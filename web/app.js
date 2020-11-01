@@ -309,12 +309,7 @@ const PDFViewerApplication = {
     const { mainContainer, viewerContainer } = this.appConfig,
       params = parseQueryString(hash);
 
-    if (
-      typeof PDFJSDev === "undefined" &&
-      params.get("workermodules") === "true"
-    ) {
-      AppOptions.set("workerSrc", "../src/pdf.worker.js");
-    } else if (params.get("disableworker") === "true") {
+    if (params.get("disableworker") === "true") {
       try {
         await loadFakeWorker();
       } catch (ex) {

@@ -2130,12 +2130,9 @@ class PDFWorker {
           );
         }
 
-        // Some versions of FF can't create a worker on localhost, see:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
         const worker =
           typeof PDFJSDev === "undefined" &&
-          !workerSrc.endsWith("/build/pdf.worker.js") &&
-          !workerSrc.endsWith("/src/worker_loader.js")
+          !workerSrc.endsWith("/build/pdf.worker.js")
             ? new Worker(workerSrc, { type: "module" })
             : new Worker(workerSrc);
         const messageHandler = new MessageHandler("main", "worker", worker);
