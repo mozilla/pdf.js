@@ -347,7 +347,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
   }
 
   static createDownloadManager(options) {
-    return new DownloadManager(options);
+    return new DownloadManager();
   }
 
   static createPreferences() {

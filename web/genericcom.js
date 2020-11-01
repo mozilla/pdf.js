@@ -39,7 +39,7 @@ class GenericPreferences extends BasePreferences {
 
 class GenericExternalServices extends DefaultExternalServices {
   static createDownloadManager(options) {
-    return new DownloadManager(options);
+    return new DownloadManager();
   }
 
   static createPreferences() {
