@@ -571,7 +571,7 @@ const TilingPattern = (function TilingPatternClosure() {
           current.strokeColor = ctx.strokeStyle;
           break;
         case PaintType.UNCOLORED:
-          const cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
+          const cssColor = Util.makeHexColor(color[0], color[1], color[2]);
           context.fillStyle = cssColor;
           context.strokeStyle = cssColor;
           // Set color needed by image masks (fixes issues 3226 and 8741).
