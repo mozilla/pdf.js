@@ -1421,6 +1421,8 @@ describe("annotation", function () {
     });
 
     it("should handle unknown text alignment, maximum length and flags", function (done) {
+      textWidgetDict.set("DV", "foo");
+
       const textWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
 
@@ -1437,6 +1439,7 @@ describe("annotation", function () {
         expect(data.hidden).toEqual(false);
         expect(data.multiLine).toEqual(false);
         expect(data.comb).toEqual(false);
+        expect(data.defaultFieldValue).toEqual("foo");
         done();
       }, done.fail);
     });
@@ -2021,6 +2024,7 @@ describe("annotation", function () {
 
     it("should handle checkboxes with export value", function (done) {
       buttonWidgetDict.set("V", Name.get("1"));
+      buttonWidgetDict.set("DV", Name.get("2"));
 
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
@@ -2044,6 +2048,7 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
         expect(data.checkBox).toEqual(true);
         expect(data.fieldValue).toEqual("1");
+        expect(data.defaultFieldValue).toEqual("2");
         expect(data.radioButton).toEqual(false);
         expect(data.exportValue).toEqual("Checked");
         done();
@@ -2052,6 +2057,7 @@ describe("annotation", function () {
 
     it("should handle checkboxes without export value", function (done) {
       buttonWidgetDict.set("V", Name.get("1"));
+      buttonWidgetDict.set("DV", Name.get("2"));
 
       const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
@@ -2067,6 +2073,7 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
         expect(data.checkBox).toEqual(true);
         expect(data.fieldValue).toEqual("1");
+        expect(data.defaultFieldValue).toEqual("2");
         expect(data.radioButton).toEqual(false);
         done();
       }, done.fail);
@@ -2074,6 +2081,7 @@ describe("annotation", function () {
 
     it("should handle checkboxes without /Off appearance", function (done) {
       buttonWidgetDict.set("V", Name.get("1"));
+      buttonWidgetDict.set("DV", Name.get("2"));
 
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
@@ -2096,6 +2104,7 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
         expect(data.checkBox).toEqual(true);
         expect(data.fieldValue).toEqual("1");
+        expect(data.defaultFieldValue).toEqual("2");
         expect(data.radioButton).toEqual(false);
         expect(data.exportValue).toEqual("Checked");
         done();
@@ -3093,6 +3102,7 @@ describe("annotation", function () {
 
       choiceWidgetDict.set("Opt", [encodedString]);
       choiceWidgetDict.set("V", encodedString);
+      choiceWidgetDict.set("DV", Name.get("foo"));
 
       const choiceWidgetRef = Ref.get(984, 0);
       const xref = new XRefMock([
@@ -3107,6 +3117,7 @@ describe("annotation", function () {
       ).then(({ data }) => {
         expect(data.annotationType).toEqual(AnnotationType.WIDGET);
         expect(data.fieldValue).toEqual([decodedString]);
+        expect(data.defaultFieldValue).toEqual("foo");
         expect(data.options).toEqual([
           { exportValue: decodedString, displayValue: decodedString },
         ]);
