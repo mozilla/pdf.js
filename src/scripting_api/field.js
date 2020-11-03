@@ -71,17 +71,8 @@ class Field extends PDFObject {
     this.valueAsString = data.valueAsString;
 
     // Private
-    this._actions = Object.create(null);
-    const doc = (this._document = data.doc);
-    if (data.actions !== null) {
-      for (const [eventType, actions] of Object.entries(data.actions)) {
-        // This code is running in a sandbox so it's safe to use Function
-        this._actions[eventType] = actions.map(action =>
-          // eslint-disable-next-line no-new-func
-          Function("event", `with (this) {${action}}`).bind(doc)
-        );
-      }
-    }
+    this._document = data.doc;
+    this._actions = this._createActionsMap(data.actions);
   }
 
   setAction(cTrigger, cScript) {
@@ -91,20 +82,45 @@ class Field extends PDFObject {
     if (!(cTrigger in this._actions)) {
       this._actions[cTrigger] = [];
     }
-    this._actions[cTrigger].push(cScript);
+    this._actions[cTrigger].push(
+      // eslint-disable-next-line no-new-func
+      Function("event", `with (this) {${cScript}}`).bind(this._document)
+    );
   }
 
   setFocus() {
     this._send({ id: this._id, focus: true });
   }
 
+  _createActionsMap(actions) {
+    const actionsMap = new Map();
+    if (actions) {
+      const doc = this._document;
+      for (const [eventType, actionsForEvent] of Object.entries(actions)) {
+        // This stuff is running in a sandbox so it's safe to use Function
+        actionsMap.set(
+          eventType,
+          actionsForEvent.map(action =>
+            // eslint-disable-next-line no-new-func
+            Function("event", `with (this) {${action}}`).bind(doc)
+          )
+        );
+      }
+    }
+    return actionsMap;
+  }
+
+  _isButton() {
+    return false;
+  }
+
   _runActions(event) {
     const eventName = event.name;
-    if (!(eventName in this._actions)) {
+    if (!this._actions.has(eventName)) {
       return false;
     }
 
-    const actions = this._actions[eventName];
+    const actions = this._actions.get(eventName);
     try {
       for (const action of actions) {
         action(event);
@@ -115,7 +131,7 @@ class Field extends PDFObject {
         `"${error.toString()}" for event ` +
         `"${eventName}" in object ${this._id}.` +
         `\n${error.stack}`;
-      this._send({ command: "error", value });
+      this._send({ id: "error", value });
     }
 
     return true;

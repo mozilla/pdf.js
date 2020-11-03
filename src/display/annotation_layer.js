@@ -501,6 +501,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", textContent);
       }
 
+      element.userValue = textContent;
       element.setAttribute("id", id);
 
       element.addEventListener("input", function (event) {
@@ -512,26 +513,76 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       });
 
       if (this.enableScripting && this.hasJSActions) {
-        element.addEventListener("updateFromSandbox", function (event) {
-          const data = event.detail;
-          if ("value" in data) {
-            event.target.value = event.detail.value;
-          } else if ("focus" in data) {
-            event.target.focus({ preventScroll: false });
+        element.addEventListener("focus", event => {
+          if (event.target.userValue) {
+            event.target.value = event.target.userValue;
           }
         });
 
-        if (this.data.actions !== null) {
+        if (this.data.actions) {
+          element.addEventListener("updateFromSandbox", function (event) {
+            const detail = event.detail;
+            const actions = {
+              value() {
+                const value = detail.value;
+                if (value === undefined || value === null) {
+                  // remove data
+                  event.target.userValue = "";
+                } else {
+                  event.target.userValue = value;
+                }
+              },
+              valueAsString() {
+                const value = detail.valueAsString;
+                if (value === undefined || value === null) {
+                  // remove data
+                  event.target.value = "";
+                } else {
+                  event.target.value = value;
+                }
+                storage.setValue(id, event.target.value);
+              },
+              focus() {
+                event.target.focus({ preventScroll: false });
+              },
+              userName() {
+                const tooltip = detail.userName;
+                event.target.title = tooltip;
+              },
+              hidden() {
+                event.target.style.display = detail.hidden ? "none" : "block";
+              },
+              editable() {
+                event.target.disabled = !detail.editable;
+              },
+              selRange() {
+                const [selStart, selEnd] = detail.selRange;
+                if (selStart >= 0 && selEnd < event.target.value.length) {
+                  event.target.setSelectionRange(selStart, selEnd);
+                }
+              },
+            };
+            for (const name of Object.keys(detail)) {
+              if (name in actions) {
+                actions[name]();
+              }
+            }
+          });
+
           for (const eventType of Object.keys(this.data.actions)) {
             switch (eventType) {
               case "Format":
-                element.addEventListener("blur", function (event) {
+                element.addEventListener("change", function (event) {
                   window.dispatchEvent(
                     new CustomEvent("dispatchEventInSandbox", {
                       detail: {
                         id,
-                        name: "Format",
+                        name: "Keystroke",
                         value: event.target.value,
+                        willCommit: true,
+                        commitKey: 1,
+                        selStart: event.target.selectionStart,
+                        selEnd: event.target.selectionEnd,
                       },
                     })
                   );
