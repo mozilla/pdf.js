@@ -59,10 +59,22 @@ class AnnotationStorage {
    * @param {Object} value
    */
   setValue(key, value) {
-    if (this._storage.get(key) !== value) {
+    const obj = this._storage.get(key);
+    let modified = false;
+    if (obj !== undefined) {
+      for (const [entry, val] of Object.entries(value)) {
+        if (obj[entry] !== val) {
+          modified = true;
+          obj[entry] = val;
+        }
+      }
+    } else {
+      this._storage.set(key, value);
+      modified = true;
+    }
+    if (modified) {
       this._setModified();
     }
-    this._storage.set(key, value);
   }
 
   getAll() {

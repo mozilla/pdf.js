@@ -347,7 +347,10 @@ class Page {
         // is resolved with the complete operator list for a single annotation.
         const opListPromises = [];
         for (const annotation of annotations) {
-          if (isAnnotationRenderable(annotation, intent)) {
+          if (
+            isAnnotationRenderable(annotation, intent) &&
+            !annotation.isHidden(annotationStorage)
+          ) {
             opListPromises.push(
               annotation
                 .getOperatorList(
