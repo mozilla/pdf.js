@@ -30,6 +30,7 @@ class InfoProxyHandler {
 class Doc extends PDFObject {
   constructor(data) {
     super(data);
+    this.calculate = true;
 
     this.baseURL = data.baseURL || "";
     this.calculate = true;

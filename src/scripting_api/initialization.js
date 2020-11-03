@@ -22,7 +22,7 @@ import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
 import { ZoomType } from "./constants.js";
 
-function initSandbox(data, extra, out) {
+function initSandbox({ data, extra, out, testMode = false }) {
   const proxyHandler = new ProxyHandler(data.dispatchEventName);
   const { send, crackURL } = extra;
   const doc = new Doc({
@@ -57,6 +57,14 @@ function initSandbox(data, extra, out) {
     if (name.startsWith("AF")) {
       out[name] = aform[name].bind(aform);
     }
+  }
+
+  if (
+    (typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")) &&
+    testMode
+  ) {
+    out._app = app;
   }
 }
 
