@@ -2126,6 +2126,13 @@ class PopupAnnotation extends Annotation {
     const rawParent = parameters.dict.getRaw("Parent");
     this.data.parentId = isRef(rawParent) ? rawParent.toString() : null;
 
+    const parentRect = parentItem.getArray("Rect");
+    if (Array.isArray(parentRect) && parentRect.length === 4) {
+      this.data.parentRect = Util.normalizeRect(parentRect);
+    } else {
+      this.data.parentRect = [0, 0, 0, 0];
+    }
+
     const rt = parentItem.get("RT");
     if (isName(rt, AnnotationReplyType.GROUP)) {
       // Subordinate annotations in a group should inherit
