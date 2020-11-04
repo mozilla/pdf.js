@@ -673,9 +673,10 @@ var Driver = (function DriverClosure() {
     },
 
     _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext("2d", { alpha: false });
-      ctx.beginPath();
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // Ideally we would just clear the canvas and beginPath, but this doesn't
+      // seem to totally reset the canvas state and causes intermittent
+      // failures.
+      this.canvas = document.createElement("canvas");
     },
 
     _snapshot: function Driver_snapshot(task, failure) {
