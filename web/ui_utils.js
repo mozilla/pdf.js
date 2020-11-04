@@ -412,6 +412,21 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
 }
 
 /**
+ * @typedef {Object} GetVisibleElementsParameters
+ * @property {HTMLElement} scrollEl - A container that can possibly scroll.
+ * @property {Array} views - Objects with a `div` property that contains an
+ *   HTMLElement, which should all be descendants of `scrollEl` satisfying the
+ *   relevant layout assumptions.
+ * @property {boolean} sortByVisibility - If `true`, the returned elements are
+ *   sorted in descending order of the percent of their padding box that is
+ *   visible. The default value is `false`.
+ * @property {boolean} horizontal - If `true`, the elements are assumed to be
+ *   laid out horizontally instead of vertically. The default value is `false`.
+ * @property {boolean} rtl - If `true`, the `scrollEl` container is assumed to
+ *   be in right-to-left mode. The default value is `false`.
+ */
+
+/**
  * Generic helper to find out what elements are visible within a scroll pane.
  *
  * Well, pretty generic. There are some assumptions placed on the elements
@@ -428,23 +443,16 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  * rendering canvas. Earlier and later refer to index in `views`, not page
  * layout.)
  *
- * @param scrollEl {HTMLElement} - a container that can possibly scroll
- * @param views {Array} - objects with a `div` property that contains an
- *   HTMLElement, which should all be descendents of `scrollEl` satisfying the
- *   above layout assumptions
- * @param sortByVisibility {boolean} - if true, the returned elements are sorted
- *   in descending order of the percent of their padding box that is visible
- * @param horizontal {boolean} - if true, the elements are assumed to be laid
- *   out horizontally instead of vertically
+ * @param {GetVisibleElementsParameters}
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
-function getVisibleElements(
+function getVisibleElements({
   scrollEl,
   views,
   sortByVisibility = false,
   horizontal = false,
-  rtl = false
-) {
+  rtl = false,
+}) {
   const top = scrollEl.scrollTop,
     bottom = top + scrollEl.clientHeight;
   const left = scrollEl.scrollLeft,
@@ -475,15 +483,12 @@ function getVisibleElements(
 
   const visible = [],
     numViews = views.length;
-  let firstVisibleElementInd =
-    numViews === 0
-      ? 0
-      : binarySearchFirstItem(
-          views,
-          horizontal
-            ? isElementNextAfterViewHorizontally
-            : isElementBottomAfterViewTop
-        );
+  let firstVisibleElementInd = binarySearchFirstItem(
+    views,
+    horizontal
+      ? isElementNextAfterViewHorizontally
+      : isElementBottomAfterViewTop
+  );
 
   // Please note the return value of the `binarySearchFirstItem` function when
   // no valid element is found (hence the `firstVisibleElementInd` check below).

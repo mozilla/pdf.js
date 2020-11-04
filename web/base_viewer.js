@@ -1076,13 +1076,13 @@ class BaseViewer {
   }
 
   _getVisiblePages() {
-    return getVisibleElements(
-      this.container,
-      this._pages,
-      true,
-      this._isScrollModeHorizontal,
-      this._isScrollModeHorizontal && this._isContainerRtl
-    );
+    return getVisibleElements({
+      scrollEl: this.container,
+      views: this._pages,
+      sortByVisibility: true,
+      horizontal: this._isScrollModeHorizontal,
+      rtl: this._isScrollModeHorizontal && this._isContainerRtl,
+    });
   }
 
   /**

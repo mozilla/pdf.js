@@ -639,11 +639,11 @@ describe("ui_utils", function () {
     // This function takes a fixed layout of pages and compares the system under
     // test to the slower implementation above, for a range of scroll viewport
     // sizes and positions.
-    function scrollOverDocument(pages, horizontally = false, rtl = false) {
+    function scrollOverDocument(pages, horizontal = false, rtl = false) {
       const size = pages.reduce(function (max, { div }) {
         return Math.max(
           max,
-          horizontally
+          horizontal
             ? Math.abs(div.offsetLeft + div.clientLeft + div.clientWidth)
             : div.offsetTop + div.clientTop + div.clientHeight
         );
@@ -657,7 +657,7 @@ describe("ui_utils", function () {
         // iteration; again, this is just to test an interesting range of cases
         // without slowing the tests down to check every possible case.
         for (let j = i + 5; j < size; j += j - i) {
-          const scroll = horizontally
+          const scrollEl = horizontal
             ? {
                 scrollTop: 0,
                 scrollLeft: i,
@@ -671,8 +671,14 @@ describe("ui_utils", function () {
                 clientWidth: 10000,
               };
           expect(
-            getVisibleElements(scroll, pages, false, horizontally, rtl)
-          ).toEqual(slowGetVisibleElements(scroll, pages));
+            getVisibleElements({
+              scrollEl,
+              views: pages,
+              sortByVisibility: false,
+              horizontal,
+              rtl,
+            })
+          ).toEqual(slowGetVisibleElements(scrollEl, pages));
         }
       }
     }
@@ -734,7 +740,7 @@ describe("ui_utils", function () {
           [30, 10],
         ],
       ]);
-      scrollOverDocument(pages, true);
+      scrollOverDocument(pages, /* horizontal = */ true);
     });
 
     it("works with horizontal scrolling with RTL-documents", function () {
@@ -745,7 +751,7 @@ describe("ui_utils", function () {
           [-30, 10],
         ],
       ]);
-      scrollOverDocument(pages, true, true);
+      scrollOverDocument(pages, /* horizontal = */ true, /* rtl = */ true);
     });
 
     it("handles `sortByVisibility` correctly", function () {
@@ -757,12 +763,12 @@ describe("ui_utils", function () {
       };
       const views = makePages([[[100, 150]], [[100, 150]], [[100, 150]]]);
 
-      const visible = getVisibleElements(scrollEl, views);
-      const visibleSorted = getVisibleElements(
+      const visible = getVisibleElements({ scrollEl, views });
+      const visibleSorted = getVisibleElements({
         scrollEl,
         views,
-        /* sortByVisibility = */ true
-      );
+        sortByVisibility: true,
+      });
 
       const viewsOrder = [],
         viewsSortedOrder = [];
@@ -785,7 +791,7 @@ describe("ui_utils", function () {
       };
       const views = [];
 
-      expect(getVisibleElements(scrollEl, views)).toEqual({
+      expect(getVisibleElements({ scrollEl, views })).toEqual({
         first: undefined,
         last: undefined,
         views: [],
@@ -801,7 +807,7 @@ describe("ui_utils", function () {
       };
       const views = makePages([[[100, 150]], [[100, 150]], [[100, 150]]]);
 
-      expect(getVisibleElements(scrollEl, views)).toEqual({
+      expect(getVisibleElements({ scrollEl, views })).toEqual({
         first: undefined,
         last: undefined,
         views: [],
