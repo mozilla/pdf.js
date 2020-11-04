@@ -81,7 +81,10 @@ class PDFThumbnailViewer {
    * @private
    */
   _getVisibleThumbs() {
-    return getVisibleElements(this.container, this._thumbnails);
+    return getVisibleElements({
+      scrollEl: this.container,
+      views: this._thumbnails,
+    });
   }
 
   scrollThumbnailIntoView(pageNumber) {
