@@ -951,6 +951,13 @@ class WidgetAnnotation extends Annotation {
     });
     data.fieldValue = this._decodeFormValue(fieldValue);
 
+    const defaultFieldValue = getInheritableProperty({
+      dict,
+      key: "DV",
+      getArray: true,
+    });
+    data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
+
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
     data.defaultAppearance =
       getInheritableProperty({ dict, key: "DA" }) ||
@@ -1652,6 +1659,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value: this.data.fieldValue,
+      defaultValue: this.data.defaultFieldValue,
       multiline: this.data.multiLine,
       password: this.hasFieldFlag(AnnotationFieldFlag.PASSWORD),
       charLimit: this.data.maxLen,
@@ -1976,6 +1984,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value,
+      defaultValue: this.data.defaultFieldValue,
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
@@ -2052,6 +2061,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value,
+      defaultValue: this.data.defaultFieldValue,
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
