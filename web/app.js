@@ -1350,11 +1350,11 @@ const PDFViewerApplication = {
         );
         this._idleCallbacks.add(callback);
       }
+      this._initializeJavaScript(pdfDocument);
     });
 
     this._initializePageLabels(pdfDocument);
     this._initializeMetadata(pdfDocument);
-    this._initializeJavaScript(pdfDocument);
   },
 
   /**
@@ -1370,25 +1370,46 @@ const PDFViewerApplication = {
       return;
     }
     const scripting = this.externalServices.scripting;
+    const {
+      info,
+      metadata,
+      contentDispositionFilename,
+    } = await pdfDocument.getMetadata();
 
-    window.addEventListener("updateFromSandbox", function (event) {
+    window.addEventListener("updateFromSandbox", event => {
       const detail = event.detail;
       const id = detail.id;
       if (!id) {
         switch (detail.command) {
-          case "println":
-            console.log(detail.value);
-            break;
-          case "clear":
-            console.clear();
-            break;
           case "alert":
             // eslint-disable-next-line no-alert
             window.alert(detail.value);
             break;
+          case "clear":
+            console.clear();
+            break;
           case "error":
             console.error(detail.value);
             break;
+          case "layout":
+            this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(detail.value);
+            return;
+          case "page-num":
+            this.pdfViewer.currentPageNumber = detail.value + 1;
+            return;
+          case "print":
+            this.triggerPrinting();
+            return;
+          case "println":
+            console.log(detail.value);
+            break;
+          case "zoom":
+            if (typeof detail.value === "string") {
+              this.pdfViewer.currentScaleValue = detail.value;
+            } else {
+              this.pdfViewer.currentScale = detail.value;
+            }
+            return;
         }
         return;
       }
@@ -1411,7 +1432,23 @@ const PDFViewerApplication = {
 
     const dispatchEventName = generateRandomStringForSandbox(objects);
     const calculationOrder = [];
-    scripting.createSandbox({ objects, dispatchEventName, calculationOrder });
+    const { length } = await pdfDocument.getDownloadInfo();
+    const filename =
+      contentDispositionFilename || getPDFFileNameFromURL(this.url);
+    scripting.createSandbox({
+      objects,
+      dispatchEventName,
+      calculationOrder,
+      docInfo: {
+        ...info,
+        baseURL: this.baseUrl,
+        filesize: length,
+        filename,
+        metadata,
+        numPages: pdfDocument.numPages,
+        URL: this.url,
+      },
+    });
   },
 
   /**
