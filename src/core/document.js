@@ -76,6 +76,7 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
+    nonBlendModesSet,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -85,6 +86,7 @@ class Page {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.globalImageCache = globalImageCache;
+    this.nonBlendModesSet = nonBlendModesSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -312,7 +314,10 @@ class Page {
       const opList = new OperatorList(intent, sink);
 
       handler.send("StartRenderPage", {
-        transparency: partialEvaluator.hasBlendModes(this.resources),
+        transparency: partialEvaluator.hasBlendModes(
+          this.resources,
+          this.nonBlendModesSet
+        ),
         pageIndex: this.pageIndex,
         intent,
       });
@@ -917,6 +922,7 @@ class PDFDocument {
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
+        nonBlendModesSet: catalog.nonBlendModesSet,
       });
     }));
   }
