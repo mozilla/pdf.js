@@ -239,12 +239,15 @@ class PartialEvaluator {
     return newEvaluator;
   }
 
-  hasBlendModes(resources) {
+  hasBlendModes(resources, nonBlendModesSet) {
     if (!(resources instanceof Dict)) {
       return false;
     }
+    if (resources.objId && nonBlendModesSet.has(resources.objId)) {
+      return false;
+    }
 
-    const processed = new RefSet();
+    const processed = new RefSet(nonBlendModesSet);
     if (resources.objId) {
       processed.put(resources.objId);
     }
@@ -344,6 +347,13 @@ class PartialEvaluator {
         }
       }
     }
+
+    // When no blend modes exist, there's no need re-fetch/re-parse any of the
+    // processed `Ref`s again for subsequent pages. This helps reduce redundant
+    // `XRef.fetch` calls for some documents (e.g. issue6961.pdf).
+    processed.forEach(ref => {
+      nonBlendModesSet.put(ref);
+    });
     return false;
   }
 
