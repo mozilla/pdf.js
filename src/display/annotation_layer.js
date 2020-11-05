@@ -266,7 +266,9 @@ class AnnotationElement {
         quadPoint[1].y,
       ];
       this.data.rect = rect;
-      quadrilaterals.push(this._createContainer(ignoreBorder));
+      const quad = this._createContainer(ignoreBorder);
+      quad.className = "highlightAnnotation";
+      quadrilaterals.push(quad);
     }
     this.data.rect = savedRect;
     return quadrilaterals;
@@ -278,12 +280,17 @@ class AnnotationElement {
    * are of a type that works with popups (such as Highlight annotations).
    *
    * @private
-   * @param {HTMLSectionElement} container
    * @param {HTMLDivElement|HTMLImageElement|null} trigger
    * @param {Object} data
    * @memberof AnnotationElement
    */
-  _createPopup(container, trigger, data) {
+  _createPopup(trigger, data) {
+    let container = this.container;
+    if (this.quadrilaterals) {
+      trigger = trigger || this.quadrilaterals;
+      container = this.quadrilaterals[0];
+    }
+
     // If no trigger element is specified, create it.
     if (!trigger) {
       trigger = document.createElement("div");
@@ -437,7 +444,7 @@ class TextAnnotationElement extends AnnotationElement {
     image.dataset.l10nArgs = JSON.stringify({ type: this.data.name });
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, image, this.data);
+      this._createPopup(image, this.data);
     }
 
     this.container.appendChild(image);
@@ -1034,7 +1041,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     this.container.className = "freeTextAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1085,7 +1092,7 @@ class LineAnnotationElement extends AnnotationElement {
 
     // Create the popup ourselves so that we can bind it to the line instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, line, data);
+    this._createPopup(line, data);
 
     return this.container;
   }
@@ -1139,7 +1146,7 @@ class SquareAnnotationElement extends AnnotationElement {
 
     // Create the popup ourselves so that we can bind it to the square instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, square, data);
+    this._createPopup(square, data);
 
     return this.container;
   }
@@ -1193,7 +1200,7 @@ class CircleAnnotationElement extends AnnotationElement {
 
     // Create the popup ourselves so that we can bind it to the circle instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, circle, data);
+    this._createPopup(circle, data);
 
     return this.container;
   }
@@ -1255,7 +1262,7 @@ class PolylineAnnotationElement extends AnnotationElement {
 
     // Create the popup ourselves so that we can bind it to the polyline
     // instead of to the entire container (which is the default).
-    this._createPopup(this.container, polyline, data);
+    this._createPopup(polyline, data);
 
     return this.container;
   }
@@ -1292,7 +1299,7 @@ class CaretAnnotationElement extends AnnotationElement {
     this.container.className = "caretAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1354,7 +1361,7 @@ class InkAnnotationElement extends AnnotationElement {
 
       // Create the popup ourselves so that we can bind it to the polyline
       // instead of to the entire container (which is the default).
-      this._createPopup(this.container, polyline, data);
+      this._createPopup(polyline, data);
 
       svg.appendChild(polyline);
     }
@@ -1386,7 +1393,7 @@ class HighlightAnnotationElement extends AnnotationElement {
     this.container.className = "highlightAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.quadrilaterals || this.container;
   }
@@ -1413,7 +1420,7 @@ class UnderlineAnnotationElement extends AnnotationElement {
     this.container.className = "underlineAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1440,7 +1447,7 @@ class SquigglyAnnotationElement extends AnnotationElement {
     this.container.className = "squigglyAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1467,7 +1474,7 @@ class StrikeOutAnnotationElement extends AnnotationElement {
     this.container.className = "strikeoutAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1494,7 +1501,7 @@ class StampAnnotationElement extends AnnotationElement {
     this.container.className = "stampAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1535,7 +1542,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     trigger.addEventListener("dblclick", this._download.bind(this));
 
     if (!this.data.hasPopup && (this.data.title || this.data.contents)) {
-      this._createPopup(this.container, trigger, this.data);
+      this._createPopup(trigger, this.data);
     }
 
     this.container.appendChild(trigger);
@@ -1627,7 +1634,13 @@ class AnnotationLayer {
             parameters.div.appendChild(renderedElement);
           }
         } else {
-          parameters.div.appendChild(rendered);
+          if (element instanceof PopupAnnotationElement) {
+            // Popup annotation elements should not be on top of other
+            // annotation elements to prevent interfering with mouse events.
+            parameters.div.prepend(rendered);
+          } else {
+            parameters.div.appendChild(rendered);
+          }
         }
       }
     }

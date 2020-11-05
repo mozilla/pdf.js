@@ -1427,6 +1427,13 @@
        "type": "eq",
        "about": "Type3 fonts with image resources; both pages need to be tested, otherwise the bug won't manifest."
     },
+    {  "id": "issue12504",
+       "file": "pdfs/issue12504.pdf",
+       "md5": "04fcc87f3e7e9e925e3ef83cf0bf49f4",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "close-path-bug",
        "file": "pdfs/close-path-bug.pdf",
        "md5": "48dd17ef58393857d2d038d33699cac5",
