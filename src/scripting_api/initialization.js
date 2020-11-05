@@ -20,11 +20,15 @@ import { Doc } from "./doc.js";
 import { Field } from "./field.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
+import { ZoomType } from "./constants.js";
 
 function initSandbox(data, extra, out) {
   const proxyHandler = new ProxyHandler(data.dispatchEventName);
   const { send, crackURL } = extra;
-  const doc = new Doc({ send });
+  const doc = new Doc({
+    send,
+    ...data.docInfo,
+  });
   const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
   const app = new App({
     send,
@@ -39,7 +43,8 @@ function initSandbox(data, extra, out) {
     obj.send = send;
     obj.doc = _document.wrapped;
     const field = new Field(obj);
-    const wrapped = (doc._fields[name] = new Proxy(field, proxyHandler));
+    const wrapped = new Proxy(field, proxyHandler);
+    doc._addField(name, wrapped);
     app._objects[obj.id] = { obj: field, wrapped };
   }
 
@@ -47,6 +52,7 @@ function initSandbox(data, extra, out) {
   out.app = new Proxy(app, proxyHandler);
   out.console = new Proxy(new Console({ send }), proxyHandler);
   out.util = new Proxy(util, proxyHandler);
+  out.zoomtype = ZoomType;
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
     if (name.startsWith("AF")) {
       out[name] = aform[name].bind(aform);
