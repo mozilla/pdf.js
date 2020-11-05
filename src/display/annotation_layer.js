@@ -847,6 +847,7 @@ class PopupAnnotationElement extends AnnotationElement {
 
     this.container.style.transformOrigin = `${-popupLeft}px ${-popupTop}px`;
     this.container.style.left = `${popupLeft}px`;
+    this.container.style.top = `${popupTop}px`;
 
     this.container.appendChild(popup.render());
     return this.container;
