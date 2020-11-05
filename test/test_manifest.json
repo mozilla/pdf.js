@@ -4784,5 +4784,12 @@
        "rounds": 2,
        "lastPage": 1,
        "type": "fbf"
-    }
+    },
+    {  "id": "pr12564",
+      "file": "pdfs/pr12564.pdf",
+      "md5": "24a19949a2541b960363832cf141f2f2",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   }
 ]
