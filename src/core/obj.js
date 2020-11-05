@@ -76,6 +76,7 @@ class Catalog {
     this.builtInCMapCache = new Map();
     this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
+    this.nonBlendModesSet = new RefSet();
   }
 
   get version() {
@@ -937,6 +938,7 @@ class Catalog {
     clearPrimitiveCaches();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
+    this.nonBlendModesSet.clear();
 
     const promises = [];
     this.fontCache.forEach(function (promise) {
