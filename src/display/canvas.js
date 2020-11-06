@@ -1350,11 +1350,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
       if (this.contentVisible) {
-        if (
-          strokeColor &&
-          strokeColor.hasOwnProperty("type") &&
-          strokeColor.type === "Pattern"
-        ) {
+        if (typeof strokeColor === "object" && strokeColor?.getPattern) {
           // for patterns, we transform to pattern space, calculate
           // the pattern, call stroke, and restore to user space
           ctx.save();
