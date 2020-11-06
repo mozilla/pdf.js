@@ -77,6 +77,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/pdf_find_utils_spec.js",
       "pdfjs-test/unit/pdf_history_spec.js",
       "pdfjs-test/unit/primitives_spec.js",
+      "pdfjs-test/unit/scripting_spec.js",
       "pdfjs-test/unit/stream_spec.js",
       "pdfjs-test/unit/type1_parser_spec.js",
       "pdfjs-test/unit/ui_utils_spec.js",
