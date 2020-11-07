@@ -16,7 +16,7 @@
     "cross-env": "^7.0.2",
     "es-module-shims": "^0.6.0",
     "escodegen": "^2.0.0",
-    "eslint": "^7.10.0",
+    "eslint": "^7.13.0",
     "eslint-config-prettier": "^6.12.0",
     "eslint-plugin-fetch-options": "^0.0.5",
     "eslint-plugin-html": "^6.1.0",
