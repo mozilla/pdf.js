@@ -121,9 +121,7 @@ class BaseFontLoader {
   }
 
   get isFontLoadingAPISupported() {
-    const supported =
-      typeof this._document !== "undefined" && !!this._document.fonts;
-    return shadow(this, "isFontLoadingAPISupported", supported);
+    return shadow(this, "isFontLoadingAPISupported", !!this._document?.fonts);
   }
 
   // eslint-disable-next-line getter-return
@@ -173,7 +171,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
           const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(
             navigator.userAgent
           );
-          if (m && m[1] >= 14) {
+          if (m?.[1] >= 14) {
             supported = true;
           }
           // TODO - other browsers...

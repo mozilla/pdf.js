@@ -1015,8 +1015,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const current = this.current;
       if (
         current.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG &&
-        current.txtElement &&
-        current.txtElement.hasChildNodes()
+        current.txtElement?.hasChildNodes()
       ) {
         // If no glyphs are shown (i.e. no child nodes), no clipping occurs.
         current.element = current.txtElement;
