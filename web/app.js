@@ -1552,7 +1552,7 @@ const PDFViewerApplication = {
         if (!producer.includes(generator)) {
           return false;
         }
-        generatorId = generator.replace(/[ .\-]/g, "_");
+        generatorId = generator.replace(/[ .-]/g, "_");
         return true;
       });
     }
