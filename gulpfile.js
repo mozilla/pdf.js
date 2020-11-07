@@ -124,7 +124,7 @@ function safeSpawnSync(command, parameters, options) {
   options.shell = true;
   // `options.shell = true` requires parameters to be quoted.
   parameters = parameters.map(param => {
-    if (!/[\s`~!#$*(){\[|\\;'"<>?]/.test(param)) {
+    if (!/[\s`~!#$*(){[|\\;'"<>?]/.test(param)) {
       return param;
     }
     return '"' + param.replace(/([$\\"`])/g, "\\$1") + '"';

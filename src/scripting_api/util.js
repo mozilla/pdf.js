@@ -61,7 +61,7 @@ class Util extends PDFObject {
       throw new TypeError("First argument of printf must be a string");
     }
 
-    const pattern = /%(,[0-4])?([\+ 0#]+)?([0-9]+)?(\.[0-9]+)?(.)/g;
+    const pattern = /%(,[0-4])?([+ 0#]+)?([0-9]+)?(\.[0-9]+)?(.)/g;
     const PLUS = 1;
     const SPACE = 2;
     const ZERO = 4;

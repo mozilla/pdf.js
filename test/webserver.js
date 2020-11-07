@@ -165,7 +165,7 @@ WebServer.prototype = {
 
       var range = req.headers.range;
       if (range && !disableRangeRequests) {
-        var rangesMatches = /^bytes=(\d+)\-(\d+)?/.exec(range);
+        var rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
         if (!rangesMatches) {
           res.writeHead(501);
           res.end("Bad range", "utf8");
