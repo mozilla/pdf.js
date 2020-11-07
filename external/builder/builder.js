@@ -202,7 +202,7 @@ function preprocessCSS(mode, source, destination) {
   }
 
   function expandImports(content, baseUrl) {
-    return content.replace(/^\s*@import\s+url\(([^\)]+)\);\s*$/gm, function (
+    return content.replace(/^\s*@import\s+url\(([^)]+)\);\s*$/gm, function (
       all,
       url
     ) {
