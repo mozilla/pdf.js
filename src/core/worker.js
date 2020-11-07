@@ -143,13 +143,14 @@ class WorkerMessageHandler {
       // `ReadableStream` and `Promise.allSettled`).
       if (
         (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
-        (typeof ReadableStream === "undefined" ||
+        (typeof globalThis === "undefined" ||
+          typeof ReadableStream === "undefined" ||
           typeof Promise.allSettled === "undefined")
       ) {
         throw new Error(
           "The browser/environment lacks native support for critical " +
-            "functionality used by the PDF.js library (e.g. " +
-            "`ReadableStream` and/or `Promise.allSettled`); " +
+            "functionality used by the PDF.js library (e.g. `globalThis`, " +
+            "`ReadableStream`, and/or `Promise.allSettled`); " +
             "please use an ES5-compatible build instead."
         );
       }
