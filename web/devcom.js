@@ -15,45 +15,12 @@
 
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { loadScript, shadow } from "pdfjs-lib";
-import { AppOptions } from "./app_options.js";
-import { BasePreferences } from "./preferences.js";
-import { DownloadManager } from "./download_manager.js";
-import { GenericL10n } from "./genericl10n.js";
 
-if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
-  throw new Error(
-    'Module "pdfjs-web/genericcom" shall not be used outside ' +
-      "GENERIC build."
-  );
-}
+const DevCom = {};
 
-const GenericCom = {};
-
-class GenericPreferences extends BasePreferences {
-  async _writeToStorage(prefObj) {
-    localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
-  }
-
-  async _readFromStorage(prefObj) {
-    return JSON.parse(localStorage.getItem("pdfjs.preferences"));
-  }
-}
-
-class GenericExternalServices extends DefaultExternalServices {
-  static createDownloadManager(options) {
-    return new DownloadManager();
-  }
-
-  static createPreferences() {
-    return new GenericPreferences();
-  }
-
-  static createL10n({ locale = "en-US" }) {
-    return new GenericL10n(locale);
-  }
-
+class DevExternalServices extends DefaultExternalServices {
   static get scripting() {
-    const promise = loadScript(AppOptions.get("scriptingSrc")).then(() => {
+    const promise = loadScript("../build/pdf.sandbox.js").then(() => {
       return window.pdfjsSandbox.QuickJSSandbox();
     });
     const sandbox = {
@@ -71,6 +38,6 @@ class GenericExternalServices extends DefaultExternalServices {
     return shadow(this, "scripting", sandbox);
   }
 }
-PDFViewerApplication.externalServices = GenericExternalServices;
+PDFViewerApplication.externalServices = DevExternalServices;
 
-export { GenericCom };
+export { DevCom };

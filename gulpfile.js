@@ -33,6 +33,7 @@ var stream = require("stream");
 var exec = require("child_process").exec;
 var spawn = require("child_process").spawn;
 var spawnSync = require("child_process").spawnSync;
+var stripComments = require("gulp-strip-comments");
 var streamqueue = require("streamqueue");
 var merge = require("merge-stream");
 var zip = require("gulp-zip");
@@ -105,6 +106,7 @@ const DEFINES = Object.freeze({
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
+  NO_SOURCE_MAP: false,
 });
 
 function transform(charEncoding, transformFunction) {
@@ -182,7 +184,8 @@ function createWebpackConfig(defines, output) {
   var enableSourceMaps =
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
-    !bundleDefines.TESTING;
+    !bundleDefines.TESTING &&
+    !bundleDefines.NO_SOURCE_MAP;
   var skipBabel = bundleDefines.SKIP_BABEL;
 
   // `core-js` (see https://github.com/zloirock/core-js/issues/514),
@@ -343,6 +346,53 @@ function createScriptingBundle(defines) {
     .pipe(replaceJSRootName(scriptingAMDName, "pdfjsScripting"));
 }
 
+function createSandboxBundle(defines, code) {
+  var sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
+  var sandboxOutputName = "pdf.sandbox.js";
+  var sandboxFileConfig = createWebpackConfig(defines, {
+    filename: sandboxOutputName,
+    library: sandboxAMDName,
+    libraryTarget: "umd",
+    umdNamedDefine: true,
+  });
+
+  // The code is the one from the bundle pdf.scripting.js
+  // so in order to have it in a string (which will be eval-ed
+  // in the sandbox) we must escape some chars.
+  // This way we've all the code (initialization+sandbox) in
+  // the same bundle.
+  code = code.replace(/["\\\n\t]/g, match => {
+    if (match === "\n") {
+      return "\\n";
+    }
+    if (match === "\t") {
+      return "\\t";
+    }
+    return `\\${match}`;
+  });
+  return (
+    gulp
+      .src("./src/scripting_api/quickjs-sandbox.js")
+      .pipe(webpack2Stream(sandboxFileConfig))
+      .pipe(replaceWebpackRequire())
+      .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"))
+      // put the code in a string to be eval-ed in the sandbox
+      .pipe(replace("/* INITIALIZATION_CODE */", `${code}`))
+  );
+}
+
+function buildSandbox(defines, dir) {
+  const scriptingDefines = builder.merge(defines, { NO_SOURCE_MAP: true });
+  return createScriptingBundle(scriptingDefines)
+    .pipe(stripComments())
+    .pipe(gulp.dest(dir + "build"))
+    .on("data", file => {
+      const content = file.contents.toString();
+      createSandboxBundle(defines, content).pipe(gulp.dest(dir + "build"));
+      fs.unlinkSync(dir + "build/pdf.scripting.js");
+    });
+}
+
 function createWorkerBundle(defines) {
   var workerAMDName = "pdfjs-dist/build/pdf.worker";
   var workerOutputName = "pdf.worker.js";
@@ -493,6 +543,25 @@ function makeRef(done, bot) {
     done();
   });
 }
+
+gulp.task("sandbox", function (done) {
+  const defines = builder.merge(DEFINES, { GENERIC: true });
+  buildSandbox(defines, GENERIC_DIR);
+  done();
+});
+
+gulp.task("watch-sandbox", function (done) {
+  const defines = builder.merge(DEFINES, { GENERIC: true });
+  buildSandbox(defines, GENERIC_DIR);
+  const watcher = gulp.watch([
+    "src/scripting_api/*.js",
+    "external/quickjs/*.js",
+  ]);
+  watcher.on("change", function () {
+    buildSandbox(defines, GENERIC_DIR);
+  });
+  done();
+});
 
 gulp.task("default", function (done) {
   console.log("Available tasks:");
@@ -762,26 +831,47 @@ function buildGeneric(defines, dir) {
 // HTML5 browsers, which implement modern ECMAScript features.
 gulp.task(
   "generic",
-  gulp.series("buildnumber", "default_preferences", "locale", function () {
-    console.log();
-    console.log("### Creating generic viewer");
-    var defines = builder.merge(DEFINES, { GENERIC: true });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    "locale",
+    function () {
+      console.log();
+      console.log("### Creating generic viewer");
+      var defines = builder.merge(DEFINES, { GENERIC: true });
 
-    return buildGeneric(defines, GENERIC_DIR);
-  })
+      return buildGeneric(defines, GENERIC_DIR);
+    },
+    "sandbox"
+  )
 );
 
 // Builds the generic production viewer that should be compatible with most
 // older HTML5 browsers.
 gulp.task(
   "generic-es5",
-  gulp.series("buildnumber", "default_preferences", "locale", function () {
-    console.log();
-    console.log("### Creating generic (ES5) viewer");
-    var defines = builder.merge(DEFINES, { GENERIC: true, SKIP_BABEL: false });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    "locale",
+    function () {
+      console.log();
+      console.log("### Creating generic (ES5) viewer");
+      var defines = builder.merge(DEFINES, {
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
 
-    return buildGeneric(defines, GENERIC_ES5_DIR);
-  })
+      return buildGeneric(defines, GENERIC_ES5_DIR);
+    },
+    function () {
+      const defines = builder.merge(DEFINES, {
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
+      return buildSandbox(defines, GENERIC_ES5_DIR);
+    }
+  )
 );
 
 function buildComponents(defines, dir) {
@@ -908,33 +998,61 @@ function buildMinified(defines, dir) {
 
 gulp.task(
   "minified-pre",
-  gulp.series("buildnumber", "default_preferences", "locale", function () {
-    console.log();
-    console.log("### Creating minified viewer");
-    var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    "locale",
+    function () {
+      console.log();
+      console.log("### Creating minified viewer");
+      var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
 
-    return buildMinified(defines, MINIFIED_DIR);
-  })
+      return buildSandbox(defines, MINIFIED_DIR);
+    },
+    function () {
+      var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+
+      return buildMinified(defines, MINIFIED_DIR);
+    }
+  )
 );
 
 gulp.task(
   "minified-es5-pre",
-  gulp.series("buildnumber", "default_preferences", "locale", function () {
-    console.log();
-    console.log("### Creating minified (ES5) viewer");
-    var defines = builder.merge(DEFINES, {
-      MINIFIED: true,
-      GENERIC: true,
-      SKIP_BABEL: false,
-    });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    "locale",
+    function () {
+      console.log();
+      console.log("### Creating minified (ES5) viewer");
+      var defines = builder.merge(DEFINES, {
+        MINIFIED: true,
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
 
-    return buildMinified(defines, MINIFIED_ES5_DIR);
-  })
+      return buildSandbox(defines, MINIFIED_ES5_DIR);
+    },
+
+    function () {
+      var defines = builder.merge(DEFINES, {
+        MINIFIED: true,
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
+
+      return buildMinified(defines, MINIFIED_ES5_DIR);
+    }
+  )
 );
 
 async function parseMinified(dir) {
   var pdfFile = fs.readFileSync(dir + "/build/pdf.js").toString();
   var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker.js").toString();
+  var pdfSandboxFile = fs
+    .readFileSync(dir + "/build/pdf.sandbox.js")
+    .toString();
   var pdfImageDecodersFile = fs
     .readFileSync(dir + "/image_decoders/pdf.image_decoders.js")
     .toString();
@@ -969,6 +1087,10 @@ async function parseMinified(dir) {
     (await Terser.minify(pdfWorkerFile, options)).code
   );
   fs.writeFileSync(
+    dir + "/build/pdf.sandbox.min.js",
+    (await Terser.minify(pdfSandboxFile, options)).code
+  );
+  fs.writeFileSync(
     dir + "image_decoders/pdf.image_decoders.min.js",
     (await Terser.minify(pdfImageDecodersFile, options)).code
   );
@@ -980,9 +1102,14 @@ async function parseMinified(dir) {
   fs.unlinkSync(dir + "/web/debugger.js");
   fs.unlinkSync(dir + "/build/pdf.js");
   fs.unlinkSync(dir + "/build/pdf.worker.js");
+  fs.unlinkSync(dir + "/build/pdf.sandbox.js");
 
   fs.renameSync(dir + "/build/pdf.min.js", dir + "/build/pdf.js");
   fs.renameSync(dir + "/build/pdf.worker.min.js", dir + "/build/pdf.worker.js");
+  fs.renameSync(
+    dir + "/build/pdf.sandbox.min.js",
+    dir + "/build/pdf.sandbox.js"
+  );
   fs.renameSync(
     dir + "/image_decoders/pdf.image_decoders.min.js",
     dir + "/image_decoders/pdf.image_decoders.js"
@@ -1176,7 +1303,14 @@ gulp.task(
   })
 );
 
-gulp.task("chromium", gulp.series("chromium-pre"));
+gulp.task(
+  "chromium",
+  gulp.series("chromium-pre", function () {
+    var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
+    var CHROME_BUILD_CONTENT_DIR = BUILD_DIR + "/chromium/content/";
+    return buildSandbox(defines, CHROME_BUILD_CONTENT_DIR);
+  })
+);
 
 gulp.task("jsdoc", function (done) {
   console.log();
@@ -1276,7 +1410,7 @@ function buildLib(defines, dir) {
   return merge([
     gulp.src(
       [
-        "src/{core,display,scripting_api,shared}/*.js",
+        "src/{core,display,shared}/*.js",
         "!src/shared/{cffStandardStrings,fonts_utils}.js",
         "src/{pdf,pdf.worker}.js",
       ],
@@ -1294,24 +1428,46 @@ function buildLib(defines, dir) {
 
 gulp.task(
   "lib",
-  gulp.series("buildnumber", "default_preferences", function () {
-    var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    function () {
+      var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
 
-    return buildLib(defines, "build/lib/");
-  })
+      return buildLib(defines, "build/lib/");
+    },
+    function () {
+      var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
+
+      return buildSandbox(defines, "build/lib/");
+    }
+  )
 );
 
 gulp.task(
   "lib-es5",
-  gulp.series("buildnumber", "default_preferences", function () {
-    var defines = builder.merge(DEFINES, {
-      GENERIC: true,
-      LIB: true,
-      SKIP_BABEL: false,
-    });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    function () {
+      var defines = builder.merge(DEFINES, {
+        GENERIC: true,
+        LIB: true,
+        SKIP_BABEL: false,
+      });
 
-    return buildLib(defines, "build/lib-es5/");
-  })
+      return buildLib(defines, "build/lib-es5/");
+    },
+    function () {
+      var defines = builder.merge(DEFINES, {
+        GENERIC: true,
+        LIB: true,
+        SKIP_BABEL: false,
+      });
+
+      return buildSandbox(defines, "build/lib-es5/");
+    }
+  )
 );
 
 function compressPublish(targetName, dir) {
@@ -1382,6 +1538,7 @@ gulp.task(
 gulp.task(
   "unittest",
   gulp.series("testing-pre", "generic", "components", function () {
+    process.env.TZ = "UTC";
     return createTestSource("unit");
   })
 );
