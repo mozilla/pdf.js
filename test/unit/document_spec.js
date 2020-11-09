@@ -239,5 +239,60 @@ describe("document", function () {
       expect(fields["parent.kid2"]).toEqual(["265R"]);
       expect(fields.parent).toEqual(["358R"]);
     });
+
+    it("should check if fields have any actions", async function () {
+      const acroForm = new Dict();
+
+      let pdfDocument = getDocument(acroForm);
+      let hasJSActions = await pdfDocument.hasJSActions;
+      expect(hasJSActions).toEqual(false);
+
+      acroForm.set("Fields", []);
+      pdfDocument = getDocument(acroForm);
+      hasJSActions = await pdfDocument.hasJSActions;
+      expect(hasJSActions).toEqual(false);
+
+      const kid1Ref = Ref.get(314, 0);
+      const kid11Ref = Ref.get(159, 0);
+      const kid2Ref = Ref.get(265, 0);
+      const parentRef = Ref.get(358, 0);
+
+      const allFields = Object.create(null);
+      for (const name of ["parent", "kid1", "kid2", "kid11"]) {
+        const buttonWidgetDict = new Dict();
+        buttonWidgetDict.set("Type", Name.get("Annot"));
+        buttonWidgetDict.set("Subtype", Name.get("Widget"));
+        buttonWidgetDict.set("FT", Name.get("Btn"));
+        buttonWidgetDict.set("T", name);
+        allFields[name] = buttonWidgetDict;
+      }
+
+      allFields.kid1.set("Kids", [kid11Ref]);
+      allFields.parent.set("Kids", [kid1Ref, kid2Ref]);
+
+      const xref = new XRefMock([
+        { ref: parentRef, data: allFields.parent },
+        { ref: kid1Ref, data: allFields.kid1 },
+        { ref: kid11Ref, data: allFields.kid11 },
+        { ref: kid2Ref, data: allFields.kid2 },
+      ]);
+
+      acroForm.set("Fields", [parentRef]);
+      pdfDocument = getDocument(acroForm, xref);
+      hasJSActions = await pdfDocument.hasJSActions;
+      expect(hasJSActions).toEqual(false);
+
+      const JS = Name.get("JavaScript");
+      const additionalActionsDict = new Dict();
+      const eDict = new Dict();
+      eDict.set("JS", "hello()");
+      eDict.set("S", JS);
+      additionalActionsDict.set("E", eDict);
+      allFields.kid2.set("AA", additionalActionsDict);
+
+      pdfDocument = getDocument(acroForm, xref);
+      hasJSActions = await pdfDocument.hasJSActions;
+      expect(hasJSActions).toEqual(true);
+    });
   });
 });

@@ -525,6 +525,10 @@ class WorkerMessageHandler {
       return pdfManager.ensureDoc("fieldObjects");
     });
 
+    handler.on("HasJSActions", function (data) {
+      return pdfManager.ensureDoc("hasJSActions");
+    });
+
     handler.on("GetCalculationOrderIds", function (data) {
       return pdfManager.ensureDoc("calculationOrderIds");
     });
