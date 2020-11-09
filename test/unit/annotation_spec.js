@@ -61,6 +61,10 @@ describe("annotation", function () {
     ensureCatalog(prop, args) {
       return this.ensure(this.pdfDocument.catalog, prop, args);
     }
+
+    ensureDoc(prop, args) {
+      return this.ensure(this.pdfDocument, prop, args);
+    }
   }
 
   function HandlerMock() {

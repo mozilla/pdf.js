@@ -73,12 +73,14 @@ class Field extends PDFObject {
     // Private
     this._actions = Object.create(null);
     const doc = (this._document = data.doc);
-    for (const [eventType, actions] of Object.entries(data.actions)) {
-      // This code is running in a sandbox so it's safe to use Function
-      this._actions[eventType] = actions.map(action =>
-        // eslint-disable-next-line no-new-func
-        Function("event", `with (this) {${action}}`).bind(doc)
-      );
+    if (data.actions !== null) {
+      for (const [eventType, actions] of Object.entries(data.actions)) {
+        // This code is running in a sandbox so it's safe to use Function
+        this._actions[eventType] = actions.map(action =>
+          // eslint-disable-next-line no-new-func
+          Function("event", `with (this) {${action}}`).bind(doc)
+        );
+      }
     }
   }
 
