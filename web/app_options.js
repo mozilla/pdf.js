@@ -223,6 +223,14 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
+  scriptingSrc: {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+        ? "../build/generic/build/pdf.sandbox.js"
+        : "../build/pdf.sandbox.js",
+    kind: OptionKind.VIEWER,
+  },
   verbosity: {
     /** @type {number} */
     value: 1,
