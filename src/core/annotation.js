@@ -817,6 +817,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
+    data.isRequired = this.hasFieldFlag(AnnotationFieldFlag.REQUIRED);
 
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
@@ -1247,7 +1248,6 @@ class SquareAnnotation extends MarkupAnnotation {
 class CircleAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
-
     this.data.annotationType = AnnotationType.CIRCLE;
   }
 }

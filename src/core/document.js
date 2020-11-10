@@ -52,7 +52,6 @@ const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 function isAnnotationRenderable(annotation, intent) {
-  // console.log(self)
   if (self.disableFlattenedAnnotations) return false;
 
   return (
@@ -362,7 +361,7 @@ class Page {
   }
 
   getAnnotationsData(intent) {
-    return this._parsedAnnotations.then(function(annotations) {
+    return this._parsedAnnotations.then(function (annotations) {
       const annotationsData = [];
       for (let i = 0, ii = annotations.length; i < ii; i++) {
         if (!intent || isAnnotationRenderable(annotations[i], intent)) {
@@ -410,7 +409,7 @@ class Page {
           }
         );
       });
-
+    
     return shadow(this, "_parsedAnnotations", parsedAnnotations);
   }
 }

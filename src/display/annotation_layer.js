@@ -51,7 +51,6 @@ class AnnotationElementFactory {
    */
   static create(parameters) {
     const subtype = parameters.data.annotationType;
-
     switch (subtype) {
       case AnnotationType.LINK:
         return new LinkAnnotationElement(parameters);
@@ -991,6 +990,7 @@ class CircleAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
+
     super(parameters, isRenderable, /* ignoreBorder = */ true);
   }
 
