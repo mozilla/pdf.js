@@ -1096,9 +1096,15 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return false;
     }
-    if (pageNumber < 1 || pageNumber > this.pagesCount) {
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.pagesCount
+      )
+    ) {
       console.error(
-        `${this._name}.isPageVisible: "${pageNumber}" is out of bounds.`
+        `${this._name}.isPageVisible: "${pageNumber}" is not a valid page.`
       );
       return false;
     }
