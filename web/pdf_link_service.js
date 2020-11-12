@@ -458,6 +458,13 @@ class PDFLinkService {
   isPageVisible(pageNumber) {
     return this.pdfViewer.isPageVisible(pageNumber);
   }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageCached(pageNumber) {
+    return this.pdfViewer.isPageCached(pageNumber);
+  }
 }
 
 function isValidExplicitDestination(dest) {
@@ -607,6 +614,13 @@ class SimpleLinkService {
    * @param {number} pageNumber
    */
   isPageVisible(pageNumber) {
+    return true;
+  }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageCached(pageNumber) {
     return true;
   }
 }
