@@ -363,6 +363,16 @@ class PDFThumbnailView {
         finishRenderTask(error);
       }
     );
+    // Only trigger cleanup, once rendering has finished, when the current
+    // pageView is *not* cached on the `BaseViewer`-instance.
+    resultPromise.finally(() => {
+      const pageCached = this.linkService.isPageCached(this.id);
+      if (pageCached) {
+        return;
+      }
+      this.pdfPage?.cleanup();
+    });
+
     return resultPromise;
   }
 
