@@ -502,10 +502,6 @@ class PDFThumbnailView {
       }
     });
   }
-
-  static cleanup() {
-    TempImageFactory.destroyCanvas();
-  }
 }
 
-export { PDFThumbnailView };
+export { PDFThumbnailView, TempImageFactory };
