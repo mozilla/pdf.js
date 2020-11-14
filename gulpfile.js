@@ -226,6 +226,7 @@ function createWebpackConfig(defines, output) {
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
             plugins: [
+              "@babel/plugin-proposal-logical-assignment-operators",
               "@babel/plugin-transform-modules-commonjs",
               [
                 "@babel/plugin-transform-runtime",
@@ -570,6 +571,7 @@ gulp.task("default_preferences-pre", function () {
       sourceType: "module",
       presets: undefined, // SKIP_BABEL
       plugins: [
+        "@babel/plugin-proposal-logical-assignment-operators",
         "@babel/plugin-transform-modules-commonjs",
         babelPluginReplaceNonWebPackRequire,
       ],
@@ -1234,6 +1236,7 @@ function buildLib(defines, dir) {
       sourceType: "module",
       presets: skipBabel ? undefined : ["@babel/preset-env"],
       plugins: [
+        "@babel/plugin-proposal-logical-assignment-operators",
         "@babel/plugin-transform-modules-commonjs",
         [
           "@babel/plugin-transform-runtime",

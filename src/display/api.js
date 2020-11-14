@@ -905,7 +905,7 @@ class PDFDocumentProxy {
 
   /**
    * @returns {Promise<boolean>} A promise that is resolved with `true`
-   * if some /AcroForm fields have JavaScript actions.
+   *   if some /AcroForm fields have JavaScript actions.
    */
   hasJSActions() {
     return this._transport.hasJSActions();
@@ -2128,7 +2128,10 @@ class WorkerTransport {
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
     waitOn.push(terminated);
     Promise.all(waitOn).then(() => {
+      this.commonObjs.clear();
       this.fontLoader.clear();
+      this._hasJSActionsPromise = null;
+
       if (this._networkStream) {
         this._networkStream.cancelAllRequests(
           new AbortException("Worker was terminated.")
@@ -2577,7 +2580,10 @@ class WorkerTransport {
   }
 
   hasJSActions() {
-    return this.messageHandler.sendWithPromise("HasJSActions", null);
+    return (this._hasJSActionsPromise ||= this.messageHandler.sendWithPromise(
+      "HasJSActions",
+      null
+    ));
   }
 
   getCalculationOrderIds() {
@@ -2679,6 +2685,7 @@ class WorkerTransport {
       }
       this.commonObjs.clear();
       this.fontLoader.clear();
+      this._hasJSActionsPromise = null;
     });
   }
 

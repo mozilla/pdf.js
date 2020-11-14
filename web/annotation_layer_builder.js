@@ -137,8 +137,8 @@ class DefaultAnnotationLayerFactory {
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
-   * @param {boolean} enableScripting
-   * @param {Promise<boolean>} hasJSActionsPromise
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
