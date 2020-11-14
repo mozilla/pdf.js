@@ -259,16 +259,13 @@ class AnnotationElement {
     const quadrilaterals = [];
     const savedRect = this.data.rect;
     for (const quadPoint of this.data.quadPoints) {
-      const rect = [
+      this.data.rect = [
         quadPoint[2].x,
         quadPoint[2].y,
         quadPoint[1].x,
         quadPoint[1].y,
       ];
-      this.data.rect = rect;
-      const quad = this._createContainer(ignoreBorder);
-      quad.className = "highlightAnnotation";
-      quadrilaterals.push(quad);
+      quadrilaterals.push(this._createContainer(ignoreBorder));
     }
     this.data.rect = savedRect;
     return quadrilaterals;
@@ -1390,12 +1387,19 @@ class HighlightAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = "highlightAnnotation";
-
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
     }
-    return this.quadrilaterals || this.container;
+
+    if (this.quadrilaterals) {
+      this.quadrilaterals.forEach(quadrilateral => {
+        quadrilateral.className = "highlightAnnotation";
+      });
+      return this.quadrilaterals;
+    }
+
+    this.container.className = "highlightAnnotation";
+    return this.container;
   }
 }
 
