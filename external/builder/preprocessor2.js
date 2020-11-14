@@ -8,7 +8,7 @@ var path = require("path");
 
 var PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
 var ROOT_PREFIX = "$ROOT/";
-const ACORN_ECMA_VERSION = 2020;
+const ACORN_ECMA_VERSION = 2021;
 
 function isLiteral(obj, value) {
   return obj.type === "Literal" && obj.value === value;

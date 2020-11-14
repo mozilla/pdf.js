@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "devDependencies": {
     "@babel/core": "^7.12.3",
+    "@babel/plugin-proposal-logical-assignment-operators": "^7.12.1",
     "@babel/plugin-transform-modules-commonjs": "^7.12.1",
     "@babel/plugin-transform-runtime": "^7.12.1",
     "@babel/preset-env": "^7.12.1",
