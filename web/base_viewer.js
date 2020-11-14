@@ -469,8 +469,7 @@ class BaseViewer {
     }
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
-
-    const annotationStorage = pdfDocument.annotationStorage;
+    // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
 
     this._pagesCapability.promise.then(() => {
@@ -521,7 +520,6 @@ class BaseViewer {
             id: pageNum,
             scale,
             defaultViewport: viewport.clone(),
-            annotationStorage,
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerFactory,
@@ -1244,11 +1242,14 @@ class BaseViewer {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
    * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1258,21 +1259,22 @@ class BaseViewer {
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n,
-    enableScripting = false
+    enableScripting = false,
+    hasJSActionsPromise = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
-      annotationStorage,
+      annotationStorage:
+        annotationStorage || this.pdfDocument?.annotationStorage,
       imageResourcesPath,
       renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
       enableScripting,
-      hasJSActionsPromise: enableScripting
-        ? this.pdfDocument.hasJSActions()
-        : Promise.resolve(false),
+      hasJSActionsPromise:
+        hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
     });
   }
 
