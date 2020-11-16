@@ -26,14 +26,14 @@ class Event {
     this.richChange = data.richChange || [];
     this.richChangeEx = data.richChangeEx || [];
     this.richValue = data.richValue || [];
-    this.selEnd = data.selEnd || 0;
-    this.selStart = data.selStart || 0;
+    this.selEnd = data.selEnd || -1;
+    this.selStart = data.selStart || -1;
     this.shift = data.shift || false;
     this.source = data.source || null;
     this.target = data.target || null;
-    this.targetName = data.targetName || "";
+    this.targetName = "";
     this.type = "Field";
-    this.value = data.value || null;
+    this.value = data.value || "";
     this.willCommit = data.willCommit || false;
   }
 }
@@ -47,6 +47,21 @@ class EventDispatcher {
     this._document.obj._eventDispatcher = this;
   }
 
+  mergeChange(event) {
+    let value = event.value;
+    if (typeof value !== "string") {
+      value = value.toString();
+    }
+    const prefix =
+      event.selStart >= 0 ? value.substring(0, event.selStart) : "";
+    const postfix =
+      event.selEnd >= 0 && event.selEnd <= value.length
+        ? value.substring(event.selEnd)
+        : "";
+
+    return `${prefix}${event.change}${postfix}`;
+  }
+
   dispatch(baseEvent) {
     const id = baseEvent.id;
     if (!(id in this._objects)) {
@@ -56,11 +71,71 @@ class EventDispatcher {
     const name = baseEvent.name.replace(" ", "");
     const source = this._objects[id];
     const event = (this._document.obj._event = new Event(baseEvent));
-    const oldValue = source.obj.value;
+    let savedChange;
+
+    if (source.obj._isButton()) {
+      source.obj._id = id;
+      event.value = source.obj._getExportValue(event.value);
+    }
+
+    if (name === "Keystroke") {
+      savedChange = {
+        value: event.value,
+        change: event.change,
+        selStart: event.selStart,
+        selEnd: event.selEnd,
+      };
+    } else if (name === "Blur" || name === "Focus") {
+      Object.defineProperty(event, "value", {
+        configurable: false,
+        writable: false,
+        enumerable: true,
+        value: event.value,
+      });
+    } else if (name === "Validate") {
+      this.runValidation(source, event);
+      return;
+    }
 
     this.runActions(source, source, event, name);
-    if (event.rc && oldValue !== event.value) {
-      source.wrapped.value = event.value;
+
+    if (name === "Keystroke") {
+      if (event.rc) {
+        if (event.willCommit) {
+          this.runValidation(source, event);
+        } else if (
+          event.change !== savedChange.change ||
+          event.selStart !== savedChange.selStart ||
+          event.selEnd !== savedChange.selEnd
+        ) {
+          source.wrapped.value = this.mergeChange(event);
+        }
+      } else if (!event.willCommit) {
+        source.obj._send({
+          id: source.obj._id,
+          value: savedChange.value,
+          selRange: [savedChange.selStart, savedChange.selEnd],
+        });
+      }
+    }
+  }
+
+  runValidation(source, event) {
+    const hasRan = this.runActions(source, source, event, "Validate");
+    if (event.rc) {
+      if (hasRan) {
+        source.wrapped.value = event.value;
+      } else {
+        source.obj.value = event.value;
+      }
+
+      if (this._document.obj.calculate) {
+        this.runCalculate(source, event);
+      }
+
+      event.value = source.obj.value;
+      this.runActions(source, source, event, "Format");
+      source.wrapped.valueAsString = event.value;
     }
   }
 
@@ -68,11 +143,43 @@ class EventDispatcher {
     event.source = source.wrapped;
     event.target = target.wrapped;
     event.name = eventName;
+    event.targetName = target.obj.name;
     event.rc = true;
-    if (!target.obj._runActions(event)) {
-      return true;
+
+    return target.obj._runActions(event);
+  }
+
+  calculateNow() {
+    if (this._calculationOrder.length === 0) {
+      return;
     }
-    return event.rc;
+    const first = this._calculationOrder[0];
+    const source = this._objects[first];
+    const event = (this._document.obj._event = new Event({}));
+    this.runCalculate(source, event);
+  }
+
+  runCalculate(source, event) {
+    if (this._calculationOrder.length === 0) {
+      return;
+    }
+
+    for (const targetId of this._calculationOrder) {
+      if (!(targetId in this._objects)) {
+        continue;
+      }
+
+      const target = this._objects[targetId];
+      this.runActions(source, target, event, "Calculate");
+      this.runActions(target, target, event, "Validate");
+      if (!event.rc) {
+        continue;
+      }
+
+      target.wrapped.value = event.value;
+      this.runActions(target, target, event, "Format");
+      target.wrapped.valueAsString = event.value;
+    }
   }
 }
 

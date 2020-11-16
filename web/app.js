@@ -1369,6 +1369,7 @@ const PDFViewerApplication = {
     if (!objects || !AppOptions.get("enableScripting")) {
       return;
     }
+    const calculationOrder = await pdfDocument.getCalculationOrderIds();
     const scripting = this.externalServices.scripting;
     const {
       info,
@@ -1431,7 +1432,6 @@ const PDFViewerApplication = {
     });
 
     const dispatchEventName = generateRandomStringForSandbox(objects);
-    const calculationOrder = [];
     const { length } = await pdfDocument.getDownloadInfo();
     const filename =
       contentDispositionFilename || getPDFFileNameFromURL(this.url);
