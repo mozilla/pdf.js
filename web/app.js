@@ -1424,20 +1424,23 @@ const PDFViewerApplication = {
     this.contentDispositionFilename = contentDispositionFilename;
 
     // Provides some basic debug information
-    console.log(
-      "PDF viewer: ngx-extended-pdf-viewer running on pdf.js " +
-        (window["pdfjs-dist/build/pdf"]
-          ? window["pdfjs-dist/build/pdf"].version
-          : " developer version (?)")
-    );
-    console.log(
-      `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
-        `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
-        `(PDF.js: ${version || "-"}` +
-        `${
-          this.pdfViewer.enableWebGL ? " [WebGL]" : ""
-        }) modified by ngx-extended-pdf-viewer)`
-    );
+    const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
+    if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
+      console.log(
+        "PDF viewer: ngx-extended-pdf-viewer running on pdf.js " +
+          (window["pdfjs-dist/build/pdf"]
+            ? window["pdfjs-dist/build/pdf"].version
+            : " developer version (?)")
+      );
+      console.log(
+        `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
+          `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
+          `(PDF.js: ${version || "-"}` +
+          `${
+            this.pdfViewer.enableWebGL ? " [WebGL]" : ""
+          }) modified by ngx-extended-pdf-viewer)`
+      );
+    }
 
     let pdfTitle;
     const infoTitle = info && info.Title;
