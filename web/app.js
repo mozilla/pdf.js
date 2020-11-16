@@ -90,6 +90,12 @@ const ViewOnLoad = {
   INITIAL: 1,
 };
 
+const ViewerCssTheme = {
+  AUTOMATIC: 0, // Default value.
+  LIGHT: 1,
+  DARK: 2,
+};
+
 // Keep these in sync with mozilla-central's Histograms.json.
 const KNOWN_VERSIONS = [
   "1.0",
@@ -256,6 +262,7 @@ const PDFViewerApplication = {
 
     await this._readPreferences();
     await this._parseHashParameters();
+    this._forceCssTheme();
     await this._initializeL10n();
 
     if (
@@ -394,6 +401,46 @@ const PDFViewerApplication = {
     );
     const dir = await this.l10n.getDirection();
     document.getElementsByTagName("html")[0].dir = dir;
+  },
+
+  /**
+   * @private
+   */
+  _forceCssTheme() {
+    const cssTheme = AppOptions.get("viewerCssTheme");
+    if (
+      cssTheme === ViewerCssTheme.AUTOMATIC ||
+      !Object.values(ViewerCssTheme).includes(cssTheme)
+    ) {
+      return;
+    }
+    try {
+      const styleSheet = document.styleSheets[0];
+      const cssRules = styleSheet?.cssRules || [];
+      for (let i = 0, ii = cssRules.length; i < ii; i++) {
+        const rule = cssRules[i];
+        if (
+          rule instanceof CSSMediaRule &&
+          rule.media?.[0] === "(prefers-color-scheme: dark)"
+        ) {
+          if (cssTheme === ViewerCssTheme.LIGHT) {
+            styleSheet.deleteRule(i);
+            return;
+          }
+          // cssTheme === ViewerCssTheme.DARK
+          const darkRules = /^@media \(prefers-color-scheme: dark\) {\n\s*([\w\s-.,:;/\\{}()]+)\n}$/.exec(
+            rule.cssText
+          );
+          if (darkRules?.[1]) {
+            styleSheet.deleteRule(i);
+            styleSheet.insertRule(darkRules[1], i);
+          }
+          return;
+        }
+      }
+    } catch (reason) {
+      console.error(`_forceCssTheme: "${reason?.message}".`);
+    }
   },
 
   /**
