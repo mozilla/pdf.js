@@ -1630,7 +1630,7 @@ var getNormalizedUnicodes = getArrayLookupTableFactory(function () {
 
 function reverseIfRtl(chars) {
   var charsLength = chars.length;
-  // Reverse an arabic ligature.
+
   if (charsLength <= 1 || !isRTLRangeFor(chars.charCodeAt(0))) {
     return chars;
   }
@@ -1642,6 +1642,7 @@ function reverseIfRtl(chars) {
 }
 
 export {
+  isRTLRangeFor,
   mapSpecialUnicodeValues,
   reverseIfRtl,
   getUnicodeRangeFor,
