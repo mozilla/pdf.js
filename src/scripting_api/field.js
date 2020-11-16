@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { Color } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
 
 class Field extends PDFObject {
@@ -41,7 +42,6 @@ class Field extends PDFObject {
     this.editable = data.editable;
     this.exportValues = data.exportValues;
     this.fileSelect = data.fileSelect;
-    this.fillColor = data.fillColor;
     this.hidden = data.hidden;
     this.highlight = data.highlight;
     this.lineWidth = data.lineWidth;
@@ -59,10 +59,8 @@ class Field extends PDFObject {
     this.richText = data.richText;
     this.richValue = data.richValue;
     this.rotation = data.rotation;
-    this.strokeColor = data.strokeColor;
     this.style = data.style;
     this.submitName = data.submitName;
-    this.textColor = data.textColor;
     this.textFont = data.textFont;
     this.textSize = data.textSize;
     this.type = data.type;
@@ -73,6 +71,40 @@ class Field extends PDFObject {
     // Private
     this._document = data.doc;
     this._actions = this._createActionsMap(data.actions);
+
+    this._fillColor = data.fillColor | ["T"];
+    this._strokeColor = data.strokeColor | ["G", 0];
+    this._textColor = data.textColor | ["G", 0];
+  }
+
+  get fillColor() {
+    return this._fillColor;
+  }
+
+  set fillColor(color) {
+    if (Color._isValidColor(color)) {
+      this._fillColor = color;
+    }
+  }
+
+  get strokeColor() {
+    return this._strokeColor;
+  }
+
+  set strokeColor(color) {
+    if (Color._isValidColor(color)) {
+      this._strokeColor = color;
+    }
+  }
+
+  get textColor() {
+    return this._textColor;
+  }
+
+  set textColor(color) {
+    if (Color._isValidColor(color)) {
+      this._textColor = color;
+    }
   }
 
   setAction(cTrigger, cScript) {
@@ -131,7 +163,7 @@ class Field extends PDFObject {
         `"${error.toString()}" for event ` +
         `"${eventName}" in object ${this._id}.` +
         `\n${error.stack}`;
-      this._send({ id: "error", value });
+      this._send({ command: "error", value });
     }
 
     return true;

@@ -1486,6 +1486,10 @@ const PDFViewerApplication = {
       objects,
       dispatchEventName,
       calculationOrder,
+      appInfo: {
+        platform: navigator.platform,
+        language: navigator.language,
+      },
       docInfo: {
         ...info,
         baseURL: this.baseUrl,

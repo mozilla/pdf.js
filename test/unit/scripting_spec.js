@@ -23,6 +23,15 @@ describe("Scripting", function () {
     return id;
   }
 
+  function myeval(code) {
+    const key = (test_id++).toString();
+    return sandbox.eval(code, key).then(() => {
+      const result = send_queue.get(key).result;
+      send_queue.delete(key);
+      return result;
+    });
+  }
+
   beforeAll(function (done) {
     test_id = 0;
     ref = 1;
@@ -92,6 +101,7 @@ describe("Scripting", function () {
           ],
         },
         calculationOrder: [],
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
@@ -115,15 +125,9 @@ describe("Scripting", function () {
   });
 
   describe("Util", function () {
-    function myeval(code) {
-      const key = (test_id++).toString();
-      return sandbox.eval(code, key).then(() => {
-        return send_queue.get(key).result;
-      });
-    }
-
     beforeAll(function (done) {
       sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
         dispatchEventName: "_dispatchMe",
@@ -214,7 +218,7 @@ describe("Scripting", function () {
           .then(() => done());
       });
 
-      it(" print a string with a percent", function (done) {
+      it("print a string with a percent", function (done) {
         myeval(`util.printf("%%s")`)
           .then(value => {
             expect(value).toEqual("%%s");
@@ -250,6 +254,7 @@ describe("Scripting", function () {
             },
           ],
         },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
         dispatchEventName: "_dispatchMe",
       };
@@ -287,6 +292,7 @@ describe("Scripting", function () {
             },
           ],
         },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
         dispatchEventName: "_dispatchMe",
       };
@@ -328,6 +334,7 @@ describe("Scripting", function () {
             },
           ],
         },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
         dispatchEventName: "_dispatchMe",
       };
@@ -368,6 +375,7 @@ describe("Scripting", function () {
             },
           ],
         },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
         dispatchEventName: "_dispatchMe",
       };
@@ -412,6 +420,7 @@ describe("Scripting", function () {
             },
           ],
         },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [refId2],
         dispatchEventName: "_dispatchMe",
       };
@@ -433,6 +442,135 @@ describe("Scripting", function () {
           done();
         })
         .catch(done.fail);
+    });
+  });
+
+  describe("Color", function () {
+    beforeAll(function (done) {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      });
+      done();
+    });
+
+    function round(color) {
+      return [
+        color[0],
+        ...color.slice(1).map(x => Math.round(x * 1000) / 1000),
+      ];
+    }
+
+    it("should convert RGB color for different color spaces", function (done) {
+      Promise.all([
+        myeval(`color.convert(["RGB", 0.1, 0.2, 0.3], "T")`).then(value => {
+          expect(round(value)).toEqual(["T"]);
+        }),
+        myeval(`color.convert(["RGB", 0.1, 0.2, 0.3], "G")`).then(value => {
+          expect(round(value)).toEqual(["G", 0.181]);
+        }),
+        myeval(`color.convert(["RGB", 0.1, 0.2, 0.3], "RGB")`).then(value => {
+          expect(round(value)).toEqual(["RGB", 0.1, 0.2, 0.3]);
+        }),
+        myeval(`color.convert(["RGB", 0.1, 0.2, 0.3], "CMYK")`).then(value => {
+          expect(round(value)).toEqual(["CMYK", 0.9, 0.8, 0.7, 0.7]);
+        }),
+      ]).then(() => done());
+    });
+
+    it("should convert CMYK color for different color spaces", function (done) {
+      Promise.all([
+        myeval(`color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "T")`).then(
+          value => {
+            expect(round(value)).toEqual(["T"]);
+          }
+        ),
+        myeval(`color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "G")`).then(
+          value => {
+            expect(round(value)).toEqual(["G", 0.371]);
+          }
+        ),
+        myeval(`color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "RGB")`).then(
+          value => {
+            expect(round(value)).toEqual(["RGB", 0.5, 0.3, 0.4]);
+          }
+        ),
+        myeval(`color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "CMYK")`).then(
+          value => {
+            expect(round(value)).toEqual(["CMYK", 0.1, 0.2, 0.3, 0.4]);
+          }
+        ),
+      ]).then(() => done());
+    });
+
+    it("should convert Gray color for different color spaces", function (done) {
+      Promise.all([
+        myeval(`color.convert(["G", 0.1], "T")`).then(value => {
+          expect(round(value)).toEqual(["T"]);
+        }),
+        myeval(`color.convert(["G", 0.1], "G")`).then(value => {
+          expect(round(value)).toEqual(["G", 0.1]);
+        }),
+        myeval(`color.convert(["G", 0.1], "RGB")`).then(value => {
+          expect(round(value)).toEqual(["RGB", 0.1, 0.1, 0.1]);
+        }),
+        myeval(`color.convert(["G", 0.1], "CMYK")`).then(value => {
+          expect(round(value)).toEqual(["CMYK", 0, 0, 0, 0.9]);
+        }),
+      ]).then(() => done());
+    });
+
+    it("should convert Transparent color for different color spaces", function (done) {
+      Promise.all([
+        myeval(`color.convert(["T"], "T")`).then(value => {
+          expect(round(value)).toEqual(["T"]);
+        }),
+        myeval(`color.convert(["T"], "G")`).then(value => {
+          expect(round(value)).toEqual(["G", 0]);
+        }),
+        myeval(`color.convert(["T"], "RGB")`).then(value => {
+          expect(round(value)).toEqual(["RGB", 0, 0, 0]);
+        }),
+        myeval(`color.convert(["T"], "CMYK")`).then(value => {
+          expect(round(value)).toEqual(["CMYK", 0, 0, 0, 1]);
+        }),
+      ]).then(() => done());
+    });
+  });
+
+  describe("App", function () {
+    beforeAll(function (done) {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      });
+      done();
+    });
+
+    it("should test language", function (done) {
+      Promise.all([
+        myeval(`app.language`).then(value => {
+          expect(value).toEqual("ENU");
+        }),
+        myeval(`app.language = "hello"`).then(value => {
+          expect(value).toEqual("app.language is read-only");
+        }),
+      ]).then(() => done());
+    });
+
+    it("should test platform", function (done) {
+      Promise.all([
+        myeval(`app.platform`).then(value => {
+          expect(value).toEqual("UNIX");
+        }),
+        myeval(`app.platform = "hello"`).then(value => {
+          expect(value).toEqual("app.platform is read-only");
+        }),
+      ]).then(() => done());
     });
   });
 });
