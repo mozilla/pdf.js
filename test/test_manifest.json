@@ -4798,5 +4798,12 @@
       "rounds": 1,
       "type": "eq",
       "annotations": true
+   },
+   {  "id": "issue12460",
+      "file": "pdfs/issue12460.pdf",
+      "md5": "791257738625054e692b6329c9801882",
+      "rounds": 1,
+      "link": false,
+      "type": "text"
    }
 ]

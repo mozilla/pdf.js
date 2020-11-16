@@ -2191,9 +2191,8 @@ class PartialEvaluator {
         }
         textState.translateTextMatrix(tx, ty);
 
-        // remark(henrywarhurst): Add glyph to the beginning of the string for
-        // RTL languages, and to the end for LTR languages.
-        // See https://github.com/mozilla/pdf.js/issues/12460 for more info.
+        // Add the glyph to the beginning of the string for RTL languages,
+        // and to the end for LTR languages (fixes issue 12460).
         if (isRTLRangeFor(glyphUnicode.charCodeAt(0))) {
           textChunk.str.unshift(glyphUnicode);
         } else {
