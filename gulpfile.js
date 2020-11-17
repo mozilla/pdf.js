@@ -931,12 +931,10 @@ gulp.task(
   })
 );
 
-function parseMinified(dir, suffix) {
+async function parseMinified(dir, suffix) {
   var pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
   var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker" + suffix + ".js").toString();
-  var pdfImageDecodersFile = fs
-    .readFileSync(dir + "/image_decoders/pdf.image_decoders" + suffix + ".js")
-    .toString();
+
   var viewerFiles = {
     "pdf.js": pdfFile,
     "viewer.js": fs.readFileSync(dir + "/web/viewer" + suffix + ".js").toString(),
@@ -963,7 +961,7 @@ function parseMinified(dir, suffix) {
     },
   };
 
-  const miniViewer = Terser.minify(viewerFiles, options);
+  const miniViewer = await Terser.minify(viewerFiles, options);
   fs.writeFileSync(
     dir + "/web/viewer" + suffix + ".min.js",
     miniViewer.code
@@ -990,7 +988,7 @@ function parseMinified(dir, suffix) {
       url: "pdf" + suffix + ".min.js.map",
     },
   };
-  const miniPdf = Terser.minify(pdfFile, options);
+  const miniPdf = await Terser.minify(pdfFile, options);
   fs.writeFileSync(
     dir + "/build/pdf" + suffix + ".min.js",
     miniPdf.code
@@ -1016,7 +1014,7 @@ function parseMinified(dir, suffix) {
     },
   };
 
-  const miniPdfWorker = Terser.minify(pdfWorkerFile, options);
+  const miniPdfWorker = await Terser.minify(pdfWorkerFile, options);
   fs.writeFileSync(
     dir + "/build/pdf.worker" + suffix + ".min.js",
     miniPdfWorker.code
@@ -1024,10 +1022,6 @@ function parseMinified(dir, suffix) {
   fs.writeFileSync(
     dir + "/build/pdf.worker" + suffix + ".min.js.map",
     miniPdfWorker.map
-  );
-  fs.writeFileSync(
-    dir + "image_decoders/pdf.image_decoders" + suffix + ".min.js",
-    Terser.minify(pdfImageDecodersFile, options).code
   );
 
   console.log();
