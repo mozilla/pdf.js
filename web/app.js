@@ -385,6 +385,9 @@ const PDFViewerApplication = {
       AppOptions.set("locale", hashParams.locale);
     }
 
+    if (waitOn.length === 0) {
+      return undefined;
+    }
     return Promise.all(waitOn).catch(reason => {
       console.error(`_parseHashParameters: "${reason.message}".`);
     });
