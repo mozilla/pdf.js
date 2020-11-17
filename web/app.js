@@ -305,12 +305,9 @@ const PDFViewerApplication = {
       return;
     }
     try {
-      const prefs = await this.preferences.getAll();
-      for (const name in prefs) {
-        AppOptions.set(name, prefs[name]);
-      }
+      AppOptions.setAll(await this.preferences.getAll());
     } catch (reason) {
-      console.error(`_readPreferences: "${reason.message}".`);
+      console.error(`_readPreferences: "${reason?.message}".`);
     }
   },
 
