@@ -39,7 +39,9 @@ describe("Scripting", function () {
     ref = 1;
     send_queue = new Map();
     window.dispatchEvent = event => {
-      if (send_queue.has(event.detail.id)) {
+      if (event.detail.command) {
+        send_queue.set(event.detail.command, event.detail);
+      } else if (send_queue.has(event.detail.id)) {
         const prev = send_queue.get(event.detail.id);
         Object.assign(prev, event.detail);
       } else {
@@ -571,6 +573,634 @@ describe("Scripting", function () {
           expect(value).toEqual("app.platform is read-only");
         }),
       ]).then(() => done());
+    });
+  });
+
+  describe("AForm", function () {
+    beforeAll(function (done) {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      });
+      done();
+    });
+
+    describe("AFExtractNums", function () {
+      it("should extract numbers", function (done) {
+        Promise.all([
+          myeval(`AFExtractNums("123 456 789")`).then(value => {
+            expect(value).toEqual(["123", "456", "789"]);
+          }),
+          myeval(`AFExtractNums("123.456")`).then(value => {
+            expect(value).toEqual(["123", "456"]);
+          }),
+          myeval(`AFExtractNums("123")`).then(value => {
+            expect(value).toEqual(["123"]);
+          }),
+          myeval(`AFExtractNums(".123")`).then(value => {
+            expect(value).toEqual(["0", "123"]);
+          }),
+          myeval(`AFExtractNums(",123")`).then(value => {
+            expect(value).toEqual(["0", "123"]);
+          }),
+        ]).then(() => done());
+      });
+    });
+
+    describe("AFMakeNumber", function () {
+      it("should convert string to number", function (done) {
+        Promise.all([
+          myeval(`AFMakeNumber("123.456")`).then(value => {
+            expect(value).toEqual(123.456);
+          }),
+          myeval(`AFMakeNumber(123.456)`).then(value => {
+            expect(value).toEqual(123.456);
+          }),
+          myeval(`AFMakeNumber("-123.456")`).then(value => {
+            expect(value).toEqual(-123.456);
+          }),
+          myeval(`AFMakeNumber("-123,456")`).then(value => {
+            expect(value).toEqual(-123.456);
+          }),
+          myeval(`AFMakeNumber("not a number")`).then(value => {
+            expect(value).toEqual(null);
+          }),
+        ]).then(() => done());
+      });
+    });
+
+    describe("AFMakeArrayFromList", function () {
+      it("should split a string into an array of strings", async function (done) {
+        const value = await myeval(
+          `AFMakeArrayFromList("aaaa,  bbbbbbb,cc,ddd, e")`
+        );
+        expect(value).toEqual(["aaaa", " bbbbbbb", "cc", "ddd", "e"]);
+        done();
+      });
+    });
+
+    describe("AFNumber_format", function () {
+      it("should format a number", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  test1: [
+                    `AFNumber_Format(2, 0, 0, 0, "€", false);` +
+                      `event.source.value = event.value;`,
+                  ],
+                  test2: [
+                    `AFNumber_Format(1, 3, 0, 0, "$", true);` +
+                      `event.source.value = event.value;`,
+                  ],
+                  test3: [
+                    `AFNumber_Format(2, 0, 1, 0, "€", false);` +
+                      `event.source.value = event.value;`,
+                  ],
+                  test4: [
+                    `AFNumber_Format(2, 0, 2, 0, "€", false);` +
+                      `event.source.value = event.value;`,
+                  ],
+                  test5: [
+                    `AFNumber_Format(2, 0, 3, 0, "€", false);` +
+                      `event.source.value = event.value;`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "123456.789",
+            name: "test1",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "123,456.79€",
+          });
+          send_queue.delete(refId);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "223456.789",
+            name: "test2",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "$223456,8",
+          });
+          send_queue.delete(refId);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "-323456.789",
+            name: "test3",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "323,456.79€",
+            textColor: ["RGB", 1, 0, 0],
+          });
+          send_queue.delete(refId);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "-423456.789",
+            name: "test4",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "(423,456.79€)",
+          });
+          send_queue.delete(refId);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "-52345.678",
+            name: "test5",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "(52,345.68€)",
+            textColor: ["RGB", 1, 0, 0],
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+    });
+
+    describe("AFNumber_Keystroke", function () {
+      it("should validate a number on a keystroke event", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  Validate: [
+                    `AFNumber_Keystroke(null, 0, null, null, null, null);`,
+                  ],
+                },
+                type: "text",
+                name: "MyField",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "123456.789",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "123456.789",
+            valueAsString: "123456.789",
+          });
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+
+      it("should not validate a number on a keystroke event", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  Validate: [
+                    `AFNumber_Keystroke(null, 0, null, null, null, null);`,
+                  ],
+                },
+                type: "text",
+                name: "MyField",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "123s456.789",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has("alert")).toEqual(true);
+          expect(send_queue.get("alert")).toEqual({
+            command: "alert",
+            value: "Invalid number in [ MyField ]",
+          });
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+    });
+
+    describe("AFPercent_Format", function () {
+      it("should format a percentage", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  test1: [
+                    `AFPercent_Format(2, 1, false);` +
+                      `event.source.value = event.value;`,
+                  ],
+                  test2: [
+                    `AFPercent_Format(2, 1, true);` +
+                      `event.source.value = event.value;`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "0.456789",
+            name: "test1",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "45.68%",
+          });
+          send_queue.delete(refId);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "0.456789",
+            name: "test2",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "%45.68",
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+    });
+
+    describe("AFDate_Format", function () {
+      it("should format a date", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  test1: [`AFDate_Format(0);event.source.value = event.value;`],
+                  test2: [
+                    `AFDate_Format(12);event.source.value = event.value;`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "Sun Apr 15 2007 03:14:15",
+            name: "test1",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "4/15",
+          });
+          send_queue.delete(refId);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "Sun Apr 15 2007 03:14:15",
+            name: "test2",
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "4/15/07 3:14 am",
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+    });
+
+    describe("AFRange_Validate", function () {
+      it("should validate a number in range [a, b]", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  Validate: [`AFRange_Validate(true, 123, true, 456);`],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "321",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "321",
+            valueAsString: "321",
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+
+      it("should invalidate a number out of range [a, b]", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  Validate: [`AFRange_Validate(true, 123, true, 456);`],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "12",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has("alert")).toEqual(true);
+          expect(send_queue.get("alert")).toEqual({
+            command: "alert",
+            value: "12 is not between 123 and 456",
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+    });
+
+    describe("ASSimple_Calculate", function () {
+      it("should compute the sum of several fields", async function (done) {
+        const refIds = [0, 1, 2, 3].map(_ => getId());
+        const data = {
+          objects: {
+            field1: [
+              {
+                id: refIds[0],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field2: [
+              {
+                id: refIds[1],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field3: [
+              {
+                id: refIds[2],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field4: [
+              {
+                id: refIds[3],
+                value: "",
+                actions: {
+                  Calculate: [
+                    `AFSimple_Calculate("SUM", ["field1", "field2", "field3"]);`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [refIds[3]],
+          dispatchEventName: "_dispatchMe",
+        };
+
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refIds[0],
+            value: "1",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has(refIds[3])).toEqual(true);
+          expect(send_queue.get(refIds[3])).toEqual({
+            id: refIds[3],
+            value: 1,
+            valueAsString: 1,
+          });
+
+          await sandbox.dispatchEventInSandbox({
+            id: refIds[1],
+            value: "2",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has(refIds[3])).toEqual(true);
+          expect(send_queue.get(refIds[3])).toEqual({
+            id: refIds[3],
+            value: 3,
+            valueAsString: 3,
+          });
+
+          await sandbox.dispatchEventInSandbox({
+            id: refIds[2],
+            value: "3",
+            name: "Keystroke",
+            willCommit: true,
+          });
+          expect(send_queue.has(refIds[3])).toEqual(true);
+          expect(send_queue.get(refIds[3])).toEqual({
+            id: refIds[3],
+            value: 6,
+            valueAsString: 6,
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
+    });
+
+    describe("AFSpecial_KeystrokeEx", function () {
+      it("should validate a phone number on a keystroke event", async function (done) {
+        const refId = getId();
+        const data = {
+          objects: {
+            field: [
+              {
+                id: refId,
+                value: "",
+                actions: {
+                  Keystroke: [`AFSpecial_KeystrokeEx("9AXO");`],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [],
+          dispatchEventName: "_dispatchMe",
+        };
+        try {
+          sandbox.createSandbox(data);
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "",
+            change: "3",
+            name: "Keystroke",
+            willCommit: false,
+            selStart: 0,
+            selEnd: 0,
+          });
+          expect(send_queue.has(refId)).toEqual(false);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "3",
+            change: "F",
+            name: "Keystroke",
+            willCommit: false,
+            selStart: 1,
+            selEnd: 1,
+          });
+          expect(send_queue.has(refId)).toEqual(false);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "3F",
+            change: "?",
+            name: "Keystroke",
+            willCommit: false,
+            selStart: 2,
+            selEnd: 2,
+          });
+          expect(send_queue.has(refId)).toEqual(false);
+
+          await sandbox.dispatchEventInSandbox({
+            id: refId,
+            value: "3F?",
+            change: "@",
+            name: "Keystroke",
+            willCommit: false,
+            selStart: 3,
+            selEnd: 3,
+          });
+          expect(send_queue.has(refId)).toEqual(true);
+          expect(send_queue.get(refId)).toEqual({
+            id: refId,
+            value: "3F?",
+            selRange: [3, 3],
+          });
+
+          done();
+        } catch (_) {
+          done.fail();
+        }
+      });
     });
   });
 });
