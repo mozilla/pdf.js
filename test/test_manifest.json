@@ -4298,6 +4298,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "js-buttons",
+       "file": "pdfs/js-buttons.pdf",
+       "md5": "2c56d419c1fb533349fd1ddef3f14da6",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue2956",
       "file": "pdfs/issue2956.pdf",
       "md5": "d8f68cbbb4bf54cde9f7f878acb6d7cd",
