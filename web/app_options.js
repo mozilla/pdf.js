@@ -314,6 +314,12 @@ class AppOptions {
     userOptions[name] = value;
   }
 
+  static setAll(options) {
+    for (const name in options) {
+      userOptions[name] = options[name];
+    }
+  }
+
   static remove(name) {
     delete userOptions[name];
   }
