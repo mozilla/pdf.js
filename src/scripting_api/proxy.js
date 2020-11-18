@@ -54,7 +54,7 @@ class ProxyHandler {
       obj[prop] = value;
       if (obj._send && obj._id !== null && typeof old !== "function") {
         const data = { id: obj._id };
-        data[prop] = value;
+        data[prop] = obj[prop];
 
         // send the updated value to the other side
         obj._send(data);
