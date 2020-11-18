@@ -66,7 +66,9 @@ class Field extends PDFObject {
     this.type = data.type;
     this.userName = data.userName;
     this.value = data.value || "";
-    this.valueAsString = data.valueAsString;
+
+    // Need getter/setter
+    this._valueAsString = data.valueAsString;
 
     // Private
     this._document = data.doc;
@@ -107,6 +109,28 @@ class Field extends PDFObject {
     }
   }
 
+  get valueAsString() {
+    return this._valueAsString;
+  }
+
+  set valueAsString(val) {
+    this._valueAsString = val ? val.toString() : "";
+  }
+
+  _getFunction(code, actionName) {
+    try {
+      // This eval is running in a sandbox so it's safe to use Function
+      // eslint-disable-next-line no-new-func
+      return Function("event", `with (this) {${code}}`).bind(this._document);
+    } catch (error) {
+      const value =
+        `"${error.toString()}" for action ` +
+        `"${actionName}" in object ${this._id}.`;
+      this._send({ command: "error", value });
+    }
+    return null;
+  }
+
   setAction(cTrigger, cScript) {
     if (typeof cTrigger !== "string" || typeof cScript !== "string") {
       return;
@@ -114,10 +138,10 @@ class Field extends PDFObject {
     if (!(cTrigger in this._actions)) {
       this._actions[cTrigger] = [];
     }
-    this._actions[cTrigger].push(
-      // eslint-disable-next-line no-new-func
-      Function("event", `with (this) {${cScript}}`).bind(this._document)
-    );
+    const fun = this._getFunction(cScript, cTrigger);
+    if (fun) {
+      this._actions[cTrigger].push(fun);
+    }
   }
 
   setFocus() {
@@ -127,16 +151,13 @@ class Field extends PDFObject {
   _createActionsMap(actions) {
     const actionsMap = new Map();
     if (actions) {
-      const doc = this._document;
       for (const [eventType, actionsForEvent] of Object.entries(actions)) {
-        // This stuff is running in a sandbox so it's safe to use Function
-        actionsMap.set(
-          eventType,
-          actionsForEvent.map(action =>
-            // eslint-disable-next-line no-new-func
-            Function("event", `with (this) {${action}}`).bind(doc)
-          )
-        );
+        const functions = actionsForEvent
+          .map(action => this._getFunction(action, eventType))
+          .filter(fun => !!fun);
+        if (functions.length > 0) {
+          actionsMap.set(eventType, functions);
+        }
       }
     }
     return actionsMap;

@@ -84,7 +84,7 @@ describe("Scripting", function () {
         return s;
       }
       const number = 123;
-      const expected = ((number - 1) * number) / 2;
+      const expected = (((number - 1) * number) / 2).toString();
       const refId = getId();
 
       const data = {
@@ -1094,7 +1094,7 @@ describe("Scripting", function () {
           expect(send_queue.get(refIds[3])).toEqual({
             id: refIds[3],
             value: 1,
-            valueAsString: 1,
+            valueAsString: "1",
           });
 
           await sandbox.dispatchEventInSandbox({
@@ -1107,7 +1107,7 @@ describe("Scripting", function () {
           expect(send_queue.get(refIds[3])).toEqual({
             id: refIds[3],
             value: 3,
-            valueAsString: 3,
+            valueAsString: "3",
           });
 
           await sandbox.dispatchEventInSandbox({
@@ -1120,7 +1120,7 @@ describe("Scripting", function () {
           expect(send_queue.get(refIds[3])).toEqual({
             id: refIds[3],
             value: 6,
-            valueAsString: 6,
+            valueAsString: "6",
           });
 
           done();
