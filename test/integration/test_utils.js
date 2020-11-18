@@ -34,3 +34,11 @@ exports.closePages = pages =>
       await page.close();
     })
   );
+
+exports.clearInput = async (page, selector) => {
+  await page.click(selector);
+  await page.keyboard.down("Control");
+  await page.keyboard.press("A");
+  await page.keyboard.up("Control");
+  await page.keyboard.press("Backspace");
+};

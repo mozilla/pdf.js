@@ -653,6 +653,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             value() {
               elementData.userValue = detail.value || "";
               storage.setValue(id, { value: elementData.userValue.toString() });
+              if (!elementData.formattedValue) {
+                event.target.value = elementData.userValue;
+              }
             },
             valueAsString() {
               elementData.formattedValue = detail.valueAsString || "";

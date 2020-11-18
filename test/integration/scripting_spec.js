@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const { closePages, loadAndWait } = require("./test_utils.js");
+const { clearInput, closePages, loadAndWait } = require("./test_utils.js");
 
 describe("Interaction", () => {
   describe("in 160F-2019.pdf", () => {
@@ -65,11 +65,7 @@ describe("Interaction", () => {
             .toEqual("visible");
 
           // Clear the textfield
-          await page.click("#\\34 16R");
-          await page.keyboard.down("Control");
-          await page.keyboard.press("A");
-          await page.keyboard.up("Control");
-          await page.keyboard.press("Backspace");
+          await clearInput(page, "#\\34 16R");
           // and leave it
           await page.click("#\\34 19R");
 
@@ -109,10 +105,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("61803");
 
           // Clear the textfield
-          await page.keyboard.down("Control");
-          await page.keyboard.press("A");
-          await page.keyboard.up("Control");
-          await page.keyboard.press("Backspace");
+          await clearInput(page, "#\\34 48R");
 
           await page.type("#\\34 48R", "1.61803", { delay: 200 });
           await page.click("#\\34 19R");
@@ -190,6 +183,99 @@ describe("Interaction", () => {
 
           const sum = await page.$eval("#\\34 27R", el => el.value);
           expect(sum).toEqual("");
+        })
+      );
+    });
+  });
+
+  describe("in js-buttons.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("js-buttons.pdf", "#\\38 0R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must show values in a text input when clicking on radio buttons", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          const expected = [
+            ["#\\36 8R", "Group1=Choice1::1"],
+            ["#\\36 9R", "Group1=Choice2::2"],
+            ["#\\37 0R", "Group1=Choice3::3"],
+            ["#\\37 1R", "Group1=Choice4::4"],
+          ];
+          for (const [selector, expectedText] of expected) {
+            // Clear the textfield
+            await clearInput(page, "#\\36 7R");
+
+            await page.click(selector);
+            await page.waitForFunction(
+              `document.querySelector("#\\\\36 7R").value !== ""`
+            );
+            const text = await page.$eval("#\\36 7R", el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
+          }
+        })
+      );
+    });
+
+    it("must show values in a text input when clicking on checkboxes", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const expected = [
+            ["#\\37 2R", "Check1=Yes::5"],
+            ["#\\37 4R", "Check2=Yes::6"],
+            ["#\\37 5R", "Check3=Yes::7"],
+            ["#\\37 6R", "Check4=Yes::8"],
+            ["#\\37 2R", "Check1=Off::5"],
+            ["#\\37 4R", "Check2=Off::6"],
+            ["#\\37 5R", "Check3=Off::7"],
+            ["#\\37 6R", "Check4=Off::8"],
+          ];
+          for (const [selector, expectedText] of expected) {
+            // Clear the textfield
+            await clearInput(page, "#\\36 7R");
+
+            await page.click(selector);
+            await page.waitForFunction(
+              `document.querySelector("#\\\\36 7R").value !== ""`
+            );
+            const text = await page.$eval("#\\36 7R", el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
+          }
+        })
+      );
+    });
+
+    it("must show values in a text input when clicking on checkboxes in a group", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const expected = [
+            ["#\\37 7R", "Check5=Yes1::9"],
+            ["#\\37 8R", "Check5=Yes2::10"],
+            ["#\\37 9R", "Check5=Yes3::11"],
+            ["#\\38 0R", "Check5=Yes4::12"],
+            ["#\\38 0R", "Check5=Off::12"],
+          ];
+          for (const [selector, expectedText] of expected) {
+            // Clear the textfield
+            await clearInput(page, "#\\36 7R");
+
+            await page.click(selector);
+            await page.waitForFunction(
+              `document.querySelector("#\\\\36 7R").value !== ""`
+            );
+            const text = await page.$eval("#\\36 7R", el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
+          }
         })
       );
     });

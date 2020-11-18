@@ -26,12 +26,12 @@ import {
   Trans,
   ZoomType,
 } from "./constants.js";
+import { CheckboxField, Field, RadioButtonField } from "./field.js";
 import { AForm } from "./aform.js";
 import { App } from "./app.js";
 import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { Doc } from "./doc.js";
-import { Field } from "./field.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
 
@@ -74,10 +74,23 @@ function initSandbox(params) {
       obj.send = send;
       obj.globalEval = globalEval;
       obj.doc = _document.wrapped;
-      const field = new Field(obj);
+      let field;
+      if (obj.type === "radiobutton") {
+        const otherButtons = objs.slice(1);
+        field = new RadioButtonField(otherButtons, obj);
+      } else if (obj.type === "checkbox") {
+        const otherButtons = objs.slice(1);
+        field = new CheckboxField(otherButtons, obj);
+      } else {
+        field = new Field(obj);
+      }
+
       const wrapped = new Proxy(field, proxyHandler);
       doc._addField(name, wrapped);
-      app._objects[obj.id] = { obj: field, wrapped };
+      const _object = { obj: field, wrapped };
+      for (const object of objs) {
+        app._objects[object.id] = _object;
+      }
     }
   }
 
