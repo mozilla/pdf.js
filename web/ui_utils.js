@@ -144,6 +144,13 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
     offsetX += parent.offsetLeft;
     parent = parent.offsetParent;
     if (!parent) {
+      // modified by ngx-extended-pdf-viewer #492
+      if (document.body.clientHeight > offsetY) {
+        // infinite scroll
+        offsetY -= 32;
+        window.scrollTo(window.scrollX, offsetY);
+      }
+      // end of modification #492
       return; // no need to scroll
     }
   }
