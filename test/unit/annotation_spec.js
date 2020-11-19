@@ -1602,7 +1602,7 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] = "test\\print";
+          annotationStorage[id] = { value: "test\\print" };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -1687,7 +1687,7 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] = "test (print)";
+          annotationStorage[id] = { value: "test (print)" };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -1723,7 +1723,7 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] = "mypassword";
+          annotationStorage[id] = { value: "mypassword" };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -1756,9 +1756,11 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] =
-            "a aa aaa aaaa aaaaa aaaaaa " +
-            "pneumonoultramicroscopicsilicovolcanoconiosis";
+          annotationStorage[id] = {
+            value:
+              "a aa aaa aaaa aaaaa aaaaaa " +
+              "pneumonoultramicroscopicsilicovolcanoconiosis",
+          };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -1823,15 +1825,17 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] =
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\r" +
-            "Aliquam vitae felis ac lectus bibendum ultricies quis non diam.\n" +
-            "Morbi id porttitor quam, a iaculis dui.\r\n" +
-            "Pellentesque habitant morbi tristique senectus et " +
-            "netus et malesuada fames ac turpis egestas.\n\r\n\r" +
-            "Nulla consectetur, ligula in tincidunt placerat, " +
-            "velit augue consectetur orci, sed mattis libero nunc ut massa.\r" +
-            "Etiam facilisis tempus interdum.";
+          annotationStorage[id] = {
+            value:
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\r" +
+              "Aliquam vitae felis ac lectus bibendum ultricies quis non diam.\n" +
+              "Morbi id porttitor quam, a iaculis dui.\r\n" +
+              "Pellentesque habitant morbi tristique senectus et " +
+              "netus et malesuada fames ac turpis egestas.\n\r\n\r" +
+              "Nulla consectetur, ligula in tincidunt placerat, " +
+              "velit augue consectetur orci, sed mattis libero nunc ut massa.\r" +
+              "Etiam facilisis tempus interdum.",
+          };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -1865,7 +1869,7 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] = "aa(aa)a\\";
+          annotationStorage[id] = { value: "aa(aa)a\\" };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -1898,7 +1902,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = "hello world";
+          annotationStorage[annotation.data.id] = { value: "hello world" };
           return annotation.save(partialEvaluator, task, annotationStorage);
         }, done.fail)
         .then(data => {
@@ -2151,7 +2155,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return annotation.getOperatorList(
             partialEvaluator,
             task,
@@ -2209,7 +2213,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return Promise.all([
             annotation,
             annotation.getOperatorList(
@@ -2234,7 +2238,7 @@ describe("annotation", function () {
         }, done.fail)
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = false;
+          annotationStorage[annotation.data.id] = { value: false };
           return annotation.getOperatorList(
             partialEvaluator,
             task,
@@ -2292,7 +2296,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return Promise.all([
             annotation,
             annotation.getOperatorList(
@@ -2317,7 +2321,7 @@ describe("annotation", function () {
         })
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return annotation.getOperatorList(
             partialEvaluator,
             task,
@@ -2424,7 +2428,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return Promise.all([
             annotation,
             annotation.save(partialEvaluator, task, annotationStorage),
@@ -2443,7 +2447,7 @@ describe("annotation", function () {
         }, done.fail)
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = false;
+          annotationStorage[annotation.data.id] = { value: false };
           return annotation.save(partialEvaluator, task, annotationStorage);
         }, done.fail)
         .then(data => {
@@ -2586,7 +2590,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return Promise.all([
             annotation,
             annotation.getOperatorList(
@@ -2611,7 +2615,7 @@ describe("annotation", function () {
         }, done.fail)
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = false;
+          annotationStorage[annotation.data.id] = { value: false };
           return annotation.getOperatorList(
             partialEvaluator,
             task,
@@ -2729,7 +2733,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return Promise.all([
             annotation,
             annotation.save(partialEvaluator, task, annotationStorage),
@@ -2755,7 +2759,7 @@ describe("annotation", function () {
         }, done.fail)
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = false;
+          annotationStorage[annotation.data.id] = { value: false };
           return annotation.save(partialEvaluator, task, annotationStorage);
         }, done.fail)
         .then(data => {
@@ -2800,7 +2804,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = true;
+          annotationStorage[annotation.data.id] = { value: true };
           return Promise.all([
             annotation,
             annotation.save(partialEvaluator, task, annotationStorage),
@@ -3247,7 +3251,7 @@ describe("annotation", function () {
         .then(annotation => {
           const id = annotation.data.id;
           const annotationStorage = {};
-          annotationStorage[id] = "a value";
+          annotationStorage[id] = { value: "a value" };
           return annotation._getAppearance(
             partialEvaluator,
             task,
@@ -3282,7 +3286,7 @@ describe("annotation", function () {
       )
         .then(annotation => {
           const annotationStorage = {};
-          annotationStorage[annotation.data.id] = "C";
+          annotationStorage[annotation.data.id] = { value: "C" };
           return annotation.save(partialEvaluator, task, annotationStorage);
         }, done.fail)
         .then(data => {
