@@ -687,15 +687,15 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
-    /** #495 modified by ngx-extended-pdf-viewer */
+    /** #492 modified by ngx-extended-pdf-viewer */
     if (this.pageViewMode === "single") {
       this._pages.forEach(() => {
         pageDiv.style.display = "block";
       });
     }
-    /** end of modification */
+    /** #492 end of modification */
 
-    scrollIntoView(pageDiv, pageSpot);
+    scrollIntoView(pageDiv, pageSpot, false, this.pageViewMode === 'infinite-scroll');
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {

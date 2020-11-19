@@ -428,6 +428,9 @@ const PDFViewerApplication = {
     const findController = new PDFFindController({
       linkService: pdfLinkService,
       eventBus,
+      // #492 modified by ngx-extended-pdf-viewer
+      pageViewMode: AppOptions.get("pageViewMode"),
+      // #492 modification end
     });
     this.findController = findController;
 

@@ -70,10 +70,12 @@ class PDFFindController {
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus }) {
+   /** #492 modified by ngx-extended-pdf-viewer */
+  constructor({ linkService, eventBus, pageViewMode }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
-
+    this._pageViewMode = pageViewMode;
+    /** #492 end of modification */
     this._reset();
     eventBus._on("findbarclose", this._onFindBarClose.bind(this));
   }
@@ -200,7 +202,9 @@ class PDFFindController {
       top: MATCH_SCROLL_OFFSET_TOP,
       left: MATCH_SCROLL_OFFSET_LEFT,
     };
-    scrollIntoView(element, spot, /* skipOverflowHiddenElements = */ true);
+    /** #492 modified by ngx-extended-pdf-viewer */
+    scrollIntoView(element, spot, /* skipOverflowHiddenElements = */ true, this._pageViewMode === 'infinite-scroll');
+    /** #492 end of modification */
   }
 
   _reset() {

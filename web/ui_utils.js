@@ -119,7 +119,9 @@ function getOutputScale(ctx) {
  * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
  *   the CSS rule `overflow: hidden;` set. The default is false.
  */
-function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
+// #492 modified by ngx-extended-pdf-viewer
+function scrollIntoView(element, spot, skipOverflowHiddenElements = false, infiniteScroll=false) {
+// #492 end of modification
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
@@ -145,10 +147,12 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
     parent = parent.offsetParent;
     if (!parent) {
       // modified by ngx-extended-pdf-viewer #492
-      if (document.body.clientHeight > offsetY) {
-        // infinite scroll
-        offsetY -= 32;
-        window.scrollTo(window.scrollX, offsetY);
+      if (infiniteScroll) {
+        if (document.body.clientHeight > offsetY) {
+          // infinite scroll
+          offsetY -= 32;
+          window.scrollTo(window.scrollX, offsetY);
+        }
       }
       // end of modification #492
       return; // no need to scroll
