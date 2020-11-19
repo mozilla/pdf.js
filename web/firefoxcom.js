@@ -259,7 +259,7 @@ class FirefoxScripting {
     FirefoxCom.requestSync("createSandbox", data);
   }
 
-  static dispatchEventInSandbox(event, sandboxID) {
+  static dispatchEventInSandbox(event) {
     FirefoxCom.requestSync("dispatchEventInSandbox", event);
   }
 

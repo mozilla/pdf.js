@@ -49,6 +49,9 @@ class Util extends PDFObject {
   }
 
   crackURL(cURL) {
+    if (typeof cURL !== "string") {
+      throw new TypeError("First argument of util.crackURL must be a string");
+    }
     return this._crackURL(cURL);
   }
 
