@@ -494,7 +494,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
-      const textContent = storage.getOrCreateValue(id, this.data.fieldValue);
+      const textContent = storage.getOrCreateValue(id, {
+        value: this.data.fieldValue,
+      }).value;
 
       if (this.data.multiLine) {
         element = document.createElement("textarea");
@@ -509,7 +511,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("id", id);
 
       element.addEventListener("input", function (event) {
-        storage.setValue(id, event.target.value);
+        storage.setValue(id, { value: event.target.value });
       });
 
       element.addEventListener("blur", function (event) {
@@ -686,10 +688,9 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getOrCreateValue(
-      id,
-      data.fieldValue && data.fieldValue !== "Off"
-    );
+    const value = storage.getOrCreateValue(id, {
+      value: data.fieldValue && data.fieldValue !== "Off",
+    }).value;
 
     this.container.className = "buttonWidgetAnnotation checkBox";
 
@@ -702,7 +703,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     element.addEventListener("change", function (event) {
-      storage.setValue(id, event.target.checked);
+      storage.setValue(id, { value: event.target.checked });
     });
 
     this.container.appendChild(element);
@@ -728,10 +729,9 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getOrCreateValue(
-      id,
-      data.fieldValue === data.buttonValue
-    );
+    const value = storage.getOrCreateValue(id, {
+      value: data.fieldValue === data.buttonValue,
+    }).value;
 
     const element = document.createElement("input");
     element.disabled = data.readOnly;
@@ -747,11 +747,11 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
         if (radio !== event.target) {
           storage.setValue(
             radio.parentNode.getAttribute("data-annotation-id"),
-            false
+            { value: false }
           );
         }
       }
-      storage.setValue(id, event.target.checked);
+      storage.setValue(id, { value: event.target.checked });
     });
 
     this.container.appendChild(element);
@@ -808,10 +808,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     // two field types is implemented, we should use the same pattern as the
     // other interactive widgets where the return value of `getOrCreateValue` is
     // used and the full array of field values is stored.
-    storage.getOrCreateValue(
-      id,
-      this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined
-    );
+    storage.getOrCreateValue(id, {
+      value:
+        this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
+    });
 
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
@@ -839,7 +839,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     selectElement.addEventListener("input", function (event) {
       const options = event.target.options;
       const value = options[options.selectedIndex].value;
-      storage.setValue(id, value);
+      storage.setValue(id, { value });
     });
 
     this.container.appendChild(selectElement);
@@ -1684,6 +1684,9 @@ class AnnotationLayer {
       });
       if (element.isRenderable) {
         const rendered = element.render();
+        if (data.hidden) {
+          rendered.style.visibility = "hidden";
+        }
         if (Array.isArray(rendered)) {
           for (const renderedElement of rendered) {
             parameters.div.appendChild(renderedElement);

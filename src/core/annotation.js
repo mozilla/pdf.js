@@ -300,7 +300,6 @@ class Annotation {
   _isViewable(flags) {
     return (
       !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-      !this._hasFlag(flags, AnnotationFlag.HIDDEN) &&
       !this._hasFlag(flags, AnnotationFlag.NOVIEW)
     );
   }
@@ -311,9 +310,16 @@ class Annotation {
   _isPrintable(flags) {
     return (
       this._hasFlag(flags, AnnotationFlag.PRINT) &&
-      !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-      !this._hasFlag(flags, AnnotationFlag.HIDDEN)
+      !this._hasFlag(flags, AnnotationFlag.INVISIBLE)
     );
+  }
+
+  isHidden(annotationStorage) {
+    const data = annotationStorage && annotationStorage[this.data.id];
+    if (data && "hidden" in data) {
+      return data.hidden;
+    }
+    return this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
   }
 
   /**
@@ -984,7 +990,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
-    data.hidden = this.hasFieldFlag(AnnotationFieldFlag.HIDDEN);
+    data.hidden = this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN);
 
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
@@ -1145,7 +1151,8 @@ class WidgetAnnotation extends Annotation {
   }
 
   async save(evaluator, task, annotationStorage) {
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
     if (value === this.data.fieldValue || value === undefined) {
       return null;
     }
@@ -1229,7 +1236,8 @@ class WidgetAnnotation extends Annotation {
     if (!annotationStorage || isPassword) {
       return null;
     }
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
     if (value === undefined) {
       // The annotation hasn't been rendered so use the appearance
       return null;
@@ -1712,7 +1720,9 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     if (annotationStorage) {
-      const value = annotationStorage[this.data.id];
+      const value =
+        annotationStorage[this.data.id] &&
+        annotationStorage[this.data.id].value;
       if (value === undefined) {
         return super.getOperatorList(
           evaluator,
@@ -1767,7 +1777,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveCheckbox(evaluator, task, annotationStorage) {
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
     if (value === undefined) {
       return null;
     }
@@ -1809,7 +1820,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveRadioButton(evaluator, task, annotationStorage) {
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
     if (value === undefined) {
       return null;
     }

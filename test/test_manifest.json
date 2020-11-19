@@ -2214,6 +2214,19 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "160F-2019",
+       "file": "pdfs/160F-2019.pdf",
+       "md5": "71591f11ee717e12887f529c84d5ae89",
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "427R": {
+           "hidden": false,
+           "value": "hello world"
+         }
+       }
+    },
     {  "id": "issue6342-eq",
        "file": "pdfs/issue6342.pdf",
        "md5": "2ea85ca8d17117798f105be88bdb2bfd",
@@ -2818,7 +2831,9 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "2795R": "氏 名 又 は 名 称 Full name"
+         "2795R": {
+           "value": "氏 名 又 は 名 称 Full name"
+         }
        }
     },
     {  "id": "issue7598",
@@ -3682,7 +3697,9 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "1605R": true
+         "1605R": {
+           "value": true
+         }
        }
     },
     {  "id": "clippath",
@@ -4186,11 +4203,21 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "29R": true,
-         "33R": true,
-         "37R": true,
-         "65R": true,
-         "69R": true
+         "29R": {
+           "value": true
+         },
+         "33R": {
+           "value": true
+         },
+         "37R": {
+           "value": true
+         },
+         "65R": {
+           "value": true
+         },
+         "69R": {
+           "value": true
+         }
        }
     },
     {  "id": "issue1171.pdf",
@@ -4584,13 +4611,27 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "61R": "Single line, unlimited length",
-         "62R": "Single lin",
-         "63R": "Single line, center aligned",
-         "64R": "Single line, right aligned",
-         "65R": "",
-         "66R": "zyxwvutsrqponmlkjihgfedcba",
-         "67R": "Multiline\nstring"
+         "61R": {
+           "value": "Single line, unlimited length"
+         },
+         "62R": {
+           "value": "Single lin"
+         },
+         "63R": {
+           "value": "Single line, center aligned"
+         },
+         "64R": {
+           "value": "Single line, right aligned"
+         },
+         "65R": {
+           "value": ""
+         },
+         "66R": {
+           "value": "zyxwvutsrqponmlkjihgfedcba"
+         },
+         "67R": {
+           "value": "Multiline\nstring"
+         }
        }
     },
     {  "id": "annotation-choice-widget-annotations",
@@ -4614,11 +4655,21 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "57R": "Ipsum",
-         "58R": "Lorem",
-         "59R": "Dolor",
-         "62R": "Sit",
-         "63R": ""
+         "57R": {
+           "value": "Ipsum"
+         },
+         "58R": {
+           "value": "Lorem"
+         },
+         "59R": {
+           "value": "Dolor"
+         },
+         "62R": {
+           "value": "Sit"
+         },
+         "63R": {
+           "value": ""
+         }
        }
     },
     {  "id": "issue12233-forms",
@@ -4637,7 +4688,9 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "20R": true
+         "20R": {
+           "value": true
+         }
        }
     },
     {  "id": "issue11931",
@@ -4673,15 +4726,33 @@
        "type": "eq",
        "print": true,
        "annotationStorage": {
-         "105R": true,
-         "106R": false,
-         "107R": false,
-         "108R": true,
-         "109R": false,
-         "110R": false,
-         "111R": true,
-         "112R": false,
-         "113R": false
+         "105R": {
+           "value": true
+         },
+         "106R": {
+           "value": false
+         },
+         "107R": {
+           "value": false
+         },
+         "108R": {
+           "value": true
+         },
+         "109R": {
+           "value": false
+         },
+         "110R": {
+           "value": false
+         },
+         "111R": {
+           "value": true
+         },
+         "112R": {
+           "value": false
+         },
+         "113R": {
+           "value": false
+         }
        }
     },
     {  "id": "annotation-polyline-polygon",
