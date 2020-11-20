@@ -128,23 +128,25 @@ class PDFDocumentProperties {
       // Get the document properties.
       this.pdfDocument
         .getMetadata()
-        .then(({ info, metadata, contentDispositionFilename }) => {
-          return Promise.all([
-            info,
-            metadata,
-            contentDispositionFilename || getPDFFileNameFromURL(this.url),
-            this._parseFileSize(this.maybeFileSize),
-            this._parseDate(info.CreationDate),
-            this._parseDate(info.ModDate),
-            this.pdfDocument.getPage(currentPageNumber).then(pdfPage => {
-              return this._parsePageSize(
-                getPageSizeInches(pdfPage),
-                pagesRotation
-              );
-            }),
-            this._parseLinearization(info.IsLinearized),
-          ]);
-        })
+        .then(
+          ({ info, metadata, contentDispositionFilename, contentLength }) => {
+            return Promise.all([
+              info,
+              metadata,
+              contentDispositionFilename || getPDFFileNameFromURL(this.url),
+              this._parseFileSize(contentLength),
+              this._parseDate(info.CreationDate),
+              this._parseDate(info.ModDate),
+              this.pdfDocument.getPage(currentPageNumber).then(pdfPage => {
+                return this._parsePageSize(
+                  getPageSizeInches(pdfPage),
+                  pagesRotation
+                );
+              }),
+              this._parseLinearization(info.IsLinearized),
+            ]);
+          }
+        )
         .then(
           ([
             info,
@@ -176,15 +178,13 @@ class PDFDocumentProperties {
             });
             this._updateUI();
 
-            // Get the correct fileSize, since it may not have been set (if
-            // `this.setFileSize` wasn't called) or may be incorrectly set.
-            return this.pdfDocument.getDownloadInfo();
+            // Get the correct fileSize, since it may not have been available
+            // or could potentially be wrong.
+            return this.pdfDocument.getDownloadInfo().then(downloadInfo => {
+              return this._parseFileSize(downloadInfo.length);
+            });
           }
         )
-        .then(({ length }) => {
-          this.maybeFileSize = length;
-          return this._parseFileSize(length);
-        })
         .then(fileSize => {
           if (fileSize === this.fieldData.fileSize) {
             return; // The fileSize has already been correctly set.
@@ -229,26 +229,12 @@ class PDFDocumentProperties {
   }
 
   /**
-   * Set the file size of the PDF document. This method is used to
-   * update the file size in the document properties overlay once it
-   * is known so we do not have to wait until the entire file is loaded.
-   *
-   * @param {number} fileSize - The file size of the PDF document.
-   */
-  setFileSize(fileSize) {
-    if (Number.isInteger(fileSize) && fileSize > 0) {
-      this.maybeFileSize = fileSize;
-    }
-  }
-
-  /**
    * @private
    */
   _reset() {
     this.pdfDocument = null;
     this.url = null;
 
-    this.maybeFileSize = 0;
     delete this.fieldData;
     this._dataAvailableCapability = createPromiseCapability();
     this._currentPageNumber = 1;

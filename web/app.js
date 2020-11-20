@@ -863,15 +863,10 @@ const PDFViewerApplication = {
       }
       parameters[key] = value;
     }
-
+    // Finally, update the API parameters with the arguments (if they exist).
     if (args) {
       for (const key in args) {
-        const value = args[key];
-
-        if (key === "length") {
-          this.pdfDocumentProperties.setFileSize(value);
-        }
-        parameters[key] = value;
+        parameters[key] = args[key];
       }
     }
 
