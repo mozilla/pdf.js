@@ -2654,9 +2654,8 @@ class WorkerTransport {
         return {
           info: results[0],
           metadata: results[1] ? new Metadata(results[1]) : null,
-          contentDispositionFilename: this._fullReader
-            ? this._fullReader.filename
-            : null,
+          contentDispositionFilename: this._fullReader?.filename ?? null,
+          contentLength: this._fullReader?.contentLength ?? null,
         };
       });
   }
