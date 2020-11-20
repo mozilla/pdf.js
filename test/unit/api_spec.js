@@ -1132,7 +1132,12 @@ describe("api", function () {
     it("gets metadata", function (done) {
       const promise = pdfDocument.getMetadata();
       promise
-        .then(function ({ info, metadata, contentDispositionFilename }) {
+        .then(function ({
+          info,
+          metadata,
+          contentDispositionFilename,
+          contentLength,
+        }) {
           expect(info.Title).toEqual("Basic API Test");
           // Custom, non-standard, information dictionary entries.
           expect(info.Custom).toEqual(undefined);
@@ -1147,6 +1152,7 @@ describe("api", function () {
           expect(metadata.get("dc:title")).toEqual("Basic API Test");
 
           expect(contentDispositionFilename).toEqual(null);
+          expect(contentLength).toEqual(basicApiFileLength);
           done();
         })
         .catch(done.fail);
@@ -1160,7 +1166,12 @@ describe("api", function () {
         .then(function (pdfDoc) {
           return pdfDoc.getMetadata();
         })
-        .then(function ({ info, metadata, contentDispositionFilename }) {
+        .then(function ({
+          info,
+          metadata,
+          contentDispositionFilename,
+          contentLength,
+        }) {
           expect(info.Creator).toEqual("TeX");
           expect(info.Producer).toEqual("pdfeTeX-1.21a");
           expect(info.CreationDate).toEqual("D:20090401163925-07'00'");
@@ -1181,6 +1192,7 @@ describe("api", function () {
 
           expect(metadata).toEqual(null);
           expect(contentDispositionFilename).toEqual(null);
+          expect(contentLength).toEqual(1016315);
 
           loadingTask.destroy().then(done);
         })
@@ -1193,7 +1205,12 @@ describe("api", function () {
         .then(function (pdfDoc) {
           return pdfDoc.getMetadata();
         })
-        .then(function ({ info, metadata, contentDispositionFilename }) {
+        .then(function ({
+          info,
+          metadata,
+          contentDispositionFilename,
+          contentLength,
+        }) {
           // The following are PDF.js specific, non-standard, properties.
           expect(info.PDFFormatVersion).toEqual(null);
           expect(info.IsLinearized).toEqual(false);
@@ -1203,6 +1220,7 @@ describe("api", function () {
 
           expect(metadata).toEqual(null);
           expect(contentDispositionFilename).toEqual(null);
+          expect(contentLength).toEqual(624);
 
           loadingTask.destroy().then(done);
         })
