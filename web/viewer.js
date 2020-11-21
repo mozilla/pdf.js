@@ -112,6 +112,8 @@ function getViewerConfiguration() {
       spreadNoneButton: document.getElementById("spreadNone"),
       spreadOddButton: document.getElementById("spreadOdd"),
       spreadEvenButton: document.getElementById("spreadEven"),
+      ltrReadingDirectionButton: document.getElementById("ltrReadingDirection"),
+      rtlReadingDirectionButton: document.getElementById("rtlReadingDirection"),
       documentPropertiesButton: document.getElementById("documentProperties"),
     },
     fullscreen: {

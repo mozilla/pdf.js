@@ -32,6 +32,7 @@ import {
   parseQueryString,
   PresentationModeState,
   ProgressBar,
+  ReadingDirection,
   RendererType,
   ScrollMode,
   SpreadMode,
@@ -1251,6 +1252,7 @@ const PDFViewerApplication = {
         sidebarView: SidebarView.UNKNOWN,
         scrollMode: ScrollMode.UNKNOWN,
         spreadMode: SpreadMode.UNKNOWN,
+        direction: ReadingDirection.UNKNOWN,
       })
       .catch(() => {
         /* Unable to read from storage; ignoring errors. */
@@ -1285,6 +1287,7 @@ const PDFViewerApplication = {
           let sidebarView = AppOptions.get("sidebarViewOnLoad");
           let scrollMode = AppOptions.get("scrollModeOnLoad");
           let spreadMode = AppOptions.get("spreadModeOnLoad");
+          let direction = AppOptions.get("directionOnLoad");
 
           if (stored.page && viewOnLoad !== ViewOnLoad.INITIAL) {
             hash =
@@ -1302,6 +1305,9 @@ const PDFViewerApplication = {
             if (spreadMode === SpreadMode.UNKNOWN) {
               spreadMode = stored.spreadMode | 0;
             }
+            if (direction === ReadingDirection.UNKNOWN) {
+              direction = stored.direction | 0;
+            }
           }
           // Always let the user preference/view history take precedence.
           if (pageMode && sidebarView === SidebarView.UNKNOWN) {
@@ -1316,6 +1322,7 @@ const PDFViewerApplication = {
             sidebarView,
             scrollMode,
             spreadMode,
+            direction,
           });
           this.eventBus.dispatch("documentinit", { source: this });
           // Make all navigation keys work on document load,
@@ -1745,7 +1752,7 @@ const PDFViewerApplication = {
 
   setInitialView(
     storedHash,
-    { rotation, sidebarView, scrollMode, spreadMode } = {}
+    { rotation, sidebarView, scrollMode, spreadMode, direction } = {}
   ) {
     const setRotation = angle => {
       if (isValidRotation(angle)) {
@@ -1764,6 +1771,10 @@ const PDFViewerApplication = {
     this.pdfSidebar.setInitialView(sidebarView);
 
     setViewerModes(scrollMode, spreadMode);
+
+    if (Object.values(ReadingDirection).includes(direction)) {
+      this.pdfViewer.direction = direction;
+    }
 
     if (this.initialBookmark) {
       setRotation(this.initialRotation);
@@ -1947,6 +1958,8 @@ const PDFViewerApplication = {
     eventBus._on("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._on("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._on("changedirection", webViewerChangeDirection);
+    eventBus._on("directionchanged", webViewerDirectionChanged);
     eventBus._on("documentproperties", webViewerDocumentProperties);
     eventBus._on("find", webViewerFind);
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
@@ -2491,6 +2504,14 @@ function webViewerSpreadModeChanged(evt) {
   }
 }
 
+function webViewerDirectionChanged(evt) {
+  const store = PDFViewerApplication.store;
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    store.set("direction", evt.direction).catch(function () {});
+  }
+}
+
 function webViewerResize() {
   const { pdfDocument, pdfViewer } = PDFViewerApplication;
   if (!pdfDocument) {
@@ -2649,6 +2670,9 @@ function webViewerSwitchScrollMode(evt) {
 }
 function webViewerSwitchSpreadMode(evt) {
   PDFViewerApplication.pdfViewer.spreadMode = evt.mode;
+}
+function webViewerChangeDirection({ mode }) {
+  PDFViewerApplication.pdfViewer.direction = mode;
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();

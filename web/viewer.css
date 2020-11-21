@@ -90,6 +90,7 @@
   --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
+  --secondaryToolbarButton-toggleReadingDirection-icon: url(images/secondaryToolbarButton-toggleReadingDirection.svg);
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
 }
 
@@ -161,6 +162,7 @@
     --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone-dark.svg);
     --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd-dark.svg);
     --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven-dark.svg);
+    --secondaryToolbarButton-toggleReadingDirection-icon: url(images/secondaryToolbarButton-toggleReadingDirection-dark.svg);
     --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties-dark.svg);
   }
 }
@@ -1202,6 +1204,12 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
+.secondaryToolbarButton.readingDirection::before {
+  content: var(--secondaryToolbarButton-toggleReadingDirection-icon);
+}
+#rtlReadingDirection::before {
+  transform: scale(-1);
+}
 .secondaryToolbarButton.documentProperties::before {
   content: var(--secondaryToolbarButton-documentProperties-icon);
 }
@@ -1898,4 +1906,11 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   #scaleSelectContainer {
     display: none;
   }
+}
+
+.dir-rtl {
+  direction: rtl;
+}
+.dir-ltr {
+  direction: ltr;
 }

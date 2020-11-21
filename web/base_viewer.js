@@ -27,6 +27,7 @@ import {
   moveToEndOfArray,
   NullL10n,
   PresentationModeState,
+  ReadingDirection,
   RendererType,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -646,6 +647,7 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
+    this._direction = ReadingDirection.UNKNOWN;
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -1475,6 +1477,35 @@ class BaseViewer {
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
+  }
+
+  /**
+   * @type {number} One of the values in {ReadingDirection}.
+   */
+  get direction() {
+    return this._direction;
+  }
+
+  /**
+   * @param {number} dir
+   */
+  set direction(direction) {
+    if (this._direction === direction) {
+      return;
+    }
+    if (!Object.values(ReadingDirection).includes(direction)) {
+      throw new Error(`Invalid document direction: ${direction}`);
+    }
+    this._direction = direction;
+    this.container.classList.toggle(
+      "dir-ltr",
+      ReadingDirection.LTR === direction
+    );
+    this.container.classList.toggle(
+      "dir-rtl",
+      ReadingDirection.RTL === direction
+    );
+    this.eventBus.dispatch("directionchanged", { source: this, direction });
   }
 }
 

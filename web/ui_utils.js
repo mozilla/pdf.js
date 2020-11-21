@@ -57,6 +57,12 @@ const SpreadMode = {
   EVEN: 2,
 };
 
+const ReadingDirection = {
+  UNKNOWN: -1,
+  LTR: 0,
+  RTL: 1,
+};
+
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
@@ -1071,6 +1077,7 @@ export {
   TextLayerMode,
   ScrollMode,
   SpreadMode,
+  ReadingDirection,
   NullL10n,
   EventBus,
   ProgressBar,

@@ -207,6 +207,17 @@
         2
       ],
       "default": 0
+    },
+    "directionOnLoad": {
+      "title": "Document direction on load",
+      "description": "Whether the viewer should order pages from left to right or from right to left.\n -1 = Default (uses the last position if available/enabled).\n 0 = Left to right.\n 1 = Right to left.\n",
+      "type": "integer",
+      "enum": [
+        -1,
+        0,
+        1
+      ],
+      "default": -1
     }
   }
 }

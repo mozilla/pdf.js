@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils.js";
+import {
+  ReadingDirection,
+  SCROLLBAR_PADDING,
+  ScrollMode,
+  SpreadMode,
+} from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
 import { PDFSinglePageViewer } from "./pdf_single_page_viewer.js";
 
@@ -130,6 +135,18 @@ class SecondaryToolbar {
         close: true,
       },
       {
+        element: options.ltrReadingDirectionButton,
+        eventName: "changedirection",
+        eventDetails: { mode: ReadingDirection.LTR },
+        close: true,
+      },
+      {
+        element: options.rtlReadingDirectionButton,
+        eventName: "changedirection",
+        eventDetails: { mode: ReadingDirection.RTL },
+        close: true,
+      },
+      {
         element: options.documentPropertiesButton,
         eventName: "documentproperties",
         close: true,
@@ -157,6 +174,7 @@ class SecondaryToolbar {
     this._bindCursorToolsListener(options);
     this._bindScrollModeListener(options);
     this._bindSpreadModeListener(options);
+    this._bindReadingDirectionListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus._on("resize", this._setMaxHeight.bind(this));
@@ -298,6 +316,20 @@ class SecondaryToolbar {
         spreadModeChanged({ mode: SpreadMode.NONE });
       }
     });
+  }
+
+  _bindReadingDirectionListener(buttons) {
+    function readingDirectionChanged({ direction }) {
+      buttons.ltrReadingDirectionButton.classList.toggle(
+        "toggled",
+        direction === ReadingDirection.LTR
+      );
+      buttons.rtlReadingDirectionButton.classList.toggle(
+        "toggled",
+        direction === ReadingDirection.RTL
+      );
+    }
+    this.eventBus._on("directionchanged", readingDirectionChanged);
   }
 
   open() {
