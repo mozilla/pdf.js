@@ -1551,12 +1551,31 @@ describe("api", function () {
         }
       );
 
-      Promise.all([defaultPromise, docBaseUrlPromise, invalidDocBaseUrlPromise])
-        .then(function (data) {
-          const defaultAnnotations = data[0];
-          const docBaseUrlAnnotations = data[1];
-          const invalidDocBaseUrlAnnotations = data[2];
+      const fileDocBaseUrlLoadingTask = getDocument(
+        buildGetDocumentParams(filename, {
+          docBaseUrl: "file:///C:/Users/name/test/pdfs/qwerty.pdf",
+        })
+      );
+      const fileDocBaseUrlPromise = fileDocBaseUrlLoadingTask.promise.then(
+        function (pdfDoc) {
+          return pdfDoc.getPage(1).then(function (pdfPage) {
+            return pdfPage.getAnnotations();
+          });
+        }
+      );
 
+      Promise.all([
+        defaultPromise,
+        docBaseUrlPromise,
+        invalidDocBaseUrlPromise,
+        fileDocBaseUrlPromise,
+      ])
+        .then(function ([
+          defaultAnnotations,
+          docBaseUrlAnnotations,
+          invalidDocBaseUrlAnnotations,
+          fileDocBaseUrlAnnotations,
+        ]) {
           expect(defaultAnnotations[0].url).toBeUndefined();
           expect(defaultAnnotations[0].unsafeUrl).toEqual(
             "../../0021/002156/215675E.pdf#15"
@@ -1574,10 +1593,18 @@ describe("api", function () {
             "../../0021/002156/215675E.pdf#15"
           );
 
+          expect(fileDocBaseUrlAnnotations[0].url).toEqual(
+            "file:///C:/Users/name/0021/002156/215675E.pdf#15"
+          );
+          expect(fileDocBaseUrlAnnotations[0].unsafeUrl).toEqual(
+            "../../0021/002156/215675E.pdf#15"
+          );
+
           Promise.all([
             defaultLoadingTask.destroy(),
             docBaseUrlLoadingTask.destroy(),
             invalidDocBaseUrlLoadingTask.destroy(),
+            fileDocBaseUrlLoadingTask.destroy(),
           ]).then(done);
         })
         .catch(done.fail);

@@ -42,7 +42,10 @@ class BasePdfManager {
   get docBaseUrl() {
     let docBaseUrl = null;
     if (this._docBaseUrl) {
-      const absoluteUrl = createValidAbsoluteUrl(this._docBaseUrl);
+      const absoluteUrl = createValidAbsoluteUrl(
+        this._docBaseUrl,
+        this._docBaseUrl
+      );
       if (absoluteUrl) {
         docBaseUrl = absoluteUrl.href;
       } else {

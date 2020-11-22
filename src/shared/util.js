@@ -386,17 +386,25 @@ function isSameOrigin(baseUrl, otherUrl) {
 }
 
 // Checks if URLs use one of the allowed protocols, e.g. to avoid XSS.
-function _isValidProtocol(url) {
-  if (!url) {
+function _isValidProtocol(urlObj, baseUrl = null) {
+  if (!urlObj) {
     return false;
   }
-  switch (url.protocol) {
+  switch (urlObj.protocol) {
     case "http:":
     case "https:":
     case "ftp:":
     case "mailto:":
     case "tel:":
       return true;
+    case "file:":
+      // Only accept "file:"-URLs when the viewer itself was also loaded from a
+      // "file:"-URL, to enable `LinkAnnotation`s for *local* PDF documents.
+      try {
+        return new URL(baseUrl).protocol === "file:";
+      } catch (ex) {
+        return false;
+      }
     default:
       return false;
   }
@@ -409,13 +417,13 @@ function _isValidProtocol(url) {
  * @param {URL|string} baseUrl - An absolute URL.
  * @returns Either a valid {URL}, or `null` otherwise.
  */
-function createValidAbsoluteUrl(url, baseUrl) {
+function createValidAbsoluteUrl(url, baseUrl = null) {
   if (!url) {
     return null;
   }
   try {
     const absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
-    if (_isValidProtocol(absoluteUrl)) {
+    if (_isValidProtocol(absoluteUrl, baseUrl)) {
       return absoluteUrl;
     }
   } catch (ex) {
