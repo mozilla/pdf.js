@@ -118,8 +118,19 @@ class Toolbar {
     this.pageLabel = null;
     this.hasPageLabels = false;
     this.pagesCount = 0;
-    this.pageScaleValue = DEFAULT_SCALE_VALUE;
-    this.pageScale = DEFAULT_SCALE;
+    const defaultZoomOption = PDFViewerApplicationOptions.get('defaultZoomValue');
+    // #556 #543 modified by ngx-extended-pdf-viewer
+    if (defaultZoomOption) {
+      this.pageScaleValue = defaultZoomOption;
+      if (!!Number(defaultZoomOption)) {
+        this.pageScale = Number(defaultZoomOption);
+      }
+    } else {
+      this.pageScaleValue = DEFAULT_SCALE_VALUE;
+      this.pageScale = DEFAULT_SCALE;
+    }
+    // #556 #543 end of modification
+
     this._updateUIState(true);
     this.updateLoadingIndicatorState();
   }
