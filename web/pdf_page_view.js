@@ -31,6 +31,7 @@ import {
 import { RenderingStates } from "./pdf_rendering_queue.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import canvasSize from "canvas-size";
+import { warn } from "../src/shared/util.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -651,6 +652,7 @@ class PDFPageView {
         PDFViewerApplication.pdfViewer.currentScaleValue = this.scale;
         viewport.width /= divisor;
         viewport.height /= divisor;
+        warn("Page " + this.id + ": Reduced the maximum zoom to " + newScale + " because the browser can't render larger canvases.");
       }
     }
     // end of modification

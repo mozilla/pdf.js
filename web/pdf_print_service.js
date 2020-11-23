@@ -16,6 +16,8 @@
 import { CSS_UNITS, NullL10n } from "./ui_utils.js";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
+import canvasSize from "canvas-size";
+import { warn } from "../src/shared/util.js";
 
 let activeService = null;
 let overlayManager = null;
@@ -33,13 +35,30 @@ function renderPage(
   const scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  const PRINT_UNITS = printResolution / 72.0;
+  let PRINT_UNITS = printResolution / 72.0;
+
+  // modified by ngx-extended-pdf-viewer #387
+  let scale = 1;
+
+  const canvasWidth = Math.floor(size.width * PRINT_UNITS);
+  const canvasHeight = Math.floor(size.height * PRINT_UNITS);
+  if (canvasWidth >= 4096 || canvasHeight >= 4096) {
+    if (!canvasSize.test({ width: canvasWidth, height: canvasHeight })) {
+      const max = determineMaxDimensions();
+      scale = Math.min(max / canvasWidth, max / canvasHeight) * 0.95;
+    }
+    warn("Page " + pageNumber + ": Reduced the [printResolution] to " + Math.floor(printResolution * scale) + " because the browser can't render larger canvases. If you see blank page in the print preview, reduce [printResolution] manually to a lower value.");
+  }
+
+  PRINT_UNITS *= scale;
+
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
   // The physical size of the img as specified by the PDF document.
   const width = Math.floor(size.width * CSS_UNITS) + "px";
   const height = Math.floor(size.height * CSS_UNITS) + "px";
+  // end of modification
 
   const ctx = scratchCanvas.getContext("2d");
   ctx.save();
@@ -67,6 +86,25 @@ function renderPage(
       };
     });
 }
+
+ // modified (added) by ngx-extended-pdf-viewer #387
+ function determineMaxDimensions() {
+  const checklist = [4096, // iOS
+    8192, // IE 9-10
+    10836, // Android
+    11180, // Firefox
+    11402, // Android,
+    14188,
+    16384
+  ];
+  for (let width of checklist) {
+    if (!canvasSize.test({width: width+1, height: width+1})) {
+      return width;
+    }
+  }
+  return 16384;
+}
+// end of modification
 
 function PDFPrintService(
   pdfDocument,
