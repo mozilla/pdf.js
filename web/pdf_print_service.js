@@ -37,7 +37,7 @@ function renderPage(
   // The size of the canvas in pixels for printing.
   let PRINT_UNITS = printResolution / 72.0;
 
-  // modified by ngx-extended-pdf-viewer #387
+  // modified by ngx-extended-pdf-viewer #530
   let scale = 1;
 
   const canvasWidth = Math.floor(size.width * PRINT_UNITS);
@@ -87,7 +87,7 @@ function renderPage(
     });
 }
 
- // modified (added) by ngx-extended-pdf-viewer #387
+ // modified (added) by ngx-extended-pdf-viewer #530
  function determineMaxDimensions() {
   const checklist = [4096, // iOS
     8192, // IE 9-10
