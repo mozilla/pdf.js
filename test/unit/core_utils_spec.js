@@ -237,6 +237,9 @@ describe("core_utils", function () {
         "#fehe#fell#ffo#ff"
       );
       expect(escapePDFName("#h#e#l#l#o")).toEqual("#23h#23e#23l#23l#23o");
+      expect(escapePDFName("#()<>[]{}/%")).toEqual(
+        "#23#28#29#3c#3e#5b#5d#7b#7d#2f#25"
+      );
     });
   });
 });
