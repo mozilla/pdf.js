@@ -112,30 +112,30 @@ More examples can be found in the [examples folder](https://github.com/mozilla/p
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
 
-+ https://www.youtube.com/watch?v=Iv15UY-4Fg8
++ [Julian Viereck youtube](https://www.youtube.com/watch?v=Iv15UY-4Fg8)
 
 More learning resources can be found at:
 
-+ https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
++ [Additional-Learning-Resources](https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources)
 
 The API documentation can be found at:
 
-+ https://mozilla.github.io/pdf.js/api/
++ [API documentation](https://mozilla.github.io/pdf.js/api/)
 
 ## Questions
 
 Check out our FAQs and get answers to common questions:
 
-+ https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
++ [FAQs Questions](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)
 
 Talk to us on Matrix:
 
-+ https://chat.mozilla.org/#/room/#pdfjs:mozilla.org
++ [Matrix chat room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org)
 
 File an issue:
 
-+ https://github.com/mozilla/pdf.js/issues/new
++ [Mozilla Github](https://github.com/mozilla/pdf.js/issues/new)
 
-Follow us on twitter: @pdfjs
+Follow us on twitter:
 
-+ https://twitter.com/pdfjs
++ [Twitter](https://twitter.com/pdfjs)
