@@ -1836,14 +1836,13 @@ var XRef = (function XRefClosure() {
         }
       }
       // reading XRef streams
-      var i, ii;
-      for (i = 0, ii = xrefStms.length; i < ii; ++i) {
+      for (let i = 0, ii = xrefStms.length; i < ii; ++i) {
         this.startXRefQueue.push(xrefStms[i]);
         this.readXRef(/* recoveryMode */ true);
       }
       // finding main trailer
       let trailerDict;
-      for (i = 0, ii = trailers.length; i < ii; ++i) {
+      for (let i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
         const parser = new Parser({
           lexer: new Lexer(stream),
@@ -1861,16 +1860,24 @@ var XRef = (function XRefClosure() {
           continue;
         }
         // Do some basic validation of the trailer/root dictionary candidate.
-        let rootDict;
         try {
-          rootDict = dict.get("Root");
+          const rootDict = dict.get("Root");
+          if (!(rootDict instanceof Dict)) {
+            continue;
+          }
+          const pagesDict = rootDict.get("Pages");
+          if (!(pagesDict instanceof Dict)) {
+            continue;
+          }
+          const pagesCount = pagesDict.get("Count");
+          if (!Number.isInteger(pagesCount)) {
+            continue;
+          }
+          // The top-level /Pages dictionary isn't obviously corrupt.
         } catch (ex) {
           if (ex instanceof MissingDataException) {
             throw ex;
           }
-          continue;
-        }
-        if (!isDict(rootDict) || !rootDict.has("Pages")) {
           continue;
         }
         // taking the first one with 'ID'
