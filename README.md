@@ -1,5 +1,4 @@
-# PDF.js [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js)
-
+# [PDF.js](https://mozilla.github.io/pdf.js/) &middot; [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mozilla/pdf.js/blob/master/LICENSE) [![npm version](https://img.shields.io/npm/v/pdfjs-dist)](https://www.npmjs.com/package/pdfjs-dist) [![npm-downloads](https://img.shields.io/npm/dm/pdfjs-dist)](https://npmcharts.com/compare/pdfjs-dist?minimal=true) [![Follow Twitter](https://img.shields.io/twitter/follow/pdfjs?style=social)](https://twitter.com/pdfjs)
 [PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.
 
 PDF.js is community-driven and supported by Mozilla. Our goal is to
@@ -19,7 +18,7 @@ get involved, visit:
 
 Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org) for questions or guidance.
 
-## Getting Started
+## Getting Started 🚀
 
 ### Online demo
 
@@ -100,6 +99,10 @@ PDF.js is hosted on several free CDNs:
  - https://www.jsdelivr.com/package/npm/pdfjs-dist
  - https://cdnjs.com/libraries/pdf.js
  - https://unpkg.com/pdfjs-dist/
+ 
+ ## Changelog
+ For a summary of new features and known issues in the [latest versions](https://github.com/mozilla/pdf.js/releases/tag/v2.5.207).
+ 
 
 ## Learning
 
@@ -112,30 +115,33 @@ More examples can be found in the [examples folder](https://github.com/mozilla/p
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
 
-+ https://www.youtube.com/watch?v=Iv15UY-4Fg8
++ [Julian Viereck youtube](https://www.youtube.com/watch?v=Iv15UY-4Fg8)
 
 More learning resources can be found at:
 
-+ https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
++ [Additional Learning Resources](https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources)
 
 The API documentation can be found at:
 
-+ https://mozilla.github.io/pdf.js/api/
++ [Pdf.js api](https://mozilla.github.io/pdf.js/api/)
 
 ## Questions
 
 Check out our FAQs and get answers to common questions:
 
-+ https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
++ [Frequently Asked Questions](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)
 
 Talk to us on Matrix:
 
-+ https://chat.mozilla.org/#/room/#pdfjs:mozilla.org
++ [Matrix chat room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org)
 
 File an issue:
 
-+ https://github.com/mozilla/pdf.js/issues/new
++ [pdf.js issue](https://github.com/mozilla/pdf.js/issues/new)
 
-Follow us on twitter: @pdfjs
+Follow us on twitter:
 
-+ https://twitter.com/pdfjs
++ [Twitter](https://twitter.com/pdfjs)
+
+### Code of Conduct
+ We have adopted this code of conduct and require all those who participate to agree and adhere to these Community Participation Guidelines in order to help us create a safe and positive community,Please read and follow our [Code of Conduct](https://github.com/mozilla/pdf.js/blob/master/CODE_OF_CONDUCT.md).
