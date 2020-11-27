@@ -1,4 +1,4 @@
-# [PDF.js](https://mozilla.github.io/pdf.js/) &middot; [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mozilla/pdf.js/blob/master/LICENSE) [![npm version](https://img.shields.io/npm/v/pdfjs-dist)](https://www.npmjs.com/package/pdfjs-dist) [![npm-downloads](https://img.shields.io/npm/dm/pdfjs-dist)](https://npmcharts.com/compare/pdfjs-dist?minimal=true) [![Follow Twitter](https://img.shields.io/twitter/follow/pdfjs?style=social)](https://twitter.com/pdfjs)
+# [PDF.js](https://mozilla.github.io/pdf.js/) [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js) [![npm version](https://img.shields.io/npm/v/pdfjs-dist)](https://www.npmjs.com/package/pdfjs-dist)
 [PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.
 
 PDF.js is community-driven and supported by Mozilla. Our goal is to
