@@ -1,4 +1,4 @@
-# [PDF.js](https://mozilla.github.io/pdf.js/) [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js) [![npm version](https://img.shields.io/npm/v/pdfjs-dist)](https://www.npmjs.com/package/pdfjs-dist)
+# PDF.js [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js) [![npm version](https://img.shields.io/npm/v/pdfjs-dist)](https://www.npmjs.com/package/pdfjs-dist)
 [PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.
 
 PDF.js is community-driven and supported by Mozilla. Our goal is to
@@ -18,7 +18,7 @@ get involved, visit:
 
 Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org) for questions or guidance.
 
-## Getting Started 🚀
+## Getting Started
 
 ### Online demo
 
@@ -100,8 +100,6 @@ PDF.js is hosted on several free CDNs:
  - https://cdnjs.com/libraries/pdf.js
  - https://unpkg.com/pdfjs-dist/
  
- ## Changelog
- For a summary of new features and known issues in the [latest versions](https://github.com/mozilla/pdf.js/releases/tag/v2.5.207).
  
 
 ## Learning
@@ -115,7 +113,7 @@ More examples can be found in the [examples folder](https://github.com/mozilla/p
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
 
-+ [Julian Viereck youtube](https://www.youtube.com/watch?v=Iv15UY-4Fg8)
++ https://www.youtube.com/watch?v=Iv15UY-4Fg8
 
 More learning resources can be found at:
 
@@ -123,7 +121,7 @@ More learning resources can be found at:
 
 The API documentation can be found at:
 
-+ [Pdf.js api](https://mozilla.github.io/pdf.js/api/)
++ [Pdf.js](https://mozilla.github.io/pdf.js/api/)
 
 ## Questions
 
@@ -144,4 +142,4 @@ Follow us on twitter:
 + [Twitter](https://twitter.com/pdfjs)
 
 ### Code of Conduct
- We have adopted this code of conduct and require all those who participate to agree and adhere to these Community Participation Guidelines in order to help us create a safe and positive community,Please read and follow our [Code of Conduct](https://github.com/mozilla/pdf.js/blob/master/CODE_OF_CONDUCT.md).
+ We have adopted this code of conduct and require all those who participate to agree and adhere to these Community Participation Guidelines in order to help us create a safe and positive community,Please read and follow our [Code of Conduct](https://github.com/mozilla/pdf.js/blob/master/README.md#contributing)
