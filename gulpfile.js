@@ -577,45 +577,46 @@ gulp.task("buildnumber", function (done) {
   console.log();
   console.log("### Getting extension build number");
 
-  exec("git log --format=oneline " + config.baseVersion + "..", function (
-    err,
-    stdout,
-    stderr
-  ) {
-    var buildNumber = 0;
-    if (!err) {
-      // Build number is the number of commits since base version
-      buildNumber = stdout ? stdout.match(/\n/g).length : 0;
-    } else {
-      console.log("This is not a Git repository; using default build number.");
-    }
-
-    console.log("Extension build number: " + buildNumber);
-
-    var version = config.versionPrefix + buildNumber;
-
-    exec('git log --format="%h" -n 1', function (err2, stdout2, stderr2) {
-      var buildCommit = "";
-      if (!err2) {
-        buildCommit = stdout2.replace("\n", "");
+  exec(
+    "git log --format=oneline " + config.baseVersion + "..",
+    function (err, stdout, stderr) {
+      var buildNumber = 0;
+      if (!err) {
+        // Build number is the number of commits since base version
+        buildNumber = stdout ? stdout.match(/\n/g).length : 0;
+      } else {
+        console.log(
+          "This is not a Git repository; using default build number."
+        );
       }
 
-      createStringSource(
-        "version.json",
-        JSON.stringify(
-          {
-            version: version,
-            build: buildNumber,
-            commit: buildCommit,
-          },
-          null,
-          2
+      console.log("Extension build number: " + buildNumber);
+
+      var version = config.versionPrefix + buildNumber;
+
+      exec('git log --format="%h" -n 1', function (err2, stdout2, stderr2) {
+        var buildCommit = "";
+        if (!err2) {
+          buildCommit = stdout2.replace("\n", "");
+        }
+
+        createStringSource(
+          "version.json",
+          JSON.stringify(
+            {
+              version: version,
+              build: buildNumber,
+              commit: buildCommit,
+            },
+            null,
+            2
+          )
         )
-      )
-        .pipe(gulp.dest(BUILD_DIR))
-        .on("end", done);
-    });
-  });
+          .pipe(gulp.dest(BUILD_DIR))
+          .on("end", done);
+      });
+    }
+  );
 });
 
 gulp.task("default_preferences-pre", function () {
@@ -1619,17 +1620,19 @@ gulp.task("baseline", function (done) {
       return;
     }
 
-    exec("git checkout " + baselineCommit, { cwd: workingDirectory }, function (
-      error2
-    ) {
-      if (error2) {
-        done(new Error("Baseline commit checkout failed."));
-        return;
-      }
+    exec(
+      "git checkout " + baselineCommit,
+      { cwd: workingDirectory },
+      function (error2) {
+        if (error2) {
+          done(new Error("Baseline commit checkout failed."));
+          return;
+        }
 
-      console.log('Baseline commit "' + baselineCommit + '" checked out.');
-      done();
-    });
+        console.log('Baseline commit "' + baselineCommit + '" checked out.');
+        done();
+      }
+    );
   });
 });
 
