@@ -202,14 +202,14 @@ function preprocessCSS(mode, source, destination) {
   }
 
   function expandImports(content, baseUrl) {
-    return content.replace(/^\s*@import\s+url\(([^)]+)\);\s*$/gm, function (
-      all,
-      url
-    ) {
-      var file = path.join(path.dirname(baseUrl), url);
-      var imported = fs.readFileSync(file, "utf8").toString();
-      return expandImports(imported, file);
-    });
+    return content.replace(
+      /^\s*@import\s+url\(([^)]+)\);\s*$/gm,
+      function (all, url) {
+        var file = path.join(path.dirname(baseUrl), url);
+        var imported = fs.readFileSync(file, "utf8").toString();
+        return expandImports(imported, file);
+      }
+    );
   }
 
   function removePrefixed(content, hasPrefixedFilter) {

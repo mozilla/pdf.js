@@ -70,140 +70,136 @@ class Util extends PDFObject {
     const ZERO = 4;
     const HASH = 8;
     let i = 0;
-    return args[0].replace(pattern, function (
-      match,
-      nDecSep,
-      cFlags,
-      nWidth,
-      nPrecision,
-      cConvChar
-    ) {
-      // cConvChar must be one of d, f, s, x
-      if (
-        cConvChar !== "d" &&
-        cConvChar !== "f" &&
-        cConvChar !== "s" &&
-        cConvChar !== "x"
-      ) {
-        const buf = ["%"];
-        for (const str of [nDecSep, cFlags, nWidth, nPrecision, cConvChar]) {
-          if (str) {
-            buf.push(str);
+    return args[0].replace(
+      pattern,
+      function (match, nDecSep, cFlags, nWidth, nPrecision, cConvChar) {
+        // cConvChar must be one of d, f, s, x
+        if (
+          cConvChar !== "d" &&
+          cConvChar !== "f" &&
+          cConvChar !== "s" &&
+          cConvChar !== "x"
+        ) {
+          const buf = ["%"];
+          for (const str of [nDecSep, cFlags, nWidth, nPrecision, cConvChar]) {
+            if (str) {
+              buf.push(str);
+            }
+          }
+          return buf.join("");
+        }
+
+        i++;
+        if (i === args.length) {
+          throw new Error("Not enough arguments in printf");
+        }
+        const arg = args[i];
+
+        if (cConvChar === "s") {
+          return arg.toString();
+        }
+
+        let flags = 0;
+        if (cFlags) {
+          for (const flag of cFlags) {
+            switch (flag) {
+              case "+":
+                flags |= PLUS;
+                break;
+              case " ":
+                flags |= SPACE;
+                break;
+              case "0":
+                flags |= ZERO;
+                break;
+              case "#":
+                flags |= HASH;
+                break;
+            }
           }
         }
-        return buf.join("");
-      }
+        cFlags = flags;
 
-      i++;
-      if (i === args.length) {
-        throw new Error("Not enough arguments in printf");
-      }
-      const arg = args[i];
+        if (nWidth) {
+          nWidth = parseInt(nWidth);
+        }
 
-      if (cConvChar === "s") {
-        return arg.toString();
-      }
+        let intPart = Math.trunc(arg);
 
-      let flags = 0;
-      if (cFlags) {
-        for (const flag of cFlags) {
-          switch (flag) {
-            case "+":
-              flags |= PLUS;
-              break;
-            case " ":
-              flags |= SPACE;
-              break;
-            case "0":
-              flags |= ZERO;
-              break;
-            case "#":
-              flags |= HASH;
-              break;
+        if (cConvChar === "x") {
+          let hex = Math.abs(intPart).toString(16).toUpperCase();
+          if (nWidth !== undefined) {
+            hex = hex.padStart(nWidth, cFlags & ZERO ? "0" : " ");
+          }
+          if (cFlags & HASH) {
+            hex = `0x${hex}`;
+          }
+          return hex;
+        }
+
+        if (nPrecision) {
+          nPrecision = parseInt(nPrecision.substring(1));
+        }
+
+        nDecSep = nDecSep ? nDecSep.substring(1) : "0";
+        const separators = {
+          0: [",", "."],
+          1: ["", "."],
+          2: [".", ","],
+          3: ["", ","],
+          4: ["'", "."],
+        };
+        const [thousandSep, decimalSep] = separators[nDecSep];
+
+        let decPart = "";
+        if (cConvChar === "f") {
+          if (nPrecision !== undefined) {
+            decPart = (arg - intPart).toFixed(nPrecision);
+          } else {
+            decPart = (arg - intPart).toString();
+          }
+          if (decPart.length > 2) {
+            decPart = `${decimalSep}${decPart.substring(2)}`;
+          } else if (cFlags & HASH) {
+            decPart = ".";
+          } else {
+            decPart = "";
           }
         }
-      }
-      cFlags = flags;
 
-      if (nWidth) {
-        nWidth = parseInt(nWidth);
-      }
+        let sign = "";
+        if (intPart < 0) {
+          sign = "-";
+          intPart = -intPart;
+        } else if (cFlags & PLUS) {
+          sign = "+";
+        } else if (cFlags & SPACE) {
+          sign = " ";
+        }
 
-      let intPart = Math.trunc(arg);
+        if (thousandSep && intPart >= 1000) {
+          const buf = [];
+          while (true) {
+            buf.push((intPart % 1000).toString().padStart(3, "0"));
+            intPart = Math.trunc(intPart / 1000);
+            if (intPart < 1000) {
+              buf.push(intPart.toString());
+              break;
+            }
+          }
+          intPart = buf.reverse().join(thousandSep);
+        } else {
+          intPart = intPart.toString();
+        }
 
-      if (cConvChar === "x") {
-        let hex = Math.abs(intPart).toString(16).toUpperCase();
+        let n = `${intPart}${decPart}`;
         if (nWidth !== undefined) {
-          hex = hex.padStart(nWidth, cFlags & ZERO ? "0" : " ");
+          n = n.padStart(nWidth - sign.length, cFlags & ZERO ? "0" : " ");
         }
-        if (cFlags & HASH) {
-          hex = `0x${hex}`;
-        }
-        return hex;
+
+        return `${sign}${n}`;
       }
-
-      if (nPrecision) {
-        nPrecision = parseInt(nPrecision.substring(1));
-      }
-
-      nDecSep = nDecSep ? nDecSep.substring(1) : "0";
-      const separators = {
-        0: [",", "."],
-        1: ["", "."],
-        2: [".", ","],
-        3: ["", ","],
-        4: ["'", "."],
-      };
-      const [thousandSep, decimalSep] = separators[nDecSep];
-
-      let decPart = "";
-      if (cConvChar === "f") {
-        if (nPrecision !== undefined) {
-          decPart = (arg - intPart).toFixed(nPrecision);
-        } else {
-          decPart = (arg - intPart).toString();
-        }
-        if (decPart.length > 2) {
-          decPart = `${decimalSep}${decPart.substring(2)}`;
-        } else if (cFlags & HASH) {
-          decPart = ".";
-        } else {
-          decPart = "";
-        }
-      }
-
-      let sign = "";
-      if (intPart < 0) {
-        sign = "-";
-        intPart = -intPart;
-      } else if (cFlags & PLUS) {
-        sign = "+";
-      } else if (cFlags & SPACE) {
-        sign = " ";
-      }
-
-      if (thousandSep && intPart >= 1000) {
-        const buf = [];
-        while (true) {
-          buf.push((intPart % 1000).toString().padStart(3, "0"));
-          intPart = Math.trunc(intPart / 1000);
-          if (intPart < 1000) {
-            buf.push(intPart.toString());
-            break;
-          }
-        }
-        intPart = buf.reverse().join(thousandSep);
-      } else {
-        intPart = intPart.toString();
-      }
-
-      let n = `${intPart}${decPart}`;
-      if (nWidth !== undefined) {
-        n = n.padStart(nWidth - sign.length, cFlags & ZERO ? "0" : " ");
-      }
-
-      return `${sign}${n}`;
-    });
+    );
   }
 
   iconStreamFromIcon() {
@@ -525,14 +521,14 @@ class Util extends PDFObject {
       const patterns = /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t)/g;
       const actions = [];
 
-      const re = escapedFormat.replace(patterns, function (
-        match,
-        patternElement
-      ) {
-        const { pattern, action } = handlers[patternElement];
-        actions.push(action);
-        return pattern;
-      });
+      const re = escapedFormat.replace(
+        patterns,
+        function (match, patternElement) {
+          const { pattern, action } = handlers[patternElement];
+          actions.push(action);
+          return pattern;
+        }
+      );
 
       this._scandCache.set(cFormat, [new RegExp(re, "g"), actions]);
     }

@@ -533,101 +533,100 @@ class WorkerMessageHandler {
       return pdfManager.ensureDoc("calculationOrderIds");
     });
 
-    handler.on("SaveDocument", function ({
-      numPages,
-      annotationStorage,
-      filename,
-    }) {
-      pdfManager.requestLoadedStream();
-      const promises = [
-        pdfManager.onLoadedStream(),
-        pdfManager.ensureCatalog("acroForm"),
-        pdfManager.ensureDoc("xref"),
-        pdfManager.ensureDoc("startXRef"),
-      ];
+    handler.on(
+      "SaveDocument",
+      function ({ numPages, annotationStorage, filename }) {
+        pdfManager.requestLoadedStream();
+        const promises = [
+          pdfManager.onLoadedStream(),
+          pdfManager.ensureCatalog("acroForm"),
+          pdfManager.ensureDoc("xref"),
+          pdfManager.ensureDoc("startXRef"),
+        ];
 
-      for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
-        promises.push(
-          pdfManager.getPage(pageIndex).then(function (page) {
-            const task = new WorkerTask(`Save: page ${pageIndex}`);
-            startWorkerTask(task);
+        for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+          promises.push(
+            pdfManager.getPage(pageIndex).then(function (page) {
+              const task = new WorkerTask(`Save: page ${pageIndex}`);
+              startWorkerTask(task);
 
-            return page
-              .save(handler, task, annotationStorage)
-              .finally(function () {
-                finishWorkerTask(task);
-              });
-          })
-        );
-      }
-
-      return Promise.all(promises).then(function ([
-        stream,
-        acroForm,
-        xref,
-        startXRef,
-        ...refs
-      ]) {
-        let newRefs = [];
-        for (const ref of refs) {
-          newRefs = ref
-            .filter(x => x !== null)
-            .reduce((a, b) => a.concat(b), newRefs);
+              return page
+                .save(handler, task, annotationStorage)
+                .finally(function () {
+                  finishWorkerTask(task);
+                });
+            })
+          );
         }
 
-        if (newRefs.length === 0) {
-          // No new refs so just return the initial bytes
-          return stream.bytes;
-        }
-
-        const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || [];
-        let xfaDatasets = null;
-        if (Array.isArray(xfa)) {
-          for (let i = 0, ii = xfa.length; i < ii; i += 2) {
-            if (xfa[i] === "datasets") {
-              xfaDatasets = xfa[i + 1];
-            }
-          }
-        } else {
-          // TODO: Support XFA streams.
-          warn("Unsupported XFA type.");
-        }
-
-        let newXrefInfo = Object.create(null);
-        if (xref.trailer) {
-          // Get string info from Info in order to compute fileId.
-          const infoObj = Object.create(null);
-          const xrefInfo = xref.trailer.get("Info") || null;
-          if (xrefInfo instanceof Dict) {
-            xrefInfo.forEach((key, value) => {
-              if (isString(key) && isString(value)) {
-                infoObj[key] = stringToPDFString(value);
-              }
-            });
-          }
-
-          newXrefInfo = {
-            rootRef: xref.trailer.getRaw("Root") || null,
-            encrypt: xref.trailer.getRaw("Encrypt") || null,
-            newRef: xref.getNewRef(),
-            infoRef: xref.trailer.getRaw("Info") || null,
-            info: infoObj,
-            fileIds: xref.trailer.getRaw("ID") || null,
-            startXRef,
-            filename,
-          };
-        }
-        xref.resetNewRef();
-
-        return incrementalUpdate({
-          originalData: stream.bytes,
-          xrefInfo: newXrefInfo,
-          newRefs,
+        return Promise.all(promises).then(function ([
+          stream,
+          acroForm,
           xref,
-          datasetsRef: xfaDatasets,
+          startXRef,
+          ...refs
+        ]) {
+          let newRefs = [];
+          for (const ref of refs) {
+            newRefs = ref
+              .filter(x => x !== null)
+              .reduce((a, b) => a.concat(b), newRefs);
+          }
+
+          if (newRefs.length === 0) {
+            // No new refs so just return the initial bytes
+            return stream.bytes;
+          }
+
+          const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || [];
+          let xfaDatasets = null;
+          if (Array.isArray(xfa)) {
+            for (let i = 0, ii = xfa.length; i < ii; i += 2) {
+              if (xfa[i] === "datasets") {
+                xfaDatasets = xfa[i + 1];
+              }
+            }
+          } else {
+            // TODO: Support XFA streams.
+            warn("Unsupported XFA type.");
+          }
+
+          let newXrefInfo = Object.create(null);
+          if (xref.trailer) {
+            // Get string info from Info in order to compute fileId.
+            const infoObj = Object.create(null);
+            const xrefInfo = xref.trailer.get("Info") || null;
+            if (xrefInfo instanceof Dict) {
+              xrefInfo.forEach((key, value) => {
+                if (isString(key) && isString(value)) {
+                  infoObj[key] = stringToPDFString(value);
+                }
+              });
+            }
+
+            newXrefInfo = {
+              rootRef: xref.trailer.getRaw("Root") || null,
+              encrypt: xref.trailer.getRaw("Encrypt") || null,
+              newRef: xref.getNewRef(),
+              infoRef: xref.trailer.getRaw("Info") || null,
+              info: infoObj,
+              fileIds: xref.trailer.getRaw("ID") || null,
+              startXRef,
+              filename,
+            };
+          }
+          xref.resetNewRef();
+
+          return incrementalUpdate({
+            originalData: stream.bytes,
+            xrefInfo: newXrefInfo,
+            newRefs,
+            xref,
+            datasetsRef: xfaDatasets,
+          });
         });
-      });
-    });
+      }
+    );
 
     handler.on("GetOperatorList", function wphSetupRenderPage(data, sink) {
       var pageIndex = data.pageIndex;
