@@ -67,7 +67,7 @@ const defaultOptions = {
   },
   enableScripting: {
     /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("ENABLE_SCRIPTING"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableWebGL: {
@@ -260,7 +260,8 @@ if (
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION && !ENABLE_SCRIPTING")
         ? "../build/dev-sandbox/pdf.sandbox.js"
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
