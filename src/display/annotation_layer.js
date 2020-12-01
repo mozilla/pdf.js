@@ -1462,6 +1462,7 @@ class UnderlineAnnotationElement extends AnnotationElement {
       parameters.data.contents
     );
     super(parameters, isRenderable, /* ignoreBorder = */ true);
+    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
   }
 
   /**
@@ -1472,11 +1473,18 @@ class UnderlineAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = "underlineAnnotation";
-
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      this.quadrilaterals.forEach(quadrilateral => {
+        quadrilateral.className = "underlineAnnotation";
+      });
+      return this.quadrilaterals;
+    }
+
+    this.container.className = "underlineAnnotation";
     return this.container;
   }
 }
@@ -1489,6 +1497,7 @@ class SquigglyAnnotationElement extends AnnotationElement {
       parameters.data.contents
     );
     super(parameters, isRenderable, /* ignoreBorder = */ true);
+    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
   }
 
   /**
@@ -1499,11 +1508,18 @@ class SquigglyAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = "squigglyAnnotation";
-
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      this.quadrilaterals.forEach(quadrilateral => {
+        quadrilateral.className = "squigglyAnnotation";
+      });
+      return this.quadrilaterals;
+    }
+
+    this.container.className = "squigglyAnnotation";
     return this.container;
   }
 }
@@ -1516,6 +1532,7 @@ class StrikeOutAnnotationElement extends AnnotationElement {
       parameters.data.contents
     );
     super(parameters, isRenderable, /* ignoreBorder = */ true);
+    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
   }
 
   /**
@@ -1526,11 +1543,18 @@ class StrikeOutAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = "strikeoutAnnotation";
-
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      this.quadrilaterals.forEach(quadrilateral => {
+        quadrilateral.className = "strikeoutAnnotation";
+      });
+      return this.quadrilaterals;
+    }
+
+    this.container.className = "strikeoutAnnotation";
     return this.container;
   }
 }
