@@ -582,6 +582,9 @@ html[dir="rtl"] #findInput {
 html[dir="rtl"] #findInput[data-status="pending"] {
   background-position: 3px;
 }
+#findInput[data-status="notFound"] {
+  background-color: rgba(255, 102, 102, 1);
+}
 
 .secondaryToolbar {
   padding: 6px 0 10px 0;
@@ -680,10 +683,6 @@ html[dir="ltr"] .doorHangerRight:before {
 }
 #findMsg:empty {
   display: none;
-}
-
-#findInput.notFound {
-  background-color: rgba(255, 102, 102, 1);
 }
 
 #toolbarViewerMiddle {
