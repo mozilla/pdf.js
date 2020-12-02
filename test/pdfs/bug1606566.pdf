@@ -1,0 +1,66 @@
+%‚„œ”
+1 0 obj 
+<<
+/Pages 2 0 R
+/Type /Catalog
+>>
+endobj 
+2 0 obj 
+<<
+/Kids [3 0 R]
+/Count 1
+/Type /Pages
+>>
+endobj 
+3 0 obj 
+<<
+/Parent 2 0 R
+/MediaBox [0 0 200 50]
+/Resources 
+<<
+/Font 
+<<
+/F1 4 0 R
+>>
+>>
+/Contents 5 0 R
+/Type /Page
+>>
+endobj 
+4 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/Type /Font
+>>
+endobj 
+5 0 obj 
+<<
+/Length 42
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Bug 1606566) Tj
+ET
+
+endstream 
+endobj xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000066 00000 n 
+0000000125 00000 n 
+0000000254 00000 n 
+0000000355 00000 n 
+trailer
+
+<<
+/Root 1 0 R
+/Size 6
+>>
+startxref
+449
+%%EOF

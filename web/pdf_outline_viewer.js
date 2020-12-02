@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-import { addLinkAttributes, LinkTarget, removeNullCharacters } from 'pdfjs-lib';
-
-const DEFAULT_TITLE = '\u2013';
+import { addLinkAttributes, LinkTarget } from "pdfjs-lib";
+import { BaseTreeViewer } from "./base_tree_viewer.js";
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions
@@ -29,37 +28,27 @@ const DEFAULT_TITLE = '\u2013';
  * @property {Array|null} outline - An array of outline objects.
  */
 
-class PDFOutlineViewer {
+class PDFOutlineViewer extends BaseTreeViewer {
   /**
    * @param {PDFOutlineViewerOptions} options
    */
-  constructor({ container, linkService, eventBus, }) {
-    this.container = container;
-    this.linkService = linkService;
-    this.eventBus = eventBus;
+  constructor(options) {
+    super(options);
+    this.linkService = options.linkService;
 
-    this.reset();
-
-    eventBus.on('toggleoutlinetree', this.toggleOutlineTree.bind(this));
+    this.eventBus._on("toggleoutlinetree", this._toggleAllTreeItems.bind(this));
   }
 
   reset() {
-    this.outline = null;
-    this.lastToggleIsShow = true;
-
-    // Remove the outline from the DOM.
-    this.container.textContent = '';
-
-    // Ensure that the left (right in RTL locales) margin is always reset,
-    // to prevent incorrect outline alignment if a new document is opened.
-    this.container.classList.remove('outlineWithDeepNesting');
+    super.reset();
+    this._outline = null;
   }
 
   /**
    * @private
    */
   _dispatchEvent(outlineCount) {
-    this.eventBus.dispatch('outlineloaded', {
+    this.eventBus.dispatch("outlineloaded", {
       source: this,
       outlineCount,
     });
@@ -68,14 +57,15 @@ class PDFOutlineViewer {
   /**
    * @private
    */
-  _bindLink(element, { url, newWindow, dest, }) {
-    let { linkService, } = this;
+  _bindLink(element, { url, newWindow, dest }) {
+    const { linkService } = this;
 
     if (url) {
       addLinkAttributes(element, {
         url,
-        target: (newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget),
+        target: newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget,
         rel: linkService.externalLinkRel,
+        enabled: linkService.externalLinkEnabled,
       });
       return;
     }
@@ -83,7 +73,7 @@ class PDFOutlineViewer {
     element.href = linkService.getDestinationHash(dest);
     element.onclick = () => {
       if (dest) {
-        linkService.navigateTo(dest);
+        linkService.goToDestination(dest);
       }
       return false;
     };
@@ -92,110 +82,73 @@ class PDFOutlineViewer {
   /**
    * @private
    */
-  _setStyles(element, { bold, italic, }) {
-    let styleStr = '';
+  _setStyles(element, { bold, italic }) {
     if (bold) {
-      styleStr += 'font-weight: bold;';
+      element.style.fontWeight = "bold";
     }
     if (italic) {
-      styleStr += 'font-style: italic;';
-    }
-
-    if (styleStr) {
-      element.setAttribute('style', styleStr);
+      element.style.fontStyle = "italic";
     }
   }
 
   /**
-   * Prepend a button before an outline item which allows the user to toggle
-   * the visibility of all outline items at that level.
-   *
    * @private
    */
-  _addToggleButton(div) {
-    let toggler = document.createElement('div');
-    toggler.className = 'outlineItemToggler';
-    toggler.onclick = (evt) => {
-      evt.stopPropagation();
-      toggler.classList.toggle('outlineItemsHidden');
-
-      if (evt.shiftKey) {
-        let shouldShowAll = !toggler.classList.contains('outlineItemsHidden');
-        this._toggleOutlineItem(div, shouldShowAll);
-      }
-    };
-    div.insertBefore(toggler, div.firstChild);
+  _addToggleButton(div, { count, items }) {
+    const hidden = count < 0 && Math.abs(count) === items.length;
+    super._addToggleButton(div, hidden);
   }
 
   /**
-   * Toggle the visibility of the subtree of an outline item.
-   *
-   * @param {Element} root - the root of the outline (sub)tree.
-   * @param {boolean} show - whether to show the outline (sub)tree. If false,
-   *   the outline subtree rooted at |root| will be collapsed.
-   *
    * @private
    */
-  _toggleOutlineItem(root, show = false) {
-    this.lastToggleIsShow = show;
-    for (const toggler of root.querySelectorAll('.outlineItemToggler')) {
-      toggler.classList.toggle('outlineItemsHidden', !show);
-    }
-  }
-
-  /**
-   * Collapse or expand all subtrees of the outline.
-   */
-  toggleOutlineTree() {
-    if (!this.outline) {
+  _toggleAllTreeItems() {
+    if (!this._outline) {
       return;
     }
-    this._toggleOutlineItem(this.container, !this.lastToggleIsShow);
+    super._toggleAllTreeItems();
   }
 
   /**
    * @param {PDFOutlineViewerRenderParameters} params
    */
-  render({ outline, }) {
-    let outlineCount = 0;
-
-    if (this.outline) {
+  render({ outline }) {
+    if (this._outline) {
       this.reset();
     }
-    this.outline = outline || null;
+    this._outline = outline || null;
 
     if (!outline) {
-      this._dispatchEvent(outlineCount);
+      this._dispatchEvent(/* outlineCount = */ 0);
       return;
     }
 
-    let fragment = document.createDocumentFragment();
-    let queue = [{ parent: fragment, items: this.outline, }];
-    let hasAnyNesting = false;
+    const fragment = document.createDocumentFragment();
+    const queue = [{ parent: fragment, items: outline }];
+    let outlineCount = 0,
+      hasAnyNesting = false;
     while (queue.length > 0) {
-      let levelData = queue.shift();
-      for (let i = 0, len = levelData.items.length; i < len; i++) {
-        let item = levelData.items[i];
+      const levelData = queue.shift();
+      for (const item of levelData.items) {
+        const div = document.createElement("div");
+        div.className = "treeItem";
 
-        let div = document.createElement('div');
-        div.className = 'outlineItem';
-
-        let element = document.createElement('a');
+        const element = document.createElement("a");
         this._bindLink(element, item);
         this._setStyles(element, item);
-        element.textContent =
-          removeNullCharacters(item.title) || DEFAULT_TITLE;
+        element.textContent = this._normalizeTextContent(item.title);
 
         div.appendChild(element);
 
         if (item.items.length > 0) {
           hasAnyNesting = true;
-          this._addToggleButton(div);
+          this._addToggleButton(div, item);
 
-          let itemsDiv = document.createElement('div');
-          itemsDiv.className = 'outlineItems';
+          const itemsDiv = document.createElement("div");
+          itemsDiv.className = "treeItems";
           div.appendChild(itemsDiv);
-          queue.push({ parent: itemsDiv, items: item.items, });
+
+          queue.push({ parent: itemsDiv, items: item.items });
         }
 
         levelData.parent.appendChild(div);
@@ -203,7 +156,10 @@ class PDFOutlineViewer {
       }
     }
     if (hasAnyNesting) {
-      this.container.classList.add('outlineWithDeepNesting');
+      this.container.classList.add("treeWithDeepNesting");
+
+      this._lastToggleIsShow =
+        fragment.querySelectorAll(".treeItemsHidden").length === 0;
     }
 
     this.container.appendChild(fragment);
@@ -212,6 +168,4 @@ class PDFOutlineViewer {
   }
 }
 
-export {
-  PDFOutlineViewer,
-};
+export { PDFOutlineViewer };

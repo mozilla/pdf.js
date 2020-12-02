@@ -21,7 +21,7 @@ Before downloading PDF.js please take a moment to understand the different layer
   <tbody>
     <tr>
       <td>Core</td>
-      <td>The core layer is where a binary PDF is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the API is likely to change. For an example of using the core layer see the [PDF Object Browser](https://github.com/brendandahl/pdf.js.utils/tree/master/browser)
+      <td>The core layer is where a binary PDF is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the API is likely to change. For an example of using the core layer see the <a href="https://github.com/brendandahl/pdf.js.utils/tree/master/browser">PDF Object Browser</a>.
       </td>
     </tr>
     <tr>
@@ -30,7 +30,7 @@ Before downloading PDF.js please take a moment to understand the different layer
     </tr>
     <tr>
       <td>Viewer</td>
-      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. *However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.*</td>
+      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. <em>However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.</em></td>
     </tr>
   </tbody>
 </table>
@@ -38,7 +38,7 @@ Before downloading PDF.js please take a moment to understand the different layer
 ## Download
 
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-md-4">
     <h3>Prebuilt</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
@@ -48,10 +48,20 @@ Before downloading PDF.js please take a moment to understand the different layer
       <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
     </span>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-4">
+    <h3>Prebuilt (ES5-compatible)</h3>
+    <p>
+      Includes the generic build of PDF.js and the viewer.
+    </p>
+    <span class="GROUP_CLASS">
+      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-es5-dist.zip">Stable (vSTABLE_VERSION)</a>
+      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-es5-dist.zip">Beta (vBETA_VERSION)</a>
+    </span>
+  </div>
+  <div class="col-md-4">
     <h3>Source</h3>
     To get a local copy of the current code, clone it using git:
-    <pre><code>$ git clone git://github.com/mozilla/pdf.js.git
+    <pre><code>$ git clone https://github.com/mozilla/pdf.js.git
 $ cd pdf.js
 </code></pre>
   </div>

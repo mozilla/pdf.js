@@ -1,5 +1,5 @@
 {
-  "spec_dir": "build/lib/test/unit",
+  "spec_dir": "build/lib-es5/test/unit",
 
   "helpers": [
     "clitests_helper.js"
@@ -7,6 +7,7 @@
 
   "spec_files": [
     "annotation_spec.js",
+    "annotation_storage_spec.js",
     "api_spec.js",
     "bidi_spec.js",
     "cff_parser_spec.js",
@@ -35,6 +36,8 @@
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
-    "util_spec.js"
+    "util_spec.js",
+    "writer_spec.js",
+    "xml_spec.js"
   ]
 }

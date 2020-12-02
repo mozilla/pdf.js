@@ -32,7 +32,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
     <title>PDF.js viewer</title>
 
-<!--#if FIREFOX || MOZCENTRAL-->
+<!--#if MOZCENTRAL-->
 <!--#include viewer-snippet-firefox-extension.html-->
 <!--#endif-->
 <!--#if CHROME-->
@@ -45,8 +45,18 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
-    <script src="../node_modules/systemjs/dist/system.js"></script>
-    <script src="../systemjs.config.js"></script>
+    <script defer src="../node_modules/es-module-shims/dist/es-module-shims.js"></script>
+    <script type="importmap-shim">
+      {
+        "imports": {
+          "pdfjs/": "../src/",
+          "pdfjs-lib": "../src/pdf.js",
+          "pdfjs-web/": "./"
+        }
+      }
+    </script>
+
+    <script src="viewer.js" type="module-shim"></script>
 <!--#endif-->
 
 <!--#if (GENERIC && !MINIFIED) -->
@@ -54,14 +64,14 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !MINIFIED -->
-    <script src="viewer.js"></script>
+<!--<script src="viewer.js"></script>-->
 <!--#else-->
 <!--#include viewer-snippet-minified.html-->
 <!--#endif-->
 
   </head>
 
-  <body tabindex="1" class="loadingInProgress">
+  <body tabindex="1">
     <div id="outerContainer">
 
       <div id="sidebarContainer">
@@ -76,6 +86,9 @@ See https://github.com/adobe-type-tools/cmap-resources
             <button id="viewAttachments" class="toolbarButton" title="Show Attachments" tabindex="4" data-l10n-id="attachments">
                <span data-l10n-id="attachments_label">Attachments</span>
             </button>
+            <button id="viewLayers" class="toolbarButton" title="Show Layers (double-click to reset all layers to the default state)" tabindex="5" data-l10n-id="layers">
+               <span data-l10n-id="layers_label">Layers</span>
+            </button>
           </div>
         </div>
         <div id="sidebarContent">
@@ -85,8 +98,10 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
           <div id="attachmentsView" class="hidden">
           </div>
+          <div id="layersView" class="hidden">
+          </div>
         </div>
-        <div id="sidebarResizer" class="hidden"></div>
+        <div id="sidebarResizer"></div>
       </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
@@ -222,7 +237,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
-                <input type="number" id="pageNumber" class="toolbarField pageNumber" title="Page" value="1" size="4" min="1" tabindex="15" data-l10n-id="page">
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" title="Page" value="1" size="4" min="1" tabindex="15" data-l10n-id="page" autocomplete="off">
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
@@ -391,7 +406,7 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </div>
-<!--#if !(FIREFOX || MOZCENTRAL)-->
+<!--#if !MOZCENTRAL-->
         <div id="printServiceOverlay" class="container hidden">
           <div class="dialog">
             <div class="row">
