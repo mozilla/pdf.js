@@ -15,6 +15,7 @@
 
 import {
   addLinkAttributes,
+  ColorConverters,
   DOMSVGFactory,
   getFilenameFromUrl,
   LinkTarget,
@@ -566,6 +567,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 if (selStart >= 0 && selEnd < event.target.value.length) {
                   event.target.setSelectionRange(selStart, selEnd);
                 }
+              },
+              strokeColor() {
+                const color = detail.strokeColor;
+                event.target.style.color = ColorConverters[`${color[0]}_HTML`](
+                  color.slice(1)
+                );
               },
             };
             for (const name of Object.keys(detail)) {

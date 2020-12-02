@@ -83,7 +83,11 @@ class Sandbox {
   evalForTesting(code, key) {
     if (this._testMode) {
       this._evalInSandbox(
-        `send({ id: "${key}", result: ${code} });`,
+        `try {
+           send({ id: "${key}", result: ${code} });
+         } catch (error) {
+           send({ id: "${key}", result: error.message });
+         }`,
         this._alertOnError
       );
     }
