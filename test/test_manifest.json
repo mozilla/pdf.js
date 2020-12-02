@@ -537,6 +537,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue9173",
+       "file": "pdfs/issue9173.pdf",
+       "md5": "a62bd42d12271105b26a68c8eae5ea5f",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "cable",
        "file": "pdfs/cable.pdf",
        "md5": "09a41b9a759d60c698228224ab85b46d",
