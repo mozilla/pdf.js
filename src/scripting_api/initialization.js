@@ -13,18 +13,38 @@
  * limitations under the License.
  */
 
+import {
+  Border,
+  Cursor,
+  Display,
+  Font,
+  Highlight,
+  Position,
+  ScaleHow,
+  ScaleWhen,
+  Style,
+  Trans,
+  ZoomType,
+} from "./constants.js";
 import { AForm } from "./aform.js";
 import { App } from "./app.js";
+import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { Doc } from "./doc.js";
 import { Field } from "./field.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
-import { ZoomType } from "./constants.js";
 
 function initSandbox({ data, extra, out }) {
   const proxyHandler = new ProxyHandler(data.dispatchEventName);
-  const { send, crackURL } = extra;
+  const {
+    send,
+    crackURL,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
+  } = extra;
   const doc = new Doc({
     send,
     ...data.docInfo,
@@ -32,8 +52,14 @@ function initSandbox({ data, extra, out }) {
   const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
   const app = new App({
     send,
+    setTimeout,
+    clearTimeout,
+    setInterval,
+    clearInterval,
     _document,
     calculationOrder: data.calculationOrder,
+    proxyHandler,
+    ...data.appInfo,
   });
   const util = new Util({ crackURL });
   const aform = new AForm(doc, app, util);
@@ -50,9 +76,21 @@ function initSandbox({ data, extra, out }) {
 
   out.global = Object.create(null);
   out.app = new Proxy(app, proxyHandler);
+  out.color = new Proxy(new Color(), proxyHandler);
   out.console = new Proxy(new Console({ send }), proxyHandler);
   out.util = new Proxy(util, proxyHandler);
+  out.border = Border;
+  out.cursor = Cursor;
+  out.display = Display;
+  out.font = Font;
+  out.highlight = Highlight;
+  out.position = Position;
+  out.scaleHow = ScaleHow;
+  out.scaleWhen = ScaleWhen;
+  out.style = Style;
+  out.trans = Trans;
   out.zoomtype = ZoomType;
+
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
     if (name.startsWith("AF")) {
       out[name] = aform[name].bind(aform);

@@ -635,6 +635,59 @@ class PDFDateString {
   }
 }
 
+function makeColorComp(n) {
+  return Math.floor(Math.max(0, Math.min(1, n)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+}
+
+const ColorConverters = {
+  // PDF specifications section 10.3
+  CMYK_G([c, y, m, k]) {
+    return ["G", 1 - Math.min(1, 0.3 * c + 0.59 * m + 0.11 * y + k)];
+  },
+  G_CMYK([g]) {
+    return ["CMYK", 0, 0, 0, 1 - g];
+  },
+  G_RGB([g]) {
+    return ["RGB", g, g, g];
+  },
+  G_HTML([g]) {
+    const G = makeColorComp(g);
+    return `#${G}${G}${G}`;
+  },
+  RGB_G([r, g, b]) {
+    return ["G", 0.3 * r + 0.59 * g + 0.11 * b];
+  },
+  RGB_HTML([r, g, b]) {
+    const R = makeColorComp(r);
+    const G = makeColorComp(g);
+    const B = makeColorComp(b);
+    return `#${R}${G}${B}`;
+  },
+  T_HTML() {
+    return "#00000000";
+  },
+  CMYK_RGB([c, y, m, k]) {
+    return [
+      "RGB",
+      1 - Math.min(1, c + k),
+      1 - Math.min(1, m + k),
+      1 - Math.min(1, y + k),
+    ];
+  },
+  CMYK_HTML(components) {
+    return ColorConverters.RGB_HTML(ColorConverters.CMYK_RGB(components));
+  },
+  RGB_CMYK([r, g, b]) {
+    const c = 1 - r;
+    const m = 1 - g;
+    const y = 1 - b;
+    const k = Math.min(c, m, y);
+    return ["CMYK", c, m, y, k];
+  },
+};
+
 export {
   PageViewport,
   RenderingCancelledException,
@@ -645,6 +698,7 @@ export {
   BaseCanvasFactory,
   DOMCanvasFactory,
   BaseCMapReaderFactory,
+  ColorConverters,
   DOMCMapReaderFactory,
   DOMSVGFactory,
   StatTimer,
