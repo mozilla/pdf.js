@@ -72,9 +72,9 @@ class Field extends PDFObject {
     this._document = data.doc;
     this._actions = this._createActionsMap(data.actions);
 
-    this._fillColor = data.fillColor | ["T"];
-    this._strokeColor = data.strokeColor | ["G", 0];
-    this._textColor = data.textColor | ["G", 0];
+    this._fillColor = data.fillColor || ["T"];
+    this._strokeColor = data.strokeColor || ["G", 0];
+    this._textColor = data.textColor || ["G", 0];
   }
 
   get fillColor() {
