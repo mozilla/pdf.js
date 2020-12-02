@@ -591,11 +591,13 @@ class PDFImage {
   createImageData(forceRGBA = false) {
     var drawWidth = this.drawWidth;
     var drawHeight = this.drawHeight;
+    var pixelated = !this.interpolate;
     var imgData = {
       width: drawWidth,
       height: drawHeight,
       kind: 0,
       data: null,
+      pixelated,
       // Other fields are filled in below.
     };
 

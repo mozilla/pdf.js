@@ -2489,6 +2489,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         paintHeight = newHeight;
         tmpCanvasId = tmpCanvasId === "prescale1" ? "prescale2" : "prescale1";
       }
+      if (ctx.imageSmoothingEnabled !== undefined) {
+        ctx.imageSmoothingEnabled = !imgData.pixelated;
+      } else {
+        ctx.mozImageSmoothingEnabled = !imgData.pixelated;
+      }
       ctx.drawImage(
         imgToPaint,
         0,
