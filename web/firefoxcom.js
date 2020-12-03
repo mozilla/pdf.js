@@ -256,15 +256,21 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
 
 class FirefoxScripting {
   static createSandbox(data) {
-    FirefoxCom.requestSync("createSandbox", data);
+    return new Promise(resolve => {
+      FirefoxCom.request("createSandbox", data, resolve);
+    }).then(success => {
+      if (!success) {
+        throw new Error("Cannot start sandbox");
+      }
+    });
   }
 
-  static dispatchEventInSandbox(event) {
-    FirefoxCom.requestSync("dispatchEventInSandbox", event);
+  static async dispatchEventInSandbox(event) {
+    FirefoxCom.request("dispatchEventInSandbox", event);
   }
 
-  static destroySandbox() {
-    FirefoxCom.requestSync("destroySandbox", null);
+  static async destroySandbox() {
+    FirefoxCom.request("destroySandbox", null);
   }
 }
 

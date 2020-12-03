@@ -48,6 +48,10 @@ describe("Scripting", function () {
         send_queue.set(event.detail.id, event.detail);
       }
     };
+    window.alert = value => {
+      const command = "alert";
+      send_queue.set(command, { command, value });
+    };
     const promise = loadScript(sandboxBundleSrc).then(() => {
       return window.pdfjsSandbox.QuickJSSandbox();
     });
@@ -104,7 +108,6 @@ describe("Scripting", function () {
         },
         calculationOrder: [],
         appInfo: { language: "en-US", platform: "Linux x86_64" },
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -132,7 +135,6 @@ describe("Scripting", function () {
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       });
       done();
     });
@@ -263,7 +265,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -301,7 +302,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -343,7 +343,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -384,7 +383,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -429,7 +427,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [refId2],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -458,7 +455,6 @@ describe("Scripting", function () {
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       });
       done();
     });
@@ -553,7 +549,6 @@ describe("Scripting", function () {
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       });
       done();
     });

@@ -180,11 +180,7 @@ class Field extends PDFObject {
       }
     } catch (error) {
       event.rc = false;
-      const value =
-        `"${error.toString()}" for event ` +
-        `"${eventName}" in object ${this._id}.` +
-        `\n${error.stack}`;
-      this._send({ command: "error", value });
+      throw error;
     }
 
     return true;
