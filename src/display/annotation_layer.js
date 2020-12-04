@@ -15,7 +15,6 @@
 
 import {
   addLinkAttributes,
-  ColorConverters,
   DOMSVGFactory,
   getFilenameFromUrl,
   LinkTarget,
@@ -30,6 +29,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { AnnotationStorage } from "./annotation_storage.js";
+import { ColorConverters } from "../shared/scripting_utils.js";
 
 /**
  * @typedef {Object} AnnotationElementParameters
