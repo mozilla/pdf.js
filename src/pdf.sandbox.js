@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import ModuleLoader from "../../external/quickjs/quickjs-eval.js";
+import ModuleLoader from "../external/quickjs/quickjs-eval.js";
+
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
 class Sandbox {
   constructor(module, testMode) {
