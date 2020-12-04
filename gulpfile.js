@@ -98,6 +98,7 @@ const DEFINES = Object.freeze({
   PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: false,
+  NO_SOURCE_MAP: false,
   // The main build targets:
   GENERIC: false,
   MOZCENTRAL: false,
@@ -106,7 +107,6 @@ const DEFINES = Object.freeze({
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
-  NO_SOURCE_MAP: false,
 });
 
 function transform(charEncoding, transformFunction) {
@@ -350,36 +350,22 @@ function createSandboxBundle(defines, code) {
   var sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
   var sandboxOutputName = "pdf.sandbox.js";
 
-  var sandboxFileConfig = createWebpackConfig(defines, {
+  // Insert the code as a string to be `eval`-ed in the sandbox.
+  const sandboxDefines = builder.merge(defines, {
+    PDF_SCRIPTING_JS_SOURCE: code,
+  });
+  var sandboxFileConfig = createWebpackConfig(sandboxDefines, {
     filename: sandboxOutputName,
     library: sandboxAMDName,
     libraryTarget: "umd",
     umdNamedDefine: true,
   });
 
-  // The code is the one from the bundle pdf.scripting.js
-  // so in order to have it in a string (which will be eval-ed
-  // in the sandbox) we must escape some chars.
-  // This way we've all the code (initialization+sandbox) in
-  // the same bundle.
-  code = code.replace(/["\\\n\t]/g, match => {
-    if (match === "\n") {
-      return "\\n";
-    }
-    if (match === "\t") {
-      return "\\t";
-    }
-    return `\\${match}`;
-  });
-  return (
-    gulp
-      .src("./src/pdf.sandbox.js")
-      .pipe(webpack2Stream(sandboxFileConfig))
-      .pipe(replaceWebpackRequire())
-      .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"))
-      // put the code in a string to be eval-ed in the sandbox
-      .pipe(replace("/* INITIALIZATION_CODE */", `${code}`))
-  );
+  return gulp
+    .src("./src/pdf.sandbox.js")
+    .pipe(webpack2Stream(sandboxFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"));
 }
 
 function buildSandbox(defines, dir) {
