@@ -349,6 +349,7 @@ function createScriptingBundle(defines) {
 function createSandboxBundle(defines, code) {
   var sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
   var sandboxOutputName = "pdf.sandbox.js";
+
   var sandboxFileConfig = createWebpackConfig(defines, {
     filename: sandboxOutputName,
     library: sandboxAMDName,
@@ -372,7 +373,7 @@ function createSandboxBundle(defines, code) {
   });
   return (
     gulp
-      .src("./src/scripting_api/quickjs-sandbox.js")
+      .src("./src/pdf.sandbox.js")
       .pipe(webpack2Stream(sandboxFileConfig))
       .pipe(replaceWebpackRequire())
       .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"))
