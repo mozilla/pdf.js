@@ -48,7 +48,7 @@ class Sandbox {
       "module = Object.create(null);",
       // Next line is replaced by code from initialization.js
       // when we create the bundle for the sandbox.
-      "/* INITIALIZATION_CODE */",
+      PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE"),
       `data = ${sandboxData};`,
       `module.exports.initSandbox({ data, extra: {${extraStr}}, out: this});`,
       "delete exports;",
