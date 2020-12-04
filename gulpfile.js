@@ -33,7 +33,6 @@ var stream = require("stream");
 var exec = require("child_process").exec;
 var spawn = require("child_process").spawn;
 var spawnSync = require("child_process").spawnSync;
-var stripComments = require("gulp-strip-comments");
 var streamqueue = require("streamqueue");
 var merge = require("merge-stream");
 var zip = require("gulp-zip");
@@ -98,7 +97,6 @@ const DEFINES = Object.freeze({
   PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: false,
-  NO_SOURCE_MAP: false,
   // The main build targets:
   GENERIC: false,
   MOZCENTRAL: false,
@@ -171,7 +169,11 @@ function createStringSource(filename, content) {
   return source;
 }
 
-function createWebpackConfig(defines, output) {
+function createWebpackConfig(
+  defines,
+  output,
+  { disableSourceMaps = false, disableLicenseHeader = false } = {}
+) {
   var versionInfo = getVersionJSON();
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
@@ -185,7 +187,7 @@ function createWebpackConfig(defines, output) {
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
     !bundleDefines.TESTING &&
-    !bundleDefines.NO_SOURCE_MAP;
+    !disableSourceMaps;
   var skipBabel = bundleDefines.SKIP_BABEL;
 
   // `core-js` (see https://github.com/zloirock/core-js/issues/514),
@@ -201,6 +203,13 @@ function createWebpackConfig(defines, output) {
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
+  const plugins = [];
+  if (!disableLicenseHeader) {
+    plugins.push(
+      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true })
+    );
+  }
+
   // Required to expose e.g., the `window` object.
   output.globalObject = "this";
 
@@ -210,9 +219,7 @@ function createWebpackConfig(defines, output) {
     performance: {
       hints: false, // Disable messages about larger file sizes.
     },
-    plugins: [
-      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true }),
-    ],
+    plugins,
     resolve: {
       alias: {
         pdfjs: path.join(__dirname, "src"),
@@ -329,16 +336,20 @@ function createMainBundle(defines) {
     .pipe(replaceJSRootName(mainAMDName, "pdfjsLib"));
 }
 
-function createScriptingBundle(defines) {
+function createScriptingBundle(defines, extraOptions = undefined) {
   var scriptingAMDName = "pdfjs-dist/build/pdf.scripting";
   var scriptingOutputName = "pdf.scripting.js";
 
-  var scriptingFileConfig = createWebpackConfig(defines, {
-    filename: scriptingOutputName,
-    library: scriptingAMDName,
-    libraryTarget: "umd",
-    umdNamedDefine: true,
-  });
+  var scriptingFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: scriptingOutputName,
+      library: scriptingAMDName,
+      libraryTarget: "umd",
+      umdNamedDefine: true,
+    },
+    extraOptions
+  );
   return gulp
     .src("./src/pdf.scripting.js")
     .pipe(webpack2Stream(scriptingFileConfig))
@@ -369,9 +380,10 @@ function createSandboxBundle(defines, code) {
 }
 
 function buildSandbox(defines, dir) {
-  const scriptingDefines = builder.merge(defines, { NO_SOURCE_MAP: true });
-  return createScriptingBundle(scriptingDefines)
-    .pipe(stripComments())
+  return createScriptingBundle(defines, {
+    disableSourceMaps: true,
+    disableLicenseHeader: true,
+  })
     .pipe(gulp.dest(dir + "build"))
     .on("data", file => {
       const content = file.contents.toString();

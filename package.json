@@ -30,7 +30,6 @@
     "gulp-postcss": "^9.0.0",
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
-    "gulp-strip-comments": "^2.5.2",
     "gulp-zip": "^5.0.2",
     "jasmine": "^3.6.3",
     "jsdoc": "^3.6.6",
