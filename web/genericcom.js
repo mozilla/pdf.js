@@ -53,7 +53,7 @@ class GenericExternalServices extends DefaultExternalServices {
   }
 
   static get scripting() {
-    const promise = loadScript(AppOptions.get("scriptingSrc")).then(() => {
+    const promise = loadScript(AppOptions.get("sandboxBundleSrc")).then(() => {
       return window.pdfjsSandbox.QuickJSSandbox();
     });
     const sandbox = {

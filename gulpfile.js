@@ -173,9 +173,15 @@ function createStringSource(filename, content) {
 function createWebpackConfig(
   defines,
   output,
-  { disableSourceMaps = false, disableLicenseHeader = false } = {}
+  {
+    disableVersionInfo = false,
+    disableSourceMaps = false,
+    disableLicenseHeader = false,
+  } = {}
 ) {
-  var versionInfo = getVersionJSON();
+  const versionInfo = !disableVersionInfo
+    ? getVersionJSON()
+    : { version: 0, commit: 0 };
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
@@ -359,8 +365,9 @@ function createScriptingBundle(defines, extraOptions = undefined) {
     .pipe(replaceJSRootName(scriptingAMDName, "pdfjsScripting"));
 }
 
-function createTemporaryScriptingBundle(defines) {
+function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
   return createScriptingBundle(defines, {
+    disableVersionInfo: !!(extraOptions && extraOptions.disableVersionInfo),
     disableSourceMaps: true,
     disableLicenseHeader: true,
   }).pipe(gulp.dest(TMP_DIR));
@@ -1711,15 +1718,56 @@ gulp.task(
   })
 );
 
-gulp.task("server", function () {
-  console.log();
-  console.log("### Starting local server");
+gulp.task(
+  "dev-sandbox",
+  gulp.series(
+    function scripting() {
+      const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+      return createTemporaryScriptingBundle(defines, {
+        disableVersionInfo: true,
+      });
+    },
+    function () {
+      console.log();
+      console.log("### Building development sandbox");
 
-  var WebServer = require("./test/webserver.js").WebServer;
-  var server = new WebServer();
-  server.port = 8888;
-  server.start();
+      const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+      const sandboxDir = BUILD_DIR + "dev-sandbox/";
+
+      rimraf.sync(sandboxDir);
+
+      return createSandboxBundle(defines, {
+        disableVersionInfo: true,
+      }).pipe(gulp.dest(sandboxDir));
+    }
+  )
+);
+
+gulp.task("watch-dev-sandbox", function () {
+  gulp.watch(
+    [
+      "src/pdf.{sandbox,scripting}.js",
+      "src/scripting_api/*.js",
+      "src/shared/scripting_utils.js",
+      "external/quickjs/*.js",
+    ],
+    { ignoreInitial: false },
+    gulp.series("dev-sandbox")
+  );
 });
+
+gulp.task(
+  "server",
+  gulp.parallel("watch-dev-sandbox", function () {
+    console.log();
+    console.log("### Starting local server");
+
+    var WebServer = require("./test/webserver.js").WebServer;
+    var server = new WebServer();
+    server.port = 8888;
+    server.start();
+  })
+);
 
 gulp.task("clean", function (done) {
   console.log();

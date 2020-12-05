@@ -223,14 +223,6 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
-  scriptingSrc: {
-    /** @type {string} */
-    value:
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
-        ? "../build/generic/build/pdf.sandbox.js"
-        : "../build/pdf.sandbox.js",
-    kind: OptionKind.VIEWER,
-  },
   verbosity: {
     /** @type {number} */
     value: 1,
@@ -263,6 +255,14 @@ if (
   defaultOptions.locale = {
     /** @type {string} */
     value: typeof navigator !== "undefined" ? navigator.language : "en-US",
+    kind: OptionKind.VIEWER,
+  };
+  defaultOptions.sandboxBundleSrc = {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+        ? "../build/dev-sandbox/pdf.sandbox.js"
+        : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
   };
 }
