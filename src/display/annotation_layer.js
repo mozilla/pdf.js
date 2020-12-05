@@ -133,7 +133,14 @@ class AnnotationElementFactory {
 }
 
 class AnnotationElement {
-  constructor(parameters, isRenderable = false, ignoreBorder = false) {
+  constructor(
+    parameters,
+    {
+      isRenderable = false,
+      ignoreBorder = false,
+      createQuadrilaterals = false,
+    } = {}
+  ) {
     this.isRenderable = isRenderable;
     this.data = parameters.data;
     this.layer = parameters.layer;
@@ -150,6 +157,9 @@ class AnnotationElement {
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
+    }
+    if (createQuadrilaterals) {
+      this.quadrilaterals = this._createQuadrilaterals(ignoreBorder);
     }
   }
 
@@ -333,7 +343,7 @@ class LinkAnnotationElement extends AnnotationElement {
       parameters.data.action ||
       parameters.data.isTooltipOnly
     );
-    super(parameters, isRenderable);
+    super(parameters, { isRenderable });
   }
 
   /**
@@ -416,7 +426,7 @@ class TextAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable);
+    super(parameters, { isRenderable });
   }
 
   /**
@@ -473,7 +483,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     const isRenderable =
       parameters.renderInteractiveForms ||
       (!parameters.data.hasAppearance && !!parameters.data.fieldValue);
-    super(parameters, isRenderable);
+    super(parameters, { isRenderable });
   }
 
   /**
@@ -680,7 +690,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
 class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    super(parameters, parameters.renderInteractiveForms);
+    super(parameters, { isRenderable: parameters.renderInteractiveForms });
   }
 
   /**
@@ -720,7 +730,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
 
 class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    super(parameters, parameters.renderInteractiveForms);
+    super(parameters, { isRenderable: parameters.renderInteractiveForms });
   }
 
   /**
@@ -792,7 +802,7 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
 
 class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    super(parameters, parameters.renderInteractiveForms);
+    super(parameters, { isRenderable: parameters.renderInteractiveForms });
   }
 
   /**
@@ -857,7 +867,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 class PopupAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable);
+    super(parameters, { isRenderable });
   }
 
   /**
@@ -1082,7 +1092,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
   /**
@@ -1109,7 +1119,7 @@ class LineAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
   /**
@@ -1160,7 +1170,7 @@ class SquareAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
   /**
@@ -1214,7 +1224,7 @@ class CircleAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
   /**
@@ -1268,7 +1278,7 @@ class PolylineAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
 
     this.containerClassName = "polylineAnnotation";
     this.svgElementName = "svg:polyline";
@@ -1340,7 +1350,7 @@ class CaretAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
   /**
@@ -1367,7 +1377,7 @@ class InkAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
 
     this.containerClassName = "inkAnnotation";
 
@@ -1433,8 +1443,11 @@ class HighlightAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
   /**
@@ -1468,8 +1481,11 @@ class UnderlineAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
   /**
@@ -1503,8 +1519,11 @@ class SquigglyAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
   /**
@@ -1538,8 +1557,11 @@ class StrikeOutAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
-    this.quadrilaterals = this._createQuadrilaterals(/* ignoreBorder = */ true);
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
   /**
@@ -1573,7 +1595,7 @@ class StampAnnotationElement extends AnnotationElement {
       parameters.data.title ||
       parameters.data.contents
     );
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
   /**
@@ -1595,7 +1617,7 @@ class StampAnnotationElement extends AnnotationElement {
 
 class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    super(parameters, /* isRenderable = */ true);
+    super(parameters, { isRenderable: true });
 
     const { filename, content } = this.data.file;
     this.filename = getFilenameFromUrl(filename);
