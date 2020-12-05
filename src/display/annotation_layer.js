@@ -367,12 +367,10 @@ class LinkAnnotationElement extends AnnotationElement {
       parameters.data.action ||
       parameters.data.isTooltipOnly
     );
-    super(parameters, { isRenderable });
+    super(parameters, { isRenderable, createQuadrilaterals: true });
   }
 
   render() {
-    this.container.className = "linkAnnotation";
-
     const { data, linkService } = this;
     const link = document.createElement("a");
 
@@ -393,6 +391,17 @@ class LinkAnnotationElement extends AnnotationElement {
       this._bindLink(link, "");
     }
 
+    if (this.quadrilaterals) {
+      return this._renderQuadrilaterals("linkAnnotation").map(
+        (quadrilateral, index) => {
+          const linkElement = index === 0 ? link : link.cloneNode();
+          quadrilateral.appendChild(linkElement);
+          return quadrilateral;
+        }
+      );
+    }
+
+    this.container.className = "linkAnnotation";
     this.container.appendChild(link);
     return this.container;
   }
