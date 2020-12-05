@@ -20,15 +20,17 @@ const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
+const TESTING =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING");
+
 class Sandbox {
-  constructor(module, testMode) {
+  constructor(module) {
     this._evalInSandbox = module.cwrap("evalInSandbox", null, [
       "string",
       "int",
     ]);
     this._dispatchEventName = null;
     this._module = module;
-    this._testMode = testMode;
     this._alertOnError = 1;
   }
 
@@ -55,7 +57,7 @@ class Sandbox {
       "delete module;",
       "delete data;",
     ];
-    if (!this._testMode) {
+    if (!TESTING) {
       code = code.concat(extra.map(name => `delete ${name};`));
       code.push("delete debugMe;");
     }
@@ -86,7 +88,7 @@ class Sandbox {
   }
 
   evalForTesting(code, key) {
-    if (this._testMode) {
+    if (TESTING) {
       this._evalInSandbox(
         `try {
            send({ id: "${key}", result: ${code} });
@@ -99,13 +101,9 @@ class Sandbox {
   }
 }
 
-function QuickJSSandbox(testMode = false) {
-  testMode =
-    testMode &&
-    (typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING"));
+function QuickJSSandbox() {
   return ModuleLoader().then(module => {
-    return new Sandbox(module, testMode);
+    return new Sandbox(module);
   });
 }
 
