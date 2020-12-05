@@ -15,6 +15,8 @@
 
 import { loadScript } from "../../src/display/display_utils.js";
 
+const sandboxBundleSrc = "../../build/generic/build/pdf.sandbox.js";
+
 describe("Scripting", function () {
   let sandbox, send_queue, test_id, ref;
 
@@ -44,11 +46,9 @@ describe("Scripting", function () {
         send_queue.set(event.detail.id, event.detail);
       }
     };
-    const promise = loadScript("../../build/generic/build/pdf.sandbox.js").then(
-      () => {
-        return window.pdfjsSandbox.QuickJSSandbox(true);
-      }
-    );
+    const promise = loadScript(sandboxBundleSrc).then(() => {
+      return window.pdfjsSandbox.QuickJSSandbox();
+    });
     sandbox = {
       createSandbox(data) {
         promise.then(sbx => sbx.create(data));
