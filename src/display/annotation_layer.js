@@ -23,6 +23,7 @@ import {
 import {
   AnnotationBorderStyleType,
   AnnotationType,
+  assert,
   stringToPDFString,
   unreachable,
   Util,
@@ -322,6 +323,28 @@ class AnnotationElement {
     popup.style.left = container.style.width;
 
     container.appendChild(popup);
+  }
+
+  /**
+   * Render the quadrilaterals of the annotation.
+   *
+   * @private
+   * @param {string} className
+   * @memberof AnnotationElement
+   * @returns {Array<HTMLSectionElement>}
+   */
+  _renderQuadrilaterals(className) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(this.quadrilaterals, "Missing quadrilaterals during rendering");
+    }
+
+    this.quadrilaterals.forEach(quadrilateral => {
+      quadrilateral.className = className;
+    });
+    return this.quadrilaterals;
   }
 
   /**
@@ -1463,10 +1486,7 @@ class HighlightAnnotationElement extends AnnotationElement {
     }
 
     if (this.quadrilaterals) {
-      this.quadrilaterals.forEach(quadrilateral => {
-        quadrilateral.className = "highlightAnnotation";
-      });
-      return this.quadrilaterals;
+      return this._renderQuadrilaterals("highlightAnnotation");
     }
 
     this.container.className = "highlightAnnotation";
@@ -1501,10 +1521,7 @@ class UnderlineAnnotationElement extends AnnotationElement {
     }
 
     if (this.quadrilaterals) {
-      this.quadrilaterals.forEach(quadrilateral => {
-        quadrilateral.className = "underlineAnnotation";
-      });
-      return this.quadrilaterals;
+      return this._renderQuadrilaterals("underlineAnnotation");
     }
 
     this.container.className = "underlineAnnotation";
@@ -1539,10 +1556,7 @@ class SquigglyAnnotationElement extends AnnotationElement {
     }
 
     if (this.quadrilaterals) {
-      this.quadrilaterals.forEach(quadrilateral => {
-        quadrilateral.className = "squigglyAnnotation";
-      });
-      return this.quadrilaterals;
+      return this._renderQuadrilaterals("squigglyAnnotation");
     }
 
     this.container.className = "squigglyAnnotation";
@@ -1577,10 +1591,7 @@ class StrikeOutAnnotationElement extends AnnotationElement {
     }
 
     if (this.quadrilaterals) {
-      this.quadrilaterals.forEach(quadrilateral => {
-        quadrilateral.className = "strikeoutAnnotation";
-      });
-      return this.quadrilaterals;
+      return this._renderQuadrilaterals("strikeoutAnnotation");
     }
 
     this.container.className = "strikeoutAnnotation";
