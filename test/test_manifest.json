@@ -4805,6 +4805,13 @@
        "lastPage": 1,
        "type": "text"
     },
+    {  "id": "quadpoints",
+       "file": "pdfs/quadpoints.pdf",
+       "md5": "aadbc9bf826b4604c49a994fc8cd72c1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "operator-in-TJ-array",
        "file": "pdfs/operator-in-TJ-array.pdf",
        "md5": "dfe0f15a45be18eca142adaf760984ee",

@@ -227,7 +227,36 @@ function getQuadPoints(dict, rect) {
       quadPointsLists[i].push({ x, y });
     }
   }
-  return quadPointsLists;
+
+  // The PDF specification states in section 12.5.6.10 (figure 64) that the
+  // order of the quadpoints should be bottom left, bottom right, top right
+  // and top left. However, in practice PDF files use a different order,
+  // namely bottom left, bottom right, top left and top right (this is also
+  // mentioned on https://github.com/highkite/pdfAnnotate#QuadPoints), so
+  // this is the actual order we should work with. However, the situation is
+  // even worse since Adobe's own applications and other applications violate
+  // the specification and create annotations with other orders, namely top
+  // left, top right, bottom left and bottom right or even top left, top right,
+  // bottom right and bottom left. To avoid inconsistency and broken rendering,
+  // we normalize all lists to put the quadpoints in the same standard order
+  // (see https://stackoverflow.com/a/10729881).
+  return quadPointsLists.map(quadPointsList => {
+    const [minX, maxX, minY, maxY] = quadPointsList.reduce(
+      ([mX, MX, mY, MY], quadPoint) => [
+        Math.min(mX, quadPoint.x),
+        Math.max(MX, quadPoint.x),
+        Math.min(mY, quadPoint.y),
+        Math.max(MY, quadPoint.y),
+      ],
+      [Number.MAX_VALUE, Number.MIN_VALUE, Number.MAX_VALUE, Number.MIN_VALUE]
+    );
+    return [
+      { x: minX, y: maxY },
+      { x: maxX, y: maxY },
+      { x: minX, y: minY },
+      { x: maxX, y: minY },
+    ];
+  });
 }
 
 function getTransformMatrix(rect, bbox, matrix) {
