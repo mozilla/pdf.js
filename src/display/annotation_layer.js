@@ -256,12 +256,12 @@ class AnnotationElement {
   }
 
   /**
-   * Create quadrilaterals for the quadPoints.
+   * Create quadrilaterals from the annotation's quadpoints.
    *
    * @private
    * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
-   * @returns {HTMLSectionElement}
+   * @returns {Array<HTMLSectionElement>}
    */
   _createQuadrilaterals(ignoreBorder = false) {
     if (!this.data.quadPoints) {
@@ -348,10 +348,11 @@ class AnnotationElement {
   }
 
   /**
-   * Render the annotation's HTML element in the empty container.
+   * Render the annotation's HTML element(s).
    *
    * @public
    * @memberof AnnotationElement
+   * @returns {HTMLSectionElement|Array<HTMLSectionElement>}
    */
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
@@ -369,13 +370,6 @@ class LinkAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the link annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof LinkAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "linkAnnotation";
 
@@ -452,13 +446,6 @@ class TextAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the text annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof TextAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "textAnnotation";
 
@@ -484,13 +471,6 @@ class TextAnnotationElement extends AnnotationElement {
 }
 
 class WidgetAnnotationElement extends AnnotationElement {
-  /**
-   * Render the widget annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof WidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     // Show only the container for unsupported field types.
     if (this.data.alternativeText) {
@@ -509,13 +489,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the text widget annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof TextWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     const TEXT_ALIGNMENT = ["left", "center", "right"];
     const storage = this.annotationStorage;
@@ -716,14 +689,6 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable: parameters.renderInteractiveForms });
   }
 
-  /**
-   * Render the checkbox widget annotation's HTML element
-   * in the empty container.
-   *
-   * @public
-   * @memberof CheckboxWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     const storage = this.annotationStorage;
     const data = this.data;
@@ -756,14 +721,6 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable: parameters.renderInteractiveForms });
   }
 
-  /**
-   * Render the radio button widget annotation's HTML element
-   * in the empty container.
-   *
-   * @public
-   * @memberof RadioButtonWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "buttonWidgetAnnotation radioButton";
     const storage = this.annotationStorage;
@@ -800,14 +757,6 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
 }
 
 class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
-  /**
-   * Render the push button widget annotation's HTML element
-   * in the empty container.
-   *
-   * @public
-   * @memberof PushButtonWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     // The rendering and functionality of a push button widget annotation is
     // equal to that of a link annotation, but may have more functionality, such
@@ -828,14 +777,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable: parameters.renderInteractiveForms });
   }
 
-  /**
-   * Render the choice widget annotation's HTML element in the empty
-   * container.
-   *
-   * @public
-   * @memberof ChoiceWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "choiceWidgetAnnotation";
     const storage = this.annotationStorage;
@@ -893,13 +834,6 @@ class PopupAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the popup annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof PopupAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
@@ -968,13 +902,6 @@ class PopupElement {
     this.pinned = false;
   }
 
-  /**
-   * Render the popup's HTML element.
-   *
-   * @public
-   * @memberof PopupElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     const BACKGROUND_ENLIGHT = 0.7;
 
@@ -1118,13 +1045,6 @@ class FreeTextAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the free text annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof FreeTextAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "freeTextAnnotation";
 
@@ -1145,13 +1065,6 @@ class LineAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the line annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof LineAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "lineAnnotation";
 
@@ -1196,13 +1109,6 @@ class SquareAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the square annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof SquareAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "squareAnnotation";
 
@@ -1250,13 +1156,6 @@ class CircleAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the circle annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof CircleAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "circleAnnotation";
 
@@ -1307,13 +1206,6 @@ class PolylineAnnotationElement extends AnnotationElement {
     this.svgElementName = "svg:polyline";
   }
 
-  /**
-   * Render the polyline annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof PolylineAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = this.containerClassName;
 
@@ -1376,13 +1268,6 @@ class CaretAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the caret annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof CaretAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "caretAnnotation";
 
@@ -1409,13 +1294,6 @@ class InkAnnotationElement extends AnnotationElement {
     this.svgElementName = "svg:polyline";
   }
 
-  /**
-   * Render the ink annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof InkAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = this.containerClassName;
 
@@ -1473,13 +1351,6 @@ class HighlightAnnotationElement extends AnnotationElement {
     });
   }
 
-  /**
-   * Render the highlight annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof HighlightAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
@@ -1508,13 +1379,6 @@ class UnderlineAnnotationElement extends AnnotationElement {
     });
   }
 
-  /**
-   * Render the underline annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof UnderlineAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
@@ -1543,13 +1407,6 @@ class SquigglyAnnotationElement extends AnnotationElement {
     });
   }
 
-  /**
-   * Render the squiggly annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof SquigglyAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
@@ -1578,13 +1435,6 @@ class StrikeOutAnnotationElement extends AnnotationElement {
     });
   }
 
-  /**
-   * Render the strikeout annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof StrikeOutAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     if (!this.data.hasPopup) {
       this._createPopup(null, this.data);
@@ -1609,13 +1459,6 @@ class StampAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the stamp annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof StampAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "stampAnnotation";
 
@@ -1644,14 +1487,6 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     }
   }
 
-  /**
-   * Render the file attachment annotation's HTML element in the empty
-   * container.
-   *
-   * @public
-   * @memberof FileAttachmentAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = "fileAttachmentAnnotation";
 
