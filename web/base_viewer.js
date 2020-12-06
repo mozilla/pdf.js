@@ -725,6 +725,20 @@ class BaseViewer {
     }
   }
 
+  /**
+   * @private
+   */
+  get _pageWidthScaleFactor() {
+    if (
+      this.spreadMode !== SpreadMode.NONE &&
+      this.scrollMode !== ScrollMode.HORIZONTAL &&
+      !this.isInPresentationMode
+    ) {
+      return 2;
+    }
+    return 1;
+  }
+
   _setScale(value, noScroll = false) {
     let scale = parseFloat(value);
 
@@ -743,8 +757,9 @@ class BaseViewer {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       const pageWidthScale =
-        ((this.container.clientWidth - hPadding) / currentPage.width) *
-        currentPage.scale;
+        (((this.container.clientWidth - hPadding) / currentPage.width) *
+          currentPage.scale) /
+        this._pageWidthScaleFactor;
       const pageHeightScale =
         ((this.container.clientHeight - vPadding) / currentPage.height) *
         currentPage.scale;
@@ -1472,6 +1487,9 @@ class BaseViewer {
 
     if (!pageNumber) {
       return;
+    }
+    if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, true);
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
