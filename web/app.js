@@ -257,6 +257,7 @@ const PDFViewerApplication = {
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
+  _scriptingInstance: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -802,6 +803,18 @@ const PDFViewerApplication = {
       window.cancelIdleCallback(callback);
     }
     this._idleCallbacks.clear();
+
+    if (this._scriptingInstance) {
+      const { scripting, events } = this._scriptingInstance;
+      try {
+        scripting.destroySandbox();
+      } catch (ex) {}
+
+      for (const [name, listener] of events) {
+        window.removeEventListener(name, listener);
+      }
+      this._scriptingInstance = null;
+    }
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -1423,6 +1436,9 @@ const PDFViewerApplication = {
       return;
     }
     const { scripting } = this.externalServices;
+    // Store a reference to the current scripting-instance, to allow destruction
+    // of the sandbox and removal of the event listeners at document closing.
+    this._scriptingInstance = { scripting, events: new Map() };
 
     if (!this.documentInfo) {
       // It should be *extremely* rare for metadata to not have been resolved
@@ -1439,7 +1455,7 @@ const PDFViewerApplication = {
       }
     }
 
-    window.addEventListener("updateFromSandbox", event => {
+    const updateFromSandbox = event => {
       const { detail } = event;
       const { id, command, value } = detail;
       if (!id) {
@@ -1486,11 +1502,20 @@ const PDFViewerApplication = {
           pdfDocument.annotationStorage.setValue(id, value);
         }
       }
-    });
+    };
+    window.addEventListener("updateFromSandbox", updateFromSandbox);
+    // Ensure that the event listener can be removed at document closing.
+    this._scriptingInstance.events.set("updateFromSandbox", updateFromSandbox);
 
-    window.addEventListener("dispatchEventInSandbox", function (event) {
+    const dispatchEventInSandbox = event => {
       scripting.dispatchEventInSandbox(event.detail);
-    });
+    };
+    window.addEventListener("dispatchEventInSandbox", dispatchEventInSandbox);
+    // Ensure that the event listener can be removed at document closing.
+    this._scriptingInstance.events.set(
+      "dispatchEventInSandbox",
+      dispatchEventInSandbox
+    );
 
     const dispatchEventName = generateRandomStringForSandbox(objects);
 
