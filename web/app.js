@@ -1417,11 +1417,21 @@ const PDFViewerApplication = {
     }
     const calculationOrder = await pdfDocument.getCalculationOrderIds();
     const scripting = this.externalServices.scripting;
-    const {
-      info,
-      metadata,
-      contentDispositionFilename,
-    } = await pdfDocument.getMetadata();
+
+    if (!this.documentInfo) {
+      // It should be *extremely* rare for metadata to not have been resolved
+      // when this code runs, but ensure that we handle that case here.
+      await new Promise(resolve => {
+        const metadataLoaded = () => {
+          this.eventBus._off("metadataloaded", metadataLoaded);
+          resolve();
+        };
+        this.eventBus._on("metadataloaded", metadataLoaded);
+      });
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the metadata resolved.
+      }
+    }
 
     window.addEventListener("updateFromSandbox", event => {
       const detail = event.detail;
@@ -1480,7 +1490,7 @@ const PDFViewerApplication = {
     const dispatchEventName = generateRandomStringForSandbox(objects);
     const { length } = await pdfDocument.getDownloadInfo();
     const filename =
-      contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
     scripting.createSandbox({
       objects,
       dispatchEventName,
@@ -1490,11 +1500,11 @@ const PDFViewerApplication = {
         language: navigator.language,
       },
       docInfo: {
-        ...info,
+        ...this.documentInfo,
         baseURL: this.baseUrl,
         filesize: length,
         filename,
-        metadata,
+        metadata: this.metadata,
         numPages: pdfDocument.numPages,
         URL: this.url,
       },
