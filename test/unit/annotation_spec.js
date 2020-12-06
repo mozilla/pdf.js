@@ -216,40 +216,66 @@ describe("annotation", function () {
       }
     });
 
-    it("should process valid quadpoints arrays", function () {
+    it("should process quadpoints in the standard order", function () {
       rect = [10, 10, 20, 20];
       dict.set("QuadPoints", [
+        10,
+        20,
+        20,
+        20,
+        10,
+        10,
+        20,
+        10,
+        11,
+        19,
+        19,
+        19,
         11,
         11,
-        12,
-        12,
-        13,
-        13,
-        14,
-        14,
-        15,
-        15,
-        16,
-        16,
-        17,
-        17,
-        18,
-        18,
+        19,
+        11,
       ]);
       expect(getQuadPoints(dict, rect)).toEqual([
         [
-          { x: 11, y: 11 },
-          { x: 12, y: 12 },
-          { x: 13, y: 13 },
-          { x: 14, y: 14 },
+          { x: 10, y: 20 },
+          { x: 20, y: 20 },
+          { x: 10, y: 10 },
+          { x: 20, y: 10 },
         ],
         [
-          { x: 15, y: 15 },
-          { x: 16, y: 16 },
-          { x: 17, y: 17 },
-          { x: 18, y: 18 },
+          { x: 11, y: 19 },
+          { x: 19, y: 19 },
+          { x: 11, y: 11 },
+          { x: 19, y: 11 },
         ],
       ]);
+    });
+
+    it("should normalize and process quadpoints in non-standard orders", function () {
+      rect = [10, 10, 20, 20];
+      const nonStandardOrders = [
+        // Bottom left, bottom right, top right and top left.
+        [10, 20, 20, 20, 20, 10, 10, 10],
+
+        // Top left, top right, bottom left and bottom right.
+        [10, 10, 20, 10, 10, 20, 20, 20],
+
+        // Top left, top right, bottom right and bottom left.
+        [10, 10, 20, 10, 20, 20, 10, 20],
+      ];
+
+      for (const nonStandardOrder of nonStandardOrders) {
+        dict.set("QuadPoints", nonStandardOrder);
+        expect(getQuadPoints(dict, rect)).toEqual([
+          [
+            { x: 10, y: 20 },
+            { x: 20, y: 20 },
+            { x: 10, y: 10 },
+            { x: 20, y: 10 },
+          ],
+        ]);
+      }
     });
   });
 
@@ -1265,7 +1291,7 @@ describe("annotation", function () {
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Link"));
       annotationDict.set("Rect", [10, 10, 20, 20]);
-      annotationDict.set("QuadPoints", [11, 11, 12, 12, 13, 13, 14, 14]);
+      annotationDict.set("QuadPoints", [10, 20, 20, 20, 10, 10, 20, 10]);
 
       const annotationRef = Ref.get(121, 0);
       const xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
@@ -1279,10 +1305,10 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.LINK);
         expect(data.quadPoints).toEqual([
           [
-            { x: 11, y: 11 },
-            { x: 12, y: 12 },
-            { x: 13, y: 13 },
-            { x: 14, y: 14 },
+            { x: 10, y: 20 },
+            { x: 20, y: 20 },
+            { x: 10, y: 10 },
+            { x: 20, y: 10 },
           ],
         ]);
         done();
@@ -3636,7 +3662,7 @@ describe("annotation", function () {
       highlightDict.set("Type", Name.get("Annot"));
       highlightDict.set("Subtype", Name.get("Highlight"));
       highlightDict.set("Rect", [10, 10, 20, 20]);
-      highlightDict.set("QuadPoints", [11, 11, 12, 12, 13, 13, 14, 14]);
+      highlightDict.set("QuadPoints", [10, 20, 20, 20, 10, 10, 20, 10]);
 
       const highlightRef = Ref.get(121, 0);
       const xref = new XRefMock([{ ref: highlightRef, data: highlightDict }]);
@@ -3650,10 +3676,10 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
         expect(data.quadPoints).toEqual([
           [
-            { x: 11, y: 11 },
-            { x: 12, y: 12 },
-            { x: 13, y: 13 },
-            { x: 14, y: 14 },
+            { x: 10, y: 20 },
+            { x: 20, y: 20 },
+            { x: 10, y: 10 },
+            { x: 20, y: 10 },
           ],
         ]);
         done();
@@ -3709,7 +3735,7 @@ describe("annotation", function () {
       underlineDict.set("Type", Name.get("Annot"));
       underlineDict.set("Subtype", Name.get("Underline"));
       underlineDict.set("Rect", [10, 10, 20, 20]);
-      underlineDict.set("QuadPoints", [11, 11, 12, 12, 13, 13, 14, 14]);
+      underlineDict.set("QuadPoints", [10, 20, 20, 20, 10, 10, 20, 10]);
 
       const underlineRef = Ref.get(121, 0);
       const xref = new XRefMock([{ ref: underlineRef, data: underlineDict }]);
@@ -3723,10 +3749,10 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
         expect(data.quadPoints).toEqual([
           [
-            { x: 11, y: 11 },
-            { x: 12, y: 12 },
-            { x: 13, y: 13 },
-            { x: 14, y: 14 },
+            { x: 10, y: 20 },
+            { x: 20, y: 20 },
+            { x: 10, y: 10 },
+            { x: 20, y: 10 },
           ],
         ]);
         done();
@@ -3760,7 +3786,7 @@ describe("annotation", function () {
       squigglyDict.set("Type", Name.get("Annot"));
       squigglyDict.set("Subtype", Name.get("Squiggly"));
       squigglyDict.set("Rect", [10, 10, 20, 20]);
-      squigglyDict.set("QuadPoints", [11, 11, 12, 12, 13, 13, 14, 14]);
+      squigglyDict.set("QuadPoints", [10, 20, 20, 20, 10, 10, 20, 10]);
 
       const squigglyRef = Ref.get(121, 0);
       const xref = new XRefMock([{ ref: squigglyRef, data: squigglyDict }]);
@@ -3774,10 +3800,10 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
         expect(data.quadPoints).toEqual([
           [
-            { x: 11, y: 11 },
-            { x: 12, y: 12 },
-            { x: 13, y: 13 },
-            { x: 14, y: 14 },
+            { x: 10, y: 20 },
+            { x: 20, y: 20 },
+            { x: 10, y: 10 },
+            { x: 20, y: 10 },
           ],
         ]);
         done();
@@ -3811,7 +3837,7 @@ describe("annotation", function () {
       strikeOutDict.set("Type", Name.get("Annot"));
       strikeOutDict.set("Subtype", Name.get("StrikeOut"));
       strikeOutDict.set("Rect", [10, 10, 20, 20]);
-      strikeOutDict.set("QuadPoints", [11, 11, 12, 12, 13, 13, 14, 14]);
+      strikeOutDict.set("QuadPoints", [10, 20, 20, 20, 10, 10, 20, 10]);
 
       const strikeOutRef = Ref.get(121, 0);
       const xref = new XRefMock([{ ref: strikeOutRef, data: strikeOutDict }]);
@@ -3825,10 +3851,10 @@ describe("annotation", function () {
         expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
         expect(data.quadPoints).toEqual([
           [
-            { x: 11, y: 11 },
-            { x: 12, y: 12 },
-            { x: 13, y: 13 },
-            { x: 14, y: 14 },
+            { x: 10, y: 20 },
+            { x: 20, y: 20 },
+            { x: 10, y: 10 },
+            { x: 20, y: 10 },
           ],
         ]);
         done();
