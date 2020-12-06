@@ -248,7 +248,9 @@ const PDFViewerApplication = {
   url: "",
   baseUrl: "",
   externalServices: DefaultExternalServices,
-  _boundEvents: {},
+  _boundEvents: Object.create(null),
+  documentInfo: null,
+  metadata: null,
   contentDispositionFilename: null,
   triggerDelayedFallback: null,
   _saveInProgress: false,
@@ -789,6 +791,8 @@ const PDFViewerApplication = {
     this.downloadComplete = false;
     this.url = "";
     this.baseUrl = "";
+    this.documentInfo = null;
+    this.metadata = null;
     this.contentDispositionFilename = null;
     this.triggerDelayedFallback = null;
     this._saveInProgress = false;
@@ -1652,6 +1656,8 @@ const PDFViewerApplication = {
       generator: generatorId,
       formType,
     });
+
+    this.eventBus.dispatch("metadataloaded", { source: this });
   },
 
   /**
