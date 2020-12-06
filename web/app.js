@@ -1409,16 +1409,20 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeJavaScript(pdfDocument) {
-    const objects = await pdfDocument.getFieldObjects();
-
-    if (pdfDocument !== this.pdfDocument) {
-      return; // The document was closed while the JavaScript data resolved.
-    }
-    if (!objects || !AppOptions.get("enableScripting")) {
+    if (!AppOptions.get("enableScripting")) {
       return;
     }
-    const calculationOrder = await pdfDocument.getCalculationOrderIds();
-    const scripting = this.externalServices.scripting;
+    const [objects, calculationOrder] = await Promise.all([
+      pdfDocument.getFieldObjects(),
+      pdfDocument.getCalculationOrderIds(),
+    ]);
+
+    if (!objects || pdfDocument !== this.pdfDocument) {
+      // No FieldObjects were found in the document,
+      // or the document was closed while the data resolved.
+      return;
+    }
+    const { scripting } = this.externalServices;
 
     if (!this.documentInfo) {
       // It should be *extremely* rare for metadata to not have been resolved
@@ -1436,37 +1440,37 @@ const PDFViewerApplication = {
     }
 
     window.addEventListener("updateFromSandbox", event => {
-      const detail = event.detail;
-      const id = detail.id;
+      const { detail } = event;
+      const { id, command, value } = detail;
       if (!id) {
-        switch (detail.command) {
+        switch (command) {
           case "alert":
             // eslint-disable-next-line no-alert
-            window.alert(detail.value);
+            window.alert(value);
             break;
           case "clear":
             console.clear();
             break;
           case "error":
-            console.error(detail.value);
+            console.error(value);
             break;
           case "layout":
-            this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(detail.value);
+            this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(value);
             return;
           case "page-num":
-            this.pdfViewer.currentPageNumber = detail.value + 1;
+            this.pdfViewer.currentPageNumber = value + 1;
             return;
           case "print":
             this.triggerPrinting();
             return;
           case "println":
-            console.log(detail.value);
+            console.log(value);
             break;
           case "zoom":
-            if (typeof detail.value === "string") {
-              this.pdfViewer.currentScaleValue = detail.value;
+            if (typeof value === "string") {
+              this.pdfViewer.currentScaleValue = value;
             } else {
-              this.pdfViewer.currentScale = detail.value;
+              this.pdfViewer.currentScale = value;
             }
             return;
         }
@@ -1477,10 +1481,9 @@ const PDFViewerApplication = {
       if (element) {
         element.dispatchEvent(new CustomEvent("updateFromSandbox", { detail }));
       } else {
-        const value = detail.value;
         if (value !== undefined && value !== null) {
-          // the element hasn't been rendered yet so use annotation storage
-          pdfDocument.annotationStorage.setValue(id, detail.value);
+          // The element hasn't been rendered yet, use the AnnotationStorage.
+          pdfDocument.annotationStorage.setValue(id, value);
         }
       }
     });
