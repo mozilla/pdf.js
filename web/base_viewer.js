@@ -256,16 +256,6 @@ class BaseViewer {
         `${this._name}.currentPageNumber: "${val}" is not a valid page.`
       );
     }
-
-    /** #495 modified by ngx-extended-pdf-viewer */
-    this.hidePagesDependingOnpageViewMode();
-    if (this.pageViewMode === "single") {
-      const pageView = this._pages[this.currentPageNumber-1];
-      this._ensurePdfPageLoaded(pageView).then(() => {
-        this.renderingQueue.renderView(pageView);
-      });
-    }
-    /** end of modification */
   }
 
   /** #495 modified by ngx-extended-pdf-viewer */
@@ -294,6 +284,17 @@ class BaseViewer {
       return false;
     }
     this._currentPageNumber = val;
+
+    /** #495 modified by ngx-extended-pdf-viewer */
+    this.hidePagesDependingOnpageViewMode();
+    if (this.pageViewMode === "single" || this.pageViewMode === "infinite-scroll") {
+      const pageView = this._pages[this.currentPageNumber-1];
+      this._ensurePdfPageLoaded(pageView).then(() => {
+        this.renderingQueue.renderView(pageView);
+      });
+    }
+    /** end of modification */
+
 
     this.eventBus.dispatch("pagechanging", {
       source: this,
