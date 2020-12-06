@@ -14,11 +14,11 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { loadScript, shadow } from "pdfjs-lib";
 import { AppOptions } from "./app_options.js";
 import { BasePreferences } from "./preferences.js";
 import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
+import { loadScript } from "pdfjs-lib";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(
@@ -39,6 +39,29 @@ class GenericPreferences extends BasePreferences {
   }
 }
 
+class GenericScripting {
+  constructor() {
+    this._ready = loadScript(AppOptions.get("sandboxBundleSrc")).then(() => {
+      return window.pdfjsSandbox.QuickJSSandbox();
+    });
+  }
+
+  async createSandbox(data) {
+    const sandbox = await this._ready;
+    sandbox.create(data);
+  }
+
+  async dispatchEventInSandbox(event) {
+    const sandbox = await this._ready;
+    sandbox.dispatchEvent(event);
+  }
+
+  async destroySandbox() {
+    const sandbox = await this._ready;
+    sandbox.nukeSandbox();
+  }
+}
+
 class GenericExternalServices extends DefaultExternalServices {
   static createDownloadManager(options) {
     return new DownloadManager();
@@ -53,22 +76,7 @@ class GenericExternalServices extends DefaultExternalServices {
   }
 
   static get scripting() {
-    const promise = loadScript(AppOptions.get("sandboxBundleSrc")).then(() => {
-      return window.pdfjsSandbox.QuickJSSandbox();
-    });
-    const sandbox = {
-      createSandbox(data) {
-        promise.then(sbx => sbx.create(data));
-      },
-      dispatchEventInSandbox(event) {
-        promise.then(sbx => sbx.dispatchEvent(event));
-      },
-      destroySandbox() {
-        promise.then(sbx => sbx.nukeSandbox());
-      },
-    };
-
-    return shadow(this, "scripting", sandbox);
+    return new GenericScripting();
   }
 }
 PDFViewerApplication.externalServices = GenericExternalServices;
