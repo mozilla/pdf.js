@@ -632,13 +632,26 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         storage.setValue(id, { value: event.target.value });
       });
 
+      let hasDragStarted = false;
       let blurListener = event => {
         if (elementData.formattedValue) {
           event.target.value = elementData.formattedValue;
         }
-        event.target.setSelectionRange(0, 0);
+        if (!hasDragStarted) {
+          // Put the caret at the beginning of the line when leaving
+          // The 'hasDragStarted' is required in Firefox to avoid bug 1679872
+          // TODO: remove hasDragStarted stuff when the above bug is fixed
+          event.target.setSelectionRange(0, 0);
+        }
         elementData.beforeInputSelectionRange = null;
       };
+
+      element.addEventListener("dragstart", () => {
+        hasDragStarted = true;
+      });
+      element.addEventListener("dragend", e => {
+        hasDragStarted = false;
+      });
 
       if (this.enableScripting && this.hasJSActions) {
         element.addEventListener("focus", event => {

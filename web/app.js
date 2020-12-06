@@ -2401,17 +2401,21 @@ function webViewerInitialized() {
 
     // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
     appConfig.mainContainer.addEventListener("dragover", function (evt) {
-      evt.preventDefault();
-
-      evt.dataTransfer.dropEffect = "move";
-    });
-    appConfig.mainContainer.addEventListener("drop", function (evt) {
-      evt.preventDefault();
-
       const files = evt.dataTransfer.files;
       if (!files || files.length === 0) {
         return;
       }
+
+      evt.preventDefault();
+      evt.dataTransfer.dropEffect = "move";
+    });
+    appConfig.mainContainer.addEventListener("drop", function (evt) {
+      const files = evt.dataTransfer.files;
+      if (!files || files.length === 0) {
+        return;
+      }
+
+      evt.preventDefault();
       PDFViewerApplication.eventBus.dispatch("fileinputchange", {
         source: this,
         fileInput: evt.dataTransfer,
