@@ -13,17 +13,24 @@
  * limitations under the License.
  */
 
-import ModuleLoader from "../../external/quickjs/quickjs-eval.js";
+import ModuleLoader from "../external/quickjs/quickjs-eval.js";
+
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
+/* eslint-disable-next-line no-unused-vars */
+const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
+
+const TESTING =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING");
 
 class Sandbox {
-  constructor(module, testMode) {
+  constructor(module) {
     this._evalInSandbox = module.cwrap("evalInSandbox", null, [
       "string",
       "int",
     ]);
     this._dispatchEventName = null;
     this._module = module;
-    this._testMode = testMode;
     this._alertOnError = 1;
   }
 
@@ -43,14 +50,14 @@ class Sandbox {
       "module = Object.create(null);",
       // Next line is replaced by code from initialization.js
       // when we create the bundle for the sandbox.
-      "/* INITIALIZATION_CODE */",
+      PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE"),
       `data = ${sandboxData};`,
       `module.exports.initSandbox({ data, extra: {${extraStr}}, out: this});`,
       "delete exports;",
       "delete module;",
       "delete data;",
     ];
-    if (!this._testMode) {
+    if (!TESTING) {
       code = code.concat(extra.map(name => `delete ${name};`));
       code.push("delete debugMe;");
     }
@@ -81,7 +88,7 @@ class Sandbox {
   }
 
   evalForTesting(code, key) {
-    if (this._testMode) {
+    if (TESTING) {
       this._evalInSandbox(
         `try {
            send({ id: "${key}", result: ${code} });
@@ -94,13 +101,9 @@ class Sandbox {
   }
 }
 
-function QuickJSSandbox(testMode = false) {
-  testMode =
-    testMode &&
-    (typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING"));
+function QuickJSSandbox() {
   return ModuleLoader().then(module => {
-    return new Sandbox(module, testMode);
+    return new Sandbox(module);
   });
 }
 
