@@ -251,7 +251,8 @@ const PDFViewerApplication = {
   _boundEvents: Object.create(null),
   documentInfo: null,
   metadata: null,
-  contentDispositionFilename: null,
+  _contentDispositionFilename: null,
+  _contentLength: null,
   triggerDelayedFallback: null,
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
@@ -793,7 +794,8 @@ const PDFViewerApplication = {
     this.baseUrl = "";
     this.documentInfo = null;
     this.metadata = null;
-    this.contentDispositionFilename = null;
+    this._contentDispositionFilename = null;
+    this._contentLength = null;
     this.triggerDelayedFallback = null;
     this._saveInProgress = false;
     for (const callback of this._idleCallbacks) {
@@ -946,7 +948,7 @@ const PDFViewerApplication = {
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
     const filename =
-      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
     const downloadManager = this.downloadManager;
     downloadManager.onerror = err => {
       // This error won't really be helpful because it's likely the
@@ -979,7 +981,7 @@ const PDFViewerApplication = {
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
     const filename =
-      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
     const downloadManager = this.downloadManager;
     downloadManager.onerror = err => {
       // This error won't really be helpful because it's likely the
@@ -1488,9 +1490,23 @@ const PDFViewerApplication = {
     });
 
     const dispatchEventName = generateRandomStringForSandbox(objects);
-    const { length } = await pdfDocument.getDownloadInfo();
+
+    if (!this._contentLength) {
+      // Always waiting for the entire PDF document to be loaded will, most
+      // likely, delay sandbox-creation too much in the general case for all
+      // PDF documents which are not provided as binary data to the API.
+      // Hence we'll simply have to trust that the `contentLength` (as provided
+      // by the server), when it exists, is accurate enough here.
+      const { length } = await pdfDocument.getDownloadInfo();
+
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the download info resolved.
+      }
+      this._contentLength = length;
+    }
     const filename =
-      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
+
     scripting.createSandbox({
       objects,
       dispatchEventName,
@@ -1502,7 +1518,7 @@ const PDFViewerApplication = {
       docInfo: {
         ...this.documentInfo,
         baseURL: this.baseUrl,
-        filesize: length,
+        filesize: this._contentLength,
         filename,
         metadata: this.metadata,
         numPages: pdfDocument.numPages,
@@ -1582,6 +1598,7 @@ const PDFViewerApplication = {
       info,
       metadata,
       contentDispositionFilename,
+      contentLength,
     } = await pdfDocument.getMetadata();
 
     if (pdfDocument !== this.pdfDocument) {
@@ -1589,7 +1606,8 @@ const PDFViewerApplication = {
     }
     this.documentInfo = info;
     this.metadata = metadata;
-    this.contentDispositionFilename = contentDispositionFilename;
+    this._contentDispositionFilename = contentDispositionFilename;
+    this._contentLength = contentLength;
 
     // Provides some basic debug information
     console.log(
