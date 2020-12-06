@@ -248,12 +248,16 @@ const PDFViewerApplication = {
   url: "",
   baseUrl: "",
   externalServices: DefaultExternalServices,
-  _boundEvents: {},
-  contentDispositionFilename: null,
+  _boundEvents: Object.create(null),
+  documentInfo: null,
+  metadata: null,
+  _contentDispositionFilename: null,
+  _contentLength: null,
   triggerDelayedFallback: null,
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
+  _scriptingInstance: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -789,13 +793,28 @@ const PDFViewerApplication = {
     this.downloadComplete = false;
     this.url = "";
     this.baseUrl = "";
-    this.contentDispositionFilename = null;
+    this.documentInfo = null;
+    this.metadata = null;
+    this._contentDispositionFilename = null;
+    this._contentLength = null;
     this.triggerDelayedFallback = null;
     this._saveInProgress = false;
     for (const callback of this._idleCallbacks) {
       window.cancelIdleCallback(callback);
     }
     this._idleCallbacks.clear();
+
+    if (this._scriptingInstance) {
+      const { scripting, events } = this._scriptingInstance;
+      try {
+        scripting.destroySandbox();
+      } catch (ex) {}
+
+      for (const [name, listener] of events) {
+        window.removeEventListener(name, listener);
+      }
+      this._scriptingInstance = null;
+    }
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -942,7 +961,7 @@ const PDFViewerApplication = {
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
     const filename =
-      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
     const downloadManager = this.downloadManager;
     downloadManager.onerror = err => {
       // This error won't really be helpful because it's likely the
@@ -975,7 +994,7 @@ const PDFViewerApplication = {
     // Use this.url instead of this.baseUrl to perform filename detection based
     // on the reference fragment as ultimate fallback if needed.
     const filename =
-      this.contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
     const downloadManager = this.downloadManager;
     downloadManager.onerror = err => {
       // This error won't really be helpful because it's likely the
@@ -1403,54 +1422,71 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeJavaScript(pdfDocument) {
-    const objects = await pdfDocument.getFieldObjects();
-
-    if (pdfDocument !== this.pdfDocument) {
-      return; // The document was closed while the JavaScript data resolved.
-    }
-    if (!objects || !AppOptions.get("enableScripting")) {
+    if (!AppOptions.get("enableScripting")) {
       return;
     }
-    const calculationOrder = await pdfDocument.getCalculationOrderIds();
-    const scripting = this.externalServices.scripting;
-    const {
-      info,
-      metadata,
-      contentDispositionFilename,
-    } = await pdfDocument.getMetadata();
+    const [objects, calculationOrder] = await Promise.all([
+      pdfDocument.getFieldObjects(),
+      pdfDocument.getCalculationOrderIds(),
+    ]);
 
-    window.addEventListener("updateFromSandbox", event => {
-      const detail = event.detail;
-      const id = detail.id;
+    if (!objects || pdfDocument !== this.pdfDocument) {
+      // No FieldObjects were found in the document,
+      // or the document was closed while the data resolved.
+      return;
+    }
+    const { scripting } = this.externalServices;
+    // Store a reference to the current scripting-instance, to allow destruction
+    // of the sandbox and removal of the event listeners at document closing.
+    this._scriptingInstance = { scripting, events: new Map() };
+
+    if (!this.documentInfo) {
+      // It should be *extremely* rare for metadata to not have been resolved
+      // when this code runs, but ensure that we handle that case here.
+      await new Promise(resolve => {
+        const metadataLoaded = () => {
+          this.eventBus._off("metadataloaded", metadataLoaded);
+          resolve();
+        };
+        this.eventBus._on("metadataloaded", metadataLoaded);
+      });
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the metadata resolved.
+      }
+    }
+
+    const updateFromSandbox = event => {
+      const { detail } = event;
+      const { id, command, value } = detail;
       if (!id) {
-        switch (detail.command) {
+        switch (command) {
           case "alert":
             // eslint-disable-next-line no-alert
-            window.alert(detail.value);
+            window.alert(value);
             break;
           case "clear":
             console.clear();
             break;
           case "error":
-            console.error(detail.value);
+            console.error(value);
             break;
           case "layout":
-            this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(detail.value);
+            this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(value);
             return;
           case "page-num":
-            this.pdfViewer.currentPageNumber = detail.value + 1;
+            this.pdfViewer.currentPageNumber = value + 1;
             return;
           case "print":
             this.triggerPrinting();
             return;
           case "println":
-            console.log(detail.value);
+            console.log(value);
             break;
           case "zoom":
-            if (typeof detail.value === "string") {
-              this.pdfViewer.currentScaleValue = detail.value;
+            if (typeof value === "string") {
+              this.pdfViewer.currentScaleValue = value;
             } else {
-              this.pdfViewer.currentScale = detail.value;
+              this.pdfViewer.currentScale = value;
             }
             return;
         }
@@ -1461,22 +1497,44 @@ const PDFViewerApplication = {
       if (element) {
         element.dispatchEvent(new CustomEvent("updateFromSandbox", { detail }));
       } else {
-        const value = detail.value;
         if (value !== undefined && value !== null) {
-          // the element hasn't been rendered yet so use annotation storage
-          pdfDocument.annotationStorage.setValue(id, detail.value);
+          // The element hasn't been rendered yet, use the AnnotationStorage.
+          pdfDocument.annotationStorage.setValue(id, value);
         }
       }
-    });
+    };
+    window.addEventListener("updateFromSandbox", updateFromSandbox);
+    // Ensure that the event listener can be removed at document closing.
+    this._scriptingInstance.events.set("updateFromSandbox", updateFromSandbox);
 
-    window.addEventListener("dispatchEventInSandbox", function (event) {
+    const dispatchEventInSandbox = event => {
       scripting.dispatchEventInSandbox(event.detail);
-    });
+    };
+    window.addEventListener("dispatchEventInSandbox", dispatchEventInSandbox);
+    // Ensure that the event listener can be removed at document closing.
+    this._scriptingInstance.events.set(
+      "dispatchEventInSandbox",
+      dispatchEventInSandbox
+    );
 
     const dispatchEventName = generateRandomStringForSandbox(objects);
-    const { length } = await pdfDocument.getDownloadInfo();
+
+    if (!this._contentLength) {
+      // Always waiting for the entire PDF document to be loaded will, most
+      // likely, delay sandbox-creation too much in the general case for all
+      // PDF documents which are not provided as binary data to the API.
+      // Hence we'll simply have to trust that the `contentLength` (as provided
+      // by the server), when it exists, is accurate enough here.
+      const { length } = await pdfDocument.getDownloadInfo();
+
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the download info resolved.
+      }
+      this._contentLength = length;
+    }
     const filename =
-      contentDispositionFilename || getPDFFileNameFromURL(this.url);
+      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
+
     scripting.createSandbox({
       objects,
       dispatchEventName,
@@ -1486,11 +1544,11 @@ const PDFViewerApplication = {
         language: navigator.language,
       },
       docInfo: {
-        ...info,
+        ...this.documentInfo,
         baseURL: this.baseUrl,
-        filesize: length,
+        filesize: this._contentLength,
         filename,
-        metadata,
+        metadata: this.metadata,
         numPages: pdfDocument.numPages,
         URL: this.url,
       },
@@ -1568,6 +1626,7 @@ const PDFViewerApplication = {
       info,
       metadata,
       contentDispositionFilename,
+      contentLength,
     } = await pdfDocument.getMetadata();
 
     if (pdfDocument !== this.pdfDocument) {
@@ -1575,7 +1634,8 @@ const PDFViewerApplication = {
     }
     this.documentInfo = info;
     this.metadata = metadata;
-    this.contentDispositionFilename = contentDispositionFilename;
+    this._contentDispositionFilename = contentDispositionFilename;
+    this._contentLength = contentLength;
 
     // Provides some basic debug information
     console.log(
@@ -1652,6 +1712,8 @@ const PDFViewerApplication = {
       generator: generatorId,
       formType,
     });
+
+    this.eventBus.dispatch("metadataloaded", { source: this });
   },
 
   /**

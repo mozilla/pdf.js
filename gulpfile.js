@@ -33,7 +33,6 @@ var stream = require("stream");
 var exec = require("child_process").exec;
 var spawn = require("child_process").spawn;
 var spawnSync = require("child_process").spawnSync;
-var stripComments = require("gulp-strip-comments");
 var streamqueue = require("streamqueue");
 var merge = require("merge-stream");
 var zip = require("gulp-zip");
@@ -65,6 +64,7 @@ var SRC_DIR = "src/";
 var LIB_DIR = BUILD_DIR + "lib/";
 var DIST_DIR = BUILD_DIR + "dist/";
 var TYPES_DIR = BUILD_DIR + "types/";
+const TMP_DIR = BUILD_DIR + "tmp/";
 var TYPESTEST_DIR = BUILD_DIR + "typestest/";
 var COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 var MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
@@ -106,7 +106,6 @@ const DEFINES = Object.freeze({
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
-  NO_SOURCE_MAP: false,
 });
 
 function transform(charEncoding, transformFunction) {
@@ -171,8 +170,18 @@ function createStringSource(filename, content) {
   return source;
 }
 
-function createWebpackConfig(defines, output) {
-  var versionInfo = getVersionJSON();
+function createWebpackConfig(
+  defines,
+  output,
+  {
+    disableVersionInfo = false,
+    disableSourceMaps = false,
+    disableLicenseHeader = false,
+  } = {}
+) {
+  const versionInfo = !disableVersionInfo
+    ? getVersionJSON()
+    : { version: 0, commit: 0 };
   var bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
@@ -184,8 +193,9 @@ function createWebpackConfig(defines, output) {
   var enableSourceMaps =
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
+    !bundleDefines.LIB &&
     !bundleDefines.TESTING &&
-    !bundleDefines.NO_SOURCE_MAP;
+    !disableSourceMaps;
   var skipBabel = bundleDefines.SKIP_BABEL;
 
   // `core-js` (see https://github.com/zloirock/core-js/issues/514),
@@ -201,6 +211,13 @@ function createWebpackConfig(defines, output) {
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
+  const plugins = [];
+  if (!disableLicenseHeader) {
+    plugins.push(
+      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true })
+    );
+  }
+
   // Required to expose e.g., the `window` object.
   output.globalObject = "this";
 
@@ -210,9 +227,7 @@ function createWebpackConfig(defines, output) {
     performance: {
       hints: false, // Disable messages about larger file sizes.
     },
-    plugins: [
-      new webpack2.BannerPlugin({ banner: licenseHeaderLibre, raw: true }),
-    ],
+    plugins,
     resolve: {
       alias: {
         pdfjs: path.join(__dirname, "src"),
@@ -329,16 +344,20 @@ function createMainBundle(defines) {
     .pipe(replaceJSRootName(mainAMDName, "pdfjsLib"));
 }
 
-function createScriptingBundle(defines) {
+function createScriptingBundle(defines, extraOptions = undefined) {
   var scriptingAMDName = "pdfjs-dist/build/pdf.scripting";
   var scriptingOutputName = "pdf.scripting.js";
 
-  var scriptingFileConfig = createWebpackConfig(defines, {
-    filename: scriptingOutputName,
-    library: scriptingAMDName,
-    libraryTarget: "umd",
-    umdNamedDefine: true,
-  });
+  var scriptingFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: scriptingOutputName,
+      library: scriptingAMDName,
+      libraryTarget: "umd",
+      umdNamedDefine: true,
+    },
+    extraOptions
+  );
   return gulp
     .src("./src/pdf.scripting.js")
     .pipe(webpack2Stream(scriptingFileConfig))
@@ -346,51 +365,41 @@ function createScriptingBundle(defines) {
     .pipe(replaceJSRootName(scriptingAMDName, "pdfjsScripting"));
 }
 
-function createSandboxBundle(defines, code) {
-  var sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
-  var sandboxOutputName = "pdf.sandbox.js";
-  var sandboxFileConfig = createWebpackConfig(defines, {
-    filename: sandboxOutputName,
-    library: sandboxAMDName,
-    libraryTarget: "umd",
-    umdNamedDefine: true,
-  });
-
-  // The code is the one from the bundle pdf.scripting.js
-  // so in order to have it in a string (which will be eval-ed
-  // in the sandbox) we must escape some chars.
-  // This way we've all the code (initialization+sandbox) in
-  // the same bundle.
-  code = code.replace(/["\\\n\t]/g, match => {
-    if (match === "\n") {
-      return "\\n";
-    }
-    if (match === "\t") {
-      return "\\t";
-    }
-    return `\\${match}`;
-  });
-  return (
-    gulp
-      .src("./src/scripting_api/quickjs-sandbox.js")
-      .pipe(webpack2Stream(sandboxFileConfig))
-      .pipe(replaceWebpackRequire())
-      .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"))
-      // put the code in a string to be eval-ed in the sandbox
-      .pipe(replace("/* INITIALIZATION_CODE */", `${code}`))
-  );
+function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
+  return createScriptingBundle(defines, {
+    disableVersionInfo: !!(extraOptions && extraOptions.disableVersionInfo),
+    disableSourceMaps: true,
+    disableLicenseHeader: true,
+  }).pipe(gulp.dest(TMP_DIR));
 }
 
-function buildSandbox(defines, dir) {
-  const scriptingDefines = builder.merge(defines, { NO_SOURCE_MAP: true });
-  return createScriptingBundle(scriptingDefines)
-    .pipe(stripComments())
-    .pipe(gulp.dest(dir + "build"))
-    .on("data", file => {
-      const content = file.contents.toString();
-      createSandboxBundle(defines, content).pipe(gulp.dest(dir + "build"));
-      fs.unlinkSync(dir + "build/pdf.scripting.js");
-    });
+function createSandboxBundle(defines, extraOptions = undefined) {
+  var sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
+  var sandboxOutputName = "pdf.sandbox.js";
+
+  const scriptingPath = TMP_DIR + "pdf.scripting.js";
+  // Insert the source as a string to be `eval`-ed in the sandbox.
+  const sandboxDefines = builder.merge(defines, {
+    PDF_SCRIPTING_JS_SOURCE: fs.readFileSync(scriptingPath).toString(),
+  });
+  fs.unlinkSync(scriptingPath);
+
+  var sandboxFileConfig = createWebpackConfig(
+    sandboxDefines,
+    {
+      filename: sandboxOutputName,
+      library: sandboxAMDName,
+      libraryTarget: "umd",
+      umdNamedDefine: true,
+    },
+    extraOptions
+  );
+
+  return gulp
+    .src("./src/pdf.sandbox.js")
+    .pipe(webpack2Stream(sandboxFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"));
 }
 
 function createWorkerBundle(defines) {
@@ -543,25 +552,6 @@ function makeRef(done, bot) {
     done();
   });
 }
-
-gulp.task("sandbox", function (done) {
-  const defines = builder.merge(DEFINES, { GENERIC: true });
-  buildSandbox(defines, GENERIC_DIR);
-  done();
-});
-
-gulp.task("watch-sandbox", function (done) {
-  const defines = builder.merge(DEFINES, { GENERIC: true });
-  buildSandbox(defines, GENERIC_DIR);
-  const watcher = gulp.watch([
-    "src/scripting_api/*.js",
-    "external/quickjs/*.js",
-  ]);
-  watcher.on("change", function () {
-    buildSandbox(defines, GENERIC_DIR);
-  });
-  done();
-});
 
 gulp.task("default", function (done) {
   console.log("Available tasks:");
@@ -798,6 +788,7 @@ function buildGeneric(defines, dir) {
   return merge([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines).pipe(gulp.dest(dir + "web")),
     gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
     gulp.src("LICENSE").pipe(gulp.dest(dir)),
@@ -836,14 +827,17 @@ gulp.task(
     "buildnumber",
     "default_preferences",
     "locale",
+    function scripting() {
+      var defines = builder.merge(DEFINES, { GENERIC: true });
+      return createTemporaryScriptingBundle(defines);
+    },
     function () {
       console.log();
       console.log("### Creating generic viewer");
       var defines = builder.merge(DEFINES, { GENERIC: true });
 
       return buildGeneric(defines, GENERIC_DIR);
-    },
-    "sandbox"
+    }
   )
 );
 
@@ -855,6 +849,13 @@ gulp.task(
     "buildnumber",
     "default_preferences",
     "locale",
+    function scripting() {
+      var defines = builder.merge(DEFINES, {
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
+      return createTemporaryScriptingBundle(defines);
+    },
     function () {
       console.log();
       console.log("### Creating generic (ES5) viewer");
@@ -864,13 +865,6 @@ gulp.task(
       });
 
       return buildGeneric(defines, GENERIC_ES5_DIR);
-    },
-    function () {
-      const defines = builder.merge(DEFINES, {
-        GENERIC: true,
-        SKIP_BABEL: false,
-      });
-      return buildSandbox(defines, GENERIC_ES5_DIR);
     }
   )
 );
@@ -964,6 +958,7 @@ function buildMinified(defines, dir) {
   return merge([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines).pipe(gulp.dest(dir + "web")),
     createImageDecodersBundle(
       builder.merge(defines, { IMAGE_DECODERS: true })
@@ -1003,14 +998,13 @@ gulp.task(
     "buildnumber",
     "default_preferences",
     "locale",
+    function scripting() {
+      var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+      return createTemporaryScriptingBundle(defines);
+    },
     function () {
       console.log();
       console.log("### Creating minified viewer");
-      var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
-
-      return buildSandbox(defines, MINIFIED_DIR);
-    },
-    function () {
       var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
 
       return buildMinified(defines, MINIFIED_DIR);
@@ -1024,19 +1018,17 @@ gulp.task(
     "buildnumber",
     "default_preferences",
     "locale",
-    function () {
-      console.log();
-      console.log("### Creating minified (ES5) viewer");
+    function scripting() {
       var defines = builder.merge(DEFINES, {
         MINIFIED: true,
         GENERIC: true,
         SKIP_BABEL: false,
       });
-
-      return buildSandbox(defines, MINIFIED_ES5_DIR);
+      return createTemporaryScriptingBundle(defines);
     },
-
     function () {
+      console.log();
+      console.log("### Creating minified (ES5) viewer");
       var defines = builder.merge(DEFINES, {
         MINIFIED: true,
         GENERIC: true,
@@ -1238,80 +1230,85 @@ gulp.task("mozcentral", gulp.series("mozcentral-pre"));
 
 gulp.task(
   "chromium-pre",
-  gulp.series("buildnumber", "default_preferences", "locale", function () {
-    console.log();
-    console.log("### Building Chromium extension");
-    var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
+  gulp.series(
+    "buildnumber",
+    "default_preferences",
+    "locale",
+    function scripting() {
+      var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
+      return createTemporaryScriptingBundle(defines);
+    },
+    function () {
+      console.log();
+      console.log("### Building Chromium extension");
+      var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
 
-    var CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
-      CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
+      var CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
+        CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
 
-    // Clear out everything in the chrome extension build directory
-    rimraf.sync(CHROME_BUILD_DIR);
+      // Clear out everything in the chrome extension build directory
+      rimraf.sync(CHROME_BUILD_DIR);
 
-    var version = getVersionJSON().version;
+      var version = getVersionJSON().version;
 
-    return merge([
-      createMainBundle(defines).pipe(
-        gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
-      ),
-      createWorkerBundle(defines).pipe(
-        gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
-      ),
-      createWebBundle(defines).pipe(
-        gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
-      ),
-      gulp
-        .src(COMMON_WEB_FILES, { base: "web/" })
-        .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
+      return merge([
+        createMainBundle(defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+        ),
+        createWorkerBundle(defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+        ),
+        createSandboxBundle(defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+        ),
+        createWebBundle(defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
+        ),
+        gulp
+          .src(COMMON_WEB_FILES, { base: "web/" })
+          .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
-      gulp
-        .src(
-          ["web/locale/*/viewer.properties", "web/locale/locale.properties"],
-          { base: "web/" }
-        )
-        .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
-      gulp
-        .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
-          base: "external/bcmaps",
-        })
-        .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/cmaps")),
+        gulp
+          .src(
+            ["web/locale/*/viewer.properties", "web/locale/locale.properties"],
+            { base: "web/" }
+          )
+          .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
+        gulp
+          .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
+            base: "external/bcmaps",
+          })
+          .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web/cmaps")),
 
-      preprocessHTML("web/viewer.html", defines).pipe(
-        gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
-      ),
-      preprocessCSS("web/viewer.css", "chrome", defines, true)
-        .pipe(
-          postcss([autoprefixer({ overrideBrowserslist: ["chrome >= 49"] })])
-        )
-        .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
+        preprocessHTML("web/viewer.html", defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
+        ),
+        preprocessCSS("web/viewer.css", "chrome", defines, true)
+          .pipe(
+            postcss([autoprefixer({ overrideBrowserslist: ["chrome >= 49"] })])
+          )
+          .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
-      gulp.src("LICENSE").pipe(gulp.dest(CHROME_BUILD_DIR)),
-      gulp
-        .src("extensions/chromium/manifest.json")
-        .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
-        .pipe(gulp.dest(CHROME_BUILD_DIR)),
-      gulp
-        .src(
-          [
-            "extensions/chromium/**/*.{html,js,css,png}",
-            "extensions/chromium/preferences_schema.json",
-          ],
-          { base: "extensions/chromium/" }
-        )
-        .pipe(gulp.dest(CHROME_BUILD_DIR)),
-    ]);
-  })
+        gulp.src("LICENSE").pipe(gulp.dest(CHROME_BUILD_DIR)),
+        gulp
+          .src("extensions/chromium/manifest.json")
+          .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
+          .pipe(gulp.dest(CHROME_BUILD_DIR)),
+        gulp
+          .src(
+            [
+              "extensions/chromium/**/*.{html,js,css,png}",
+              "extensions/chromium/preferences_schema.json",
+            ],
+            { base: "extensions/chromium/" }
+          )
+          .pipe(gulp.dest(CHROME_BUILD_DIR)),
+      ]);
+    }
+  )
 );
 
-gulp.task(
-  "chromium",
-  gulp.series("chromium-pre", function () {
-    var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
-    var CHROME_BUILD_CONTENT_DIR = BUILD_DIR + "/chromium/content/";
-    return buildSandbox(defines, CHROME_BUILD_CONTENT_DIR);
-  })
-);
+gulp.task("chromium", gulp.series("chromium-pre"));
 
 gulp.task("jsdoc", function (done) {
   console.log();
@@ -1432,15 +1429,17 @@ gulp.task(
   gulp.series(
     "buildnumber",
     "default_preferences",
-    function () {
+    function scripting() {
       var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
-
-      return buildLib(defines, "build/lib/");
+      return createTemporaryScriptingBundle(defines);
     },
     function () {
       var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
 
-      return buildSandbox(defines, "build/lib/");
+      return merge([
+        buildLib(defines, "build/lib/"),
+        createSandboxBundle(defines).pipe(gulp.dest("build/lib/")),
+      ]);
     }
   )
 );
@@ -1450,14 +1449,13 @@ gulp.task(
   gulp.series(
     "buildnumber",
     "default_preferences",
-    function () {
+    function scripting() {
       var defines = builder.merge(DEFINES, {
         GENERIC: true,
         LIB: true,
         SKIP_BABEL: false,
       });
-
-      return buildLib(defines, "build/lib-es5/");
+      return createTemporaryScriptingBundle(defines);
     },
     function () {
       var defines = builder.merge(DEFINES, {
@@ -1466,7 +1464,10 @@ gulp.task(
         SKIP_BABEL: false,
       });
 
-      return buildSandbox(defines, "build/lib-es5/");
+      return merge([
+        buildLib(defines, "build/lib-es5/"),
+        createSandboxBundle(defines).pipe(gulp.dest("build/lib-es5/")),
+      ]);
     }
   )
 );
@@ -1717,15 +1718,56 @@ gulp.task(
   })
 );
 
-gulp.task("server", function () {
-  console.log();
-  console.log("### Starting local server");
+gulp.task(
+  "dev-sandbox",
+  gulp.series(
+    function scripting() {
+      const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+      return createTemporaryScriptingBundle(defines, {
+        disableVersionInfo: true,
+      });
+    },
+    function () {
+      console.log();
+      console.log("### Building development sandbox");
 
-  var WebServer = require("./test/webserver.js").WebServer;
-  var server = new WebServer();
-  server.port = 8888;
-  server.start();
+      const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+      const sandboxDir = BUILD_DIR + "dev-sandbox/";
+
+      rimraf.sync(sandboxDir);
+
+      return createSandboxBundle(defines, {
+        disableVersionInfo: true,
+      }).pipe(gulp.dest(sandboxDir));
+    }
+  )
+);
+
+gulp.task("watch-dev-sandbox", function () {
+  gulp.watch(
+    [
+      "src/pdf.{sandbox,scripting}.js",
+      "src/scripting_api/*.js",
+      "src/shared/scripting_utils.js",
+      "external/quickjs/*.js",
+    ],
+    { ignoreInitial: false },
+    gulp.series("dev-sandbox")
+  );
 });
+
+gulp.task(
+  "server",
+  gulp.parallel("watch-dev-sandbox", function () {
+    console.log();
+    console.log("### Starting local server");
+
+    var WebServer = require("./test/webserver.js").WebServer;
+    var server = new WebServer();
+    server.port = 8888;
+    server.start();
+  })
+);
 
 gulp.task("clean", function (done) {
   console.log();

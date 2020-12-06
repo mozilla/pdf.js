@@ -56,9 +56,6 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
   require("./chromecom.js");
 }
-if (typeof PDFJSDev === "undefined") {
-  import("./devcom.js");
-}
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME || GENERIC")) {
   require("./pdf_print_service.js");
 }
