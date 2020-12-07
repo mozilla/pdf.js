@@ -14,11 +14,10 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { AppOptions } from "./app_options.js";
 import { BasePreferences } from "./preferences.js";
 import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
-import { loadScript } from "pdfjs-lib";
+import { GenericScripting } from "./generic_scripting.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(
@@ -36,32 +35,6 @@ class GenericPreferences extends BasePreferences {
 
   async _readFromStorage(prefObj) {
     return JSON.parse(localStorage.getItem("pdfjs.preferences"));
-  }
-}
-
-class GenericScripting {
-  constructor() {
-    this._ready = loadScript(
-      AppOptions.get("sandboxBundleSrc"),
-      /* removeScriptElement = */ true
-    ).then(() => {
-      return window.pdfjsSandbox.QuickJSSandbox();
-    });
-  }
-
-  async createSandbox(data) {
-    const sandbox = await this._ready;
-    sandbox.create(data);
-  }
-
-  async dispatchEventInSandbox(event) {
-    const sandbox = await this._ready;
-    sandbox.dispatchEvent(event);
-  }
-
-  async destroySandbox() {
-    const sandbox = await this._ready;
-    sandbox.nukeSandbox();
   }
 }
 
