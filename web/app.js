@@ -764,6 +764,19 @@ const PDFViewerApplication = {
   },
 
   /**
+   * @private
+   */
+  _cancelIdleCallbacks() {
+    if (!this._idleCallbacks.size) {
+      return;
+    }
+    for (const callback of this._idleCallbacks) {
+      window.cancelIdleCallback(callback);
+    }
+    this._idleCallbacks.clear();
+  },
+
+  /**
    * Closes opened PDF document.
    * @returns {Promise} - Returns the promise, which is resolved when all
    *                      destruction is completed.
@@ -799,10 +812,8 @@ const PDFViewerApplication = {
     this._contentLength = null;
     this.triggerDelayedFallback = null;
     this._saveInProgress = false;
-    for (const callback of this._idleCallbacks) {
-      window.cancelIdleCallback(callback);
-    }
-    this._idleCallbacks.clear();
+
+    this._cancelIdleCallbacks();
 
     if (this._scriptingInstance) {
       const { scripting, events } = this._scriptingInstance;
