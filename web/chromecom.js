@@ -430,7 +430,7 @@ class ChromeExternalServices extends DefaultExternalServices {
     return new GenericL10n(navigator.language);
   }
 
-  static get scripting() {
+  static createScripting() {
     return new GenericScripting();
   }
 }

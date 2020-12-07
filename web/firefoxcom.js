@@ -360,7 +360,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
     return new MozL10n(mozL10n);
   }
 
-  static get scripting() {
+  static createScripting() {
     return FirefoxScripting;
   }
 

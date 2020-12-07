@@ -168,6 +168,10 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createL10n");
   }
 
+  static createScripting() {
+    throw new Error("Not implemented: createScripting");
+  }
+
   static get supportsIntegratedFind() {
     return shadow(this, "supportsIntegratedFind", false);
   }
@@ -185,10 +189,6 @@ class DefaultExternalServices {
 
   static get isInAutomation() {
     return shadow(this, "isInAutomation", false);
-  }
-
-  static get scripting() {
-    throw new Error("Not implemented: scripting");
   }
 }
 
@@ -1456,7 +1456,7 @@ const PDFViewerApplication = {
       // or the document was closed while the data resolved.
       return;
     }
-    const { scripting } = this.externalServices;
+    const scripting = this.externalServices.createScripting();
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
     this._scriptingInstance = { scripting, events: new Map() };
