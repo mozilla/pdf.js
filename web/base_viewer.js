@@ -207,6 +207,7 @@ class BaseViewer {
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.presentationModeState = PresentationModeState.UNKNOWN;
     this._onBeforeDraw = this._onAfterDraw = null;
+    this._onAfterPageDraw = null;
     this._resetView();
 
     if (this.removePageBorders) {
@@ -281,6 +282,7 @@ class BaseViewer {
     if (!(0 < val && val <= this.pagesCount)) {
       return false;
     }
+
     this._currentPageNumber = val;
 
     this.eventBus.dispatch("pagechanging", {
@@ -292,6 +294,25 @@ class BaseViewer {
     if (resetCurrentPageView) {
       this._resetCurrentPageView();
     }
+
+    if (this._pages[val - 1].renderingState === RenderingStates.FINISHED) {
+      this.eventBus.dispatch("pageopen", {
+        source: this,
+        pageNumber: val,
+      });
+    } else if (!this._onAfterPageDraw) {
+      this._onAfterPageDraw = evt => {
+        if (evt.pageNumber !== this._currentPageNumber) {
+          return;
+        }
+        this.eventBus.dispatch("pageopen", {
+          source: this,
+          pageNumber: this._currentPageNumber,
+        });
+      };
+      this.eventBus._on("pagerendered", this._onAfterPageDraw);
+    }
+
     return true;
   }
 
