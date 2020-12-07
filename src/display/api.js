@@ -754,6 +754,17 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @returns {Promise<Object | null>} A promise that is resolved with
+   *   an {Object} with the JavaScript actions:
+   *     - from the name tree (like getJavaScript);
+   *     - from A or AA entries in the catalog dictionary.
+   *   , or `null` if no JavaScript exists.
+   */
+  getJSActions() {
+    return this._transport.getDocJSActions();
+  }
+
+  /**
    * @typedef {Object} OutlineNode
    * @property {string} title
    * @property {boolean} bold
@@ -1125,6 +1136,20 @@ class PDFPageProxy {
   }
 
   /**
+   * @param {GetAnnotationsParameters} params - Annotation parameters.
+   * @returns {Promise<Array<any>>} A promise that is resolved with an
+   *   {Array} of the annotation objects.
+   */
+  getJSActions() {
+    if (!this._jsActionsPromise) {
+      this._jsActionsPromise = this._transport.getPageJSActions(
+        this._pageIndex
+      );
+    }
+    return this._jsActionsPromise;
+  }
+
+  /**
    * Begins the process of rendering a page to the desired context.
    *
    * @param {RenderParameters} params Page render parameters.
@@ -1405,6 +1430,7 @@ class PDFPageProxy {
     }
     this.objs.clear();
     this.annotationsPromise = null;
+    this._jsActionsPromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1438,6 +1464,7 @@ class PDFPageProxy {
     this._intentStates.clear();
     this.objs.clear();
     this.annotationsPromise = null;
+    this._jsActionsPromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
@@ -2629,6 +2656,16 @@ class WorkerTransport {
 
   getJavaScript() {
     return this.messageHandler.sendWithPromise("GetJavaScript", null);
+  }
+
+  getDocJSActions() {
+    return this.messageHandler.sendWithPromise("GetDocJSActions", null);
+  }
+
+  getPageJSActions(pageIndex) {
+    return this.messageHandler.sendWithPromise("GetPageJSActions", {
+      pageIndex,
+    });
   }
 
   getOutline() {

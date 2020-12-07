@@ -481,6 +481,16 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("javaScript");
     });
 
+    handler.on("GetDocJSActions", function wphSetupGetDocJSActions(data) {
+      return pdfManager.ensureCatalog("jsActions");
+    });
+
+    handler.on("GetPageJSActions", function ({ pageIndex }) {
+      return pdfManager.getPage(pageIndex).then(function (page) {
+        return page.jsActions;
+      });
+    });
+
     handler.on("GetOutline", function wphSetupGetOutline(data) {
       return pdfManager.ensureCatalog("documentOutline");
     });

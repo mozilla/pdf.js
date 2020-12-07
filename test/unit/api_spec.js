@@ -995,6 +995,44 @@ describe("api", function () {
         .catch(done.fail);
     });
 
+    it("gets JSActions (none)", function (done) {
+      const promise = pdfDocument.getJSActions();
+      promise
+        .then(function (data) {
+          expect(data).toEqual(null);
+          done();
+        })
+        .catch(done.fail);
+    });
+    it("gets JSActions", function (done) {
+      // PDF document with "JavaScript" action in the OpenAction dictionary.
+      const loadingTask = getDocument(buildGetDocumentParams("docactions.pdf"));
+      const promise = loadingTask.promise.then(async pdfDoc => {
+        const docActions = await pdfDoc.getJSActions();
+        const page5 = await pdfDoc.getPage(5);
+        const page12 = await pdfDoc.getPage(12);
+        const page5Actions = await page5.getJSActions();
+        const page12Actions = await page12.getJSActions();
+        return [docActions, page5Actions, page12Actions];
+      });
+      promise
+        .then(async ([docActions, page5Actions, page12Actions]) => {
+          expect(docActions).toEqual({
+            Open: ["console.println('Open Action');"],
+          });
+          expect(page5Actions).toEqual({
+            PageOpen: ["console.println('Open page 5');"],
+            PageClose: ["console.println('Close page 5');"],
+          });
+          expect(page12Actions).toEqual({
+            PageOpen: ["console.println('Open page 12');"],
+            PageClose: ["console.println('Close page 12');"],
+          });
+          loadingTask.destroy().then(done);
+        })
+        .catch(done.fail);
+    });
+
     it("gets non-existent outline", function (done) {
       const loadingTask = getDocument(
         buildGetDocumentParams("tracemonkey.pdf")

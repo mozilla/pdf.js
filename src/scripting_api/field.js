@@ -14,6 +14,7 @@
  */
 
 import { Color } from "./color.js";
+import { createActionsMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 
 class Field extends PDFObject {
@@ -72,7 +73,7 @@ class Field extends PDFObject {
 
     // Private
     this._document = data.doc;
-    this._actions = this._createActionsMap(data.actions);
+    this._actions = createActionsMap(data.actions);
 
     this._fillColor = data.fillColor || ["T"];
     this._strokeColor = data.strokeColor || ["G", 0];
@@ -131,16 +132,6 @@ class Field extends PDFObject {
 
   setFocus() {
     this._send({ id: this._id, focus: true });
-  }
-
-  _createActionsMap(actions) {
-    const actionsMap = new Map();
-    if (actions) {
-      for (const [eventType, actionsForEvent] of Object.entries(actions)) {
-        actionsMap.set(eventType, actionsForEvent);
-      }
-    }
-    return actionsMap;
   }
 
   _isButton() {
