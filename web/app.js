@@ -777,6 +777,26 @@ const PDFViewerApplication = {
   },
 
   /**
+   * @private
+   */
+  async _destroyScriptingInstance() {
+    if (!this._scriptingInstance) {
+      return;
+    }
+    const { scripting, events } = this._scriptingInstance;
+    try {
+      await scripting.destroySandbox();
+    } catch (ex) {}
+
+    for (const [name, listener] of events) {
+      window.removeEventListener(name, listener);
+    }
+    events.clear();
+
+    this._scriptingInstance = null;
+  },
+
+  /**
    * Closes opened PDF document.
    * @returns {Promise} - Returns the promise, which is resolved when all
    *                      destruction is completed.
@@ -788,8 +808,9 @@ const PDFViewerApplication = {
     if (!this.pdfLoadingTask) {
       return undefined;
     }
+    const promises = [];
 
-    const promise = this.pdfLoadingTask.destroy();
+    promises.push(this.pdfLoadingTask.destroy());
     this.pdfLoadingTask = null;
 
     if (this.pdfDocument) {
@@ -814,18 +835,7 @@ const PDFViewerApplication = {
     this._saveInProgress = false;
 
     this._cancelIdleCallbacks();
-
-    if (this._scriptingInstance) {
-      const { scripting, events } = this._scriptingInstance;
-      try {
-        scripting.destroySandbox();
-      } catch (ex) {}
-
-      for (const [name, listener] of events) {
-        window.removeEventListener(name, listener);
-      }
-      this._scriptingInstance = null;
-    }
+    promises.push(this._destroyScriptingInstance());
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -844,7 +854,7 @@ const PDFViewerApplication = {
     if (typeof PDFBug !== "undefined") {
       PDFBug.cleanup();
     }
-    return promise;
+    return Promise.all(promises);
   },
 
   /**
