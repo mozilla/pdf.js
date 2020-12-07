@@ -41,7 +41,10 @@ class GenericPreferences extends BasePreferences {
 
 class GenericScripting {
   constructor() {
-    this._ready = loadScript(AppOptions.get("sandboxBundleSrc")).then(() => {
+    this._ready = loadScript(
+      AppOptions.get("sandboxBundleSrc"),
+      /* removeScriptElement = */ true
+    ).then(() => {
       return window.pdfjsSandbox.QuickJSSandbox();
     });
   }
