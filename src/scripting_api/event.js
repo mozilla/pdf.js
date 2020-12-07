@@ -65,12 +65,28 @@ class EventDispatcher {
   dispatch(baseEvent) {
     const id = baseEvent.id;
     if (!(id in this._objects)) {
+      let event;
+      if (id === "doc" || id === "page") {
+        event = globalThis.event = new Event(baseEvent);
+        event.source = event.target = this._document.wrapped;
+        event.name = baseEvent.name;
+      }
+      if (id === "doc") {
+        this._document.obj._dispatchDocEvent(event.name);
+      }
+      if (id === "page") {
+        this._document.obj._dispatchPageEvent(
+          event.name,
+          baseEvent.action,
+          baseEvent.pageNumber
+        );
+      }
       return;
     }
 
     const name = baseEvent.name.replace(" ", "");
     const source = this._objects[id];
-    globalThis.event = new Event(baseEvent);
+    const event = (globalThis.event = new Event(baseEvent));
     let savedChange;
 
     if (source.obj._isButton()) {
@@ -156,7 +172,7 @@ class EventDispatcher {
     const first = this._calculationOrder[0];
     const source = this._objects[first];
     globalThis.event = new Event({});
-    this.runCalculate(source, event);
+    this.runCalculate(source, globalThis.event);
   }
 
   runCalculate(source, event) {

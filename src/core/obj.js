@@ -19,6 +19,7 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
+  DocumentActionEventType,
   FormatError,
   info,
   InvalidPDFException,
@@ -47,13 +48,14 @@ import {
   RefSet,
   RefSetCache,
 } from "./primitives.js";
-import { Lexer, Parser } from "./parser.js";
 import {
+  collectActions,
   MissingDataException,
   toRomanNumerals,
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
+import { Lexer, Parser } from "./parser.js";
 import { CipherTransformFactory } from "./crypto.js";
 import { ColorSpace } from "./colorspace.js";
 import { GlobalImageCache } from "./image_utils.js";
@@ -873,11 +875,11 @@ class Catalog {
     return shadow(this, "attachments", attachments);
   }
 
-  get javaScript() {
+  _collectJavaScript() {
     const obj = this._catDict.get("Names");
 
     let javaScript = null;
-    function appendIfJavaScriptDict(jsDict) {
+    function appendIfJavaScriptDict(name, jsDict) {
       const type = jsDict.get("S");
       if (!isName(type, "JavaScript")) {
         return;
@@ -890,10 +892,10 @@ class Catalog {
         return;
       }
 
-      if (!javaScript) {
-        javaScript = [];
+      if (javaScript === null) {
+        javaScript = Object.create(null);
       }
-      javaScript.push(stringToPDFString(js));
+      javaScript[name] = stringToPDFString(js);
     }
 
     if (obj && obj.has("JavaScript")) {
@@ -904,7 +906,7 @@ class Catalog {
         // defensive so we don't cause errors on document load.
         const jsDict = names[name];
         if (isDict(jsDict)) {
-          appendIfJavaScriptDict(jsDict);
+          appendIfJavaScriptDict(name, jsDict);
         }
       }
     }
@@ -912,10 +914,43 @@ class Catalog {
     // Append OpenAction "JavaScript" actions to the JavaScript array.
     const openAction = this._catDict.get("OpenAction");
     if (isDict(openAction) && isName(openAction.get("S"), "JavaScript")) {
-      appendIfJavaScriptDict(openAction);
+      appendIfJavaScriptDict("OpenAction", openAction);
     }
 
-    return shadow(this, "javaScript", javaScript);
+    return javaScript;
+  }
+
+  get javaScript() {
+    const javaScript = this._collectJavaScript();
+    return shadow(
+      this,
+      "javaScript",
+      javaScript ? Object.values(javaScript) : null
+    );
+  }
+
+  get jsActions() {
+    const js = this._collectJavaScript();
+    let actions = collectActions(
+      this.xref,
+      this._catDict,
+      DocumentActionEventType
+    );
+
+    if (!actions && js) {
+      actions = Object.create(null);
+    }
+    if (actions && js) {
+      for (const [key, val] of Object.entries(js)) {
+        if (key in actions) {
+          actions[key].push(val);
+        } else {
+          actions[key] = [val];
+        }
+      }
+    }
+
+    return shadow(this, "jsActions", actions);
   }
 
   fontFallback(id, handler) {

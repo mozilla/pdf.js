@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 
-import { assert, BaseException, warn } from "../shared/util.js";
+import {
+  assert,
+  BaseException,
+  bytesToString,
+  objectSize,
+  stringToPDFString,
+  warn,
+} from "../shared/util.js";
+import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -240,7 +248,80 @@ function escapePDFName(str) {
   return buffer.join("");
 }
 
+function _collectJS(entry, xref, list, parents) {
+  if (!entry) {
+    return;
+  }
+
+  let parent = null;
+  if (isRef(entry)) {
+    if (parents.has(entry)) {
+      // If we've already found entry then we've a cycle.
+      return;
+    }
+    parent = entry;
+    parents.put(parent);
+    entry = xref.fetch(entry);
+  }
+  if (Array.isArray(entry)) {
+    for (const element of entry) {
+      _collectJS(element, xref, list, parents);
+    }
+  } else if (entry instanceof Dict) {
+    if (isName(entry.get("S"), "JavaScript") && entry.has("JS")) {
+      const js = entry.get("JS");
+      let code;
+      if (isStream(js)) {
+        code = bytesToString(js.getBytes());
+      } else {
+        code = js;
+      }
+      code = stringToPDFString(code);
+      if (code) {
+        list.push(code);
+      }
+    }
+    _collectJS(entry.getRaw("Next"), xref, list, parents);
+  }
+
+  if (parent) {
+    parents.remove(parent);
+  }
+}
+
+function collectActions(xref, dict, eventType) {
+  const actions = Object.create(null);
+  if (dict.has("AA")) {
+    const additionalActions = dict.get("AA");
+    for (const key of additionalActions.getKeys()) {
+      const action = eventType[key];
+      if (!action) {
+        continue;
+      }
+      const actionDict = additionalActions.getRaw(key);
+      const parents = new RefSet();
+      const list = [];
+      _collectJS(actionDict, xref, list, parents);
+      if (list.length > 0) {
+        actions[action] = list;
+      }
+    }
+  }
+  // Collect the Action if any (we may have one on pushbutton).
+  if (dict.has("A")) {
+    const actionDict = dict.get("A");
+    const parents = new RefSet();
+    const list = [];
+    _collectJS(actionDict, xref, list, parents);
+    if (list.length > 0) {
+      actions.Action = list;
+    }
+  }
+  return objectSize(actions) > 0 ? actions : null;
+}
+
 export {
+  collectActions,
   escapePDFName,
   getLookupTableFactory,
   getArrayLookupTableFactory,
