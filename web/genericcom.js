@@ -51,7 +51,7 @@ class GenericExternalServices extends DefaultExternalServices {
     return new GenericL10n(locale);
   }
 
-  static get scripting() {
+  static createScripting() {
     return new GenericScripting();
   }
 }
