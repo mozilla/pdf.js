@@ -168,6 +168,10 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createL10n");
   }
 
+  static createScripting() {
+    throw new Error("Not implemented: createScripting");
+  }
+
   static get supportsIntegratedFind() {
     return shadow(this, "supportsIntegratedFind", false);
   }
@@ -185,10 +189,6 @@ class DefaultExternalServices {
 
   static get isInAutomation() {
     return shadow(this, "isInAutomation", false);
-  }
-
-  static get scripting() {
-    throw new Error("Not implemented: scripting");
   }
 }
 
@@ -764,6 +764,39 @@ const PDFViewerApplication = {
   },
 
   /**
+   * @private
+   */
+  _cancelIdleCallbacks() {
+    if (!this._idleCallbacks.size) {
+      return;
+    }
+    for (const callback of this._idleCallbacks) {
+      window.cancelIdleCallback(callback);
+    }
+    this._idleCallbacks.clear();
+  },
+
+  /**
+   * @private
+   */
+  async _destroyScriptingInstance() {
+    if (!this._scriptingInstance) {
+      return;
+    }
+    const { scripting, events } = this._scriptingInstance;
+    try {
+      await scripting.destroySandbox();
+    } catch (ex) {}
+
+    for (const [name, listener] of events) {
+      window.removeEventListener(name, listener);
+    }
+    events.clear();
+
+    this._scriptingInstance = null;
+  },
+
+  /**
    * Closes opened PDF document.
    * @returns {Promise} - Returns the promise, which is resolved when all
    *                      destruction is completed.
@@ -775,8 +808,9 @@ const PDFViewerApplication = {
     if (!this.pdfLoadingTask) {
       return undefined;
     }
+    const promises = [];
 
-    const promise = this.pdfLoadingTask.destroy();
+    promises.push(this.pdfLoadingTask.destroy());
     this.pdfLoadingTask = null;
 
     if (this.pdfDocument) {
@@ -799,22 +833,9 @@ const PDFViewerApplication = {
     this._contentLength = null;
     this.triggerDelayedFallback = null;
     this._saveInProgress = false;
-    for (const callback of this._idleCallbacks) {
-      window.cancelIdleCallback(callback);
-    }
-    this._idleCallbacks.clear();
 
-    if (this._scriptingInstance) {
-      const { scripting, events } = this._scriptingInstance;
-      try {
-        scripting.destroySandbox();
-      } catch (ex) {}
-
-      for (const [name, listener] of events) {
-        window.removeEventListener(name, listener);
-      }
-      this._scriptingInstance = null;
-    }
+    this._cancelIdleCallbacks();
+    promises.push(this._destroyScriptingInstance());
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -833,7 +854,7 @@ const PDFViewerApplication = {
     if (typeof PDFBug !== "undefined") {
       PDFBug.cleanup();
     }
-    return promise;
+    return Promise.all(promises);
   },
 
   /**
@@ -1435,7 +1456,7 @@ const PDFViewerApplication = {
       // or the document was closed while the data resolved.
       return;
     }
-    const { scripting } = this.externalServices;
+    const scripting = this.externalServices.createScripting();
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
     this._scriptingInstance = { scripting, events: new Map() };
