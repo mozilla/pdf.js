@@ -354,7 +354,7 @@ class FontFaceObject {
       fontRegistry = null,
     }
   ) {
-    this.compiledGlyphs = {};
+    this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (const i in translatedData) {
       this[i] = translatedData[i];
@@ -394,7 +394,7 @@ class FontFaceObject {
   }
 
   tryGetPathGenerator(objs, character) {
-    if (this.compiledGlyphs.hasOwnProperty(character)) {
+    if (this.compiledGlyphs[character] !== undefined) {
       return this.compiledGlyphs[character];
     }
 
@@ -412,7 +412,7 @@ class FontFaceObject {
       }
       warn(`tryGetPathGenerator - ignoring character: "${ex}".`);
 
-      return (this.compiledGlyphs[character] = undefined);
+      return (this.compiledGlyphs[character] = null);
     }
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...
