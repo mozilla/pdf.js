@@ -717,6 +717,16 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     element.addEventListener("change", function (event) {
+      const name = event.target.name;
+      for (const checkbox of document.getElementsByName(name)) {
+        if (checkbox !== event.target) {
+          checkbox.checked = false;
+          storage.setValue(
+            checkbox.parentNode.getAttribute("data-annotation-id"),
+            { value: false }
+          );
+        }
+      }
       storage.setValue(id, { value: event.target.checked });
     });
 
