@@ -265,6 +265,12 @@ if (
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
   };
+} else if (PDFJSDev.test("CHROME")) {
+  defaultOptions.sandboxBundleSrc = {
+    /** @type {string} */
+    value: "../build/pdf.sandbox.js",
+    kind: OptionKind.VIEWER,
+  };
 }
 
 const userOptions = Object.create(null);
