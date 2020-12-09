@@ -354,7 +354,7 @@ class FontFaceObject {
       fontRegistry = null,
     }
   ) {
-    this.compiledGlyphs = Object.create(null);
+    this.compiledGlyphs = {};
     // importing translated data
     for (const i in translatedData) {
       this[i] = translatedData[i];
@@ -393,8 +393,8 @@ class FontFaceObject {
     return rule;
   }
 
-  getPathGenerator(objs, character) {
-    if (this.compiledGlyphs[character] !== undefined) {
+  tryGetPathGenerator(objs, character) {
+    if (this.compiledGlyphs.hasOwnProperty(character)) {
       return this.compiledGlyphs[character];
     }
 
@@ -410,11 +410,9 @@ class FontFaceObject {
           featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
         });
       }
-      warn(`getPathGenerator - ignoring character: "${ex}".`);
+      warn(`tryGetPathGenerator - ignoring character: "${ex}".`);
 
-      return (this.compiledGlyphs[character] = function (c, size) {
-        // No-op function, to allow rendering to continue.
-      });
+      return (this.compiledGlyphs[character] = undefined);
     }
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...

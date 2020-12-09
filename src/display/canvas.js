@@ -1592,10 +1592,10 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       let addToPath;
       if (font.disableFontFace || isAddToPathSet || patternFill) {
-        addToPath = font.getPathGenerator(this.commonObjs, character);
+        addToPath = font.tryGetPathGenerator(this.commonObjs, character);
       }
 
-      if (font.disableFontFace || patternFill) {
+      if (addToPath && (font.disableFontFace || patternFill)) {
         ctx.save();
         ctx.translate(x, y);
         ctx.beginPath();
