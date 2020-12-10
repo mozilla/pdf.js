@@ -209,6 +209,11 @@ describe("Scripting", function () {
               expect(value).toEqual("Decimal number: +  1.235");
             }
           ),
+          myeval(`util.printf("Decimal number: %,0.2f", -12.34567)`).then(
+            value => {
+              expect(value).toEqual("Decimal number: -12.35");
+            }
+          ),
         ]).then(() => done());
       });
 
