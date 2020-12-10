@@ -154,9 +154,9 @@ class Util extends PDFObject {
         let decPart = "";
         if (cConvChar === "f") {
           if (nPrecision !== undefined) {
-            decPart = (arg - intPart).toFixed(nPrecision);
+            decPart = Math.abs(arg - intPart).toFixed(nPrecision);
           } else {
-            decPart = (arg - intPart).toString();
+            decPart = Math.abs(arg - intPart).toString();
           }
           if (decPart.length > 2) {
             decPart = `${decimalSep}${decPart.substring(2)}`;
