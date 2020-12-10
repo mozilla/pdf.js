@@ -1319,11 +1319,12 @@ var Font = (function FontClosure() {
       let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
       var stdFontMap = getStdFontMap(),
         nonStdFontMap = getNonStdFontMap();
-      var isStandardFont =
-        !!stdFontMap[fontName] ||
-        !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
-      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+      const isStandardFont = !!stdFontMap[fontName];
+      const isMappedToStandardFont = !!(
+        nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]
+      );
 
+      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
       this.bold = fontName.search(/bold/gi) !== -1;
       this.italic =
         fontName.search(/oblique/gi) !== -1 ||
@@ -1334,9 +1335,9 @@ var Font = (function FontClosure() {
       this.black = name.search(/Black/g) !== -1;
 
       // if at least one width is present, remeasure all chars when exists
-      this.remeasure = Object.keys(this.widths).length > 0;
+      this.remeasure = !isStandardFont && Object.keys(this.widths).length > 0;
       if (
-        isStandardFont &&
+        (isStandardFont || isMappedToStandardFont) &&
         type === "CIDFontType2" &&
         this.cidEncoding.startsWith("Identity-")
       ) {
