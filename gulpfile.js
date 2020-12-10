@@ -98,6 +98,7 @@ const DEFINES = Object.freeze({
   PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: false,
+  ENABLE_SCRIPTING: false,
   // The main build targets:
   GENERIC: false,
   MOZCENTRAL: false,
@@ -303,14 +304,26 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
     return false;
   }
   if (webPrefsKeys.length !== chromePrefsKeys.length) {
+    console.log("Warning: Prefs objects haven't the same length");
     return false;
   }
-  return webPrefsKeys.every(function (value, index) {
-    return (
-      chromePrefsKeys[index] === value &&
-      chromePrefs.properties[value].default === webPrefs[value]
-    );
-  });
+
+  let ret = true;
+  for (let i = 0, ii = webPrefsKeys.length; i < ii; i++) {
+    const value = webPrefsKeys[i];
+    if (chromePrefsKeys[i] !== value) {
+      ret = false;
+      console.log(
+        `Warning: not the same keys: ${chromePrefsKeys[i]} !== ${value}`
+      );
+    } else if (chromePrefs.properties[value].default !== webPrefs[value]) {
+      ret = false;
+      console.log(
+        `Warning: not the same values: ${chromePrefs.properties[value].default} !== ${webPrefs[value]}`
+      );
+    }
+  }
+  return ret;
 }
 
 function replaceWebpackRequire() {
@@ -515,6 +528,9 @@ function createTestSource(testsName, bot) {
       case "font":
         args.push("--fontTest");
         break;
+      case "integration":
+        args.push("--integration");
+        break;
       default:
         this.emit("error", new Error("Unknown name: " + testsName));
         return null;
@@ -646,6 +662,7 @@ gulp.task("default_preferences-pre", function () {
       LIB: true,
       BUNDLE_VERSION: 0, // Dummy version
       BUNDLE_BUILD: 0, // Dummy build
+      ENABLE_SCRIPTING: process.env.ENABLE_SCRIPTING === "true",
     }),
     map: {
       "pdfjs-lib": "../pdf",
@@ -1507,27 +1524,46 @@ gulp.task("testing-pre", function (done) {
   done();
 });
 
+gulp.task("enable-scripting", function (done) {
+  process.env.ENABLE_SCRIPTING = "true";
+  done();
+});
+
 gulp.task(
   "test",
-  gulp.series("testing-pre", "generic", "components", function () {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit"),
-      createTestSource("browser")
-    );
-  })
+  gulp.series(
+    "enable-scripting",
+    "testing-pre",
+    "generic",
+    "components",
+    function () {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit"),
+        createTestSource("browser"),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "bottest",
-  gulp.series("testing-pre", "generic", "components", function () {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit", true),
-      createTestSource("font", true),
-      createTestSource("browser (no reftest)", true)
-    );
-  })
+  gulp.series(
+    "enable-scripting",
+    "testing-pre",
+    "generic",
+    "components",
+    function () {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit", true),
+        createTestSource("font", true),
+        createTestSource("browser (no reftest)", true),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
@@ -1542,6 +1578,13 @@ gulp.task(
   gulp.series("testing-pre", "generic", "components", function () {
     process.env.TZ = "UTC";
     return createTestSource("unit");
+  })
+);
+
+gulp.task(
+  "integrationtest",
+  gulp.series("enable-scripting", "testing-pre", "generic", function () {
+    return createTestSource("integration");
   })
 );
 
