@@ -3602,7 +3602,7 @@ class TranslatedFont {
     var charProcOperatorList = Object.create(null);
 
     for (const key of charProcs.getKeys()) {
-      loadCharProcsPromise = loadCharProcsPromise.then(function () {
+      loadCharProcsPromise = loadCharProcsPromise.then(() => {
         var glyphStream = charProcs.get(key);
         var operatorList = new OperatorList();
         return type3Evaluator
@@ -3612,7 +3612,16 @@ class TranslatedFont {
             resources: fontResources,
             operatorList,
           })
-          .then(function () {
+          .then(() => {
+            // According to the PDF specification, section "9.6.5 Type 3 Fonts"
+            // and "Table 113":
+            //  "A glyph description that begins with the d1 operator should
+            //   not execute any operators that set the colour (or other
+            //   colour-related parameters) in the graphics state;
+            //   any use of such operators shall be ignored."
+            if (operatorList.fnArray[0] === OPS.setCharWidthAndBounds) {
+              this._removeType3ColorOperators(operatorList);
+            }
             charProcOperatorList[key] = operatorList.getIR();
 
             for (const dependency of operatorList.dependencies) {
@@ -3630,6 +3639,68 @@ class TranslatedFont {
       translatedFont.charProcOperatorList = charProcOperatorList;
     });
     return this.type3Loaded;
+  }
+
+  /**
+   * @private
+   */
+  _removeType3ColorOperators(operatorList) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        operatorList.fnArray[0] === OPS.setCharWidthAndBounds,
+        "Type3 glyph shall start with the d1 operator."
+      );
+    }
+    let i = 1,
+      ii = operatorList.length;
+    while (i < ii) {
+      switch (operatorList.fnArray[i]) {
+        case OPS.setStrokeColorSpace:
+        case OPS.setFillColorSpace:
+        case OPS.setStrokeColor:
+        case OPS.setStrokeColorN:
+        case OPS.setFillColor:
+        case OPS.setFillColorN:
+        case OPS.setStrokeGray:
+        case OPS.setFillGray:
+        case OPS.setStrokeRGBColor:
+        case OPS.setFillRGBColor:
+        case OPS.setStrokeCMYKColor:
+        case OPS.setFillCMYKColor:
+        case OPS.shadingFill:
+        case OPS.setRenderingIntent:
+          operatorList.fnArray.splice(i, 1);
+          operatorList.argsArray.splice(i, 1);
+          ii--;
+          continue;
+
+        case OPS.setGState:
+          const gStateObj = operatorList.argsArray[i];
+          let j = 0,
+            jj = gStateObj.length;
+          while (j < jj) {
+            const [gStateKey] = gStateObj[j];
+            switch (gStateKey) {
+              case "TR":
+              case "TR2":
+              case "HT":
+              case "BG":
+              case "BG2":
+              case "UCR":
+              case "UCR2":
+                gStateObj.splice(j, 1);
+                jj--;
+                continue;
+            }
+            j++;
+          }
+          break;
+      }
+      i++;
+    }
   }
 }
 
