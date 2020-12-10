@@ -37,6 +37,14 @@ class AForm {
       "m/d/yy HH:MM",
     ];
     this._timeFormats = ["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"];
+
+    // The e-mail address regex below originates from:
+    // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+    this._emailRegex = new RegExp(
+      "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+" +
+        "@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?" +
+        "(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
+    );
   }
 
   _parseDate(cFormat, cDate) {
@@ -576,6 +584,10 @@ class AForm {
     if (pdf >= 0 && pdf < this._timeFormats.length) {
       this.AFDate_KeystrokeEx(this._timeFormats[pdf]);
     }
+  }
+
+  eMailValidate(str) {
+    return this._emailRegex.test(str);
   }
 }
 

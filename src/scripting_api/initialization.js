@@ -92,7 +92,7 @@ function initSandbox({ data, extra, out }) {
   out.zoomtype = ZoomType;
 
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
-    if (name.startsWith("AF")) {
+    if (name !== "constructor" && !name.startsWith("_")) {
       out[name] = aform[name].bind(aform);
     }
   }
