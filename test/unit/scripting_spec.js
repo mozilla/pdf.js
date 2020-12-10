@@ -1207,5 +1207,21 @@ describe("Scripting", function () {
         }
       });
     });
+
+    describe("eMailValidate", function () {
+      it("should validate an e-mail address", function (done) {
+        Promise.all([
+          myeval(`eMailValidate(123)`).then(value => {
+            expect(value).toEqual(false);
+          }),
+          myeval(`eMailValidate("foo@bar.com")`).then(value => {
+            expect(value).toEqual(true);
+          }),
+          myeval(`eMailValidate("foo bar")`).then(value => {
+            expect(value).toEqual(false);
+          }),
+        ]).then(() => done());
+      });
+    });
   });
 });
