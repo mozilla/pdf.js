@@ -437,11 +437,8 @@ class Page {
   }
 
   get annotations() {
-    return shadow(
-      this,
-      "annotations",
-      this._getInheritableProperty("Annots") || []
-    );
+    const annots = this._getInheritableProperty("Annots");
+    return shadow(this, "annotations", Array.isArray(annots) ? annots : []);
   }
 
   get _parsedAnnotations() {
