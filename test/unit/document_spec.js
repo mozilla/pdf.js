@@ -187,6 +187,14 @@ describe("document", function () {
       acroForm.set("CO", []);
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.calculationOrderIds).toEqual(null);
+
+      acroForm.set("CO", ["1", "2"]);
+      pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(null);
+
+      acroForm.set("CO", ["1", Ref.get(1, 0), "2"]);
+      pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(["1R"]);
     });
 
     it("should get field objects array or null", async function () {

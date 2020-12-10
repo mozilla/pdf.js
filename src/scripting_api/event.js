@@ -150,7 +150,7 @@ class EventDispatcher {
   }
 
   calculateNow() {
-    if (this._calculationOrder.length === 0) {
+    if (!this._calculationOrder) {
       return;
     }
     const first = this._calculationOrder[0];
@@ -160,7 +160,7 @@ class EventDispatcher {
   }
 
   runCalculate(source, event) {
-    if (this._calculationOrder.length === 0) {
+    if (!this._calculationOrder) {
       return;
     }
 

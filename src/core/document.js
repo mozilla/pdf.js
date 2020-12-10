@@ -1050,6 +1050,9 @@ class PDFDocument {
     }
 
     const ids = calculationOrder.filter(isRef).map(ref => ref.toString());
+    if (ids.length === 0) {
+      return shadow(this, "calculationOrderIds", null);
+    }
     return shadow(this, "calculationOrderIds", ids);
   }
 }
