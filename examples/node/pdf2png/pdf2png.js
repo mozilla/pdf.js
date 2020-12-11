@@ -54,6 +54,10 @@ const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 const CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
 const CMAP_PACKED = true;
 
+// Where the standard fonts are located.
+const STANDARD_FONT_DATA_URL =
+  "../../../node_modules/pdfjs-dist/standard_fonts/";
+
 // Loading file from file system into typed array.
 const pdfPath =
   process.argv[2] || "../../../web/compressed.tracemonkey-pldi-09.pdf";
@@ -64,6 +68,7 @@ const loadingTask = pdfjsLib.getDocument({
   data,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
+  standardFontDataUrl: STANDARD_FONT_DATA_URL,
 });
 loadingTask.promise
   .then(function (pdfDocument) {

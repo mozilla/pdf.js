@@ -29,10 +29,18 @@ import {
   stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
-import { CMAP_PARAMS, createIdFactory, XRefMock } from "./test_utils.js";
+import {
+  CMAP_PARAMS,
+  createIdFactory,
+  STANDARD_FONT_DATA_URL,
+  XRefMock,
+} from "./test_utils.js";
+import {
+  DefaultCMapReaderFactory,
+  DefaultStandardFontDataFactory,
+} from "../../src/display/api.js";
 import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
-import { DefaultCMapReaderFactory } from "../../src/display/api.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
 import { WorkerTask } from "../../src/core/worker.js";
@@ -68,12 +76,22 @@ describe("annotation", function () {
     }
   }
 
+  const fontDataReader = new DefaultStandardFontDataFactory({
+    baseUrl: STANDARD_FONT_DATA_URL,
+  });
+
   function HandlerMock() {
     this.inputs = [];
   }
   HandlerMock.prototype = {
     send(name, data) {
       this.inputs.push({ name, data });
+    },
+    sendWithPromise(name, data) {
+      if (name !== "FetchStandardFontData") {
+        return Promise.reject(new Error(`Unsupported mock ${name}.`));
+      }
+      return fontDataReader.fetch(data);
     },
   };
 
@@ -2282,7 +2300,6 @@ describe("annotation", function () {
       ]);
       const task = new WorkerTask("test print");
       const checkboxEvaluator = partialEvaluator.clone({ ignoreErrors: true });
-
       const annotation = await AnnotationFactory.create(
         xref,
         buttonWidgetRef,
@@ -2306,7 +2323,7 @@ describe("annotation", function () {
         OPS.showText,
         OPS.endAnnotation,
       ]);
-      expect(operatorList.argsArray[3][0][0].fontChar).toEqual("✔");
+      expect(operatorList.argsArray[3][0][0].unicode).toEqual("4");
     });
 
     it("should render checkboxes for printing", async function () {

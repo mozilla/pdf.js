@@ -21,6 +21,7 @@ const WAITING_TIME = 100; // ms
 const PDF_TO_CSS_UNITS = 96.0 / 72.0;
 const CMAP_URL = "../external/bcmaps/";
 const CMAP_PACKED = true;
+const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
@@ -415,9 +416,12 @@ var Driver = (function DriverClosure() {
             password: task.password,
             cMapUrl: CMAP_URL,
             cMapPacked: CMAP_PACKED,
+            standardFontDataUrl: STANDARD_FONT_DATA_URL,
             disableRange: task.disableRange,
             disableAutoFetch: !task.enableAutoFetch,
             pdfBug: true,
+            useSystemFonts: task.useSystemFonts,
+            useWorkerFetch: task.useWorkerFetch,
           });
           loadingTask.promise.then(
             doc => {

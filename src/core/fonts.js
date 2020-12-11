@@ -30,6 +30,7 @@ import {
   FontFlags,
   getFontType,
   MacStandardGlyphOrdering,
+  normalizeFontName,
   recoverGlyphName,
   SEAC_ANALYSIS_ENABLED,
 } from "./fonts_utils.js";
@@ -130,6 +131,9 @@ function adjustWidths(properties) {
 }
 
 function adjustToUnicode(properties, builtInEncoding) {
+  if (properties.isInternalFont) {
+    return;
+  }
   if (properties.hasIncludedToUnicodeMap) {
     return; // The font dictionary has a `ToUnicode` entry.
   }
@@ -928,7 +932,7 @@ class Font {
     }
 
     this.data = data;
-    this.fontType = getFontType(type, subtype);
+    this.fontType = getFontType(type, subtype, properties.isStandardFont);
 
     // Transfer some properties again that could change during font conversion
     this.fontMatrix = properties.fontMatrix;
@@ -967,7 +971,7 @@ class Font {
     const name = this.name;
     const type = this.type;
     const subtype = this.subtype;
-    let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
+    let fontName = normalizeFontName(name);
     const stdFontMap = getStdFontMap(),
       nonStdFontMap = getNonStdFontMap();
     const isStandardFont = !!stdFontMap[fontName];
@@ -1086,7 +1090,7 @@ class Font {
       this.toFontChar = map;
     }
     this.loadedName = fontName.split("-")[0];
-    this.fontType = getFontType(type, subtype);
+    this.fontType = getFontType(type, subtype, properties.isStandardFont);
   }
 
   checkAndRepair(name, font, properties) {
