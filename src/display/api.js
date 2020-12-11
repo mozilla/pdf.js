@@ -413,6 +413,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       source: {
         data: source.data,
         url: source.url,
+        contentLength: source.contentLength,
         password: source.password,
         disableAutoFetch: source.disableAutoFetch,
         rangeChunkSize: source.rangeChunkSize,

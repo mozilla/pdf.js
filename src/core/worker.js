@@ -229,7 +229,16 @@ class WorkerMessageHandler {
         return pdfManagerCapability.promise;
       }
 
-      var fullRequest = pdfStream.getFullReader();
+      const mockFullRequest = {
+        headersReady: Promise.resolve(),
+        isRangeSupported: !source.disableRange,
+        contentLength: source.contentLength,
+        isStreamingSupported: !source.disableStream,
+      };
+      var fullRequest =
+        !source.disableRange && source.contentLength
+          ? mockFullRequest
+          : pdfStream.getFullReader();
       fullRequest.headersReady
         .then(function () {
           if (!fullRequest.isRangeSupported) {
