@@ -4531,6 +4531,12 @@
        "annotations": true,
        "type": "eq"
     },
+    {  "id": "issue12705",
+       "file": "pdfs/issue12705.pdf",
+       "md5": "d8725b9dcfef72fd4fa4a39cab711624",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "annotation-strikeout",
        "file": "pdfs/annotation-strikeout.pdf",
        "md5": "6624e6b5bedd2f2855b6ab12bbf93c57",
@@ -4894,5 +4900,5 @@
       "rounds": 1,
       "type": "eq",
       "annotations": true
-   }
+    }
 ]
