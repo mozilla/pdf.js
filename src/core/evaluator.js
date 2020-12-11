@@ -64,7 +64,9 @@ import {
 } from "./unicode.js";
 import {
   getSerifFonts,
+  getStandardFontName,
   getStdFontMap,
+  getStdFontNameToFileMap,
   getSymbolsFonts,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
@@ -77,6 +79,7 @@ import {
   LocalImageCache,
   LocalTilingPatternCache,
 } from "./image_utils.js";
+import { NullStream, Stream } from "./stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
@@ -84,7 +87,6 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
-import { NullStream } from "./stream.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
 
@@ -94,6 +96,8 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   fontExtraProperties: false,
+  standardFontDataUrl: null,
+  useSystemFonts: true,
 });
 
 const PatternType = {
@@ -379,6 +383,43 @@ class PartialEvaluator {
       this.builtInCMapCache.set(name, data);
     }
     return data;
+  }
+
+  async fetchStandardFontData(name) {
+    // The symbol fonts are not consistent across platforms, always load the
+    // font data for them.
+    if (
+      this.options.useSystemFonts &&
+      name !== "Symbol" &&
+      name !== "ZapfDingbats"
+    ) {
+      return null;
+    }
+    const standardFontNameToFileName = getStdFontNameToFileMap();
+    const filename = standardFontNameToFileName[name];
+    if (this.options.standardFontDataUrl !== null) {
+      const url = `${this.options.standardFontDataUrl}${filename}.pfb`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        warn(
+          `fetchStandardFontData failed to fetch file "${url}" with "${response.statusText}".`
+        );
+        return null;
+      }
+      return new Stream(await response.arrayBuffer());
+    }
+    // Get the data on the main thread instead.
+    try {
+      const data = await this.handler.sendWithPromise("FetchStandardFontData", {
+        filename,
+      });
+      return new Stream(data);
+    } catch (e) {
+      warn(
+        `fetchStandardFontData failed to fetch file "${filename}" with "${e}".`
+      );
+    }
+    return null;
   }
 
   async buildFormXObject(
@@ -3711,6 +3752,7 @@ class PartialEvaluator {
         properties = {
           type,
           name: baseFontName,
+          loadedName: baseDict.loadedName,
           widths: metrics.widths,
           defaultWidth: metrics.defaultWidth,
           flags,
@@ -3720,6 +3762,13 @@ class PartialEvaluator {
           isType3Font,
         };
         const widths = dict.get("Widths");
+        const standardFontName = getStandardFontName(baseFontName);
+        let file = null;
+        if (standardFontName) {
+          properties.isStandardFont = true;
+          file = await this.fetchStandardFontData(standardFontName);
+          properties.isInternalFont = !!file;
+        }
         return this.extractDataStructures(dict, dict, properties).then(
           newProperties => {
             if (widths) {
@@ -3735,7 +3784,7 @@ class PartialEvaluator {
                 newProperties
               );
             }
-            return new Font(baseFontName, null, newProperties);
+            return new Font(baseFontName, file, newProperties);
           }
         );
       }
@@ -3788,6 +3837,8 @@ class PartialEvaluator {
       warn(`translateFont - fetching "${fontName.name}" font file: "${ex}".`);
       fontFile = new NullStream();
     }
+    let isStandardFont = false;
+    let isInternalFont = false;
     if (fontFile) {
       if (fontFile.dict) {
         const subtypeEntry = fontFile.dict.get("Subtype");
@@ -3797,6 +3848,13 @@ class PartialEvaluator {
         length1 = fontFile.dict.get("Length1");
         length2 = fontFile.dict.get("Length2");
         length3 = fontFile.dict.get("Length3");
+      }
+    } else if (type === "Type1") {
+      const standardFontName = getStandardFontName(fontName.name);
+      if (standardFontName) {
+        isStandardFont = true;
+        fontFile = await this.fetchStandardFontData(standardFontName);
+        isInternalFont = !!fontFile;
       }
     }
 
@@ -3808,6 +3866,8 @@ class PartialEvaluator {
       length1,
       length2,
       length3,
+      isStandardFont,
+      isInternalFont,
       loadedName: baseDict.loadedName,
       composite,
       fixedPitch: false,

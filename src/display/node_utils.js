@@ -14,9 +14,26 @@
  */
 /* globals __non_webpack_require__ */
 
-import { BaseCanvasFactory, BaseCMapReaderFactory } from "./display_utils.js";
+import {
+  BaseCanvasFactory,
+  BaseCMapReaderFactory,
+  BaseStandardFontDataFactory,
+} from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
 import { unreachable } from "../shared/util.js";
+
+function fetchData(url) {
+  return new Promise((resolve, reject) => {
+    const fs = __non_webpack_require__("fs");
+    fs.readFile(url, (error, data) => {
+      if (error || !data) {
+        reject(new Error(error));
+        return;
+      }
+      resolve(new Uint8Array(data));
+    });
+  });
+}
 
 let NodeCanvasFactory = class {
   constructor() {
@@ -27,6 +44,12 @@ let NodeCanvasFactory = class {
 let NodeCMapReaderFactory = class {
   constructor() {
     unreachable("Not implemented: NodeCMapReaderFactory");
+  }
+};
+
+let NodeStandardFontDataFactory = class {
+  constructor() {
+    unreachable("Not implemented: NodeStandardFontDataFactory");
   }
 };
 
@@ -47,18 +70,21 @@ if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
 
   NodeCMapReaderFactory = class extends BaseCMapReaderFactory {
     _fetchData(url, compressionType) {
-      return new Promise((resolve, reject) => {
-        const fs = __non_webpack_require__("fs");
-        fs.readFile(url, (error, data) => {
-          if (error || !data) {
-            reject(new Error(error));
-            return;
-          }
-          resolve({ cMapData: new Uint8Array(data), compressionType });
-        });
+      return fetchData(url).then(data => {
+        return { cMapData: data, compressionType };
       });
+    }
+  };
+
+  NodeStandardFontDataFactory = class extends BaseStandardFontDataFactory {
+    _fetchData(url) {
+      return fetchData(url);
     }
   };
 }
 
-export { NodeCanvasFactory, NodeCMapReaderFactory };
+export {
+  NodeCanvasFactory,
+  NodeCMapReaderFactory,
+  NodeStandardFontDataFactory,
+};
