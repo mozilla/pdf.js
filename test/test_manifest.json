@@ -851,6 +851,14 @@
        "lastPage": 8,
        "type": "eq"
     },
+    {  "id": "bug1292316",
+       "file": "pdfs/bug1292316.pdf",
+       "md5": "f0a815ada0276059242f264653cfd2bc",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue10004",
        "file": "pdfs/issue10004.pdf",
        "md5": "64d1853060cefe3be50e5c4617dd0505",
