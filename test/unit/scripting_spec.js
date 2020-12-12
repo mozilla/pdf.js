@@ -749,8 +749,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -793,8 +793,8 @@ describe("Scripting", function () {
             valueAsString: "123456.789",
           });
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
 
@@ -834,8 +834,8 @@ describe("Scripting", function () {
             value: "Invalid number in [ MyField ]",
           });
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -893,8 +893,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -948,8 +948,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -990,8 +990,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
 
@@ -1029,8 +1029,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -1124,8 +1124,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -1202,8 +1202,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
