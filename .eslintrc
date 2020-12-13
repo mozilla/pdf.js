@@ -67,6 +67,7 @@
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": ["error", { "disallowArithmeticOperators": true }],
     "use-isnan": ["error", { "enforceForIndexOf": true, }],
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
