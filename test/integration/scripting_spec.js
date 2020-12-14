@@ -13,52 +13,38 @@
  * limitations under the License.
  */
 
+const { closePages, loadAndWait } = require("./test_utils.js");
+
 describe("Interaction", () => {
   describe("in 160F-2019.pdf", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await Promise.all(
-        global.integrationSessions.map(async session => {
-          const page = await session.browser.newPage();
-          await page.goto(
-            `${global.integrationBaseUrl}?file=/test/pdfs/160F-2019.pdf`
-          );
-          await page.bringToFront();
-          await page.waitForSelector("#\\34 16R", {
-            timeout: 0,
-          });
-          return [session.name, page];
-        })
-      );
+      pages = await loadAndWait("160F-2019.pdf", "#\\34 16R");
     });
 
     afterAll(async () => {
-      await Promise.all(
-        pages.map(async ([_, page]) => {
-          await page.close();
-        })
-      );
+      await closePages(pages);
     });
 
     it("must format the field with 2 digits and leave field with a click", async () => {
       await Promise.all(
-        pages.map(async ([name, page]) => {
+        pages.map(async ([browserName, page]) => {
           await page.type("#\\34 16R", "3.14159", { delay: 200 });
           await page.click("#\\34 19R");
           const text = await page.$eval("#\\34 16R", el => el.value);
-          expect(text).withContext(`In ${name}`).toEqual("3,14");
+          expect(text).withContext(`In ${browserName}`).toEqual("3,14");
         })
       );
     });
 
     it("must format the field with 2 digits and leave field with a TAB", async () => {
       await Promise.all(
-        pages.map(async ([name, page]) => {
+        pages.map(async ([browserName, page]) => {
           await page.type("#\\34 22R", "2.7182818", { delay: 200 });
           await page.keyboard.press("Tab");
           const text = await page.$eval("#\\34 22R", el => el.value);
-          expect(text).withContext(`In ${name}`).toEqual("2,72");
+          expect(text).withContext(`In ${browserName}`).toEqual("2,72");
         })
       );
     });
