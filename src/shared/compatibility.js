@@ -59,15 +59,6 @@ if (
     require("core-js/es/object/from-entries.js");
   })();
 
-  // Provides support for TypedArray.prototype.slice in legacy browsers.
-  // Support: Safari<10
-  (function checkTypedArraySlice() {
-    if (Uint8Array.prototype.slice) {
-      return;
-    }
-    require("core-js/es/typed-array/slice");
-  })();
-
   // Provides support for *recent* additions to the Promise specification,
   // however basic Promise support is assumed to be available natively.
   // Support: Firefox<71, Chrome<76, Safari<13
@@ -128,24 +119,6 @@ if (
       return;
     }
     globalThis.ReadableStream = require("web-streams-polyfill/dist/ponyfill.js").ReadableStream;
-  })();
-
-  // Provides support for String.codePointAt in legacy browsers.
-  // Support: Safari<10
-  (function checkStringCodePointAt() {
-    if (String.prototype.codePointAt) {
-      return;
-    }
-    require("core-js/es/string/code-point-at.js");
-  })();
-
-  // Provides support for String.fromCodePoint in legacy browsers.
-  // Support: Safari<10
-  (function checkStringFromCodePoint() {
-    if (String.fromCodePoint) {
-      return;
-    }
-    String.fromCodePoint = require("core-js/es/string/from-code-point.js");
   })();
 
   // Provides support for String.prototype.padStart in legacy browsers.
