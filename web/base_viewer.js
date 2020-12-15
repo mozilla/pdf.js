@@ -460,6 +460,8 @@ class BaseViewer {
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
+      this.eventBus.dispatch("pagesdestroy", { source: this });
+
       this._cancelRendering();
       this._resetView();
 
@@ -1554,6 +1556,10 @@ class BaseViewer {
 
     eventBus._on("pagesinit", () => {
       dispatchPageOpen(this._currentPageNumber);
+    });
+
+    eventBus._on("pagesdestroy", () => {
+      dispatchPageClose(this._currentPageNumber);
     });
   }
 }
