@@ -913,6 +913,7 @@ class Doc extends PDFObject {
         const field = this.getField(fieldName);
         if (field) {
           field.value = field.defaultValue;
+          field.valueAsString = field.value;
           mustCalculate = true;
         }
       }
@@ -920,6 +921,7 @@ class Doc extends PDFObject {
       mustCalculate = this._fields.size !== 0;
       for (const field of this._fields.values()) {
         field.value = field.defaultValue;
+        field.valueAsString = field.value;
       }
     }
     if (mustCalculate) {

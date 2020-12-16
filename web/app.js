@@ -258,6 +258,7 @@ const PDFViewerApplication = {
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
   _scriptingInstance: null,
+  _mouseState: Object.create(null),
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -501,6 +502,7 @@ const PDFViewerApplication = {
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enableScripting: AppOptions.get("enableScripting"),
+      mouseState: this._mouseState,
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -1537,6 +1539,17 @@ const PDFViewerApplication = {
       "dispatchEventInSandbox",
       dispatchEventInSandbox
     );
+
+    const mouseDown = event => {
+      this._mouseState.isDown = true;
+    };
+    const mouseUp = event => {
+      this._mouseState.isDown = false;
+    };
+    window.addEventListener("mousedown", mouseDown);
+    this._scriptingInstance.events.set("mousedown", mouseDown);
+    window.addEventListener("mouseup", mouseUp);
+    this._scriptingInstance.events.set("mouseup", mouseUp);
 
     const dispatchEventName = generateRandomStringForSandbox(objects);
 
