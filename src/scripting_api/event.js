@@ -70,7 +70,7 @@ class EventDispatcher {
 
     const name = baseEvent.name.replace(" ", "");
     const source = this._objects[id];
-    const event = (this._document.obj._event = new Event(baseEvent));
+    globalThis.event = new Event(baseEvent);
     let savedChange;
 
     if (source.obj._isButton()) {
@@ -155,7 +155,7 @@ class EventDispatcher {
     }
     const first = this._calculationOrder[0];
     const source = this._objects[first];
-    const event = (this._document.obj._event = new Event({}));
+    globalThis.event = new Event({});
     this.runCalculate(source, event);
   }
 
