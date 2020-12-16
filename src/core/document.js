@@ -965,7 +965,7 @@ class PDFDocument {
       }
     }
 
-    if (!(name in promises)) {
+    if (!promises.has(name)) {
       promises.set(name, []);
     }
     promises.get(name).push(
