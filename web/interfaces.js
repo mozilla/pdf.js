@@ -188,6 +188,7 @@ class IPDFAnnotationLayerFactory {
    * @param {IL10n} l10n
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -198,7 +199,8 @@ class IPDFAnnotationLayerFactory {
     renderInteractiveForms = true,
     l10n = undefined,
     enableScripting = false,
-    hasJSActionsPromise = null
+    hasJSActionsPromise = null,
+    mouseState = null
   ) {}
 }
 
