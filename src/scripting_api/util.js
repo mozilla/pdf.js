@@ -19,7 +19,6 @@ class Util extends PDFObject {
   constructor(data) {
     super(data);
 
-    this._crackURL = data.crackURL;
     this._scandCache = new Map();
     this._months = [
       "January",
@@ -46,13 +45,9 @@ class Util extends PDFObject {
     ];
     this.MILLISECONDS_IN_DAY = 86400000;
     this.MILLISECONDS_IN_WEEK = 604800000;
-  }
 
-  crackURL(cURL) {
-    if (typeof cURL !== "string") {
-      throw new TypeError("First argument of util.crackURL must be a string");
-    }
-    return this._crackURL(cURL);
+    // used with crackURL
+    this._externalCall = data.externalCall;
   }
 
   printf(...args) {

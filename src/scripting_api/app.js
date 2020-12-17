@@ -49,15 +49,28 @@ class App extends PDFObject {
       data.calculationOrder,
       this._objects
     );
-    this._setTimeout = data.setTimeout;
-    this._clearTimeout = data.clearTimeout;
-    this._setInterval = data.setInterval;
-    this._clearInterval = data.clearInterval;
-    this._timeoutIds = null;
-    this._timeoutIdsRegistry = null;
 
-    // used in proxy.js to check that this is the object with the backdoor
-    this._isApp = true;
+    this._timeoutIds = new WeakMap();
+    // eslint-disable-next-line no-undef
+    if (typeof FinalizationRegistry !== "undefined") {
+      // About setTimeOut/setInterval return values (specs):
+      //   The return value of this method must be held in a
+      //   JavaScript variable.
+      //   Otherwise, the timeout object is subject to garbage-collection,
+      //   which would cause the clock to stop.
+
+      // eslint-disable-next-line no-undef
+      this._timeoutIdsRegistry = new FinalizationRegistry(
+        this._cleanTimeout.bind(this)
+      );
+    } else {
+      this._timeoutIdsRegistry = null;
+    }
+
+    this._timeoutCallbackIds = new Map();
+    this._timeoutCallbackId = 0;
+    this._globalEval = data.globalEval;
+    this._externalCall = data.externalCall;
   }
 
   // This function is called thanks to the proxy
@@ -66,50 +79,58 @@ class App extends PDFObject {
     this._eventDispatcher.dispatch(pdfEvent);
   }
 
-  _registerTimeout(timeout, id, interval) {
-    if (!this._timeoutIds) {
-      this._timeoutIds = new WeakMap();
-      // FinalizationRegistry isn't implemented in QuickJS
-      // eslint-disable-next-line no-undef
-      if (typeof FinalizationRegistry !== "undefined") {
-        // About setTimeOut/setInterval return values (specs):
-        //   The return value of this method must be held in a
-        //   JavaScript variable.
-        //   Otherwise, the timeout object is subject to garbage-collection,
-        //   which would cause the clock to stop.
+  _registerTimeoutCallback(cExpr) {
+    const id = this._timeoutCallbackId++;
+    this._timeoutCallbackIds.set(id, cExpr);
+    return id;
+  }
 
-        // eslint-disable-next-line no-undef
-        this._timeoutIdsRegistry = new FinalizationRegistry(
-          ([timeoutId, isInterval]) => {
-            if (isInterval) {
-              this._clearInterval(timeoutId);
-            } else {
-              this._clearTimeout(timeoutId);
-            }
-          }
-        );
-      }
+  _unregisterTimeoutCallback(id) {
+    this._timeoutCallbackIds.delete(id);
+  }
+
+  _evalCallback({ callbackId, interval }) {
+    const expr = this._timeoutCallbackIds.get(callbackId);
+    if (!interval) {
+      this._unregisterTimeoutCallback(callbackId);
     }
-    this._timeoutIds.set(timeout, [id, interval]);
-    if (this._timeoutIdsRegistry) {
-      this._timeoutIdsRegistry.register(timeout, [id, interval]);
+
+    if (expr) {
+      this._globalEval(expr);
     }
   }
 
-  _unregisterTimeout(timeout) {
-    if (!this._timeoutIds || !this._timeoutIds.has(timeout)) {
-      return;
+  _registerTimeout(callbackId, interval) {
+    const timeout = Object.create(null);
+    const id = { callbackId, interval };
+    this._timeoutIds.set(timeout, id);
+    if (this._timeoutIdsRegistry) {
+      this._timeoutIdsRegistry.register(timeout, id);
     }
-    const [id, interval] = this._timeoutIds.get(timeout);
+    return timeout;
+  }
+
+  _unregisterTimeout(timeout) {
     if (this._timeoutIdsRegistry) {
       this._timeoutIdsRegistry.unregister(timeout);
     }
+
+    const data = this._timeoutIds.get(timeout);
+    if (!data) {
+      return;
+    }
+
     this._timeoutIds.delete(timeout);
+    this._cleanTimeout(data);
+  }
+
+  _cleanTimeout({ callbackId, interval }) {
+    this._unregisterTimeoutCallback(callbackId);
 
     if (interval) {
-      this._clearInterval(id);
+      this._externalCall("clearInterval", [callbackId]);
     } else {
-      this._clearTimeout(id);
+      this._externalCall("clearTimeout", [callbackId]);
     }
   }
 
@@ -409,7 +430,7 @@ class App extends PDFObject {
     oDoc = null,
     oCheckbox = null
   ) {
-    this._send({ command: "alert", value: cMsg });
+    this._externalCall("alert", [cMsg]);
   }
 
   beep() {
@@ -425,11 +446,11 @@ class App extends PDFObject {
   }
 
   clearInterval(oInterval) {
-    this.unregisterTimeout(oInterval);
+    this._unregisterTimeout(oInterval);
   }
 
   clearTimeOut(oTime) {
-    this.unregisterTimeout(oTime);
+    this._unregisterTimeout(oTime);
   }
 
   endPriv() {
@@ -524,8 +545,8 @@ class App extends PDFObject {
     /* Not implemented */
   }
 
-  response() {
-    /* TODO or not */
+  response(cQuestion, cTitle = "", cDefault = "", bPassword = "", cLabel = "") {
+    return this._externalCall("prompt", [cQuestion, cDefault || ""]);
   }
 
   setInterval(cExpr, nMilliseconds) {
@@ -537,11 +558,9 @@ class App extends PDFObject {
         "Second argument of app.setInterval must be a number"
       );
     }
-
-    const id = this._setInterval(cExpr, nMilliseconds);
-    const timeout = Object.create(null);
-    this._registerTimeout(timeout, id, true);
-    return timeout;
+    const callbackId = this._registerTimeoutCallback(cExpr);
+    this._externalCall("setInterval", [callbackId, nMilliseconds]);
+    return this._registerTimeout(callbackId, true);
   }
 
   setTimeOut(cExpr, nMilliseconds) {
@@ -551,11 +570,9 @@ class App extends PDFObject {
     if (typeof nMilliseconds !== "number") {
       throw new TypeError("Second argument of app.setTimeOut must be a number");
     }
-
-    const id = this._setTimeout(cExpr, nMilliseconds);
-    const timeout = Object.create(null);
-    this._registerTimeout(timeout, id, false);
-    return timeout;
+    const callbackId = this._registerTimeoutCallback(cExpr);
+    this._externalCall("setTimeout", [callbackId, nMilliseconds]);
+    return this._registerTimeout(callbackId, false);
   }
 
   trustedFunction() {
