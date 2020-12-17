@@ -399,7 +399,7 @@ class LinkAnnotationElement extends AnnotationElement {
       this.enableScripting &&
       this.hasJSActions
     ) {
-      this._bindJSAction(link);
+      this._bindJSAction(link, data);
     } else {
       this._bindLink(link, "");
     }
@@ -465,9 +465,8 @@ class LinkAnnotationElement extends AnnotationElement {
    * @param {Object} data
    * @memberof LinkAnnotationElement
    */
-  _bindJSAction(link) {
-    link.href = this.linkService.getAnchorUrl("#");
-    const { data } = this;
+  _bindJSAction(link, data) {
+    link.href = this.linkService.getAnchorUrl("");
     const map = new Map([
       ["Action", "onclick"],
       ["MouseUp", "onmouseup"],
@@ -546,40 +545,44 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   _setEventListener(element, baseName, eventName, valueGetter) {
-    if (this.data.actions && eventName.replace(" ", "") in this.data.actions) {
-      if (baseName.includes("mouse")) {
-        // Mouse events
-        element.addEventListener(baseName, event => {
-          window.dispatchEvent(
-            new CustomEvent("dispatchEventInSandbox", {
-              detail: {
-                id: this.data.id,
-                name: eventName,
-                value: valueGetter(event),
-                shift: event.shiftKey,
-                modifier: this._getKeyModifier(event),
-              },
-            })
-          );
-        });
-      } else {
-        // Non mouse event
-        element.addEventListener(baseName, event => {
-          window.dispatchEvent(
-            new CustomEvent("dispatchEventInSandbox", {
-              detail: {
-                id: this.data.id,
-                name: eventName,
-                value: event.target.checked,
-              },
-            })
-          );
-        });
-      }
+    if (this.data.actions[eventName.replace(" ", "")] === undefined) {
+      return;
+    }
+    if (baseName.includes("mouse")) {
+      // Mouse events
+      element.addEventListener(baseName, event => {
+        window.dispatchEvent(
+          new CustomEvent("dispatchEventInSandbox", {
+            detail: {
+              id: this.data.id,
+              name: eventName,
+              value: valueGetter(event),
+              shift: event.shiftKey,
+              modifier: this._getKeyModifier(event),
+            },
+          })
+        );
+      });
+    } else {
+      // Non mouse event
+      element.addEventListener(baseName, event => {
+        window.dispatchEvent(
+          new CustomEvent("dispatchEventInSandbox", {
+            detail: {
+              id: this.data.id,
+              name: eventName,
+              value: event.target.checked,
+            },
+          })
+        );
+      });
     }
   }
 
   _setEventListeners(element, names, getter) {
+    if (!this.data.actions) {
+      return;
+    }
     for (const [baseName, eventName] of names) {
       this._setEventListener(element, baseName, eventName, getter);
     }
@@ -997,8 +1000,8 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     element.setAttribute("id", id);
 
     element.addEventListener("change", function (event) {
-      const target = event.target;
-      for (const radio of document.getElementsByName(event.target.name)) {
+      const { target } = event;
+      for (const radio of document.getElementsByName(target.name)) {
         if (radio !== target) {
           storage.setValue(radio.getAttribute("id"), { value: false });
         }
