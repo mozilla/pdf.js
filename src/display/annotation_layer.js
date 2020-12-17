@@ -478,14 +478,13 @@ class LinkAnnotationElement extends AnnotationElement {
         continue;
       }
       link[jsName] = () => {
-        window.dispatchEvent(
-          new CustomEvent("dispatchEventInSandbox", {
-            detail: {
-              id: data.id,
-              name,
-            },
-          })
-        );
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: data.id,
+            name,
+          },
+        });
         return false;
       };
     }
@@ -551,30 +550,28 @@ class WidgetAnnotationElement extends AnnotationElement {
     if (baseName.includes("mouse")) {
       // Mouse events
       element.addEventListener(baseName, event => {
-        window.dispatchEvent(
-          new CustomEvent("dispatchEventInSandbox", {
-            detail: {
-              id: this.data.id,
-              name: eventName,
-              value: valueGetter(event),
-              shift: event.shiftKey,
-              modifier: this._getKeyModifier(event),
-            },
-          })
-        );
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: this.data.id,
+            name: eventName,
+            value: valueGetter(event),
+            shift: event.shiftKey,
+            modifier: this._getKeyModifier(event),
+          },
+        });
       });
     } else {
       // Non mouse event
       element.addEventListener(baseName, event => {
-        window.dispatchEvent(
-          new CustomEvent("dispatchEventInSandbox", {
-            detail: {
-              id: this.data.id,
-              name: eventName,
-              value: event.target.checked,
-            },
-          })
-        );
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: this.data.id,
+            name: eventName,
+            value: event.target.checked,
+          },
+        });
       });
     }
   }
@@ -650,7 +647,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
         });
 
-        element.addEventListener("updateFromSandbox", function (event) {
+        element.addEventListener("updatefromsandbox", function (event) {
           const { detail } = event;
           const actions = {
             value() {
@@ -721,19 +718,18 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             }
             // Save the entered value
             elementData.userValue = event.target.value;
-            window.dispatchEvent(
-              new CustomEvent("dispatchEventInSandbox", {
-                detail: {
-                  id,
-                  name: "Keystroke",
-                  value: event.target.value,
-                  willCommit: true,
-                  commitKey,
-                  selStart: event.target.selectionStart,
-                  selEnd: event.target.selectionEnd,
-                },
-              })
-            );
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value: event.target.value,
+                willCommit: true,
+                commitKey,
+                selStart: event.target.selectionStart,
+                selEnd: event.target.selectionEnd,
+              },
+            });
           });
           const _blurListener = blurListener;
           blurListener = null;
@@ -741,19 +737,18 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             if (this._mouseState.isDown) {
               // Focus out using the mouse: data are committed
               elementData.userValue = event.target.value;
-              window.dispatchEvent(
-                new CustomEvent("dispatchEventInSandbox", {
-                  detail: {
-                    id,
-                    name: "Keystroke",
-                    value: event.target.value,
-                    willCommit: true,
-                    commitKey: 1,
-                    selStart: event.target.selectionStart,
-                    selEnd: event.target.selectionEnd,
-                  },
-                })
-              );
+              this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+                source: this,
+                detail: {
+                  id,
+                  name: "Keystroke",
+                  value: event.target.value,
+                  willCommit: true,
+                  commitKey: 1,
+                  selStart: event.target.selectionStart,
+                  selEnd: event.target.selectionEnd,
+                },
+              });
             }
             _blurListener(event);
           });
@@ -783,19 +778,18 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               if (elementData.beforeInputSelectionRange) {
                 [selStart, selEnd] = elementData.beforeInputSelectionRange;
               }
-              window.dispatchEvent(
-                new CustomEvent("dispatchEventInSandbox", {
-                  detail: {
-                    id,
-                    name: "Keystroke",
-                    value: elementData.beforeInputValue,
-                    change: event.data,
-                    willCommit: false,
-                    selStart,
-                    selEnd,
-                  },
-                })
-              );
+              this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+                source: this,
+                detail: {
+                  id,
+                  name: "Keystroke",
+                  value: elementData.beforeInputValue,
+                  change: event.data,
+                  willCommit: false,
+                  selStart,
+                  selEnd,
+                },
+              });
             });
           }
 
@@ -929,7 +923,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     });
 
     if (this.enableScripting && this.hasJSActions) {
-      element.addEventListener("updateFromSandbox", event => {
+      element.addEventListener("updatefromsandbox", event => {
         const { detail } = event;
         const actions = {
           value() {
@@ -1010,7 +1004,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     });
 
     if (this.enableScripting && this.hasJSActions) {
-      element.addEventListener("updateFromSandbox", event => {
+      element.addEventListener("updatefromsandbox", event => {
         const { detail } = event;
         const actions = {
           value() {
@@ -1132,7 +1126,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     if (this.enableScripting && this.hasJSActions) {
-      selectElement.addEventListener("updateFromSandbox", event => {
+      selectElement.addEventListener("updatefromsandbox", event => {
         const { detail } = event;
         const actions = {
           value() {
@@ -1162,22 +1156,21 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           .forEach(name => actions[name]());
       });
 
-      selectElement.addEventListener("input", function (event) {
+      selectElement.addEventListener("input", event => {
         const value = getValue(event);
         storage.setValue(id, { value });
 
-        window.dispatchEvent(
-          new CustomEvent("dispatchEventInSandbox", {
-            detail: {
-              id,
-              name: "Keystroke",
-              changeEx: value,
-              willCommit: true,
-              commitKey: 1,
-              keyDown: false,
-            },
-          })
-        );
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id,
+            name: "Keystroke",
+            changeEx: value,
+            willCommit: true,
+            commitKey: 1,
+            keyDown: false,
+          },
+        });
       });
 
       this._setEventListeners(
@@ -1852,14 +1845,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     this.filename = getFilenameFromUrl(filename);
     this.content = content;
 
-    if (this.linkService.eventBus) {
-      this.linkService.eventBus.dispatch("fileattachmentannotation", {
-        source: this,
-        id: stringToPDFString(filename),
-        filename,
-        content,
-      });
-    }
+    this.linkService.eventBus?.dispatch("fileattachmentannotation", {
+      source: this,
+      id: stringToPDFString(filename),
+      filename,
+      content,
+    });
   }
 
   render() {

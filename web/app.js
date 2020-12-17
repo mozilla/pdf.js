@@ -784,15 +784,20 @@ const PDFViewerApplication = {
     if (!this._scriptingInstance) {
       return;
     }
-    const { scripting, events } = this._scriptingInstance;
+    const { scripting, internalEvents, domEvents } = this._scriptingInstance;
     try {
       await scripting.destroySandbox();
     } catch (ex) {}
 
-    for (const [name, listener] of events) {
+    for (const [name, listener] of internalEvents) {
+      this.eventBus._off(name, listener);
+    }
+    internalEvents.clear();
+
+    for (const [name, listener] of domEvents) {
       window.removeEventListener(name, listener);
     }
-    events.clear();
+    domEvents.clear();
 
     delete this._mouseState.isDown;
     this._scriptingInstance = null;
@@ -1468,16 +1473,19 @@ const PDFViewerApplication = {
       pdfDocument.getJSActions(),
     ]);
 
-    if ((!objects && !docActions) || pdfDocument !== this.pdfDocument) {
-      // No FieldObjects were found in the document, no JS Actions at doc level
-      // or the document was closed while the data resolved.
+    if (!objects && !docActions) {
+      // No FieldObjects or JavaScript actions were found in the document.
       return;
     }
-
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the data resolved.
+    }
     const scripting = this.externalServices.createScripting();
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
-    this._scriptingInstance = { scripting, events: new Map() };
+    const internalEvents = new Map(),
+      domEvents = new Map();
+    this._scriptingInstance = { scripting, internalEvents, domEvents };
 
     if (!this.documentInfo) {
       // It should be *extremely* rare for metadata to not have been resolved
@@ -1494,8 +1502,7 @@ const PDFViewerApplication = {
       }
     }
 
-    const updateFromSandbox = event => {
-      const { detail } = event;
+    const updateFromSandbox = ({ detail }) => {
       const { id, command, value } = detail;
       if (!id) {
         switch (command) {
@@ -1520,11 +1527,7 @@ const PDFViewerApplication = {
             console.log(value);
             break;
           case "zoom":
-            if (typeof value === "string") {
-              this.pdfViewer.currentScaleValue = value;
-            } else {
-              this.pdfViewer.currentScale = value;
-            }
+            this.pdfViewer.currentScaleValue = value;
             break;
         }
         return;
@@ -1532,7 +1535,7 @@ const PDFViewerApplication = {
 
       const element = document.getElementById(id);
       if (element) {
-        element.dispatchEvent(new CustomEvent("updateFromSandbox", { detail }));
+        element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
       } else {
         if (value !== undefined && value !== null) {
           // The element hasn't been rendered yet, use the AnnotationStorage.
@@ -1540,30 +1543,29 @@ const PDFViewerApplication = {
         }
       }
     };
-    window.addEventListener("updateFromSandbox", updateFromSandbox);
-    // Ensure that the event listener can be removed at document closing.
-    this._scriptingInstance.events.set("updateFromSandbox", updateFromSandbox);
+    internalEvents.set("updatefromsandbox", updateFromSandbox);
 
-    const dispatchEventInSandbox = event => {
-      scripting.dispatchEventInSandbox(event.detail);
+    const dispatchEventInSandbox = ({ detail }) => {
+      scripting.dispatchEventInSandbox(detail);
     };
-    window.addEventListener("dispatchEventInSandbox", dispatchEventInSandbox);
-    // Ensure that the event listener can be removed at document closing.
-    this._scriptingInstance.events.set(
-      "dispatchEventInSandbox",
-      dispatchEventInSandbox
-    );
+    internalEvents.set("dispatcheventinsandbox", dispatchEventInSandbox);
 
     const mouseDown = event => {
       this._mouseState.isDown = true;
     };
+    domEvents.set("mousedown", mouseDown);
+
     const mouseUp = event => {
       this._mouseState.isDown = false;
     };
-    window.addEventListener("mousedown", mouseDown);
-    this._scriptingInstance.events.set("mousedown", mouseDown);
-    window.addEventListener("mouseup", mouseUp);
-    this._scriptingInstance.events.set("mouseup", mouseUp);
+    domEvents.set("mouseup", mouseUp);
+
+    for (const [name, listener] of internalEvents) {
+      this.eventBus._on(name, listener);
+    }
+    for (const [name, listener] of domEvents) {
+      window.addEventListener(name, listener);
+    }
 
     if (!this._contentLength) {
       // Always waiting for the entire PDF document to be loaded will, most
@@ -1602,12 +1604,10 @@ const PDFViewerApplication = {
       });
 
       if (this.externalServices.isInAutomation) {
-        this.eventBus.dispatch("sandboxcreated", {
-          source: this,
-        });
+        this.eventBus.dispatch("sandboxcreated", { source: this });
       }
     } catch (error) {
-      console.error(error);
+      console.error(`_initializeJavaScript: "${error?.message}".`);
       this._destroyScriptingInstance();
     }
 
@@ -2125,6 +2125,12 @@ const PDFViewerApplication = {
     _boundEvents.windowAfterPrint = () => {
       eventBus.dispatch("afterprint", { source: window });
     };
+    _boundEvents.windowUpdateFromSandbox = event => {
+      eventBus.dispatch("updatefromsandbox", {
+        source: window,
+        detail: event.detail,
+      });
+    };
 
     window.addEventListener("visibilitychange", webViewerVisibilityChange);
     window.addEventListener("wheel", webViewerWheel, { passive: false });
@@ -2138,6 +2144,10 @@ const PDFViewerApplication = {
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
     window.addEventListener("afterprint", _boundEvents.windowAfterPrint);
+    window.addEventListener(
+      "updatefromsandbox",
+      _boundEvents.windowUpdateFromSandbox
+    );
   },
 
   unbindEvents() {
@@ -2212,11 +2222,16 @@ const PDFViewerApplication = {
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
     window.removeEventListener("afterprint", _boundEvents.windowAfterPrint);
+    window.removeEventListener(
+      "updatefromsandbox",
+      _boundEvents.windowUpdateFromSandbox
+    );
 
     _boundEvents.windowResize = null;
     _boundEvents.windowHashChange = null;
     _boundEvents.windowBeforePrint = null;
     _boundEvents.windowAfterPrint = null;
+    _boundEvents.windowUpdateFromSandbox = null;
   },
 
   accumulateWheelTicks(ticks) {
