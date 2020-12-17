@@ -19,7 +19,6 @@ import {
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
   EventBus,
-  generateRandomStringForSandbox,
   getActiveOrFocusedElement,
   getPDFFileNameFromURL,
   isValidRotation,
@@ -1483,10 +1482,6 @@ const PDFViewerApplication = {
       const { id, command, value } = detail;
       if (!id) {
         switch (command) {
-          case "alert":
-            // eslint-disable-next-line no-alert
-            window.alert(value);
-            break;
           case "clear":
             console.clear();
             break;
@@ -1501,7 +1496,7 @@ const PDFViewerApplication = {
             return;
           case "print":
             this.triggerPrinting();
-            return;
+            break;
           case "println":
             console.log(value);
             break;
@@ -1511,7 +1506,7 @@ const PDFViewerApplication = {
             } else {
               this.pdfViewer.currentScale = value;
             }
-            return;
+            break;
         }
         return;
       }
@@ -1551,8 +1546,6 @@ const PDFViewerApplication = {
     window.addEventListener("mouseup", mouseUp);
     this._scriptingInstance.events.set("mouseup", mouseUp);
 
-    const dispatchEventName = generateRandomStringForSandbox(objects);
-
     if (!this._contentLength) {
       // Always waiting for the entire PDF document to be loaded will, most
       // likely, delay sandbox-creation too much in the general case for all
@@ -1569,24 +1562,28 @@ const PDFViewerApplication = {
     const filename =
       this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
 
-    scripting.createSandbox({
-      objects,
-      dispatchEventName,
-      calculationOrder,
-      appInfo: {
-        platform: navigator.platform,
-        language: navigator.language,
-      },
-      docInfo: {
-        ...this.documentInfo,
-        baseURL: this.baseUrl,
-        filesize: this._contentLength,
-        filename,
-        metadata: this.metadata,
-        numPages: pdfDocument.numPages,
-        URL: this.url,
-      },
-    });
+    try {
+      await scripting.createSandbox({
+        objects,
+        calculationOrder,
+        appInfo: {
+          platform: navigator.platform,
+          language: navigator.language,
+        },
+        docInfo: {
+          ...this.documentInfo,
+          baseURL: this.baseUrl,
+          filesize: this._contentLength,
+          filename,
+          metadata: this.metadata,
+          numPages: pdfDocument.numPages,
+          URL: this.url,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      this._destroyScriptingInstance();
+    }
   },
 
   /**

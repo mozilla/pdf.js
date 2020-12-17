@@ -35,16 +35,20 @@ import { Field } from "./field.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
 
-function initSandbox({ data, extra, out }) {
-  const proxyHandler = new ProxyHandler(data.dispatchEventName);
-  const {
-    send,
-    crackURL,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-  } = extra;
+function initSandbox(params) {
+  delete globalThis.pdfjsScripting;
+
+  // externalCall is a function to call a function defined
+  // outside the sandbox.
+  // (see src/pdf.sandbox.external.js).
+  const externalCall = globalThis.callExternalFunction;
+  delete globalThis.callExternalFunction;
+
+  // eslint-disable-next-line no-eval
+  const globalEval = code => globalThis.eval(code);
+  const send = data => externalCall("send", [data]);
+  const proxyHandler = new ProxyHandler();
+  const { data } = params;
   const doc = new Doc({
     send,
     ...data.docInfo,
@@ -52,21 +56,21 @@ function initSandbox({ data, extra, out }) {
   const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
   const app = new App({
     send,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
+    globalEval,
+    externalCall,
     _document,
     calculationOrder: data.calculationOrder,
     proxyHandler,
     ...data.appInfo,
   });
-  const util = new Util({ crackURL });
+
+  const util = new Util({ externalCall });
   const aform = new AForm(doc, app, util);
 
   for (const [name, objs] of Object.entries(data.objects)) {
     const obj = objs[0];
     obj.send = send;
+    obj.globalEval = globalEval;
     obj.doc = _document.wrapped;
     const field = new Field(obj);
     const wrapped = new Proxy(field, proxyHandler);
@@ -74,28 +78,44 @@ function initSandbox({ data, extra, out }) {
     app._objects[obj.id] = { obj: field, wrapped };
   }
 
-  out.global = Object.create(null);
-  out.app = new Proxy(app, proxyHandler);
-  out.color = new Proxy(new Color(), proxyHandler);
-  out.console = new Proxy(new Console({ send }), proxyHandler);
-  out.util = new Proxy(util, proxyHandler);
-  out.border = Border;
-  out.cursor = Cursor;
-  out.display = Display;
-  out.font = Font;
-  out.highlight = Highlight;
-  out.position = Position;
-  out.scaleHow = ScaleHow;
-  out.scaleWhen = ScaleWhen;
-  out.style = Style;
-  out.trans = Trans;
-  out.zoomtype = ZoomType;
+  globalThis.event = null;
+  globalThis.global = Object.create(null);
+  globalThis.app = new Proxy(app, proxyHandler);
+  globalThis.doc = _document.wrapped;
+  globalThis.color = new Proxy(new Color(), proxyHandler);
+  globalThis.console = new Proxy(new Console({ send }), proxyHandler);
+  globalThis.util = new Proxy(util, proxyHandler);
+  globalThis.border = Border;
+  globalThis.cursor = Cursor;
+  globalThis.display = Display;
+  globalThis.font = Font;
+  globalThis.highlight = Highlight;
+  globalThis.position = Position;
+  globalThis.scaleHow = ScaleHow;
+  globalThis.scaleWhen = ScaleWhen;
+  globalThis.style = Style;
+  globalThis.trans = Trans;
+  globalThis.zoomtype = ZoomType;
 
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
     if (name !== "constructor" && !name.startsWith("_")) {
-      out[name] = aform[name].bind(aform);
+      globalThis[name] = aform[name].bind(aform);
     }
   }
+
+  const functions = {
+    dispatchEvent: app._dispatchEvent.bind(app),
+    timeoutCb: app._evalCallback.bind(app),
+  };
+
+  return (name, args) => {
+    try {
+      functions[name](args);
+    } catch (error) {
+      const value = `${error.toString()}\n${error.stack}`;
+      send({ command: "error", value });
+    }
+  };
 }
 
 export { initSandbox };

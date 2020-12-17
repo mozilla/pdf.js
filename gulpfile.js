@@ -374,7 +374,28 @@ function createScriptingBundle(defines, extraOptions = undefined) {
     .src("./src/pdf.scripting.js")
     .pipe(webpack2Stream(scriptingFileConfig))
     .pipe(replaceWebpackRequire())
-    .pipe(replaceJSRootName(scriptingAMDName, "pdfjsScripting"));
+    .pipe(
+      replace(
+        'root["' + scriptingAMDName + '"] = factory()',
+        "root.pdfjsScripting = factory()"
+      )
+    );
+}
+
+function createSandboxExternal(defines) {
+  const preprocessor2 = require("./external/builder/preprocessor2.js");
+  const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
+
+  const ctx = {
+    saveComments: false,
+    defines,
+  };
+  return gulp.src("./src/pdf.sandbox.external.js").pipe(
+    transform("utf8", content => {
+      content = preprocessor2.preprocessPDFJSCode(ctx, content);
+      return `${licenseHeader}\n${content}`;
+    })
+  );
 }
 
 function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
@@ -1203,6 +1224,9 @@ gulp.task(
       createScriptingBundle(defines).pipe(
         gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
       ),
+      createSandboxExternal(defines).pipe(
+        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+      ),
       createWorkerBundle(defines).pipe(
         gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
       ),
@@ -1791,7 +1815,7 @@ gulp.task(
 gulp.task("watch-dev-sandbox", function () {
   gulp.watch(
     [
-      "src/pdf.{sandbox,scripting}.js",
+      "src/pdf.{sandbox,sandbox.external,scripting}.js",
       "src/scripting_api/*.js",
       "src/shared/scripting_utils.js",
       "external/quickjs/*.js",
