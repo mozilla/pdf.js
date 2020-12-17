@@ -47,6 +47,7 @@ import { ColorConverters } from "../shared/scripting_utils.js";
  * @property {Object} svgFactory
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
+ * @property {Object} [mouseState]
  */
 
 class AnnotationElementFactory {
@@ -155,6 +156,7 @@ class AnnotationElement {
     this.annotationStorage = parameters.annotationStorage;
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
+    this._mouseState = parameters.mouseState;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -590,7 +592,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       parameters.renderInteractiveForms ||
       (!parameters.data.hasAppearance && !!parameters.data.fieldValue);
     super(parameters, { isRenderable });
-    this.mouseState = parameters.mouseState;
   }
 
   render() {
@@ -734,7 +735,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           const _blurListener = blurListener;
           blurListener = null;
           element.addEventListener("blur", event => {
-            if (this.mouseState.isDown) {
+            if (this._mouseState.isDown) {
               // Focus out using the mouse: data are committed
               elementData.userValue = event.target.value;
               window.dispatchEvent(
@@ -1951,7 +1952,7 @@ class AnnotationLayer {
           parameters.annotationStorage || new AnnotationStorage(),
         enableScripting: parameters.enableScripting,
         hasJSActions: parameters.hasJSActions,
-        mouseState: parameters.mouseState,
+        mouseState: parameters.mouseState || { isDown: false },
       });
       if (element.isRenderable) {
         const rendered = element.render();
