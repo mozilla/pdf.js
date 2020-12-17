@@ -63,7 +63,6 @@ import { viewerCompatibilityParams } from "./viewer_compatibility.js";
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enableScripting] - Enable embedded script execution.
  *   The default value is `false`.
- * @property {Object} [mouseState] - The mouse button state.
  */
 
 const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
@@ -110,7 +109,6 @@ class PDFPageView {
     this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
     this.enableScripting = options.enableScripting || false;
-    this.mouseState = options.mouseState || null;
 
     this.paintTask = null;
     this.paintedViewportMap = new WeakMap();
@@ -554,7 +552,7 @@ class PDFPageView {
           this.l10n,
           this.enableScripting,
           /* hasJSActionsPromise = */ null,
-          this.mouseState
+          /* mouseState = */ null
         );
       }
       this._renderAnnotationLayer();

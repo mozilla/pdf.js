@@ -79,7 +79,8 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enableScripting] - Enable embedded script execution.
  *   The default value is `false`.
- * @property {Object} [mouseState] - The mouse button state.
+ * @property {Object} [mouseState] - The mouse button state. The default value
+ *   is `null`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -195,7 +196,7 @@ class BaseViewer {
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
     this.enableScripting = options.enableScripting || false;
-    this.mouseState = options.mouseState || null;
+    this._mouseState = options.mouseState || null;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -540,7 +541,6 @@ class BaseViewer {
             maxCanvasPixels: this.maxCanvasPixels,
             l10n: this.l10n,
             enableScripting: this.enableScripting,
-            mouseState: this.mouseState,
           });
           this._pages.push(pageView);
         }
@@ -1301,7 +1301,7 @@ class BaseViewer {
       enableScripting,
       hasJSActionsPromise:
         hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
-      mouseState,
+      mouseState: mouseState || this._mouseState,
     });
   }
 

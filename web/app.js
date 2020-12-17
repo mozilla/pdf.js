@@ -794,6 +794,7 @@ const PDFViewerApplication = {
     }
     events.clear();
 
+    delete this._mouseState.isDown;
     this._scriptingInstance = null;
   },
 
