@@ -1580,6 +1580,12 @@ const PDFViewerApplication = {
           URL: this.url,
         },
       });
+
+      if (this.externalServices.isInAutomation) {
+        this.eventBus.dispatch("sandboxcreated", {
+          source: this,
+        });
+      }
     } catch (error) {
       console.error(error);
       this._destroyScriptingInstance();
