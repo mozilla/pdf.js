@@ -51,6 +51,7 @@ function initSandbox(params) {
   const { data } = params;
   const doc = new Doc({
     send,
+    globalEval,
     ...data.docInfo,
   });
   const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
@@ -67,16 +68,17 @@ function initSandbox(params) {
   const util = new Util({ externalCall });
   const aform = new AForm(doc, app, util);
 
-  for (const [name, objs] of Object.entries(data.objects)) {
-    const obj = objs[0];
-    obj.send = send;
-    obj.globalEval = globalEval;
-    obj.doc = _document.wrapped;
-    obj.globalEval = globalEval;
-    const field = new Field(obj);
-    const wrapped = new Proxy(field, proxyHandler);
-    doc._addField(name, wrapped);
-    app._objects[obj.id] = { obj: field, wrapped };
+  if (data.objects) {
+    for (const [name, objs] of Object.entries(data.objects)) {
+      const obj = objs[0];
+      obj.send = send;
+      obj.globalEval = globalEval;
+      obj.doc = _document.wrapped;
+      const field = new Field(obj);
+      const wrapped = new Proxy(field, proxyHandler);
+      doc._addField(name, wrapped);
+      app._objects[obj.id] = { obj: field, wrapped };
+    }
   }
 
   globalThis.event = null;

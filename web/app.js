@@ -1031,12 +1031,26 @@ const PDFViewerApplication = {
       return;
     }
 
+    if (this._scriptingInstance) {
+      this._scriptingInstance.scripting.dispatchEventInSandbox({
+        id: "doc",
+        name: "WillSave",
+      });
+    }
+
     this._saveInProgress = true;
     this.pdfDocument
       .saveDocument(this.pdfDocument.annotationStorage)
       .then(data => {
         const blob = new Blob([data], { type: "application/pdf" });
         downloadManager.download(blob, url, filename, sourceEventType);
+
+        if (this._scriptingInstance) {
+          this._scriptingInstance.scripting.dispatchEventInSandbox({
+            id: "doc",
+            name: "DidSave",
+          });
+        }
       })
       .catch(() => {
         this.download({ sourceEventType });
@@ -1447,16 +1461,18 @@ const PDFViewerApplication = {
     if (!AppOptions.get("enableScripting")) {
       return;
     }
-    const [objects, calculationOrder] = await Promise.all([
+    const [objects, calculationOrder, docActions] = await Promise.all([
       pdfDocument.getFieldObjects(),
       pdfDocument.getCalculationOrderIds(),
+      pdfDocument.getJSActions(),
     ]);
 
-    if (!objects || pdfDocument !== this.pdfDocument) {
-      // No FieldObjects were found in the document,
+    if ((!objects && !docActions) || pdfDocument !== this.pdfDocument) {
+      // No FieldObjects were found in the document, no JS Actions at doc level
       // or the document was closed while the data resolved.
       return;
     }
+
     const scripting = this.externalServices.createScripting();
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
@@ -1495,8 +1511,10 @@ const PDFViewerApplication = {
             this.pdfViewer.currentPageNumber = value + 1;
             return;
           case "print":
-            this.triggerPrinting();
-            break;
+            this.pdfViewer.pagesPromise.then(() => {
+              this.triggerPrinting();
+            });
+            return;
           case "println":
             console.log(value);
             break;
@@ -1578,6 +1596,7 @@ const PDFViewerApplication = {
           metadata: this.metadata,
           numPages: pdfDocument.numPages,
           URL: this.url,
+          actions: docActions,
         },
       });
 
@@ -1590,6 +1609,11 @@ const PDFViewerApplication = {
       console.error(error);
       this._destroyScriptingInstance();
     }
+
+    scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "Open",
+    });
   },
 
   /**
@@ -1626,7 +1650,7 @@ const PDFViewerApplication = {
     if (openAction && openAction.action === "Print") {
       triggerAutoPrint = true;
     }
-    if (javaScript) {
+    if (javaScript && !AppOptions.get("enableScripting")) {
       javaScript.some(js => {
         if (!js) {
           // Don't warn/fallback for empty JavaScript actions.
@@ -2008,7 +2032,21 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
+    if (this._scriptingInstance) {
+      this._scriptingInstance.scripting.dispatchEventInSandbox({
+        id: "doc",
+        name: "WillPrint",
+      });
+    }
+
     window.print();
+
+    if (this._scriptingInstance) {
+      this._scriptingInstance.scripting.dispatchEventInSandbox({
+        id: "doc",
+        name: "DidPrint",
+      });
+    }
   },
 
   bindEvents() {
