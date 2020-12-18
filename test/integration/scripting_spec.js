@@ -27,6 +27,20 @@ describe("Interaction", () => {
       await closePages(pages);
     });
 
+    it("must check that first text field has focus", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // The document has an open action in order to give
+          // the focus to 401R.
+          await page.waitForTimeout(1000);
+          const id = await page.evaluate(
+            () => window.document.activeElement.id
+          );
+          expect(id).withContext(`In ${browserName}`).toEqual("401R");
+        })
+      );
+    });
+
     it("must show a text field and then make in invisible when content is removed", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {

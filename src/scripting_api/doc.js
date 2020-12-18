@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { createActionsMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
@@ -88,6 +89,48 @@ class Doc extends PDFObject {
 
     this._zoomType = ZoomType.none;
     this._zoom = data.zoom || 100;
+    this._actions = createActionsMap(data.actions);
+    this._globalEval = data.globalEval;
+  }
+
+  _dispatchDocEvent(name) {
+    if (name === "Open") {
+      const dontRun = new Set([
+        "WillClose",
+        "WillSave",
+        "DidSave",
+        "WillPrint",
+        "DidPrint",
+        "OpenAction",
+      ]);
+      for (const actionName of this._actions.keys()) {
+        if (!dontRun.has(actionName)) {
+          this._runActions(actionName);
+        }
+      }
+      this._runActions("OpenAction");
+    } else {
+      this._runActions(name);
+    }
+  }
+
+  _dispatchPageEvent(name, action, pageNumber) {
+    if (name === "PageOpen") {
+      this._pageNum = pageNumber - 1;
+    }
+
+    this._globalEval(action);
+  }
+
+  _runActions(name) {
+    if (!this._actions.has(name)) {
+      return;
+    }
+
+    const actions = this._actions.get(name);
+    for (const action of actions) {
+      this._globalEval(action);
+    }
   }
 
   _addField(name, field) {
@@ -954,7 +997,7 @@ class Doc extends PDFObject {
       nEnd = -1;
     }
 
-    this._send({ id: "print", start: nStart, end: nEnd });
+    this._send({ command: "print", start: nStart, end: nEnd });
   }
 
   removeDataObject() {

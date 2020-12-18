@@ -159,11 +159,19 @@ const AnnotationActionEventType = {
   F: "Format",
   V: "Validate",
   C: "Calculate",
+};
+
+const DocumentActionEventType = {
   WC: "WillClose",
   WS: "WillSave",
   DS: "DidSave",
   WP: "WillPrint",
   DP: "DidPrint",
+};
+
+const PageActionEventType = {
+  O: "PageOpen",
+  C: "PageClose",
 };
 
 const StreamType = {
@@ -1011,9 +1019,11 @@ export {
   FontType,
   ImageKind,
   CMapCompressionType,
+  DocumentActionEventType,
   AbortException,
   InvalidPDFException,
   MissingPDFException,
+  PageActionEventType,
   PasswordException,
   PasswordResponses,
   PermissionFlag,

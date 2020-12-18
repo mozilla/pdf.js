@@ -894,6 +894,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "docactions",
+       "file": "pdfs/docactions.pdf",
+       "md5": "28ea940349cf7cb793cfe167d04b097c",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue9084",
        "file": "pdfs/issue9084.pdf",
        "md5": "5570ec01cc869d299fec1b2f68926a08",

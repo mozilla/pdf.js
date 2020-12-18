@@ -24,6 +24,7 @@ import {
   isNum,
   isString,
   OPS,
+  PageActionEventType,
   shadow,
   stringToBytes,
   stringToPDFString,
@@ -42,6 +43,7 @@ import {
   Ref,
 } from "./primitives.js";
 import {
+  collectActions,
   getInheritableProperty,
   isWhiteSpace,
   MissingDataException,
@@ -466,6 +468,16 @@ class Page {
       });
 
     return shadow(this, "_parsedAnnotations", parsedAnnotations);
+  }
+
+  get jsActions() {
+    const actions = collectActions(
+      this.xref,
+      this.pageDict,
+      PageActionEventType
+    );
+
+    return shadow(this, "jsActions", actions);
   }
 }
 

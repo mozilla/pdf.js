@@ -21,11 +21,9 @@ import {
   AnnotationReplyType,
   AnnotationType,
   assert,
-  bytesToString,
   escapeString,
   getModificationDate,
   isString,
-  objectSize,
   OPS,
   shadow,
   stringToPDFString,
@@ -34,17 +32,9 @@ import {
   warn,
 } from "../shared/util.js";
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
-import {
-  Dict,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  RefSet,
-} from "./primitives.js";
+import { collectActions, getInheritableProperty } from "./core_utils.js";
+import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
-import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
@@ -977,7 +967,7 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.actions = this._collectActions(params.xref, dict);
+    data.actions = collectActions(params.xref, dict, AnnotationActionEventType);
 
     const fieldValue = getInheritableProperty({
       dict,
@@ -1457,78 +1447,6 @@ class WidgetAnnotation extends Annotation {
       }
     }
     return localResources || Dict.empty;
-  }
-
-  _collectJS(entry, xref, list, parents) {
-    if (!entry) {
-      return;
-    }
-
-    let parent = null;
-    if (isRef(entry)) {
-      if (parents.has(entry)) {
-        // If we've already found entry then we've a cycle.
-        return;
-      }
-      parent = entry;
-      parents.put(parent);
-      entry = xref.fetch(entry);
-    }
-    if (Array.isArray(entry)) {
-      for (const element of entry) {
-        this._collectJS(element, xref, list, parents);
-      }
-    } else if (entry instanceof Dict) {
-      if (isName(entry.get("S"), "JavaScript") && entry.has("JS")) {
-        const js = entry.get("JS");
-        let code;
-        if (isStream(js)) {
-          code = bytesToString(js.getBytes());
-        } else {
-          code = js;
-        }
-        code = stringToPDFString(code);
-        if (code) {
-          list.push(code);
-        }
-      }
-      this._collectJS(entry.getRaw("Next"), xref, list, parents);
-    }
-
-    if (parent) {
-      parents.remove(parent);
-    }
-  }
-
-  _collectActions(xref, dict) {
-    const actions = Object.create(null);
-    if (dict.has("AA")) {
-      const additionalActions = dict.get("AA");
-      for (const key of additionalActions.getKeys()) {
-        const action = AnnotationActionEventType[key];
-        if (!action) {
-          continue;
-        }
-        const actionDict = additionalActions.getRaw(key);
-        const parents = new RefSet();
-        const list = [];
-        this._collectJS(actionDict, xref, list, parents);
-        if (list.length > 0) {
-          actions[action] = list;
-        }
-      }
-    }
-    // Collect the Action if any (we may have one on pushbutton).
-    if (dict.has("A")) {
-      const actionDict = dict.get("A");
-      const parents = new RefSet();
-      const list = [];
-      this._collectJS(actionDict, xref, list, parents);
-      if (list.length > 0) {
-        actions.Action = list;
-      }
-    }
-    return objectSize(actions) > 0 ? actions : null;
   }
 
   getFieldObject() {
