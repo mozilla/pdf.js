@@ -72,6 +72,7 @@ function initSandbox(params) {
     obj.send = send;
     obj.globalEval = globalEval;
     obj.doc = _document.wrapped;
+    obj.globalEval = globalEval;
     const field = new Field(obj);
     const wrapped = new Proxy(field, proxyHandler);
     doc._addField(name, wrapped);
@@ -81,7 +82,6 @@ function initSandbox(params) {
   globalThis.event = null;
   globalThis.global = Object.create(null);
   globalThis.app = new Proxy(app, proxyHandler);
-  globalThis.doc = _document.wrapped;
   globalThis.color = new Proxy(new Color(), proxyHandler);
   globalThis.console = new Proxy(new Console({ send }), proxyHandler);
   globalThis.util = new Proxy(util, proxyHandler);
@@ -102,6 +102,26 @@ function initSandbox(params) {
       globalThis[name] = aform[name].bind(aform);
     }
   }
+
+  // The doc properties must live in the global scope too
+  const properties = Object.create(null);
+  for (const name of Object.getOwnPropertyNames(Doc.prototype)) {
+    if (name === "constructor" || name.startsWith("_")) {
+      continue;
+    }
+    const descriptor = Object.getOwnPropertyDescriptor(Doc.prototype, name);
+    if (descriptor.get) {
+      properties[name] = {
+        get: descriptor.get.bind(doc),
+        set: descriptor.set.bind(doc),
+      };
+    } else {
+      properties[name] = {
+        value: Doc.prototype[name].bind(doc),
+      };
+    }
+  }
+  Object.defineProperties(globalThis, properties);
 
   const functions = {
     dispatchEvent: app._dispatchEvent.bind(app),

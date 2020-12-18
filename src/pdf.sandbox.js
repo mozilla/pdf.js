@@ -58,6 +58,9 @@ class Sandbox {
   }
 
   create(data) {
+    if (TESTING) {
+      this._module.ccall("nukeSandbox", null, []);
+    }
     const sandboxData = JSON.stringify(data);
     const code = [
       // Next line is replaced by code from initialization.js
