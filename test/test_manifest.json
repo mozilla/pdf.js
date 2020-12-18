@@ -2779,6 +2779,18 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue12750",
+       "file": "pdfs/issue12750.pdf",
+       "md5": "47a39ef5d6ae2e4f52887c477cfdfc9e",
+       "rounds": 1,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "12R": {
+           "value": "foobar"
+         }
+       }
+    },
     {  "id": "preistabelle-text",
        "file": "pdfs/preistabelle.pdf",
        "md5": "d2f0b2086160d4f3d325c79a5dc1fb4d",
