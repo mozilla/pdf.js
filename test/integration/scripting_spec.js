@@ -30,9 +30,12 @@ describe("Interaction", () => {
     it("must check that first text field has focus", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
           // The document has an open action in order to give
           // the focus to 401R.
-          await page.waitForTimeout(1000);
           const id = await page.evaluate(
             () => window.document.activeElement.id
           );
