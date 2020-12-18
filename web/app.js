@@ -1480,7 +1480,12 @@ const PDFViewerApplication = {
     // of the sandbox and removal of the event listeners at document closing.
     const internalEvents = new Map(),
       domEvents = new Map();
-    this._scriptingInstance = { scripting, internalEvents, domEvents };
+    this._scriptingInstance = {
+      scripting,
+      ready: false,
+      internalEvents,
+      domEvents,
+    };
 
     if (!this.documentInfo) {
       // It should be *extremely* rare for metadata to not have been resolved
@@ -1611,6 +1616,15 @@ const PDFViewerApplication = {
     scripting.dispatchEventInSandbox({
       id: "doc",
       name: "Open",
+    });
+
+    // Used together with the integration-tests, see the `scriptingReady`
+    // getter, to enable awaiting full initialization of the scripting/sandbox.
+    // (Defer this slightly, to make absolutely sure that everything is done.)
+    Promise.resolve().then(() => {
+      if (this._scriptingInstance) {
+        this._scriptingInstance.ready = true;
+      }
     });
   },
 
@@ -2241,6 +2255,14 @@ const PDFViewerApplication = {
       Math.floor(Math.abs(this._wheelUnusedTicks));
     this._wheelUnusedTicks -= wholeTicks;
     return wholeTicks;
+  },
+
+  /**
+   * Used together with the integration-tests, to enable awaiting full
+   * initialization of the scripting/sandbox.
+   */
+  get scriptingReady() {
+    return this._scriptingInstance?.ready || false;
   },
 };
 
