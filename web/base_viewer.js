@@ -214,6 +214,7 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add("removePageBorders");
     }
+    this._initializeScriptingEvents();
     // Defer the dispatching of this event, to give other viewer components
     // time to initialize *and* register 'baseviewerinit' event listeners.
     Promise.resolve().then(() => {
@@ -283,12 +284,14 @@ class BaseViewer {
     if (!(0 < val && val <= this.pagesCount)) {
       return false;
     }
+    const previous = this._currentPageNumber;
     this._currentPageNumber = val;
 
     this.eventBus.dispatch("pagechanging", {
       source: this,
       pageNumber: val,
       pageLabel: this._pageLabels && this._pageLabels[val - 1],
+      previous,
     });
 
     if (resetCurrentPageView) {
@@ -457,6 +460,8 @@ class BaseViewer {
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
+      this.eventBus.dispatch("pagesdestroy", { source: this });
+
       this._cancelRendering();
       this._resetView();
 
@@ -649,6 +654,7 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
+    this._pageOpenPendingSet = null;
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -1499,6 +1505,62 @@ class BaseViewer {
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
+  }
+
+  /**
+   * @private
+   */
+  _initializeScriptingEvents() {
+    if (!this.enableScripting) {
+      return;
+    }
+    const { eventBus } = this;
+
+    const dispatchPageClose = pageNumber => {
+      eventBus.dispatch("pageclose", { source: this, pageNumber });
+    };
+    const dispatchPageOpen = (pageNumber, force = false) => {
+      const pageView = this._pages[pageNumber - 1];
+      if (force || pageView?.renderingState === RenderingStates.FINISHED) {
+        this._pageOpenPendingSet?.delete(pageNumber);
+
+        eventBus.dispatch("pageopen", { source: this, pageNumber });
+      } else {
+        if (!this._pageOpenPendingSet) {
+          this._pageOpenPendingSet = new Set();
+        }
+        this._pageOpenPendingSet.add(pageNumber);
+      }
+    };
+
+    eventBus._on("pagechanging", ({ pageNumber, previous }) => {
+      if (pageNumber === previous) {
+        return; // The active page didn't change.
+      }
+      dispatchPageClose(previous);
+      dispatchPageOpen(pageNumber);
+    });
+
+    eventBus._on("pagerendered", ({ pageNumber }) => {
+      if (!this._pageOpenPendingSet) {
+        return; // No pending "pageopen" events.
+      }
+      if (!this._pageOpenPendingSet.has(pageNumber)) {
+        return; // No pending "pageopen" event for the newly rendered page.
+      }
+      if (pageNumber !== this._currentPageNumber) {
+        return; // The newly rendered page is no longer the current one.
+      }
+      dispatchPageOpen(pageNumber, /* force = */ true);
+    });
+
+    eventBus._on("pagesinit", () => {
+      dispatchPageOpen(this._currentPageNumber);
+    });
+
+    eventBus._on("pagesdestroy", () => {
+      dispatchPageClose(this._currentPageNumber);
+    });
   }
 }
 
