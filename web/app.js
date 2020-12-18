@@ -1036,13 +1036,10 @@ const PDFViewerApplication = {
       this.download({ sourceEventType });
       return;
     }
-
-    if (this._scriptingInstance) {
-      this._scriptingInstance.scripting.dispatchEventInSandbox({
-        id: "doc",
-        name: "WillSave",
-      });
-    }
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillSave",
+    });
 
     this._saveInProgress = true;
     this.pdfDocument
@@ -1051,12 +1048,10 @@ const PDFViewerApplication = {
         const blob = new Blob([data], { type: "application/pdf" });
         downloadManager.download(blob, url, filename, sourceEventType);
 
-        if (this._scriptingInstance) {
-          this._scriptingInstance.scripting.dispatchEventInSandbox({
-            id: "doc",
-            name: "DidSave",
-          });
-        }
+        this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          id: "doc",
+          name: "DidSave",
+        });
       })
       .catch(() => {
         this.download({ sourceEventType });
@@ -1514,15 +1509,15 @@ const PDFViewerApplication = {
             break;
           case "layout":
             this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(value);
-            return;
+            break;
           case "page-num":
             this.pdfViewer.currentPageNumber = value + 1;
-            return;
+            break;
           case "print":
             this.pdfViewer.pagesPromise.then(() => {
               this.triggerPrinting();
             });
-            return;
+            break;
           case "println":
             console.log(value);
             break;
@@ -1608,7 +1603,9 @@ const PDFViewerApplication = {
       }
     } catch (error) {
       console.error(`_initializeJavaScript: "${error?.message}".`);
+
       this._destroyScriptingInstance();
+      return;
     }
 
     scripting.dispatchEventInSandbox({
@@ -2033,21 +2030,17 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
-    if (this._scriptingInstance) {
-      this._scriptingInstance.scripting.dispatchEventInSandbox({
-        id: "doc",
-        name: "WillPrint",
-      });
-    }
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillPrint",
+    });
 
     window.print();
 
-    if (this._scriptingInstance) {
-      this._scriptingInstance.scripting.dispatchEventInSandbox({
-        id: "doc",
-        name: "DidPrint",
-      });
-    }
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "DidPrint",
+    });
   },
 
   bindEvents() {
