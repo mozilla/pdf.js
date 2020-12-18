@@ -60,10 +60,7 @@ class AForm {
     }
   }
 
-  AFMergeChange(event) {
-    if (!event) {
-      event = this._document._event;
-    }
+  AFMergeChange(event = globalThis.event) {
     if (event.willCommit) {
       return event.value.toString();
     }
@@ -128,7 +125,7 @@ class AForm {
     strCurrency,
     bCurrencyPrepend
   ) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }
@@ -193,7 +190,7 @@ class AForm {
     strCurrency /* unused */,
     bCurrencyPrepend /* unused */
   ) {
-    const event = this._document._event;
+    const event = globalThis.event;
     let value = this.AFMergeChange(event);
     if (!value) {
       return;
@@ -236,7 +233,7 @@ class AForm {
       throw new Error("Invalid nDec value in AFPercent_Format");
     }
 
-    const event = this._document._event;
+    const event = globalThis.event;
     if (nDec > 512) {
       event.value = "%";
       return;
@@ -268,7 +265,7 @@ class AForm {
   }
 
   AFDate_FormatEx(cFormat) {
-    const event = this._document._event;
+    const event = globalThis.event;
     const value = event.value;
     if (!value) {
       return;
@@ -287,7 +284,7 @@ class AForm {
   }
 
   AFDate_KeystrokeEx(cFormat) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.willCommit) {
       return;
     }
@@ -310,7 +307,7 @@ class AForm {
   }
 
   AFRange_Validate(bGreaterThan, nGreaterThan, bLessThan, nLessThan) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }
@@ -397,7 +394,7 @@ class AForm {
       throw new TypeError("Invalid function in AFSimple_Calculate");
     }
 
-    const event = this._document._event;
+    const event = globalThis.event;
     const values = [];
     for (const cField of cFields) {
       const field = this._document.getField(cField);
@@ -417,7 +414,7 @@ class AForm {
   }
 
   AFSpecial_Format(psf) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }
@@ -457,7 +454,7 @@ class AForm {
       return;
     }
 
-    const event = this._document._event;
+    const event = globalThis.event;
     const value = this.AFMergeChange(event);
     const checkers = new Map([
       ["9", char => char >= "0" && char <= "9"],
@@ -526,7 +523,7 @@ class AForm {
   }
 
   AFSpecial_Keystroke(psf) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }

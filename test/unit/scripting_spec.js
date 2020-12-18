@@ -129,6 +129,38 @@ describe("Scripting", function () {
     });
   });
 
+  describe("Doc", function () {
+    it("should treat globalThis as the doc", async function (done) {
+      const refId = getId();
+      const data = {
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {},
+              type: "text",
+            },
+          ],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      };
+      sandbox.createSandbox(data);
+
+      try {
+        await myeval(`(this.foobar = 123456, 0)`);
+        await myeval(`this.getField("field").doc.foobar`).then(value => {
+          expect(value).toEqual(123456);
+        });
+        done();
+      } catch (ex) {
+        done.fail(ex);
+      }
+    });
+  });
+
   describe("Util", function () {
     beforeAll(function (done) {
       sandbox.createSandbox({

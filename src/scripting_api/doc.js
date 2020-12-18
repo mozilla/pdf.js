@@ -31,17 +31,21 @@ class Doc extends PDFObject {
   constructor(data) {
     super(data);
 
-    this.baseURL = data.baseURL || "";
-    this.calculate = true;
-    this.delay = false;
-    this.dirty = false;
-    this.disclosed = false;
-    this.media = undefined;
-    this.metadata = data.metadata;
-    this.noautocomplete = undefined;
-    this.nocache = undefined;
-    this.spellDictionaryOrder = [];
-    this.spellLanguageOrder = [];
+    // In a script doc === this.
+    // So adding a property to the doc means adding it to this
+    this._expandos = globalThis;
+
+    this._baseURL = data.baseURL || "";
+    this._calculate = true;
+    this._delay = false;
+    this._dirty = false;
+    this._disclosed = false;
+    this._media = undefined;
+    this._metadata = data.metadata;
+    this._noautocomplete = undefined;
+    this._nocache = undefined;
+    this._spellDictionaryOrder = [];
+    this._spellLanguageOrder = [];
 
     this._printParams = null;
     this._fields = new Map();
@@ -127,12 +131,28 @@ class Doc extends PDFObject {
     throw new Error("doc.author is read-only");
   }
 
+  get baseURL() {
+    return this._baseURL;
+  }
+
+  set baseURL(baseURL) {
+    this._baseURL = baseURL;
+  }
+
   get bookmarkRoot() {
     return undefined;
   }
 
   set bookmarkRoot(_) {
     throw new Error("doc.bookmarkRoot is read-only");
+  }
+
+  get calculate() {
+    return this._calculate;
+  }
+
+  set calculate(calculate) {
+    this._calculate = calculate;
   }
 
   get creator() {
@@ -149,6 +169,30 @@ class Doc extends PDFObject {
 
   set dataObjects(_) {
     throw new Error("doc.dataObjects is read-only");
+  }
+
+  get delay() {
+    return this._delay;
+  }
+
+  set delay(delay) {
+    this._delay = delay;
+  }
+
+  get dirty() {
+    return this._dirty;
+  }
+
+  set dirty(dirty) {
+    this._dirty = dirty;
+  }
+
+  get disclosed() {
+    return this._disclosed;
+  }
+
+  set disclosed(disclosed) {
+    this._disclosed = disclosed;
   }
 
   get docID() {
@@ -278,6 +322,22 @@ class Doc extends PDFObject {
     this._layout = value;
   }
 
+  get media() {
+    return this._media;
+  }
+
+  set media(media) {
+    this._media = media;
+  }
+
+  get metadata() {
+    return this._metadata;
+  }
+
+  set metadata(metadata) {
+    this._metadata = metadata;
+  }
+
   get modDate() {
     return this._modDate;
   }
@@ -300,6 +360,22 @@ class Doc extends PDFObject {
 
   set mouseY(_) {
     throw new Error("doc.mouseY is read-only");
+  }
+
+  get noautocomplete() {
+    return this._noautocomplete;
+  }
+
+  set noautocomplete(noautocomplete) {
+    this._noautocomplete = noautocomplete;
+  }
+
+  get nocache() {
+    return this._nocache;
+  }
+
+  set nocache(nocache) {
+    this._nocache = nocache;
   }
 
   get numFields() {
@@ -416,6 +492,22 @@ class Doc extends PDFObject {
 
   set sounds(_) {
     throw new Error("doc.sounds is read-only");
+  }
+
+  get spellDictionaryOrder() {
+    return this._spellDictionaryOrder;
+  }
+
+  set spellDictionaryOrder(spellDictionaryOrder) {
+    this._spellDictionaryOrder = spellDictionaryOrder;
+  }
+
+  get spellLanguageOrder() {
+    return this._spellLanguageOrder;
+  }
+
+  set spellLanguageOrder(spellLanguageOrder) {
+    this._spellLanguageOrder = spellLanguageOrder;
   }
 
   get subject() {
