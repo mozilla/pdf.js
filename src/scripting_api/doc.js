@@ -109,6 +109,7 @@ class Doc extends PDFObject {
         }
       }
       this._runActions("OpenAction");
+      this._send({ command: "opendocfinished" });
     } else {
       this._runActions(name);
     }

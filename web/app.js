@@ -1525,6 +1525,11 @@ const PDFViewerApplication = {
               this.pdfViewer.currentScale = value;
             }
             break;
+          case "opendocfinished":
+            if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+              this.opendocfinished = true;
+            }
+            break;
         }
         return;
       }
