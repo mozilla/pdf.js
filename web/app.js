@@ -1060,6 +1060,14 @@ const PDFViewerApplication = {
       });
   },
 
+  downloadOrSave(options) {
+    if (this.pdfDocument?.annotationStorage.size > 0) {
+      this.save(options);
+    } else {
+      this.download(options);
+    }
+  },
+
   /**
    * For PDF documents that contain e.g. forms and javaScript, we should only
    * trigger the fallback bar once the user has interacted with the page.
@@ -2712,21 +2720,11 @@ function webViewerPresentationMode() {
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
 }
-function webViewerDownloadOrSave(sourceEventType) {
-  if (
-    PDFViewerApplication.pdfDocument &&
-    PDFViewerApplication.pdfDocument.annotationStorage.size > 0
-  ) {
-    PDFViewerApplication.save({ sourceEventType });
-  } else {
-    PDFViewerApplication.download({ sourceEventType });
-  }
-}
 function webViewerDownload() {
-  webViewerDownloadOrSave("download");
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "download" });
 }
 function webViewerSave() {
-  webViewerDownloadOrSave("save");
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "save" });
 }
 function webViewerFirstPage() {
   if (PDFViewerApplication.pdfDocument) {
