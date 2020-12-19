@@ -63,8 +63,6 @@ class Sandbox {
     }
     const sandboxData = JSON.stringify(data);
     const code = [
-      // Next line is replaced by code from initialization.js
-      // when we create the bundle for the sandbox.
       PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE"),
       `pdfjsScripting.initSandbox({ data: ${sandboxData} })`,
     ];

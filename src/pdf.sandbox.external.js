@@ -148,7 +148,7 @@ class SandboxSupportBase {
         if (!data) {
           return;
         }
-        const event = new this.win.CustomEvent("updateFromSandbox", {
+        const event = new this.win.CustomEvent("updatefromsandbox", {
           detail: this.importValueFromSandbox(data),
         });
         this.win.dispatchEvent(event);

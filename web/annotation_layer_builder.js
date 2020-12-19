@@ -30,6 +30,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]
+ * @property {Object} [mouseState]
  */
 
 class AnnotationLayerBuilder {
