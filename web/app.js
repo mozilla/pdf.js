@@ -1287,14 +1287,6 @@ const PDFViewerApplication = {
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
-    const annotationStorage = pdfDocument.annotationStorage;
-    annotationStorage.onSetModified = function () {
-      window.addEventListener("beforeunload", beforeUnload);
-    };
-    annotationStorage.onResetModified = function () {
-      window.removeEventListener("beforeunload", beforeUnload);
-    };
-
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
     const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
@@ -1322,6 +1314,7 @@ const PDFViewerApplication = {
 
     firstPagePromise.then(pdfPage => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
+      this._initializeAnnotationStorageCallbacks(pdfDocument);
 
       Promise.all([
         animationStarted,
@@ -1876,6 +1869,23 @@ const PDFViewerApplication = {
     if (!permissions.includes(PermissionFlag.COPY)) {
       this.appConfig.viewerContainer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
+  },
+
+  /**
+   * @private
+   */
+  _initializeAnnotationStorageCallbacks(pdfDocument) {
+    if (pdfDocument !== this.pdfDocument) {
+      return;
+    }
+    const { annotationStorage } = pdfDocument;
+
+    annotationStorage.onSetModified = function () {
+      window.addEventListener("beforeunload", beforeUnload);
+    };
+    annotationStorage.onResetModified = function () {
+      window.removeEventListener("beforeunload", beforeUnload);
+    };
   },
 
   setInitialView(
