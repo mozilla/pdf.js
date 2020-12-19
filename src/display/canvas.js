@@ -1350,11 +1350,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
       if (this.contentVisible) {
-        if (
-          strokeColor &&
-          strokeColor.hasOwnProperty("type") &&
-          strokeColor.type === "Pattern"
-        ) {
+        if (typeof strokeColor === "object" && strokeColor?.getPattern) {
           // for patterns, we transform to pattern space, calculate
           // the pattern, call stroke, and restore to user space
           ctx.save();
@@ -1951,12 +1947,12 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.patternFill = true;
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
-      const color = Util.makeCssRgb(r, g, b);
+      const color = Util.makeHexColor(r, g, b);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillRGBColor: function CanvasGraphics_setFillRGBColor(r, g, b) {
-      const color = Util.makeCssRgb(r, g, b);
+      const color = Util.makeHexColor(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
       this.current.patternFill = false;
@@ -2246,7 +2242,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         }
       }
 
-      if (glyph && glyph.compiled) {
+      if (glyph?.compiled) {
         glyph.compiled(ctx);
         return;
       }

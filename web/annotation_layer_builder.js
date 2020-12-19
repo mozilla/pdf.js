@@ -28,6 +28,9 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enableScripting]
+ * @property {Promise<boolean>} [hasJSActionsPromise]
+ * @property {Object} [mouseState]
  */
 
 class AnnotationLayerBuilder {
@@ -43,6 +46,9 @@ class AnnotationLayerBuilder {
     imageResourcesPath = "",
     renderInteractiveForms = true,
     l10n = NullL10n,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null,
   }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
@@ -52,6 +58,9 @@ class AnnotationLayerBuilder {
     this.renderInteractiveForms = renderInteractiveForms;
     this.l10n = l10n;
     this.annotationStorage = annotationStorage;
+    this.enableScripting = enableScripting;
+    this._hasJSActionsPromise = hasJSActionsPromise;
+    this._mouseState = mouseState;
 
     this.div = null;
     this._cancelled = false;
@@ -64,7 +73,10 @@ class AnnotationLayerBuilder {
    *   annotations is complete.
    */
   render(viewport, intent = "display") {
-    return this.pdfPage.getAnnotations({ intent }).then(annotations => {
+    return Promise.all([
+      this.pdfPage.getAnnotations({ intent }),
+      this._hasJSActionsPromise,
+    ]).then(([annotations, hasJSActions = false]) => {
       if (this._cancelled) {
         return;
       }
@@ -83,6 +95,9 @@ class AnnotationLayerBuilder {
         linkService: this.linkService,
         downloadManager: this.downloadManager,
         annotationStorage: this.annotationStorage,
+        enableScripting: this.enableScripting,
+        hasJSActions,
+        mouseState: this._mouseState,
       };
 
       if (this.div) {
@@ -127,6 +142,9 @@ class DefaultAnnotationLayerFactory {
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -135,7 +153,10 @@ class DefaultAnnotationLayerFactory {
     annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = true,
-    l10n = NullL10n
+    l10n = NullL10n,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -145,6 +166,9 @@ class DefaultAnnotationLayerFactory {
       linkService: new SimpleLinkService(),
       l10n,
       annotationStorage,
+      enableScripting,
+      hasJSActionsPromise,
+      mouseState,
     });
   }
 }

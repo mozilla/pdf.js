@@ -38,7 +38,6 @@ ShadingIRs.RadialAxial = {
     const r0 = raw[6];
     const r1 = raw[7];
     return {
-      type: "Pattern",
       getPattern: function RadialAxial_getPattern(ctx) {
         applyBoundingBox(ctx, bbox);
         let grad;
@@ -340,7 +339,6 @@ ShadingIRs.Mesh = {
     const bbox = raw[7];
     const background = raw[8];
     return {
-      type: "Pattern",
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
         applyBoundingBox(ctx, bbox);
         let scale;
@@ -390,7 +388,6 @@ ShadingIRs.Mesh = {
 ShadingIRs.Dummy = {
   fromIR: function Dummy_fromIR() {
     return {
-      type: "Pattern",
       getPattern: function Dummy_fromIR_getPattern() {
         return "hotpink";
       },
@@ -429,7 +426,6 @@ const TilingPattern = (function TilingPatternClosure() {
     this.color = color;
     this.canvasGraphicsFactory = canvasGraphicsFactory;
     this.baseTransform = baseTransform;
-    this.type = "Pattern";
     this.ctx = ctx;
   }
 
@@ -571,7 +567,7 @@ const TilingPattern = (function TilingPatternClosure() {
           current.strokeColor = ctx.strokeStyle;
           break;
         case PaintType.UNCOLORED:
-          const cssColor = Util.makeCssRgb(color[0], color[1], color[2]);
+          const cssColor = Util.makeHexColor(color[0], color[1], color[2]);
           context.fillStyle = cssColor;
           context.strokeStyle = cssColor;
           // Set color needed by image masks (fixes issues 3226 and 8741).

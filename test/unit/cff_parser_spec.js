@@ -25,26 +25,26 @@ import { Stream } from "../../src/core/stream.js";
 
 describe("CFFParser", function () {
   function createWithNullProto(obj) {
-    var result = Object.create(null);
-    for (var i in obj) {
+    const result = Object.create(null);
+    for (const i in obj) {
       result[i] = obj[i];
     }
     return result;
   }
 
   // Stub that returns `0` for any privateDict key.
-  var privateDictStub = {
+  const privateDictStub = {
     getByName(name) {
       return 0;
     },
   };
 
-  var fontData, parser, cff;
+  let fontData, parser, cff;
 
   beforeAll(function (done) {
     // This example font comes from the CFF spec:
     // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
-    var exampleFont =
+    const exampleFont =
       "0100040100010101134142434445462b" +
       "54696d65732d526f6d616e000101011f" +
       "f81b00f81c02f81d03f819041c6f000d" +
@@ -55,9 +55,9 @@ describe("CFFParser", function () {
       "8b06f79a93fc7c8c077d99f85695f75e" +
       "9908fb6e8cf87393f7108b09a70adf0b" +
       "f78e14";
-    var fontArr = [];
-    for (var i = 0, ii = exampleFont.length; i < ii; i += 2) {
-      var hex = exampleFont.substring(i, i + 2);
+    const fontArr = [];
+    for (let i = 0, ii = exampleFont.length; i < ii; i += 2) {
+      const hex = exampleFont.substring(i, i + 2);
       fontArr.push(parseInt(hex, 16));
     }
     fontData = new Stream(fontArr);
@@ -80,7 +80,7 @@ describe("CFFParser", function () {
   });
 
   it("parses header", function () {
-    var header = cff.header;
+    const header = cff.header;
     expect(header.major).toEqual(1);
     expect(header.minor).toEqual(0);
     expect(header.hdrSize).toEqual(4);
@@ -88,20 +88,20 @@ describe("CFFParser", function () {
   });
 
   it("parses name index", function () {
-    var names = cff.names;
+    const names = cff.names;
     expect(names.length).toEqual(1);
     expect(names[0]).toEqual("ABCDEF+Times-Roman");
   });
 
   it("parses string index", function () {
-    var strings = cff.strings;
+    const strings = cff.strings;
     expect(strings.count).toEqual(3);
     expect(strings.get(0)).toEqual(".notdef");
     expect(strings.get(391)).toEqual("001.007");
   });
 
   it("parses top dict", function () {
-    var topDict = cff.topDict;
+    const topDict = cff.topDict;
     // 391 version 392 FullName 393 FamilyName 389 Weight 28416 UniqueID
     // -168 -218 1000 898 FontBBox 94 CharStrings 45 102 Private
     expect(topDict.getByName("version")).toEqual(391);
@@ -115,8 +115,8 @@ describe("CFFParser", function () {
   });
 
   it("refuses to add topDict key with invalid value (bug 1068432)", function () {
-    var topDict = cff.topDict;
-    var defaultValue = topDict.getByName("UnderlinePosition");
+    const topDict = cff.topDict;
+    const defaultValue = topDict.getByName("UnderlinePosition");
 
     topDict.setByKey(/* [12, 3] = */ 3075, [NaN]);
     expect(topDict.getByName("UnderlinePosition")).toEqual(defaultValue);
@@ -127,26 +127,26 @@ describe("CFFParser", function () {
       "keys with invalid values (bug 1308536)",
     function () {
       // prettier-ignore
-      var bytes = new Uint8Array([
+      const bytes = new Uint8Array([
       64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6
     ]);
       parser.bytes = bytes;
-      var topDict = cff.topDict;
+      const topDict = cff.topDict;
       topDict.setByName("Private", [bytes.length, 0]);
 
-      var parsePrivateDict = function () {
+      const parsePrivateDict = function () {
         parser.parsePrivateDict(topDict);
       };
       expect(parsePrivateDict).not.toThrow();
 
-      var privateDict = topDict.privateDict;
+      const privateDict = topDict.privateDict;
       expect(privateDict.getByName("BlueValues")).toBeNull();
     }
   );
 
   it("parses a CharString having cntrmask", function () {
     // prettier-ignore
-    var bytes = new Uint8Array([0, 1, // count
+    const bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
                                 38, // end
@@ -161,8 +161,8 @@ describe("CFFParser", function () {
                                 14  // endchar
                               ]);
     parser.bytes = bytes;
-    var charStringsIndex = parser.parseIndex(0).obj;
-    var charStrings = parser.parseCharStrings({
+    const charStringsIndex = parser.parseIndex(0).obj;
+    const charStrings = parser.parseCharStrings({
       charStrings: charStringsIndex,
       privateDict: privateDictStub,
     }).charStrings;
@@ -180,13 +180,13 @@ describe("CFFParser", function () {
     cffParser.parse(); // cff
 
     // prettier-ignore
-    var bytes = new Uint8Array([0, 1, // count
+    const bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
                                 237, 247, 22, 247, 72, 204, 247, 86, 14]);
     cffParser.bytes = bytes;
-    var charStringsIndex = cffParser.parseIndex(0).obj;
-    var result = cffParser.parseCharStrings({
+    const charStringsIndex = cffParser.parseIndex(0).obj;
+    const result = cffParser.parseCharStrings({
       charStrings: charStringsIndex,
       privateDict: privateDictStub,
     });
@@ -209,13 +209,13 @@ describe("CFFParser", function () {
     cffParser.parse(); // cff
 
     // prettier-ignore
-    var bytes = new Uint8Array([0, 1, // count
+    const bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
                                 237, 247, 22, 247, 72, 204, 247, 86, 14]);
     cffParser.bytes = bytes;
-    var charStringsIndex = cffParser.parseIndex(0).obj;
-    var result = cffParser.parseCharStrings({
+    const charStringsIndex = cffParser.parseIndex(0).obj;
+    const result = cffParser.parseCharStrings({
       charStrings: charStringsIndex,
       privateDict: privateDictStub,
     });
@@ -226,13 +226,13 @@ describe("CFFParser", function () {
 
   it("parses a CharString endchar no args", function () {
     // prettier-ignore
-    var bytes = new Uint8Array([0, 1, // count
+    const bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
                                 0,  // offset[0]
                                 14]);
     parser.bytes = bytes;
-    var charStringsIndex = parser.parseIndex(0).obj;
-    var result = parser.parseCharStrings({
+    const charStringsIndex = parser.parseIndex(0).obj;
+    const result = parser.parseCharStrings({
       charStrings: charStringsIndex,
       privateDict: privateDictStub,
     });
@@ -242,19 +242,19 @@ describe("CFFParser", function () {
   });
 
   it("parses predefined charsets", function () {
-    var charset = parser.parseCharsets(0, 0, null, true);
+    const charset = parser.parseCharsets(0, 0, null, true);
     expect(charset.predefined).toEqual(true);
   });
 
   it("parses charset format 0", function () {
     // The first three bytes make the offset large enough to skip predefined.
     // prettier-ignore
-    var bytes = new Uint8Array([0x00, 0x00, 0x00,
+    const bytes = new Uint8Array([0x00, 0x00, 0x00,
                                 0x00, // format
                                 0x00, 0x02 // sid/cid
                               ]);
     parser.bytes = bytes;
-    var charset = parser.parseCharsets(3, 2, new CFFStrings(), false);
+    let charset = parser.parseCharsets(3, 2, new CFFStrings(), false);
     expect(charset.charset[1]).toEqual("exclam");
 
     // CID font
@@ -265,13 +265,13 @@ describe("CFFParser", function () {
   it("parses charset format 1", function () {
     // The first three bytes make the offset large enough to skip predefined.
     // prettier-ignore
-    var bytes = new Uint8Array([0x00, 0x00, 0x00,
+    const bytes = new Uint8Array([0x00, 0x00, 0x00,
                                 0x01, // format
                                 0x00, 0x08, // sid/cid start
                                 0x01 // sid/cid left
                               ]);
     parser.bytes = bytes;
-    var charset = parser.parseCharsets(3, 2, new CFFStrings(), false);
+    let charset = parser.parseCharsets(3, 2, new CFFStrings(), false);
     expect(charset.charset).toEqual([".notdef", "quoteright", "parenleft"]);
 
     // CID font
@@ -283,13 +283,13 @@ describe("CFFParser", function () {
     // format 2 is the same as format 1 but the left is card16
     // The first three bytes make the offset large enough to skip predefined.
     // prettier-ignore
-    var bytes = new Uint8Array([0x00, 0x00, 0x00,
+    const bytes = new Uint8Array([0x00, 0x00, 0x00,
                                 0x02, // format
                                 0x00, 0x08, // sid/cid start
                                 0x00, 0x01 // sid/cid left
                               ]);
     parser.bytes = bytes;
-    var charset = parser.parseCharsets(3, 2, new CFFStrings(), false);
+    let charset = parser.parseCharsets(3, 2, new CFFStrings(), false);
     expect(charset.charset).toEqual([".notdef", "quoteright", "parenleft"]);
 
     // CID font
@@ -300,27 +300,27 @@ describe("CFFParser", function () {
   it("parses encoding format 0", function () {
     // The first two bytes make the offset large enough to skip predefined.
     // prettier-ignore
-    var bytes = new Uint8Array([0x00, 0x00,
+    const bytes = new Uint8Array([0x00, 0x00,
                                 0x00, // format
                                 0x01, // count
                                 0x08  // start
                               ]);
     parser.bytes = bytes;
-    var encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
+    const encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
     expect(encoding.encoding).toEqual(createWithNullProto({ 0x8: 1 }));
   });
 
   it("parses encoding format 1", function () {
     // The first two bytes make the offset large enough to skip predefined.
     // prettier-ignore
-    var bytes = new Uint8Array([0x00, 0x00,
+    const bytes = new Uint8Array([0x00, 0x00,
                                 0x01, // format
                                 0x01, // num ranges
                                 0x07, // range1 start
                                 0x01 // range2 left
                               ]);
     parser.bytes = bytes;
-    var encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
+    const encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
     expect(encoding.encoding).toEqual(
       createWithNullProto({ 0x7: 0x01, 0x08: 0x02 })
     );
@@ -328,12 +328,12 @@ describe("CFFParser", function () {
 
   it("parses fdselect format 0", function () {
     // prettier-ignore
-    var bytes = new Uint8Array([0x00, // format
+    const bytes = new Uint8Array([0x00, // format
                                 0x00, // gid: 0 fd: 0
                                 0x01 // gid: 1 fd: 1
                                ]);
     parser.bytes = bytes.slice();
-    var fdSelect = parser.parseFDSelect(0, 2);
+    const fdSelect = parser.parseFDSelect(0, 2);
 
     expect(fdSelect.fdSelect).toEqual([0, 1]);
     expect(fdSelect.format).toEqual(0);
@@ -341,7 +341,7 @@ describe("CFFParser", function () {
 
   it("parses fdselect format 3", function () {
     // prettier-ignore
-    var bytes = new Uint8Array([0x03, // format
+    const bytes = new Uint8Array([0x03, // format
                                 0x00, 0x02, // range count
                                 0x00, 0x00, // first gid
                                 0x09, // font dict 1 id
@@ -350,7 +350,7 @@ describe("CFFParser", function () {
                                 0x00, 0x04 // sentinel (last gid)
                                ]);
     parser.bytes = bytes.slice();
-    var fdSelect = parser.parseFDSelect(0, 4);
+    const fdSelect = parser.parseFDSelect(0, 4);
 
     expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
     expect(fdSelect.format).toEqual(3);
@@ -358,7 +358,7 @@ describe("CFFParser", function () {
 
   it("parses invalid fdselect format 3 (bug 1146106)", function () {
     // prettier-ignore
-    var bytes = new Uint8Array([0x03, // format
+    const bytes = new Uint8Array([0x03, // format
                                 0x00, 0x02, // range count
                                 0x00, 0x01, // first gid (invalid)
                                 0x09, // font dict 1 id
@@ -367,7 +367,7 @@ describe("CFFParser", function () {
                                 0x00, 0x04 // sentinel (last gid)
                                ]);
     parser.bytes = bytes.slice();
-    var fdSelect = parser.parseFDSelect(0, 4);
+    const fdSelect = parser.parseFDSelect(0, 4);
 
     expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
     expect(fdSelect.format).toEqual(3);
@@ -391,7 +391,7 @@ describe("CFFCompiler", function () {
   }
 
   it("encodes integers", function () {
-    var c = new CFFCompiler();
+    const c = new CFFCompiler();
     // all the examples from the spec
     expect(c.encodeInteger(0)).toEqual([0x8b]);
     expect(c.encodeInteger(100)).toEqual([0xef]);
@@ -405,21 +405,21 @@ describe("CFFCompiler", function () {
   });
 
   it("encodes floats", function () {
-    var c = new CFFCompiler();
+    const c = new CFFCompiler();
     expect(c.encodeFloat(-2.25)).toEqual([0x1e, 0xe2, 0xa2, 0x5f]);
     expect(c.encodeFloat(5e-11)).toEqual([0x1e, 0x5c, 0x11, 0xff]);
   });
 
   it("sanitizes name index", function () {
-    var c = new CFFCompiler();
-    var nameIndexCompiled = c.compileNameIndex(["[a"]);
-    var parser = testParser(nameIndexCompiled);
-    var nameIndex = parser.parseIndex(0);
-    var names = parser.parseNameIndex(nameIndex.obj);
+    const c = new CFFCompiler();
+    let nameIndexCompiled = c.compileNameIndex(["[a"]);
+    let parser = testParser(nameIndexCompiled);
+    let nameIndex = parser.parseIndex(0);
+    let names = parser.parseNameIndex(nameIndex.obj);
     expect(names).toEqual(["_a"]);
 
-    var longName = "";
-    for (var i = 0; i < 129; i++) {
+    let longName = "";
+    for (let i = 0; i < 129; i++) {
       longName += "_";
     }
     nameIndexCompiled = c.compileNameIndex([longName]);
@@ -430,9 +430,9 @@ describe("CFFCompiler", function () {
   });
 
   it("compiles fdselect format 0", function () {
-    var fdSelect = new CFFFDSelect(0, [3, 2, 1]);
-    var c = new CFFCompiler();
-    var out = c.compileFDSelect(fdSelect);
+    const fdSelect = new CFFFDSelect(0, [3, 2, 1]);
+    const c = new CFFCompiler();
+    const out = c.compileFDSelect(fdSelect);
     expect(out).toEqual([
       0, // format
       3, // gid: 0 fd 3
@@ -442,9 +442,9 @@ describe("CFFCompiler", function () {
   });
 
   it("compiles fdselect format 3", function () {
-    var fdSelect = new CFFFDSelect(3, [0, 0, 1, 1]);
-    var c = new CFFCompiler();
-    var out = c.compileFDSelect(fdSelect);
+    const fdSelect = new CFFFDSelect(3, [0, 0, 1, 1]);
+    const c = new CFFCompiler();
+    const out = c.compileFDSelect(fdSelect);
     expect(out).toEqual([
       3, // format
       0, // nRanges (high)
@@ -461,9 +461,9 @@ describe("CFFCompiler", function () {
   });
 
   it("compiles fdselect format 3, single range", function () {
-    var fdSelect = new CFFFDSelect(3, [0, 0]);
-    var c = new CFFCompiler();
-    var out = c.compileFDSelect(fdSelect);
+    const fdSelect = new CFFFDSelect(3, [0, 0]);
+    const c = new CFFCompiler();
+    const out = c.compileFDSelect(fdSelect);
     expect(out).toEqual([
       3, // format
       0, // nRanges (high)
@@ -477,10 +477,10 @@ describe("CFFCompiler", function () {
   });
 
   it("compiles charset of CID font", function () {
-    var charset = new CFFCharset();
-    var c = new CFFCompiler();
-    var numGlyphs = 7;
-    var out = c.compileCharset(charset, numGlyphs, new CFFStrings(), true);
+    const charset = new CFFCharset();
+    const c = new CFFCompiler();
+    const numGlyphs = 7;
+    const out = c.compileCharset(charset, numGlyphs, new CFFStrings(), true);
     // All CID charsets get turned into a simple format 2.
     expect(out).toEqual([
       2, // format
@@ -492,10 +492,10 @@ describe("CFFCompiler", function () {
   });
 
   it("compiles charset of non CID font", function () {
-    var charset = new CFFCharset(false, 0, ["space", "exclam"]);
-    var c = new CFFCompiler();
-    var numGlyphs = 3;
-    var out = c.compileCharset(charset, numGlyphs, new CFFStrings(), false);
+    const charset = new CFFCharset(false, 0, ["space", "exclam"]);
+    const c = new CFFCompiler();
+    const numGlyphs = 3;
+    const out = c.compileCharset(charset, numGlyphs, new CFFStrings(), false);
     // All non-CID fonts use a format 0 charset.
     expect(out).toEqual([
       0, // format

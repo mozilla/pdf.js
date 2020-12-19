@@ -132,7 +132,6 @@ class PDFFindBar {
   }
 
   updateUIState(state, previous, matchesCount) {
-    let notFound = false;
     let findMsg = "";
     let status = "";
 
@@ -146,7 +145,7 @@ class PDFFindBar {
 
       case FindState.NOT_FOUND:
         findMsg = this.l10n.get("find_not_found", null, "Phrase not found");
-        notFound = true;
+        status = "notFound";
         break;
 
       case FindState.WRAPPED:
@@ -165,8 +164,6 @@ class PDFFindBar {
         }
         break;
     }
-
-    this.findField.classList.toggle("notFound", notFound);
     this.findField.setAttribute("data-status", status);
     this.findFieldMultiline.classList.toggle("notFound", notFound); // #201
     this.findFieldMultiline.setAttribute("data-status", status); // #201

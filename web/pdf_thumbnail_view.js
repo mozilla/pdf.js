@@ -146,7 +146,7 @@ class PDFThumbnailView {
       anchor.title = msg;
     });
     anchor.onclick = function () {
-      linkService.page = id;
+      linkService.goToPage(id);
       return false;
     };
     pdfThumbnailView.anchor = anchor;
@@ -237,7 +237,7 @@ class PDFThumbnailView {
   /**
    * @private
    */
-  _getPageDrawContext(noCtxScale = false) {
+  _getPageDrawContext() {
     const canvas = document.createElement("canvas");
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
@@ -257,10 +257,11 @@ class PDFThumbnailView {
     canvas.style.width = this.canvasWidth + "px";
     canvas.style.height = this.canvasHeight + "px";
 
-    if (!noCtxScale && outputScale.scaled) {
-      ctx.scale(outputScale.sx, outputScale.sy);
-    }
-    return ctx;
+    const transform = outputScale.scaled
+      ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
+      : null;
+
+    return [ctx, transform];
   }
 
   /**
@@ -341,7 +342,7 @@ class PDFThumbnailView {
       }
     };
 
-    const ctx = this._getPageDrawContext();
+    const [ctx, transform] = this._getPageDrawContext();
     const drawViewport = this.viewport.clone({ scale: this.scale });
     const renderContinueCallback = cont => {
       if (!this.renderingQueue.isHighestPriority(this)) {
@@ -357,6 +358,7 @@ class PDFThumbnailView {
 
     const renderContext = {
       canvasContext: ctx,
+      transform,
       viewport: drawViewport,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
     };
@@ -371,6 +373,16 @@ class PDFThumbnailView {
         finishRenderTask(error);
       }
     );
+    // Only trigger cleanup, once rendering has finished, when the current
+    // pageView is *not* cached on the `BaseViewer`-instance.
+    resultPromise.finally(() => {
+      const pageCached = this.linkService.isPageCached(this.id);
+      if (pageCached) {
+        return;
+      }
+      this.pdfPage?.cleanup();
+    });
+
     return resultPromise;
   }
 
@@ -391,7 +403,7 @@ class PDFThumbnailView {
 
     this.renderingState = RenderingStates.FINISHED;
 
-    const ctx = this._getPageDrawContext(true);
+    const [ctx] = this._getPageDrawContext();
     const canvas = ctx.canvas;
     if (img.width <= 2 * canvas.width) {
       ctx.drawImage(
@@ -500,10 +512,6 @@ class PDFThumbnailView {
       }
     });
   }
-
-  static cleanup() {
-    TempImageFactory.destroyCanvas();
-  }
 }
 
-export { PDFThumbnailView };
+export { PDFThumbnailView, TempImageFactory };

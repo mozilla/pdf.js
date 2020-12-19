@@ -159,11 +159,19 @@ const AnnotationActionEventType = {
   F: "Format",
   V: "Validate",
   C: "Calculate",
+};
+
+const DocumentActionEventType = {
   WC: "WillClose",
   WS: "WillSave",
   DS: "DidSave",
   WP: "WillPrint",
   DP: "DidPrint",
+};
+
+const PageActionEventType = {
+  O: "PageOpen",
+  C: "PageClose",
 };
 
 const StreamType = {
@@ -585,6 +593,15 @@ function string32(value) {
   );
 }
 
+function objectSize(obj) {
+  return Object.keys(obj).length;
+}
+
+// Ensures that the returned Object has a `null` prototype.
+function objectFromEntries(iterable) {
+  return Object.assign(Object.create(null), Object.fromEntries(iterable));
+}
+
 // Checks the endianness of the platform.
 function isLittleEndian() {
   const buffer8 = new Uint8Array(4);
@@ -613,16 +630,13 @@ const IsEvalSupportedCached = {
   },
 };
 
-const rgbBuf = ["rgb(", 0, ",", 0, ",", 0, ")"];
+const hexNumbers = [...Array(256).keys()].map(n =>
+  n.toString(16).padStart(2, "0")
+);
 
 class Util {
-  // makeCssRgb() can be called thousands of times. Using ´rgbBuf` avoids
-  // creating many intermediate strings.
-  static makeCssRgb(r, g, b) {
-    rgbBuf[1] = r;
-    rgbBuf[3] = g;
-    rgbBuf[5] = b;
-    return rgbBuf.join("");
+  static makeHexColor(r, g, b) {
+    return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
 
   // Concatenates two transformation matrices together and returns the result.
@@ -818,7 +832,7 @@ function escapeString(str) {
   // replace "(", ")", "\n", "\r" and "\"
   // by "\(", "\)", "\\n", "\\r" and "\\"
   // in order to write it in a PDF file.
-  return str.replace(/([\(\)\\\n\r])/g, match => {
+  return str.replace(/([()\\\n\r])/g, match => {
     if (match === "\n") {
       return "\\n";
     } else if (match === "\r") {
@@ -1005,9 +1019,11 @@ export {
   FontType,
   ImageKind,
   CMapCompressionType,
+  DocumentActionEventType,
   AbortException,
   InvalidPDFException,
   MissingPDFException,
+  PageActionEventType,
   PasswordException,
   PasswordResponses,
   PermissionFlag,
@@ -1035,6 +1051,8 @@ export {
   isString,
   isSameOrigin,
   createValidAbsoluteUrl,
+  objectSize,
+  objectFromEntries,
   IsLittleEndianCached,
   IsEvalSupportedCached,
   removeNullCharacters,

@@ -115,7 +115,7 @@ var FontInspector = (function FontInspectorClosure() {
       name.textContent = fontName;
       var download = document.createElement("a");
       if (url) {
-        url = /url\(['"]?([^\)"']+)/.exec(url);
+        url = /url\(['"]?([^)"']+)/.exec(url);
         download.href = url[1];
       } else if (fontObj.data) {
         download.href = URL.createObjectURL(
@@ -381,7 +381,6 @@ var Stepper = (function StepperClosure() {
         line.appendChild(c("td", JSON.stringify(simplifyArgs(decArgs))));
       }
       if (operatorsToDisplay < operatorList.fnArray.length) {
-        line = c("tr");
         var lastCell = c("td", "...");
         lastCell.colspan = 4;
         chunk.appendChild(lastCell);

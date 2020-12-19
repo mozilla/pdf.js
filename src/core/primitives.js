@@ -277,8 +277,16 @@ var Ref = (function RefClosure() {
 // The reference is identified by number and generation.
 // This structure stores only one instance of the reference.
 class RefSet {
-  constructor() {
-    this._set = new Set();
+  constructor(parent = null) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) &&
+      parent &&
+      !(parent instanceof RefSet)
+    ) {
+      unreachable('RefSet: Invalid "parent" value.');
+    }
+    this._set = new Set(parent && parent._set);
   }
 
   has(ref) {
@@ -291,6 +299,16 @@ class RefSet {
 
   remove(ref) {
     this._set.delete(ref.toString());
+  }
+
+  forEach(callback) {
+    for (const ref of this._set.values()) {
+      callback(ref);
+    }
+  }
+
+  clear() {
+    this._set.clear();
   }
 }
 

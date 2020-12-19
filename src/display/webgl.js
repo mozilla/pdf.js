@@ -478,11 +478,11 @@ const WebGLUtils = (function WebGLUtilsClosure() {
     drawFigures,
 
     cleanup() {
-      if (smaskCache && smaskCache.canvas) {
+      if (smaskCache?.canvas) {
         smaskCache.canvas.width = 0;
         smaskCache.canvas.height = 0;
       }
-      if (figuresCache && figuresCache.canvas) {
+      if (figuresCache?.canvas) {
         figuresCache.canvas.width = 0;
         figuresCache.canvas.height = 0;
       }

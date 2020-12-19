@@ -24,6 +24,7 @@ import {
   isNum,
   isString,
   OPS,
+  PageActionEventType,
   shadow,
   stringToBytes,
   stringToPDFString,
@@ -37,10 +38,12 @@ import {
   Dict,
   isDict,
   isName,
+  isRef,
   isStream,
   Ref,
 } from "./primitives.js";
 import {
+  collectActions,
   getInheritableProperty,
   isWhiteSpace,
   MissingDataException,
@@ -75,6 +78,7 @@ class Page {
     fontCache,
     builtInCMapCache,
     globalImageCache,
+    nonBlendModesSet,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -84,6 +88,7 @@ class Page {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.globalImageCache = globalImageCache;
+    this.nonBlendModesSet = nonBlendModesSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -311,7 +316,10 @@ class Page {
       const opList = new OperatorList(intent, sink);
 
       handler.send("StartRenderPage", {
-        transparency: partialEvaluator.hasBlendModes(this.resources),
+        transparency: partialEvaluator.hasBlendModes(
+          this.resources,
+          this.nonBlendModesSet
+        ),
         pageIndex: this.pageIndex,
         intent,
       });
@@ -341,7 +349,10 @@ class Page {
         // is resolved with the complete operator list for a single annotation.
         const opListPromises = [];
         for (const annotation of annotations) {
-          if (isAnnotationRenderable(annotation, intent)) {
+          if (
+            isAnnotationRenderable(annotation, intent) &&
+            !annotation.isHidden(annotationStorage)
+          ) {
             opListPromises.push(
               annotation
                 .getOperatorList(
@@ -428,11 +439,8 @@ class Page {
   }
 
   get annotations() {
-    return shadow(
-      this,
-      "annotations",
-      this._getInheritableProperty("Annots") || []
-    );
+    const annots = this._getInheritableProperty("Annots");
+    return shadow(this, "annotations", Array.isArray(annots) ? annots : []);
   }
 
   get _parsedAnnotations() {
@@ -460,6 +468,16 @@ class Page {
       });
 
     return shadow(this, "_parsedAnnotations", parsedAnnotations);
+  }
+
+  get jsActions() {
+    const actions = collectActions(
+      this.xref,
+      this.pageDict,
+      PageActionEventType
+    );
+
+    return shadow(this, "jsActions", actions);
   }
 }
 
@@ -916,6 +934,7 @@ class PDFDocument {
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
+        nonBlendModesSet: catalog.nonBlendModesSet,
       });
     }));
   }
@@ -958,7 +977,7 @@ class PDFDocument {
       }
     }
 
-    if (!(name in promises)) {
+    if (!promises.has(name)) {
       promises.set(name, []);
     }
     promises.get(name).push(
@@ -968,7 +987,7 @@ class PDFDocument {
         this.pdfManager,
         this._localIdFactory
       )
-        .then(annotation => annotation.getFieldObject())
+        .then(annotation => annotation && annotation.getFieldObject())
         .catch(function (reason) {
           warn(`_collectFieldObjects: "${reason}".`);
           return null;
@@ -998,7 +1017,7 @@ class PDFDocument {
     for (const [name, promises] of fieldPromises) {
       allPromises.push(
         Promise.all(promises).then(fields => {
-          fields = fields.filter(field => field !== null);
+          fields = fields.filter(field => !!field);
           if (fields.length > 0) {
             allFields[name] = fields;
           }
@@ -1011,6 +1030,39 @@ class PDFDocument {
       "fieldObjects",
       Promise.all(allPromises).then(() => allFields)
     );
+  }
+
+  get hasJSActions() {
+    return shadow(
+      this,
+      "hasJSActions",
+      this.fieldObjects.then(fieldObjects => {
+        return (
+          fieldObjects !== null &&
+          Object.values(fieldObjects).some(fieldObject =>
+            fieldObject.some(object => object.actions !== null)
+          )
+        );
+      })
+    );
+  }
+
+  get calculationOrderIds() {
+    const acroForm = this.catalog.acroForm;
+    if (!acroForm || !acroForm.has("CO")) {
+      return shadow(this, "calculationOrderIds", null);
+    }
+
+    const calculationOrder = acroForm.get("CO");
+    if (!Array.isArray(calculationOrder) || calculationOrder.length === 0) {
+      return shadow(this, "calculationOrderIds", null);
+    }
+
+    const ids = calculationOrder.filter(isRef).map(ref => ref.toString());
+    if (ids.length === 0) {
+      return shadow(this, "calculationOrderIds", null);
+    }
+    return shadow(this, "calculationOrderIds", ids);
   }
 }
 

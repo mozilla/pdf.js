@@ -19,12 +19,14 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
+  DocumentActionEventType,
   FormatError,
   info,
   InvalidPDFException,
   isBool,
   isNum,
   isString,
+  objectSize,
   PermissionFlag,
   shadow,
   stringToPDFString,
@@ -46,13 +48,14 @@ import {
   RefSet,
   RefSetCache,
 } from "./primitives.js";
-import { Lexer, Parser } from "./parser.js";
 import {
+  collectActions,
   MissingDataException,
   toRomanNumerals,
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
+import { Lexer, Parser } from "./parser.js";
 import { CipherTransformFactory } from "./crypto.js";
 import { ColorSpace } from "./colorspace.js";
 import { GlobalImageCache } from "./image_utils.js";
@@ -75,6 +78,7 @@ class Catalog {
     this.builtInCMapCache = new Map();
     this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
+    this.nonBlendModesSet = new RefSet();
   }
 
   get version() {
@@ -150,6 +154,47 @@ class Catalog {
       }
     }
     return shadow(this, "metadata", metadata);
+  }
+
+  get markInfo() {
+    let markInfo = null;
+    try {
+      markInfo = this._readMarkInfo();
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn("Unable to read mark info.");
+    }
+    return shadow(this, "markInfo", markInfo);
+  }
+
+  /**
+   * @private
+   */
+  _readMarkInfo() {
+    const obj = this._catDict.get("MarkInfo");
+    if (!isDict(obj)) {
+      return null;
+    }
+
+    const markInfo = Object.assign(Object.create(null), {
+      Marked: false,
+      UserProperties: false,
+      Suspects: false,
+    });
+    for (const key in markInfo) {
+      if (!obj.has(key)) {
+        continue;
+      }
+      const value = obj.get(key);
+      if (!isBool(value)) {
+        continue;
+      }
+      markInfo[key] = value;
+    }
+
+    return markInfo;
   }
 
   get toplevelPagesDict() {
@@ -786,7 +831,7 @@ class Catalog {
    */
   get openAction() {
     const obj = this._catDict.get("OpenAction");
-    let openAction = null;
+    const openAction = Object.create(null);
 
     if (isDict(obj)) {
       // Convert the OpenAction dictionary into a format that works with
@@ -798,23 +843,18 @@ class Catalog {
       Catalog.parseDestDictionary({ destDict, resultObj });
 
       if (Array.isArray(resultObj.dest)) {
-        if (!openAction) {
-          openAction = Object.create(null);
-        }
         openAction.dest = resultObj.dest;
       } else if (resultObj.action) {
-        if (!openAction) {
-          openAction = Object.create(null);
-        }
         openAction.action = resultObj.action;
       }
     } else if (Array.isArray(obj)) {
-      if (!openAction) {
-        openAction = Object.create(null);
-      }
       openAction.dest = obj;
     }
-    return shadow(this, "openAction", openAction);
+    return shadow(
+      this,
+      "openAction",
+      objectSize(openAction) > 0 ? openAction : null
+    );
   }
 
   get attachments() {
@@ -835,11 +875,11 @@ class Catalog {
     return shadow(this, "attachments", attachments);
   }
 
-  get javaScript() {
+  _collectJavaScript() {
     const obj = this._catDict.get("Names");
 
     let javaScript = null;
-    function appendIfJavaScriptDict(jsDict) {
+    function appendIfJavaScriptDict(name, jsDict) {
       const type = jsDict.get("S");
       if (!isName(type, "JavaScript")) {
         return;
@@ -852,10 +892,10 @@ class Catalog {
         return;
       }
 
-      if (!javaScript) {
-        javaScript = [];
+      if (javaScript === null) {
+        javaScript = Object.create(null);
       }
-      javaScript.push(stringToPDFString(js));
+      javaScript[name] = stringToPDFString(js);
     }
 
     if (obj && obj.has("JavaScript")) {
@@ -866,7 +906,7 @@ class Catalog {
         // defensive so we don't cause errors on document load.
         const jsDict = names[name];
         if (isDict(jsDict)) {
-          appendIfJavaScriptDict(jsDict);
+          appendIfJavaScriptDict(name, jsDict);
         }
       }
     }
@@ -874,10 +914,43 @@ class Catalog {
     // Append OpenAction "JavaScript" actions to the JavaScript array.
     const openAction = this._catDict.get("OpenAction");
     if (isDict(openAction) && isName(openAction.get("S"), "JavaScript")) {
-      appendIfJavaScriptDict(openAction);
+      appendIfJavaScriptDict("OpenAction", openAction);
     }
 
-    return shadow(this, "javaScript", javaScript);
+    return javaScript;
+  }
+
+  get javaScript() {
+    const javaScript = this._collectJavaScript();
+    return shadow(
+      this,
+      "javaScript",
+      javaScript ? Object.values(javaScript) : null
+    );
+  }
+
+  get jsActions() {
+    const js = this._collectJavaScript();
+    let actions = collectActions(
+      this.xref,
+      this._catDict,
+      DocumentActionEventType
+    );
+
+    if (!actions && js) {
+      actions = Object.create(null);
+    }
+    if (actions && js) {
+      for (const [key, val] of Object.entries(js)) {
+        if (key in actions) {
+          actions[key].push(val);
+        } else {
+          actions[key] = [val];
+        }
+      }
+    }
+
+    return shadow(this, "jsActions", actions);
   }
 
   fontFallback(id, handler) {
@@ -900,6 +973,7 @@ class Catalog {
     clearPrimitiveCaches();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
+    this.nonBlendModesSet.clear();
 
     const promises = [];
     this.fontCache.forEach(function (promise) {
@@ -1797,14 +1871,13 @@ var XRef = (function XRefClosure() {
         }
       }
       // reading XRef streams
-      var i, ii;
-      for (i = 0, ii = xrefStms.length; i < ii; ++i) {
+      for (let i = 0, ii = xrefStms.length; i < ii; ++i) {
         this.startXRefQueue.push(xrefStms[i]);
         this.readXRef(/* recoveryMode */ true);
       }
       // finding main trailer
       let trailerDict;
-      for (i = 0, ii = trailers.length; i < ii; ++i) {
+      for (let i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
         const parser = new Parser({
           lexer: new Lexer(stream),
@@ -1822,16 +1895,24 @@ var XRef = (function XRefClosure() {
           continue;
         }
         // Do some basic validation of the trailer/root dictionary candidate.
-        let rootDict;
         try {
-          rootDict = dict.get("Root");
+          const rootDict = dict.get("Root");
+          if (!(rootDict instanceof Dict)) {
+            continue;
+          }
+          const pagesDict = rootDict.get("Pages");
+          if (!(pagesDict instanceof Dict)) {
+            continue;
+          }
+          const pagesCount = pagesDict.get("Count");
+          if (!Number.isInteger(pagesCount)) {
+            continue;
+          }
+          // The top-level /Pages dictionary isn't obviously corrupt.
         } catch (ex) {
           if (ex instanceof MissingDataException) {
             throw ex;
           }
-          continue;
-        }
-        if (!isDict(rootDict) || !rootDict.has("Pages")) {
           continue;
         }
         // taking the first one with 'ID'

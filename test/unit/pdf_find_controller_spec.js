@@ -98,29 +98,30 @@ describe("pdf_find_controller", function () {
         return a + b;
       });
 
-      eventBus.on("updatefindmatchescount", function onUpdateFindMatchesCount(
-        evt
-      ) {
-        if (pdfFindController.pageMatches.length !== totalPages) {
-          return;
-        }
-        eventBus.off("updatefindmatchescount", onUpdateFindMatchesCount);
+      eventBus.on(
+        "updatefindmatchescount",
+        function onUpdateFindMatchesCount(evt) {
+          if (pdfFindController.pageMatches.length !== totalPages) {
+            return;
+          }
+          eventBus.off("updatefindmatchescount", onUpdateFindMatchesCount);
 
-        expect(evt.matchesCount.total).toBe(totalMatches);
-        for (let i = 0; i < totalPages; i++) {
-          expect(pdfFindController.pageMatches[i].length).toEqual(
-            matchesPerPage[i]
+          expect(evt.matchesCount.total).toBe(totalMatches);
+          for (let i = 0; i < totalPages; i++) {
+            expect(pdfFindController.pageMatches[i].length).toEqual(
+              matchesPerPage[i]
+            );
+          }
+          expect(pdfFindController.selected.pageIdx).toEqual(
+            selectedMatch.pageIndex
           );
-        }
-        expect(pdfFindController.selected.pageIdx).toEqual(
-          selectedMatch.pageIndex
-        );
-        expect(pdfFindController.selected.matchIdx).toEqual(
-          selectedMatch.matchIndex
-        );
+          expect(pdfFindController.selected.matchIdx).toEqual(
+            selectedMatch.matchIndex
+          );
 
-        resolve();
-      });
+          resolve();
+        }
+      );
     });
   }
 

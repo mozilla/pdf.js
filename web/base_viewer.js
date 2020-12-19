@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability, version } from "pdfjs-lib";
 import {
   CSS_UNITS,
   DEFAULT_SCALE,
@@ -38,7 +39,6 @@ import {
 } from "./ui_utils.js";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
-import { createPromiseCapability } from "pdfjs-lib";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
@@ -77,6 +77,10 @@ const DEFAULT_CACHE_SIZE = 10;
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enableScripting] - Enable embedded script execution.
+ *   The default value is `false`.
+ * @property {Object} [mouseState] - The mouse button state. The default value
+ *   is `null`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -113,6 +117,10 @@ function PDFPageViewBuffer(size) {
       data.shift().destroy();
     }
   };
+
+  this.has = function (view) {
+    return data.includes(view);
+  };
 }
 
 function isSameScale(oldScale, newScale) {
@@ -139,6 +147,13 @@ class BaseViewer {
     if (this.constructor === BaseViewer) {
       throw new Error("Cannot initialize BaseViewer.");
     }
+    const viewerVersion =
+      typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
+    if (version !== viewerVersion) {
+      throw new Error(
+        `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
+      );
+    }
     this._name = this.constructor.name;
 
     this.container = options.container;
@@ -154,10 +169,8 @@ class BaseViewer {
     ) {
       if (
         !(
-          this.container &&
-          this.container.tagName.toUpperCase() === "DIV" &&
-          this.viewer &&
-          this.viewer.tagName.toUpperCase() === "DIV"
+          this.container?.tagName.toUpperCase() === "DIV" &&
+          this.viewer?.tagName.toUpperCase() === "DIV"
         )
       ) {
         throw new Error("Invalid `container` and/or `viewer` option.");
@@ -186,6 +199,8 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
+    this.enableScripting = options.enableScripting || false;
+    this._mouseState = options.mouseState || null;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -204,6 +219,7 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add("removePageBorders");
     }
+    this._initializeScriptingEvents();
     // Defer the dispatching of this event, to give other viewer components
     // time to initialize *and* register 'baseviewerinit' event listeners.
     Promise.resolve().then(() => {
@@ -283,6 +299,7 @@ class BaseViewer {
     if (!(0 < val && val <= this.pagesCount)) {
       return false;
     }
+    const previous = this._currentPageNumber;
     this._currentPageNumber = val;
 
     /** #495 modified by ngx-extended-pdf-viewer */
@@ -300,6 +317,7 @@ class BaseViewer {
       source: this,
       pageNumber: val,
       pageLabel: this._pageLabels && this._pageLabels[val - 1],
+      previous,
     });
 
     if (resetCurrentPageView) {
@@ -470,6 +488,8 @@ class BaseViewer {
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
+      this.eventBus.dispatch("pagesdestroy", { source: this });
+
       this._cancelRendering();
       this._resetView();
 
@@ -484,8 +504,7 @@ class BaseViewer {
     }
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
-
-    const annotationStorage = pdfDocument.annotationStorage;
+    // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
 
     this._pagesCapability.promise.then(() => {
@@ -536,7 +555,6 @@ class BaseViewer {
             id: pageNum,
             scale,
             defaultViewport: viewport.clone(),
-            annotationStorage,
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerFactory,
@@ -550,6 +568,7 @@ class BaseViewer {
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
             l10n: this.l10n,
+            enableScripting: this.enableScripting,
           });
           this._pages.push(pageView);
         }
@@ -667,6 +686,7 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
+    this._pageOpenPendingSet = null;
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -754,6 +774,20 @@ class BaseViewer {
     }
   }
 
+  /**
+   * @private
+   */
+  get _pageWidthScaleFactor() {
+    if (
+      this.spreadMode !== SpreadMode.NONE &&
+      this.scrollMode !== ScrollMode.HORIZONTAL &&
+      !this.isInPresentationMode
+    ) {
+      return 2;
+    }
+    return 1;
+  }
+
   _setScale(value, noScroll = false) {
     let scale = parseFloat(value);
 
@@ -772,8 +806,9 @@ class BaseViewer {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       const pageWidthScale =
-        ((this.container.clientWidth - hPadding) / currentPage.width) *
-        currentPage.scale;
+        (((this.container.clientWidth - hPadding) / currentPage.width) *
+          currentPage.scale) /
+        this._pageWidthScaleFactor;
       const pageHeightScale =
         ((this.container.clientHeight - vPadding) / currentPage.height) *
         currentPage.scale;
@@ -820,6 +855,22 @@ class BaseViewer {
 
     const pageView = this._pages[this._currentPageNumber - 1];
     this._scrollIntoView({ pageDiv: pageView.div });
+  }
+
+  /**
+   * @param {string} label - The page label.
+   * @returns {number|null} The page number corresponding to the page label,
+   *   or `null` when no page labels exist and/or the input is invalid.
+   */
+  pageLabelToPageNumber(label) {
+    if (!this._pageLabels) {
+      return null;
+    }
+    const i = this._pageLabels.indexOf(label);
+    if (i < 0) {
+      return null;
+    }
+    return i + 1;
   }
 
   /**
@@ -1056,6 +1107,10 @@ class BaseViewer {
       : this._scrollMode === ScrollMode.HORIZONTAL;
   }
 
+  get _isContainerRtl() {
+    return getComputedStyle(this.container).direction === "rtl";
+  }
+
   get isInPresentationMode() {
     return this.presentationModeState === PresentationModeState.FULLSCREEN;
   }
@@ -1106,12 +1161,13 @@ class BaseViewer {
       return this._getCurrentVisiblePage();
     }
     /** end of modification */
-    return getVisibleElements(
-      this.container,
-      this._pages,
-      true,
-      this._isScrollModeHorizontal
-    );
+    return getVisibleElements({
+      scrollEl: this.container,
+      views: this._pages,
+      sortByVisibility: true,
+      horizontal: this._isScrollModeHorizontal,
+      rtl: this._isScrollModeHorizontal && this._isContainerRtl,
+    });
   }
 
   /**
@@ -1121,15 +1177,47 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return false;
     }
-    if (pageNumber < 1 || pageNumber > this.pagesCount) {
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.pagesCount
+      )
+    ) {
       console.error(
-        `${this._name}.isPageVisible: "${pageNumber}" is out of bounds.`
+        `${this._name}.isPageVisible: "${pageNumber}" is not a valid page.`
       );
       return false;
     }
     return this._getVisiblePages().views.some(function (view) {
       return view.id === pageNumber;
     });
+  }
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageCached(pageNumber) {
+    if (!this.pdfDocument || !this._buffer) {
+      return false;
+    }
+    if (
+      !(
+        Number.isInteger(pageNumber) &&
+        pageNumber > 0 &&
+        pageNumber <= this.pagesCount
+      )
+    ) {
+      console.error(
+        `${this._name}.isPageCached: "${pageNumber}" is not a valid page.`
+      );
+      return false;
+    }
+    const pageView = this._pages[pageNumber - 1];
+    if (!pageView) {
+      return false;
+    }
+    return this._buffer.has(pageView);
   }
 
   cleanup() {
@@ -1233,10 +1321,15 @@ class BaseViewer {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1245,17 +1338,25 @@ class BaseViewer {
     annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = false,
-    l10n = NullL10n
+    l10n = NullL10n,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
-      annotationStorage,
+      annotationStorage:
+        annotationStorage || this.pdfDocument?.annotationStorage,
       imageResourcesPath,
       renderInteractiveForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
+      enableScripting,
+      hasJSActionsPromise:
+        hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
+      mouseState: mouseState || this._mouseState,
     });
   }
 
@@ -1454,8 +1555,67 @@ class BaseViewer {
     if (!pageNumber) {
       return;
     }
+    if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
+      this._setScale(this._currentScaleValue, true);
+    }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
+  }
+
+  /**
+   * @private
+   */
+  _initializeScriptingEvents() {
+    if (!this.enableScripting) {
+      return;
+    }
+    const { eventBus } = this;
+
+    const dispatchPageClose = pageNumber => {
+      eventBus.dispatch("pageclose", { source: this, pageNumber });
+    };
+    const dispatchPageOpen = (pageNumber, force = false) => {
+      const pageView = this._pages[pageNumber - 1];
+      if (force || pageView?.renderingState === RenderingStates.FINISHED) {
+        this._pageOpenPendingSet?.delete(pageNumber);
+
+        eventBus.dispatch("pageopen", { source: this, pageNumber });
+      } else {
+        if (!this._pageOpenPendingSet) {
+          this._pageOpenPendingSet = new Set();
+        }
+        this._pageOpenPendingSet.add(pageNumber);
+      }
+    };
+
+    eventBus._on("pagechanging", ({ pageNumber, previous }) => {
+      if (pageNumber === previous) {
+        return; // The active page didn't change.
+      }
+      dispatchPageClose(previous);
+      dispatchPageOpen(pageNumber);
+    });
+
+    eventBus._on("pagerendered", ({ pageNumber }) => {
+      if (!this._pageOpenPendingSet) {
+        return; // No pending "pageopen" events.
+      }
+      if (!this._pageOpenPendingSet.has(pageNumber)) {
+        return; // No pending "pageopen" event for the newly rendered page.
+      }
+      if (pageNumber !== this._currentPageNumber) {
+        return; // The newly rendered page is no longer the current one.
+      }
+      dispatchPageOpen(pageNumber, /* force = */ true);
+    });
+
+    eventBus._on("pagesinit", () => {
+      dispatchPageOpen(this._currentPageNumber);
+    });
+
+    eventBus._on("pagesdestroy", () => {
+      dispatchPageClose(this._currentPageNumber);
+    });
   }
 }
 

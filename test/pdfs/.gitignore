@@ -107,6 +107,7 @@
 !bug766086.pdf
 !bug793632.pdf
 !bug1020858.pdf
+!prefilled_f1040.pdf
 !bug1050040.pdf
 !bug1200096.pdf
 !bug1068432.pdf
@@ -177,7 +178,9 @@
 !pattern_text_embedded_font.pdf
 !devicen.pdf
 !cmykjpeg.pdf
+!docactions.pdf
 !issue840.pdf
+!160F-2019.pdf
 !issue4402_reduced.pdf
 !issue845r.pdf
 !issue3405r.pdf
@@ -220,6 +223,7 @@
 !issue5734.pdf
 !issue4875.pdf
 !issue11740_reduced.pdf
+!issue12705.pdf
 !issue4881.pdf
 !issue5994.pdf
 !issue6151.pdf
@@ -289,6 +293,7 @@
 !noembed-identity.pdf
 !noembed-identity-2.pdf
 !noembed-jis7.pdf
+!issue12504.pdf
 !noembed-eucjp.pdf
 !noembed-sjis.pdf
 !vertical.pdf
@@ -327,6 +332,7 @@
 !issue5334.pdf
 !annotation-caret-ink.pdf
 !bug1186827.pdf
+!issue12706.pdf
 !issue215.pdf
 !issue5044.pdf
 !issue1512r.pdf
@@ -354,6 +360,7 @@
 !issue6298.pdf
 !issue6889.pdf
 !bug1001080.pdf
+!bug1671312_reduced.pdf
 !issue6108.pdf
 !issue6113.pdf
 !openoffice.pdf
@@ -374,6 +381,7 @@
 !issue12418_reduced.pdf
 !annotation-freetext.pdf
 !annotation-line.pdf
+!bug1669099.pdf
 !annotation-square-circle.pdf
 !annotation-stamp.pdf
 !annotation-fileattachment.pdf
@@ -388,6 +396,7 @@
 !issue11442_reduced.pdf
 !issue11549_reduced.pdf
 !issue8097_reduced.pdf
+!quadpoints.pdf
 !transparent.pdf
 !xobject-image.pdf
 !ccitt_EndOfBlock_false.pdf
@@ -398,3 +407,4 @@
 !tiling-pattern-large-steps.pdf
 !issue11555.pdf
 !issue12337.pdf
+!pr12564.pdf

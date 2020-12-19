@@ -15,22 +15,6 @@
 
 import { AppOptions, OptionKind } from "./app_options.js";
 
-let defaultPreferences = null;
-function getDefaultPreferences() {
-  if (!defaultPreferences) {
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-      defaultPreferences = Promise.resolve(
-        AppOptions.getAll(OptionKind.PREFERENCE)
-      );
-    } else {
-      defaultPreferences = Promise.resolve(
-        PDFJSDev.json("$ROOT/build/default_preferences.json")
-      );
-    }
-  }
-  return defaultPreferences;
-}
-
 /**
  * BasePreferences - Abstract base class for storing persistent settings.
  *   Used for settings that should be applied to all opened documents,
@@ -41,21 +25,20 @@ class BasePreferences {
     if (this.constructor === BasePreferences) {
       throw new Error("Cannot initialize BasePreferences.");
     }
-    this.prefs = null;
+    Object.defineProperty(this, "defaults", {
+      value: Object.freeze(
+        typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+          ? AppOptions.getAll(OptionKind.PREFERENCE)
+          : PDFJSDev.json("$ROOT/build/default_preferences.json")
+      ),
+      writable: false,
+      enumerable: true,
+      configurable: false,
+    });
+    this.prefs = Object.assign(Object.create(null), this.defaults);
 
-    this._initializedPromise = getDefaultPreferences()
-      .then(defaults => {
-        Object.defineProperty(this, "defaults", {
-          value: Object.freeze(defaults),
-          writable: false,
-          enumerable: true,
-          configurable: false,
-        });
-
-        this.prefs = Object.assign(Object.create(null), defaults);
-        return this._readFromStorage(defaults);
-      })
-      .then(prefs => {
+    this._initializedPromise = this._readFromStorage(this.defaults).then(
+      prefs => {
         if (!prefs) {
           return;
         }
@@ -72,7 +55,8 @@ class BasePreferences {
           }
           this.prefs[name] = prefValue;
         }
-      });
+      }
+    );
   }
 
   /**

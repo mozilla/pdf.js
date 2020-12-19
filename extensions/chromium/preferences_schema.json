@@ -156,6 +156,10 @@
       "type": "boolean",
       "default": true
     },
+    "enableScripting": {
+      "type": "boolean",
+      "default": false
+    },
     "enablePermissions": {
       "type": "boolean",
       "default": false
@@ -199,6 +203,15 @@
         2
       ],
       "default": -1
+    },
+    "viewerCssTheme": {
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 0
     }
   }
 }

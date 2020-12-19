@@ -254,7 +254,7 @@ function startRefTest(masterMode, showRefImages) {
     onAllSessionsClosed = finalize;
 
     const startUrl = `http://${host}:${server.port}/test/test_slave.html`;
-    startBrowsers(startUrl, function (session) {
+    startBrowsers(function (session) {
       session.masterMode = masterMode;
       session.taskResults = {};
       session.tasks = {};
@@ -271,7 +271,7 @@ function startRefTest(masterMode, showRefImages) {
       session.numEqNoSnapshot = 0;
       session.numEqFailures = 0;
       monitorBrowserTimeout(session, handleSessionTimeout);
-    });
+    }, makeTestUrl(startUrl));
   }
   function checkRefsTmp() {
     if (masterMode && fs.existsSync(refsTmpDir)) {
@@ -670,11 +670,9 @@ function refTestPostHandler(req, res) {
   return true;
 }
 
-function startUnitTest(testUrl, name) {
-  var startTime = Date.now();
-  startServer();
-  server.hooks.POST.push(unitTestPostHandler);
-  onAllSessionsClosed = function () {
+function onAllSessionsClosedAfterTests(name) {
+  const startTime = Date.now();
+  return function () {
     stopServer();
     var numRuns = 0,
       numErrors = 0;
@@ -693,12 +691,53 @@ function startUnitTest(testUrl, name) {
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
   };
+}
+
+function makeTestUrl(startUrl) {
+  return function (browserName) {
+    const queryParameters =
+      `?browser=${encodeURIComponent(browserName)}` +
+      `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
+      `&testFilter=${JSON.stringify(options.testfilter)}` +
+      `&delay=${options.statsDelay}` +
+      `&masterMode=${options.masterMode}`;
+    return startUrl + queryParameters;
+  };
+}
+
+function startUnitTest(testUrl, name) {
+  onAllSessionsClosed = onAllSessionsClosedAfterTests(name);
+  startServer();
+  server.hooks.POST.push(unitTestPostHandler);
 
   const startUrl = `http://${host}:${server.port}${testUrl}`;
-  startBrowsers(startUrl, function (session) {
+  startBrowsers(function (session) {
+    session.numRuns = 0;
+    session.numErrors = 0;
+  }, makeTestUrl(startUrl));
+}
+
+function startIntegrationTest() {
+  onAllSessionsClosed = onAllSessionsClosedAfterTests("integration");
+  startServer();
+
+  const { runTests } = require("./integration-boot.js");
+  startBrowsers(function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
   });
+  global.integrationBaseUrl = `http://${host}:${server.port}/build/generic/web/viewer.html`;
+  global.integrationSessions = sessions;
+
+  Promise.all(sessions.map(session => session.browserPromise)).then(
+    async () => {
+      const results = { runs: 0, failures: 0 };
+      await runTests(results);
+      sessions[0].numRuns = results.runs;
+      sessions[0].numErrors = results.failures;
+      await Promise.all(sessions.map(session => closeSession(session.name)));
+    }
+  );
 }
 
 function unitTestPostHandler(req, res) {
@@ -768,7 +807,7 @@ function unitTestPostHandler(req, res) {
   return true;
 }
 
-async function startBrowser(browserName, startUrl) {
+async function startBrowser(browserName, startUrl = "") {
   const revisions = require("puppeteer/lib/cjs/puppeteer/revisions.js")
     .PUPPETEER_REVISIONS;
   const wantedRevision =
@@ -790,18 +829,37 @@ async function startBrowser(browserName, startUrl) {
     }
   }
 
-  const browser = await puppeteer.launch({
+  const options = {
     product: browserName,
     headless: false,
     defaultViewport: null,
-  });
-  const pages = await browser.pages();
-  const page = pages[0];
-  await page.goto(startUrl, { timeout: 0 });
+    ignoreDefaultArgs: ["--disable-extensions"],
+  };
+
+  if (browserName === "chrome") {
+    // avoid crash
+    options.args = ["--no-sandbox", "--disable-setuid-sandbox"];
+  }
+
+  if (browserName === "firefox") {
+    options.extraPrefsFirefox = {
+      // avoid to have a prompt when leaving a page with a form
+      "dom.disable_beforeunload": true,
+    };
+  }
+
+  const browser = await puppeteer.launch(options);
+
+  if (startUrl) {
+    const pages = await browser.pages();
+    const page = pages[0];
+    await page.goto(startUrl, { timeout: 0 });
+  }
+
   return browser;
 }
 
-function startBrowsers(rootUrl, initSessionCallback) {
+function startBrowsers(initSessionCallback, makeStartUrl = null) {
   const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
 
   sessions = [];
@@ -820,16 +878,9 @@ function startBrowsers(rootUrl, initSessionCallback) {
       closed: false,
     };
     sessions.push(session);
+    const startUrl = makeStartUrl ? makeStartUrl(browserName) : "";
 
-    const queryParameters =
-      `?browser=${encodeURIComponent(browserName)}` +
-      `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
-      `&testFilter=${JSON.stringify(options.testfilter)}` +
-      `&delay=${options.statsDelay}` +
-      `&masterMode=${options.masterMode}`;
-    const startUrl = rootUrl + queryParameters;
-
-    startBrowser(browserName, startUrl)
+    session.browserPromise = startBrowser(browserName, startUrl)
       .then(function (browser) {
         session.browser = browser;
         if (initSessionCallback) {
@@ -920,6 +971,8 @@ function main() {
     });
   } else if (options.fontTest) {
     startUnitTest("/test/font/font_test.html", "font");
+  } else if (options.integration) {
+    startIntegrationTest();
   } else {
     startRefTest(options.masterMode, options.reftest);
   }

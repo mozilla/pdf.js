@@ -239,12 +239,15 @@ class PartialEvaluator {
     return newEvaluator;
   }
 
-  hasBlendModes(resources) {
+  hasBlendModes(resources, nonBlendModesSet) {
     if (!(resources instanceof Dict)) {
       return false;
     }
+    if (resources.objId && nonBlendModesSet.has(resources.objId)) {
+      return false;
+    }
 
-    const processed = new RefSet();
+    const processed = new RefSet(nonBlendModesSet);
     if (resources.objId) {
       processed.put(resources.objId);
     }
@@ -344,6 +347,13 @@ class PartialEvaluator {
         }
       }
     }
+
+    // When no blend modes exist, there's no need re-fetch/re-parse any of the
+    // processed `Ref`s again for subsequent pages. This helps reduce redundant
+    // `XRef.fetch` calls for some documents (e.g. issue6961.pdf).
+    processed.forEach(ref => {
+      nonBlendModesSet.put(ref);
+    });
     return false;
   }
 
@@ -777,7 +787,15 @@ class PartialEvaluator {
       });
   }
 
-  handleSetFont(resources, fontArgs, fontRef, operatorList, task, state) {
+  handleSetFont(
+    resources,
+    fontArgs,
+    fontRef,
+    operatorList,
+    task,
+    state,
+    fallbackFontDict = null
+  ) {
     // TODO(mack): Not needed?
     var fontName,
       fontSize = 0;
@@ -787,7 +805,7 @@ class PartialEvaluator {
       fontSize = fontArgs[1];
     }
 
-    return this.loadFont(fontName, fontRef, resources)
+    return this.loadFont(fontName, fontRef, resources, fallbackFontDict)
       .then(translated => {
         if (!translated.font.isType3Font) {
           return translated;
@@ -978,7 +996,7 @@ class PartialEvaluator {
     });
   }
 
-  loadFont(fontName, font, resources) {
+  loadFont(fontName, font, resources, fallbackFontDict = null) {
     const errorFont = async () => {
       return new TranslatedFont({
         loadedName: "g_font_error",
@@ -1020,7 +1038,11 @@ class PartialEvaluator {
 
       // Falling back to a default font to avoid completely broken rendering,
       // but note that there're no guarantees that things will look "correct".
-      fontRef = PartialEvaluator.fallbackFontDict;
+      if (fallbackFontDict) {
+        fontRef = fallbackFontDict;
+      } else {
+        fontRef = PartialEvaluator.fallbackFontDict;
+      }
     }
 
     if (this.fontCache.has(fontRef)) {
@@ -1224,10 +1246,12 @@ class PartialEvaluator {
     localTilingPatternCache
   ) {
     // compile tiling patterns
-    const patternName = args[args.length - 1];
+    const patternName = args.pop();
     // SCN/scn applies patterns along with normal colors
     if (patternName instanceof Name) {
-      const localTilingPattern = localTilingPatternCache.getByName(patternName);
+      const name = patternName.name;
+
+      const localTilingPattern = localTilingPatternCache.getByName(name);
       if (localTilingPattern) {
         try {
           const color = cs.base ? cs.base.getRgb(args, 0) : null;
@@ -1249,7 +1273,7 @@ class PartialEvaluator {
       //       if and only if there are PDF documents where doing so would
       //       significantly improve performance.
 
-      let pattern = patterns.get(patternName.name);
+      let pattern = patterns.get(name);
       if (pattern) {
         var dict = isStream(pattern) ? pattern.dict : pattern;
         var typeNum = dict.get("PatternType");
@@ -1264,7 +1288,7 @@ class PartialEvaluator {
             dict,
             operatorList,
             task,
-            patternName,
+            /* cacheKey = */ name,
             localTilingPatternCache
           );
         } else if (typeNum === PatternType.SHADING) {
@@ -1351,6 +1375,7 @@ class PartialEvaluator {
     resources,
     operatorList,
     initialState = null,
+    fallbackFontDict = null,
   }) {
     // Ensure that `resources`/`initialState` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
@@ -1531,7 +1556,8 @@ class PartialEvaluator {
                   null,
                   operatorList,
                   task,
-                  stateManager.state
+                  stateManager.state,
+                  fallbackFontDict
                 )
                 .then(function (loadedName) {
                   operatorList.addDependency(loadedName);
@@ -3399,8 +3425,8 @@ class PartialEvaluator {
       var baseFontStr = baseFont && baseFont.name;
       if (fontNameStr !== baseFontStr) {
         info(
-          `The FontDescriptor\'s FontName is "${fontNameStr}" but ` +
-            `should be the same as the Font\'s BaseFont "${baseFontStr}".`
+          `The FontDescriptor's FontName is "${fontNameStr}" but ` +
+            `should be the same as the Font's BaseFont "${baseFontStr}".`
         );
         // Workaround for cases where e.g. fontNameStr = 'Arial' and
         // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
@@ -3576,7 +3602,7 @@ class TranslatedFont {
     var charProcOperatorList = Object.create(null);
 
     for (const key of charProcs.getKeys()) {
-      loadCharProcsPromise = loadCharProcsPromise.then(function () {
+      loadCharProcsPromise = loadCharProcsPromise.then(() => {
         var glyphStream = charProcs.get(key);
         var operatorList = new OperatorList();
         return type3Evaluator
@@ -3586,7 +3612,16 @@ class TranslatedFont {
             resources: fontResources,
             operatorList,
           })
-          .then(function () {
+          .then(() => {
+            // According to the PDF specification, section "9.6.5 Type 3 Fonts"
+            // and "Table 113":
+            //  "A glyph description that begins with the d1 operator should
+            //   not execute any operators that set the colour (or other
+            //   colour-related parameters) in the graphics state;
+            //   any use of such operators shall be ignored."
+            if (operatorList.fnArray[0] === OPS.setCharWidthAndBounds) {
+              this._removeType3ColorOperators(operatorList);
+            }
             charProcOperatorList[key] = operatorList.getIR();
 
             for (const dependency of operatorList.dependencies) {
@@ -3604,6 +3639,68 @@ class TranslatedFont {
       translatedFont.charProcOperatorList = charProcOperatorList;
     });
     return this.type3Loaded;
+  }
+
+  /**
+   * @private
+   */
+  _removeType3ColorOperators(operatorList) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        operatorList.fnArray[0] === OPS.setCharWidthAndBounds,
+        "Type3 glyph shall start with the d1 operator."
+      );
+    }
+    let i = 1,
+      ii = operatorList.length;
+    while (i < ii) {
+      switch (operatorList.fnArray[i]) {
+        case OPS.setStrokeColorSpace:
+        case OPS.setFillColorSpace:
+        case OPS.setStrokeColor:
+        case OPS.setStrokeColorN:
+        case OPS.setFillColor:
+        case OPS.setFillColorN:
+        case OPS.setStrokeGray:
+        case OPS.setFillGray:
+        case OPS.setStrokeRGBColor:
+        case OPS.setFillRGBColor:
+        case OPS.setStrokeCMYKColor:
+        case OPS.setFillCMYKColor:
+        case OPS.shadingFill:
+        case OPS.setRenderingIntent:
+          operatorList.fnArray.splice(i, 1);
+          operatorList.argsArray.splice(i, 1);
+          ii--;
+          continue;
+
+        case OPS.setGState:
+          const gStateObj = operatorList.argsArray[i];
+          let j = 0,
+            jj = gStateObj.length;
+          while (j < jj) {
+            const [gStateKey] = gStateObj[j];
+            switch (gStateKey) {
+              case "TR":
+              case "TR2":
+              case "HT":
+              case "BG":
+              case "BG2":
+              case "UCR":
+              case "UCR2":
+                gStateObj.splice(j, 1);
+                jj--;
+                continue;
+            }
+            j++;
+          }
+          break;
+      }
+      i++;
+    }
   }
 }
 

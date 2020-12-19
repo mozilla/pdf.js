@@ -54,9 +54,14 @@ class IPDFLinkService {
   set externalLinkEnabled(value) {}
 
   /**
-   * @param dest - The PDF destination object.
+   * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
-  navigateTo(dest) {}
+  async goToDestination(dest) {}
+
+  /**
+   * @param {number|string} val - The page number, or page label.
+   */
+  goToPage(val) {}
 
   /**
    * @param dest - The PDF destination object.
@@ -90,6 +95,11 @@ class IPDFLinkService {
    * @param {number} pageNumber
    */
   isPageVisible(pageNumber) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageCached(pageNumber) {}
 }
 
 /**
@@ -107,6 +117,11 @@ class IPDFHistory {
    * @param {Object} params
    */
   push({ namedDest = null, explicitDest, pageNumber }) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {}
 
   pushCurrentPosition() {}
 
@@ -171,6 +186,9 @@ class IPDFAnnotationLayerFactory {
    *   for annotation icons. Include trailing slash.
    * @param {boolean} renderInteractiveForms
    * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -179,7 +197,10 @@ class IPDFAnnotationLayerFactory {
     annotationStorage = null,
     imageResourcesPath = "",
     renderInteractiveForms = true,
-    l10n = undefined
+    l10n = undefined,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null
   ) {}
 }
 

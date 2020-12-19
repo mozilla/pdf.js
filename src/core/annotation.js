@@ -21,28 +21,20 @@ import {
   AnnotationReplyType,
   AnnotationType,
   assert,
-  bytesToString,
   escapeString,
   getModificationDate,
   isString,
   OPS,
+  shadow,
   stringToPDFString,
   unreachable,
   Util,
   warn,
 } from "../shared/util.js";
 import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
-import {
-  Dict,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  RefSet,
-} from "./primitives.js";
+import { collectActions, getInheritableProperty } from "./core_utils.js";
+import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
-import { getInheritableProperty } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
@@ -194,7 +186,11 @@ function getQuadPoints(dict, rect) {
   // The region is described as a number of quadrilaterals.
   // Each quadrilateral must consist of eight coordinates.
   const quadPoints = dict.getArray("QuadPoints");
-  if (!Array.isArray(quadPoints) || quadPoints.length % 8 > 0) {
+  if (
+    !Array.isArray(quadPoints) ||
+    quadPoints.length === 0 ||
+    quadPoints.length % 8 > 0
+  ) {
     return null;
   }
 
@@ -221,7 +217,36 @@ function getQuadPoints(dict, rect) {
       quadPointsLists[i].push({ x, y });
     }
   }
-  return quadPointsLists;
+
+  // The PDF specification states in section 12.5.6.10 (figure 64) that the
+  // order of the quadpoints should be bottom left, bottom right, top right
+  // and top left. However, in practice PDF files use a different order,
+  // namely bottom left, bottom right, top left and top right (this is also
+  // mentioned on https://github.com/highkite/pdfAnnotate#QuadPoints), so
+  // this is the actual order we should work with. However, the situation is
+  // even worse since Adobe's own applications and other applications violate
+  // the specification and create annotations with other orders, namely top
+  // left, top right, bottom left and bottom right or even top left, top right,
+  // bottom right and bottom left. To avoid inconsistency and broken rendering,
+  // we normalize all lists to put the quadpoints in the same standard order
+  // (see https://stackoverflow.com/a/10729881).
+  return quadPointsLists.map(quadPointsList => {
+    const [minX, maxX, minY, maxY] = quadPointsList.reduce(
+      ([mX, MX, mY, MY], quadPoint) => [
+        Math.min(mX, quadPoint.x),
+        Math.max(MX, quadPoint.x),
+        Math.min(mY, quadPoint.y),
+        Math.max(MY, quadPoint.y),
+      ],
+      [Number.MAX_VALUE, Number.MIN_VALUE, Number.MAX_VALUE, Number.MIN_VALUE]
+    );
+    return [
+      { x: minX, y: maxY },
+      { x: maxX, y: maxY },
+      { x: minX, y: minY },
+      { x: maxX, y: minY },
+    ];
+  });
 }
 
 function getTransformMatrix(rect, bbox, matrix) {
@@ -277,6 +302,8 @@ class Annotation {
       rect: this.rectangle,
       subtype: params.subtype,
     };
+
+    this._fallbackFontDict = null;
   }
 
   /**
@@ -292,7 +319,6 @@ class Annotation {
   _isViewable(flags) {
     return (
       !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-      !this._hasFlag(flags, AnnotationFlag.HIDDEN) &&
       !this._hasFlag(flags, AnnotationFlag.NOVIEW)
     );
   }
@@ -303,15 +329,25 @@ class Annotation {
   _isPrintable(flags) {
     return (
       this._hasFlag(flags, AnnotationFlag.PRINT) &&
-      !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-      !this._hasFlag(flags, AnnotationFlag.HIDDEN)
+      !this._hasFlag(flags, AnnotationFlag.INVISIBLE)
     );
+  }
+
+  isHidden(annotationStorage) {
+    const data = annotationStorage && annotationStorage[this.data.id];
+    if (data && "hidden" in data) {
+      return data.hidden;
+    }
+    return this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
   }
 
   /**
    * @type {boolean}
    */
   get viewable() {
+    if (this.data.quadPoints === null) {
+      return false;
+    }
     if (this.flags === 0) {
       return true;
     }
@@ -322,6 +358,9 @@ class Annotation {
    * @type {boolean}
    */
   get printable() {
+    if (this.data.quadPoints === null) {
+      return false;
+    }
     if (this.flags === 0) {
       return false;
     }
@@ -566,6 +605,7 @@ class Annotation {
           task,
           resources,
           operatorList: opList,
+          fallbackFontDict: this._fallbackFontDict,
         })
         .then(() => {
           opList.addOp(OPS.endAnnotation, []);
@@ -927,7 +967,7 @@ class WidgetAnnotation extends Annotation {
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
-    data.actions = this._collectActions(params.xref, dict);
+    data.actions = collectActions(params.xref, dict, AnnotationActionEventType);
 
     const fieldValue = getInheritableProperty({
       dict,
@@ -935,6 +975,13 @@ class WidgetAnnotation extends Annotation {
       getArray: true,
     });
     data.fieldValue = this._decodeFormValue(fieldValue);
+
+    const defaultFieldValue = getInheritableProperty({
+      dict,
+      key: "DV",
+      getArray: true,
+    });
+    data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
 
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
     data.defaultAppearance =
@@ -962,7 +1009,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
-    data.hidden = this.hasFieldFlag(AnnotationFieldFlag.HIDDEN);
+    data.hidden = this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN);
 
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
@@ -1129,7 +1176,9 @@ class WidgetAnnotation extends Annotation {
   }
 
   async save(evaluator, task, annotationStorage) {
-    if (this.data.fieldValue === annotationStorage[this.data.id]) {
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (value === this.data.fieldValue || value === undefined) {
       return null;
     }
 
@@ -1148,7 +1197,6 @@ class WidgetAnnotation extends Annotation {
       return null;
     }
 
-    const value = annotationStorage[this.data.id];
     const bbox = [
       0,
       0,
@@ -1213,8 +1261,15 @@ class WidgetAnnotation extends Annotation {
     if (!annotationStorage || isPassword) {
       return null;
     }
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (value === undefined) {
+      // The annotation hasn't been rendered so use the appearance
+      return null;
+    }
+
     if (value === "") {
+      // the field is empty: nothing to render
       return "";
     }
 
@@ -1312,14 +1367,14 @@ class WidgetAnnotation extends Annotation {
 
   _computeFontSize(font, fontName, fontSize, height) {
     if (fontSize === null || fontSize === 0) {
-      const em = font.charsToGlyphs("M", true)[0].width / 1000;
+      const em = font.charsToGlyphs("M")[0].width / 1000;
       // According to https://en.wikipedia.org/wiki/Em_(typography)
       // an average cap height should be 70% of 1em
       const capHeight = 0.7 * em;
       // 1.5 * capHeight * fontSize seems to be a good value for lineHeight
       fontSize = Math.max(1, Math.floor(height / (1.5 * capHeight)));
 
-      let fontRegex = new RegExp(`/${fontName}\\s+[0-9\.]+\\s+Tf`);
+      let fontRegex = new RegExp(`/${fontName}\\s+[0-9.]+\\s+Tf`);
       if (this.data.defaultAppearance.search(fontRegex) === -1) {
         // The font size is missing
         fontRegex = new RegExp(`/${fontName}\\s+Tf`);
@@ -1398,76 +1453,6 @@ class WidgetAnnotation extends Annotation {
       }
     }
     return localResources || Dict.empty;
-  }
-
-  _collectJS(entry, xref, list, parents) {
-    if (!entry) {
-      return;
-    }
-
-    let parent = null;
-    if (isRef(entry)) {
-      if (parents.has(entry)) {
-        // If we've already found entry then we've a cycle.
-        return;
-      }
-      parent = entry;
-      parents.put(parent);
-      entry = xref.fetch(entry);
-    }
-    if (Array.isArray(entry)) {
-      for (const element of entry) {
-        this._collectJS(element, xref, list, parents);
-      }
-    } else if (entry instanceof Dict) {
-      if (isName(entry.get("S"), "JavaScript") && entry.has("JS")) {
-        const js = entry.get("JS");
-        let code;
-        if (isStream(js)) {
-          code = bytesToString(js.getBytes());
-        } else {
-          code = js;
-        }
-        code = stringToPDFString(code);
-        if (code) {
-          list.push(code);
-        }
-      }
-      this._collectJS(entry.getRaw("Next"), xref, list, parents);
-    }
-
-    if (parent) {
-      parents.remove(parent);
-    }
-  }
-
-  _collectActions(xref, dict) {
-    const actions = Object.create(null);
-    if (dict.has("AA")) {
-      const additionalActions = dict.get("AA");
-      for (const key of additionalActions.getKeys()) {
-        if (key in AnnotationActionEventType) {
-          const actionDict = additionalActions.getRaw(key);
-          const parents = new RefSet();
-          const list = [];
-          this._collectJS(actionDict, xref, list, parents);
-          if (list.length > 0) {
-            actions[AnnotationActionEventType[key]] = list;
-          }
-        }
-      }
-    }
-    // Collect the Action if any (we may have one on pushbutton)
-    if (dict.has("A")) {
-      const actionDict = dict.get("A");
-      const parents = new RefSet();
-      const list = [];
-      this._collectJS(actionDict, xref, list, parents);
-      if (list.length > 0) {
-        actions.Action = list;
-      }
-    }
-    return actions;
   }
 
   getFieldObject() {
@@ -1583,7 +1568,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     const scale = fontSize / 1000;
-    const whitespace = font.charsToGlyphs(" ", true)[0].width * scale;
+    const whitespace = font.charsToGlyphs(" ")[0].width * scale;
     const chunks = [];
 
     let lastSpacePos = -1,
@@ -1604,7 +1589,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
           lastSpacePos = i;
         }
       } else {
-        const charWidth = font.charsToGlyphs(character, false)[0].width * scale;
+        const charWidth = font.charsToGlyphs(character)[0].width * scale;
         if (currentWidth + charWidth > width) {
           // We must break to the last white position (if available)
           if (lastSpacePos !== -1) {
@@ -1635,6 +1620,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value: this.data.fieldValue,
+      defaultValue: this.data.defaultFieldValue,
       multiline: this.data.multiLine,
       password: this.hasFieldFlag(AnnotationFieldFlag.PASSWORD),
       charLimit: this.data.maxLen,
@@ -1687,7 +1673,18 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     if (annotationStorage) {
-      const value = annotationStorage[this.data.id] || false;
+      const value =
+        annotationStorage[this.data.id] &&
+        annotationStorage[this.data.id].value;
+      if (value === undefined) {
+        return super.getOperatorList(
+          evaluator,
+          task,
+          renderForms,
+          annotationStorage
+        );
+      }
+
       let appearance;
       if (value) {
         appearance = this.checkedAppearance;
@@ -1733,9 +1730,13 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveCheckbox(evaluator, task, annotationStorage) {
-    const defaultValue = this.data.fieldValue && this.data.fieldValue !== "Off";
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (value === undefined) {
+      return null;
+    }
 
+    const defaultValue = this.data.fieldValue && this.data.fieldValue !== "Off";
     if (defaultValue === value) {
       return null;
     }
@@ -1772,9 +1773,13 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveRadioButton(evaluator, task, annotationStorage) {
-    const defaultValue = this.data.fieldValue === this.data.buttonValue;
-    const value = annotationStorage[this.data.id];
+    const value =
+      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (value === undefined) {
+      return null;
+    }
 
+    const defaultValue = this.data.fieldValue === this.data.buttonValue;
     if (defaultValue === value) {
       return null;
     }
@@ -1869,6 +1874,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (this.uncheckedAppearance) {
       this._streams.push(this.uncheckedAppearance);
     }
+    this._fallbackFontDict = this.fallbackFontDict;
   }
 
   _processRadioButton(params) {
@@ -1908,6 +1914,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (this.uncheckedAppearance) {
       this._streams.push(this.uncheckedAppearance);
     }
+    this._fallbackFontDict = this.fallbackFontDict;
   }
 
   _processPushButton(params) {
@@ -1942,6 +1949,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value,
+      defaultValue: this.data.defaultFieldValue,
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
@@ -1949,6 +1957,16 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       actions: this.data.actions,
       type,
     };
+  }
+
+  get fallbackFontDict() {
+    const dict = new Dict();
+    dict.set("BaseFont", Name.get("ZapfDingbats"));
+    dict.set("Type", Name.get("FallbackType"));
+    dict.set("Subtype", Name.get("FallbackType"));
+    dict.set("Encoding", Name.get("ZapfDingbatsEncoding"));
+
+    return shadow(this, "fallbackFontDict", dict);
   }
 }
 
@@ -2008,6 +2026,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value,
+      defaultValue: this.data.defaultFieldValue,
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
@@ -2081,6 +2100,13 @@ class PopupAnnotation extends Annotation {
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
     const rawParent = parameters.dict.getRaw("Parent");
     this.data.parentId = isRef(rawParent) ? rawParent.toString() : null;
+
+    const parentRect = parentItem.getArray("Rect");
+    if (Array.isArray(parentRect) && parentRect.length === 4) {
+      this.data.parentRect = Util.normalizeRect(parentRect);
+    } else {
+      this.data.parentRect = [0, 0, 0, 0];
+    }
 
     const rt = parentItem.get("RT");
     if (isName(rt, AnnotationReplyType.GROUP)) {
@@ -2228,10 +2254,11 @@ class HighlightAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.HIGHLIGHT;
-
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is yellow in Acrobat Reader
         const fillColor = this.color
@@ -2251,6 +2278,8 @@ class HighlightAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
@@ -2260,10 +2289,11 @@ class UnderlineAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.UNDERLINE;
-
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
@@ -2281,6 +2311,8 @@ class UnderlineAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
@@ -2291,9 +2323,11 @@ class SquigglyAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.SQUIGGLY;
 
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
@@ -2320,6 +2354,8 @@ class SquigglyAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }
@@ -2330,9 +2366,11 @@ class StrikeOutAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
 
-    const quadPoints = getQuadPoints(parameters.dict, null);
+    const quadPoints = (this.data.quadPoints = getQuadPoints(
+      parameters.dict,
+      null
+    ));
     if (quadPoints) {
-      this.data.quadPoints = quadPoints;
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
@@ -2356,6 +2394,8 @@ class StrikeOutAnnotation extends MarkupAnnotation {
           },
         });
       }
+    } else {
+      this.data.hasPopup = false;
     }
   }
 }

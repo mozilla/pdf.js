@@ -7,11 +7,11 @@ external/webL10n/
 external/cmapscompress/
 external/builder/fixtures/
 external/builder/fixtures_esprima/
+external/quickjs/quickjs-eval.js
 src/shared/cffStandardStrings.js
 src/shared/fonts_utils.js
 test/tmp/
 test/features/
 test/pdfs/
 test/resources/
-test/font/*_spec.js
 *~/

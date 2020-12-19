@@ -97,7 +97,7 @@ class PDFDocumentProperties {
   /**
    * Open the document properties overlay.
    */
-  open() {
+  async open() {
     const freezeFieldData = data => {
       Object.defineProperty(this, "fieldData", {
         value: Object.freeze(data),
@@ -107,95 +107,81 @@ class PDFDocumentProperties {
       });
     };
 
-    Promise.all([
+    await Promise.all([
       this.overlayManager.open(this.overlayName),
       this._dataAvailableCapability.promise,
-    ]).then(() => {
-      const currentPageNumber = this._currentPageNumber;
-      const pagesRotation = this._pagesRotation;
+    ]);
+    const currentPageNumber = this._currentPageNumber;
+    const pagesRotation = this._pagesRotation;
 
-      // If the document properties were previously fetched (for this PDF file),
-      // just update the dialog immediately to avoid redundant lookups.
-      if (
-        this.fieldData &&
-        currentPageNumber === this.fieldData._currentPageNumber &&
-        pagesRotation === this.fieldData._pagesRotation
-      ) {
-        this._updateUI();
-        return;
-      }
+    // If the document properties were previously fetched (for this PDF file),
+    // just update the dialog immediately to avoid redundant lookups.
+    if (
+      this.fieldData &&
+      currentPageNumber === this.fieldData._currentPageNumber &&
+      pagesRotation === this.fieldData._pagesRotation
+    ) {
+      this._updateUI();
+      return;
+    }
 
-      // Get the document properties.
-      this.pdfDocument
-        .getMetadata()
-        .then(({ info, metadata, contentDispositionFilename }) => {
-          return Promise.all([
-            info,
-            metadata,
-            contentDispositionFilename || getPDFFileNameFromURL(this.url),
-            this._parseFileSize(this.maybeFileSize),
-            this._parseDate(info.CreationDate),
-            this._parseDate(info.ModDate),
-            this.pdfDocument.getPage(currentPageNumber).then(pdfPage => {
-              return this._parsePageSize(
-                getPageSizeInches(pdfPage),
-                pagesRotation
-              );
-            }),
-            this._parseLinearization(info.IsLinearized),
-          ]);
-        })
-        .then(
-          ([
-            info,
-            metadata,
-            fileName,
-            fileSize,
-            creationDate,
-            modDate,
-            pageSize,
-            isLinearized,
-          ]) => {
-            freezeFieldData({
-              fileName,
-              fileSize,
-              title: info.Title,
-              author: info.Author,
-              subject: info.Subject,
-              keywords: info.Keywords,
-              creationDate,
-              modificationDate: modDate,
-              creator: info.Creator,
-              producer: info.Producer,
-              version: info.PDFFormatVersion,
-              pageCount: this.pdfDocument.numPages,
-              pageSize,
-              linearized: isLinearized,
-              _currentPageNumber: currentPageNumber,
-              _pagesRotation: pagesRotation,
-            });
-            this._updateUI();
+    // Get the document properties.
+    const {
+      info,
+      /* metadata, */
+      contentDispositionFilename,
+      contentLength,
+    } = await this.pdfDocument.getMetadata();
 
-            // Get the correct fileSize, since it may not have been set (if
-            // `this.setFileSize` wasn't called) or may be incorrectly set.
-            return this.pdfDocument.getDownloadInfo();
-          }
-        )
-        .then(({ length }) => {
-          this.maybeFileSize = length;
-          return this._parseFileSize(length);
-        })
-        .then(fileSize => {
-          if (fileSize === this.fieldData.fileSize) {
-            return; // The fileSize has already been correctly set.
-          }
-          const data = Object.assign(Object.create(null), this.fieldData);
-          data.fileSize = fileSize;
+    const [
+      fileName,
+      fileSize,
+      creationDate,
+      modificationDate,
+      pageSize,
+      isLinearized,
+    ] = await Promise.all([
+      contentDispositionFilename || getPDFFileNameFromURL(this.url),
+      this._parseFileSize(contentLength),
+      this._parseDate(info.CreationDate),
+      this._parseDate(info.ModDate),
+      this.pdfDocument.getPage(currentPageNumber).then(pdfPage => {
+        return this._parsePageSize(getPageSizeInches(pdfPage), pagesRotation);
+      }),
+      this._parseLinearization(info.IsLinearized),
+    ]);
 
-          freezeFieldData(data);
-          this._updateUI();
-        });
+    freezeFieldData({
+      fileName,
+      fileSize,
+      title: info.Title,
+      author: info.Author,
+      subject: info.Subject,
+      keywords: info.Keywords,
+      creationDate,
+      modificationDate,
+      creator: info.Creator,
+      producer: info.Producer,
+      version: info.PDFFormatVersion,
+      pageCount: this.pdfDocument.numPages,
+      pageSize,
+      linearized: isLinearized,
+      _currentPageNumber: currentPageNumber,
+      _pagesRotation: pagesRotation,
     });
+    this._updateUI();
+
+    // Get the correct fileSize, since it may not have been available
+    // or could potentially be wrong.
+    const { length } = await this.pdfDocument.getDownloadInfo();
+    if (contentLength === length) {
+      return; // The fileSize has already been correctly set.
+    }
+    const data = Object.assign(Object.create(null), this.fieldData);
+    data.fileSize = await this._parseFileSize(length);
+
+    freezeFieldData(data);
+    this._updateUI();
   }
 
   /**
@@ -229,26 +215,12 @@ class PDFDocumentProperties {
   }
 
   /**
-   * Set the file size of the PDF document. This method is used to
-   * update the file size in the document properties overlay once it
-   * is known so we do not have to wait until the entire file is loaded.
-   *
-   * @param {number} fileSize - The file size of the PDF document.
-   */
-  setFileSize(fileSize) {
-    if (Number.isInteger(fileSize) && fileSize > 0) {
-      this.maybeFileSize = fileSize;
-    }
-  }
-
-  /**
    * @private
    */
   _reset() {
     this.pdfDocument = null;
     this.url = null;
 
-    this.maybeFileSize = 0;
     delete this.fieldData;
     this._dataAvailableCapability = createPromiseCapability();
     this._currentPageNumber = 1;

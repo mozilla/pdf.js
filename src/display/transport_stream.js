@@ -27,7 +27,7 @@ class PDFDataTransportStream {
     this._progressiveDone = params.progressiveDone || false;
 
     const initialData = params.initialData;
-    if (initialData && initialData.length > 0) {
+    if (initialData?.length > 0) {
       const buffer = new Uint8Array(initialData).buffer;
       this._queuedChunks.push(buffer);
     }
@@ -90,12 +90,12 @@ class PDFDataTransportStream {
     if (evt.total === undefined) {
       // Reporting to first range reader, if it exists.
       const firstReader = this._rangeReaders[0];
-      if (firstReader && firstReader.onProgress) {
+      if (firstReader?.onProgress) {
         firstReader.onProgress({ loaded: evt.loaded });
       }
     } else {
       const fullReader = this._fullRequestReader;
-      if (fullReader && fullReader.onProgress) {
+      if (fullReader?.onProgress) {
         fullReader.onProgress({ loaded: evt.loaded, total: evt.total });
       }
     }

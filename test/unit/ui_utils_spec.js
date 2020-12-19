@@ -145,12 +145,12 @@ describe("ui_utils", function () {
     });
 
     it("gets PDF filename from URI-encoded data", function () {
-      var encodedUrl = encodeURIComponent(
+      const encodedUrl = encodeURIComponent(
         "http://www.example.com/pdfs/file1.pdf"
       );
       expect(getPDFFileNameFromURL(encodedUrl)).toEqual("file1.pdf");
 
-      var encodedUrlWithQuery = encodeURIComponent(
+      const encodedUrlWithQuery = encodeURIComponent(
         "http://www.example.com/pdfs/file.txt?file2.pdf"
       );
       expect(getPDFFileNameFromURL(encodedUrlWithQuery)).toEqual("file2.pdf");
@@ -185,8 +185,8 @@ describe("ui_utils", function () {
       if (isNodeJS) {
         pending("Blob in not supported in Node.js.");
       }
-      var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      var blobUrl = createObjectURL(typedArray, "application/pdf");
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const blobUrl = createObjectURL(typedArray, "application/pdf");
       // Sanity check to ensure that a "blob:" URL was returned.
       expect(blobUrl.startsWith("blob:")).toEqual(true);
 
@@ -194,8 +194,8 @@ describe("ui_utils", function () {
     });
 
     it('gets fallback filename from query string appended to "data:" URL', function () {
-      var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      var dataUrl = createObjectURL(
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const dataUrl = createObjectURL(
         typedArray,
         "application/pdf",
         /* forceDataSchema = */ true
@@ -216,8 +216,8 @@ describe("ui_utils", function () {
 
   describe("EventBus", function () {
     it("dispatch event", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function (evt) {
         expect(evt).toEqual(undefined);
         count++;
@@ -238,8 +238,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(1);
     });
     it("dispatch different event", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function () {
         count++;
       });
@@ -247,8 +247,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(0);
     });
     it("dispatch event multiple times", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.dispatch("test");
       eventBus.on("test", function () {
         count++;
@@ -258,8 +258,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
     it("dispatch event to multiple handlers", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function () {
         count++;
       });
@@ -270,9 +270,9 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
     it("dispatch to detached", function () {
-      var eventBus = new EventBus();
-      var count = 0;
-      var listener = function () {
+      const eventBus = new EventBus();
+      let count = 0;
+      const listener = function () {
         count++;
       };
       eventBus.on("test", listener);
@@ -282,8 +282,8 @@ describe("ui_utils", function () {
       expect(count).toEqual(1);
     });
     it("dispatch to wrong detached", function () {
-      var eventBus = new EventBus();
-      var count = 0;
+      const eventBus = new EventBus();
+      let count = 0;
       eventBus.on("test", function () {
         count++;
       });
@@ -295,13 +295,13 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
     it("dispatch to detached during handling", function () {
-      var eventBus = new EventBus();
-      var count = 0;
-      var listener1 = function () {
+      const eventBus = new EventBus();
+      let count = 0;
+      const listener1 = function () {
         eventBus.off("test", listener2);
         count++;
       };
-      var listener2 = function () {
+      const listener2 = function () {
         eventBus.off("test", listener1);
         count++;
       };
@@ -639,12 +639,12 @@ describe("ui_utils", function () {
     // This function takes a fixed layout of pages and compares the system under
     // test to the slower implementation above, for a range of scroll viewport
     // sizes and positions.
-    function scrollOverDocument(pages, horizontally = false) {
+    function scrollOverDocument(pages, horizontal = false, rtl = false) {
       const size = pages.reduce(function (max, { div }) {
         return Math.max(
           max,
-          horizontally
-            ? div.offsetLeft + div.clientLeft + div.clientWidth
+          horizontal
+            ? Math.abs(div.offsetLeft + div.clientLeft + div.clientWidth)
             : div.offsetTop + div.clientTop + div.clientHeight
         );
       }, 0);
@@ -652,12 +652,12 @@ describe("ui_utils", function () {
       // make scrollOverDocument tests faster, decrease them to make the tests
       // more scrupulous, and keep them coprime to reduce the chance of missing
       // weird edge case bugs.
-      for (let i = 0; i < size; i += 7) {
+      for (let i = -size; i < size; i += 7) {
         // The screen height (or width) here (j - i) doubles on each inner loop
         // iteration; again, this is just to test an interesting range of cases
         // without slowing the tests down to check every possible case.
         for (let j = i + 5; j < size; j += j - i) {
-          const scroll = horizontally
+          const scrollEl = horizontal
             ? {
                 scrollTop: 0,
                 scrollLeft: i,
@@ -671,8 +671,14 @@ describe("ui_utils", function () {
                 clientWidth: 10000,
               };
           expect(
-            getVisibleElements(scroll, pages, false, horizontally)
-          ).toEqual(slowGetVisibleElements(scroll, pages));
+            getVisibleElements({
+              scrollEl,
+              views: pages,
+              sortByVisibility: false,
+              horizontal,
+              rtl,
+            })
+          ).toEqual(slowGetVisibleElements(scrollEl, pages));
         }
       }
     }
@@ -734,7 +740,18 @@ describe("ui_utils", function () {
           [30, 10],
         ],
       ]);
-      scrollOverDocument(pages, true);
+      scrollOverDocument(pages, /* horizontal = */ true);
+    });
+
+    it("works with horizontal scrolling with RTL-documents", function () {
+      const pages = makePages([
+        [
+          [-10, 50],
+          [-20, 20],
+          [-30, 10],
+        ],
+      ]);
+      scrollOverDocument(pages, /* horizontal = */ true, /* rtl = */ true);
     });
 
     it("handles `sortByVisibility` correctly", function () {
@@ -746,12 +763,12 @@ describe("ui_utils", function () {
       };
       const views = makePages([[[100, 150]], [[100, 150]], [[100, 150]]]);
 
-      const visible = getVisibleElements(scrollEl, views);
-      const visibleSorted = getVisibleElements(
+      const visible = getVisibleElements({ scrollEl, views });
+      const visibleSorted = getVisibleElements({
         scrollEl,
         views,
-        /* sortByVisibility = */ true
-      );
+        sortByVisibility: true,
+      });
 
       const viewsOrder = [],
         viewsSortedOrder = [];
@@ -774,7 +791,7 @@ describe("ui_utils", function () {
       };
       const views = [];
 
-      expect(getVisibleElements(scrollEl, views)).toEqual({
+      expect(getVisibleElements({ scrollEl, views })).toEqual({
         first: undefined,
         last: undefined,
         views: [],
@@ -790,7 +807,7 @@ describe("ui_utils", function () {
       };
       const views = makePages([[[100, 150]], [[100, 150]], [[100, 150]]]);
 
-      expect(getVisibleElements(scrollEl, views)).toEqual({
+      expect(getVisibleElements({ scrollEl, views })).toEqual({
         first: undefined,
         last: undefined,
         views: [],

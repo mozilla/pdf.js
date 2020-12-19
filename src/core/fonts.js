@@ -1319,11 +1319,12 @@ var Font = (function FontClosure() {
       let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
       var stdFontMap = getStdFontMap(),
         nonStdFontMap = getNonStdFontMap();
-      var isStandardFont =
-        !!stdFontMap[fontName] ||
-        !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
-      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+      const isStandardFont = !!stdFontMap[fontName];
+      const isMappedToStandardFont = !!(
+        nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]
+      );
 
+      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
       this.bold = fontName.search(/bold/gi) !== -1;
       this.italic =
         fontName.search(/oblique/gi) !== -1 ||
@@ -1334,9 +1335,9 @@ var Font = (function FontClosure() {
       this.black = name.search(/Black/g) !== -1;
 
       // if at least one width is present, remeasure all chars when exists
-      this.remeasure = Object.keys(this.widths).length > 0;
+      this.remeasure = !isStandardFont && Object.keys(this.widths).length > 0;
       if (
-        isStandardFont &&
+        (isStandardFont || isMappedToStandardFont) &&
         type === "CIDFontType2" &&
         this.cidEncoding.startsWith("Identity-")
       ) {
@@ -3230,7 +3231,10 @@ var Font = (function FontClosure() {
       return shadow(this, "spaceWidth", width);
     },
 
-    charToGlyph: function Font_charToGlyph(charcode, isSpace) {
+    /**
+     * @private
+     */
+    _charToGlyph(charcode, isSpace = false) {
       var fontCharCode, width, operatorListId;
 
       var widthCode = charcode;
@@ -3354,13 +3358,13 @@ var Font = (function FontClosure() {
           i += length;
           // Space is char with code 0x20 and length 1 in multiple-byte codes.
           var isSpace = length === 1 && chars.charCodeAt(i - 1) === 0x20;
-          glyph = this.charToGlyph(charcode, isSpace);
+          glyph = this._charToGlyph(charcode, isSpace);
           glyphs.push(glyph);
         }
       } else {
         for (i = 0, ii = chars.length; i < ii; ++i) {
           charcode = chars.charCodeAt(i);
-          glyph = this.charToGlyph(charcode, charcode === 0x20);
+          glyph = this._charToGlyph(charcode, charcode === 0x20);
           glyphs.push(glyph);
         }
       }

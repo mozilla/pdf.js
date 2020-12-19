@@ -1,6 +1,6 @@
 {
   "parserOptions": {
-    "ecmaVersion": 2020,
+    "ecmaVersion": 2021,
     "sourceType": "module",
   },
 
@@ -36,6 +36,7 @@
     "mozilla/use-includes-instead-of-indexOf": "error",
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
+    "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-instanceof": "error",
     "unicorn/prefer-starts-ends-with": "error",
 
@@ -66,6 +67,7 @@
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": ["error", { "disallowArithmeticOperators": true }],
     "use-isnan": ["error", { "enforceForIndexOf": true, }],
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
@@ -110,6 +112,7 @@
     "no-useless-call": "error",
     "no-useless-catch": "error",
     "no-useless-concat": "error",
+    "no-useless-escape": "error",
     "no-useless-return": "error",
     "prefer-promise-reject-errors": "error",
     "wrap-iife": ["error", "any"],

@@ -254,6 +254,26 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
   }
 }
 
+class FirefoxScripting {
+  static async createSandbox(data) {
+    return new Promise(resolve => {
+      FirefoxCom.request("createSandbox", data, resolve);
+    }).then(success => {
+      if (!success) {
+        throw new Error("Cannot create sandbox.");
+      }
+    });
+  }
+
+  static async dispatchEventInSandbox(event) {
+    FirefoxCom.request("dispatchEventInSandbox", event);
+  }
+
+  static async destroySandbox() {
+    FirefoxCom.request("destroySandbox", null);
+  }
+}
+
 class FirefoxExternalServices extends DefaultExternalServices {
   static updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
@@ -333,7 +353,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
   }
 
   static createDownloadManager(options) {
-    return new DownloadManager(options);
+    return new DownloadManager();
   }
 
   static createPreferences() {
@@ -344,6 +364,10 @@ class FirefoxExternalServices extends DefaultExternalServices {
     const mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);
+  }
+
+  static createScripting() {
+    return FirefoxScripting;
   }
 
   static get supportsIntegratedFind() {

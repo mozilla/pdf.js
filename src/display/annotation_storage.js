@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { objectFromEntries } from "../shared/util.js";
+
 /**
  * Key/value storage for annotation data in forms.
  */
@@ -57,17 +59,29 @@ class AnnotationStorage {
    * @param {Object} value
    */
   setValue(key, value) {
-    if (this._storage.get(key) !== value) {
+    const obj = this._storage.get(key);
+    let modified = false;
+    if (obj !== undefined) {
+      for (const [entry, val] of Object.entries(value)) {
+        if (obj[entry] !== val) {
+          modified = true;
+          obj[entry] = val;
+        }
+      }
+    } else {
+      this._storage.set(key, value);
+      modified = true;
+    }
+    if (modified) {
       this._setModified();
     }
-    this._storage.set(key, value);
   }
 
   getAll() {
     if (this._storage.size === 0) {
       return null;
     }
-    return Object.fromEntries(this._storage);
+    return objectFromEntries(this._storage);
   }
 
   get size() {
