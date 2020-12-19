@@ -1,0 +1,14 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14 LTS
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm install -g gulp-cli
+      - run: npm install
+      - run: npm test
