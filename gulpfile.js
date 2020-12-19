@@ -97,7 +97,6 @@ const DEFINES = Object.freeze({
   PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: false,
-  ENABLE_SCRIPTING: false,
   // The main build targets:
   GENERIC: false,
   MOZCENTRAL: false,
@@ -682,7 +681,6 @@ gulp.task("default_preferences-pre", function () {
       LIB: true,
       BUNDLE_VERSION: 0, // Dummy version
       BUNDLE_BUILD: 0, // Dummy build
-      ENABLE_SCRIPTING: process.env.ENABLE_SCRIPTING === "true",
     }),
     map: {
       "pdfjs-lib": "../pdf",
@@ -1551,46 +1549,29 @@ gulp.task("testing-pre", function (done) {
   done();
 });
 
-gulp.task("enable-scripting", function (done) {
-  process.env.ENABLE_SCRIPTING = "true";
-  done();
-});
-
 gulp.task(
   "test",
-  gulp.series(
-    "enable-scripting",
-    "testing-pre",
-    "generic",
-    "components",
-    function () {
-      return streamqueue(
-        { objectMode: true },
-        createTestSource("unit"),
-        createTestSource("browser"),
-        createTestSource("integration")
-      );
-    }
-  )
+  gulp.series("testing-pre", "generic", "components", function () {
+    return streamqueue(
+      { objectMode: true },
+      createTestSource("unit"),
+      createTestSource("browser"),
+      createTestSource("integration")
+    );
+  })
 );
 
 gulp.task(
   "bottest",
-  gulp.series(
-    "enable-scripting",
-    "testing-pre",
-    "generic",
-    "components",
-    function () {
-      return streamqueue(
-        { objectMode: true },
-        createTestSource("unit", true),
-        createTestSource("font", true),
-        createTestSource("browser (no reftest)", true),
-        createTestSource("integration")
-      );
-    }
-  )
+  gulp.series("testing-pre", "generic", "components", function () {
+    return streamqueue(
+      { objectMode: true },
+      createTestSource("unit", true),
+      createTestSource("font", true),
+      createTestSource("browser (no reftest)", true),
+      createTestSource("integration")
+    );
+  })
 );
 
 gulp.task(
@@ -1609,7 +1590,7 @@ gulp.task(
 
 gulp.task(
   "integrationtest",
-  gulp.series("enable-scripting", "testing-pre", "generic", function () {
+  gulp.series("testing-pre", "generic", function () {
     return createTestSource("integration");
   })
 );
