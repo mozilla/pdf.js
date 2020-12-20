@@ -799,8 +799,12 @@ class BaseViewer {
         return;
       }
       const noPadding = this.isInPresentationMode || this.removePageBorders;
+      let verticalPadding = VERTICAL_PADDING;
+      if (this.pageViewMode === 'single') {
+        verticalPadding += 15;
+      }
       let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
-      let vPadding = noPadding ? 0 : VERTICAL_PADDING;
+      let vPadding = noPadding ? 0 : verticalPadding;
 
       if (!noPadding && this._isScrollModeHorizontal) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
