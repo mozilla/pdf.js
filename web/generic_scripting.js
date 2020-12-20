@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-import { AppOptions } from "./app_options.js";
 import { loadScript } from "pdfjs-lib";
 
 class GenericScripting {
-  constructor() {
+  constructor(sandboxBundleSrc) {
     this._ready = loadScript(
-      AppOptions.get("sandboxBundleSrc"),
+      sandboxBundleSrc,
       /* removeScriptElement = */ true
     ).then(() => {
       return window.pdfjsSandbox.QuickJSSandbox();
