@@ -366,7 +366,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
     return new MozL10n(mozL10n);
   }
 
-  static createScripting() {
+  static createScripting(options) {
     return FirefoxScripting;
   }
 

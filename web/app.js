@@ -167,7 +167,7 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createL10n");
   }
 
-  static createScripting() {
+  static createScripting(options) {
     throw new Error("Not implemented: createScripting");
   }
 
@@ -1476,7 +1476,12 @@ const PDFViewerApplication = {
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the data resolved.
     }
-    const scripting = this.externalServices.createScripting();
+    const scripting = this.externalServices.createScripting(
+      typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC || CHROME")
+        ? { sandboxBundleSrc: AppOptions.get("sandboxBundleSrc") }
+        : null
+    );
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
     const internalEvents = new Map(),
