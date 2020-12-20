@@ -2001,7 +2001,7 @@ const PDFViewerApplication = {
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
       // but PDFPrintService may generate double events -- this will ignore
-      // the second event that will be coming from native window.print().
+      // the second event that will be coming from native window.printPDF().
       return;
     }
 
@@ -2097,7 +2097,7 @@ const PDFViewerApplication = {
       name: "WillPrint",
     });
 
-    window.print();
+    window.printPDF();  // #586 modified by ngx-extended-pdf-viewer
 
     this._scriptingInstance?.scripting.dispatchEventInSandbox({
       id: "doc",
