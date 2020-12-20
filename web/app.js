@@ -1013,7 +1013,7 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  save({ sourceEventType = "download" } = {}) {
+  async save({ sourceEventType = "download" } = {}) {
     if (this._saveInProgress) {
       return;
     }
@@ -1036,19 +1036,20 @@ const PDFViewerApplication = {
       this.download({ sourceEventType });
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+    this._saveInProgress = true;
+
+    await this._scriptingInstance?.scripting.dispatchEventInSandbox({
       id: "doc",
       name: "WillSave",
     });
 
-    this._saveInProgress = true;
     this.pdfDocument
       .saveDocument(this.pdfDocument.annotationStorage)
-      .then(data => {
+      .then(async data => {
         const blob = new Blob([data], { type: "application/pdf" });
         downloadManager.download(blob, url, filename, sourceEventType);
 
-        this._scriptingInstance?.scripting.dispatchEventInSandbox({
+        await this._scriptingInstance?.scripting.dispatchEventInSandbox({
           id: "doc",
           name: "DidSave",
         });
@@ -1614,7 +1615,7 @@ const PDFViewerApplication = {
       return;
     }
 
-    scripting.dispatchEventInSandbox({
+    await scripting.dispatchEventInSandbox({
       id: "doc",
       name: "Open",
     });
@@ -2058,18 +2059,18 @@ const PDFViewerApplication = {
     this.pdfPresentationMode.request();
   },
 
-  triggerPrinting() {
+  async triggerPrinting() {
     if (!this.supportsPrinting) {
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+    await this._scriptingInstance?.scripting.dispatchEventInSandbox({
       id: "doc",
       name: "WillPrint",
     });
 
     window.print();
 
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+    await this._scriptingInstance?.scripting.dispatchEventInSandbox({
       id: "doc",
       name: "DidPrint",
     });
