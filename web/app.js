@@ -1652,7 +1652,7 @@ const PDFViewerApplication = {
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
     const [openAction, javaScript] = await Promise.all([
       openActionPromise,
-      pdfDocument.getJavaScript(),
+      !AppOptions.get("enableScripting") ? pdfDocument.getJavaScript() : null,
     ]);
 
     if (pdfDocument !== this.pdfDocument) {
@@ -1660,10 +1660,10 @@ const PDFViewerApplication = {
     }
     let triggerAutoPrint = false;
 
-    if (openAction && openAction.action === "Print") {
+    if (openAction?.action === "Print") {
       triggerAutoPrint = true;
     }
-    if (javaScript && !AppOptions.get("enableScripting")) {
+    if (javaScript) {
       javaScript.some(js => {
         if (!js) {
           // Don't warn/fallback for empty JavaScript actions.
@@ -1686,9 +1686,7 @@ const PDFViewerApplication = {
     }
 
     if (triggerAutoPrint) {
-      setTimeout(() => {
-        this.triggerPrinting();
-      });
+      this.triggerPrinting();
     }
   },
 
