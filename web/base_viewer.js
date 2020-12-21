@@ -799,12 +799,14 @@ class BaseViewer {
         return;
       }
       const noPadding = this.isInPresentationMode || this.removePageBorders;
+      // #589 modified by ngx-extended-pdf-viewer
       let verticalPadding = VERTICAL_PADDING;
       if (this.pageViewMode === 'single') {
         verticalPadding += 15;
       }
       let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
-      let vPadding = noPadding ? 0 : verticalPadding;
+      let vPadding = noPadding ? (this.pageViewMode === 'single'? 10: 0) : verticalPadding;
+      // #589 end of modification
 
       if (!noPadding && this._isScrollModeHorizontal) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
