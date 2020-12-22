@@ -375,7 +375,9 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
-    this._setScale(val, false);
+    // #562 modified by ngx-extended-pdf-viewer
+    this._setScale(val, this.pageViewMode === "single");
+    // #562 end of modification
   }
 
   /**
