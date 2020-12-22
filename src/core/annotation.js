@@ -984,10 +984,13 @@ class WidgetAnnotation extends Annotation {
     data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
 
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
-    data.defaultAppearance =
+    const defaultAppearance =
       getInheritableProperty({ dict, key: "DA" }) ||
       params.acroForm.get("DA") ||
       "";
+    data.defaultAppearance = isString(defaultAppearance)
+      ? defaultAppearance
+      : "";
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
 
@@ -1277,6 +1280,15 @@ class WidgetAnnotation extends Annotation {
     const hPadding = defaultPadding;
     const totalHeight = this.data.rect[3] - this.data.rect[1];
     const totalWidth = this.data.rect[2] - this.data.rect[0];
+
+    if (!this.data.defaultAppearance) {
+      // The DA is required and must be a string.
+      // If there is no font named Helvetica in the resource dictionary,
+      // the evaluator will fall back to a default font.
+      // Doing so prevents exceptions and allows saving/printing
+      // the file as expected.
+      this.data.defaultAppearance = "/Helvetica 0 Tf 0 g";
+    }
 
     const fontInfo = await this._getFontData(evaluator, task);
     const [font, fontName] = fontInfo;

@@ -1658,7 +1658,7 @@ gulp.task(
 
 gulp.task(
   "unittest",
-  gulp.series("testing-pre", "generic", "components", function () {
+  gulp.series("testing-pre", "generic", function () {
     return createTestSource("unit");
   })
 );

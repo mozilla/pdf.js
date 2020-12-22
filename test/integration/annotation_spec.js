@@ -39,7 +39,10 @@ describe("Annotation highlight", () => {
           );
           expect(hidden).withContext(`In ${browserName}`).toEqual(true);
           await page.hover("[data-annotation-id='19R']");
-          await page.waitForTimeout(100);
+          await page.waitForSelector("[data-annotation-id='21R']", {
+            visible: true,
+            timeout: 0,
+          });
           hidden = await page.$eval(
             "[data-annotation-id='21R']",
             el => el.hidden

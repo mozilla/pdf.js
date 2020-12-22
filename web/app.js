@@ -1108,6 +1108,14 @@ const PDFViewerApplication = {
       });
   },
 
+  downloadOrSave(options) {
+    if (this.pdfDocument?.annotationStorage.size > 0) {
+      this.save(options);
+    } else {
+      this.download(options);
+    }
+  },
+
   /**
    * For PDF documents that contain e.g. forms and javaScript, we should only
    * trigger the fallback bar once the user has interacted with the page.
@@ -1327,14 +1335,6 @@ const PDFViewerApplication = {
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
-    const annotationStorage = pdfDocument.annotationStorage;
-    annotationStorage.onSetModified = function () {
-      window.addEventListener("beforeunload", beforeUnload);
-    };
-    annotationStorage.onResetModified = function () {
-      window.removeEventListener("beforeunload", beforeUnload);
-    };
-
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
     const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
@@ -1362,6 +1362,7 @@ const PDFViewerApplication = {
 
     firstPagePromise.then(pdfPage => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
+      this._initializeAnnotationStorageCallbacks(pdfDocument);
 
       Promise.all([
         animationStarted,
@@ -1698,7 +1699,7 @@ const PDFViewerApplication = {
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
     const [openAction, javaScript] = await Promise.all([
       openActionPromise,
-      pdfDocument.getJavaScript(),
+      !AppOptions.get("enableScripting") ? pdfDocument.getJavaScript() : null,
     ]);
 
     if (pdfDocument !== this.pdfDocument) {
@@ -1706,10 +1707,10 @@ const PDFViewerApplication = {
     }
     let triggerAutoPrint = false;
 
-    if (openAction && openAction.action === "Print") {
+    if (openAction?.action === "Print") {
       triggerAutoPrint = true;
     }
-    if (javaScript && !AppOptions.get("enableScripting")) {
+    if (javaScript) {
       javaScript.some(js => {
         if (!js) {
           // Don't warn/fallback for empty JavaScript actions.
@@ -1732,9 +1733,7 @@ const PDFViewerApplication = {
     }
 
     if (triggerAutoPrint) {
-      setTimeout(() => {
-        this.triggerPrinting();
-      });
+      this.triggerPrinting();
     }
   },
 
@@ -1938,6 +1937,23 @@ const PDFViewerApplication = {
     if (!permissions.includes(PermissionFlag.COPY)) {
       this.appConfig.viewerContainer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
+  },
+
+  /**
+   * @private
+   */
+  _initializeAnnotationStorageCallbacks(pdfDocument) {
+    if (pdfDocument !== this.pdfDocument) {
+      return;
+    }
+    const { annotationStorage } = pdfDocument;
+
+    annotationStorage.onSetModified = function () {
+      window.addEventListener("beforeunload", beforeUnload);
+    };
+    annotationStorage.onResetModified = function () {
+      window.removeEventListener("beforeunload", beforeUnload);
+    };
   },
 
   setInitialView(
@@ -2811,21 +2827,11 @@ function webViewerPresentationMode() {
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
 }
-function webViewerDownloadOrSave(sourceEventType) {
-  if (
-    PDFViewerApplication.pdfDocument &&
-    PDFViewerApplication.pdfDocument.annotationStorage.size > 0
-  ) {
-    PDFViewerApplication.save({ sourceEventType });
-  } else {
-    PDFViewerApplication.download({ sourceEventType });
-  }
-}
 function webViewerDownload() {
-  webViewerDownloadOrSave("download");
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "download" });
 }
 function webViewerSave() {
-  webViewerDownloadOrSave("save");
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "save" });
 }
 function webViewerFirstPage() {
   if (PDFViewerApplication.pdfDocument) {

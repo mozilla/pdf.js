@@ -2151,6 +2151,10 @@ class WorkerTransport {
     this.setupMessageHandler();
   }
 
+  get loadingTaskSettled() {
+    return this.loadingTask._capability.settled;
+  }
+
   destroy() {
     if (this.destroyCapability) {
       return this.destroyCapability.promise;
@@ -2178,6 +2182,18 @@ class WorkerTransport {
     // We also need to wait for the worker to finish its long running tasks.
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
     waitOn.push(terminated);
+    // Allow `AnnotationStorage`-related clean-up when destroying the document.
+    if (this.loadingTaskSettled) {
+      const annotationStorageResetModified = this.loadingTask.promise
+        .then(pdfDocument => {
+          // Avoid initializing the `annotationStorage` if it doesn't exist.
+          if (pdfDocument.hasOwnProperty("annotationStorage")) {
+            pdfDocument.annotationStorage.resetModified();
+          }
+        })
+        .catch(() => {});
+      waitOn.push(annotationStorageResetModified);
+    }
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();

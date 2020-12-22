@@ -16,4 +16,5 @@ git checkout master
 # aren't already in upstream/master are replayed on top of that
 # other branch:
 
-git rebase upstream/master
+# git rebase upstream/master
+git merge upstream/master
