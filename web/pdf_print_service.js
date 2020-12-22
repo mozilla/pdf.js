@@ -112,7 +112,8 @@ function PDFPrintService(
   printContainer,
   printResolution,
   optionalContentConfigPromise = null,
-  l10n
+  l10n,
+  eventBus // #588 modified by ngx-extended-pdf-viewer
 ) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
@@ -124,6 +125,10 @@ function PDFPrintService(
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement("canvas");
+
+  // #588 modified by ngx-extended-pdf-viewer
+  this.eventBus = eventBus;
+  // #588 end of modification
 }
 
 PDFPrintService.prototype = {
@@ -223,14 +228,15 @@ PDFPrintService.prototype = {
         renderProgress(
           window.filteredPageCount | pageCount,
           window.filteredPageCount | pageCount,
-          this.l10n
+          this.l10n,
+          this.eventBus // #588 modified by ngx-extended-pdf-viewer
         ); // #243
         resolve();
         return;
       }
 
       const index = this.currentPage;
-      renderProgress(index, window.filteredPageCount | pageCount, this.l10n); // #243
+      renderProgress(index, window.filteredPageCount | pageCount, this.l10n, this.eventBus); // #243 and #588 modified by ngx-extended-pdf-viewer
       renderPage(
         this,
         this.pdfDocument,
@@ -366,7 +372,7 @@ function abort() {
   }
 }
 
-function renderProgress(index, total, l10n) {
+function renderProgress(index, total, l10n, eventBus) { // #588 modified by ngx-extended-pdf-viewer
   const progressContainer = document.getElementById("printServiceOverlay");
   const progress = Math.round((100 * index) / total);
   const progressBar = progressContainer.querySelector("progress");
@@ -375,6 +381,15 @@ function renderProgress(index, total, l10n) {
   l10n.get("print_progress_percent", { progress }, progress + "%").then(msg => {
     progressPerc.textContent = msg;
   });
+  // #588 modified by ngx-extended-pdf-viewer
+  eventBus.dispatch("progress", {
+    source: this,
+    type: "print",
+    total,
+    page: index,
+    percent: (100 * index) / total,
+  });
+  // #588 end of modification
 }
 
 PDFViewerApplication.printKeyDownListener = function (event) {
@@ -439,7 +454,8 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
-    l10n
+    l10n,
+    eventBus // #588 modified by ngx-extended-pdf-viewer
   ) {
     if (activeService) {
       throw new Error("The print service is created and active.");
@@ -450,7 +466,8 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      l10n
+      l10n,
+      eventBus // #588 modified by ngx-extended-pdf-viewer
     );
     return activeService;
   },
