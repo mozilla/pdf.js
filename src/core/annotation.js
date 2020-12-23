@@ -1944,18 +1944,19 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
   getFieldObject() {
     let type = "button";
-    let value = null;
+    let exportValues;
     if (this.data.checkBox) {
       type = "checkbox";
-      value = this.data.fieldValue && this.data.fieldValue !== "Off";
+      exportValues = this.data.exportValue;
     } else if (this.data.radioButton) {
       type = "radiobutton";
-      value = this.data.fieldValue === this.data.buttonValue;
+      exportValues = this.data.buttonValue;
     }
     return {
       id: this.data.id,
-      value,
+      value: this.data.fieldValue || null,
       defaultValue: this.data.defaultFieldValue,
+      exportValues,
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
@@ -2036,6 +2037,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
+      numItems: this.data.fieldValue.length,
       multipleSelection: this.data.multiSelect,
       hidden: this.data.hidden,
       actions: this.data.actions,

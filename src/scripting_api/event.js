@@ -92,6 +92,9 @@ class EventDispatcher {
     if (source.obj._isButton()) {
       source.obj._id = id;
       event.value = source.obj._getExportValue(event.value);
+      if (name === "Action") {
+        source.obj._value = event.value;
+      }
     }
 
     if (name === "Keystroke") {
