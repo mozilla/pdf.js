@@ -47,7 +47,7 @@ class Field extends PDFObject {
     this.highlight = data.highlight;
     this.lineWidth = data.lineWidth;
     this.multiline = data.multiline;
-    this.multipleSelection = data.multipleSelection;
+    this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
     this.numItems = data.numItems;
     this.page = data.page;
@@ -66,15 +66,12 @@ class Field extends PDFObject {
     this.textSize = data.textSize;
     this.type = data.type;
     this.userName = data.userName;
-    this.value = data.value || "";
-
-    // Need getter/setter
-    this._valueAsString = data.valueAsString;
 
     // Private
     this._document = data.doc;
+    this._value = data.value || "";
+    this._valueAsString = data.valueAsString;
     this._actions = createActionsMap(data.actions);
-
     this._fillColor = data.fillColor || ["T"];
     this._strokeColor = data.strokeColor || ["G", 0];
     this._textColor = data.textColor || ["G", 0];
@@ -112,12 +109,32 @@ class Field extends PDFObject {
     }
   }
 
+  get value() {
+    return this._value;
+  }
+
+  set value(value) {
+    if (!this.multipleSelection) {
+      this._value = value;
+    }
+  }
+
   get valueAsString() {
     return this._valueAsString;
   }
 
   set valueAsString(val) {
     this._valueAsString = val ? val.toString() : "";
+  }
+
+  checkThisBox(nWidget, bCheckIt = true) {}
+
+  isBoxChecked(nWidget) {
+    return false;
+  }
+
+  isDefaultChecked(nWidget) {
+    return false;
   }
 
   setAction(cTrigger, cScript) {
@@ -159,4 +176,121 @@ class Field extends PDFObject {
   }
 }
 
-export { Field };
+class RadioButtonField extends Field {
+  constructor(otherButtons, data) {
+    super(data);
+
+    this.exportValues = [this.exportValues];
+    this._radioIds = [this._id];
+    this._radioActions = [this._actions];
+
+    for (const radioData of otherButtons) {
+      this.exportValues.push(radioData.exportValues);
+      this._radioIds.push(radioData.id);
+      this._radioActions.push(createActionsMap(radioData.actions));
+      if (this._value === radioData.exportValues) {
+        this._id = radioData.id;
+      }
+    }
+  }
+
+  get value() {
+    return this._value;
+  }
+
+  set value(value) {
+    const i = this.exportValues.indexOf(value);
+    if (0 <= i && i < this._radioIds.length) {
+      this._id = this._radioIds[i];
+      this._value = value;
+    } else if (value === "Off" && this._radioIds.length === 2) {
+      const nextI = (1 + this._radioIds.indexOf(this._id)) % 2;
+      this._id = this._radioIds[nextI];
+      this._value = this.exportValues[nextI];
+    }
+  }
+
+  checkThisBox(nWidget, bCheckIt = true) {
+    if (nWidget < 0 || nWidget >= this._radioIds.length || !bCheckIt) {
+      return;
+    }
+
+    this._id = this._radioIds[nWidget];
+    this._value = this.exportValues[nWidget];
+    this._send({ id: this._id, value: this._value });
+  }
+
+  isBoxChecked(nWidget) {
+    return (
+      nWidget >= 0 &&
+      nWidget < this._radioIds.length &&
+      this._id === this._radioIds[nWidget]
+    );
+  }
+
+  isDefaultChecked(nWidget) {
+    return (
+      nWidget >= 0 &&
+      nWidget < this.exportValues.length &&
+      this.defaultValue === this.exportValues[nWidget]
+    );
+  }
+
+  _getExportValue(state) {
+    const i = this._radioIds.indexOf(this._id);
+    return this.exportValues[i];
+  }
+
+  _runActions(event) {
+    const i = this._radioIds.indexOf(this._id);
+    this._actions = this._radioActions[i];
+    return super._runActions(event);
+  }
+
+  _isButton() {
+    return true;
+  }
+}
+
+class CheckboxField extends RadioButtonField {
+  get value() {
+    return this._value;
+  }
+
+  set value(value) {
+    if (value === "Off") {
+      this._value = "Off";
+    } else {
+      super.value = value;
+    }
+  }
+
+  _getExportValue(state) {
+    return state ? super._getExportValue(state) : "Off";
+  }
+
+  isBoxChecked(nWidget) {
+    if (this._value === "Off") {
+      return false;
+    }
+    return super.isBoxChecked(nWidget);
+  }
+
+  isDefaultChecked(nWidget) {
+    if (this.defaultValue === "Off") {
+      return this._value === "Off";
+    }
+    return super.isDefaultChecked(nWidget);
+  }
+
+  checkThisBox(nWidget, bCheckIt = true) {
+    if (nWidget < 0 || nWidget >= this._radioIds.length) {
+      return;
+    }
+    this._id = this._radioIds[nWidget];
+    this._value = bCheckIt ? this.exportValues[nWidget] : "Off";
+    this._send({ id: this._id, value: this._value });
+  }
+}
+
+export { CheckboxField, Field, RadioButtonField };
