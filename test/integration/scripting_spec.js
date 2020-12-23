@@ -16,6 +16,15 @@
 const { clearInput, closePages, loadAndWait } = require("./test_utils.js");
 
 describe("Interaction", () => {
+  async function actAndWaitForInput(page, selector, action) {
+    await clearInput(page, selector);
+    await action();
+    await page.waitForFunction(
+      `document.querySelector("${selector.replace("\\", "\\\\")}").value !== ""`
+    );
+    return page.$eval(selector, el => el.value);
+  }
+
   describe("in 160F-2019.pdf", () => {
     let pages;
 
@@ -276,6 +285,78 @@ describe("Interaction", () => {
             const text = await page.$eval("#\\36 7R", el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
           }
+        })
+      );
+    });
+  });
+
+  describe("in doc_actions.pdf for printing", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("doc_actions.pdf", "#\\34 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must execute WillPrint and DidPrint actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (process.platform === "win32" && browserName === "firefox") {
+            // Doesn't work because of bug 1662471
+            return;
+          }
+          let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
+            await page.click("#print");
+          });
+          expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\35 0R").value !== ""`
+          );
+
+          text = await page.$eval("#\\35 0R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("DidPrint");
+        })
+      );
+    });
+  });
+
+  describe("in doc_actions.pdf for saving", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("doc_actions.pdf", "#\\34 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must execute WillSave and DidSave actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          try {
+            // Disable download in chrome
+            // (it leads to an error in firefox so the try...)
+            await page._client.send("Page.setDownloadBehavior", {
+              behavior: "deny",
+            });
+          } catch (_) {}
+          await clearInput(page, "#\\34 7R");
+          let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
+            await page.click("#download");
+          });
+          expect(text).withContext(`In ${browserName}`).toEqual("WillSave");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\35 0R").value !== ""`
+          );
+
+          text = await page.$eval("#\\35 0R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("DidSave");
         })
       );
     });
