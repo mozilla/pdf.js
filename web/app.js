@@ -1047,16 +1047,16 @@ const PDFViewerApplication = {
       .then(data => {
         const blob = new Blob([data], { type: "application/pdf" });
         downloadManager.download(blob, url, filename, sourceEventType);
-
-        this._scriptingInstance?.scripting.dispatchEventInSandbox({
-          id: "doc",
-          name: "DidSave",
-        });
       })
       .catch(() => {
         this.download({ sourceEventType });
       })
       .finally(() => {
+        this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          id: "doc",
+          name: "DidSave",
+        });
+
         this._saveInProgress = false;
       });
   },
@@ -1967,6 +1967,11 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillPrint",
+    });
+
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
       // but PDFPrintService may generate double events -- this will ignore
@@ -2028,6 +2033,11 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "DidPrint",
+    });
+
     if (this.printService) {
       this.printService.destroy();
       this.printService = null;
@@ -2060,17 +2070,7 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
-      id: "doc",
-      name: "WillPrint",
-    });
-
     window.print();
-
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
-      id: "doc",
-      name: "DidPrint",
-    });
   },
 
   bindEvents() {
