@@ -1013,7 +1013,7 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  save({ sourceEventType = "download" } = {}) {
+  async save({ sourceEventType = "download" } = {}) {
     if (this._saveInProgress) {
       return;
     }
@@ -1036,27 +1036,28 @@ const PDFViewerApplication = {
       this.download({ sourceEventType });
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+    this._saveInProgress = true;
+
+    await this._scriptingInstance?.scripting.dispatchEventInSandbox({
       id: "doc",
       name: "WillSave",
     });
 
-    this._saveInProgress = true;
     this.pdfDocument
       .saveDocument(this.pdfDocument.annotationStorage)
       .then(data => {
         const blob = new Blob([data], { type: "application/pdf" });
         downloadManager.download(blob, url, filename, sourceEventType);
-
-        this._scriptingInstance?.scripting.dispatchEventInSandbox({
-          id: "doc",
-          name: "DidSave",
-        });
       })
       .catch(() => {
         this.download({ sourceEventType });
       })
-      .finally(() => {
+      .finally(async () => {
+        await this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          id: "doc",
+          name: "DidSave",
+        });
+
         this._saveInProgress = false;
       });
   },
@@ -1614,7 +1615,7 @@ const PDFViewerApplication = {
       return;
     }
 
-    scripting.dispatchEventInSandbox({
+    await scripting.dispatchEventInSandbox({
       id: "doc",
       name: "Open",
     });
@@ -1967,6 +1968,13 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
+    // Given that the "beforeprint" browser event is synchronous, we
+    // unfortunately cannot await the scripting event dispatching here.
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillPrint",
+    });
+
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
       // but PDFPrintService may generate double events -- this will ignore
@@ -2028,6 +2036,13 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
+    // Given that the "afterprint" browser event is synchronous, we
+    // unfortunately cannot await the scripting event dispatching here.
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "DidPrint",
+    });
+
     if (this.printService) {
       this.printService.destroy();
       this.printService = null;
@@ -2060,17 +2075,7 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
-      id: "doc",
-      name: "WillPrint",
-    });
-
     window.print();
-
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
-      id: "doc",
-      name: "DidPrint",
-    });
   },
 
   bindEvents() {
