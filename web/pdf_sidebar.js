@@ -13,19 +13,10 @@
  * limitations under the License.
  */
 
-import { NullL10n, PresentationModeState } from "./ui_utils.js";
+import { NullL10n, PresentationModeState, SidebarView } from "./ui_utils.js";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
-
-const SidebarView = {
-  UNKNOWN: -1,
-  NONE: 0,
-  THUMBS: 1, // Default value.
-  OUTLINE: 2,
-  ATTACHMENTS: 3,
-  LAYERS: 4,
-};
 
 /**
  * @typedef {Object} PDFSidebarOptions
@@ -62,6 +53,10 @@ const SidebarView = {
  *   the attachments are placed.
  * @property {HTMLDivElement} layersView - The container in which
  *   the layers are placed.
+ * @property {HTMLDivElement} outlineOptionsContainer - The container in which
+ *   the outline view-specific option button(s) are placed.
+ * @property {HTMLButtonElement} currentOutlineItemButton - The button used to
+ *   find the current outline item.
  */
 
 class PDFSidebar {
@@ -103,6 +98,9 @@ class PDFSidebar {
     this.attachmentsView = elements.attachmentsView;
     this.layersView = elements.layersView;
 
+    this._outlineOptionsContainer = elements.outlineOptionsContainer;
+    this._currentOutlineItemButton = elements.currentOutlineItemButton;
+
     this.eventBus = eventBus;
     this.l10n = l10n;
     this._disableNotification = disableNotification;
@@ -119,6 +117,7 @@ class PDFSidebar {
     this.outlineButton.disabled = false;
     this.attachmentsButton.disabled = false;
     this.layersButton.disabled = false;
+    this._currentOutlineItemButton.disabled = true;
   }
 
   /**
@@ -242,6 +241,12 @@ class PDFSidebar {
       view !== SidebarView.ATTACHMENTS
     );
     this.layersView.classList.toggle("hidden", view !== SidebarView.LAYERS);
+
+    // Finally, update view-specific CSS classes.
+    this._outlineOptionsContainer.classList.toggle(
+      "hidden",
+      view !== SidebarView.OUTLINE
+    );
 
     if (forceOpen && !this.isOpen) {
       this.open();
@@ -460,6 +465,11 @@ class PDFSidebar {
       this.eventBus.dispatch("resetlayers", { source: this });
     });
 
+    // Buttons for view-specific options.
+    this._currentOutlineItemButton.addEventListener("click", () => {
+      this.eventBus.dispatch("currentoutlineitem", { source: this });
+    });
+
     // Disable/enable views.
     const onTreeLoaded = (count, button, view) => {
       button.disabled = !count;
@@ -475,6 +485,12 @@ class PDFSidebar {
 
     this.eventBus._on("outlineloaded", evt => {
       onTreeLoaded(evt.outlineCount, this.outlineButton, SidebarView.OUTLINE);
+
+      if (evt.enableCurrentOutlineItemButton) {
+        this.pdfViewer.pagesPromise.then(() => {
+          this._currentOutlineItemButton.disabled = !this.isInitialViewSet;
+        });
+      }
     });
 
     this.eventBus._on("attachmentsloaded", evt => {

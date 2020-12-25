@@ -48,8 +48,8 @@
   --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
   --treeitem-color: rgba(0, 0, 0, 0.8);
   --treeitem-hover-color: rgba(0, 0, 0, 0.9);
-  --treeitem-active-color: rgba(0, 0, 0, 0.08);
-  --treeitem-active-bg-color: rgba(0, 0, 0, 1);
+  --treeitem-selected-color: rgba(0, 0, 0, 0.9);
+  --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
   --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
@@ -77,6 +77,7 @@
   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
   --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
+  --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
   --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
   --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
   --findbarButton-next-icon: url(images/findbarButton-next.svg);
@@ -121,8 +122,8 @@
     --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
     --treeitem-color: rgba(255, 255, 255, 0.8);
     --treeitem-hover-color: rgba(255, 255, 255, 0.9);
-    --treeitem-active-color: rgba(255, 255, 255, 0.08);
-    --treeitem-active-bg-color: rgba(255, 255, 255, 1);
+    --treeitem-selected-color: rgba(255, 255, 255, 0.9);
+    --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
     --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
@@ -336,6 +337,13 @@ html[dir="ltr"] #toolbarSidebar .toolbarButton {
 }
 html[dir="rtl"] #toolbarSidebar .toolbarButton {
   margin-left: 2px !important;
+}
+
+html[dir="ltr"] #toolbarSidebarRight .toolbarButton {
+  margin-right: 3px !important;
+}
+html[dir="rtl"] #toolbarSidebarRight .toolbarButton {
+  margin-left: 3px !important;
 }
 
 #sidebarResizer {
@@ -694,16 +702,22 @@ html[dir="ltr"] .doorHangerRight:before {
 }
 
 html[dir="ltr"] #toolbarViewerLeft,
-html[dir="rtl"] #toolbarViewerRight {
+html[dir="rtl"] #toolbarViewerRight,
+html[dir="ltr"] #toolbarSidebarLeft,
+html[dir="rtl"] #toolbarSidebarRight {
   float: left;
 }
 html[dir="ltr"] #toolbarViewerRight,
-html[dir="rtl"] #toolbarViewerLeft {
+html[dir="rtl"] #toolbarViewerLeft,
+html[dir="ltr"] #toolbarSidebarRight,
+html[dir="rtl"] #toolbarSidebarLeft {
   float: right;
 }
 html[dir="ltr"] #toolbarViewerLeft > *,
 html[dir="ltr"] #toolbarViewerMiddle > *,
 html[dir="ltr"] #toolbarViewerRight > *,
+html[dir="ltr"] #toolbarSidebarLeft *,
+html[dir="ltr"] #toolbarSidebarRight *,
 html[dir="ltr"] .findbar * {
   position: relative;
   float: left;
@@ -711,6 +725,8 @@ html[dir="ltr"] .findbar * {
 html[dir="rtl"] #toolbarViewerLeft > *,
 html[dir="rtl"] #toolbarViewerMiddle > *,
 html[dir="rtl"] #toolbarViewerRight > *,
+html[dir="rtl"] #toolbarSidebarLeft *,
+html[dir="rtl"] #toolbarSidebarRight *,
 html[dir="rtl"] .findbar * {
   position: relative;
   float: right;
@@ -1071,6 +1087,14 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 #viewLayers.toolbarButton::before {
   -webkit-mask-image: var(--toolbarButton-viewLayers-icon);
   mask-image: var(--toolbarButton-viewLayers-icon);
+}
+
+#currentOutlineItem.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-currentOutlineItem-icon);
+  mask-image: var(--toolbarButton-currentOutlineItem-icon);
+}
+html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
+  transform: scaleX(-1);
 }
 
 #viewFind.toolbarButton::before {
@@ -1448,6 +1472,11 @@ html[dir="rtl"] .treeItemToggler::before {
   left: 4px;
 }
 
+.treeItem.selected > a {
+  background-color: var(--treeitem-selected-bg-color);
+  color: var(--treeitem-selected-color);
+}
+
 .treeItemToggler:hover,
 .treeItemToggler:hover + a,
 .treeItemToggler:hover ~ .treeItems,
@@ -1456,12 +1485,6 @@ html[dir="rtl"] .treeItemToggler::before {
   background-clip: padding-box;
   border-radius: 2px;
   color: var(--treeitem-hover-color);
-}
-
-.treeItem.selected {
-  background-color: var(--treeitem-active-bg-color);
-  background-clip: padding-box;
-  color: var(--treeitem-active-color);
 }
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive

@@ -32,6 +32,15 @@ const PresentationModeState = {
   FULLSCREEN: 3,
 };
 
+const SidebarView = {
+  UNKNOWN: -1,
+  NONE: 0,
+  THUMBS: 1, // Default value.
+  OUTLINE: 2,
+  ATTACHMENTS: 3,
+  LAYERS: 4,
+};
+
 const RendererType = {
   CANVAS: "canvas",
   SVG: "svg",
@@ -1037,6 +1046,7 @@ export {
   isValidSpreadMode,
   isPortraitOrientation,
   PresentationModeState,
+  SidebarView,
   RendererType,
   TextLayerMode,
   ScrollMode,
