@@ -167,7 +167,7 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createL10n");
   }
 
-  static createScripting() {
+  static createScripting(options) {
     throw new Error("Not implemented: createScripting");
   }
 
@@ -1060,7 +1060,7 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  save({ sourceEventType = "download" } = {}) {
+  async save({ sourceEventType = "download" } = {}) {
     if (this._saveInProgress) {
       return;
     }
@@ -1083,27 +1083,28 @@ const PDFViewerApplication = {
       this.download({ sourceEventType });
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+    this._saveInProgress = true;
+
+    await this._scriptingInstance?.scripting.dispatchEventInSandbox({
       id: "doc",
       name: "WillSave",
     });
 
-    this._saveInProgress = true;
     this.pdfDocument
       .saveDocument(this.pdfDocument.annotationStorage)
       .then(data => {
         const blob = new Blob([data], { type: "application/pdf" });
         downloadManager.download(blob, url, filename, sourceEventType);
-
-        this._scriptingInstance?.scripting.dispatchEventInSandbox({
-          id: "doc",
-          name: "DidSave",
-        });
       })
       .catch(() => {
         this.download({ sourceEventType });
       })
-      .finally(() => {
+      .finally(async () => {
+        await this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          id: "doc",
+          name: "DidSave",
+        });
+
         this._saveInProgress = false;
       });
   },
@@ -1523,7 +1524,12 @@ const PDFViewerApplication = {
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the data resolved.
     }
-    const scripting = this.externalServices.createScripting();
+    const scripting = this.externalServices.createScripting(
+      typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC || CHROME")
+        ? { sandboxBundleSrc: AppOptions.get("sandboxBundleSrc") }
+        : null
+    );
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
     const internalEvents = new Map(),
@@ -1661,7 +1667,7 @@ const PDFViewerApplication = {
       return;
     }
 
-    scripting.dispatchEventInSandbox({
+    await scripting.dispatchEventInSandbox({
       id: "doc",
       name: "Open",
     });
@@ -2032,6 +2038,13 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
+    // Given that the "beforeprint" browser event is synchronous, we
+    // unfortunately cannot await the scripting event dispatching here.
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillPrint",
+    });
+
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
       // but PDFPrintService may generate double events -- this will ignore
@@ -2094,6 +2107,13 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
+    // Given that the "afterprint" browser event is synchronous, we
+    // unfortunately cannot await the scripting event dispatching here.
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "DidPrint",
+    });
+
     if (this.printService) {
       document.body.removeAttribute("data-pdfjsprinting");
       this.printService.destroy();
@@ -2127,17 +2147,7 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
-      id: "doc",
-      name: "WillPrint",
-    });
-
-    window.printPDF();  // #586 modified by ngx-extended-pdf-viewer
-
-    this._scriptingInstance?.scripting.dispatchEventInSandbox({
-      id: "doc",
-      name: "DidPrint",
-    });
+    window.printPDF();
   },
 
   bindEvents() {

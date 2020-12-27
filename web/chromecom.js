@@ -430,8 +430,8 @@ class ChromeExternalServices extends DefaultExternalServices {
     return new GenericL10n(navigator.language);
   }
 
-  static createScripting() {
-    return new GenericScripting();
+  static createScripting({ sandboxBundleSrc }) {
+    return new GenericScripting(sandboxBundleSrc);
   }
 }
 PDFViewerApplication.externalServices = ChromeExternalServices;
