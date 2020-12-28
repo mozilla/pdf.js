@@ -171,16 +171,8 @@ class PDFOutlineViewer extends BaseTreeViewer {
         outlineCount++;
       }
     }
-    if (hasAnyNesting) {
-      this.container.classList.add("treeWithDeepNesting");
 
-      this._lastToggleIsShow =
-        fragment.querySelectorAll(".treeItemsHidden").length === 0;
-    }
-
-    this.container.appendChild(fragment);
-
-    this._dispatchEvent(outlineCount);
+    this._finishRendering(fragment, outlineCount, hasAnyNesting);
   }
 }
 
