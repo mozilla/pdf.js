@@ -29,7 +29,6 @@ import {
   noContextMenuHandler,
   normalizeWheelEventDirection,
   parseQueryString,
-  PresentationModeState,
   ProgressBar,
   RendererType,
   ScrollMode,
@@ -2620,14 +2619,8 @@ function webViewerNamedAction(evt) {
   }
 }
 
-function webViewerPresentationModeChanged({ active, switchInProgress }) {
-  let state = PresentationModeState.NORMAL;
-  if (switchInProgress) {
-    state = PresentationModeState.CHANGING;
-  } else if (active) {
-    state = PresentationModeState.FULLSCREEN;
-  }
-  PDFViewerApplication.pdfViewer.presentationModeState = state;
+function webViewerPresentationModeChanged(evt) {
+  PDFViewerApplication.pdfViewer.presentationModeState = evt.state;
 }
 
 function webViewerSidebarViewChanged(evt) {
