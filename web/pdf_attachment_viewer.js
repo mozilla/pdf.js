@@ -187,9 +187,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       attachmentsCount++;
     }
 
-    this.container.appendChild(fragment);
-
-    this._dispatchEvent(attachmentsCount);
+    this._finishRendering(fragment, attachmentsCount);
   }
 
   /**
