@@ -804,24 +804,32 @@ class EventBus {
     this._listeners = Object.create(null);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
-      this._isInAutomation = (options && options.isInAutomation) === true;
+      this._isInAutomation = options?.isInAutomation === true;
     }
   }
 
   /**
    * @param {string} eventName
    * @param {function} listener
+   * @param {Object} [options]
    */
-  on(eventName, listener) {
-    this._on(eventName, listener, { external: true });
+  on(eventName, listener, options = null) {
+    this._on(eventName, listener, {
+      external: true,
+      once: options?.once,
+    });
   }
 
   /**
    * @param {string} eventName
    * @param {function} listener
+   * @param {Object} [options]
    */
-  off(eventName, listener) {
-    this._off(eventName, listener, { external: true });
+  off(eventName, listener, options = null) {
+    this._off(eventName, listener, {
+      external: true,
+      once: options?.once,
+    });
   }
 
   dispatch(eventName) {
@@ -841,12 +849,12 @@ class EventBus {
     let externalListeners;
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
-    eventListeners.slice(0).forEach(function ({ listener, external }) {
+    eventListeners.slice(0).forEach(({ listener, external, once }) => {
+      if (once) {
+        this._off(eventName, listener);
+      }
       if (external) {
-        if (!externalListeners) {
-          externalListeners = [];
-        }
-        externalListeners.push(listener);
+        (externalListeners ||= []).push(listener);
         return;
       }
       listener.apply(null, args);
@@ -854,7 +862,7 @@ class EventBus {
     // Dispatch any "external" listeners *after* the internal ones, to give the
     // viewer components time to handle events and update their state first.
     if (externalListeners) {
-      externalListeners.forEach(function (listener) {
+      externalListeners.forEach(listener => {
         listener.apply(null, args);
       });
       externalListeners = null;
@@ -871,13 +879,11 @@ class EventBus {
    * @ignore
    */
   _on(eventName, listener, options = null) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners) {
-      this._listeners[eventName] = eventListeners = [];
-    }
+    const eventListeners = (this._listeners[eventName] ||= []);
     eventListeners.push({
       listener,
-      external: (options && options.external) === true,
+      external: options?.external === true,
+      once: options?.once === true,
     });
   }
 

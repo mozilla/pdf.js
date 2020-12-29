@@ -1497,11 +1497,13 @@ const PDFViewerApplication = {
       // It should be *extremely* rare for metadata to not have been resolved
       // when this code runs, but ensure that we handle that case here.
       await new Promise(resolve => {
-        const metadataLoaded = () => {
-          this.eventBus._off("metadataloaded", metadataLoaded);
-          resolve();
-        };
-        this.eventBus._on("metadataloaded", metadataLoaded);
+        this.eventBus._on(
+          "metadataloaded",
+          evt => {
+            resolve();
+          },
+          { once: true }
+        );
       });
       if (pdfDocument !== this.pdfDocument) {
         return; // The document was closed while the metadata resolved.
