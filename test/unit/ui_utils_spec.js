@@ -312,6 +312,30 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
 
+    it("dispatch event to handlers with/without 'once' option", function () {
+      const eventBus = new EventBus();
+      let multipleCount = 0,
+        onceCount = 0;
+
+      eventBus.on("test", function () {
+        multipleCount++;
+      });
+      eventBus.on(
+        "test",
+        function () {
+          onceCount++;
+        },
+        { once: true }
+      );
+
+      eventBus.dispatch("test");
+      eventBus.dispatch("test");
+      eventBus.dispatch("test");
+
+      expect(multipleCount).toEqual(3);
+      expect(onceCount).toEqual(1);
+    });
+
     it("should not re-dispatch to DOM", function (done) {
       if (isNodeJS) {
         pending("Document in not supported in Node.js.");
