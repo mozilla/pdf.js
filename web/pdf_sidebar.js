@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { NullL10n } from "./ui_utils.js";
+import { NullL10n, PresentationModeState } from "./ui_utils.js";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
@@ -499,7 +499,10 @@ class PDFSidebar {
 
     // Update the thumbnailViewer, if visible, when exiting presentation mode.
     this.eventBus._on("presentationmodechanged", evt => {
-      if (!evt.active && !evt.switchInProgress && this.isThumbnailViewVisible) {
+      if (
+        evt.state === PresentationModeState.NORMAL &&
+        this.isThumbnailViewVisible
+      ) {
         this._updateThumbnailViewer();
       }
     });

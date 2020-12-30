@@ -1492,13 +1492,6 @@ html[dir="rtl"] .treeItemToggler::before {
   color: var(--treeitem-active-color);
 }
 
-.noResults {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  font-style: italic;
-  cursor: default;
-}
-
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */

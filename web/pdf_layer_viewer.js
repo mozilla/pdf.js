@@ -174,16 +174,8 @@ class PDFLayerViewer extends BaseTreeViewer {
         levelData.parent.appendChild(div);
       }
     }
-    if (hasAnyNesting) {
-      this.container.classList.add("treeWithDeepNesting");
 
-      this._lastToggleIsShow =
-        fragment.querySelectorAll(".treeItemsHidden").length === 0;
-    }
-
-    this.container.appendChild(fragment);
-
-    this._dispatchEvent(layersCount);
+    this._finishRendering(fragment, layersCount, hasAnyNesting);
   }
 
   /**

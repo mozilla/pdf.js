@@ -16,6 +16,7 @@
 import {
   isValidRotation,
   parseQueryString,
+  PresentationModeState,
   waitOnEventOrTimeout,
 } from "./ui_utils.js";
 
@@ -69,16 +70,19 @@ class PDFHistory {
     // Ensure that we don't miss either a 'presentationmodechanged' or a
     // 'pagesinit' event, by registering the listeners immediately.
     this.eventBus._on("presentationmodechanged", evt => {
-      this._isViewerInPresentationMode = evt.active || evt.switchInProgress;
+      this._isViewerInPresentationMode =
+        evt.state !== PresentationModeState.NORMAL;
     });
     this.eventBus._on("pagesinit", () => {
       this._isPagesLoaded = false;
 
-      const onPagesLoaded = evt => {
-        this.eventBus._off("pagesloaded", onPagesLoaded);
-        this._isPagesLoaded = !!evt.pagesCount;
-      };
-      this.eventBus._on("pagesloaded", onPagesLoaded);
+      this.eventBus._on(
+        "pagesloaded",
+        evt => {
+          this._isPagesLoaded = !!evt.pagesCount;
+        },
+        { once: true }
+      );
     });
   }
 

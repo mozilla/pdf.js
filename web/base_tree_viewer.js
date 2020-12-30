@@ -103,6 +103,20 @@ class BaseTreeViewer {
     this._toggleTreeItem(this.container, !this._lastToggleIsShow);
   }
 
+  /**
+   * @private
+   */
+  _finishRendering(fragment, count, hasAnyNesting = false) {
+    if (hasAnyNesting) {
+      this.container.classList.add("treeWithDeepNesting");
+
+      this._lastToggleIsShow = !fragment.querySelector(".treeItemsHidden");
+    }
+    this.container.appendChild(fragment);
+
+    this._dispatchEvent(count);
+  }
+
   render(params) {
     throw new Error("Not implemented: render");
   }
