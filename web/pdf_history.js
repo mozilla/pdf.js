@@ -76,11 +76,13 @@ class PDFHistory {
     this.eventBus._on("pagesinit", () => {
       this._isPagesLoaded = false;
 
-      const onPagesLoaded = evt => {
-        this.eventBus._off("pagesloaded", onPagesLoaded);
-        this._isPagesLoaded = !!evt.pagesCount;
-      };
-      this.eventBus._on("pagesloaded", onPagesLoaded);
+      this.eventBus._on(
+        "pagesloaded",
+        evt => {
+          this._isPagesLoaded = !!evt.pagesCount;
+        },
+        { once: true }
+      );
     });
   }
 
