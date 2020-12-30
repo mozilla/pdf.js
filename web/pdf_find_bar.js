@@ -165,7 +165,7 @@ class PDFFindBar {
         break;
     }
     this.findField.setAttribute("data-status", status);
-    this.findFieldMultiline.classList.toggle("notFound", notFound); // #201
+    this.findFieldMultiline.classList.toggle("notFound", status === "notFound"); // #201
     this.findFieldMultiline.setAttribute("data-status", status); // #201
 
     Promise.resolve(findMsg).then(msg => {
