@@ -344,8 +344,10 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.requestSync("initPassiveLoading", null);
   }
 
-  static fallback(data, callback) {
-    FirefoxCom.request("fallback", data, callback);
+  static async fallback(data) {
+    return new Promise(resolve => {
+      FirefoxCom.request("fallback", data, resolve);
+    });
   }
 
   static reportTelemetry(data) {
