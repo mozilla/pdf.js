@@ -63,15 +63,18 @@ const FirefoxCom = (function FirefoxComClosure() {
     request(action, data, callback) {
       const request = document.createTextNode("");
       if (callback) {
-        document.addEventListener("pdf.js.response", function listener(event) {
-          const node = event.target;
-          const response = event.detail.response;
+        document.addEventListener(
+          "pdf.js.response",
+          event => {
+            const node = event.target;
+            const response = event.detail.response;
 
-          document.documentElement.removeChild(node);
+            document.documentElement.removeChild(node);
 
-          document.removeEventListener("pdf.js.response", listener);
-          return callback(response);
-        });
+            return callback(response);
+          },
+          { once: true }
+        );
       }
       document.documentElement.appendChild(request);
 
