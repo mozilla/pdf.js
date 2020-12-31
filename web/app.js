@@ -150,7 +150,7 @@ class DefaultExternalServices {
 
   static initPassiveLoading(callbacks) {}
 
-  static fallback(data, callback) {}
+  static async fallback(data) {}
 
   static reportTelemetry(data) {}
 
@@ -1102,18 +1102,17 @@ const PDFViewerApplication = {
       return;
     }
     this.fellback = true;
-    this.externalServices.fallback(
-      {
+    this.externalServices
+      .fallback({
         featureId,
         url: this.baseUrl,
-      },
-      function response(download) {
+      })
+      .then(download => {
         if (!download) {
           return;
         }
-        PDFViewerApplication.download({ sourceEventType: "download" });
-      }
-    );
+        this.download({ sourceEventType: "download" });
+      });
   },
 
   /**
