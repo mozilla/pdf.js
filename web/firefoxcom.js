@@ -48,7 +48,8 @@ const FirefoxCom = (function FirefoxComClosure() {
       });
       request.dispatchEvent(sender);
       const response = sender.detail.response;
-      document.documentElement.removeChild(request);
+      request.remove();
+
       return response;
     },
 
@@ -68,10 +69,9 @@ const FirefoxCom = (function FirefoxComClosure() {
           event => {
             const node = event.target;
             const response = event.detail.response;
+            node.remove();
 
-            document.documentElement.removeChild(node);
-
-            return callback(response);
+            callback(response);
           },
           { once: true }
         );
