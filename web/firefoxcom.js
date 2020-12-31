@@ -64,12 +64,11 @@ const FirefoxCom = (function FirefoxComClosure() {
     request(action, data, callback) {
       const request = document.createTextNode("");
       if (callback) {
-        document.addEventListener(
+        request.addEventListener(
           "pdf.js.response",
           event => {
-            const node = event.target;
             const response = event.detail.response;
-            node.remove();
+            event.target.remove();
 
             callback(response);
           },
