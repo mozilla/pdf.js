@@ -763,6 +763,12 @@ const PDFViewerApplication = {
     document.title = title;
   },
 
+  get _docFilename() {
+    // Use `this.url` instead of `this.baseUrl` to perform filename detection
+    // based on the reference fragment as ultimate fallback if needed.
+    return this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
+  },
+
   /**
    * @private
    */
@@ -984,12 +990,9 @@ const PDFViewerApplication = {
       downloadManager.downloadUrl(url, filename);
     }
 
-    const url = this.baseUrl;
-    // Use this.url instead of this.baseUrl to perform filename detection based
-    // on the reference fragment as ultimate fallback if needed.
-    const filename =
-      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
-    const downloadManager = this.downloadManager;
+    const downloadManager = this.downloadManager,
+      url = this.baseUrl,
+      filename = this._docFilename;
     downloadManager.onerror = err => {
       // This error won't really be helpful because it's likely the
       // fallback won't work either (or is already open).
@@ -1017,12 +1020,9 @@ const PDFViewerApplication = {
       return;
     }
 
-    const url = this.baseUrl;
-    // Use this.url instead of this.baseUrl to perform filename detection based
-    // on the reference fragment as ultimate fallback if needed.
-    const filename =
-      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
-    const downloadManager = this.downloadManager;
+    const downloadManager = this.downloadManager,
+      url = this.baseUrl,
+      filename = this._docFilename;
     downloadManager.onerror = err => {
       // This error won't really be helpful because it's likely the
       // fallback won't work either (or is already open).
@@ -1587,8 +1587,6 @@ const PDFViewerApplication = {
       }
       this._contentLength = length;
     }
-    const filename =
-      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
 
     try {
       await scripting.createSandbox({
@@ -1602,7 +1600,7 @@ const PDFViewerApplication = {
           ...this.documentInfo,
           baseURL: this.baseUrl,
           filesize: this._contentLength,
-          filename,
+          filename: this._docFilename,
           metadata: this.metadata,
           numPages: pdfDocument.numPages,
           URL: this.url,
