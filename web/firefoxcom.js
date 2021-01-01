@@ -48,7 +48,8 @@ const FirefoxCom = (function FirefoxComClosure() {
       });
       request.dispatchEvent(sender);
       const response = sender.detail.response;
-      document.documentElement.removeChild(request);
+      request.remove();
+
       return response;
     },
 
@@ -63,15 +64,16 @@ const FirefoxCom = (function FirefoxComClosure() {
     request(action, data, callback) {
       const request = document.createTextNode("");
       if (callback) {
-        document.addEventListener("pdf.js.response", function listener(event) {
-          const node = event.target;
-          const response = event.detail.response;
+        request.addEventListener(
+          "pdf.js.response",
+          event => {
+            const response = event.detail.response;
+            event.target.remove();
 
-          document.documentElement.removeChild(node);
-
-          document.removeEventListener("pdf.js.response", listener);
-          return callback(response);
-        });
+            callback(response);
+          },
+          { once: true }
+        );
       }
       document.documentElement.appendChild(request);
 
