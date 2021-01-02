@@ -130,8 +130,10 @@ class DownloadManager {
       filename,
       sourceEventType,
     }).then(error => {
-      if (error && this.onerror) {
-        this.onerror(error);
+      if (error) {
+        // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
+        // that attempting to fallback and re-download would be helpful here.
+        console.error("`ChromeActions.download` failed.");
       }
       URL.revokeObjectURL(blobUrl);
     });

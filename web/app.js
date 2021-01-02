@@ -993,11 +993,6 @@ const PDFViewerApplication = {
     const downloadManager = this.downloadManager,
       url = this.baseUrl,
       filename = this._docFilename;
-    downloadManager.onerror = err => {
-      // This error won't really be helpful because it's likely the
-      // fallback won't work either (or is already open).
-      this.error(`PDF failed to download: ${err}`);
-    };
 
     // When the PDF document isn't ready, or the PDF file is still downloading,
     // simply download using the URL.
@@ -1023,11 +1018,6 @@ const PDFViewerApplication = {
     const downloadManager = this.downloadManager,
       url = this.baseUrl,
       filename = this._docFilename;
-    downloadManager.onerror = err => {
-      // This error won't really be helpful because it's likely the
-      // fallback won't work either (or is already open).
-      this.error(`PDF failed to be saved: ${err}`);
-    };
 
     // When the PDF document isn't ready, or the PDF file is still downloading,
     // simply download using the URL.
