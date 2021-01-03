@@ -39,6 +39,7 @@
   --toolbar-border-color: rgba(204, 204, 204, 1);
   --button-hover-color: rgba(221, 222, 223, 1);
   --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+  --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
   --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
   --separator-color: rgba(0, 0, 0, 0.3);
   --field-color: rgba(6, 6, 6, 1);
@@ -111,6 +112,7 @@
     --toolbar-border-color: rgba(12, 12, 13, 1);
     --button-hover-color: rgba(102, 102, 103, 1);
     --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+    --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
     --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
     --separator-color: rgba(0, 0, 0, 0.3);
     --field-color: rgba(250, 250, 250, 1);
@@ -714,11 +716,7 @@ html[dir="rtl"] .findbar * {
   float: right;
 }
 
-html[dir="ltr"] .splitToolbarButton {
-  margin: 2px 2px 0;
-  display: inline-block;
-}
-html[dir="rtl"] .splitToolbarButton {
+.splitToolbarButton {
   margin: 2px 2px 0;
   display: inline-block;
 }
@@ -813,6 +811,7 @@ html[dir="rtl"] .splitToolbarButtonSeparator {
 .secondaryToolbarButton,
 .overlayButton {
   min-width: 16px;
+  margin: 2px 1px;
   padding: 2px 6px 0;
   border: none;
   border-radius: 2px;
@@ -822,17 +821,6 @@ html[dir="rtl"] .splitToolbarButtonSeparator {
   user-select: none;
   cursor: default;
   box-sizing: border-box;
-}
-
-html[dir="ltr"] .toolbarButton,
-html[dir="ltr"] .overlayButton,
-html[dir="ltr"] .dropdownToolbarButton {
-  margin: 2px 1px;
-}
-html[dir="rtl"] .toolbarButton,
-html[dir="rtl"] .overlayButton,
-html[dir="rtl"] .dropdownToolbarButton {
-  margin: 2px 1px;
 }
 
 html[dir="ltr"] #toolbarViewerLeft > .toolbarButton:first-child,
@@ -862,7 +850,7 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 .toolbarButton.toggled:hover:active,
 .splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
 .secondaryToolbarButton.toggled:hover:active {
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--toggled-hover-active-btn-color);
 }
 
 .dropdownToolbarButton {
@@ -942,16 +930,6 @@ html[dir="rtl"] #findNext {
   margin-left: 3px;
 }
 
-.toolbarButton::before {
-  opacity: var(--toolbar-icon-opacity);
-  top: 6px;
-}
-
-.secondaryToolbarButton::before {
-  opacity: var(--doorhanger-icon-opacity);
-  top: 5px;
-}
-
 .toolbarButton::before,
 .secondaryToolbarButton::before,
 .dropdownToolbarButton::after,
@@ -968,11 +946,17 @@ html[dir="rtl"] #findNext {
   -webkit-mask-size: cover;
   mask-size: cover;
 }
-.toolbarButton::before,
-.secondaryToolbarButton::before {
+
+.toolbarButton::before {
+  opacity: var(--toolbar-icon-opacity);
+  top: 6px;
   left: 6px;
 }
 
+.secondaryToolbarButton::before {
+  opacity: var(--doorhanger-icon-opacity);
+  top: 5px;
+}
 html[dir="ltr"] .secondaryToolbarButton::before {
   left: 12px;
 }
