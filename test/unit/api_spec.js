@@ -1006,27 +1006,33 @@ describe("api", function () {
     });
     it("gets JSActions", function (done) {
       // PDF document with "JavaScript" action in the OpenAction dictionary.
-      const loadingTask = getDocument(buildGetDocumentParams("docactions.pdf"));
+      const loadingTask = getDocument(
+        buildGetDocumentParams("doc_actions.pdf")
+      );
       const promise = loadingTask.promise.then(async pdfDoc => {
         const docActions = await pdfDoc.getJSActions();
-        const page5 = await pdfDoc.getPage(5);
-        const page12 = await pdfDoc.getPage(12);
-        const page5Actions = await page5.getJSActions();
-        const page12Actions = await page12.getJSActions();
-        return [docActions, page5Actions, page12Actions];
+        const page1 = await pdfDoc.getPage(1);
+        const page3 = await pdfDoc.getPage(3);
+        const page1Actions = await page1.getJSActions();
+        const page3Actions = await page3.getJSActions();
+        return [docActions, page1Actions, page3Actions];
       });
       promise
-        .then(async ([docActions, page5Actions, page12Actions]) => {
+        .then(async ([docActions, page1Actions, page3Actions]) => {
           expect(docActions).toEqual({
-            Open: ["console.println('Open Action');"],
+            DidPrint: [`this.getField("Text2").value = "DidPrint";`],
+            DidSave: [`this.getField("Text2").value = "DidSave";`],
+            WillClose: [`this.getField("Text1").value = "WillClose";`],
+            WillPrint: [`this.getField("Text1").value = "WillPrint";`],
+            WillSave: [`this.getField("Text1").value = "WillSave";`],
           });
-          expect(page5Actions).toEqual({
-            PageOpen: ["console.println('Open page 5');"],
-            PageClose: ["console.println('Close page 5');"],
+          expect(page1Actions).toEqual({
+            PageOpen: [`this.getField("Text1").value = "PageOpen 1";`],
+            PageClose: [`this.getField("Text2").value = "PageClose 1";`],
           });
-          expect(page12Actions).toEqual({
-            PageOpen: ["console.println('Open page 12');"],
-            PageClose: ["console.println('Close page 12');"],
+          expect(page3Actions).toEqual({
+            PageOpen: [`this.getField("Text5").value = "PageOpen 3";`],
+            PageClose: [`this.getField("Text6").value = "PageClose 3";`],
           });
           loadingTask.destroy().then(done);
         })
