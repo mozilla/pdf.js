@@ -71,7 +71,6 @@ class DownloadManager {
       this.downloadUrl(url, filename);
       return;
     }
-
     const blobUrl = URL.createObjectURL(blob);
     download(blobUrl, filename);
   }
