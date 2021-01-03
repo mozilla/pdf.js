@@ -305,8 +305,7 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           if (process.platform === "win32" && browserName === "firefox") {
-            // Doesn't work because of bug 1662471
-            return;
+            pending("Disabled in Firefox on Windows, because of bug 1662471.");
           }
           let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
             await page.click("#print");
