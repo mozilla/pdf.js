@@ -1038,10 +1038,11 @@ class PDFDocument {
       "hasJSActions",
       this.fieldObjects.then(fieldObjects => {
         return (
-          fieldObjects !== null &&
-          Object.values(fieldObjects).some(fieldObject =>
-            fieldObject.some(object => object.actions !== null)
-          )
+          (fieldObjects !== null &&
+            Object.values(fieldObjects).some(fieldObject =>
+              fieldObject.some(object => object.actions !== null)
+            )) ||
+          !!this.catalog.jsActions
         );
       })
     );
