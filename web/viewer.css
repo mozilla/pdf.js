@@ -1000,32 +1000,20 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
   -webkit-mask-image: var(--findbarButton-previous-icon);
   mask-image: var(--findbarButton-previous-icon);
 }
-html[dir="rtl"] .toolbarButton.findPrevious::before {
-  transform: scaleX(-1);
-}
 
 .toolbarButton.findNext::before {
   -webkit-mask-image: var(--findbarButton-next-icon);
   mask-image: var(--findbarButton-next-icon);
-}
-html[dir="rtl"] .toolbarButton.findNext::before {
-  transform: scaleX(-1);
 }
 
 .toolbarButton.pageUp::before {
   -webkit-mask-image: var(--toolbarButton-pageUp-icon);
   mask-image: var(--toolbarButton-pageUp-icon);
 }
-html[dir="rtl"] .toolbarButton.pageUp::before {
-  transform: scaleX(-1);
-}
 
 .toolbarButton.pageDown::before {
   -webkit-mask-image: var(--toolbarButton-pageDown-icon);
   mask-image: var(--toolbarButton-pageDown-icon);
-}
-html[dir="rtl"] .toolbarButton.pageDown::before {
-  transform: scaleX(-1);
 }
 
 .toolbarButton.zoomOut::before {
