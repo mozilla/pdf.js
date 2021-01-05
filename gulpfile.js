@@ -1969,6 +1969,9 @@ function packageBowerJson() {
     homepage: DIST_HOMEPAGE,
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
+    peerDependencies: {
+      "worker-loader": "^3.0.7", // Used in `external/dist/webpack.js`.
+    },
     browser: {
       canvas: false,
       fs: false,
