@@ -312,6 +312,9 @@ describe("Interaction", () => {
           await page.waitForFunction(
             "window.PDFViewerApplication.scriptingReady === true"
           );
+          await page.waitForSelector("#print", {
+            timeout: 0,
+          });
 
           await clearInput(page, "#\\34 7R");
           await page.evaluate(_ => {
@@ -322,7 +325,7 @@ describe("Interaction", () => {
           );
 
           let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
-            await page.click("#print");
+            await page.evaluate(() => document.querySelector("#print").click());
           });
           expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
 
@@ -354,6 +357,9 @@ describe("Interaction", () => {
           await page.waitForFunction(
             "window.PDFViewerApplication.scriptingReady === true"
           );
+          await page.waitForSelector("#download", {
+            timeout: 0,
+          });
 
           try {
             // Disable download in chrome
@@ -371,7 +377,9 @@ describe("Interaction", () => {
           );
 
           let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
-            await page.click("#download");
+            await page.evaluate(() =>
+              document.querySelector("#download").click()
+            );
           });
           expect(text).withContext(`In ${browserName}`).toEqual("WillSave");
 
