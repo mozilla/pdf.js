@@ -654,7 +654,7 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
-    this._pageOpenPendingSet = null;
+    this._pageOpenPendingSet?.clear();
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -1514,10 +1514,11 @@ class BaseViewer {
     if (!this.enableScripting) {
       return;
     }
-    const { eventBus } = this;
+    const eventBus = this.eventBus,
+      pageOpenPendingSet = (this._pageOpenPendingSet ||= new Set());
 
     const dispatchPageClose = pageNumber => {
-      if (this._pageOpenPendingSet?.has(pageNumber)) {
+      if (pageOpenPendingSet.has(pageNumber)) {
         return; // No "pageopen" event was dispatched for the previous page.
       }
       eventBus.dispatch("pageclose", { source: this, pageNumber });
@@ -1525,14 +1526,11 @@ class BaseViewer {
     const dispatchPageOpen = (pageNumber, force = false) => {
       const pageView = this._pages[pageNumber - 1];
       if (force || pageView?.renderingState === RenderingStates.FINISHED) {
-        this._pageOpenPendingSet?.delete(pageNumber);
+        pageOpenPendingSet.delete(pageNumber);
 
         eventBus.dispatch("pageopen", { source: this, pageNumber });
       } else {
-        if (!this._pageOpenPendingSet) {
-          this._pageOpenPendingSet = new Set();
-        }
-        this._pageOpenPendingSet.add(pageNumber);
+        pageOpenPendingSet.add(pageNumber);
       }
     };
 
@@ -1545,7 +1543,7 @@ class BaseViewer {
     });
 
     eventBus._on("pagerendered", ({ pageNumber }) => {
-      if (!this._pageOpenPendingSet?.has(pageNumber)) {
+      if (!pageOpenPendingSet.has(pageNumber)) {
         return; // No pending "pageopen" event for the newly rendered page.
       }
       if (pageNumber !== this._currentPageNumber) {
