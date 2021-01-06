@@ -1517,6 +1517,9 @@ class BaseViewer {
     const { eventBus } = this;
 
     const dispatchPageClose = pageNumber => {
+      if (this._pageOpenPendingSet?.has(pageNumber)) {
+        return; // No "pageopen" event was dispatched for the previous page.
+      }
       eventBus.dispatch("pageclose", { source: this, pageNumber });
     };
     const dispatchPageOpen = (pageNumber, force = false) => {
@@ -1542,10 +1545,7 @@ class BaseViewer {
     });
 
     eventBus._on("pagerendered", ({ pageNumber }) => {
-      if (!this._pageOpenPendingSet) {
-        return; // No pending "pageopen" events.
-      }
-      if (!this._pageOpenPendingSet.has(pageNumber)) {
+      if (!this._pageOpenPendingSet?.has(pageNumber)) {
         return; // No pending "pageopen" event for the newly rendered page.
       }
       if (pageNumber !== this._currentPageNumber) {
