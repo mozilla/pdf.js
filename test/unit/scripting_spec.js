@@ -161,6 +161,64 @@ describe("Scripting", function () {
         done.fail(ex);
       }
     });
+
+    it("should get field using a path", async function (done) {
+      const base = value => {
+        return {
+          id: getId(),
+          value,
+          actions: {},
+          type: "text",
+        };
+      };
+      const data = {
+        objects: {
+          A: [base(1)],
+          "A.B": [base(2)],
+          "A.B.C": [base(3)],
+          "A.B.C.D": [base(4)],
+          "A.B.C.D.E": [base(5)],
+          "A.B.C.D.E.F": [base(6)],
+          "A.B.C.D.G": [base(7)],
+          C: [base(8)],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      };
+      sandbox.createSandbox(data);
+
+      try {
+        await myeval(`this.getField("A").value`).then(value => {
+          expect(value).toEqual(1);
+        });
+        await myeval(`this.getField("B.C").value`).then(value => {
+          expect(value).toEqual(3);
+        });
+        // path has been cached so try again
+        await myeval(`this.getField("B.C").value`).then(value => {
+          expect(value).toEqual(3);
+        });
+        await myeval(`this.getField("B.C.D#0").value`).then(value => {
+          expect(value).toEqual(5);
+        });
+        await myeval(`this.getField("B.C.D#1").value`).then(value => {
+          expect(value).toEqual(7);
+        });
+        await myeval(`this.getField("C").value`).then(value => {
+          expect(value).toEqual(8);
+        });
+
+        await myeval(
+          `this.getField("A.B.C.D").getArray().map((x) => x.value)`
+        ).then(value => {
+          expect(value).toEqual([5, 7]);
+        });
+        done();
+      } catch (ex) {
+        done.fail(ex);
+      }
+    });
   });
 
   describe("Util", function () {

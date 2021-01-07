@@ -39,7 +39,7 @@ class Field extends PDFObject {
     this.doNotSpellCheck = data.doNotSpellCheck;
     this.delay = data.delay;
     this.display = data.display;
-    this.doc = data.doc;
+    this.doc = data.doc.wrapped;
     this.editable = data.editable;
     this.exportValues = data.exportValues;
     this.fileSelect = data.fileSelect;
@@ -68,8 +68,13 @@ class Field extends PDFObject {
 
     // Private
     this._actions = createActionsMap(data.actions);
+    this._browseForFileToSubmit = data.browseForFileToSubmit || null;
+    this._buttonCaption = null;
+    this._buttonIcon = null;
+    this._children = null;
     this._currentValueIndices = data.currentValueIndices || 0;
     this._document = data.doc;
+    this._fieldPath = data.fieldPath;
     this._fillColor = data.fillColor || ["T"];
     this._isChoice = Array.isArray(data.items);
     this._items = data.items || [];
@@ -197,6 +202,48 @@ class Field extends PDFObject {
     this._valueAsString = val ? val.toString() : "";
   }
 
+  browseForFileToSubmit() {
+    if (this._browseForFileToSubmit) {
+      // TODO: implement this function on Firefox side
+      // we can use nsIFilePicker but open method is async.
+      // Maybe it's possible to use a html input (type=file) too.
+      this._browseForFileToSubmit();
+    }
+  }
+
+  buttonGetCaption(nFace = 0) {
+    if (this._buttonCaption) {
+      return this._buttonCaption[nFace];
+    }
+    return "";
+  }
+
+  buttonGetIcon(nFace = 0) {
+    if (this._buttonIcon) {
+      return this._buttonIcon[nFace];
+    }
+    return null;
+  }
+
+  buttonImportIcon(cPath = null, nPave = 0) {
+    /* Not implemented */
+  }
+
+  buttonSetCaption(cCaption, nFace = 0) {
+    if (!this._buttonCaption) {
+      this._buttonCaption = ["", "", ""];
+    }
+    this._buttonCaption[nFace] = cCaption;
+    // TODO: send to the annotation layer
+  }
+
+  buttonSetIcon(oIcon, nFace = 0) {
+    if (!this._buttonIcon) {
+      this._buttonIcon = [null, null, null];
+    }
+    this._buttonIcon[nFace] = oIcon;
+  }
+
   checkThisBox(nWidget, bCheckIt = true) {}
 
   clearItems() {
@@ -258,6 +305,17 @@ class Field extends PDFObject {
     }
     const item = this._items[nIdx];
     return bExportValue ? item.exportValue : item.displayValue;
+  }
+
+  getArray() {
+    if (this._children === null) {
+      this._children = this._document.obj._getChildren(this._fieldPath);
+    }
+    return this._children;
+  }
+
+  getLock() {
+    return undefined;
   }
 
   isBoxChecked(nWidget) {
@@ -336,6 +394,20 @@ class Field extends PDFObject {
 
     this._send({ id: this._id, items: this._items });
   }
+
+  setLock() {}
+
+  signatureGetModifications() {}
+
+  signatureGetSeedValue() {}
+
+  signatureInfo() {}
+
+  signatureSetSeedValue() {}
+
+  signatureSign() {}
+
+  signatureValidate() {}
 
   _isButton() {
     return false;
