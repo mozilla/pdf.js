@@ -828,13 +828,48 @@ class Doc extends PDFObject {
       return searchedField;
     }
 
+    const parts = cName.split("#");
+    let childIndex = NaN;
+    if (parts.length === 2) {
+      childIndex = Math.floor(parseFloat(parts[1]));
+      cName = parts[0];
+    }
+
     for (const [name, field] of this._fields.entries()) {
-      if (name.includes(cName)) {
+      if (name.endsWith(cName)) {
+        if (!isNaN(childIndex)) {
+          const children = this._getChildren(name);
+          if (childIndex < 0 || childIndex >= children.length) {
+            childIndex = 0;
+          }
+          if (childIndex < children.length) {
+            this._fields.set(cName, children[childIndex]);
+            return children[childIndex];
+          }
+        }
+        this._fields.set(cName, field);
         return field;
       }
     }
 
     return undefined;
+  }
+
+  _getChildren(fieldName) {
+    // Children of foo.bar are foo.bar.oof, foo.bar.rab
+    // but not foo.bar.oof.FOO.
+    const len = fieldName.length;
+    const children = [];
+    const pattern = /^\.[^.]+$/;
+    for (const [name, field] of this._fields.entries()) {
+      if (name.startsWith(fieldName)) {
+        const finalPart = name.slice(len);
+        if (finalPart.match(pattern)) {
+          children.push(field);
+        }
+      }
+    }
+    return children;
   }
 
   getIcon() {
