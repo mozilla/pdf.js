@@ -842,6 +842,20 @@ function escapeString(str) {
   });
 }
 
+function isAscii(str) {
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
+function stringToUTF16BEString(str) {
+  const buf = ["\xFE\xFF"];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    buf.push(String.fromCharCode((char >> 8) & 0xff));
+    buf.push(String.fromCharCode(char & 0xff));
+  }
+  return buf.join("");
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -1044,6 +1058,7 @@ export {
   getModificationDate,
   getVerbosityLevel,
   info,
+  isAscii,
   isArrayBuffer,
   isArrayEqual,
   isBool,
@@ -1061,6 +1076,7 @@ export {
   string32,
   stringToBytes,
   stringToPDFString,
+  stringToUTF16BEString,
   stringToUTF8String,
   utf8StringToString,
   warn,
