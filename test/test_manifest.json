@@ -1163,6 +1163,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue12823",
+       "file": "pdfs/issue12823.pdf",
+       "md5": "8391c63006ccc4b41c95de5e8c38deeb",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug1050040",
        "file": "pdfs/bug1050040.pdf",
        "md5": "9076b29bd157e2646b457f29a4472a07",

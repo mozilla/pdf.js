@@ -1062,7 +1062,13 @@ class PartialEvaluator {
 
     var fontCapability = createPromiseCapability();
 
-    var preEvaluatedFont = this.preEvaluateFont(font);
+    let preEvaluatedFont;
+    try {
+      preEvaluatedFont = this.preEvaluateFont(font);
+    } catch (reason) {
+      warn(`loadFont - ignoring preEvaluateFont errors: "${reason}".`);
+      return errorFont();
+    }
     const { descriptor, hash } = preEvaluatedFont;
 
     var fontRefIsRef = isRef(fontRef),
@@ -3258,6 +3264,9 @@ class PartialEvaluator {
       }
       dict = Array.isArray(df) ? this.xref.fetchIfRef(df[0]) : df;
 
+      if (!(dict instanceof Dict)) {
+        throw new FormatError("Descendant font is not a dictionary.");
+      }
       type = dict.get("Subtype");
       if (!isName(type)) {
         throw new FormatError("invalid font Subtype");
