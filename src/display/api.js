@@ -1136,9 +1136,8 @@ class PDFPageProxy {
   }
 
   /**
-   * @param {GetAnnotationsParameters} params - Annotation parameters.
-   * @returns {Promise<Array<any>>} A promise that is resolved with an
-   *   {Array} of the annotation objects.
+   * @returns {Promise<Object>} A promise that is resolved with an
+   *   {Object} with JS actions.
    */
   getJSActions() {
     if (!this._jsActionsPromise) {
