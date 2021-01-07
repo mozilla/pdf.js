@@ -2091,6 +2091,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       multipleSelection: this.data.multiSelect,
       hidden: this.data.hidden,
       actions: this.data.actions,
+      items: this.data.options,
       type,
     };
   }

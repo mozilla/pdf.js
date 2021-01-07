@@ -49,7 +49,6 @@ class Field extends PDFObject {
     this.multiline = data.multiline;
     this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
-    this.numItems = data.numItems;
     this.page = data.page;
     this.password = data.password;
     this.print = data.print;
@@ -68,15 +67,62 @@ class Field extends PDFObject {
     this.userName = data.userName;
 
     // Private
-    this._document = data.doc;
-    this._value = data.value || "";
-    this._valueAsString = data.valueAsString;
     this._actions = createActionsMap(data.actions);
+    this._currentValueIndices = data.currentValueIndices || 0;
+    this._document = data.doc;
     this._fillColor = data.fillColor || ["T"];
+    this._isChoice = Array.isArray(data.items);
+    this._items = data.items || [];
     this._strokeColor = data.strokeColor || ["G", 0];
     this._textColor = data.textColor || ["G", 0];
+    this._value = data.value || "";
+    this._valueAsString = data.valueAsString;
 
     this._globalEval = data.globalEval;
+  }
+
+  get currentValueIndices() {
+    if (!this._isChoice) {
+      return 0;
+    }
+    return this._currentValueIndices;
+  }
+
+  set currentValueIndices(indices) {
+    if (!this._isChoice) {
+      return;
+    }
+    if (!Array.isArray(indices)) {
+      indices = [indices];
+    }
+    if (
+      !indices.every(
+        i =>
+          typeof i === "number" &&
+          Number.isInteger(i) &&
+          i >= 0 &&
+          i < this.numItems
+      )
+    ) {
+      return;
+    }
+
+    indices.sort();
+
+    if (this.multipleSelection) {
+      this._currentValueIndices = indices;
+      this._value = [];
+      indices.forEach(i => {
+        this._value.push(this._items[i].displayValue);
+      });
+    } else {
+      if (indices.length > 0) {
+        indices = indices.splice(1, indices.length - 1);
+        this._currentValueIndices = indices[0];
+        this._value = this._items[this._currentValueIndices];
+      }
+    }
+    this._send({ id: this._id, indices });
   }
 
   get fillColor() {
@@ -87,6 +133,17 @@ class Field extends PDFObject {
     if (Color._isValidColor(color)) {
       this._fillColor = color;
     }
+  }
+
+  get numItems() {
+    if (!this._isChoice) {
+      throw new Error("Not a choice widget");
+    }
+    return this._items.length;
+  }
+
+  set numItems(_) {
+    throw new Error("field.numItems is read-only");
   }
 
   get strokeColor() {
@@ -114,8 +171,21 @@ class Field extends PDFObject {
   }
 
   set value(value) {
-    if (!this.multipleSelection) {
-      this._value = value;
+    this._value = value;
+    if (this._isChoice) {
+      if (this.multipleSelection) {
+        const values = new Set(value);
+        this._currentValueIndices.length = 0;
+        this._items.forEach(({ displayValue }, i) => {
+          if (values.has(displayValue)) {
+            this._currentValueIndices.push(i);
+          }
+        });
+      } else {
+        this._currentValueIndices = this._items.findIndex(
+          ({ displayValue }) => value === displayValue
+        );
+      }
     }
   }
 
@@ -129,12 +199,108 @@ class Field extends PDFObject {
 
   checkThisBox(nWidget, bCheckIt = true) {}
 
+  clearItems() {
+    if (!this._isChoice) {
+      throw new Error("Not a choice widget");
+    }
+    this._items = [];
+    this._send({ id: this._id, clear: null });
+  }
+
+  deleteItemAt(nIdx = null) {
+    if (!this._isChoice) {
+      throw new Error("Not a choice widget");
+    }
+    if (!this.numItems) {
+      return;
+    }
+
+    if (nIdx === null) {
+      // Current selected item.
+      nIdx = Array.isArray(this._currentValueIndices)
+        ? this._currentValueIndices[0]
+        : this._currentValueIndices;
+      nIdx = nIdx || 0;
+    }
+
+    if (nIdx < 0 || nIdx >= this.numItems) {
+      nIdx = this.numItems - 1;
+    }
+
+    this._items.splice(nIdx, 1);
+    if (Array.isArray(this._currentValueIndices)) {
+      let index = this._currentValueIndices.findIndex(i => i >= nIdx);
+      if (index !== -1) {
+        if (this._currentValueIndices[index] === nIdx) {
+          this._currentValueIndices.splice(index, 1);
+        }
+        for (const ii = this._currentValueIndices.length; index < ii; index++) {
+          --this._currentValueIndices[index];
+        }
+      }
+    } else {
+      if (this._currentValueIndices === nIdx) {
+        this._currentValueIndices = this.numItems > 0 ? 0 : -1;
+      } else if (this._currentValueIndices > nIdx) {
+        --this._currentValueIndices;
+      }
+    }
+
+    this._send({ id: this._id, remove: nIdx });
+  }
+
+  getItemAt(nIdx = -1, bExportValue = false) {
+    if (!this._isChoice) {
+      throw new Error("Not a choice widget");
+    }
+    if (nIdx < 0 || nIdx >= this.numItems) {
+      nIdx = this.numItems - 1;
+    }
+    const item = this._items[nIdx];
+    return bExportValue ? item.exportValue : item.displayValue;
+  }
+
   isBoxChecked(nWidget) {
     return false;
   }
 
   isDefaultChecked(nWidget) {
     return false;
+  }
+
+  insertItemAt(cName, cExport = undefined, nIdx = 0) {
+    if (!this._isChoice) {
+      throw new Error("Not a choice widget");
+    }
+    if (!cName) {
+      return;
+    }
+
+    if (nIdx < 0 || nIdx > this.numItems) {
+      nIdx = this.numItems;
+    }
+
+    if (this._items.some(({ displayValue }) => displayValue === cName)) {
+      return;
+    }
+
+    if (cExport === undefined) {
+      cExport = cName;
+    }
+    const data = { displayValue: cName, exportValue: cExport };
+    this._items.splice(nIdx, 0, data);
+    if (Array.isArray(this._currentValueIndices)) {
+      let index = this._currentValueIndices.findIndex(i => i >= nIdx);
+      if (index !== -1) {
+        for (const ii = this._currentValueIndices.length; index < ii; index++) {
+          ++this._currentValueIndices[index];
+        }
+      }
+    } else if (this._currentValueIndices >= nIdx) {
+      ++this._currentValueIndices;
+    }
+
+    this._send({ id: this._id, insert: { index: nIdx, ...data } });
   }
 
   setAction(cTrigger, cScript) {
@@ -149,6 +315,26 @@ class Field extends PDFObject {
 
   setFocus() {
     this._send({ id: this._id, focus: true });
+  }
+
+  setItems(oArray) {
+    if (!this._isChoice) {
+      throw new Error("Not a choice widget");
+    }
+    this._items.length = 0;
+    for (const element of oArray) {
+      let displayValue, exportValue;
+      if (Array.isArray(element)) {
+        displayValue = element[0]?.toString() || "";
+        exportValue = element[1]?.toString() || "";
+      } else {
+        displayValue = exportValue = element?.toString() || "";
+      }
+      this._items.push({ displayValue, exportValue });
+    }
+    this._currentValueIndices = 0;
+
+    this._send({ id: this._id, items: this._items });
   }
 
   _isButton() {
