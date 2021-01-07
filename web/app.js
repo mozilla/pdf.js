@@ -1242,7 +1242,8 @@ const PDFViewerApplication = {
   load(pdfDocument) {
     this.pdfDocument = pdfDocument;
 
-    pdfDocument.getDownloadInfo().then(() => {
+    pdfDocument.getDownloadInfo().then(({ length }) => {
+      this._contentLength = length; // Ensure that the correct length is used.
       this.downloadComplete = true;
       this.loadingBar.hide();
 
@@ -1498,6 +1499,25 @@ const PDFViewerApplication = {
         return; // The document was closed while the metadata resolved.
       }
     }
+    if (!this._contentLength) {
+      // Always waiting for the entire PDF document to be loaded will, most
+      // likely, delay sandbox-creation too much in the general case for all
+      // PDF documents which are not provided as binary data to the API.
+      // Hence we'll simply have to trust that the `contentLength` (as provided
+      // by the server), when it exists, is accurate enough here.
+      await new Promise(resolve => {
+        this.eventBus._on(
+          "documentloaded",
+          evt => {
+            resolve();
+          },
+          { once: true }
+        );
+      });
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the downloadInfo resolved.
+      }
+    }
 
     const updateFromSandbox = ({ detail }) => {
       const { id, command, value } = detail;
@@ -1562,20 +1582,6 @@ const PDFViewerApplication = {
     }
     for (const [name, listener] of domEvents) {
       window.addEventListener(name, listener);
-    }
-
-    if (!this._contentLength) {
-      // Always waiting for the entire PDF document to be loaded will, most
-      // likely, delay sandbox-creation too much in the general case for all
-      // PDF documents which are not provided as binary data to the API.
-      // Hence we'll simply have to trust that the `contentLength` (as provided
-      // by the server), when it exists, is accurate enough here.
-      const { length } = await pdfDocument.getDownloadInfo();
-
-      if (pdfDocument !== this.pdfDocument) {
-        return; // The document was closed while the download info resolved.
-      }
-      this._contentLength = length;
     }
 
     try {
@@ -1701,7 +1707,7 @@ const PDFViewerApplication = {
     this.documentInfo = info;
     this.metadata = metadata;
     this._contentDispositionFilename = contentDispositionFilename;
-    this._contentLength = contentLength;
+    this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
 
     // Provides some basic debug information
     console.log(
