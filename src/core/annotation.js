@@ -998,12 +998,16 @@ class WidgetAnnotation extends Annotation {
 
     const localResources = getInheritableProperty({ dict, key: "DR" });
     const acroFormResources = params.acroForm.get("DR");
+    const appearanceResources =
+      this.appearance && this.appearance.dict.get("Resources");
+
     this._fieldResources = {
       localResources,
       acroFormResources,
+      appearanceResources,
       mergedResources: Dict.merge({
         xref: params.xref,
-        dictArray: [localResources, acroFormResources],
+        dictArray: [localResources, appearanceResources, acroFormResources],
         mergeSubDicts: true,
       }),
     };
@@ -1450,17 +1454,25 @@ class WidgetAnnotation extends Annotation {
         "Expected `_getAppearance()` to have been called."
       );
     }
-    const { localResources, acroFormResources } = this._fieldResources;
+    const {
+      localResources,
+      acroFormResources,
+      appearanceResources,
+    } = this._fieldResources;
 
     if (!this._fontName) {
       return localResources || Dict.empty;
     }
-    if (localResources instanceof Dict) {
-      const localFont = localResources.get("Font");
-      if (localFont instanceof Dict && localFont.has(this._fontName)) {
-        return localResources;
+
+    for (const resources of [localResources, appearanceResources]) {
+      if (resources instanceof Dict) {
+        const localFont = resources.get("Font");
+        if (localFont instanceof Dict && localFont.has(this._fontName)) {
+          return resources;
+        }
       }
     }
+
     if (acroFormResources instanceof Dict) {
       const acroFormFont = acroFormResources.get("Font");
       if (acroFormFont instanceof Dict && acroFormFont.has(this._fontName)) {
