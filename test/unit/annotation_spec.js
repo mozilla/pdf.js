@@ -29,20 +29,13 @@ import {
   stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
-import { createIdFactory, XRefMock } from "./test_utils.js";
+import { CMAP_PARAMS, createIdFactory, XRefMock } from "./test_utils.js";
 import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
-import { DOMCMapReaderFactory } from "../../src/display/display_utils.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
-import { NodeCMapReaderFactory } from "../../src/display/node_utils.js";
+import { DefaultCMapReaderFactory } from "../../src/display/api.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
 import { WorkerTask } from "../../src/core/worker.js";
-
-const cMapUrl = {
-  dom: "../../external/bcmaps/",
-  node: "./external/bcmaps/",
-};
 
 describe("annotation", function () {
   class PDFManagerMock {
@@ -86,32 +79,24 @@ describe("annotation", function () {
 
   let pdfManagerMock, idFactoryMock, partialEvaluator;
 
-  beforeAll(function (done) {
+  beforeAll(async function (done) {
     pdfManagerMock = new PDFManagerMock({
       docBaseUrl: null,
     });
 
-    let CMapReaderFactory;
-    if (isNodeJS) {
-      CMapReaderFactory = new NodeCMapReaderFactory({
-        baseUrl: cMapUrl.node,
-        isCompressed: true,
-      });
-    } else {
-      CMapReaderFactory = new DOMCMapReaderFactory({
-        baseUrl: cMapUrl.dom,
-        isCompressed: true,
-      });
-    }
+    const CMapReaderFactory = new DefaultCMapReaderFactory({
+      baseUrl: CMAP_PARAMS.cMapUrl,
+      isCompressed: CMAP_PARAMS.cMapPacked,
+    });
 
     const builtInCMapCache = new Map();
     builtInCMapCache.set(
       "UniJIS-UTF16-H",
-      CMapReaderFactory.fetch({ name: "UniJIS-UTF16-H" })
+      await CMapReaderFactory.fetch({ name: "UniJIS-UTF16-H" })
     );
     builtInCMapCache.set(
       "Adobe-Japan1-UCS2",
-      CMapReaderFactory.fetch({ name: "Adobe-Japan1-UCS2" })
+      await CMapReaderFactory.fetch({ name: "Adobe-Japan1-UCS2" })
     );
 
     idFactoryMock = createIdFactory(/* pageIndex = */ 0);

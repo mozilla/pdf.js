@@ -14,35 +14,20 @@
  */
 
 import { CMap, CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
-import { DOMCMapReaderFactory } from "../../src/display/display_utils.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
+import { CMAP_PARAMS } from "./test_utils.js";
+import { DefaultCMapReaderFactory } from "../../src/display/api.js";
 import { Name } from "../../src/core/primitives.js";
-import { NodeCMapReaderFactory } from "../../src/display/node_utils.js";
 import { StringStream } from "../../src/core/stream.js";
-
-const cMapUrl = {
-  dom: "../../external/bcmaps/",
-  node: "./external/bcmaps/",
-};
-const cMapPacked = true;
 
 describe("cmap", function () {
   let fetchBuiltInCMap;
 
   beforeAll(function (done) {
     // Allow CMap testing in Node.js, e.g. for Travis.
-    let CMapReaderFactory;
-    if (isNodeJS) {
-      CMapReaderFactory = new NodeCMapReaderFactory({
-        baseUrl: cMapUrl.node,
-        isCompressed: cMapPacked,
-      });
-    } else {
-      CMapReaderFactory = new DOMCMapReaderFactory({
-        baseUrl: cMapUrl.dom,
-        isCompressed: cMapPacked,
-      });
-    }
+    const CMapReaderFactory = new DefaultCMapReaderFactory({
+      baseUrl: CMAP_PARAMS.cMapUrl,
+      isCompressed: CMAP_PARAMS.cMapPacked,
+    });
 
     fetchBuiltInCMap = function (name) {
       return CMapReaderFactory.fetch({
@@ -298,9 +283,8 @@ describe("cmap", function () {
 
   it("attempts to load a built-in CMap without the necessary API parameters", function (done) {
     function tmpFetchBuiltInCMap(name) {
-      const CMapReaderFactory = isNodeJS
-        ? new NodeCMapReaderFactory({})
-        : new DOMCMapReaderFactory({});
+      const CMapReaderFactory = new DefaultCMapReaderFactory({});
+
       return CMapReaderFactory.fetch({
         name,
       });
@@ -328,18 +312,11 @@ describe("cmap", function () {
 
   it("attempts to load a built-in CMap with inconsistent API parameters", function (done) {
     function tmpFetchBuiltInCMap(name) {
-      let CMapReaderFactory;
-      if (isNodeJS) {
-        CMapReaderFactory = new NodeCMapReaderFactory({
-          baseUrl: cMapUrl.node,
-          isCompressed: false,
-        });
-      } else {
-        CMapReaderFactory = new DOMCMapReaderFactory({
-          baseUrl: cMapUrl.dom,
-          isCompressed: false,
-        });
-      }
+      const CMapReaderFactory = new DefaultCMapReaderFactory({
+        baseUrl: CMAP_PARAMS.cMapUrl,
+        isCompressed: false,
+      });
+
       return CMapReaderFactory.fetch({
         name,
       });
