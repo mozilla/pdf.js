@@ -3060,4 +3060,6 @@ export {
   setPDFNetworkStreamFactory,
   version,
   build,
+  DefaultCanvasFactory,
+  DefaultCMapReaderFactory,
 };
