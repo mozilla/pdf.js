@@ -42,7 +42,7 @@ class Doc extends PDFObject {
     this._dirty = false;
     this._disclosed = false;
     this._media = undefined;
-    this._metadata = data.metadata;
+    this._metadata = data.metadata || "";
     this._noautocomplete = undefined;
     this._nocache = undefined;
     this._spellDictionaryOrder = [];
@@ -74,12 +74,13 @@ class Doc extends PDFObject {
     // and they're are read-only.
     this._info = new Proxy(
       {
-        title: this.title,
-        author: this.author,
-        subject: this.subject,
-        keywords: this.keywords,
-        creator: this.creator,
-        producer: this.producer,
+        title: this._title,
+        author: this._author,
+        authors: data.authors || [this._author],
+        subject: this._subject,
+        keywords: this._keywords,
+        creator: this._creator,
+        producer: this._producer,
         creationdate: this._creationDate,
         moddate: this._modDate,
         trapped: data.Trapped || "Unknown",

@@ -451,4 +451,29 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in js-authors.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("js-authors.pdf", "#\\32 5R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must print authors in a text field", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const text = await actAndWaitForInput(page, "#\\32 5R", async () => {
+            await page.click("[data-annotation-id='26R']");
+          });
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .toEqual("author1::author2::author3::author4::author5");
+        })
+      );
+    });
+  });
 });
