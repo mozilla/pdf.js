@@ -130,9 +130,7 @@ function updateXFA(datasetsRef, newRefs, xref) {
   }
   const datasets = xref.fetchIfRef(datasetsRef);
   const str = bytesToString(datasets.getBytes());
-  const xml = new SimpleXMLParser(/* hasAttributes */ true).parseFromString(
-    str
-  );
+  const xml = new SimpleXMLParser({ hasAttributes: true }).parseFromString(str);
 
   for (const { xfa } of newRefs) {
     if (!xfa) {
