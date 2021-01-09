@@ -4419,7 +4419,9 @@
        "type": "eq",
        "print": "true",
        "annotationStorage": {
-         "35R": "收文"
+         "35R": {
+           "value": "收文"
+         }
        }
     },
     {  "id": "issue4883",
