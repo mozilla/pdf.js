@@ -4013,11 +4013,11 @@ var CFFFont = (function CFFFontClosure() {
 })();
 
 export {
-  SEAC_ANALYSIS_ENABLED,
   ErrorFont,
   Font,
   FontFlags,
-  ToUnicodeMap,
-  IdentityToUnicodeMap,
   getFontType,
+  IdentityToUnicodeMap,
+  SEAC_ANALYSIS_ENABLED,
+  ToUnicodeMap,
 };

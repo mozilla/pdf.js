@@ -141,11 +141,11 @@ function isEmptyObj(obj) {
 }
 
 export {
-  DefaultFileReaderFactory,
-  XRefMock,
   buildGetDocumentParams,
-  TEST_PDFS_PATH,
   CMAP_PARAMS,
   createIdFactory,
+  DefaultFileReaderFactory,
   isEmptyObj,
+  TEST_PDFS_PATH,
+  XRefMock,
 };
