@@ -32,6 +32,7 @@ import {
   ProgressBar,
   RendererType,
   ScrollMode,
+  SidebarView,
   SpreadMode,
   TextLayerMode,
 } from "./ui_utils.js";
@@ -56,7 +57,6 @@ import {
 } from "pdfjs-lib";
 import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
-import { PDFSidebar, SidebarView } from "./pdf_sidebar.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
@@ -68,6 +68,7 @@ import { PDFLayerViewer } from "./pdf_layer_viewer.js";
 import { PDFLinkService } from "./pdf_link_service.js";
 import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
 import { PDFPresentationMode } from "./pdf_presentation_mode.js";
+import { PDFSidebar } from "./pdf_sidebar.js";
 import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
 import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
@@ -1419,7 +1420,7 @@ const PDFViewerApplication = {
 
     onePageRendered.then(() => {
       pdfDocument.getOutline().then(outline => {
-        this.pdfOutlineViewer.render({ outline });
+        this.pdfOutlineViewer.render({ outline, pdfDocument });
       });
       pdfDocument.getAttachments().then(attachments => {
         this.pdfAttachmentViewer.render({ attachments });
