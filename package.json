@@ -24,6 +24,7 @@
     "eslint-plugin-mozilla": "^2.9.1",
     "eslint-plugin-no-unsanitized": "^3.1.4",
     "eslint-plugin-prettier": "^3.3.0",
+    "eslint-plugin-sort-exports": "^0.3.2",
     "eslint-plugin-unicorn": "^22.0.0",
     "globals": "^13.5.0",
     "gulp": "^4.0.2",

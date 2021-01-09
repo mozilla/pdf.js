@@ -183,4 +183,4 @@ class PDFRenderingQueue {
   }
 }
 
-export { RenderingStates, PDFRenderingQueue };
+export { PDFRenderingQueue, RenderingStates };

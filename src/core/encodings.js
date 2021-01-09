@@ -291,11 +291,11 @@ function getEncoding(encodingName) {
 }
 
 export {
-  WinAnsiEncoding,
-  StandardEncoding,
-  MacRomanEncoding,
-  SymbolSetEncoding,
-  ZapfDingbatsEncoding,
   ExpertEncoding,
   getEncoding,
+  MacRomanEncoding,
+  StandardEncoding,
+  SymbolSetEncoding,
+  WinAnsiEncoding,
+  ZapfDingbatsEncoding,
 };

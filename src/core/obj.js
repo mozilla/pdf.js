@@ -2602,4 +2602,4 @@ const ObjectLoader = (function () {
   return ObjectLoader;
 })();
 
-export { Catalog, ObjectLoader, XRef, FileSpec };
+export { Catalog, FileSpec, ObjectLoader, XRef };

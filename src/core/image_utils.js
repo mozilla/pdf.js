@@ -250,10 +250,10 @@ class GlobalImageCache {
 }
 
 export {
-  LocalImageCache,
+  GlobalImageCache,
   LocalColorSpaceCache,
   LocalFunctionCache,
   LocalGStateCache,
+  LocalImageCache,
   LocalTilingPatternCache,
-  GlobalImageCache,
 };

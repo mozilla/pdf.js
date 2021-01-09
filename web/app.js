@@ -3480,7 +3480,7 @@ const PDFPrintServiceFactory = {
 };
 
 export {
-  PDFViewerApplication,
   DefaultExternalServices,
   PDFPrintServiceFactory,
+  PDFViewerApplication,
 };

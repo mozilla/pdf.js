@@ -273,4 +273,4 @@ function incrementalUpdate({
   return array;
 }
 
-export { writeDict, incrementalUpdate };
+export { incrementalUpdate, writeDict };

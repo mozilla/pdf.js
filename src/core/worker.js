@@ -804,4 +804,4 @@ if (
   WorkerMessageHandler.initializeFromPort(self);
 }
 
-export { WorkerTask, WorkerMessageHandler };
+export { WorkerMessageHandler, WorkerTask };

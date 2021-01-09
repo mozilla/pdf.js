@@ -238,10 +238,10 @@ class IL10n {
 }
 
 export {
-  IPDFLinkService,
-  IPDFHistory,
-  IRenderableView,
-  IPDFTextLayerFactory,
-  IPDFAnnotationLayerFactory,
   IL10n,
+  IPDFAnnotationLayerFactory,
+  IPDFHistory,
+  IPDFLinkService,
+  IPDFTextLayerFactory,
+  IRenderableView,
 };

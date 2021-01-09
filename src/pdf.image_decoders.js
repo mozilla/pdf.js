@@ -37,4 +37,4 @@ const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 // eslint-disable-next-line no-unused-vars
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
-export { Jbig2mage, JpegImage, JpxImage, getVerbosityLevel, setVerbosityLevel };
+export { getVerbosityLevel, Jbig2mage, JpegImage, JpxImage, setVerbosityLevel };
