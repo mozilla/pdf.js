@@ -15,6 +15,7 @@
 
 .annotationLayer section {
   position: absolute;
+  text-align: initial;
 }
 
 .annotationLayer .linkAnnotation > a,
@@ -165,6 +166,7 @@
   cursor: pointer;
   font: message-box;
   font-size: 9px;
+  white-space: normal;
   word-wrap: break-word;
 }
 
