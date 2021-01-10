@@ -3051,15 +3051,15 @@ const build =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : null;
 
 export {
-  getDocument,
-  LoopbackPort,
-  PDFDataRangeTransport,
-  PDFWorker,
-  PDFDocumentProxy,
-  PDFPageProxy,
-  setPDFNetworkStreamFactory,
-  version,
   build,
   DefaultCanvasFactory,
   DefaultCMapReaderFactory,
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFDocumentProxy,
+  PDFPageProxy,
+  PDFWorker,
+  setPDFNetworkStreamFactory,
+  version,
 };

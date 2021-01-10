@@ -1341,14 +1341,14 @@ var NullStream = (function NullStreamClosure() {
 export {
   Ascii85Stream,
   AsciiHexStream,
-  DecryptStream,
   DecodeStream,
+  DecryptStream,
   FlateStream,
+  LZWStream,
   NullStream,
   PredictorStream,
   RunLengthStream,
   Stream,
   StreamsSequenceStream,
   StringStream,
-  LZWStream,
 };

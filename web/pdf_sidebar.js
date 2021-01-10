@@ -517,4 +517,4 @@ class PDFSidebar {
   }
 }
 
-export { SidebarView, PDFSidebar };
+export { PDFSidebar };

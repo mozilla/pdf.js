@@ -1642,9 +1642,9 @@ function reverseIfRtl(chars) {
 }
 
 export {
-  mapSpecialUnicodeValues,
-  reverseIfRtl,
-  getUnicodeRangeFor,
   getNormalizedUnicodes,
   getUnicodeForGlyph,
+  getUnicodeRangeFor,
+  mapSpecialUnicodeValues,
+  reverseIfRtl,
 };
