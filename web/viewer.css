@@ -367,15 +367,6 @@ html[dir="rtl"] #sidebarResizer {
   position: relative;
   height: 32px;
   background-color: var(--toolbar-bg-color);
-}
-html[dir="ltr"] #toolbarContainer,
-.findbar,
-.secondaryToolbar {
-  box-shadow: 0 1px 0 var(--toolbar-border-color);
-}
-html[dir="rtl"] #toolbarContainer,
-.findbar,
-.secondaryToolbar {
   box-shadow: 0 1px 0 var(--toolbar-border-color);
 }
 
@@ -494,58 +485,42 @@ html[dir="rtl"] .findbar {
   right: 64px;
 }
 
+.findbar .splitToolbarButton {
+  margin-top: 3px;
+}
 html[dir="ltr"] .findbar .splitToolbarButton {
   margin-left: 0px;
-  margin-top: 3px;
+  margin-right: 5px;
 }
-
 html[dir="rtl"] .findbar .splitToolbarButton {
+  margin-left: 5px;
   margin-right: 0px;
-  margin-top: 3px;
 }
 
-.findbar .splitToolbarButton .findNext {
-  width: 29px;
-}
-
-html[dir="ltr"] .findbar .splitToolbarButton .findNext {
-  border-right: 1px solid var(--field-border-color);
-}
-
-html[dir="rtl"] .findbar .splitToolbarButton .findNext {
-  border-left: 1px solid var(--field-border-color);
-}
-
-.findbar .splitToolbarButton .toolbarButton {
+.findbar .splitToolbarButton > .toolbarButton {
   background-color: var(--findbar-nextprevious-btn-bg-color);
-  border-radius: 0px;
+  border-radius: 0;
   height: 26px;
   border-top: 1px solid var(--field-border-color);
   border-bottom: 1px solid var(--field-border-color);
 }
 
-.findbar .splitToolbarButton .toolbarButton::before {
+.findbar .splitToolbarButton > .toolbarButton::before {
   top: 5px;
 }
 
-html[dir="ltr"] .findbar .splitToolbarButton > .findPrevious {
-  border-radius: 0;
+.findbar .splitToolbarButton > .findNext {
+  width: 29px;
 }
 html[dir="ltr"] .findbar .splitToolbarButton > .findNext {
-  border-bottom-left-radius: 0;
   border-bottom-right-radius: 2px;
-  border-top-left-radius: 0;
   border-top-right-radius: 2px;
-}
-
-html[dir="rtl"] .findbar .splitToolbarButton > .findPrevious {
-  border-radius: 0;
+  border-right: 1px solid var(--field-border-color);
 }
 html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
   border-bottom-left-radius: 2px;
-  border-bottom-right-radius: 0;
   border-top-left-radius: 2px;
-  border-top-right-radius: 0;
+  border-left: 1px solid var(--field-border-color);
 }
 
 .findbar input[type="checkbox"] {
@@ -565,7 +540,6 @@ html[dir="ltr"] #findInput {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 html[dir="rtl"] #findInput {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
@@ -737,11 +711,9 @@ html[dir="rtl"] .findbar * {
   display: inline-block;
 }
 html[dir="ltr"] .splitToolbarButton > .toolbarButton {
-  border-radius: 2px;
   float: left;
 }
 html[dir="rtl"] .splitToolbarButton > .toolbarButton {
-  border-radius: 2px;
   float: right;
 }
 
@@ -792,12 +764,10 @@ html[dir="rtl"] .splitToolbarButton > .toolbarButton {
 }
 html[dir="ltr"] .splitToolbarButton > .toolbarButton:first-child,
 html[dir="rtl"] .splitToolbarButton > .toolbarButton:last-child {
-  position: relative;
   margin: 0;
 }
 html[dir="ltr"] .splitToolbarButton > .toolbarButton:last-child,
 html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
-  position: relative;
   margin: 0;
 }
 .splitToolbarButtonSeparator {
@@ -930,20 +900,6 @@ html[dir="rtl"] .dropdownToolbarButton > select {
   width: 30px;
   display: inline-block;
   height: 1px;
-}
-
-html[dir="ltr"] #findPrevious {
-  margin-left: 0;
-}
-html[dir="ltr"] #findNext {
-  margin-right: 3px;
-}
-
-html[dir="rtl"] #findPrevious {
-  margin-right: 0;
-}
-html[dir="rtl"] #findNext {
-  margin-left: 3px;
 }
 
 .toolbarButton::before,
