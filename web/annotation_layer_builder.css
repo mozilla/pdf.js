@@ -31,7 +31,7 @@
 .annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
   opacity: 0.2;
   background: rgba(255, 255, 0, 1);
-  box-shadow: 0px 2px 10px rgba(255, 255, 0, 1);
+  box-shadow: 0 2px 10px rgba(255, 255, 0, 1);
 }
 
 .annotationLayer .textAnnotation img {
@@ -158,7 +158,7 @@
   z-index: 200;
   max-width: 20em;
   background-color: rgba(255, 255, 153, 1);
-  box-shadow: 0px 2px 5px rgba(136, 136, 136, 1);
+  box-shadow: 0 2px 5px rgba(136, 136, 136, 1);
   border-radius: 2px;
   padding: 6px;
   margin-left: 5px;
