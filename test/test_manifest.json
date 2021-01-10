@@ -3236,6 +3236,12 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue12841",
+       "file": "pdfs/issue12841_reduced.pdf",
+       "md5": "5c645897c652853ad86b59df5fc6cce0",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue1597",
       "file": "pdfs/issue1597.pdf",
       "md5": "a5ebef467fd6e2fc0aeb56c9eb725ae3",
