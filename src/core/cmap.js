@@ -1055,4 +1055,4 @@ var CMapFactory = (function CMapFactoryClosure() {
   };
 })();
 
-export { CMap, IdentityCMap, CMapFactory };
+export { CMap, CMapFactory, IdentityCMap };

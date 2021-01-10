@@ -463,4 +463,4 @@ class DefaultTextLayerFactory {
   }
 }
 
-export { TextLayerBuilder, DefaultTextLayerFactory };
+export { DefaultTextLayerFactory, TextLayerBuilder };

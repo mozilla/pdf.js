@@ -2475,6 +2475,6 @@ export {
   Annotation,
   AnnotationBorderStyle,
   AnnotationFactory,
-  MarkupAnnotation,
   getQuadPoints,
+  MarkupAnnotation,
 };

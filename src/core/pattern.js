@@ -994,4 +994,4 @@ function getTilingPatternIR(operatorList, dict, color) {
   ];
 }
 
-export { Pattern, getTilingPatternIR };
+export { getTilingPatternIR, Pattern };

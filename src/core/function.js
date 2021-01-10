@@ -1345,6 +1345,6 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
 export {
   isPDFFunction,
   PDFFunctionFactory,
-  PostScriptEvaluator,
   PostScriptCompiler,
+  PostScriptEvaluator,
 };

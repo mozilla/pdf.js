@@ -1913,15 +1913,15 @@ class CFFCompiler {
 }
 
 export {
-  CFFStandardStrings,
-  CFFParser,
   CFF,
-  CFFHeader,
-  CFFStrings,
-  CFFIndex,
   CFFCharset,
-  CFFTopDict,
-  CFFPrivateDict,
   CFFCompiler,
   CFFFDSelect,
+  CFFHeader,
+  CFFIndex,
+  CFFParser,
+  CFFPrivateDict,
+  CFFStandardStrings,
+  CFFStrings,
+  CFFTopDict,
 };

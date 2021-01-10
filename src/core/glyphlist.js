@@ -4556,4 +4556,4 @@ var getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
   ];
 });
 
-export { getGlyphsUnicode, getDingbatsGlyphsUnicode };
+export { getDingbatsGlyphsUnicode, getGlyphsUnicode };
