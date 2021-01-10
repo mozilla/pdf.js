@@ -179,7 +179,7 @@ select {
 }
 
 #viewerContainer.pdfPresentationMode:fullscreen {
-  top: 0px;
+  top: 0;
   border-top: 2px solid rgba(0, 0, 0, 0);
   background-color: rgba(0, 0, 0, 1);
   width: 100%;
@@ -240,10 +240,10 @@ html[dir="rtl"] #sidebarContainer {
   visibility: visible;
 }
 html[dir="ltr"] #outerContainer.sidebarOpen #sidebarContainer {
-  left: 0px;
+  left: 0;
 }
 html[dir="rtl"] #outerContainer.sidebarOpen #sidebarContainer {
-  right: 0px;
+  right: 0;
 }
 
 #mainContainer {
@@ -456,7 +456,7 @@ html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
   z-index: 10000;
   height: auto;
   min-width: 16px;
-  padding: 0px 4px 0px 4px;
+  padding: 0 4px 0 4px;
   margin: 4px 2px 4px 2px;
   color: rgba(217, 217, 217, 1);
   font-size: 12px;
@@ -489,12 +489,12 @@ html[dir="rtl"] .findbar {
   margin-top: 3px;
 }
 html[dir="ltr"] .findbar .splitToolbarButton {
-  margin-left: 0px;
+  margin-left: 0;
   margin-right: 5px;
 }
 html[dir="rtl"] .findbar .splitToolbarButton {
   margin-left: 5px;
-  margin-right: 0px;
+  margin-right: 0;
 }
 
 .findbar .splitToolbarButton > .toolbarButton {
@@ -1794,10 +1794,10 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   }
 
   html[dir="ltr"] #outerContainer.sidebarOpen #viewerContainer {
-    left: 0px !important;
+    left: 0 !important;
   }
   html[dir="rtl"] #outerContainer.sidebarOpen #viewerContainer {
-    right: 0px !important;
+    right: 0 !important;
   }
 
   #outerContainer .hiddenLargeView,
