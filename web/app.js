@@ -1588,7 +1588,7 @@ const PDFViewerApplication = {
             }
           }
 
-          this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          await this._scriptingInstance?.scripting.dispatchEventInSandbox({
             id: "page",
             name: "PageOpen",
             pageNumber,
@@ -1612,7 +1612,7 @@ const PDFViewerApplication = {
         return; // The document was closed while the actions resolved.
       }
 
-      this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      await this._scriptingInstance?.scripting.dispatchEventInSandbox({
         id: "page",
         name: "PageClose",
         pageNumber,
@@ -1678,8 +1678,7 @@ const PDFViewerApplication = {
       id: "doc",
       name: "Open",
     });
-
-    await pageOpen({ pageNumber: this.pdfViewer.currentPageNumber });
+    await this.pdfViewer.initializeScriptingEvents();
 
     // Used together with the integration-tests, see the `scriptingReady`
     // getter, to enable awaiting full initialization of the scripting/sandbox.
