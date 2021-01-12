@@ -867,7 +867,9 @@ const PDFViewerApplication = {
     if (typeof PDFBug !== "undefined") {
       PDFBug.cleanup();
     }
-    return Promise.all(promises);
+    await Promise.all(promises);
+
+    return undefined;
   },
 
   /**
