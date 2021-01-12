@@ -1526,7 +1526,11 @@ class BaseViewer {
       if (pageView?.renderingState === RenderingStates.FINISHED) {
         pageOpenPendingSet.delete(pageNumber);
 
-        eventBus.dispatch("pageopen", { source: this, pageNumber });
+        eventBus.dispatch("pageopen", {
+          source: this,
+          pageNumber,
+          actionsPromise: pageView.pdfPage?.getJSActions(),
+        });
       } else {
         pageOpenPendingSet.add(pageNumber);
       }
