@@ -1140,12 +1140,9 @@ class PDFPageProxy {
    *   {Object} with JS actions.
    */
   getJSActions() {
-    if (!this._jsActionsPromise) {
-      this._jsActionsPromise = this._transport.getPageJSActions(
-        this._pageIndex
-      );
-    }
-    return this._jsActionsPromise;
+    return (this._jsActionsPromise ||= this._transport.getPageJSActions(
+      this._pageIndex
+    ));
   }
 
   /**

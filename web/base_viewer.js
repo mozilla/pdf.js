@@ -215,7 +215,6 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add("removePageBorders");
     }
-    this._initializeScriptingEvents();
     // Defer the dispatching of this event, to give other viewer components
     // time to initialize *and* register 'baseviewerinit' event listeners.
     Promise.resolve().then(() => {
@@ -654,7 +653,6 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
-    this._pageOpenPendingSet?.clear();
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -664,6 +662,8 @@ class BaseViewer {
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
     }
+    this._resetScriptingEvents();
+
     // Remove the pages from the DOM...
     this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
@@ -1507,15 +1507,13 @@ class BaseViewer {
     this.update();
   }
 
-  /**
-   * @private
-   */
-  _initializeScriptingEvents() {
-    if (!this.enableScripting) {
+  initializeScriptingEvents() {
+    if (!this.enableScripting || this._pageOpenPendingSet) {
       return;
     }
     const eventBus = this.eventBus,
-      pageOpenPendingSet = (this._pageOpenPendingSet ||= new Set());
+      pageOpenPendingSet = (this._pageOpenPendingSet = new Set()),
+      scriptingEvents = (this._scriptingEvents ||= Object.create(null));
 
     const dispatchPageClose = pageNumber => {
       if (pageOpenPendingSet.has(pageNumber)) {
@@ -1523,42 +1521,71 @@ class BaseViewer {
       }
       eventBus.dispatch("pageclose", { source: this, pageNumber });
     };
-    const dispatchPageOpen = (pageNumber, force = false) => {
+    const dispatchPageOpen = pageNumber => {
       const pageView = this._pages[pageNumber - 1];
-      if (force || pageView?.renderingState === RenderingStates.FINISHED) {
+      if (pageView?.renderingState === RenderingStates.FINISHED) {
         pageOpenPendingSet.delete(pageNumber);
 
-        eventBus.dispatch("pageopen", { source: this, pageNumber });
+        eventBus.dispatch("pageopen", {
+          source: this,
+          pageNumber,
+          actionsPromise: pageView.pdfPage?.getJSActions(),
+        });
       } else {
         pageOpenPendingSet.add(pageNumber);
       }
     };
 
-    eventBus._on("pagechanging", ({ pageNumber, previous }) => {
+    scriptingEvents.onPageChanging = ({ pageNumber, previous }) => {
       if (pageNumber === previous) {
         return; // The active page didn't change.
       }
       dispatchPageClose(previous);
       dispatchPageOpen(pageNumber);
-    });
+    };
+    eventBus._on("pagechanging", scriptingEvents.onPageChanging);
 
-    eventBus._on("pagerendered", ({ pageNumber }) => {
+    scriptingEvents.onPageRendered = ({ pageNumber }) => {
       if (!pageOpenPendingSet.has(pageNumber)) {
         return; // No pending "pageopen" event for the newly rendered page.
       }
       if (pageNumber !== this._currentPageNumber) {
         return; // The newly rendered page is no longer the current one.
       }
-      dispatchPageOpen(pageNumber, /* force = */ true);
-    });
+      dispatchPageOpen(pageNumber);
+    };
+    eventBus._on("pagerendered", scriptingEvents.onPageRendered);
 
-    eventBus._on("pagesinit", () => {
-      dispatchPageOpen(this._currentPageNumber);
-    });
-
-    eventBus._on("pagesdestroy", () => {
+    scriptingEvents.onPagesDestroy = () => {
       dispatchPageClose(this._currentPageNumber);
-    });
+    };
+    eventBus._on("pagesdestroy", scriptingEvents.onPagesDestroy);
+
+    // Ensure that a "pageopen" event is dispatched for the initial page.
+    dispatchPageOpen(this._currentPageNumber);
+  }
+
+  /**
+   * @private
+   */
+  _resetScriptingEvents() {
+    if (!this.enableScripting || !this._pageOpenPendingSet) {
+      return;
+    }
+    const eventBus = this.eventBus,
+      scriptingEvents = this._scriptingEvents;
+
+    // Remove the event listeners.
+    eventBus._off("pagechanging", scriptingEvents.onPageChanging);
+    scriptingEvents.onPageChanging = null;
+
+    eventBus._off("pagerendered", scriptingEvents.onPageRendered);
+    scriptingEvents.onPageRendered = null;
+
+    eventBus._off("pagesdestroy", scriptingEvents.onPagesDestroy);
+    scriptingEvents.onPagesDestroy = null;
+
+    this._pageOpenPendingSet = null;
   }
 }
 
