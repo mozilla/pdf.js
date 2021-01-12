@@ -867,7 +867,9 @@ const PDFViewerApplication = {
     if (typeof PDFBug !== "undefined") {
       PDFBug.cleanup();
     }
-    return Promise.all(promises);
+    await Promise.all(promises);
+
+    return undefined;
   },
 
   /**
@@ -1564,31 +1566,22 @@ const PDFViewerApplication = {
     internalEvents.set("updatefromsandbox", updateFromSandbox);
 
     const visitedPages = new Map();
-    const pageOpen = ({ pageNumber }) => {
+    const pageOpen = ({ pageNumber, actionsPromise }) => {
       visitedPages.set(
         pageNumber,
         (async () => {
           // Avoid sending, and thus serializing, the `actions` data
-          // when the same page is open several times.
+          // when the same page is opened several times.
           let actions = null;
           if (!visitedPages.has(pageNumber)) {
-            // visitedPages doesn't contain pageNumber: first visit.
-
-            const pageView = this.pdfViewer.getPageView(
-              /* index = */ pageNumber - 1
-            );
-            if (pageView?.pdfPage) {
-              actions = await pageView.pdfPage.getJSActions();
-            } else {
-              actions = await pdfDocument.getPage(pageNumber).getJSActions();
-            }
+            actions = await actionsPromise;
 
             if (pdfDocument !== this.pdfDocument) {
               return; // The document was closed while the actions resolved.
             }
           }
 
-          this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          await this._scriptingInstance?.scripting.dispatchEventInSandbox({
             id: "page",
             name: "PageOpen",
             pageNumber,
@@ -1599,20 +1592,21 @@ const PDFViewerApplication = {
     };
 
     const pageClose = async ({ pageNumber }) => {
-      const promise = visitedPages.get(pageNumber);
-      if (!promise) {
+      const actionsPromise = visitedPages.get(pageNumber);
+      if (!actionsPromise) {
+        // Ensure that the "pageclose" event was preceded by a "pageopen" event.
         return;
       }
       visitedPages.set(pageNumber, null);
 
-      // Wait for PageOpen has been sent.
-      await promise;
+      // Ensure that the "pageopen" event is handled first.
+      await actionsPromise;
 
       if (pdfDocument !== this.pdfDocument) {
         return; // The document was closed while the actions resolved.
       }
 
-      this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      await this._scriptingInstance?.scripting.dispatchEventInSandbox({
         id: "page",
         name: "PageClose",
         pageNumber,
@@ -1678,8 +1672,7 @@ const PDFViewerApplication = {
       id: "doc",
       name: "Open",
     });
-
-    await pageOpen({ pageNumber: this.pdfViewer.currentPageNumber });
+    await this.pdfViewer.initializeScriptingEvents();
 
     // Used together with the integration-tests, see the `scriptingReady`
     // getter, to enable awaiting full initialization of the scripting/sandbox.
