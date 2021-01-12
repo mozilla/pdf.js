@@ -24,7 +24,7 @@ class Metadata {
     data = this._repair(data);
 
     // Convert the string to an XML document.
-    const parser = new SimpleXMLParser();
+    const parser = new SimpleXMLParser({ lowerCaseName: true });
     const xmlDocument = parser.parseFromString(data);
 
     this._metadataMap = new Map();
@@ -32,6 +32,7 @@ class Metadata {
     if (xmlDocument) {
       this._parse(xmlDocument);
     }
+    this._data = data;
   }
 
   _repair(data) {
@@ -79,38 +80,69 @@ class Metadata {
       });
   }
 
+  _getSequence(entry) {
+    const name = entry.nodeName;
+    if (name !== "rdf:bag" && name !== "rdf:seq" && name !== "rdf:alt") {
+      return null;
+    }
+
+    return entry.childNodes.filter(node => node.nodeName === "rdf:li");
+  }
+
+  _getCreators(entry) {
+    if (entry.nodeName !== "dc:creator") {
+      return false;
+    }
+    if (!entry.hasChildNodes()) {
+      return true;
+    }
+
+    // Child must be a Bag (unordered array) or a Seq.
+    const seqNode = entry.childNodes[0];
+    const authors = this._getSequence(seqNode) || [];
+    this._metadataMap.set(
+      entry.nodeName,
+      authors.map(node => node.textContent.trim())
+    );
+
+    return true;
+  }
+
   _parse(xmlDocument) {
     let rdf = xmlDocument.documentElement;
 
-    if (rdf.nodeName.toLowerCase() !== "rdf:rdf") {
+    if (rdf.nodeName !== "rdf:rdf") {
       // Wrapped in <xmpmeta>
       rdf = rdf.firstChild;
-      while (rdf && rdf.nodeName.toLowerCase() !== "rdf:rdf") {
+      while (rdf && rdf.nodeName !== "rdf:rdf") {
         rdf = rdf.nextSibling;
       }
     }
 
-    const nodeName = rdf ? rdf.nodeName.toLowerCase() : null;
-    if (!rdf || nodeName !== "rdf:rdf" || !rdf.hasChildNodes()) {
+    if (!rdf || rdf.nodeName !== "rdf:rdf" || !rdf.hasChildNodes()) {
       return;
     }
 
-    const children = rdf.childNodes;
-    for (let i = 0, ii = children.length; i < ii; i++) {
-      const desc = children[i];
-      if (desc.nodeName.toLowerCase() !== "rdf:description") {
+    for (const desc of rdf.childNodes) {
+      if (desc.nodeName !== "rdf:description") {
         continue;
       }
 
-      for (let j = 0, jj = desc.childNodes.length; j < jj; j++) {
-        if (desc.childNodes[j].nodeName.toLowerCase() !== "#text") {
-          const entry = desc.childNodes[j];
-          const name = entry.nodeName.toLowerCase();
-
-          this._metadataMap.set(name, entry.textContent.trim());
+      for (const entry of desc.childNodes) {
+        const name = entry.nodeName;
+        if (name === "#text") {
+          continue;
         }
+        if (this._getCreators(entry)) {
+          continue;
+        }
+        this._metadataMap.set(name, entry.textContent.trim());
       }
     }
+  }
+
+  getRaw() {
+    return this._data;
   }
 
   get(name) {

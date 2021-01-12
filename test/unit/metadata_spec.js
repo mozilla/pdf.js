@@ -96,7 +96,7 @@ describe("metadata", function () {
     expect(metadata.get("dc:qux")).toEqual(null);
 
     expect(metadata.getAll()).toEqual({
-      "dc:creator": "ODIS",
+      "dc:creator": ["ODIS"],
       "dc:title": "L'Odissee thématique logo Odisséé - décembre 2008.pub",
       "xap:creatortool": "PDFCreator Version 0.9.6",
     });
@@ -168,7 +168,7 @@ describe("metadata", function () {
     expect(metadata.get("dc:qux")).toEqual(null);
 
     expect(metadata.getAll()).toEqual({
-      "dc:creator": "",
+      "dc:creator": [""],
       "dc:description": "",
       "dc:format": "application/pdf",
       "dc:subject": "",
