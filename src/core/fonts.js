@@ -1335,8 +1335,13 @@ var Font = (function FontClosure() {
       // name ArialBlack for example will be replaced by Helvetica.
       this.black = name.search(/Black/g) !== -1;
 
+      // Use 'name' instead of 'fontName' here because the original
+      // name ArialNarrow for example will be replaced by Helvetica.
+      const isNarrow = name.search(/Narrow/g) !== -1;
+
       // if at least one width is present, remeasure all chars when exists
-      this.remeasure = !isStandardFont && Object.keys(this.widths).length > 0;
+      this.remeasure =
+        (!isStandardFont || isNarrow) && Object.keys(this.widths).length > 0;
       if (
         (isStandardFont || isMappedToStandardFont) &&
         type === "CIDFontType2" &&

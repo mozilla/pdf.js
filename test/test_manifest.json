@@ -2301,6 +2301,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug1671312_ArialNarrow",
+       "file": "pdfs/bug1671312_ArialNarrow.pdf",
+       "md5": "f4f0a0d1dc9276bd6e3402165ecdc3d7",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue7020",
        "file": "pdfs/issue7020.pdf",
        "md5": "93b464e21c649e64ae92eeafe99fc31b",
