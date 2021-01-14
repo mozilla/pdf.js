@@ -1190,6 +1190,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue12295",
+       "file": "pdfs/issue12295.pdf",
+       "md5": "c534f74866ba8ada56010d19b57231ec",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug1245391-text",
        "file": "pdfs/bug1245391_reduced.pdf",
        "md5": "6c946045ee0f2f663f269717c0f1614a",
@@ -2332,6 +2338,12 @@
        "file": "pdfs/issue7200.pdf",
        "md5": "ddae17424ea23930eecf8b612a66ed0f",
        "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue12810",
+       "file": "pdfs/issue12810.pdf",
+       "md5": "585e19781308603dd706f941b1ace774",
        "rounds": 1,
        "type": "eq"
     },
@@ -4327,6 +4339,12 @@
     {  "id": "js-buttons",
        "file": "pdfs/js-buttons.pdf",
        "md5": "2c56d419c1fb533349fd1ddef3f14da6",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue12810",
+       "file": "pdfs/issue12810.pdf",
+       "md5": "585e19781308603dd706f941b1ace774",
        "rounds": 1,
        "type": "eq"
     },
