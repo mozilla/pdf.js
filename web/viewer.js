@@ -77,6 +77,7 @@ function getViewerConfiguration() {
       next: document.getElementById("next"),
       zoomIn: document.getElementById("zoomIn"),
       zoomOut: document.getElementById("zoomOut"),
+      speak: document.getElementById("speak"),
       viewFind: document.getElementById("viewFind"),
       openFile: document.getElementById("openFile"),
       print: document.getElementById("print"),
@@ -127,11 +128,13 @@ function getViewerConfiguration() {
       outlineButton: document.getElementById("viewOutline"),
       attachmentsButton: document.getElementById("viewAttachments"),
       layersButton: document.getElementById("viewLayers"),
+      ttsButton: document.getElementById("viewTTS"),
       // Views
       thumbnailView: document.getElementById("thumbnailView"),
       outlineView: document.getElementById("outlineView"),
       attachmentsView: document.getElementById("attachmentsView"),
       layersView: document.getElementById("layersView"),
+      ttsView: document.getElementById("ttsView"),
       // View-specific options
       outlineOptionsContainer: document.getElementById(
         "outlineOptionsContainer"

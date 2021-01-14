@@ -20,10 +20,8 @@
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
   --loadingBar-end-offset: 0;
-
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
-
   --main-color: rgba(12, 12, 13, 1);
   --body-bg-color: rgba(237, 237, 240, 1);
   --errorWrapper-bg-color: rgba(255, 74, 74, 1);
@@ -33,7 +31,6 @@
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
   --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
-
   --sidebar-bg-color: rgba(245, 246, 247, 1);
   --toolbar-bg-color: rgba(249, 249, 250, 1);
   --toolbar-border-color: rgba(204, 204, 204, 1);
@@ -57,7 +54,6 @@
   --doorhanger-separator-color: rgba(222, 222, 222, 1);
   --overlay-button-bg-color: rgba(12, 12, 13, 0.1);
   --overlay-button-hover-color: rgba(12, 12, 13, 0.3);
-
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
@@ -68,6 +64,7 @@
   --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
   --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
+  --toolbarButton-speak-icon: url(images/toolbarButton-speak.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
@@ -77,6 +74,7 @@
   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
   --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
+  --toolbarButton-viewTTS-icon: url(images/toolbarButton-viewTTS.svg);
   --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
   --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
   --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
@@ -982,6 +980,11 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
+.toolbarButton.speak::before {
+  -webkit-mask-image: var(--toolbarButton-speak-icon);
+  mask-image: var(--toolbarButton-speak-icon);
+}
+
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
   -webkit-mask-image: var(--toolbarButton-presentationMode-icon);
@@ -1043,6 +1046,11 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 #viewLayers.toolbarButton::before {
   -webkit-mask-image: var(--toolbarButton-viewLayers-icon);
   mask-image: var(--toolbarButton-viewLayers-icon);
+}
+
+#viewTTS.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-viewTTS-icon);
+  mask-image: var(--toolbarButton-viewTTS-icon);
 }
 
 #currentOutlineItem.toolbarButton::before {
@@ -1341,7 +1349,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 
 #outlineView,
 #attachmentsView,
-#layersView {
+#layersView,
+#ttsView {
   position: absolute;
   width: calc(100% - 8px);
   top: 0;

@@ -71,6 +71,7 @@ import { PDFPresentationMode } from "./pdf_presentation_mode.js";
 import { PDFSidebar } from "./pdf_sidebar.js";
 import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
 import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
+import { PDFTTSViewer } from "./pdf_tts_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
 import { SecondaryToolbar } from "./secondary_toolbar.js";
 import { Toolbar } from "./toolbar.js";
@@ -223,6 +224,8 @@ const PDFViewerApplication = {
   pdfAttachmentViewer: null,
   /** @type {PDFLayerViewer} */
   pdfLayerViewer: null,
+  /** @type {PDFTTSViewer} */
+  pdfTTSViewer: null,
   /** @type {PDFCursorTools} */
   pdfCursorTools: null,
   /** @type {ViewHistory} */
@@ -579,6 +582,12 @@ const PDFViewerApplication = {
       l10n: this.l10n,
     });
 
+    this.pdfTTSViewer = new PDFTTSViewer({
+      container: appConfig.sidebar.ttsView,
+      eventBus,
+      l10n: this.l10n,
+    });
+
     this.pdfSidebar = new PDFSidebar({
       elements: appConfig.sidebar,
       pdfViewer: this.pdfViewer,
@@ -638,6 +647,18 @@ const PDFViewerApplication = {
       return;
     }
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+  },
+
+  speak() {
+    const text = window.getSelection().toString();
+    const msg = new SpeechSynthesisUtterance();
+    const voices = window.speechSynthesis.getVoices();
+    msg.voice = voices[voicelist.val];
+    msg.rate = $('#rate').val() / 10;
+    msg.pitch = $('#pitch').val();
+    msg.text = text;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(msg);
   },
 
   get pagesCount() {
@@ -854,6 +875,7 @@ const PDFViewerApplication = {
     this.pdfOutlineViewer.reset();
     this.pdfAttachmentViewer.reset();
     this.pdfLayerViewer.reset();
+    this.pdfTTSViewer.reset();
 
     if (this.pdfHistory) {
       this.pdfHistory.reset();
@@ -1431,6 +1453,9 @@ const PDFViewerApplication = {
       // viewer itself, rather than the default state provided by the API.
       pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
         this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+      });
+      pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
+        this.pdfTTSViewer.render({ optionalContentConfig });
       });
       if ("requestIdleCallback" in window) {
         const callback = window.requestIdleCallback(
@@ -2162,6 +2187,7 @@ const PDFViewerApplication = {
     eventBus._on("zoomin", webViewerZoomIn);
     eventBus._on("zoomout", webViewerZoomOut);
     eventBus._on("zoomreset", webViewerZoomReset);
+    eventBus._on("speak", webViewerSpeak);
     eventBus._on("pagenumberchanged", webViewerPageNumberChanged);
     eventBus._on("scalechanged", webViewerScaleChanged);
     eventBus._on("rotatecw", webViewerRotateCw);
@@ -2259,6 +2285,7 @@ const PDFViewerApplication = {
     eventBus._off("zoomin", webViewerZoomIn);
     eventBus._off("zoomout", webViewerZoomOut);
     eventBus._off("zoomreset", webViewerZoomReset);
+    eventBus._off("speak", webViewerSpeak);
     eventBus._off("pagenumberchanged", webViewerPageNumberChanged);
     eventBus._off("scalechanged", webViewerScaleChanged);
     eventBus._off("rotatecw", webViewerRotateCw);
@@ -2273,6 +2300,7 @@ const PDFViewerApplication = {
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
+    
 
     if (_boundEvents.reportPageStatsPDFBug) {
       eventBus._off("pagerendered", _boundEvents.reportPageStatsPDFBug);
@@ -2842,6 +2870,9 @@ function webViewerZoomOut() {
 }
 function webViewerZoomReset() {
   PDFViewerApplication.zoomReset();
+}
+function webViewerSpeak() {
+  PDFViewerApplication.speak();
 }
 function webViewerPageNumberChanged(evt) {
   const pdfViewer = PDFViewerApplication.pdfViewer;

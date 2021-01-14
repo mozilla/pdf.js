@@ -43,6 +43,7 @@ const SCALE_SELECT_WIDTH = 162; // px
  * @property {HTMLButtonElement} next - Button to go to the next page.
  * @property {HTMLButtonElement} zoomIn - Button to zoom in the pages.
  * @property {HTMLButtonElement} zoomOut - Button to zoom out the pages.
+ * @property {HTMLButtonElement} speak - Button to Speak selected text.
  * @property {HTMLButtonElement} viewFind - Button to open find bar.
  * @property {HTMLButtonElement} openFile - Button to open a new document.
  * @property {HTMLButtonElement} presentationModeButton - Button to switch to
@@ -67,6 +68,7 @@ class Toolbar {
       { element: options.next, eventName: "nextpage" },
       { element: options.zoomIn, eventName: "zoomin" },
       { element: options.zoomOut, eventName: "zoomout" },
+      { element: options.speak, eventName: "speak" },
       { element: options.openFile, eventName: "openfile" },
       { element: options.print, eventName: "print" },
       {
@@ -86,6 +88,7 @@ class Toolbar {
       next: options.next,
       zoomIn: options.zoomIn,
       zoomOut: options.zoomOut,
+      speak: options.speak,
     };
 
     this._wasLocalized = false;
@@ -207,6 +210,7 @@ class Toolbar {
 
     items.zoomOut.disabled = pageScale <= MIN_SCALE;
     items.zoomIn.disabled = pageScale >= MAX_SCALE;
+    items.speak.disabled = !('speechSynthesis' in window);
 
     const customScale = Math.round(pageScale * 10000) / 100;
     this.l10n

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!--
 Copyright 2012 Mozilla Foundation
 
@@ -79,16 +79,19 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarSidebarLeft">
             <div class="splitToolbarButton toggled">
               <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" tabindex="2" data-l10n-id="thumbs">
-                 <span data-l10n-id="thumbs_label">Thumbnails</span>
+                <span data-l10n-id="thumbs_label">Thumbnails</span>
               </button>
               <button id="viewOutline" class="toolbarButton" title="Show Document Outline (double-click to expand/collapse all items)" tabindex="3" data-l10n-id="document_outline">
-                 <span data-l10n-id="document_outline_label">Document Outline</span>
+                <span data-l10n-id="document_outline_label">Document Outline</span>
               </button>
               <button id="viewAttachments" class="toolbarButton" title="Show Attachments" tabindex="4" data-l10n-id="attachments">
-                 <span data-l10n-id="attachments_label">Attachments</span>
+                <span data-l10n-id="attachments_label">Attachments</span>
               </button>
               <button id="viewLayers" class="toolbarButton" title="Show Layers (double-click to reset all layers to the default state)" tabindex="5" data-l10n-id="layers">
-                 <span data-l10n-id="layers_label">Layers</span>
+                <span data-l10n-id="layers_label">Layers</span>
+              </button>
+              <button id="viewTTS" class="toolbarButton" title="Show Text-to-speech options" tabindex="6" data-l10n-id="tts">
+                <span data-l10n-id="tts_label">Text-to-speech options</span>
               </button>
             </div>
           </div>
@@ -111,6 +114,30 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="attachmentsView" class="hidden">
           </div>
           <div id="layersView" class="hidden">
+          </div>
+          <div id="ttsView" class="hidden">
+            <div class="row">
+              <button id="speak" class="toolbarButton" title="Speak selected text" data-l10n-id="speak">Speak</button>
+            </div>
+            <div class="row">
+              <label>Choose voice</label>
+              <select id="voices"></select>
+            </div>
+            <div class="row">
+              <label title="Rate (only work with native voice.)">Rate</label>
+              <p class="range-field">
+                <input type="range" id="rate" min="1" max="100" value="10"><span class="thumb"><span class="value"></span></span><span class="thumb"><span class="value"></span></span>
+              </p>
+            </div>
+            <div class="row">
+              <label title="Pitch (only work with native voice.)">Pitch</label>
+              <p class="range-field">
+                <input type="range" id="pitch" min="0" max="2" value="1"><span class="thumb"><span class="value"></span></span><span class="thumb"><span class="value"></span></span>
+              </p>
+            </div>
+
+
+
           </div>
         </div>
         <div id="sidebarResizer"></div>
@@ -305,6 +332,10 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <option title="" value="4" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 400 }'>400%</option>
                   </select>
                 </span>
+                <div class="toolbarButtonSpacer"></div>
+                <button id="speak" class="toolbarButton speak" title="Speak selected text" tabindex="26" data-l10n-id="speak">
+                  <span data-l10n-id="speak_label">Speak</span>
+                </button>
               </div>
             </div>
             <div id="loadingBar">
