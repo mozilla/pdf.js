@@ -4877,6 +4877,13 @@
          }
        }
     },
+    {  "id": "issue6127",
+       "file": "pdfs/issue6127.pdf",
+       "md5": "65ef9572bddef5fddfaf7172f10a0df2",
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "annotation-polyline-polygon",
        "file": "pdfs/annotation-polyline-polygon.pdf",
        "md5": "e68611602f58c8ca70cc40575ba3b04e",
