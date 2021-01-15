@@ -14,10 +14,10 @@
  */
 
 import { isName, Name } from "./primitives.js";
+import { OPS, warn } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { escapePDFName } from "./core_utils.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
-import { OPS } from "../shared/util.js";
 import { StringStream } from "./stream.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
@@ -36,33 +36,38 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
       fontColor: new Uint8ClampedArray([0, 0, 0]) /* black */,
     };
 
-    while (this.read(operation)) {
-      if (this.stateManager.stateStack.length !== 0) {
-        // Don't get info in save/restore sections.
-        continue;
+    try {
+      while (this.read(operation)) {
+        if (this.stateManager.stateStack.length !== 0) {
+          // Don't get info in save/restore sections.
+          args.length = 0;
+          continue;
+        }
+        const { fn, args } = operation;
+        switch (fn | 0) {
+          case OPS.setFont:
+            const [fontName, fontSize] = args;
+            if (isName(fontName)) {
+              result.fontName = fontName;
+            }
+            if (typeof fontSize === "number" && fontSize > 0) {
+              result.fontSize = fontSize;
+            }
+            break;
+          case OPS.setFillRGBColor:
+            ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
+            break;
+          case OPS.setFillGray:
+            ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
+            break;
+          case OPS.setFillColorSpace:
+            ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+            break;
+        }
+        args.length = 0;
       }
-      const { fn, args } = operation;
-      switch (fn | 0) {
-        case OPS.setFont:
-          const [fontName, fontSize] = args;
-          if (isName(fontName)) {
-            result.fontName = fontName;
-          }
-          if (typeof fontSize === "number" && fontSize > 0) {
-            result.fontSize = fontSize;
-          }
-          break;
-        case OPS.setFillRGBColor:
-          ColorSpace.singletons.rgb.getRgbItem(args, 0, result.fontColor, 0);
-          break;
-        case OPS.setFillGray:
-          ColorSpace.singletons.gray.getRgbItem(args, 0, result.fontColor, 0);
-          break;
-        case OPS.setFillColorSpace:
-          ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
-          break;
-      }
-      args.length = 0;
+    } catch (reason) {
+      warn(`parseDefaultAppearance - ignoring errors: "${reason}".`);
     }
 
     return result;
