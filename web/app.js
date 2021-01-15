@@ -2829,10 +2829,10 @@ function webViewerLastPage() {
   }
 }
 function webViewerNextPage() {
-  PDFViewerApplication.page++;
+  PDFViewerApplication.pdfViewer.nextPage();
 }
 function webViewerPreviousPage() {
-  PDFViewerApplication.page--;
+  PDFViewerApplication.pdfViewer.previousPage();
 }
 function webViewerZoomIn() {
   PDFViewerApplication.zoomIn();
@@ -3351,13 +3351,9 @@ function webViewerKeyDown(evt) {
       (!turnOnlyIfPageFit || pdfViewer.currentScaleValue === "page-fit")
     ) {
       if (turnPage > 0) {
-        if (PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
-          PDFViewerApplication.page++;
-        }
+        pdfViewer.nextPage();
       } else {
-        if (PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page--;
-        }
+        pdfViewer.previousPage();
       }
       handled = true;
     }

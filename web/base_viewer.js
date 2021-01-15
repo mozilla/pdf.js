@@ -1507,6 +1507,140 @@ class BaseViewer {
     this.update();
   }
 
+  /**
+   * @private
+   */
+  _getPageAdvance(currentPageNumber, previous = false) {
+    if (this.isInPresentationMode) {
+      return 1;
+    }
+    switch (this._scrollMode) {
+      case ScrollMode.WRAPPED: {
+        const { views } = this._getVisiblePages(),
+          pageLayout = new Map();
+
+        // Determine the current (visible) page layout.
+        for (const { id, y, percent, widthPercent } of views) {
+          if (percent === 0 || widthPercent < 100) {
+            continue;
+          }
+          let yArray = pageLayout.get(y);
+          if (!yArray) {
+            pageLayout.set(y, (yArray ||= []));
+          }
+          yArray.push(id);
+        }
+        // Find the row of the current page.
+        for (const yArray of pageLayout.values()) {
+          const currentIndex = yArray.indexOf(currentPageNumber);
+          if (currentIndex === -1) {
+            continue;
+          }
+          const numPages = yArray.length;
+          if (numPages === 1) {
+            break;
+          }
+          // Handle documents with varying page sizes.
+          if (previous) {
+            for (let i = currentIndex - 1, ii = 0; i >= ii; i--) {
+              const currentId = yArray[i],
+                expectedId = yArray[i + 1] - 1;
+              if (currentId < expectedId) {
+                return currentPageNumber - expectedId;
+              }
+            }
+          } else {
+            for (let i = currentIndex + 1, ii = numPages; i < ii; i++) {
+              const currentId = yArray[i],
+                expectedId = yArray[i - 1] + 1;
+              if (currentId > expectedId) {
+                return expectedId - currentPageNumber;
+              }
+            }
+          }
+          // The current row is "complete", advance to the previous/next one.
+          if (previous) {
+            const firstId = yArray[0];
+            if (firstId < currentPageNumber) {
+              return currentPageNumber - firstId + 1;
+            }
+          } else {
+            const lastId = yArray[numPages - 1];
+            if (lastId > currentPageNumber) {
+              return lastId - currentPageNumber + 1;
+            }
+          }
+          break;
+        }
+        break;
+      }
+      case ScrollMode.HORIZONTAL: {
+        break;
+      }
+      case ScrollMode.VERTICAL: {
+        if (this._spreadMode === SpreadMode.NONE) {
+          break; // Normal vertical scrolling.
+        }
+        const parity = this._spreadMode - 1;
+
+        if (previous && currentPageNumber % 2 !== parity) {
+          break; // Left-hand side page.
+        } else if (!previous && currentPageNumber % 2 === parity) {
+          break; // Right-hand side page.
+        }
+        const { views } = this._getVisiblePages(),
+          expectedId = previous ? currentPageNumber - 1 : currentPageNumber + 1;
+
+        for (const { id, percent, widthPercent } of views) {
+          if (id !== expectedId) {
+            continue;
+          }
+          if (percent > 0 && widthPercent === 100) {
+            return 2;
+          }
+          break;
+        }
+        break;
+      }
+    }
+    return 1;
+  }
+
+  /**
+   * Go to the next page, taking scroll/spread-modes into account.
+   * @returns {boolean} Whether navigation occured.
+   */
+  nextPage() {
+    const currentPageNumber = this._currentPageNumber,
+      pagesCount = this.pagesCount;
+
+    if (currentPageNumber >= pagesCount) {
+      return false;
+    }
+    const advance =
+      this._getPageAdvance(currentPageNumber, /* previous = */ false) || 1;
+
+    this.currentPageNumber = Math.min(currentPageNumber + advance, pagesCount);
+    return true;
+  }
+
+  /**
+   * Go to the previous page, taking scroll/spread-modes into account.
+   * @returns {boolean} Whether navigation occured.
+   */
+  previousPage() {
+    const currentPageNumber = this._currentPageNumber;
+
+    if (currentPageNumber <= 1) {
+      return false;
+    }
+    const advance =
+      this._getPageAdvance(currentPageNumber, /* previous = */ true) || 1;
+
+    this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
+    return true;
+  }
+
   initializeScriptingEvents() {
     if (!this.enableScripting || this._pageOpenPendingSet) {
       return;
