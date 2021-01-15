@@ -1368,9 +1368,8 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         } else {
           const lineWidth = this.getSinglePixelWidth();
           if (lineWidth === -1) {
-            // The current transform will transform a square pixel into
-            // a parallelogramm where both heights are lower than 1 and
-            // not equal.
+            // The current transform will transform a square pixel into a
+            // parallelogram where both heights are lower than 1 and not equal.
             ctx.save();
             ctx.resetTransform();
             ctx.lineWidth = 1;
@@ -2655,7 +2654,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       if (this._cachedGetSinglePixelWidth === null) {
         // If transform is [a b] then a pixel (square) is transformed
         //                 [c d]
-        // into a parallelogramm: its area is the abs value of determinant.
+        // into a parallelogram: its area is the abs value of the determinant.
         // This parallelogram has 2 heights:
         //  - Area / |col_1|;
         //  - Area / |col_2|.
@@ -2669,18 +2668,18 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         const sqNorm1 = m[0] ** 2 + m[2] ** 2;
         const sqNorm2 = m[1] ** 2 + m[3] ** 2;
         if (sqNorm1 !== sqNorm2 && sqNorm1 > sqDet && sqNorm2 > sqDet) {
-          // The parallelogramm isn't a losange and both heights
+          // The parallelogram isn't a losange and both heights
           // are lower than 1 so the resulting line width must be 1
           // but it cannot be achieved with one scale: when scaling a pixel
-          // we'll get a rectangle (see isssue #12295).
+          // we'll get a rectangle (see issue #12295).
           this._cachedGetSinglePixelWidth = -1;
         } else if (sqDet > Number.EPSILON ** 2) {
-          // The multiplication by the constant 1.000001 is here to have
+          // The multiplication by the constant 1.0000001 is here to have
           // a number slightly greater than what we "exactly" want.
           this._cachedGetSinglePixelWidth =
             Math.sqrt(Math.max(sqNorm1, sqNorm2) / sqDet) * 1.0000001;
         } else {
-          // Matrix is non-invertible.x
+          // Matrix is non-invertible.
           this._cachedGetSinglePixelWidth = 1;
         }
       }
