@@ -2667,11 +2667,16 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         const sqDet = (m[0] * m[3] - m[2] * m[1]) ** 2;
         const sqNorm1 = m[0] ** 2 + m[2] ** 2;
         const sqNorm2 = m[1] ** 2 + m[3] ** 2;
-        if (sqNorm1 !== sqNorm2 && sqNorm1 > sqDet && sqNorm2 > sqDet) {
-          // The parallelogram isn't a losange and both heights
-          // are lower than 1 so the resulting line width must be 1
+        if (sqNorm1 !== sqNorm2 && (sqNorm1 > sqDet || sqNorm2 > sqDet)) {
+          // The parallelogram isn't a losange and at least one height
+          // is lower than 1 so the resulting line width must be 1
           // but it cannot be achieved with one scale: when scaling a pixel
           // we'll get a rectangle (see issue #12295).
+          // For example with matrix [0.001 0, 0, 100], a pixel is transformed
+          // in a rectangle 0.001x100. If we just scale by 1000 (to have a 1)
+          // then we'll get a rectangle 1x1e5 which is wrong.
+          // In this case, we must reset the transform and set linewidth to 1
+          // and then stroke.
           this._cachedGetSinglePixelWidth = -1;
         } else if (sqDet > Number.EPSILON ** 2) {
           // The multiplication by the constant 1.0000001 is here to have
