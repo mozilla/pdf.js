@@ -923,6 +923,10 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.transform.apply(this.ctx, viewport.transform);
 
       this.baseTransform = this.ctx.mozCurrentTransform.slice();
+      this._combinedScaleFactor = Math.hypot(
+        this.baseTransform[0],
+        this.baseTransform[2]
+      );
 
       if (this.imageLayer) {
         this.imageLayer.beginLayout();
@@ -1357,22 +1361,23 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           const scale = Util.singularValueDecompose2dScale(transform)[0];
           ctx.strokeStyle = strokeColor.getPattern(ctx, this);
           const lineWidth = this.getSinglePixelWidth();
-          if (lineWidth === -1) {
+          const scaledLineWidth = this.current.lineWidth * scale;
+          if (lineWidth < 0 && -lineWidth >= scaledLineWidth) {
             ctx.resetTransform();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = Math.round(this._combinedScaleFactor);
           } else {
-            ctx.lineWidth = Math.max(lineWidth, this.current.lineWidth * scale);
+            ctx.lineWidth = Math.max(lineWidth, scaledLineWidth);
           }
           ctx.stroke();
           ctx.restore();
         } else {
           const lineWidth = this.getSinglePixelWidth();
-          if (lineWidth === -1) {
+          if (lineWidth < 0 && -lineWidth >= this.current.lineWidth) {
             // The current transform will transform a square pixel into a
             // parallelogram where both heights are lower than 1 and not equal.
             ctx.save();
             ctx.resetTransform();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = Math.round(this._combinedScaleFactor);
             ctx.stroke();
             ctx.restore();
           } else {
@@ -1621,7 +1626,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         ) {
           if (resetLineWidthToOne) {
             ctx.resetTransform();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = Math.round(this._combinedScaleFactor);
           }
           ctx.stroke();
         }
@@ -1641,7 +1646,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.save();
             ctx.moveTo(x, y);
             ctx.resetTransform();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = Math.round(this._combinedScaleFactor);
             ctx.strokeText(character, 0, 0);
             ctx.restore();
           } else {
@@ -1744,7 +1749,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         ) {
           this._cachedGetSinglePixelWidth = null;
           lineWidth = this.getSinglePixelWidth();
-          resetLineWidthToOne = lineWidth === -1;
+          resetLineWidthToOne = lineWidth < 0;
         }
       } else {
         lineWidth /= scale;
@@ -2664,25 +2669,31 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         // This is equivalent to:
         //  h = max(|line_1_inv(M)|, |line_2_inv(M)|)
         const m = this.ctx.mozCurrentTransform;
-        const sqDet = (m[0] * m[3] - m[2] * m[1]) ** 2;
+
+        const absDet = Math.abs(m[0] * m[3] - m[2] * m[1]);
         const sqNorm1 = m[0] ** 2 + m[2] ** 2;
         const sqNorm2 = m[1] ** 2 + m[3] ** 2;
-        if (sqNorm1 !== sqNorm2 && (sqNorm1 > sqDet || sqNorm2 > sqDet)) {
-          // The parallelogram isn't a losange and at least one height
+        const pixelHeight = Math.sqrt(Math.max(sqNorm1, sqNorm2)) / absDet;
+        if (
+          sqNorm1 !== sqNorm2 &&
+          this._combinedScaleFactor * pixelHeight > 1
+        ) {
+          // The parallelogram isn't a square and at least one height
           // is lower than 1 so the resulting line width must be 1
           // but it cannot be achieved with one scale: when scaling a pixel
           // we'll get a rectangle (see issue #12295).
           // For example with matrix [0.001 0, 0, 100], a pixel is transformed
           // in a rectangle 0.001x100. If we just scale by 1000 (to have a 1)
           // then we'll get a rectangle 1x1e5 which is wrong.
-          // In this case, we must reset the transform and set linewidth to 1
+          // In this case, we must reset the transform, set linewidth to 1
           // and then stroke.
-          this._cachedGetSinglePixelWidth = -1;
-        } else if (sqDet > Number.EPSILON ** 2) {
+          this._cachedGetSinglePixelWidth = -(
+            this._combinedScaleFactor * pixelHeight
+          );
+        } else if (absDet > Number.EPSILON) {
           // The multiplication by the constant 1.0000001 is here to have
           // a number slightly greater than what we "exactly" want.
-          this._cachedGetSinglePixelWidth =
-            Math.sqrt(Math.max(sqNorm1, sqNorm2) / sqDet) * 1.0000001;
+          this._cachedGetSinglePixelWidth = pixelHeight * 1.0000001;
         } else {
           // Matrix is non-invertible.
           this._cachedGetSinglePixelWidth = 1;
