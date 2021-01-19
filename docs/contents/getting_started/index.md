@@ -49,7 +49,7 @@ Before downloading PDF.js please take a moment to understand the different layer
     </span>
   </div>
   <div class="col-md-4">
-    <h3>Prebuilt (ES5-compatible)</h3>
+    <h3>Prebuilt (for older browsers)</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
