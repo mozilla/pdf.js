@@ -24,7 +24,8 @@ Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mo
 ### Online demo
 
 Please note that the "Modern browsers" version assumes native support for
-features such as e.g. `async`/`await`, and `ReadableStream`.
+features such as e.g. `async`/`await`, `ReadableStream`, optional chaining, and
+nullish coalescing.
 
 + Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
 
