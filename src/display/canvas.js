@@ -1506,10 +1506,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!fontObj) {
         throw new Error(`Can't find font for ${fontRefName}`);
       }
-
-      current.fontMatrix = fontObj.fontMatrix
-        ? fontObj.fontMatrix
-        : FONT_IDENTITY_MATRIX;
+      current.fontMatrix = fontObj.fontMatrix || FONT_IDENTITY_MATRIX;
 
       // A valid matrix needs all main diagonal elements to be non-zero
       // This also ensures we bypass FF bugzilla bug #719844.
