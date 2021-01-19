@@ -153,7 +153,7 @@ class PDFSidebar {
   get isTTSViewVisible() {
     return this.isOpen && this.active === SidebarView.TTS;
   }
-
+  
   /**
    * @param {number} view - The sidebar view that should become visible,
    *                        must be one of the values in {SidebarView}.
@@ -493,7 +493,6 @@ class PDFSidebar {
 
     this.ttsButton.addEventListener("click", () => {
       this.switchView(SidebarView.TTS);
-      //this.eventBus.dispatch("render", { source: this });
     });
 
     // Buttons for view-specific options.
@@ -506,7 +505,7 @@ class PDFSidebar {
       button.disabled = !count;
 
       if (count) {
-        this._showUINotification(view);
+        if (!SidebarView.TTS) { this._showUINotification(view); }
       } else if (this.active === view) {
         // If the `view` was opened by the user during document load,
         // switch away from it if it turns out to be empty.
@@ -537,7 +536,7 @@ class PDFSidebar {
     });
 
     this.eventBus._on("ttsloaded", evt => {
-      onTreeLoaded(evt.ttsCount, this.ttsButton, SidebarView.TTS);
+      onTreeLoaded(evt.ttsAvailable, this.ttsButton, SidebarView.TTS);
     });
 
     // Update the thumbnailViewer, if visible, when exiting presentation mode.

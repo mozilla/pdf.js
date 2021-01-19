@@ -33,9 +33,6 @@ class PDFTTSViewer extends BaseTreeViewer {
   constructor(options) {
     super(options);
     this.l10n = options.l10n;
-    // this.eventBus._on("sidebarviewchanged", evt => {
-    //   this.render();
-    // });
   }
 
   reset() {
@@ -46,11 +43,15 @@ class PDFTTSViewer extends BaseTreeViewer {
   /**
    * @private
    */
-  _dispatchEvent(ttsCount) {
+  _dispatchEvent(ttsAvailable) {
     this.eventBus.dispatch("ttsloaded", {
       source: this,
-      ttsCount,
+      ttsAvailable,
     });
+  }
+
+  get isTTSAvailable() {
+    return ('speechSynthesis' in window);
   }
 
   /**
@@ -62,12 +63,9 @@ class PDFTTSViewer extends BaseTreeViewer {
     }
     this._optionalContentConfig = optionalContentConfig || null;
 
-    let ttsCount = 0;
-    if ( !('speechSynthesis' in window) ) {
-      this._dispatchEvent(/* count = */ ttsCount);
+    if (!this.isTTSAvailable) {
+      this._dispatchEvent(0);
       return;
-    } else {
-      ttsCount = 1;
     }
 
     const fragment = document.createDocumentFragment();
@@ -79,28 +77,56 @@ class PDFTTSViewer extends BaseTreeViewer {
     div.appendChild(voiceslabel);
 
     const voicelist = document.createElement("select");
-    speechSynthesis.getVoices().forEach(function (voice, index) {
-      const option = document.createElement("option");
-      option.index = index;
-      option.textContent = voice.name + (voice.default ? ' (default)' : '');
-      voicelist.appendChild(option);
-    });
+    voicelist.id = "voiceSelect";
+    this.loadVoices(voicelist);
     div.appendChild(voicelist);
 
     fragment.appendChild(div);
-    this._finishRendering(fragment, ttsCount);
+    this._finishRendering(fragment, 1);
   }
 
-  /**
-   * @private
-   */
-  _speak(){
+
+  async loadVoices(voicelist) {
+    // Get Voices as promise to allow time to load.
+    const allVoicesObtained = new Promise(function(resolve, reject) {
+      let voices = window.speechSynthesis.getVoices();
+      if (voices.length !== 0) {
+        resolve(voices);
+      } else {
+        window.speechSynthesis.addEventListener("voiceschanged", function() {
+          voices = window.speechSynthesis.getVoices();
+          resolve(voices);
+        });
+      }
+    });
+    // When promise resolved, add to voice list.
+    await allVoicesObtained.then(voices => {
+      voices.forEach(function (voice) {
+        let option = document.createElement("option");
+        option.textContent = voice.name + (voice.default ? ' (default)' : '');
+        voicelist.appendChild(option);
+      });
+      // Load preference
+      voicelist.selectedIndex = localStorage['PDFJS_TTS_Voice'];
+      // Save preference
+      voicelist.onchange = function () {
+        localStorage['PDFJS_TTS_Voice'] = this.selectedIndex;
+      }
+    });
+  }
+
+
+
+  speak() {
     const text = window.getSelection().toString();
-    const msg = new SpeechSynthesisUtterance();
+    let msg = new SpeechSynthesisUtterance();
     const voices = window.speechSynthesis.getVoices();
-    msg.voice = voices[voicelist.val];
-    msg.rate = $('#rate').val() / 10;
-    msg.pitch = $('#pitch').val();
+    const voicechoice = document.getElementById('voiceSelect')
+    msg.voice = voices[voicechoice.selectedIndex];
+    //msg.rate = 1;
+    // msg.rate = $('#rate').val() / 10;
+    //msg.pitch = 1;
+    // msg.pitch = $('#pitch').val();
     msg.text = text;
     speechSynthesis.cancel();
     speechSynthesis.speak(msg);

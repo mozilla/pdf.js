@@ -650,17 +650,9 @@ const PDFViewerApplication = {
   },
 
   speak() {
-    const text = window.getSelection().toString();
-    const msg = new SpeechSynthesisUtterance();
-    const voices = window.speechSynthesis.getVoices();
-    msg.voice = voices[voicelist.val];
-    msg.rate = $('#rate').val() / 10;
-    msg.pitch = $('#pitch').val();
-    msg.text = text;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(msg);
+    this.pdfTTSViewer.speak()
   },
-
+ 
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   },
