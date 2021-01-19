@@ -2605,7 +2605,7 @@ class WorkerTransport {
       .sendWithPromise("SaveDocument", {
         numPages: this._numPages,
         annotationStorage: annotationStorage?.getAll() || null,
-        filename: this._fullReader ? this._fullReader.filename : null,
+        filename: this._fullReader?.filename ?? null,
       })
       .finally(() => {
         if (annotationStorage) {
@@ -2800,7 +2800,7 @@ class PDFObjects {
 
   has(objId) {
     const obj = this._objs[objId];
-    return obj ? obj.resolved : false;
+    return obj?.resolved || false;
   }
 
   /**
