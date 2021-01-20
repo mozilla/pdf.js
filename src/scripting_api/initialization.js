@@ -18,6 +18,7 @@ import {
   Cursor,
   Display,
   Font,
+  GlobalConstants,
   Highlight,
   Position,
   ScaleHow,
@@ -66,7 +67,6 @@ function initSandbox(params) {
   });
 
   const util = new Util({ externalCall });
-  const aform = new AForm(doc, app, util);
 
   if (data.objects) {
     for (const [name, objs] of Object.entries(data.objects)) {
@@ -94,10 +94,12 @@ function initSandbox(params) {
     }
   }
 
+  const color = new Color();
+
   globalThis.event = null;
   globalThis.global = Object.create(null);
   globalThis.app = new Proxy(app, proxyHandler);
-  globalThis.color = new Proxy(new Color(), proxyHandler);
+  globalThis.color = new Proxy(color, proxyHandler);
   globalThis.console = new Proxy(new Console({ send }), proxyHandler);
   globalThis.util = new Proxy(util, proxyHandler);
   globalThis.border = Border;
@@ -112,11 +114,33 @@ function initSandbox(params) {
   globalThis.trans = Trans;
   globalThis.zoomtype = ZoomType;
 
+  // AF... functions
+  const aform = new AForm(doc, app, util, color);
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
     if (name !== "constructor" && !name.startsWith("_")) {
       globalThis[name] = aform[name].bind(aform);
     }
   }
+
+  // Add global constants such as IDS_GREATER_THAN or RE_NUMBER_ENTRY_DOT_SEP
+  for (const [name, value] of Object.entries(GlobalConstants)) {
+    Object.defineProperty(globalThis, name, {
+      value,
+      writable: false,
+    });
+  }
+
+  // Color functions
+  Object.defineProperties(globalThis, {
+    ColorConvert: {
+      value: color.convert.bind(color),
+      writable: true,
+    },
+    ColorEqual: {
+      value: color.equal.bind(color),
+      writable: true,
+    },
+  });
 
   // The doc properties must live in the global scope too
   const properties = Object.create(null);
