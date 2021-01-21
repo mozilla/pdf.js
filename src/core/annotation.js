@@ -2007,7 +2007,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
     return {
       id: this.data.id,
-      value: this.data.fieldValue || null,
+      value: this.data.fieldValue || "Off",
       defaultValue: this.data.defaultFieldValue,
       exportValues,
       editable: !this.data.readOnly,
