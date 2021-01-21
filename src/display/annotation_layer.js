@@ -595,7 +595,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   }
 
   render() {
-    const TEXT_ALIGNMENT = ["left", "center", "right"];
     const storage = this.annotationStorage;
     const id = this.data.id;
 
@@ -834,20 +833,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.textContent = this.data.fieldValue;
       element.style.verticalAlign = "middle";
       element.style.display = "table-cell";
-
-      let font = null;
-      if (
-        this.data.fontRefName &&
-        this.page.commonObjs.has(this.data.fontRefName)
-      ) {
-        font = this.page.commonObjs.get(this.data.fontRefName);
-      }
-      this._setTextStyle(element, font);
     }
 
-    if (this.data.textAlignment !== null) {
-      element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
-    }
+    this._setTextStyle(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -858,32 +846,25 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    *
    * @private
    * @param {HTMLDivElement} element
-   * @param {Object} font
    * @memberof TextWidgetAnnotationElement
    */
-  _setTextStyle(element, font) {
-    // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
+  _setTextStyle(element) {
+    const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const { fontSize, fontColor } = this.data.defaultAppearanceData;
     const style = element.style;
-    style.fontSize = `${this.data.fontSize}px`;
-    style.direction = this.data.fontDirection < 0 ? "rtl" : "ltr";
 
-    if (!font) {
-      return;
+    // TODO: If the font-size is zero, calculate it based on the height and
+    //       width of the element.
+    // Not setting `style.fontSize` will use the default font-size for now.
+    if (fontSize) {
+      style.fontSize = `${fontSize}px`;
     }
 
-    let bold = "normal";
-    if (font.black) {
-      bold = "900";
-    } else if (font.bold) {
-      bold = "bold";
-    }
-    style.fontWeight = bold;
-    style.fontStyle = font.italic ? "italic" : "normal";
+    style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
 
-    // Use a reasonable default font if the font doesn't specify a fallback.
-    const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
-    const fallbackName = font.fallbackName || "Helvetica, sans-serif";
-    style.fontFamily = fontFamily + fallbackName;
+    if (this.data.textAlignment !== null) {
+      style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
+    }
   }
 }
 
