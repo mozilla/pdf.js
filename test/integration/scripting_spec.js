@@ -218,20 +218,20 @@ describe("Interaction", () => {
           );
 
           const expected = [
-            ["#\\36 8R", "Group1=Choice1::1"],
-            ["#\\36 9R", "Group1=Choice2::2"],
-            ["#\\37 0R", "Group1=Choice3::3"],
-            ["#\\37 1R", "Group1=Choice4::4"],
+            ["#\\38 1R", "Group1=Choice1::1"],
+            ["#\\38 2R", "Group1=Choice2::2"],
+            ["#\\38 3R", "Group1=Choice3::3"],
+            ["#\\38 4R", "Group1=Choice4::4"],
           ];
           for (const [selector, expectedText] of expected) {
             // Clear the textfield
-            await clearInput(page, "#\\36 7R");
+            await clearInput(page, "#\\38 0R");
 
             await page.click(selector);
             await page.waitForFunction(
-              `document.querySelector("#\\\\36 7R").value !== ""`
+              `document.querySelector("#\\\\38 0R").value !== ""`
             );
-            const text = await page.$eval("#\\36 7R", el => el.value);
+            const text = await page.$eval("#\\38 0R", el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
           }
         })
@@ -242,24 +242,24 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const expected = [
-            ["#\\37 2R", "Check1=Yes::5"],
-            ["#\\37 4R", "Check2=Yes::6"],
-            ["#\\37 5R", "Check3=Yes::7"],
-            ["#\\37 6R", "Check4=Yes::8"],
-            ["#\\37 2R", "Check1=Off::5"],
-            ["#\\37 4R", "Check2=Off::6"],
-            ["#\\37 5R", "Check3=Off::7"],
-            ["#\\37 6R", "Check4=Off::8"],
+            ["#\\38 5R", "Check1=Yes::5"],
+            ["#\\38 7R", "Check2=Yes::6"],
+            ["#\\38 8R", "Check3=Yes::7"],
+            ["#\\38 9R", "Check4=Yes::8"],
+            ["#\\38 5R", "Check1=Off::5"],
+            ["#\\38 7R", "Check2=Off::6"],
+            ["#\\38 8R", "Check3=Off::7"],
+            ["#\\38 9R", "Check4=Off::8"],
           ];
           for (const [selector, expectedText] of expected) {
             // Clear the textfield
-            await clearInput(page, "#\\36 7R");
+            await clearInput(page, "#\\38 0R");
 
             await page.click(selector);
             await page.waitForFunction(
-              `document.querySelector("#\\\\36 7R").value !== ""`
+              `document.querySelector("#\\\\38 0R").value !== ""`
             );
-            const text = await page.$eval("#\\36 7R", el => el.value);
+            const text = await page.$eval("#\\38 0R", el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
           }
         })
@@ -270,21 +270,51 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const expected = [
-            ["#\\37 7R", "Check5=Yes1::9"],
-            ["#\\37 8R", "Check5=Yes2::10"],
-            ["#\\37 9R", "Check5=Yes3::11"],
-            ["#\\38 0R", "Check5=Yes4::12"],
-            ["#\\38 0R", "Check5=Off::12"],
+            ["#\\39 0R", "Check5=Yes1::9"],
+            ["#\\39 1R", "Check5=Yes2::10"],
+            ["#\\39 2R", "Check5=Yes3::11"],
+            ["#\\39 3R", "Check5=Yes4::12"],
+            ["#\\39 3R", "Check5=Off::12"],
           ];
           for (const [selector, expectedText] of expected) {
             // Clear the textfield
-            await clearInput(page, "#\\36 7R");
+            await clearInput(page, "#\\38 0R");
 
             await page.click(selector);
             await page.waitForFunction(
-              `document.querySelector("#\\\\36 7R").value !== ""`
+              `document.querySelector("#\\\\38 0R").value !== ""`
             );
-            const text = await page.$eval("#\\36 7R", el => el.value);
+            const text = await page.$eval("#\\38 0R", el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
+          }
+        })
+      );
+    });
+
+    it("must show values in a text input when clicking on checkboxes or radio with no actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const expected = [
+            ["", "Off;Off"],
+            ["#\\39 4R", "Yes;Off"],
+            ["#\\39 5R", "Yes;NoAct2"],
+            ["#\\39 6R", "Yes;NoAct3"],
+            ["#\\39 4R", "Off;NoAct3"],
+            ["#\\39 5R", "Off;NoAct2"],
+          ];
+          for (const [selector, expectedText] of expected) {
+            // Clear the textfield
+            await clearInput(page, "#\\38 0R");
+
+            if (selector) {
+              await page.click(selector);
+            }
+
+            await page.click("[data-annotation-id='97R']");
+            await page.waitForFunction(
+              `document.querySelector("#\\\\38 0R").value !== ""`
+            );
+            const text = await page.$eval("#\\38 0R", el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
           }
         })
