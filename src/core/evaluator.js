@@ -797,12 +797,10 @@ class PartialEvaluator {
     fallbackFontDict = null
   ) {
     // TODO(mack): Not needed?
-    var fontName,
-      fontSize = 0;
+    var fontName;
     if (fontArgs) {
       fontArgs = fontArgs.slice();
       fontName = fontArgs[0].name;
-      fontSize = fontArgs[1];
     }
 
     return this.loadFont(fontName, fontRef, resources, fallbackFontDict)
@@ -835,8 +833,6 @@ class PartialEvaluator {
       })
       .then(translated => {
         state.font = translated.font;
-        state.fontSize = fontSize;
-        state.fontName = fontName;
         translated.send(this.handler);
         return translated.loadedName;
       });
@@ -3714,7 +3710,7 @@ class TranslatedFont {
 }
 
 class StateManager {
-  constructor(initialState) {
+  constructor(initialState = new EvalState()) {
     this.state = initialState;
     this.stateStack = [];
   }
@@ -3985,7 +3981,7 @@ class EvaluatorPreprocessor {
     return shadow(this, "MAX_INVALID_PATH_OPS", 20);
   }
 
-  constructor(stream, xref, stateManager) {
+  constructor(stream, xref, stateManager = new StateManager()) {
     // TODO(mduan): pass array of knownCommands rather than this.opMap
     // dictionary
     this.parser = new Parser({
@@ -4126,4 +4122,4 @@ class EvaluatorPreprocessor {
   }
 }
 
-export { PartialEvaluator };
+export { EvaluatorPreprocessor, PartialEvaluator };

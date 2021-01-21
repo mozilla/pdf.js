@@ -1808,7 +1808,7 @@ describe("annotation", function () {
         }, done.fail)
         .then(appearance => {
           expect(appearance).toEqual(
-            "/Tx BMC q BT /Helv 11 Tf 1 0 0 1 0 0 Tm" +
+            "/Tx BMC q BT /Helv 11 Tf 0 g 1 0 0 1 0 0 Tm" +
               " 2.00 2.00 Td (test \\(print\\)) Tj ET Q EMC"
           );
           done();
@@ -1848,7 +1848,7 @@ describe("annotation", function () {
             "\x30\x53\x30\x93\x30\x6b\x30\x61" +
             "\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
           expect(appearance).toEqual(
-            "/Tx BMC q BT /Goth 9 Tf 1 0 0 1 0 0 Tm" +
+            "/Tx BMC q BT /Goth 9 Tf 0 g 1 0 0 1 0 0 Tm" +
               ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
           );
           done();

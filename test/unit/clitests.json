@@ -16,6 +16,7 @@
     "core_utils_spec.js",
     "crypto_spec.js",
     "custom_spec.js",
+    "default_appearance_spec.js",
     "display_svg_spec.js",
     "display_utils_spec.js",
     "document_spec.js",
