@@ -19,6 +19,13 @@ import { assert } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { StringStream } from "../../src/core/stream.js";
 
+const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
+
+const CMAP_PARAMS = {
+  cMapUrl: isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/",
+  cMapPacked: true,
+};
+
 class DOMFileReaderFactory {
   static async fetch(params) {
     const response = await fetch(params.path);
@@ -45,18 +52,16 @@ class NodeFileReaderFactory {
   }
 }
 
-const TEST_PDFS_PATH = {
-  dom: "../pdfs/",
-  node: "./test/pdfs/",
-};
+const DefaultFileReaderFactory = isNodeJS
+  ? NodeFileReaderFactory
+  : DOMFileReaderFactory;
 
 function buildGetDocumentParams(filename, options) {
   const params = Object.create(null);
-  if (isNodeJS) {
-    params.url = TEST_PDFS_PATH.node + filename;
-  } else {
-    params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
-  }
+  params.url = isNodeJS
+    ? TEST_PDFS_PATH + filename
+    : new URL(TEST_PDFS_PATH + filename, window.location).href;
+
   for (const option in options) {
     params[option] = options[option];
   }
@@ -136,11 +141,11 @@ function isEmptyObj(obj) {
 }
 
 export {
-  DOMFileReaderFactory,
-  NodeFileReaderFactory,
-  XRefMock,
   buildGetDocumentParams,
-  TEST_PDFS_PATH,
+  CMAP_PARAMS,
   createIdFactory,
+  DefaultFileReaderFactory,
   isEmptyObj,
+  TEST_PDFS_PATH,
+  XRefMock,
 };

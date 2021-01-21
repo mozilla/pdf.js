@@ -764,11 +764,11 @@ const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
 });
 
 export {
-  getStdFontMap,
+  getGlyphMapForStandardFonts,
   getNonStdFontMap,
   getSerifFonts,
-  getSymbolsFonts,
-  getGlyphMapForStandardFonts,
+  getStdFontMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
+  getSymbolsFonts,
 };

@@ -842,6 +842,20 @@ function escapeString(str) {
   });
 }
 
+function isAscii(str) {
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
+function stringToUTF16BEString(str) {
+  const buf = ["\xFE\xFF"];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    buf.push(String.fromCharCode((char >> 8) & 0xff));
+    buf.push(String.fromCharCode(char & 0xff));
+  }
+  return buf.join("");
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -1001,12 +1015,7 @@ function encodeToXmlString(str) {
 }
 
 export {
-  BaseException,
-  FONT_IDENTITY_MATRIX,
-  IDENTITY_MATRIX,
-  OPS,
-  VerbosityLevel,
-  UNSUPPORTED_FEATURES,
+  AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
@@ -1016,53 +1025,60 @@ export {
   AnnotationReviewState,
   AnnotationStateModelType,
   AnnotationType,
-  FontType,
-  ImageKind,
+  arrayByteLength,
+  arraysToBytes,
+  assert,
+  BaseException,
+  bytesToString,
   CMapCompressionType,
+  createObjectURL,
+  createPromiseCapability,
+  createValidAbsoluteUrl,
   DocumentActionEventType,
-  AbortException,
+  encodeToXmlString,
+  escapeString,
+  FONT_IDENTITY_MATRIX,
+  FontType,
+  FormatError,
+  getModificationDate,
+  getVerbosityLevel,
+  IDENTITY_MATRIX,
+  ImageKind,
+  info,
   InvalidPDFException,
+  isArrayBuffer,
+  isArrayEqual,
+  isAscii,
+  isBool,
+  IsEvalSupportedCached,
+  IsLittleEndianCached,
+  isNum,
+  isSameOrigin,
+  isString,
   MissingPDFException,
+  objectFromEntries,
+  objectSize,
+  OPS,
   PageActionEventType,
   PasswordException,
   PasswordResponses,
   PermissionFlag,
-  StreamType,
-  TextRenderingMode,
-  UnexpectedResponseException,
-  UnknownErrorException,
-  Util,
-  FormatError,
-  arrayByteLength,
-  arraysToBytes,
-  assert,
-  bytesToString,
-  createPromiseCapability,
-  createObjectURL,
-  escapeString,
-  encodeToXmlString,
-  getModificationDate,
-  getVerbosityLevel,
-  info,
-  isArrayBuffer,
-  isArrayEqual,
-  isBool,
-  isNum,
-  isString,
-  isSameOrigin,
-  createValidAbsoluteUrl,
-  objectSize,
-  objectFromEntries,
-  IsLittleEndianCached,
-  IsEvalSupportedCached,
   removeNullCharacters,
   setVerbosityLevel,
   shadow,
+  StreamType,
   string32,
   stringToBytes,
   stringToPDFString,
+  stringToUTF16BEString,
   stringToUTF8String,
-  utf8StringToString,
-  warn,
+  TextRenderingMode,
+  UnexpectedResponseException,
+  UnknownErrorException,
   unreachable,
+  UNSUPPORTED_FEATURES,
+  utf8StringToString,
+  Util,
+  VerbosityLevel,
+  warn,
 };

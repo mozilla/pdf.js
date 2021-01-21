@@ -25,67 +25,78 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-const FirefoxCom = (function FirefoxComClosure() {
-  return {
-    /**
-     * Creates an event that the extension is listening for and will
-     * synchronously respond to.
-     * NOTE: It is reccomended to use request() instead since one day we may not
-     * be able to synchronously reply.
-     * @param {string} action - The action to trigger.
-     * @param {string} [data] - The data to send.
-     * @returns {*} The response.
-     */
-    requestSync(action, data) {
-      const request = document.createTextNode("");
-      document.documentElement.appendChild(request);
+class FirefoxCom {
+  /**
+   * Creates an event that the extension is listening for and will
+   * synchronously respond to.
+   * NOTE: It is recommended to use requestAsync() instead since one day we may
+   *       not be able to synchronously reply.
+   * @param {string} action - The action to trigger.
+   * @param {Object|string} [data] - The data to send.
+   * @returns {*} The response.
+   */
+  static requestSync(action, data) {
+    const request = document.createTextNode("");
+    document.documentElement.appendChild(request);
 
-      const sender = document.createEvent("CustomEvent");
-      sender.initCustomEvent("pdf.js.message", true, false, {
-        action,
-        data,
-        sync: true,
-      });
-      request.dispatchEvent(sender);
-      const response = sender.detail.response;
-      document.documentElement.removeChild(request);
-      return response;
-    },
+    const sender = document.createEvent("CustomEvent");
+    sender.initCustomEvent("pdf.js.message", true, false, {
+      action,
+      data,
+      sync: true,
+    });
+    request.dispatchEvent(sender);
+    const response = sender.detail.response;
+    request.remove();
 
-    /**
-     * Creates an event that the extension is listening for and will
-     * asynchronously respond by calling the callback.
-     * @param {string} action - The action to trigger.
-     * @param {string} [data] - The data to send.
-     * @param {Function} [callback] - Response callback that will be called
-     *   with one data argument.
-     */
-    request(action, data, callback) {
-      const request = document.createTextNode("");
-      if (callback) {
-        document.addEventListener("pdf.js.response", function listener(event) {
-          const node = event.target;
+    return response;
+  }
+
+  /**
+   * Creates an event that the extension is listening for and will
+   * asynchronously respond to.
+   * @param {string} action - The action to trigger.
+   * @param {Object|string} [data] - The data to send.
+   * @returns {Promise<any>} A promise that is resolved with the response data.
+   */
+  static requestAsync(action, data) {
+    return new Promise(resolve => {
+      this.request(action, data, resolve);
+    });
+  }
+
+  /**
+   * Creates an event that the extension is listening for and will, optionally,
+   * asynchronously respond to.
+   * @param {string} action - The action to trigger.
+   * @param {Object|string} [data] - The data to send.
+   */
+  static request(action, data, callback = null) {
+    const request = document.createTextNode("");
+    if (callback) {
+      request.addEventListener(
+        "pdf.js.response",
+        event => {
           const response = event.detail.response;
+          event.target.remove();
 
-          document.documentElement.removeChild(node);
+          callback(response);
+        },
+        { once: true }
+      );
+    }
+    document.documentElement.appendChild(request);
 
-          document.removeEventListener("pdf.js.response", listener);
-          return callback(response);
-        });
-      }
-      document.documentElement.appendChild(request);
-
-      const sender = document.createEvent("CustomEvent");
-      sender.initCustomEvent("pdf.js.message", true, false, {
-        action,
-        data,
-        sync: false,
-        responseExpected: !!callback,
-      });
-      return request.dispatchEvent(sender);
-    },
-  };
-})();
+    const sender = document.createEvent("CustomEvent");
+    sender.initCustomEvent("pdf.js.message", true, false, {
+      action,
+      data,
+      sync: false,
+      responseExpected: !!callback,
+    });
+    request.dispatchEvent(sender);
+  }
+}
 
 class DownloadManager {
   downloadUrl(url, filename) {
@@ -99,58 +110,44 @@ class DownloadManager {
     const blobUrl = URL.createObjectURL(
       new Blob([data], { type: contentType })
     );
-    const onResponse = err => {
-      URL.revokeObjectURL(blobUrl);
-    };
 
-    FirefoxCom.request(
-      "download",
-      {
-        blobUrl,
-        originalUrl: blobUrl,
-        filename,
-        isAttachment: true,
-      },
-      onResponse
-    );
+    FirefoxCom.requestAsync("download", {
+      blobUrl,
+      originalUrl: blobUrl,
+      filename,
+      isAttachment: true,
+    }).then(error => {
+      URL.revokeObjectURL(blobUrl);
+    });
   }
 
   download(blob, url, filename, sourceEventType = "download") {
     const blobUrl = URL.createObjectURL(blob);
-    const onResponse = err => {
-      if (err && this.onerror) {
-        this.onerror(err);
+
+    FirefoxCom.requestAsync("download", {
+      blobUrl,
+      originalUrl: url,
+      filename,
+      sourceEventType,
+    }).then(error => {
+      if (error) {
+        // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
+        // that attempting to fallback and re-download would be helpful here.
+        console.error("`ChromeActions.download` failed.");
       }
       URL.revokeObjectURL(blobUrl);
-    };
-
-    FirefoxCom.request(
-      "download",
-      {
-        blobUrl,
-        originalUrl: url,
-        filename,
-        sourceEventType,
-      },
-      onResponse
-    );
+    });
   }
 }
 
 class FirefoxPreferences extends BasePreferences {
   async _writeToStorage(prefObj) {
-    return new Promise(function (resolve) {
-      FirefoxCom.request("setPreferences", prefObj, resolve);
-    });
+    return FirefoxCom.requestAsync("setPreferences", prefObj);
   }
 
   async _readFromStorage(prefObj) {
-    return new Promise(function (resolve) {
-      FirefoxCom.request("getPreferences", prefObj, function (prefStr) {
-        const readPrefs = JSON.parse(prefStr);
-        resolve(readPrefs);
-      });
-    });
+    const prefStr = await FirefoxCom.requestAsync("getPreferences", prefObj);
+    return JSON.parse(prefStr);
   }
 }
 
@@ -256,13 +253,10 @@ class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
 
 class FirefoxScripting {
   static async createSandbox(data) {
-    return new Promise(resolve => {
-      FirefoxCom.request("createSandbox", data, resolve);
-    }).then(success => {
-      if (!success) {
-        throw new Error("Cannot create sandbox.");
-      }
-    });
+    const success = await FirefoxCom.requestAsync("createSandbox", data);
+    if (!success) {
+      throw new Error("Cannot create sandbox.");
+    }
   }
 
   static async dispatchEventInSandbox(event) {
@@ -344,8 +338,8 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.requestSync("initPassiveLoading", null);
   }
 
-  static fallback(data, callback) {
-    FirefoxCom.request("fallback", data, callback);
+  static async fallback(data) {
+    return FirefoxCom.requestAsync("fallback", data);
   }
 
   static reportTelemetry(data) {

@@ -29,9 +29,10 @@ import {
   stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
-import { createIdFactory, XRefMock } from "./test_utils.js";
+import { CMAP_PARAMS, createIdFactory, XRefMock } from "./test_utils.js";
 import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
+import { DefaultCMapReaderFactory } from "../../src/display/api.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { StringStream } from "../../src/core/stream.js";
 import { WorkerTask } from "../../src/core/worker.js";
@@ -78,10 +79,26 @@ describe("annotation", function () {
 
   let pdfManagerMock, idFactoryMock, partialEvaluator;
 
-  beforeAll(function (done) {
+  beforeAll(async function (done) {
     pdfManagerMock = new PDFManagerMock({
       docBaseUrl: null,
     });
+
+    const CMapReaderFactory = new DefaultCMapReaderFactory({
+      baseUrl: CMAP_PARAMS.cMapUrl,
+      isCompressed: CMAP_PARAMS.cMapPacked,
+    });
+
+    const builtInCMapCache = new Map();
+    builtInCMapCache.set(
+      "UniJIS-UTF16-H",
+      await CMapReaderFactory.fetch({ name: "UniJIS-UTF16-H" })
+    );
+    builtInCMapCache.set(
+      "Adobe-Japan1-UCS2",
+      await CMapReaderFactory.fetch({ name: "Adobe-Japan1-UCS2" })
+    );
+
     idFactoryMock = createIdFactory(/* pageIndex = */ 0);
     partialEvaluator = new PartialEvaluator({
       xref: new XRefMock(),
@@ -89,7 +106,9 @@ describe("annotation", function () {
       pageIndex: 0,
       idFactory: createIdFactory(/* pageIndex = */ 0),
       fontCache: new RefSetCache(),
+      builtInCMapCache,
     });
+
     done();
   });
 
@@ -1419,7 +1438,7 @@ describe("annotation", function () {
   });
 
   describe("TextWidgetAnnotation", function () {
-    let textWidgetDict, fontRefObj;
+    let textWidgetDict, helvRefObj, gothRefObj;
 
     beforeEach(function (done) {
       textWidgetDict = new Dict();
@@ -1432,11 +1451,38 @@ describe("annotation", function () {
       helvDict.set("Type", Name.get("Font"));
       helvDict.set("Subtype", Name.get("Type1"));
 
-      const fontRef = Ref.get(314, 0);
-      fontRefObj = { ref: fontRef, data: helvDict };
+      const gothDict = new Dict();
+      gothDict.set("BaseFont", Name.get("MSGothic"));
+      gothDict.set("Type", Name.get("Font"));
+      gothDict.set("Subtype", Name.get("Type0"));
+      gothDict.set("Encoding", Name.get("UniJIS-UTF16-H"));
+      gothDict.set("Name", Name.get("MSGothic"));
+
+      const cidSysInfoDict = new Dict();
+      cidSysInfoDict.set("Ordering", "Japan1");
+      cidSysInfoDict.set("Registry", "Adobe");
+      cidSysInfoDict.set("Supplement", "5");
+
+      const fontDescriptorDict = new Dict();
+      fontDescriptorDict.set("FontName", Name.get("MSGothic"));
+      fontDescriptorDict.set("CapHeight", "680");
+
+      const gothDescendantDict = new Dict();
+      gothDescendantDict.set("BaseFont", Name.get("MSGothic"));
+      gothDescendantDict.set("CIDSystemInfo", cidSysInfoDict);
+      gothDescendantDict.set("Subtype", Name.get("CIDFontType2"));
+      gothDescendantDict.set("Type", Name.get("Font"));
+      gothDescendantDict.set("FontDescriptor", fontDescriptorDict);
+
+      gothDict.set("DescendantFonts", [gothDescendantDict]);
+
+      const helvRef = Ref.get(314, 0);
+      const gothRef = Ref.get(159, 0);
+      helvRefObj = { ref: helvRef, data: helvDict };
+      gothRefObj = { ref: gothRef, data: gothDict };
       const resourceDict = new Dict();
       const fontDict = new Dict();
-      fontDict.set("Helv", fontRef);
+      fontDict.set("Helv", helvRef);
       resourceDict.set("Font", fontDict);
 
       textWidgetDict.set("DA", "/Helv 5 Tf");
@@ -1447,7 +1493,7 @@ describe("annotation", function () {
     });
 
     afterEach(function () {
-      textWidgetDict = fontRefObj = null;
+      textWidgetDict = helvRefObj = gothRefObj = null;
     });
 
     it("should handle unknown text alignment, maximum length and flags", function (done) {
@@ -1614,7 +1660,7 @@ describe("annotation", function () {
       const textWidgetRef = Ref.get(271, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1644,6 +1690,46 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should render regular text in Japanese for printing", function (done) {
+      textWidgetDict.get("DR").get("Font").set("Goth", gothRefObj.ref);
+      textWidgetDict.set("DA", "/Goth 5 Tf");
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        gothRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = { value: "こんにちは世界の" };
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          const utf16String =
+            "\x30\x53\x30\x93\x30\x6b\x30\x61" +
+            "\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm" +
+              ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
+          );
+          done();
+        }, done.fail);
+    });
+
     it("should render regular text for printing using normal appearance", function (done) {
       const textWidgetRef = Ref.get(271, 0);
 
@@ -1658,7 +1744,7 @@ describe("annotation", function () {
 
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1699,7 +1785,7 @@ describe("annotation", function () {
       const textWidgetRef = Ref.get(271, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1722,8 +1808,48 @@ describe("annotation", function () {
         }, done.fail)
         .then(appearance => {
           expect(appearance).toEqual(
-            "/Tx BMC q BT /Helv 11 Tf 1 0 0 1 0 0 Tm" +
+            "/Tx BMC q BT /Helv 11 Tf 0 g 1 0 0 1 0 0 Tm" +
               " 2.00 2.00 Td (test \\(print\\)) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
+    it("should render auto-sized text in Japanese for printing", function (done) {
+      textWidgetDict.get("DR").get("Font").set("Goth", gothRefObj.ref);
+      textWidgetDict.set("DA", "/Goth 0 Tf");
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        gothRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = { value: "こんにちは世界の" };
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          const utf16String =
+            "\x30\x53\x30\x93\x30\x6b\x30\x61" +
+            "\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Goth 9 Tf 0 g 1 0 0 1 0 0 Tm" +
+              ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
           );
           done();
         }, done.fail);
@@ -1735,7 +1861,7 @@ describe("annotation", function () {
       const textWidgetRef = Ref.get(271, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1768,7 +1894,7 @@ describe("annotation", function () {
       const textWidgetRef = Ref.get(271, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1808,6 +1934,45 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should render multiline text in Japanese for printing", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
+      textWidgetDict.get("DR").get("Font").set("Goth", gothRefObj.ref);
+      textWidgetDict.set("DA", "/Goth 5 Tf");
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        gothRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = { value: "こんにちは世界の" };
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 10 Tm " +
+              "2.00 -5.00 Td (\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f) Tj\n" +
+              "0.00 -5.00 Td (\x4e\x16\x75\x4c\x30\x6e) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
     it("should render multiline text with various EOL for printing", function (done) {
       textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
       textWidgetDict.set("Rect", [0, 0, 128, 10]);
@@ -1815,7 +1980,7 @@ describe("annotation", function () {
       const textWidgetRef = Ref.get(271, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1881,7 +2046,7 @@ describe("annotation", function () {
       const textWidgetRef = Ref.get(271, 0);
       const xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict },
-        fontRefObj,
+        helvRefObj,
       ]);
       const task = new WorkerTask("test print");
       partialEvaluator.xref = xref;
@@ -1914,9 +2079,55 @@ describe("annotation", function () {
         }, done.fail);
     });
 
+    it("should render comb with Japanese text for printing", function (done) {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.COMB);
+      textWidgetDict.set("MaxLen", 4);
+      textWidgetDict.get("DR").get("Font").set("Goth", gothRefObj.ref);
+      textWidgetDict.set("DA", "/Goth 5 Tf");
+      textWidgetDict.set("Rect", [0, 0, 32, 10]);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        gothRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const id = annotation.data.id;
+          const annotationStorage = {};
+          annotationStorage[id] = { value: "こんにちは世界の" };
+          return annotation._getAppearance(
+            partialEvaluator,
+            task,
+            annotationStorage
+          );
+        }, done.fail)
+        .then(appearance => {
+          expect(appearance).toEqual(
+            "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 2 2 Tm" +
+              " (\x30\x53) Tj 8.00 0 Td (\x30\x93) Tj 8.00 0 Td (\x30\x6b) Tj" +
+              " 8.00 0 Td (\x30\x61) Tj 8.00 0 Td (\x30\x6f) Tj" +
+              " 8.00 0 Td (\x4e\x16) Tj 8.00 0 Td (\x75\x4c) Tj" +
+              " 8.00 0 Td (\x30\x6e) Tj ET Q EMC"
+          );
+          done();
+        }, done.fail);
+    });
+
     it("should save text", function (done) {
       const textWidgetRef = Ref.get(123, 0);
-      const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
       partialEvaluator.xref = xref;
       const task = new WorkerTask("test save");
 
@@ -1935,17 +2146,17 @@ describe("annotation", function () {
           expect(data.length).toEqual(2);
           const [oldData, newData] = data;
           expect(oldData.ref).toEqual(Ref.get(123, 0));
-          expect(newData.ref).toEqual(Ref.get(1, 0));
+          expect(newData.ref).toEqual(Ref.get(2, 0));
 
           oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
           expect(oldData.data).toEqual(
             "123 0 obj\n" +
               "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
               "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] " +
-              "/V (hello world) /AP << /N 1 0 R>> /M (date)>>\nendobj\n"
+              "/V (hello world) /AP << /N 2 0 R>> /M (date)>>\nendobj\n"
           );
           expect(newData.data).toEqual(
-            "1 0 obj\n<< /Length 77 /Subtype /Form /Resources " +
+            "2 0 obj\n<< /Length 77 /Subtype /Form /Resources " +
               "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
               "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (hello world) Tj " +
               "ET Q EMC\nendstream\nendobj\n"
@@ -2036,6 +2247,55 @@ describe("annotation", function () {
             "oof()",
           ]);
           expect(actions.MouseDown).toEqual(["bar()"]);
+          done();
+        }, done.fail);
+    });
+
+    it("should save Japanese text", function (done) {
+      textWidgetDict.get("DR").get("Font").set("Goth", gothRefObj.ref);
+      textWidgetDict.set("DA", "/Goth 5 Tf");
+
+      const textWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        gothRefObj,
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      )
+        .then(annotation => {
+          const annotationStorage = {};
+          annotationStorage[annotation.data.id] = { value: "こんにちは世界の" };
+          return annotation.save(partialEvaluator, task, annotationStorage);
+        }, done.fail)
+        .then(data => {
+          const utf16String =
+            "\x30\x53\x30\x93\x30\x6b\x30\x61" +
+            "\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
+          expect(data.length).toEqual(2);
+          const [oldData, newData] = data;
+          expect(oldData.ref).toEqual(Ref.get(123, 0));
+          expect(newData.ref).toEqual(Ref.get(2, 0));
+
+          oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+          expect(oldData.data).toEqual(
+            "123 0 obj\n" +
+              "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Goth 5 Tf) /DR " +
+              "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /Rect [0 0 32 10] " +
+              `/V (\xfe\xff${utf16String}) /AP << /N 2 0 R>> /M (date)>>\nendobj\n`
+          );
+          expect(newData.data).toEqual(
+            "2 0 obj\n<< /Length 82 /Subtype /Form /Resources " +
+              "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
+              `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (${utf16String}) Tj ` +
+              "ET Q EMC\nendstream\nendobj\n"
+          );
           done();
         }, done.fail);
     });

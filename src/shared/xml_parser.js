@@ -427,12 +427,13 @@ class SimpleDOMNode {
 }
 
 class SimpleXMLParser extends XMLParserBase {
-  constructor(hasAttributes = false) {
+  constructor({ hasAttributes = false, lowerCaseName = false }) {
     super();
     this._currentFragment = null;
     this._stack = null;
     this._errorCode = XMLParserErrorCode.NoError;
     this._hasAttributes = hasAttributes;
+    this._lowerCaseName = lowerCaseName;
   }
 
   parseFromString(data) {
@@ -476,6 +477,9 @@ class SimpleXMLParser extends XMLParserBase {
   }
 
   onBeginElement(name, attributes, isEmpty) {
+    if (this._lowerCaseName) {
+      name = name.toLowerCase();
+    }
     const node = new SimpleDOMNode(name);
     node.childNodes = [];
     if (this._hasAttributes) {

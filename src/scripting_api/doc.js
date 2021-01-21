@@ -42,7 +42,7 @@ class Doc extends PDFObject {
     this._dirty = false;
     this._disclosed = false;
     this._media = undefined;
-    this._metadata = data.metadata;
+    this._metadata = data.metadata || "";
     this._noautocomplete = undefined;
     this._nocache = undefined;
     this._spellDictionaryOrder = [];
@@ -74,12 +74,13 @@ class Doc extends PDFObject {
     // and they're are read-only.
     this._info = new Proxy(
       {
-        title: this.title,
-        author: this.author,
-        subject: this.subject,
-        keywords: this.keywords,
-        creator: this.creator,
-        producer: this.producer,
+        title: this._title,
+        author: this._author,
+        authors: data.authors || [this._author],
+        subject: this._subject,
+        keywords: this._keywords,
+        creator: this._creator,
+        producer: this._producer,
         creationdate: this._creationDate,
         moddate: this._modDate,
         trapped: data.Trapped || "Unknown",
@@ -91,6 +92,7 @@ class Doc extends PDFObject {
     this._zoom = data.zoom || 100;
     this._actions = createActionsMap(data.actions);
     this._globalEval = data.globalEval;
+    this._pageActions = new Map();
   }
 
   _dispatchDocEvent(name) {
@@ -114,22 +116,28 @@ class Doc extends PDFObject {
     }
   }
 
-  _dispatchPageEvent(name, action, pageNumber) {
+  _dispatchPageEvent(name, actions, pageNumber) {
     if (name === "PageOpen") {
+      if (!this._pageActions.has(pageNumber)) {
+        this._pageActions.set(pageNumber, createActionsMap(actions));
+      }
       this._pageNum = pageNumber - 1;
     }
 
-    this._globalEval(action);
+    actions = this._pageActions.get(pageNumber)?.get(name);
+    if (actions) {
+      for (const action of actions) {
+        this._globalEval(action);
+      }
+    }
   }
 
   _runActions(name) {
-    if (!this._actions.has(name)) {
-      return;
-    }
-
     const actions = this._actions.get(name);
-    for (const action of actions) {
-      this._globalEval(action);
+    if (actions) {
+      for (const action of actions) {
+        this._globalEval(action);
+      }
     }
   }
 

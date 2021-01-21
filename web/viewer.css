@@ -39,6 +39,7 @@
   --toolbar-border-color: rgba(204, 204, 204, 1);
   --button-hover-color: rgba(221, 222, 223, 1);
   --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+  --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
   --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
   --separator-color: rgba(0, 0, 0, 0.3);
   --field-color: rgba(6, 6, 6, 1);
@@ -47,8 +48,8 @@
   --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
   --treeitem-color: rgba(0, 0, 0, 0.8);
   --treeitem-hover-color: rgba(0, 0, 0, 0.9);
-  --treeitem-active-color: rgba(0, 0, 0, 0.08);
-  --treeitem-active-bg-color: rgba(0, 0, 0, 1);
+  --treeitem-selected-color: rgba(0, 0, 0, 0.9);
+  --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
   --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
@@ -76,6 +77,7 @@
   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
   --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
+  --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
   --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
   --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
   --findbarButton-next-icon: url(images/findbarButton-next.svg);
@@ -111,6 +113,7 @@
     --toolbar-border-color: rgba(12, 12, 13, 1);
     --button-hover-color: rgba(102, 102, 103, 1);
     --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+    --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
     --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
     --separator-color: rgba(0, 0, 0, 0.3);
     --field-color: rgba(250, 250, 250, 1);
@@ -119,8 +122,8 @@
     --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
     --treeitem-color: rgba(255, 255, 255, 0.8);
     --treeitem-hover-color: rgba(255, 255, 255, 0.9);
-    --treeitem-active-color: rgba(255, 255, 255, 0.08);
-    --treeitem-active-bg-color: rgba(255, 255, 255, 1);
+    --treeitem-selected-color: rgba(255, 255, 255, 0.9);
+    --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
     --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
@@ -176,7 +179,7 @@ select {
 }
 
 #viewerContainer.pdfPresentationMode:fullscreen {
-  top: 0px;
+  top: 0;
   border-top: 2px solid rgba(0, 0, 0, 0);
   background-color: rgba(0, 0, 0, 1);
   width: 100%;
@@ -237,10 +240,10 @@ html[dir="rtl"] #sidebarContainer {
   visibility: visible;
 }
 html[dir="ltr"] #outerContainer.sidebarOpen #sidebarContainer {
-  left: 0px;
+  left: 0;
 }
 html[dir="rtl"] #outerContainer.sidebarOpen #sidebarContainer {
-  right: 0px;
+  right: 0;
 }
 
 #mainContainer {
@@ -336,6 +339,13 @@ html[dir="rtl"] #toolbarSidebar .toolbarButton {
   margin-left: 2px !important;
 }
 
+html[dir="ltr"] #toolbarSidebarRight .toolbarButton {
+  margin-right: 3px !important;
+}
+html[dir="rtl"] #toolbarSidebarRight .toolbarButton {
+  margin-left: 3px !important;
+}
+
 #sidebarResizer {
   position: absolute;
   top: 0;
@@ -357,15 +367,6 @@ html[dir="rtl"] #sidebarResizer {
   position: relative;
   height: 32px;
   background-color: var(--toolbar-bg-color);
-}
-html[dir="ltr"] #toolbarContainer,
-.findbar,
-.secondaryToolbar {
-  box-shadow: 0 1px 0 var(--toolbar-border-color);
-}
-html[dir="rtl"] #toolbarContainer,
-.findbar,
-.secondaryToolbar {
   box-shadow: 0 1px 0 var(--toolbar-border-color);
 }
 
@@ -455,7 +456,7 @@ html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
   z-index: 10000;
   height: auto;
   min-width: 16px;
-  padding: 0px 4px 0px 4px;
+  padding: 0 4px 0 4px;
   margin: 4px 2px 4px 2px;
   color: rgba(217, 217, 217, 1);
   font-size: 12px;
@@ -484,58 +485,42 @@ html[dir="rtl"] .findbar {
   right: 64px;
 }
 
+.findbar .splitToolbarButton {
+  margin-top: 3px;
+}
 html[dir="ltr"] .findbar .splitToolbarButton {
-  margin-left: 0px;
-  margin-top: 3px;
+  margin-left: 0;
+  margin-right: 5px;
 }
-
 html[dir="rtl"] .findbar .splitToolbarButton {
-  margin-right: 0px;
-  margin-top: 3px;
+  margin-left: 5px;
+  margin-right: 0;
 }
 
-.findbar .splitToolbarButton .findNext {
-  width: 29px;
-}
-
-html[dir="ltr"] .findbar .splitToolbarButton .findNext {
-  border-right: 1px solid var(--field-border-color);
-}
-
-html[dir="rtl"] .findbar .splitToolbarButton .findNext {
-  border-left: 1px solid var(--field-border-color);
-}
-
-.findbar .splitToolbarButton .toolbarButton {
+.findbar .splitToolbarButton > .toolbarButton {
   background-color: var(--findbar-nextprevious-btn-bg-color);
-  border-radius: 0px;
+  border-radius: 0;
   height: 26px;
   border-top: 1px solid var(--field-border-color);
   border-bottom: 1px solid var(--field-border-color);
 }
 
-.findbar .splitToolbarButton .toolbarButton::before {
+.findbar .splitToolbarButton > .toolbarButton::before {
   top: 5px;
 }
 
-html[dir="ltr"] .findbar .splitToolbarButton > .findPrevious {
-  border-radius: 0;
+.findbar .splitToolbarButton > .findNext {
+  width: 29px;
 }
 html[dir="ltr"] .findbar .splitToolbarButton > .findNext {
-  border-bottom-left-radius: 0;
   border-bottom-right-radius: 2px;
-  border-top-left-radius: 0;
   border-top-right-radius: 2px;
-}
-
-html[dir="rtl"] .findbar .splitToolbarButton > .findPrevious {
-  border-radius: 0;
+  border-right: 1px solid var(--field-border-color);
 }
 html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
   border-bottom-left-radius: 2px;
-  border-bottom-right-radius: 0;
   border-top-left-radius: 2px;
-  border-top-right-radius: 0;
+  border-left: 1px solid var(--field-border-color);
 }
 
 .findbar input[type="checkbox"] {
@@ -555,7 +540,6 @@ html[dir="ltr"] #findInput {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 html[dir="rtl"] #findInput {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
@@ -692,16 +676,22 @@ html[dir="ltr"] .doorHangerRight:before {
 }
 
 html[dir="ltr"] #toolbarViewerLeft,
-html[dir="rtl"] #toolbarViewerRight {
+html[dir="rtl"] #toolbarViewerRight,
+html[dir="ltr"] #toolbarSidebarLeft,
+html[dir="rtl"] #toolbarSidebarRight {
   float: left;
 }
 html[dir="ltr"] #toolbarViewerRight,
-html[dir="rtl"] #toolbarViewerLeft {
+html[dir="rtl"] #toolbarViewerLeft,
+html[dir="ltr"] #toolbarSidebarRight,
+html[dir="rtl"] #toolbarSidebarLeft {
   float: right;
 }
 html[dir="ltr"] #toolbarViewerLeft > *,
 html[dir="ltr"] #toolbarViewerMiddle > *,
 html[dir="ltr"] #toolbarViewerRight > *,
+html[dir="ltr"] #toolbarSidebarLeft *,
+html[dir="ltr"] #toolbarSidebarRight *,
 html[dir="ltr"] .findbar * {
   position: relative;
   float: left;
@@ -709,25 +699,21 @@ html[dir="ltr"] .findbar * {
 html[dir="rtl"] #toolbarViewerLeft > *,
 html[dir="rtl"] #toolbarViewerMiddle > *,
 html[dir="rtl"] #toolbarViewerRight > *,
+html[dir="rtl"] #toolbarSidebarLeft *,
+html[dir="rtl"] #toolbarSidebarRight *,
 html[dir="rtl"] .findbar * {
   position: relative;
   float: right;
 }
 
-html[dir="ltr"] .splitToolbarButton {
-  margin: 2px 2px 0;
-  display: inline-block;
-}
-html[dir="rtl"] .splitToolbarButton {
+.splitToolbarButton {
   margin: 2px 2px 0;
   display: inline-block;
 }
 html[dir="ltr"] .splitToolbarButton > .toolbarButton {
-  border-radius: 2px;
   float: left;
 }
 html[dir="rtl"] .splitToolbarButton > .toolbarButton {
-  border-radius: 2px;
   float: right;
 }
 
@@ -778,12 +764,10 @@ html[dir="rtl"] .splitToolbarButton > .toolbarButton {
 }
 html[dir="ltr"] .splitToolbarButton > .toolbarButton:first-child,
 html[dir="rtl"] .splitToolbarButton > .toolbarButton:last-child {
-  position: relative;
   margin: 0;
 }
 html[dir="ltr"] .splitToolbarButton > .toolbarButton:last-child,
 html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
-  position: relative;
   margin: 0;
 }
 .splitToolbarButtonSeparator {
@@ -813,6 +797,7 @@ html[dir="rtl"] .splitToolbarButtonSeparator {
 .secondaryToolbarButton,
 .overlayButton {
   min-width: 16px;
+  margin: 2px 1px;
   padding: 2px 6px 0;
   border: none;
   border-radius: 2px;
@@ -822,17 +807,6 @@ html[dir="rtl"] .splitToolbarButtonSeparator {
   user-select: none;
   cursor: default;
   box-sizing: border-box;
-}
-
-html[dir="ltr"] .toolbarButton,
-html[dir="ltr"] .overlayButton,
-html[dir="ltr"] .dropdownToolbarButton {
-  margin: 2px 1px;
-}
-html[dir="rtl"] .toolbarButton,
-html[dir="rtl"] .overlayButton,
-html[dir="rtl"] .dropdownToolbarButton {
-  margin: 2px 1px;
 }
 
 html[dir="ltr"] #toolbarViewerLeft > .toolbarButton:first-child,
@@ -862,7 +836,7 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 .toolbarButton.toggled:hover:active,
 .splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
 .secondaryToolbarButton.toggled:hover:active {
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--toggled-hover-active-btn-color);
 }
 
 .dropdownToolbarButton {
@@ -928,30 +902,6 @@ html[dir="rtl"] .dropdownToolbarButton > select {
   height: 1px;
 }
 
-html[dir="ltr"] #findPrevious {
-  margin-left: 0;
-}
-html[dir="ltr"] #findNext {
-  margin-right: 3px;
-}
-
-html[dir="rtl"] #findPrevious {
-  margin-right: 0;
-}
-html[dir="rtl"] #findNext {
-  margin-left: 3px;
-}
-
-.toolbarButton::before {
-  opacity: var(--toolbar-icon-opacity);
-  top: 6px;
-}
-
-.secondaryToolbarButton::before {
-  opacity: var(--doorhanger-icon-opacity);
-  top: 5px;
-}
-
 .toolbarButton::before,
 .secondaryToolbarButton::before,
 .dropdownToolbarButton::after,
@@ -968,11 +918,17 @@ html[dir="rtl"] #findNext {
   -webkit-mask-size: cover;
   mask-size: cover;
 }
-.toolbarButton::before,
-.secondaryToolbarButton::before {
+
+.toolbarButton::before {
+  opacity: var(--toolbar-icon-opacity);
+  top: 6px;
   left: 6px;
 }
 
+.secondaryToolbarButton::before {
+  opacity: var(--doorhanger-icon-opacity);
+  top: 5px;
+}
 html[dir="ltr"] .secondaryToolbarButton::before {
   left: 12px;
 }
@@ -1000,32 +956,20 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
   -webkit-mask-image: var(--findbarButton-previous-icon);
   mask-image: var(--findbarButton-previous-icon);
 }
-html[dir="rtl"] .toolbarButton.findPrevious::before {
-  transform: scaleX(-1);
-}
 
 .toolbarButton.findNext::before {
   -webkit-mask-image: var(--findbarButton-next-icon);
   mask-image: var(--findbarButton-next-icon);
-}
-html[dir="rtl"] .toolbarButton.findNext::before {
-  transform: scaleX(-1);
 }
 
 .toolbarButton.pageUp::before {
   -webkit-mask-image: var(--toolbarButton-pageUp-icon);
   mask-image: var(--toolbarButton-pageUp-icon);
 }
-html[dir="rtl"] .toolbarButton.pageUp::before {
-  transform: scaleX(-1);
-}
 
 .toolbarButton.pageDown::before {
   -webkit-mask-image: var(--toolbarButton-pageDown-icon);
   mask-image: var(--toolbarButton-pageDown-icon);
-}
-html[dir="rtl"] .toolbarButton.pageDown::before {
-  transform: scaleX(-1);
 }
 
 .toolbarButton.zoomOut::before {
@@ -1099,6 +1043,14 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 #viewLayers.toolbarButton::before {
   -webkit-mask-image: var(--toolbarButton-viewLayers-icon);
   mask-image: var(--toolbarButton-viewLayers-icon);
+}
+
+#currentOutlineItem.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-currentOutlineItem-icon);
+  mask-image: var(--toolbarButton-currentOutlineItem-icon);
+}
+html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
+  transform: scaleX(-1);
 }
 
 #viewFind.toolbarButton::before {
@@ -1476,6 +1428,11 @@ html[dir="rtl"] .treeItemToggler::before {
   left: 4px;
 }
 
+.treeItem.selected > a {
+  background-color: var(--treeitem-selected-bg-color);
+  color: var(--treeitem-selected-color);
+}
+
 .treeItemToggler:hover,
 .treeItemToggler:hover + a,
 .treeItemToggler:hover ~ .treeItems,
@@ -1484,12 +1441,6 @@ html[dir="rtl"] .treeItemToggler::before {
   background-clip: padding-box;
   border-radius: 2px;
   color: var(--treeitem-hover-color);
-}
-
-.treeItem.selected {
-  background-color: var(--treeitem-active-bg-color);
-  background-clip: padding-box;
-  color: var(--treeitem-active-color);
 }
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
@@ -1843,10 +1794,10 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   }
 
   html[dir="ltr"] #outerContainer.sidebarOpen #viewerContainer {
-    left: 0px !important;
+    left: 0 !important;
   }
   html[dir="rtl"] #outerContainer.sidebarOpen #viewerContainer {
-    right: 0px !important;
+    right: 0 !important;
   }
 
   #outerContainer .hiddenLargeView,

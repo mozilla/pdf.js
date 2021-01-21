@@ -16,6 +16,17 @@
 const { clearInput, closePages, loadAndWait } = require("./test_utils.js");
 
 describe("Interaction", () => {
+  async function actAndWaitForInput(page, selector, action, clear = true) {
+    if (clear) {
+      await clearInput(page, selector);
+    }
+    await action();
+    await page.waitForFunction(
+      `document.querySelector("${selector.replace("\\", "\\\\")}").value !== ""`
+    );
+    return page.$eval(selector, el => el.value);
+  }
+
   describe("in 160F-2019.pdf", () => {
     let pages;
 
@@ -276,6 +287,191 @@ describe("Interaction", () => {
             const text = await page.$eval("#\\36 7R", el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(expectedText);
           }
+        })
+      );
+    });
+  });
+
+  describe("in doc_actions.pdf for printing", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("doc_actions.pdf", "#\\34 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must execute WillPrint and DidPrint actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (process.platform === "win32" && browserName === "firefox") {
+            pending("Disabled in Firefox on Windows, because of bug 1662471.");
+          }
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await clearInput(page, "#\\34 7R");
+          await page.evaluate(_ => {
+            window.document.activeElement.blur();
+          });
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 7R").value === ""`
+          );
+
+          let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
+            await page.click("#print");
+          });
+          expect(text).withContext(`In ${browserName}`).toEqual("WillPrint");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\35 0R").value !== ""`
+          );
+
+          text = await page.$eval("#\\35 0R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("DidPrint");
+        })
+      );
+    });
+  });
+
+  describe("in doc_actions.pdf for saving", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("doc_actions.pdf", "#\\34 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must execute WillSave and DidSave actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          try {
+            // Disable download in chrome
+            // (it leads to an error in firefox so the try...)
+            await page._client.send("Page.setDownloadBehavior", {
+              behavior: "deny",
+            });
+          } catch (_) {}
+          await clearInput(page, "#\\34 7R");
+          await page.evaluate(_ => {
+            window.document.activeElement.blur();
+          });
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 7R").value === ""`
+          );
+
+          let text = await actAndWaitForInput(page, "#\\34 7R", async () => {
+            await page.click("#download");
+          });
+          expect(text).withContext(`In ${browserName}`).toEqual("WillSave");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\35 0R").value !== ""`
+          );
+
+          text = await page.$eval("#\\35 0R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("DidSave");
+        })
+      );
+    });
+  });
+
+  describe("in doc_actions.pdf for page actions", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("doc_actions.pdf", "#\\34 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must execute PageOpen and PageClose actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let text = await page.$eval("#\\34 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("PageOpen 1");
+
+          for (let run = 0; run < 5; run++) {
+            for (const ref of [18, 19, 20, 21, 47, 50]) {
+              await page.evaluate(refElem => {
+                const element = window.document.getElementById(`${refElem}R`);
+                if (element) {
+                  element.value = "";
+                }
+              }, ref);
+            }
+
+            for (const [refOpen, refClose, pageNumOpen, pageNumClose] of [
+              [18, 50, 2, 1],
+              [21, 19, 3, 2],
+              [47, 20, 1, 3],
+            ]) {
+              text = await actAndWaitForInput(
+                page,
+                `#\\3${Math.floor(refOpen / 10)} ${refOpen % 10}R`,
+                async () => {
+                  await page.evaluate(refElem => {
+                    window.document
+                      .getElementById(`${refElem}R`)
+                      .scrollIntoView();
+                  }, refOpen);
+                },
+                false
+              );
+              expect(text)
+                .withContext(`In ${browserName}`)
+                .toEqual(`PageOpen ${pageNumOpen}`);
+
+              text = await page.$eval(
+                `#\\3${Math.floor(refClose / 10)} ${refClose % 10}R`,
+                el => el.value
+              );
+              expect(text)
+                .withContext(`In ${browserName}`)
+                .toEqual(`PageClose ${pageNumClose}`);
+            }
+          }
+        })
+      );
+    });
+  });
+
+  describe("in js-authors.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("js-authors.pdf", "#\\32 5R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must print authors in a text field", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const text = await actAndWaitForInput(page, "#\\32 5R", async () => {
+            await page.click("[data-annotation-id='26R']");
+          });
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .toEqual("author1::author2::author3::author4::author5");
         })
       );
     });

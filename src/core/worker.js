@@ -189,19 +189,15 @@ class WorkerMessageHandler {
 
       // Ensure that (primarily) Node.js users won't accidentally attempt to use
       // a non-translated/non-polyfilled build of the library, since that would
-      // quickly fail anyway because of missing functionality (such as e.g.
-      // `ReadableStream` and `Promise.allSettled`).
+      // quickly fail anyway because of missing functionality.
       if (
         (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
-        (typeof globalThis === "undefined" ||
-          typeof ReadableStream === "undefined" ||
-          typeof Promise.allSettled === "undefined")
+        typeof ReadableStream === "undefined"
       ) {
         throw new Error(
           "The browser/environment lacks native support for critical " +
-            "functionality used by the PDF.js library (e.g. `globalThis`, " +
-            "`ReadableStream`, and/or `Promise.allSettled`); " +
-            "please use an ES5-compatible build instead."
+            "functionality used by the PDF.js library (e.g. `ReadableStream`); " +
+            "please use an `es5`-build instead."
         );
       }
     }
@@ -869,4 +865,4 @@ if (
   WorkerMessageHandler.initializeFromPort(self);
 }
 
-export { WorkerTask, WorkerMessageHandler };
+export { WorkerMessageHandler, WorkerTask };

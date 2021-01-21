@@ -165,12 +165,11 @@ class TextLayerBuilder {
     if (!matches) {
       return [];
     }
-    const { findController, textContentItemsStr } = this;
+    const { textContentItemsStr } = this;
 
     let i = 0,
       iIndex = 0;
     const end = textContentItemsStr.length - 1;
-    const queryLen = findController.state.query.length;
     const result = [];
 
     for (let m = 0, mm = matches.length; m < mm; m++) {
@@ -196,13 +195,7 @@ class TextLayerBuilder {
       };
 
       // Calculate the end position.
-      if (matchesLength) {
-        // Multiterm search.
-        matchIdx += matchesLength[m];
-      } else {
-        // Phrase search.
-        matchIdx += queryLen;
-      }
+      matchIdx += matchesLength[m];
 
       // Somewhat the same array as above, but use > instead of >= to get
       // the end position right.
@@ -474,4 +467,4 @@ class DefaultTextLayerFactory {
   }
 }
 
-export { TextLayerBuilder, DefaultTextLayerFactory };
+export { DefaultTextLayerFactory, TextLayerBuilder };

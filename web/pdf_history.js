@@ -804,4 +804,4 @@ function isDestArraysEqual(firstDest, secondDest) {
   return true;
 }
 
-export { PDFHistory, isDestHashesEqual, isDestArraysEqual };
+export { isDestArraysEqual, isDestHashesEqual, PDFHistory };

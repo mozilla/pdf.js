@@ -73,11 +73,10 @@ class EventDispatcher {
       }
       if (id === "doc") {
         this._document.obj._dispatchDocEvent(event.name);
-      }
-      if (id === "page") {
+      } else if (id === "page") {
         this._document.obj._dispatchPageEvent(
           event.name,
-          baseEvent.action,
+          baseEvent.actions,
           baseEvent.pageNumber
         );
       }

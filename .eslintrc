@@ -8,6 +8,7 @@
     "import",
     "mozilla",
     "no-unsanitized",
+    "sort-exports",
     "unicorn",
   ],
 
@@ -36,9 +37,12 @@
     "mozilla/use-includes-instead-of-indexOf": "error",
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
+    "sort-exports/sort-exports": ["error", {
+      "ignoreCase": true,
+    }],
     "unicorn/no-abusive-eslint-disable": "error",
-    "unicorn/no-array-instanceof": "error",
-    "unicorn/prefer-starts-ends-with": "error",
+    "unicorn/no-instanceof-array": "error",
+    "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
     "for-direction": "error",
