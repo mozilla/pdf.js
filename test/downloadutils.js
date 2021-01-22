@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
 
 "use strict";
 
@@ -133,7 +132,7 @@ function downloadManifestFiles(manifest, callback) {
       var linkfile = file + ".link";
       var url = fs.readFileSync(linkfile).toString();
       url = url.replace(/\s+$/, "");
-      return { file: file, url: url };
+      return { file, url };
     });
 
   var i = 0;

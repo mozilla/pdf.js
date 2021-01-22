@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* eslint-env node */
-/* eslint-disable object-shorthand */
 /* globals target */
 
 "use strict";
@@ -222,7 +221,7 @@ function createWebpackConfig(
 
   return {
     mode: "none",
-    output: output,
+    output,
     performance: {
       hints: false, // Disable messages about larger file sizes.
     },
@@ -629,7 +628,7 @@ gulp.task("buildnumber", function (done) {
           "version.json",
           JSON.stringify(
             {
-              version: version,
+              version,
               build: buildNumber,
               commit: buildCommit,
             },
