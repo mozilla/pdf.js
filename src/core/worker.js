@@ -43,54 +43,31 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { XRefParseException } from "./core_utils.js";
 
-
-// modified by ngx-extended-pdf-viewer #358 (several not-so-old browsers don't implement Promise.allSettled())
+// modified by ngx-extended-pdf-viewer #358
+// (several not-so-old browsers don't implement Promise.allSettled())
 if (!Promise.allSettled) {
   Promise.allSettled = function (promises) {
-    let mappedPromises = promises.filter(o=>!!o).map((p) => {
-      return p
-        .then((value) => {
-          return {
-            status: 'fulfilled',
-            value,
-          };
-        })
-        .catch((reason) => {
-          return {
-            status: 'rejected',
-            reason,
-          };
-        });
-    });
+    const mappedPromises = promises
+      .filter(o => !!o)
+      .map(p => {
+        return p
+          .then(value => {
+            return {
+              status: "fulfilled",
+              value,
+            };
+          })
+          .catch(reason => {
+            return {
+              status: "rejected",
+              reason,
+            };
+          });
+      });
     return Promise.all(mappedPromises);
-  }
+  };
 }
 // end of modification ngx-extended-pdf-viewer #358
-
-
-// modified by ngx-extended-pdf-viewer #358 (several not-so-old browsers don't implement Promise.allSettled())
-if (!Promise.allSettled) {
-  Promise.allSettled = function (promises) {
-    let mappedPromises = promises.filter(o=>!!o).map((p) => {
-      return p
-        .then((value) => {
-          return {
-            status: 'fulfilled',
-            value,
-          };
-        })
-        .catch((reason) => {
-          return {
-            status: 'rejected',
-            reason,
-          };
-        });
-    });
-    return Promise.all(mappedPromises);
-  }
-}
-// end of modification ngx-extended-pdf-viewer #358
-
 class WorkerTask {
   constructor(name) {
     this.name = name;
