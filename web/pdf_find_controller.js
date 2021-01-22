@@ -49,12 +49,44 @@ let normalizationRegex = null;
 function normalize(text) {
   if (!normalizationRegex) {
     // Compile the regular expression for text normalization once.
+    // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
     normalizationRegex = new RegExp(`[${replace}]`, "g");
   }
-  return text.replace(normalizationRegex, function (ch) {
-    return CHARACTERS_TO_NORMALIZE[ch];
+  let diffs = null;
+  const normalizedText = text.replace(normalizationRegex, function (ch, index) {
+    const normalizedCh = CHARACTERS_TO_NORMALIZE[ch],
+      diff = normalizedCh.length - ch.length;
+    if (diff !== 0) {
+      (diffs ||= []).push([index, diff]);
+    }
+    return normalizedCh;
   });
+
+  return [normalizedText, diffs];
+}
+
+// Determine the original, non-normalized, match index such that highlighting of
+// search results is correct in the `textLayer` for strings containing e.g. "½"
+// characters; essentially "inverting" the result of the `normalize` function.
+function getOriginalIndex(matchIndex, diffs = null) {
+  if (!diffs) {
+    return matchIndex;
+  }
+  let totalDiff = 0;
+  for (const [index, diff] of diffs) {
+    const currentIndex = index + totalDiff;
+
+    if (currentIndex >= matchIndex) {
+      break;
+    }
+    if (currentIndex + diff > matchIndex) {
+      totalDiff += matchIndex - currentIndex;
+      break;
+    }
+    totalDiff += diff;
+  }
+  return matchIndex - totalDiff;
 }
 
 /**
@@ -228,6 +260,7 @@ class PDFFindController {
     };
     this._extractTextPromises = [];
     this._pageContents = []; // Stores the normalized text for each page.
+    this._pageDiffs = [];
     this._matchesCountTotal = 0;
     this._pagesToSearch = null;
     this._pendingFindMatches = Object.create(null);
@@ -245,7 +278,7 @@ class PDFFindController {
   get _query() {
     if (this._state.query !== this._rawQuery) {
       this._rawQuery = this._state.query;
-      this._normalizedQuery = normalize(this._state.query);
+      [this._normalizedQuery] = normalize(this._state.query);
     }
     return this._normalizedQuery;
   }
@@ -398,6 +431,7 @@ class PDFFindController {
     query,
     pageIndex,
     pageContent,
+    pageDiffs,
     entireWord,
     ignoreAccents
   ) {
@@ -408,7 +442,8 @@ class PDFFindController {
       query = deburr(query); // #177
     } // #177
 
-    const matches = [];
+    const matches = [],
+      matchesLength = [];
     const queryLen = query.length;
 
     let matchIdx = -queryLen;
@@ -420,15 +455,23 @@ class PDFFindController {
       if (entireWord && !this._isEntireWord(pageContent, matchIdx, queryLen)) {
         continue;
       }
-      matches.push(matchIdx);
+      const originalMatchIdx = getOriginalIndex(matchIdx, pageDiffs),
+      matchEnd = matchIdx + queryLen - 1,
+      originalQueryLen =
+        getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+
+      matches.push(originalMatchIdx);
+      matchesLength.push(originalQueryLen);
     }
     this._pageMatches[pageIndex] = matches;
+    this._pageMatchesLength[pageIndex] = matchesLength;
   }
 
   _calculateWordMatch(
     query,
     pageIndex,
     pageContent,
+    pageDiffs,
     entireWord,
     ignoreAccents
   ) {
@@ -464,10 +507,15 @@ class PDFFindController {
         ) {
           continue;
         }
+        const originalMatchIdx = getOriginalIndex(matchIdx, pageDiffs),
+        matchEnd = matchIdx + subqueryLen - 1,
+        originalQueryLen =
+          getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+
         // Other searches do not, so we store the length.
         matchesWithLength.push({
-          match: matchIdx,
-          matchLength: subqueryLen,
+          match: originalMatchIdx,
+          matchLength: originalQueryLen,
           skipped: false,
           color: i, // #201
         });
@@ -491,6 +539,7 @@ class PDFFindController {
 
   _calculateMatch(pageIndex) {
     let pageContent = this._pageContents[pageIndex];
+    const pageDiffs = this._pageDiffs[pageIndex];
     let query = this._query;
     const {
       caseSensitive,
@@ -512,7 +561,7 @@ class PDFFindController {
 
     if (fuzzySearch) {
       if (query.length <= 2) {
-        this._calculatePhraseMatch(query, pageIndex, pageContent, false);
+        this._calculatePhraseMatch(query, pageIndex, pageContent, pageDiffs, false);
       } else {
         this._calculateFuzzyMatch(query, pageIndex, pageContent);
       }
@@ -521,6 +570,7 @@ class PDFFindController {
         query,
         pageIndex,
         pageContent,
+        pageDiffs,
         entireWord,
         ignoreAccents
       ); // #177
@@ -529,6 +579,7 @@ class PDFFindController {
         query,
         pageIndex,
         pageContent,
+        pageDiffs,
         entireWord,
         ignoreAccents
       ); // #177
@@ -581,7 +632,10 @@ class PDFFindController {
               }
 
               // Store the normalized page content (text items) as one string.
-              this._pageContents[i] = normalize(strBuf.join(""));
+              [this._pageContents[i], this._pageDiffs[i]] = normalize(
+                strBuf.join("")
+              );
+
               extractTextCapability.resolve(i);
             },
             reason => {
@@ -591,6 +645,7 @@ class PDFFindController {
               );
               // Page error -- assuming no text content.
               this._pageContents[i] = "";
+              this._pageDiffs[i] = null;
               extractTextCapability.resolve(i);
             }
           );
@@ -845,4 +900,4 @@ class PDFFindController {
   }
 }
 
-export { FindState, PDFFindController };
+export { FindState, PDFFindController }
