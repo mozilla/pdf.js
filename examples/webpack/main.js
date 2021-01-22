@@ -25,7 +25,7 @@ loadingTask.promise
       var ctx = canvas.getContext("2d");
       var renderTask = pdfPage.render({
         canvasContext: ctx,
-        viewport: viewport,
+        viewport,
       });
       return renderTask.promise;
     });
