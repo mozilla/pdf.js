@@ -209,6 +209,23 @@ function createWebpackConfig(
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
+  // Since logical assignment operators is a fairly new ECMAScript feature,
+  // for now we translate these regardless of the `SKIP_BABEL` value (with the
+  // exception of `MOZCENTRAL`/`TESTING`-builds where this isn't an issue).
+  const babelPlugins = [
+    "@babel/plugin-transform-modules-commonjs",
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        helpers: false,
+        regenerator: true,
+      },
+    ],
+  ];
+  if (!bundleDefines.MOZCENTRAL && !bundleDefines.TESTING) {
+    babelPlugins.push("@babel/plugin-proposal-logical-assignment-operators");
+  }
+
   const plugins = [];
   if (!disableLicenseHeader) {
     plugins.push(
@@ -241,17 +258,7 @@ function createWebpackConfig(
           exclude: babelExcludeRegExp,
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
-            plugins: [
-              "@babel/plugin-proposal-logical-assignment-operators",
-              "@babel/plugin-transform-modules-commonjs",
-              [
-                "@babel/plugin-transform-runtime",
-                {
-                  helpers: false,
-                  regenerator: true,
-                },
-              ],
-            ],
+            plugins: babelPlugins,
           },
         },
         {
