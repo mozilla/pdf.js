@@ -34,8 +34,8 @@ files.forEach(function (expectationFilename) {
     "import-alias": "import-name",
   };
   var ctx = {
-    defines: defines,
-    map: map,
+    defines,
+    map,
     rootPath: __dirname + "/../..",
   };
   var out;

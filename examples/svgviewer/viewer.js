@@ -16,6 +16,7 @@
 "use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
+  // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
@@ -37,12 +38,12 @@ var eventBus = new pdfjsViewer.EventBus();
 
 // (Optionally) enable hyperlinks within PDF files.
 var pdfLinkService = new pdfjsViewer.PDFLinkService({
-  eventBus: eventBus,
+  eventBus,
 });
 
 var pdfViewer = new pdfjsViewer.PDFViewer({
-  container: container,
-  eventBus: eventBus,
+  container,
+  eventBus,
   linkService: pdfLinkService,
   renderer: "svg",
   textLayerMode: 0,
