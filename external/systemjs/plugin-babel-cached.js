@@ -46,11 +46,11 @@ function storeCache(address, hashCode, translated, format) {
     var tx = db.transaction(dbCacheTable, "readwrite");
     var store = tx.objectStore(dbCacheTable);
     store.put({
-      address: address,
-      hashCode: hashCode,
-      translated: translated,
+      address,
+      hashCode,
+      translated,
       expires: Date.now() + cacheExpiration,
-      format: format,
+      format,
     });
     return new Promise(function (resolve, reject) {
       tx.oncomplete = function () {

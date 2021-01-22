@@ -16,6 +16,7 @@
 "use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFPageView) {
+  // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
@@ -48,11 +49,11 @@ loadingTask.promise.then(function (pdfDocument) {
   return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
     // Creating the page view with default parameters.
     var pdfPageView = new pdfjsViewer.PDFPageView({
-      container: container,
+      container,
       id: PAGE_TO_VIEW,
       scale: SCALE,
       defaultViewport: pdfPage.getViewport({ scale: SCALE }),
-      eventBus: eventBus,
+      eventBus,
       // We can enable text/annotations layers, if needed
       textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
       annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),

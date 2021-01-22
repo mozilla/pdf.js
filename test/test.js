@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
 
 "use strict";
 
@@ -646,15 +645,15 @@ function refTestPostHandler(req, res) {
     }
 
     taskResults[round][page] = {
-      failure: failure,
-      snapshot: snapshot,
+      failure,
+      snapshot,
     };
     if (stats) {
       stats.push({
-        browser: browser,
+        browser,
         pdf: id,
-        page: page,
-        round: round,
+        page,
+        round,
         stats: data.stats,
       });
     }
