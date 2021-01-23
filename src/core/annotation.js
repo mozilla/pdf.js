@@ -1272,8 +1272,6 @@ class WidgetAnnotation extends Annotation {
   }
 
   async _getAppearance(evaluator, task, annotationStorage) {
-    this._fontName = null;
-
     const isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
     if (!annotationStorage || isPassword) {
       return null;
@@ -1309,7 +1307,6 @@ class WidgetAnnotation extends Annotation {
 
     const font = await this._getFontData(evaluator, task);
     const fontSize = this._computeFontSize(font, totalHeight);
-    this._fontName = this._defaultAppearanceData.fontName.name;
 
     let descent = font.descent;
     if (isNaN(descent)) {
@@ -1465,34 +1462,35 @@ class WidgetAnnotation extends Annotation {
       PDFJSDev.test("!PRODUCTION || TESTING")
     ) {
       assert(
-        this._fontName !== undefined,
-        "Expected `_getAppearance()` to have been called."
+        this._defaultAppearanceData,
+        "Expected `_defaultAppearanceData` to have been set."
       );
     }
     const {
       localResources,
-      acroFormResources,
       appearanceResources,
+      acroFormResources,
     } = this._fieldResources;
 
-    if (!this._fontName) {
+    const fontNameStr =
+      this._defaultAppearanceData && this._defaultAppearanceData.fontName.name;
+    if (!fontNameStr) {
       return localResources || Dict.empty;
     }
 
     for (const resources of [localResources, appearanceResources]) {
       if (resources instanceof Dict) {
         const localFont = resources.get("Font");
-        if (localFont instanceof Dict && localFont.has(this._fontName)) {
+        if (localFont instanceof Dict && localFont.has(fontNameStr)) {
           return resources;
         }
       }
     }
-
     if (acroFormResources instanceof Dict) {
       const acroFormFont = acroFormResources.get("Font");
-      if (acroFormFont instanceof Dict && acroFormFont.has(this._fontName)) {
+      if (acroFormFont instanceof Dict && acroFormFont.has(fontNameStr)) {
         const subFontDict = new Dict(xref);
-        subFontDict.set(this._fontName, acroFormFont.getRaw(this._fontName));
+        subFontDict.set(fontNameStr, acroFormFont.getRaw(fontNameStr));
 
         const subResourcesDict = new Dict(xref);
         subResourcesDict.set("Font", subFontDict);
@@ -2013,7 +2011,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
     return {
       id: this.data.id,
-      value: this.data.fieldValue || null,
+      value: this.data.fieldValue || "Off",
       defaultValue: this.data.defaultFieldValue,
       exportValues,
       editable: !this.data.readOnly,

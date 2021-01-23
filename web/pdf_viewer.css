@@ -23,7 +23,7 @@
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: 1px auto -8px auto;
+  margin: 1px auto -8px;
   position: relative;
   overflow: visible;
   border: 9px solid transparent;
@@ -33,7 +33,7 @@
 }
 
 .pdfViewer.removePageBorders .page {
-  margin: 0 auto 10px auto;
+  margin: 0 auto 10px;
   border: none;
 }
 

@@ -16,6 +16,7 @@
 "use strict";
 
 if (!pdfjsImageDecoders.JpegImage) {
+  // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using `gulp dist-install`");
 }
 
@@ -61,8 +62,8 @@ jpegImage.parse(typedArrayImage);
 var width = jpegImage.width,
   height = jpegImage.height;
 var jpegData = jpegImage.getData({
-  width: width,
-  height: height,
+  width,
+  height,
   forceRGB: true,
 });
 

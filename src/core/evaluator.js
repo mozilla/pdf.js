@@ -3683,7 +3683,7 @@ class TranslatedFont {
           continue;
 
         case OPS.setGState:
-          const gStateObj = operatorList.argsArray[i];
+          const [gStateObj] = operatorList.argsArray[i];
           let j = 0,
             jj = gStateObj.length;
           while (j < jj) {
