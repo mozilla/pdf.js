@@ -22,10 +22,10 @@ import { Name } from "../../src/core/primitives.js";
 describe("Default appearance", function () {
   describe("parseDefaultAppearance and createDefaultAppearance", function () {
     it("should parse and create default appearance", function () {
-      const da = "/FontName 12 Tf 0.10 0.20 0.30 rg";
+      const da = "/F1 12 Tf 0.10 0.20 0.30 rg";
       const result = {
         fontSize: 12,
-        fontName: Name.get("FontName"),
+        fontName: Name.get("F1"),
         fontColor: new Uint8ClampedArray([26, 51, 76]),
       };
       expect(parseDefaultAppearance(da)).toEqual(result);
@@ -33,21 +33,21 @@ describe("Default appearance", function () {
 
       expect(
         parseDefaultAppearance(
-          "0.1 0.2 0.3 rg /FontName 12 Tf 0.3 0.2 0.1 rg /NameFont 13 Tf"
+          "0.1 0.2 0.3 rg /F1 12 Tf 0.3 0.2 0.1 rg /F2 13 Tf"
         )
       ).toEqual({
         fontSize: 13,
-        fontName: Name.get("NameFont"),
+        fontName: Name.get("F2"),
         fontColor: new Uint8ClampedArray([76, 51, 26]),
       });
     });
 
     it("should parse default appearance with save/restore", function () {
       const da =
-        "q Q 0.10 0.20 0.30 rg /FontName 12 Tf q 0.30 0.20 0.10 rg /NameFont 13 Tf Q";
+        "q Q 0.10 0.20 0.30 rg /F1 12 Tf q 0.30 0.20 0.10 rg /F2 13 Tf Q";
       expect(parseDefaultAppearance(da)).toEqual({
         fontSize: 12,
-        fontName: Name.get("FontName"),
+        fontName: Name.get("F1"),
         fontColor: new Uint8ClampedArray([26, 51, 76]),
       });
     });
