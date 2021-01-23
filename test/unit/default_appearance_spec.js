@@ -33,7 +33,7 @@ describe("Default appearance", function () {
 
       expect(
         parseDefaultAppearance(
-          " 0.1 0.2 0.3 rg /FontName 12 Tf 0.3 0.2 0.1 rg /NameFont 13 Tf"
+          "0.1 0.2 0.3 rg /FontName 12 Tf 0.3 0.2 0.1 rg /NameFont 13 Tf"
         )
       ).toEqual({
         fontSize: 13,
@@ -44,7 +44,7 @@ describe("Default appearance", function () {
 
     it("should parse default appearance with save/restore", function () {
       const da =
-        "0.10 0.20 0.30 rg /FontName 12 Tf q 0.30 0.20 0.10 rg /NameFont 13 Tf Q";
+        "q Q 0.10 0.20 0.30 rg /FontName 12 Tf q 0.30 0.20 0.10 rg /NameFont 13 Tf Q";
       expect(parseDefaultAppearance(da)).toEqual({
         fontSize: 12,
         fontName: Name.get("FontName"),
