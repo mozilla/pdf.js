@@ -997,9 +997,7 @@ class WidgetAnnotation extends Annotation {
     data.defaultAppearance = isString(defaultAppearance)
       ? defaultAppearance
       : "";
-    this._defaultAppearanceData = parseDefaultAppearance(
-      data.defaultAppearance
-    );
+    data.defaultAppearanceData = parseDefaultAppearance(data.defaultAppearance);
 
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
@@ -1294,7 +1292,7 @@ class WidgetAnnotation extends Annotation {
       // Doing so prevents exceptions and allows saving/printing
       // the file as expected.
       this.data.defaultAppearance = "/Helvetica 0 Tf 0 g";
-      this._defaultAppearanceData = parseDefaultAppearance(
+      this.data.defaultAppearanceData = parseDefaultAppearance(
         this.data.defaultAppearance
       );
     }
@@ -1377,7 +1375,7 @@ class WidgetAnnotation extends Annotation {
       },
     };
 
-    const { fontName, fontSize } = this._defaultAppearanceData;
+    const { fontName, fontSize } = this.data.defaultAppearanceData;
     await evaluator.handleSetFont(
       this._fieldResources.mergedResources,
       [fontName, fontSize],
@@ -1392,9 +1390,9 @@ class WidgetAnnotation extends Annotation {
   }
 
   _computeFontSize(font, height) {
-    let fontSize = this._defaultAppearanceData.fontSize;
+    let fontSize = this.data.defaultAppearanceData.fontSize;
     if (!fontSize) {
-      const { fontColor, fontName } = this._defaultAppearanceData;
+      const { fontColor, fontName } = this.data.defaultAppearanceData;
       let capHeight;
       if (font.capHeight) {
         capHeight = font.capHeight;
@@ -1456,7 +1454,7 @@ class WidgetAnnotation extends Annotation {
       PDFJSDev.test("!PRODUCTION || TESTING")
     ) {
       assert(
-        this._defaultAppearanceData,
+        this.data.defaultAppearanceData,
         "Expected `_defaultAppearanceData` to have been set."
       );
     }
@@ -1467,7 +1465,8 @@ class WidgetAnnotation extends Annotation {
     } = this._fieldResources;
 
     const fontNameStr =
-      this._defaultAppearanceData && this._defaultAppearanceData.fontName.name;
+      this.data.defaultAppearanceData &&
+      this.data.defaultAppearanceData.fontName.name;
     if (!fontNameStr) {
       return localResources || Dict.empty;
     }
