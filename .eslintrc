@@ -139,6 +139,11 @@
       "vars": "local",
       "args": "none",
     }],
+    "no-use-before-define": ["error", {
+      "functions": false,
+      "classes": false,
+      "variables": false,
+    }],
 
     // Node.js and CommonJS
     "no-buffer-constructor": "error",
