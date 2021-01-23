@@ -121,6 +121,10 @@ class PDFSinglePageViewer extends BaseViewer {
   _updateScrollMode() {}
 
   _updateSpreadMode() {}
+
+  _getPageAdvance() {
+    return 1;
+  }
 }
 
 export { PDFSinglePageViewer };

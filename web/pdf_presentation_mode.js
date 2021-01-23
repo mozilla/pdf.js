@@ -138,7 +138,9 @@ class PDFPresentationMode {
       const totalDelta = this.mouseScrollDelta;
       this._resetMouseScrollState();
       const success =
-        totalDelta > 0 ? this._goToPreviousPage() : this._goToNextPage();
+        totalDelta > 0
+          ? this.pdfViewer.previousPage()
+          : this.pdfViewer.nextPage();
       if (success) {
         this.mouseScrollTimeStamp = currentTime;
       }
@@ -151,32 +153,6 @@ class PDFPresentationMode {
       document.mozFullScreen ||
       document.webkitIsFullScreen
     );
-  }
-
-  /**
-   * @private
-   */
-  _goToPreviousPage() {
-    const page = this.pdfViewer.currentPageNumber;
-    // If we're at the first page, we don't need to do anything.
-    if (page <= 1) {
-      return false;
-    }
-    this.pdfViewer.currentPageNumber = page - 1;
-    return true;
-  }
-
-  /**
-   * @private
-   */
-  _goToNextPage() {
-    const page = this.pdfViewer.currentPageNumber;
-    // If we're at the last page, we don't need to do anything.
-    if (page >= this.pdfViewer.pagesCount) {
-      return false;
-    }
-    this.pdfViewer.currentPageNumber = page + 1;
-    return true;
   }
 
   /**
@@ -315,9 +291,9 @@ class PDFPresentationMode {
         evt.preventDefault();
 
         if (evt.shiftKey) {
-          this._goToPreviousPage();
+          this.pdfViewer.previousPage();
         } else {
-          this._goToNextPage();
+          this.pdfViewer.nextPage();
         }
       }
     }
@@ -422,9 +398,9 @@ class PDFPresentationMode {
           delta = dy;
         }
         if (delta > 0) {
-          this._goToPreviousPage();
+          this.pdfViewer.previousPage();
         } else if (delta < 0) {
-          this._goToNextPage();
+          this.pdfViewer.nextPage();
         }
         break;
     }
