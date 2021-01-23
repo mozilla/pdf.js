@@ -563,17 +563,18 @@ function getVisibleElements({
       Math.max(0, top - currentHeight) + Math.max(0, viewBottom - bottom);
     const hiddenWidth =
       Math.max(0, left - currentWidth) + Math.max(0, viewRight - right);
-    const percent =
-      (((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) * 100) /
-        viewHeight /
-        viewWidth) |
-      0;
+
+    const fractionHeight = (viewHeight - hiddenHeight) / viewHeight,
+      fractionWidth = (viewWidth - hiddenWidth) / viewWidth;
+    const percent = (fractionHeight * fractionWidth * 100) | 0;
+
     visible.push({
       id: view.id,
       x: currentWidth,
       y: currentHeight,
       view,
       percent,
+      widthPercent: (fractionWidth * 100) | 0,
     });
   }
 
