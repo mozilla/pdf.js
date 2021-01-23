@@ -37,13 +37,17 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
     };
 
     try {
-      while (this.read(operation)) {
-        if (this.stateManager.stateStack.length !== 0) {
-          // Don't get info in save/restore sections.
-          args.length = 0;
-          continue;
+      while (true) {
+        operation.args.length = 0; // Ensure that `args` it's always reset.
+
+        if (!this.read(operation)) {
+          break;
+        }
+        if (this.savedStatesDepth !== 0) {
+          continue; // Don't get info in save/restore sections.
         }
         const { fn, args } = operation;
+
         switch (fn | 0) {
           case OPS.setFont:
             const [fontName, fontSize] = args;
@@ -64,7 +68,6 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
             ColorSpace.singletons.cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
         }
-        args.length = 0;
       }
     } catch (reason) {
       warn(`parseDefaultAppearance - ignoring errors: "${reason}".`);
