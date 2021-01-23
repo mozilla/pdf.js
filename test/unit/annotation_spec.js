@@ -2238,15 +2238,15 @@ describe("annotation", function () {
         })
         .then(object => {
           const actions = object.actions;
-          expect(actions.MouseEnter).toEqual(["hello()"]);
-          expect(actions.MouseExit).toEqual([
+          expect(actions["Mouse Enter"]).toEqual(["hello()"]);
+          expect(actions["Mouse Exit"]).toEqual([
             "world()",
             "olleh()",
             "foo()",
             "dlrow()",
             "oof()",
           ]);
-          expect(actions.MouseDown).toEqual(["bar()"]);
+          expect(actions["Mouse Down"]).toEqual(["bar()"]);
           done();
         }, done.fail);
     });
