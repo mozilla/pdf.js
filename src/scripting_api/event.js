@@ -83,7 +83,7 @@ class EventDispatcher {
       return;
     }
 
-    const name = baseEvent.name.replace(" ", "");
+    const name = baseEvent.name;
     const source = this._objects[id];
     const event = (globalThis.event = new Event(baseEvent));
     let savedChange;
