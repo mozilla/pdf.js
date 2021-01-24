@@ -51,15 +51,12 @@ class App extends PDFObject {
     );
 
     this._timeoutIds = new WeakMap();
-    // eslint-disable-next-line no-undef
     if (typeof FinalizationRegistry !== "undefined") {
       // About setTimeOut/setInterval return values (specs):
       //   The return value of this method must be held in a
       //   JavaScript variable.
       //   Otherwise, the timeout object is subject to garbage-collection,
       //   which would cause the clock to stop.
-
-      // eslint-disable-next-line no-undef
       this._timeoutIdsRegistry = new FinalizationRegistry(
         this._cleanTimeout.bind(this)
       );
