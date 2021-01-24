@@ -370,8 +370,8 @@ class LinkAnnotationElement extends AnnotationElement {
       parameters.data.isTooltipOnly ||
       (parameters.data.actions &&
         (parameters.data.actions.Action ||
-          parameters.data.actions.MouseUp ||
-          parameters.data.actions.MouseDown))
+          parameters.data.actions["Mouse Up"] ||
+          parameters.data.actions["Mouse Down"]))
     );
     super(parameters, { isRenderable, createQuadrilaterals: true });
   }
@@ -395,7 +395,9 @@ class LinkAnnotationElement extends AnnotationElement {
       this._bindLink(link, data.dest);
     } else if (
       data.actions &&
-      (data.actions.Action || data.actions.MouseUp || data.actions.MouseDown) &&
+      (data.actions.Action ||
+        data.actions["Mouse Up"] ||
+        data.actions["Mouse Down"]) &&
       this.enableScripting &&
       this.hasJSActions
     ) {
@@ -469,8 +471,8 @@ class LinkAnnotationElement extends AnnotationElement {
     link.href = this.linkService.getAnchorUrl("");
     const map = new Map([
       ["Action", "onclick"],
-      ["MouseUp", "onmouseup"],
-      ["MouseDown", "onmousedown"],
+      ["Mouse Up", "onmouseup"],
+      ["Mouse Down", "onmousedown"],
     ]);
     for (const name of Object.keys(data.actions)) {
       const jsName = map.get(name);
@@ -575,11 +577,7 @@ class WidgetAnnotationElement extends AnnotationElement {
 
   _setEventListeners(element, names, getter) {
     for (const [baseName, eventName] of names) {
-      if (
-        eventName === "Action" ||
-        (this.data.actions &&
-          this.data.actions[eventName.replace(" ", "")] !== undefined)
-      ) {
+      if (eventName === "Action" || this.data.actions?.[eventName]) {
         this._setEventListener(element, baseName, eventName, getter);
       }
     }
@@ -803,7 +801,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               ["mousedown", "Mouse Down"],
               ["mouseenter", "Mouse Enter"],
               ["mouseleave", "Mouse Exit"],
-              ["mouseup", "MouseUp"],
+              ["mouseup", "Mouse Up"],
             ],
             event => event.target.value
           );
@@ -942,7 +940,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
           ["mousedown", "Mouse Down"],
           ["mouseenter", "Mouse Enter"],
           ["mouseleave", "Mouse Exit"],
-          ["mouseup", "MouseUp"],
+          ["mouseup", "Mouse Up"],
         ],
         event => event.target.checked
       );
@@ -1031,7 +1029,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
           ["mousedown", "Mouse Down"],
           ["mouseenter", "Mouse Enter"],
           ["mouseleave", "Mouse Exit"],
-          ["mouseup", "MouseUp"],
+          ["mouseup", "Mouse Up"],
         ],
         event => event.target.checked
       );
@@ -1165,7 +1163,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           ["mousedown", "Mouse Down"],
           ["mouseenter", "Mouse Enter"],
           ["mouseleave", "Mouse Exit"],
-          ["mouseup", "MouseUp"],
+          ["mouseup", "Mouse Up"],
         ],
         event => event.target.checked
       );
