@@ -698,25 +698,43 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             .forEach(name => actions[name]());
         });
 
-        if (this.data.actions) {
-          // Even if the field hasn't any actions
-          // leaving it can still trigger some actions with Calculate
-          element.addEventListener("keydown", event => {
-            elementData.beforeInputValue = event.target.value;
-            // if the key is one of Escape, Enter or Tab
-            // then the data are committed
-            let commitKey = -1;
-            if (event.key === "Escape") {
-              commitKey = 0;
-            } else if (event.key === "Enter") {
-              commitKey = 2;
-            } else if (event.key === "Tab") {
-              commitKey = 3;
-            }
-            if (commitKey === -1) {
-              return;
-            }
-            // Save the entered value
+        // Even if the field hasn't any actions
+        // leaving it can still trigger some actions with Calculate
+        element.addEventListener("keydown", event => {
+          elementData.beforeInputValue = event.target.value;
+          // if the key is one of Escape, Enter or Tab
+          // then the data are committed
+          let commitKey = -1;
+          if (event.key === "Escape") {
+            commitKey = 0;
+          } else if (event.key === "Enter") {
+            commitKey = 2;
+          } else if (event.key === "Tab") {
+            commitKey = 3;
+          }
+          if (commitKey === -1) {
+            return;
+          }
+          // Save the entered value
+          elementData.userValue = event.target.value;
+          this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+            source: this,
+            detail: {
+              id,
+              name: "Keystroke",
+              value: event.target.value,
+              willCommit: true,
+              commitKey,
+              selStart: event.target.selectionStart,
+              selEnd: event.target.selectionEnd,
+            },
+          });
+        });
+        const _blurListener = blurListener;
+        blurListener = null;
+        element.addEventListener("blur", event => {
+          if (this._mouseState.isDown) {
+            // Focus out using the mouse: data are committed
             elementData.userValue = event.target.value;
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
               source: this,
@@ -725,87 +743,67 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 name: "Keystroke",
                 value: event.target.value,
                 willCommit: true,
-                commitKey,
+                commitKey: 1,
                 selStart: event.target.selectionStart,
                 selEnd: event.target.selectionEnd,
               },
             });
-          });
-          const _blurListener = blurListener;
-          blurListener = null;
-          element.addEventListener("blur", event => {
-            if (this._mouseState.isDown) {
-              // Focus out using the mouse: data are committed
-              elementData.userValue = event.target.value;
-              this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-                source: this,
-                detail: {
-                  id,
-                  name: "Keystroke",
-                  value: event.target.value,
-                  willCommit: true,
-                  commitKey: 1,
-                  selStart: event.target.selectionStart,
-                  selEnd: event.target.selectionEnd,
-                },
-              });
-            }
-            _blurListener(event);
-          });
-          element.addEventListener("mousedown", event => {
-            elementData.beforeInputValue = event.target.value;
-            elementData.beforeInputSelectionRange = null;
-          });
-          element.addEventListener("keyup", event => {
-            // keyup is triggered after input
-            if (event.target.selectionStart === event.target.selectionEnd) {
-              elementData.beforeInputSelectionRange = null;
-            }
-          });
-          element.addEventListener("select", event => {
-            elementData.beforeInputSelectionRange = [
-              event.target.selectionStart,
-              event.target.selectionEnd,
-            ];
-          });
-
-          if ("Keystroke" in this.data.actions) {
-            // We should use beforeinput but this
-            // event isn't available in Firefox
-            element.addEventListener("input", event => {
-              let selStart = -1;
-              let selEnd = -1;
-              if (elementData.beforeInputSelectionRange) {
-                [selStart, selEnd] = elementData.beforeInputSelectionRange;
-              }
-              this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-                source: this,
-                detail: {
-                  id,
-                  name: "Keystroke",
-                  value: elementData.beforeInputValue,
-                  change: event.data,
-                  willCommit: false,
-                  selStart,
-                  selEnd,
-                },
-              });
-            });
           }
+          _blurListener(event);
+        });
+        element.addEventListener("mousedown", event => {
+          elementData.beforeInputValue = event.target.value;
+          elementData.beforeInputSelectionRange = null;
+        });
+        element.addEventListener("keyup", event => {
+          // keyup is triggered after input
+          if (event.target.selectionStart === event.target.selectionEnd) {
+            elementData.beforeInputSelectionRange = null;
+          }
+        });
+        element.addEventListener("select", event => {
+          elementData.beforeInputSelectionRange = [
+            event.target.selectionStart,
+            event.target.selectionEnd,
+          ];
+        });
 
-          this._setEventListeners(
-            element,
-            [
-              ["focus", "Focus"],
-              ["blur", "Blur"],
-              ["mousedown", "Mouse Down"],
-              ["mouseenter", "Mouse Enter"],
-              ["mouseleave", "Mouse Exit"],
-              ["mouseup", "Mouse Up"],
-            ],
-            event => event.target.value
-          );
+        if (this.data.actions?.Keystroke) {
+          // We should use beforeinput but this
+          // event isn't available in Firefox
+          element.addEventListener("input", event => {
+            let selStart = -1;
+            let selEnd = -1;
+            if (elementData.beforeInputSelectionRange) {
+              [selStart, selEnd] = elementData.beforeInputSelectionRange;
+            }
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value: elementData.beforeInputValue,
+                change: event.data,
+                willCommit: false,
+                selStart,
+                selEnd,
+              },
+            });
+          });
         }
+
+        this._setEventListeners(
+          element,
+          [
+            ["focus", "Focus"],
+            ["blur", "Blur"],
+            ["mousedown", "Mouse Down"],
+            ["mouseenter", "Mouse Enter"],
+            ["mouseleave", "Mouse Exit"],
+            ["mouseup", "Mouse Up"],
+          ],
+          event => event.target.value
+        );
       }
 
       if (blurListener) {
@@ -1102,23 +1100,112 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.appendChild(optionElement);
     }
 
-    function getValue(event) {
+    const getValue = (event, isExport) => {
+      const name = isExport ? "value" : "textContent";
       const options = event.target.options;
-      return options[options.selectedIndex].value;
-    }
+      if (!event.target.multiple) {
+        return options.selectedIndex === -1
+          ? null
+          : options[options.selectedIndex][name];
+      }
+      return Array.prototype.filter
+        .call(options, option => option.selected)
+        .map(option => option[name]);
+    };
+
+    const getItems = event => {
+      const options = event.target.options;
+      return Array.prototype.map.call(options, option => {
+        return { displayValue: option.textContent, exportValue: option.value };
+      });
+    };
 
     if (this.enableScripting && this.hasJSActions) {
       selectElement.addEventListener("updatefromsandbox", event => {
         const { detail } = event;
         const actions = {
           value() {
-            const options = event.target.options;
+            const options = selectElement.options;
             const value = detail.value;
-            const i = options.indexOf(value);
-            if (i !== -1) {
-              options.selectedIndex = i;
-              storage.setValue(id, { value });
+            const values = new Set(Array.isArray(value) ? value : [value]);
+            Array.prototype.forEach.call(options, option => {
+              option.selected = values.has(option.value);
+            });
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+            });
+          },
+          multipleSelection() {
+            selectElement.multiple = true;
+          },
+          remove() {
+            const options = selectElement.options;
+            const index = detail.remove;
+            options[index].selected = false;
+            selectElement.remove(index);
+            if (options.length > 0) {
+              const i = Array.prototype.findIndex.call(
+                options,
+                option => option.selected
+              );
+              if (i === -1) {
+                options[0].selected = true;
+              }
             }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          clear() {
+            while (selectElement.length !== 0) {
+              selectElement.remove(0);
+            }
+            storage.setValue(id, { value: null, items: [] });
+          },
+          insert() {
+            const { index, displayValue, exportValue } = detail.insert;
+            const optionElement = document.createElement("option");
+            optionElement.textContent = displayValue;
+            optionElement.value = exportValue;
+            selectElement.insertBefore(
+              optionElement,
+              selectElement.children[index]
+            );
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          items() {
+            const { items } = detail;
+            while (selectElement.length !== 0) {
+              selectElement.remove(0);
+            }
+            for (const item of items) {
+              const { displayValue, exportValue } = item;
+              const optionElement = document.createElement("option");
+              optionElement.textContent = displayValue;
+              optionElement.value = exportValue;
+              selectElement.appendChild(optionElement);
+            }
+            if (selectElement.options.length > 0) {
+              selectElement.options[0].selected = true;
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          indices() {
+            const indices = new Set(detail.indices);
+            const options = event.target.options;
+            Array.prototype.forEach.call(options, (option, i) => {
+              option.selected = indices.has(i);
+            });
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+            });
           },
           focus() {
             setTimeout(() => event.target.focus({ preventScroll: false }), 0);
@@ -1139,15 +1226,17 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       });
 
       selectElement.addEventListener("input", event => {
-        const value = getValue(event);
-        storage.setValue(id, { value });
+        const exportValue = getValue(event, /* isExport */ true);
+        const value = getValue(event, /* isExport */ false);
+        storage.setValue(id, { value: exportValue });
 
         this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
           source: this,
           detail: {
             id,
             name: "Keystroke",
-            changeEx: value,
+            value,
+            changeEx: exportValue,
             willCommit: true,
             commitKey: 1,
             keyDown: false,
@@ -1164,6 +1253,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           ["mouseenter", "Mouse Enter"],
           ["mouseleave", "Mouse Exit"],
           ["mouseup", "Mouse Up"],
+          ["input", "Action"],
         ],
         event => event.target.checked
       );
