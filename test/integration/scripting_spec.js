@@ -489,10 +489,6 @@ describe("Interaction", () => {
       pages = await loadAndWait("js-authors.pdf", "#\\32 5R");
     });
 
-    afterAll(async () => {
-      await closePages(pages);
-    });
-
     it("must print authors in a text field", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -502,6 +498,134 @@ describe("Interaction", () => {
           expect(text)
             .withContext(`In ${browserName}`)
             .toEqual("author1::author2::author3::author4::author5");
+        })
+      );
+    });
+  });
+
+  describe("in listbox_actions.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("listbox_actions.pdf", "#\\33 3R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must print selected value in a text field", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const num of [7, 6, 4, 3, 2, 1]) {
+            await page.click(`option[value=Export${num}]`);
+            await page.waitForFunction(
+              `document.querySelector("#\\\\33 3R").value !== ""`
+            );
+            const text = await page.$eval("#\\33 3R", el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual(`Item${num},Export${num}`);
+          }
+        })
+      );
+    });
+
+    it("must clear and restore list elements", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Click on ClearItems button.
+          await page.click("[data-annotation-id='34R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").children.length === 0`
+          );
+
+          // Click on Restore button.
+          await page.click("[data-annotation-id='37R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").children.length !== 0`
+          );
+
+          for (const num of [7, 6, 4, 3, 2, 1]) {
+            await page.click(`option[value=Export${num}]`);
+            await page.waitForFunction(
+              `document.querySelector("#\\\\33 3R").value !== ""`
+            );
+            const text = await page.$eval("#\\33 3R", el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual(`Item${num},Export${num}`);
+          }
+        })
+      );
+    });
+
+    it("must insert new elements", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          let len = 6;
+          for (const num of [1, 3, 5, 6, 431, -1, 0]) {
+            ++len;
+            await clearInput(page, "#\\33 9R");
+            await page.type("#\\33 9R", `${num},Insert${num},Tresni${num}`, {
+              delay: 10,
+            });
+
+            // Click on AddItem button.
+            await page.click("[data-annotation-id='38R']");
+
+            await page.waitForFunction(
+              `document.querySelector("#\\\\33 0R").children.length === ${len}`
+            );
+
+            // Click on newly added option.
+            await page.select("#\\33 0R", `Tresni${num}`);
+
+            await page.waitForFunction(
+              `document.querySelector("#\\\\33 3R").value !== ""`
+            );
+            const text = await page.$eval("#\\33 3R", el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual(`Insert${num},Tresni${num}`);
+          }
+        })
+      );
+    });
+
+    it("must delete some element", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          let len = 6;
+          // Click on Restore button.
+          await page.click("[data-annotation-id='37R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").children.length === ${len}`
+          );
+
+          for (const num of [2, 5]) {
+            --len;
+            await clearInput(page, "#\\33 9R");
+            await page.type("#\\33 9R", `${num}`);
+
+            // Click on DeleteItem button.
+            await page.click("[data-annotation-id='36R']");
+
+            await page.waitForFunction(
+              `document.querySelector("#\\\\33 0R").children.length === ${len}`
+            );
+          }
+
+          for (const num of [6, 4, 2, 1]) {
+            await page.click(`option[value=Export${num}]`);
+            await page.waitForFunction(
+              `document.querySelector("#\\\\33 3R").value !== ""`
+            );
+            const text = await page.$eval("#\\33 3R", el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual(`Item${num},Export${num}`);
+          }
         })
       );
     });
