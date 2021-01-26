@@ -2047,19 +2047,15 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src([
-            GENERIC_DIR + "build/pdf.js",
-            GENERIC_DIR + "build/pdf.js.map",
-            GENERIC_DIR + "build/pdf.worker.js",
-            GENERIC_DIR + "build/pdf.worker.js.map",
+            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src([
-            GENERIC_ES5_DIR + "build/pdf.js",
-            GENERIC_ES5_DIR + "build/pdf.js.map",
-            GENERIC_ES5_DIR + "build/pdf.worker.js",
-            GENERIC_ES5_DIR + "build/pdf.worker.js.map",
+            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
@@ -2072,6 +2068,10 @@ gulp.task(
           .pipe(rename("pdf.worker.min.js"))
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
+          .src(MINIFIED_DIR + "build/pdf.sandbox.js")
+          .pipe(rename("pdf.sandbox.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "build/")),
+        gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.js")
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
@@ -2082,6 +2082,10 @@ gulp.task(
         gulp
           .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
           .pipe(rename("pdf.worker.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.sandbox.js")
+          .pipe(rename("pdf.sandbox.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
         gulp
           .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")
