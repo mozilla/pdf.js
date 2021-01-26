@@ -20,8 +20,8 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IL10n} l10n - Localization service.
- * @property {boolean} newSelection - Used to track whether selection has changed since last utterance.
- * @property {boolean} paused - track paused state ourselves as Microsoft and Google Online voices don't report `speechSynthesis.paused` state.
+ * @property {boolean} isNewSelection - track whether selection has changed since last utterance.
+ * @property {boolean} isPaused - track paused state ourselves as Microsoft and Google Online voices don't report `speechSynthesis.paused` state.
  */
 
 /**
@@ -35,14 +35,15 @@ class PDFTTSViewer extends BaseTreeViewer {
   constructor(options) {
     super(options);
     this.l10n = options.l10n;
-    this.newSelection = options.newSelection;
-    this.isPaused = options.paused;  
-    document.addEventListener("selectionchange", this._newSelection, true);
+    this.isPaused = options.isPaused;  
+    this.isNewSelection = options.isNewSelection;  
+
+    document.addEventListener("selectionchange", () => {
+      this.toggleToolbarPlayingIcon(false);
+      this.isNewSelection = true;
+    });
   }
 
-  newSelection() {
-     
-  }
 
   reset() {
     super.reset();
@@ -70,11 +71,13 @@ class PDFTTSViewer extends BaseTreeViewer {
   /**
    * @param {PDFTTSViewerRenderParameters} params
    */
-  render({ optionalContentConfig }) {
+  render({ optionalContentConfig, pdfDocument }) {
     if (this._optionalContentConfig) {
       this.reset();
     }
     this._optionalContentConfig = optionalContentConfig || null;
+    this._pdfDocument = pdfDocument || null;
+    
 
     if (!this.isTTSAvailable) {
       this._dispatchEvent(0);
@@ -140,6 +143,7 @@ class PDFTTSViewer extends BaseTreeViewer {
 
   startedPlaying() {
     this.isPaused = false;
+    this.isNewSelection = false;
     // Initial timeout required for Firefox, which is slow to update speechSynthesis.speaking
     setTimeout(() => {
       // Set toolbar icon to Pause.
@@ -156,17 +160,20 @@ class PDFTTSViewer extends BaseTreeViewer {
   playpause() {
     const text = window.getSelection().toString();
 
-    if (this.isPlaying) {
-      // Pause
-      speechSynthesis.pause();
-      this.pausedPlaying();
-      return;
-    } else if (this.isPaused) {
-      // Resume paused speech
-      speechSynthesis.resume();
-      this.startedPlaying();
-      return;
-    } 
+    if (!this.isNewSelection) {
+      // Always speak new selection
+      if (this.isPlaying) {
+        // Pause
+        speechSynthesis.pause();
+        this.pausedPlaying();
+        return;
+      } else if (this.isPaused) {
+        // Resume paused speech
+        speechSynthesis.resume();
+        this.startedPlaying();
+        return;
+      } 
+    }
     
     // Speak selected
     let msg = new SpeechSynthesisUtterance();
@@ -218,7 +225,8 @@ class PDFTTSViewer extends BaseTreeViewer {
 
     // ... and reset the sidebarView to the default state.
     this.render({
-      optionalContentConfig
+      optionalContentConfig,
+      pdfDocument: this._pdfDocument,
     });
   }
 }

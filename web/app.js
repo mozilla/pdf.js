@@ -1447,7 +1447,7 @@ const PDFViewerApplication = {
         this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
       });
       pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
-        this.pdfTTSViewer.render({ optionalContentConfig });
+        this.pdfTTSViewer.render({ optionalContentConfig, pdfDocument });
       });
       if ("requestIdleCallback" in window) {
         const callback = window.requestIdleCallback(
