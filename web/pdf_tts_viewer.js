@@ -20,6 +20,8 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} newSelection - Used to track whether selection has changed since last utterance.
+ * @property {boolean} paused - track paused state ourselves as Microsoft and Google Online voices don't report `speechSynthesis.paused` state.
  */
 
 /**
@@ -33,6 +35,13 @@ class PDFTTSViewer extends BaseTreeViewer {
   constructor(options) {
     super(options);
     this.l10n = options.l10n;
+    this.newSelection = options.newSelection;
+    this.isPaused = options.paused;  
+    document.addEventListener("selectionchange", this._newSelection, true);
+  }
+
+  newSelection() {
+     
   }
 
   reset() {
@@ -52,6 +61,10 @@ class PDFTTSViewer extends BaseTreeViewer {
 
   get isTTSAvailable() {
     return ('speechSynthesis' in window);
+  }
+
+  get isPlaying() {   
+    return speechSynthesis.speaking && !(this.isPaused);
   }
 
   /**
@@ -95,6 +108,7 @@ class PDFTTSViewer extends BaseTreeViewer {
       } else {
         window.speechSynthesis.addEventListener("voiceschanged", function() {
           voices = window.speechSynthesis.getVoices();
+          voices = window.speechSynthesis.getVoices();
           resolve(voices);
         });
       }
@@ -115,14 +129,50 @@ class PDFTTSViewer extends BaseTreeViewer {
     });
   }
 
+  toggleToolbarPlayingIcon(playing) {
+    var button = document.getElementById("ttsPlayPause");
+    if (playing) {    
+      button.className = "toolbarButton ttsPause";
+    } else {
+      button.className = "toolbarButton ttsPlay";
+    }
+  }
 
+  startedPlaying() {
+    this.isPaused = false;
+    // Initial timeout required for Firefox, which is slow to update speechSynthesis.speaking
+    setTimeout(() => {
+      // Set toolbar icon to Pause.
+      if (this.isPlaying) { this.toggleToolbarPlayingIcon(true); }      
+      // Poll until speaking stops to reset toolbar icon to Play.
+      this._pollStillSpeaking({ interval: 500 }).then(p => this.toggleToolbarPlayingIcon(p));  
+    }, 100);
+  }
 
-  speak() {
+  pausedPlaying() {
+    this.isPaused = true;
+  }
+
+  playpause() {
     const text = window.getSelection().toString();
+
+    if (this.isPlaying) {
+      // Pause
+      speechSynthesis.pause();
+      this.pausedPlaying();
+      return;
+    } else if (this.isPaused) {
+      // Resume paused speech
+      speechSynthesis.resume();
+      this.startedPlaying();
+      return;
+    } 
+    
+    // Speak selected
     let msg = new SpeechSynthesisUtterance();
     const voices = window.speechSynthesis.getVoices();
-    const voicechoice = document.getElementById('voiceSelect')
-    msg.voice = voices[voicechoice.selectedIndex];
+    const voicesel = document.getElementById('voiceSelect')
+    msg.voice = voices[voicesel.selectedIndex];
     //msg.rate = 1;
     // msg.rate = $('#rate').val() / 10;
     //msg.pitch = 1;
@@ -130,7 +180,26 @@ class PDFTTSViewer extends BaseTreeViewer {
     msg.text = text;
     speechSynthesis.cancel();
     speechSynthesis.speak(msg);
+    this.startedPlaying();   
   }
+
+
+  /**
+   * @private
+   */
+  async _pollStillSpeaking(interval) { 
+    console.log(" Start poll");
+    const executePoll = async (resolve, reject) => {
+      console.log(" - poll", speechSynthesis.speaking, speechSynthesis.paused, speechSynthesis.pending);
+      const stillSpeaking = this.isPlaying;  
+      if (stillSpeaking) {
+        setTimeout(executePoll, interval, resolve, reject);
+      } else {
+        return resolve(stillSpeaking);
+      }
+    };
+    return new Promise(executePoll);
+  };
 
   /**
    * @private

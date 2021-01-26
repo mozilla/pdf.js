@@ -64,7 +64,8 @@
   --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
   --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
-  --toolbarButton-speak-icon: url(images/toolbarButton-speak.svg);
+  --toolbarButton-ttsPlay-icon: url(images/toolbarButton-ttsPlay.svg);
+  --toolbarButton-ttsPause-icon: url(images/toolbarButton-ttsPause.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
@@ -820,6 +821,7 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 .toolbarButton:focus {
   background-color: var(--button-hover-color);
 }
+
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus {
   background-color: var(--doorhanger-hover-color);
@@ -980,10 +982,16 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-.toolbarButton.speak::before {
-  -webkit-mask-image: var(--toolbarButton-speak-icon);
-  mask-image: var(--toolbarButton-speak-icon);
+.toolbarButton.ttsPlay::before {
+  -webkit-mask-image: var(--toolbarButton-ttsPlay-icon);
+  mask-image: var(--toolbarButton-ttsPlay-icon);
 }
+
+.toolbarButton.ttsPause::before {
+  -webkit-mask-image: var(--toolbarButton-ttsPause-icon);
+  mask-image: var(--toolbarButton-ttsPause-icon);
+}
+
 
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {

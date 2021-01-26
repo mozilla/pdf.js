@@ -649,8 +649,8 @@ const PDFViewerApplication = {
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
   },
 
-  speak() {
-    this.pdfTTSViewer.speak()
+  ttsPlayPause() {
+    this.pdfTTSViewer.playpause()
   },
  
   get pagesCount() {
@@ -2179,7 +2179,7 @@ const PDFViewerApplication = {
     eventBus._on("zoomin", webViewerZoomIn);
     eventBus._on("zoomout", webViewerZoomOut);
     eventBus._on("zoomreset", webViewerZoomReset);
-    eventBus._on("speak", webViewerSpeak);
+    eventBus._on("ttsplaypause", webViewerPlayPause);
     eventBus._on("pagenumberchanged", webViewerPageNumberChanged);
     eventBus._on("scalechanged", webViewerScaleChanged);
     eventBus._on("rotatecw", webViewerRotateCw);
@@ -2277,7 +2277,7 @@ const PDFViewerApplication = {
     eventBus._off("zoomin", webViewerZoomIn);
     eventBus._off("zoomout", webViewerZoomOut);
     eventBus._off("zoomreset", webViewerZoomReset);
-    eventBus._off("speak", webViewerSpeak);
+    eventBus._off("ttsplaypause", webViewerPlayPause);
     eventBus._off("pagenumberchanged", webViewerPageNumberChanged);
     eventBus._off("scalechanged", webViewerScaleChanged);
     eventBus._off("rotatecw", webViewerRotateCw);
@@ -2863,8 +2863,8 @@ function webViewerZoomOut() {
 function webViewerZoomReset() {
   PDFViewerApplication.zoomReset();
 }
-function webViewerSpeak() {
-  PDFViewerApplication.speak();
+function webViewerPlayPause() {
+  PDFViewerApplication.ttsPlayPause();
 }
 function webViewerPageNumberChanged(evt) {
   const pdfViewer = PDFViewerApplication.pdfViewer;
