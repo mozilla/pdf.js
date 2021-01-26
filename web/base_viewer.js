@@ -159,6 +159,10 @@ class BaseViewer {
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
 
+    /** #495 modified by ngx-extended-pdf-viewer */
+    this.pageViewMode = options.pageViewMode || "single";
+    /** end of modification */
+
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
@@ -269,6 +273,16 @@ class BaseViewer {
     }
   }
 
+  /** #495 modified by ngx-extended-pdf-viewer */
+  hidePagesDependingOnpageViewMode() {
+    if (this.pageViewMode === "single") {
+      this._pages.forEach((page) => {
+        page.div.style.display = (page.id === this.currentPageNumber) ? "block" : "none";
+      });
+    }
+  }
+  /** end of modification */
+
   /**
    * @returns {boolean} Whether the pageNumber is valid (within bounds).
    * @private
@@ -286,6 +300,17 @@ class BaseViewer {
     }
     const previous = this._currentPageNumber;
     this._currentPageNumber = val;
+
+    /** #495 modified by ngx-extended-pdf-viewer */
+    this.hidePagesDependingOnpageViewMode();
+    if (this.pageViewMode === "single" || this.pageViewMode === "infinite-scroll") {
+      const pageView = this._pages[this.currentPageNumber-1];
+      this._ensurePdfPageLoaded(pageView).then(() => {
+        this.renderingQueue.renderView(pageView);
+      });
+    }
+    /** end of modification */
+
 
     this.eventBus.dispatch("pagechanging", {
       source: this,
@@ -349,7 +374,9 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
-    this._setScale(val, false);
+    // #562 modified by ngx-extended-pdf-viewer
+    this._setScale(val, this.pageViewMode === "single");
+    // #562 end of modification
   }
 
   /**
@@ -366,7 +393,9 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
-    this._setScale(val, false);
+    // #562 modified by ngx-extended-pdf-viewer
+    this._setScale(val, this.pageViewMode === "single");
+    // #562 end of modification
   }
 
   /**
@@ -533,6 +562,7 @@ class BaseViewer {
             textLayerMode: this.textLayerMode,
             annotationLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
+            removePageBorders: this.removePageBorders, // #194
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
             enableWebGL: this.enableWebGL,
@@ -600,6 +630,10 @@ class BaseViewer {
             );
           }
         });
+
+        /** #495 modified by ngx-extended-pdf-viewer */
+        this.hidePagesDependingOnpageViewMode();
+        /** end of modification */
 
         this.eventBus.dispatch("pagesinit", { source: this });
 
@@ -678,7 +712,15 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
-    scrollIntoView(pageDiv, pageSpot);
+    /** #492 modified by ngx-extended-pdf-viewer */
+    if (this.pageViewMode === "single") {
+      this._pages.forEach(() => {
+        pageDiv.style.display = "block";
+      });
+    }
+    /** #492 end of modification */
+
+    scrollIntoView(pageDiv, pageSpot, false, this.pageViewMode === 'infinite-scroll');
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
@@ -759,8 +801,14 @@ class BaseViewer {
         return;
       }
       const noPadding = this.isInPresentationMode || this.removePageBorders;
+      // #589 modified by ngx-extended-pdf-viewer
+      let verticalPadding = VERTICAL_PADDING;
+      if (this.pageViewMode === 'single') {
+        verticalPadding += 15;
+      }
       let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
-      let vPadding = noPadding ? 0 : VERTICAL_PADDING;
+      let vPadding = noPadding ? (this.pageViewMode === 'single'? 10: 0) : verticalPadding;
+      // #589 end of modification
 
       if (!noPadding && this._isScrollModeHorizontal) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
@@ -955,6 +1003,16 @@ class BaseViewer {
       }
     }
 
+    /** #495 modified by ngx-extended-pdf-viewer */
+    this._ensurePdfPageLoaded(pageView).then(() => {
+      this.renderingQueue.renderView(pageView);
+      if (this.currentPageNumber !== pageNumber) {
+        this.currentPageNumber = pageNumber;
+      }
+    });
+    /** end of modification */
+
+
     if (scale === "page-fit" && !destArray[4]) {
       this._scrollIntoView({
         pageDiv: pageView.div,
@@ -1106,6 +1164,11 @@ class BaseViewer {
   }
 
   _getVisiblePages() {
+    /** #495 modified by ngx-extended-pdf-viewer */
+    if (this.pageViewMode === 'single') {
+      return this._getCurrentVisiblePage();
+    }
+    /** end of modification */
     return getVisibleElements({
       scrollEl: this.container,
       views: this._pages,

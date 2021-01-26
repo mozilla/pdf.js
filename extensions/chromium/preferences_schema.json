@@ -139,7 +139,12 @@
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
       "default": false
     },
-    "renderer": {
+    "removePageBorders": {
+      "title": "Omit page borders",
+      "type": "boolean",
+      "description": "Display the PDF without page borders",
+      "default": "false"
+    },    "renderer": {
       "type": "string",
       "enum": [
         "canvas",

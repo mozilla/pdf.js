@@ -16,6 +16,8 @@
 import { CSS_UNITS, NullL10n } from "./ui_utils.js";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
+import canvasSize from "canvas-size";
+import { warn } from "../src/shared/util.js";
 
 let activeService = null;
 let overlayManager = null;
@@ -33,13 +35,30 @@ function renderPage(
   const scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  const PRINT_UNITS = printResolution / 72.0;
+  let PRINT_UNITS = printResolution / 72.0;
+
+  // modified by ngx-extended-pdf-viewer #530
+  let scale = 1;
+
+  const canvasWidth = Math.floor(size.width * PRINT_UNITS);
+  const canvasHeight = Math.floor(size.height * PRINT_UNITS);
+  if (canvasWidth >= 4096 || canvasHeight >= 4096) {
+    if (!canvasSize.test({ width: canvasWidth, height: canvasHeight })) {
+      const max = determineMaxDimensions();
+      scale = Math.min(max / canvasWidth, max / canvasHeight) * 0.95;
+    }
+    warn("Page " + pageNumber + ": Reduced the [printResolution] to " + Math.floor(printResolution * scale) + " because the browser can't render larger canvases. If you see blank page in the print preview, reduce [printResolution] manually to a lower value.");
+  }
+
+  PRINT_UNITS *= scale;
+
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
   // The physical size of the img as specified by the PDF document.
   const width = Math.floor(size.width * CSS_UNITS) + "px";
   const height = Math.floor(size.height * CSS_UNITS) + "px";
+  // end of modification
 
   const ctx = scratchCanvas.getContext("2d");
   ctx.save();
@@ -68,13 +87,33 @@ function renderPage(
     });
 }
 
+ // modified (added) by ngx-extended-pdf-viewer #530
+ function determineMaxDimensions() {
+  const checklist = [4096, // iOS
+    8192, // IE 9-10
+    10836, // Android
+    11180, // Firefox
+    11402, // Android,
+    14188,
+    16384
+  ];
+  for (let width of checklist) {
+    if (!canvasSize.test({width: width+1, height: width+1})) {
+      return width;
+    }
+  }
+  return 16384;
+}
+// end of modification
+
 function PDFPrintService(
   pdfDocument,
   pagesOverview,
   printContainer,
   printResolution,
   optionalContentConfigPromise = null,
-  l10n
+  l10n,
+  eventBus // #588 modified by ngx-extended-pdf-viewer
 ) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
@@ -86,6 +125,10 @@ function PDFPrintService(
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement("canvas");
+
+  // #588 modified by ngx-extended-pdf-viewer
+  this.eventBus = eventBus;
+  // #588 end of modification
 }
 
 PDFPrintService.prototype = {
@@ -156,20 +199,44 @@ PDFPrintService.prototype = {
         return; // overlay was already closed
       }
       overlayManager.close("printServiceOverlay");
+      overlayManager.unregister("printServiceOverlay"); // #104
     });
+    overlayPromise = undefined; // #104
   },
 
   renderPages() {
     const pageCount = this.pagesOverview.length;
     const renderNextPage = (resolve, reject) => {
       this.throwIfInactive();
-      if (++this.currentPage >= pageCount) {
-        renderProgress(pageCount, pageCount, this.l10n);
+      while (true) {
+        // #243
+        ++this.currentPage; // #243
+        if (this.currentPage >= pageCount) {
+          // #243
+          break; // #243
+        } // #243
+        if (
+          !window.isInPDFPrintRange ||
+          window.isInPDFPrintRange(this.currentPage)
+        ) {
+          // #243
+          break; // #243
+        } // #243
+      } // #243
+
+      if (this.currentPage >= pageCount) {
+        renderProgress(
+          window.filteredPageCount | pageCount,
+          window.filteredPageCount | pageCount,
+          this.l10n,
+          this.eventBus // #588 modified by ngx-extended-pdf-viewer
+        ); // #243
         resolve();
         return;
       }
+
       const index = this.currentPage;
-      renderProgress(index, pageCount, this.l10n);
+      renderProgress(index, window.filteredPageCount | pageCount, this.l10n, this.eventBus); // #243 and #588 modified by ngx-extended-pdf-viewer
       renderPage(
         this,
         this.pdfDocument,
@@ -244,9 +311,12 @@ PDFPrintService.prototype = {
 };
 
 const print = window.print;
-window.print = function () {
+window.printPDF = function () {
+  if (!PDFViewerApplication.enablePrint) {
+    return;
+  }
   if (activeService) {
-    console.warn("Ignored window.print() because of a pending print job.");
+    console.warn("Ignored window.printPDF() because of a pending print job.");
     return;
   }
   ensureOverlay().then(function () {
@@ -302,7 +372,7 @@ function abort() {
   }
 }
 
-function renderProgress(index, total, l10n) {
+function renderProgress(index, total, l10n, eventBus) { // #588 modified by ngx-extended-pdf-viewer
   const progressContainer = document.getElementById("printServiceOverlay");
   const progress = Math.round((100 * index) / total);
   const progressBar = progressContainer.querySelector("progress");
@@ -311,33 +381,38 @@ function renderProgress(index, total, l10n) {
   l10n.get("print_progress_percent", { progress }, progress + "%").then(msg => {
     progressPerc.textContent = msg;
   });
+  // #588 modified by ngx-extended-pdf-viewer
+  eventBus.dispatch("progress", {
+    source: this,
+    type: "print",
+    total,
+    page: index,
+    percent: (100 * index) / total,
+  });
+  // #588 end of modification
 }
 
-window.addEventListener(
-  "keydown",
-  function (event) {
-    // Intercept Cmd/Ctrl + P in all browsers.
-    // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
-    if (
-      event.keyCode === /* P= */ 80 &&
-      (event.ctrlKey || event.metaKey) &&
-      !event.altKey &&
-      (!event.shiftKey || window.chrome || window.opera)
-    ) {
-      window.print();
+PDFViewerApplication.printKeyDownListener = function (event) {
+  // Intercept Cmd/Ctrl + P in all browsers.
+  // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
+  if (
+    event.keyCode === /* P= */ 80 &&
+    (event.ctrlKey || event.metaKey) &&
+    !event.altKey &&
+    (!event.shiftKey || window.chrome || window.opera)
+  ) {
+    window.printPDF();
 
-      // The (browser) print dialog cannot be prevented from being shown in
-      // IE11.
-      event.preventDefault();
-      if (event.stopImmediatePropagation) {
-        event.stopImmediatePropagation();
-      } else {
-        event.stopPropagation();
-      }
+    // The (browser) print dialog cannot be prevented from being shown in
+    // IE11.
+    event.preventDefault();
+    if (event.stopImmediatePropagation) {
+      event.stopImmediatePropagation();
+    } else {
+      event.stopPropagation();
     }
-  },
-  true
-);
+  }
+};
 
 if ("onbeforeprint" in window) {
   // Do not propagate before/afterprint events when they are not triggered
@@ -379,7 +454,8 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
-    l10n
+    l10n,
+    eventBus // #588 modified by ngx-extended-pdf-viewer
   ) {
     if (activeService) {
       throw new Error("The print service is created and active.");
@@ -390,7 +466,8 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      l10n
+      l10n,
+      eventBus // #588 modified by ngx-extended-pdf-viewer
     );
     return activeService;
   },

@@ -30,6 +30,8 @@ import {
 } from "pdfjs-lib";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
+import canvasSize from "canvas-size";
+import { warn } from "../src/shared/util.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -635,6 +637,28 @@ class PDFPageView {
 
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
+
+    // modified by ngx-extended-pdf-viewer #387
+    const width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
+    const height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
+    if (width >= 4096 || height >= 4096) {
+      if ((!!this.maxWidth) || (!canvasSize.test({ width, height }))) {
+        const max = this.determineMaxDimensions();
+        let divisor = Math.max(width / max, height / max);
+        const newScale = Math.floor(100 * this.scale / divisor) / 100; // round to integer percentages
+        divisor = this.scale / newScale;
+        this.scale = newScale;
+
+        const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
+        PDFViewerApplicationOptions.set('maxZoom', newScale);
+
+        PDFViewerApplication.pdfViewer.currentScaleValue = this.scale;
+        viewport.width /= divisor;
+        viewport.height /= divisor;
+        warn("Page " + this.id + ": Reduced the maximum zoom to " + newScale + " because the browser can't render larger canvases.");
+      }
+    }
+    // end of modification
     canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
     canvas.style.width = roundToDivide(viewport.width, sfx[1]) + "px";
@@ -741,6 +765,29 @@ class PDFPageView {
       this.div.removeAttribute("data-page-label");
     }
   }
+
+  // modified (added) by ngx-extended-pdf-viewer #387
+  determineMaxDimensions() {
+    if (this.maxWidth) {
+      return this.maxWidth;
+    }
+    const checklist = [4096, // iOS
+      8192, // IE 9-10
+      10836, // Android
+      11180, // Firefox
+      11402, // Android,
+      14188,
+      16384
+    ];
+    for (let width of checklist) {
+      if (!canvasSize.test({width: width+1, height: width+1})) {
+        this.maxWidth = width;
+        return this.maxWidth;
+      }
+    }
+    return 16384;
+  }
+  // end of modification
 }
 
 export { PDFPageView };

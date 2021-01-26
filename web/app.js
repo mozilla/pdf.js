@@ -354,6 +354,13 @@ const PDFViewerApplication = {
     if ("webgl" in hashParams) {
       AppOptions.set("enableWebGL", hashParams.webgl === "true");
     }
+    if ("removepageborders" in hashParams) {
+      // #194
+      AppOptions.set(
+        "removePageBorders",
+        hashParams["removepageborders"] === "true"
+      ); // #194
+    }
     if ("verbosity" in hashParams) {
       AppOptions.set("verbosity", hashParams.verbosity | 0);
     }
@@ -478,6 +485,9 @@ const PDFViewerApplication = {
     const findController = new PDFFindController({
       linkService: pdfLinkService,
       eventBus,
+      // #492 modified by ngx-extended-pdf-viewer
+      pageViewMode: AppOptions.get("pageViewMode"),
+      // #492 modification end
     });
     this.findController = findController;
 
@@ -496,10 +506,15 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
+      removePageBorders: AppOptions.get("removePageBorders"), // #194
       renderInteractiveForms: AppOptions.get("renderInteractiveForms"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
+      /** #495 modified by ngx-extended-pdf-viewer */
+      pageViewMode: AppOptions.get("pageViewMode"),
+      /** end of modification */
+
       enableScripting: AppOptions.get("enableScripting"),
       mouseState: this._mouseState,
     });
@@ -611,12 +626,19 @@ const PDFViewerApplication = {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
+
     let newScale = this.pdfViewer.currentScale;
+    // modified by ngx-extended-pdf-viewer #367
+    let maxScale = Number(AppOptions.get("maxZoom"));
+    if (!maxScale) {
+      maxScale = MAX_SCALE;
+    }
     do {
       newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.ceil(newScale * 10) / 10;
-      newScale = Math.min(MAX_SCALE, newScale);
-    } while (--ticks > 0 && newScale < MAX_SCALE);
+      newScale = Math.min(maxScale, newScale);
+    } while (--ticks > 0 && newScale < maxScale);
+    // end of modification
     this.pdfViewer.currentScaleValue = newScale;
   },
 
@@ -625,11 +647,17 @@ const PDFViewerApplication = {
       return;
     }
     let newScale = this.pdfViewer.currentScale;
+    // modified by ngx-extended-pdf-viewer #367
+    let minScale = Number(AppOptions.get("minZoom"));
+    if (!minScale) {
+      minScale = MIN_SCALE;
+    }
     do {
       newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.floor(newScale * 10) / 10;
-      newScale = Math.max(MIN_SCALE, newScale);
-    } while (--ticks > 0 && newScale > MIN_SCALE);
+      newScale = Math.max(minScale, newScale);
+    } while (--ticks > 0 && newScale > minScale);
+    // end of modification
     this.pdfViewer.currentScaleValue = newScale;
   },
 
@@ -736,6 +764,15 @@ const PDFViewerApplication = {
       },
       onProgress(loaded, total) {
         PDFViewerApplication.progress(loaded / total);
+        // #588 modified by ngx-extended-pdf-viewer
+        this.eventBus.dispatch("progress", {
+          source: this,
+          type: "load",
+          total,
+          loaded,
+          percent: (100 * loaded) / total,
+        });
+        // #588 end of modification
       },
     });
   },
@@ -936,6 +973,15 @@ const PDFViewerApplication = {
 
     loadingTask.onProgress = ({ loaded, total }) => {
       this.progress(loaded / total);
+      // #588 modified by ngx-extended-pdf-viewer
+      this.eventBus.dispatch("progress", {
+        source: this,
+        type: "load",
+        total,
+        loaded,
+        percent: (100 * loaded) / total,
+      });
+      // #588 end of modification
     };
 
     // Listen for unsupported features to trigger the fallback UI.
@@ -982,6 +1028,7 @@ const PDFViewerApplication = {
 
         return loadingErrorMessage.then(msg => {
           this.error(msg, { message });
+          this.onError(exception); // #205
           throw exception;
         });
       }
@@ -1765,12 +1812,23 @@ const PDFViewerApplication = {
     this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
 
     // Provides some basic debug information
-    console.log(
-      `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
-        `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
-        `(PDF.js: ${version || "-"}` +
-        `${this.pdfViewer.enableWebGL ? " [WebGL]" : ""})`
-    );
+    const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
+    if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
+      console.log(
+        "PDF viewer: ngx-extended-pdf-viewer running on pdf.js " +
+          (window["pdfjs-dist/build/pdf"]
+            ? window["pdfjs-dist/build/pdf"].version
+            : " developer version (?)")
+      );
+      console.log(
+        `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
+          `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
+          `(PDF.js: ${version || "-"}` +
+          `${
+            this.pdfViewer.enableWebGL ? " [WebGL]" : ""
+          }) modified by ngx-extended-pdf-viewer)`
+      );
+    }
 
     let pdfTitle;
     const infoTitle = info && info.Title;
@@ -1998,7 +2056,14 @@ const PDFViewerApplication = {
     if (!this.pdfViewer.currentScaleValue) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+      const defaultZoomOption = PDFViewerApplicationOptions.get('defaultZoomValue');
+      // #556 #543 modified by ngx-extended-pdf-viewer
+      if (defaultZoomOption) {
+        this.pdfViewer.currentScaleValue = defaultZoomOption;
+      } else {
+        this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+      }
+      // #556 #543 end of modification
     }
   },
 
@@ -2032,7 +2097,7 @@ const PDFViewerApplication = {
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
       // but PDFPrintService may generate double events -- this will ignore
-      // the second event that will be coming from native window.print().
+      // the second event that will be coming from native window.printPDF().
       return;
     }
 
@@ -2077,7 +2142,8 @@ const PDFViewerApplication = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
-      this.l10n
+      this.l10n,
+      this.pdfViewer.eventBus // #588 modified by ngx-extended-pdf-viewer
     );
     this.printService = printService;
     this.forceRendering();
@@ -2098,6 +2164,7 @@ const PDFViewerApplication = {
     });
 
     if (this.printService) {
+      document.body.removeAttribute("data-pdfjsprinting");
       this.printService.destroy();
       this.printService = null;
 
@@ -2129,7 +2196,7 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
-    window.print();
+    window.printPDF();
   },
 
   bindEvents() {
@@ -2431,6 +2498,7 @@ function webViewerInitialized() {
     const fileInput = document.createElement("input");
     fileInput.id = appConfig.openFileInputName;
     fileInput.className = "fileInput";
+    fileInput.setAttribute("accept", ".pdf,application/pdf");
     fileInput.setAttribute("type", "file");
     fileInput.oncontextmenu = noContextMenuHandler;
     document.body.appendChild(fileInput);
@@ -2826,10 +2894,24 @@ function webViewerFirstPage() {
 function webViewerLastPage() {
   if (PDFViewerApplication.pdfDocument) {
     PDFViewerApplication.page = PDFViewerApplication.pagesCount;
+    // #542 prevent IE11 and Edge from scrolling to the end of the page
+    if (PDFViewerApplication.pageViewMode === "single") {
+      if (PDFViewerApplication.pdfViewer && PDFViewerApplication.pdfViewer.container) {
+        PDFViewerApplication.pdfViewer.container.scrollTop = 0;
+      }
+    }
+    // #542 end of modification
   }
 }
 function webViewerNextPage() {
   PDFViewerApplication.pdfViewer.nextPage();
+  // #542 prevent IE11 and Edge from scrolling to the end of the page
+  if (PDFViewerApplication.pageViewMode === "single") {
+    if (PDFViewerApplication.pdfViewer && PDFViewerApplication.pdfViewer.container) {
+     PDFViewerApplication.pdfViewer.container.scrollTop = 0;
+    }
+  }
+  // #542 end of modification
 }
 function webViewerPreviousPage() {
   PDFViewerApplication.pdfViewer.previousPage();
@@ -2891,6 +2973,8 @@ function webViewerFind(evt) {
     phraseSearch: evt.phraseSearch,
     caseSensitive: evt.caseSensitive,
     entireWord: evt.entireWord,
+    ignoreAccents: evt.ignoreAccents, // #177
+    fuzzySearch: evt.fuzzySearch, // #304
     highlightAll: evt.highlightAll,
     findPrevious: evt.findPrevious,
   });
@@ -2902,6 +2986,8 @@ function webViewerFindFromUrlHash(evt) {
     phraseSearch: evt.phraseSearch,
     caseSensitive: false,
     entireWord: false,
+    ignoreAccents: false, // #177
+    fuzzySearch: false, // #304
     highlightAll: true,
     findPrevious: false,
   });
@@ -2954,6 +3040,11 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
   }
+  const pageNumberInput = document.getElementById("pageNumber");
+  if (pageNumberInput) {
+    const pageScrollEvent = new CustomEvent("page-change");
+    pageNumberInput.dispatchEvent(pageScrollEvent);
+  }
 }
 
 function webViewerVisibilityChange(evt) {
@@ -2980,6 +3071,16 @@ function webViewerWheel(evt) {
   } = PDFViewerApplication;
 
   if (pdfViewer.isInPresentationMode) {
+    return;
+  }
+
+  const cmd =
+    (evt.ctrlKey ? 1 : 0) |
+    (evt.altKey ? 2 : 0) |
+    (evt.shiftKey ? 4 : 0) |
+    (evt.metaKey ? 8 : 0);
+
+  if (window.isKeyIgnored && window.isKeyIgnored(cmd, "WHEEL")) {
     return;
   }
 
@@ -3077,6 +3178,21 @@ function webViewerClick(evt) {
     (appConfig.toolbar.container.contains(evt.target) &&
       evt.target !== appConfig.secondaryToolbar.toggleButton)
   ) {
+    if (
+      evt.target &&
+      evt.target.parentElement === appConfig.secondaryToolbar.toggleButton
+    ) {
+      return;
+    }
+    if (
+      evt.target &&
+      evt.target.parentElement &&
+      evt.target.parentElement.parentElement ===
+        appConfig.secondaryToolbar.toggleButton
+    ) {
+      return;
+    }
+
     PDFViewerApplication.secondaryToolbar.close();
   }
 }
@@ -3108,6 +3224,9 @@ function webViewerKeyDown(evt) {
   const isViewerInPresentationMode =
     pdfViewer && pdfViewer.isInPresentationMode;
 
+  if (window.isKeyIgnored && window.isKeyIgnored(cmd, evt.keyCode)) {
+    return;
+  }
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
   if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
@@ -3128,6 +3247,8 @@ function webViewerKeyDown(evt) {
               phraseSearch: findState.phraseSearch,
               caseSensitive: findState.caseSensitive,
               entireWord: findState.entireWord,
+              ignoreAccents: findState.ignoreAccents, // #177
+              fuzzySearch: findState.fuzzySearch, // #304
               highlightAll: findState.highlightAll,
               findPrevious: cmd === 5 || cmd === 12,
             });
@@ -3382,17 +3503,7 @@ function webViewerKeyDown(evt) {
     }
   }
 
-  if (!handled && !isViewerInPresentationMode) {
-    // 33=Page Up  34=Page Down  35=End    36=Home
-    // 37=Left     38=Up         39=Right  40=Down
-    // 32=Spacebar
-    if (
-      (evt.keyCode >= 33 && evt.keyCode <= 40) ||
-      (evt.keyCode === 32 && curElementTagName !== "BUTTON")
-    ) {
-      ensureViewerFocused = true;
-    }
-  }
+  // ngx-extended-pdf-viewer must not enforce getting the focus
 
   if (ensureViewerFocused && !pdfViewer.containsElement(curElement)) {
     // The page container is not focused, but a page navigation key has been

@@ -16,10 +16,4 @@
 
 "use strict";
 
-let pdfjsLib;
-if (typeof window !== "undefined" && window["pdfjs-dist/build/pdf"]) {
-  pdfjsLib = window["pdfjs-dist/build/pdf"];
-} else {
-  pdfjsLib = __non_webpack_require__("../build/pdf.js");
-}
-module.exports = pdfjsLib;
+module.exports = window["pdfjs-dist/build/pdf"];

@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line no-unused-vars
 import { createPromiseCapability } from "pdfjs-lib";
+import { deburr } from "../external/lodash.deburr/index.js"; // #177
 import { getCharacterType } from "./pdf_find_utils.js";
+import { Levenshtein } from "../external/fast-levenshtein/levenshtein.js";
 import { scrollIntoView } from "./ui_utils.js";
 
 const FindState = {
@@ -45,6 +48,7 @@ const CHARACTERS_TO_NORMALIZE = {
 let normalizationRegex = null;
 function normalize(text) {
   if (!normalizationRegex) {
+    // Compile the regular expression for text normalization once.
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
     normalizationRegex = new RegExp(`[${replace}]`, "g");
@@ -98,10 +102,12 @@ class PDFFindController {
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus }) {
+   /** #492 modified by ngx-extended-pdf-viewer */
+  constructor({ linkService, eventBus, pageViewMode }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
-
+    this._pageViewMode = pageViewMode;
+    /** #492 end of modification */
     this._reset();
     eventBus._on("findbarclose", this._onFindBarClose.bind(this));
   }
@@ -113,6 +119,11 @@ class PDFFindController {
   get pageMatches() {
     return this._pageMatches;
   }
+
+  get pageMatchesColor() {
+    // #201
+    return this._pageMatchesColor; // #201
+  } // #201
 
   get pageMatchesLength() {
     return this._pageMatchesLength;
@@ -223,7 +234,9 @@ class PDFFindController {
       top: MATCH_SCROLL_OFFSET_TOP,
       left: MATCH_SCROLL_OFFSET_LEFT,
     };
-    scrollIntoView(element, spot, /* skipOverflowHiddenElements = */ true);
+    /** #492 modified by ngx-extended-pdf-viewer */
+    scrollIntoView(element, spot, /* skipOverflowHiddenElements = */ true, this._pageViewMode === 'infinite-scroll');
+    /** #492 end of modification */
   }
 
   _reset() {
@@ -232,6 +245,7 @@ class PDFFindController {
     this._pdfDocument = null;
     this._pageMatches = [];
     this._pageMatchesLength = [];
+    this._pageMatchesColor = []; // #201
     this._state = null;
     // Currently selected match.
     this._selected = {
@@ -308,7 +322,12 @@ class PDFFindController {
    * example, "tamed tame" or "this is"). It looks for intersecting terms in
    * the `matches` and keeps elements with a longer match length.
    */
-  _prepareMatches(matchesWithLength, matches, matchesLength) {
+  _prepareMatches(
+    matchesWithLength,
+    matches,
+    matchesLength,
+    matchesColor // #201
+  ) {
     function isSubTerm(currentIndex) {
       const currentElem = matchesWithLength[currentIndex];
       const nextElem = matchesWithLength[currentIndex + 1];
@@ -355,6 +374,7 @@ class PDFFindController {
       }
       matches.push(matchesWithLength[i].match);
       matchesLength.push(matchesWithLength[i].matchLength);
+      matchesColor.push(matchesWithLength[i].color); // #201
     }
   }
 
@@ -381,7 +401,47 @@ class PDFFindController {
     return true;
   }
 
-  _calculatePhraseMatch(query, pageIndex, pageContent, pageDiffs, entireWord) {
+  _calculateFuzzyMatch(query, pageIndex, pageContent) {
+    const matches = [];
+
+    const queryLen = query.length;
+    const shortLen = queryLen < 5 ? queryLen : 5;
+    const maxDistance = Math.round(queryLen / 5);
+    const shortQuery = query.substring(0, shortLen);
+    const options = {
+      useCollator: true,
+    };
+
+    for (let i = 0; i < pageContent.length - queryLen; i++) {
+      const shortCurrentContent = pageContent.substring(i, i + shortLen);
+      if (Levenshtein.distance(shortQuery, shortCurrentContent, options) < 3) {
+        const currentContent = pageContent.substring(i, i + queryLen);
+
+        const distance = Levenshtein.distance(query, currentContent, options);
+        if (distance <= maxDistance) {
+          matches.push(i);
+          i += queryLen - 1;
+        }
+      }
+    }
+    this._pageMatches[pageIndex] = matches;
+  }
+
+  _calculatePhraseMatch(
+    query,
+    pageIndex,
+    pageContent,
+    pageDiffs,
+    entireWord,
+    ignoreAccents
+  ) {
+    // #177
+    if (ignoreAccents) {
+      // #177
+      pageContent = deburr(pageContent); // #177
+      query = deburr(query); // #177
+    } // #177
+
     const matches = [],
       matchesLength = [];
     const queryLen = query.length;
@@ -396,9 +456,9 @@ class PDFFindController {
         continue;
       }
       const originalMatchIdx = getOriginalIndex(matchIdx, pageDiffs),
-        matchEnd = matchIdx + queryLen - 1,
-        originalQueryLen =
-          getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+      matchEnd = matchIdx + queryLen - 1,
+      originalQueryLen =
+        getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
 
       matches.push(originalMatchIdx);
       matchesLength.push(originalQueryLen);
@@ -407,14 +467,33 @@ class PDFFindController {
     this._pageMatchesLength[pageIndex] = matchesLength;
   }
 
-  _calculateWordMatch(query, pageIndex, pageContent, pageDiffs, entireWord) {
+  _calculateWordMatch(
+    query,
+    pageIndex,
+    pageContent,
+    pageDiffs,
+    entireWord,
+    ignoreAccents
+  ) {
+    // #177
+    if (ignoreAccents) {
+      // #177
+      pageContent = deburr(pageContent); // #177
+      query = deburr(query); // #177
+    } // #177
     const matchesWithLength = [];
 
     // Divide the query into pieces and search for text in each piece.
-    const queryArray = query.match(/\S+/g);
+    const queryArray = query.includes("\n")
+      ? query.trim().split(/\n+/g)
+      : query.trim().match(/\S+/g); // #201
+
     for (let i = 0, len = queryArray.length; i < len; i++) {
       const subquery = queryArray[i];
       const subqueryLen = subquery.length;
+      if (subqueryLen === 0) {
+        continue;
+      }
 
       let matchIdx = -subqueryLen;
       while (true) {
@@ -429,21 +508,23 @@ class PDFFindController {
           continue;
         }
         const originalMatchIdx = getOriginalIndex(matchIdx, pageDiffs),
-          matchEnd = matchIdx + subqueryLen - 1,
-          originalQueryLen =
-            getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+        matchEnd = matchIdx + subqueryLen - 1,
+        originalQueryLen =
+          getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
 
         // Other searches do not, so we store the length.
         matchesWithLength.push({
           match: originalMatchIdx,
           matchLength: originalQueryLen,
           skipped: false,
+          color: i, // #201
         });
       }
     }
 
     // Prepare arrays for storing the matches.
     this._pageMatchesLength[pageIndex] = [];
+    this._pageMatchesColor[pageIndex] = []; // #201
     this._pageMatches[pageIndex] = [];
 
     // Sort `matchesWithLength`, remove intersecting terms and put the result
@@ -451,7 +532,8 @@ class PDFFindController {
     this._prepareMatches(
       matchesWithLength,
       this._pageMatches[pageIndex],
-      this._pageMatchesLength[pageIndex]
+      this._pageMatchesLength[pageIndex],
+      this._pageMatchesColor[pageIndex] // #201
     );
   }
 
@@ -459,7 +541,13 @@ class PDFFindController {
     let pageContent = this._pageContents[pageIndex];
     const pageDiffs = this._pageDiffs[pageIndex];
     let query = this._query;
-    const { caseSensitive, entireWord, phraseSearch } = this._state;
+    const {
+      caseSensitive,
+      entireWord,
+      ignoreAccents, // #177
+      fuzzySearch, // #304
+      phraseSearch,
+    } = this._state;
 
     if (query.length === 0) {
       // Do nothing: the matches should be wiped out already.
@@ -471,22 +559,30 @@ class PDFFindController {
       query = query.toLowerCase();
     }
 
-    if (phraseSearch) {
+    if (fuzzySearch) {
+      if (query.length <= 2) {
+        this._calculatePhraseMatch(query, pageIndex, pageContent, pageDiffs, false);
+      } else {
+        this._calculateFuzzyMatch(query, pageIndex, pageContent);
+      }
+    } else if (phraseSearch) {
       this._calculatePhraseMatch(
         query,
         pageIndex,
         pageContent,
         pageDiffs,
-        entireWord
-      );
+        entireWord,
+        ignoreAccents
+      ); // #177
     } else {
       this._calculateWordMatch(
         query,
         pageIndex,
         pageContent,
         pageDiffs,
-        entireWord
-      );
+        entireWord,
+        ignoreAccents
+      ); // #177
     }
 
     // When `highlightAll` is set, ensure that the matches on previously
@@ -539,6 +635,7 @@ class PDFFindController {
               [this._pageContents[i], this._pageDiffs[i]] = normalize(
                 strBuf.join("")
               );
+
               extractTextCapability.resolve(i);
             },
             reason => {
@@ -594,6 +691,7 @@ class PDFFindController {
       this._resumePageIdx = null;
       this._pageMatches.length = 0;
       this._pageMatchesLength.length = 0;
+      this._pageMatchesColor.length = 0; // #201
       this._matchesCountTotal = 0;
 
       this._updateAllPages(); // Wipe out any previously highlighted matches.
@@ -802,4 +900,4 @@ class PDFFindController {
   }
 }
 
-export { FindState, PDFFindController };
+export { FindState, PDFFindController }

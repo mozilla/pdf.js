@@ -36,11 +36,38 @@ import {
 import { clearPrimitiveCaches, Dict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { incrementalUpdate } from "./writer.js";
-import { isNodeJS } from "../shared/is_node.js";
+// ngx-extended-pdf-viewer doesn't need node.js support
+// import { isNodeJS } from "../shared/is_node.js";
+// end of modification
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { XRefParseException } from "./core_utils.js";
 
+// modified by ngx-extended-pdf-viewer #358
+// (several not-so-old browsers don't implement Promise.allSettled())
+if (!Promise.allSettled) {
+  Promise.allSettled = function (promises) {
+    const mappedPromises = promises
+      .filter(o => !!o)
+      .map(p => {
+        return p
+          .then(value => {
+            return {
+              status: "fulfilled",
+              value,
+            };
+          })
+          .catch(reason => {
+            return {
+              status: "rejected",
+              reason,
+            };
+          });
+      });
+    return Promise.all(mappedPromises);
+  };
+}
+// end of modification ngx-extended-pdf-viewer #358
 class WorkerTask {
   constructor(name) {
     this.name = name;
@@ -774,6 +801,20 @@ class WorkerMessageHandler {
       setupDoc(docParams);
       docParams = null; // we don't need docParams anymore -- saving memory.
     });
+
+    // #171 receive options from ngx-extended-pdf-viewer
+    handler.on("showUnverifiedSignatures", function wphReady(data) {
+      if (data) {
+        console.log(
+          "showUnverifiedSignatures=" +
+            data +
+            ". This is an incompletely implemented feature. Signatures cannot be validated, so use it at own risk."
+        );
+      }
+      self.showUnverifiedSignatures = data;
+    });
+    // #171 end of receive options from ngx-extended-pdf-viewer
+
     return workerHandlerName;
   }
 
@@ -793,7 +834,8 @@ function isMessagePort(maybePort) {
 // Worker thread (and not Node.js)?
 if (
   typeof window === "undefined" &&
-  !isNodeJS &&
+  // modified by ngx-extended-pdf-viewer - we don't need node.js support
+  // !isNodeJS &&
   typeof self !== "undefined" &&
   isMessagePort(self)
 ) {

@@ -61,6 +61,14 @@ import { WebGLContext } from "./webgl.js";
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 
+// #171 receive options from ngx-extended-pdf-viewer
+const ServiceWorkerOptions = {
+  showUnverifiedSignatures: false,
+};
+
+window.ServiceWorkerOptions = ServiceWorkerOptions;
+// #171 end
+
 const DefaultCanvasFactory =
   (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
     ? NodeCanvasFactory
@@ -372,6 +380,12 @@ function getDocument(src) {
             params
           );
           task._transport = transport;
+          // #171 receive options from ngx-extended-pdf-viewer
+          messageHandler.send(
+            "showUnverifiedSignatures",
+            window.ServiceWorkerOptions.showUnverifiedSignatures
+          );
+          // #171 end of receive options from ngx-extended-pdf-viewer
           messageHandler.send("Ready", null);
         }
       );
@@ -1752,6 +1766,11 @@ const PDFWorker = (function PDFWorkerClosure() {
 
   function getWorkerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
+      // modified by ngx-extended-pdf-viewer #376
+      if (GlobalWorkerOptions.workerSrc.constructor.name === "Function") {
+        return GlobalWorkerOptions.workerSrc();
+      }
+      // end of modification
       return GlobalWorkerOptions.workerSrc;
     }
     if (typeof fallbackWorkerSrc !== "undefined") {
@@ -2103,11 +2122,16 @@ class WorkerTransport {
       ownerDocument: params.ownerDocument,
     });
     this._params = params;
+    // modified by ngx-extended-pdf-viewer #376
+    let cMapUrl = params.cMapUrl;
+    if (cMapUrl.constructor.name === "Function") {
+      cMapUrl = cMapUrl();
+    }
     this.CMapReaderFactory = new params.CMapReaderFactory({
-      baseUrl: params.cMapUrl,
+      baseUrl: cMapUrl,
       isCompressed: params.cMapPacked,
     });
-
+    // end of modification
     this.destroyed = false;
     this.destroyCapability = null;
     this._passwordCapability = null;

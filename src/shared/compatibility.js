@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-import { isNodeJS } from "./is_node.js";
+// modified by ngx-extended-pdf-viewer - removed node.js support
+// import { isNodeJS } from "./is_node.js";
+
+const isNodeJS = false;
 
 // Skip compatibility checks for modern builds and if we already ran the module.
 if (

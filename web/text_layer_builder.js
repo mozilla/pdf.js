@@ -156,7 +156,11 @@ class TextLayerBuilder {
     this.textContent = textContent;
   }
 
-  _convertMatches(matches, matchesLength) {
+  _convertMatches(
+    matches,
+    matchesLength,
+    matchesColor // #201
+  ) {
     // Early exit if there is nothing to convert.
     if (!matches) {
       return [];
@@ -183,6 +187,7 @@ class TextLayerBuilder {
       }
 
       const match = {
+        color: matchesColor ? matchesColor[m] : 0, // #201
         begin: {
           divIdx: i,
           offset: matchIdx - iIndex,
@@ -262,7 +267,8 @@ class TextLayerBuilder {
       const begin = match.begin;
       const end = match.end;
       const isSelected = isSelectedPage && i === selectedMatchIdx;
-      const highlightSuffix = isSelected ? " selected" : "";
+      const highlightSuffix =
+        (isSelected ? " selected" : "") + " color" + match.color; // #201
 
       if (isSelected) {
         // Attempt to scroll the selected match into view.
@@ -346,7 +352,12 @@ class TextLayerBuilder {
     const pageMatches = findController.pageMatches[pageIdx] || null;
     const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
 
-    this.matches = this._convertMatches(pageMatches, pageMatchesLength);
+    const pageMatchesColor = findController.pageMatchesColor[pageIdx] || null; // #201
+    this.matches = this._convertMatches(
+      pageMatches,
+      pageMatchesLength,
+      pageMatchesColor
+    ); // #201
     this._renderMatches(this.matches);
   }
 

@@ -26,6 +26,31 @@ const pdfjsBuild =
 window.PDFViewerApplication = PDFViewerApplication;
 window.PDFViewerApplicationOptions = AppOptions;
 
+// modified by ngx-extended-pdf-viewer
+if (!HTMLCollection.prototype[Symbol.iterator]) {
+  HTMLCollection.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
+}
+(function () {
+  if (typeof window.CustomEvent === "function") {
+    return;
+  }
+
+  function CustomEvent(event, params) {
+    params = params || { bubbles: false, cancelable: false, detail: null };
+    const evt = document.createEvent("CustomEvent");
+    evt.initCustomEvent(
+      event,
+      params.bubbles,
+      params.cancelable,
+      params.detail
+    );
+    return evt;
+  }
+
+  window.CustomEvent = CustomEvent;
+})();
+// end of modification
+
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
   var defaultUrl; // eslint-disable-line no-var
 
@@ -146,9 +171,15 @@ function getViewerConfiguration() {
       bar: document.getElementById("findbar"),
       toggleButton: document.getElementById("viewFind"),
       findField: document.getElementById("findInput"),
+      findFieldMultiline: document.getElementById("findInputMultiline"), // #201
       highlightAllCheckbox: document.getElementById("findHighlightAll"),
       caseSensitiveCheckbox: document.getElementById("findMatchCase"),
       entireWordCheckbox: document.getElementById("findEntireWord"),
+      findMultipleSearchTextsCheckbox: document.getElementById(
+        "findMultipleSearchTexts"
+      ), // #201
+      ignoreAccentsCheckbox: document.getElementById("findIgnoreAccents"), // #177
+      fuzzyCheckbox: document.getElementById("findFuzzy"), // #304
       findMsg: document.getElementById("findMsg"),
       findResultsCount: document.getElementById("findResultsCount"),
       findPreviousButton: document.getElementById("findPrevious"),
@@ -236,13 +267,17 @@ function webViewerLoad() {
   }
 }
 
-if (
-  document.readyState === "interactive" ||
-  document.readyState === "complete"
-) {
-  webViewerLoad();
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+  if (
+    document.readyState === "interactive" ||
+    document.readyState === "complete"
+  ) {
+    webViewerLoad();
+  } else {
+    document.addEventListener("DOMContentLoaded", webViewerLoad, true);
+  }
 } else {
-  document.addEventListener("DOMContentLoaded", webViewerLoad, true);
+  window.webViewerLoad = webViewerLoad;
 }
 
 export { PDFViewerApplication, AppOptions as PDFViewerApplicationOptions };
