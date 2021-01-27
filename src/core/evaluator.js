@@ -609,6 +609,9 @@ class PartialEvaluator {
       .then(imageObj => {
         imgData = imageObj.createImageData(/* forceRGBA = */ false);
 
+        if (cacheKey && imageRef && cacheGlobally) {
+          this.globalImageCache.addByteSize(imageRef, imgData.data.length);
+        }
         return this._sendImgData(objId, imgData, cacheGlobally);
       })
       .catch(reason => {
@@ -633,6 +636,7 @@ class PartialEvaluator {
             objId,
             fn: OPS.paintImageXObject,
             args,
+            byteSize: 0, // Temporary entry, note `addByteSize` above.
           });
         }
       }
