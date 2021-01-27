@@ -22,6 +22,7 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} isNewSelection - track whether selection has changed since last utterance.
  * @property {boolean} isPaused - track paused state ourselves as Microsoft and Google Online voices don't report `speechSynthesis.paused` state.
+ * @property {SpeechSynthesisVoice} [storedVoices] - Store voices so we don't regenerate list which can change and desync indexes.
  */
 
 /**
@@ -42,8 +43,10 @@ class PDFTTSViewer extends BaseTreeViewer {
       this.toggleToolbarPlayingIcon(false);
       this.isNewSelection = true;
     });
+    window.speechSynthesis.addEventListener("voiceschanged", () => {
+      this.updateVoiceSelect();
+    });
   }
-
 
   reset() {
     super.reset();
@@ -92,44 +95,41 @@ class PDFTTSViewer extends BaseTreeViewer {
     voiceslabel.textContent = "Choose voice"
     div.appendChild(voiceslabel);
 
-    const voicelist = document.createElement("select");
-    voicelist.id = "voiceSelect";
-    this.loadVoices(voicelist);
+    const voicelist = this.updateVoiceSelect();
     div.appendChild(voicelist);
 
     fragment.appendChild(div);
     this._finishRendering(fragment, 1);
   }
 
+  updateVoiceSelect() {
+    const oldvoicelist = document.getElementById("voiceSelect");   
+    const voicelist = document.createElement("select");
+    voicelist.id = "voiceSelect";
+    this.loadVoices(voicelist);
+
+    if (oldvoicelist !== null) {
+      oldvoicelist.replaceWith(voicelist);
+    } else {
+      return voicelist;
+    }
+  }
 
   async loadVoices(voicelist) {
-    // Get Voices as promise to allow time to load.
-    const allVoicesObtained = new Promise(function(resolve, reject) {
-      let voices = window.speechSynthesis.getVoices();
-      if (voices.length !== 0) {
-        resolve(voices);
-      } else {
-        window.speechSynthesis.addEventListener("voiceschanged", function() {
-          voices = window.speechSynthesis.getVoices();
-          voices = window.speechSynthesis.getVoices();
-          resolve(voices);
-        });
-      }
+    let voices = window.speechSynthesis.getVoices();    
+    voices.forEach(function (voice) {
+      let option = document.createElement("option");
+      option.textContent = voice.name + (voice.default ? ' (default)' : '');
+      voicelist.appendChild(option);
     });
-    // When promise resolved, add to voice list.
-    await allVoicesObtained.then(voices => {
-      voices.forEach(function (voice) {
-        let option = document.createElement("option");
-        option.textContent = voice.name + (voice.default ? ' (default)' : '');
-        voicelist.appendChild(option);
-      });
-      // Load preference
-      voicelist.selectedIndex = localStorage['PDFJS_TTS_Voice'];
-      // Save preference
-      voicelist.onchange = function () {
-        localStorage['PDFJS_TTS_Voice'] = this.selectedIndex;
-      }
-    });
+    // Store for later use by playpause(), so we don't regenerate list which may have changed and will desync selectedIndex.
+    this.storedVoices = voices;
+    // Load preference
+    voicelist.value = localStorage['PDFJS_TTS_Voice'];
+    // Save preference
+    voicelist.onchange = function () {
+      localStorage['PDFJS_TTS_Voice'] = this.value;
+    }
   }
 
   toggleToolbarPlayingIcon(playing) {
@@ -177,9 +177,8 @@ class PDFTTSViewer extends BaseTreeViewer {
     
     // Speak selected
     let msg = new SpeechSynthesisUtterance();
-    const voices = window.speechSynthesis.getVoices();
     const voicesel = document.getElementById('voiceSelect')
-    msg.voice = voices[voicesel.selectedIndex];
+    msg.voice = this.storedVoices[voicesel.selectedIndex];
     //msg.rate = 1;
     // msg.rate = $('#rate').val() / 10;
     //msg.pitch = 1;
