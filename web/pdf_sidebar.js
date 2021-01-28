@@ -505,7 +505,7 @@ class PDFSidebar {
       button.disabled = !count;
 
       if (count) {
-        if (!SidebarView.TTS) { this._showUINotification(view); }
+        if (view !== SidebarView.TTS) { this._showUINotification(view); }
       } else if (this.active === view) {
         // If the `view` was opened by the user during document load,
         // switch away from it if it turns out to be empty.
