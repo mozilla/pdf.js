@@ -247,13 +247,14 @@ class GlobalImageCache {
     if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
       return null;
     }
-    if (!this._imageCache.has(ref)) {
+    const imageData = this._imageCache.get(ref);
+    if (!imageData) {
       return null;
     }
     // Ensure that we keep track of all pages containing the image reference.
     pageIndexSet.add(pageIndex);
 
-    return this._imageCache.get(ref);
+    return imageData;
   }
 
   setData(ref, data) {
