@@ -2515,6 +2515,15 @@ class PartialEvaluator {
                     return;
                   }
 
+                  const globalImage = self.globalImageCache.getData(
+                    xobj,
+                    self.pageIndex
+                  );
+                  if (globalImage) {
+                    resolveXObject();
+                    return;
+                  }
+
                   xobj = xref.fetch(xobj);
                 }
 
