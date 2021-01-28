@@ -3196,7 +3196,7 @@ class PartialEvaluator {
 
   getBaseFontMetrics(name) {
     var defaultWidth = 0;
-    var widths = [];
+    var widths = Object.create(null);
     var monospace = false;
     var stdFontMap = getStdFontMap();
     var lookupName = stdFontMap[name] || name;
