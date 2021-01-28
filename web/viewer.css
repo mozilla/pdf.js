@@ -860,6 +860,16 @@ html[dir="rtl"] .dropdownToolbarButton::after {
   left: 7px;
 }
 
+.dropdownSideBarButton > select {
+  width: calc(100% - 6px);
+  height: 28px;
+  font-size: 12px;
+  color: var(--main-color);
+  margin: 4px 4px 4px 2px;
+  padding: 6px;
+  border: none;
+  background-color: var(--dropdown-btn-bg-color);
+}
 .dropdownToolbarButton > select {
   width: 162px;
   height: 28px;

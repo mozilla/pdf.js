@@ -88,17 +88,26 @@ class PDFTTSViewer extends BaseTreeViewer {
     }
 
     const fragment = document.createDocumentFragment();
-    const div = document.createElement("div");
-    div.className = "treeItem";
+    
+    // PlayPause
+    
 
+    // Voice select  
     const voiceslabel = document.createElement("label");
     voiceslabel.textContent = "Choose voice"
-    div.appendChild(voiceslabel);
+    voiceslabel.className = "toolbarLabel";
+    fragment.appendChild(voiceslabel);
 
     const voicelist = this.updateVoiceSelect();
-    div.appendChild(voicelist);
+    const span = document.createElement("span");
+    span.className = "dropdownSideBarButton";
+    span.appendChild(voicelist);
+    fragment.appendChild(span);
+    
+    // Rate
+    
 
-    fragment.appendChild(div);
+
     this._finishRendering(fragment, 1);
   }
 
