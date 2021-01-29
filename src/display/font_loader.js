@@ -350,7 +350,7 @@ class FontFaceObject {
       isEvalSupported = true,
       disableFontFace = false,
       ignoreErrors = false,
-      onUnsupportedFeature = null,
+      onUnsupportedFeature,
       fontRegistry = null,
     }
   ) {
@@ -405,11 +405,9 @@ class FontFaceObject {
       if (!this.ignoreErrors) {
         throw ex;
       }
-      if (this._onUnsupportedFeature) {
-        this._onUnsupportedFeature({
-          featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
-        });
-      }
+      this._onUnsupportedFeature({
+        featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
+      });
       warn(`getPathGenerator - ignoring character: "${ex}".`);
 
       return (this.compiledGlyphs[character] = function (c, size) {
