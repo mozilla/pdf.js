@@ -85,6 +85,7 @@ var AUTOPREFIXER_CONFIG = {
     "Firefox ESR",
     "Safari >= 10",
     "> 0.5%",
+    "not IE > 0",
     "not dead",
   ],
 };
