@@ -609,6 +609,9 @@ class PartialEvaluator {
       .then(imageObj => {
         imgData = imageObj.createImageData(/* forceRGBA = */ false);
 
+        if (cacheKey && imageRef && cacheGlobally) {
+          this.globalImageCache.addByteSize(imageRef, imgData.data.length);
+        }
         return this._sendImgData(objId, imgData, cacheGlobally);
       })
       .catch(reason => {
@@ -633,6 +636,7 @@ class PartialEvaluator {
             objId,
             fn: OPS.paintImageXObject,
             args,
+            byteSize: 0, // Temporary entry, note `addByteSize` above.
           });
         }
       }
@@ -2511,6 +2515,15 @@ class PartialEvaluator {
                     return;
                   }
 
+                  const globalImage = self.globalImageCache.getData(
+                    xobj,
+                    self.pageIndex
+                  );
+                  if (globalImage) {
+                    resolveXObject();
+                    return;
+                  }
+
                   xobj = xref.fetch(xobj);
                 }
 
@@ -3192,7 +3205,7 @@ class PartialEvaluator {
 
   getBaseFontMetrics(name) {
     var defaultWidth = 0;
-    var widths = [];
+    var widths = Object.create(null);
     var monospace = false;
     var stdFontMap = getStdFontMap();
     var lookupName = stdFontMap[name] || name;

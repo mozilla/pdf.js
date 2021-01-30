@@ -19,7 +19,6 @@
 
 var autoprefixer = require("autoprefixer");
 var calc = require("postcss-calc");
-var cssvariables = require("postcss-css-variables");
 var fs = require("fs");
 var gulp = require("gulp");
 var postcss = require("gulp-postcss");
@@ -85,11 +84,9 @@ var AUTOPREFIXER_CONFIG = {
     "Firefox ESR",
     "Safari >= 10",
     "> 0.5%",
+    "not IE > 0",
     "not dead",
   ],
-};
-var CSS_VARIABLES_CONFIG = {
-  preserve: true,
 };
 
 const DEFINES = Object.freeze({
@@ -865,13 +862,7 @@ function buildGeneric(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "generic", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -943,13 +934,7 @@ function buildComponents(defines, dir) {
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
     preprocessCSS("web/pdf_viewer.css", "components", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir)),
   ]);
 }
@@ -1038,13 +1023,7 @@ function buildMinified(defines, dir) {
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "minified", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -2123,19 +2102,15 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src([
-            GENERIC_DIR + "build/pdf.js",
-            GENERIC_DIR + "build/pdf.js.map",
-            GENERIC_DIR + "build/pdf.worker.js",
-            GENERIC_DIR + "build/pdf.worker.js.map",
+            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src([
-            GENERIC_ES5_DIR + "build/pdf.js",
-            GENERIC_ES5_DIR + "build/pdf.js.map",
-            GENERIC_ES5_DIR + "build/pdf.worker.js",
-            GENERIC_ES5_DIR + "build/pdf.worker.js.map",
+            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
@@ -2148,6 +2123,10 @@ gulp.task(
           .pipe(rename("pdf.worker.min.js"))
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
+          .src(MINIFIED_DIR + "build/pdf.sandbox.js")
+          .pipe(rename("pdf.sandbox.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "build/")),
+        gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.js")
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
@@ -2158,6 +2137,10 @@ gulp.task(
         gulp
           .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
           .pipe(rename("pdf.worker.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.sandbox.js")
+          .pipe(rename("pdf.sandbox.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
         gulp
           .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")
