@@ -19,7 +19,6 @@
 
 var autoprefixer = require("autoprefixer");
 var calc = require("postcss-calc");
-var cssvariables = require("postcss-css-variables");
 var fs = require("fs");
 var gulp = require("gulp");
 var postcss = require("gulp-postcss");
@@ -88,9 +87,6 @@ var AUTOPREFIXER_CONFIG = {
     "not IE > 0",
     "not dead",
   ],
-};
-var CSS_VARIABLES_CONFIG = {
-  preserve: true,
 };
 
 const DEFINES = Object.freeze({
@@ -846,13 +842,7 @@ function buildGeneric(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "generic", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -924,13 +914,7 @@ function buildComponents(defines, dir) {
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
     preprocessCSS("web/pdf_viewer.css", "components", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir)),
   ]);
 }
@@ -1019,13 +1003,7 @@ function buildMinified(defines, dir) {
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "minified", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
     gulp
