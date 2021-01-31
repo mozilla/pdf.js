@@ -86,14 +86,22 @@ class PDFPresentationMode {
     this._setSwitchInProgress();
     this._notifyStateChange();
 
-    if (this.container.requestFullscreen) {
-      this.container.requestFullscreen();
-    } else if (this.container.mozRequestFullScreen) {
-      this.container.mozRequestFullScreen();
-    } else if (this.container.webkitRequestFullscreen) {
-      this.container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      if (this.container.requestFullscreen) {
+        this.container.requestFullscreen();
+      } else {
+        return false;
+      }
     } else {
-      return false;
+      if (this.container.requestFullscreen) {
+        this.container.requestFullscreen();
+      } else if (this.container.mozRequestFullScreen) {
+        this.container.mozRequestFullScreen();
+      } else if (this.container.webkitRequestFullscreen) {
+        this.container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+      } else {
+        return false;
+      }
     }
 
     this.args = {
@@ -148,6 +156,9 @@ class PDFPresentationMode {
   }
 
   get isFullscreen() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      return !!document.fullscreenElement;
+    }
     return !!(
       document.fullscreenElement ||
       document.mozFullScreen ||
@@ -468,8 +479,8 @@ class PDFPresentationMode {
     this.fullscreenChangeBind = this._fullscreenChange.bind(this);
 
     window.addEventListener("fullscreenchange", this.fullscreenChangeBind);
-    window.addEventListener("mozfullscreenchange", this.fullscreenChangeBind);
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      window.addEventListener("mozfullscreenchange", this.fullscreenChangeBind);
       window.addEventListener(
         "webkitfullscreenchange",
         this.fullscreenChangeBind
@@ -482,11 +493,11 @@ class PDFPresentationMode {
    */
   _removeFullscreenChangeListeners() {
     window.removeEventListener("fullscreenchange", this.fullscreenChangeBind);
-    window.removeEventListener(
-      "mozfullscreenchange",
-      this.fullscreenChangeBind
-    );
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      window.removeEventListener(
+        "mozfullscreenchange",
+        this.fullscreenChangeBind
+      );
       window.removeEventListener(
         "webkitfullscreenchange",
         this.fullscreenChangeBind
