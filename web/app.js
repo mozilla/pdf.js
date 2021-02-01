@@ -293,6 +293,10 @@ const PDFViewerApplication = {
     });
 
     this._initializedCapability.resolve();
+
+    /* modified by ngx-extended-pdf-viewer #633. The shadow() function        */
+    this.initializeLoadingBar();
+    /* #633 end of modification */
   },
 
   /**
@@ -396,6 +400,7 @@ const PDFViewerApplication = {
     if (waitOn.length === 0) {
       return undefined;
     }
+
     return Promise.all(waitOn).catch(reason => {
       console.error(`_parseHashParameters: "${reason.message}".`);
     });
@@ -717,10 +722,21 @@ const PDFViewerApplication = {
     return this.externalServices.supportsDocumentFonts;
   },
 
-  get loadingBar() {
+  /* modified by ngx-extended-pdf-viewer #633. The shadow() function        */
+  /* replaces the getter by a property,so when a new instance of            */
+  /* ngx-extended-pdf-viewer is opened, it still references the old viewer. */
+  /** The bug fix solves this problem.                                      */
+  initializeLoadingBar() {
     const bar = new ProgressBar("#loadingBar");
+    bar.hide();
+    console.log("Loading bar = " + bar);
     return shadow(this, "loadingBar", bar);
   },
+  // get loadingBar() {
+  //  const bar = new ProgressBar("#loadingBar");
+  //  return shadow(this, "loadingBar", bar);
+  // },
+  /** end of modification */
 
   get supportedMouseWheelZoomModifierKeys() {
     return this.externalServices.supportedMouseWheelZoomModifierKeys;
