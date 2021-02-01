@@ -46,12 +46,133 @@ describe("XFAParser", function () {
       <validate>foobar</validate>
     </acrobat>
   </config>
+  <template baseProfile="full" xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <extras>
+      <float>1.23</float>
+      <boolean>1</boolean>
+      <integer>314</integer>
+      <float>2.71</float>
+    </extras>
+    <subform>
+      <proto>
+        <area x="hello" y="-3.14in" relevant="-foo +bar" />
+        <color value="111, 222, 123" />
+        <color value="111, abc, 123" />
+        <medium imagingBBox="1,2in,3.4cm,5.67px" />
+        <medium imagingBBox="1,2in,-3cm,4px" />
+      </proto>
+    </subform>
+  </template>
 </xdp:xdp>
       `;
+      const attributes = {
+        id: "",
+        name: "",
+        use: "",
+        usehref: "",
+      };
+      const mediumAttributes = {
+        id: "",
+        long: { value: 0, unit: "" },
+        orientation: "portrait",
+        short: { value: 0, unit: "" },
+        stock: "",
+        trayIn: "auto",
+        trayOut: "auto",
+        use: "",
+        usehref: "",
+      };
+      const colorAttributes = {
+        cSpace: "SRGB",
+        id: "",
+        use: "",
+        usehref: "",
+      };
       const root = new XFAParser().parse(xml);
       const expected = {
         uuid: "1234",
         timeStamp: "",
+        template: {
+          baseProfile: "full",
+          extras: {
+            ...attributes,
+            float: [
+              { ...attributes, $content: 1.23 },
+              { ...attributes, $content: 2.71 },
+            ],
+            boolean: { ...attributes, $content: 1 },
+            integer: { ...attributes, $content: 314 },
+          },
+          subform: {
+            access: "open",
+            allowMacro: 0,
+            anchorType: "topLeft",
+            colSpan: 1,
+            columnWidths: [{ value: 0, unit: "" }],
+            h: { value: 0, unit: "" },
+            hAlign: "left",
+            id: "",
+            layout: "position",
+            locale: "",
+            maxH: { value: 0, unit: "" },
+            maxW: { value: 0, unit: "" },
+            mergeMode: "consumeData",
+            minH: { value: 0, unit: "" },
+            minW: { value: 0, unit: "" },
+            name: "",
+            presence: "visible",
+            relevant: [],
+            restoreState: "manual",
+            scope: "name",
+            use: "",
+            usehref: "",
+            w: { value: 0, unit: "" },
+            x: { value: 0, unit: "" },
+            y: { value: 0, unit: "" },
+            proto: {
+              area: {
+                ...attributes,
+                colSpan: 1,
+                x: { value: 0, unit: "" },
+                y: { value: -3.14, unit: "in" },
+                relevant: [
+                  { excluded: true, viewname: "foo" },
+                  { excluded: false, viewname: "bar" },
+                ],
+              },
+              color: [
+                {
+                  ...colorAttributes,
+                  value: { r: 111, g: 222, b: 123 },
+                },
+                {
+                  ...colorAttributes,
+                  value: { r: 111, g: 0, b: 123 },
+                },
+              ],
+              medium: [
+                {
+                  ...mediumAttributes,
+                  imagingBBox: {
+                    x: { value: 1, unit: "" },
+                    y: { value: 2, unit: "in" },
+                    width: { value: 3.4, unit: "cm" },
+                    height: { value: 5.67, unit: "px" },
+                  },
+                },
+                {
+                  ...mediumAttributes,
+                  imagingBBox: {
+                    x: { value: -1, unit: "" },
+                    y: { value: -1, unit: "" },
+                    width: { value: -1, unit: "" },
+                    height: { value: -1, unit: "" },
+                  },
+                },
+              ],
+            },
+          },
+        },
         config: {
           acrobat: {
             acrobat7: {
@@ -84,6 +205,43 @@ describe("XFAParser", function () {
                 $content: 7,
               },
             },
+          },
+        },
+      };
+      expect(root[$dump]()).toEqual(expected);
+    });
+
+    it("should parse a xfa document and check namespaces", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <config xmlns:foo="http:/www.foo.com" xmlns="http://www.xfa.org/schema/xci/3.1/">
+    <present xmlns="http://www.mozilla.org">
+      <pdf name="hello">
+        <adobeExtensionLevel>
+          7
+        </adobeExtensionLevel>
+      </pdf>
+    </present>
+    <acrobat>
+      <foo:submitUrl>http://a.b.c</foo:submitUrl>
+      <submitUrl>http://c.b.a</submitUrl>
+    </acrobat>
+  </config>
+  <template baseProfile="full" xmlns="http://www.allizom.org">
+    <extras>
+      <float>1.23</float>
+    </extras>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const expected = {
+        uuid: "",
+        timeStamp: "",
+        config: {
+          acrobat: {
+            submitUrl: { $content: "http://c.b.a" },
           },
         },
       };

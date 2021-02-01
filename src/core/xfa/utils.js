@@ -13,12 +13,26 @@
  * limitations under the License.
  */
 
+const measurementPattern = /([+-]?)([0-9]+\.?[0-9]*)(.*)/;
+
 function getInteger({ data, defaultValue, validate }) {
   if (!data) {
     return defaultValue;
   }
   data = data.trim();
   const n = parseInt(data, 10);
+  if (!isNaN(n) && validate(n)) {
+    return n;
+  }
+  return defaultValue;
+}
+
+function getFloat({ data, defaultValue, validate }) {
+  if (!data) {
+    return defaultValue;
+  }
+  data = data.trim();
+  const n = parseFloat(data);
   if (!isNaN(n) && validate(n)) {
     return n;
   }
@@ -44,4 +58,106 @@ function getStringOption(data, options) {
   });
 }
 
-export { getInteger, getKeyword, getStringOption };
+function getMeasurement(str, def = "0") {
+  def = def || "0";
+  if (!str) {
+    return getMeasurement(def);
+  }
+  const match = str.trim().match(measurementPattern);
+  if (!match) {
+    return getMeasurement(def);
+  }
+  const [, sign, valueStr, unit] = match;
+  const value = parseFloat(valueStr);
+  if (isNaN(value)) {
+    return getMeasurement(def);
+  }
+  return {
+    value: sign === "-" ? -value : value,
+    unit,
+  };
+}
+
+function getRatio(data) {
+  if (!data) {
+    return { num: 1, den: 1 };
+  }
+  const ratio = data
+    .trim()
+    .split(/\s*:\s*/)
+    .map(x => parseFloat(x))
+    .filter(x => !isNaN(x));
+  if (ratio.length === 1) {
+    ratio.push(1);
+  }
+
+  if (ratio.length === 0) {
+    return { num: 1, den: 1 };
+  }
+
+  const [num, den] = ratio;
+  return { num, den };
+}
+
+function getRelevant(data) {
+  if (!data) {
+    return [];
+  }
+  return data
+    .trim()
+    .split(/\s+/)
+    .map(e => {
+      return {
+        excluded: e[0] === "-",
+        viewname: e.substring(1),
+      };
+    });
+}
+
+function getColor(data, def = [0, 0, 0]) {
+  let [r, g, b] = def;
+  if (!data) {
+    return { r, g, b };
+  }
+  const color = data
+    .trim()
+    .split(/\s*,\s*/)
+    .map(c => Math.min(Math.max(0, parseInt(c.trim(), 10)), 255))
+    .map(c => (isNaN(c) ? 0 : c));
+
+  if (color.length < 3) {
+    return { r, g, b };
+  }
+
+  [r, g, b] = color;
+  return { r, g, b };
+}
+
+function getBBox(data) {
+  const def = getMeasurement("-1");
+  if (!data) {
+    return { x: def, y: def, width: def, height: def };
+  }
+  const bbox = data
+    .trim()
+    .split(/\s*,\s*/)
+    .map(m => getMeasurement(m, "-1"));
+  if (bbox.length < 4 || bbox[2].value < 0 || bbox[3].value < 0) {
+    return { x: def, y: def, width: def, height: def };
+  }
+
+  const [x, y, width, height] = bbox;
+  return { x, y, width, height };
+}
+
+export {
+  getBBox,
+  getColor,
+  getFloat,
+  getInteger,
+  getKeyword,
+  getMeasurement,
+  getRatio,
+  getRelevant,
+  getStringOption,
+};
