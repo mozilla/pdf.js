@@ -94,19 +94,44 @@ class PDFTTSViewer extends BaseTreeViewer {
 
     // Voice select  
     const voiceslabel = document.createElement("label");
-    voiceslabel.textContent = "Choose voice"
+    voiceslabel.textContent = "Choose voice";
     voiceslabel.className = "toolbarLabel";
+    voiceslabel.setAttribute("data-l10n-id","tts_voice_label");
     fragment.appendChild(voiceslabel);
 
     const voicelist = this.updateVoiceSelect();
-    const span = document.createElement("span");
-    span.className = "dropdownSideBarButton";
-    span.appendChild(voicelist);
-    fragment.appendChild(span);
+    const voicespan = document.createElement("span");
+    voicespan.className = "dropdownSideBarButton";
+    voicespan.appendChild(voicelist);
+    fragment.appendChild(voicespan);
     
     // Rate
-    
+    const ratelabel = document.createElement("label");
+    ratelabel.textContent = "Rate";
+    ratelabel.title = "Change rate (double-click here to reset)";
+    ratelabel.className = "toolbarLabel";
+    ratelabel.setAttribute("data-l10n-id","tts_rate_label");
+    ratelabel.ondblclick = function () {
+      rateinput.value = 10;
+    }
+    fragment.appendChild(ratelabel);
 
+    const ratespan = document.createElement("span");
+    ratespan.className = "range-field";
+    const rateinput = document.createElement("input");
+    rateinput.type = "range";
+    rateinput.id = "rate";
+    rateinput.min = 1;
+    rateinput.max = 100;
+    rateinput.value = 10;
+    // Load pref
+    rateinput.value = localStorage['PDFJS_TTS_Rate'];
+    // Save pref
+    rateinput.onchange = function () {
+      localStorage['PDFJS_TTS_Rate'] = this.value;
+    }
+    ratespan.appendChild(rateinput);
+    fragment.appendChild(ratespan);
 
     this._finishRendering(fragment, 1);
   }
@@ -126,6 +151,7 @@ class PDFTTSViewer extends BaseTreeViewer {
 
   async loadVoices(voicelist) {
     let voices = window.speechSynthesis.getVoices();    
+    
     voices.forEach(function (voice) {
       let option = document.createElement("option");
       option.textContent = voice.name + (voice.default ? ' (default)' : '');
@@ -188,10 +214,7 @@ class PDFTTSViewer extends BaseTreeViewer {
     let msg = new SpeechSynthesisUtterance();
     const voicesel = document.getElementById('voiceSelect')
     msg.voice = this.storedVoices[voicesel.selectedIndex];
-    //msg.rate = 1;
-    // msg.rate = $('#rate').val() / 10;
-    //msg.pitch = 1;
-    // msg.pitch = $('#pitch').val();
+    msg.rate = document.getElementById('rate').value  / 10;
     msg.text = text;
     speechSynthesis.cancel();
     speechSynthesis.speak(msg);

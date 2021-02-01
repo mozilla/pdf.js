@@ -860,6 +860,10 @@ html[dir="rtl"] .dropdownToolbarButton::after {
   left: 7px;
 }
 
+.range-field > input {
+  display: block;
+  width: calc(100% - 6px);
+}
 .dropdownSideBarButton > select {
   width: calc(100% - 6px);
   height: 28px;
