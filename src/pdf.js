@@ -22,7 +22,7 @@ import {
   LinkTarget,
   loadScript,
   PDFDateString,
-  RenderingCancelledException,
+  RenderingCancelledException
 } from "./display/display_utils.js";
 import {
   build,
@@ -31,7 +31,7 @@ import {
   PDFDataRangeTransport,
   PDFWorker,
   setPDFNetworkStreamFactory,
-  version,
+  version
 } from "./display/api.js";
 import {
   CMapCompressionType,
@@ -48,7 +48,7 @@ import {
   UnexpectedResponseException,
   UNSUPPORTED_FEATURES,
   Util,
-  VerbosityLevel,
+  VerbosityLevel
 } from "./shared/util.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
 import { apiCompatibilityParams } from "./display/api_compatibility.js";
@@ -57,11 +57,9 @@ import { renderTextLayer } from "./display/text_layer.js";
 import { SVGGraphics } from "./display/svg.js";
 
 /* eslint-disable-next-line no-unused-vars */
-const pdfjsVersion =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
+const pdfjsVersion = typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : void 0;
 /* eslint-disable-next-line no-unused-vars */
-const pdfjsBuild =
-  typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
+const pdfjsBuild = typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
   const streamsPromise = Promise.all([
@@ -164,5 +162,5 @@ export {
   // From "./display/text_layer.js":
   renderTextLayer,
   // From "./display/svg.js":
-  SVGGraphics,
+  SVGGraphics
 };
