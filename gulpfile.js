@@ -1431,7 +1431,7 @@ function buildLib(defines, dir) {
   return merge([
     gulp.src(
       [
-        "src/{core,display,shared}/*.js",
+        "src/{core,display,shared}/**/*.js",
         "!src/shared/{cffStandardStrings,fonts_utils}.js",
         "src/{pdf,pdf.worker}.js",
       ],

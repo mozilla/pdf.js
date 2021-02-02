@@ -63,6 +63,8 @@ class XMLParserBase {
           return "&";
         case "quot":
           return '"';
+        case "apos":
+          return "'";
       }
       return this.onResolveEntity(entity);
     });
@@ -455,14 +457,6 @@ class SimpleXMLParser extends XMLParserBase {
     return { documentElement };
   }
 
-  onResolveEntity(name) {
-    switch (name) {
-      case "apos":
-        return "'";
-    }
-    return super.onResolveEntity(name);
-  }
-
   onText(text) {
     if (isWhitespaceString(text)) {
       return;
@@ -509,4 +503,4 @@ class SimpleXMLParser extends XMLParserBase {
   }
 }
 
-export { SimpleDOMNode, SimpleXMLParser };
+export { SimpleDOMNode, SimpleXMLParser, XMLParserBase, XMLParserErrorCode };
