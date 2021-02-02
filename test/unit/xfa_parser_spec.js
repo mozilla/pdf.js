@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { $dump } from "../../src/core/xfa/xfa_object.js";
+import { $dump, $getChildren, $text } from "../../src/core/xfa/xfa_object.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";
 
 describe("XFAParser", function () {
@@ -246,6 +246,39 @@ describe("XFAParser", function () {
         },
       };
       expect(root[$dump]()).toEqual(expected);
+    });
+
+    it("should parse a xfa document with xhtml", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <extras>
+      <text>
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <p style="foo: bar; text-indent:0.5in; line-height:11px;bar:foo;tab-stop: left 0.5in">
+            The first line of this paragraph is indented a half-inch.<br/>
+            Successive lines are not indented.<br/>
+            This is the last line of the paragraph.<br/>
+          </p>
+        </body>
+      </text>
+    </extras>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      const p = root.template.extras.text.$content[$getChildren]()[0];
+      expect(p.style).toEqual(
+        "text-indent:0.5in;line-height:11px;tab-stop:left 0.5in"
+      );
+      expect(p[$text]()).toEqual(
+        [
+          "The first line of this paragraph is indented a half-inch.\n",
+          "Successive lines are not indented.\n",
+          "This is the last line of the paragraph.\n",
+        ].join("")
+      );
     });
   });
 });

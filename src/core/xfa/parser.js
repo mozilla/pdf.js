@@ -42,7 +42,7 @@ class XFAParser extends XMLParserBase {
     if (this._whiteRegex.test(text)) {
       return;
     }
-    this._current[$onText](text);
+    this._current[$onText](text.trim());
   }
 
   onCdata(text) {
