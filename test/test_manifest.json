@@ -4925,6 +4925,14 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue6961",
+       "file": "pdfs/issue6961.pdf",
+       "md5": "a80e4357a8fda758d96c2c76f2980b03",
+       "link": false,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "load"
+    },
     {  "id": "zero_descent",
        "file": "pdfs/zero_descent.pdf",
        "md5": "32805ab28be1d0e91d27d9742c66eccf",
