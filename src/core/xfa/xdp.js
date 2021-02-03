@@ -19,6 +19,7 @@ import {
   $nodeName,
   $onChildCheck,
   XFAObject,
+  XFAObjectArray,
 } from "./xfa_object.js";
 
 const XDP_NS_ID = NamespaceIds.xdp.id;
@@ -32,7 +33,7 @@ class Xdp extends XFAObject {
     this.connectionSet = null;
     this.datasets = null;
     this.localeSet = null;
-    this.stylesheet = [];
+    this.stylesheet = new XFAObjectArray();
     this.template = null;
   }
 
