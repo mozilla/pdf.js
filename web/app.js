@@ -558,7 +558,8 @@ const PDFViewerApplication = {
     this.passwordPrompt = new PasswordPrompt(
       appConfig.passwordOverlay,
       this.overlayManager,
-      this.l10n
+      this.l10n,
+      this.isViewerEmbedded
     );
 
     this.pdfOutlineViewer = new PDFOutlineViewer({
