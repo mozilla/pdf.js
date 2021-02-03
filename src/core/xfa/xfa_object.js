@@ -14,7 +14,7 @@
  */
 
 import { getInteger, getKeyword } from "./utils.js";
-import { warn } from "../../shared/util.js";
+import { shadow, warn } from "../../shared/util.js";
 
 // We use these symbols to avoid name conflict between tags
 // and properties/methods names.
@@ -23,15 +23,22 @@ const $cleanup = Symbol();
 const $content = Symbol("content");
 const $dump = Symbol();
 const $finalize = Symbol();
+const $getChildren = Symbol();
 const $isTransparent = Symbol();
+const $lastAttribute = Symbol();
 const $namespaceId = Symbol("namespaceId");
 const $nodeName = Symbol("nodeName");
 const $onChild = Symbol();
 const $onChildCheck = Symbol();
 const $onText = Symbol();
+const $text = Symbol();
 
+const _attributes = Symbol();
+const _attributeNames = Symbol();
+const _children = Symbol();
 const _defaultValue = Symbol();
 const _hasChildren = Symbol();
+const _max = Symbol();
 const _options = Symbol();
 const _parent = Symbol();
 const _validator = Symbol();
@@ -42,6 +49,7 @@ class XFAObject {
     this[$nodeName] = name;
     this[_hasChildren] = hasChildren;
     this[_parent] = null;
+    this[_children] = [];
   }
 
   [$onChild](child) {
@@ -51,12 +59,15 @@ class XFAObject {
 
     const name = child[$nodeName];
     const node = this[name];
-    if (Array.isArray(node)) {
-      node.push(child);
-      child[_parent] = this;
+    if (node instanceof XFAObjectArray) {
+      if (node.push(child)) {
+        child[_parent] = this;
+        this[_children].push(child);
+      }
     } else if (node === null) {
       this[name] = child;
       child[_parent] = this;
+      this[_children].push(child);
     } else {
       warn(`XFA - node "${this[$nodeName]}" accepts only one child: ${name}`);
     }
@@ -85,6 +96,37 @@ class XFAObject {
     return this.name === "";
   }
 
+  [$lastAttribute]() {
+    return "";
+  }
+
+  get [_attributeNames]() {
+    // Lazily get attributes names
+    const proto = Object.getPrototypeOf(this);
+    if (!proto._attributes) {
+      const attributes = (proto._attributes = new Set());
+      for (const name of Object.getOwnPropertyNames(this)) {
+        if (
+          this[name] === null ||
+          this[name] instanceof XFAObject ||
+          this[name] instanceof XFAObjectArray
+        ) {
+          break;
+        }
+        attributes.add(name);
+      }
+    }
+    return shadow(this, _attributeNames, proto._attributes);
+  }
+
+  [$getChildren](name = null) {
+    if (!name) {
+      return this[_children];
+    }
+
+    return this[_children].filter(c => c[$nodeName] === name);
+  }
+
   [$dump]() {
     const dumped = Object.create(null);
     if (this[$content]) {
@@ -93,17 +135,14 @@ class XFAObject {
 
     for (const name of Object.getOwnPropertyNames(this)) {
       const value = this[name];
-      if (value === null || (Array.isArray(value) && value.length === 0)) {
+      if (value === null) {
         continue;
       }
       if (value instanceof XFAObject) {
         dumped[name] = value[$dump]();
-      } else if (Array.isArray(value)) {
-        if (value[0] instanceof XFAObject) {
-          dumped[name] =
-            value.length === 1 ? value[0][$dump]() : value.map(x => x[$dump]());
-        } else {
-          dumped[name] = value;
+      } else if (value instanceof XFAObjectArray) {
+        if (!value.isEmpty()) {
+          dumped[name] = value.dump();
         }
       } else {
         dumped[name] = value;
@@ -114,13 +153,41 @@ class XFAObject {
   }
 }
 
+class XFAObjectArray {
+  constructor(max = Infinity) {
+    this[_max] = max;
+    this[_children] = [];
+  }
+
+  push(child) {
+    const len = this[_children].length;
+    if (len <= this[_max]) {
+      this[_children].push(child);
+      return true;
+    }
+    warn(
+      `XFA - node "${child[$nodeName]}" accepts no more than ${this[_max]} children`
+    );
+    return false;
+  }
+
+  isEmpty() {
+    return this[_children].length === 0;
+  }
+
+  dump() {
+    return this[_children].length === 1
+      ? this[_children][0][$dump]()
+      : this[_children].map(x => x[$dump]());
+  }
+}
+
 class XmlObject extends XFAObject {
   constructor(nsId, name, attributes = Object.create(null)) {
     super(nsId, name);
     this[$content] = "";
     if (name !== "#text") {
-      this.attributes = attributes;
-      this.children = [];
+      this[_attributes] = attributes;
     }
   }
 
@@ -129,9 +196,9 @@ class XmlObject extends XFAObject {
       const node = new XmlObject(this[$namespaceId], "#text");
       node[$content] = this[$content];
       this[$content] = "";
-      this.children.push(node);
+      this[_children].push(node);
     }
-    this.children.push(child);
+    this[_children].push(child);
   }
 
   [$onText](str) {
@@ -139,12 +206,19 @@ class XmlObject extends XFAObject {
   }
 
   [$finalize]() {
-    if (this[$content] && this.children.length > 0) {
+    if (this[$content] && this[_children].length > 0) {
       const node = new XmlObject(this[$namespaceId], "#text");
       node[$content] = this[$content];
-      this.children.push(node);
+      this[_children].push(node);
       delete this[$content];
     }
+  }
+
+  [$text]() {
+    if (this[_children].length === 0) {
+      return this[$content];
+    }
+    return this[_children].map(c => c[$text]()).join("");
   }
 }
 
@@ -240,5 +314,6 @@ export {
   OptionObject,
   StringObject,
   XFAObject,
+  XFAObjectArray,
   XmlObject,
 };

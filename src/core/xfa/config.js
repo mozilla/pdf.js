@@ -19,6 +19,7 @@ import {
   OptionObject,
   StringObject,
   XFAObject,
+  XFAObjectArray,
 } from "./xfa_object.js";
 
 const CONFIG_NS_ID = NamespaceIds.config.id;
@@ -31,7 +32,7 @@ class Acrobat extends XFAObject {
     this.common = null;
     this.validate = null;
     this.validateApprovalSignatures = null;
-    this.submitUrl = [];
+    this.submitUrl = new XFAObjectArray();
   }
 }
 
@@ -60,7 +61,7 @@ class Config extends XFAObject {
     this.acrobat = null;
     this.present = null;
     this.trace = null;
-    this.agent = [];
+    this.agent = new XFAObjectArray();
   }
 }
 
@@ -87,14 +88,14 @@ class Present extends XFAObject {
     this.script = null;
     this.validate = null;
     this.xdp = null;
-    this.driver = [];
-    this.labelPrinter = [];
-    this.pcl = [];
-    this.pdf = [];
-    this.ps = [];
-    this.submitUrl = [];
-    this.webClient = [];
-    this.zpl = [];
+    this.driver = new XFAObjectArray();
+    this.labelPrinter = new XFAObjectArray();
+    this.pcl = new XFAObjectArray();
+    this.pdf = new XFAObjectArray();
+    this.ps = new XFAObjectArray();
+    this.submitUrl = new XFAObjectArray();
+    this.webClient = new XFAObjectArray();
+    this.zpl = new XFAObjectArray();
   }
 }
 
