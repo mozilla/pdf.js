@@ -445,7 +445,7 @@ class PDFLinkService {
   _cachedPageNumber(pageRef) {
     const refStr =
       pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
-    return (this._pagesRefCache && this._pagesRefCache[refStr]) || null;
+    return this._pagesRefCache?.[refStr] || null;
   }
 
   /**
