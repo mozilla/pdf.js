@@ -308,7 +308,7 @@ var Driver = (function DriverClosure() {
       : [];
 
     // Create a working canvas
-    this.canvas = document.createElement("canvas");
+    this._clearCanvas();
   }
 
   Driver.prototype = {
@@ -510,14 +510,13 @@ var Driver = (function DriverClosure() {
               task.pdfDoc.numPages +
               "... "
           );
-          this.canvas.mozOpaque = true;
+          this._clearCanvas();
           ctx = this.canvas.getContext("2d", { alpha: false });
           task.pdfDoc.getPage(task.pageNum).then(
             function (page) {
               var viewport = page.getViewport({ scale: PDF_TO_CSS_UNITS });
               self.canvas.width = viewport.width;
               self.canvas.height = viewport.height;
-              self._clearCanvas();
 
               // Initialize various `eq` test subtypes, see comment below.
               var renderAnnotations = false,
@@ -673,9 +672,15 @@ var Driver = (function DriverClosure() {
     },
 
     _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext("2d", { alpha: false });
-      ctx.beginPath();
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      if (this.canvas) {
+        // Zeroing the width and height causes Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        this.canvas.width = 0;
+        this.canvas.height = 0;
+      }
+      // TODO: Add comment here if this actually works...
+      this.canvas = document.createElement("canvas");
+      this.canvas.mozOpaque = true;
     },
 
     _snapshot: function Driver_snapshot(task, failure) {
