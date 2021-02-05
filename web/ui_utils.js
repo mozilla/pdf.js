@@ -787,7 +787,7 @@ function dispatchDOMEvent(eventName, args = null) {
     throw new Error("Not implemented: dispatchDOMEvent");
   }
   const details = Object.create(null);
-  if (args && args.length > 0) {
+  if (args?.length > 0) {
     const obj = args[0];
     for (const key in obj) {
       const value = obj[key];
@@ -1022,7 +1022,7 @@ function getActiveOrFocusedElement() {
   let curActiveOrFocused =
     curRoot.activeElement || curRoot.querySelector(":focus");
 
-  while (curActiveOrFocused && curActiveOrFocused.shadowRoot) {
+  while (curActiveOrFocused?.shadowRoot) {
     curRoot = curActiveOrFocused.shadowRoot;
     curActiveOrFocused =
       curRoot.activeElement || curRoot.querySelector(":focus");
