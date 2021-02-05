@@ -943,6 +943,8 @@ const PDFViewerApplication = {
         this.load(pdfDocument);
       },
       exception => {
+        this._unblockDocumentLoadEvent();
+
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
         }
@@ -1420,6 +1422,8 @@ const PDFViewerApplication = {
     });
 
     pagesPromise.then(() => {
+      this._unblockDocumentLoadEvent();
+
       this._initializeAutoPrint(pdfDocument, openActionPromise);
     });
 
@@ -2333,6 +2337,19 @@ const PDFViewerApplication = {
       Math.floor(Math.abs(this._wheelUnusedTicks));
     this._wheelUnusedTicks -= wholeTicks;
     return wholeTicks;
+  },
+
+  /**
+   * Should be called *after* all pages have loaded, or if an error occurred,
+   * to unblock the "load" event; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
+   * @private
+   */
+  _unblockDocumentLoadEvent() {
+    if (document.blockUnblockOnload) {
+      document.blockUnblockOnload(false);
+    }
+    // Ensure that this method is only ever run once.
+    this._unblockDocumentLoadEvent = () => {};
   },
 
   /**
