@@ -14,10 +14,12 @@
  */
 
 import { ConfigNamespace } from "./config.js";
+import { TemplateNamespace } from "./template.js";
 import { XdpNamespace } from "./xdp.js";
 
 const NamespaceSetUp = {
   config: ConfigNamespace,
+  template: TemplateNamespace,
   xdp: XdpNamespace,
 };
 
