@@ -211,6 +211,7 @@ class PDFFindBar {
     if (!this.opened) {
       this.opened = true;
       this.toggleButton.classList.add("toggled");
+      this.toggleButton.setAttribute("aria-expanded", "true");
       this.bar.classList.remove("hidden");
     }
     this.findField.select();
@@ -225,6 +226,7 @@ class PDFFindBar {
     }
     this.opened = false;
     this.toggleButton.classList.remove("toggled");
+    this.toggleButton.setAttribute("aria-expanded", "false");
     this.bar.classList.add("hidden");
 
     this.eventBus.dispatch("findbarclose", { source: this });
