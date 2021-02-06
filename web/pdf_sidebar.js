@@ -264,6 +264,7 @@ class PDFSidebar {
     }
     this.isOpen = true;
     this.toggleButton.classList.add("toggled");
+    this.toggleButton.setAttribute("aria-expanded", "true");
 
     this.outerContainer.classList.add("sidebarMoving", "sidebarOpen");
 
@@ -282,6 +283,7 @@ class PDFSidebar {
     }
     this.isOpen = false;
     this.toggleButton.classList.remove("toggled");
+    this.toggleButton.setAttribute("aria-expanded", "false");
 
     this.outerContainer.classList.add("sidebarMoving");
     this.outerContainer.classList.remove("sidebarOpen");
