@@ -19,7 +19,6 @@ import {
   bytesToString,
   objectSize,
   stringToPDFString,
-  warn,
 } from "../shared/util.js";
 import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
 
@@ -72,8 +71,7 @@ class XRefParseException extends BaseException {}
  *
  * If the key is not found in the tree, `undefined` is returned. Otherwise,
  * the value for the key is returned or, if `stopWhenFound` is `false`, a list
- * of values is returned. To avoid infinite loops, the traversal is stopped when
- * the loop limit is reached.
+ * of values is returned.
  *
  * @param {Dict} dict - Dictionary from where to start the traversal.
  * @param {string} key - The key of the property to find the value for.
@@ -90,11 +88,13 @@ function getInheritableProperty({
   getArray = false,
   stopWhenFound = true,
 }) {
-  const LOOP_LIMIT = 100;
-  let loopCount = 0;
   let values;
+  const visited = new RefSet();
 
-  while (dict) {
+  while (dict instanceof Dict && !(dict.objId && visited.has(dict.objId))) {
+    if (dict.objId) {
+      visited.put(dict.objId);
+    }
     const value = getArray ? dict.getArray(key) : dict.get(key);
     if (value !== undefined) {
       if (stopWhenFound) {
@@ -104,10 +104,6 @@ function getInheritableProperty({
         values = [];
       }
       values.push(value);
-    }
-    if (++loopCount > LOOP_LIMIT) {
-      warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
-      break;
     }
     dict = dict.get("Parent");
   }
