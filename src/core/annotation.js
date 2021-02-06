@@ -114,6 +114,17 @@ class AnnotationFactory {
             return new ButtonWidgetAnnotation(parameters);
           case "Ch":
             return new ChoiceWidgetAnnotation(parameters);
+          // #639 modified by ngx-extended-pdf- viewer
+          case "Sig":
+            if (self.showUnverifiedSignatures) {
+              console.log(
+                "The PDF file contains a signature. Please take into account that it can't be verified yet. ngx-extended-pdf-viewer also displays forged signatures, so use this feature only if you're sure what you're doing."
+              );
+              const annotation = new SquareAnnotation(parameters);
+              annotation.data.fieldType = "Sig";
+              return annotation;
+            }
+          // #639 end of modification
         }
         warn(
           'Unimplemented widget field type "' +
@@ -1035,7 +1046,7 @@ class WidgetAnnotation extends Annotation {
       if (!self.showUnverifiedSignatures) {
         this.setFlags(AnnotationFlag.HIDDEN);
         console.log(
-          "The PDF file contains a signature. Please take into account that it can't be verified yet."
+          "The PDF file contains a signature. Please take into account that it can't be verified yet. ngx-extended-pdf-viewer also displays forged signatures, so use this feature only if you're sure what you're doing."
         );
       }
       // #171 modification end
