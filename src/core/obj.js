@@ -2556,7 +2556,11 @@ const ObjectLoader = (function () {
             currentNode = this.xref.fetch(currentNode);
           } catch (ex) {
             if (!(ex instanceof MissingDataException)) {
-              throw ex;
+              warn(`ObjectLoader._walk - requesting all data: "${ex}".`);
+              this.refSet = null;
+
+              const { manager } = this.xref.stream;
+              return manager.requestAllChunks();
             }
             nodesToRevisit.push(currentNode);
             pendingRequests.push({ begin: ex.begin, end: ex.end });
