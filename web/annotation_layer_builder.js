@@ -125,7 +125,7 @@ class AnnotationLayerBuilder {
     if (!this.div) {
       return;
     }
-    this.div.setAttribute("hidden", "true");
+    this.div.hidden = true;
   }
 }
 
