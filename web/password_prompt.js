@@ -34,8 +34,15 @@ class PasswordPrompt {
    * @param {PasswordPromptOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {IL10n} l10n - Localization service.
+   * @param {boolean} [isViewerEmbedded] - If the viewer is embedded, in e.g.
+   *   an <iframe> or an <object>. The default value is `false`.
    */
-  constructor(options, overlayManager, l10n = NullL10n) {
+  constructor(
+    options,
+    overlayManager,
+    l10n = NullL10n,
+    isViewerEmbedded = false
+  ) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
@@ -44,6 +51,7 @@ class PasswordPrompt {
     this.cancelButton = options.cancelButton;
     this.overlayManager = overlayManager;
     this.l10n = l10n;
+    this._isViewerEmbedded = isViewerEmbedded;
 
     this.updateCallback = null;
     this.reason = null;
@@ -100,7 +108,7 @@ class PasswordPrompt {
 
   verify() {
     const password = this.input.value;
-    if (password && password.length > 0) {
+    if (password?.length > 0) {
       this.close();
       this.updateCallback(password);
     }

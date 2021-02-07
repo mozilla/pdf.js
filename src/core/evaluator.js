@@ -47,6 +47,7 @@ import {
   Ref,
   RefSet,
 } from "./primitives.js";
+import { DecodeStream, NullStream } from "./stream.js";
 import {
   ErrorFont,
   Font,
@@ -85,7 +86,6 @@ import {
 } from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
-import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
@@ -1066,7 +1066,7 @@ class PartialEvaluator {
     try {
       preEvaluatedFont = this.preEvaluateFont(font);
     } catch (reason) {
-      warn(`loadFont - ignoring preEvaluateFont errors: "${reason}".`);
+      warn(`loadFont - preEvaluateFont failed: "${reason}".`);
       return errorFont();
     }
     const { descriptor, hash } = preEvaluatedFont;
@@ -1156,6 +1156,7 @@ class PartialEvaluator {
         this.handler.send("UnsupportedFeature", {
           featureId: UNSUPPORTED_FEATURES.errorFontTranslate,
         });
+        warn(`loadFont - translateFont failed: "${reason}".`);
 
         try {
           // error, but it's still nice to have font type reported
@@ -3459,7 +3460,16 @@ class PartialEvaluator {
       throw new FormatError("invalid font name");
     }
 
-    var fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+    let fontFile;
+    try {
+      fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+    } catch (ex) {
+      if (!this.options.ignoreErrors) {
+        throw ex;
+      }
+      warn(`translateFont - fetching "${fontName.name}" font file: "${ex}".`);
+      fontFile = new NullStream();
+    }
     if (fontFile) {
       if (fontFile.dict) {
         var subtype = fontFile.dict.get("Subtype");

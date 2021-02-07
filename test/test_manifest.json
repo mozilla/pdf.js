@@ -1127,6 +1127,15 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue9462",
+       "file": "pdfs/issue9462.pdf",
+       "md5": "0a2895b0aa8a8ef730a20b4116cd996c",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 3,
+       "lastPage": 3,
+       "type": "eq"
+    },
     {  "id": "f1040",
        "file": "pdfs/f1040.pdf",
        "md5": "7323b50c6d28d959b8b4b92c469b2469",
@@ -4923,6 +4932,14 @@
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",
        "rounds": 1,
+       "type": "load"
+    },
+    {  "id": "issue6961",
+       "file": "pdfs/issue6961.pdf",
+       "md5": "a80e4357a8fda758d96c2c76f2980b03",
+       "link": false,
+       "rounds": 1,
+       "lastPage": 1,
        "type": "load"
     },
     {  "id": "zero_descent",

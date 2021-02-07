@@ -244,7 +244,7 @@ class BaseViewer {
     // Prevent printing errors when 'disableAutoFetch' is set, by ensuring
     // that *all* pages have in fact been completely loaded.
     return this._pages.every(function (pageView) {
-      return pageView && pageView.pdfPage;
+      return pageView?.pdfPage;
     });
   }
 
@@ -315,7 +315,7 @@ class BaseViewer {
     this.eventBus.dispatch("pagechanging", {
       source: this,
       pageNumber: val,
-      pageLabel: this._pageLabels && this._pageLabels[val - 1],
+      pageLabel: this._pageLabels?.[val - 1] ?? null,
       previous,
     });
 
@@ -330,7 +330,7 @@ class BaseViewer {
    *   labels exist.
    */
   get currentPageLabel() {
-    return this._pageLabels && this._pageLabels[this._currentPageNumber - 1];
+    return this._pageLabels?.[this._currentPageNumber - 1] ?? null;
   }
 
   /**
@@ -665,9 +665,7 @@ class BaseViewer {
     }
     // Update all the `PDFPageView` instances.
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      const pageView = this._pages[i];
-      const label = this._pageLabels && this._pageLabels[i];
-      pageView.setPageLabel(label);
+      this._pages[i].setPageLabel(this._pageLabels?.[i] ?? null);
     }
   }
 

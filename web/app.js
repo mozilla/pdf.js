@@ -578,7 +578,8 @@ const PDFViewerApplication = {
     this.passwordPrompt = new PasswordPrompt(
       appConfig.passwordOverlay,
       this.overlayManager,
-      this.l10n
+      this.l10n,
+      this.isViewerEmbedded
     );
 
     this.pdfOutlineViewer = new PDFOutlineViewer({
@@ -690,26 +691,22 @@ const PDFViewerApplication = {
   },
 
   get supportsFullscreen() {
-    let support;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      support =
-        document.fullscreenEnabled === true ||
-        document.mozFullScreenEnabled === true;
-    } else {
-      const doc = document.documentElement;
-      support = !!(
-        doc.requestFullscreen ||
-        doc.mozRequestFullScreen ||
-        doc.webkitRequestFullScreen
-      );
+      return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
+    }
+    const doc = document.documentElement;
+    let support = !!(
+      doc.requestFullscreen ||
+      doc.mozRequestFullScreen ||
+      doc.webkitRequestFullScreen
+    );
 
-      if (
-        document.fullscreenEnabled === false ||
-        document.mozFullScreenEnabled === false ||
-        document.webkitFullscreenEnabled === false
-      ) {
-        support = false;
-      }
+    if (
+      document.fullscreenEnabled === false ||
+      document.mozFullScreenEnabled === false ||
+      document.webkitFullscreenEnabled === false
+    ) {
+      support = false;
     }
     return shadow(this, "supportsFullscreen", support);
   },
@@ -1008,6 +1005,8 @@ const PDFViewerApplication = {
         this.load(pdfDocument);
       },
       exception => {
+        this._unblockDocumentLoadEvent();
+
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
         }
@@ -1392,7 +1391,7 @@ const PDFViewerApplication = {
           this._initializePdfHistory({
             fingerprint: pdfDocument.fingerprint,
             viewOnLoad,
-            initialDest: openAction && openAction.dest,
+            initialDest: openAction?.dest,
           });
           const initialBookmark = this.initialBookmark;
 
@@ -1486,6 +1485,8 @@ const PDFViewerApplication = {
     });
 
     pagesPromise.then(() => {
+      this._unblockDocumentLoadEvent();
+
       this._initializeAutoPrint(pdfDocument, openActionPromise);
     });
 
@@ -1853,11 +1854,11 @@ const PDFViewerApplication = {
     }
 
     let pdfTitle;
-    const infoTitle = info && info.Title;
+    const infoTitle = info?.Title;
     if (infoTitle) {
       pdfTitle = infoTitle;
     }
-    const metadataTitle = metadata && metadata.get("dc:title");
+    const metadataTitle = metadata?.get("dc:title");
     if (metadataTitle) {
       // Ghostscript can produce invalid 'dc:title' Metadata entries:
       //  - The title may be "Untitled" (fixes bug 1031612).
@@ -2422,6 +2423,19 @@ const PDFViewerApplication = {
   },
 
   /**
+   * Should be called *after* all pages have loaded, or if an error occurred,
+   * to unblock the "load" event; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
+   * @private
+   */
+  _unblockDocumentLoadEvent() {
+    if (document.blockUnblockOnload) {
+      document.blockUnblockOnload(false);
+    }
+    // Ensure that this method is only ever run once.
+    this._unblockDocumentLoadEvent = () => {};
+  },
+
+  /**
    * Used together with the integration-tests, to enable awaiting full
    * initialization of the scripting/sandbox.
    */
@@ -2458,11 +2472,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         throw new Error("file origin does not match viewer's");
       }
     } catch (ex) {
-      const message = ex && ex.message;
       PDFViewerApplication.l10n
         .get("loading_error", null, "An error occurred while loading the PDF.")
         .then(loadingErrorMessage => {
-          PDFViewerApplication.error(loadingErrorMessage, { message });
+          PDFViewerApplication.error(loadingErrorMessage, {
+            message: ex?.message,
+          });
         });
       throw ex;
     }
@@ -2495,7 +2510,7 @@ function reportPageStatsPDFBug({ pageNumber }) {
   const pageView = PDFViewerApplication.pdfViewer.getPageView(
     /* index = */ pageNumber - 1
   );
-  const pageStats = pageView && pageView.pdfPage && pageView.pdfPage.stats;
+  const pageStats = pageView?.pdfPage?.stats;
   if (!pageStats) {
     return;
   }
@@ -2801,8 +2816,7 @@ function webViewerUpdateViewarea(evt) {
   const currentPage = PDFViewerApplication.pdfViewer.getPageView(
     /* index = */ PDFViewerApplication.page - 1
   );
-  const loading =
-    (currentPage && currentPage.renderingState) !== RenderingStates.FINISHED;
+  const loading = currentPage?.renderingState !== RenderingStates.FINISHED;
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
 }
 
@@ -2854,10 +2868,7 @@ function webViewerHashchange(evt) {
 let webViewerFileInputChange, webViewerOpenFile;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   webViewerFileInputChange = function (evt) {
-    if (
-      PDFViewerApplication.pdfViewer &&
-      PDFViewerApplication.pdfViewer.isInPresentationMode
-    ) {
+    if (PDFViewerApplication.pdfViewer?.isInPresentationMode) {
       return; // Opening a new PDF file isn't supported in Presentation Mode.
     }
     const file = evt.fileInput.files[0];
@@ -3243,8 +3254,7 @@ function webViewerKeyDown(evt) {
     (evt.metaKey ? 8 : 0);
 
   const pdfViewer = PDFViewerApplication.pdfViewer;
-  const isViewerInPresentationMode =
-    pdfViewer && pdfViewer.isInPresentationMode;
+  const isViewerInPresentationMode = pdfViewer?.isInPresentationMode;
 
   if (window.isKeyIgnored && window.isKeyIgnored(cmd, evt.keyCode)) {
     return;
@@ -3374,12 +3384,12 @@ function webViewerKeyDown(evt) {
   // Some shortcuts should not get handled if a control/input element
   // is selected.
   const curElement = getActiveOrFocusedElement();
-  const curElementTagName = curElement && curElement.tagName.toUpperCase();
+  const curElementTagName = curElement?.tagName.toUpperCase();
   if (
     curElementTagName === "INPUT" ||
     curElementTagName === "TEXTAREA" ||
     curElementTagName === "SELECT" ||
-    (curElement && curElement.isContentEditable)
+    curElement?.isContentEditable
   ) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
     if (evt.keyCode !== /* Esc = */ 27) {

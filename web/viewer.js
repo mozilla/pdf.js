@@ -267,6 +267,11 @@ function webViewerLoad() {
   }
 }
 
+// Block the "load" event until all pages are loaded, to ensure that printing
+// works in Firefox; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
+if (document.blockUnblockOnload) {
+  document.blockUnblockOnload(true);
+}
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
   if (
     document.readyState === "interactive" ||
