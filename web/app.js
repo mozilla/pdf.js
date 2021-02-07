@@ -721,6 +721,7 @@ const PDFViewerApplication = {
         PDFViewerApplication.open(file, args);
       },
       onError(err) {
+        PDFViewerApplication._unblockDocumentLoadEvent();
         PDFViewerApplication.l10n
           .get(
             "loading_error",
