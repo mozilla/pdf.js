@@ -1257,7 +1257,7 @@ class PDFPageProxy {
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
-      operatorList: intentState.operatorList,
+      operatorList: this._params.operatorList || intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
       webGLContext,
