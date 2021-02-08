@@ -48,9 +48,10 @@ function validateRangeRequestCapabilities({
   if (disableRange || !isHttp) {
     return returnValues;
   }
-  if (getResponseHeader("Accept-Ranges") !== "bytes") {
-    return returnValues;
-  }
+  // Chrome doesn't return the Accept-Ranges header from cache
+  // if (getResponseHeader("Accept-Ranges") !== "bytes") {
+  //   return returnValues;
+  // }
 
   const contentEncoding = getResponseHeader("Content-Encoding") || "identity";
   if (contentEncoding !== "identity") {

@@ -218,6 +218,11 @@ const defaultOptions = {
     value: -1,
     kind: OptionKind.API,
   },
+  maxImageSizeToStore: {
+    /** @type {number} */
+    value: -1,
+    kind: OptionKind.API,
+  },
   pdfBug: {
     /** @type {boolean} */
     value: false,

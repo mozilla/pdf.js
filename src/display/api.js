@@ -150,6 +150,10 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {number} [maxImageSize] - The maximum allowed image size in total
  *   pixels, i.e. width * height. Images above this value will not be rendered.
  *   Use -1 for no limit, which is also the default value.
+ * @property {number} [maxImageSizeToStore] - The maximum allowed image size to
+ *   store in pixels, i.e. width * height. Images above this value will not be
+ *   rendered.
+ *   Use -1 for no limit, which is also the default value.
  * @property {boolean} [isEvalSupported] - Determines if we can evaluate strings
  *   as JavaScript. Primarily used to improve performance of font rendering, and
  *   when parsing PDF functions. The default value is `true`.
@@ -2460,6 +2464,8 @@ class WorkerTransport {
     });
 
     messageHandler.on("obj", data => {
+      const params = this._params;
+
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return undefined;
@@ -2475,8 +2481,10 @@ class WorkerTransport {
         case "Image":
           pageProxy.objs.resolve(id, imageData);
 
-          // Heuristic that will allow us not to store large data.
-          const MAX_IMAGE_SIZE_TO_STORE = 8000000;
+          const MAX_IMAGE_SIZE_TO_STORE =
+            params.maxImageSizeToStore === "number"
+              ? params.maxImageSizeToStore
+              : 8000000;
           if (imageData?.data?.length > MAX_IMAGE_SIZE_TO_STORE) {
             pageProxy.cleanupAfterRender = true;
           }
