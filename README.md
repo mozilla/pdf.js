@@ -1,15 +1,14 @@
-
 # SHOWPAD RELEASE
 
 Update version https://github.com/showpad/mozilla-pdf.js/blob/a5f8e1d0e7642b074bdc302807201a1a135b918c/gulpfile.js#L430
 Run gulp dist-pre ( node version 6 )
 cd to build/dist and npm publish
 
-# PDF.js
+# PDF.js [![Build Status](https://github.com/mozilla/pdf.js/workflows/CI/badge.svg?branch=master)](https://github.com/mozilla/pdf.js/actions?query=workflow%3ACI+branch%3Amaster)
 
-PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
+[PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.
 
-PDF.js is community-driven and supported by Mozilla Labs. Our goal is to
+PDF.js is community-driven and supported by Mozilla. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
@@ -24,25 +23,25 @@ get involved, visit:
 + [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?direction=desc&labels=5-good-beginner-bug&page=1&sort=created&state=open)
 + [Projects](https://github.com/mozilla/pdf.js/projects)
 
-Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
+Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org) for questions or guidance.
 
 ## Getting Started
 
 ### Online demo
 
-+ https://mozilla.github.io/pdf.js/web/viewer.html
+Please note that the "Modern browsers" version assumes native support for
+features such as e.g. `async`/`await`, `ReadableStream`, optional chaining, and
+nullish coalescing.
+
++ Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
+
++ Older browsers: https://mozilla.github.io/pdf.js/es5/web/viewer.html
 
 ### Browser Extensions
 
-#### Firefox (and Seamonkey)
+#### Firefox
 
-PDF.js is built into version 19+ of Firefox, however, one extension is still available:
-
-+ [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This extension is mainly intended for developers/testers, and it is updated every time new code is merged into the PDF.js codebase. It should be quite stable but might break from time to time.
-
-  + Please note that the extension is *not* guaranteed to be compatible with Firefox versions that are *older* than the current ESR version, see the [Release Calendar](https://wiki.mozilla.org/RapidRelease/Calendar#Past_branch_dates).
-
-  + The extension should also work in Seamonkey, provided that it is based on a Firefox version as above (see [Which version of Firefox does SeaMonkey 2.x correspond with?](https://wiki.mozilla.org/SeaMonkey/FAQ#General)), but we do *not* guarantee compatibility.
+PDF.js is built into version 19+ of Firefox.
 
 #### Chrome
 
@@ -56,10 +55,10 @@ directory `build/chromium`.
 
 To get a local copy of the current code, clone it using git:
 
-    $ git clone git://github.com/mozilla/pdf.js.git
+    $ git clone https://github.com/mozilla/pdf.js.git
     $ cd pdf.js
 
-Next, install Node.js via the [official package](http://nodejs.org) or via
+Next, install Node.js via the [official package](https://nodejs.org) or via
 [nvm](https://github.com/creationix/nvm). You need to install the gulp package
 globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
 
@@ -78,7 +77,7 @@ and then you can open:
 
 + http://localhost:8888/web/viewer.html
 
-Please keep in mind that this requires an ES6 compatible browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for usage with older browsers.
+Please keep in mind that this requires a modern and fully up-to-date browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for non-development usage of the PDF.js library.
 
 It is also possible to view all test PDF files on the right side by opening:
 
@@ -91,7 +90,11 @@ viewer, run:
 
     $ gulp generic
 
-This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory.
+If you need to support older browsers, run:
+
+    $ gulp generic-es5
+
+This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory (respectively `build/generic-es5/build/`).
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 
@@ -113,22 +116,22 @@ PDF.js is hosted on several free CDNs:
 
 You can play with the PDF.js API directly from your browser using the live demos below:
 
-+ [Interactive examples](http://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
++ [Interactive examples](https://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
 
-The repository contains a hello world example that you can run locally:
-
-+ [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
-
-More examples can be found in the examples folder. Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
+More examples can be found in the [examples folder](https://github.com/mozilla/pdf.js/tree/master/examples/). Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
 
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
 
-+ http://www.youtube.com/watch?v=Iv15UY-4Fg8
++ https://www.youtube.com/watch?v=Iv15UY-4Fg8
 
 More learning resources can be found at:
 
 + https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
+
+The API documentation can be found at:
+
++ https://mozilla.github.io/pdf.js/api/
 
 ## Questions
 
@@ -136,9 +139,9 @@ Check out our FAQs and get answers to common questions:
 
 + https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
 
-Talk to us on IRC (Internet Relay Chat):
+Talk to us on Matrix:
 
-+ #pdfjs on irc.mozilla.org
++ https://chat.mozilla.org/#/room/#pdfjs:mozilla.org
 
 File an issue:
 
@@ -146,5 +149,4 @@ File an issue:
 
 Follow us on twitter: @pdfjs
 
-+ http://twitter.com/#!/pdfjs
-+ 
++ https://twitter.com/pdfjs

@@ -14,21 +14,21 @@
  */
 /* eslint-env node */
 
-'use strict';
+"use strict";
 
-var preprocessor2 = require('../builder/preprocessor2.js');
-var path = require('path');
+var preprocessor2 = require("../builder/preprocessor2.js");
+var path = require("path");
 
 module.exports = function (source) {
   // Options must be specified, ignoring request if not.
-  if (!this.query || typeof this.query !== 'object') {
+  if (!this.query || typeof this.query !== "object") {
     return source;
   }
   this.cacheable();
 
   var filePath = this.resourcePath;
-  var context = this.options.context;
-  var sourcePath = path.relative(context, filePath).split(path.sep).join('/');
+  var context = this.rootContext;
+  var sourcePath = path.relative(context, filePath).split(path.sep).join("/");
 
   var ctx = Object.create(this.query);
   ctx.sourceMap = true;
@@ -40,4 +40,5 @@ module.exports = function (source) {
   // escodegen does not embed source -- setting map's sourcesContent.
   map.sourcesContent = [source];
   callback(null, sourceAndMap.code, map);
+  return undefined;
 };

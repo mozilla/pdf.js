@@ -13,51 +13,58 @@
  * limitations under the License.
  */
 
-import { AbortException, createPromiseCapability, Util } from '../shared/util';
-import { getDefaultSetting } from './dom_utils';
+import {
+  AbortException,
+  createPromiseCapability,
+  Util,
+} from "../shared/util.js";
 
 /**
  * Text layer render parameters.
  *
  * @typedef {Object} TextLayerRenderParameters
- * @property {TextContent} textContent - (optional) Text content to render
- *   (the object is returned by the page's getTextContent() method).
- * @property {ReadableStream} textContentStream - (optional) Text content
- *   stream to render (the stream is returned by the page's
- *   streamTextContent() method).
+ * @property {import("./api").TextContent} [textContent] - Text content to
+ *   render (the object is returned by the page's `getTextContent` method).
+ * @property {ReadableStream} [textContentStream] - Text content stream to
+ *   render (the stream is returned by the page's `streamTextContent` method).
  * @property {HTMLElement} container - HTML element that will contain text runs.
- * @property {PageViewport} viewport - The target viewport to properly
- *   layout the text runs.
- * @property {Array} textDivs - (optional) HTML elements that are correspond
- *   the text items of the textContent input. This is output and shall be
+ * @property {import("./display_utils").PageViewport} viewport - The target
+ *   viewport to properly layout the text runs.
+ * @property {Array<HTMLElement>} [textDivs] - HTML elements that are correspond
+ *   to the text items of the textContent input. This is output and shall be
  *   initially be set to empty array.
- * @property {Array} textContentItemsStr - (optional) Strings that correspond
- *   the `str` property of the text items of textContent input. This is output
+ * @property {Array<string>} [textContentItemsStr] - Strings that correspond to
+ *    the `str` property of the text items of textContent input. This is output
  *   and shall be initially be set to empty array.
- * @property {number} timeout - (optional) Delay in milliseconds before
- *   rendering of the text  runs occurs.
- * @property {boolean} enhanceTextSelection - (optional) Whether to turn on the
- *   text selection enhancement.
+ * @property {number} [timeout] - Delay in milliseconds before rendering of the
+ *   text runs occurs.
+ * @property {boolean} [enhanceTextSelection] - Whether to turn on the text
+ *   selection enhancement.
  */
-var renderTextLayer = (function renderTextLayerClosure() {
-  var MAX_TEXT_DIVS_TO_RENDER = 100000;
 
-  var NonWhitespaceRegexp = /\S/;
+/**
+ * @typedef {Object} TextLayerRenderTask
+ * @property {Promise<void>} promise
+ * @property {() => void} cancel
+ * @property {(expandDivs: boolean) => void} expandTextDivs
+ */
+
+/**
+ * @type {(renderParameters: TextLayerRenderParameters) => TextLayerRenderTask}
+ */
+const renderTextLayer = (function renderTextLayerClosure() {
+  const MAX_TEXT_DIVS_TO_RENDER = 100000;
+
+  const NonWhitespaceRegexp = /\S/;
 
   function isAllWhitespace(str) {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  // Text layers may contain many thousand div's, and using `styleBuf` avoids
-  // creating many intermediate strings when building their 'style' properties.
-  var styleBuf = ['left: ', 0, 'px; top: ', 0, 'px; font-size: ', 0,
-                  'px; font-family: ', '', ';'];
-
   function appendText(task, geom, styles) {
     // Initialize all used properties to keep the caches monomorphic.
-    var textDiv = document.createElement('div');
-    var textDivProperties = {
-      style: null,
+    const textDiv = document.createElement("span");
+    const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
       isWhitespace: false,
@@ -76,42 +83,42 @@ var renderTextLayer = (function renderTextLayerClosure() {
       return;
     }
 
-    var tx = Util.transform(task._viewport.transform, geom.transform);
-    var angle = Math.atan2(tx[1], tx[0]);
-    var style = styles[geom.fontName];
+    const tx = Util.transform(task._viewport.transform, geom.transform);
+    let angle = Math.atan2(tx[1], tx[0]);
+    const style = styles[geom.fontName];
     if (style.vertical) {
       angle += Math.PI / 2;
     }
-    var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-    var fontAscent = fontHeight;
+    const fontHeight = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+    let fontAscent = fontHeight;
     if (style.ascent) {
       fontAscent = style.ascent * fontAscent;
     } else if (style.descent) {
       fontAscent = (1 + style.descent) * fontAscent;
     }
 
-    var left;
-    var top;
+    let left, top;
     if (angle === 0) {
       left = tx[4];
       top = tx[5] - fontAscent;
     } else {
-      left = tx[4] + (fontAscent * Math.sin(angle));
-      top = tx[5] - (fontAscent * Math.cos(angle));
+      left = tx[4] + fontAscent * Math.sin(angle);
+      top = tx[5] - fontAscent * Math.cos(angle);
     }
-    styleBuf[1] = left;
-    styleBuf[3] = top;
-    styleBuf[5] = fontHeight;
-    styleBuf[7] = style.fontFamily;
-    textDivProperties.style = styleBuf.join('');
-    textDiv.setAttribute('style', textDivProperties.style);
+    // Setting the style properties individually, rather than all at once,
+    // should be OK since the `textDiv` isn't appended to the document yet.
+    textDiv.style.left = `${left}px`;
+    textDiv.style.top = `${top}px`;
+    textDiv.style.fontSize = `${fontHeight}px`;
+    textDiv.style.fontFamily = style.fontFamily;
 
     textDiv.textContent = geom.str;
-    // |fontName| is only used by the Font Inspector. This test will succeed
-    // when e.g. the Font Inspector is off but the Stepper is on, but it's
-    // not worth the effort to do a more accurate test. We only use `dataset`
-    // here to make the font name available for the debugger.
-    if (getDefaultSetting('pdfBug')) {
+    // geom.dir may be 'ttb' for vertical texts.
+    textDiv.dir = geom.dir;
+
+    // `fontName` is only used by the FontInspector, and we only use `dataset`
+    // here to make the font name available in the debugger.
+    if (task._fontInspectorEnabled) {
       textDiv.dataset.fontName = geom.fontName;
     }
     if (angle !== 0) {
@@ -120,7 +127,22 @@ var renderTextLayer = (function renderTextLayerClosure() {
     // We don't bother scaling single-char text divs, because it has very
     // little effect on text highlighting. This makes scrolling on docs with
     // lots of such divs a lot faster.
+    let shouldScaleText = false;
     if (geom.str.length > 1) {
+      shouldScaleText = true;
+    } else if (geom.transform[0] !== geom.transform[3]) {
+      const absScaleX = Math.abs(geom.transform[0]),
+        absScaleY = Math.abs(geom.transform[3]);
+      // When the horizontal/vertical scaling differs significantly, also scale
+      // even single-char text to improve highlighting (fixes issue11713.pdf).
+      if (
+        absScaleX !== absScaleY &&
+        Math.max(absScaleX, absScaleY) / Math.min(absScaleX, absScaleY) > 1.5
+      ) {
+        shouldScaleText = true;
+      }
+    }
+    if (shouldScaleText) {
       if (style.vertical) {
         textDivProperties.canvasWidth = geom.height * task._viewport.scale;
       } else {
@@ -133,16 +155,17 @@ var renderTextLayer = (function renderTextLayerClosure() {
     }
 
     if (task._enhanceTextSelection) {
-      var angleCos = 1, angleSin = 0;
+      let angleCos = 1,
+        angleSin = 0;
       if (angle !== 0) {
         angleCos = Math.cos(angle);
         angleSin = Math.sin(angle);
       }
-      var divWidth = (style.vertical ? geom.height : geom.width) *
-                     task._viewport.scale;
-      var divHeight = fontHeight;
+      const divWidth =
+        (style.vertical ? geom.height : geom.width) * task._viewport.scale;
+      const divHeight = fontHeight;
 
-      var m, b;
+      let m, b;
       if (angle !== 0) {
         m = [angleCos, angleSin, -angleSin, angleCos, left, top];
         b = Util.getAxialAlignedBoundingBox([0, 0, divWidth, divHeight], m);
@@ -166,9 +189,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
     if (task._canceled) {
       return;
     }
-    var textDivs = task._textDivs;
-    var capability = task._capability;
-    var textDivsLength = textDivs.length;
+    const textDivs = task._textDivs;
+    const capability = task._capability;
+    const textDivsLength = textDivs.length;
 
     // No point in rendering many divs as it would make the browser
     // unusable even after the divs are rendered.
@@ -179,7 +202,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     }
 
     if (!task._textContentStream) {
-      for (var i = 0; i < textDivsLength; i++) {
+      for (let i = 0; i < textDivsLength; i++) {
         task._layoutText(textDivs[i]);
       }
     }
@@ -188,14 +211,25 @@ var renderTextLayer = (function renderTextLayerClosure() {
     capability.resolve();
   }
 
-  function expand(task) {
-    var bounds = task._bounds;
-    var viewport = task._viewport;
+  function findPositiveMin(ts, offset, count) {
+    let result = 0;
+    for (let i = 0; i < count; i++) {
+      const t = ts[offset++];
+      if (t > 0) {
+        result = result ? Math.min(t, result) : t;
+      }
+    }
+    return result;
+  }
 
-    var expanded = expandBounds(viewport.width, viewport.height, bounds);
-    for (var i = 0; i < expanded.length; i++) {
-      var div = bounds[i].div;
-      var divProperties = task._textDivProperties.get(div);
+  function expand(task) {
+    const bounds = task._bounds;
+    const viewport = task._viewport;
+
+    const expanded = expandBounds(viewport.width, viewport.height, bounds);
+    for (let i = 0; i < expanded.length; i++) {
+      const div = bounds[i].div;
+      const divProperties = task._textDivProperties.get(div);
       if (divProperties.angle === 0) {
         divProperties.paddingLeft = bounds[i].left - expanded[i].left;
         divProperties.paddingTop = bounds[i].top - expanded[i].top;
@@ -206,46 +240,39 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
       // Box is rotated -- trying to find padding so rotated div will not
       // exceed its expanded bounds.
-      var e = expanded[i], b = bounds[i];
-      var m = b.m, c = m[0], s = m[1];
+      const e = expanded[i],
+        b = bounds[i];
+      const m = b.m,
+        c = m[0],
+        s = m[1];
       // Finding intersections with expanded box.
-      var points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
-      var ts = new Float64Array(64);
-      points.forEach(function (p, i) {
-        var t = Util.applyTransform(p, m);
-        ts[i + 0] = c && (e.left - t[0]) / c;
-        ts[i + 4] = s && (e.top - t[1]) / s;
-        ts[i + 8] = c && (e.right - t[0]) / c;
-        ts[i + 12] = s && (e.bottom - t[1]) / s;
+      const points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
+      const ts = new Float64Array(64);
+      points.forEach(function (p, j) {
+        const t = Util.applyTransform(p, m);
+        ts[j + 0] = c && (e.left - t[0]) / c;
+        ts[j + 4] = s && (e.top - t[1]) / s;
+        ts[j + 8] = c && (e.right - t[0]) / c;
+        ts[j + 12] = s && (e.bottom - t[1]) / s;
 
-        ts[i + 16] = s && (e.left - t[0]) / -s;
-        ts[i + 20] = c && (e.top - t[1]) / c;
-        ts[i + 24] = s && (e.right - t[0]) / -s;
-        ts[i + 28] = c && (e.bottom - t[1]) / c;
+        ts[j + 16] = s && (e.left - t[0]) / -s;
+        ts[j + 20] = c && (e.top - t[1]) / c;
+        ts[j + 24] = s && (e.right - t[0]) / -s;
+        ts[j + 28] = c && (e.bottom - t[1]) / c;
 
-        ts[i + 32] = c && (e.left - t[0]) / -c;
-        ts[i + 36] = s && (e.top - t[1]) / -s;
-        ts[i + 40] = c && (e.right - t[0]) / -c;
-        ts[i + 44] = s && (e.bottom - t[1]) / -s;
+        ts[j + 32] = c && (e.left - t[0]) / -c;
+        ts[j + 36] = s && (e.top - t[1]) / -s;
+        ts[j + 40] = c && (e.right - t[0]) / -c;
+        ts[j + 44] = s && (e.bottom - t[1]) / -s;
 
-        ts[i + 48] = s && (e.left - t[0]) / s;
-        ts[i + 52] = c && (e.top - t[1]) / -c;
-        ts[i + 56] = s && (e.right - t[0]) / s;
-        ts[i + 60] = c && (e.bottom - t[1]) / -c;
+        ts[j + 48] = s && (e.left - t[0]) / s;
+        ts[j + 52] = c && (e.top - t[1]) / -c;
+        ts[j + 56] = s && (e.right - t[0]) / s;
+        ts[j + 60] = c && (e.bottom - t[1]) / -c;
       });
-      var findPositiveMin = function (ts, offset, count) {
-        var result = 0;
-        for (var i = 0; i < count; i++) {
-          var t = ts[offset++];
-          if (t > 0) {
-            result = result ? Math.min(t, result) : t;
-          }
-        }
-        return result;
-      };
       // Not based on math, but to simplify calculations, using cos and sin
       // absolute values to not exceed the box (it can but insignificantly).
-      var boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
+      const boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
       divProperties.paddingLeft = findPositiveMin(ts, 32, 16) / boxScale;
       divProperties.paddingTop = findPositiveMin(ts, 48, 16) / boxScale;
       divProperties.paddingRight = findPositiveMin(ts, 0, 16) / boxScale;
@@ -255,7 +282,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
   }
 
   function expandBounds(width, height, boxes) {
-    var bounds = boxes.map(function (box, i) {
+    const bounds = boxes.map(function (box, i) {
       return {
         x1: box.left,
         y1: box.top,
@@ -267,9 +294,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
       };
     });
     expandBoundsLTR(width, bounds);
-    var expanded = new Array(boxes.length);
+    const expanded = new Array(boxes.length);
     bounds.forEach(function (b) {
-      var i = b.index;
+      const i = b.index;
       expanded[i] = {
         left: b.x1New,
         top: 0,
@@ -281,7 +308,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     // Rotating on 90 degrees and extending extended boxes. Reusing the bounds
     // array and objects.
     boxes.map(function (box, i) {
-      var e = expanded[i], b = bounds[i];
+      const e = expanded[i],
+        b = bounds[i];
       b.x1 = box.top;
       b.y1 = width - e.right;
       b.x2 = box.bottom;
@@ -293,7 +321,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     expandBoundsLTR(height, bounds);
 
     bounds.forEach(function (b) {
-      var i = b.index;
+      const i = b.index;
       expanded[i].top = b.x1New;
       expanded[i].bottom = b.x2New;
     });
@@ -307,7 +335,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     });
 
     // First we see on the horizon is a fake boundary.
-    var fakeBoundary = {
+    const fakeBoundary = {
       x1: -Infinity,
       y1: -Infinity,
       x2: 0,
@@ -316,36 +344,42 @@ var renderTextLayer = (function renderTextLayerClosure() {
       x1New: 0,
       x2New: 0,
     };
-    var horizon = [{
-      start: -Infinity,
-      end: Infinity,
-      boundary: fakeBoundary,
-    }];
+    const horizon = [
+      {
+        start: -Infinity,
+        end: Infinity,
+        boundary: fakeBoundary,
+      },
+    ];
 
     bounds.forEach(function (boundary) {
       // Searching for the affected part of horizon.
       // TODO red-black tree or simple binary search
-      var i = 0;
+      let i = 0;
       while (i < horizon.length && horizon[i].end <= boundary.y1) {
         i++;
       }
-      var j = horizon.length - 1;
+      let j = horizon.length - 1;
       while (j >= 0 && horizon[j].start >= boundary.y2) {
         j--;
       }
 
-      var horizonPart, affectedBoundary;
-      var q, k, maxXNew = -Infinity;
+      let horizonPart, affectedBoundary;
+      let q,
+        k,
+        maxXNew = -Infinity;
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;
-        var xNew;
+        let xNew;
         if (affectedBoundary.x2 > boundary.x1) {
           // In the middle of the previous element, new x shall be at the
-          // boundary start. Extending if further if the affected bondary
+          // boundary start. Extending if further if the affected boundary
           // placed on top of the current one.
-          xNew = affectedBoundary.index > boundary.index ?
-            affectedBoundary.x1New : boundary.x1;
+          xNew =
+            affectedBoundary.index > boundary.index
+              ? affectedBoundary.x1New
+              : boundary.x1;
         } else if (affectedBoundary.x2New === undefined) {
           // We have some space in between, new x in middle will be a fair
           // choice.
@@ -384,13 +418,14 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
 
       // Fixing the horizon.
-      var changedHorizon = [], lastBoundary = null;
+      const changedHorizon = [];
+      let lastBoundary = null;
       for (q = i; q <= j; q++) {
         horizonPart = horizon[q];
         affectedBoundary = horizonPart.boundary;
         // Checking which boundary will be visible.
-        var useBoundary = affectedBoundary.x2 > boundary.x2 ?
-          affectedBoundary : boundary;
+        const useBoundary =
+          affectedBoundary.x2 > boundary.x2 ? affectedBoundary : boundary;
         if (lastBoundary === useBoundary) {
           // Merging with previous.
           changedHorizon[changedHorizon.length - 1].end = horizonPart.end;
@@ -429,13 +464,19 @@ var renderTextLayer = (function renderTextLayerClosure() {
         if (affectedBoundary.x2New !== undefined) {
           continue;
         }
-        var used = false;
-        for (k = i - 1; !used && k >= 0 &&
-        horizon[k].start >= affectedBoundary.y1; k--) {
+        let used = false;
+        for (
+          k = i - 1;
+          !used && k >= 0 && horizon[k].start >= affectedBoundary.y1;
+          k--
+        ) {
           used = horizon[k].boundary === affectedBoundary;
         }
-        for (k = j + 1; !used && k < horizon.length &&
-        horizon[k].end <= affectedBoundary.y2; k++) {
+        for (
+          k = j + 1;
+          !used && k < horizon.length && horizon[k].end <= affectedBoundary.y2;
+          k++
+        ) {
           used = horizon[k].boundary === affectedBoundary;
         }
         for (k = 0; !used && k < changedHorizon.length; k++) {
@@ -446,13 +487,15 @@ var renderTextLayer = (function renderTextLayerClosure() {
         }
       }
 
-      Array.prototype.splice.apply(horizon,
-        [i, j - i + 1].concat(changedHorizon));
+      Array.prototype.splice.apply(
+        horizon,
+        [i, j - i + 1].concat(changedHorizon)
+      );
     });
 
     // Set new x2 for all unset boundaries.
     horizon.forEach(function (horizonPart) {
-      var affectedBoundary = horizonPart.boundary;
+      const affectedBoundary = horizonPart.boundary;
       if (affectedBoundary.x2New === undefined) {
         affectedBoundary.x2New = Math.max(width, affectedBoundary.x2);
       }
@@ -469,16 +512,24 @@ var renderTextLayer = (function renderTextLayerClosure() {
    * @param {boolean} enhanceTextSelection
    * @private
    */
-  function TextLayerRenderTask({ textContent, textContentStream, container,
-                                 viewport, textDivs, textContentItemsStr,
-                                 enhanceTextSelection, }) {
+  function TextLayerRenderTask({
+    textContent,
+    textContentStream,
+    container,
+    viewport,
+    textDivs,
+    textContentItemsStr,
+    enhanceTextSelection,
+  }) {
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;
+    this._document = container.ownerDocument;
     this._viewport = viewport;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._enhanceTextSelection = !!enhanceTextSelection;
+    this._fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
     this._reader = null;
     this._layoutTextLastFontSize = null;
@@ -490,6 +541,21 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._capability = createPromiseCapability();
     this._renderTimer = null;
     this._bounds = [];
+
+    // Always clean-up the temporary canvas once rendering is no longer pending.
+    this._capability.promise
+      .finally(() => {
+        if (this._layoutTextCtx) {
+          // Zeroing the width and height cause Firefox to release graphics
+          // resources immediately, which can greatly reduce memory consumption.
+          this._layoutTextCtx.canvas.width = 0;
+          this._layoutTextCtx.canvas.height = 0;
+          this._layoutTextCtx = null;
+        }
+      })
+      .catch(() => {
+        /* Avoid "Uncaught promise" messages in the console. */
+      });
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -497,16 +563,16 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     cancel: function TextLayer_cancel() {
+      this._canceled = true;
       if (this._reader) {
-        this._reader.cancel(new AbortException('text layer task cancelled'));
+        this._reader.cancel(new AbortException("TextLayer task cancelled."));
         this._reader = null;
       }
-      this._canceled = true;
       if (this._renderTimer !== null) {
         clearTimeout(this._renderTimer);
         this._renderTimer = null;
       }
-      this._capability.reject('canceled');
+      this._capability.reject(new Error("TextLayer task cancelled."));
     },
 
     _processItems(items, styleCache) {
@@ -517,86 +583,94 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     _layoutText(textDiv) {
-      let textLayerFrag = this._container;
-
-      let textDivProperties = this._textDivProperties.get(textDiv);
+      const textDivProperties = this._textDivProperties.get(textDiv);
       if (textDivProperties.isWhitespace) {
         return;
       }
 
-      let fontSize = textDiv.style.fontSize;
-      let fontFamily = textDiv.style.fontFamily;
+      let transform = "";
+      if (textDivProperties.canvasWidth !== 0) {
+        const { fontSize, fontFamily } = textDiv.style;
 
-      // Only build font string and set to context if different from last.
-      if (fontSize !== this._layoutTextLastFontSize ||
-          fontFamily !== this._layoutTextLastFontFamily) {
-        this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
-        this._lastFontSize = fontSize;
-        this._lastFontFamily = fontFamily;
-      }
+        // Only build font string and set to context if different from last.
+        if (
+          fontSize !== this._layoutTextLastFontSize ||
+          fontFamily !== this._layoutTextLastFontFamily
+        ) {
+          this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
+          this._layoutTextLastFontSize = fontSize;
+          this._layoutTextLastFontFamily = fontFamily;
+        }
+        // Only measure the width for multi-char text divs, see `appendText`.
+        const { width } = this._layoutTextCtx.measureText(textDiv.textContent);
 
-      let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
-
-      let transform = '';
-      if (textDivProperties.canvasWidth !== 0 && width > 0) {
-        textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = 'scaleX(' + textDivProperties.scale + ')';
+        if (width > 0) {
+          textDivProperties.scale = textDivProperties.canvasWidth / width;
+          transform = `scaleX(${textDivProperties.scale})`;
+        }
       }
       if (textDivProperties.angle !== 0) {
-        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
+        transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }
-      if (transform !== '') {
-        textDivProperties.originalTransform = transform;
+      if (transform.length > 0) {
+        if (this._enhanceTextSelection) {
+          textDivProperties.originalTransform = transform;
+        }
         textDiv.style.transform = transform;
       }
       this._textDivProperties.set(textDiv, textDivProperties);
-      textLayerFrag.appendChild(textDiv);
+      this._container.appendChild(textDiv);
     },
 
     _render: function TextLayer_render(timeout) {
-      let capability = createPromiseCapability();
+      const capability = createPromiseCapability();
       let styleCache = Object.create(null);
 
       // The temporary canvas is used to measure text length in the DOM.
-      let canvas = document.createElement('canvas');
-      if (typeof PDFJSDev === 'undefined' ||
-          PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
-         canvas.mozOpaque = true;
+      const canvas = this._document.createElement("canvas");
+      if (
+        typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("MOZCENTRAL || GENERIC")
+      ) {
+        canvas.mozOpaque = true;
       }
-      this._layoutTextCtx = canvas.getContext('2d', { alpha: false, });
+      this._layoutTextCtx = canvas.getContext("2d", { alpha: false });
 
       if (this._textContent) {
-        let textItems = this._textContent.items;
-        let textStyles = this._textContent.styles;
+        const textItems = this._textContent.items;
+        const textStyles = this._textContent.styles;
         this._processItems(textItems, textStyles);
         capability.resolve();
       } else if (this._textContentStream) {
-        let pump = () => {
-          this._reader.read().then(({ value, done, }) => {
+        const pump = () => {
+          this._reader.read().then(({ value, done }) => {
             if (done) {
               capability.resolve();
               return;
             }
 
-            Util.extendObj(styleCache, value.styles);
+            Object.assign(styleCache, value.styles);
             this._processItems(value.items, styleCache);
             pump();
-
           }, capability.reject);
         };
 
         this._reader = this._textContentStream.getReader();
         pump();
       } else {
-        throw new Error('Neither "textContent" nor "textContentStream"' +
-          ' parameters specified.');
+        throw new Error(
+          'Neither "textContent" nor "textContentStream"' +
+            " parameters specified."
+        );
       }
 
       capability.promise.then(() => {
         styleCache = null;
-        if (!timeout) { // Render right away
+        if (!timeout) {
+          // Render right away
           render(this);
-        } else { // Schedule
+        } else {
+          // Schedule
           this._renderTimer = setTimeout(() => {
             render(this);
             this._renderTimer = null;
@@ -613,64 +687,63 @@ var renderTextLayer = (function renderTextLayerClosure() {
         expand(this);
         this._bounds = null;
       }
+      const transformBuf = [],
+        paddingBuf = [];
 
-      for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
-        var div = this._textDivs[i];
-        var divProperties = this._textDivProperties.get(div);
+      for (let i = 0, ii = this._textDivs.length; i < ii; i++) {
+        const div = this._textDivs[i];
+        const divProps = this._textDivProperties.get(div);
 
-        if (divProperties.isWhitespace) {
+        if (divProps.isWhitespace) {
           continue;
         }
         if (expandDivs) {
-          var transform = '', padding = '';
+          transformBuf.length = 0;
+          paddingBuf.length = 0;
 
-          if (divProperties.scale !== 1) {
-            transform = 'scaleX(' + divProperties.scale + ')';
+          if (divProps.originalTransform) {
+            transformBuf.push(divProps.originalTransform);
           }
-          if (divProperties.angle !== 0) {
-            transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
+          if (divProps.paddingTop > 0) {
+            paddingBuf.push(`${divProps.paddingTop}px`);
+            transformBuf.push(`translateY(${-divProps.paddingTop}px)`);
+          } else {
+            paddingBuf.push(0);
           }
-          if (divProperties.paddingLeft !== 0) {
-            padding += ' padding-left: ' +
-              (divProperties.paddingLeft / divProperties.scale) + 'px;';
-            transform += ' translateX(' +
-              (-divProperties.paddingLeft / divProperties.scale) + 'px)';
+          if (divProps.paddingRight > 0) {
+            paddingBuf.push(`${divProps.paddingRight / divProps.scale}px`);
+          } else {
+            paddingBuf.push(0);
           }
-          if (divProperties.paddingTop !== 0) {
-            padding += ' padding-top: ' + divProperties.paddingTop + 'px;';
-            transform += ' translateY(' + (-divProperties.paddingTop) + 'px)';
+          if (divProps.paddingBottom > 0) {
+            paddingBuf.push(`${divProps.paddingBottom}px`);
+          } else {
+            paddingBuf.push(0);
           }
-          if (divProperties.paddingRight !== 0) {
-            padding += ' padding-right: ' +
-              (divProperties.paddingRight / divProperties.scale) + 'px;';
-          }
-          if (divProperties.paddingBottom !== 0) {
-            padding += ' padding-bottom: ' +
-              divProperties.paddingBottom + 'px;';
+          if (divProps.paddingLeft > 0) {
+            paddingBuf.push(`${divProps.paddingLeft / divProps.scale}px`);
+            transformBuf.push(
+              `translateX(${-divProps.paddingLeft / divProps.scale}px)`
+            );
+          } else {
+            paddingBuf.push(0);
           }
 
-          if (padding !== '') {
-            div.setAttribute('style', divProperties.style + padding);
-          }
-          if (transform !== '') {
-            div.style.transform = transform;
+          div.style.padding = paddingBuf.join(" ");
+          if (transformBuf.length) {
+            div.style.transform = transformBuf.join(" ");
           }
         } else {
-          div.style.padding = 0;
-          div.style.transform = divProperties.originalTransform || '';
+          div.style.padding = null;
+          div.style.transform = divProps.originalTransform;
         }
       }
     },
   };
 
-  /**
-   * Starts rendering of the text layer.
-   *
-   * @param {TextLayerRenderParameters} renderParameters
-   * @returns {TextLayerRenderTask}
-   */
+  // eslint-disable-next-line no-shadow
   function renderTextLayer(renderParameters) {
-    var task = new TextLayerRenderTask({
+    const task = new TextLayerRenderTask({
       textContent: renderParameters.textContent,
       textContentStream: renderParameters.textContentStream,
       container: renderParameters.container,
@@ -686,6 +759,4 @@ var renderTextLayer = (function renderTextLayerClosure() {
   return renderTextLayer;
 })();
 
-export {
-  renderTextLayer,
-};
+export { renderTextLayer };

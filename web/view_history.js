@@ -21,99 +21,87 @@ const DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
  *
  * The way that the view parameters are stored depends on how PDF.js is built,
  * for 'gulp <flag>' the following cases exist:
- *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
- *  - GENERIC or CHROME     - uses localStorage, if it is available.
+ *  - MOZCENTRAL        - uses sessionStorage.
+ *  - GENERIC or CHROME - uses localStorage, if it is available.
  */
 class ViewHistory {
   constructor(fingerprint, cacheSize = DEFAULT_VIEW_HISTORY_CACHE_SIZE) {
     this.fingerprint = fingerprint;
     this.cacheSize = cacheSize;
 
-    this._initializedPromise = this._readFromStorage().then((databaseStr) => {
-      let database = JSON.parse(databaseStr || '{}');
-      if (!('files' in database)) {
+    this._initializedPromise = this._readFromStorage().then(databaseStr => {
+      const database = JSON.parse(databaseStr || "{}");
+      let index = -1;
+      if (!Array.isArray(database.files)) {
         database.files = [];
-      }
-      if (database.files.length >= this.cacheSize) {
-        database.files.shift();
-      }
-      let index;
-      for (let i = 0, length = database.files.length; i < length; i++) {
-        let branch = database.files[i];
-        if (branch.fingerprint === this.fingerprint) {
-          index = i;
-          break;
+      } else {
+        while (database.files.length >= this.cacheSize) {
+          database.files.shift();
+        }
+
+        for (let i = 0, ii = database.files.length; i < ii; i++) {
+          const branch = database.files[i];
+          if (branch.fingerprint === this.fingerprint) {
+            index = i;
+            break;
+          }
         }
       }
-      if (typeof index !== 'number') {
-        index = database.files.push({ fingerprint: this.fingerprint, }) - 1;
+      if (index === -1) {
+        index = database.files.push({ fingerprint: this.fingerprint }) - 1;
       }
       this.file = database.files[index];
       this.database = database;
     });
   }
 
-  _writeToStorage() {
-    return new Promise((resolve) => {
-      let databaseStr = JSON.stringify(this.database);
+  async _writeToStorage() {
+    const databaseStr = JSON.stringify(this.database);
 
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        sessionStorage.setItem('pdfjs.history', databaseStr);
-      } else {
-        localStorage.setItem('pdfjs.history', databaseStr);
-      }
-      resolve();
-    });
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      sessionStorage.setItem("pdfjs.history", databaseStr);
+      return;
+    }
+    localStorage.setItem("pdfjs.history", databaseStr);
   }
 
-  _readFromStorage() {
-    return new Promise(function(resolve) {
-      if (typeof PDFJSDev !== 'undefined' &&
-          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-        resolve(sessionStorage.getItem('pdfjs.history'));
-      } else {
-        resolve(localStorage.getItem('pdfjs.history'));
-      }
-    });
+  async _readFromStorage() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      return sessionStorage.getItem("pdfjs.history");
+    }
+    return localStorage.getItem("pdfjs.history");
   }
 
-  set(name, val) {
-    return this._initializedPromise.then(() => {
-      this.file[name] = val;
-      return this._writeToStorage();
-    });
+  async set(name, val) {
+    await this._initializedPromise;
+    this.file[name] = val;
+    return this._writeToStorage();
   }
 
-  setMultiple(properties) {
-    return this._initializedPromise.then(() => {
-      for (let name in properties) {
-        this.file[name] = properties[name];
-      }
-      return this._writeToStorage();
-    });
+  async setMultiple(properties) {
+    await this._initializedPromise;
+    for (const name in properties) {
+      this.file[name] = properties[name];
+    }
+    return this._writeToStorage();
   }
 
-  get(name, defaultValue) {
-    return this._initializedPromise.then(() => {
-      let val = this.file[name];
-      return val !== undefined ? val : defaultValue;
-    });
+  async get(name, defaultValue) {
+    await this._initializedPromise;
+    const val = this.file[name];
+    return val !== undefined ? val : defaultValue;
   }
 
-  getMultiple(properties) {
-    return this._initializedPromise.then(() => {
-      let values = Object.create(null);
+  async getMultiple(properties) {
+    await this._initializedPromise;
+    const values = Object.create(null);
 
-      for (let name in properties) {
-        let val = this.file[name];
-        values[name] = val !== undefined ? val : properties[name];
-      }
-      return values;
-    });
+    for (const name in properties) {
+      const val = this.file[name];
+      values[name] = val !== undefined ? val : properties[name];
+    }
+    return values;
   }
 }
 
-export {
-  ViewHistory,
-};
+export { ViewHistory };

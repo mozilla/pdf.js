@@ -10,6 +10,6 @@ module.exports = (env, callback) ->
     depth = count(source, '/') # 1 being /
     ret = ""
     ret += "../" while depth = depth - 1
-    ret + dest.substr(1)
+    ret + dest.substring(1)
 
   callback()

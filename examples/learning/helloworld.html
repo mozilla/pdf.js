@@ -8,7 +8,7 @@
 
 <h1>'Hello, world!' example</h1>
 
-<canvas id="the-canvas" style="border:1px  solid black"></canvas>
+<canvas id="the-canvas" style="border: 1px solid black; direction: ltr;"></canvas>
 
 <script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
 
@@ -20,27 +20,22 @@
   var url = './helloworld.pdf';
 
   //
-  // Disable workers to avoid yet another cross-origin issue (workers need
-  // the URL of the script to be loaded, and dynamically loading a cross-origin
-  // script does not work).
-  //
-  // PDFJS.disableWorker = true;
-
-  //
   // The workerSrc property shall be specified.
   //
-  PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   //
   // Asynchronous download PDF
   //
-  PDFJS.getDocument(url).then(function getPdfHelloWorld(pdf) {
+  var loadingTask = pdfjsLib.getDocument(url);
+  loadingTask.promise.then(function(pdf) {
     //
     // Fetch the first page
     //
-    pdf.getPage(1).then(function getPageHelloWorld(page) {
+    pdf.getPage(1).then(function(page) {
       var scale = 1.5;
-      var viewport = page.getViewport(scale);
+      var viewport = page.getViewport({ scale: scale, });
 
       //
       // Prepare canvas using PDF page dimensions
@@ -55,7 +50,7 @@
       //
       var renderContext = {
         canvasContext: context,
-        viewport: viewport
+        viewport: viewport,
       };
       page.render(renderContext);
     });

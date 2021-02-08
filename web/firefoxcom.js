@@ -13,126 +13,141 @@
  * limitations under the License.
  */
 
-import '../extensions/firefox/tools/l10n';
-import { createObjectURL, PDFDataRangeTransport, shadow } from 'pdfjs-lib';
-import { BasePreferences } from './preferences';
-import { PDFViewerApplication } from './app';
+import "../extensions/firefox/tools/l10n.js";
+import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
+import { PDFDataRangeTransport, shadow } from "pdfjs-lib";
+import { BasePreferences } from "./preferences.js";
+import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  throw new Error('Module "pdfjs-web/firefoxcom" shall not be used outside ' +
-                  'FIREFOX and MOZCENTRAL builds.');
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+  throw new Error(
+    'Module "./firefoxcom.js" shall not be used outside MOZCENTRAL builds.'
+  );
 }
 
-let FirefoxCom = (function FirefoxComClosure() {
-  return {
-    /**
-     * Creates an event that the extension is listening for and will
-     * synchronously respond to.
-     * NOTE: It is reccomended to use request() instead since one day we may not
-     * be able to synchronously reply.
-     * @param {String} action The action to trigger.
-     * @param {String} data Optional data to send.
-     * @return {*} The response.
-     */
-    requestSync(action, data) {
-      let request = document.createTextNode('');
-      document.documentElement.appendChild(request);
+class FirefoxCom {
+  /**
+   * Creates an event that the extension is listening for and will
+   * synchronously respond to.
+   * NOTE: It is recommended to use requestAsync() instead since one day we may
+   *       not be able to synchronously reply.
+   * @param {string} action - The action to trigger.
+   * @param {Object|string} [data] - The data to send.
+   * @returns {*} The response.
+   */
+  static requestSync(action, data) {
+    const request = document.createTextNode("");
+    document.documentElement.appendChild(request);
 
-      let sender = document.createEvent('CustomEvent');
-      sender.initCustomEvent('pdf.js.message', true, false,
-                             { action, data, sync: true, });
-      request.dispatchEvent(sender);
-      let response = sender.detail.response;
-      document.documentElement.removeChild(request);
-      return response;
-    },
+    const sender = document.createEvent("CustomEvent");
+    sender.initCustomEvent("pdf.js.message", true, false, {
+      action,
+      data,
+      sync: true,
+    });
+    request.dispatchEvent(sender);
+    const response = sender.detail.response;
+    request.remove();
 
-    /**
-     * Creates an event that the extension is listening for and will
-     * asynchronously respond by calling the callback.
-     * @param {String} action The action to trigger.
-     * @param {String} data Optional data to send.
-     * @param {Function} callback Optional response callback that will be called
-     * with one data argument.
-     */
-    request(action, data, callback) {
-      let request = document.createTextNode('');
-      if (callback) {
-        document.addEventListener('pdf.js.response', function listener(event) {
-          let node = event.target;
-          let response = event.detail.response;
+    return response;
+  }
 
-          document.documentElement.removeChild(node);
+  /**
+   * Creates an event that the extension is listening for and will
+   * asynchronously respond to.
+   * @param {string} action - The action to trigger.
+   * @param {Object|string} [data] - The data to send.
+   * @returns {Promise<any>} A promise that is resolved with the response data.
+   */
+  static requestAsync(action, data) {
+    return new Promise(resolve => {
+      this.request(action, data, resolve);
+    });
+  }
 
-          document.removeEventListener('pdf.js.response', listener);
-          return callback(response);
-        });
-      }
-      document.documentElement.appendChild(request);
+  /**
+   * Creates an event that the extension is listening for and will, optionally,
+   * asynchronously respond to.
+   * @param {string} action - The action to trigger.
+   * @param {Object|string} [data] - The data to send.
+   */
+  static request(action, data, callback = null) {
+    const request = document.createTextNode("");
+    if (callback) {
+      request.addEventListener(
+        "pdf.js.response",
+        event => {
+          const response = event.detail.response;
+          event.target.remove();
 
-      let sender = document.createEvent('CustomEvent');
-      sender.initCustomEvent('pdf.js.message', true, false, {
-        action,
-        data,
-        sync: false,
-        responseExpected: !!callback,
-      });
-      return request.dispatchEvent(sender);
-    },
-  };
-})();
+          callback(response);
+        },
+        { once: true }
+      );
+    }
+    document.documentElement.appendChild(request);
+
+    const sender = document.createEvent("CustomEvent");
+    sender.initCustomEvent("pdf.js.message", true, false, {
+      action,
+      data,
+      sync: false,
+      responseExpected: !!callback,
+    });
+    request.dispatchEvent(sender);
+  }
+}
 
 class DownloadManager {
   downloadUrl(url, filename) {
-    FirefoxCom.request('download', {
+    FirefoxCom.request("download", {
       originalUrl: url,
       filename,
     });
   }
 
   downloadData(data, filename, contentType) {
-    let blobUrl = createObjectURL(data, contentType, false);
+    const blobUrl = URL.createObjectURL(
+      new Blob([data], { type: contentType })
+    );
 
-    FirefoxCom.request('download', {
+    FirefoxCom.requestAsync("download", {
       blobUrl,
       originalUrl: blobUrl,
       filename,
       isAttachment: true,
+    }).then(error => {
+      URL.revokeObjectURL(blobUrl);
     });
   }
 
-  download(blob, url, filename) {
-    let blobUrl = URL.createObjectURL(blob);
-    let onResponse = (err) => {
-      if (err && this.onerror) {
-        this.onerror(err);
-      }
-      URL.revokeObjectURL(blobUrl);
-    };
+  download(blob, url, filename, sourceEventType = "download") {
+    const blobUrl = URL.createObjectURL(blob);
 
-    FirefoxCom.request('download', {
+    FirefoxCom.requestAsync("download", {
       blobUrl,
       originalUrl: url,
       filename,
-    }, onResponse);
+      sourceEventType,
+    }).then(error => {
+      if (error) {
+        // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
+        // that attempting to fallback and re-download would be helpful here.
+        console.error("`ChromeActions.download` failed.");
+      }
+      URL.revokeObjectURL(blobUrl);
+    });
   }
 }
 
 class FirefoxPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
-    return new Promise(function(resolve) {
-      FirefoxCom.request('setPreferences', prefObj, resolve);
-    });
+  async _writeToStorage(prefObj) {
+    return FirefoxCom.requestAsync("setPreferences", prefObj);
   }
 
-  _readFromStorage(prefObj) {
-    return new Promise(function(resolve) {
-      FirefoxCom.request('getPreferences', prefObj, function(prefStr) {
-        let readPrefs = JSON.parse(prefStr);
-        resolve(readPrefs);
-      });
-    });
+  async _readFromStorage(prefObj) {
+    const prefStr = await FirefoxCom.requestAsync("getPreferences", prefObj);
+    return JSON.parse(prefStr);
   }
 }
 
@@ -141,102 +156,177 @@ class MozL10n {
     this.mozL10n = mozL10n;
   }
 
-  getDirection() {
-    return Promise.resolve(this.mozL10n.getDirection());
+  async getLanguage() {
+    return this.mozL10n.getLanguage();
   }
 
-  get(property, args, fallback) {
-    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  async getDirection() {
+    return this.mozL10n.getDirection();
   }
 
-  translate(element) {
+  async get(property, args, fallback) {
+    return this.mozL10n.get(property, args, fallback);
+  }
+
+  async translate(element) {
     this.mozL10n.translate(element);
-    return Promise.resolve();
   }
 }
 
 (function listenFindEvents() {
   const events = [
-    'find',
-    'findagain',
-    'findhighlightallchange',
-    'findcasesensitivitychange'
+    "find",
+    "findagain",
+    "findhighlightallchange",
+    "findcasesensitivitychange",
+    "findentirewordchange",
+    "findbarclose",
   ];
-  let handleEvent = function(evt) {
+  const handleEvent = function ({ type, detail }) {
     if (!PDFViewerApplication.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch('find', {
+    if (type === "findbarclose") {
+      PDFViewerApplication.eventBus.dispatch(type, { source: window });
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch("find", {
       source: window,
-      type: evt.type.substring('find'.length),
-      query: evt.detail.query,
+      type: type.substring("find".length),
+      query: detail.query,
       phraseSearch: true,
-      caseSensitive: !!evt.detail.caseSensitive,
-      highlightAll: !!evt.detail.highlightAll,
-      findPrevious: !!evt.detail.findPrevious,
+      caseSensitive: !!detail.caseSensitive,
+      entireWord: !!detail.entireWord,
+      highlightAll: !!detail.highlightAll,
+      findPrevious: !!detail.findPrevious,
     });
   };
 
-  for (let i = 0, len = events.length; i < len; i++) {
-    window.addEventListener(events[i], handleEvent);
+  for (const event of events) {
+    window.addEventListener(event, handleEvent);
   }
 })();
 
-function FirefoxComDataRangeTransport(length, initialData) {
-  PDFDataRangeTransport.call(this, length, initialData);
+(function listenZoomEvents() {
+  const events = ["zoomin", "zoomout", "zoomreset"];
+  const handleEvent = function ({ type, detail }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    // Avoid attempting to needlessly reset the zoom level *twice* in a row,
+    // when using the `Ctrl + 0` keyboard shortcut.
+    if (
+      type === "zoomreset" &&
+      PDFViewerApplication.pdfViewer.currentScaleValue === DEFAULT_SCALE_VALUE
+    ) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+  };
+
+  for (const event of events) {
+    window.addEventListener(event, handleEvent);
+  }
+})();
+
+(function listenSaveEvent() {
+  const handleEvent = function ({ type, detail }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+  };
+
+  window.addEventListener("save", handleEvent);
+})();
+
+class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
+  requestDataRange(begin, end) {
+    FirefoxCom.request("requestDataRange", { begin, end });
+  }
+
+  abort() {
+    // Sync call to ensure abort is really started.
+    FirefoxCom.requestSync("abortLoading", null);
+  }
 }
-FirefoxComDataRangeTransport.prototype =
-  Object.create(PDFDataRangeTransport.prototype);
-FirefoxComDataRangeTransport.prototype.requestDataRange =
-    function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
-  FirefoxCom.request('requestDataRange', { begin, end, });
-};
-FirefoxComDataRangeTransport.prototype.abort =
-    function FirefoxComDataRangeTransport_abort() {
-  // Sync call to ensure abort is really started.
-  FirefoxCom.requestSync('abortLoading', null);
-};
 
-PDFViewerApplication.externalServices = {
-  updateFindControlState(data) {
-    FirefoxCom.request('updateFindControlState', data);
-  },
+class FirefoxScripting {
+  static async createSandbox(data) {
+    const success = await FirefoxCom.requestAsync("createSandbox", data);
+    if (!success) {
+      throw new Error("Cannot create sandbox.");
+    }
+  }
 
-  initPassiveLoading(callbacks) {
+  static async dispatchEventInSandbox(event) {
+    FirefoxCom.request("dispatchEventInSandbox", event);
+  }
+
+  static async destroySandbox() {
+    FirefoxCom.request("destroySandbox", null);
+  }
+}
+
+class FirefoxExternalServices extends DefaultExternalServices {
+  static updateFindControlState(data) {
+    FirefoxCom.request("updateFindControlState", data);
+  }
+
+  static updateFindMatchesCount(data) {
+    FirefoxCom.request("updateFindMatchesCount", data);
+  }
+
+  static initPassiveLoading(callbacks) {
     let pdfDataRangeTransport;
 
-    window.addEventListener('message', function windowMessage(e) {
+    window.addEventListener("message", function windowMessage(e) {
       if (e.source !== null) {
         // The message MUST originate from Chrome code.
-        console.warn('Rejected untrusted message from ' + e.origin);
+        console.warn("Rejected untrusted message from " + e.origin);
         return;
       }
-      let args = e.data;
+      const args = e.data;
 
-      if (typeof args !== 'object' || !('pdfjsLoadAction' in args)) {
+      if (typeof args !== "object" || !("pdfjsLoadAction" in args)) {
         return;
       }
       switch (args.pdfjsLoadAction) {
-        case 'supportsRangedLoading':
-          pdfDataRangeTransport =
-            new FirefoxComDataRangeTransport(args.length, args.data);
+        case "supportsRangedLoading":
+          pdfDataRangeTransport = new FirefoxComDataRangeTransport(
+            args.length,
+            args.data,
+            args.done
+          );
 
-          callbacks.onOpenWithTransport(args.pdfUrl, args.length,
-                                        pdfDataRangeTransport);
+          callbacks.onOpenWithTransport(
+            args.pdfUrl,
+            args.length,
+            pdfDataRangeTransport
+          );
           break;
-        case 'range':
+        case "range":
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
           break;
-        case 'rangeProgress':
+        case "rangeProgress":
           pdfDataRangeTransport.onDataProgress(args.loaded);
           break;
-        case 'progressiveRead':
+        case "progressiveRead":
           pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
+
+          // Don't forget to report loading progress as well, since otherwise
+          // the loadingBar won't update when `disableRange=true` is set.
+          pdfDataRangeTransport.onDataProgress(args.loaded, args.total);
           break;
-        case 'progress':
+        case "progressiveDone":
+          if (pdfDataRangeTransport) {
+            pdfDataRangeTransport.onDataProgressiveDone();
+          }
+          break;
+        case "progress":
           callbacks.onProgress(args.loaded, args.total);
           break;
-        case 'complete':
+        case "complete":
           if (!args.data) {
             callbacks.onError(args.errorCode);
             break;
@@ -245,64 +335,70 @@ PDFViewerApplication.externalServices = {
           break;
       }
     });
-    FirefoxCom.requestSync('initPassiveLoading', null);
-  },
+    FirefoxCom.requestSync("initPassiveLoading", null);
+  }
 
-  fallback(data, callback) {
-    FirefoxCom.request('fallback', data, callback);
-  },
+  static async fallback(data) {
+    return FirefoxCom.requestAsync("fallback", data);
+  }
 
-  reportTelemetry(data) {
-    FirefoxCom.request('reportTelemetry', JSON.stringify(data));
-  },
+  static reportTelemetry(data) {
+    FirefoxCom.request("reportTelemetry", JSON.stringify(data));
+  }
 
-  createDownloadManager() {
+  static createDownloadManager(options) {
     return new DownloadManager();
-  },
+  }
 
-  createPreferences() {
+  static createPreferences() {
     return new FirefoxPreferences();
-  },
+  }
 
-  createL10n() {
-    let mozL10n = document.mozL10n;
+  static createL10n(options) {
+    const mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
     return new MozL10n(mozL10n);
-  },
+  }
 
-  get supportsIntegratedFind() {
-    let support = FirefoxCom.requestSync('supportsIntegratedFind');
-    return shadow(this, 'supportsIntegratedFind', support);
-  },
+  static createScripting(options) {
+    return FirefoxScripting;
+  }
 
-  get supportsDocumentFonts() {
-    let support = FirefoxCom.requestSync('supportsDocumentFonts');
-    return shadow(this, 'supportsDocumentFonts', support);
-  },
+  static get supportsIntegratedFind() {
+    const support = FirefoxCom.requestSync("supportsIntegratedFind");
+    return shadow(this, "supportsIntegratedFind", support);
+  }
 
-  get supportsDocumentColors() {
-    let support = FirefoxCom.requestSync('supportsDocumentColors');
-    return shadow(this, 'supportsDocumentColors', support);
-  },
+  static get supportsDocumentFonts() {
+    const support = FirefoxCom.requestSync("supportsDocumentFonts");
+    return shadow(this, "supportsDocumentFonts", support);
+  }
 
-  get supportedMouseWheelZoomModifierKeys() {
-    let support = FirefoxCom.requestSync('supportedMouseWheelZoomModifierKeys');
-    return shadow(this, 'supportedMouseWheelZoomModifierKeys', support);
-  },
-};
+  static get supportedMouseWheelZoomModifierKeys() {
+    const support = FirefoxCom.requestSync(
+      "supportedMouseWheelZoomModifierKeys"
+    );
+    return shadow(this, "supportedMouseWheelZoomModifierKeys", support);
+  }
+
+  static get isInAutomation() {
+    // Returns the value of `Cu.isInAutomation`, which is only `true` when e.g.
+    // various test-suites are running in mozilla-central.
+    const isInAutomation = FirefoxCom.requestSync("isInAutomation");
+    return shadow(this, "isInAutomation", isInAutomation);
+  }
+}
+PDFViewerApplication.externalServices = FirefoxExternalServices;
 
 // l10n.js for Firefox extension expects services to be set.
 document.mozL10n.setExternalLocalizerServices({
   getLocale() {
-    return FirefoxCom.requestSync('getLocale', null);
+    return FirefoxCom.requestSync("getLocale", null);
   },
 
   getStrings(key) {
-    return FirefoxCom.requestSync('getStrings', key);
+    return FirefoxCom.requestSync("getStrings", key);
   },
 });
 
-export {
-  DownloadManager,
-  FirefoxCom,
-};
+export { DownloadManager, FirefoxCom };

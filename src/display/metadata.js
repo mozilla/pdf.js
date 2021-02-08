@@ -13,107 +13,149 @@
  * limitations under the License.
  */
 
-import { assert } from '../shared/util';
-import { SimpleXMLParser } from './dom_utils';
+import { assert, objectFromEntries } from "../shared/util.js";
+import { SimpleXMLParser } from "../shared/xml_parser.js";
 
 class Metadata {
   constructor(data) {
-    assert(typeof data === 'string', 'Metadata: input is not a string');
+    assert(typeof data === "string", "Metadata: input is not a string");
 
     // Ghostscript may produce invalid metadata, so try to repair that first.
     data = this._repair(data);
 
-    // Convert the string to a DOM `Document`.
-    let parser = new SimpleXMLParser();
-    data = parser.parseFromString(data);
+    // Convert the string to an XML document.
+    const parser = new SimpleXMLParser({ lowerCaseName: true });
+    const xmlDocument = parser.parseFromString(data);
 
-    this._metadata = Object.create(null);
+    this._metadataMap = new Map();
 
-    this._parse(data);
+    if (xmlDocument) {
+      this._parse(xmlDocument);
+    }
+    this._data = data;
   }
 
   _repair(data) {
-    return data.replace(/>\\376\\377([^<]+)/g, function(all, codes) {
-      let bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
-          function(code, d1, d2, d3) {
-        return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
-      }).replace(/&(amp|apos|gt|lt|quot);/g, function(str, name) {
-        switch (name) {
-          case 'amp':
-            return '&';
-          case 'apos':
-            return '\'';
-          case 'gt':
-            return '>';
-          case 'lt':
-            return '<';
-          case 'quot':
-            return '\"';
+    // Start by removing any "junk" before the first tag (see issue 10395).
+    return data
+      .replace(/^[^<]+/, "")
+      .replace(/>\\376\\377([^<]+)/g, function (all, codes) {
+        const bytes = codes
+          .replace(/\\([0-3])([0-7])([0-7])/g, function (code, d1, d2, d3) {
+            return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
+          })
+          .replace(/&(amp|apos|gt|lt|quot);/g, function (str, name) {
+            switch (name) {
+              case "amp":
+                return "&";
+              case "apos":
+                return "'";
+              case "gt":
+                return ">";
+              case "lt":
+                return "<";
+              case "quot":
+                return '"';
+            }
+            throw new Error(`_repair: ${name} isn't defined.`);
+          });
+
+        let chars = "";
+        for (let i = 0, ii = bytes.length; i < ii; i += 2) {
+          const code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
+          if (
+            code >= /* Space = */ 32 &&
+            code < /* Delete = */ 127 &&
+            code !== /* '<' = */ 60 &&
+            code !== /* '>' = */ 62 &&
+            code !== /* '&' = */ 38
+          ) {
+            chars += String.fromCharCode(code);
+          } else {
+            chars += "&#x" + (0x10000 + code).toString(16).substring(1) + ";";
+          }
         }
-        throw new Error(`_repair: ${name} isn't defined.`);
+
+        return ">" + chars;
       });
-
-      let chars = '';
-      for (let i = 0, ii = bytes.length; i < ii; i += 2) {
-        let code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
-        if (code >= 32 && code < 127 && code !== 60 && code !== 62 &&
-            code !== 38) {
-          chars += String.fromCharCode(code);
-        } else {
-          chars += '&#x' + (0x10000 + code).toString(16).substring(1) + ';';
-        }
-      }
-
-      return '>' + chars;
-    });
   }
 
-  _parse(domDocument) {
-    let rdf = domDocument.documentElement;
+  _getSequence(entry) {
+    const name = entry.nodeName;
+    if (name !== "rdf:bag" && name !== "rdf:seq" && name !== "rdf:alt") {
+      return null;
+    }
 
-    if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
+    return entry.childNodes.filter(node => node.nodeName === "rdf:li");
+  }
+
+  _getCreators(entry) {
+    if (entry.nodeName !== "dc:creator") {
+      return false;
+    }
+    if (!entry.hasChildNodes()) {
+      return true;
+    }
+
+    // Child must be a Bag (unordered array) or a Seq.
+    const seqNode = entry.childNodes[0];
+    const authors = this._getSequence(seqNode) || [];
+    this._metadataMap.set(
+      entry.nodeName,
+      authors.map(node => node.textContent.trim())
+    );
+
+    return true;
+  }
+
+  _parse(xmlDocument) {
+    let rdf = xmlDocument.documentElement;
+
+    if (rdf.nodeName !== "rdf:rdf") {
+      // Wrapped in <xmpmeta>
       rdf = rdf.firstChild;
-      while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
+      while (rdf && rdf.nodeName !== "rdf:rdf") {
         rdf = rdf.nextSibling;
       }
     }
 
-    let nodeName = rdf ? rdf.nodeName.toLowerCase() : null;
-    if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes()) {
+    if (!rdf || rdf.nodeName !== "rdf:rdf" || !rdf.hasChildNodes()) {
       return;
     }
 
-    let children = rdf.childNodes;
-    for (let i = 0, ii = children.length; i < ii; i++) {
-      let desc = children[i];
-      if (desc.nodeName.toLowerCase() !== 'rdf:description') {
+    for (const desc of rdf.childNodes) {
+      if (desc.nodeName !== "rdf:description") {
         continue;
       }
 
-      for (let j = 0, jj = desc.childNodes.length; j < jj; j++) {
-        if (desc.childNodes[j].nodeName.toLowerCase() !== '#text') {
-          let entry = desc.childNodes[j];
-          let name = entry.nodeName.toLowerCase();
-
-          this._metadata[name] = entry.textContent.trim();
+      for (const entry of desc.childNodes) {
+        const name = entry.nodeName;
+        if (name === "#text") {
+          continue;
         }
+        if (this._getCreators(entry)) {
+          continue;
+        }
+        this._metadataMap.set(name, entry.textContent.trim());
       }
     }
   }
 
+  getRaw() {
+    return this._data;
+  }
+
   get(name) {
-    return this._metadata[name] || null;
+    return this._metadataMap.get(name) ?? null;
   }
 
   getAll() {
-    return this._metadata;
+    return objectFromEntries(this._metadataMap);
   }
 
   has(name) {
-    return typeof this._metadata[name] !== 'undefined';
+    return this._metadataMap.has(name);
   }
 }
 
-export {
-  Metadata,
-};
+export { Metadata };

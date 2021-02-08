@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import '../external/webL10n/l10n';
+import "../external/webL10n/l10n.js";
 
-let webL10n = document.webL10n;
+const webL10n = document.webL10n;
 
 class GenericL10n {
   constructor(lang) {
@@ -27,25 +27,25 @@ class GenericL10n {
     });
   }
 
-  getDirection() {
-    return this._ready.then((l10n) => {
-      return l10n.getDirection();
-    });
+  async getLanguage() {
+    const l10n = await this._ready;
+    return l10n.getLanguage();
   }
 
-  get(property, args, fallback) {
-    return this._ready.then((l10n) => {
-      return l10n.get(property, args, fallback);
-    });
+  async getDirection() {
+    const l10n = await this._ready;
+    return l10n.getDirection();
   }
 
-  translate(element) {
-    return this._ready.then((l10n) => {
-      return l10n.translate(element);
-    });
+  async get(property, args, fallback) {
+    const l10n = await this._ready;
+    return l10n.get(property, args, fallback);
+  }
+
+  async translate(element) {
+    const l10n = await this._ready;
+    return l10n.translate(element);
   }
 }
 
-export {
-  GenericL10n,
-};
+export { GenericL10n };

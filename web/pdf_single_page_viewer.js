@@ -13,40 +13,44 @@
  * limitations under the License.
  */
 
-import { BaseViewer } from './base_viewer';
-import { scrollIntoView } from './ui_utils';
-import { shadow } from 'pdfjs-lib';
+import { BaseViewer } from "./base_viewer.js";
+import { shadow } from "pdfjs-lib";
 
 class PDFSinglePageViewer extends BaseViewer {
   constructor(options) {
     super(options);
 
-    this.eventBus.on('pagesinit', (evt) => {
+    this.eventBus._on("pagesinit", evt => {
       // Since the pages are placed in a `DocumentFragment`, make sure that
       // the current page becomes visible upon loading of the document.
       this._ensurePageViewVisible();
     });
   }
 
-  get _setDocumentViewerElement() {
+  get _viewerElement() {
     // Since we only want to display *one* page at a time when using the
     // `PDFSinglePageViewer`, we cannot append them to the `viewer` DOM element.
     // Instead, they are placed in a `DocumentFragment`, and only the current
     // page is displayed in the viewer (refer to `this._ensurePageViewVisible`).
-    return shadow(this, '_setDocumentViewerElement', this._shadowViewer);
+    return shadow(this, "_viewerElement", this._shadowViewer);
+  }
+
+  get _pageWidthScaleFactor() {
+    return 1;
   }
 
   _resetView() {
     super._resetView();
     this._previousPageNumber = 1;
     this._shadowViewer = document.createDocumentFragment();
+    this._updateScrollDown = null;
   }
 
   _ensurePageViewVisible() {
-    let pageView = this._pages[this._currentPageNumber - 1];
-    let previousPageView = this._pages[this._previousPageNumber - 1];
+    const pageView = this._pages[this._currentPageNumber - 1];
+    const previousPageView = this._pages[this._previousPageNumber - 1];
 
-    let viewerNodes = this.viewer.childNodes;
+    const viewerNodes = this.viewer.childNodes;
     switch (viewerNodes.length) {
       case 0: // Should *only* occur on initial loading.
         this.viewer.appendChild(pageView.div);
@@ -54,7 +58,8 @@ class PDFSinglePageViewer extends BaseViewer {
       case 1: // The normal page-switching case.
         if (viewerNodes[0] !== previousPageView.div) {
           throw new Error(
-            '_ensurePageViewVisible: Unexpected previously visible page.');
+            "_ensurePageViewVisible: Unexpected previously visible page."
+          );
         }
         if (pageView === previousPageView) {
           break; // The correct page is already visible.
@@ -67,7 +72,8 @@ class PDFSinglePageViewer extends BaseViewer {
         break;
       default:
         throw new Error(
-          '_ensurePageViewVisible: Only one page should be visible at a time.');
+          "_ensurePageViewVisible: Only one page should be visible at a time."
+        );
     }
     this._previousPageNumber = this._currentPageNumber;
   }
@@ -79,71 +85,46 @@ class PDFSinglePageViewer extends BaseViewer {
     super._scrollUpdate();
   }
 
-  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null, }) {
-    if (pageNumber) { // Ensure that `this._currentPageNumber` is correct.
+  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
+    if (pageNumber) {
+      // Ensure that `this._currentPageNumber` is correct.
       this._setCurrentPageNumber(pageNumber);
     }
-    let scrolledDown = this._currentPageNumber >= this._previousPageNumber;
-    let previousLocation = this._location;
-    this._ensurePageViewVisible();
+    const scrolledDown = this._currentPageNumber >= this._previousPageNumber;
 
-    scrollIntoView(pageDiv, pageSpot);
+    this._ensurePageViewVisible();
+    // Ensure that rendering always occurs, to avoid showing a blank page,
+    // even if the current position doesn't change when the page is scrolled.
+    this.update();
+
+    super._scrollIntoView({ pageDiv, pageSpot, pageNumber });
 
     // Since scrolling is tracked using `requestAnimationFrame`, update the
     // scroll direction during the next `this._scrollUpdate` invocation.
     this._updateScrollDown = () => {
       this.scroll.down = scrolledDown;
-      delete this._updateScrollDown;
+      this._updateScrollDown = null;
     };
-    // If the scroll position doesn't change as a result of the `scrollIntoView`
-    // call, ensure that rendering always occurs to avoid showing a blank page.
-    setTimeout(() => {
-      if (this._location === previousLocation) {
-        if (this._updateScrollDown) {
-          this._updateScrollDown();
-        }
-        this.update();
-      }
-    }, 0);
   }
 
   _getVisiblePages() {
-    if (!this.pagesCount) {
-      return { views: [], };
-    }
-    let pageView = this._pages[this._currentPageNumber - 1];
-    // NOTE: Compute the `x` and `y` properties of the current view,
-    // since `this._updateLocation` depends of them being available.
-    let element = pageView.div;
-
-    let view = {
-      id: pageView.id,
-      x: element.offsetLeft + element.clientLeft,
-      y: element.offsetTop + element.clientTop,
-      view: pageView,
-    };
-    return { first: view, last: view, views: [view], };
+    return this._getCurrentVisiblePage();
   }
 
-  update() {
-    let visible = this._getVisiblePages();
-    let visiblePages = visible.views, numVisiblePages = visiblePages.length;
+  _updateHelper(visiblePages) {}
 
-    if (numVisiblePages === 0) {
-      return;
-    }
-    this._resizeBuffer(numVisiblePages);
+  get _isScrollModeHorizontal() {
+    // The Scroll/Spread modes are never used in `PDFSinglePageViewer`.
+    return shadow(this, "_isScrollModeHorizontal", false);
+  }
 
-    this.renderingQueue.renderHighestPriority(visible);
+  _updateScrollMode() {}
 
-    this._updateLocation(visible.first);
-    this.eventBus.dispatch('updateviewarea', {
-      source: this,
-      location: this._location,
-    });
+  _updateSpreadMode() {}
+
+  _getPageAdvance() {
+    return 1;
   }
 }
 
-export {
-  PDFSinglePageViewer,
-};
+export { PDFSinglePageViewer };
