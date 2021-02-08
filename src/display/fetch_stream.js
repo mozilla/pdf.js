@@ -273,7 +273,7 @@ class PDFFetchStreamRangeReader {
         },
         error => {
           if (errorHasKnownResponseCode(error)) {
-            throw error;
+            throw createResponseStatusError(error.status, url);
           }
           // network error:
           // workaround Chrome issue: net::ERR_CACHE_OPERATION_NOT_SUPPORTED
@@ -289,13 +289,18 @@ class PDFFetchStreamRangeReader {
           return fetch(
             cachebustedUrl,
             createFetchOptions(this._headers, this._withCredentials)
-          ).then(response => {
-            if (!validateResponseStatus(response.status)) {
-              throw createResponseStatusError(response.status, url);
+          ).then(
+            response => {
+              if (!validateResponseStatus(response.status)) {
+                throw createResponseStatusError(response.status, url);
+              }
+              this._readCapability.resolve();
+              this._reader = response.body.getReader();
+            },
+            _error => {
+              throw createResponseStatusError(_error.status, cachebustedUrl);
             }
-            this._readCapability.resolve();
-            this._reader = response.body.getReader();
-          });
+          );
         }
       )
       .catch(reason => {
