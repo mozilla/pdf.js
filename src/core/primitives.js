@@ -394,19 +394,19 @@ function clearPrimitiveCaches() {
 }
 
 export {
-  EOF,
   clearPrimitiveCaches,
   Cmd,
   Dict,
-  Name,
-  Ref,
-  RefSet,
-  RefSetCache,
-  isEOF,
+  EOF,
   isCmd,
   isDict,
+  isEOF,
   isName,
   isRef,
   isRefsEqual,
   isStream,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
 };

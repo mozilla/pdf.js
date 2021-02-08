@@ -4,7 +4,7 @@ Update version https://github.com/showpad/mozilla-pdf.js/blob/a5f8e1d0e7642b074b
 Run gulp dist-pre ( node version 6 )
 cd to build/dist and npm publish
 
-# PDF.js [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js)
+# PDF.js [![Build Status](https://github.com/mozilla/pdf.js/workflows/CI/badge.svg?branch=master)](https://github.com/mozilla/pdf.js/actions?query=workflow%3ACI+branch%3Amaster)
 
 [PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.
 
@@ -30,7 +30,8 @@ Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mo
 ### Online demo
 
 Please note that the "Modern browsers" version assumes native support for
-features such as e.g. `async`/`await`, and `ReadableStream`.
+features such as e.g. `async`/`await`, `ReadableStream`, optional chaining, and
+nullish coalescing.
 
 + Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
 
@@ -76,7 +77,7 @@ and then you can open:
 
 + http://localhost:8888/web/viewer.html
 
-Please keep in mind that this requires an ES6 compatible browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for usage with older browsers.
+Please keep in mind that this requires a modern and fully up-to-date browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for non-development usage of the PDF.js library.
 
 It is also possible to view all test PDF files on the right side by opening:
 
@@ -89,7 +90,11 @@ viewer, run:
 
     $ gulp generic
 
-This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory.
+If you need to support older browsers, run:
+
+    $ gulp generic-es5
+
+This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory (respectively `build/generic-es5/build/`).
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 

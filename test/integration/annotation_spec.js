@@ -13,49 +13,75 @@
  * limitations under the License.
  */
 
+const { closePages, loadAndWait } = require("./test_utils.js");
+
 describe("Annotation highlight", () => {
   describe("annotation-highlight.pdf", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await Promise.all(
-        global.integrationSessions.map(async session => {
-          const page = await session.browser.newPage();
-          await page.goto(
-            `${global.integrationBaseUrl}?file=/test/pdfs/annotation-highlight.pdf`
-          );
-          await page.bringToFront();
-          await page.waitForSelector("[data-annotation-id='19R']", {
-            timeout: 0,
-          });
-          return page;
-        })
+      pages = await loadAndWait(
+        "annotation-highlight.pdf",
+        "[data-annotation-id='19R']"
       );
     });
 
     afterAll(async () => {
-      await Promise.all(
-        pages.map(async page => {
-          await page.close();
-        })
-      );
+      await closePages(pages);
     });
 
     it("must show a popup on mouseover", async () => {
       await Promise.all(
-        pages.map(async page => {
+        pages.map(async ([browserName, page]) => {
           let hidden = await page.$eval(
             "[data-annotation-id='21R']",
             el => el.hidden
           );
-          expect(hidden).toEqual(true);
+          expect(hidden).withContext(`In ${browserName}`).toEqual(true);
           await page.hover("[data-annotation-id='19R']");
-          await page.waitForTimeout(100);
+          await page.waitForSelector("[data-annotation-id='21R']", {
+            visible: true,
+            timeout: 0,
+          });
           hidden = await page.$eval(
             "[data-annotation-id='21R']",
             el => el.hidden
           );
-          expect(hidden).toEqual(false);
+          expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+        })
+      );
+    });
+  });
+});
+
+describe("Checkbox annotation", () => {
+  describe("issue12706.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue12706.pdf", "[data-annotation-id='63R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must let checkboxes with the same name behave like radio buttons", async () => {
+      const selectors = [63, 70, 79].map(n => `[data-annotation-id='${n}R']`);
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const selector of selectors) {
+            await page.click(selector);
+            for (const otherSelector of selectors) {
+              const checked = await page.$eval(
+                `${otherSelector} > :first-child`,
+                el => el.checked
+              );
+              expect(checked)
+                .withContext(`In ${browserName}`)
+                .toBe(selector === otherSelector);
+            }
+          }
         })
       );
     });

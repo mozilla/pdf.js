@@ -58,7 +58,7 @@ function DOMElement(name) {
   if (name === "style") {
     this.sheet = {
       cssRules: [],
-      insertRule: function (rule) {
+      insertRule(rule) {
         this.cssRules.push(rule);
       },
     };
@@ -226,16 +226,16 @@ const document = {
     return this;
   },
 
-  createElementNS: function (NS, element) {
+  createElementNS(NS, element) {
     var elObject = new DOMElement(element);
     return elObject;
   },
 
-  createElement: function (element) {
+  createElement(element) {
     return this.createElementNS("", element);
   },
 
-  getElementsByTagName: function (element) {
+  getElementsByTagName(element) {
     if (element === "head") {
       return [this.head || (this.head = new DOMElement("head"))];
     }

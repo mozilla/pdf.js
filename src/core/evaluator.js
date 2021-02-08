@@ -47,6 +47,7 @@ import {
   Ref,
   RefSet,
 } from "./primitives.js";
+import { DecodeStream, NullStream } from "./stream.js";
 import {
   ErrorFont,
   Font,
@@ -85,7 +86,6 @@ import {
 } from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
-import { DecodeStream } from "./stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
@@ -609,6 +609,9 @@ class PartialEvaluator {
       .then(imageObj => {
         imgData = imageObj.createImageData(/* forceRGBA = */ false);
 
+        if (cacheKey && imageRef && cacheGlobally) {
+          this.globalImageCache.addByteSize(imageRef, imgData.data.length);
+        }
         return this._sendImgData(objId, imgData, cacheGlobally);
       })
       .catch(reason => {
@@ -633,6 +636,7 @@ class PartialEvaluator {
             objId,
             fn: OPS.paintImageXObject,
             args,
+            byteSize: 0, // Temporary entry, note `addByteSize` above.
           });
         }
       }
@@ -797,12 +801,10 @@ class PartialEvaluator {
     fallbackFontDict = null
   ) {
     // TODO(mack): Not needed?
-    var fontName,
-      fontSize = 0;
+    var fontName;
     if (fontArgs) {
       fontArgs = fontArgs.slice();
       fontName = fontArgs[0].name;
-      fontSize = fontArgs[1];
     }
 
     return this.loadFont(fontName, fontRef, resources, fallbackFontDict)
@@ -835,8 +837,6 @@ class PartialEvaluator {
       })
       .then(translated => {
         state.font = translated.font;
-        state.fontSize = fontSize;
-        state.fontName = fontName;
         translated.send(this.handler);
         return translated.loadedName;
       });
@@ -1062,7 +1062,13 @@ class PartialEvaluator {
 
     var fontCapability = createPromiseCapability();
 
-    var preEvaluatedFont = this.preEvaluateFont(font);
+    let preEvaluatedFont;
+    try {
+      preEvaluatedFont = this.preEvaluateFont(font);
+    } catch (reason) {
+      warn(`loadFont - preEvaluateFont failed: "${reason}".`);
+      return errorFont();
+    }
     const { descriptor, hash } = preEvaluatedFont;
 
     var fontRefIsRef = isRef(fontRef),
@@ -1150,6 +1156,7 @@ class PartialEvaluator {
         this.handler.send("UnsupportedFeature", {
           featureId: UNSUPPORTED_FEATURES.errorFontTranslate,
         });
+        warn(`loadFont - translateFont failed: "${reason}".`);
 
         try {
           // error, but it's still nice to have font type reported
@@ -2509,6 +2516,15 @@ class PartialEvaluator {
                     return;
                   }
 
+                  const globalImage = self.globalImageCache.getData(
+                    xobj,
+                    self.pageIndex
+                  );
+                  if (globalImage) {
+                    resolveXObject();
+                    return;
+                  }
+
                   xobj = xref.fetch(xobj);
                 }
 
@@ -3190,7 +3206,7 @@ class PartialEvaluator {
 
   getBaseFontMetrics(name) {
     var defaultWidth = 0;
-    var widths = [];
+    var widths = Object.create(null);
     var monospace = false;
     var stdFontMap = getStdFontMap();
     var lookupName = stdFontMap[name] || name;
@@ -3258,6 +3274,9 @@ class PartialEvaluator {
       }
       dict = Array.isArray(df) ? this.xref.fetchIfRef(df[0]) : df;
 
+      if (!(dict instanceof Dict)) {
+        throw new FormatError("Descendant font is not a dictionary.");
+      }
       type = dict.get("Subtype");
       if (!isName(type)) {
         throw new FormatError("invalid font Subtype");
@@ -3441,7 +3460,16 @@ class PartialEvaluator {
       throw new FormatError("invalid font name");
     }
 
-    var fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+    let fontFile;
+    try {
+      fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+    } catch (ex) {
+      if (!this.options.ignoreErrors) {
+        throw ex;
+      }
+      warn(`translateFont - fetching "${fontName.name}" font file: "${ex}".`);
+      fontFile = new NullStream();
+    }
     if (fontFile) {
       if (fontFile.dict) {
         var subtype = fontFile.dict.get("Subtype");
@@ -3602,7 +3630,7 @@ class TranslatedFont {
     var charProcOperatorList = Object.create(null);
 
     for (const key of charProcs.getKeys()) {
-      loadCharProcsPromise = loadCharProcsPromise.then(function () {
+      loadCharProcsPromise = loadCharProcsPromise.then(() => {
         var glyphStream = charProcs.get(key);
         var operatorList = new OperatorList();
         return type3Evaluator
@@ -3612,7 +3640,16 @@ class TranslatedFont {
             resources: fontResources,
             operatorList,
           })
-          .then(function () {
+          .then(() => {
+            // According to the PDF specification, section "9.6.5 Type 3 Fonts"
+            // and "Table 113":
+            //  "A glyph description that begins with the d1 operator should
+            //   not execute any operators that set the colour (or other
+            //   colour-related parameters) in the graphics state;
+            //   any use of such operators shall be ignored."
+            if (operatorList.fnArray[0] === OPS.setCharWidthAndBounds) {
+              this._removeType3ColorOperators(operatorList);
+            }
             charProcOperatorList[key] = operatorList.getIR();
 
             for (const dependency of operatorList.dependencies) {
@@ -3631,10 +3668,72 @@ class TranslatedFont {
     });
     return this.type3Loaded;
   }
+
+  /**
+   * @private
+   */
+  _removeType3ColorOperators(operatorList) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        operatorList.fnArray[0] === OPS.setCharWidthAndBounds,
+        "Type3 glyph shall start with the d1 operator."
+      );
+    }
+    let i = 1,
+      ii = operatorList.length;
+    while (i < ii) {
+      switch (operatorList.fnArray[i]) {
+        case OPS.setStrokeColorSpace:
+        case OPS.setFillColorSpace:
+        case OPS.setStrokeColor:
+        case OPS.setStrokeColorN:
+        case OPS.setFillColor:
+        case OPS.setFillColorN:
+        case OPS.setStrokeGray:
+        case OPS.setFillGray:
+        case OPS.setStrokeRGBColor:
+        case OPS.setFillRGBColor:
+        case OPS.setStrokeCMYKColor:
+        case OPS.setFillCMYKColor:
+        case OPS.shadingFill:
+        case OPS.setRenderingIntent:
+          operatorList.fnArray.splice(i, 1);
+          operatorList.argsArray.splice(i, 1);
+          ii--;
+          continue;
+
+        case OPS.setGState:
+          const [gStateObj] = operatorList.argsArray[i];
+          let j = 0,
+            jj = gStateObj.length;
+          while (j < jj) {
+            const [gStateKey] = gStateObj[j];
+            switch (gStateKey) {
+              case "TR":
+              case "TR2":
+              case "HT":
+              case "BG":
+              case "BG2":
+              case "UCR":
+              case "UCR2":
+                gStateObj.splice(j, 1);
+                jj--;
+                continue;
+            }
+            j++;
+          }
+          break;
+      }
+      i++;
+    }
+  }
 }
 
 class StateManager {
-  constructor(initialState) {
+  constructor(initialState = new EvalState()) {
     this.state = initialState;
     this.stateStack = [];
   }
@@ -3905,7 +4004,7 @@ class EvaluatorPreprocessor {
     return shadow(this, "MAX_INVALID_PATH_OPS", 20);
   }
 
-  constructor(stream, xref, stateManager) {
+  constructor(stream, xref, stateManager = new StateManager()) {
     // TODO(mduan): pass array of knownCommands rather than this.opMap
     // dictionary
     this.parser = new Parser({
@@ -4046,4 +4145,4 @@ class EvaluatorPreprocessor {
   }
 }
 
-export { PartialEvaluator };
+export { EvaluatorPreprocessor, PartialEvaluator };

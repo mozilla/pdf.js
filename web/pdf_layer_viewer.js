@@ -41,7 +41,6 @@ class PDFLayerViewer extends BaseTreeViewer {
   reset() {
     super.reset();
     this._optionalContentConfig = null;
-    this._pdfDocument = null;
   }
 
   /**
@@ -123,7 +122,7 @@ class PDFLayerViewer extends BaseTreeViewer {
     this._optionalContentConfig = optionalContentConfig || null;
     this._pdfDocument = pdfDocument || null;
 
-    const groups = optionalContentConfig && optionalContentConfig.getOrder();
+    const groups = optionalContentConfig?.getOrder();
     if (!groups) {
       this._dispatchEvent(/* layersCount = */ 0);
       return;
@@ -174,16 +173,8 @@ class PDFLayerViewer extends BaseTreeViewer {
         levelData.parent.appendChild(div);
       }
     }
-    if (hasAnyNesting) {
-      this.container.classList.add("treeWithDeepNesting");
 
-      this._lastToggleIsShow =
-        fragment.querySelectorAll(".treeItemsHidden").length === 0;
-    }
-
-    this.container.appendChild(fragment);
-
-    this._dispatchEvent(layersCount);
+    this._finishRendering(fragment, layersCount, hasAnyNesting);
   }
 
   /**

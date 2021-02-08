@@ -67,7 +67,7 @@ const defaultOptions = {
   },
   enableScripting: {
     /** @type {boolean} */
-    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("ENABLE_SCRIPTING"),
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableWebGL: {
@@ -254,7 +254,7 @@ if (
 ) {
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
     kind: OptionKind.VIEWER,
   };
   defaultOptions.locale = {
@@ -265,8 +265,7 @@ if (
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION && !ENABLE_SCRIPTING")
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
         ? "../build/dev-sandbox/pdf.sandbox.js"
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,

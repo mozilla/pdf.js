@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
 
 "use strict";
 
@@ -646,15 +645,15 @@ function refTestPostHandler(req, res) {
     }
 
     taskResults[round][page] = {
-      failure: failure,
-      snapshot: snapshot,
+      failure,
+      snapshot,
     };
     if (stats) {
       stats.push({
-        browser: browser,
+        browser,
         pdf: id,
-        page: page,
-        round: round,
+        page,
+        round,
         stats: data.stats,
       });
     }
@@ -836,15 +835,36 @@ async function startBrowser(browserName, startUrl = "") {
     ignoreDefaultArgs: ["--disable-extensions"],
   };
 
+  if (!tempDir) {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pdfjs-"));
+  }
+  const printFile = path.join(tempDir, "print.pdf");
+
   if (browserName === "chrome") {
     // avoid crash
     options.args = ["--no-sandbox", "--disable-setuid-sandbox"];
+    // silent printing in a pdf
+    options.args.push("--kiosk-printing");
   }
 
   if (browserName === "firefox") {
     options.extraPrefsFirefox = {
       // avoid to have a prompt when leaving a page with a form
       "dom.disable_beforeunload": true,
+      // Disable dialog when saving a pdf
+      "pdfjs.disabled": true,
+      "browser.helperApps.neverAsk.saveToDisk": "application/pdf",
+      // Avoid popup when saving is done
+      "browser.download.panel.shown": true,
+      // Save file in output
+      "browser.download.folderList": 2,
+      "browser.download.dir": tempDir,
+      // Print silently in a pdf
+      "print.always_print_silent": true,
+      "print.show_print_progress": false,
+      print_printer: "PDF",
+      "print.printer_PDF.print_to_file": true,
+      "print.printer_PDF.print_to_filename": printFile,
     };
   }
 
@@ -928,8 +948,15 @@ async function closeSession(browser) {
     const allClosed = sessions.every(function (s) {
       return s.closed;
     });
-    if (allClosed && onAllSessionsClosed) {
-      onAllSessionsClosed();
+    if (allClosed) {
+      if (tempDir) {
+        const rimraf = require("rimraf");
+        rimraf.sync(tempDir);
+      }
+
+      if (onAllSessionsClosed) {
+        onAllSessionsClosed();
+      }
     }
   }
 }
@@ -984,5 +1011,6 @@ var onAllSessionsClosed;
 var host = "127.0.0.1";
 var options = parseOptions();
 var stats;
+var tempDir = null;
 
 main();

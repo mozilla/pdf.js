@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-/* global color */
+import { GlobalConstants } from "./constants.js";
 
 class AForm {
-  constructor(document, app, util) {
+  constructor(document, app, util, color) {
     this._document = document;
     this._app = app;
     this._util = util;
+    this._color = color;
     this._dateFormats = [
       "m/d",
       "m/d/yy",
@@ -47,6 +48,10 @@ class AForm {
     );
   }
 
+  _mkTargetName(event) {
+    return event.target ? `[ ${event.target.name} ]` : "";
+  }
+
   _parseDate(cFormat, cDate) {
     const ddate = Date.parse(cDate);
     if (isNaN(ddate)) {
@@ -60,10 +65,7 @@ class AForm {
     }
   }
 
-  AFMergeChange(event) {
-    if (!event) {
-      event = this._document._event;
-    }
+  AFMergeChange(event = globalThis.event) {
     if (event.willCommit) {
       return event.value.toString();
     }
@@ -128,7 +130,7 @@ class AForm {
     strCurrency,
     bCurrencyPrepend
   ) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }
@@ -174,7 +176,7 @@ class AForm {
     }
 
     if (negStyle === 1 || negStyle === 3) {
-      event.target.textColor = sign === 1 ? color.black : color.red;
+      event.target.textColor = sign === 1 ? this._color.black : this._color.red;
     }
 
     if ((negStyle !== 0 || bCurrencyPrepend) && sign === -1) {
@@ -193,7 +195,7 @@ class AForm {
     strCurrency /* unused */,
     bCurrencyPrepend /* unused */
   ) {
-    const event = this._document._event;
+    const event = globalThis.event;
     let value = this.AFMergeChange(event);
     if (!value) {
       return;
@@ -215,13 +217,16 @@ class AForm {
 
     if (!pattern.test(value)) {
       if (event.willCommit) {
-        if (event.target) {
-          this._app.alert(`Invalid number in [ ${event.target.name} ]`);
-        } else {
-          this._app.alert(`Invalid number`);
-        }
+        const err = `${GlobalConstants.IDS_INVALID_VALUE} ${this._mkTargetName(
+          event
+        )}`;
+        this._app.alert(err);
       }
       event.rc = false;
+    }
+
+    if (event.willCommit && sepStyle > 1) {
+      event.value = parseFloat(value.replace(",", "."));
     }
   }
 
@@ -236,7 +241,7 @@ class AForm {
       throw new Error("Invalid nDec value in AFPercent_Format");
     }
 
-    const event = this._document._event;
+    const event = globalThis.event;
     if (nDec > 512) {
       event.value = "%";
       return;
@@ -268,7 +273,7 @@ class AForm {
   }
 
   AFDate_FormatEx(cFormat) {
-    const event = this._document._event;
+    const event = globalThis.event;
     const value = event.value;
     if (!value) {
       return;
@@ -287,18 +292,23 @@ class AForm {
   }
 
   AFDate_KeystrokeEx(cFormat) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.willCommit) {
       return;
     }
 
-    const value = event.value;
+    const value = this.AFMergeChange(event);
     if (!value) {
       return;
     }
 
     if (this._parseDate(cFormat, value) === null) {
-      this._app.alert("Invalid date");
+      const invalid = GlobalConstants.IDS_INVALID_DATE;
+      const invalid2 = GlobalConstants.IDS_INVALID_DATE2;
+      const err = `${invalid} ${this._mkTargetName(
+        event
+      )}${invalid2}${cFormat}`;
+      this._app.alert(err);
       event.rc = false;
     }
   }
@@ -310,7 +320,7 @@ class AForm {
   }
 
   AFRange_Validate(bGreaterThan, nGreaterThan, bLessThan, nLessThan) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }
@@ -340,14 +350,18 @@ class AForm {
     let err = "";
     if (bGreaterThan && bLessThan) {
       if (value < nGreaterThan || value > nLessThan) {
-        err = `${event.value} is not between ${nGreaterThan} and ${nLessThan}`;
+        err = this._util.printf(
+          GlobalConstants.IDS_GT_AND_LT,
+          nGreaterThan,
+          nLessThan
+        );
       }
     } else if (bGreaterThan) {
       if (value < nGreaterThan) {
-        err = `${event.value} is not greater or equal than ${nGreaterThan}`;
+        err = this._util.printf(GlobalConstants.IDS_GREATER_THAN, nGreaterThan);
       }
     } else if (value > nLessThan) {
-      err = `${event.value} is not less or equal than ${nLessThan}`;
+      err = this._util.printf(GlobalConstants.IDS_LESS_THAN, nLessThan);
     }
     if (err) {
       this._app.alert(err);
@@ -397,7 +411,7 @@ class AForm {
       throw new TypeError("Invalid function in AFSimple_Calculate");
     }
 
-    const event = this._document._event;
+    const event = globalThis.event;
     const values = [];
     for (const cField of cFields) {
       const field = this._document.getField(cField);
@@ -417,7 +431,7 @@ class AForm {
   }
 
   AFSpecial_Format(psf) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }
@@ -457,7 +471,7 @@ class AForm {
       return;
     }
 
-    const event = this._document._event;
+    const event = globalThis.event;
     const value = this.AFMergeChange(event);
     const checkers = new Map([
       ["9", char => char >= "0" && char <= "9"],
@@ -495,24 +509,27 @@ class AForm {
       return;
     }
 
+    const err = `${GlobalConstants.IDS_INVALID_VALUE} = "${cMask}"`;
+
     if (value.length > cMask.length) {
-      this._app.alert("Value is too long");
+      this._app.alert(err);
       event.rc = false;
       return;
     }
 
     if (event.willCommit) {
       if (value.length < cMask.length) {
-        this._app.alert("Value is too short");
+        this._app.alert(err);
         event.rc = false;
         return;
       }
 
       if (!_checkValidity(value, cMask)) {
-        this._app.alert("Value doesn't fit the specified format");
+        this._app.alert(err);
         event.rc = false;
         return;
       }
+      event.value += cMask.subString(value.length);
       return;
     }
 
@@ -521,12 +538,13 @@ class AForm {
     }
 
     if (!_checkValidity(value, cMask)) {
+      this._app.alert(err);
       event.rc = false;
     }
   }
 
   AFSpecial_Keystroke(psf) {
-    const event = this._document._event;
+    const event = globalThis.event;
     if (!event.value) {
       return;
     }

@@ -338,6 +338,22 @@ class CMap {
     out.length = 1;
   }
 
+  getCharCodeLength(charCode) {
+    const codespaceRanges = this.codespaceRanges;
+    for (let n = 0, nn = codespaceRanges.length; n < nn; n++) {
+      // Check each codespace range to see if it falls within.
+      const codespaceRange = codespaceRanges[n];
+      for (let k = 0, kk = codespaceRange.length; k < kk; ) {
+        const low = codespaceRange[k++];
+        const high = codespaceRange[k++];
+        if (charCode >= low && charCode <= high) {
+          return n + 1;
+        }
+      }
+    }
+    return 1;
+  }
+
   get length() {
     return this._map.length;
   }
@@ -1039,4 +1055,4 @@ var CMapFactory = (function CMapFactoryClosure() {
   };
 })();
 
-export { CMap, IdentityCMap, CMapFactory };
+export { CMap, CMapFactory, IdentityCMap };

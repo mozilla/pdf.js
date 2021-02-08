@@ -199,8 +199,7 @@ class PDFPageView {
     const childNodes = div.childNodes;
     const currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
     const currentAnnotationNode =
-      (keepAnnotations && this.annotationLayer && this.annotationLayer.div) ||
-      null;
+      (keepAnnotations && this.annotationLayer?.div) || null;
     for (let i = childNodes.length - 1; i >= 0; i--) {
       const node = childNodes[i];
       if (currentZoomLayerNode === node || currentAnnotationNode === node) {
@@ -437,7 +436,7 @@ class PDFPageView {
     canvasWrapper.style.height = div.style.height;
     canvasWrapper.classList.add("canvasWrapper");
 
-    if (this.annotationLayer && this.annotationLayer.div) {
+    if (this.annotationLayer?.div) {
       // The annotation layer needs to stay on top.
       div.insertBefore(canvasWrapper, this.annotationLayer.div);
     } else {
@@ -450,7 +449,7 @@ class PDFPageView {
       textLayerDiv.className = "textLayer";
       textLayerDiv.style.width = canvasWrapper.style.width;
       textLayerDiv.style.height = canvasWrapper.style.height;
-      if (this.annotationLayer && this.annotationLayer.div) {
+      if (this.annotationLayer?.div) {
         // The annotation layer needs to stay on top.
         div.insertBefore(textLayerDiv, this.annotationLayer.div);
       } else {
@@ -551,7 +550,8 @@ class PDFPageView {
           this.renderInteractiveForms,
           this.l10n,
           this.enableScripting,
-          /* hasJSActionsPromise = */ null
+          /* hasJSActionsPromise = */ null,
+          /* mouseState = */ null
         );
       }
       this._renderAnnotationLayer();

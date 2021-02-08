@@ -16,6 +16,7 @@
 "use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFSinglePageViewer) {
+  // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
@@ -38,18 +39,18 @@ var eventBus = new pdfjsViewer.EventBus();
 
 // (Optionally) enable hyperlinks within PDF files.
 var pdfLinkService = new pdfjsViewer.PDFLinkService({
-  eventBus: eventBus,
+  eventBus,
 });
 
 // (Optionally) enable find controller.
 var pdfFindController = new pdfjsViewer.PDFFindController({
-  eventBus: eventBus,
+  eventBus,
   linkService: pdfLinkService,
 });
 
 var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
-  container: container,
-  eventBus: eventBus,
+  container,
+  eventBus,
   linkService: pdfLinkService,
   findController: pdfFindController,
 });

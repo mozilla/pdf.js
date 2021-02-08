@@ -132,7 +132,7 @@ function isRuntimeAvailable() {
   try {
     // When the extension is reloaded, the extension runtime is destroyed and
     // the extension APIs become unavailable.
-    if (chrome.runtime && chrome.runtime.getManifest()) {
+    if (chrome.runtime?.getManifest()) {
       return true;
     }
   } catch (e) {}
@@ -181,7 +181,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // These strings are from chrome/app/resources/generated_resources_*.xtb.
     const i18nFileAccessLabel = PDFJSDev.json(
       "$ROOT/web/chrome-i18n-allow-access-to-file-urls.json"
-    )[chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
+    )[chrome.i18n.getUILanguage?.()];
 
     if (i18nFileAccessLabel) {
       document.getElementById(
@@ -279,7 +279,7 @@ function setReferer(url, callback) {
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.
   port.postMessage({
-    referer: window.history.state && window.history.state.chromecomState,
+    referer: window.history.state?.chromecomState,
     requestUrl: url,
   });
 
@@ -430,8 +430,8 @@ class ChromeExternalServices extends DefaultExternalServices {
     return new GenericL10n(navigator.language);
   }
 
-  static createScripting() {
-    return new GenericScripting();
+  static createScripting({ sandboxBundleSrc }) {
+    return new GenericScripting(sandboxBundleSrc);
   }
 }
 PDFViewerApplication.externalServices = ChromeExternalServices;

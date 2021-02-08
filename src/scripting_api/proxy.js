@@ -14,18 +14,7 @@
  */
 
 class ProxyHandler {
-  constructor(dispatchEventName) {
-    this.dispatchEventName = dispatchEventName;
-  }
-
   get(obj, prop) {
-    if (obj._isApp && prop === this.dispatchEventName) {
-      // a backdoor to be able to call _dispatchEvent method
-      // the value of 'dispatchEvent' is generated randomly
-      // and injected in the code
-      return obj._dispatchEvent.bind(obj);
-    }
-
     // script may add some properties to the object
     if (prop in obj._expandos) {
       const val = obj._expandos[prop];
@@ -54,7 +43,7 @@ class ProxyHandler {
       obj[prop] = value;
       if (obj._send && obj._id !== null && typeof old !== "function") {
         const data = { id: obj._id };
-        data[prop] = value;
+        data[prop] = obj[prop];
 
         // send the updated value to the other side
         obj._send(data);

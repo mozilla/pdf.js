@@ -1063,7 +1063,7 @@ var JpegImage = (function JpegImageClosure() {
               offset = nextFileMarker.offset;
               break;
             }
-            if (offset >= data.length - 1) {
+            if (!nextFileMarker || offset >= data.length - 1) {
               warn(
                 "JpegImage.parse - reached the end of the image data " +
                   "without finding an EOI marker (0xFFD9)."

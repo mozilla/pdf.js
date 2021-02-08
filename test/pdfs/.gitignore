@@ -6,6 +6,7 @@
 !TrueType_without_cmap.pdf
 !franz.pdf
 !franz_2.pdf
+!fraction-highlight.pdf
 !german-umlaut-r.pdf
 !xref_command_missing.pdf
 !issue1155r.pdf
@@ -46,8 +47,10 @@
 !issue7544.pdf
 !issue7507.pdf
 !issue6931_reduced.pdf
+!doc_actions.pdf
 !issue7580.pdf
 !issue7598.pdf
+!issue12750.pdf
 !issue7665.pdf
 !issue7696.pdf
 !issue7835.pdf
@@ -68,6 +71,7 @@
 !issue8570.pdf
 !issue8697.pdf
 !issue8702.pdf
+!issue12823.pdf
 !issue8707.pdf
 !issue8798r.pdf
 !issue8823.pdf
@@ -90,6 +94,7 @@
 !issue11045.pdf
 !bug1057544.pdf
 !issue11150_reduced.pdf
+!issue6127.pdf
 !issue11242_reduced.pdf
 !issue11279.pdf
 !issue11362.pdf
@@ -111,6 +116,7 @@
 !bug1050040.pdf
 !bug1200096.pdf
 !bug1068432.pdf
+!issue12295.pdf
 !bug1146106.pdf
 !bug1245391_reduced.pdf
 !bug1252420.pdf
@@ -222,6 +228,7 @@
 !issue5734.pdf
 !issue4875.pdf
 !issue11740_reduced.pdf
+!issue12705.pdf
 !issue4881.pdf
 !issue5994.pdf
 !issue6151.pdf
@@ -237,6 +244,7 @@
 !personwithdog.pdf
 !helloworld-bad.pdf
 !zerowidthline.pdf
+!issue12841_reduced.pdf
 !bug868745.pdf
 !mmtype1.pdf
 !issue4436r.pdf
@@ -272,6 +280,7 @@
 !gradientfill.pdf
 !bug903856.pdf
 !bug850854.pdf
+!issue12810.pdf
 !bug866395.pdf
 !issue12010_reduced.pdf
 !issue11718_reduced.pdf
@@ -320,6 +329,7 @@
 !tensor-allflags-withfunction.pdf
 !issue10084_reduced.pdf
 !issue4246.pdf
+!js-authors.pdf
 !issue4461.pdf
 !issue4573.pdf
 !issue4722.pdf
@@ -330,6 +340,7 @@
 !issue5334.pdf
 !annotation-caret-ink.pdf
 !bug1186827.pdf
+!issue12706.pdf
 !issue215.pdf
 !issue5044.pdf
 !issue1512r.pdf
@@ -357,9 +368,12 @@
 !issue6298.pdf
 !issue6889.pdf
 !bug1001080.pdf
+!bug1671312_reduced.pdf
+!bug1671312_ArialNarrow.pdf
 !issue6108.pdf
 !issue6113.pdf
 !openoffice.pdf
+!js-buttons.pdf
 !issue7014.pdf
 !issue8187.pdf
 !annotation-link-text-popup.pdf
@@ -389,6 +403,7 @@
 !operator-in-TJ-array.pdf
 !issue7878.pdf
 !font_ascent_descent.pdf
+!listbox_actions.pdf
 !issue11442_reduced.pdf
 !issue11549_reduced.pdf
 !issue8097_reduced.pdf
@@ -404,3 +419,4 @@
 !issue11555.pdf
 !issue12337.pdf
 !pr12564.pdf
+!pr12828.pdf

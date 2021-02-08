@@ -312,6 +312,30 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
 
+    it("dispatch event to handlers with/without 'once' option", function () {
+      const eventBus = new EventBus();
+      let multipleCount = 0,
+        onceCount = 0;
+
+      eventBus.on("test", function () {
+        multipleCount++;
+      });
+      eventBus.on(
+        "test",
+        function () {
+          onceCount++;
+        },
+        { once: true }
+      );
+
+      eventBus.dispatch("test");
+      eventBus.dispatch("test");
+      eventBus.dispatch("test");
+
+      expect(multipleCount).toEqual(3);
+      expect(onceCount).toEqual(1);
+    });
+
     it("should not re-dispatch to DOM", function (done) {
       if (isNodeJS) {
         pending("Document in not supported in Node.js.");
@@ -626,11 +650,21 @@ describe("ui_utils", function () {
           const hiddenWidth =
             Math.max(0, scrollLeft - viewLeft) +
             Math.max(0, viewRight - scrollRight);
-          const visibleArea =
-            (div.clientHeight - hiddenHeight) * (div.clientWidth - hiddenWidth);
-          const percent =
-            ((visibleArea * 100) / div.clientHeight / div.clientWidth) | 0;
-          views.push({ id: view.id, x: viewLeft, y: viewTop, view, percent });
+
+          const fractionHeight =
+            (div.clientHeight - hiddenHeight) / div.clientHeight;
+          const fractionWidth =
+            (div.clientWidth - hiddenWidth) / div.clientWidth;
+          const percent = (fractionHeight * fractionWidth * 100) | 0;
+
+          views.push({
+            id: view.id,
+            x: viewLeft,
+            y: viewTop,
+            view,
+            percent,
+            widthPercent: (fractionWidth * 100) | 0,
+          });
         }
       }
       return { first: views[0], last: views[views.length - 1], views };

@@ -60,6 +60,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/core_utils_spec.js",
       "pdfjs-test/unit/crypto_spec.js",
       "pdfjs-test/unit/custom_spec.js",
+      "pdfjs-test/unit/default_appearance_spec.js",
       "pdfjs-test/unit/display_svg_spec.js",
       "pdfjs-test/unit/display_utils_spec.js",
       "pdfjs-test/unit/document_spec.js",
@@ -84,6 +85,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/unicode_spec.js",
       "pdfjs-test/unit/util_spec.js",
       "pdfjs-test/unit/writer_spec.js",
+      "pdfjs-test/unit/xfa_parser_spec.js",
       "pdfjs-test/unit/xml_spec.js",
     ].map(function (moduleName) {
       // eslint-disable-next-line no-unsanitized/method

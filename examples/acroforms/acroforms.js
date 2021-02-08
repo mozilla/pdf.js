@@ -18,7 +18,7 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
-var DEFAULT_URL = "../../test/pdfs/f1040.pdf";
+var DEFAULT_URL = "../../test/pdfs/prefilled_f1040.pdf";
 var DEFAULT_SCALE = 1.0;
 
 var container = document.getElementById("pageContainer");
@@ -37,11 +37,11 @@ loadingTask.promise.then(function (doc) {
         return doc.getPage(pageNum).then(function (pdfPage) {
           // Create the page view.
           var pdfPageView = new pdfjsViewer.PDFPageView({
-            container: container,
+            container,
             id: pageNum,
             scale: DEFAULT_SCALE,
             defaultViewport: pdfPage.getViewport({ scale: DEFAULT_SCALE }),
-            eventBus: eventBus,
+            eventBus,
             annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
             renderInteractiveForms: true,
           });

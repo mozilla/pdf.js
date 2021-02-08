@@ -145,10 +145,10 @@ const AnnotationBorderStyleType = {
 };
 
 const AnnotationActionEventType = {
-  E: "MouseEnter",
-  X: "MouseExit",
-  D: "MouseDown",
-  U: "MouseUp",
+  E: "Mouse Enter",
+  X: "Mouse Exit",
+  D: "Mouse Down",
+  U: "Mouse Up",
   Fo: "Focus",
   Bl: "Blur",
   PO: "PageOpen",
@@ -159,11 +159,19 @@ const AnnotationActionEventType = {
   F: "Format",
   V: "Validate",
   C: "Calculate",
+};
+
+const DocumentActionEventType = {
   WC: "WillClose",
   WS: "WillSave",
   DS: "DidSave",
   WP: "WillPrint",
   DP: "DidPrint",
+};
+
+const PageActionEventType = {
+  O: "PageOpen",
+  C: "PageClose",
 };
 
 const StreamType = {
@@ -834,6 +842,20 @@ function escapeString(str) {
   });
 }
 
+function isAscii(str) {
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
+function stringToUTF16BEString(str) {
+  const buf = ["\xFE\xFF"];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    buf.push(String.fromCharCode((char >> 8) & 0xff));
+    buf.push(String.fromCharCode(char & 0xff));
+  }
+  return buf.join("");
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -993,12 +1015,7 @@ function encodeToXmlString(str) {
 }
 
 export {
-  BaseException,
-  FONT_IDENTITY_MATRIX,
-  IDENTITY_MATRIX,
-  OPS,
-  VerbosityLevel,
-  UNSUPPORTED_FEATURES,
+  AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
@@ -1008,51 +1025,60 @@ export {
   AnnotationReviewState,
   AnnotationStateModelType,
   AnnotationType,
-  FontType,
-  ImageKind,
-  CMapCompressionType,
-  AbortException,
-  InvalidPDFException,
-  MissingPDFException,
-  PasswordException,
-  PasswordResponses,
-  PermissionFlag,
-  StreamType,
-  TextRenderingMode,
-  UnexpectedResponseException,
-  UnknownErrorException,
-  Util,
-  FormatError,
   arrayByteLength,
   arraysToBytes,
   assert,
+  BaseException,
   bytesToString,
-  createPromiseCapability,
+  CMapCompressionType,
   createObjectURL,
-  escapeString,
+  createPromiseCapability,
+  createValidAbsoluteUrl,
+  DocumentActionEventType,
   encodeToXmlString,
+  escapeString,
+  FONT_IDENTITY_MATRIX,
+  FontType,
+  FormatError,
   getModificationDate,
   getVerbosityLevel,
+  IDENTITY_MATRIX,
+  ImageKind,
   info,
+  InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
+  isAscii,
   isBool,
-  isNum,
-  isString,
-  isSameOrigin,
-  createValidAbsoluteUrl,
-  objectSize,
-  objectFromEntries,
-  IsLittleEndianCached,
   IsEvalSupportedCached,
+  IsLittleEndianCached,
+  isNum,
+  isSameOrigin,
+  isString,
+  MissingPDFException,
+  objectFromEntries,
+  objectSize,
+  OPS,
+  PageActionEventType,
+  PasswordException,
+  PasswordResponses,
+  PermissionFlag,
   removeNullCharacters,
   setVerbosityLevel,
   shadow,
+  StreamType,
   string32,
   stringToBytes,
   stringToPDFString,
+  stringToUTF16BEString,
   stringToUTF8String,
-  utf8StringToString,
-  warn,
+  TextRenderingMode,
+  UnexpectedResponseException,
+  UnknownErrorException,
   unreachable,
+  UNSUPPORTED_FEATURES,
+  utf8StringToString,
+  Util,
+  VerbosityLevel,
+  warn,
 };

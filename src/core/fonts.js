@@ -590,6 +590,7 @@ var Font = (function FontClosure() {
     this.defaultWidth = properties.defaultWidth;
     this.composite = properties.composite;
     this.cMap = properties.cMap;
+    this.capHeight = properties.capHeight / PDF_GLYPH_SPACE_UNITS;
     this.ascent = properties.ascent / PDF_GLYPH_SPACE_UNITS;
     this.descent = properties.descent / PDF_GLYPH_SPACE_UNITS;
     this.fontMatrix = properties.fontMatrix;
@@ -1319,11 +1320,12 @@ var Font = (function FontClosure() {
       let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
       var stdFontMap = getStdFontMap(),
         nonStdFontMap = getNonStdFontMap();
-      var isStandardFont =
-        !!stdFontMap[fontName] ||
-        !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
-      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+      const isStandardFont = !!stdFontMap[fontName];
+      const isMappedToStandardFont = !!(
+        nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]
+      );
 
+      fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
       this.bold = fontName.search(/bold/gi) !== -1;
       this.italic =
         fontName.search(/oblique/gi) !== -1 ||
@@ -1333,10 +1335,15 @@ var Font = (function FontClosure() {
       // name ArialBlack for example will be replaced by Helvetica.
       this.black = name.search(/Black/g) !== -1;
 
+      // Use 'name' instead of 'fontName' here because the original
+      // name ArialNarrow for example will be replaced by Helvetica.
+      const isNarrow = name.search(/Narrow/g) !== -1;
+
       // if at least one width is present, remeasure all chars when exists
-      this.remeasure = Object.keys(this.widths).length > 0;
+      this.remeasure =
+        (!isStandardFont || isNarrow) && Object.keys(this.widths).length > 0;
       if (
-        isStandardFont &&
+        (isStandardFont || isMappedToStandardFont) &&
         type === "CIDFontType2" &&
         this.cidEncoding.startsWith("Identity-")
       ) {
@@ -3350,8 +3357,92 @@ var Font = (function FontClosure() {
       return (charsCache[charsCacheKey] = glyphs);
     },
 
+    /**
+     * Chars can have different sizes (depends on the encoding).
+     * @param {String} a string encoded with font encoding.
+     * @returns {Array<Array<number>>} the positions of each char in the string.
+     */
+    getCharPositions(chars) {
+      // This function doesn't use a cache because
+      // it's called only when saving or printing.
+      const positions = [];
+
+      if (this.cMap) {
+        const c = Object.create(null);
+        let i = 0;
+        while (i < chars.length) {
+          this.cMap.readCharCode(chars, i, c);
+          const length = c.length;
+          positions.push([i, i + length]);
+          i += length;
+        }
+      } else {
+        for (let i = 0, ii = chars.length; i < ii; ++i) {
+          positions.push([i, i + 1]);
+        }
+      }
+
+      return positions;
+    },
+
     get glyphCacheValues() {
       return Object.values(this.glyphCache);
+    },
+
+    /**
+     * Encode a js string using font encoding.
+     * The resulting array contains an encoded string at even positions
+     * (can be empty) and a non-encoded one at odd positions.
+     * @param {String} a js string.
+     * @returns {Array<String>} an array of encoded strings or non-encoded ones.
+     */
+    encodeString(str) {
+      const buffers = [];
+      const currentBuf = [];
+
+      // buffers will contain: encoded, non-encoded, encoded, ...
+      // currentBuf is pushed in buffers each time there is a change.
+      // So when buffers.length is odd then the last string is an encoded one
+      // and currentBuf contains non-encoded chars.
+      const hasCurrentBufErrors = () => buffers.length % 2 === 1;
+
+      for (let i = 0, ii = str.length; i < ii; i++) {
+        const unicode = str.codePointAt(i);
+        if (unicode > 0xd7ff && (unicode < 0xe000 || unicode > 0xfffd)) {
+          // unicode is represented by two uint16
+          i++;
+        }
+        if (this.toUnicode) {
+          const char = String.fromCodePoint(unicode);
+          const charCode = this.toUnicode.charCodeOf(char);
+          if (charCode !== -1) {
+            if (hasCurrentBufErrors()) {
+              buffers.push(currentBuf.join(""));
+              currentBuf.length = 0;
+            }
+            const charCodeLength = this.cMap
+              ? this.cMap.getCharCodeLength(charCode)
+              : 1;
+            for (let j = charCodeLength - 1; j >= 0; j--) {
+              currentBuf.push(
+                String.fromCharCode((charCode >> (8 * j)) & 0xff)
+              );
+            }
+            continue;
+          }
+        }
+
+        // unicode can't be encoded
+        if (!hasCurrentBufErrors()) {
+          buffers.push(currentBuf.join(""));
+          currentBuf.length = 0;
+        }
+        currentBuf.push(String.fromCodePoint(unicode));
+      }
+
+      buffers.push(currentBuf.join(""));
+
+      return buffers;
     },
   };
 
@@ -3369,6 +3460,9 @@ var ErrorFont = (function ErrorFontClosure() {
   ErrorFont.prototype = {
     charsToGlyphs: function ErrorFont_charsToGlyphs() {
       return [];
+    },
+    encodeString: function ErrorFont_encodeString(chars) {
+      return [chars];
     },
     exportData(extraProperties = false) {
       return { error: this.error };
@@ -3924,11 +4018,11 @@ var CFFFont = (function CFFFontClosure() {
 })();
 
 export {
-  SEAC_ANALYSIS_ENABLED,
   ErrorFont,
   Font,
   FontFlags,
-  ToUnicodeMap,
-  IdentityToUnicodeMap,
   getFontType,
+  IdentityToUnicodeMap,
+  SEAC_ANALYSIS_ENABLED,
+  ToUnicodeMap,
 };

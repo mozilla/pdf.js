@@ -19,7 +19,6 @@ import {
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
   EventBus,
-  generateRandomStringForSandbox,
   getActiveOrFocusedElement,
   getPDFFileNameFromURL,
   isValidRotation,
@@ -30,10 +29,10 @@ import {
   noContextMenuHandler,
   normalizeWheelEventDirection,
   parseQueryString,
-  PresentationModeState,
   ProgressBar,
   RendererType,
   ScrollMode,
+  SidebarView,
   SpreadMode,
   TextLayerMode,
 } from "./ui_utils.js";
@@ -58,7 +57,6 @@ import {
 } from "pdfjs-lib";
 import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
-import { PDFSidebar, SidebarView } from "./pdf_sidebar.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
@@ -70,6 +68,7 @@ import { PDFLayerViewer } from "./pdf_layer_viewer.js";
 import { PDFLinkService } from "./pdf_link_service.js";
 import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
 import { PDFPresentationMode } from "./pdf_presentation_mode.js";
+import { PDFSidebar } from "./pdf_sidebar.js";
 import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
 import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
@@ -152,7 +151,7 @@ class DefaultExternalServices {
 
   static initPassiveLoading(callbacks) {}
 
-  static fallback(data, callback) {}
+  static async fallback(data) {}
 
   static reportTelemetry(data) {}
 
@@ -168,7 +167,7 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createL10n");
   }
 
-  static createScripting() {
+  static createScripting(options) {
     throw new Error("Not implemented: createScripting");
   }
 
@@ -258,6 +257,7 @@ const PDFViewerApplication = {
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
   _scriptingInstance: null,
+  _mouseState: Object.create(null),
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -501,6 +501,7 @@ const PDFViewerApplication = {
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enableScripting: AppOptions.get("enableScripting"),
+      mouseState: this._mouseState,
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -557,7 +558,8 @@ const PDFViewerApplication = {
     this.passwordPrompt = new PasswordPrompt(
       appConfig.passwordOverlay,
       this.overlayManager,
-      this.l10n
+      this.l10n,
+      this.isViewerEmbedded
     );
 
     this.pdfOutlineViewer = new PDFOutlineViewer({
@@ -656,26 +658,22 @@ const PDFViewerApplication = {
   },
 
   get supportsFullscreen() {
-    let support;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      support =
-        document.fullscreenEnabled === true ||
-        document.mozFullScreenEnabled === true;
-    } else {
-      const doc = document.documentElement;
-      support = !!(
-        doc.requestFullscreen ||
-        doc.mozRequestFullScreen ||
-        doc.webkitRequestFullScreen
-      );
+      return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
+    }
+    const doc = document.documentElement;
+    let support = !!(
+      doc.requestFullscreen ||
+      doc.mozRequestFullScreen ||
+      doc.webkitRequestFullScreen
+    );
 
-      if (
-        document.fullscreenEnabled === false ||
-        document.mozFullScreenEnabled === false ||
-        document.webkitFullscreenEnabled === false
-      ) {
-        support = false;
-      }
+    if (
+      document.fullscreenEnabled === false ||
+      document.mozFullScreenEnabled === false ||
+      document.webkitFullscreenEnabled === false
+    ) {
+      support = false;
     }
     return shadow(this, "supportsFullscreen", support);
   },
@@ -763,6 +761,12 @@ const PDFViewerApplication = {
     document.title = title;
   },
 
+  get _docFilename() {
+    // Use `this.url` instead of `this.baseUrl` to perform filename detection
+    // based on the reference fragment as ultimate fallback if needed.
+    return this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
+  },
+
   /**
    * @private
    */
@@ -783,16 +787,22 @@ const PDFViewerApplication = {
     if (!this._scriptingInstance) {
       return;
     }
-    const { scripting, events } = this._scriptingInstance;
+    const { scripting, internalEvents, domEvents } = this._scriptingInstance;
     try {
       await scripting.destroySandbox();
     } catch (ex) {}
 
-    for (const [name, listener] of events) {
+    for (const [name, listener] of internalEvents) {
+      this.eventBus._off(name, listener);
+    }
+    internalEvents.clear();
+
+    for (const [name, listener] of domEvents) {
       window.removeEventListener(name, listener);
     }
-    events.clear();
+    domEvents.clear();
 
+    delete this._mouseState.isDown;
     this._scriptingInstance = null;
   },
 
@@ -854,7 +864,9 @@ const PDFViewerApplication = {
     if (typeof PDFBug !== "undefined") {
       PDFBug.cleanup();
     }
-    return Promise.all(promises);
+    await Promise.all(promises);
+
+    return undefined;
   },
 
   /**
@@ -931,6 +943,8 @@ const PDFViewerApplication = {
         this.load(pdfDocument);
       },
       exception => {
+        this._unblockDocumentLoadEvent();
+
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
         }
@@ -978,17 +992,9 @@ const PDFViewerApplication = {
       downloadManager.downloadUrl(url, filename);
     }
 
-    const url = this.baseUrl;
-    // Use this.url instead of this.baseUrl to perform filename detection based
-    // on the reference fragment as ultimate fallback if needed.
-    const filename =
-      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
-    const downloadManager = this.downloadManager;
-    downloadManager.onerror = err => {
-      // This error won't really be helpful because it's likely the
-      // fallback won't work either (or is already open).
-      this.error(`PDF failed to download: ${err}`);
-    };
+    const downloadManager = this.downloadManager,
+      url = this.baseUrl,
+      filename = this._docFilename;
 
     // When the PDF document isn't ready, or the PDF file is still downloading,
     // simply download using the URL.
@@ -1006,22 +1012,14 @@ const PDFViewerApplication = {
       .catch(downloadByUrl); // Error occurred, try downloading with the URL.
   },
 
-  save({ sourceEventType = "download" } = {}) {
+  async save({ sourceEventType = "download" } = {}) {
     if (this._saveInProgress) {
       return;
     }
 
-    const url = this.baseUrl;
-    // Use this.url instead of this.baseUrl to perform filename detection based
-    // on the reference fragment as ultimate fallback if needed.
-    const filename =
-      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
-    const downloadManager = this.downloadManager;
-    downloadManager.onerror = err => {
-      // This error won't really be helpful because it's likely the
-      // fallback won't work either (or is already open).
-      this.error(`PDF failed to be saved: ${err}`);
-    };
+    const downloadManager = this.downloadManager,
+      url = this.baseUrl,
+      filename = this._docFilename;
 
     // When the PDF document isn't ready, or the PDF file is still downloading,
     // simply download using the URL.
@@ -1029,8 +1027,13 @@ const PDFViewerApplication = {
       this.download({ sourceEventType });
       return;
     }
-
     this._saveInProgress = true;
+
+    await this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillSave",
+    });
+
     this.pdfDocument
       .saveDocument(this.pdfDocument.annotationStorage)
       .then(data => {
@@ -1040,9 +1043,22 @@ const PDFViewerApplication = {
       .catch(() => {
         this.download({ sourceEventType });
       })
-      .finally(() => {
+      .finally(async () => {
+        await this._scriptingInstance?.scripting.dispatchEventInSandbox({
+          id: "doc",
+          name: "DidSave",
+        });
+
         this._saveInProgress = false;
       });
+  },
+
+  downloadOrSave(options) {
+    if (this.pdfDocument?.annotationStorage.size > 0) {
+      this.save(options);
+    } else {
+      this.download(options);
+    }
   },
 
   /**
@@ -1072,24 +1088,29 @@ const PDFViewerApplication = {
       featureId,
     });
 
+    // Don't show the fallback bar for things that are *very* unlikely to cause
+    // user-visible errors, to avoid bothering the user unnecessarily.
+    switch (featureId) {
+      case UNSUPPORTED_FEATURES.errorFontLoadNative:
+        return;
+    }
     // Only trigger the fallback once so we don't spam the user with messages
     // for one PDF.
     if (this.fellback) {
       return;
     }
     this.fellback = true;
-    this.externalServices.fallback(
-      {
+    this.externalServices
+      .fallback({
         featureId,
         url: this.baseUrl,
-      },
-      function response(download) {
+      })
+      .then(download => {
         if (!download) {
           return;
         }
-        PDFViewerApplication.download({ sourceEventType: "download" });
-      }
-    );
+        this.download({ sourceEventType: "download" });
+      });
   },
 
   /**
@@ -1229,7 +1250,8 @@ const PDFViewerApplication = {
   load(pdfDocument) {
     this.pdfDocument = pdfDocument;
 
-    pdfDocument.getDownloadInfo().then(() => {
+    pdfDocument.getDownloadInfo().then(({ length }) => {
+      this._contentLength = length; // Ensure that the correct length is used.
       this.downloadComplete = true;
       this.loadingBar.hide();
 
@@ -1264,14 +1286,6 @@ const PDFViewerApplication = {
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
-    const annotationStorage = pdfDocument.annotationStorage;
-    annotationStorage.onSetModified = function () {
-      window.addEventListener("beforeunload", beforeUnload);
-    };
-    annotationStorage.onResetModified = function () {
-      window.removeEventListener("beforeunload", beforeUnload);
-    };
-
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
     const { firstPagePromise, onePageRendered, pagesPromise } = pdfViewer;
@@ -1299,6 +1313,7 @@ const PDFViewerApplication = {
 
     firstPagePromise.then(pdfPage => {
       this.loadingBar.setWidth(this.appConfig.viewerContainer);
+      this._initializeAnnotationStorageCallbacks(pdfDocument);
 
       Promise.all([
         animationStarted,
@@ -1313,7 +1328,7 @@ const PDFViewerApplication = {
           this._initializePdfHistory({
             fingerprint: pdfDocument.fingerprint,
             viewOnLoad,
-            initialDest: openAction && openAction.dest,
+            initialDest: openAction?.dest,
           });
           const initialBookmark = this.initialBookmark;
 
@@ -1407,12 +1422,14 @@ const PDFViewerApplication = {
     });
 
     pagesPromise.then(() => {
+      this._unblockDocumentLoadEvent();
+
       this._initializeAutoPrint(pdfDocument, openActionPromise);
     });
 
     onePageRendered.then(() => {
       pdfDocument.getOutline().then(outline => {
-        this.pdfOutlineViewer.render({ outline });
+        this.pdfOutlineViewer.render({ outline, pdfDocument });
       });
       pdfDocument.getAttachments().then(attachments => {
         this.pdfAttachmentViewer.render({ attachments });
@@ -1446,45 +1463,76 @@ const PDFViewerApplication = {
     if (!AppOptions.get("enableScripting")) {
       return;
     }
-    const [objects, calculationOrder] = await Promise.all([
+    const [objects, calculationOrder, docActions] = await Promise.all([
       pdfDocument.getFieldObjects(),
       pdfDocument.getCalculationOrderIds(),
+      pdfDocument.getJSActions(),
     ]);
 
-    if (!objects || pdfDocument !== this.pdfDocument) {
-      // No FieldObjects were found in the document,
-      // or the document was closed while the data resolved.
+    if (!objects && !docActions) {
+      // No FieldObjects or JavaScript actions were found in the document.
       return;
     }
-    const scripting = this.externalServices.createScripting();
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the data resolved.
+    }
+    const scripting = this.externalServices.createScripting(
+      typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC || CHROME")
+        ? { sandboxBundleSrc: AppOptions.get("sandboxBundleSrc") }
+        : null
+    );
     // Store a reference to the current scripting-instance, to allow destruction
     // of the sandbox and removal of the event listeners at document closing.
-    this._scriptingInstance = { scripting, events: new Map() };
+    const internalEvents = new Map(),
+      domEvents = new Map();
+    this._scriptingInstance = {
+      scripting,
+      ready: false,
+      internalEvents,
+      domEvents,
+    };
 
     if (!this.documentInfo) {
       // It should be *extremely* rare for metadata to not have been resolved
       // when this code runs, but ensure that we handle that case here.
       await new Promise(resolve => {
-        const metadataLoaded = () => {
-          this.eventBus._off("metadataloaded", metadataLoaded);
-          resolve();
-        };
-        this.eventBus._on("metadataloaded", metadataLoaded);
+        this.eventBus._on(
+          "metadataloaded",
+          evt => {
+            resolve();
+          },
+          { once: true }
+        );
       });
       if (pdfDocument !== this.pdfDocument) {
         return; // The document was closed while the metadata resolved.
       }
     }
+    if (!this._contentLength) {
+      // Always waiting for the entire PDF document to be loaded will, most
+      // likely, delay sandbox-creation too much in the general case for all
+      // PDF documents which are not provided as binary data to the API.
+      // Hence we'll simply have to trust that the `contentLength` (as provided
+      // by the server), when it exists, is accurate enough here.
+      await new Promise(resolve => {
+        this.eventBus._on(
+          "documentloaded",
+          evt => {
+            resolve();
+          },
+          { once: true }
+        );
+      });
+      if (pdfDocument !== this.pdfDocument) {
+        return; // The document was closed while the downloadInfo resolved.
+      }
+    }
 
-    const updateFromSandbox = event => {
-      const { detail } = event;
+    const updateFromSandbox = ({ detail }) => {
       const { id, command, value } = detail;
       if (!id) {
         switch (command) {
-          case "alert":
-            // eslint-disable-next-line no-alert
-            window.alert(value);
-            break;
           case "clear":
             console.clear();
             break;
@@ -1493,30 +1541,28 @@ const PDFViewerApplication = {
             break;
           case "layout":
             this.pdfViewer.spreadMode = apiPageLayoutToSpreadMode(value);
-            return;
+            break;
           case "page-num":
             this.pdfViewer.currentPageNumber = value + 1;
-            return;
+            break;
           case "print":
-            this.triggerPrinting();
-            return;
+            this.pdfViewer.pagesPromise.then(() => {
+              this.triggerPrinting();
+            });
+            break;
           case "println":
             console.log(value);
             break;
           case "zoom":
-            if (typeof value === "string") {
-              this.pdfViewer.currentScaleValue = value;
-            } else {
-              this.pdfViewer.currentScale = value;
-            }
-            return;
+            this.pdfViewer.currentScaleValue = value;
+            break;
         }
         return;
       }
 
       const element = document.getElementById(id);
       if (element) {
-        element.dispatchEvent(new CustomEvent("updateFromSandbox", { detail }));
+        element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
       } else {
         if (value !== undefined && value !== null) {
           // The element hasn't been rendered yet, use the AnnotationStorage.
@@ -1524,55 +1570,124 @@ const PDFViewerApplication = {
         }
       }
     };
-    window.addEventListener("updateFromSandbox", updateFromSandbox);
-    // Ensure that the event listener can be removed at document closing.
-    this._scriptingInstance.events.set("updateFromSandbox", updateFromSandbox);
+    internalEvents.set("updatefromsandbox", updateFromSandbox);
 
-    const dispatchEventInSandbox = event => {
-      scripting.dispatchEventInSandbox(event.detail);
+    const visitedPages = new Map();
+    const pageOpen = ({ pageNumber, actionsPromise }) => {
+      visitedPages.set(
+        pageNumber,
+        (async () => {
+          // Avoid sending, and thus serializing, the `actions` data
+          // when the same page is opened several times.
+          let actions = null;
+          if (!visitedPages.has(pageNumber)) {
+            actions = await actionsPromise;
+
+            if (pdfDocument !== this.pdfDocument) {
+              return; // The document was closed while the actions resolved.
+            }
+          }
+
+          await this._scriptingInstance?.scripting.dispatchEventInSandbox({
+            id: "page",
+            name: "PageOpen",
+            pageNumber,
+            actions,
+          });
+        })()
+      );
     };
-    window.addEventListener("dispatchEventInSandbox", dispatchEventInSandbox);
-    // Ensure that the event listener can be removed at document closing.
-    this._scriptingInstance.events.set(
-      "dispatchEventInSandbox",
-      dispatchEventInSandbox
-    );
 
-    const dispatchEventName = generateRandomStringForSandbox(objects);
+    const pageClose = async ({ pageNumber }) => {
+      const actionsPromise = visitedPages.get(pageNumber);
+      if (!actionsPromise) {
+        // Ensure that the "pageclose" event was preceded by a "pageopen" event.
+        return;
+      }
+      visitedPages.set(pageNumber, null);
 
-    if (!this._contentLength) {
-      // Always waiting for the entire PDF document to be loaded will, most
-      // likely, delay sandbox-creation too much in the general case for all
-      // PDF documents which are not provided as binary data to the API.
-      // Hence we'll simply have to trust that the `contentLength` (as provided
-      // by the server), when it exists, is accurate enough here.
-      const { length } = await pdfDocument.getDownloadInfo();
+      // Ensure that the "pageopen" event is handled first.
+      await actionsPromise;
 
       if (pdfDocument !== this.pdfDocument) {
-        return; // The document was closed while the download info resolved.
+        return; // The document was closed while the actions resolved.
       }
-      this._contentLength = length;
-    }
-    const filename =
-      this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
 
-    scripting.createSandbox({
-      objects,
-      dispatchEventName,
-      calculationOrder,
-      appInfo: {
-        platform: navigator.platform,
-        language: navigator.language,
-      },
-      docInfo: {
-        ...this.documentInfo,
-        baseURL: this.baseUrl,
-        filesize: this._contentLength,
-        filename,
-        metadata: this.metadata,
-        numPages: pdfDocument.numPages,
-        URL: this.url,
-      },
+      await this._scriptingInstance?.scripting.dispatchEventInSandbox({
+        id: "page",
+        name: "PageClose",
+        pageNumber,
+      });
+    };
+    internalEvents.set("pageopen", pageOpen);
+    internalEvents.set("pageclose", pageClose);
+
+    const dispatchEventInSandbox = ({ detail }) => {
+      scripting.dispatchEventInSandbox(detail);
+    };
+    internalEvents.set("dispatcheventinsandbox", dispatchEventInSandbox);
+
+    const mouseDown = event => {
+      this._mouseState.isDown = true;
+    };
+    domEvents.set("mousedown", mouseDown);
+
+    const mouseUp = event => {
+      this._mouseState.isDown = false;
+    };
+    domEvents.set("mouseup", mouseUp);
+
+    for (const [name, listener] of internalEvents) {
+      this.eventBus._on(name, listener);
+    }
+    for (const [name, listener] of domEvents) {
+      window.addEventListener(name, listener);
+    }
+
+    try {
+      await scripting.createSandbox({
+        objects,
+        calculationOrder,
+        appInfo: {
+          platform: navigator.platform,
+          language: navigator.language,
+        },
+        docInfo: {
+          ...this.documentInfo,
+          baseURL: this.baseUrl,
+          filesize: this._contentLength,
+          filename: this._docFilename,
+          metadata: this.metadata?.getRaw(),
+          authors: this.metadata?.get("dc:creator"),
+          numPages: pdfDocument.numPages,
+          URL: this.url,
+          actions: docActions,
+        },
+      });
+
+      if (this.externalServices.isInAutomation) {
+        this.eventBus.dispatch("sandboxcreated", { source: this });
+      }
+    } catch (error) {
+      console.error(`_initializeJavaScript: "${error?.message}".`);
+
+      this._destroyScriptingInstance();
+      return;
+    }
+
+    await scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "Open",
+    });
+    await this.pdfViewer.initializeScriptingEvents();
+
+    // Used together with the integration-tests, see the `scriptingReady`
+    // getter, to enable awaiting full initialization of the scripting/sandbox.
+    // (Defer this slightly, to make absolutely sure that everything is done.)
+    Promise.resolve().then(() => {
+      if (this._scriptingInstance) {
+        this._scriptingInstance.ready = true;
+      }
     });
   },
 
@@ -1599,7 +1714,7 @@ const PDFViewerApplication = {
   async _initializeAutoPrint(pdfDocument, openActionPromise) {
     const [openAction, javaScript] = await Promise.all([
       openActionPromise,
-      pdfDocument.getJavaScript(),
+      !AppOptions.get("enableScripting") ? pdfDocument.getJavaScript() : null,
     ]);
 
     if (pdfDocument !== this.pdfDocument) {
@@ -1607,7 +1722,7 @@ const PDFViewerApplication = {
     }
     let triggerAutoPrint = false;
 
-    if (openAction && openAction.action === "Print") {
+    if (openAction?.action === "Print") {
       triggerAutoPrint = true;
     }
     if (javaScript) {
@@ -1633,9 +1748,7 @@ const PDFViewerApplication = {
     }
 
     if (triggerAutoPrint) {
-      setTimeout(() => {
-        this.triggerPrinting();
-      });
+      this.triggerPrinting();
     }
   },
 
@@ -1656,7 +1769,7 @@ const PDFViewerApplication = {
     this.documentInfo = info;
     this.metadata = metadata;
     this._contentDispositionFilename = contentDispositionFilename;
-    this._contentLength = contentLength;
+    this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
 
     // Provides some basic debug information
     console.log(
@@ -1667,11 +1780,11 @@ const PDFViewerApplication = {
     );
 
     let pdfTitle;
-    const infoTitle = info && info.Title;
+    const infoTitle = info?.Title;
     if (infoTitle) {
       pdfTitle = infoTitle;
     }
-    const metadataTitle = metadata && metadata.get("dc:title");
+    const metadataTitle = metadata?.get("dc:title");
     if (metadataTitle) {
       // Ghostscript can produce invalid 'dc:title' Metadata entries:
       //  - The title may be "Untitled" (fixes bug 1031612).
@@ -1830,6 +1943,23 @@ const PDFViewerApplication = {
     }
   },
 
+  /**
+   * @private
+   */
+  _initializeAnnotationStorageCallbacks(pdfDocument) {
+    if (pdfDocument !== this.pdfDocument) {
+      return;
+    }
+    const { annotationStorage } = pdfDocument;
+
+    annotationStorage.onSetModified = function () {
+      window.addEventListener("beforeunload", beforeUnload);
+    };
+    annotationStorage.onResetModified = function () {
+      window.removeEventListener("beforeunload", beforeUnload);
+    };
+  },
+
   setInitialView(
     storedHash,
     { rotation, sidebarView, scrollMode, spreadMode } = {}
@@ -1899,6 +2029,13 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
+    // Given that the "beforeprint" browser event is synchronous, we
+    // unfortunately cannot await the scripting event dispatching here.
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "WillPrint",
+    });
+
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
       // but PDFPrintService may generate double events -- this will ignore
@@ -1960,6 +2097,13 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
+    // Given that the "afterprint" browser event is synchronous, we
+    // unfortunately cannot await the scripting event dispatching here.
+    this._scriptingInstance?.scripting.dispatchEventInSandbox({
+      id: "doc",
+      name: "DidPrint",
+    });
+
     if (this.printService) {
       this.printService.destroy();
       this.printService = null;
@@ -2070,6 +2214,12 @@ const PDFViewerApplication = {
     _boundEvents.windowAfterPrint = () => {
       eventBus.dispatch("afterprint", { source: window });
     };
+    _boundEvents.windowUpdateFromSandbox = event => {
+      eventBus.dispatch("updatefromsandbox", {
+        source: window,
+        detail: event.detail,
+      });
+    };
 
     window.addEventListener("visibilitychange", webViewerVisibilityChange);
     window.addEventListener("wheel", webViewerWheel, { passive: false });
@@ -2083,6 +2233,10 @@ const PDFViewerApplication = {
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
     window.addEventListener("afterprint", _boundEvents.windowAfterPrint);
+    window.addEventListener(
+      "updatefromsandbox",
+      _boundEvents.windowUpdateFromSandbox
+    );
   },
 
   unbindEvents() {
@@ -2157,11 +2311,16 @@ const PDFViewerApplication = {
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
     window.removeEventListener("afterprint", _boundEvents.windowAfterPrint);
+    window.removeEventListener(
+      "updatefromsandbox",
+      _boundEvents.windowUpdateFromSandbox
+    );
 
     _boundEvents.windowResize = null;
     _boundEvents.windowHashChange = null;
     _boundEvents.windowBeforePrint = null;
     _boundEvents.windowAfterPrint = null;
+    _boundEvents.windowUpdateFromSandbox = null;
   },
 
   accumulateWheelTicks(ticks) {
@@ -2178,6 +2337,27 @@ const PDFViewerApplication = {
       Math.floor(Math.abs(this._wheelUnusedTicks));
     this._wheelUnusedTicks -= wholeTicks;
     return wholeTicks;
+  },
+
+  /**
+   * Should be called *after* all pages have loaded, or if an error occurred,
+   * to unblock the "load" event; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
+   * @private
+   */
+  _unblockDocumentLoadEvent() {
+    if (document.blockUnblockOnload) {
+      document.blockUnblockOnload(false);
+    }
+    // Ensure that this method is only ever run once.
+    this._unblockDocumentLoadEvent = () => {};
+  },
+
+  /**
+   * Used together with the integration-tests, to enable awaiting full
+   * initialization of the scripting/sandbox.
+   */
+  get scriptingReady() {
+    return this._scriptingInstance?.ready || false;
   },
 };
 
@@ -2209,11 +2389,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         throw new Error("file origin does not match viewer's");
       }
     } catch (ex) {
-      const message = ex && ex.message;
       PDFViewerApplication.l10n
         .get("loading_error", null, "An error occurred while loading the PDF.")
         .then(loadingErrorMessage => {
-          PDFViewerApplication.error(loadingErrorMessage, { message });
+          PDFViewerApplication.error(loadingErrorMessage, {
+            message: ex?.message,
+          });
         });
       throw ex;
     }
@@ -2246,7 +2427,7 @@ function reportPageStatsPDFBug({ pageNumber }) {
   const pageView = PDFViewerApplication.pdfViewer.getPageView(
     /* index = */ pageNumber - 1
   );
-  const pageStats = pageView && pageView.pdfPage && pageView.pdfPage.stats;
+  const pageStats = pageView?.pdfPage?.stats;
   if (!pageStats) {
     return;
   }
@@ -2509,14 +2690,8 @@ function webViewerNamedAction(evt) {
   }
 }
 
-function webViewerPresentationModeChanged({ active, switchInProgress }) {
-  let state = PresentationModeState.NORMAL;
-  if (switchInProgress) {
-    state = PresentationModeState.CHANGING;
-  } else if (active) {
-    state = PresentationModeState.FULLSCREEN;
-  }
-  PDFViewerApplication.pdfViewer.presentationModeState = state;
+function webViewerPresentationModeChanged(evt) {
+  PDFViewerApplication.pdfViewer.presentationModeState = evt.state;
 }
 
 function webViewerSidebarViewChanged(evt) {
@@ -2557,8 +2732,7 @@ function webViewerUpdateViewarea(evt) {
   const currentPage = PDFViewerApplication.pdfViewer.getPageView(
     /* index = */ PDFViewerApplication.page - 1
   );
-  const loading =
-    (currentPage && currentPage.renderingState) !== RenderingStates.FINISHED;
+  const loading = currentPage?.renderingState !== RenderingStates.FINISHED;
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
 }
 
@@ -2610,10 +2784,7 @@ function webViewerHashchange(evt) {
 let webViewerFileInputChange, webViewerOpenFile;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   webViewerFileInputChange = function (evt) {
-    if (
-      PDFViewerApplication.pdfViewer &&
-      PDFViewerApplication.pdfViewer.isInPresentationMode
-    ) {
+    if (PDFViewerApplication.pdfViewer?.isInPresentationMode) {
       return; // Opening a new PDF file isn't supported in Presentation Mode.
     }
     const file = evt.fileInput.files[0];
@@ -2658,21 +2829,11 @@ function webViewerPresentationMode() {
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
 }
-function webViewerDownloadOrSave(sourceEventType) {
-  if (
-    PDFViewerApplication.pdfDocument &&
-    PDFViewerApplication.pdfDocument.annotationStorage.size > 0
-  ) {
-    PDFViewerApplication.save({ sourceEventType });
-  } else {
-    PDFViewerApplication.download({ sourceEventType });
-  }
-}
 function webViewerDownload() {
-  webViewerDownloadOrSave("download");
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "download" });
 }
 function webViewerSave() {
-  webViewerDownloadOrSave("save");
+  PDFViewerApplication.downloadOrSave({ sourceEventType: "save" });
 }
 function webViewerFirstPage() {
   if (PDFViewerApplication.pdfDocument) {
@@ -2685,10 +2846,10 @@ function webViewerLastPage() {
   }
 }
 function webViewerNextPage() {
-  PDFViewerApplication.page++;
+  PDFViewerApplication.pdfViewer.nextPage();
 }
 function webViewerPreviousPage() {
-  PDFViewerApplication.page--;
+  PDFViewerApplication.pdfViewer.previousPage();
 }
 function webViewerZoomIn() {
   PDFViewerApplication.zoomIn();
@@ -2961,8 +3122,7 @@ function webViewerKeyDown(evt) {
     (evt.metaKey ? 8 : 0);
 
   const pdfViewer = PDFViewerApplication.pdfViewer;
-  const isViewerInPresentationMode =
-    pdfViewer && pdfViewer.isInPresentationMode;
+  const isViewerInPresentationMode = pdfViewer?.isInPresentationMode;
 
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
@@ -3087,12 +3247,12 @@ function webViewerKeyDown(evt) {
   // Some shortcuts should not get handled if a control/input element
   // is selected.
   const curElement = getActiveOrFocusedElement();
-  const curElementTagName = curElement && curElement.tagName.toUpperCase();
+  const curElementTagName = curElement?.tagName.toUpperCase();
   if (
     curElementTagName === "INPUT" ||
     curElementTagName === "TEXTAREA" ||
     curElementTagName === "SELECT" ||
-    (curElement && curElement.isContentEditable)
+    curElement?.isContentEditable
   ) {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
     if (evt.keyCode !== /* Esc = */ 27) {
@@ -3207,13 +3367,9 @@ function webViewerKeyDown(evt) {
       (!turnOnlyIfPageFit || pdfViewer.currentScaleValue === "page-fit")
     ) {
       if (turnPage > 0) {
-        if (PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
-          PDFViewerApplication.page++;
-        }
+        pdfViewer.nextPage();
       } else {
-        if (PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page--;
-        }
+        pdfViewer.previousPage();
       }
       handled = true;
     }
@@ -3330,7 +3486,7 @@ const PDFPrintServiceFactory = {
 };
 
 export {
-  PDFViewerApplication,
   DefaultExternalServices,
   PDFPrintServiceFactory,
+  PDFViewerApplication,
 };

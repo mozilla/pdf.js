@@ -30,6 +30,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]
+ * @property {Object} [mouseState]
  */
 
 class AnnotationLayerBuilder {
@@ -47,6 +48,7 @@ class AnnotationLayerBuilder {
     l10n = NullL10n,
     enableScripting = false,
     hasJSActionsPromise = null,
+    mouseState = null,
   }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
@@ -58,6 +60,7 @@ class AnnotationLayerBuilder {
     this.annotationStorage = annotationStorage;
     this.enableScripting = enableScripting;
     this._hasJSActionsPromise = hasJSActionsPromise;
+    this._mouseState = mouseState;
 
     this.div = null;
     this._cancelled = false;
@@ -93,6 +96,7 @@ class AnnotationLayerBuilder {
         annotationStorage: this.annotationStorage,
         enableScripting: this.enableScripting,
         hasJSActions,
+        mouseState: this._mouseState,
       };
 
       if (this.div) {
@@ -139,6 +143,7 @@ class DefaultAnnotationLayerFactory {
    * @param {IL10n} l10n
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -149,7 +154,8 @@ class DefaultAnnotationLayerFactory {
     renderInteractiveForms = true,
     l10n = NullL10n,
     enableScripting = false,
-    hasJSActionsPromise = null
+    hasJSActionsPromise = null,
+    mouseState = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -161,6 +167,7 @@ class DefaultAnnotationLayerFactory {
       annotationStorage,
       enableScripting,
       hasJSActionsPromise,
+      mouseState,
     });
   }
 }

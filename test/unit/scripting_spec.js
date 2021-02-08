@@ -48,6 +48,10 @@ describe("Scripting", function () {
         send_queue.set(event.detail.id, event.detail);
       }
     };
+    window.alert = value => {
+      const command = "alert";
+      send_queue.set(command, { command, value });
+    };
     const promise = loadScript(sandboxBundleSrc).then(() => {
       return window.pdfjsSandbox.QuickJSSandbox();
     });
@@ -84,7 +88,7 @@ describe("Scripting", function () {
         return s;
       }
       const number = 123;
-      const expected = ((number - 1) * number) / 2;
+      const expected = (((number - 1) * number) / 2).toString();
       const refId = getId();
 
       const data = {
@@ -104,7 +108,6 @@ describe("Scripting", function () {
         },
         calculationOrder: [],
         appInfo: { language: "en-US", platform: "Linux x86_64" },
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -126,13 +129,44 @@ describe("Scripting", function () {
     });
   });
 
+  describe("Doc", function () {
+    it("should treat globalThis as the doc", async function (done) {
+      const refId = getId();
+      const data = {
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {},
+              type: "text",
+            },
+          ],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      };
+      sandbox.createSandbox(data);
+
+      try {
+        await myeval(`(this.foobar = 123456, 0)`);
+        await myeval(`this.getField("field").doc.foobar`).then(value => {
+          expect(value).toEqual(123456);
+        });
+        done();
+      } catch (ex) {
+        done.fail(ex);
+      }
+    });
+  });
+
   describe("Util", function () {
     beforeAll(function (done) {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       });
       done();
     });
@@ -263,7 +297,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -301,7 +334,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -343,7 +375,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -384,7 +415,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -429,7 +459,6 @@ describe("Scripting", function () {
         },
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         calculationOrder: [refId2],
-        dispatchEventName: "_dispatchMe",
       };
       sandbox.createSandbox(data);
       sandbox
@@ -458,7 +487,6 @@ describe("Scripting", function () {
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       });
       done();
     });
@@ -553,7 +581,6 @@ describe("Scripting", function () {
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
-        dispatchEventName: "_dispatchMe",
       });
       done();
     });
@@ -749,8 +776,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -793,8 +820,8 @@ describe("Scripting", function () {
             valueAsString: "123456.789",
           });
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
 
@@ -831,11 +858,12 @@ describe("Scripting", function () {
           expect(send_queue.has("alert")).toEqual(true);
           expect(send_queue.get("alert")).toEqual({
             command: "alert",
-            value: "Invalid number in [ MyField ]",
+            value:
+              "The value entered does not match the format of the field [ MyField ]",
           });
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -893,8 +921,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -948,8 +976,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -990,8 +1018,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
 
@@ -1025,12 +1053,13 @@ describe("Scripting", function () {
           expect(send_queue.has("alert")).toEqual(true);
           expect(send_queue.get("alert")).toEqual({
             command: "alert",
-            value: "12 is not between 123 and 456",
+            value:
+              "Invalid value: must be greater than or equal to 123 and less than or equal to 456.",
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -1094,7 +1123,7 @@ describe("Scripting", function () {
           expect(send_queue.get(refIds[3])).toEqual({
             id: refIds[3],
             value: 1,
-            valueAsString: 1,
+            valueAsString: "1",
           });
 
           await sandbox.dispatchEventInSandbox({
@@ -1107,7 +1136,7 @@ describe("Scripting", function () {
           expect(send_queue.get(refIds[3])).toEqual({
             id: refIds[3],
             value: 3,
-            valueAsString: 3,
+            valueAsString: "3",
           });
 
           await sandbox.dispatchEventInSandbox({
@@ -1120,12 +1149,12 @@ describe("Scripting", function () {
           expect(send_queue.get(refIds[3])).toEqual({
             id: refIds[3],
             value: 6,
-            valueAsString: 6,
+            valueAsString: "6",
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });
@@ -1202,8 +1231,8 @@ describe("Scripting", function () {
           });
 
           done();
-        } catch (_) {
-          done.fail();
+        } catch (ex) {
+          done.fail(ex);
         }
       });
     });

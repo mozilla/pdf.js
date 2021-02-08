@@ -35,6 +35,10 @@ class PDFSinglePageViewer extends BaseViewer {
     return shadow(this, "_viewerElement", this._shadowViewer);
   }
 
+  get _pageWidthScaleFactor() {
+    return 1;
+  }
+
   _resetView() {
     super._resetView();
     this._previousPageNumber = 1;
@@ -117,6 +121,10 @@ class PDFSinglePageViewer extends BaseViewer {
   _updateScrollMode() {}
 
   _updateSpreadMode() {}
+
+  _getPageAdvance() {
+    return 1;
+  }
 }
 
 export { PDFSinglePageViewer };

@@ -113,6 +113,9 @@ const renderTextLayer = (function renderTextLayerClosure() {
     textDiv.style.fontFamily = style.fontFamily;
 
     textDiv.textContent = geom.str;
+    // geom.dir may be 'ttb' for vertical texts.
+    textDiv.dir = geom.dir;
+
     // `fontName` is only used by the FontInspector, and we only use `dataset`
     // here to make the font name available in the debugger.
     if (task._fontInspectorEnabled) {

@@ -47,6 +47,7 @@ import { ColorConverters } from "../shared/scripting_utils.js";
  * @property {Object} svgFactory
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
+ * @property {Object} [mouseState]
  */
 
 class AnnotationElementFactory {
@@ -155,6 +156,7 @@ class AnnotationElement {
     this.annotationStorage = parameters.annotationStorage;
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
+    this._mouseState = parameters.mouseState;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -369,7 +371,11 @@ class LinkAnnotationElement extends AnnotationElement {
       parameters.data.url ||
       parameters.data.dest ||
       parameters.data.action ||
-      parameters.data.isTooltipOnly
+      parameters.data.isTooltipOnly ||
+      (parameters.data.actions &&
+        (parameters.data.actions.Action ||
+          parameters.data.actions["Mouse Up"] ||
+          parameters.data.actions["Mouse Down"]))
     );
     super(parameters, { isRenderable, createQuadrilaterals: true });
   }
@@ -395,6 +401,15 @@ class LinkAnnotationElement extends AnnotationElement {
       this._bindNamedAction(link, data.action);
     } else if (data.dest) {
       this._bindLink(link, data.dest);
+    } else if (
+      data.actions &&
+      (data.actions.Action ||
+        data.actions["Mouse Up"] ||
+        data.actions["Mouse Down"]) &&
+      this.enableScripting &&
+      this.hasJSActions
+    ) {
+      this._bindJSAction(link, data);
     } else {
       this._bindLink(link, "");
     }
@@ -461,6 +476,40 @@ class LinkAnnotationElement extends AnnotationElement {
     };
     link.className = "internalLink";
   }
+
+  /**
+   * Bind JS actions to the link element.
+   *
+   * @private
+   * @param {Object} link
+   * @param {Object} data
+   * @memberof LinkAnnotationElement
+   */
+  _bindJSAction(link, data) {
+    link.href = this.linkService.getAnchorUrl("");
+    const map = new Map([
+      ["Action", "onclick"],
+      ["Mouse Up", "onmouseup"],
+      ["Mouse Down", "onmousedown"],
+    ]);
+    for (const name of Object.keys(data.actions)) {
+      const jsName = map.get(name);
+      if (!jsName) {
+        continue;
+      }
+      link[jsName] = () => {
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: data.id,
+            name,
+          },
+        });
+        return false;
+      };
+    }
+    link.className = "internalLink";
+  }
 }
 
 class TextAnnotationElement extends AnnotationElement {
@@ -506,6 +555,51 @@ class WidgetAnnotationElement extends AnnotationElement {
 
     return this.container;
   }
+
+  _getKeyModifier(event) {
+    return (
+      (navigator.platform.includes("Win") && event.ctrlKey) ||
+      (navigator.platform.includes("Mac") && event.metaKey)
+    );
+  }
+
+  _setEventListener(element, baseName, eventName, valueGetter) {
+    if (baseName.includes("mouse")) {
+      // Mouse events
+      element.addEventListener(baseName, event => {
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: this.data.id,
+            name: eventName,
+            value: valueGetter(event),
+            shift: event.shiftKey,
+            modifier: this._getKeyModifier(event),
+          },
+        });
+      });
+    } else {
+      // Non mouse event
+      element.addEventListener(baseName, event => {
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: this.data.id,
+            name: eventName,
+            value: event.target.checked,
+          },
+        });
+      });
+    }
+  }
+
+  _setEventListeners(element, names, getter) {
+    for (const [baseName, eventName] of names) {
+      if (eventName === "Action" || this.data.actions?.[eventName]) {
+        this._setEventListener(element, baseName, eventName, getter);
+      }
+    }
+  }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
@@ -517,7 +611,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   }
 
   render() {
-    const TEXT_ALIGNMENT = ["left", "center", "right"];
     const storage = this.annotationStorage;
     const id = this.data.id;
 
@@ -531,6 +624,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       const textContent = storage.getOrCreateValue(id, {
         value: this.data.fieldValue,
       }).value;
+      const elementData = {
+        userValue: null,
+        formattedValue: null,
+        beforeInputSelectionRange: null,
+        beforeInputValue: null,
+      };
 
       if (this.data.multiLine) {
         element = document.createElement("textarea");
@@ -541,102 +640,192 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.setAttribute("value", textContent);
       }
 
-      element.userValue = textContent;
+      elementData.userValue = textContent;
       element.setAttribute("id", id);
 
       element.addEventListener("input", function (event) {
         storage.setValue(id, { value: event.target.value });
       });
 
-      element.addEventListener("blur", function (event) {
+      let blurListener = event => {
+        if (elementData.formattedValue) {
+          event.target.value = elementData.formattedValue;
+        }
         event.target.setSelectionRange(0, 0);
-      });
+        elementData.beforeInputSelectionRange = null;
+      };
 
       if (this.enableScripting && this.hasJSActions) {
         element.addEventListener("focus", event => {
-          if (event.target.userValue) {
-            event.target.value = event.target.userValue;
+          if (elementData.userValue) {
+            event.target.value = elementData.userValue;
           }
         });
 
-        if (this.data.actions) {
-          element.addEventListener("updateFromSandbox", function (event) {
-            const detail = event.detail;
-            const actions = {
-              value() {
-                const value = detail.value;
-                if (value === undefined || value === null) {
-                  // remove data
-                  event.target.userValue = "";
-                } else {
-                  event.target.userValue = value;
-                }
-              },
-              valueAsString() {
-                const value = detail.valueAsString;
-                if (value === undefined || value === null) {
-                  // remove data
-                  event.target.value = "";
-                } else {
-                  event.target.value = value;
-                }
-                storage.setValue(id, event.target.value);
-              },
-              focus() {
-                event.target.focus({ preventScroll: false });
-              },
-              userName() {
-                const tooltip = detail.userName;
-                event.target.title = tooltip;
-              },
-              hidden() {
-                event.target.style.display = detail.hidden ? "none" : "block";
-              },
-              editable() {
-                event.target.disabled = !detail.editable;
-              },
-              selRange() {
-                const [selStart, selEnd] = detail.selRange;
-                if (selStart >= 0 && selEnd < event.target.value.length) {
-                  event.target.setSelectionRange(selStart, selEnd);
-                }
-              },
-              strokeColor() {
-                const color = detail.strokeColor;
-                event.target.style.color = ColorConverters[`${color[0]}_HTML`](
-                  color.slice(1)
-                );
-              },
-            };
-            for (const name of Object.keys(detail)) {
-              if (name in actions) {
-                actions[name]();
+        element.addEventListener("updatefromsandbox", function (event) {
+          const { detail } = event;
+          const actions = {
+            value() {
+              elementData.userValue = detail.value || "";
+              storage.setValue(id, { value: elementData.userValue.toString() });
+              if (!elementData.formattedValue) {
+                event.target.value = elementData.userValue;
               }
-            }
-          });
+            },
+            valueAsString() {
+              elementData.formattedValue = detail.valueAsString || "";
+              if (event.target !== document.activeElement) {
+                // Input hasn't the focus so display formatted string
+                event.target.value = elementData.formattedValue;
+              }
+              storage.setValue(id, {
+                formattedValue: elementData.formattedValue,
+              });
+            },
+            focus() {
+              setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+            },
+            userName() {
+              // tooltip
+              event.target.title = detail.userName;
+            },
+            hidden() {
+              event.target.style.visibility = detail.hidden
+                ? "hidden"
+                : "visible";
+              storage.setValue(id, { hidden: detail.hidden });
+            },
+            editable() {
+              event.target.disabled = !detail.editable;
+            },
+            selRange() {
+              const [selStart, selEnd] = detail.selRange;
+              if (selStart >= 0 && selEnd < event.target.value.length) {
+                event.target.setSelectionRange(selStart, selEnd);
+              }
+            },
+            strokeColor() {
+              const color = detail.strokeColor;
+              event.target.style.color = ColorConverters[`${color[0]}_HTML`](
+                color.slice(1)
+              );
+            },
+          };
+          Object.keys(detail)
+            .filter(name => name in actions)
+            .forEach(name => actions[name]());
+        });
 
-          for (const eventType of Object.keys(this.data.actions)) {
-            switch (eventType) {
-              case "Format":
-                element.addEventListener("change", function (event) {
-                  window.dispatchEvent(
-                    new CustomEvent("dispatchEventInSandbox", {
-                      detail: {
-                        id,
-                        name: "Keystroke",
-                        value: event.target.value,
-                        willCommit: true,
-                        commitKey: 1,
-                        selStart: event.target.selectionStart,
-                        selEnd: event.target.selectionEnd,
-                      },
-                    })
-                  );
-                });
-                break;
-            }
+        // Even if the field hasn't any actions
+        // leaving it can still trigger some actions with Calculate
+        element.addEventListener("keydown", event => {
+          elementData.beforeInputValue = event.target.value;
+          // if the key is one of Escape, Enter or Tab
+          // then the data are committed
+          let commitKey = -1;
+          if (event.key === "Escape") {
+            commitKey = 0;
+          } else if (event.key === "Enter") {
+            commitKey = 2;
+          } else if (event.key === "Tab") {
+            commitKey = 3;
           }
+          if (commitKey === -1) {
+            return;
+          }
+          // Save the entered value
+          elementData.userValue = event.target.value;
+          this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+            source: this,
+            detail: {
+              id,
+              name: "Keystroke",
+              value: event.target.value,
+              willCommit: true,
+              commitKey,
+              selStart: event.target.selectionStart,
+              selEnd: event.target.selectionEnd,
+            },
+          });
+        });
+        const _blurListener = blurListener;
+        blurListener = null;
+        element.addEventListener("blur", event => {
+          if (this._mouseState.isDown) {
+            // Focus out using the mouse: data are committed
+            elementData.userValue = event.target.value;
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value: event.target.value,
+                willCommit: true,
+                commitKey: 1,
+                selStart: event.target.selectionStart,
+                selEnd: event.target.selectionEnd,
+              },
+            });
+          }
+          _blurListener(event);
+        });
+        element.addEventListener("mousedown", event => {
+          elementData.beforeInputValue = event.target.value;
+          elementData.beforeInputSelectionRange = null;
+        });
+        element.addEventListener("keyup", event => {
+          // keyup is triggered after input
+          if (event.target.selectionStart === event.target.selectionEnd) {
+            elementData.beforeInputSelectionRange = null;
+          }
+        });
+        element.addEventListener("select", event => {
+          elementData.beforeInputSelectionRange = [
+            event.target.selectionStart,
+            event.target.selectionEnd,
+          ];
+        });
+
+        if (this.data.actions?.Keystroke) {
+          // We should use beforeinput but this
+          // event isn't available in Firefox
+          element.addEventListener("input", event => {
+            let selStart = -1;
+            let selEnd = -1;
+            if (elementData.beforeInputSelectionRange) {
+              [selStart, selEnd] = elementData.beforeInputSelectionRange;
+            }
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value: elementData.beforeInputValue,
+                change: event.data,
+                willCommit: false,
+                selStart,
+                selEnd,
+              },
+            });
+          });
         }
+
+        this._setEventListeners(
+          element,
+          [
+            ["focus", "Focus"],
+            ["blur", "Blur"],
+            ["mousedown", "Mouse Down"],
+            ["mouseenter", "Mouse Enter"],
+            ["mouseleave", "Mouse Exit"],
+            ["mouseup", "Mouse Up"],
+          ],
+          event => event.target.value
+        );
+      }
+
+      if (blurListener) {
+        element.addEventListener("blur", blurListener);
       }
 
       element.disabled = this.data.readOnly;
@@ -658,20 +847,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.textContent = this.data.fieldValue;
       element.style.verticalAlign = "middle";
       element.style.display = "table-cell";
-
-      let font = null;
-      if (
-        this.data.fontRefName &&
-        this.page.commonObjs.has(this.data.fontRefName)
-      ) {
-        font = this.page.commonObjs.get(this.data.fontRefName);
-      }
-      this._setTextStyle(element, font);
     }
 
-    if (this.data.textAlignment !== null) {
-      element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
-    }
+    this._setTextStyle(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -682,32 +860,25 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    *
    * @private
    * @param {HTMLDivElement} element
-   * @param {Object} font
    * @memberof TextWidgetAnnotationElement
    */
-  _setTextStyle(element, font) {
-    // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
+  _setTextStyle(element) {
+    const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const { fontSize, fontColor } = this.data.defaultAppearanceData;
     const style = element.style;
-    style.fontSize = `${this.data.fontSize}px`;
-    style.direction = this.data.fontDirection < 0 ? "rtl" : "ltr";
 
-    if (!font) {
-      return;
+    // TODO: If the font-size is zero, calculate it based on the height and
+    //       width of the element.
+    // Not setting `style.fontSize` will use the default font-size for now.
+    if (fontSize) {
+      style.fontSize = `${fontSize}px`;
     }
 
-    let bold = "normal";
-    if (font.black) {
-      bold = "900";
-    } else if (font.bold) {
-      bold = "bold";
-    }
-    style.fontWeight = bold;
-    style.fontStyle = font.italic ? "italic" : "normal";
+    style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
 
-    // Use a reasonable default font if the font doesn't specify a fallback.
-    const fontFamily = font.loadedName ? `"${font.loadedName}", ` : "";
-    const fallbackName = font.fallbackName || "Helvetica, sans-serif";
-    style.fontFamily = fontFamily + fallbackName;
+    if (this.data.textAlignment !== null) {
+      style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
+    }
   }
 }
 
@@ -733,6 +904,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     if (value) {
       element.setAttribute("checked", true);
     }
+    element.setAttribute("id", id);
 
     element.addEventListener("change", function (event) {
       const name = event.target.name;
@@ -747,6 +919,48 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       }
       storage.setValue(id, { value: event.target.checked });
     });
+
+    if (this.enableScripting && this.hasJSActions) {
+      element.addEventListener("updatefromsandbox", event => {
+        const { detail } = event;
+        const actions = {
+          value() {
+            event.target.checked = detail.value !== "Off";
+            storage.setValue(id, { value: event.target.checked });
+          },
+          focus() {
+            setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+          },
+          hidden() {
+            event.target.style.visibility = detail.hidden
+              ? "hidden"
+              : "visible";
+            storage.setValue(id, { hidden: detail.hidden });
+          },
+          editable() {
+            event.target.disabled = !detail.editable;
+          },
+        };
+        Object.keys(detail)
+          .filter(name => name in actions)
+          .forEach(name => actions[name]());
+      });
+
+      this._setEventListeners(
+        element,
+        [
+          ["change", "Validate"],
+          ["change", "Action"],
+          ["focus", "Focus"],
+          ["blur", "Blur"],
+          ["mousedown", "Mouse Down"],
+          ["mouseenter", "Mouse Enter"],
+          ["mouseleave", "Mouse Exit"],
+          ["mouseup", "Mouse Up"],
+        ],
+        event => event.target.checked
+      );
+    }
 
     this.container.appendChild(element);
     return this.container;
@@ -774,19 +988,68 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     if (value) {
       element.setAttribute("checked", true);
     }
+    element.setAttribute("pdfButtonValue", data.buttonValue);
+    element.setAttribute("id", id);
 
     element.addEventListener("change", function (event) {
-      const name = event.target.name;
-      for (const radio of document.getElementsByName(name)) {
-        if (radio !== event.target) {
-          storage.setValue(
-            radio.parentNode.getAttribute("data-annotation-id"),
-            { value: false }
-          );
+      const { target } = event;
+      for (const radio of document.getElementsByName(target.name)) {
+        if (radio !== target) {
+          storage.setValue(radio.getAttribute("id"), { value: false });
         }
       }
-      storage.setValue(id, { value: event.target.checked });
+      storage.setValue(id, { value: target.checked });
     });
+
+    if (this.enableScripting && this.hasJSActions) {
+      element.addEventListener("updatefromsandbox", event => {
+        const { detail } = event;
+        const actions = {
+          value() {
+            const fieldValue = detail.value;
+            for (const radio of document.getElementsByName(event.target.name)) {
+              const radioId = radio.getAttribute("id");
+              if (fieldValue === radio.getAttribute("pdfButtonValue")) {
+                radio.setAttribute("checked", true);
+                storage.setValue(radioId, { value: true });
+              } else {
+                storage.setValue(radioId, { value: false });
+              }
+            }
+          },
+          focus() {
+            setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+          },
+          hidden() {
+            event.target.style.visibility = detail.hidden
+              ? "hidden"
+              : "visible";
+            storage.setValue(id, { hidden: detail.hidden });
+          },
+          editable() {
+            event.target.disabled = !detail.editable;
+          },
+        };
+        Object.keys(detail)
+          .filter(name => name in actions)
+          .forEach(name => actions[name]());
+      });
+
+      this._setEventListeners(
+        element,
+        [
+          ["change", "Validate"],
+          ["change", "Action"],
+          ["focus", "Focus"],
+          ["blur", "Blur"],
+          ["mousedown", "Mouse Down"],
+          ["mouseenter", "Mouse Enter"],
+          ["mouseleave", "Mouse Exit"],
+          ["mouseup", "Mouse Up"],
+        ],
+        event => event.target.checked
+      );
+    }
 
     this.container.appendChild(element);
     return this.container;
@@ -834,6 +1097,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
+    selectElement.setAttribute("id", id);
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
@@ -854,11 +1118,168 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.appendChild(optionElement);
     }
 
-    selectElement.addEventListener("input", function (event) {
+    const getValue = (event, isExport) => {
+      const name = isExport ? "value" : "textContent";
       const options = event.target.options;
-      const value = options[options.selectedIndex].value;
-      storage.setValue(id, { value });
-    });
+      if (!event.target.multiple) {
+        return options.selectedIndex === -1
+          ? null
+          : options[options.selectedIndex][name];
+      }
+      return Array.prototype.filter
+        .call(options, option => option.selected)
+        .map(option => option[name]);
+    };
+
+    const getItems = event => {
+      const options = event.target.options;
+      return Array.prototype.map.call(options, option => {
+        return { displayValue: option.textContent, exportValue: option.value };
+      });
+    };
+
+    if (this.enableScripting && this.hasJSActions) {
+      selectElement.addEventListener("updatefromsandbox", event => {
+        const { detail } = event;
+        const actions = {
+          value() {
+            const options = selectElement.options;
+            const value = detail.value;
+            const values = new Set(Array.isArray(value) ? value : [value]);
+            Array.prototype.forEach.call(options, option => {
+              option.selected = values.has(option.value);
+            });
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+            });
+          },
+          multipleSelection() {
+            selectElement.multiple = true;
+          },
+          remove() {
+            const options = selectElement.options;
+            const index = detail.remove;
+            options[index].selected = false;
+            selectElement.remove(index);
+            if (options.length > 0) {
+              const i = Array.prototype.findIndex.call(
+                options,
+                option => option.selected
+              );
+              if (i === -1) {
+                options[0].selected = true;
+              }
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          clear() {
+            while (selectElement.length !== 0) {
+              selectElement.remove(0);
+            }
+            storage.setValue(id, { value: null, items: [] });
+          },
+          insert() {
+            const { index, displayValue, exportValue } = detail.insert;
+            const optionElement = document.createElement("option");
+            optionElement.textContent = displayValue;
+            optionElement.value = exportValue;
+            selectElement.insertBefore(
+              optionElement,
+              selectElement.children[index]
+            );
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          items() {
+            const { items } = detail;
+            while (selectElement.length !== 0) {
+              selectElement.remove(0);
+            }
+            for (const item of items) {
+              const { displayValue, exportValue } = item;
+              const optionElement = document.createElement("option");
+              optionElement.textContent = displayValue;
+              optionElement.value = exportValue;
+              selectElement.appendChild(optionElement);
+            }
+            if (selectElement.options.length > 0) {
+              selectElement.options[0].selected = true;
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          indices() {
+            const indices = new Set(detail.indices);
+            const options = event.target.options;
+            Array.prototype.forEach.call(options, (option, i) => {
+              option.selected = indices.has(i);
+            });
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+            });
+          },
+          focus() {
+            setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+          },
+          hidden() {
+            event.target.style.visibility = detail.hidden
+              ? "hidden"
+              : "visible";
+            storage.setValue(id, { hidden: detail.hidden });
+          },
+          editable() {
+            event.target.disabled = !detail.editable;
+          },
+        };
+        Object.keys(detail)
+          .filter(name => name in actions)
+          .forEach(name => actions[name]());
+      });
+
+      selectElement.addEventListener("input", event => {
+        const exportValue = getValue(event, /* isExport */ true);
+        const value = getValue(event, /* isExport */ false);
+        storage.setValue(id, { value: exportValue });
+
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id,
+            name: "Keystroke",
+            value,
+            changeEx: exportValue,
+            willCommit: true,
+            commitKey: 1,
+            keyDown: false,
+          },
+        });
+      });
+
+      this._setEventListeners(
+        selectElement,
+        [
+          ["focus", "Focus"],
+          ["blur", "Blur"],
+          ["mousedown", "Mouse Down"],
+          ["mouseenter", "Mouse Enter"],
+          ["mouseleave", "Mouse Exit"],
+          ["mouseup", "Mouse Up"],
+          ["input", "Action"],
+        ],
+        event => event.target.checked
+      );
+    } else {
+      selectElement.addEventListener("input", function (event) {
+        storage.setValue(id, { value: getValue(event) });
+      });
+    }
 
     this.container.appendChild(selectElement);
     return this.container;
@@ -1514,14 +1935,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     this.filename = getFilenameFromUrl(filename);
     this.content = content;
 
-    if (this.linkService.eventBus) {
-      this.linkService.eventBus.dispatch("fileattachmentannotation", {
-        source: this,
-        id: stringToPDFString(filename),
-        filename,
-        content,
-      });
-    }
+    this.linkService.eventBus?.dispatch("fileattachmentannotation", {
+      source: this,
+      id: stringToPDFString(filename),
+      filename,
+      content,
+    });
   }
 
   render() {
@@ -1617,6 +2036,7 @@ class AnnotationLayer {
           parameters.annotationStorage || new AnnotationStorage(),
         enableScripting: parameters.enableScripting,
         hasJSActions: parameters.hasJSActions,
+        mouseState: parameters.mouseState || { isDown: false },
       });
       if (element.isRenderable) {
         const rendered = element.render();

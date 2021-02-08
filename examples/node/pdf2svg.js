@@ -71,7 +71,7 @@ ReadableSVGStream.prototype._read = function () {
 // Streams the SVG element to the given file path.
 function writeSvgToFile(svgElement, filePath) {
   var readableSvgStream = new ReadableSVGStream({
-    svgElement: svgElement,
+    svgElement,
   });
   var writableStream = fs.createWriteStream(filePath);
   return new Promise(function (resolve, reject) {
@@ -89,7 +89,7 @@ function writeSvgToFile(svgElement, filePath) {
 // Will be using promises to load document, pages and misc data instead of
 // callback.
 var loadingTask = pdfjsLib.getDocument({
-  data: data,
+  data,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
   fontExtraProperties: true,

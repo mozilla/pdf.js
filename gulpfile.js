@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 /* eslint-env node */
-/* eslint-disable object-shorthand */
 /* globals target */
 
 "use strict";
 
 var autoprefixer = require("autoprefixer");
 var calc = require("postcss-calc");
-var cssvariables = require("postcss-css-variables");
 var fs = require("fs");
 var gulp = require("gulp");
 var postcss = require("gulp-postcss");
@@ -84,21 +82,17 @@ var AUTOPREFIXER_CONFIG = {
     "Chrome >= 49", // Last supported on Windows XP
     "Firefox >= 52", // Last supported on Windows XP
     "Firefox ESR",
-    "IE >= 11",
-    "Safari >= 9",
+    "Safari >= 10",
     "> 0.5%",
+    "not IE > 0",
     "not dead",
   ],
-};
-var CSS_VARIABLES_CONFIG = {
-  preserve: true,
 };
 
 const DEFINES = Object.freeze({
   PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: false,
-  ENABLE_SCRIPTING: false,
   // The main build targets:
   GENERIC: false,
   MOZCENTRAL: false,
@@ -212,6 +206,23 @@ function createWebpackConfig(
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
+  // Since logical assignment operators is a fairly new ECMAScript feature,
+  // for now we translate these regardless of the `SKIP_BABEL` value (with the
+  // exception of `MOZCENTRAL`/`TESTING`-builds where this isn't an issue).
+  const babelPlugins = [
+    "@babel/plugin-transform-modules-commonjs",
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        helpers: false,
+        regenerator: true,
+      },
+    ],
+  ];
+  if (!bundleDefines.MOZCENTRAL && !bundleDefines.TESTING) {
+    babelPlugins.push("@babel/plugin-proposal-logical-assignment-operators");
+  }
+
   const plugins = [];
   if (!disableLicenseHeader) {
     plugins.push(
@@ -224,7 +235,7 @@ function createWebpackConfig(
 
   return {
     mode: "none",
-    output: output,
+    output,
     performance: {
       hints: false, // Disable messages about larger file sizes.
     },
@@ -244,17 +255,7 @@ function createWebpackConfig(
           exclude: babelExcludeRegExp,
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
-            plugins: [
-              "@babel/plugin-proposal-logical-assignment-operators",
-              "@babel/plugin-transform-modules-commonjs",
-              [
-                "@babel/plugin-transform-runtime",
-                {
-                  helpers: false,
-                  regenerator: true,
-                },
-              ],
-            ],
+            plugins: babelPlugins,
           },
         },
         {
@@ -375,7 +376,28 @@ function createScriptingBundle(defines, extraOptions = undefined) {
     .src("./src/pdf.scripting.js")
     .pipe(webpack2Stream(scriptingFileConfig))
     .pipe(replaceWebpackRequire())
-    .pipe(replaceJSRootName(scriptingAMDName, "pdfjsScripting"));
+    .pipe(
+      replace(
+        'root["' + scriptingAMDName + '"] = factory()',
+        "root.pdfjsScripting = factory()"
+      )
+    );
+}
+
+function createSandboxExternal(defines) {
+  const preprocessor2 = require("./external/builder/preprocessor2.js");
+  const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
+
+  const ctx = {
+    saveComments: false,
+    defines,
+  };
+  return gulp.src("./src/pdf.sandbox.external.js").pipe(
+    transform("utf8", content => {
+      content = preprocessor2.preprocessPDFJSCode(ctx, content);
+      return `${licenseHeader}\n${content}`;
+    })
+  );
 }
 
 function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
@@ -610,7 +632,7 @@ gulp.task("buildnumber", function (done) {
           "version.json",
           JSON.stringify(
             {
-              version: version,
+              version,
               build: buildNumber,
               commit: buildCommit,
             },
@@ -662,7 +684,6 @@ gulp.task("default_preferences-pre", function () {
       LIB: true,
       BUNDLE_VERSION: 0, // Dummy version
       BUNDLE_BUILD: 0, // Dummy build
-      ENABLE_SCRIPTING: process.env.ENABLE_SCRIPTING === "true",
     }),
     map: {
       "pdfjs-lib": "../pdf",
@@ -821,13 +842,7 @@ function buildGeneric(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "generic", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -899,13 +914,7 @@ function buildComponents(defines, dir) {
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
     preprocessCSS("web/pdf_viewer.css", "components", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir)),
   ]);
 }
@@ -994,13 +1003,7 @@ function buildMinified(defines, dir) {
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "minified", defines, true)
-      .pipe(
-        postcss([
-          cssvariables(CSS_VARIABLES_CONFIG),
-          calc(),
-          autoprefixer(AUTOPREFIXER_CONFIG),
-        ])
-      )
+      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -1202,6 +1205,9 @@ gulp.task(
         gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
       ),
       createScriptingBundle(defines).pipe(
+        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+      ),
+      createSandboxExternal(defines).pipe(
         gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
       ),
       createWorkerBundle(defines).pipe(
@@ -1425,7 +1431,7 @@ function buildLib(defines, dir) {
   return merge([
     gulp.src(
       [
-        "src/{core,display,shared}/*.js",
+        "src/{core,display,shared}/**/*.js",
         "!src/shared/{cffStandardStrings,fonts_utils}.js",
         "src/{pdf,pdf.worker}.js",
       ],
@@ -1521,49 +1527,36 @@ gulp.task(
 
 gulp.task("testing-pre", function (done) {
   process.env.TESTING = "true";
-  done();
-});
-
-gulp.task("enable-scripting", function (done) {
-  process.env.ENABLE_SCRIPTING = "true";
+  // TODO: Re-write the relevant unit-tests, which are using `new Date(...)`,
+  //       to not required the following time-zone hack since it doesn't work
+  //       when the unit-tests are run directly in the browser.
+  process.env.TZ = "UTC";
   done();
 });
 
 gulp.task(
   "test",
-  gulp.series(
-    "enable-scripting",
-    "testing-pre",
-    "generic",
-    "components",
-    function () {
-      return streamqueue(
-        { objectMode: true },
-        createTestSource("unit"),
-        createTestSource("browser"),
-        createTestSource("integration")
-      );
-    }
-  )
+  gulp.series("testing-pre", "generic", "components", function () {
+    return streamqueue(
+      { objectMode: true },
+      createTestSource("unit"),
+      createTestSource("browser"),
+      createTestSource("integration")
+    );
+  })
 );
 
 gulp.task(
   "bottest",
-  gulp.series(
-    "enable-scripting",
-    "testing-pre",
-    "generic",
-    "components",
-    function () {
-      return streamqueue(
-        { objectMode: true },
-        createTestSource("unit", true),
-        createTestSource("font", true),
-        createTestSource("browser (no reftest)", true),
-        createTestSource("integration")
-      );
-    }
-  )
+  gulp.series("testing-pre", "generic", "components", function () {
+    return streamqueue(
+      { objectMode: true },
+      createTestSource("unit", true),
+      createTestSource("font", true),
+      createTestSource("browser (no reftest)", true),
+      createTestSource("integration")
+    );
+  })
 );
 
 gulp.task(
@@ -1575,15 +1568,14 @@ gulp.task(
 
 gulp.task(
   "unittest",
-  gulp.series("testing-pre", "generic", "components", function () {
-    process.env.TZ = "UTC";
+  gulp.series("testing-pre", "generic", function () {
     return createTestSource("unit");
   })
 );
 
 gulp.task(
   "integrationtest",
-  gulp.series("enable-scripting", "testing-pre", "generic", function () {
+  gulp.series("testing-pre", "generic", function () {
     return createTestSource("integration");
   })
 );
@@ -1789,7 +1781,7 @@ gulp.task(
 gulp.task("watch-dev-sandbox", function () {
   gulp.watch(
     [
-      "src/pdf.{sandbox,scripting}.js",
+      "src/pdf.{sandbox,sandbox.external,scripting}.js",
       "src/scripting_api/*.js",
       "src/shared/scripting_utils.js",
       "external/quickjs/*.js",
@@ -1962,6 +1954,9 @@ function packageBowerJson() {
     homepage: DIST_HOMEPAGE,
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
+    peerDependencies: {
+      "worker-loader": "^3.0.7", // Used in `external/dist/webpack.js`.
+    },
     browser: {
       canvas: false,
       fs: false,
@@ -2035,19 +2030,15 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR)),
         gulp
           .src([
-            GENERIC_DIR + "build/pdf.js",
-            GENERIC_DIR + "build/pdf.js.map",
-            GENERIC_DIR + "build/pdf.worker.js",
-            GENERIC_DIR + "build/pdf.worker.js.map",
+            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src([
-            GENERIC_ES5_DIR + "build/pdf.js",
-            GENERIC_ES5_DIR + "build/pdf.js.map",
-            GENERIC_ES5_DIR + "build/pdf.worker.js",
-            GENERIC_ES5_DIR + "build/pdf.worker.js.map",
+            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
@@ -2060,6 +2051,10 @@ gulp.task(
           .pipe(rename("pdf.worker.min.js"))
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
+          .src(MINIFIED_DIR + "build/pdf.sandbox.js")
+          .pipe(rename("pdf.sandbox.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "build/")),
+        gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.js")
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
@@ -2070,6 +2065,10 @@ gulp.task(
         gulp
           .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
           .pipe(rename("pdf.worker.min.js"))
+          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+        gulp
+          .src(MINIFIED_ES5_DIR + "build/pdf.sandbox.js")
+          .pipe(rename("pdf.sandbox.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
         gulp
           .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")

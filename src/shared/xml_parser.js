@@ -63,6 +63,8 @@ class XMLParserBase {
           return "&";
         case "quot":
           return '"';
+        case "apos":
+          return "'";
       }
       return this.onResolveEntity(entity);
     });
@@ -427,12 +429,13 @@ class SimpleDOMNode {
 }
 
 class SimpleXMLParser extends XMLParserBase {
-  constructor(hasAttributes = false) {
+  constructor({ hasAttributes = false, lowerCaseName = false }) {
     super();
     this._currentFragment = null;
     this._stack = null;
     this._errorCode = XMLParserErrorCode.NoError;
     this._hasAttributes = hasAttributes;
+    this._lowerCaseName = lowerCaseName;
   }
 
   parseFromString(data) {
@@ -454,14 +457,6 @@ class SimpleXMLParser extends XMLParserBase {
     return { documentElement };
   }
 
-  onResolveEntity(name) {
-    switch (name) {
-      case "apos":
-        return "'";
-    }
-    return super.onResolveEntity(name);
-  }
-
   onText(text) {
     if (isWhitespaceString(text)) {
       return;
@@ -476,6 +471,9 @@ class SimpleXMLParser extends XMLParserBase {
   }
 
   onBeginElement(name, attributes, isEmpty) {
+    if (this._lowerCaseName) {
+      name = name.toLowerCase();
+    }
     const node = new SimpleDOMNode(name);
     node.childNodes = [];
     if (this._hasAttributes) {
@@ -505,4 +503,4 @@ class SimpleXMLParser extends XMLParserBase {
   }
 }
 
-export { SimpleDOMNode, SimpleXMLParser };
+export { SimpleDOMNode, SimpleXMLParser, XMLParserBase, XMLParserErrorCode };

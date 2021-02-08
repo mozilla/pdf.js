@@ -47,8 +47,9 @@ describe("XML", function () {
               <g a="121110"/>
           </b>
       </a>`;
-      const root = new SimpleXMLParser(true).parseFromString(xml)
-        .documentElement;
+      const root = new SimpleXMLParser({ hasAttributes: true }).parseFromString(
+        xml
+      ).documentElement;
       function getAttr(path) {
         return root.searchNode(parseXFAPath(path), 0).attributes[0].value;
       }
@@ -96,8 +97,9 @@ describe("XML", function () {
               <g a="121110"/>
           </b>
       </a>`;
-      const root = new SimpleXMLParser(true).parseFromString(xml)
-        .documentElement;
+      const root = new SimpleXMLParser({ hasAttributes: true }).parseFromString(
+        xml
+      ).documentElement;
       const buffer = [];
       root.dump(buffer);
 

@@ -773,6 +773,17 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @returns {Promise<Object | null>} A promise that is resolved with
+   *   an {Object} with the JavaScript actions:
+   *     - from the name tree (like getJavaScript);
+   *     - from A or AA entries in the catalog dictionary.
+   *   , or `null` if no JavaScript exists.
+   */
+  getJSActions() {
+    return this._transport.getDocJSActions();
+  }
+
+  /**
    * @typedef {Object} OutlineNode
    * @property {string} title
    * @property {boolean} bold
@@ -1144,6 +1155,16 @@ class PDFPageProxy {
   }
 
   /**
+   * @returns {Promise<Object>} A promise that is resolved with an
+   *   {Object} with JS actions.
+   */
+  getJSActions() {
+    return (this._jsActionsPromise ||= this._transport.getPageJSActions(
+      this._pageIndex
+    ));
+  }
+
+  /**
    * Begins the process of rendering a page to the desired context.
    *
    * @param {RenderParameters} params Page render parameters.
@@ -1424,6 +1445,7 @@ class PDFPageProxy {
     }
     this.objs.clear();
     this.annotationsPromise = null;
+    this._jsActionsPromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1457,6 +1479,7 @@ class PDFPageProxy {
     this._intentStates.clear();
     this.objs.clear();
     this.annotationsPromise = null;
+    this._jsActionsPromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
@@ -2119,6 +2142,10 @@ class WorkerTransport {
     this.setupMessageHandler();
   }
 
+  get loadingTaskSettled() {
+    return this.loadingTask._capability.settled;
+  }
+
   destroy() {
     if (this.destroyCapability) {
       return this.destroyCapability.promise;
@@ -2146,6 +2173,18 @@ class WorkerTransport {
     // We also need to wait for the worker to finish its long running tasks.
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
     waitOn.push(terminated);
+    // Allow `AnnotationStorage`-related clean-up when destroying the document.
+    if (this.loadingTaskSettled) {
+      const annotationStorageResetModified = this.loadingTask.promise
+        .then(pdfDocument => {
+          // Avoid initializing the `annotationStorage` if it doesn't exist.
+          if (pdfDocument.hasOwnProperty("annotationStorage")) {
+            pdfDocument.annotationStorage.resetModified();
+          }
+        })
+        .catch(() => {});
+      waitOn.push(annotationStorageResetModified);
+    }
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();
@@ -2629,7 +2668,7 @@ class WorkerTransport {
       .sendWithPromise("SaveDocument", {
         numPages: this._numPages,
         annotationStorage: annotationStorage?.getAll() || null,
-        filename: this._fullReader ? this._fullReader.filename : null,
+        filename: this._fullReader?.filename ?? null,
       })
       .finally(() => {
         if (annotationStorage) {
@@ -2692,6 +2731,16 @@ class WorkerTransport {
 
   getJavaScript() {
     return this.messageHandler.sendWithPromise("GetJavaScript", null);
+  }
+
+  getDocJSActions() {
+    return this.messageHandler.sendWithPromise("GetDocJSActions", null);
+  }
+
+  getPageJSActions(pageIndex) {
+    return this.messageHandler.sendWithPromise("GetPageJSActions", {
+      pageIndex,
+    });
   }
 
   getOutline() {
@@ -2814,7 +2863,7 @@ class PDFObjects {
 
   has(objId) {
     const obj = this._objs[objId];
-    return obj ? obj.resolved : false;
+    return obj?.resolved || false;
   }
 
   /**
@@ -3062,13 +3111,15 @@ const build =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : null;
 
 export {
+  build,
+  DefaultCanvasFactory,
+  DefaultCMapReaderFactory,
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,
-  PDFWorker,
   PDFDocumentProxy,
   PDFPageProxy,
+  PDFWorker,
   setPDFNetworkStreamFactory,
   version,
-  build,
 };

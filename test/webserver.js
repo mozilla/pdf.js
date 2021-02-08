@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
 
 "use strict";
 
@@ -53,7 +52,7 @@ function WebServer() {
   };
 }
 WebServer.prototype = {
-  start: function (callback) {
+  start(callback) {
     this._ensureNonZeroPort();
     this.server = http.createServer(this._handler.bind(this));
     this.server.listen(this.port, this.host, callback);
@@ -61,11 +60,11 @@ WebServer.prototype = {
       "Server running at http://" + this.host + ":" + this.port + "/"
     );
   },
-  stop: function (callback) {
+  stop(callback) {
     this.server.close(callback);
     this.server = null;
   },
-  _ensureNonZeroPort: function () {
+  _ensureNonZeroPort() {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
       // name to make sure that the port is synchronously set by .listen().
@@ -78,7 +77,7 @@ WebServer.prototype = {
       server.close();
     }
   },
-  _handler: function (req, res) {
+  _handler(req, res) {
     var url = req.url.replace(/\/\//g, "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     try {
@@ -312,7 +311,7 @@ WebServer.prototype = {
     function serveRequestedFileRange(reqFilePath, start, end) {
       var stream = fs.createReadStream(reqFilePath, {
         flags: "rs",
-        start: start,
+        start,
         end: end - 1,
       });
 

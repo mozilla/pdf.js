@@ -14,6 +14,7 @@
  */
 
 import ModuleLoader from "../external/quickjs/quickjs-eval.js";
+import { SandboxSupportBase } from "./pdf.sandbox.external.js";
 
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
@@ -23,79 +24,113 @@ const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 const TESTING =
   typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING");
 
+class SandboxSupport extends SandboxSupportBase {
+  exportValueToSandbox(val) {
+    // The communication with the Quickjs sandbox is based on strings
+    // So we use JSON.stringfy to serialize
+    return JSON.stringify(val);
+  }
+
+  importValueFromSandbox(val) {
+    return val;
+  }
+
+  createErrorForSandbox(errorMessage) {
+    return new Error(errorMessage);
+  }
+}
+
 class Sandbox {
-  constructor(module) {
-    this._evalInSandbox = module.cwrap("evalInSandbox", null, [
-      "string",
-      "int",
-    ]);
-    this._dispatchEventName = null;
+  constructor(win, module) {
+    this.support = new SandboxSupport(win, this);
+
+    // The "external" functions created in pdf.sandbox.external.js
+    // are finally used here:
+    // https://github.com/mozilla/pdf.js.quickjs/blob/main/src/myjs.js
+    // They're called from the sandbox only.
+    module.externalCall = this.support.createSandboxExternals();
+
     this._module = module;
-    this._alertOnError = 1;
+
+    // 0 to display error using console.error
+    // else display error using window.alert
+    this._alertOnError = 0;
   }
 
   create(data) {
-    const sandboxData = JSON.stringify(data);
-    const extra = [
-      "send",
-      "setTimeout",
-      "clearTimeout",
-      "setInterval",
-      "clearInterval",
-      "crackURL",
-    ];
-    const extraStr = extra.join(",");
-    let code = [
-      "exports = Object.create(null);",
-      "module = Object.create(null);",
-      // Next line is replaced by code from initialization.js
-      // when we create the bundle for the sandbox.
-      PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE"),
-      `data = ${sandboxData};`,
-      `module.exports.initSandbox({ data, extra: {${extraStr}}, out: this});`,
-      "delete exports;",
-      "delete module;",
-      "delete data;",
-    ];
-    if (!TESTING) {
-      code = code.concat(extra.map(name => `delete ${name};`));
-      code.push("delete debugMe;");
+    if (TESTING) {
+      this._module.ccall("nukeSandbox", null, []);
     }
-    this._evalInSandbox(code.join("\n"), this._alertOnError);
-    this._dispatchEventName = data.dispatchEventName;
+    const code = [PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE")];
+    if (!TESTING) {
+      code.push("delete dump;");
+    } else {
+      code.push(
+        `globalThis.sendResultForTesting = callExternalFunction.bind(null, "send");`
+      );
+    }
+
+    let success = false;
+    try {
+      const sandboxData = JSON.stringify(data);
+      // "pdfjsScripting.initSandbox..." MUST be the last line to be evaluated
+      // since the returned value is used for the communication.
+      code.push(`pdfjsScripting.initSandbox({ data: ${sandboxData} })`);
+
+      success = !!this._module.ccall(
+        "init",
+        "number",
+        ["string", "number"],
+        [code.join("\n"), this._alertOnError]
+      );
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (success) {
+      this.support.commFun = this._module.cwrap("commFun", null, [
+        "string",
+        "string",
+      ]);
+    } else {
+      this.nukeSandbox();
+      throw new Error("Cannot start sandbox");
+    }
   }
 
   dispatchEvent(event) {
-    if (this._dispatchEventName === null) {
-      throw new Error("Sandbox must have been initialized");
-    }
-    event = JSON.stringify(event);
-    this._evalInSandbox(
-      `app["${this._dispatchEventName}"](${event});`,
-      this._alertOnError
-    );
+    this.support.callSandboxFunction("dispatchEvent", event);
   }
 
   dumpMemoryUse() {
-    this._module.ccall("dumpMemoryUse", null, []);
+    if (this._module) {
+      this._module.ccall("dumpMemoryUse", null, []);
+    }
   }
 
   nukeSandbox() {
-    this._dispatchEventName = null;
-    this._module.ccall("nukeSandbox", null, []);
-    this._module = null;
-    this._evalInSandbox = null;
+    if (this._module !== null) {
+      this.support.destroy();
+      this.support = null;
+      this._module.ccall("nukeSandbox", null, []);
+      this._module = null;
+    }
   }
 
   evalForTesting(code, key) {
     if (TESTING) {
-      this._evalInSandbox(
-        `try {
-           send({ id: "${key}", result: ${code} });
-         } catch (error) {
-           send({ id: "${key}", result: error.message });
-         }`,
-        this._alertOnError
+      this._module.ccall(
+        "evalInSandbox",
+        null,
+        ["string", "int"],
+        [
+          `try {
+             sendResultForTesting([{ id: "${key}", result: ${code} }]);
+          } catch (error) {
+             sendResultForTesting([{ id: "${key}", result: error.message }]);
+          }`,
+          this._alertOnError,
+        ]
       );
     }
   }
@@ -103,7 +138,7 @@ class Sandbox {
 
 function QuickJSSandbox() {
   return ModuleLoader().then(module => {
-    return new Sandbox(module);
+    return new Sandbox(window, module);
   });
 }
 
