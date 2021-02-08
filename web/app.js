@@ -728,7 +728,7 @@ const PDFViewerApplication = {
             "An error occurred while loading the PDF."
           )
           .then(msg => {
-            PDFViewerApplication.error(msg, err);
+            PDFViewerApplication._documentError(msg, err);
           });
       },
       onProgress(loaded, total) {
@@ -812,6 +812,8 @@ const PDFViewerApplication = {
    *                      destruction is completed.
    */
   async close() {
+    this._unblockDocumentLoadEvent();
+
     const errorWrapper = this.appConfig.errorWrapper.container;
     errorWrapper.setAttribute("hidden", "true");
 
@@ -943,8 +945,6 @@ const PDFViewerApplication = {
         this.load(pdfDocument);
       },
       exception => {
-        this._unblockDocumentLoadEvent();
-
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
         }
@@ -980,7 +980,7 @@ const PDFViewerApplication = {
         }
 
         return loadingErrorMessage.then(msg => {
-          this.error(msg, { message });
+          this._documentError(msg, { message });
           throw exception;
         });
       }
@@ -1114,13 +1114,24 @@ const PDFViewerApplication = {
   },
 
   /**
-   * Show the error box.
+   * Show the error box; used for errors affecting loading and/or parsing of
+   * the entire PDF document.
+   */
+  _documentError(message, moreInfo = null) {
+    this._unblockDocumentLoadEvent();
+
+    this._otherError(message, moreInfo);
+  },
+
+  /**
+   * Show the error box; used for errors affecting e.g. only a single page.
+   *
    * @param {string} message - A message that is human readable.
    * @param {Object} [moreInfo] - Further information about the error that is
    *                              more technical.  Should have a 'message' and
    *                              optionally a 'stack' property.
    */
-  error(message, moreInfo) {
+  _otherError(message, moreInfo = null) {
     const moreInfoText = [
       this.l10n.get(
         "error_version_info",
@@ -2051,7 +2062,7 @@ const PDFViewerApplication = {
           "Warning: Printing is not fully supported by this browser."
         )
         .then(printMessage => {
-          this.error(printMessage);
+          this._otherError(printMessage);
         });
       return;
     }
@@ -2392,7 +2403,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       PDFViewerApplication.l10n
         .get("loading_error", null, "An error occurred while loading the PDF.")
         .then(loadingErrorMessage => {
-          PDFViewerApplication.error(loadingErrorMessage, {
+          PDFViewerApplication._documentError(loadingErrorMessage, {
             message: ex?.message,
           });
         });
@@ -2545,7 +2556,7 @@ function webViewerInitialized() {
     PDFViewerApplication.l10n
       .get("loading_error", null, "An error occurred while loading the PDF.")
       .then(msg => {
-        PDFViewerApplication.error(msg, reason);
+        PDFViewerApplication._documentError(msg, reason);
       });
   }
 }
@@ -2622,7 +2633,7 @@ function webViewerPageRendered({ pageNumber, timestamp, error }) {
         "An error occurred while rendering the page."
       )
       .then(msg => {
-        PDFViewerApplication.error(msg, error);
+        PDFViewerApplication._otherError(msg, error);
       });
   }
 
