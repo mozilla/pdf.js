@@ -243,13 +243,18 @@ class PDFFetchStreamRangeReader {
         this._abortController
       )
     )
-      .then(response => {
-        if (!validateResponseStatus(response.status)) {
-          throw createResponseStatusError(response.status, url);
+      .then(
+        response => {
+          if (!validateResponseStatus(response.status)) {
+            throw createResponseStatusError(response.status, url);
+          }
+          this._readCapability.resolve();
+          this._reader = response.body.getReader();
+        },
+        error => {
+          this._readCapability.reject(error);
         }
-        this._readCapability.resolve();
-        this._reader = response.body.getReader();
-      })
+      )
       .catch(reason => {
         if (reason?.name === "AbortError") {
           return;

@@ -361,7 +361,11 @@ class AnnotationElement {
 
 class LinkAnnotationElement extends AnnotationElement {
   constructor(parameters) {
+    const isShowpadUrl =
+      parameters.data.unsafeUrl &&
+      parameters.data.unsafeUrl.indexOf("showpad://") === 0;
     const isRenderable = !!(
+      isShowpadUrl ||
       parameters.data.url ||
       parameters.data.dest ||
       parameters.data.action ||
@@ -375,14 +379,18 @@ class LinkAnnotationElement extends AnnotationElement {
     const link = document.createElement("a");
 
     if (data.url) {
-      addLinkAttributes(link, {
-        url: data.url,
-        target: data.newWindow
-          ? LinkTarget.BLANK
-          : linkService.externalLinkTarget,
-        rel: linkService.externalLinkRel,
-        enabled: linkService.externalLinkEnabled,
-      });
+      if (data.unsafeUrl && data.unsafeUrl.indexOf("showpad://") === 0) {
+        this._bindShowpadLink(link, data.unsafeUrl);
+      } else {
+        addLinkAttributes(link, {
+          url: data.url,
+          target: data.newWindow
+            ? LinkTarget.BLANK
+            : linkService.externalLinkTarget,
+          rel: linkService.externalLinkRel,
+          enabled: linkService.externalLinkEnabled,
+        });
+      }
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
     } else if (data.dest) {
@@ -425,6 +433,16 @@ class LinkAnnotationElement extends AnnotationElement {
     if (destination || destination === /* isTooltipOnly = */ "") {
       link.className = "internalLink";
     }
+  }
+
+  _bindShowpadLink(link, url) {
+    link.onclick = () => {
+      if (typeof this.linkService.handleShowpadLink === "function") {
+        this.linkService.handleShowpadLink(url);
+      }
+      return false;
+    };
+    link.className = "showpadLink";
   }
 
   /**
