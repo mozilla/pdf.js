@@ -235,10 +235,13 @@ class WorkerMessageHandler {
         contentLength: source.contentLength,
         isStreamingSupported: !source.disableStream,
       };
-      var fullRequest =
-        !source.disableRange && source.contentLength
-          ? mockFullRequest
-          : pdfStream.getFullReader();
+      const useRangeRequests =
+        !source.disableRange &&
+        source.contentLength &&
+        source.contentLength > source.rangeChunkSize * 2;
+      var fullRequest = useRangeRequests
+        ? mockFullRequest
+        : pdfStream.getFullReader();
       fullRequest.headersReady
         .then(function () {
           if (!fullRequest.isRangeSupported) {
@@ -298,39 +301,41 @@ class WorkerMessageHandler {
         }
         cachedChunks = [];
       };
-      var readPromise = new Promise(function (resolve, reject) {
-        var readChunk = function ({ value, done }) {
-          try {
-            ensureNotTerminated();
-            if (done) {
-              if (!newPdfManager) {
-                flushChunks();
+      var readPromise = useRangeRequests
+        ? Promise.resolve()
+        : new Promise(function (resolve, reject) {
+            var readChunk = function ({ value, done }) {
+              try {
+                ensureNotTerminated();
+                if (done) {
+                  if (!newPdfManager) {
+                    flushChunks();
+                  }
+                  cancelXHRs = null;
+                  return;
+                }
+
+                loaded += arrayByteLength(value);
+                if (!fullRequest.isStreamingSupported) {
+                  handler.send("DocProgress", {
+                    loaded,
+                    total: Math.max(loaded, fullRequest.contentLength || 0),
+                  });
+                }
+
+                if (newPdfManager) {
+                  newPdfManager.sendProgressiveData(value);
+                } else {
+                  cachedChunks.push(value);
+                }
+
+                fullRequest.read().then(readChunk, reject);
+              } catch (e) {
+                reject(e);
               }
-              cancelXHRs = null;
-              return;
-            }
-
-            loaded += arrayByteLength(value);
-            if (!fullRequest.isStreamingSupported) {
-              handler.send("DocProgress", {
-                loaded,
-                total: Math.max(loaded, fullRequest.contentLength || 0),
-              });
-            }
-
-            if (newPdfManager) {
-              newPdfManager.sendProgressiveData(value);
-            } else {
-              cachedChunks.push(value);
-            }
-
+            };
             fullRequest.read().then(readChunk, reject);
-          } catch (e) {
-            reject(e);
-          }
-        };
-        fullRequest.read().then(readChunk, reject);
-      });
+          });
       readPromise.catch(function (e) {
         pdfManagerCapability.reject(e);
         cancelXHRs = null;
@@ -385,21 +390,28 @@ class WorkerMessageHandler {
       function pdfManagerReady() {
         ensureNotTerminated();
 
-        loadDocument(false).then(onSuccess, function (reason) {
-          ensureNotTerminated();
-
-          // Try again with recoveryMode == true
-          if (!(reason instanceof XRefParseException)) {
-            onFailure(reason);
-            return;
-          }
-          pdfManager.requestLoadedStream();
-          pdfManager.onLoadedStream().then(function () {
+        loadDocument(false).then(
+          onSuccess,
+          function (reason) {
             ensureNotTerminated();
 
-            loadDocument(true).then(onSuccess, onFailure);
-          });
-        });
+            // Try again with recoveryMode == true
+            if (!(reason instanceof XRefParseException)) {
+              onFailure(reason);
+              return;
+            }
+            pdfManager.requestLoadedStream();
+            pdfManager
+              .onLoadedStream()
+              .then(function () {
+                ensureNotTerminated();
+
+                loadDocument(true).then(onSuccess, onFailure);
+              })
+              .catch(onFailure);
+          },
+          onFailure
+        );
       }
 
       ensureNotTerminated();
@@ -424,9 +436,12 @@ class WorkerMessageHandler {
           }
           pdfManager = newPdfManager;
 
-          pdfManager.onLoadedStream().then(function (stream) {
-            handler.send("DataLoaded", { length: stream.bytes.byteLength });
-          });
+          pdfManager
+            .onLoadedStream()
+            .then(function (stream) {
+              handler.send("DataLoaded", { length: stream.bytes.byteLength });
+            })
+            .catch(onFailure);
         })
         .then(pdfManagerReady, onFailure);
     }

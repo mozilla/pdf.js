@@ -360,12 +360,16 @@ class ChunkedStreamManager {
       };
       rangeReader.read().then(readChunk, reject);
     });
-    promise.then(data => {
-      if (this.aborted) {
-        return; // Ignoring any data after abort.
-      }
-      this.onReceiveData({ chunk: data, begin });
-    });
+    promise
+      .then(data => {
+        if (this.aborted) {
+          return; // Ignoring any data after abort.
+        }
+        this.onReceiveData({ chunk: data, begin });
+      })
+      .catch(error => {
+        this.onError(error);
+      });
     // TODO check errors
   }
 

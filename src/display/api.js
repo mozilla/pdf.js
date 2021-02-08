@@ -70,6 +70,20 @@ const DefaultCMapReaderFactory =
     ? NodeCMapReaderFactory
     : DOMCMapReaderFactory;
 
+function errorHasKnownResponseCode(error) {
+  if (
+    error &&
+    (error.status === 404 ||
+      error.status === 401 ||
+      error.status === 403 ||
+      error.status === 500 ||
+      error.status === 416)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * @typedef {function} IPDFStreamFactory
  * @param {DocumentInitParameters} params - The document initialization
@@ -2270,19 +2284,21 @@ class WorkerTransport {
             sink.enqueue(new Uint8Array(value), 1, [value]);
           })
           .catch(reason => {
-            // network error:
-            // workaround Chrome issue: net::ERR_CACHE_READ_FAILURE
-            console.log(
-              "ERROR: possible Chrome cache fail: " +
-                "net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url",
-              reason.message
-            );
-            if (
+            if (errorHasKnownResponseCode(reason)) {
+              sink.error(reason);
+            } else if (
               reason &&
               reason.message === "network error" &&
               // Only cachebust once
               this._networkStream.source.url.includes("cachebust")
             ) {
+              // network error: workaround Chrome issue:
+              // net::ERR_CACHE_READ_FAILURE
+              console.log(
+                "ERROR: possible Chrome cache fail: " +
+                  "net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url",
+                reason.message
+              );
               rangeReader.cancel(reason);
               const cachebust = true;
               rangeReader = this._networkStream.getRangeReader(

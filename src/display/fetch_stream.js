@@ -25,6 +25,20 @@ import {
   validateResponseStatus,
 } from "./network_utils.js";
 
+function errorHasKnownResponseCode(error) {
+  if (
+    error &&
+    (error.status === 404 ||
+      error.status === 401 ||
+      error.status === 403 ||
+      error.status === 500 ||
+      error.status === 416)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
     'Module "./fetch_stream.js" shall not be used with MOZCENTRAL builds.'
@@ -258,6 +272,9 @@ class PDFFetchStreamRangeReader {
           this._reader = response.body.getReader();
         },
         error => {
+          if (errorHasKnownResponseCode(error)) {
+            throw error;
+          }
           // network error:
           // workaround Chrome issue: net::ERR_CACHE_OPERATION_NOT_SUPPORTED
           console.log(
@@ -285,6 +302,8 @@ class PDFFetchStreamRangeReader {
         if (reason?.name === "AbortError") {
           return;
         }
+        console.error(reason);
+        this._readCapability.reject(reason);
         throw reason;
       });
 
