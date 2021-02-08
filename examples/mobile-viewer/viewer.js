@@ -135,7 +135,7 @@ var PDFViewerApplication = {
    */
   close() {
     var errorWrapper = document.getElementById("errorWrapper");
-    errorWrapper.setAttribute("hidden", "true");
+    errorWrapper.hidden = true;
 
     if (!this.pdfLoadingTask) {
       return Promise.resolve();
@@ -270,32 +270,32 @@ var PDFViewerApplication = {
     }
 
     var errorWrapper = document.getElementById("errorWrapper");
-    errorWrapper.removeAttribute("hidden");
+    errorWrapper.hidden = false;
 
     var errorMessage = document.getElementById("errorMessage");
     errorMessage.textContent = message;
 
     var closeButton = document.getElementById("errorClose");
     closeButton.onclick = function () {
-      errorWrapper.setAttribute("hidden", "true");
+      errorWrapper.hidden = true;
     };
 
     var errorMoreInfo = document.getElementById("errorMoreInfo");
     var moreInfoButton = document.getElementById("errorShowMore");
     var lessInfoButton = document.getElementById("errorShowLess");
     moreInfoButton.onclick = function () {
-      errorMoreInfo.removeAttribute("hidden");
-      moreInfoButton.setAttribute("hidden", "true");
-      lessInfoButton.removeAttribute("hidden");
+      errorMoreInfo.hidden = false;
+      moreInfoButton.hidden = true;
+      lessInfoButton.hidden = false;
       errorMoreInfo.style.height = errorMoreInfo.scrollHeight + "px";
     };
     lessInfoButton.onclick = function () {
-      errorMoreInfo.setAttribute("hidden", "true");
-      moreInfoButton.removeAttribute("hidden");
-      lessInfoButton.setAttribute("hidden", "true");
+      errorMoreInfo.hidden = true;
+      moreInfoButton.hidden = false;
+      lessInfoButton.hidden = true;
     };
-    moreInfoButton.removeAttribute("hidden");
-    lessInfoButton.setAttribute("hidden", "true");
+    moreInfoButton.hidden = false;
+    lessInfoButton.hidden = true;
     Promise.all(moreInfoText).then(function (parts) {
       errorMoreInfo.value = parts.join("\n");
     });
