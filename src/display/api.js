@@ -2277,7 +2277,12 @@ class WorkerTransport {
                 "net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url",
               reason.message
             );
-            if (reason && reason.message === "network error") {
+            if (
+              reason &&
+              reason.message === "network error" &&
+              // Only cachebust once
+              this._networkStream.source.url.includes("cachebust")
+            ) {
               rangeReader.cancel(reason);
               const cachebust = true;
               rangeReader = this._networkStream.getRangeReader(
