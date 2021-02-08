@@ -2095,6 +2095,7 @@ gulp.task(
         gulp
           .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
           .pipe(gulp.dest(DIST_DIR + "types/")),
+        gulp.src(".npmrc").pipe(gulp.dest(DIST_DIR)),
       ]);
     }
   )
