@@ -201,7 +201,7 @@ var StepperManager = (function StepperManagerClosure() {
     create: function create(pageIndex) {
       var debug = document.createElement("div");
       debug.id = "stepper" + pageIndex;
-      debug.setAttribute("hidden", true);
+      debug.hidden = true;
       debug.className = "stepper";
       stepperDiv.appendChild(debug);
       var b = document.createElement("option");
@@ -224,11 +224,7 @@ var StepperManager = (function StepperManagerClosure() {
       }
       for (i = 0; i < steppers.length; ++i) {
         var stepper = steppers[i];
-        if (stepper.pageIndex === pageIndex) {
-          stepper.panel.removeAttribute("hidden");
-        } else {
-          stepper.panel.setAttribute("hidden", true);
-        }
+        stepper.panel.hidden = stepper.pageIndex !== pageIndex;
       }
       var options = stepperChooser.options;
       for (i = 0; i < options.length; ++i) {
@@ -608,15 +604,10 @@ window.PDFBug = (function PDFBugClosure() {
       activePanel = index;
       var tools = this.tools;
       for (var j = 0; j < tools.length; ++j) {
-        if (j === index) {
-          buttons[j].setAttribute("class", "active");
-          tools[j].active = true;
-          tools[j].panel.removeAttribute("hidden");
-        } else {
-          buttons[j].setAttribute("class", "");
-          tools[j].active = false;
-          tools[j].panel.setAttribute("hidden", "true");
-        }
+        var isActive = j === index;
+        buttons[j].classList.toggle("active", isActive);
+        tools[j].active = isActive;
+        tools[j].panel.hidden = !isActive;
       }
     },
   };

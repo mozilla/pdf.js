@@ -815,7 +815,7 @@ const PDFViewerApplication = {
     this._unblockDocumentLoadEvent();
 
     const errorWrapper = this.appConfig.errorWrapper.container;
-    errorWrapper.setAttribute("hidden", "true");
+    errorWrapper.hidden = true;
 
     if (!this.pdfLoadingTask) {
       return undefined;
@@ -1180,35 +1180,35 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       const errorWrapperConfig = this.appConfig.errorWrapper;
       const errorWrapper = errorWrapperConfig.container;
-      errorWrapper.removeAttribute("hidden");
+      errorWrapper.hidden = false;
 
       const errorMessage = errorWrapperConfig.errorMessage;
       errorMessage.textContent = message;
 
       const closeButton = errorWrapperConfig.closeButton;
       closeButton.onclick = function () {
-        errorWrapper.setAttribute("hidden", "true");
+        errorWrapper.hidden = true;
       };
 
       const errorMoreInfo = errorWrapperConfig.errorMoreInfo;
       const moreInfoButton = errorWrapperConfig.moreInfoButton;
       const lessInfoButton = errorWrapperConfig.lessInfoButton;
       moreInfoButton.onclick = function () {
-        errorMoreInfo.removeAttribute("hidden");
-        moreInfoButton.setAttribute("hidden", "true");
-        lessInfoButton.removeAttribute("hidden");
+        errorMoreInfo.hidden = false;
+        moreInfoButton.hidden = true;
+        lessInfoButton.hidden = false;
         errorMoreInfo.style.height = errorMoreInfo.scrollHeight + "px";
       };
       lessInfoButton.onclick = function () {
-        errorMoreInfo.setAttribute("hidden", "true");
-        moreInfoButton.removeAttribute("hidden");
-        lessInfoButton.setAttribute("hidden", "true");
+        errorMoreInfo.hidden = true;
+        moreInfoButton.hidden = false;
+        lessInfoButton.hidden = true;
       };
       moreInfoButton.oncontextmenu = noContextMenuHandler;
       lessInfoButton.oncontextmenu = noContextMenuHandler;
       closeButton.oncontextmenu = noContextMenuHandler;
-      moreInfoButton.removeAttribute("hidden");
-      lessInfoButton.setAttribute("hidden", "true");
+      moreInfoButton.hidden = false;
+      lessInfoButton.hidden = true;
       Promise.all(moreInfoText).then(parts => {
         errorMoreInfo.value = parts.join("\n");
       });
@@ -2473,8 +2473,8 @@ function webViewerInitialized() {
       !window.FileList ||
       !window.Blob
     ) {
-      appConfig.toolbar.openFile.setAttribute("hidden", "true");
-      appConfig.secondaryToolbar.openFileButton.setAttribute("hidden", "true");
+      appConfig.toolbar.openFile.hidden = true;
+      appConfig.secondaryToolbar.openFileButton.hidden = true;
     } else {
       fileInput.value = null;
     }
@@ -2509,8 +2509,8 @@ function webViewerInitialized() {
       });
     });
   } else {
-    appConfig.toolbar.openFile.setAttribute("hidden", "true");
-    appConfig.secondaryToolbar.openFileButton.setAttribute("hidden", "true");
+    appConfig.toolbar.openFile.hidden = true;
+    appConfig.secondaryToolbar.openFileButton.hidden = true;
   }
 
   if (!PDFViewerApplication.supportsDocumentFonts) {
@@ -2819,13 +2819,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
     // URL does not reflect proper document location - hiding some icons.
     const appConfig = PDFViewerApplication.appConfig;
-    appConfig.toolbar.viewBookmark.setAttribute("hidden", "true");
-    appConfig.secondaryToolbar.viewBookmarkButton.setAttribute(
-      "hidden",
-      "true"
-    );
-    appConfig.toolbar.download.setAttribute("hidden", "true");
-    appConfig.secondaryToolbar.downloadButton.setAttribute("hidden", "true");
+    appConfig.toolbar.viewBookmark.hidden = true;
+    appConfig.secondaryToolbar.viewBookmarkButton.hidden = true;
+    appConfig.toolbar.download.hidden = true;
+    appConfig.secondaryToolbar.downloadButton.hidden = true;
   };
 
   webViewerOpenFile = function (evt) {
