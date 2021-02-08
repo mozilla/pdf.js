@@ -2231,7 +2231,7 @@ class WorkerTransport {
         this._networkStream,
         "GetRangeReader - no `IPDFStream` instance available."
       );
-      const rangeReader = this._networkStream.getRangeReader(
+      let rangeReader = this._networkStream.getRangeReader(
         data.begin,
         data.end
       );
@@ -2266,7 +2266,40 @@ class WorkerTransport {
             sink.enqueue(new Uint8Array(value), 1, [value]);
           })
           .catch(reason => {
-            sink.error(reason);
+            // network error:
+            // workaround Chrome issue: net::ERR_CACHE_READ_FAILURE
+            console.log(
+              "ERROR: possible Chrome cache fail: " +
+                "net::ERR_CACHE_READ_FAILURE. Retry with cachebusted url",
+              reason.message
+            );
+            if (reason && reason.message === "network error") {
+              rangeReader.cancel(reason);
+              const cachebust = true;
+              rangeReader = this._networkStream.getRangeReader(
+                data.begin,
+                data.end,
+                cachebust
+              );
+              rangeReader
+                .read()
+                .then(function ({ value, done }) {
+                  if (done) {
+                    sink.close();
+                    return;
+                  }
+                  assert(
+                    isArrayBuffer(value),
+                    "GetRangeReader - network error"
+                  );
+                  sink.enqueue(new Uint8Array(value), 1, [value]);
+                })
+                .catch(_reason => {
+                  sink.error(_reason);
+                });
+            } else {
+              sink.error(reason);
+            }
           });
       };
 
