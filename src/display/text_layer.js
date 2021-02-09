@@ -89,7 +89,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
     if (style.vertical) {
       angle += Math.PI / 2;
     }
-    const fontHeight = Math.sqrt(tx[2] * tx[2] + tx[3] * tx[3]);
+    const fontHeight = Math.hypot(tx[2], tx[3]);
     let fontAscent = fontHeight;
     if (style.ascent) {
       fontAscent = style.ascent * fontAscent;
