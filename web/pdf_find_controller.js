@@ -401,8 +401,9 @@ class PDFFindController {
     return true;
   }
 
-  _calculateFuzzyMatch(query, pageIndex, pageContent) {
+  _calculateFuzzyMatch(query, pageIndex, pageContent, pageDiffs) {
     const matches = [];
+    const matchesLength = [];
 
     const queryLen = query.length;
     const shortLen = queryLen < 5 ? queryLen : 5;
@@ -419,12 +420,19 @@ class PDFFindController {
 
         const distance = Levenshtein.distance(query, currentContent, options);
         if (distance <= maxDistance) {
-          matches.push(i);
+          const originalMatchIdx = getOriginalIndex(i, pageDiffs),
+            matchEnd = i + queryLen - 1,
+            originalQueryLen =
+              getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+
+          matches.push(originalMatchIdx);
+          matchesLength.push(originalQueryLen);
           i += queryLen - 1;
         }
       }
     }
     this._pageMatches[pageIndex] = matches;
+    this._pageMatchesLength[pageIndex] = matchesLength;
   }
 
   _calculatePhraseMatch(
@@ -456,9 +464,9 @@ class PDFFindController {
         continue;
       }
       const originalMatchIdx = getOriginalIndex(matchIdx, pageDiffs),
-      matchEnd = matchIdx + queryLen - 1,
-      originalQueryLen =
-        getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+        matchEnd = matchIdx + queryLen - 1,
+        originalQueryLen =
+          getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
 
       matches.push(originalMatchIdx);
       matchesLength.push(originalQueryLen);
@@ -508,9 +516,9 @@ class PDFFindController {
           continue;
         }
         const originalMatchIdx = getOriginalIndex(matchIdx, pageDiffs),
-        matchEnd = matchIdx + subqueryLen - 1,
-        originalQueryLen =
-          getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
+          matchEnd = matchIdx + subqueryLen - 1,
+          originalQueryLen =
+            getOriginalIndex(matchEnd, pageDiffs) - originalMatchIdx + 1;
 
         // Other searches do not, so we store the length.
         matchesWithLength.push({
@@ -561,9 +569,15 @@ class PDFFindController {
 
     if (fuzzySearch) {
       if (query.length <= 2) {
-        this._calculatePhraseMatch(query, pageIndex, pageContent, pageDiffs, false);
+        this._calculatePhraseMatch(
+          query,
+          pageIndex,
+          pageContent,
+          pageDiffs,
+          false
+        );
       } else {
-        this._calculateFuzzyMatch(query, pageIndex, pageContent);
+        this._calculateFuzzyMatch(query, pageIndex, pageContent, pageDiffs);
       }
     } else if (phraseSearch) {
       this._calculatePhraseMatch(
