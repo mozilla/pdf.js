@@ -15,8 +15,8 @@
 
 import { CSS_UNITS, NullL10n } from "./ui_utils.js";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import canvasSize from "canvas-size";
+import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import { warn } from "../src/shared/util.js";
 
 let activeService = null;
@@ -341,6 +341,14 @@ window.printPDF = function () {
     activeService
       .renderPages()
       .then(function () {
+        // #643 modified by ngx-extended-pdf-viewer
+        const progressIndicator = document.getElementById(
+          "printServiceOverlay"
+        );
+        if (progressIndicator) {
+          progressIndicator.classList.add("hidden");
+        }
+        // #643 end of modification
         return activeServiceOnEntry.performPrint();
       })
       .catch(function () {
