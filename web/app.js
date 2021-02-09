@@ -551,7 +551,6 @@ const PDFViewerApplication = {
         container,
         pdfViewer: this.pdfViewer,
         eventBus,
-        contextMenuItems: appConfig.fullscreen,
       });
     }
 
