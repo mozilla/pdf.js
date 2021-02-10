@@ -48,14 +48,14 @@ var EXTENSION_SRC_DIR = "extensions/";
 var BASELINE_DIR = BUILD_DIR + "baseline/";
 var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + "mozcentral.baseline/";
 var GENERIC_DIR = BUILD_DIR + "generic/";
-var GENERIC_ES5_DIR = BUILD_DIR + "generic-es5/";
+var GENERIC_LEGACY_DIR = BUILD_DIR + "generic-legacy/";
 var COMPONENTS_DIR = BUILD_DIR + "components/";
-var COMPONENTS_ES5_DIR = BUILD_DIR + "components-es5/";
+var COMPONENTS_LEGACY_DIR = BUILD_DIR + "components-legacy/";
 var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
-var IMAGE_DECODERS_ES5_DIR = BUILD_DIR + "image_decoders-es5/";
+var IMAGE_DECODERS_LEGACY_DIR = BUILD_DIR + "image_decoders-legacy/";
 var DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
 var MINIFIED_DIR = BUILD_DIR + "minified/";
-var MINIFIED_ES5_DIR = BUILD_DIR + "minified-es5/";
+var MINIFIED_LEGACY_DIR = BUILD_DIR + "minified-legacy/";
 var JSDOC_BUILD_DIR = BUILD_DIR + "jsdoc/";
 var GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 var SRC_DIR = "src/";
@@ -876,7 +876,7 @@ gulp.task(
 // Builds the generic production viewer that should be compatible with most
 // older HTML5 browsers.
 gulp.task(
-  "generic-es5",
+  "generic-legacy",
   gulp.series(
     "buildnumber",
     "default_preferences",
@@ -890,13 +890,13 @@ gulp.task(
     },
     function () {
       console.log();
-      console.log("### Creating generic (ES5) viewer");
+      console.log("### Creating generic (legacy) viewer");
       var defines = builder.merge(DEFINES, {
         GENERIC: true,
         SKIP_BABEL: false,
       });
 
-      return buildGeneric(defines, GENERIC_ES5_DIR);
+      return buildGeneric(defines, GENERIC_LEGACY_DIR);
     }
   )
 );
@@ -931,17 +931,17 @@ gulp.task(
 );
 
 gulp.task(
-  "components-es5",
+  "components-legacy",
   gulp.series("buildnumber", function () {
     console.log();
-    console.log("### Creating generic (ES5) components");
+    console.log("### Creating generic (legacy) components");
     var defines = builder.merge(DEFINES, {
       COMPONENTS: true,
       GENERIC: true,
       SKIP_BABEL: false,
     });
 
-    return buildComponents(defines, COMPONENTS_ES5_DIR);
+    return buildComponents(defines, COMPONENTS_LEGACY_DIR);
   })
 );
 
@@ -962,10 +962,10 @@ gulp.task(
 );
 
 gulp.task(
-  "image_decoders-es5",
+  "image_decoders-legacy",
   gulp.series("buildnumber", function () {
     console.log();
-    console.log("### Creating (ES5) image decoders");
+    console.log("### Creating (legacy) image decoders");
     var defines = builder.merge(DEFINES, {
       GENERIC: true,
       IMAGE_DECODERS: true,
@@ -973,7 +973,7 @@ gulp.task(
     });
 
     return createImageDecodersBundle(defines).pipe(
-      gulp.dest(IMAGE_DECODERS_ES5_DIR)
+      gulp.dest(IMAGE_DECODERS_LEGACY_DIR)
     );
   })
 );
@@ -1033,7 +1033,7 @@ gulp.task(
 );
 
 gulp.task(
-  "minified-es5-pre",
+  "minified-legacy-pre",
   gulp.series(
     "buildnumber",
     "default_preferences",
@@ -1048,14 +1048,14 @@ gulp.task(
     },
     function () {
       console.log();
-      console.log("### Creating minified (ES5) viewer");
+      console.log("### Creating minified (legacy) viewer");
       var defines = builder.merge(DEFINES, {
         MINIFIED: true,
         GENERIC: true,
         SKIP_BABEL: false,
       });
 
-      return buildMinified(defines, MINIFIED_ES5_DIR);
+      return buildMinified(defines, MINIFIED_LEGACY_DIR);
     }
   )
 );
@@ -1138,9 +1138,9 @@ gulp.task(
 );
 
 gulp.task(
-  "minified-es5",
-  gulp.series("minified-es5-pre", async function (done) {
-    await parseMinified(MINIFIED_ES5_DIR);
+  "minified-legacy",
+  gulp.series("minified-legacy-pre", async function (done) {
+    await parseMinified(MINIFIED_LEGACY_DIR);
     done();
   })
 );
@@ -1468,7 +1468,7 @@ gulp.task(
 );
 
 gulp.task(
-  "lib-es5",
+  "lib-legacy",
   gulp.series(
     "buildnumber",
     "default_preferences",
@@ -1488,8 +1488,8 @@ gulp.task(
       });
 
       return merge([
-        buildLib(defines, "build/lib-es5/"),
-        createSandboxBundle(defines).pipe(gulp.dest("build/lib-es5/")),
+        buildLib(defines, "build/lib-legacy/"),
+        createSandboxBundle(defines).pipe(gulp.dest("build/lib-legacy/")),
       ]);
     }
   )
@@ -1507,7 +1507,7 @@ function compressPublish(targetName, dir) {
 
 gulp.task(
   "publish",
-  gulp.series("generic", "generic-es5", function (done) {
+  gulp.series("generic", "generic-legacy", function (done) {
     var version = JSON.parse(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
@@ -1520,7 +1520,10 @@ gulp.task(
         gulp.dest(".")
       ),
       compressPublish("pdfjs-" + version + "-dist.zip", GENERIC_DIR),
-      compressPublish("pdfjs-" + version + "-es5-dist.zip", GENERIC_ES5_DIR),
+      compressPublish(
+        "pdfjs-" + version + "-legacy-dist.zip",
+        GENERIC_LEGACY_DIR
+      ),
     ]);
   })
 );
@@ -1674,7 +1677,7 @@ gulp.task("baseline", function (done) {
 
 gulp.task(
   "unittestcli",
-  gulp.series("testing-pre", "lib-es5", function (done) {
+  gulp.series("testing-pre", "lib-legacy", function (done) {
     var options = [
       "node_modules/jasmine/bin/jasmine",
       "JASMINE_CONFIG_PATH=test/unit/clitests.json",
@@ -1846,8 +1849,11 @@ gulp.task("gh-pages-prepare", function () {
       .src(GENERIC_DIR + "**/*", { base: GENERIC_DIR, stripBOM: false })
       .pipe(gulp.dest(GH_PAGES_DIR)),
     vfs
-      .src(GENERIC_ES5_DIR + "**/*", { base: GENERIC_ES5_DIR, stripBOM: false })
-      .pipe(gulp.dest(GH_PAGES_DIR + "es5/")),
+      .src(GENERIC_LEGACY_DIR + "**/*", {
+        base: GENERIC_LEGACY_DIR,
+        stripBOM: false,
+      })
+      .pipe(gulp.dest(GH_PAGES_DIR + "legacy/")),
     gulp
       .src("test/features/**/*", { base: "test/" })
       .pipe(gulp.dest(GH_PAGES_DIR)),
@@ -1865,20 +1871,36 @@ gulp.task("wintersmith", function (done) {
       done(error);
       return;
     }
+    const { stableVersion, betaVersion } = config;
+
+    // Create appropriate file names for the legacy builds. This logic can be
+    // removed and/or simplified, once the stable version is past the cutoff.
+    const CUTOFF_VERSION = "2.7.570";
+    replaceInFile(
+      GH_PAGES_DIR + "/getting_started/index.html",
+      /STABLE_VERSION_LEGACY/g,
+      stableVersion + (stableVersion <= CUTOFF_VERSION ? "-es5" : "-legacy")
+    );
+    replaceInFile(
+      GH_PAGES_DIR + "/getting_started/index.html",
+      /BETA_VERSION_LEGACY/g,
+      betaVersion + (betaVersion <= CUTOFF_VERSION ? "-es5" : "-legacy")
+    );
+
     replaceInFile(
       GH_PAGES_DIR + "/getting_started/index.html",
       /STABLE_VERSION/g,
-      config.stableVersion
+      stableVersion
     );
     replaceInFile(
       GH_PAGES_DIR + "/getting_started/index.html",
       /BETA_VERSION/g,
-      config.betaVersion
+      betaVersion
     );
 
     // Hide the beta version button if there is only a stable version.
-    const groupClass = config.betaVersion ? "btn-group-vertical centered" : "";
-    const hiddenClass = config.betaVersion ? "" : "hidden";
+    const groupClass = betaVersion ? "btn-group-vertical centered" : "";
+    const hiddenClass = betaVersion ? "" : "hidden";
     replaceInFile(
       GH_PAGES_DIR + "/getting_started/index.html",
       /GROUP_CLASS/g,
@@ -1926,7 +1948,7 @@ gulp.task(
   "web",
   gulp.series(
     "generic",
-    "generic-es5",
+    "generic-legacy",
     "jsdoc",
     "gh-pages-prepare",
     "wintersmith",
@@ -1990,14 +2012,14 @@ gulp.task(
   "dist-pre",
   gulp.series(
     "generic",
-    "generic-es5",
+    "generic-legacy",
     "components",
-    "components-es5",
+    "components-legacy",
     "image_decoders",
-    "image_decoders-es5",
+    "image_decoders-legacy",
     "lib",
     "minified",
-    "minified-es5",
+    "minified-legacy",
     "types",
     function () {
       console.log();
@@ -2033,11 +2055,11 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src([
-            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
-            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
-          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
           .src(MINIFIED_DIR + "build/pdf.js")
           .pipe(rename("pdf.min.js"))
@@ -2055,35 +2077,35 @@ gulp.task(
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "build/pdf.js")
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.js")
           .pipe(rename("pdf.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.worker.js")
           .pipe(rename("pdf.worker.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "build/pdf.sandbox.js")
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.sandbox.js")
           .pipe(rename("pdf.sandbox.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "es5/build/")),
+          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")
+          .src(MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.js")
           .pipe(rename("pdf.image_decoders.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
+          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
         gulp
-          .src(COMPONENTS_ES5_DIR + "**/*", { base: COMPONENTS_ES5_DIR })
-          .pipe(gulp.dest(DIST_DIR + "es5/web/")),
+          .src(COMPONENTS_LEGACY_DIR + "**/*", { base: COMPONENTS_LEGACY_DIR })
+          .pipe(gulp.dest(DIST_DIR + "legacy/web/")),
         gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(IMAGE_DECODERS_ES5_DIR + "**/*", {
-            base: IMAGE_DECODERS_ES5_DIR,
+          .src(IMAGE_DECODERS_LEGACY_DIR + "**/*", {
+            base: IMAGE_DECODERS_LEGACY_DIR,
           })
-          .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
+          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),

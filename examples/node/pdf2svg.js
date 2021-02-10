@@ -14,7 +14,7 @@ var stream = require("stream");
 require("./domstubs.js").setStubs(global);
 
 // Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
-var pdfjsLib = require("pdfjs-dist/es5/build/pdf.js");
+var pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 
 // Some PDFs need external cmaps.
 var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
