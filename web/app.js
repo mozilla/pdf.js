@@ -702,13 +702,13 @@ const PDFViewerApplication = {
       throw new Error("Not implemented: initPassiveLoading");
     }
     this.externalServices.initPassiveLoading({
-      onOpenWithTransport(url, length, transport) {
-        PDFViewerApplication.open(url, { length, range: transport });
+      onOpenWithTransport: (url, length, transport) => {
+        this.open(url, { length, range: transport });
       },
-      onOpenWithData(data) {
-        PDFViewerApplication.open(data);
+      onOpenWithData: data => {
+        this.open(data);
       },
-      onOpenWithURL(url, length, originalUrl) {
+      onOpenWithURL: (url, length, originalUrl) => {
         let file = url,
           args = null;
         if (length !== undefined) {
@@ -717,21 +717,21 @@ const PDFViewerApplication = {
         if (originalUrl !== undefined) {
           file = { url, originalUrl };
         }
-        PDFViewerApplication.open(file, args);
+        this.open(file, args);
       },
-      onError(err) {
-        PDFViewerApplication.l10n
+      onError: err => {
+        this.l10n
           .get(
             "loading_error",
             null,
             "An error occurred while loading the PDF."
           )
           .then(msg => {
-            PDFViewerApplication._documentError(msg, err);
+            this._documentError(msg, err);
           });
       },
-      onProgress(loaded, total) {
-        PDFViewerApplication.progress(loaded / total);
+      onProgress: (loaded, total) => {
+        this.progress(loaded / total);
       },
     });
   },
