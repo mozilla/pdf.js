@@ -259,6 +259,28 @@ const PDFViewerApplication = {
   _scriptingInstance: null,
   _mouseState: Object.create(null),
 
+  _localizeMessage(key, args = null) {
+    const DEFAULT_L10N_STRINGS = {
+      error_file: "File: {{file}}",
+      error_line: "Line: {{line}}",
+      error_message: "Message: {{message}}",
+      error_stack: "Stack: {{stack}}",
+      error_version_info: "PDF.js v{{version}} (build: {{build}})",
+      invalid_file_error: "Invalid or corrupted PDF file.",
+      loading_error: "An error occurred while loading the PDF.",
+      missing_file_error: "Missing PDF file.",
+      printing_not_ready: "Warning: The PDF is not fully loaded for printing.",
+      printing_not_supported:
+        "Warning: Printing is not fully supported by this browser.",
+      rendering_error: "An error occurred while rendering the page.",
+      unexpected_response_error: "Unexpected server response.",
+      web_fonts_disabled:
+        "Web fonts are disabled: unable to use embedded PDF fonts.",
+    };
+
+    return this.l10n.get(key || "", args, DEFAULT_L10N_STRINGS[key]);
+  },
+
   // Called once when the document is loaded.
   async initialize(appConfig) {
     this.preferences = this.externalServices.createPreferences();
@@ -715,15 +737,9 @@ const PDFViewerApplication = {
         this.open(file, args);
       },
       onError: err => {
-        this.l10n
-          .get(
-            "loading_error",
-            null,
-            "An error occurred while loading the PDF."
-          )
-          .then(msg => {
-            this._documentError(msg, err);
-          });
+        this._localizeMessage("loading_error").then(msg => {
+          this._documentError(msg, err);
+        });
       },
       onProgress: (loaded, total) => {
         this.progress(loaded / total);
@@ -943,38 +959,16 @@ const PDFViewerApplication = {
           return undefined; // Ignore errors for previously opened PDF files.
         }
 
-        const message = exception?.message;
-        let loadingErrorMessage;
+        let key = "loading_error";
         if (exception instanceof InvalidPDFException) {
-          // change error message also for other builds
-          loadingErrorMessage = this.l10n.get(
-            "invalid_file_error",
-            null,
-            "Invalid or corrupted PDF file."
-          );
+          key = "invalid_file_error";
         } else if (exception instanceof MissingPDFException) {
-          // special message for missing PDF's
-          loadingErrorMessage = this.l10n.get(
-            "missing_file_error",
-            null,
-            "Missing PDF file."
-          );
+          key = "missing_file_error";
         } else if (exception instanceof UnexpectedResponseException) {
-          loadingErrorMessage = this.l10n.get(
-            "unexpected_response_error",
-            null,
-            "Unexpected server response."
-          );
-        } else {
-          loadingErrorMessage = this.l10n.get(
-            "loading_error",
-            null,
-            "An error occurred while loading the PDF."
-          );
+          key = "unexpected_response_error";
         }
-
-        return loadingErrorMessage.then(msg => {
-          this._documentError(msg, { message });
+        return this._localizeMessage(key).then(msg => {
+          this._documentError(msg, { message: exception?.message });
           throw exception;
         });
       }
@@ -1127,45 +1121,28 @@ const PDFViewerApplication = {
    */
   _otherError(message, moreInfo = null) {
     const moreInfoText = [
-      this.l10n.get(
-        "error_version_info",
-        { version: version || "?", build: build || "?" },
-        "PDF.js v{{version}} (build: {{build}})"
-      ),
+      this._localizeMessage("error_version_info", {
+        version: version || "?",
+        build: build || "?",
+      }),
     ];
     if (moreInfo) {
       moreInfoText.push(
-        this.l10n.get(
-          "error_message",
-          { message: moreInfo.message },
-          "Message: {{message}}"
-        )
+        this._localizeMessage("error_message", { message: moreInfo.message })
       );
       if (moreInfo.stack) {
         moreInfoText.push(
-          this.l10n.get(
-            "error_stack",
-            { stack: moreInfo.stack },
-            "Stack: {{stack}}"
-          )
+          this._localizeMessage("error_stack", { stack: moreInfo.stack })
         );
       } else {
         if (moreInfo.filename) {
           moreInfoText.push(
-            this.l10n.get(
-              "error_file",
-              { file: moreInfo.filename },
-              "File: {{file}}"
-            )
+            this._localizeMessage("error_file", { file: moreInfo.filename })
           );
         }
         if (moreInfo.lineNumber) {
           moreInfoText.push(
-            this.l10n.get(
-              "error_line",
-              { line: moreInfo.lineNumber },
-              "Line: {{line}}"
-            )
+            this._localizeMessage("error_line", { line: moreInfo.lineNumber })
           );
         }
       }
@@ -2049,31 +2026,19 @@ const PDFViewerApplication = {
     }
 
     if (!this.supportsPrinting) {
-      this.l10n
-        .get(
-          "printing_not_supported",
-          null,
-          "Warning: Printing is not fully supported by this browser."
-        )
-        .then(printMessage => {
-          this._otherError(printMessage);
-        });
+      this._localizeMessage("printing_not_supported").then(msg => {
+        this._otherError(msg);
+      });
       return;
     }
 
     // The beforePrint is a sync method and we need to know layout before
     // returning from this method. Ensure that we can get sizes of the pages.
     if (!this.pdfViewer.pageViewsReady) {
-      this.l10n
-        .get(
-          "printing_not_ready",
-          null,
-          "Warning: The PDF is not fully loaded for printing."
-        )
-        .then(notReadyMessage => {
-          // eslint-disable-next-line no-alert
-          window.alert(notReadyMessage);
-        });
+      this._localizeMessage("printing_not_ready").then(msg => {
+        // eslint-disable-next-line no-alert
+        window.alert(msg);
+      });
       return;
     }
 
@@ -2394,13 +2359,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         throw new Error("file origin does not match viewer's");
       }
     } catch (ex) {
-      PDFViewerApplication.l10n
-        .get("loading_error", null, "An error occurred while loading the PDF.")
-        .then(loadingErrorMessage => {
-          PDFViewerApplication._documentError(loadingErrorMessage, {
-            message: ex?.message,
-          });
-        });
+      PDFViewerApplication._localizeMessage("loading_error").then(msg => {
+        PDFViewerApplication._documentError(msg, { message: ex?.message });
+      });
       throw ex;
     }
   };
@@ -2509,15 +2470,9 @@ function webViewerInitialized() {
 
   if (!PDFViewerApplication.supportsDocumentFonts) {
     AppOptions.set("disableFontFace", true);
-    PDFViewerApplication.l10n
-      .get(
-        "web_fonts_disabled",
-        null,
-        "Web fonts are disabled: unable to use embedded PDF fonts."
-      )
-      .then(msg => {
-        console.warn(msg);
-      });
+    PDFViewerApplication._localizeMessage("web_fonts_disabled").then(msg => {
+      console.warn(msg);
+    });
   }
 
   if (!PDFViewerApplication.supportsPrinting) {
@@ -2547,11 +2502,9 @@ function webViewerInitialized() {
   try {
     webViewerOpenFileViaURL(file);
   } catch (reason) {
-    PDFViewerApplication.l10n
-      .get("loading_error", null, "An error occurred while loading the PDF.")
-      .then(msg => {
-        PDFViewerApplication._documentError(msg, reason);
-      });
+    PDFViewerApplication._localizeMessage("loading_error").then(msg => {
+      PDFViewerApplication._documentError(msg, reason);
+    });
   }
 }
 
@@ -2620,15 +2573,9 @@ function webViewerPageRendered({ pageNumber, timestamp, error }) {
   }
 
   if (error) {
-    PDFViewerApplication.l10n
-      .get(
-        "rendering_error",
-        null,
-        "An error occurred while rendering the page."
-      )
-      .then(msg => {
-        PDFViewerApplication._otherError(msg, error);
-      });
+    PDFViewerApplication._localizeMessage("rendering_error").then(msg => {
+      PDFViewerApplication._otherError(msg, error);
+    });
   }
 
   PDFViewerApplication.externalServices.reportTelemetry({
