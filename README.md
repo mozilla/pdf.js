@@ -29,7 +29,7 @@ nullish coalescing.
 
 + Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
 
-+ Older browsers: https://mozilla.github.io/pdf.js/es5/web/viewer.html
++ Older browsers: https://mozilla.github.io/pdf.js/legacy/web/viewer.html
 
 ### Browser Extensions
 
@@ -86,9 +86,9 @@ viewer, run:
 
 If you need to support older browsers, run:
 
-    $ gulp generic-es5
+    $ gulp generic-legacy
 
-This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory (respectively `build/generic-es5/build/`).
+This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory (respectively `build/generic-legacy/build/`).
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 
