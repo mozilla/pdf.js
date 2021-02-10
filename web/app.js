@@ -709,14 +709,9 @@ const PDFViewerApplication = {
         this.open(data);
       },
       onOpenWithURL: (url, length, originalUrl) => {
-        let file = url,
-          args = null;
-        if (length !== undefined) {
-          args = { length };
-        }
-        if (originalUrl !== undefined) {
-          file = { url, originalUrl };
-        }
+        const file = originalUrl !== undefined ? { url, originalUrl } : url;
+        const args = length !== undefined ? { length } : null;
+
         this.open(file, args);
       },
       onError: err => {
