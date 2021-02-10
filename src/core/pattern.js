@@ -164,13 +164,8 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     ) {
       // Radial gradient only currently works if either circle is fully within
       // the other circle.
-      var x1 = this.coordsArr[0];
-      var y1 = this.coordsArr[1];
-      var r1 = this.coordsArr[2];
-      var x2 = this.coordsArr[3];
-      var y2 = this.coordsArr[4];
-      var r2 = this.coordsArr[5];
-      var distance = Math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+      const [x1, y1, r1, x2, y2, r2] = this.coordsArr;
+      const distance = Math.hypot(x1 - x2, y1 - y2);
       if (r1 <= r2 + distance && r2 <= r1 + distance) {
         warn("Unsupported radial gradient.");
       }
