@@ -420,6 +420,16 @@ class PDFFindController {
 
         const distance = Levenshtein.distance(query, currentContent, options);
         if (distance <= maxDistance) {
+          // we've found a decent match.
+          // But maybe the match gets better one letter ahead?
+          if (i + 1 < pageContent.length - queryLen) {
+            const nextCurrentContent = pageContent.substring(i + 1, i + 1 + queryLen);
+            const nextDistance = Levenshtein.distance(query, nextCurrentContent, options);
+            if (distance >= nextDistance) {
+              continue;
+            }
+          }
+
           const originalMatchIdx = getOriginalIndex(i, pageDiffs),
             matchEnd = i + queryLen - 1,
             originalQueryLen =
