@@ -14,11 +14,13 @@
  */
 
 import { ConfigNamespace } from "./config.js";
+import { LocaleSetNamespace } from "./locale_set.js";
 import { TemplateNamespace } from "./template.js";
 import { XdpNamespace } from "./xdp.js";
 
 const NamespaceSetUp = {
   config: ConfigNamespace,
+  localeSet: LocaleSetNamespace,
   template: TemplateNamespace,
   xdp: XdpNamespace,
 };
