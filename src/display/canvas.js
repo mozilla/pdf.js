@@ -1576,7 +1576,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     setTextMatrix: function CanvasGraphics_setTextMatrix(a, b, c, d, e, f) {
       this.current.textMatrix = [a, b, c, d, e, f];
-      this.current.textMatrixScale = Math.sqrt(a * a + b * b);
+      this.current.textMatrixScale = Math.hypot(a, b);
 
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
@@ -2455,12 +2455,14 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       ctx.scale(1 / width, -1 / height);
 
       const currentTransform = ctx.mozCurrentTransformInverse;
-      const a = currentTransform[0],
-        b = currentTransform[1];
-      let widthScale = Math.max(Math.sqrt(a * a + b * b), 1);
-      const c = currentTransform[2],
-        d = currentTransform[3];
-      let heightScale = Math.max(Math.sqrt(c * c + d * d), 1);
+      let widthScale = Math.max(
+        Math.hypot(currentTransform[0], currentTransform[1]),
+        1
+      );
+      let heightScale = Math.max(
+        Math.hypot(currentTransform[2], currentTransform[3]),
+        1
+      );
 
       let imgToPaint, tmpCanvas, tmpCtx;
       // typeof check is needed due to node.js support, see issue #8489

@@ -735,7 +735,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     setTextMatrix(a, b, c, d, e, f) {
       const current = this.current;
       current.textMatrix = current.lineMatrix = [a, b, c, d, e, f];
-      current.textMatrixScale = Math.sqrt(a * a + b * b);
+      current.textMatrixScale = Math.hypot(a, b);
 
       current.x = current.lineX = 0;
       current.y = current.lineY = 0;

@@ -2077,20 +2077,19 @@ class PartialEvaluator {
       textContentItem.transform = trm;
       if (!font.vertical) {
         textContentItem.width = 0;
-        textContentItem.height = Math.sqrt(trm[2] * trm[2] + trm[3] * trm[3]);
+        textContentItem.height = Math.hypot(trm[2], trm[3]);
         textContentItem.vertical = false;
       } else {
-        textContentItem.width = Math.sqrt(trm[0] * trm[0] + trm[1] * trm[1]);
+        textContentItem.width = Math.hypot(trm[0], trm[1]);
         textContentItem.height = 0;
         textContentItem.vertical = true;
       }
 
-      var a = textState.textLineMatrix[0];
-      var b = textState.textLineMatrix[1];
-      var scaleLineX = Math.sqrt(a * a + b * b);
-      a = textState.ctm[0];
-      b = textState.ctm[1];
-      var scaleCtmX = Math.sqrt(a * a + b * b);
+      const scaleLineX = Math.hypot(
+        textState.textLineMatrix[0],
+        textState.textLineMatrix[1]
+      );
+      const scaleCtmX = Math.hypot(textState.ctm[0], textState.ctm[1]);
       textContentItem.textAdvanceScale = scaleCtmX * scaleLineX;
       textContentItem.lastAdvanceWidth = 0;
       textContentItem.lastAdvanceHeight = 0;
