@@ -174,7 +174,7 @@ class WorkerMessageHandler {
         throw new Error(
           "The browser/environment lacks native support for critical " +
             "functionality used by the PDF.js library (e.g. `ReadableStream`); " +
-            "please use an `es5`-build instead."
+            "please use a `legacy`-build instead."
         );
       }
     }

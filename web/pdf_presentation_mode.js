@@ -34,15 +34,13 @@ const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {EventBus} eventBus - The application event bus.
- * @property {Array} [contextMenuItems] - The menu items that are added to the
- *   context menu in Presentation Mode.
  */
 
 class PDFPresentationMode {
   /**
    * @param {PDFPresentationModeOptions} options
    */
-  constructor({ container, pdfViewer, eventBus, contextMenuItems = null }) {
+  constructor({ container, pdfViewer, eventBus }) {
     this.container = container;
     this.pdfViewer = pdfViewer;
     this.eventBus = eventBus;
@@ -53,25 +51,6 @@ class PDFPresentationMode {
     this.mouseScrollTimeStamp = 0;
     this.mouseScrollDelta = 0;
     this.touchSwipeState = null;
-
-    if (contextMenuItems) {
-      contextMenuItems.contextFirstPage.addEventListener("click", () => {
-        this.contextMenuOpen = false;
-        this.eventBus.dispatch("firstpage", { source: this });
-      });
-      contextMenuItems.contextLastPage.addEventListener("click", () => {
-        this.contextMenuOpen = false;
-        this.eventBus.dispatch("lastpage", { source: this });
-      });
-      contextMenuItems.contextPageRotateCw.addEventListener("click", () => {
-        this.contextMenuOpen = false;
-        this.eventBus.dispatch("rotatecw", { source: this });
-      });
-      contextMenuItems.contextPageRotateCcw.addEventListener("click", () => {
-        this.contextMenuOpen = false;
-        this.eventBus.dispatch("rotateccw", { source: this });
-      });
-    }
   }
 
   /**
@@ -249,7 +228,6 @@ class PDFPresentationMode {
     this._addWindowListeners();
     this._showControls();
     this.contextMenuOpen = false;
-    this.container.setAttribute("contextmenu", "viewerContextMenu");
 
     // Text selection is disabled in Presentation Mode, thus it's not possible
     // for the user to deselect text that is selected (e.g. with "Select all")
@@ -279,7 +257,6 @@ class PDFPresentationMode {
     this._removeWindowListeners();
     this._hideControls();
     this._resetMouseScrollState();
-    this.container.removeAttribute("contextmenu");
     this.contextMenuOpen = false;
   }
 
