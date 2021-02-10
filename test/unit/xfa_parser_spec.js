@@ -248,6 +248,54 @@ describe("XFAParser", function () {
       expect(root[$dump]()).toEqual(expected);
     });
 
+    it("should parse a xfa document and apply some prototypes", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <proto>
+        <font id="id1" typeface="Foo" size="123pt" weight="bold" posture="italic">
+          <fill>
+            <color value="1,2,3"/>
+          </fill>
+        </font>
+      </proto>
+      <field>
+        <font use="#id1"/>
+      </field>
+      <field>
+        <font use="#id1" size="456pt" weight="bold" posture="normal">
+          <fill>
+            <color value="4,5,6"/>
+          </fill>
+          <extras id="id2"/>
+        </font>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      let font = root.template.subform.field[0].font;
+      expect(font.typeface).toEqual("Foo");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual({ value: 123, unit: "pt" });
+      expect(font.weight).toEqual("bold");
+      expect(font.posture).toEqual("italic");
+      expect(font.fill.color.value).toEqual({ r: 1, g: 2, b: 3 });
+      expect(font.extras).toEqual(undefined);
+
+      font = root.template.subform.field[1].font;
+      expect(font.typeface).toEqual("Foo");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual({ value: 456, unit: "pt" });
+      expect(font.weight).toEqual("bold");
+      expect(font.posture).toEqual("normal");
+      expect(font.fill.color.value).toEqual({ r: 4, g: 5, b: 6 });
+      expect(font.extras.id).toEqual("id2");
+    });
+
     it("should parse a xfa document with xhtml", function () {
       const xml = `
 <?xml version="1.0"?>
@@ -279,6 +327,93 @@ describe("XFAParser", function () {
           "This is the last line of the paragraph.\n",
         ].join("")
       );
+    });
+
+    it("should parse a xfa document and apply some prototypes with cycle", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <proto>
+        <subform id="id1">
+          <subform use="#id1"/>
+        </subform>
+      </proto>
+    </subform>
+    <subform use="#id1"/>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      const subform = root.template.subform[1];
+
+      expect(subform.id).toEqual("id1");
+      expect(subform.subform.id).toEqual("id1");
+    });
+
+    it("should parse a xfa document and apply some nested prototypes", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <proto>
+        <color id="RED" value="7, 8, 9"/>
+        <font id="HELV" typeface="helvetica" size="31pt" weight="normal" posture="italic"> </font>
+        <font id="HELV-RED" use="#HELV">
+          <fill>
+            <color use="#RED"/>
+          </fill>
+        </font>
+      </proto>
+      <field>
+        <font use="#HELV-RED"/>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      const font = root.template.subform.field.font;
+
+      expect(font.typeface).toEqual("helvetica");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual({ value: 31, unit: "pt" });
+      expect(font.weight).toEqual("normal");
+      expect(font.posture).toEqual("italic");
+      expect(font.fill.color.value).toEqual({ r: 7, g: 8, b: 9 });
+    });
+
+    it("should parse a xfa document and apply a prototype with content", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <proto>
+        <text id="TEXT">default TEXT</text>
+      </proto>
+      <field>
+        <value>
+          <text use="#TEXT"></text>
+        </value>
+      </field>
+      <field>
+        <value>
+          <text use="#TEXT">Overriding text</text>
+        </value>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      let field = root.template.subform.field[0];
+      expect(field.value.text.$content).toEqual("default TEXT");
+
+      field = root.template.subform.field[1];
+      expect(field.value.text.$content).toEqual("Overriding text");
     });
   });
 });
