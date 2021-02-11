@@ -51,6 +51,7 @@ var GENERIC_DIR = BUILD_DIR + "generic/";
 var GENERIC_ES5_DIR = BUILD_DIR + "generic-es5/";
 var COMPONENTS_DIR = BUILD_DIR + "components/";
 var COMPONENTS_ES5_DIR = BUILD_DIR + "components-es5/";
+var SINGLE_FILE_DIR = BUILD_DIR + "singlefile/";
 var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
 var IMAGE_DECODERS_ES5_DIR = BUILD_DIR + "image_decoders-es5/";
 var DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
@@ -2032,6 +2033,8 @@ gulp.task(
           .src([
             GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
             GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
+            SINGLE_FILE_DIR + "build/pdf.combined.js",
+            SINGLE_FILE_DIR + "build/pdf.combined.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "build/")),
