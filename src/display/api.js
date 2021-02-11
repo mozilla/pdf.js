@@ -1183,6 +1183,7 @@ class PDFPageProxy {
     background = null,
     annotationStorage = null,
     optionalContentConfigPromise = null,
+    operatorList = null,
   }) {
     if (this._stats) {
       this._stats.time("Overall");
@@ -1278,7 +1279,7 @@ class PDFPageProxy {
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
-      operatorList: this._params.operatorList || intentState.operatorList,
+      operatorList: operatorList || intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
       webGLContext,
