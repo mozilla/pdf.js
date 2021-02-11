@@ -14,15 +14,25 @@
  */
 
 import { ConfigNamespace } from "./config.js";
+import { ConnectionSetNamespace } from "./connection_set.js";
+import { DatasetsNamespace } from "./datasets.js";
 import { LocaleSetNamespace } from "./locale_set.js";
+import { SignatureNamespace } from "./signature.js";
+import { StylesheetNamespace } from "./stylesheet.js";
 import { TemplateNamespace } from "./template.js";
 import { XdpNamespace } from "./xdp.js";
+import { XhtmlNamespace } from "./xhtml.js";
 
 const NamespaceSetUp = {
   config: ConfigNamespace,
+  connection: ConnectionSetNamespace,
+  datasets: DatasetsNamespace,
   localeSet: LocaleSetNamespace,
+  signature: SignatureNamespace,
+  stylesheet: StylesheetNamespace,
   template: TemplateNamespace,
   xdp: XdpNamespace,
+  xhtml: XhtmlNamespace,
 };
 
 export { NamespaceSetUp };
