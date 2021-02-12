@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { deprecated } from "./display_utils.js";
 import { objectFromEntries } from "../shared/util.js";
 
 /**
@@ -33,7 +34,7 @@ class AnnotationStorage {
 
   /**
    * Get the value for a given key if it exists
-   * or store and return the default value
+   * or return the default value
    *
    * @public
    * @memberof AnnotationStorage
@@ -41,7 +42,19 @@ class AnnotationStorage {
    * @param {Object} defaultValue
    * @returns {Object}
    */
+  getValue(key, defaultValue) {
+    if (this._storage.has(key)) {
+      return this._storage.get(key);
+    }
+
+    return defaultValue;
+  }
+
+  /**
+   * @deprecated
+   */
   getOrCreateValue(key, defaultValue) {
+    deprecated("Use getValue instead.");
     if (this._storage.has(key)) {
       return this._storage.get(key);
     }
