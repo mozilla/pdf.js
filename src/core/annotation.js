@@ -1268,16 +1268,23 @@ class WidgetAnnotation extends Annotation {
     if (!annotationStorage || isPassword) {
       return null;
     }
-    const value =
+    let value =
       annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
     if (value === undefined) {
       // The annotation hasn't been rendered so use the appearance
       return null;
     }
 
+    value = value.trim();
+
     if (value === "") {
       // the field is empty: nothing to render
       return "";
+    }
+
+    let lineCount = -1;
+    if (this.data.multiLine) {
+      lineCount = value.split(/\r\n|\r|\n/).length;
     }
 
     const defaultPadding = 2;
@@ -1297,8 +1304,12 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
+    const [defaultAppearance, fontSize] = this._computeFontSize(
+      totalHeight,
+      lineCount
+    );
+
     const font = await this._getFontData(evaluator, task);
-    const fontSize = this._computeFontSize(font, totalHeight);
 
     let descent = font.descent;
     if (isNaN(descent)) {
@@ -1306,7 +1317,6 @@ class WidgetAnnotation extends Annotation {
     }
 
     const vPadding = defaultPadding + Math.abs(descent) * fontSize;
-    const defaultAppearance = this.data.defaultAppearance;
     const alignment = this.data.textAlignment;
 
     if (this.data.multiLine) {
@@ -1389,35 +1399,44 @@ class WidgetAnnotation extends Annotation {
     return initialState.font;
   }
 
-  _computeFontSize(font, height) {
-    let fontSize = this.data.defaultAppearanceData.fontSize;
-    if (!fontSize) {
-      const { fontColor, fontName } = this.data.defaultAppearanceData;
-      let capHeight;
-      if (font.capHeight) {
-        capHeight = font.capHeight;
+  _computeFontSize(height, lineCount) {
+    let { fontSize } = this.data.defaultAppearanceData;
+    if (fontSize === null || fontSize === 0) {
+      // A zero value for size means that the font shall be auto-sized:
+      // its size shall be computed as a function of the height of the
+      // annotation rectangle (see 12.7.3.3).
+
+      const roundWithOneDigit = x => Math.round(x * 10) / 10;
+
+      // Represent the percentage of the font size over the height
+      // of a single-line field.
+      const FONT_FACTOR = 0.8;
+      if (lineCount === -1) {
+        fontSize = roundWithOneDigit(FONT_FACTOR * height);
       } else {
-        const glyphs = font.charsToGlyphs(font.encodeString("M").join(""));
-        if (glyphs.length === 1 && glyphs[0].width) {
-          const em = glyphs[0].width / 1000;
-          // According to https://en.wikipedia.org/wiki/Em_(typography)
-          // an average cap height should be 70% of 1em
-          capHeight = 0.7 * em;
-        } else {
-          capHeight = 0.7;
-        }
+        // Hard to guess how many lines there are.
+        // The field may have been sized to have 10 lines
+        // and the user entered only 1 so if we get font size from
+        // height and number of lines then we'll get something too big.
+        // So we compute a fake number of lines based on height and
+        // a font size equal to 10.
+        // Then we'll adjust font size to what we have really.
+        fontSize = 10;
+        let lineHeight = fontSize / FONT_FACTOR;
+        let numberOfLines = Math.round(height / lineHeight);
+        numberOfLines = Math.max(numberOfLines, lineCount);
+        lineHeight = height / numberOfLines;
+        fontSize = roundWithOneDigit(FONT_FACTOR * lineHeight);
       }
 
-      // 1.5 * capHeight * fontSize seems to be a good value for lineHeight
-      fontSize = Math.max(1, Math.floor(height / (1.5 * capHeight)));
-
+      const { fontName, fontColor } = this.data.defaultAppearanceData;
       this.data.defaultAppearance = createDefaultAppearance({
         fontSize,
         fontName,
         fontColor,
       });
     }
-    return fontSize;
+    return [this.data.defaultAppearance, fontSize];
   }
 
   _renderText(text, font, fontSize, totalWidth, alignment, hPadding, vPadding) {
