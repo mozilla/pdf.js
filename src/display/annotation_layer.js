@@ -874,7 +874,10 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const data = this.data;
     const id = data.id;
     const value = storage.getOrCreateValue(id, {
-      value: data.fieldValue && data.fieldValue !== "Off",
+      value:
+        data.fieldValue &&
+        ((data.exportValue && data.exportValue === data.fieldValue) ||
+          (!data.exportValue && data.fieldValue !== "Off")),
     }).value;
 
     this.container.className = "buttonWidgetAnnotation checkBox";
