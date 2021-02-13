@@ -603,7 +603,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
-      const textContent = storage.getOrCreateValue(id, {
+      const textContent = storage.getValue(id, {
         value: this.data.fieldValue,
       }).value;
       const elementData = {
@@ -873,8 +873,11 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getOrCreateValue(id, {
-      value: data.fieldValue && data.fieldValue !== "Off",
+    const value = storage.getValue(id, {
+      value:
+        data.fieldValue &&
+        ((data.exportValue && data.exportValue === data.fieldValue) ||
+          (!data.exportValue && data.fieldValue !== "Off")),
     }).value;
 
     this.container.className = "buttonWidgetAnnotation checkBox";
@@ -959,7 +962,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getOrCreateValue(id, {
+    const value = storage.getValue(id, {
       value: data.fieldValue === data.buttonValue,
     }).value;
 
@@ -1069,9 +1072,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     // are not properly printed/saved yet, so we only store the first item in
     // the field value array instead of the entire array. Once support for those
     // two field types is implemented, we should use the same pattern as the
-    // other interactive widgets where the return value of `getOrCreateValue` is
-    // used and the full array of field values is stored.
-    storage.getOrCreateValue(id, {
+    // other interactive widgets where the return value of `getValue`
+    // is used and the full array of field values is stored.
+    storage.getValue(id, {
       value:
         this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
     });

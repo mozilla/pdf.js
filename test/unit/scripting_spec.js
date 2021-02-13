@@ -18,7 +18,7 @@ import { loadScript } from "../../src/display/display_utils.js";
 const sandboxBundleSrc = "../../build/generic/build/pdf.sandbox.js";
 
 describe("Scripting", function () {
-  let sandbox, send_queue, test_id, ref;
+  let sandbox, send_queue, test_id, ref, windowAlert;
 
   function getId() {
     const id = `${ref++}R`;
@@ -48,6 +48,7 @@ describe("Scripting", function () {
         send_queue.set(event.detail.id, event.detail);
       }
     };
+    windowAlert = window.alert;
     window.alert = value => {
       const command = "alert";
       send_queue.set(command, { command, value });
@@ -76,6 +77,7 @@ describe("Scripting", function () {
     sandbox.nukeSandbox();
     sandbox = null;
     send_queue = null;
+    window.alert = windowAlert;
   });
 
   describe("Sandbox", function () {

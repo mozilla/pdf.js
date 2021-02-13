@@ -106,7 +106,7 @@ class PDFPresentationMode {
     evt.preventDefault();
 
     const delta = normalizeWheelEventDelta(evt);
-    const currentTime = new Date().getTime();
+    const currentTime = Date.now();
     const storedTime = this.mouseScrollTimeStamp;
 
     // If we've already switched page, avoid accidentally switching again.
