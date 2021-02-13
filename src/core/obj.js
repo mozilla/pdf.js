@@ -1910,9 +1910,6 @@ var XRef = (function XRefClosure() {
           }
           // The top-level /Pages dictionary isn't obviously corrupt.
         } catch (ex) {
-          if (ex instanceof MissingDataException) {
-            throw ex;
-          }
           continue;
         }
         // taking the first one with 'ID'

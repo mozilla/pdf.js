@@ -64,7 +64,6 @@ import {
   WinAnsiEncoding,
   ZapfDingbatsEncoding,
 } from "./encodings.js";
-import { getLookupTableFactory, MissingDataException } from "./core_utils.js";
 import {
   getNormalizedUnicodes,
   getUnicodeForGlyph,
@@ -87,6 +86,7 @@ import {
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
+import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
@@ -267,9 +267,6 @@ class PartialEvaluator {
             try {
               graphicState = xref.fetch(graphicState);
             } catch (ex) {
-              if (ex instanceof MissingDataException) {
-                throw ex;
-              }
               // Avoid parsing a corrupt ExtGState more than once.
               processed.put(graphicState);
 
@@ -316,9 +313,6 @@ class PartialEvaluator {
           try {
             xObject = xref.fetch(xObject);
           } catch (ex) {
-            if (ex instanceof MissingDataException) {
-              throw ex;
-            }
             // Avoid parsing a corrupt XObject more than once.
             processed.put(xObject);
 
@@ -1270,9 +1264,6 @@ class PartialEvaluator {
           operatorList.addOp(fn, tilingPatternIR);
           return undefined;
         } catch (ex) {
-          if (ex instanceof MissingDataException) {
-            throw ex;
-          }
           // Handle any errors during normal TilingPattern parsing.
         }
       }
