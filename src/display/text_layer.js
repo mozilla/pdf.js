@@ -58,12 +58,6 @@ const renderTextLayer = (function renderTextLayerClosure() {
   const DEFAULT_FONT_ASCENT = 0.8;
   const ascentCache = new Map();
 
-  const NonWhitespaceRegexp = /\S/;
-
-  function isAllWhitespace(str) {
-    return !NonWhitespaceRegexp.test(str);
-  }
-
   function getAscent(fontFamily, ctx) {
     const cachedAscent = ascentCache.get(fontFamily);
     if (cachedAscent) {
@@ -133,7 +127,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
     const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
-      isWhitespace: false,
+      hasEOL: geom.hasEOL,
       originalTransform: null,
       paddingBottom: 0,
       paddingLeft: 0,
@@ -142,12 +136,8 @@ const renderTextLayer = (function renderTextLayerClosure() {
       scale: 1,
     };
 
+    textDiv.textContent = geom.str;
     task._textDivs.push(textDiv);
-    if (isAllWhitespace(geom.str)) {
-      textDivProperties.isWhitespace = true;
-      task._textDivProperties.set(textDiv, textDivProperties);
-      return;
-    }
 
     const tx = Util.transform(task._viewport.transform, geom.transform);
     let angle = Math.atan2(tx[1], tx[0]);
@@ -173,7 +163,6 @@ const renderTextLayer = (function renderTextLayerClosure() {
     textDiv.style.fontSize = `${fontHeight}px`;
     textDiv.style.fontFamily = style.fontFamily;
 
-    textDiv.textContent = geom.str;
     // geom.dir may be 'ttb' for vertical texts.
     textDiv.dir = geom.dir;
 
@@ -189,7 +178,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
     // little effect on text highlighting. This makes scrolling on docs with
     // lots of such divs a lot faster.
     let shouldScaleText = false;
-    if (geom.str.length > 1) {
+    if (geom.str.length > 1 || geom.isSpace) {
       shouldScaleText = true;
     } else if (geom.transform[0] !== geom.transform[3]) {
       const absScaleX = Math.abs(geom.transform[0]),
@@ -645,9 +634,6 @@ const renderTextLayer = (function renderTextLayerClosure() {
 
     _layoutText(textDiv) {
       const textDivProperties = this._textDivProperties.get(textDiv);
-      if (textDivProperties.isWhitespace) {
-        return;
-      }
 
       let transform = "";
       if (textDivProperties.canvasWidth !== 0) {
@@ -679,8 +665,11 @@ const renderTextLayer = (function renderTextLayerClosure() {
         }
         textDiv.style.transform = transform;
       }
-      this._textDivProperties.set(textDiv, textDivProperties);
+
       this._container.appendChild(textDiv);
+      if (textDivProperties.hasEOL) {
+        textDiv.appendChild(document.createElement("br"));
+      }
     },
 
     _render: function TextLayer_render(timeout) {
@@ -746,6 +735,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
       if (!this._enhanceTextSelection || !this._renderingDone) {
         return;
       }
+
       if (this._bounds !== null) {
         expand(this);
         this._bounds = null;
@@ -757,9 +747,6 @@ const renderTextLayer = (function renderTextLayerClosure() {
         const div = this._textDivs[i];
         const divProps = this._textDivProperties.get(div);
 
-        if (divProps.isWhitespace) {
-          continue;
-        }
         if (expandDivs) {
           transformBuf.length = 0;
           paddingBuf.length = 0;

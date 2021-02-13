@@ -1658,6 +1658,8 @@ describe("api", function () {
                 str: "Issue 8276",
                 transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
                 width: 77.49,
+                isSpace: false,
+                hasEOL: false,
               });
               expect(styles.Times).toEqual({
                 fontFamily: "serif",
