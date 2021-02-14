@@ -877,8 +877,10 @@ const PDFViewerApplication = {
   async close() {
     this._unblockDocumentLoadEvent();
 
-    const errorWrapper = this.appConfig.errorWrapper.container;
-    errorWrapper.hidden = true;
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      const { container } = this.appConfig.errorWrapper;
+      container.hidden = true;
+    }
 
     if (!this.pdfLoadingTask) {
       return undefined;
@@ -1484,7 +1486,10 @@ const PDFViewerApplication = {
       pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
         this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
       });
-      if ("requestIdleCallback" in window) {
+      if (
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+        "requestIdleCallback" in window
+      ) {
         const callback = window.requestIdleCallback(
           () => {
             this._collectTelemetry(pdfDocument);
@@ -1542,13 +1547,7 @@ const PDFViewerApplication = {
       // It should be *extremely* rare for metadata to not have been resolved
       // when this code runs, but ensure that we handle that case here.
       await new Promise(resolve => {
-        this.eventBus._on(
-          "metadataloaded",
-          evt => {
-            resolve();
-          },
-          { once: true }
-        );
+        this.eventBus._on("metadataloaded", resolve, { once: true });
       });
       if (pdfDocument !== this.pdfDocument) {
         return; // The document was closed while the metadata resolved.
@@ -1561,13 +1560,7 @@ const PDFViewerApplication = {
       // Hence we'll simply have to trust that the `contentLength` (as provided
       // by the server), when it exists, is accurate enough here.
       await new Promise(resolve => {
-        this.eventBus._on(
-          "documentloaded",
-          evt => {
-            resolve();
-          },
-          { once: true }
-        );
+        this.eventBus._on("documentloaded", resolve, { once: true });
       });
       if (pdfDocument !== this.pdfDocument) {
         return; // The document was closed while the downloadInfo resolved.
