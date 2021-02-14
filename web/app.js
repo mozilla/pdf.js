@@ -824,8 +824,10 @@ const PDFViewerApplication = {
   async close() {
     this._unblockDocumentLoadEvent();
 
-    const errorWrapper = this.appConfig.errorWrapper.container;
-    errorWrapper.hidden = true;
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      const { container } = this.appConfig.errorWrapper;
+      container.hidden = true;
+    }
 
     if (!this.pdfLoadingTask) {
       return undefined;
@@ -1421,7 +1423,10 @@ const PDFViewerApplication = {
       pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
         this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
       });
-      if ("requestIdleCallback" in window) {
+      if (
+        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+        "requestIdleCallback" in window
+      ) {
         const callback = window.requestIdleCallback(
           () => {
             this._collectTelemetry(pdfDocument);
