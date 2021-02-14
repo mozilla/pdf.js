@@ -740,8 +740,8 @@ class BaseViewer {
    */
   get _pageWidthScaleFactor() {
     if (
-      this.spreadMode !== SpreadMode.NONE &&
-      this.scrollMode !== ScrollMode.HORIZONTAL &&
+      this._spreadMode !== SpreadMode.NONE &&
+      this._scrollMode !== ScrollMode.HORIZONTAL &&
       !this.isInPresentationMode
     ) {
       return 2;
@@ -1642,7 +1642,7 @@ class BaseViewer {
     return true;
   }
 
-  initializeScriptingEvents() {
+  async initializeScriptingEvents() {
     if (!this.enableScripting || this._pageOpenPendingSet) {
       return;
     }
