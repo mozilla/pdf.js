@@ -129,8 +129,6 @@ class PDFCursorTools {
 
     this.eventBus._on("presentationmodechanged", evt => {
       switch (evt.state) {
-        case PresentationModeState.CHANGING:
-          break;
         case PresentationModeState.FULLSCREEN: {
           const previouslyActive = this.active;
 
