@@ -89,23 +89,18 @@ class Metadata {
     return entry.childNodes.filter(node => node.nodeName === "rdf:li");
   }
 
-  _getCreators(entry) {
-    if (entry.nodeName !== "dc:creator") {
-      return false;
-    }
+  _parseArray(entry) {
     if (!entry.hasChildNodes()) {
-      return true;
+      return;
     }
-
     // Child must be a Bag (unordered array) or a Seq.
-    const seqNode = entry.childNodes[0];
-    const authors = this._getSequence(seqNode) || [];
+    const [seqNode] = entry.childNodes;
+    const sequence = this._getSequence(seqNode) || [];
+
     this._metadataMap.set(
       entry.nodeName,
-      authors.map(node => node.textContent.trim())
+      sequence.map(node => node.textContent.trim())
     );
-
-    return true;
   }
 
   _parse(xmlDocument) {
@@ -130,11 +125,13 @@ class Metadata {
 
       for (const entry of desc.childNodes) {
         const name = entry.nodeName;
-        if (name === "#text") {
-          continue;
-        }
-        if (this._getCreators(entry)) {
-          continue;
+        switch (name) {
+          case "#text":
+            continue;
+          case "dc:creator":
+          case "dc:subject":
+            this._parseArray(entry);
+            continue;
         }
         this._metadataMap.set(name, entry.textContent.trim());
       }
