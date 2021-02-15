@@ -171,7 +171,7 @@ describe("metadata", function () {
       "dc:creator": [""],
       "dc:description": "",
       "dc:format": "application/pdf",
-      "dc:subject": "",
+      "dc:subject": [],
       "dc:title": "",
       "pdf:keywords": "",
       "pdf:pdfversion": "1.7",
