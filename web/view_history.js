@@ -13,19 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/view_history', ['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
-  } else {
-    factory((root.pdfjsWebViewHistory = {}));
-  }
-}(this, function (exports) {
-
-var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
+const DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
 
 /**
  * View History - This is a utility for saving various view parameters for
@@ -33,98 +21,87 @@ var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
  *
  * The way that the view parameters are stored depends on how PDF.js is built,
  * for 'gulp <flag>' the following cases exist:
- *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
- *  - GENERIC or CHROME     - uses localStorage, if it is available.
+ *  - MOZCENTRAL        - uses sessionStorage.
+ *  - GENERIC or CHROME - uses localStorage, if it is available.
  */
-var ViewHistory = (function ViewHistoryClosure() {
-  function ViewHistory(fingerprint, cacheSize) {
+class ViewHistory {
+  constructor(fingerprint, cacheSize = DEFAULT_VIEW_HISTORY_CACHE_SIZE) {
     this.fingerprint = fingerprint;
-    this.cacheSize = cacheSize || DEFAULT_VIEW_HISTORY_CACHE_SIZE;
-    this.isInitializedPromiseResolved = false;
-    this.initializedPromise =
-        this._readFromStorage().then(function (databaseStr) {
-      this.isInitializedPromiseResolved = true;
+    this.cacheSize = cacheSize;
 
-      var database = JSON.parse(databaseStr || '{}');
-      if (!('files' in database)) {
+    this._initializedPromise = this._readFromStorage().then(databaseStr => {
+      const database = JSON.parse(databaseStr || "{}");
+      let index = -1;
+      if (!Array.isArray(database.files)) {
         database.files = [];
-      }
-      if (database.files.length >= this.cacheSize) {
-        database.files.shift();
-      }
-      var index;
-      for (var i = 0, length = database.files.length; i < length; i++) {
-        var branch = database.files[i];
-        if (branch.fingerprint === this.fingerprint) {
-          index = i;
-          break;
+      } else {
+        while (database.files.length >= this.cacheSize) {
+          database.files.shift();
+        }
+
+        for (let i = 0, ii = database.files.length; i < ii; i++) {
+          const branch = database.files[i];
+          if (branch.fingerprint === this.fingerprint) {
+            index = i;
+            break;
+          }
         }
       }
-      if (typeof index !== 'number') {
-        index = database.files.push({fingerprint: this.fingerprint}) - 1;
+      if (index === -1) {
+        index = database.files.push({ fingerprint: this.fingerprint }) - 1;
       }
       this.file = database.files[index];
       this.database = database;
-    }.bind(this));
+    });
   }
 
-  ViewHistory.prototype = {
-    _writeToStorage: function ViewHistory_writeToStorage() {
-      return new Promise(function (resolve) {
-        var databaseStr = JSON.stringify(this.database);
+  async _writeToStorage() {
+    const databaseStr = JSON.stringify(this.database);
 
-//#if FIREFOX || MOZCENTRAL
-//      sessionStorage.setItem('pdfjsHistory', databaseStr);
-//      resolve();
-//#endif
-
-//#if !(FIREFOX || MOZCENTRAL)
-        localStorage.setItem('database', databaseStr);
-        resolve();
-//#endif
-      }.bind(this));
-    },
-
-    _readFromStorage: function ViewHistory_readFromStorage() {
-      return new Promise(function (resolve) {
-//#if FIREFOX || MOZCENTRAL
-//      resolve(sessionStorage.getItem('pdfjsHistory'));
-//#endif
-
-//#if !(FIREFOX || MOZCENTRAL)
-        resolve(localStorage.getItem('database'));
-//#endif
-      });
-    },
-
-    set: function ViewHistory_set(name, val) {
-      if (!this.isInitializedPromiseResolved) {
-        return;
-      }
-      this.file[name] = val;
-      return this._writeToStorage();
-    },
-
-    setMultiple: function ViewHistory_setMultiple(properties) {
-      if (!this.isInitializedPromiseResolved) {
-        return;
-      }
-      for (var name in properties) {
-        this.file[name] = properties[name];
-      }
-      return this._writeToStorage();
-    },
-
-    get: function ViewHistory_get(name, defaultValue) {
-      if (!this.isInitializedPromiseResolved) {
-        return defaultValue;
-      }
-      return this.file[name] || defaultValue;
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      sessionStorage.setItem("pdfjs.history", databaseStr);
+      return;
     }
-  };
+    localStorage.setItem("pdfjs.history", databaseStr);
+  }
 
-  return ViewHistory;
-})();
+  async _readFromStorage() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      return sessionStorage.getItem("pdfjs.history");
+    }
+    return localStorage.getItem("pdfjs.history");
+  }
 
-exports.ViewHistory = ViewHistory;
-}));
+  async set(name, val) {
+    await this._initializedPromise;
+    this.file[name] = val;
+    return this._writeToStorage();
+  }
+
+  async setMultiple(properties) {
+    await this._initializedPromise;
+    for (const name in properties) {
+      this.file[name] = properties[name];
+    }
+    return this._writeToStorage();
+  }
+
+  async get(name, defaultValue) {
+    await this._initializedPromise;
+    const val = this.file[name];
+    return val !== undefined ? val : defaultValue;
+  }
+
+  async getMultiple(properties) {
+    await this._initializedPromise;
+    const values = Object.create(null);
+
+    for (const name in properties) {
+      const val = this.file[name];
+      values[name] = val !== undefined ? val : properties[name];
+    }
+    return values;
+  }
+}
+
+export { ViewHistory };

@@ -23,23 +23,79 @@
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: 1px auto -8px auto;
+  margin: 1px auto -8px;
   position: relative;
   overflow: visible;
   border: 9px solid transparent;
   background-clip: content-box;
   border-image: url(images/shadow.png) 9 9 repeat;
-  background-color: white;
+  background-color: rgba(255, 255, 255, 1);
 }
 
 .pdfViewer.removePageBorders .page {
-  margin: 0px auto 10px auto;
+  margin: 0 auto 10px;
   border: none;
+}
+
+.pdfViewer.singlePageView {
+  display: inline-block;
+}
+
+.pdfViewer.singlePageView .page {
+  margin: 0;
+  border: none;
+}
+
+.pdfViewer.scrollHorizontal,
+.pdfViewer.scrollWrapped,
+.spread {
+  margin-left: 3.5px;
+  margin-right: 3.5px;
+  text-align: center;
+}
+
+.pdfViewer.scrollHorizontal,
+.spread {
+  white-space: nowrap;
+}
+
+.pdfViewer.removePageBorders,
+.pdfViewer.scrollHorizontal .spread,
+.pdfViewer.scrollWrapped .spread {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.spread .page,
+.pdfViewer.scrollHorizontal .page,
+.pdfViewer.scrollWrapped .page,
+.pdfViewer.scrollHorizontal .spread,
+.pdfViewer.scrollWrapped .spread {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.spread .page,
+.pdfViewer.scrollHorizontal .page,
+.pdfViewer.scrollWrapped .page {
+  margin-left: -3.5px;
+  margin-right: -3.5px;
+}
+
+.pdfViewer.removePageBorders .spread .page,
+.pdfViewer.removePageBorders.scrollHorizontal .page,
+.pdfViewer.removePageBorders.scrollWrapped .page {
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
 .pdfViewer .page canvas {
   margin: 0;
   display: block;
+}
+
+.pdfViewer .page canvas[hidden] {
+  display: none;
 }
 
 .pdfViewer .page .loadingIcon {
@@ -49,22 +105,23 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: url('images/loading-icon.gif') center no-repeat;
+  background: url("images/loading-icon.gif") center no-repeat;
 }
 
-.pdfPresentationMode:-webkit-full-screen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
+.pdfPresentationMode .pdfViewer {
+  margin-left: 0;
+  margin-right: 0;
 }
 
-.pdfPresentationMode:-moz-full-screen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
+.pdfPresentationMode .pdfViewer .page,
+.pdfPresentationMode .pdfViewer .spread {
+  display: block;
 }
 
-.pdfPresentationMode:-ms-fullscreen .pdfViewer .page {
-  margin-bottom: 100% !important;
-  border: 0;
+.pdfPresentationMode .pdfViewer .page,
+.pdfPresentationMode .pdfViewer.removePageBorders .page {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pdfPresentationMode:fullscreen .pdfViewer .page {

@@ -13,143 +13,129 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/overlay_manager', ['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
-  } else {
-    factory((root.pdfjsWebOverlayManager = {}));
+class OverlayManager {
+  constructor() {
+    this._overlays = {};
+    this._active = null;
+    this._keyDownBound = this._keyDown.bind(this);
   }
-}(this, function (exports) {
 
-var OverlayManager = {
-  overlays: {},
-  active: null,
+  get active() {
+    return this._active;
+  }
 
   /**
-   * @param {string} name The name of the overlay that is registered.
-   * @param {HTMLDivElement} element The overlay's DOM element.
-   * @param {function} callerCloseMethod (optional) The method that, if present,
-   *                   will call OverlayManager.close from the Object
-   *                   registering the overlay. Access to this method is
-   *                   necessary in order to run cleanup code when e.g.
-   *                   the overlay is force closed. The default is null.
-   * @param {boolean} canForceClose (optional) Indicates if opening the overlay
-   *                  will close an active overlay. The default is false.
+   * @param {string} name - The name of the overlay that is registered.
+   * @param {HTMLDivElement} element - The overlay's DOM element.
+   * @param {function} [callerCloseMethod] - The method that, if present, calls
+   *                   `OverlayManager.close` from the object registering the
+   *                   overlay. Access to this method is necessary in order to
+   *                   run cleanup code when e.g. the overlay is force closed.
+   *                   The default is `null`.
+   * @param {boolean} [canForceClose] - Indicates if opening the overlay closes
+   *                  an active overlay. The default is `false`.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    registered.
    */
-  register: function overlayManagerRegister(name, element,
-                                            callerCloseMethod, canForceClose) {
-    return new Promise(function (resolve) {
-      var container;
-      if (!name || !element || !(container = element.parentNode)) {
-        throw new Error('Not enough parameters.');
-      } else if (this.overlays[name]) {
-        throw new Error('The overlay is already registered.');
-      }
-      this.overlays[name] = { element: element,
-                              container: container,
-                              callerCloseMethod: (callerCloseMethod || null),
-                              canForceClose: (canForceClose || false) };
-      resolve();
-    }.bind(this));
-  },
+  async register(
+    name,
+    element,
+    callerCloseMethod = null,
+    canForceClose = false
+  ) {
+    let container;
+    if (!name || !element || !(container = element.parentNode)) {
+      throw new Error("Not enough parameters.");
+    } else if (this._overlays[name]) {
+      throw new Error("The overlay is already registered.");
+    }
+    this._overlays[name] = {
+      element,
+      container,
+      callerCloseMethod,
+      canForceClose,
+    };
+  }
 
   /**
-   * @param {string} name The name of the overlay that is unregistered.
+   * @param {string} name - The name of the overlay that is unregistered.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    unregistered.
    */
-  unregister: function overlayManagerUnregister(name) {
-    return new Promise(function (resolve) {
-      if (!this.overlays[name]) {
-        throw new Error('The overlay does not exist.');
-      } else if (this.active === name) {
-        throw new Error('The overlay cannot be removed while it is active.');
-      }
-      delete this.overlays[name];
-
-      resolve();
-    }.bind(this));
-  },
+  async unregister(name) {
+    if (!this._overlays[name]) {
+      throw new Error("The overlay does not exist.");
+    } else if (this._active === name) {
+      throw new Error("The overlay cannot be removed while it is active.");
+    }
+    delete this._overlays[name];
+  }
 
   /**
-   * @param {string} name The name of the overlay that should be opened.
+   * @param {string} name - The name of the overlay that should be opened.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    opened.
    */
-  open: function overlayManagerOpen(name) {
-    return new Promise(function (resolve) {
-      if (!this.overlays[name]) {
-        throw new Error('The overlay does not exist.');
-      } else if (this.active) {
-        if (this.overlays[name].canForceClose) {
-          this._closeThroughCaller();
-        } else if (this.active === name) {
-          throw new Error('The overlay is already active.');
-        } else {
-          throw new Error('Another overlay is currently active.');
-        }
+  async open(name) {
+    if (!this._overlays[name]) {
+      throw new Error("The overlay does not exist.");
+    } else if (this._active) {
+      if (this._overlays[name].canForceClose) {
+        this._closeThroughCaller();
+      } else if (this._active === name) {
+        throw new Error("The overlay is already active.");
+      } else {
+        throw new Error("Another overlay is currently active.");
       }
-      this.active = name;
-      this.overlays[this.active].element.classList.remove('hidden');
-      this.overlays[this.active].container.classList.remove('hidden');
+    }
+    this._active = name;
+    this._overlays[this._active].element.classList.remove("hidden");
+    this._overlays[this._active].container.classList.remove("hidden");
 
-      window.addEventListener('keydown', this._keyDown);
-      resolve();
-    }.bind(this));
-  },
+    window.addEventListener("keydown", this._keyDownBound);
+  }
 
   /**
-   * @param {string} name The name of the overlay that should be closed.
+   * @param {string} name - The name of the overlay that should be closed.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    closed.
    */
-  close: function overlayManagerClose(name) {
-    return new Promise(function (resolve) {
-      if (!this.overlays[name]) {
-        throw new Error('The overlay does not exist.');
-      } else if (!this.active) {
-        throw new Error('The overlay is currently not active.');
-      } else if (this.active !== name) {
-        throw new Error('Another overlay is currently active.');
-      }
-      this.overlays[this.active].container.classList.add('hidden');
-      this.overlays[this.active].element.classList.add('hidden');
-      this.active = null;
+  async close(name) {
+    if (!this._overlays[name]) {
+      throw new Error("The overlay does not exist.");
+    } else if (!this._active) {
+      throw new Error("The overlay is currently not active.");
+    } else if (this._active !== name) {
+      throw new Error("Another overlay is currently active.");
+    }
+    this._overlays[this._active].container.classList.add("hidden");
+    this._overlays[this._active].element.classList.add("hidden");
+    this._active = null;
 
-      window.removeEventListener('keydown', this._keyDown);
-      resolve();
-    }.bind(this));
-  },
+    window.removeEventListener("keydown", this._keyDownBound);
+  }
 
   /**
    * @private
    */
-  _keyDown: function overlayManager_keyDown(evt) {
-    var self = OverlayManager;
-    if (self.active && evt.keyCode === 27) { // Esc key.
-      self._closeThroughCaller();
+  _keyDown(evt) {
+    if (this._active && evt.keyCode === /* Esc = */ 27) {
+      this._closeThroughCaller();
       evt.preventDefault();
     }
-  },
+  }
 
   /**
    * @private
    */
-  _closeThroughCaller: function overlayManager_closeThroughCaller() {
-    if (this.overlays[this.active].callerCloseMethod) {
-      this.overlays[this.active].callerCloseMethod();
+  _closeThroughCaller() {
+    if (this._overlays[this._active].callerCloseMethod) {
+      this._overlays[this._active].callerCloseMethod();
     }
-    if (this.active) {
-      this.close(this.active);
+    if (this._active) {
+      this.close(this._active);
     }
   }
-};
+}
 
-exports.OverlayManager = OverlayManager;
-}));
+export { OverlayManager };

@@ -1,0 +1,163 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Parent 2 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 3 0 R
+>>
+>>
+/MediaBox [0 0 200 50]
+/Type /Page
+/Contents 4 0 R
+>>
+endobj 
+4 0 obj 
+<<
+/Length 50
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Issue 8088 - Page 2) Tj
+ET
+
+endstream 
+endobj 
+5 0 obj 
+<<
+/Parent 6 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 3 0 R
+>>
+>>
+/MediaBox [0 0 200 50]
+/Type /Page
+/Contents 7 0 R
+>>
+endobj 
+7 0 obj 
+<<
+/Length 50
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Issue 8088 - Page 3) Tj
+ET
+
+endstream 
+endobj 
+8 0 obj 
+<<
+/Parent 9 0 R
+/Kids []
+/Type /Pages
+/Count 0
+>>
+endobj 
+2 0 obj 
+<<
+/Parent 9 0 R
+/Kids [10 0 R 1 0 R]
+/Type /Pages
+/Count 2
+>>
+endobj 
+9 0 obj 
+<<
+/Parent 11 0 R
+/Kids [8 0 R 2 0 R]
+/Type /Pages
+/Count 2
+>>
+endobj 
+6 0 obj 
+<<
+/Parent 11 0 R
+/Kids [5 0 R]
+/Type /Pages
+/Count 1
+>>
+endobj 
+11 0 obj 
+<<
+/Kids [9 0 R 6 0 R]
+/Type /Pages
+/Count 3
+>>
+endobj 
+12 0 obj 
+<<
+/Pages 11 0 R
+/Type /Catalog
+>>
+endobj 
+10 0 obj 
+<<
+/Parent 2 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 3 0 R
+>>
+>>
+/MediaBox [0 0 200 50]
+/Type /Page
+/Contents 13 0 R
+>>
+endobj 
+13 0 obj 
+<<
+/Length 50
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Issue 8088 - Page 1) Tj
+ET
+
+endstream 
+endobj 
+3 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/Type /Font
+>>
+endobj xref
+0 14
+0000000000 65535 f 
+0000000015 00000 n 
+0000000547 00000 n 
+0000001135 00000 n 
+0000000144 00000 n 
+0000000247 00000 n 
+0000000707 00000 n 
+0000000376 00000 n 
+0000000479 00000 n 
+0000000627 00000 n 
+0000000900 00000 n 
+0000000781 00000 n 
+0000000847 00000 n 
+0000001031 00000 n 
+trailer
+
+<<
+/Root 12 0 R
+/Size 14
+>>
+startxref
+1235
+%%EOF

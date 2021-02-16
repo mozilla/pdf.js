@@ -1,4 +1,4 @@
-/* Copyright 2014 Mozilla Foundation
+/* Copyright 2018 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,106 +12,236 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-'use strict';
+/* eslint-disable getter-return */
 
 /**
  * @interface
  */
-function IPDFLinkService() {}
-IPDFLinkService.prototype = {
+class IPDFLinkService {
   /**
-   * @returns {number}
+   * @type {number}
    */
-  get page() {},
+  get pagesCount() {}
+
+  /**
+   * @type {number}
+   */
+  get page() {}
+
   /**
    * @param {number} value
    */
-  set page(value) {},
+  set page(value) {}
+
   /**
-   * @param dest - The PDF destination object.
+   * @type {number}
    */
-  navigateTo: function (dest) {},
+  get rotation() {}
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {}
+
+  /**
+   * @type {boolean}
+   */
+  get externalLinkEnabled() {}
+
+  /**
+   * @param {boolean} value
+   */
+  set externalLinkEnabled(value) {}
+
+  /**
+   * @param {string|Array} dest - The named, or explicit, PDF destination.
+   */
+  async goToDestination(dest) {}
+
+  /**
+   * @param {number|string} val - The page number, or page label.
+   */
+  goToPage(val) {}
+
   /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
    */
-  getDestinationHash: function (dest) {},
+  getDestinationHash(dest) {}
+
   /**
    * @param hash - The PDF parameters/hash.
    * @returns {string} The hyperlink to the PDF object.
    */
-  getAnchorUrl: function (hash) {},
+  getAnchorUrl(hash) {}
+
   /**
    * @param {string} hash
    */
-  setHash: function (hash) {},
+  setHash(hash) {}
+
   /**
    * @param {string} action
    */
-  executeNamedAction: function (action) {},
+  executeNamedAction(action) {}
 
   /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
-  cachePageRef: function (pageNum, pageRef) {},
-};
+  cachePageRef(pageNum, pageRef) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageVisible(pageNumber) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  isPageCached(pageNumber) {}
+}
 
 /**
  * @interface
  */
-function IPDFHistory() {}
-IPDFHistory.prototype = {
-  forward: function () {},
-  back: function () {},
-  push: function (params) {},
-  updateNextHashParam: function (hash) {},
-};
+class IPDFHistory {
+  /**
+   * @param {Object} params
+   */
+  initialize({ fingerprint, resetHistory = false, updateUrl = false }) {}
+
+  reset() {}
+
+  /**
+   * @param {Object} params
+   */
+  push({ namedDest = null, explicitDest, pageNumber }) {}
+
+  /**
+   * @param {number} pageNumber
+   */
+  pushPage(pageNumber) {}
+
+  pushCurrentPosition() {}
+
+  back() {}
+
+  forward() {}
+}
 
 /**
  * @interface
  */
-function IRenderableView() {}
-IRenderableView.prototype = {
+class IRenderableView {
   /**
-   * @returns {string} - Unique ID for rendering queue.
+   * @type {string} - Unique ID for rendering queue.
    */
-  get renderingId() {},
+  get renderingId() {}
+
   /**
-   * @returns {RenderingStates}
+   * @type {RenderingStates}
    */
-  get renderingState() {},
+  get renderingState() {}
+
   /**
    * @returns {Promise} Resolved on draw completion.
    */
-  draw: function () {},
-  resume: function () {},
-};
+  draw() {}
+
+  resume() {}
+}
 
 /**
  * @interface
  */
-function IPDFTextLayerFactory() {}
-IPDFTextLayerFactory.prototype = {
+class IPDFTextLayerFactory {
   /**
    * @param {HTMLDivElement} textLayerDiv
    * @param {number} pageIndex
    * @param {PageViewport} viewport
+   * @param {boolean} enhanceTextSelection
+   * @param {EventBus} eventBus
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {}
-};
+  createTextLayerBuilder(
+    textLayerDiv,
+    pageIndex,
+    viewport,
+    enhanceTextSelection = false,
+    eventBus
+  ) {}
+}
 
 /**
  * @interface
  */
-function IPDFAnnotationLayerFactory() {}
-IPDFAnnotationLayerFactory.prototype = {
+class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
+   * @param {boolean} renderInteractiveForms
+   * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder: function (pageDiv, pdfPage) {}
+  createAnnotationLayerBuilder(
+    pageDiv,
+    pdfPage,
+    annotationStorage = null,
+    imageResourcesPath = "",
+    renderInteractiveForms = true,
+    l10n = undefined,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null
+  ) {}
+}
+
+/**
+ * @interface
+ */
+class IL10n {
+  /**
+   * @returns {Promise<string>} - Resolves to the current locale.
+   */
+  async getLanguage() {}
+
+  /**
+   * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
+   */
+  async getDirection() {}
+
+  /**
+   * Translates text identified by the key and adds/formats data using the args
+   * property bag. If the key was not found, translation falls back to the
+   * fallback text.
+   * @param {string} key
+   * @param {object} args
+   * @param {string} fallback
+   * @returns {Promise<string>}
+   */
+  async get(key, args, fallback) {}
+
+  /**
+   * Translates HTML element.
+   * @param {HTMLElement} element
+   * @returns {Promise<void>}
+   */
+  async translate(element) {}
+}
+
+export {
+  IL10n,
+  IPDFAnnotationLayerFactory,
+  IPDFHistory,
+  IPDFLinkService,
+  IPDFTextLayerFactory,
+  IRenderableView,
 };

@@ -13,41 +13,50 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
-if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
-  alert('Please build the library and components using\n' +
-        '  `gulp generic components`');
+if (!pdfjsLib.getDocument || !pdfjsViewer.PDFPageView) {
+  // eslint-disable-next-line no-alert
+  alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
 // The workerSrc property shall be specified.
 //
-PDFJS.workerSrc = '../../build/pdf.worker.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
 // Some PDFs need external cmaps.
 //
-// PDFJS.cMapUrl = '../../external/bcmaps/';
-// PDFJS.cMapPacked = true;
+var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+var CMAP_PACKED = true;
 
-var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
+var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 var PAGE_TO_VIEW = 1;
 var SCALE = 1.0;
 
-var container = document.getElementById('pageContainer');
+var container = document.getElementById("pageContainer");
+
+var eventBus = new pdfjsViewer.EventBus();
 
 // Loading document.
-PDFJS.getDocument(DEFAULT_URL).then(function (pdfDocument) {
+var loadingTask = pdfjsLib.getDocument({
+  url: DEFAULT_URL,
+  cMapUrl: CMAP_URL,
+  cMapPacked: CMAP_PACKED,
+});
+loadingTask.promise.then(function (pdfDocument) {
   // Document loaded, retrieving the page.
   return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
     // Creating the page view with default parameters.
-    var pdfPageView = new PDFJS.PDFPageView({
-      container: container,
+    var pdfPageView = new pdfjsViewer.PDFPageView({
+      container,
       id: PAGE_TO_VIEW,
       scale: SCALE,
-      defaultViewport: pdfPage.getViewport(SCALE),
+      defaultViewport: pdfPage.getViewport({ scale: SCALE }),
+      eventBus,
       // We can enable text/annotations layers, if needed
-      textLayerFactory: new PDFJS.DefaultTextLayerFactory(),
-      annotationLayerFactory: new PDFJS.DefaultAnnotationLayerFactory()
+      textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
+      annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
     });
     // Associates the actual page with the view, and drawing it
     pdfPageView.setPdfPage(pdfPage);

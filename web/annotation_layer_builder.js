@@ -13,129 +13,163 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/annotation_layer_builder', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_link_service',
-      'pdfjs-web/pdfjs'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_link_service.js'), require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebAnnotationLayerBuilder = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, uiUtils, pdfLinkService, pdfjsLib) {
-
-var mozL10n = uiUtils.mozL10n;
-var SimpleLinkService = pdfLinkService.SimpleLinkService;
+import { AnnotationLayer } from "pdfjs-lib";
+import { NullL10n } from "./ui_utils.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
+ * @property {AnnotationStorage} [annotationStorage]
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
+ * @property {boolean} renderInteractiveForms
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
+ * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enableScripting]
+ * @property {Promise<boolean>} [hasJSActionsPromise]
+ * @property {Object} [mouseState]
  */
 
-/**
- * @class
- */
-var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
+class AnnotationLayerBuilder {
   /**
    * @param {AnnotationLayerBuilderOptions} options
-   * @constructs AnnotationLayerBuilder
    */
-  function AnnotationLayerBuilder(options) {
-    this.pageDiv = options.pageDiv;
-    this.pdfPage = options.pdfPage;
-    this.linkService = options.linkService;
-    this.downloadManager = options.downloadManager;
+  constructor({
+    pageDiv,
+    pdfPage,
+    linkService,
+    downloadManager,
+    annotationStorage = null,
+    imageResourcesPath = "",
+    renderInteractiveForms = true,
+    l10n = NullL10n,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null,
+  }) {
+    this.pageDiv = pageDiv;
+    this.pdfPage = pdfPage;
+    this.linkService = linkService;
+    this.downloadManager = downloadManager;
+    this.imageResourcesPath = imageResourcesPath;
+    this.renderInteractiveForms = renderInteractiveForms;
+    this.l10n = l10n;
+    this.annotationStorage = annotationStorage;
+    this.enableScripting = enableScripting;
+    this._hasJSActionsPromise = hasJSActionsPromise;
+    this._mouseState = mouseState;
 
     this.div = null;
+    this._cancelled = false;
   }
 
-  AnnotationLayerBuilder.prototype =
-      /** @lends AnnotationLayerBuilder.prototype */ {
-
-    /**
-     * @param {PageViewport} viewport
-     * @param {string} intent (default value is 'display')
-     */
-    render: function AnnotationLayerBuilder_render(viewport, intent) {
-      var self = this;
-      var parameters = {
-        intent: (intent === undefined ? 'display' : intent),
-      };
-
-      this.pdfPage.getAnnotations(parameters).then(function (annotations) {
-        viewport = viewport.clone({ dontFlip: true });
-        parameters = {
-          viewport: viewport,
-          div: self.div,
-          annotations: annotations,
-          page: self.pdfPage,
-          linkService: self.linkService,
-          downloadManager: self.downloadManager
-        };
-
-        if (self.div) {
-          // If an annotationLayer already exists, refresh its children's
-          // transformation matrices.
-          pdfjsLib.AnnotationLayer.update(parameters);
-        } else {
-          // Create an annotation layer div and render the annotations
-          // if there is at least one annotation.
-          if (annotations.length === 0) {
-            return;
-          }
-
-          self.div = document.createElement('div');
-          self.div.className = 'annotationLayer';
-          self.pageDiv.appendChild(self.div);
-          parameters.div = self.div;
-
-          pdfjsLib.AnnotationLayer.render(parameters);
-          if (typeof mozL10n !== 'undefined') {
-            mozL10n.translate(self.div);
-          }
-        }
-      });
-    },
-
-    hide: function AnnotationLayerBuilder_hide() {
-      if (!this.div) {
+  /**
+   * @param {PageViewport} viewport
+   * @param {string} intent (default value is 'display')
+   * @returns {Promise<void>} A promise that is resolved when rendering of the
+   *   annotations is complete.
+   */
+  render(viewport, intent = "display") {
+    return Promise.all([
+      this.pdfPage.getAnnotations({ intent }),
+      this._hasJSActionsPromise,
+    ]).then(([annotations, hasJSActions = false]) => {
+      if (this._cancelled) {
         return;
       }
-      this.div.setAttribute('hidden', 'true');
-    }
-  };
+      if (annotations.length === 0) {
+        return;
+      }
 
-  return AnnotationLayerBuilder;
-})();
+      const parameters = {
+        viewport: viewport.clone({ dontFlip: true }),
+        div: this.div,
+        annotations,
+        page: this.pdfPage,
+        imageResourcesPath: this.imageResourcesPath,
+        renderInteractiveForms: this.renderInteractiveForms,
+        linkService: this.linkService,
+        downloadManager: this.downloadManager,
+        annotationStorage: this.annotationStorage,
+        enableScripting: this.enableScripting,
+        hasJSActions,
+        mouseState: this._mouseState,
+      };
+
+      if (this.div) {
+        // If an annotationLayer already exists, refresh its children's
+        // transformation matrices.
+        AnnotationLayer.update(parameters);
+      } else {
+        // Create an annotation layer div and render the annotations
+        // if there is at least one annotation.
+        this.div = document.createElement("div");
+        this.div.className = "annotationLayer";
+        this.pageDiv.appendChild(this.div);
+        parameters.div = this.div;
+
+        AnnotationLayer.render(parameters);
+        this.l10n.translate(this.div);
+      }
+    });
+  }
+
+  cancel() {
+    this._cancelled = true;
+  }
+
+  hide() {
+    if (!this.div) {
+      return;
+    }
+    this.div.hidden = true;
+  }
+}
 
 /**
- * @constructor
  * @implements IPDFAnnotationLayerFactory
  */
-function DefaultAnnotationLayerFactory() {}
-DefaultAnnotationLayerFactory.prototype = {
+class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage]
+   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   *   for annotation icons. Include trailing slash.
+   * @param {boolean} renderInteractiveForms
+   * @param {IL10n} l10n
+   * @param {boolean} [enableScripting]
+   * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+  createAnnotationLayerBuilder(
+    pageDiv,
+    pdfPage,
+    annotationStorage = null,
+    imageResourcesPath = "",
+    renderInteractiveForms = true,
+    l10n = NullL10n,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    mouseState = null
+  ) {
     return new AnnotationLayerBuilder({
-      pageDiv: pageDiv,
-      pdfPage: pdfPage,
+      pageDiv,
+      pdfPage,
+      imageResourcesPath,
+      renderInteractiveForms,
       linkService: new SimpleLinkService(),
+      l10n,
+      annotationStorage,
+      enableScripting,
+      hasJSActionsPromise,
+      mouseState,
     });
   }
-};
+}
 
-exports.AnnotationLayerBuilder = AnnotationLayerBuilder;
-exports.DefaultAnnotationLayerFactory = DefaultAnnotationLayerFactory;
-}));
+export { AnnotationLayerBuilder, DefaultAnnotationLayerFactory };

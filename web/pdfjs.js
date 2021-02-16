@@ -12,23 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* umdutils ignore */
+/* globals module, __non_webpack_require__ */
 
-'use strict';
+"use strict";
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdfjs', ['exports', 'pdfjs/main_loader'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../src/main_loader.js'));
-  } else {
-    factory((root.pdfjsWebPDFJS = {}), root.pdfjsMainLoader);
-  }
-}(this, function (exports, mainLoader) {
-  // Re-export all mainLoader members.
-  for (var i in mainLoader) {
-    if (Object.prototype.hasOwnProperty.call(mainLoader, i)) {
-      exports[i] = mainLoader[i];
-    }
-  }
-}));
+let pdfjsLib;
+if (typeof window !== "undefined" && window["pdfjs-dist/build/pdf"]) {
+  pdfjsLib = window["pdfjs-dist/build/pdf"];
+} else {
+  pdfjsLib = __non_webpack_require__("../build/pdf.js");
+}
+module.exports = pdfjsLib;

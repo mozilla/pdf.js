@@ -13,15 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome */
 
-'use strict';
+"use strict";
 
 // Do not reload the extension when an update becomes available, UNLESS the PDF
 // viewer is not displaying any PDF files. Otherwise the tabs would close, which
 // is quite disruptive (crbug.com/511670).
-chrome.runtime.onUpdateAvailable.addListener(function() {
-    if (chrome.extension.getViews({type: 'tab'}).length === 0) {
-        chrome.runtime.reload();
-    }
+chrome.runtime.onUpdateAvailable.addListener(function () {
+  if (chrome.extension.getViews({ type: "tab" }).length === 0) {
+    chrome.runtime.reload();
+  }
 });

@@ -13,213 +13,310 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_outline_viewer', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFOutlineViewer = {}), root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, pdfjsLib) {
-
-var DEFAULT_TITLE = '\u2013';
+import {
+  addLinkAttributes,
+  createPromiseCapability,
+  LinkTarget,
+} from "pdfjs-lib";
+import { BaseTreeViewer } from "./base_tree_viewer.js";
+import { SidebarView } from "./ui_utils.js";
 
 /**
  * @typedef {Object} PDFOutlineViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {EventBus} eventBus - The application event bus.
  */
 
 /**
  * @typedef {Object} PDFOutlineViewerRenderParameters
  * @property {Array|null} outline - An array of outline objects.
+ * @property {PDFDocument} pdfDocument - A {PDFDocument} instance.
  */
 
-/**
- * @class
- */
-var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
+class PDFOutlineViewer extends BaseTreeViewer {
   /**
-   * @constructs PDFOutlineViewer
    * @param {PDFOutlineViewerOptions} options
    */
-  function PDFOutlineViewer(options) {
-    this.outline = null;
-    this.lastToggleIsShow = true;
-    this.container = options.container;
+  constructor(options) {
+    super(options);
     this.linkService = options.linkService;
+
+    this.eventBus._on("toggleoutlinetree", this._toggleAllTreeItems.bind(this));
+    this.eventBus._on(
+      "currentoutlineitem",
+      this._currentOutlineItem.bind(this)
+    );
+
+    this.eventBus._on("pagechanging", evt => {
+      this._currentPageNumber = evt.pageNumber;
+    });
+    this.eventBus._on("pagesloaded", evt => {
+      this._isPagesLoaded = !!evt.pagesCount;
+    });
+    this.eventBus._on("sidebarviewchanged", evt => {
+      this._sidebarView = evt.view;
+    });
   }
 
-  PDFOutlineViewer.prototype = {
-    reset: function PDFOutlineViewer_reset() {
-      this.outline = null;
-      this.lastToggleIsShow = true;
+  reset() {
+    super.reset();
+    this._outline = null;
 
-      var container = this.container;
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-      }
-    },
+    this._pageNumberToDestHashCapability = null;
+    this._currentPageNumber = 1;
+    this._isPagesLoaded = false;
+  }
 
-    /**
-     * @private
-     */
-    _dispatchEvent: function PDFOutlineViewer_dispatchEvent(outlineCount) {
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('outlineloaded', true, true, {
-        outlineCount: outlineCount
+  /**
+   * @private
+   */
+  _dispatchEvent(outlineCount) {
+    this.eventBus.dispatch("outlineloaded", {
+      source: this,
+      outlineCount,
+      enableCurrentOutlineItemButton:
+        outlineCount > 0 && !this._pdfDocument?.loadingParams.disableAutoFetch,
+    });
+  }
+
+  /**
+   * @private
+   */
+  _bindLink(element, { url, newWindow, dest }) {
+    const { linkService } = this;
+
+    if (url) {
+      addLinkAttributes(element, {
+        url,
+        target: newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget,
+        rel: linkService.externalLinkRel,
+        enabled: linkService.externalLinkEnabled,
       });
-      this.container.dispatchEvent(event);
-    },
+      return;
+    }
 
-    /**
-     * @private
-     */
-    _bindLink: function PDFOutlineViewer_bindLink(element, item) {
-      if (item.url) {
-        pdfjsLib.addLinkAttributes(element, { url: item.url });
-        return;
+    element.href = linkService.getDestinationHash(dest);
+    element.onclick = evt => {
+      this._updateCurrentTreeItem(evt.target.parentNode);
+
+      if (dest) {
+        linkService.goToDestination(dest);
       }
-      var linkService = this.linkService;
-      element.href = linkService.getDestinationHash(item.dest);
-      element.onclick = function goToDestination(e) {
-        linkService.navigateTo(item.dest);
-        return false;
-      };
-    },
+      return false;
+    };
+  }
 
-    /**
-     * @private
-     */
-    _setStyles: function PDFOutlineViewer_setStyles(element, item) {
-      var styleStr = '';
-      if (item.bold) {
-        styleStr += 'font-weight: bold;';
-      }
-      if (item.italic) {
-        styleStr += 'font-style: italic;';
-      }
+  /**
+   * @private
+   */
+  _setStyles(element, { bold, italic }) {
+    if (bold) {
+      element.style.fontWeight = "bold";
+    }
+    if (italic) {
+      element.style.fontStyle = "italic";
+    }
+  }
 
-      if (styleStr) {
-        element.setAttribute('style', styleStr);
-      }
-    },
-
-    /**
-     * Prepend a button before an outline item which allows the user to toggle
-     * the visibility of all outline items at that level.
-     *
-     * @private
-     */
-    _addToggleButton: function PDFOutlineViewer_addToggleButton(div) {
-      var toggler = document.createElement('div');
-      toggler.className = 'outlineItemToggler';
-      toggler.onclick = function(event) {
-        event.stopPropagation();
-        toggler.classList.toggle('outlineItemsHidden');
-
-        if (event.shiftKey) {
-          var shouldShowAll = !toggler.classList.contains('outlineItemsHidden');
-          this._toggleOutlineItem(div, shouldShowAll);
+  /**
+   * @private
+   */
+  _addToggleButton(div, { count, items }) {
+    let hidden = false;
+    if (count < 0) {
+      let totalCount = items.length;
+      if (totalCount > 0) {
+        const queue = [...items];
+        while (queue.length > 0) {
+          const { count: nestedCount, items: nestedItems } = queue.shift();
+          if (nestedCount > 0 && nestedItems.length > 0) {
+            totalCount += nestedItems.length;
+            queue.push(...nestedItems);
+          }
         }
-      }.bind(this);
-      div.insertBefore(toggler, div.firstChild);
-    },
-
-    /**
-     * Toggle the visibility of the subtree of an outline item.
-     *
-     * @param {Element} root - the root of the outline (sub)tree.
-     * @param {boolean} state - whether to show the outline (sub)tree. If false,
-     *   the outline subtree rooted at |root| will be collapsed.
-     *
-     * @private
-     */
-    _toggleOutlineItem:
-        function PDFOutlineViewer_toggleOutlineItem(root, show) {
-      this.lastToggleIsShow = show;
-      var togglers = root.querySelectorAll('.outlineItemToggler');
-      for (var i = 0, ii = togglers.length; i < ii; ++i) {
-        togglers[i].classList[show ? 'remove' : 'add']('outlineItemsHidden');
       }
-    },
-
-    /**
-     * Collapse or expand all subtrees of the outline.
-     */
-    toggleOutlineTree: function PDFOutlineViewer_toggleOutlineTree() {
-      if (!this.outline) {
-        return;
+      if (Math.abs(count) === totalCount) {
+        hidden = true;
       }
-      this._toggleOutlineItem(this.container, !this.lastToggleIsShow);
-    },
+    }
+    super._addToggleButton(div, hidden);
+  }
 
-    /**
-     * @param {PDFOutlineViewerRenderParameters} params
-     */
-    render: function PDFOutlineViewer_render(params) {
-      var outline = (params && params.outline) || null;
-      var outlineCount = 0;
+  /**
+   * @private
+   */
+  _toggleAllTreeItems() {
+    if (!this._outline) {
+      return;
+    }
+    super._toggleAllTreeItems();
+  }
 
-      if (this.outline) {
-        this.reset();
+  /**
+   * @param {PDFOutlineViewerRenderParameters} params
+   */
+  render({ outline, pdfDocument }) {
+    if (this._outline) {
+      this.reset();
+    }
+    this._outline = outline || null;
+    this._pdfDocument = pdfDocument || null;
+
+    if (!outline) {
+      this._dispatchEvent(/* outlineCount = */ 0);
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+    const queue = [{ parent: fragment, items: outline }];
+    let outlineCount = 0,
+      hasAnyNesting = false;
+    while (queue.length > 0) {
+      const levelData = queue.shift();
+      for (const item of levelData.items) {
+        const div = document.createElement("div");
+        div.className = "treeItem";
+
+        const element = document.createElement("a");
+        this._bindLink(element, item);
+        this._setStyles(element, item);
+        element.textContent = this._normalizeTextContent(item.title);
+
+        div.appendChild(element);
+
+        if (item.items.length > 0) {
+          hasAnyNesting = true;
+          this._addToggleButton(div, item);
+
+          const itemsDiv = document.createElement("div");
+          itemsDiv.className = "treeItems";
+          div.appendChild(itemsDiv);
+
+          queue.push({ parent: itemsDiv, items: item.items });
+        }
+
+        levelData.parent.appendChild(div);
+        outlineCount++;
       }
-      this.outline = outline;
+    }
 
-      if (!outline) {
-        this._dispatchEvent(outlineCount);
-        return;
+    this._finishRendering(fragment, outlineCount, hasAnyNesting);
+  }
+
+  /**
+   * Find/highlight the current outline item, corresponding to the active page.
+   * @private
+   */
+  async _currentOutlineItem() {
+    if (!this._isPagesLoaded) {
+      throw new Error("_currentOutlineItem: All pages have not been loaded.");
+    }
+    if (!this._outline || !this._pdfDocument) {
+      return;
+    }
+
+    const pageNumberToDestHash = await this._getPageNumberToDestHash(
+      this._pdfDocument
+    );
+    if (!pageNumberToDestHash) {
+      return;
+    }
+    this._updateCurrentTreeItem(/* treeItem = */ null);
+
+    if (this._sidebarView !== SidebarView.OUTLINE) {
+      return; // The outline view is no longer visible, hence do nothing.
+    }
+    // When there is no destination on the current page, always check the
+    // previous ones in (reverse) order.
+    for (let i = this._currentPageNumber; i > 0; i--) {
+      const destHash = pageNumberToDestHash.get(i);
+      if (!destHash) {
+        continue;
       }
+      const linkElement = this.container.querySelector(`a[href="${destHash}"]`);
+      if (!linkElement) {
+        continue;
+      }
+      this._scrollToCurrentTreeItem(linkElement.parentNode);
+      break;
+    }
+  }
 
-      var fragment = document.createDocumentFragment();
-      var queue = [{ parent: fragment, items: this.outline }];
-      var hasAnyNesting = false;
-      while (queue.length > 0) {
-        var levelData = queue.shift();
-        for (var i = 0, len = levelData.items.length; i < len; i++) {
-          var item = levelData.items[i];
+  /**
+   * To (significantly) simplify the overall implementation, we will only
+   * consider *one* destination per page when finding/highlighting the current
+   * outline item (similar to e.g. Adobe Reader); more specifically, we choose
+   * the *first* outline item at the *lowest* level of the outline tree.
+   * @private
+   */
+  async _getPageNumberToDestHash(pdfDocument) {
+    if (this._pageNumberToDestHashCapability) {
+      return this._pageNumberToDestHashCapability.promise;
+    }
+    this._pageNumberToDestHashCapability = createPromiseCapability();
 
-          var div = document.createElement('div');
-          div.className = 'outlineItem';
+    const pageNumberToDestHash = new Map(),
+      pageNumberNesting = new Map();
+    const queue = [{ nesting: 0, items: this._outline }];
+    while (queue.length > 0) {
+      const levelData = queue.shift(),
+        currentNesting = levelData.nesting;
+      for (const { dest, items } of levelData.items) {
+        let explicitDest, pageNumber;
+        if (typeof dest === "string") {
+          explicitDest = await pdfDocument.getDestination(dest);
 
-          var element = document.createElement('a');
-          this._bindLink(element, item);
-          this._setStyles(element, item);
-          element.textContent =
-            pdfjsLib.removeNullCharacters(item.title) || DEFAULT_TITLE;
+          if (pdfDocument !== this._pdfDocument) {
+            return null; // The document was closed while the data resolved.
+          }
+        } else {
+          explicitDest = dest;
+        }
+        if (Array.isArray(explicitDest)) {
+          const [destRef] = explicitDest;
 
-          div.appendChild(element);
+          if (typeof destRef === "object") {
+            pageNumber = this.linkService._cachedPageNumber(destRef);
 
-          if (item.items.length > 0) {
-            hasAnyNesting = true;
-            this._addToggleButton(div);
+            if (!pageNumber) {
+              try {
+                pageNumber = (await pdfDocument.getPageIndex(destRef)) + 1;
 
-            var itemsDiv = document.createElement('div');
-            itemsDiv.className = 'outlineItems';
-            div.appendChild(itemsDiv);
-            queue.push({ parent: itemsDiv, items: item.items });
+                if (pdfDocument !== this._pdfDocument) {
+                  return null; // The document was closed while the data resolved.
+                }
+                this.linkService.cachePageRef(pageNumber, destRef);
+              } catch (ex) {
+                // Invalid page reference, ignore it and continue parsing.
+              }
+            }
+          } else if (Number.isInteger(destRef)) {
+            pageNumber = destRef + 1;
           }
 
-          levelData.parent.appendChild(div);
-          outlineCount++;
+          if (
+            Number.isInteger(pageNumber) &&
+            (!pageNumberToDestHash.has(pageNumber) ||
+              currentNesting > pageNumberNesting.get(pageNumber))
+          ) {
+            const destHash = this.linkService.getDestinationHash(dest);
+            pageNumberToDestHash.set(pageNumber, destHash);
+            pageNumberNesting.set(pageNumber, currentNesting);
+          }
+        }
+
+        if (items.length > 0) {
+          queue.push({ nesting: currentNesting + 1, items });
         }
       }
-      if (hasAnyNesting) {
-        this.container.classList.add('outlineWithDeepNesting');
-      }
-
-      this.container.appendChild(fragment);
-
-      this._dispatchEvent(outlineCount);
     }
-  };
 
-  return PDFOutlineViewer;
-})();
+    this._pageNumberToDestHashCapability.resolve(
+      pageNumberToDestHash.size > 0 ? pageNumberToDestHash : null
+    );
+    return this._pageNumberToDestHashCapability.promise;
+  }
+}
 
-exports.PDFOutlineViewer = PDFOutlineViewer;
-}));
+export { PDFOutlineViewer };
