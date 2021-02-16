@@ -1082,6 +1082,7 @@ const PDFViewerApplication = {
     // user-visible errors, to avoid bothering the user unnecessarily.
     switch (featureId) {
       case UNSUPPORTED_FEATURES.errorFontLoadNative:
+      case UNSUPPORTED_FEATURES.errorFontMissing:
         return;
     }
     // Only trigger the fallback once so we don't spam the user with messages
