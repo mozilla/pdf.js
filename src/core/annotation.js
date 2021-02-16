@@ -39,7 +39,15 @@ import {
   createDefaultAppearance,
   parseDefaultAppearance,
 } from "./default_appearance.js";
-import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
+import {
+  Dict,
+  isDict,
+  isName,
+  isRef,
+  isStream,
+  Name,
+  RefSet,
+} from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
@@ -1066,13 +1074,26 @@ class WidgetAnnotation extends Annotation {
     }
 
     let loopDict = dict;
+    const visited = new RefSet();
+    if (dict.objId) {
+      visited.put(dict.objId);
+    }
     while (loopDict.has("Parent")) {
       loopDict = loopDict.get("Parent");
-      if (!isDict(loopDict)) {
+      if (
+        !(loopDict instanceof Dict) ||
+        (loopDict.objId && visited.has(loopDict.objId))
+      ) {
         // Even though it is not allowed according to the PDF specification,
         // bad PDF generators may provide a `Parent` entry that is not a
         // dictionary, but `null` for example (issue 8143).
+        //
+        // If parent has been already visited, it means that we're
+        // in an infinite loop.
         break;
+      }
+      if (loopDict.objId) {
+        visited.put(loopDict.objId);
       }
 
       if (loopDict.has("T")) {
