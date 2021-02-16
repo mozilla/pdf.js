@@ -15,6 +15,7 @@
 
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
+  encodeToXmlString,
   escapePDFName,
   getInheritableProperty,
   isWhiteSpace,
@@ -216,6 +217,20 @@ describe("core_utils", function () {
       expect(escapePDFName("#()<>[]{}/%")).toEqual(
         "#23#28#29#3c#3e#5b#5d#7b#7d#2f#25"
       );
+    });
+  });
+
+  describe("encodeToXmlString", function () {
+    it("should get a correctly encoded string with some entities", function () {
+      const str = "\"\u0397ell😂' & <W😂rld>";
+      expect(encodeToXmlString(str)).toEqual(
+        "&quot;&#x397;ell&#x1F602;&apos; &amp; &lt;W&#x1F602;rld&gt;"
+      );
+    });
+
+    it("should get a correctly encoded basic ascii string", function () {
+      const str = "hello world";
+      expect(encodeToXmlString(str)).toEqual(str);
     });
   });
 });
