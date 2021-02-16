@@ -14,7 +14,7 @@
  */
 
 import { parseXFAPath } from "../../src/core/core_utils.js";
-import { SimpleXMLParser } from "../../src/shared/xml_parser.js";
+import { SimpleXMLParser } from "../../src/core/xml_parser.js";
 
 describe("XML", function () {
   describe("searchNode", function () {

@@ -16,7 +16,7 @@
 import { bytesToString, escapeString, warn } from "../shared/util.js";
 import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
 import { escapePDFName, parseXFAPath } from "./core_utils.js";
-import { SimpleDOMNode, SimpleXMLParser } from "../shared/xml_parser.js";
+import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { calculateMD5 } from "./crypto.js";
 
 function writeDict(dict, buffer, transform) {

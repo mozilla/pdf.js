@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { SimpleXMLParser } from "../shared/xml_parser.js";
+import { SimpleXMLParser } from "./xml_parser.js";
 
 class MetadataParser {
   constructor(data) {
