@@ -14,7 +14,7 @@
  */
 
 import { $clean, $finalize, $onChild, $onText } from "./xfa_object.js";
-import { XMLParserBase, XMLParserErrorCode } from "../../shared/xml_parser.js";
+import { XMLParserBase, XMLParserErrorCode } from "../xml_parser.js";
 import { Builder } from "./builder.js";
 import { warn } from "../../shared/util.js";
 

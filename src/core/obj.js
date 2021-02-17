@@ -59,6 +59,7 @@ import { Lexer, Parser } from "./parser.js";
 import { CipherTransformFactory } from "./crypto.js";
 import { ColorSpace } from "./colorspace.js";
 import { GlobalImageCache } from "./image_utils.js";
+import { MetadataParser } from "./metadata_parser.js";
 
 function fetchDestination(dest) {
   return isDict(dest) ? dest.get("D") : dest;
@@ -131,20 +132,22 @@ class Catalog {
       this.xref.encrypt && this.xref.encrypt.encryptMetadata
     );
     const stream = this.xref.fetch(streamRef, suppressEncryption);
-    let metadata;
+    let metadata = null;
 
-    if (stream && isDict(stream.dict)) {
+    if (isStream(stream) && isDict(stream.dict)) {
       const type = stream.dict.get("Type");
       const subtype = stream.dict.get("Subtype");
 
       if (isName(type, "Metadata") && isName(subtype, "XML")) {
         // XXX: This should examine the charset the XML document defines,
-        // however since there are currently no real means to decode
-        // arbitrary charsets, let's just hope that the author of the PDF
-        // was reasonable enough to stick with the XML default charset,
-        // which is UTF-8.
+        // however since there are currently no real means to decode arbitrary
+        // charsets, let's just hope that the author of the PDF was reasonable
+        // enough to stick with the XML default charset, which is UTF-8.
         try {
-          metadata = stringToUTF8String(bytesToString(stream.getBytes()));
+          const data = stringToUTF8String(bytesToString(stream.getBytes()));
+          if (data) {
+            metadata = new MetadataParser(data).serializable;
+          }
         } catch (e) {
           if (e instanceof MissingDataException) {
             throw e;
