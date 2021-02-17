@@ -2012,10 +2012,7 @@ class AnnotationLayer {
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
         imageResourcesPath: parameters.imageResourcesPath || "",
-        renderInteractiveForms:
-          typeof parameters.renderInteractiveForms === "boolean"
-            ? parameters.renderInteractiveForms
-            : true,
+        renderInteractiveForms: parameters.renderInteractiveForms !== false,
         svgFactory: new DOMSVGFactory(),
         annotationStorage:
           parameters.annotationStorage || new AnnotationStorage(),
