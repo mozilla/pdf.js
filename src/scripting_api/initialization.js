@@ -73,7 +73,8 @@ function initSandbox(params) {
       const obj = objs[0];
       obj.send = send;
       obj.globalEval = globalEval;
-      obj.doc = _document.wrapped;
+      obj.doc = _document;
+      obj.fieldPath = name;
       let field;
       if (obj.type === "radiobutton") {
         const otherButtons = objs.slice(1);
