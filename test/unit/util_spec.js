@@ -17,7 +17,6 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
-  encodeToXmlString,
   escapeString,
   getModificationDate,
   isArrayBuffer,
@@ -332,20 +331,6 @@ describe("util", function () {
     it("should get a correctly formatted date", function () {
       const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
       expect(getModificationDate(date)).toEqual("31410609020653");
-    });
-  });
-
-  describe("encodeToXmlString", function () {
-    it("should get a correctly encoded string with some entities", function () {
-      const str = "\"\u0397ell😂' & <W😂rld>";
-      expect(encodeToXmlString(str)).toEqual(
-        "&quot;&#x397;ell&#x1F602;&apos; &amp; &lt;W&#x1F602;rld&gt;"
-      );
-    });
-
-    it("should get a correctly encoded basic ascii string", function () {
-      const str = "hello world";
-      expect(encodeToXmlString(str)).toEqual(str);
     });
   });
 

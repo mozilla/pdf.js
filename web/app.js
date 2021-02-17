@@ -1755,11 +1755,8 @@ const PDFViewerApplication = {
         `${this.pdfViewer.enableWebGL ? " [WebGL]" : ""})`
     );
 
-    let pdfTitle;
-    const infoTitle = info?.Title;
-    if (infoTitle) {
-      pdfTitle = infoTitle;
-    }
+    let pdfTitle = info?.Title;
+
     const metadataTitle = metadata?.get("dc:title");
     if (metadataTitle) {
       // Ghostscript can produce invalid 'dc:title' Metadata entries:
