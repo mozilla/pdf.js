@@ -348,9 +348,10 @@ class Annotation {
   }
 
   isHidden(annotationStorage) {
-    const data = annotationStorage && annotationStorage[this.data.id];
-    if (data && "hidden" in data) {
-      return data.hidden;
+    const storageEntry =
+      annotationStorage && annotationStorage.get(this.data.id);
+    if (storageEntry && storageEntry.hidden !== undefined) {
+      return storageEntry.hidden;
     }
     return this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
   }
@@ -1206,8 +1207,11 @@ class WidgetAnnotation extends Annotation {
   }
 
   async save(evaluator, task, annotationStorage) {
-    const value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    const value = storageEntry && storageEntry.value;
     if (value === this.data.fieldValue || value === undefined) {
       return null;
     }
@@ -1289,8 +1293,8 @@ class WidgetAnnotation extends Annotation {
     if (!annotationStorage || isPassword) {
       return null;
     }
-    let value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    const storageEntry = annotationStorage.get(this.data.id);
+    let value = storageEntry && storageEntry.value;
     if (value === undefined) {
       // The annotation hasn't been rendered so use the appearance
       return null;
@@ -1769,9 +1773,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     if (annotationStorage) {
-      const value =
-        annotationStorage[this.data.id] &&
-        annotationStorage[this.data.id].value;
+      const storageEntry = annotationStorage.get(this.data.id);
+      const value = storageEntry && storageEntry.value;
       if (value === undefined) {
         return super.getOperatorList(
           evaluator,
@@ -1826,8 +1829,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveCheckbox(evaluator, task, annotationStorage) {
-    const value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    const value = storageEntry && storageEntry.value;
     if (value === undefined) {
       return null;
     }
@@ -1869,8 +1875,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveRadioButton(evaluator, task, annotationStorage) {
-    const value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    const value = storageEntry && storageEntry.value;
     if (value === undefined) {
       return null;
     }
