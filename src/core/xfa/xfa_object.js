@@ -15,6 +15,7 @@
 
 import { getInteger, getKeyword } from "./utils.js";
 import { shadow, warn } from "../../shared/util.js";
+import { NamespaceIds } from "./namespaces.js";
 
 // We use these symbols to avoid name conflict between tags
 // and properties/methods names.
@@ -31,16 +32,25 @@ const $nodeName = Symbol("nodeName");
 const $onChild = Symbol();
 const $onChildCheck = Symbol();
 const $onText = Symbol();
+const $resolvePrototypes = Symbol();
+const $setId = Symbol();
+const $setSetAttributes = Symbol();
 const $text = Symbol();
 
+const _applyPrototype = Symbol();
 const _attributes = Symbol();
 const _attributeNames = Symbol();
 const _children = Symbol();
+const _clone = Symbol();
+const _cloneAttribute = Symbol();
 const _defaultValue = Symbol();
+const _getPrototype = Symbol();
+const _getUnsetAttributes = Symbol();
 const _hasChildren = Symbol();
 const _max = Symbol();
 const _options = Symbol();
 const _parent = Symbol();
+const _setAttributes = Symbol();
 const _validator = Symbol();
 
 class XFAObject {
@@ -54,23 +64,27 @@ class XFAObject {
 
   [$onChild](child) {
     if (!this[_hasChildren] || !this[$onChildCheck](child)) {
-      return;
+      return false;
     }
 
     const name = child[$nodeName];
     const node = this[name];
+
     if (node instanceof XFAObjectArray) {
       if (node.push(child)) {
         child[_parent] = this;
         this[_children].push(child);
+        return true;
       }
     } else if (node === null) {
       this[name] = child;
       child[_parent] = this;
       this[_children].push(child);
-    } else {
-      warn(`XFA - node "${this[$nodeName]}" accepts only one child: ${name}`);
+      return true;
     }
+
+    warn(`XFA - node "${this[$nodeName]}" has already enough "${name}"!`);
+    return false;
   }
 
   [$onChildCheck](child) {
@@ -78,6 +92,12 @@ class XFAObject {
       this.hasOwnProperty(child[$nodeName]) &&
       child[$namespaceId] === this[$namespaceId]
     );
+  }
+
+  [$setId](ids) {
+    if (this.id && this[$namespaceId] === NamespaceIds.template.id) {
+      ids.set(this.id, this);
+    }
   }
 
   [$onText](_) {}
@@ -151,6 +171,198 @@ class XFAObject {
 
     return dumped;
   }
+
+  [$setSetAttributes](attributes) {
+    if (attributes.use || attributes.id) {
+      // Just keep set attributes because this node uses a proto or is a proto.
+      this[_setAttributes] = new Set(Object.keys(attributes));
+    }
+  }
+
+  /**
+   * Get attribute names which have been set in the proto but not in this.
+   */
+  [_getUnsetAttributes](protoAttributes) {
+    const allAttr = this[_attributeNames];
+    const setAttr = this[_setAttributes];
+    return [...protoAttributes].filter(x => allAttr.has(x) && !setAttr.has(x));
+  }
+
+  /**
+   * Update the node with properties coming from a prototype and apply
+   * this function recursivly to all children.
+   */
+  [$resolvePrototypes](ids, ancestors = new Set()) {
+    for (const child of this[_children]) {
+      const proto = child[_getPrototype](ids, ancestors);
+      if (proto) {
+        // _applyPrototype will apply $resolvePrototypes with correct ancestors
+        // to avoid infinite loop.
+        child[_applyPrototype](proto, ids, ancestors);
+      } else {
+        child[$resolvePrototypes](ids, ancestors);
+      }
+    }
+  }
+
+  [_getPrototype](ids, ancestors) {
+    const { use } = this;
+    if (use && use.startsWith("#")) {
+      const id = use.slice(1);
+      const proto = ids.get(id);
+      this.use = "";
+      if (!proto) {
+        warn(`XFA - Invalid prototype id: ${id}.`);
+        return null;
+      }
+
+      if (proto[$nodeName] !== this[$nodeName]) {
+        warn(
+          `XFA - Incompatible prototype: ${proto[$nodeName]} !== ${this[$nodeName]}.`
+        );
+        return null;
+      }
+
+      if (ancestors.has(proto)) {
+        // We've a cycle so break it.
+        warn(`XFA - Cycle detected in prototypes use.`);
+        return null;
+      }
+
+      ancestors.add(proto);
+      // The prototype can have a "use" attribute itself.
+      const protoProto = proto[_getPrototype](ids, ancestors);
+      if (!protoProto) {
+        ancestors.delete(proto);
+        return proto;
+      }
+
+      proto[_applyPrototype](protoProto, ids, ancestors);
+      ancestors.delete(proto);
+
+      return proto;
+    }
+    // TODO: handle SOM expressions.
+
+    return null;
+  }
+
+  [_applyPrototype](proto, ids, ancestors) {
+    if (ancestors.has(proto)) {
+      // We've a cycle so break it.
+      warn(`XFA - Cycle detected in prototypes use.`);
+      return;
+    }
+
+    if (!this[$content] && proto[$content]) {
+      this[$content] = proto[$content];
+    }
+
+    const newAncestors = new Set(ancestors);
+    newAncestors.add(proto);
+
+    for (const unsetAttrName of this[_getUnsetAttributes](
+      proto[_setAttributes]
+    )) {
+      this[unsetAttrName] = proto[unsetAttrName];
+      if (this[_setAttributes]) {
+        this[_setAttributes].add(unsetAttrName);
+      }
+    }
+
+    for (const name of Object.getOwnPropertyNames(this)) {
+      if (this[_attributeNames].has(name)) {
+        continue;
+      }
+      const value = this[name];
+      const protoValue = proto[name];
+
+      if (value instanceof XFAObjectArray) {
+        for (const child of value[_children]) {
+          child[$resolvePrototypes](ids, ancestors);
+        }
+
+        for (
+          let i = value[_children].length, ii = protoValue[_children].length;
+          i < ii;
+          i++
+        ) {
+          const child = proto[_children][i][_clone]();
+          if (value.push(child)) {
+            child[_parent] = this;
+            this[_children].push(child);
+            child[$resolvePrototypes](ids, newAncestors);
+          } else {
+            // No need to continue: other nodes will be rejected.
+            break;
+          }
+        }
+        continue;
+      }
+
+      if (value !== null) {
+        value[$resolvePrototypes](ids, ancestors);
+        continue;
+      }
+
+      if (protoValue !== null) {
+        const child = protoValue[_clone]();
+        child[_parent] = this;
+        this[name] = child;
+        this[_children].push(child);
+        child[$resolvePrototypes](ids, newAncestors);
+      }
+    }
+  }
+
+  static [_cloneAttribute](obj) {
+    if (Array.isArray(obj)) {
+      return obj.map(x => XFAObject[_cloneAttribute](x));
+    }
+    if (obj instanceof Object) {
+      return Object.assign({}, obj);
+    }
+    return obj;
+  }
+
+  [_clone]() {
+    const clone = Object.create(Object.getPrototypeOf(this));
+    for (const $symbol of Object.getOwnPropertySymbols(this)) {
+      try {
+        clone[$symbol] = this[$symbol];
+      } catch (_) {
+        shadow(clone, $symbol, this[$symbol]);
+      }
+    }
+    clone[_children] = [];
+
+    for (const name of Object.getOwnPropertyNames(this)) {
+      if (this[_attributeNames].has(name)) {
+        clone[name] = XFAObject[_cloneAttribute](this[name]);
+        continue;
+      }
+      const value = this[name];
+      if (value instanceof XFAObjectArray) {
+        clone[name] = new XFAObjectArray(value[_max]);
+      } else {
+        clone[name] = null;
+      }
+    }
+
+    for (const child of this[_children]) {
+      const name = child[$nodeName];
+      const clonedChild = child[_clone]();
+      clone[_children].push(clonedChild);
+      clonedChild[_parent] = clone;
+      if (clone[name] === null) {
+        clone[name] = clonedChild;
+      } else {
+        clone[name][_children].push(clonedChild);
+      }
+    }
+
+    return clone;
+  }
 }
 
 class XFAObjectArray {
@@ -180,6 +392,12 @@ class XFAObjectArray {
       ? this[_children][0][$dump]()
       : this[_children].map(x => x[$dump]());
   }
+
+  [_clone]() {
+    const clone = new XFAObjectArray(this[_max]);
+    clone[_children] = this[_children].map(c => c[_clone]());
+    return clone;
+  }
 }
 
 class XmlObject extends XFAObject {
@@ -198,7 +416,9 @@ class XmlObject extends XFAObject {
       this[$content] = "";
       this[_children].push(node);
     }
+    child[_parent] = this;
     this[_children].push(child);
+    return true;
   }
 
   [$onText](str) {
@@ -308,6 +528,9 @@ export {
   $onChild,
   $onChildCheck,
   $onText,
+  $resolvePrototypes,
+  $setId,
+  $setSetAttributes,
   $text,
   ContentObject,
   IntegerObject,
