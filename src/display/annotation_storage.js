@@ -91,10 +91,7 @@ class AnnotationStorage {
   }
 
   getAll() {
-    if (this._storage.size === 0) {
-      return null;
-    }
-    return objectFromEntries(this._storage);
+    return this._storage.size > 0 ? objectFromEntries(this._storage) : null;
   }
 
   get size() {
@@ -120,6 +117,14 @@ class AnnotationStorage {
         this.onResetModified();
       }
     }
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get serializable() {
+    return this._storage.size > 0 ? this._storage : null;
   }
 }
 

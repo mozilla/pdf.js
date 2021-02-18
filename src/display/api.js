@@ -1214,7 +1214,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
-        annotationStorage: annotationStorage?.getAll() || null,
+        annotationStorage: annotationStorage?.serializable || null,
       });
     }
 
@@ -2613,7 +2613,7 @@ class WorkerTransport {
     return this.messageHandler
       .sendWithPromise("SaveDocument", {
         numPages: this._numPages,
-        annotationStorage: annotationStorage?.getAll() || null,
+        annotationStorage: annotationStorage?.serializable || null,
         filename: this._fullReader?.filename ?? null,
       })
       .finally(() => {
