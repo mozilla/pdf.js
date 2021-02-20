@@ -39,7 +39,15 @@ import {
   createDefaultAppearance,
   parseDefaultAppearance,
 } from "./default_appearance.js";
-import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
+import {
+  Dict,
+  isDict,
+  isName,
+  isRef,
+  isStream,
+  Name,
+  RefSet,
+} from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
@@ -351,9 +359,10 @@ class Annotation {
   }
 
   isHidden(annotationStorage) {
-    const data = annotationStorage && annotationStorage[this.data.id];
-    if (data && "hidden" in data) {
-      return data.hidden;
+    const storageEntry =
+      annotationStorage && annotationStorage.get(this.data.id);
+    if (storageEntry && storageEntry.hidden !== undefined) {
+      return storageEntry.hidden;
     }
     return this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
   }
@@ -1083,13 +1092,26 @@ class WidgetAnnotation extends Annotation {
     }
 
     let loopDict = dict;
+    const visited = new RefSet();
+    if (dict.objId) {
+      visited.put(dict.objId);
+    }
     while (loopDict.has("Parent")) {
       loopDict = loopDict.get("Parent");
-      if (!isDict(loopDict)) {
+      if (
+        !(loopDict instanceof Dict) ||
+        (loopDict.objId && visited.has(loopDict.objId))
+      ) {
         // Even though it is not allowed according to the PDF specification,
         // bad PDF generators may provide a `Parent` entry that is not a
         // dictionary, but `null` for example (issue 8143).
+        //
+        // If parent has been already visited, it means that we're
+        // in an infinite loop.
         break;
+      }
+      if (loopDict.objId) {
+        visited.put(loopDict.objId);
       }
 
       if (loopDict.has("T")) {
@@ -1202,8 +1224,11 @@ class WidgetAnnotation extends Annotation {
   }
 
   async save(evaluator, task, annotationStorage) {
-    const value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    const value = storageEntry && storageEntry.value;
     if (value === this.data.fieldValue || value === undefined) {
       return null;
     }
@@ -1285,8 +1310,8 @@ class WidgetAnnotation extends Annotation {
     if (!annotationStorage || isPassword) {
       return null;
     }
-    let value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    const storageEntry = annotationStorage.get(this.data.id);
+    let value = storageEntry && storageEntry.value;
     if (value === undefined) {
       // The annotation hasn't been rendered so use the appearance
       return null;
@@ -1765,9 +1790,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     if (annotationStorage) {
-      const value =
-        annotationStorage[this.data.id] &&
-        annotationStorage[this.data.id].value;
+      const storageEntry = annotationStorage.get(this.data.id);
+      const value = storageEntry && storageEntry.value;
       if (value === undefined) {
         return super.getOperatorList(
           evaluator,
@@ -1822,8 +1846,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveCheckbox(evaluator, task, annotationStorage) {
-    const value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    const value = storageEntry && storageEntry.value;
     if (value === undefined) {
       return null;
     }
@@ -1865,8 +1892,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
 
   async _saveRadioButton(evaluator, task, annotationStorage) {
-    const value =
-      annotationStorage[this.data.id] && annotationStorage[this.data.id].value;
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    const value = storageEntry && storageEntry.value;
     if (value === undefined) {
       return null;
     }

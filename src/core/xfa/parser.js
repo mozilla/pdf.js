@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { $clean, $finalize, $onChild, $onText } from "./xfa_object.js";
-import { XMLParserBase, XMLParserErrorCode } from "../../shared/xml_parser.js";
+import { $clean, $finalize, $onChild, $onText, $setId } from "./xfa_object.js";
+import { XMLParserBase, XMLParserErrorCode } from "../xml_parser.js";
 import { Builder } from "./builder.js";
 import { warn } from "../../shared/util.js";
 
@@ -23,7 +23,8 @@ class XFAParser extends XMLParserBase {
     super();
     this._builder = new Builder();
     this._stack = [];
-    this._current = this._builder.buildRoot();
+    this._ids = new Map();
+    this._current = this._builder.buildRoot(this._ids);
     this._errorCode = XMLParserErrorCode.NoError;
     this._whiteRegex = /^\s+$/;
   }
@@ -34,6 +35,8 @@ class XFAParser extends XMLParserBase {
     if (this._errorCode !== XMLParserErrorCode.NoError) {
       return undefined;
     }
+
+    this._current[$finalize]();
 
     return this._current.element;
   }
@@ -101,7 +104,9 @@ class XFAParser extends XMLParserBase {
     if (isEmpty) {
       // No children: just push the node into its parent.
       node[$finalize]();
-      this._current[$onChild](node);
+      if (this._current[$onChild](node)) {
+        node[$setId](this._ids);
+      }
       node[$clean](this._builder);
       return;
     }
@@ -114,7 +119,9 @@ class XFAParser extends XMLParserBase {
     const node = this._current;
     node[$finalize]();
     this._current = this._stack.pop();
-    this._current[$onChild](node);
+    if (this._current[$onChild](node)) {
+      node[$setId](this._ids);
+    }
     node[$clean](this._builder);
   }
 

@@ -2445,6 +2445,15 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue12963",
+       "file": "pdfs/issue12963.pdf",
+       "md5": "2590047a2ef0113e698d888c29918008",
+       "rounds": 1,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "multiple-filters-length-zero",
        "file": "pdfs/multiple-filters-length-zero.pdf",
        "md5": "c273c3a6fb79cbf3034fe1b62b204728",

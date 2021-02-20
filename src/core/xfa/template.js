@@ -21,6 +21,7 @@ import {
   $namespaceId,
   $nodeName,
   $onChild,
+  $setSetAttributes,
   ContentObject,
   Option01,
   OptionObject,
@@ -1071,9 +1072,15 @@ class ExData extends ContentObject {
       child[$namespaceId] === NamespaceIds.xhtml.id
     ) {
       this[$content] = child;
-    } else if (this.contentType === "text/xml") {
-      this[$content] = child;
+      return true;
     }
+
+    if (this.contentType === "text/xml") {
+      this[$content] = child;
+      return true;
+    }
+
+    return false;
   }
 }
 
@@ -2531,9 +2538,10 @@ class Text extends ContentObject {
   [$onChild](child) {
     if (child[$namespaceId] === NamespaceIds.xhtml.id) {
       this[$content] = child;
-    } else {
-      warn(`XFA - Invalid content in Text: ${child[$nodeName]}.`);
+      return true;
     }
+    warn(`XFA - Invalid content in Text: ${child[$nodeName]}.`);
+    return false;
   }
 }
 
@@ -2757,7 +2765,9 @@ class Variables extends XFAObject {
 class TemplateNamespace {
   static [$buildXFAObject](name, attributes) {
     if (TemplateNamespace.hasOwnProperty(name)) {
-      return TemplateNamespace[name](attributes);
+      const node = TemplateNamespace[name](attributes);
+      node[$setSetAttributes](attributes);
+      return node;
     }
     return undefined;
   }
@@ -3215,4 +3225,4 @@ class TemplateNamespace {
   }
 }
 
-export { TemplateNamespace };
+export { Template, TemplateNamespace };

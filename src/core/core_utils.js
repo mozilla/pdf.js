@@ -19,7 +19,6 @@ import {
   bytesToString,
   objectSize,
   stringToPDFString,
-  warn,
 } from "../shared/util.js";
 import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
 
@@ -72,8 +71,7 @@ class XRefParseException extends BaseException {}
  *
  * If the key is not found in the tree, `undefined` is returned. Otherwise,
  * the value for the key is returned or, if `stopWhenFound` is `false`, a list
- * of values is returned. To avoid infinite loops, the traversal is stopped when
- * the loop limit is reached.
+ * of values is returned.
  *
  * @param {Dict} dict - Dictionary from where to start the traversal.
  * @param {string} key - The key of the property to find the value for.
@@ -90,11 +88,13 @@ function getInheritableProperty({
   getArray = false,
   stopWhenFound = true,
 }) {
-  const LOOP_LIMIT = 100;
-  let loopCount = 0;
   let values;
+  const visited = new RefSet();
 
-  while (dict) {
+  while (dict instanceof Dict && !(dict.objId && visited.has(dict.objId))) {
+    if (dict.objId) {
+      visited.put(dict.objId);
+    }
     const value = getArray ? dict.getArray(key) : dict.get(key);
     if (value !== undefined) {
       if (stopWhenFound) {
@@ -104,10 +104,6 @@ function getInheritableProperty({
         values = [];
       }
       values.push(value);
-    }
-    if (++loopCount > LOOP_LIMIT) {
-      warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
-      break;
     }
     dict = dict.get("Parent");
   }
@@ -320,8 +316,54 @@ function collectActions(xref, dict, eventType) {
   return objectSize(actions) > 0 ? actions : null;
 }
 
+const XMLEntities = {
+  /* < */ 0x3c: "&lt;",
+  /* > */ 0x3e: "&gt;",
+  /* & */ 0x26: "&amp;",
+  /* " */ 0x22: "&quot;",
+  /* ' */ 0x27: "&apos;",
+};
+
+function encodeToXmlString(str) {
+  const buffer = [];
+  let start = 0;
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.codePointAt(i);
+    if (0x20 <= char && char <= 0x7e) {
+      // ascii
+      const entity = XMLEntities[char];
+      if (entity) {
+        if (start < i) {
+          buffer.push(str.substring(start, i));
+        }
+        buffer.push(entity);
+        start = i + 1;
+      }
+    } else {
+      if (start < i) {
+        buffer.push(str.substring(start, i));
+      }
+      buffer.push(`&#x${char.toString(16).toUpperCase()};`);
+      if (char > 0xd7ff && (char < 0xe000 || char > 0xfffd)) {
+        // char is represented by two u16
+        i++;
+      }
+      start = i + 1;
+    }
+  }
+
+  if (buffer.length === 0) {
+    return str;
+  }
+  if (start < str.length) {
+    buffer.push(str.substring(start, str.length));
+  }
+  return buffer.join("");
+}
+
 export {
   collectActions,
+  encodeToXmlString,
   escapePDFName,
   getArrayLookupTableFactory,
   getInheritableProperty,

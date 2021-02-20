@@ -1228,7 +1228,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
-        annotationStorage: annotationStorage?.getAll() || null,
+        annotationStorage: annotationStorage?.serializable || null,
       });
     }
 
@@ -1638,9 +1638,8 @@ class PDFPageProxy {
 }
 
 class LoopbackPort {
-  constructor(defer = true) {
+  constructor() {
     this._listeners = [];
-    this._defer = defer;
     this._deferred = Promise.resolve(undefined);
   }
 
@@ -1670,8 +1669,24 @@ class LoopbackPort {
         cloned.set(value, result);
         return result;
       }
+      if (value instanceof Map) {
+        result = new Map();
+        cloned.set(value, result); // Adding to cache now for cyclic references.
+        for (const [key, val] of value) {
+          result.set(key, cloneValue(val));
+        }
+        return result;
+      }
+      if (value instanceof Set) {
+        result = new Set();
+        cloned.set(value, result); // Adding to cache now for cyclic references.
+        for (const val of value) {
+          result.add(cloneValue(val));
+        }
+        return result;
+      }
       result = Array.isArray(value) ? [] : {};
-      cloned.set(value, result); // adding to cache now for cyclic references
+      cloned.set(value, result); // Adding to cache now for cyclic references.
       // Cloning all value and object properties, however ignoring properties
       // defined via getter.
       for (const i in value) {
@@ -1684,7 +1699,7 @@ class LoopbackPort {
           continue;
         }
         if (typeof desc.value === "function") {
-          if (value.hasOwnProperty && value.hasOwnProperty(i)) {
+          if (value.hasOwnProperty?.(i)) {
             throw new Error(
               `LoopbackPort.postMessage - cannot clone: ${value[i]}`
             );
@@ -1696,19 +1711,13 @@ class LoopbackPort {
       return result;
     }
 
-    if (!this._defer) {
-      this._listeners.forEach(listener => {
-        listener.call(this, { data: obj });
-      });
-      return;
-    }
-
     const cloned = new WeakMap();
-    const e = { data: cloneValue(obj) };
+    const event = { data: cloneValue(obj) };
+
     this._deferred.then(() => {
-      this._listeners.forEach(listener => {
-        listener.call(this, e);
-      });
+      for (const listener of this._listeners) {
+        listener.call(this, event);
+      }
     });
   }
 
@@ -2628,7 +2637,7 @@ class WorkerTransport {
     return this.messageHandler
       .sendWithPromise("SaveDocument", {
         numPages: this._numPages,
-        annotationStorage: annotationStorage?.getAll() || null,
+        annotationStorage: annotationStorage?.serializable || null,
         filename: this._fullReader?.filename ?? null,
       })
       .finally(() => {
