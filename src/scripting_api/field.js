@@ -140,6 +140,14 @@ class Field extends PDFObject {
     }
   }
 
+  get bgColor() {
+    return this.fillColor;
+  }
+
+  set bgColor(color) {
+    this.fillColor = color;
+  }
+
   get numItems() {
     if (!this._isChoice) {
       throw new Error("Not a choice widget");
@@ -161,6 +169,14 @@ class Field extends PDFObject {
     }
   }
 
+  get borderColor() {
+    return this.strokeColor;
+  }
+
+  set borderColor(color) {
+    this.strokeColor = color;
+  }
+
   get textColor() {
     return this._textColor;
   }
@@ -169,6 +185,14 @@ class Field extends PDFObject {
     if (Color._isValidColor(color)) {
       this._textColor = color;
     }
+  }
+
+  get fgColor() {
+    return this.textColor;
+  }
+
+  set fgColor(color) {
+    this.textColor = color;
   }
 
   get value() {
