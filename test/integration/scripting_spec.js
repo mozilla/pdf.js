@@ -664,6 +664,7 @@ describe("Interaction", () => {
               );
 
               await page.click(`[data-annotation-id='${id}R']`);
+              await page.focus(ref);
               await page.waitForFunction(
                 (_ref, _current, _propName) =>
                   getComputedStyle(document.querySelector(_ref))[_propName] !==

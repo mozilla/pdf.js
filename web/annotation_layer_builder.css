@@ -45,7 +45,7 @@
 .annotationLayer .choiceWidgetAnnotation select,
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
-  background-color: rgba(0, 54, 255, 0.13);
+  background-color: transparent;
   border: 1px solid transparent;
   box-sizing: border-box;
   font-size: 9px;
@@ -86,13 +86,6 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input:hover,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:hover {
   border: 1px solid rgba(0, 0, 0, 1);
-}
-
-.annotationLayer .textWidgetAnnotation input:focus,
-.annotationLayer .textWidgetAnnotation textarea:focus,
-.annotationLayer .choiceWidgetAnnotation select:focus {
-  background: none;
-  border: 1px solid transparent;
 }
 
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,

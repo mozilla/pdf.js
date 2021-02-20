@@ -615,6 +615,16 @@ class WidgetAnnotationElement extends AnnotationElement {
       }
     }
   }
+
+  _setBorderAndBackgroundColors(element) {
+    for (const name of ["borderColor", "backgroundColor"]) {
+      const color = this.data[name];
+      element.style[name] =
+        color === null
+          ? "transparent"
+          : Util.makeHexColor(color[0], color[1], color[2]);
+    }
+  }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
@@ -860,6 +870,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     this._setTextStyle(element);
+    this._setBorderAndBackgroundColors(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -976,6 +987,15 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       );
     }
 
+    this._setBorderAndBackgroundColors(element);
+
+    const { fontColor } = this.data.defaultAppearanceData;
+    element.style.color = Util.makeHexColor(
+      fontColor[0],
+      fontColor[1],
+      fontColor[2]
+    );
+
     this.container.appendChild(element);
     return this.container;
   }
@@ -1065,6 +1085,8 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
         event => event.target.checked
       );
     }
+
+    this._setBorderAndBackgroundColors(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -1296,6 +1318,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         storage.setValue(id, { value: getValue(event) });
       });
     }
+
+    this._setBorderAndBackgroundColors(selectElement);
 
     this.container.appendChild(selectElement);
     return this.container;
