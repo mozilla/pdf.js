@@ -582,6 +582,39 @@ class WidgetAnnotationElement extends AnnotationElement {
       }
     }
   }
+
+  _setColor(event) {
+    const { detail, target } = event;
+    const { style } = target;
+    for (const name of [
+      "bgColor",
+      "fillColor",
+      "fgColor",
+      "textColor",
+      "borderColor",
+      "strokeColor",
+    ]) {
+      let color = detail[name];
+      if (!color) {
+        continue;
+      }
+      color = ColorConverters[`${color[0]}_HTML`](color.slice(1));
+      switch (name) {
+        case "bgColor":
+        case "fillColor":
+          style.backgroundColor = color;
+          break;
+        case "fgColor":
+        case "textColor":
+          style.color = color;
+          break;
+        case "borderColor":
+        case "strokeColor":
+          style.borderColor = color;
+          break;
+      }
+    }
+  }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
@@ -644,7 +677,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
         });
 
-        element.addEventListener("updatefromsandbox", function (event) {
+        element.addEventListener("updatefromsandbox", event => {
           const { detail } = event;
           const actions = {
             value() {
@@ -686,16 +719,11 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 event.target.setSelectionRange(selStart, selEnd);
               }
             },
-            strokeColor() {
-              const color = detail.strokeColor;
-              event.target.style.color = ColorConverters[`${color[0]}_HTML`](
-                color.slice(1)
-              );
-            },
           };
           Object.keys(detail)
             .filter(name => name in actions)
             .forEach(name => actions[name]());
+          this._setColor(event);
         });
 
         // Even if the field hasn't any actions
@@ -929,6 +957,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
         Object.keys(detail)
           .filter(name => name in actions)
           .forEach(name => actions[name]());
+        this._setColor(event);
       });
 
       this._setEventListeners(
@@ -1018,6 +1047,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
         Object.keys(detail)
           .filter(name => name in actions)
           .forEach(name => actions[name]());
+        this._setColor(event);
       });
 
       this._setEventListeners(
@@ -1226,6 +1256,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         Object.keys(detail)
           .filter(name => name in actions)
           .forEach(name => actions[name]());
+        this._setColor(event);
       });
 
       selectElement.addEventListener("input", event => {
