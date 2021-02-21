@@ -4724,6 +4724,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-square-circle-without-appearance",
+       "file": "pdfs/annotation-square-circle-without-appearance.pdf",
+       "md5": "5b2a5e1e918137993d26a0cd8b0947f6",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "annotation-stamp",
        "file": "pdfs/annotation-stamp.pdf",
        "md5": "0a04d7ce1ad103cb3c033d26855d6ec7",
