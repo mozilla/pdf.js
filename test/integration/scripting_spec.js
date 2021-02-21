@@ -630,4 +630,53 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in js-colors.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("js-colors.pdf", "#\\33 4R");
+    });
+
+    it("must changes colors", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const [name, ref] of [
+            ["Text1", "#\\33 4R"],
+            ["Check1", "#\\33 5R"],
+            ["Radio1", "#\\33 7R"],
+            ["Choice1", "#\\33 8R"],
+          ]) {
+            await clearInput(page, "#\\33 4R");
+            await page.type("#\\33 4R", `${name}`, {
+              delay: 10,
+            });
+            await page.click("[data-annotation-id='41R']");
+            let color = await page.$eval(
+              ref,
+              el => getComputedStyle(el).backgroundColor
+            );
+            expect(color)
+              .withContext(`In ${browserName}`)
+              .toEqual("rgb(255, 0, 0)");
+
+            await page.click("[data-annotation-id='43R']");
+            color = await page.$eval(ref, el => getComputedStyle(el).color);
+            expect(color)
+              .withContext(`In ${browserName}`)
+              .toEqual("rgb(0, 255, 0)");
+
+            await page.click("[data-annotation-id='44R']");
+            color = await page.$eval(
+              ref,
+              el => getComputedStyle(el)["border-top-color"]
+            );
+            expect(color)
+              .withContext(`In ${browserName}`)
+              .toEqual("rgb(0, 0, 255)");
+          }
+        })
+      );
+    });
+  });
 });
