@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS, NullL10n } from "./ui_utils.js";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
+import { CSS_UNITS } from "./ui_utils.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 let activeService = null;
@@ -82,7 +82,7 @@ function PDFPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
-  this.l10n = l10n || NullL10n;
+  this.l10n = l10n;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement("canvas");
