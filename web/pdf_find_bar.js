@@ -28,16 +28,16 @@ class PDFFindBar {
   constructor(options, eventBus, l10n = NullL10n) {
     this.opened = false;
 
-    this.bar = options.bar || null;
-    this.toggleButton = options.toggleButton || null;
-    this.findField = options.findField || null;
-    this.highlightAll = options.highlightAllCheckbox || null;
-    this.caseSensitive = options.caseSensitiveCheckbox || null;
-    this.entireWord = options.entireWordCheckbox || null;
-    this.findMsg = options.findMsg || null;
-    this.findResultsCount = options.findResultsCount || null;
-    this.findPreviousButton = options.findPreviousButton || null;
-    this.findNextButton = options.findNextButton || null;
+    this.bar = options.bar;
+    this.toggleButton = options.toggleButton;
+    this.findField = options.findField;
+    this.highlightAll = options.highlightAllCheckbox;
+    this.caseSensitive = options.caseSensitiveCheckbox;
+    this.entireWord = options.entireWordCheckbox;
+    this.findMsg = options.findMsg;
+    this.findResultsCount = options.findResultsCount;
+    this.findPreviousButton = options.findPreviousButton;
+    this.findNextButton = options.findNextButton;
     this.eventBus = eventBus;
     this.l10n = l10n;
 
@@ -147,9 +147,6 @@ class PDFFindBar {
   }
 
   updateResultsCount({ current = 0, total = 0 } = {}) {
-    if (!this.findResultsCount) {
-      return; // No UI control is provided.
-    }
     const limit = MATCHES_COUNT_LIMIT;
     let matchesCountMsg = "";
 
