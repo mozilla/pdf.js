@@ -87,11 +87,7 @@ class PDFLayerViewer extends BaseTreeViewer {
       element.textContent = this._normalizeTextContent(name);
       return;
     }
-    element.textContent = await this.l10n.get(
-      "additional_layers",
-      null,
-      "Additional Layers"
-    );
+    element.textContent = await this.l10n.get("additional_layers");
     element.style.fontStyle = "italic";
   }
 
