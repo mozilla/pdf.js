@@ -69,36 +69,6 @@ const SpreadMode = {
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
-// Replaces {{arguments}} with their values.
-function formatL10nValue(text, args) {
-  if (!args) {
-    return text;
-  }
-  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
-    return name in args ? args[name] : "{{" + name + "}}";
-  });
-}
-
-/**
- * No-op implementation of the localization service.
- * @implements {IL10n}
- */
-const NullL10n = {
-  async getLanguage() {
-    return "en-us";
-  },
-
-  async getDirection() {
-    return "ltr";
-  },
-
-  async get(property, args, fallback) {
-    return formatL10nValue(fallback, args);
-  },
-
-  async translate(element) {},
-};
-
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
  * @returns {Object} The object with horizontal (sx) and vertical (sy)
@@ -1057,7 +1027,6 @@ export {
   noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
-  NullL10n,
   parseQueryString,
   PresentationModeState,
   ProgressBar,

@@ -177,26 +177,18 @@ class Toolbar {
         items.pageNumber.type = "text";
       } else {
         items.pageNumber.type = "number";
-        this.l10n
-          .get("of_pages", { pagesCount }, "of {{pagesCount}}")
-          .then(msg => {
-            items.numPages.textContent = msg;
-          });
+        this.l10n.get("of_pages", { pagesCount }).then(msg => {
+          items.numPages.textContent = msg;
+        });
       }
       items.pageNumber.max = pagesCount;
     }
 
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
-      this.l10n
-        .get(
-          "page_of_pages",
-          { pageNumber, pagesCount },
-          "({{pageNumber}} of {{pagesCount}})"
-        )
-        .then(msg => {
-          items.numPages.textContent = msg;
-        });
+      this.l10n.get("page_of_pages", { pageNumber, pagesCount }).then(msg => {
+        items.numPages.textContent = msg;
+      });
     } else {
       items.pageNumber.value = pageNumber;
     }
@@ -207,9 +199,8 @@ class Toolbar {
     items.zoomOut.disabled = pageScale <= MIN_SCALE;
     items.zoomIn.disabled = pageScale >= MAX_SCALE;
 
-    const customScale = Math.round(pageScale * 10000) / 100;
     this.l10n
-      .get("page_scale_percent", { scale: customScale }, "{{scale}}%")
+      .get("page_scale_percent", { scale: Math.round(pageScale * 10000) / 100 })
       .then(msg => {
         let predefinedValueFound = false;
         for (const option of items.scaleSelect.options) {
@@ -242,10 +233,10 @@ class Toolbar {
     const { items, l10n } = this;
 
     const predefinedValuesPromise = Promise.all([
-      l10n.get("page_scale_auto", null, "Automatic Zoom"),
-      l10n.get("page_scale_actual", null, "Actual Size"),
-      l10n.get("page_scale_fit", null, "Page Fit"),
-      l10n.get("page_scale_width", null, "Page Width"),
+      l10n.get("page_scale_auto"),
+      l10n.get("page_scale_actual"),
+      l10n.get("page_scale_fit"),
+      l10n.get("page_scale_width"),
     ]);
 
     // The temporary canvas is used to measure text length in the DOM.
