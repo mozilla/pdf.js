@@ -14,10 +14,10 @@
  */
 
 import "../extensions/firefox/tools/l10n.js";
+import { DEFAULT_SCALE_VALUE, PdfFileRegExp } from "./ui_utils.js";
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
-import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -99,6 +99,10 @@ class FirefoxCom {
 }
 
 class DownloadManager {
+  constructor() {
+    this._openBlobUrls = new WeakMap();
+  }
+
   downloadUrl(url, filename) {
     FirefoxCom.request("download", {
       originalUrl: url,
@@ -119,6 +123,38 @@ class DownloadManager {
     }).then(error => {
       URL.revokeObjectURL(blobUrl);
     });
+  }
+
+  /**
+   * @returns {boolean} Indicating if the data was opened.
+   */
+  openOrDownloadData(element, data, filename) {
+    const isPdfFile = PdfFileRegExp.test(filename);
+    const contentType = isPdfFile ? "application/pdf" : "";
+
+    if (isPdfFile) {
+      let blobUrl = this._openBlobUrls.get(element);
+      if (!blobUrl) {
+        blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));
+        this._openBlobUrls.set(element, blobUrl);
+      }
+      // Let Firefox's content handler catch the URL and display the PDF.
+      const viewerUrl = blobUrl + "#filename=" + encodeURIComponent(filename);
+
+      try {
+        window.open(viewerUrl);
+        return true;
+      } catch (ex) {
+        console.error(`openOrDownloadData: ${ex}`);
+        // Release the `blobUrl`, since opening it failed, and fallback to
+        // downloading the PDF file.
+        URL.revokeObjectURL(blobUrl);
+        this._openBlobUrls.delete(element);
+      }
+    }
+
+    this.downloadData(data, filename, contentType);
+    return false;
   }
 
   download(blob, url, filename, sourceEventType = "download") {
