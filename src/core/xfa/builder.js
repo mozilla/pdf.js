@@ -17,6 +17,7 @@ import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import {
   $cleanup,
   $finalize,
+  $nsAttributes,
   $onChild,
   $resolvePrototypes,
   XFAObject,
@@ -86,6 +87,25 @@ class Builder {
     if (prefixes) {
       // The xml node may have namespace prefix definitions
       this._addNamespacePrefix(prefixes);
+    }
+
+    if (attributes.hasOwnProperty($nsAttributes)) {
+      // Only support xfa-data namespace.
+      const dataTemplate = NamespaceSetUp.datasets;
+      const nsAttrs = attributes[$nsAttributes];
+      let xfaAttrs = null;
+      for (const [ns, attrs] of Object.entries(nsAttrs)) {
+        const nsToUse = this._getNamespaceToUse(ns);
+        if (nsToUse === dataTemplate) {
+          xfaAttrs = { xfa: attrs };
+          break;
+        }
+      }
+      if (xfaAttrs) {
+        attributes[$nsAttributes] = xfaAttrs;
+      } else {
+        delete attributes[$nsAttributes];
+      }
     }
 
     const namespaceToUse = this._getNamespaceToUse(nsPrefix);
