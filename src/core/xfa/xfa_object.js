@@ -24,7 +24,13 @@ const $cleanup = Symbol();
 const $content = Symbol("content");
 const $dump = Symbol();
 const $finalize = Symbol();
+const $isDataValue = Symbol();
+const $getAttributeIt = Symbol();
+const $getChildrenByClass = Symbol();
+const $getChildrenByName = Symbol();
+const $getChildrenByNameIt = Symbol();
 const $getChildren = Symbol();
+const $getParent = Symbol();
 const $isTransparent = Symbol();
 const $lastAttribute = Symbol();
 const $namespaceId = Symbol("namespaceId");
@@ -139,12 +145,16 @@ class XFAObject {
     return shadow(this, _attributeNames, proto._attributes);
   }
 
+  [$getParent]() {
+    return this[_parent];
+  }
+
   [$getChildren](name = null) {
     if (!name) {
       return this[_children];
     }
 
-    return this[_children].filter(c => c[$nodeName] === name);
+    return this[name];
   }
 
   [$dump]() {
@@ -363,6 +373,47 @@ class XFAObject {
 
     return clone;
   }
+
+  [$getChildren](name = null) {
+    if (!name) {
+      return this[_children];
+    }
+
+    return this[_children].filter(c => c[$nodeName] === name);
+  }
+
+  [$getChildrenByClass](name) {
+    return this[name];
+  }
+
+  [$getChildrenByName](name, allTransparent, first = true) {
+    return Array.from(this[$getChildrenByNameIt](name, allTransparent, first));
+  }
+
+  *[$getChildrenByNameIt](name, allTransparent, first = true) {
+    if (name === "parent") {
+      yield this[_parent];
+      return;
+    }
+
+    for (const child of this[_children]) {
+      if (child[$nodeName] === name) {
+        yield child;
+      }
+
+      if (child.name === name) {
+        yield child;
+      }
+
+      if (allTransparent || child[$isTransparent]()) {
+        yield* child[$getChildrenByNameIt](name, allTransparent, false);
+      }
+    }
+
+    if (first && this[_attributeNames].has(name)) {
+      yield new XFAAttribute(this, name, this[name]);
+    }
+  }
 }
 
 class XFAObjectArray {
@@ -398,10 +449,34 @@ class XFAObjectArray {
     clone[_children] = this[_children].map(c => c[_clone]());
     return clone;
   }
+
+  get children() {
+    return this[_children];
+  }
+}
+
+class XFAAttribute {
+  constructor(node, name, value) {
+    this[_parent] = node;
+    this[$nodeName] = name;
+    this[$content] = value;
+  }
+
+  [$getParent]() {
+    return this[_parent];
+  }
+
+  [$isDataValue]() {
+    return true;
+  }
+
+  [$text]() {
+    return this[$content];
+  }
 }
 
 class XmlObject extends XFAObject {
-  constructor(nsId, name, attributes = Object.create(null)) {
+  constructor(nsId, name, attributes = null) {
     super(nsId, name);
     this[$content] = "";
     if (name !== "#text") {
@@ -412,6 +487,7 @@ class XmlObject extends XFAObject {
   [$onChild](child) {
     if (this[$content]) {
       const node = new XmlObject(this[$namespaceId], "#text");
+      node[_parent] = this;
       node[$content] = this[$content];
       this[$content] = "";
       this[_children].push(node);
@@ -428,6 +504,7 @@ class XmlObject extends XFAObject {
   [$finalize]() {
     if (this[$content] && this[_children].length > 0) {
       const node = new XmlObject(this[$namespaceId], "#text");
+      node[_parent] = this;
       node[$content] = this[$content];
       this[_children].push(node);
       delete this[$content];
@@ -439,6 +516,54 @@ class XmlObject extends XFAObject {
       return this[$content];
     }
     return this[_children].map(c => c[$text]()).join("");
+  }
+
+  [$getChildren](name = null) {
+    if (!name) {
+      return this[_children];
+    }
+
+    return this[_children].filter(c => c[$nodeName] === name);
+  }
+
+  [$getChildrenByClass](name) {
+    const value = this[_attributes][name];
+    if (value !== undefined) {
+      return value;
+    }
+    return this[$getChildren](name);
+  }
+
+  *[$getChildrenByNameIt](name, allTransparent) {
+    const value = this[_attributes][name];
+    if (value !== undefined) {
+      yield new XFAAttribute(this, name, value);
+    }
+
+    for (const child of this[_children]) {
+      if (child[$nodeName] === name) {
+        yield child;
+      }
+
+      if (allTransparent) {
+        yield* child[$getChildrenByNameIt](name, allTransparent);
+      }
+    }
+  }
+
+  *[$getAttributeIt](name) {
+    const value = this[_attributes][name];
+    if (value !== undefined) {
+      yield new XFAAttribute(this, name, value);
+    }
+
+    for (const child of this[_children]) {
+      yield* child[$getAttributeIt](name);
+    }
+  }
+
+  [$isDataValue]() {
+    return this[_children].length === 0;
   }
 }
 
@@ -521,7 +646,13 @@ export {
   $content,
   $dump,
   $finalize,
+  $getAttributeIt,
   $getChildren,
+  $getChildrenByClass,
+  $getChildrenByName,
+  $getChildrenByNameIt,
+  $getParent,
+  $isDataValue,
   $isTransparent,
   $namespaceId,
   $nodeName,
@@ -538,6 +669,7 @@ export {
   Option10,
   OptionObject,
   StringObject,
+  XFAAttribute,
   XFAObject,
   XFAObjectArray,
   XmlObject,

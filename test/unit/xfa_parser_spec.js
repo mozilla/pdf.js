@@ -13,7 +13,14 @@
  * limitations under the License.
  */
 
-import { $dump, $getChildren, $text } from "../../src/core/xfa/xfa_object.js";
+import {
+  $dump,
+  $getChildren,
+  $getChildrenByClass,
+  $getChildrenByName,
+  $text,
+} from "../../src/core/xfa/xfa_object.js";
+import { searchNode } from "../../src/core/xfa/som.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";
 
 describe("XFAParser", function () {
@@ -414,6 +421,242 @@ describe("XFAParser", function () {
 
       field = root.template.subform.field[1];
       expect(field.value.text.$content).toEqual("Overriding text");
+    });
+  });
+
+  describe("Search in XFA", function () {
+    it("should search some nodes in a template object", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+    <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+      <subform name="Receipt" id="l">
+        <subform id="m">
+          <field name="Description" id="a">  </field>
+          <field name="Units" id="b">  </field>
+          <field name="Unit_Price" id="c">  </field>
+          <field name="Total_Price" id="d">  </field>
+        </subform>
+        <subform id="n">
+          <field name="Description" id="e">  </field>
+          <field name="Units" id="f">  </field>
+          <field name="Unit_Price" id="g">  </field>
+          <field name="Total_Price" id="h">  </field>
+        </subform>
+        <subform name="foo" id="o">
+          <field name="Description" id="p">  </field>
+          <field name="Units" id="q">  </field>
+          <field name="Unit_Price" id="r">  </field>
+          <field name="Total_Price" id="s">  </field>
+        </subform>
+        <field name="Sub_Total" id="i">  </field>
+        <field name="Tax" id="j">  </field>
+        <field name="Total_Price" id="k">  </field>
+      </subform>
+    </template>
+</xdp:xdp>
+        `;
+      const root = new XFAParser().parse(xml);
+
+      let found = root[$getChildrenByName]("subform", true);
+      expect(found.map(x => x.id)).toEqual(["l", "m", "n", "o"]);
+
+      found = root[$getChildrenByName]("Total_Price", true);
+      expect(found.map(x => x.id)).toEqual(["d", "h", "s", "k"]);
+
+      found = root.template[$getChildrenByName]("Receipt", false);
+      const receipt = found[0];
+
+      found = receipt[$getChildrenByName]("Total_Price", false);
+      expect(found.map(x => x.id)).toEqual(["d", "h", "k"]);
+
+      expect(receipt[$getChildrenByClass]("name")).toEqual("Receipt");
+      const subforms = receipt[$getChildrenByClass]("subform");
+      expect(subforms.children.map(x => x.id)).toEqual(["m", "n", "o"]);
+    });
+
+    it("should search some nodes in a template object using SOM", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+    <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+      <subform name="Receipt" id="l">
+        <subform id="m">
+          <field name="Description" id="a">  </field>
+          <field name="Units" id="b">  </field>
+          <field name="Unit_Price" id="c">  </field>
+          <field name="Total_Price" id="d">  </field>
+        </subform>
+        <subform id="n">
+          <field name="Description" id="e">  </field>
+          <field name="Units" id="f">  </field>
+          <field name="Unit_Price" id="g">  </field>
+          <field name="Total_Price" id="h">  </field>
+        </subform>
+        <subform name="foo" id="o">
+          <field name="Description" id="p">  </field>
+          <field name="Units" id="q">  </field>
+          <field name="Unit_Price" id="r">  </field>
+          <field name="Total_Price" id="s">  </field>
+        </subform>
+        <field name="Sub_Total" id="i">  </field>
+        <field name="Tax" id="j">  </field>
+        <field name="Total_Price" id="k">  </field>
+      </subform>
+    </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      expect(searchNode(root, null, "$template..Description.id")[$text]()).toBe(
+        "a"
+      );
+      expect(searchNode(root, null, "$template..Description.id")[$text]()).toBe(
+        "a"
+      );
+      expect(
+        searchNode(root, null, "$template..Description[0].id")[$text]()
+      ).toBe("a");
+      expect(
+        searchNode(root, null, "$template..Description[1].id")[$text]()
+      ).toBe("e");
+      expect(
+        searchNode(root, null, "$template..Description[2].id")[$text]()
+      ).toBe("p");
+      expect(searchNode(root, null, "$template.Receipt.id")[$text]()).toBe("l");
+      expect(
+        searchNode(root, null, "$template.Receipt.Description[1].id")[$text]()
+      ).toBe("e");
+      expect(searchNode(root, null, "$template.Receipt.Description[2]")).toBe(
+        null
+      );
+      expect(
+        searchNode(root, null, "$template.Receipt.foo.Description.id")[$text]()
+      ).toBe("p");
+      expect(
+        searchNode(root, null, "$template.#subform.Sub_Total.id")[$text]()
+      ).toBe("i");
+      expect(
+        searchNode(root, null, "$template.#subform.Units.id")[$text]()
+      ).toBe("b");
+      expect(
+        searchNode(root, null, "$template.#subform.Units.parent.id")[$text]()
+      ).toBe("m");
+    });
+
+    it("should search some nodes in a datasets object", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <Receipt>
+        <Page>1</Page>
+        <Detail PartNo="GS001">
+          <Description>Giant Slingshot</Description>
+          <Units>1</Units>
+          <Unit_Price>250.00</Unit_Price>
+          <Total_Price>250.00</Total_Price>
+        </Detail>
+        <Page>2</Page>
+        <Detail PartNo="RRB-LB">
+          <Description>Road Runner Bait, large bag</Description>
+          <Units>5</Units>
+          <Unit_Price>12.00</Unit_Price>
+          <Total_Price>60.00</Total_Price>
+        </Detail>
+        <Sub_Total>310.00</Sub_Total>
+        <Tax>24.80</Tax>
+        <Total_Price>334.80</Total_Price>
+      </Receipt>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const data = root.datasets.data;
+
+      let found = data[$getChildrenByName]("Description", true);
+      expect(found.map(x => x[$text]())).toEqual([
+        "Giant Slingshot",
+        "Road Runner Bait, large bag",
+      ]);
+
+      found = data[$getChildrenByName]("Total_Price", true);
+      expect(found.map(x => x[$text]())).toEqual(["250.00", "60.00", "334.80"]);
+    });
+
+    it("should search some nodes using SOM from a non-root node", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <Receipt>
+        <Page>1</Page>
+        <Detail PartNo="GS001">
+          <Description>Giant Slingshot</Description>
+          <Units>1</Units>
+          <Unit_Price>250.00</Unit_Price>
+          <Total_Price>250.00</Total_Price>
+        </Detail>
+        <Page>2</Page>
+        <Detail PartNo="RRB-LB">
+          <Description>Road Runner Bait, large bag</Description>
+          <Units>5</Units>
+          <Unit_Price>12.00</Unit_Price>
+          <Total_Price>60.00</Total_Price>
+        </Detail>
+        <Sub_Total>310.00</Sub_Total>
+        <Tax>24.80</Tax>
+        <Total_Price>334.80</Total_Price>
+      </Receipt>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const [receipt] = root.datasets.data[$getChildren]("Receipt");
+      expect(
+        searchNode(root, receipt, "Detail[*].Total_Price").map(x => x[$text]())
+      ).toEqual(["250.00", "60.00"]);
+
+      const units = searchNode(root, receipt, "Detail[1].Units");
+      expect(units[$text]()).toBe("5");
+
+      let found = searchNode(root, units, "Total_Price");
+      expect(found[$text]()).toBe("60.00");
+
+      found = searchNode(root, units, "Total_Pric");
+      expect(found).toEqual(null);
+    });
+
+    it("should search some nodes in a datasets object using SOM", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <Receipt Detail="Acme">
+        <Detail>foo</Detail>
+        <Detail>bar</Detail>
+     </Receipt>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      expect(searchNode(root, null, "$data.Receipt.Detail")[$text]()).toBe(
+        "Acme"
+      );
+      expect(searchNode(root, null, "$data.Receipt.Detail[0]")[$text]()).toBe(
+        "Acme"
+      );
+      expect(searchNode(root, null, "$data.Receipt.Detail[1]")[$text]()).toBe(
+        "foo"
+      );
+      expect(searchNode(root, null, "$data.Receipt.Detail[2]")[$text]()).toBe(
+        "bar"
+      );
     });
   });
 });
