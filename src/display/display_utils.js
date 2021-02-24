@@ -451,6 +451,10 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
   link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
+function isPdfFile(filename) {
+  return typeof filename === "string" && /\.pdf$/i.test(filename);
+}
+
 /**
  * Gets the file name from a given URL.
  * @param {string} url
@@ -652,6 +656,7 @@ export {
   DOMSVGFactory,
   getFilenameFromUrl,
   isFetchSupported,
+  isPdfFile,
   isValidFetchUrl,
   LinkTarget,
   loadScript,

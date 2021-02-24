@@ -19,6 +19,7 @@ import {
   UnexpectedResponseException,
 } from "../shared/util.js";
 import { getFilenameFromContentDispositionHeader } from "./content_disposition.js";
+import { isPdfFile } from "./display_utils.js";
 
 function validateRangeRequestCapabilities({
   getResponseHeader,
@@ -70,7 +71,7 @@ function extractFilenameFromHeader(getResponseHeader) {
         filename = decodeURIComponent(filename);
       } catch (ex) {}
     }
-    if (/\.pdf$/i.test(filename)) {
+    if (isPdfFile(filename)) {
       return filename;
     }
   }
@@ -82,11 +83,7 @@ function createResponseStatusError(status, url) {
     return new MissingPDFException('Missing PDF "' + url + '".');
   }
   return new UnexpectedResponseException(
-    "Unexpected server response (" +
-      status +
-      ') while retrieving PDF "' +
-      url +
-      '".',
+    `Unexpected server response (${status}) while retrieving PDF "${url}".`,
     status
   );
 }
