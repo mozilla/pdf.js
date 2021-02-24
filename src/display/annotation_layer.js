@@ -1982,11 +1982,11 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
    * @memberof FileAttachmentAnnotationElement
    */
   _download() {
-    if (!this.downloadManager) {
-      warn("Download cannot be started due to unavailable download manager");
-      return;
-    }
-    this.downloadManager.downloadData(this.content, this.filename, "");
+    this.downloadManager?.openOrDownloadData(
+      this.container,
+      this.content,
+      this.filename
+    );
   }
 }
 
