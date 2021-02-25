@@ -18,7 +18,6 @@ import {
   getPageSizeInches,
   getPDFFileNameFromURL,
   isPortraitOrientation,
-  NullL10n,
 } from "./ui_utils.js";
 
 const DEFAULT_FIELD_CONTENT = "-";
@@ -63,7 +62,7 @@ class PDFDocumentProperties {
     { overlayName, fields, container, closeButton },
     overlayManager,
     eventBus,
-    l10n = NullL10n
+    l10n
   ) {
     this.overlayName = overlayName;
     this.fields = fields;
