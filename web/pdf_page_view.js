@@ -701,7 +701,11 @@ class PDFPageView {
     const actualSizeViewport = this.viewport.clone({ scale: CSS_UNITS });
     const promise = pdfPage.getOperatorList().then(opList => {
       ensureNotCancelled();
-      const svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
+      const svgGfx = new SVGGraphics(
+        pdfPage.commonObjs,
+        pdfPage.objs,
+        /* forceDataSchema = */ viewerCompatibilityParams.disableCreateObjectURL
+      );
       return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
         ensureNotCancelled();
         this.svg = svg;
