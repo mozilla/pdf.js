@@ -16,7 +16,6 @@
 import {
   getVisibleElements,
   isValidRotation,
-  NullL10n,
   scrollIntoView,
   watchScroll,
 } from "./ui_utils.js";
@@ -45,13 +44,7 @@ class PDFThumbnailViewer {
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
-  constructor({
-    container,
-    eventBus,
-    linkService,
-    renderingQueue,
-    l10n = NullL10n,
-  }) {
+  constructor({ container, eventBus, linkService, renderingQueue, l10n }) {
     this.container = container;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { NullL10n } from "./ui_utils.js";
 import { PasswordResponses } from "pdfjs-lib";
 
 /**
@@ -37,12 +36,7 @@ class PasswordPrompt {
    * @param {boolean} [isViewerEmbedded] - If the viewer is embedded, in e.g.
    *   an <iframe> or an <object>. The default value is `false`.
    */
-  constructor(
-    options,
-    overlayManager,
-    l10n = NullL10n,
-    isViewerEmbedded = false
-  ) {
+  constructor(options, overlayManager, l10n, isViewerEmbedded = false) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;

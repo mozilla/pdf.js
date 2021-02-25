@@ -14,7 +14,6 @@
  */
 
 import { FindState } from "./pdf_find_controller.js";
-import { NullL10n } from "./ui_utils.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -25,7 +24,7 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.opened = false;
 
     this.bar = options.bar;
