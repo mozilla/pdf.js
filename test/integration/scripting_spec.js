@@ -638,7 +638,7 @@ describe("Interaction", () => {
       pages = await loadAndWait("js-colors.pdf", "#\\33 4R");
     });
 
-    it("must changes colors", async () => {
+    it("must change colors", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           for (const [name, ref] of [
@@ -651,29 +651,36 @@ describe("Interaction", () => {
             await page.type("#\\33 4R", `${name}`, {
               delay: 10,
             });
-            await page.click("[data-annotation-id='41R']");
-            let color = await page.$eval(
-              ref,
-              el => getComputedStyle(el).backgroundColor
-            );
-            expect(color)
-              .withContext(`In ${browserName}`)
-              .toEqual("rgb(255, 0, 0)");
 
-            await page.click("[data-annotation-id='43R']");
-            color = await page.$eval(ref, el => getComputedStyle(el).color);
-            expect(color)
-              .withContext(`In ${browserName}`)
-              .toEqual("rgb(0, 255, 0)");
+            for (const [id, propName, expected] of [
+              [41, "backgroundColor", "rgb(255, 0, 0)"],
+              [43, "color", "rgb(0, 255, 0)"],
+              [44, "border-top-color", "rgb(0, 0, 255)"],
+            ]) {
+              const current = await page.$eval(
+                ref,
+                (el, _propName) => getComputedStyle(el)[_propName],
+                propName
+              );
 
-            await page.click("[data-annotation-id='44R']");
-            color = await page.$eval(
-              ref,
-              el => getComputedStyle(el)["border-top-color"]
-            );
-            expect(color)
-              .withContext(`In ${browserName}`)
-              .toEqual("rgb(0, 0, 255)");
+              await page.click(`[data-annotation-id='${id}R']`);
+              await page.waitForFunction(
+                (_ref, _current, _propName) =>
+                  getComputedStyle(document.querySelector(_ref))[_propName] !==
+                  _current,
+                {},
+                ref,
+                current,
+                propName
+              );
+
+              const color = await page.$eval(
+                ref,
+                (el, _propName) => getComputedStyle(el)[_propName],
+                propName
+              );
+              expect(color).withContext(`In ${browserName}`).toEqual(expected);
+            }
           }
         })
       );
