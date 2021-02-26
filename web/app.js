@@ -2346,9 +2346,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       // IE10 / IE11 does not include an origin in `blob:`-URLs. So don't block
       // any blob:-URL. The browser's same-origin policy will block requests to
       // blob:-URLs from other origins, so this is safe.
-      if (origin !== viewerOrigin && protocol !== "blob:") {
+      /*if (origin !== viewerOrigin && protocol !== "blob:") {
         throw new Error("file origin does not match viewer's");
-      }
+      }*/
     } catch (ex) {
       PDFViewerApplication._localizeMessage("loading_error").then(msg => {
         PDFViewerApplication._documentError(msg, { message: ex?.message });
