@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { createObjectURL, createValidAbsoluteUrl } from "pdfjs-lib";
-import { PdfFileRegExp } from "./ui_utils.js";
+import { createObjectURL, createValidAbsoluteUrl, isPdfFile } from "pdfjs-lib";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("CHROME || GENERIC")) {
@@ -68,10 +67,10 @@ class DownloadManager {
    * @returns {boolean} Indicating if the data was opened.
    */
   openOrDownloadData(element, data, filename) {
-    const isPdfFile = PdfFileRegExp.test(filename);
-    const contentType = isPdfFile ? "application/pdf" : "";
+    const isPdfData = isPdfFile(filename);
+    const contentType = isPdfData ? "application/pdf" : "";
 
-    if (isPdfFile && !viewerCompatibilityParams.disableCreateObjectURL) {
+    if (isPdfData && !viewerCompatibilityParams.disableCreateObjectURL) {
       let blobUrl = this._openBlobUrls.get(element);
       if (!blobUrl) {
         blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));

@@ -14,6 +14,7 @@
  */
 
 import { assert, createPromiseCapability } from "../shared/util.js";
+import { isPdfFile } from "./display_utils.js";
 
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {
@@ -25,6 +26,8 @@ class PDFDataTransportStream {
 
     this._queuedChunks = [];
     this._progressiveDone = params.progressiveDone || false;
+    this._contentDispositionFilename =
+      params.contentDispositionFilename || null;
 
     const initialData = params.initialData;
     if (initialData?.length > 0) {
@@ -125,7 +128,8 @@ class PDFDataTransportStream {
     return new PDFDataTransportStreamReader(
       this,
       queuedChunks,
-      this._progressiveDone
+      this._progressiveDone,
+      this._contentDispositionFilename
     );
   }
 
@@ -153,10 +157,17 @@ class PDFDataTransportStream {
 
 /** @implements {IPDFStreamReader} */
 class PDFDataTransportStreamReader {
-  constructor(stream, queuedChunks, progressiveDone = false) {
+  constructor(
+    stream,
+    queuedChunks,
+    progressiveDone = false,
+    contentDispositionFilename = null
+  ) {
     this._stream = stream;
     this._done = progressiveDone || false;
-    this._filename = null;
+    this._filename = isPdfFile(contentDispositionFilename)
+      ? contentDispositionFilename
+      : null;
     this._queuedChunks = queuedChunks || [];
     this._loaded = 0;
     for (const chunk of this._queuedChunks) {
