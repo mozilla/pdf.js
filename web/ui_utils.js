@@ -69,9 +69,6 @@ const SpreadMode = {
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
-// Used by the (various) `DownloadManager`-implementations.
-const PdfFileRegExp = /\.pdf$/i;
-
 // Replaces {{arguments}} with their values.
 function formatL10nValue(text, args) {
   if (!args) {
@@ -1062,7 +1059,6 @@ export {
   normalizeWheelEventDirection,
   NullL10n,
   parseQueryString,
-  PdfFileRegExp,
   PresentationModeState,
   ProgressBar,
   RendererType,

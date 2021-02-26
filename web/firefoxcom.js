@@ -14,10 +14,10 @@
  */
 
 import "../extensions/firefox/tools/l10n.js";
-import { DEFAULT_SCALE_VALUE, PdfFileRegExp } from "./ui_utils.js";
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { PDFDataRangeTransport, shadow } from "pdfjs-lib";
+import { isPdfFile, PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
+import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -129,10 +129,10 @@ class DownloadManager {
    * @returns {boolean} Indicating if the data was opened.
    */
   openOrDownloadData(element, data, filename) {
-    const isPdfFile = PdfFileRegExp.test(filename);
-    const contentType = isPdfFile ? "application/pdf" : "";
+    const isPdfData = isPdfFile(filename);
+    const contentType = isPdfData ? "application/pdf" : "";
 
-    if (isPdfFile) {
+    if (isPdfData) {
       let blobUrl = this._openBlobUrls.get(element);
       if (!blobUrl) {
         blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));
@@ -332,7 +332,8 @@ class FirefoxExternalServices extends DefaultExternalServices {
           pdfDataRangeTransport = new FirefoxComDataRangeTransport(
             args.length,
             args.data,
-            args.done
+            args.done,
+            args.filename
           );
 
           callbacks.onOpenWithTransport(
@@ -367,7 +368,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
             callbacks.onError(args.errorCode);
             break;
           }
-          callbacks.onOpenWithData(args.data);
+          callbacks.onOpenWithData(args.data, args.filename);
           break;
       }
     });
