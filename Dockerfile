@@ -5,4 +5,4 @@ WORKDIR /opt/node
 RUN apt-get update -y && apt-get upgrade -y && apt-get install unzip -y
 RUN yarn install
 EXPOSE 8888
-CMD gulp server
+CMD yarn run start
