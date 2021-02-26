@@ -32,6 +32,7 @@
     "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
     "gulp-zip": "^5.0.2",
+    "http-server": "^0.12.3",
     "jasmine": "^3.6.4",
     "jsdoc": "^3.6.6",
     "jstransformer-markdown-it": "^2.1.0",
@@ -65,7 +66,9 @@
   "scripts": {
     "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js",
     "test": "gulp npm-test",
-    "start": "gulp server"
+    "start": "gulp server",
+    "generic": "gulp generic",
+    "server": "http-server build/generic"
   },
   "repository": {
     "type": "git",
