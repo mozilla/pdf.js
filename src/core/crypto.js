@@ -17,6 +17,7 @@
 import {
   bytesToString,
   FormatError,
+  isArrayEqual,
   PasswordException,
   PasswordResponses,
   stringToBytes,
@@ -1262,18 +1263,6 @@ class AES256Cipher extends AESBaseCipher {
 }
 
 var PDF17 = (function PDF17Closure() {
-  function compareByteArrays(array1, array2) {
-    if (array1.length !== array2.length) {
-      return false;
-    }
-    for (var i = 0; i < array1.length; i++) {
-      if (array1[i] !== array2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   // eslint-disable-next-line no-shadow
   function PDF17() {}
 
@@ -1289,7 +1278,7 @@ var PDF17 = (function PDF17Closure() {
       hashData.set(ownerValidationSalt, password.length);
       hashData.set(userBytes, password.length + ownerValidationSalt.length);
       var result = calculateSHA256(hashData, 0, hashData.length);
-      return compareByteArrays(result, ownerPassword);
+      return isArrayEqual(result, ownerPassword);
     },
     checkUserPassword: function PDF17_checkUserPassword(
       password,
@@ -1300,7 +1289,7 @@ var PDF17 = (function PDF17Closure() {
       hashData.set(password, 0);
       hashData.set(userValidationSalt, password.length);
       var result = calculateSHA256(hashData, 0, hashData.length);
-      return compareByteArrays(result, userPassword);
+      return isArrayEqual(result, userPassword);
     },
     getOwnerKey: function PDF17_getOwnerKey(
       password,
@@ -1385,18 +1374,6 @@ var PDF20 = (function PDF20Closure() {
   // eslint-disable-next-line no-shadow
   function PDF20() {}
 
-  function compareByteArrays(array1, array2) {
-    if (array1.length !== array2.length) {
-      return false;
-    }
-    for (var i = 0; i < array1.length; i++) {
-      if (array1[i] !== array2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   PDF20.prototype = {
     hash: function PDF20_hash(password, concatBytes, userBytes) {
       return calculatePDF20Hash(password, concatBytes, userBytes);
@@ -1412,7 +1389,7 @@ var PDF20 = (function PDF20Closure() {
       hashData.set(ownerValidationSalt, password.length);
       hashData.set(userBytes, password.length + ownerValidationSalt.length);
       var result = calculatePDF20Hash(password, hashData, userBytes);
-      return compareByteArrays(result, ownerPassword);
+      return isArrayEqual(result, ownerPassword);
     },
     checkUserPassword: function PDF20_checkUserPassword(
       password,
@@ -1423,7 +1400,7 @@ var PDF20 = (function PDF20Closure() {
       hashData.set(password, 0);
       hashData.set(userValidationSalt, password.length);
       var result = calculatePDF20Hash(password, hashData, []);
-      return compareByteArrays(result, userPassword);
+      return isArrayEqual(result, userPassword);
     },
     getOwnerKey: function PDF20_getOwnerKey(
       password,
