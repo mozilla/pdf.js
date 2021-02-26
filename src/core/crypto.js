@@ -1323,26 +1323,24 @@ var PDF17 = (function PDF17Closure() {
 })();
 
 var PDF20 = (function PDF20Closure() {
-  function concatArrays(array1, array2) {
-    var t = new Uint8Array(array1.length + array2.length);
-    t.set(array1, 0);
-    t.set(array2, array1.length);
-    return t;
-  }
-
   function calculatePDF20Hash(password, input, userBytes) {
     // This refers to Algorithm 2.B as defined in ISO 32000-2.
     var k = calculateSHA256(input, 0, input.length).subarray(0, 32);
     var e = [0];
     var i = 0;
     while (i < 64 || e[e.length - 1] > i - 32) {
-      var arrayLength = password.length + k.length + userBytes.length;
+      const combinedLength = password.length + k.length + userBytes.length,
+        combinedArray = new Uint8Array(combinedLength);
+      let writeOffset = 0;
+      combinedArray.set(password, writeOffset);
+      writeOffset += password.length;
+      combinedArray.set(k, writeOffset);
+      writeOffset += k.length;
+      combinedArray.set(userBytes, writeOffset);
 
-      var k1 = new Uint8Array(arrayLength * 64);
-      var array = concatArrays(password, k);
-      array = concatArrays(array, userBytes);
-      for (var j = 0, pos = 0; j < 64; j++, pos += arrayLength) {
-        k1.set(array, pos);
+      var k1 = new Uint8Array(combinedLength * 64);
+      for (var j = 0, pos = 0; j < 64; j++, pos += combinedLength) {
+        k1.set(combinedArray, pos);
       }
       // AES128 CBC NO PADDING with first 16 bytes of k as the key
       // and the second 16 as the iv.
