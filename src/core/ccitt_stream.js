@@ -12,13 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { Dict, isDict } from "./primitives.js";
 import { CCITTFaxDecoder } from "./ccitt.js";
 import { DecodeStream } from "./stream.js";
 
-var CCITTFaxStream = (function CCITTFaxStreamClosure() {
+const CCITTFaxStream = (function CCITTFaxStreamClosure() {
   // eslint-disable-next-line no-shadow
   function CCITTFaxStream(str, maybeLength, params) {
     this.str = str;
