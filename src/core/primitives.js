@@ -12,13 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { assert, unreachable } from "../shared/util.js";
 
-var EOF = {};
+const EOF = {};
 
-var Name = (function NameClosure() {
+const Name = (function NameClosure() {
   let nameCache = Object.create(null);
 
   // eslint-disable-next-line no-shadow
@@ -29,7 +28,7 @@ var Name = (function NameClosure() {
   Name.prototype = {};
 
   Name.get = function Name_get(name) {
-    var nameValue = nameCache[name];
+    const nameValue = nameCache[name];
     // eslint-disable-next-line no-restricted-syntax
     return nameValue ? nameValue : (nameCache[name] = new Name(name));
   };
@@ -41,7 +40,7 @@ var Name = (function NameClosure() {
   return Name;
 })();
 
-var Cmd = (function CmdClosure() {
+const Cmd = (function CmdClosure() {
   let cmdCache = Object.create(null);
 
   // eslint-disable-next-line no-shadow
@@ -52,7 +51,7 @@ var Cmd = (function CmdClosure() {
   Cmd.prototype = {};
 
   Cmd.get = function Cmd_get(cmd) {
-    var cmdValue = cmdCache[cmd];
+    const cmdValue = cmdCache[cmd];
     // eslint-disable-next-line no-restricted-syntax
     return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
@@ -64,8 +63,8 @@ var Cmd = (function CmdClosure() {
   return Cmd;
 })();
 
-var Dict = (function DictClosure() {
-  var nonSerializable = function nonSerializableClosure() {
+const Dict = (function DictClosure() {
+  const nonSerializable = function nonSerializableClosure() {
     return nonSerializable; // creating closure on some variable
   };
 
@@ -165,7 +164,7 @@ var Dict = (function DictClosure() {
     },
 
     forEach: function Dict_forEach(callback) {
-      for (var key in this._map) {
+      for (const key in this._map) {
         callback(key, this.get(key));
       }
     },
@@ -240,7 +239,7 @@ var Dict = (function DictClosure() {
   return Dict;
 })();
 
-var Ref = (function RefClosure() {
+const Ref = (function RefClosure() {
   let refCache = Object.create(null);
 
   // eslint-disable-next-line no-shadow
