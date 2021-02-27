@@ -1633,11 +1633,11 @@ function reverseIfRtl(chars) {
   if (charsLength <= 1 || !isRTLRangeFor(chars.charCodeAt(0))) {
     return chars;
   }
-  let s = "";
+  const buf = [];
   for (let ii = charsLength - 1; ii >= 0; ii--) {
-    s += chars[ii];
+    buf.push(chars[ii]);
   }
-  return s;
+  return buf.join("");
 }
 
 export {
