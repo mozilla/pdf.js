@@ -15,7 +15,7 @@
 
 import "../extensions/firefox/tools/l10n.js";
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { PDFDataRangeTransport, shadow } from "pdfjs-lib";
+import { isPdfFile, PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
 
@@ -99,6 +99,10 @@ class FirefoxCom {
 }
 
 class DownloadManager {
+  constructor() {
+    this._openBlobUrls = new WeakMap();
+  }
+
   downloadUrl(url, filename) {
     FirefoxCom.request("download", {
       originalUrl: url,
@@ -119,6 +123,38 @@ class DownloadManager {
     }).then(error => {
       URL.revokeObjectURL(blobUrl);
     });
+  }
+
+  /**
+   * @returns {boolean} Indicating if the data was opened.
+   */
+  openOrDownloadData(element, data, filename) {
+    const isPdfData = isPdfFile(filename);
+    const contentType = isPdfData ? "application/pdf" : "";
+
+    if (isPdfData) {
+      let blobUrl = this._openBlobUrls.get(element);
+      if (!blobUrl) {
+        blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));
+        this._openBlobUrls.set(element, blobUrl);
+      }
+      // Let Firefox's content handler catch the URL and display the PDF.
+      const viewerUrl = blobUrl + "#filename=" + encodeURIComponent(filename);
+
+      try {
+        window.open(viewerUrl);
+        return true;
+      } catch (ex) {
+        console.error(`openOrDownloadData: ${ex}`);
+        // Release the `blobUrl`, since opening it failed, and fallback to
+        // downloading the PDF file.
+        URL.revokeObjectURL(blobUrl);
+        this._openBlobUrls.delete(element);
+      }
+    }
+
+    this.downloadData(data, filename, contentType);
+    return false;
   }
 
   download(blob, url, filename, sourceEventType = "download") {
@@ -296,7 +332,8 @@ class FirefoxExternalServices extends DefaultExternalServices {
           pdfDataRangeTransport = new FirefoxComDataRangeTransport(
             args.length,
             args.data,
-            args.done
+            args.done,
+            args.filename
           );
 
           callbacks.onOpenWithTransport(
@@ -331,7 +368,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
             callbacks.onError(args.errorCode);
             break;
           }
-          callbacks.onOpenWithData(args.data);
+          callbacks.onOpenWithData(args.data, args.filename);
           break;
       }
     });

@@ -15,9 +15,6 @@
 
 import { createPromiseCapability, getFilenameFromUrl } from "pdfjs-lib";
 import { BaseTreeViewer } from "./base_tree_viewer.js";
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
-
-const PdfFileRegExp = /\.pdf$/i;
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
@@ -92,54 +89,11 @@ class PDFAttachmentViewer extends BaseTreeViewer {
   }
 
   /**
-   * NOTE: Should only be used when `URL.createObjectURL` is natively supported.
-   * @private
-   */
-  _bindPdfLink(element, { content, filename }) {
-    let blobUrl;
-    element.onclick = () => {
-      if (!blobUrl) {
-        blobUrl = URL.createObjectURL(
-          new Blob([content], { type: "application/pdf" })
-        );
-      }
-      let viewerUrl;
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        // The current URL is the viewer, let's use it and append the file.
-        viewerUrl = "?file=" + encodeURIComponent(blobUrl + "#" + filename);
-      } else if (PDFJSDev.test("MOZCENTRAL")) {
-        // Let Firefox's content handler catch the URL and display the PDF.
-        viewerUrl = blobUrl + "#filename=" + encodeURIComponent(filename);
-      } else if (PDFJSDev.test("CHROME")) {
-        // In the Chrome extension, the URL is rewritten using the history API
-        // in viewer.js, so an absolute URL must be generated.
-        viewerUrl =
-          // eslint-disable-next-line no-undef
-          chrome.runtime.getURL("/content/web/viewer.html") +
-          "?file=" +
-          encodeURIComponent(blobUrl + "#" + filename);
-      }
-      try {
-        window.open(viewerUrl);
-      } catch (ex) {
-        console.error(`_bindPdfLink: ${ex}`);
-        // Release the `blobUrl`, since opening it failed...
-        URL.revokeObjectURL(blobUrl);
-        blobUrl = null;
-        // ... and fallback to downloading the PDF file.
-        this.downloadManager.downloadData(content, filename, "application/pdf");
-      }
-      return false;
-    };
-  }
-
-  /**
    * @private
    */
   _bindLink(element, { content, filename }) {
     element.onclick = () => {
-      const contentType = PdfFileRegExp.test(filename) ? "application/pdf" : "";
-      this.downloadManager.downloadData(content, filename, contentType);
+      this.downloadManager.openOrDownloadData(element, content, filename);
       return false;
     };
   }
@@ -165,20 +119,14 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     let attachmentsCount = 0;
     for (const name of names) {
       const item = attachments[name];
-      const filename = getFilenameFromUrl(item.filename);
+      const content = item.content,
+        filename = getFilenameFromUrl(item.filename);
 
       const div = document.createElement("div");
       div.className = "treeItem";
 
       const element = document.createElement("a");
-      if (
-        PdfFileRegExp.test(filename) &&
-        !viewerCompatibilityParams.disableCreateObjectURL
-      ) {
-        this._bindPdfLink(element, { content: item.content, filename });
-      } else {
-        this._bindLink(element, { content: item.content, filename });
-      }
+      this._bindLink(element, { content, filename });
       element.textContent = this._normalizeTextContent(filename);
 
       div.appendChild(element);

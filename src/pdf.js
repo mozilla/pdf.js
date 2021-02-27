@@ -18,6 +18,7 @@ import {
   addLinkAttributes,
   getFilenameFromUrl,
   isFetchSupported,
+  isPdfFile,
   isValidFetchUrl,
   LinkTarget,
   loadScript,
@@ -99,6 +100,7 @@ export {
   // From "./display/display_utils.js":
   addLinkAttributes,
   getFilenameFromUrl,
+  isPdfFile,
   LinkTarget,
   loadScript,
   PDFDateString,

@@ -529,7 +529,7 @@ class AForm {
         event.rc = false;
         return;
       }
-      event.value += cMask.subString(value.length);
+      event.value += cMask.substring(value.length);
       return;
     }
 

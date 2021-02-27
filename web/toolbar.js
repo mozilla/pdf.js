@@ -20,7 +20,6 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   noContextMenuHandler,
-  NullL10n,
 } from "./ui_utils.js";
 
 const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
@@ -58,7 +57,7 @@ class Toolbar {
    * @param {EventBus} eventBus
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.toolbar = options.container;
     this.eventBus = eventBus;
     this.l10n = l10n;

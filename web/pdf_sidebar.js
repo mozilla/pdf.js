@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { NullL10n, PresentationModeState, SidebarView } from "./ui_utils.js";
+import { PresentationModeState, SidebarView } from "./ui_utils.js";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
@@ -61,13 +61,7 @@ class PDFSidebar {
   /**
    * @param {PDFSidebarOptions} options
    */
-  constructor({
-    elements,
-    pdfViewer,
-    pdfThumbnailViewer,
-    eventBus,
-    l10n = NullL10n,
-  }) {
+  constructor({ elements, pdfViewer, pdfThumbnailViewer, eventBus, l10n }) {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;

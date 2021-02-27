@@ -837,7 +837,7 @@ function preprocessHTML(source, defines) {
   fs.unlinkSync(outName);
 
   var i = source.lastIndexOf("/");
-  return createStringSource(source.substr(i + 1), out);
+  return createStringSource(source.substr(i + 1), `${out.trimEnd()}\n`);
 }
 
 function buildGeneric(defines, dir) {

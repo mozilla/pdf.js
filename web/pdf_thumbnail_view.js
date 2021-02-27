@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { getOutputScale, NullL10n } from "./ui_utils.js";
+import { getOutputScale } from "./ui_utils.js";
 import { RenderingCancelledException } from "pdfjs-lib";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 
@@ -97,7 +97,7 @@ class PDFThumbnailView {
     renderingQueue,
     checkSetImageDisabled,
     disableCanvasToImageConversion = false,
-    l10n = NullL10n,
+    l10n,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;

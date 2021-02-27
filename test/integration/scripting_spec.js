@@ -630,4 +630,60 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in js-colors.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("js-colors.pdf", "#\\33 4R");
+    });
+
+    it("must change colors", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const [name, ref] of [
+            ["Text1", "#\\33 4R"],
+            ["Check1", "#\\33 5R"],
+            ["Radio1", "#\\33 7R"],
+            ["Choice1", "#\\33 8R"],
+          ]) {
+            await clearInput(page, "#\\33 4R");
+            await page.type("#\\33 4R", `${name}`, {
+              delay: 10,
+            });
+
+            for (const [id, propName, expected] of [
+              [41, "backgroundColor", "rgb(255, 0, 0)"],
+              [43, "color", "rgb(0, 255, 0)"],
+              [44, "border-top-color", "rgb(0, 0, 255)"],
+            ]) {
+              const current = await page.$eval(
+                ref,
+                (el, _propName) => getComputedStyle(el)[_propName],
+                propName
+              );
+
+              await page.click(`[data-annotation-id='${id}R']`);
+              await page.waitForFunction(
+                (_ref, _current, _propName) =>
+                  getComputedStyle(document.querySelector(_ref))[_propName] !==
+                  _current,
+                {},
+                ref,
+                current,
+                propName
+              );
+
+              const color = await page.$eval(
+                ref,
+                (el, _propName) => getComputedStyle(el)[_propName],
+                propName
+              );
+              expect(color).withContext(`In ${browserName}`).toEqual(expected);
+            }
+          }
+        })
+      );
+    });
+  });
 });

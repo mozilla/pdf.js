@@ -44,6 +44,7 @@ import {
   getFilenameFromUrl,
   GlobalWorkerOptions,
   InvalidPDFException,
+  isPdfFile,
   LinkTarget,
   loadScript,
   MissingPDFException,
@@ -770,7 +771,10 @@ const PDFViewerApplication = {
       onOpenWithTransport: (url, length, transport) => {
         this.open(url, { length, range: transport });
       },
-      onOpenWithData: data => {
+      onOpenWithData: (data, contentDispositionFilename) => {
+        if (isPdfFile(contentDispositionFilename)) {
+          this._contentDispositionFilename = contentDispositionFilename;
+        }
         this.open(data);
       },
       onOpenWithURL: (url, length, originalUrl) => {
@@ -1806,7 +1810,7 @@ const PDFViewerApplication = {
     }
     this.documentInfo = info;
     this.metadata = metadata;
-    this._contentDispositionFilename = contentDispositionFilename;
+    this._contentDispositionFilename ??= contentDispositionFilename;
     this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
 
     // Provides some basic debug information

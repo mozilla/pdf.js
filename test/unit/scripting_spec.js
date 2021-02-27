@@ -1166,6 +1166,18 @@ describe("Scripting", function () {
           value: "3F?",
           selRange: [3, 3],
         });
+
+        send_queue.delete(refId);
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "3F?",
+          change: "0",
+          name: "Keystroke",
+          willCommit: true,
+          selStart: 3,
+          selEnd: 3,
+        });
+        expect(send_queue.has(refId)).toEqual(false);
       });
     });
 

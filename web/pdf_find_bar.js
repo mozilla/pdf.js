@@ -14,7 +14,6 @@
  */
 
 import { FindState } from "./pdf_find_controller.js";
-import { NullL10n } from "./ui_utils.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -25,23 +24,24 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.opened = false;
 
-    this.bar = options.bar || null;
-    this.toggleButton = options.toggleButton || null;
-    this.findField = options.findField || null;
+    this.bar = options.bar;
+    this.toggleButton = options.toggleButton;
+    this.findField = options.findField;
+    this.highlightAll = options.highlightAllCheckbox;
+    this.caseSensitive = options.caseSensitiveCheckbox;
+    this.entireWord = options.entireWordCheckbox;
+    this.findMsg = options.findMsg;
+    this.findResultsCount = options.findResultsCount;
+    this.findPreviousButton = options.findPreviousButton;
+    this.findNextButton = options.findNextButton;
     this.findFieldMultiline = options.findFieldMultiline || null; // #201
-    this.highlightAll = options.highlightAllCheckbox || null;
-    this.caseSensitive = options.caseSensitiveCheckbox || null;
-    this.entireWord = options.entireWordCheckbox || null;
     this.multipleSearchTexts = options.findMultipleSearchTextsCheckbox || null; // #201
     this.ignoreAccents = options.ignoreAccentsCheckbox || null; // #177
     this.fuzzySearch = options.fuzzyCheckbox || null; // #304
-    this.findMsg = options.findMsg || null;
-    this.findResultsCount = options.findResultsCount || null;
-    this.findPreviousButton = options.findPreviousButton || null;
-    this.findNextButton = options.findNextButton || null;
+
     this.eventBus = eventBus;
     this.l10n = l10n;
 
@@ -177,9 +177,6 @@ class PDFFindBar {
   }
 
   updateResultsCount({ current = 0, total = 0 } = {}) {
-    if (!this.findResultsCount) {
-      return; // No UI control is provided.
-    }
     const limit = MATCHES_COUNT_LIMIT;
     let matchesCountMsg = "";
 
