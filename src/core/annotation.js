@@ -2280,9 +2280,34 @@ class LineAnnotation extends MarkupAnnotation {
 
     this.data.annotationType = AnnotationType.LINE;
 
-    this.data.lineCoordinates = Util.normalizeRect(
-      parameters.dict.getArray("L")
-    );
+    const lineCoordinates = parameters.dict.getArray("L");
+    this.data.lineCoordinates = Util.normalizeRect(lineCoordinates);
+
+    if (!this.appearance) {
+      // The default stroke color is black.
+      const strokeColor = this.color
+        ? Array.from(this.color).map(c => c / 255)
+        : [0, 0, 0];
+
+      const borderWidth = this.borderStyle.width;
+
+      this._setDefaultAppearance({
+        xref: parameters.xref,
+        extra: `${borderWidth} w`,
+        strokeColor,
+        pointsCallback: (buffer, points) => {
+          buffer.push(`${lineCoordinates[0]} ${lineCoordinates[1]} m`);
+          buffer.push(`${lineCoordinates[2]} ${lineCoordinates[3]} l`);
+          buffer.push("S");
+          return [
+            points[0].x - borderWidth,
+            points[1].x + borderWidth,
+            points[3].y - borderWidth,
+            points[1].y + borderWidth,
+          ];
+        },
+      });
+    }
   }
 }
 
