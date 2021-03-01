@@ -274,13 +274,46 @@ class PDFPresentationMode {
       // pointing to destinations in the current PDF document work.
       const isInternalLink =
         evt.target.href && evt.target.classList.contains("internalLink");
+      // if the checkbox is alreadly checked, must continue checked.
+      const STAY_CHECKED = 0;
       if (!isInternalLink) {
         // Unless an internal link was clicked, advance one page.
         evt.preventDefault();
 
         if (evt.shiftKey) {
+          // handle checkboxes in presentation mode.
+          // if it is on first page.
+          if (this.pdfViewer.currentPageNumber === 1) {
+            if (evt.target.checked === false) {
+              evt.target.checked = "disabled";
+            } else if (evt.target.checked === true) {
+              evt.target.checked = STAY_CHECKED;
+            }
+          }
+
+          if (evt.target.checked === false) {
+            evt.target.checked = false;
+          }
+          if (evt.target.checked === true) {
+            evt.target.checked = true;
+          }
           this.pdfViewer.previousPage();
         } else {
+          // if it is on last page
+          if (this.pdfViewer.currentPageNumber === this.pdfViewer.pagesCount) {
+            if (evt.target.checked === false) {
+              evt.target.checked = "disabled";
+            } else if (evt.target.checked === true) {
+              evt.target.checked = STAY_CHECKED;
+            }
+          }
+
+          if (evt.target.checked === false) {
+            evt.target.checked = false;
+          }
+          if (evt.target.checked === true) {
+            evt.target.checked = true;
+          }
           this.pdfViewer.nextPage();
         }
       }
