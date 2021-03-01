@@ -34,7 +34,8 @@
   --scrollbar-bg-color: auto;
   --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
 
-  --sidebar-bg-color: rgba(245, 246, 247, 1);
+  --sidebar-narrow-bg-color: rgba(237, 237, 240, 0.9);
+  --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
   --toolbar-bg-color: rgba(249, 249, 250, 1);
   --toolbar-border-color: rgba(204, 204, 204, 1);
   --button-hover-color: rgba(221, 222, 223, 1);
@@ -108,7 +109,8 @@
     --scrollbar-bg-color: rgba(35, 35, 39, 1);
     --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
 
-    --sidebar-bg-color: rgba(50, 50, 52, 1);
+    --sidebar-narrow-bg-color: rgba(42, 42, 46, 0.9);
+    --sidebar-toolbar-bg-color: rgba(50, 50, 52, 1);
     --toolbar-bg-color: rgba(56, 56, 61, 1);
     --toolbar-border-color: rgba(12, 12, 13, 1);
     --button-hover-color: rgba(102, 102, 103, 1);
@@ -321,7 +323,7 @@ html[dir="rtl"]
 #toolbarSidebar {
   width: 100%;
   height: 32px;
-  background-color: var(--sidebar-bg-color);
+  background-color: var(--sidebar-toolbar-bg-color);
 }
 html[dir="ltr"] #toolbarSidebar {
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
@@ -1789,8 +1791,8 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
 }
 
 @media all and (max-width: 840px) {
-  #sidebarContent {
-    background-color: rgba(0, 0, 0, 0.7);
+  #sidebarContainer {
+    background-color: var(--sidebar-narrow-bg-color);
   }
 
   html[dir="ltr"] #outerContainer.sidebarOpen #viewerContainer {
