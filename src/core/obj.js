@@ -1366,7 +1366,16 @@ class Catalog {
           }
         /* falls through */
         default:
-          warn(`parseDestDictionary: unsupported action type "${actionName}".`);
+          if (
+            actionName === "JavaScript" ||
+            actionName === "ResetForm" ||
+            actionName === "SubmitForm"
+          ) {
+            // Don't bother the user with a warning for actions that require
+            // scripting support, since those will be handled separately.
+            break;
+          }
+          warn(`parseDestDictionary - unsupported action: "${actionName}".`);
           break;
       }
     } else if (destDict.has("Dest")) {

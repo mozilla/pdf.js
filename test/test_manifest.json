@@ -4717,12 +4717,26 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-line-without-appearance",
+       "file": "pdfs/annotation-line-without-appearance.pdf",
+       "md5": "1f60935b2a7719ce40616af60fc308a2",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "annotation-square-circle",
        "file": "pdfs/annotation-square-circle.pdf",
        "md5": "cfd3c302f68d61e1d55ed9c7896046c3",
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    {  "id": "annotation-square-circle-without-appearance",
+       "file": "pdfs/annotation-square-circle-without-appearance.pdf",
+       "md5": "5b2a5e1e918137993d26a0cd8b0947f6",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
     },
     {  "id": "annotation-stamp",
        "file": "pdfs/annotation-stamp.pdf",
