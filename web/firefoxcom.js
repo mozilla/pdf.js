@@ -18,6 +18,7 @@ import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
 import { isPdfFile, PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
+import { getL10nFallback } from "./l10n_utils.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -200,8 +201,8 @@ class MozL10n {
     return this.mozL10n.getDirection();
   }
 
-  async get(property, args, fallback) {
-    return this.mozL10n.get(property, args, fallback);
+  async get(key, args = null, fallback = getL10nFallback(key, args)) {
+    return this.mozL10n.get(key, args, fallback);
   }
 
   async translate(element) {

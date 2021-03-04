@@ -467,19 +467,15 @@ class PDFThumbnailView {
   }
 
   get _thumbPageTitle() {
-    return this.l10n.get(
-      "thumb_page_title",
-      { page: this.pageLabel ?? this.id },
-      "Page {{page}}"
-    );
+    return this.l10n.get("thumb_page_title", {
+      page: this.pageLabel ?? this.id,
+    });
   }
 
   get _thumbPageCanvas() {
-    return this.l10n.get(
-      "thumb_page_canvas",
-      { page: this.pageLabel ?? this.id },
-      "Thumbnail of Page {{page}}"
-    );
+    return this.l10n.get("thumb_page_canvas", {
+      page: this.pageLabel ?? this.id,
+    });
   }
 
   /**

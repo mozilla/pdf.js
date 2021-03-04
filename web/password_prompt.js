@@ -67,34 +67,18 @@ class PasswordPrompt {
     );
   }
 
-  open() {
-    this.overlayManager.open(this.overlayName).then(() => {
-      if (
-        !this._isViewerEmbedded ||
-        this.reason === PasswordResponses.INCORRECT_PASSWORD
-      ) {
-        this.input.focus();
-      }
+  async open() {
+    await this.overlayManager.open(this.overlayName);
 
-      let promptString;
-      if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
-        promptString = this.l10n.get(
-          "password_invalid",
-          null,
-          "Invalid password. Please try again."
-        );
-      } else {
-        promptString = this.l10n.get(
-          "password_label",
-          null,
-          "Enter the password to open this PDF file."
-        );
-      }
+    const passwordIncorrect =
+      this.reason === PasswordResponses.INCORRECT_PASSWORD;
 
-      promptString.then(msg => {
-        this.label.textContent = msg;
-      });
-    });
+    if (!this._isViewerEmbedded || passwordIncorrect) {
+      this.input.focus();
+    }
+    this.label.textContent = await this.l10n.get(
+      `password_${passwordIncorrect ? "invalid" : "label"}`
+    );
   }
 
   close() {
