@@ -25,7 +25,6 @@ import {
   isValidSpreadMode,
   MAX_AUTO_SCALE,
   moveToEndOfArray,
-  NullL10n,
   PresentationModeState,
   RendererType,
   SCROLLBAR_PADDING,
@@ -39,6 +38,7 @@ import {
 } from "./ui_utils.js";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
+import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
