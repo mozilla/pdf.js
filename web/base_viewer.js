@@ -470,7 +470,7 @@ class BaseViewer {
         this.findController.setDocument(null);
       }
       if (this._scriptingManager) {
-        // Defer this slightly, to allow the "pageclose" event to be handled.
+        // Defer this slightly, to allow the "PageClose" event to be handled.
         Promise.resolve().then(() => {
           this._scriptingManager.setDocument(null);
         });
@@ -670,8 +670,6 @@ class BaseViewer {
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
     }
-    this._resetScriptingEvents();
-
     // Remove the pages from the DOM...
     this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
@@ -1647,83 +1645,6 @@ class BaseViewer {
 
     this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
     return true;
-  }
-
-  async initializeScriptingEvents() {
-    if (!this.enableScripting || this._pageOpenPendingSet) {
-      return;
-    }
-    const eventBus = this.eventBus,
-      pageOpenPendingSet = (this._pageOpenPendingSet = new Set()),
-      scriptingEvents = (this._scriptingEvents = Object.create(null));
-
-    const dispatchPageClose = pageNumber => {
-      if (pageOpenPendingSet.has(pageNumber)) {
-        return; // No "pageopen" event was dispatched for the previous page.
-      }
-      eventBus.dispatch("pageclose", { source: this, pageNumber });
-    };
-    const dispatchPageOpen = pageNumber => {
-      const pageView = this._pages[pageNumber - 1];
-      if (pageView?.renderingState === RenderingStates.FINISHED) {
-        pageOpenPendingSet.delete(pageNumber);
-
-        eventBus.dispatch("pageopen", {
-          source: this,
-          pageNumber,
-          actionsPromise: pageView.pdfPage?.getJSActions(),
-        });
-      } else {
-        pageOpenPendingSet.add(pageNumber);
-      }
-    };
-
-    scriptingEvents.onPageChanging = ({ pageNumber, previous }) => {
-      if (pageNumber === previous) {
-        return; // The active page didn't change.
-      }
-      dispatchPageClose(previous);
-      dispatchPageOpen(pageNumber);
-    };
-    eventBus._on("pagechanging", scriptingEvents.onPageChanging);
-
-    scriptingEvents.onPageRendered = ({ pageNumber }) => {
-      if (!pageOpenPendingSet.has(pageNumber)) {
-        return; // No pending "pageopen" event for the newly rendered page.
-      }
-      if (pageNumber !== this._currentPageNumber) {
-        return; // The newly rendered page is no longer the current one.
-      }
-      dispatchPageOpen(pageNumber);
-    };
-    eventBus._on("pagerendered", scriptingEvents.onPageRendered);
-
-    scriptingEvents.onPagesDestroy = () => {
-      dispatchPageClose(this._currentPageNumber);
-    };
-    eventBus._on("pagesdestroy", scriptingEvents.onPagesDestroy);
-
-    // Ensure that a "pageopen" event is dispatched for the initial page.
-    dispatchPageOpen(this._currentPageNumber);
-  }
-
-  /**
-   * @private
-   */
-  _resetScriptingEvents() {
-    if (!this.enableScripting || !this._pageOpenPendingSet) {
-      return;
-    }
-    const eventBus = this.eventBus,
-      scriptingEvents = this._scriptingEvents;
-
-    // Remove the event listeners.
-    eventBus._off("pagechanging", scriptingEvents.onPageChanging);
-    eventBus._off("pagerendered", scriptingEvents.onPageRendered);
-    eventBus._off("pagesdestroy", scriptingEvents.onPagesDestroy);
-
-    this._pageOpenPendingSet = null;
-    this._scriptingEvents = null;
   }
 }
 
