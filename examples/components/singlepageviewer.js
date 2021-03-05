@@ -31,7 +31,13 @@ var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
 var CMAP_PACKED = true;
 
 var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+// To test the AcroForm and/or scripting functionality, try e.g. this file:
+// var DEFAULT_URL = "../../test/pdfs/160F-2019.pdf";
+
 var SEARCH_FOR = ""; // try 'Mozilla';
+
+// For scripting support, note also `enableScripting` below.
+var SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
 
 var container = document.getElementById("viewerContainer");
 
@@ -48,13 +54,22 @@ var pdfFindController = new pdfjsViewer.PDFFindController({
   linkService: pdfLinkService,
 });
 
+// (Optionally) enable scripting support.
+var pdfScriptingManager = new pdfjsViewer.PDFScriptingManager({
+  eventBus,
+  sandboxBundleSrc: SANDBOX_BUNDLE_SRC,
+});
+
 var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
   container,
   eventBus,
   linkService: pdfLinkService,
   findController: pdfFindController,
+  scriptingManager: pdfScriptingManager,
+  enableScripting: true,
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
+pdfScriptingManager.setViewer(pdfSinglePageViewer);
 
 eventBus.on("pagesinit", function () {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.

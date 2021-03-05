@@ -55,6 +55,8 @@ const DEFAULT_CACHE_SIZE = 10;
  *   component.
  * @property {PDFFindController} [findController] - The find controller
  *   component.
+ * @property {PDFScriptingManager} [scriptingManager] - The scripting manager
+ *   component.
  * @property {PDFRenderingQueue} [renderingQueue] - The rendering queue object.
  * @property {boolean} [removePageBorders] - Removes the border shadow around
  *   the pages. The default value is `false`.
@@ -77,10 +79,8 @@ const DEFAULT_CACHE_SIZE = 10;
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
- * @property {boolean} [enableScripting] - Enable embedded script execution.
- *   The default value is `false`.
- * @property {Object} [mouseState] - The mouse button state. The default value
- *   is `null`.
+ * @property {boolean} [enableScripting] - Enable embedded script execution
+ *   (also requires {scriptingManager} being set). The default value is `false`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -183,6 +183,7 @@ class BaseViewer {
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
+    this._scriptingManager = options.scriptingManager || null;
     this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = Number.isInteger(options.textLayerMode)
       ? options.textLayerMode
@@ -195,8 +196,8 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
-    this.enableScripting = options.enableScripting || false;
-    this._mouseState = options.mouseState || null;
+    this.enableScripting =
+      options.enableScripting === true && !!this._scriptingManager;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -468,6 +469,12 @@ class BaseViewer {
       if (this.findController) {
         this.findController.setDocument(null);
       }
+      if (this._scriptingManager) {
+        // Defer this slightly, to allow the "pageclose" event to be handled.
+        Promise.resolve().then(() => {
+          this._scriptingManager.setDocument(null);
+        });
+      }
     }
 
     this.pdfDocument = pdfDocument;
@@ -561,6 +568,9 @@ class BaseViewer {
         this._onePageRenderedOrForceFetch().then(() => {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
+          }
+          if (this.enableScripting) {
+            this._scriptingManager.setDocument(pdfDocument);
           }
 
           // In addition to 'disableAutoFetch' being set, also attempt to reduce
@@ -1299,7 +1309,7 @@ class BaseViewer {
       enableScripting,
       hasJSActionsPromise:
         hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
-      mouseState: mouseState || this._mouseState,
+      mouseState: mouseState || this._scriptingManager?.mouseState,
     });
   }
 
@@ -1645,7 +1655,7 @@ class BaseViewer {
     }
     const eventBus = this.eventBus,
       pageOpenPendingSet = (this._pageOpenPendingSet = new Set()),
-      scriptingEvents = (this._scriptingEvents ||= Object.create(null));
+      scriptingEvents = (this._scriptingEvents = Object.create(null));
 
     const dispatchPageClose = pageNumber => {
       if (pageOpenPendingSet.has(pageNumber)) {
@@ -1709,15 +1719,11 @@ class BaseViewer {
 
     // Remove the event listeners.
     eventBus._off("pagechanging", scriptingEvents.onPageChanging);
-    scriptingEvents.onPageChanging = null;
-
     eventBus._off("pagerendered", scriptingEvents.onPageRendered);
-    scriptingEvents.onPageRendered = null;
-
     eventBus._off("pagesdestroy", scriptingEvents.onPagesDestroy);
-    scriptingEvents.onPagesDestroy = null;
 
     this._pageOpenPendingSet = null;
+    this._scriptingEvents = null;
   }
 }
 
