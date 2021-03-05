@@ -105,7 +105,7 @@ class PDFPageView {
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
-    this.enableScripting = options.enableScripting || false;
+    this.enableScripting = options.enableScripting === true;
 
     this.paintTask = null;
     this.paintedViewportMap = new WeakMap();
