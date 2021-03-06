@@ -1002,7 +1002,6 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     if (value) {
       element.setAttribute("checked", true);
     }
-    element.setAttribute("pdfButtonValue", data.buttonValue);
     element.setAttribute("id", id);
 
     element.addEventListener("change", function (event) {
@@ -1016,19 +1015,16 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     });
 
     if (this.enableScripting && this.hasJSActions) {
+      const pdfButtonValue = data.buttonValue;
       element.addEventListener("updatefromsandbox", event => {
         const { detail } = event;
         const actions = {
           value() {
-            const fieldValue = detail.value;
+            const checked = pdfButtonValue === detail.value;
             for (const radio of document.getElementsByName(event.target.name)) {
               const radioId = radio.getAttribute("id");
-              if (fieldValue === radio.getAttribute("pdfButtonValue")) {
-                radio.setAttribute("checked", true);
-                storage.setValue(radioId, { value: true });
-              } else {
-                storage.setValue(radioId, { value: false });
-              }
+              radio.checked = radioId === id && checked;
+              storage.setValue(radioId, { value: radio.checked });
             }
           },
           focus() {
