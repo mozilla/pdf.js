@@ -128,6 +128,11 @@ class PDFScriptingManager {
     this._internalEvents.set("pagesdestroy", async event => {
       await this._dispatchPageClose(this._pdfViewer.currentPageNumber);
 
+      await this._scripting?.dispatchEventInSandbox({
+        id: "doc",
+        name: "WillClose",
+      });
+
       this._closeCapability?.resolve();
     });
 
