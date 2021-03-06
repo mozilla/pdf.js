@@ -174,8 +174,14 @@ describe("Interaction", () => {
     it("must reset all", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          // click on a radio button
+          await page.click("[data-annotation-id='449R']");
+
           // this field has no actions but it must be cleared on reset
           await page.type("#\\34 05R", "employee", { delay: 200 });
+
+          let checked = await page.$eval("#\\34 49R", el => el.checked);
+          expect(checked).toEqual(true);
 
           // click on reset button
           await page.click("[data-annotation-id='402R']");
@@ -194,6 +200,9 @@ describe("Interaction", () => {
 
           const sum = await page.$eval("#\\34 27R", el => el.value);
           expect(sum).toEqual("");
+
+          checked = await page.$eval("#\\34 49R", el => el.checked);
+          expect(checked).toEqual(false);
         })
       );
     });
