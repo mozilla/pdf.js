@@ -18,7 +18,6 @@ import {
   CSS_UNITS,
   DEFAULT_SCALE,
   getOutputScale,
-  NullL10n,
   RendererType,
   roundToDivide,
   TextLayerMode,
@@ -28,6 +27,7 @@ import {
   RenderingCancelledException,
   SVGGraphics,
 } from "pdfjs-lib";
+import { NullL10n } from "./l10n_utils.js";
 import { RenderingStates } from "./pdf_rendering_queue.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import canvasSize from "canvas-size";
@@ -107,7 +107,7 @@ class PDFPageView {
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
-    this.enableScripting = options.enableScripting || false;
+    this.enableScripting = options.enableScripting === true;
 
     this.paintTask = null;
     this.paintedViewportMap = new WeakMap();
@@ -578,11 +578,9 @@ class PDFPageView {
 
     const viewport = this.viewport;
     const canvas = document.createElement("canvas");
-    this.l10n
-      .get("page_canvas", { page: this.id }, "Page {{page}}")
-      .then(msg => {
-        canvas.setAttribute("aria-label", msg);
-      });
+    this.l10n.get("page_canvas", { page: this.id }).then(msg => {
+      canvas.setAttribute("aria-label", msg);
+    });
 
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.

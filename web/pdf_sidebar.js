@@ -344,15 +344,9 @@ class PDFSidebar {
    * @private
    */
   _showUINotification() {
-    this.l10n
-      .get(
-        "toggle_sidebar_notification2.title",
-        null,
-        "Toggle Sidebar (document contains outline/attachments/layers)"
-      )
-      .then(msg => {
-        this.toggleButton.title = msg;
-      });
+    this.l10n.get("toggle_sidebar_notification2.title").then(msg => {
+      this.toggleButton.title = msg;
+    });
 
     if (!this.isOpen) {
       // Only show the notification on the `toggleButton` if the sidebar is
@@ -372,11 +366,9 @@ class PDFSidebar {
     }
 
     if (reset) {
-      this.l10n
-        .get("toggle_sidebar.title", null, "Toggle Sidebar")
-        .then(msg => {
-          this.toggleButton.title = msg;
-        });
+      this.l10n.get("toggle_sidebar.title").then(msg => {
+        this.toggleButton.title = msg;
+      });
     }
   }
 
