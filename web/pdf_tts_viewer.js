@@ -20,9 +20,12 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IL10n} l10n - Localization service.
- * @property {boolean} isNewSelection - track whether selection has changed since last utterance.
- * @property {boolean} isPaused - track paused state ourselves as Microsoft and Google Online voices don't report `speechSynthesis.paused` state.
- * @property {SpeechSynthesisVoice} [storedVoices] - Store voices so we don't regenerate list which can change and desync indexes.
+ * @property {boolean} isNewSelection - track whether selection has changed
+ * since last utterance.
+ * @property {boolean} isPaused - track paused state ourselves as Microsoft
+ * and Google Online voices don't report `speechSynthesis.paused` state.
+ * @property {SpeechSynthesisVoice} [storedVoices] - Store voices so we don't
+ * regenerate list which can change and desync indexes.
  */
 
 /**
@@ -36,12 +39,17 @@ class PDFTTSViewer extends BaseTreeViewer {
   constructor(options) {
     super(options);
     this.l10n = options.l10n;
-    this.isPaused = options.isPaused;  
-    this.isNewSelection = options.isNewSelection;  
+    this.isPaused = options.isPaused;
+    this.isNewSelection = options.isNewSelection;
 
     document.addEventListener("selectionchange", () => {
-      this.toggleToolbarPlayingIcon(false);
-      this.isNewSelection = true;
+      /* Reset if new selection made to allow playing it 
+         (but ignore empty selection). */
+      const text = window.getSelection().toString();
+      if (text) {
+        this.toggleToolbarPlayingIcon(false);
+        this.isNewSelection = true;
+      }
     });
     window.speechSynthesis.addEventListener("voiceschanged", () => {
       this.updateVoiceSelect();
@@ -64,13 +72,19 @@ class PDFTTSViewer extends BaseTreeViewer {
   }
 
   get isTTSAvailable() {
-    return ('speechSynthesis' in window);
+    return "speechSynthesis" in window;
   }
 
-  get isPlaying() {   
-    return speechSynthesis.speaking && !(this.isPaused);
+  get isPlaying() {
+    // Note isPaused definition
+    return speechSynthesis.speaking && !this.isPaused;
   }
 
+  /* 
+  Render all HTML here. 
+  Can't put static HTML in viewer.html because
+  container is cleared by base_tree_viewer.reset()
+  */
   /**
    * @param {PDFTTSViewerRenderParameters} params
    */
@@ -80,7 +94,6 @@ class PDFTTSViewer extends BaseTreeViewer {
     }
     this._optionalContentConfig = optionalContentConfig || null;
     this._pdfDocument = pdfDocument || null;
-    
 
     if (!this.isTTSAvailable) {
       this._dispatchEvent(0);
@@ -88,15 +101,14 @@ class PDFTTSViewer extends BaseTreeViewer {
     }
 
     const fragment = document.createDocumentFragment();
-    
-    // PlayPause
-    
 
-    // Voice select  
+    // PlayPause
+
+    // Voice select
     const voiceslabel = document.createElement("label");
     voiceslabel.textContent = "Choose voice";
     voiceslabel.className = "toolbarLabel";
-    voiceslabel.setAttribute("data-l10n-id","tts_voice_label");
+    voiceslabel.setAttribute("data-l10n-id", "tts_voice_label");
     fragment.appendChild(voiceslabel);
 
     const voicelist = this.updateVoiceSelect();
@@ -104,16 +116,16 @@ class PDFTTSViewer extends BaseTreeViewer {
     voicespan.className = "dropdownSideBarButton";
     voicespan.appendChild(voicelist);
     fragment.appendChild(voicespan);
-    
+
     // Rate
     const ratelabel = document.createElement("label");
     ratelabel.textContent = "Rate";
     ratelabel.title = "Change rate (double-click here to reset)";
     ratelabel.className = "toolbarLabel";
-    ratelabel.setAttribute("data-l10n-id","tts_rate_label");
+    ratelabel.setAttribute("data-l10n-id", "tts_rate_label");
     ratelabel.ondblclick = function () {
       rateinput.value = 10;
-    }
+    };
     fragment.appendChild(ratelabel);
 
     const ratespan = document.createElement("span");
@@ -125,51 +137,57 @@ class PDFTTSViewer extends BaseTreeViewer {
     rateinput.max = 100;
     rateinput.value = 10;
     // Load pref
-    rateinput.value = localStorage['PDFJS_TTS_Rate'];
+    rateinput.value = localStorage.PDFJS_TTS_Rate;
     // Save pref
     rateinput.onchange = function () {
-      localStorage['PDFJS_TTS_Rate'] = this.value;
-    }
+      localStorage.PDFJS_TTS_Rate = this.value;
+    };
     ratespan.appendChild(rateinput);
     fragment.appendChild(ratespan);
 
     this._finishRendering(fragment, 1);
   }
 
+  /*
+  Update voicelist if exists and return voicelist. 
+  */
   updateVoiceSelect() {
-    const oldvoicelist = document.getElementById("voiceSelect");   
+    const oldvoicelist = document.getElementById("voiceSelect");
     const voicelist = document.createElement("select");
     voicelist.id = "voiceSelect";
     this.loadVoices(voicelist);
 
     if (oldvoicelist !== null) {
       oldvoicelist.replaceWith(voicelist);
-    } else {
-      return voicelist;
     }
+    return voicelist;
   }
 
+  /*
+  
+  */
   async loadVoices(voicelist) {
-    let voices = window.speechSynthesis.getVoices();    
-    
+    const voices = window.speechSynthesis.getVoices();
+
     voices.forEach(function (voice) {
-      let option = document.createElement("option");
-      option.textContent = voice.name + (voice.default ? ' (default)' : '');
+      const option = document.createElement("option");
+      option.textContent = voice.name + (voice.default ? " (default)" : "");
       voicelist.appendChild(option);
     });
-    // Store for later use by playpause(), so we don't regenerate list which may have changed and will desync selectedIndex.
+    /* Store for later use by playpause(), so we don't regenerate list 
+       which may have changed and will desync selectedIndex. */
     this.storedVoices = voices;
     // Load preference
-    voicelist.value = localStorage['PDFJS_TTS_Voice'];
+    voicelist.value = localStorage.PDFJS_TTS_Voice;
     // Save preference
     voicelist.onchange = function () {
-      localStorage['PDFJS_TTS_Voice'] = this.value;
-    }
+      localStorage.PDFJS_TTS_Voice = this.value;
+    };
   }
 
   toggleToolbarPlayingIcon(playing) {
-    var button = document.getElementById("ttsPlayPause");
-    if (playing) {    
+    const button = document.getElementById("ttsPlayPause");
+    if (playing) {
       button.className = "toolbarButton ttsPause";
     } else {
       button.className = "toolbarButton ttsPlay";
@@ -179,12 +197,17 @@ class PDFTTSViewer extends BaseTreeViewer {
   startedPlaying() {
     this.isPaused = false;
     this.isNewSelection = false;
-    // Initial timeout required for Firefox, which is slow to update speechSynthesis.speaking
+    /* Initial timeout required for Firefox,
+     * which is slow to update speechSynthesis.speaking */
     setTimeout(() => {
       // Set toolbar icon to Pause.
-      if (this.isPlaying) { this.toggleToolbarPlayingIcon(true); }      
+      if (this.isPlaying) {
+        this.toggleToolbarPlayingIcon(true);
+      }
       // Poll until speaking stops to reset toolbar icon to Play.
-      this._pollStillSpeaking({ interval: 500 }).then(p => this.toggleToolbarPlayingIcon(p));  
+      this._pollStillSpeaking({ interval: 500 }).then(p =>
+        this.toggleToolbarPlayingIcon(p)
+      );
     }, 100);
   }
 
@@ -207,37 +230,41 @@ class PDFTTSViewer extends BaseTreeViewer {
         speechSynthesis.resume();
         this.startedPlaying();
         return;
-      } 
+      }
     }
-    
+
     // Speak selected
-    let msg = new SpeechSynthesisUtterance();
-    const voicesel = document.getElementById('voiceSelect')
+    const msg = new SpeechSynthesisUtterance();
+    const voicesel = document.getElementById("voiceSelect");
     msg.voice = this.storedVoices[voicesel.selectedIndex];
-    msg.rate = document.getElementById('rate').value  / 10;
+    msg.rate = document.getElementById("rate").value / 10;
     msg.text = text;
     speechSynthesis.cancel();
     speechSynthesis.speak(msg);
-    this.startedPlaying();   
+    this.startedPlaying();
   }
-
 
   /**
    * @private
    */
-  async _pollStillSpeaking(interval) { 
+  async _pollStillSpeaking(interval) {
     console.log(" Start poll");
     const executePoll = async (resolve, reject) => {
-      console.log(" - poll", speechSynthesis.speaking, speechSynthesis.paused, speechSynthesis.pending);
-      const stillSpeaking = this.isPlaying;  
+      console.log(
+        " - poll",
+        speechSynthesis.speaking,
+        speechSynthesis.paused,
+        speechSynthesis.pending
+      );
+      const stillSpeaking = this.isPlaying;
       if (stillSpeaking) {
         setTimeout(executePoll, interval, resolve, reject);
-      } else {
-        return resolve(stillSpeaking);
+        return false;
       }
+      return resolve(stillSpeaking);
     };
     return new Promise(executePoll);
-  };
+  }
 
   /**
    * @private

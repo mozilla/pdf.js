@@ -1006,7 +1006,6 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
   mask-image: var(--toolbarButton-ttsPause-icon);
 }
 
-
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
   -webkit-mask-image: var(--toolbarButton-presentationMode-icon);

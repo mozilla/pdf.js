@@ -55,7 +55,7 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  *   the attachments are placed.
  * @property {HTMLDivElement} layersView - The container in which
  *   the layers are placed.
-  * @property {HTMLDivElement} ttsView - The container in which
+ * @property {HTMLDivElement} ttsView - The container in which
  *   the TTS options are placed.
  * @property {HTMLDivElement} outlineOptionsContainer - The container in which
  *   the outline view-specific option button(s) are placed.
@@ -153,7 +153,7 @@ class PDFSidebar {
   get isTTSViewVisible() {
     return this.isOpen && this.active === SidebarView.TTS;
   }
-  
+
   /**
    * @param {number} view - The sidebar view that should become visible,
    *                        must be one of the values in {SidebarView}.
@@ -248,18 +248,15 @@ class PDFSidebar {
       "toggled",
       view === SidebarView.ATTACHMENTS
     );
-    this.layersButton.classList.toggle(
-      "toggled",
-      view === SidebarView.LAYERS
-    );
-    this.ttsButton.classList.toggle(
-      "toggled",
-      view === SidebarView.TTS
-    );
+    this.layersButton.classList.toggle("toggled", view === SidebarView.LAYERS);
+    this.ttsButton.classList.toggle("toggled", view === SidebarView.TTS);
     // ... and for all views.
     this.thumbnailView.classList.toggle("hidden", view !== SidebarView.THUMBS);
     this.outlineView.classList.toggle("hidden", view !== SidebarView.OUTLINE);
-    this.attachmentsView.classList.toggle("hidden", view !== SidebarView.ATTACHMENTS);
+    this.attachmentsView.classList.toggle(
+      "hidden",
+      view !== SidebarView.ATTACHMENTS
+    );
     this.layersView.classList.toggle("hidden", view !== SidebarView.LAYERS);
     this.ttsView.classList.toggle("hidden", view !== SidebarView.TTS);
     // Finally, update view-specific CSS classes.
@@ -505,7 +502,9 @@ class PDFSidebar {
       button.disabled = !count;
 
       if (count) {
-        if (view !== SidebarView.TTS) { this._showUINotification(view); }
+        if (view !== SidebarView.TTS) {
+          this._showUINotification(view);
+        }
       } else if (this.active === view) {
         // If the `view` was opened by the user during document load,
         // switch away from it if it turns out to be empty.

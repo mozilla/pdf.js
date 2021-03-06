@@ -210,7 +210,7 @@ class Toolbar {
 
     items.zoomOut.disabled = pageScale <= MIN_SCALE;
     items.zoomIn.disabled = pageScale >= MAX_SCALE;
-    items.ttsPlayPause.disabled = !('speechSynthesis' in window);
+    items.ttsPlayPause.disabled = !("speechSynthesis" in window);
 
     const customScale = Math.round(pageScale * 10000) / 100;
     this.l10n

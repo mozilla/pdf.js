@@ -650,9 +650,9 @@ const PDFViewerApplication = {
   },
 
   ttsPlayPause() {
-    this.pdfTTSViewer.playpause()
+    this.pdfTTSViewer.playpause();
   },
- 
+
   get pagesCount() {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   },
@@ -2292,7 +2292,6 @@ const PDFViewerApplication = {
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
-    
 
     if (_boundEvents.reportPageStatsPDFBug) {
       eventBus._off("pagerendered", _boundEvents.reportPageStatsPDFBug);
