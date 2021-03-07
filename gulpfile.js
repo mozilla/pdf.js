@@ -1855,9 +1855,6 @@ gulp.task("gh-pages-prepare", function () {
       })
       .pipe(gulp.dest(GH_PAGES_DIR + "legacy/")),
     gulp
-      .src("test/features/**/*", { base: "test/" })
-      .pipe(gulp.dest(GH_PAGES_DIR)),
-    gulp
       .src(JSDOC_BUILD_DIR + "**/*", { base: JSDOC_BUILD_DIR })
       .pipe(gulp.dest(GH_PAGES_DIR + "api/draft/")),
   ]);
