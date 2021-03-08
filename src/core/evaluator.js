@@ -2317,6 +2317,7 @@ class PartialEvaluator {
               advance <= textContentItem.fakeMultiSpaceMax
             ) {
               textState.translateTextLineMatrix(args[0], args[1]);
+              textState.textMatrix = textState.textLineMatrix.slice();
               textContentItem.width +=
                 args[0] - textContentItem.lastAdvanceWidth;
               textContentItem.height +=
