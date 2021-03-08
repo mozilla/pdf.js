@@ -16,7 +16,7 @@
 
 import {
   assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
-  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream, releaseImageResources,
   MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
   PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
   UnknownErrorException, Util, warn
@@ -1967,9 +1967,15 @@ var WorkerTransport = (function WorkerTransportClosure() {
               }
             }
             resolve({ data: buf, width, height, });
+
+            // Immediately release the image data once decoding has finished.
+            releaseImageResources(img);
           };
           img.onerror = function () {
             reject(new Error('JpegDecode failed to load image'));
+
+            // Always remember to release the image data if errors occurred.
+            releaseImageResources(img);
           };
           img.src = imageUrl;
         });
@@ -2187,6 +2193,16 @@ var PDFObjects = (function PDFObjectsClosure() {
     },
 
     clear: function PDFObjects_clear() {
+      var objs = this.objs;
+      for (const objId in objs) {
+        const data = objs[objId].data;
+  
+        if (typeof Image !== 'undefined' && data instanceof Image) {
+          // Always release the image data when clearing out the cached objects.
+          releaseImageResources(data);
+        }
+      }
+
       this.objs = Object.create(null);
     },
   };

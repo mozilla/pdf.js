@@ -1633,6 +1633,17 @@ MessageHandler.prototype = {
   },
 };
 
+function releaseImageResources(img) {
+  assert(img instanceof Image, 'Invalid img parameter.');
+
+  const url = img.src;
+  if (typeof url === 'string' && url.startsWith('blob:') &&
+      URL.revokeObjectURL) {
+    URL.revokeObjectURL(url);
+  }
+  img.removeAttribute('src');
+}
+
 function loadJpegStream(id, imageUrl, objs) {
   var img = new Image();
   img.onload = (function loadJpegStream_onloadClosure() {
@@ -1641,6 +1652,9 @@ function loadJpegStream(id, imageUrl, objs) {
   img.onerror = (function loadJpegStream_onerrorClosure() {
     objs.resolve(id, null);
     warn('Error during JPEG image loading');
+
+    // Always remember to release the image data if errors occurred.
+    releaseImageResources(img);
   });
   img.src = imageUrl;
 }
@@ -1703,6 +1717,7 @@ export {
   readInt8,
   readUint16,
   readUint32,
+  releaseImageResources,
   removeNullCharacters,
   ReadableStream,
   setVerbosityLevel,
