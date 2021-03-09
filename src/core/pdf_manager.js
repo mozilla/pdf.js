@@ -106,13 +106,14 @@ class BasePdfManager {
 }
 
 class LocalPdfManager extends BasePdfManager {
-  constructor(docId, data, password, evaluatorOptions, docBaseUrl) {
+  constructor(docId, data, password, evaluatorOptions, enableXfa, docBaseUrl) {
     super();
 
     this._docId = docId;
     this._password = password;
     this._docBaseUrl = docBaseUrl;
     this.evaluatorOptions = evaluatorOptions;
+    this.enableXfa = enableXfa;
 
     const stream = new Stream(data);
     this.pdfDocument = new PDFDocument(this, stream);
@@ -141,7 +142,14 @@ class LocalPdfManager extends BasePdfManager {
 }
 
 class NetworkPdfManager extends BasePdfManager {
-  constructor(docId, pdfNetworkStream, args, evaluatorOptions, docBaseUrl) {
+  constructor(
+    docId,
+    pdfNetworkStream,
+    args,
+    evaluatorOptions,
+    enableXfa,
+    docBaseUrl
+  ) {
     super();
 
     this._docId = docId;
@@ -149,6 +157,7 @@ class NetworkPdfManager extends BasePdfManager {
     this._docBaseUrl = docBaseUrl;
     this.msgHandler = args.msgHandler;
     this.evaluatorOptions = evaluatorOptions;
+    this.enableXfa = enableXfa;
 
     this.streamManager = new ChunkedStreamManager(pdfNetworkStream, {
       msgHandler: args.msgHandler,

@@ -205,6 +205,11 @@ const defaultOptions = {
     value: "",
     kind: OptionKind.API,
   },
+  enableXfa: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.API,
+  },
   fontExtraProperties: {
     /** @type {boolean} */
     value: false,

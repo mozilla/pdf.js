@@ -15,8 +15,11 @@
 
 import {
   $appendChild,
+  $childrenToHTML,
   $content,
+  $extra,
   $finalize,
+  $getParent,
   $hasItem,
   $hasSettableValue,
   $isTransparent,
@@ -26,6 +29,8 @@ import {
   $removeChild,
   $setSetAttributes,
   $setValue,
+  $toHTML,
+  $uid,
   ContentObject,
   Option01,
   OptionObject,
@@ -45,6 +50,7 @@ import {
   getRelevant,
   getStringOption,
 } from "./utils.js";
+import { measureToString, setPosition, setWidthHeight } from "./html_utils.js";
 import { warn } from "../../shared/util.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
@@ -655,6 +661,29 @@ class ContentArea extends XFAObject {
     this.y = getMeasurement(attributes.y);
     this.desc = null;
     this.extras = null;
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    const left = measureToString(this.x);
+    const top = measureToString(this.y);
+
+    const style = {
+      position: "absolute",
+      left,
+      top,
+      width: measureToString(this.w),
+      height: measureToString(this.h),
+    };
+    return {
+      name: "div",
+      children: [],
+      attributes: {
+        style,
+        className: "xfa-contentarea",
+        id: this[$uid],
+      },
+    };
   }
 }
 
@@ -1946,6 +1975,41 @@ class PageArea extends XFAObject {
     this.field = new XFAObjectArray();
     this.subform = new XFAObjectArray();
   }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    if (this.contentArea.children.length === 0) {
+      return null;
+    }
+
+    const children = this[$childrenToHTML]({
+      filter: new Set(["area", "draw", "field", "subform", "contentArea"]),
+      include: true,
+    });
+
+    // TODO: handle the case where there are several content areas.
+    const contentArea = children.find(
+      node => node.attributes.className === "xfa-contentarea"
+    );
+
+    const style = Object.create(null);
+    if (this.medium && this.medium.short.value && this.medium.long.value) {
+      style.width = measureToString(this.medium.short);
+      style.height = measureToString(this.medium.long);
+    } else {
+      // TODO: compute it from contentAreas
+    }
+
+    return {
+      name: "div",
+      children,
+      attributes: {
+        id: this[$uid],
+        style,
+      },
+      contentArea,
+    };
+  }
 }
 
 class PageSet extends XFAObject {
@@ -1969,6 +2033,20 @@ class PageSet extends XFAObject {
     this.occur = null;
     this.pageArea = new XFAObjectArray();
     this.pageSet = new XFAObjectArray();
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    return {
+      name: "div",
+      children: this[$childrenToHTML]({
+        filter: new Set(["pageArea", "pageSet"]),
+        include: true,
+      }),
+      attributes: {
+        id: this[$uid],
+      },
+    };
   }
 }
 
@@ -2465,6 +2543,64 @@ class Subform extends XFAObject {
     this.subform = new XFAObjectArray();
     this.subformSet = new XFAObjectArray();
   }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    this[$extra] = Object.create(null);
+
+    const parent = this[$getParent]();
+    let page = null;
+    if (parent[$nodeName] === "template") {
+      // Root subform: should have page info.
+      if (this.pageSet !== null) {
+        this[$extra].pageNumber = 0;
+      } else {
+        // TODO
+        warn("XFA - No pageSet in root subform");
+      }
+    } else if (parent[$extra] && parent[$extra].pageNumber !== undefined) {
+      // This subform is a child of root subform
+      // so push it in a new page.
+      const pageNumber = parent[$extra].pageNumber;
+      const pageAreas = parent.pageSet.pageArea.children;
+      parent[$extra].pageNumber =
+        (parent[$extra].pageNumber + 1) % pageAreas.length;
+      page = pageAreas[pageNumber][$toHTML]();
+    }
+
+    const style = Object.create(null);
+    setWidthHeight(this, style);
+    setPosition(this, style);
+
+    const attributes = {
+      style,
+      id: this[$uid],
+    };
+
+    if (this.name) {
+      attributes["xfa-name"] = this.name;
+    }
+
+    const children = this[$childrenToHTML]({
+      // TODO: exObject & exclGroup
+      filter: new Set(["area", "draw", "field", "subform", "subformSet"]),
+      include: true,
+    });
+
+    const html = {
+      name: "div",
+      attributes,
+      children,
+    };
+
+    if (page) {
+      page.contentArea.children.push(html);
+      delete page.contentArea;
+      return page;
+    }
+
+    return html;
+  }
 }
 
 class SubformSet extends XFAObject {
@@ -2580,7 +2716,31 @@ class Template extends XFAObject {
       "interactiveForms",
     ]);
     this.extras = null;
+
+    // Spec is unclear:
+    //  A container element that describes a single subform capable of
+    //  enclosing other containers.
+    // Can we have more than one subform ?
     this.subform = new XFAObjectArray();
+  }
+
+  [$finalize]() {
+    if (this.subform.children.length === 0) {
+      warn("XFA - No subforms in template node.");
+    }
+    if (this.subform.children.length >= 2) {
+      warn("XFA - Several subforms in template node: please file a bug.");
+    }
+  }
+
+  [$toHTML]() {
+    if (this.subform.children.length > 0) {
+      return this.subform.children[0][$toHTML]();
+    }
+    return {
+      name: "div",
+      children: [],
+    };
   }
 }
 

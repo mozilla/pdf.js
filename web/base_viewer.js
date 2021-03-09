@@ -42,6 +42,7 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
+import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
 
@@ -478,6 +479,7 @@ class BaseViewer {
     if (!pdfDocument) {
       return;
     }
+    const isPureXfa = pdfDocument.isPureXfa;
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
@@ -523,6 +525,7 @@ class BaseViewer {
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
         const textLayerFactory =
           this.textLayerMode !== TextLayerMode.DISABLE ? this : null;
+        const xfaLayerFactory = isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
@@ -536,6 +539,7 @@ class BaseViewer {
             textLayerFactory,
             textLayerMode: this.textLayerMode,
             annotationLayerFactory: this,
+            xfaLayerFactory,
             imageResourcesPath: this.imageResourcesPath,
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
@@ -1305,6 +1309,18 @@ class BaseViewer {
       hasJSActionsPromise:
         hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
       mouseState: mouseState || this._scriptingManager?.mouseState,
+    });
+  }
+
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPage} pdfPage
+   * @returns {XfaLayerBuilder}
+   */
+  createXfaLayerBuilder(pageDiv, pdfPage) {
+    return new XfaLayerBuilder({
+      pageDiv,
+      pdfPage,
     });
   }
 

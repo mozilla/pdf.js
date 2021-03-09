@@ -13,13 +13,27 @@
  * limitations under the License.
  */
 
+import { $toHTML } from "./xfa_object.js";
 import { Binder } from "./bind.js";
 import { XFAParser } from "./parser.js";
 
 class XFAFactory {
   constructor(data) {
-    this.root = new XFAParser().parse(XFAFactory._createDocument(data));
-    this.form = new Binder(this.root).bind();
+    try {
+      this.root = new XFAParser().parse(XFAFactory._createDocument(data));
+      this.form = new Binder(this.root).bind();
+      this.pages = this.form[$toHTML]();
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  getPage(pageIndex) {
+    return this.pages.children[pageIndex];
+  }
+
+  get numberPages() {
+    return this.pages.children.length;
   }
 
   static _createDocument(data) {
