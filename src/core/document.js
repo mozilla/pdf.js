@@ -564,6 +564,9 @@ class PDFDocument {
         "The PDF file is empty, i.e. its size is zero bytes."
       );
     }
+    if (stream.bytes.byteOffset > 0) {
+      stream = new Stream(new Uint8Array(stream.bytes));
+    }
 
     this.pdfManager = pdfManager;
     this.stream = stream;
