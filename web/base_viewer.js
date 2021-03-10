@@ -470,10 +470,7 @@ class BaseViewer {
         this.findController.setDocument(null);
       }
       if (this._scriptingManager) {
-        // Defer this slightly, to allow the "PageClose" event to be handled.
-        Promise.resolve().then(() => {
-          this._scriptingManager.setDocument(null);
-        });
+        this._scriptingManager.setDocument(null);
       }
     }
 
