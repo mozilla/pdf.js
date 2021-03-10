@@ -1883,6 +1883,12 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue13075",
+       "file": "pdfs/issue13075.pdf",
+       "md5": "d6ed5c362cd3ba57e8ac5aa4e8ab1efc",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue8424",
        "file": "pdfs/issue8424.pdf",
        "md5": "3de1ea4c085e8fe8e156153418058955",

@@ -339,6 +339,41 @@ describe("api", function () {
       }
     );
 
+    it("does not use buffer.buffer issue 13075", function (done) {
+      if (!isNodeJS) {
+        done();
+        return;
+      }
+
+      const pdfFilename = "issue13075.pdf";
+
+      const { url } = buildGetDocumentParams(pdfFilename);
+      const fileBuffer = require("fs").readFileSync(url);
+
+      const bufferFromUint8 = Buffer.from(
+        new Uint8Array(fileBuffer).buffer,
+        640,
+        3291
+      );
+      const Uint8Arr = new Uint8Array(bufferFromUint8).buffer;
+      expect(bufferFromUint8.equals(Buffer.from(Uint8Arr, 0))).toEqual(true);
+
+      const task = getDocument(bufferFromUint8);
+      const taskUint = getDocument(Uint8Arr);
+      const result = task.promise.catch(e => {
+        return Promise.reject(new Error("file should be loaded successfully"));
+      });
+      const resultUint = taskUint.promise.catch(e => {
+        return Promise.reject(new Error("file should be loaded successfully"));
+      });
+
+      Promise.all([result, resultUint])
+        .then(function () {
+          done();
+        })
+        .catch(done.fail);
+    });
+
     it("creates pdf doc from empty typed array", function (done) {
       const loadingTask = getDocument(new Uint8Array(0));
 
