@@ -243,10 +243,21 @@ function getDocument(src) {
     } else if (key === "worker") {
       worker = source[key];
       continue;
-    } else if (key === "data" && !(source[key] instanceof Uint8Array)) {
+    } else if (key === "data") {
       // Converting string or array-like data to Uint8Array.
       const pdfBytes = source[key];
-      if (typeof pdfBytes === "string") {
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("GENERIC") &&
+        isNodeJS &&
+        typeof Buffer !== "undefined" && // eslint-disable-line no-undef
+        pdfBytes instanceof Buffer // eslint-disable-line no-undef
+      ) {
+        params[key] = new Uint8Array(pdfBytes);
+      } else if (pdfBytes instanceof Uint8Array) {
+        // Use the data as-is when it's already a Uint8Array.
+        params[key] = pdfBytes;
+      } else if (typeof pdfBytes === "string") {
         params[key] = stringToBytes(pdfBytes);
       } else if (
         typeof pdfBytes === "object" &&
@@ -259,8 +270,7 @@ function getDocument(src) {
       } else {
         throw new Error(
           "Invalid PDF binary data: either typed array, " +
-            "string or array-like object is expected in the " +
-            "data property."
+            "string, or array-like object is expected in the data property."
         );
       }
       continue;
