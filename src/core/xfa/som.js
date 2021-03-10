@@ -14,11 +14,14 @@
  */
 
 import {
+  $appendChild,
   $getChildrenByClass,
   $getChildrenByName,
   $getParent,
+  $namespaceId,
   XFAObject,
   XFAObjectArray,
+  XmlObject,
 } from "./xfa_object.js";
 import { warn } from "../../shared/util.js";
 
@@ -33,17 +36,18 @@ const operators = {
 };
 
 const shortcuts = new Map([
-  ["$data", root => root.datasets.data],
-  ["$template", root => root.template],
-  ["$connectionSet", root => root.connectionSet],
-  ["$form", root => root.form],
-  ["$layout", root => root.layout],
-  ["$host", root => root.host],
-  ["$dataWindow", root => root.dataWindow],
-  ["$event", root => root.event],
-  ["!", root => root.datasets],
-  ["$xfa", root => root],
-  ["xfa", root => root],
+  ["$data", (root, current) => root.datasets.data],
+  ["$template", (root, current) => root.template],
+  ["$connectionSet", (root, current) => root.connectionSet],
+  ["$form", (root, current) => root.form],
+  ["$layout", (root, current) => root.layout],
+  ["$host", (root, current) => root.host],
+  ["$dataWindow", (root, current) => root.dataWindow],
+  ["$event", (root, current) => root.event],
+  ["!", (root, current) => root.datasets],
+  ["$xfa", (root, current) => root],
+  ["xfa", (root, current) => root],
+  ["$", (root, current) => current],
 ]);
 
 const somCache = new WeakMap();
@@ -138,17 +142,24 @@ function parseExpression(expr, dotDotAllowed) {
   return parsed;
 }
 
-function searchNode(root, container, expr, dotDotAllowed = true) {
+function searchNode(
+  root,
+  container,
+  expr,
+  dotDotAllowed = true,
+  useCache = true
+) {
   const parsed = parseExpression(expr, dotDotAllowed);
   if (!parsed) {
     return null;
   }
+
   const fn = shortcuts.get(parsed[0].name);
   let i = 0;
   let isQualified;
   if (fn) {
     isQualified = true;
-    root = [fn(root)];
+    root = [fn(root, container)];
     i = 1;
   } else {
     isQualified = container === null;
@@ -163,13 +174,17 @@ function searchNode(root, container, expr, dotDotAllowed = true) {
         continue;
       }
 
-      let cached = somCache.get(node);
-      if (!cached) {
-        cached = new Map();
-        somCache.set(node, cached);
+      let children, cached;
+
+      if (useCache) {
+        cached = somCache.get(node);
+        if (!cached) {
+          cached = new Map();
+          somCache.set(node, cached);
+        }
+        children = cached.get(cacheName);
       }
 
-      let children = cached.get(cacheName);
       if (!children) {
         switch (operator) {
           case operators.dot:
@@ -189,7 +204,9 @@ function searchNode(root, container, expr, dotDotAllowed = true) {
           default:
             break;
         }
-        cached.set(cacheName, children);
+        if (useCache) {
+          cached.set(cacheName, children);
+        }
       }
 
       if (children.length > 0) {
@@ -222,11 +239,72 @@ function searchNode(root, container, expr, dotDotAllowed = true) {
     return null;
   }
 
-  if (root.length === 1) {
-    return root[0];
-  }
-
   return root;
 }
 
-export { searchNode };
+function createNodes(root, path) {
+  let node = null;
+  for (const { name, index } of path) {
+    for (let i = 0; i <= index; i++) {
+      node = new XmlObject(root[$namespaceId], name);
+      root[$appendChild](node);
+    }
+
+    root = node;
+  }
+  return node;
+}
+
+function createDataNode(root, container, expr) {
+  const parsed = parseExpression(expr);
+  if (!parsed) {
+    return null;
+  }
+
+  if (parsed.some(x => x.operator === operators.dotDot)) {
+    return null;
+  }
+
+  const fn = shortcuts.get(parsed[0].name);
+  let i = 0;
+  if (fn) {
+    root = fn(root, container);
+    i = 1;
+  } else {
+    root = container || root;
+  }
+
+  for (let ii = parsed.length; i < ii; i++) {
+    const { cacheName, index } = parsed[i];
+    if (!isFinite(index)) {
+      parsed[i].index = 0;
+      return createNodes(root, parsed.slice(i));
+    }
+
+    const cached = somCache.get(root);
+    if (!cached) {
+      warn(`XFA - createDataNode must be called after searchNode.`);
+      return null;
+    }
+
+    const children = cached.get(cacheName);
+    if (children.length === 0) {
+      return createNodes(root, parsed.slice(i));
+    }
+
+    if (index < children.length) {
+      const child = children[index];
+      if (!(child instanceof XFAObject)) {
+        warn(`XFA - Cannot create a node.`);
+        return null;
+      }
+      root = child;
+    } else {
+      parsed[i].index = children.length - index;
+      return createNodes(root, parsed.slice(i));
+    }
+  }
+  return null;
+}
+
+export { createDataNode, searchNode };
