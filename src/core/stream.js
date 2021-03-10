@@ -123,7 +123,7 @@ var Stream = (function StreamClosure() {
       this.start = this.pos;
     },
     makeSubStream: function Stream_makeSubStream(start, length, dict) {
-      return new Stream(this.bytes, start, length, dict);
+      return new Stream(this.bytes.buffer, start, length, dict);
     },
   };
 

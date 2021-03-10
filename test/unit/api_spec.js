@@ -339,9 +339,9 @@ describe("api", function () {
       }
     );
 
-    it("does not use buffer.buffer issue 13075", function (done) {
+    it("should properly parse buffer with offset. issue 13075", function (done) {
       if (!isNodeJS) {
-        done();
+        pending("Buffers with offsets are in Node.js only.");
         return;
       }
 

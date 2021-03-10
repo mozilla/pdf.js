@@ -243,7 +243,10 @@ function getDocument(src) {
     } else if (key === "worker") {
       worker = source[key];
       continue;
-    } else if (key === "data" && !(source[key] instanceof Uint8Array)) {
+    } else if (
+      key === "data" &&
+      (!(source[key] instanceof Uint8Array) || source[key].offset > 0)
+    ) {
       // Converting string or array-like data to Uint8Array.
       const pdfBytes = source[key];
       if (typeof pdfBytes === "string") {
