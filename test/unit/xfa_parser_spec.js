@@ -20,6 +20,7 @@ import {
   $getChildrenByName,
   $text,
 } from "../../src/core/xfa/xfa_object.js";
+import { Binder } from "../../src/core/xfa/bind.js";
 import { searchNode } from "../../src/core/xfa/som.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";
 
@@ -507,39 +508,45 @@ describe("XFAParser", function () {
 </xdp:xdp>
       `;
       const root = new XFAParser().parse(xml);
-      expect(searchNode(root, null, "$template..Description.id")[$text]()).toBe(
-        "a"
-      );
-      expect(searchNode(root, null, "$template..Description.id")[$text]()).toBe(
-        "a"
-      );
       expect(
-        searchNode(root, null, "$template..Description[0].id")[$text]()
+        searchNode(root, null, "$template..Description.id")[0][$text]()
       ).toBe("a");
       expect(
-        searchNode(root, null, "$template..Description[1].id")[$text]()
+        searchNode(root, null, "$template..Description.id")[0][$text]()
+      ).toBe("a");
+      expect(
+        searchNode(root, null, "$template..Description[0].id")[0][$text]()
+      ).toBe("a");
+      expect(
+        searchNode(root, null, "$template..Description[1].id")[0][$text]()
       ).toBe("e");
       expect(
-        searchNode(root, null, "$template..Description[2].id")[$text]()
+        searchNode(root, null, "$template..Description[2].id")[0][$text]()
       ).toBe("p");
-      expect(searchNode(root, null, "$template.Receipt.id")[$text]()).toBe("l");
+      expect(searchNode(root, null, "$template.Receipt.id")[0][$text]()).toBe(
+        "l"
+      );
       expect(
-        searchNode(root, null, "$template.Receipt.Description[1].id")[$text]()
+        searchNode(root, null, "$template.Receipt.Description[1].id")[0][
+          $text
+        ]()
       ).toBe("e");
       expect(searchNode(root, null, "$template.Receipt.Description[2]")).toBe(
         null
       );
       expect(
-        searchNode(root, null, "$template.Receipt.foo.Description.id")[$text]()
+        searchNode(root, null, "$template.Receipt.foo.Description.id")[0][
+          $text
+        ]()
       ).toBe("p");
       expect(
-        searchNode(root, null, "$template.#subform.Sub_Total.id")[$text]()
+        searchNode(root, null, "$template.#subform.Sub_Total.id")[0][$text]()
       ).toBe("i");
       expect(
-        searchNode(root, null, "$template.#subform.Units.id")[$text]()
+        searchNode(root, null, "$template.#subform.Units.id")[0][$text]()
       ).toBe("b");
       expect(
-        searchNode(root, null, "$template.#subform.Units.parent.id")[$text]()
+        searchNode(root, null, "$template.#subform.Units.parent.id")[0][$text]()
       ).toBe("m");
     });
 
@@ -620,10 +627,10 @@ describe("XFAParser", function () {
         searchNode(root, receipt, "Detail[*].Total_Price").map(x => x[$text]())
       ).toEqual(["250.00", "60.00"]);
 
-      const units = searchNode(root, receipt, "Detail[1].Units");
+      const [units] = searchNode(root, receipt, "Detail[1].Units");
       expect(units[$text]()).toBe("5");
 
-      let found = searchNode(root, units, "Total_Price");
+      let [found] = searchNode(root, units, "Total_Price");
       expect(found[$text]()).toBe("60.00");
 
       found = searchNode(root, units, "Total_Pric");
@@ -645,18 +652,503 @@ describe("XFAParser", function () {
 </xdp:xdp>
       `;
       const root = new XFAParser().parse(xml);
-      expect(searchNode(root, null, "$data.Receipt.Detail")[$text]()).toBe(
+      expect(searchNode(root, null, "$data.Receipt.Detail")[0][$text]()).toBe(
         "Acme"
       );
-      expect(searchNode(root, null, "$data.Receipt.Detail[0]")[$text]()).toBe(
-        "Acme"
+      expect(
+        searchNode(root, null, "$data.Receipt.Detail[0]")[0][$text]()
+      ).toBe("Acme");
+      expect(
+        searchNode(root, null, "$data.Receipt.Detail[1]")[0][$text]()
+      ).toBe("foo");
+      expect(
+        searchNode(root, null, "$data.Receipt.Detail[2]")[0][$text]()
+      ).toBe("bar");
+    });
+  });
+
+  describe("Bind data into form", function () {
+    it("should make a basic binding", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="A">
+      <subform name="B">
+        <field name="C">
+        </field>
+        <field name="D">
+        </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <A>
+        <C>xyz</C>
+      </A>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "A.B.C.value.text")[0][$dump]().$content
+      ).toBe("xyz");
+    });
+
+    it("should make another basic binding", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="registration">
+      <field name="first"> </field>
+      <field name="last">  </field>
+      <field name="apt">  </field>
+      <field name="street">  </field>
+      <field name="city">  </field>
+      <field name="country">  </field>
+      <field name="postalcode"/>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <registration>
+        <first>Jack</first>
+        <last>Spratt</last>
+        <apt/>
+        <street>99 Candlestick Lane</street>
+        <city>London</city>
+        <country>UK</country>
+        <postalcode>SW1</postalcode>
+      </registration>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "registration.first..text")[0][$dump]().$content
+      ).toBe("Jack");
+      expect(
+        searchNode(form, form, "registration.last..text")[0][$dump]().$content
+      ).toBe("Spratt");
+      expect(
+        searchNode(form, form, "registration.apt..text")[0][$dump]().$content
+      ).toBe(undefined);
+      expect(
+        searchNode(form, form, "registration.street..text")[0][$dump]().$content
+      ).toBe("99 Candlestick Lane");
+      expect(
+        searchNode(form, form, "registration.city..text")[0][$dump]().$content
+      ).toBe("London");
+      expect(
+        searchNode(form, form, "registration.country..text")[0][$dump]()
+          .$content
+      ).toBe("UK");
+      expect(
+        searchNode(form, form, "registration.postalcode..text")[0][$dump]()
+          .$content
+      ).toBe("SW1");
+    });
+
+    it("should make basic binding with extra subform", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="registration">
+      <field name="first"> </field>
+      <field name="last">  </field>
+      <subform name="address">
+        <field name="apt">  </field>
+        <field name="street">  </field>
+        <field name="city">  </field>
+        <field name="country">  </field>
+        <field name="postalcode">  </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <registration>
+        <first>Jack</first>
+        <last>Spratt</last>
+        <apt/>
+        <street>99 Candlestick Lane</street>
+        <city>London</city>
+        <country>UK</country>
+        <postalcode>SW1</postalcode>
+      </registration>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "registration..first..text")[0][$dump]().$content
+      ).toBe("Jack");
+      expect(
+        searchNode(form, form, "registration..last..text")[0][$dump]().$content
+      ).toBe("Spratt");
+      expect(
+        searchNode(form, form, "registration..apt..text")[0][$dump]().$content
+      ).toBe(undefined);
+      expect(
+        searchNode(form, form, "registration..street..text")[0][$dump]()
+          .$content
+      ).toBe("99 Candlestick Lane");
+      expect(
+        searchNode(form, form, "registration..city..text")[0][$dump]().$content
+      ).toBe("London");
+      expect(
+        searchNode(form, form, "registration..country..text")[0][$dump]()
+          .$content
+      ).toBe("UK");
+      expect(
+        searchNode(form, form, "registration..postalcode..text")[0][$dump]()
+          .$content
+      ).toBe("SW1");
+    });
+
+    it("should make basic binding with extra subform", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="registration" mergeMode="consumeData">
+      <subform name="address">
+        <field name="first"/>
+        <field name="last"/>
+        <field name="apt"/>
+        <field name="street"/>
+        <field name="city"/>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <registration>
+        <first>Jack</first>
+        <last>Spratt</last>
+        <address>
+          <apt>7</apt>
+          <street>99 Candlestick Lane</street>
+          <city>London</city>
+        </address>
+      </registration>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "registration..first..text")[0][$dump]().$content
+      ).toBe("Jack");
+      expect(
+        searchNode(form, form, "registration..last..text")[0][$dump]().$content
+      ).toBe("Spratt");
+      expect(
+        searchNode(form, form, "registration..apt..text")[0][$dump]().$content
+      ).toBe("7");
+      expect(
+        searchNode(form, form, "registration..street..text")[0][$dump]()
+          .$content
+      ).toBe("99 Candlestick Lane");
+      expect(
+        searchNode(form, form, "registration..city..text")[0][$dump]().$content
+      ).toBe("London");
+    });
+
+    it("should make basic binding with same names in different parts", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="application" mergeMode="consumeData">
+      <subform name="sponsor">
+        <field name="lastname">  </field>
+        <!-- sponsor's last name -->
+      </subform>
+      <field name="lastname">  </field>
+      <!-- applicant's last name -->
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <application>
+        <lastname>Abott</lastname>
+        <sponsor>
+          <lastname>Costello</lastname>
+        </sponsor>
+      </application>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "application.sponsor.lastname..text")[0][$dump]()
+          .$content
+      ).toBe("Costello");
+      expect(
+        searchNode(form, form, "application.lastname..text")[0][$dump]()
+          .$content
+      ).toBe("Abott");
+    });
+
+    it("should make binding and create nodes in data", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <subform name="A">
+        <field name="a"/>
+        <field name="b"/>
+        <subform name="B">
+          <field name="c"/>
+          <field name="d"/>
+          <subform name="C">
+            <field name="e"/>
+            <field name="f"/>
+          </subform>
+        </subform>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <root>
+        <A>
+          <b>1</b>
+        </A>
+      </root>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      const form = binder.bind();
+      const data = binder.getData();
+
+      expect(searchNode(form, form, "root..b..text")[0][$dump]().$content).toBe(
+        "1"
       );
-      expect(searchNode(root, null, "$data.Receipt.Detail[1]")[$text]()).toBe(
-        "foo"
+      expect(searchNode(data, data, "root.A.a")[0][$dump]().$name).toBe("a");
+      expect(searchNode(data, data, "root.A.B.c")[0][$dump]().$name).toBe("c");
+      expect(searchNode(data, data, "root.A.B.d")[0][$dump]().$name).toBe("d");
+      expect(searchNode(data, data, "root.A.B.C.e")[0][$dump]().$name).toBe(
+        "e"
       );
-      expect(searchNode(root, null, "$data.Receipt.Detail[2]")[$text]()).toBe(
-        "bar"
+      expect(searchNode(data, data, "root.A.B.C.f")[0][$dump]().$name).toBe(
+        "f"
       );
+    });
+
+    it("should make binding and set properties", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="Id">
+      <field name="LastName">
+        <setProperty ref="$data.Main.Style.NameFont" target="font.typeface"/>
+        <setProperty ref="$data.Main.Style.NameSize" target="font.size"/>
+        <setProperty ref="$data.Main.Help.LastName" target="assist.toolTip"/>
+        <font></font>
+        <assist>
+          <toolTip>
+          </toolTip>
+        </assist>
+      </field>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <Id>
+        <LastName>foo</LastName>
+      </Id>
+      <Main>
+        <Style>
+          <NameFont>myfont</NameFont>
+          <NameSize>123.4pt</NameSize>
+        </Style>
+        <Help>
+          <LastName>Give the name!</LastName>
+        </Help>
+      </Main>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "Id.LastName..text")[0][$dump]().$content
+      ).toBe("foo");
+      expect(
+        searchNode(form, form, "Id.LastName.font.typeface")[0][$text]()
+      ).toBe("myfont");
+      expect(
+        searchNode(form, form, "Id.LastName.font.size")[0][$text]()
+      ).toEqual({
+        value: 123.4,
+        unit: "pt",
+      });
+      expect(
+        searchNode(form, form, "Id.LastName.assist.toolTip")[0][$dump]()
+          .$content
+      ).toBe("Give the name!");
+    });
+
+    it("should make binding and bind items", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="main">
+      <field name="CardName">
+        <bindItems ref="$data.main.ccs.cc[*]" labelRef="uiname" valueRef="token"/>
+        <ui>
+          <choiceList/>
+        </ui>
+      </field>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <main>
+        <ccs>
+          <cc uiname="Visa" token="VISA"/>
+          <cc uiname="Mastercard" token="MC"/>
+          <cc uiname="American Express" token="AMEX"/>
+        </ccs>
+        <CardName>MC</CardName>
+      </main>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+      expect(
+        searchNode(form, form, "subform.CardName.items[*].text[*]").map(x =>
+          x[$text]()
+        )
+      ).toEqual([
+        "Visa",
+        "Mastercard",
+        "American Express",
+        "VISA",
+        "MC",
+        "AMEX",
+      ]);
+    });
+
+    it("should make binding with occurrences in consumeData mode", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="consumeData">
+      <subform name="section" id="section1">
+        <occur min="0" max="-1"/>
+        <bind match="dataRef" ref="$.section[*]"/>
+        <field name="line-item"/>
+      </subform>
+      <subform name="section" id="section2">
+        <occur min="0" max="-1"/>
+        <bind match="dataRef" ref="$.section[*]"/>
+        <field name="line-item"/>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <root>
+        <section>
+          <line-item>item1</line-item>
+        </section>
+        <section>
+          <line-item>item2</line-item>
+        </section>
+      </root>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "root.section[*].id").map(x => x[$text]())
+      ).toEqual(["section1", "section1"]);
+
+      expect(
+        searchNode(form, form, "root.section[*].line-item..text").map(x =>
+          x[$text]()
+        )
+      ).toEqual(["item1", "item2"]);
+    });
+
+    it("should make binding with occurrences in matchTemplate mode", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <subform name="section" id="section1">
+        <occur min="0" max="-1"/>
+        <bind match="dataRef" ref="$.section[*]"/>
+        <field name="line-item"/>
+      </subform>
+      <subform name="section" id="section2">
+        <occur min="0" max="-1"/>
+        <bind match="dataRef" ref="$.section[*]"/>
+        <field name="line-item"/>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <root>
+        <section>
+          <line-item>item1</line-item>
+        </section>
+        <section>
+          <line-item>item2</line-item>
+        </section>
+      </root>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "root.section[*].id").map(x => x[$text]())
+      ).toEqual(["section1", "section1", "section2", "section2"]);
+
+      expect(
+        searchNode(form, form, "root.section[*].line-item..text").map(x =>
+          x[$text]()
+        )
+      ).toEqual(["item1", "item2", "item1", "item2"]);
     });
   });
 });

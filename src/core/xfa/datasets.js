@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
-import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import {
+  $appendChild,
+  $global,
   $namespaceId,
   $nodeName,
-  $onChildCheck,
+  $onChild,
   XFAObject,
   XmlObject,
 } from "./xfa_object.js";
+import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 
 const DATASETS_NS_ID = NamespaceIds.datasets.id;
 
@@ -37,15 +39,18 @@ class Datasets extends XFAObject {
     this.Signature = null;
   }
 
-  [$onChildCheck](child) {
+  [$onChild](child) {
     const name = child[$nodeName];
-    if (name === "data") {
-      return child[$namespaceId] === DATASETS_NS_ID;
+    if (
+      (name === "data" && child[$namespaceId] === DATASETS_NS_ID) ||
+      (name === "Signature" &&
+        child[$namespaceId] === NamespaceIds.signature.id)
+    ) {
+      this[name] = child;
+    } else {
+      child[$global] = true;
     }
-    if (name === "Signature") {
-      return child[$namespaceId] === NamespaceIds.signature.id;
-    }
-    return false;
+    this[$appendChild](child);
   }
 }
 

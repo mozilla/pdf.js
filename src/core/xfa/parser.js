@@ -13,7 +13,14 @@
  * limitations under the License.
  */
 
-import { $clean, $finalize, $onChild, $onText, $setId } from "./xfa_object.js";
+import {
+  $clean,
+  $finalize,
+  $nsAttributes,
+  $onChild,
+  $onText,
+  $setId,
+} from "./xfa_object.js";
 import { XMLParserBase, XMLParserErrorCode } from "../xml_parser.js";
 import { Builder } from "./builder.js";
 import { warn } from "../../shared/util.js";
@@ -57,7 +64,7 @@ class XFAParser extends XMLParserBase {
     // namespaces information.
     let namespace = null;
     let prefixes = null;
-    const attributeObj = Object.create(null);
+    const attributeObj = Object.create({});
     for (const { name, value } of attributes) {
       if (name === "xmlns") {
         if (!namespace) {
@@ -72,7 +79,23 @@ class XFAParser extends XMLParserBase {
         }
         prefixes.push({ prefix, value });
       } else {
-        attributeObj[name] = value;
+        const i = name.indexOf(":");
+        if (i === -1) {
+          attributeObj[name] = value;
+        } else {
+          // Attributes can have their own namespace.
+          // For example in data, we can have <foo xfa:dataNode="dataGroup"/>
+          let nsAttrs = attributeObj[$nsAttributes];
+          if (!nsAttrs) {
+            nsAttrs = attributeObj[$nsAttributes] = Object.create(null);
+          }
+          const [ns, attrName] = [name.slice(0, i), name.slice(i + 1)];
+          let attrs = nsAttrs[ns];
+          if (!attrs) {
+            attrs = nsAttrs[ns] = Object.create(null);
+          }
+          attrs[attrName] = value;
+        }
       }
     }
 
