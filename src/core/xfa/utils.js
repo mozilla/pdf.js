@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-const measurementPattern = /([+-]?)([0-9]+\.?[0-9]*)(.*)/;
+const dimConverters = {
+  pt: x => x,
+  cm: x => (x / 2.54) * 72,
+  mm: x => (x / (10 * 2.54)) * 72,
+  in: x => x * 72,
+};
+const measurementPattern = /([+-]?[0-9]+\.?[0-9]*)(.*)/;
 
 function getInteger({ data, defaultValue, validate }) {
   if (!data) {
@@ -67,15 +73,22 @@ function getMeasurement(str, def = "0") {
   if (!match) {
     return getMeasurement(def);
   }
-  const [, sign, valueStr, unit] = match;
+  const [, valueStr, unit] = match;
   const value = parseFloat(valueStr);
   if (isNaN(value)) {
     return getMeasurement(def);
   }
-  return {
-    value: sign === "-" ? -value : value,
-    unit: unit || "pt",
-  };
+
+  if (value === 0) {
+    return 0;
+  }
+
+  const conv = dimConverters[unit];
+  if (conv) {
+    return conv(value);
+  }
+
+  return value;
 }
 
 function getRatio(data) {
@@ -134,7 +147,7 @@ function getColor(data, def = [0, 0, 0]) {
 }
 
 function getBBox(data) {
-  const def = getMeasurement("-1");
+  const def = -1;
   if (!data) {
     return { x: def, y: def, width: def, height: def };
   }
@@ -142,7 +155,7 @@ function getBBox(data) {
     .trim()
     .split(/\s*,\s*/)
     .map(m => getMeasurement(m, "-1"));
-  if (bbox.length < 4 || bbox[2].value < 0 || bbox[3].value < 0) {
+  if (bbox.length < 4 || bbox[2] < 0 || bbox[3] < 0) {
     return { x: def, y: def, width: def, height: def };
   }
 

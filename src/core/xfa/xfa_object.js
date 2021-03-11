@@ -59,6 +59,7 @@ const $setSetAttributes = Symbol();
 const $setValue = Symbol();
 const $text = Symbol();
 const $toHTML = Symbol();
+const $toStyle = Symbol();
 const $uid = Symbol("uid");
 
 const _applyPrototype = Symbol();
@@ -257,6 +258,10 @@ class XFAObject {
     }
 
     return dumped;
+  }
+
+  [$toStyle]() {
+    return null;
   }
 
   [$toHTML]() {
@@ -839,6 +844,7 @@ export {
   $setValue,
   $text,
   $toHTML,
+  $toStyle,
   $uid,
   ContentObject,
   IntegerObject,
