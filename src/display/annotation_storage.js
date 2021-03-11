@@ -14,7 +14,7 @@
  */
 
 import { deprecated } from "./display_utils.js";
-import { objectFromEntries } from "../shared/util.js";
+import { objectFromMap } from "../shared/util.js";
 
 /**
  * Key/value storage for annotation data in forms.
@@ -91,7 +91,7 @@ class AnnotationStorage {
   }
 
   getAll() {
-    return this._storage.size > 0 ? objectFromEntries(this._storage) : null;
+    return this._storage.size > 0 ? objectFromMap(this._storage) : null;
   }
 
   get size() {
