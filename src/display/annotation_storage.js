@@ -33,8 +33,7 @@ class AnnotationStorage {
   }
 
   /**
-   * Get the value for a given key if it exists
-   * or return the default value
+   * Get the value for a given key if it exists, or return the default value.
    *
    * @public
    * @memberof AnnotationStorage
@@ -43,11 +42,8 @@ class AnnotationStorage {
    * @returns {Object}
    */
   getValue(key, defaultValue) {
-    if (this._storage.has(key)) {
-      return this._storage.get(key);
-    }
-
-    return defaultValue;
+    const obj = this._storage.get(key);
+    return obj !== undefined ? obj : defaultValue;
   }
 
   /**
