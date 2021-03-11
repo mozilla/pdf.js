@@ -89,6 +89,7 @@ class PDFTTSViewer extends BaseTreeViewer {
    * @param {PDFTTSViewerRenderParameters} params
    */
   render({ optionalContentConfig, pdfDocument }) {
+    const DEFAULT_RATE = 10;
     if (this._optionalContentConfig) {
       this.reset();
     }
@@ -124,7 +125,8 @@ class PDFTTSViewer extends BaseTreeViewer {
     ratelabel.className = "toolbarLabel";
     ratelabel.setAttribute("data-l10n-id", "tts_rate_label");
     ratelabel.ondblclick = function () {
-      rateinput.value = 10;
+      rateinput.value = DEFAULT_RATE;
+      localStorage.PDFJS_TTS_Rate = DEFAULT_RATE;
     };
     fragment.appendChild(ratelabel);
 
@@ -135,13 +137,18 @@ class PDFTTSViewer extends BaseTreeViewer {
     rateinput.id = "rate";
     rateinput.min = 1;
     rateinput.max = 100;
-    rateinput.value = 10;
-    // Load pref
-    rateinput.value = localStorage.PDFJS_TTS_Rate;
-    // Save pref
+
+    // Load rate pref
+    if (localStorage.PDFJS_TTS_Rate == undefined) {
+      rateinput.value = DEFAULT_RATE;
+    } else {
+      rateinput.value = localStorage.PDFJS_TTS_Rate;
+    }
+    // Save rate pref
     rateinput.onchange = function () {
       localStorage.PDFJS_TTS_Rate = this.value;
     };
+
     ratespan.appendChild(rateinput);
     fragment.appendChild(ratespan);
 
@@ -153,7 +160,7 @@ class PDFTTSViewer extends BaseTreeViewer {
   */
   updateVoiceSelect() {
     const oldvoicelist = document.getElementById("voiceSelect");
-    const voicelist = document.createElement("select");
+    const voicelist = document.createElement("select");    
     voicelist.id = "voiceSelect";
     this.loadVoices(voicelist);
 
@@ -177,12 +184,26 @@ class PDFTTSViewer extends BaseTreeViewer {
     /* Store for later use by playpause(), so we don't regenerate list 
        which may have changed and will desync selectedIndex. */
     this.storedVoices = voices;
-    // Load preference
-    voicelist.value = localStorage.PDFJS_TTS_Voice;
-    // Save preference
+
+    // Save voice preference
     voicelist.onchange = function () {
       localStorage.PDFJS_TTS_Voice = this.value;
     };
+    // Load voice preference
+    if (localStorage.PDFJS_TTS_Voice == undefined) {
+      voicelist.value = getDefaultVoiceName(voices);
+    } else {
+      voicelist.value = localStorage.PDFJS_TTS_Voice;
+    }
+    return voicelist;
+  }
+
+  getDefaultVoiceName(voices) {
+    voices.forEach(function (voice) {
+      if (voice.default) 
+        return voice.name + (voice.default ? " (default)" : "");
+    });
+    return undefined;
   }
 
   toggleToolbarPlayingIcon(playing) {
