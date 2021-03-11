@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { objectFromEntries, warn } from "../shared/util.js";
+import { objectFromMap, warn } from "../shared/util.js";
 
 class OptionalContentGroup {
   constructor(name, intent) {
@@ -142,10 +142,7 @@ class OptionalContentConfig {
   }
 
   getGroups() {
-    if (!this._groups.size) {
-      return null;
-    }
-    return objectFromEntries(this._groups);
+    return this._groups.size > 0 ? objectFromMap(this._groups) : null;
   }
 
   getGroup(id) {
