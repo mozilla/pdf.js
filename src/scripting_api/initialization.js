@@ -115,6 +115,12 @@ function initSandbox(params) {
   globalThis.trans = Trans;
   globalThis.zoomtype = ZoomType;
 
+  // Avoid to have a popup asking to update Acrobat.
+  globalThis.ADBE = {
+    Reader_Value_Asked: true,
+    Viewer_Value_Asked: true,
+  };
+
   // AF... functions
   const aform = new AForm(doc, app, util, color);
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
