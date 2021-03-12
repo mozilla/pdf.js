@@ -35,7 +35,7 @@ const MIN_SCALE = 0.25;
 const MAX_SCALE = 10.0;
 const DEFAULT_SCALE_VALUE = "auto";
 
-var PDFViewerApplication = {
+const PDFViewerApplication = {
   pdfLoadingTask: null,
   pdfDocument: null,
   pdfViewer: null,
@@ -424,6 +424,8 @@ var PDFViewerApplication = {
     );
   },
 };
+
+window.PDFViewerApplication = PDFViewerApplication;
 
 document.addEventListener(
   "DOMContentLoaded",
