@@ -435,18 +435,14 @@ document.addEventListener(
   true
 );
 
-(function animationStartedClosure() {
-  // The offsetParent is not set until the PDF.js iframe or object is visible.
-  // Waiting for first animation.
-  PDFViewerApplication.animationStartedPromise = new Promise(function (
-    resolve
-  ) {
-    window.requestAnimationFrame(resolve);
-  });
-})();
+// The offsetParent is not set until the PDF.js iframe or object is visible;
+// waiting for first animation.
+const animationStarted = new Promise(function (resolve) {
+  window.requestAnimationFrame(resolve);
+});
 
 // We need to delay opening until all HTML is loaded.
-PDFViewerApplication.animationStartedPromise.then(function () {
+animationStarted.then(function () {
   PDFViewerApplication.open({
     url: DEFAULT_URL,
   });
