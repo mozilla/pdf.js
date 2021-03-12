@@ -188,9 +188,9 @@ DOMElementSerializer.prototype = {
         this._loopIndex = 0;
       /* falls through */
       case 5: // Serialize child nodes (only for non-tspan/style elements).
-        var value;
         while (true) {
-          value = this._childSerializer && this._childSerializer.getNext();
+          const value =
+            this._childSerializer && this._childSerializer.getNext();
           if (value !== null) {
             return value;
           }
