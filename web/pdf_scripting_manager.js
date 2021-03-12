@@ -31,7 +31,7 @@ import { RenderingStates } from "./pdf_rendering_queue.js";
 
 class PDFScriptingManager {
   /**
-   * @param {PDFScriptingManager} options
+   * @param {PDFScriptingManagerOptions} options
    */
   constructor({
     eventBus,
@@ -41,6 +41,7 @@ class PDFScriptingManager {
   }) {
     this._pdfDocument = null;
     this._pdfViewer = null;
+    this._closeCapability = null;
     this._destroyCapability = null;
 
     this._scripting = null;
@@ -124,8 +125,10 @@ class PDFScriptingManager {
       }
       this._dispatchPageOpen(pageNumber);
     });
-    this._internalEvents.set("pagesdestroy", event => {
-      this._dispatchPageClose(this._pdfViewer.currentPageNumber);
+    this._internalEvents.set("pagesdestroy", async event => {
+      await this._dispatchPageClose(this._pdfViewer.currentPageNumber);
+
+      this._closeCapability?.resolve();
     });
 
     this._domEvents.set("mousedown", event => {
@@ -307,6 +310,8 @@ class PDFScriptingManager {
       visitedPages = this._visitedPages;
 
     if (initialize) {
+      this._closeCapability = createPromiseCapability();
+
       this._pageEventsReady = true;
     }
     if (!this._pageEventsReady) {
@@ -417,12 +422,26 @@ class PDFScriptingManager {
    * @private
    */
   async _destroyScripting() {
-    this._pdfDocument = null; // Ensure that it's *always* reset synchronously.
-
     if (!this._scripting) {
+      this._pdfDocument = null;
+
       this._destroyCapability?.resolve();
       return;
     }
+    if (this._closeCapability) {
+      await Promise.race([
+        this._closeCapability.promise,
+        new Promise(resolve => {
+          // Avoid the scripting/sandbox-destruction hanging indefinitely.
+          setTimeout(resolve, 1000);
+        }),
+      ]).catch(reason => {
+        // Ignore any errors, to ensure that the sandbox is always destroyed.
+      });
+      this._closeCapability = null;
+    }
+    this._pdfDocument = null;
+
     try {
       await this._scripting.destroySandbox();
     } catch (ex) {}
