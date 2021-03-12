@@ -139,7 +139,7 @@ class PDFTTSViewer extends BaseTreeViewer {
     rateinput.max = 100;
 
     // Load rate pref
-    if (localStorage.PDFJS_TTS_Rate == undefined) {
+    if (localStorage.PDFJS_TTS_Rate === undefined) {
       rateinput.value = DEFAULT_RATE;
     } else {
       rateinput.value = localStorage.PDFJS_TTS_Rate;
@@ -160,7 +160,7 @@ class PDFTTSViewer extends BaseTreeViewer {
   */
   updateVoiceSelect() {
     const oldvoicelist = document.getElementById("voiceSelect");
-    const voicelist = document.createElement("select");    
+    const voicelist = document.createElement("select");
     voicelist.id = "voiceSelect";
     this.loadVoices(voicelist);
 
@@ -190,8 +190,8 @@ class PDFTTSViewer extends BaseTreeViewer {
       localStorage.PDFJS_TTS_Voice = this.value;
     };
     // Load voice preference
-    if (localStorage.PDFJS_TTS_Voice == undefined) {
-      voicelist.value = getDefaultVoiceName(voices);
+    if (localStorage.PDFJS_TTS_Voice === undefined) {
+      voicelist.value = this.getDefaultVoiceName(voices);
     } else {
       voicelist.value = localStorage.PDFJS_TTS_Voice;
     }
@@ -199,11 +199,13 @@ class PDFTTSViewer extends BaseTreeViewer {
   }
 
   getDefaultVoiceName(voices) {
+    let name = null;
     voices.forEach(function (voice) {
-      if (voice.default) 
-        return voice.name + (voice.default ? " (default)" : "");
+      if (voice.default === true) {
+        name = voice.name + (voice.default ? " (default)" : "");
+      }
     });
-    return undefined;
+    return name;
   }
 
   toggleToolbarPlayingIcon(playing) {
