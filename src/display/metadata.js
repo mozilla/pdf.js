@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { objectFromEntries } from "../shared/util.js";
+import { objectFromMap } from "../shared/util.js";
 
 class Metadata {
   constructor({ parsedData, rawData }) {
@@ -30,7 +30,7 @@ class Metadata {
   }
 
   getAll() {
-    return objectFromEntries(this._metadataMap);
+    return objectFromMap(this._metadataMap);
   }
 
   has(name) {
