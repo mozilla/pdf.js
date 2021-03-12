@@ -27,40 +27,40 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
-var CMAP_PACKED = true;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
-var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 // To test the AcroForm and/or scripting functionality, try e.g. this file:
 // var DEFAULT_URL = "../../test/pdfs/160F-2019.pdf";
 
-var SEARCH_FOR = ""; // try 'Mozilla';
+const SEARCH_FOR = ""; // try 'Mozilla';
 
 // For scripting support, note also `enableScripting` below.
-var SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
+const SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
 
-var container = document.getElementById("viewerContainer");
+const container = document.getElementById("viewerContainer");
 
-var eventBus = new pdfjsViewer.EventBus();
+const eventBus = new pdfjsViewer.EventBus();
 
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new pdfjsViewer.PDFLinkService({
+const pdfLinkService = new pdfjsViewer.PDFLinkService({
   eventBus,
 });
 
 // (Optionally) enable find controller.
-var pdfFindController = new pdfjsViewer.PDFFindController({
+const pdfFindController = new pdfjsViewer.PDFFindController({
   eventBus,
   linkService: pdfLinkService,
 });
 
 // (Optionally) enable scripting support.
-var pdfScriptingManager = new pdfjsViewer.PDFScriptingManager({
+const pdfScriptingManager = new pdfjsViewer.PDFScriptingManager({
   eventBus,
   sandboxBundleSrc: SANDBOX_BUNDLE_SRC,
 });
 
-var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
+const pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
   container,
   eventBus,
   linkService: pdfLinkService,
@@ -82,7 +82,7 @@ eventBus.on("pagesinit", function () {
 });
 
 // Loading document.
-var loadingTask = pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
