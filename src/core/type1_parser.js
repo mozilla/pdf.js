@@ -80,20 +80,16 @@ const Type1CharString = (function Type1CharStringClosure() {
   };
 
   // eslint-disable-next-line no-shadow
-  function Type1CharString() {
-    this.width = 0;
-    this.lsb = 0;
-    this.flexing = false;
-    this.output = [];
-    this.stack = [];
-  }
+  class Type1CharString {
+    constructor() {
+      this.width = 0;
+      this.lsb = 0;
+      this.flexing = false;
+      this.output = [];
+      this.stack = [];
+    }
 
-  Type1CharString.prototype = {
-    convert: function Type1CharString_convert(
-      encoded,
-      subrs,
-      seacAnalysisEnabled
-    ) {
+    convert(encoded, subrs, seacAnalysisEnabled) {
       const count = encoded.length;
       let error = false;
       let wx, sbx, subrNumber;
@@ -331,7 +327,7 @@ const Type1CharString = (function Type1CharStringClosure() {
         this.stack.push(value);
       }
       return error;
-    },
+    }
 
     executeCommand(howManyArgs, command, keepStack) {
       const stackLength = this.stack.length;
@@ -362,8 +358,8 @@ const Type1CharString = (function Type1CharStringClosure() {
         this.stack.length = 0;
       }
       return false;
-    },
-  };
+    }
+  }
 
   return Type1CharString;
 })();
@@ -455,33 +451,33 @@ const Type1Parser = (function Type1ParserClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function Type1Parser(stream, encrypted, seacAnalysisEnabled) {
-    if (encrypted) {
-      const data = stream.getBytes();
-      const isBinary = !(
-        (isHexDigit(data[0]) || isWhiteSpace(data[0])) &&
-        isHexDigit(data[1]) &&
-        isHexDigit(data[2]) &&
-        isHexDigit(data[3]) &&
-        isHexDigit(data[4]) &&
-        isHexDigit(data[5]) &&
-        isHexDigit(data[6]) &&
-        isHexDigit(data[7])
-      );
-      stream = new Stream(
-        isBinary
-          ? decrypt(data, EEXEC_ENCRYPT_KEY, 4)
-          : decryptAscii(data, EEXEC_ENCRYPT_KEY, 4)
-      );
+  class Type1Parser {
+    constructor(stream, encrypted, seacAnalysisEnabled) {
+      if (encrypted) {
+        const data = stream.getBytes();
+        const isBinary = !(
+          (isHexDigit(data[0]) || isWhiteSpace(data[0])) &&
+          isHexDigit(data[1]) &&
+          isHexDigit(data[2]) &&
+          isHexDigit(data[3]) &&
+          isHexDigit(data[4]) &&
+          isHexDigit(data[5]) &&
+          isHexDigit(data[6]) &&
+          isHexDigit(data[7])
+        );
+        stream = new Stream(
+          isBinary
+            ? decrypt(data, EEXEC_ENCRYPT_KEY, 4)
+            : decryptAscii(data, EEXEC_ENCRYPT_KEY, 4)
+        );
+      }
+      this.seacAnalysisEnabled = !!seacAnalysisEnabled;
+
+      this.stream = stream;
+      this.nextChar();
     }
-    this.seacAnalysisEnabled = !!seacAnalysisEnabled;
 
-    this.stream = stream;
-    this.nextChar();
-  }
-
-  Type1Parser.prototype = {
-    readNumberArray: function Type1Parser_readNumberArray() {
+    readNumberArray() {
       this.getToken(); // read '[' or '{' (arrays can start with either)
       const array = [];
       while (true) {
@@ -492,32 +488,31 @@ const Type1Parser = (function Type1ParserClosure() {
         array.push(parseFloat(token || 0));
       }
       return array;
-    },
+    }
 
-    readNumber: function Type1Parser_readNumber() {
+    readNumber() {
       const token = this.getToken();
       return parseFloat(token || 0);
-    },
+    }
 
-    readInt: function Type1Parser_readInt() {
+    readInt() {
       // Use '| 0' to prevent setting a double into length such as the double
       // does not flow into the loop variable.
       const token = this.getToken();
       return parseInt(token || 0, 10) | 0;
-    },
+    }
 
-    readBoolean: function Type1Parser_readBoolean() {
+    readBoolean() {
       const token = this.getToken();
-
       // Use 1 and 0 since that's what type2 charstrings use.
       return token === "true" ? 1 : 0;
-    },
+    }
 
-    nextChar: function Type1_nextChar() {
+    nextChar() {
       return (this.currentChar = this.stream.getByte());
-    },
+    }
 
-    getToken: function Type1Parser_getToken() {
+    getToken() {
       // Eat whitespace and comments.
       let comment = false;
       let ch = this.currentChar;
@@ -547,22 +542,22 @@ const Type1Parser = (function Type1ParserClosure() {
         ch = this.nextChar();
       } while (ch >= 0 && !isWhiteSpace(ch) && !isSpecial(ch));
       return token;
-    },
+    }
 
-    readCharStrings: function Type1Parser_readCharStrings(bytes, lenIV) {
+    readCharStrings(bytes, lenIV) {
       if (lenIV === -1) {
         // This isn't in the spec, but Adobe's tx program handles -1
         // as plain text.
         return bytes;
       }
       return decrypt(bytes, CHAR_STRS_ENCRYPT_KEY, lenIV);
-    },
+    }
 
     /*
      * Returns an object containing a Subrs array and a CharStrings
      * array extracted from and eexec encrypted block of data
      */
-    extractFontProgram: function Type1Parser_extractFontProgram(properties) {
+    extractFontProgram(properties) {
       const stream = this.stream;
 
       const subrs = [],
@@ -717,9 +712,9 @@ const Type1Parser = (function Type1ParserClosure() {
       }
 
       return program;
-    },
+    }
 
-    extractFontHeader: function Type1Parser_extractFontHeader(properties) {
+    extractFontHeader(properties) {
       let token;
       while ((token = this.getToken()) !== null) {
         if (token !== "/") {
@@ -772,8 +767,8 @@ const Type1Parser = (function Type1ParserClosure() {
             break;
         }
       }
-    },
-  };
+    }
+  }
 
   return Type1Parser;
 })();
