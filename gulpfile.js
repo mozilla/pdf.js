@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* eslint-env node */
-/* eslint no-var: error */
 /* globals target */
 
 "use strict";
