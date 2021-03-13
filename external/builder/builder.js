@@ -33,6 +33,11 @@ const fs = require("fs"),
  * //#endif
  */
 function preprocess(inFilename, outFilename, defines) {
+  let lineNumber = 0;
+  function loc() {
+    return fs.realpathSync(inFilename) + ":" + lineNumber;
+  }
+
   // TODO make this really read line by line.
   const lines = fs.readFileSync(inFilename).toString().split("\n");
   const totalLines = lines.length;
@@ -118,10 +123,7 @@ function preprocess(inFilename, outFilename, defines) {
   let state = STATE_NONE;
   const stack = [];
   const control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
-  let lineNumber = 0;
-  var loc = function () {
-    return fs.realpathSync(inFilename) + ":" + lineNumber;
-  };
+
   while ((line = readLine()) !== null) {
     ++lineNumber;
     const m = control.exec(line);
@@ -277,11 +279,11 @@ exports.preprocessCSS = preprocessCSS;
  * the first.
  */
 function merge(defaults, defines) {
-  const ret = {};
-  for (var key in defaults) {
+  const ret = Object.create(null);
+  for (const key in defaults) {
     ret[key] = defaults[key];
   }
-  for (key in defines) {
+  for (const key in defines) {
     ret[key] = defines[key];
   }
   return ret;
