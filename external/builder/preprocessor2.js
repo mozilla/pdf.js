@@ -1,13 +1,13 @@
 "use strict";
 
-var acorn = require("acorn");
-var escodegen = require("escodegen");
-var vm = require("vm");
-var fs = require("fs");
-var path = require("path");
+const acorn = require("acorn");
+const escodegen = require("escodegen");
+const vm = require("vm");
+const fs = require("fs");
+const path = require("path");
 
-var PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
-var ROOT_PREFIX = "$ROOT/";
+const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
+const ROOT_PREFIX = "$ROOT/";
 const ACORN_ECMA_VERSION = 2021;
 
 function isLiteral(obj, value) {
@@ -27,7 +27,7 @@ function evalWithDefines(code, defines, loc) {
 
 function handlePreprocessorAction(ctx, actionName, args, loc) {
   try {
-    var arg;
+    let arg;
     switch (actionName) {
       case "test":
         arg = args[0];
@@ -103,7 +103,7 @@ function postprocessNode(ctx, node) {
         ctx.map &&
         ctx.map[node.source.value]
       ) {
-        var newValue = ctx.map[node.source.value];
+        const newValue = ctx.map[node.source.value];
         node.source.value = node.source.raw = newValue;
       }
       break;
@@ -193,7 +193,7 @@ function postprocessNode(ctx, node) {
         node.callee.property.type === "Identifier"
       ) {
         // PDFJSDev.xxxx(arg1, arg2, ...) => transform
-        var action = node.callee.property.name;
+        const action = node.callee.property.name;
         return handlePreprocessorAction(ctx, action, node.arguments, node.loc);
       }
       // require('string')
@@ -205,7 +205,7 @@ function postprocessNode(ctx, node) {
         ctx.map &&
         ctx.map[node.arguments[0].value]
       ) {
-        var requireName = node.arguments[0];
+        const requireName = node.arguments[0];
         requireName.value = requireName.raw = ctx.map[requireName.value];
       }
       break;
@@ -262,14 +262,14 @@ function fixComments(ctx, node) {
   delete node.trailingComments;
   // Removes ESLint and other service comments.
   if (node.leadingComments) {
-    var CopyrightRegExp = /\bcopyright\b/i;
-    var BlockCommentRegExp = /^\s*(globals|eslint|falls through)\b/;
-    var LineCommentRegExp = /^\s*eslint\b/;
+    const CopyrightRegExp = /\bcopyright\b/i;
+    const BlockCommentRegExp = /^\s*(globals|eslint|falls through)\b/;
+    const LineCommentRegExp = /^\s*eslint\b/;
 
-    var i = 0;
+    let i = 0;
     while (i < node.leadingComments.length) {
-      var type = node.leadingComments[i].type;
-      var value = node.leadingComments[i].value;
+      const type = node.leadingComments[i].type;
+      const value = node.leadingComments[i].value;
 
       if (ctx.saveComments === "copyright") {
         // Remove all comments, except Copyright notices and License headers.
@@ -291,7 +291,7 @@ function fixComments(ctx, node) {
 
 function traverseTree(ctx, node) {
   // generic node processing
-  for (var i in node) {
+  for (const i in node) {
     var child = node[i];
     if (typeof child === "object" && child !== null && child.type) {
       const result = traverseTree(ctx, child);
@@ -321,18 +321,18 @@ function traverseTree(ctx, node) {
 }
 
 function preprocessPDFJSCode(ctx, code) {
-  var format = ctx.format || {
+  const format = ctx.format || {
     indent: {
       style: " ",
     },
   };
-  var parseOptions = {
+  const parseOptions = {
     ecmaVersion: ACORN_ECMA_VERSION,
     locations: true,
     sourceFile: ctx.sourceFile,
     sourceType: "module",
   };
-  var codegenOptions = {
+  const codegenOptions = {
     format,
     parse(input) {
       return acorn.parse(input, { ecmaVersion: ACORN_ECMA_VERSION });
@@ -340,7 +340,7 @@ function preprocessPDFJSCode(ctx, code) {
     sourceMap: ctx.sourceMap,
     sourceMapWithCode: ctx.sourceMap,
   };
-  var syntax = acorn.parse(code, parseOptions);
+  const syntax = acorn.parse(code, parseOptions);
   traverseTree(ctx, syntax);
   return escodegen.generate(syntax, codegenOptions);
 }
