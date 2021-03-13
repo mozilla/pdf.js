@@ -32,21 +32,21 @@ exports.parseAdobeCMap = function (content) {
   result.type = +m[1];
   m = /\/WMode\s+(\d+)+\s+def\b/.exec(body);
   result.wmode = +m[1];
-  m = /\/([\w\-]+)\s+usecmap\b/.exec(body);
+  m = /\/([\w-]+)\s+usecmap\b/.exec(body);
   if (m) {
     result.usecmap = m[1];
   }
   const re = /(\d+)\s+(begincodespacerange|beginnotdefrange|begincidchar|begincidrange|beginbfchar|beginbfrange)\n([\s\S]*?)\n(endcodespacerange|endnotdefrange|endcidchar|endcidrange|endbfchar|endbfrange)/g;
   while ((m = re.exec(body))) {
     const lines = m[3].toLowerCase().split("\n");
-    var m2;
+
     switch (m[2]) {
       case "begincodespacerange":
         result.body.push({
           type: 0,
           items: lines.map(function (line) {
-            const m = /<(\w+)>\s+<(\w+)>/.exec(line);
-            return { start: m[1], end: m[2] };
+            const m2 = /<(\w+)>\s+<(\w+)>/.exec(line);
+            return { start: m2[1], end: m2[2] };
           }),
         });
         break;
@@ -54,8 +54,8 @@ exports.parseAdobeCMap = function (content) {
         result.body.push({
           type: 1,
           items: lines.map(function (line) {
-            const m = /<(\w+)>\s+<(\w+)>\s+(\d+)/.exec(line);
-            return { start: m[1], end: m[2], code: +m[3] };
+            const m2 = /<(\w+)>\s+<(\w+)>\s+(\d+)/.exec(line);
+            return { start: m2[1], end: m2[2], code: +m2[3] };
           }),
         });
         break;
@@ -63,8 +63,8 @@ exports.parseAdobeCMap = function (content) {
         result.body.push({
           type: 2,
           items: lines.map(function (line) {
-            const m = /<(\w+)>\s+(\d+)/.exec(line);
-            return { char: m[1], code: +m[2] };
+            const m2 = /<(\w+)>\s+(\d+)/.exec(line);
+            return { char: m2[1], code: +m2[2] };
           }),
         });
         break;
@@ -72,8 +72,8 @@ exports.parseAdobeCMap = function (content) {
         result.body.push({
           type: 3,
           items: lines.map(function (line) {
-            const m = /<(\w+)>\s+<(\w+)>\s+(\d+)/.exec(line);
-            return { start: m[1], end: m[2], code: +m[3] };
+            const m2 = /<(\w+)>\s+<(\w+)>\s+(\d+)/.exec(line);
+            return { start: m2[1], end: m2[2], code: +m2[3] };
           }),
         });
         break;
@@ -81,8 +81,8 @@ exports.parseAdobeCMap = function (content) {
         result.body.push({
           type: 4,
           items: lines.map(function (line) {
-            const m = /<(\w+)>\s+<(\w+)>/.exec(line);
-            return { char: m[1], code: m[2] };
+            const m2 = /<(\w+)>\s+<(\w+)>/.exec(line);
+            return { char: m2[1], code: m2[2] };
           }),
         });
         break;
@@ -90,8 +90,8 @@ exports.parseAdobeCMap = function (content) {
         result.body.push({
           type: 5,
           items: lines.map(function (line) {
-            const m = /<(\w+)>\s+<(\w+)>\s+<(\w+)>/.exec(line);
-            return { start: m[1], end: m[2], code: m[3] };
+            const m2 = /<(\w+)>\s+<(\w+)>\s+<(\w+)>/.exec(line);
+            return { start: m2[1], end: m2[2], code: m2[3] };
           }),
         });
         break;

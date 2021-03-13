@@ -37,7 +37,7 @@ function compressCmap(srcPath, destPath, verify) {
     const first = item.items[0];
     const sequence = item.sequence === true;
     const flags = (item.type << 5) | (sequence ? 0x10 : 0);
-    var nextStart, nextCode;
+    let nextStart, nextCode;
     switch (item.type) {
       case 0:
         out +=
@@ -45,7 +45,7 @@ function compressCmap(srcPath, destPath, verify) {
           writeNumber(subitems.length);
         out += first.start + writeNumber(subHex(first.end, first.start));
         nextStart = incHex(first.end);
-        for (var j = 1; j < subitems.length; j++) {
+        for (let j = 1; j < subitems.length; j++) {
           out +=
             writeNumber(subHex(subitems[j].start, nextStart)) +
             writeNumber(subHex(subitems[j].end, subitems[j].start));
@@ -61,7 +61,7 @@ function compressCmap(srcPath, destPath, verify) {
           writeNumber(subHex(first.end, first.start)) +
           writeNumber(first.code);
         nextStart = incHex(first.end);
-        for (var j = 1; j < subitems.length; j++) {
+        for (let j = 1; j < subitems.length; j++) {
           out +=
             writeNumber(subHex(subitems[j].start, nextStart)) +
             writeNumber(subHex(subitems[j].end, subitems[j].start)) +
@@ -76,7 +76,7 @@ function compressCmap(srcPath, destPath, verify) {
         out += first.char + writeNumber(first.code);
         nextStart = incHex(first.char);
         nextCode = first.code + 1;
-        for (var j = 1; j < subitems.length; j++) {
+        for (let j = 1; j < subitems.length; j++) {
           out +=
             (sequence ? "" : writeNumber(subHex(subitems[j].char, nextStart))) +
             writeSigned(subitems[j].code - nextCode);
@@ -93,7 +93,7 @@ function compressCmap(srcPath, destPath, verify) {
           writeNumber(subHex(first.end, first.start)) +
           writeNumber(first.code);
         nextStart = incHex(first.end);
-        for (var j = 1; j < subitems.length; j++) {
+        for (let j = 1; j < subitems.length; j++) {
           out +=
             (sequence
               ? ""
@@ -110,7 +110,7 @@ function compressCmap(srcPath, destPath, verify) {
         out += first.char + first.code;
         nextStart = incHex(first.char);
         nextCode = incHex(first.code);
-        for (var j = 1; j < subitems.length; j++) {
+        for (let j = 1; j < subitems.length; j++) {
           out +=
             (sequence ? "" : writeNumber(subHex(subitems[j].char, nextStart))) +
             writeSigned(subHex(subitems[j].code, nextCode));
@@ -127,7 +127,7 @@ function compressCmap(srcPath, destPath, verify) {
           writeNumber(subHex(first.end, first.start)) +
           first.code;
         nextStart = incHex(first.end);
-        for (var j = 1; j < subitems.length; j++) {
+        for (let j = 1; j < subitems.length; j++) {
           out +=
             (sequence
               ? ""
@@ -140,11 +140,11 @@ function compressCmap(srcPath, destPath, verify) {
     }
   }
 
-  fs.writeFileSync(destPath, new Buffer(out, "hex"));
+  fs.writeFileSync(destPath, Buffer.from(out, "hex"));
 
   if (verify) {
     const result2 = parseCMap(out);
-    const isGood = JSON.stringify(inputData) == JSON.stringify(result2);
+    const isGood = JSON.stringify(inputData) === JSON.stringify(result2);
     if (!isGood) {
       throw new Error("Extracted data does not match the expected result");
     }
@@ -191,8 +191,9 @@ function parseCMap(binaryData) {
       return s;
     },
     readHexNumber(size) {
-      const lengthInChars = (size + 1) << 1;
-      const stack = [];
+      const lengthInChars = (size + 1) << 1,
+        stack = [];
+      let last;
       do {
         const b = this.readByte();
         last = !(b & 0x80);
@@ -269,13 +270,13 @@ function parseCMap(binaryData) {
     }
     const ucs2DataSize = 1;
     const subitemsCount = reader.readNumber();
-    var start, end, code, char;
+    let start, end, code, char;
     switch (type) {
       case 0:
         start = reader.readHex(dataSize);
         end = addHex(reader.readHexNumber(dataSize), start);
         subitems.push({ start, end });
-        for (var i = 1; i < subitemsCount; i++) {
+        for (let i = 1; i < subitemsCount; i++) {
           start = addHex(reader.readHexNumber(dataSize), incHex(end));
           end = addHex(reader.readHexNumber(dataSize), start);
           subitems.push({ start, end });
@@ -286,7 +287,7 @@ function parseCMap(binaryData) {
         end = addHex(reader.readHexNumber(dataSize), start);
         code = reader.readNumber();
         subitems.push({ start, end, code });
-        for (var i = 1; i < subitemsCount; i++) {
+        for (let i = 1; i < subitemsCount; i++) {
           start = addHex(reader.readHexNumber(dataSize), incHex(end));
           end = addHex(reader.readHexNumber(dataSize), start);
           code = reader.readNumber();
@@ -297,7 +298,7 @@ function parseCMap(binaryData) {
         char = reader.readHex(dataSize);
         code = reader.readNumber();
         subitems.push({ char, code });
-        for (var i = 1; i < subitemsCount; i++) {
+        for (let i = 1; i < subitemsCount; i++) {
           char = sequence
             ? incHex(char)
             : addHex(reader.readHexNumber(dataSize), incHex(char));
@@ -310,7 +311,7 @@ function parseCMap(binaryData) {
         end = addHex(reader.readHexNumber(dataSize), start);
         code = reader.readNumber();
         subitems.push({ start, end, code });
-        for (var i = 1; i < subitemsCount; i++) {
+        for (let i = 1; i < subitemsCount; i++) {
           start = sequence
             ? incHex(end)
             : addHex(reader.readHexNumber(dataSize), incHex(end));
@@ -323,7 +324,7 @@ function parseCMap(binaryData) {
         char = reader.readHex(ucs2DataSize);
         code = reader.readHex(dataSize);
         subitems.push({ char, code });
-        for (var i = 1; i < subitemsCount; i++) {
+        for (let i = 1; i < subitemsCount; i++) {
           char = sequence
             ? incHex(char)
             : addHex(reader.readHexNumber(ucs2DataSize), incHex(char));
@@ -336,7 +337,7 @@ function parseCMap(binaryData) {
         end = addHex(reader.readHexNumber(ucs2DataSize), start);
         code = reader.readHex(dataSize);
         subitems.push({ start, end, code });
-        for (var i = 1; i < subitemsCount; i++) {
+        for (let i = 1; i < subitemsCount; i++) {
           start = sequence
             ? incHex(end)
             : addHex(reader.readHexNumber(ucs2DataSize), incHex(end));
@@ -368,7 +369,7 @@ function writeByte(b) {
 }
 function writeNumber(n) {
   if (typeof n === "string") {
-    var s = "",
+    let s = "",
       buffer = 0,
       bufferSize = 0;
     let i = n.length;
@@ -390,7 +391,7 @@ function writeNumber(n) {
     }
     return s;
   }
-  var s = writeByte(n & 0x7f);
+  let s = writeByte(n & 0x7f);
   n >>>= 7;
   while (n > 0) {
     s = writeByte((n & 0x7f) | 0x80) + s;
@@ -470,7 +471,7 @@ function incHex(a) {
 
 exports.compressCmaps = function (src, dest, verify) {
   const files = fs.readdirSync(src).filter(function (fn) {
-    return fn.indexOf(".") < 0; // skipping files with the extension
+    return !fn.includes("."); // skipping files with the extension
   });
   files.forEach(function (fn) {
     const srcPath = path.join(src, fn);
