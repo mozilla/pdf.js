@@ -27,19 +27,19 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
-var CMAP_PACKED = true;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
-var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
-var PAGE_TO_VIEW = 1;
-var SCALE = 1.0;
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+const PAGE_TO_VIEW = 1;
+const SCALE = 1.0;
 
-var container = document.getElementById("pageContainer");
+const container = document.getElementById("pageContainer");
 
-var eventBus = new pdfjsViewer.EventBus();
+const eventBus = new pdfjsViewer.EventBus();
 
 // Loading document.
-var loadingTask = pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
@@ -48,7 +48,7 @@ loadingTask.promise.then(function (pdfDocument) {
   // Document loaded, retrieving the page.
   return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
     // Creating the page view with default parameters.
-    var pdfPageView = new pdfjsViewer.PDFPageView({
+    const pdfPageView = new pdfjsViewer.PDFPageView({
       container,
       id: PAGE_TO_VIEW,
       scale: SCALE,

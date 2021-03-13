@@ -8,4 +8,9 @@
     "pdfjsLib": false,
     "pdfjsViewer": false,
   },
+
+  "rules": {
+    // ECMAScript 6
+    "no-var": "error",
+  },
 }
