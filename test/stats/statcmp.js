@@ -1,3 +1,5 @@
+/* eslint-disable no-var */
+
 "use strict";
 
 var fs = require("fs");

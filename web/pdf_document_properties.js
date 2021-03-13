@@ -262,7 +262,7 @@ class PDFDocumentProperties {
     }
     return this.l10n.get(`document_properties_${mb >= 1 ? "mb" : "kb"}`, {
       size_mb: mb >= 1 && (+mb.toPrecision(3)).toLocaleString(),
-      size_kb: (+kb.toPrecision(3)).toLocaleString(),
+      size_kb: mb < 1 && (+kb.toPrecision(3)).toLocaleString(),
       size_b: fileSize.toLocaleString(),
     });
   }

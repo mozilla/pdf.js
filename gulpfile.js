@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+/* eslint-disable prettier/prettier */
 /* Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,66 +19,66 @@
 
 "use strict";
 
-var autoprefixer = require("autoprefixer");
-var calc = require("postcss-calc");
-var fs = require("fs");
-var gulp = require("gulp");
-var postcss = require("gulp-postcss");
-var rename = require("gulp-rename");
-var replace = require("gulp-replace");
-var mkdirp = require("mkdirp");
-var path = require("path");
-var rimraf = require("rimraf");
-var stream = require("stream");
-var exec = require("child_process").exec;
-var spawn = require("child_process").spawn;
-var spawnSync = require("child_process").spawnSync;
-var streamqueue = require("streamqueue");
-var merge = require("merge-stream");
-var zip = require("gulp-zip");
-var webpack2 = require("webpack");
-var webpackStream = require("webpack-stream");
-var Vinyl = require("vinyl");
-var vfs = require("vinyl-fs");
-var through = require("through2");
+const autoprefixer = require("autoprefixer");
+const calc = require("postcss-calc");
+const fs = require("fs");
+const gulp = require("gulp");
+const postcss = require("gulp-postcss");
+const rename = require("gulp-rename");
+const replace = require("gulp-replace");
+const mkdirp = require("mkdirp");
+const path = require("path");
+const rimraf = require("rimraf");
+const stream = require("stream");
+const exec = require("child_process").exec;
+const spawn = require("child_process").spawn;
+const spawnSync = require("child_process").spawnSync;
+const streamqueue = require("streamqueue");
+const merge = require("merge-stream");
+const zip = require("gulp-zip");
+const webpack2 = require("webpack");
+const webpackStream = require("webpack-stream");
+const Vinyl = require("vinyl");
+const vfs = require("vinyl-fs");
+const through = require("through2");
 
-var BUILD_DIR = "build/";
-var L10N_DIR = "l10n/";
-var TEST_DIR = "test/";
-var EXTENSION_SRC_DIR = "extensions/";
+const BUILD_DIR = "build/";
+const L10N_DIR = "l10n/";
+const TEST_DIR = "test/";
+const EXTENSION_SRC_DIR = "extensions/";
 
-var BASELINE_DIR = BUILD_DIR + "baseline/";
-var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + "mozcentral.baseline/";
-var GENERIC_DIR = BUILD_DIR + "generic/";
-var GENERIC_ES5_DIR = BUILD_DIR + "generic-es5/";
-var COMPONENTS_DIR = BUILD_DIR + "components/";
-var COMPONENTS_ES5_DIR = BUILD_DIR + "components-es5/";
-var IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
-var IMAGE_DECODERS_ES5_DIR = BUILD_DIR + "image_decoders-es5/";
-var DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
-var MINIFIED_DIR = BUILD_DIR + "minified/";
-var MINIFIED_ES5_DIR = BUILD_DIR + "minified-es5/";
-var JSDOC_BUILD_DIR = BUILD_DIR + "jsdoc/";
-var GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
-var SRC_DIR = "src/";
-var LIB_DIR = BUILD_DIR + "lib/";
-var DIST_DIR = BUILD_DIR + "dist/";
-var TYPES_DIR = BUILD_DIR + "types/";
+const BASELINE_DIR = BUILD_DIR + "baseline/";
+const MOZCENTRAL_BASELINE_DIR = BUILD_DIR + "mozcentral.baseline/";
+const GENERIC_DIR = BUILD_DIR + "generic/";
+const GENERIC_LEGACY_DIR = BUILD_DIR + "generic-legacy/";
+const COMPONENTS_DIR = BUILD_DIR + "components/";
+const COMPONENTS_LEGACY_DIR = BUILD_DIR + "components-legacy/";
+const IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
+const IMAGE_DECODERS_LEGACY_DIR = BUILD_DIR + "image_decoders-legacy/";
+const DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
+const MINIFIED_DIR = BUILD_DIR + "minified/";
+const MINIFIED_LEGACY_DIR = BUILD_DIR + "minified-legacy/";
+const JSDOC_BUILD_DIR = BUILD_DIR + "jsdoc/";
+const GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
+const SRC_DIR = "src/";
+const LIB_DIR = BUILD_DIR + "lib/";
+const DIST_DIR = BUILD_DIR + "dist/";
+const TYPES_DIR = BUILD_DIR + "types/";
 const TMP_DIR = BUILD_DIR + "tmp/";
-var TYPESTEST_DIR = BUILD_DIR + "typestest/";
-var COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
-var MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
+const TYPESTEST_DIR = BUILD_DIR + "typestest/";
+const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
+const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
-var REPO = "git@github.com:mozilla/pdf.js.git";
-var DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
+const REPO = "git@github.com:mozilla/pdf.js.git";
+const DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
 
-var builder = require("./external/builder/builder.js");
+const builder = require("./external/builder/builder.js");
 
-var CONFIG_FILE = "pdfjs.config";
-var config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
+const CONFIG_FILE = "pdfjs.config";
+const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
 // Default Autoprefixer config used for generic, components, minified-pre
-var AUTOPREFIXER_CONFIG = {
+const AUTOPREFIXER_CONFIG = {
   overrideBrowserslist: [
     "last 2 versions",
     "Chrome >= 49", // Last supported on Windows XP
@@ -105,7 +107,7 @@ const DEFINES = Object.freeze({
 
 function transform(charEncoding, transformFunction) {
   return through.obj(function (vinylFile, enc, done) {
-    var transformedFile = vinylFile.clone();
+    const transformedFile = vinylFile.clone();
     transformedFile.contents = Buffer.from(
       transformFunction(transformedFile.contents),
       charEncoding
@@ -126,7 +128,7 @@ function safeSpawnSync(command, parameters, options) {
     return '"' + param.replace(/([$\\"`])/g, "\\$1") + '"';
   });
 
-  var result = spawnSync(command, parameters, options);
+  const result = spawnSync(command, parameters, options);
   if (result.status !== 0) {
     console.log(
       'Error: command "' +
@@ -152,7 +154,7 @@ function startNode(args, options) {
 }
 
 function createStringSource(filename, content) {
-  var source = stream.Readable({ objectMode: true });
+  const source = stream.Readable({ objectMode: true });
   source._read = function () {
     this.push(
       new Vinyl({
@@ -177,21 +179,21 @@ function createWebpackConfig(
   const versionInfo = !disableVersionInfo
     ? getVersionJSON()
     : { version: 0, commit: 0 };
-  var bundleDefines = builder.merge(defines, {
+  const bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: defines.TESTING || process.env.TESTING === "true",
   });
-  var licenseHeaderLibre = fs
+  const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
     .toString();
-  var enableSourceMaps =
+  const enableSourceMaps =
     !bundleDefines.MOZCENTRAL &&
     !bundleDefines.CHROME &&
     !bundleDefines.LIB &&
     !bundleDefines.TESTING &&
     !disableSourceMaps;
-  var skipBabel = bundleDefines.SKIP_BABEL;
+  const skipBabel = bundleDefines.SKIP_BABEL;
 
   // `core-js` (see https://github.com/zloirock/core-js/issues/514),
   // `web-streams-polyfill` (already using a transpiled file), and
@@ -284,20 +286,20 @@ function getVersionJSON() {
 }
 
 function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
-  var chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
-  var chromePrefsKeys = Object.keys(chromePrefs.properties);
+  const chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
+  let chromePrefsKeys = Object.keys(chromePrefs.properties);
   chromePrefsKeys = chromePrefsKeys.filter(function (key) {
-    var description = chromePrefs.properties[key].description;
+    const description = chromePrefs.properties[key].description;
     // Deprecated keys are allowed in the managed preferences file.
     // The code maintained is responsible for adding migration logic to
     // extensions/chromium/options/migration.js and web/chromecom.js .
     return !description || !description.startsWith("DEPRECATED.");
   });
   chromePrefsKeys.sort();
-  var webPrefs = JSON.parse(fs.readFileSync(webPrefsPath).toString());
-  var webPrefsKeys = Object.keys(webPrefs);
+  const webPrefs = JSON.parse(fs.readFileSync(webPrefsPath).toString());
+  const webPrefsKeys = Object.keys(webPrefs);
   webPrefsKeys.sort();
-  var telemetryIndex = chromePrefsKeys.indexOf("disableTelemetry");
+  const telemetryIndex = chromePrefsKeys.indexOf("disableTelemetry");
   if (telemetryIndex >= 0) {
     chromePrefsKeys.splice(telemetryIndex, 1);
   } else {
@@ -359,11 +361,11 @@ function addSuffix(filename, defines) {
 // ngx-extended-pdf-viewer end
 
 function createMainBundle(defines) {
-  var mainAMDName = "pdfjs-dist/build/pdf";
-  var mainOutputName = "pdf.js";
+  const mainAMDName = "pdfjs-dist/build/pdf";
+  let mainOutputName = "pdf.js";
   mainOutputName = addSuffix(mainOutputName, defines); // modified by ngx-extended-pdf-viewer
 
-  var mainFileConfig = createWebpackConfig(defines, {
+  const mainFileConfig = createWebpackConfig(defines, {
     filename: mainOutputName,
     library: mainAMDName,
     libraryTarget: "umd",
@@ -377,10 +379,10 @@ function createMainBundle(defines) {
 }
 
 function createScriptingBundle(defines, extraOptions = undefined) {
-  var scriptingAMDName = "pdfjs-dist/build/pdf.scripting";
-  var scriptingOutputName = "pdf.scripting.js";
+  const scriptingAMDName = "pdfjs-dist/build/pdf.scripting";
+  const scriptingOutputName = "pdf.scripting.js";
 
-  var scriptingFileConfig = createWebpackConfig(
+  const scriptingFileConfig = createWebpackConfig(
     defines,
     {
       filename: scriptingOutputName,
@@ -427,8 +429,8 @@ function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
 }
 
 function createSandboxBundle(defines, extraOptions = undefined) {
-  var sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
-  var sandboxOutputName = "pdf.sandbox.js";
+  const sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
+  const sandboxOutputName = "pdf.sandbox.js";
 
   const scriptingPath = TMP_DIR + "pdf.scripting.js";
   // Insert the source as a string to be `eval`-ed in the sandbox.
@@ -437,7 +439,7 @@ function createSandboxBundle(defines, extraOptions = undefined) {
   });
   fs.unlinkSync(scriptingPath);
 
-  var sandboxFileConfig = createWebpackConfig(
+  const sandboxFileConfig = createWebpackConfig(
     sandboxDefines,
     {
       filename: sandboxOutputName,
@@ -456,11 +458,11 @@ function createSandboxBundle(defines, extraOptions = undefined) {
 }
 
 function createWorkerBundle(defines) {
-  var workerAMDName = "pdfjs-dist/build/pdf.worker";
-  var workerOutputName = "pdf.worker.js";
+  const workerAMDName = "pdfjs-dist/build/pdf.worker";
+  let workerOutputName = "pdf.worker.js";
   workerOutputName = addSuffix(workerOutputName, defines); // modified by ngx-extended-pdf-viewer
 
-  var workerFileConfig = createWebpackConfig(defines, {
+  const workerFileConfig = createWebpackConfig(defines, {
     filename: workerOutputName,
     library: workerAMDName,
     libraryTarget: "umd",
@@ -474,20 +476,19 @@ function createWorkerBundle(defines) {
 }
 
 function createWebBundle(defines) {
-  var viewerOutputName = addSuffix("viewer.js", defines); // modifed by ngx-extended-pdf-viewer
+  const viewerOutputName = addSuffix("viewer.js", defines); // modifed by ngx-extended-pdf-viewer
 
-  var viewerFileConfig = createWebpackConfig(defines, {
+  const viewerFileConfig = createWebpackConfig(defines, {
     filename: viewerOutputName,
   });
   return gulp.src("./web/viewer.js").pipe(webpack2Stream(viewerFileConfig));
 }
 
 function createComponentsBundle(defines) {
-  var componentsAMDName = "pdfjs-dist/web/pdf_viewer";
-  var componentsOutputName = "pdf_viewer.js";
-  componentsOutputName = addSuffix('viewer.js', defines); // modified by ngx-extended-pdf-viewer
+  const componentsAMDName = "pdfjs-dist/web/pdf_viewer";
+  const componentsOutputName = addSuffix('viewer.js', defines); // modified by ngx-extended-pdf-viewer
 
-  var componentsFileConfig = createWebpackConfig(defines, {
+  const componentsFileConfig = createWebpackConfig(defines, {
     filename: componentsOutputName,
     library: componentsAMDName,
     libraryTarget: "umd",
@@ -501,10 +502,10 @@ function createComponentsBundle(defines) {
 }
 
 function createImageDecodersBundle(defines) {
-  var imageDecodersAMDName = "pdfjs-dist/image_decoders/pdf.image_decoders";
-  var imageDecodersOutputName = addSuffix("pdf.image_decoders.js", defines); // modified by ngx-extended-pdf-viewer
+  const imageDecodersAMDName = "pdfjs-dist/image_decoders/pdf.image_decoders";
+  const imageDecodersOutputName = addSuffix("pdf.image_decoders.js", defines); // modified by ngx-extended-pdf-viewer
 
-  var componentsFileConfig = createWebpackConfig(defines, {
+  const componentsFileConfig = createWebpackConfig(defines, {
     filename: imageDecodersOutputName,
     library: imageDecodersAMDName,
     libraryTarget: "umd",
@@ -519,7 +520,7 @@ function createImageDecodersBundle(defines) {
 
 function checkFile(filePath) {
   try {
-    var stat = fs.lstatSync(filePath);
+    const stat = fs.lstatSync(filePath);
     return stat.isFile();
   } catch (e) {
     return false;
@@ -528,7 +529,7 @@ function checkFile(filePath) {
 
 function checkDir(dirPath) {
   try {
-    var stat = fs.lstatSync(dirPath);
+    const stat = fs.lstatSync(dirPath);
     return stat.isDirectory();
   } catch (e) {
     return false;
@@ -536,27 +537,27 @@ function checkDir(dirPath) {
 }
 
 function replaceInFile(filePath, find, replacement) {
-  var content = fs.readFileSync(filePath).toString();
+  let content = fs.readFileSync(filePath).toString();
   content = content.replace(find, replacement);
   fs.writeFileSync(filePath, content);
 }
 
 function getTempFile(prefix, suffix) {
   mkdirp.sync(BUILD_DIR + "tmp/");
-  var bytes = require("crypto").randomBytes(6).toString("hex");
-  var filePath = BUILD_DIR + "tmp/" + prefix + bytes + suffix;
+  const bytes = require("crypto").randomBytes(6).toString("hex");
+  const filePath = BUILD_DIR + "tmp/" + prefix + bytes + suffix;
   fs.writeFileSync(filePath, "");
   return filePath;
 }
 
 function createTestSource(testsName, bot) {
-  var source = stream.Readable({ objectMode: true });
+  const source = stream.Readable({ objectMode: true });
   source._read = function () {
     console.log();
     console.log("### Running " + testsName + " tests");
 
-    var PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
-    var args = ["test.js"];
+    const PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
+    const args = ["test.js"];
     switch (testsName) {
       case "browser":
         args.push("--reftest", "--manifestFile=" + PDF_TEST);
@@ -584,7 +585,7 @@ function createTestSource(testsName, bot) {
       args.push("--noChrome");
     }
 
-    var testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
+    const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
     testProcess.on("close", function (code) {
       source.push(null);
     });
@@ -597,7 +598,7 @@ function makeRef(done, bot) {
   console.log();
   console.log("### Creating reference images");
 
-  var args = ["test.js", "--masterMode"];
+  const args = ["test.js", "--masterMode"];
   if (bot) {
     args.push("--noPrompts", "--strictVerify");
   }
@@ -605,7 +606,7 @@ function makeRef(done, bot) {
     args.push("--noChrome");
   }
 
-  var testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
+  const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
   testProcess.on("close", function (code) {
     done();
   });
@@ -613,7 +614,7 @@ function makeRef(done, bot) {
 
 gulp.task("default", function (done) {
   console.log("Available tasks:");
-  var tasks = Object.keys(gulp.registry().tasks());
+  const tasks = Object.keys(gulp.registry().tasks());
   tasks.sort();
   tasks.forEach(function (taskName) {
     console.log("  " + taskName);
@@ -628,7 +629,7 @@ gulp.task("buildnumber", function (done) {
   exec(
     "git log --format=oneline " + config.baseVersion + "..",
     function (err, stdout, stderr) {
-      var buildNumber = 0;
+      let buildNumber = 0;
       if (!err) {
         // Build number is the number of commits since base version
         buildNumber = stdout ? stdout.match(/\n/g).length : 0;
@@ -640,10 +641,10 @@ gulp.task("buildnumber", function (done) {
 
       console.log("Extension build number: " + buildNumber);
 
-      var version = config.versionPrefix + buildNumber;
+      const version = config.versionPrefix + buildNumber;
 
       exec('git log --format="%h" -n 1', function (err2, stdout2, stderr2) {
-        var buildCommit = "";
+        let buildCommit = "";
         if (!err2) {
           buildCommit = stdout2.replace("\n", "");
         }
@@ -695,8 +696,8 @@ gulp.task("default_preferences-pre", function () {
       ],
     }).code;
   }
-  var babel = require("@babel/core");
-  var ctx = {
+  const babel = require("@babel/core");
+  const ctx = {
     rootPath: __dirname,
     saveComments: false,
     defines: builder.merge(DEFINES, {
@@ -709,7 +710,7 @@ gulp.task("default_preferences-pre", function () {
       "pdfjs-lib": "../pdf",
     },
   };
-  var preprocessor2 = require("./external/builder/preprocessor2.js");
+  const preprocessor2 = require("./external/builder/preprocessor2.js");
   return merge([
     gulp.src(["web/{app_options,viewer_compatibility}.js"], {
       base: ".",
@@ -722,11 +723,11 @@ gulp.task("default_preferences-pre", function () {
 gulp.task(
   "default_preferences",
   gulp.series("default_preferences-pre", function (done) {
-    var AppOptionsLib = require("./" +
+    const AppOptionsLib = require("./" +
       DEFAULT_PREFERENCES_DIR +
       "lib/web/app_options.js");
-    var AppOptions = AppOptionsLib.AppOptions;
-    var OptionKind = AppOptionsLib.OptionKind;
+    const AppOptions = AppOptionsLib.AppOptions;
+    const OptionKind = AppOptionsLib.OptionKind;
 
     createStringSource(
       "default_preferences.json",
@@ -738,7 +739,7 @@ gulp.task(
 );
 
 gulp.task("locale", function () {
-  var VIEWER_LOCALE_OUTPUT = "web/locale/";
+  const VIEWER_LOCALE_OUTPUT = "web/locale/";
 
   console.log();
   console.log("### Building localization files");
@@ -746,13 +747,13 @@ gulp.task("locale", function () {
   rimraf.sync(VIEWER_LOCALE_OUTPUT);
   mkdirp.sync(VIEWER_LOCALE_OUTPUT);
 
-  var subfolders = fs.readdirSync(L10N_DIR);
+  const subfolders = fs.readdirSync(L10N_DIR);
   subfolders.sort();
-  var viewerOutput = "";
-  var locales = [];
-  for (var i = 0; i < subfolders.length; i++) {
-    var locale = subfolders[i];
-    var dirPath = L10N_DIR + locale;
+  let viewerOutput = "";
+  const locales = [];
+  for (let i = 0; i < subfolders.length; i++) {
+    const locale = subfolders[i];
+    const dirPath = L10N_DIR + locale;
     if (!checkDir(dirPath)) {
       continue;
     }
@@ -789,8 +790,8 @@ gulp.task("locale", function () {
 });
 
 gulp.task("cmaps", function (done) {
-  var CMAP_INPUT = "external/cmaps";
-  var VIEWER_CMAP_OUTPUT = "external/bcmaps";
+  const CMAP_INPUT = "external/cmaps";
+  const VIEWER_CMAP_OUTPUT = "external/bcmaps";
 
   console.log();
   console.log("### Building cmaps");
@@ -809,34 +810,34 @@ gulp.task("cmaps", function (done) {
     }
   });
 
-  var compressCmaps = require("./external/cmapscompress/compress.js")
+  const compressCmaps = require("./external/cmapscompress/compress.js")
     .compressCmaps;
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
   done();
 });
 
 function preprocessCSS(source, mode, defines, cleanup) {
-  var outName = getTempFile("~preprocess", ".css");
+  const outName = getTempFile("~preprocess", ".css");
   builder.preprocessCSS(mode, source, outName);
-  var out = fs.readFileSync(outName).toString();
+  let out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
   if (cleanup) {
     // Strip out all license headers in the middle.
-    var reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
+    const reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
     out = out.replace(reg, "");
   }
 
-  var i = source.lastIndexOf("/");
+  const i = source.lastIndexOf("/");
   return createStringSource(source.substr(i + 1), out);
 }
 
 function preprocessHTML(source, defines) {
-  var outName = getTempFile("~preprocess", ".html");
+  const outName = getTempFile("~preprocess", ".html");
   builder.preprocess(source, outName, defines);
-  var out = fs.readFileSync(outName).toString();
+  const out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
 
-  var i = source.lastIndexOf("/");
+  const i = source.lastIndexOf("/");
   return createStringSource(source.substr(i + 1), `${out.trimEnd()}\n`);
 }
 
@@ -880,13 +881,13 @@ gulp.task(
     "default_preferences",
     "locale",
     function scripting() {
-      var defines = builder.merge(DEFINES, { GENERIC: true });
+      const defines = builder.merge(DEFINES, { GENERIC: true });
       return createTemporaryScriptingBundle(defines);
     },
     function () {
       console.log();
       console.log("### Creating generic viewer");
-      var defines = builder.merge(DEFINES, { GENERIC: true });
+      const defines = builder.merge(DEFINES, { GENERIC: true });
 
       return buildGeneric(defines, GENERIC_DIR);
     }
@@ -896,13 +897,13 @@ gulp.task(
 // Builds the generic production viewer that should be compatible with most
 // older HTML5 browsers.
 gulp.task(
-  "generic-es5",
+  "generic-legacy",
   gulp.series(
     "buildnumber",
     "default_preferences",
     "locale",
     function scripting() {
-      var defines = builder.merge(DEFINES, {
+      const defines = builder.merge(DEFINES, {
         GENERIC: true,
         SKIP_BABEL: false,
       });
@@ -910,13 +911,13 @@ gulp.task(
     },
     function () {
       console.log();
-      console.log("### Creating generic (ES5) viewer");
-      var defines = builder.merge(DEFINES, {
+      console.log("### Creating generic (legacy) viewer");
+      const defines = builder.merge(DEFINES, {
         GENERIC: true,
         SKIP_BABEL: false,
       });
 
-      return buildGeneric(defines, GENERIC_ES5_DIR);
+      return buildGeneric(defines, GENERIC_LEGACY_DIR);
     }
   )
 );
@@ -924,7 +925,7 @@ gulp.task(
 function buildComponents(defines, dir) {
   rimraf.sync(dir);
 
-  var COMPONENTS_IMAGES = [
+  const COMPONENTS_IMAGES = [
     "web/images/annotation-*.svg",
     "web/images/loading-icon.gif",
     "web/images/shadow.png",
@@ -944,7 +945,7 @@ gulp.task(
   gulp.series("buildnumber", function () {
     console.log();
     console.log("### Creating generic components");
-    var defines = builder.merge(DEFINES, { COMPONENTS: true, GENERIC: true });
+    const defines = builder.merge(DEFINES, { COMPONENTS: true, GENERIC: true });
 
     return buildComponents(defines, COMPONENTS_DIR);
   })
@@ -954,14 +955,14 @@ gulp.task(
   "components-es5",
   gulp.series("buildnumber", function () {
     console.log();
-    console.log("### Creating generic (ES5) components");
-    var defines = builder.merge(DEFINES, {
+    console.log("### Creating generic (legacy) components");
+    const defines = builder.merge(DEFINES, {
       COMPONENTS: true,
       GENERIC: true,
       SKIP_BABEL: false,
     });
 
-    return buildComponents(defines, COMPONENTS_ES5_DIR);
+    return buildComponents(defines, COMPONENTS_LEGACY_DIR);
   })
 );
 
@@ -970,7 +971,7 @@ gulp.task(
   gulp.series("buildnumber", function () {
     console.log();
     console.log("### Creating image decoders");
-    var defines = builder.merge(DEFINES, {
+    const defines = builder.merge(DEFINES, {
       GENERIC: true,
       IMAGE_DECODERS: true,
     });
@@ -985,15 +986,15 @@ gulp.task(
   "image_decoders-es5",
   gulp.series("buildnumber", function () {
     console.log();
-    console.log("### Creating (ES5) image decoders");
-    var defines = builder.merge(DEFINES, {
+    console.log("### Creating (legacy) image decoders");
+    const defines = builder.merge(DEFINES, {
       GENERIC: true,
       IMAGE_DECODERS: true,
       SKIP_BABEL: false,
     });
 
     return createImageDecodersBundle(defines).pipe(
-      gulp.dest(IMAGE_DECODERS_ES5_DIR)
+      gulp.dest(IMAGE_DECODERS_LEGACY_DIR)
     );
   })
 );
@@ -1039,13 +1040,13 @@ gulp.task(
     "default_preferences",
     "locale",
     function scripting() {
-      var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+      const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
       return createTemporaryScriptingBundle(defines);
     },
     function () {
       console.log();
       console.log("### Creating minified viewer");
-      var defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+      const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
 
       return buildMinified(defines, MINIFIED_DIR);
     }
@@ -1059,7 +1060,7 @@ gulp.task(
     "default_preferences",
     "locale",
     function scripting() {
-      var defines = builder.merge(DEFINES, {
+      const defines = builder.merge(DEFINES, {
         MINIFIED: true,
         GENERIC: true,
         SKIP_BABEL: false,
@@ -1068,23 +1069,30 @@ gulp.task(
     },
     function () {
       console.log();
-      console.log("### Creating minified (ES5) viewer");
-      var defines = builder.merge(DEFINES, {
+      console.log("### Creating minified (legacy) viewer");
+      const defines = builder.merge(DEFINES, {
         MINIFIED: true,
         GENERIC: true,
         SKIP_BABEL: false,
       });
 
-      return buildMinified(defines, MINIFIED_ES5_DIR);
+      return buildMinified(defines, MINIFIED_LEGACY_DIR);
     }
   )
 );
 
 async function parseMinified(dir, suffix) {
-  var pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
-  var pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker" + suffix + ".js").toString();
+  const pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
+  const pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker" + suffix + ".js").toString();
+/*  const pdfSandboxFile = fs
+    .readFileSync(dir + "/build/pdf.sandbox.js")
+    .toString();
+  const pdfImageDecodersFile = fs
+    .readFileSync(dir + "/image_decoders/pdf.image_decoders.js")
+    .toString();
+    */
 
-  var viewerFiles = {
+  const viewerFiles = {
     "pdf.js": pdfFile,
     "viewer.js": fs.readFileSync(dir + "/web/viewer" + suffix + ".js").toString(),
   };
@@ -1092,13 +1100,13 @@ async function parseMinified(dir, suffix) {
   console.log();
   console.log("### Minifying js files");
 
-  var Terser = require("terser");
+  const Terser = require("terser");
 
   const viewerSource = fs
     .readFileSync(dir + "/web/viewer" + suffix + ".js.map")
     .toString();
   let options = {
-    compress: {
+      compress: {
       // V8 chokes on very long sequences, work around that.
       sequences: false,
     },
@@ -1120,7 +1128,6 @@ async function parseMinified(dir, suffix) {
     dir + "/web/viewer" + suffix + ".min.js.map",
     miniViewer.map
   );
-
 
   const pdfSource = fs
     .readFileSync(dir + "/build/pdf" + suffix + ".js.map")
@@ -1200,17 +1207,17 @@ gulp.task(
 gulp.task(
   "minified-es5",
   gulp.series("minified-es5-pre", function (done) {
-    parseMinified(MINIFIED_ES5_DIR, '-es5');
+    parseMinified(MINIFIED_LEGACY_DIR, '-es5');
     done();
   })
 );
 
 function preprocessDefaultPreferences(content) {
-  var preprocessor2 = require("./external/builder/preprocessor2.js");
-  var licenseHeader = fs.readFileSync("./src/license_header.js").toString();
+  const preprocessor2 = require("./external/builder/preprocessor2.js");
+  const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
-  var GLOBALS = "/* eslint-disable */\n";
-  var MODIFICATION_WARNING =
+  const GLOBALS = "/* eslint-disable */\n";
+  const MODIFICATION_WARNING =
     "//\n// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!\n//\n";
 
   content = preprocessor2.preprocessPDFJSCode(
@@ -1238,9 +1245,9 @@ gulp.task(
   gulp.series("buildnumber", "default_preferences", function () {
     console.log();
     console.log("### Building mozilla-central extension");
-    var defines = builder.merge(DEFINES, { MOZCENTRAL: true });
+    const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
 
-    var MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
+    const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
       MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
       FIREFOX_EXTENSION_DIR = "extensions/firefox/",
@@ -1250,8 +1257,8 @@ gulp.task(
     // Clear out everything in the firefox extension build directory
     rimraf.sync(MOZCENTRAL_DIR);
 
-    var versionJSON = getVersionJSON();
-    var version = versionJSON.version,
+    const versionJSON = getVersionJSON();
+    const version = versionJSON.version,
       commit = versionJSON.commit;
 
     // Ignore the fallback cursor images, since they're unnecessary in Firefox.
@@ -1318,21 +1325,27 @@ gulp.task(
     "default_preferences",
     "locale",
     function scripting() {
-      var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
+      const defines = builder.merge(DEFINES, {
+        CHROME: true,
+        SKIP_BABEL: false,
+      });
       return createTemporaryScriptingBundle(defines);
     },
     function () {
       console.log();
       console.log("### Building Chromium extension");
-      var defines = builder.merge(DEFINES, { CHROME: true, SKIP_BABEL: false });
+      const defines = builder.merge(DEFINES, {
+        CHROME: true,
+        SKIP_BABEL: false,
+      });
 
-      var CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
+      const CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
         CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
 
       // Clear out everything in the chrome extension build directory
       rimraf.sync(CHROME_BUILD_DIR);
 
-      var version = getVersionJSON().version;
+      const version = getVersionJSON().version;
 
       return merge([
         createMainBundle(defines).pipe(
@@ -1397,11 +1410,11 @@ gulp.task("jsdoc", function (done) {
   console.log();
   console.log("### Generating documentation (JSDoc)");
 
-  var JSDOC_FILES = ["src/doc_helper.js", "src/display/api.js"];
+  const JSDOC_FILES = ["src/doc_helper.js", "src/display/api.js"];
 
   rimraf(JSDOC_BUILD_DIR, function () {
     mkdirp(JSDOC_BUILD_DIR).then(function () {
-      var command =
+      const command =
         '"node_modules/.bin/jsdoc" -d ' +
         JSDOC_BUILD_DIR +
         " " +
@@ -1459,7 +1472,7 @@ function buildLib(defines, dir) {
     };
   }
   function preprocess(content) {
-    var skipBabel =
+    const skipBabel =
       bundleDefines.SKIP_BABEL || /\/\*\s*no-babel-preset\s*\*\//.test(content);
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
@@ -1478,20 +1491,20 @@ function buildLib(defines, dir) {
         babelPluginReplaceNonWebPackRequire,
       ],
     }).code;
-    var removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
+    const removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
     content = content.replace(removeCjsSrc, (all, prefix, interop, suffix) => {
       return prefix + suffix;
     });
     return licenseHeaderLibre + content;
   }
-  var babel = require("@babel/core");
-  var versionInfo = getVersionJSON();
-  var bundleDefines = builder.merge(defines, {
+  const babel = require("@babel/core");
+  const versionInfo = getVersionJSON();
+  const bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: process.env.TESTING === "true",
   });
-  var ctx = {
+  const ctx = {
     rootPath: __dirname,
     saveComments: false,
     defines: bundleDefines,
@@ -1499,10 +1512,10 @@ function buildLib(defines, dir) {
       "pdfjs-lib": "../pdf",
     },
   };
-  var licenseHeaderLibre = fs
+  const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
     .toString();
-  var preprocessor2 = require("./external/builder/preprocessor2.js");
+  const preprocessor2 = require("./external/builder/preprocessor2.js");
   return merge([
     gulp.src(
       [
@@ -1528,11 +1541,11 @@ gulp.task(
     "buildnumber",
     "default_preferences",
     function scripting() {
-      var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
+      const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
       return createTemporaryScriptingBundle(defines);
     },
     function () {
-      var defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
+      const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
 
       return merge([
         buildLib(defines, "build/lib/"),
@@ -1543,12 +1556,12 @@ gulp.task(
 );
 
 gulp.task(
-  "lib-es5",
+  "lib-legacy",
   gulp.series(
     "buildnumber",
     "default_preferences",
     function scripting() {
-      var defines = builder.merge(DEFINES, {
+      const defines = builder.merge(DEFINES, {
         GENERIC: true,
         LIB: true,
         SKIP_BABEL: false,
@@ -1556,15 +1569,15 @@ gulp.task(
       return createTemporaryScriptingBundle(defines);
     },
     function () {
-      var defines = builder.merge(DEFINES, {
+      const defines = builder.merge(DEFINES, {
         GENERIC: true,
         LIB: true,
         SKIP_BABEL: false,
       });
 
       return merge([
-        buildLib(defines, "build/lib-es5/"),
-        createSandboxBundle(defines).pipe(gulp.dest("build/lib-es5/")),
+        buildLib(defines, "build/lib-legacy/"),
+        createSandboxBundle(defines).pipe(gulp.dest("build/lib-legacy/")),
       ]);
     }
   )
@@ -1582,8 +1595,8 @@ function compressPublish(targetName, dir) {
 
 gulp.task(
   "publish",
-  gulp.series("generic", "generic-es5", function (done) {
-    var version = JSON.parse(
+  gulp.series("generic", "generic-legacy", function (done) {
+    const version = JSON.parse(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
 
@@ -1595,7 +1608,7 @@ gulp.task(
         gulp.dest(".")
       ),
       compressPublish("pdfjs-" + version + "-dist.zip", GENERIC_DIR),
-      compressPublish("pdfjs-" + version + "-es5-dist.zip", GENERIC_ES5_DIR),
+      compressPublish("pdfjs-" + version + "-es5-dist.zip", GENERIC_LEGACY_DIR),
     ]);
   })
 );
@@ -1712,19 +1725,19 @@ gulp.task("baseline", function (done) {
   console.log();
   console.log("### Creating baseline environment");
 
-  var baselineCommit = process.env.BASELINE;
+  const baselineCommit = process.env.BASELINE;
   if (!baselineCommit) {
     done(new Error("Missing baseline commit. Specify the BASELINE variable."));
     return;
   }
 
-  var initializeCommand = "git fetch origin";
+  let initializeCommand = "git fetch origin";
   if (!checkDir(BASELINE_DIR)) {
     mkdirp.sync(BASELINE_DIR);
     initializeCommand = "git clone ../../ .";
   }
 
-  var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
+  const workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
   exec(initializeCommand, { cwd: workingDirectory }, function (error) {
     if (error) {
       done(new Error("Baseline clone/fetch failed."));
@@ -1749,12 +1762,12 @@ gulp.task("baseline", function (done) {
 
 gulp.task(
   "unittestcli",
-  gulp.series("testing-pre", "lib-es5", function (done) {
-    var options = [
+  gulp.series("testing-pre", "lib-legacy", function (done) {
+    const options = [
       "node_modules/jasmine/bin/jasmine",
       "JASMINE_CONFIG_PATH=test/unit/clitests.json",
     ];
-    var jasmineProcess = startNode(options, { stdio: "inherit" });
+    const jasmineProcess = startNode(options, { stdio: "inherit" });
     jasmineProcess.on("close", function (code) {
       if (code !== 0) {
         done(new Error("Unit tests failed."));
@@ -1872,8 +1885,8 @@ gulp.task(
     console.log();
     console.log("### Starting local server");
 
-    var WebServer = require("./test/webserver.js").WebServer;
-    var server = new WebServer();
+    const WebServer = require("./test/webserver.js").WebServer;
+    const server = new WebServer();
     server.port = 8888;
     server.start();
   })
@@ -1887,9 +1900,9 @@ gulp.task("clean", function (done) {
 });
 
 gulp.task("makefile", function () {
-  var makefileContent = "help:\n\tgulp\n\n";
-  var targetsNames = [];
-  for (var i in target) {
+  let makefileContent = "help:\n\tgulp\n\n";
+  const targetsNames = [];
+  for (const i in target) {
     makefileContent += i + ":\n\tgulp " + i + "\n\n";
     targetsNames.push(i);
   }
@@ -1898,7 +1911,7 @@ gulp.task("makefile", function () {
 });
 
 gulp.task("importl10n", function (done) {
-  var locales = require("./external/importL10n/locales.js");
+  const locales = require("./external/importL10n/locales.js");
 
   console.log();
   console.log("### Importing translations from mozilla-central");
@@ -1921,11 +1934,8 @@ gulp.task("gh-pages-prepare", function () {
       .src(GENERIC_DIR + "**/*", { base: GENERIC_DIR, stripBOM: false })
       .pipe(gulp.dest(GH_PAGES_DIR)),
     vfs
-      .src(GENERIC_ES5_DIR + "**/*", { base: GENERIC_ES5_DIR, stripBOM: false })
+      .src(GENERIC_LEGACY_DIR + "**/*", { base: GENERIC_LEGACY_DIR, stripBOM: false })
       .pipe(gulp.dest(GH_PAGES_DIR + "es5/")),
-    gulp
-      .src("test/features/**/*", { base: "test/" })
-      .pipe(gulp.dest(GH_PAGES_DIR)),
     gulp
       .src(JSDOC_BUILD_DIR + "**/*", { base: JSDOC_BUILD_DIR })
       .pipe(gulp.dest(GH_PAGES_DIR + "api/draft/")),
@@ -1933,8 +1943,8 @@ gulp.task("gh-pages-prepare", function () {
 });
 
 gulp.task("wintersmith", function (done) {
-  var wintersmith = require("wintersmith");
-  var env = wintersmith("docs/config.json");
+  const wintersmith = require("wintersmith");
+  const env = wintersmith("docs/config.json");
   env.build(GH_PAGES_DIR, function (error) {
     if (error) {
       done(error);
@@ -1971,8 +1981,8 @@ gulp.task("wintersmith", function (done) {
 });
 
 gulp.task("gh-pages-git", function (done) {
-  var VERSION = getVersionJSON().version;
-  var reason = process.env.PDFJS_UPDATE_REASON;
+  const VERSION = getVersionJSON().version;
+  const reason = process.env.PDFJS_UPDATE_REASON;
 
   safeSpawnSync("git", ["init"], { cwd: GH_PAGES_DIR });
   safeSpawnSync("git", ["remote", "add", "origin", REPO], {
@@ -2001,7 +2011,7 @@ gulp.task(
   "web",
   gulp.series(
     "generic",
-    "generic-es5",
+    "generic-legacy",
     "jsdoc",
     "gh-pages-prepare",
     "wintersmith",
@@ -2010,16 +2020,16 @@ gulp.task(
 );
 
 function packageBowerJson() {
-  var VERSION = getVersionJSON().version;
+  const VERSION = getVersionJSON().version;
 
-  var DIST_NAME = "pdfjs-dist";
-  var DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
-  var DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
-  var DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
-  var DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
-  var DIST_LICENSE = "Apache-2.0";
+  const DIST_NAME = "pdfjs-dist";
+  const DIST_DESCRIPTION = "Generic build of Mozilla's PDF.js library.";
+  const DIST_KEYWORDS = ["Mozilla", "pdf", "pdf.js"];
+  const DIST_HOMEPAGE = "http://mozilla.github.io/pdf.js/";
+  const DIST_BUGS_URL = "https://github.com/mozilla/pdf.js/issues";
+  const DIST_LICENSE = "Apache-2.0";
 
-  var npmManifest = {
+  const npmManifest = {
     name: DIST_NAME,
     version: VERSION,
     main: "build/pdf.js",
@@ -2047,7 +2057,7 @@ function packageBowerJson() {
     },
   };
 
-  var bowerManifest = {
+  const bowerManifest = {
     name: DIST_NAME,
     version: VERSION,
     main: ["build/pdf.js", "build/pdf.worker.js"],
@@ -2065,7 +2075,7 @@ gulp.task(
   "dist-pre",
   gulp.series(
     "generic",
-    "generic-es5",
+    "generic-legacy",
     "components",
     "components-es5",
     "image_decoders",
@@ -2088,7 +2098,7 @@ gulp.task(
       rimraf.sync(path.join(DIST_DIR, "*"));
 
       // Rebuilding manifests
-      var [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
+      const [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
 
       return merge([
         packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
@@ -2109,8 +2119,8 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src([
-            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
-            GENERIC_ES5_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
             SRC_DIR + "pdf.worker.entry.js",
           ])
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
@@ -2131,33 +2141,33 @@ gulp.task(
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "build/pdf.js")
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.js")
           .pipe(rename("pdf.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "build/pdf.worker.js")
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.worker.js")
           .pipe(rename("pdf.worker.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "build/pdf.sandbox.js")
+          .src(MINIFIED_LEGACY_DIR + "build/pdf.sandbox.js")
           .pipe(rename("pdf.sandbox.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/build/")),
         gulp
-          .src(MINIFIED_ES5_DIR + "image_decoders/pdf.image_decoders.js")
+          .src(MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.js")
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
         gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
         gulp
-          .src(COMPONENTS_ES5_DIR + "**/*", { base: COMPONENTS_ES5_DIR })
+          .src(COMPONENTS_LEGACY_DIR + "**/*", { base: COMPONENTS_LEGACY_DIR })
           .pipe(gulp.dest(DIST_DIR + "es5/web/")),
         gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(IMAGE_DECODERS_ES5_DIR + "**/*", {
-            base: IMAGE_DECODERS_ES5_DIR,
+          .src(IMAGE_DECODERS_LEGACY_DIR + "**/*", {
+            base: IMAGE_DECODERS_LEGACY_DIR,
           })
           .pipe(gulp.dest(DIST_DIR + "es5/image_decoders/")),
         gulp
@@ -2174,9 +2184,9 @@ gulp.task(
 gulp.task(
   "dist-install",
   gulp.series("dist-pre", function (done) {
-    var distPath = DIST_DIR;
-    var opts = {};
-    var installPath = process.env.PDFJS_INSTALL_PATH;
+    let distPath = DIST_DIR;
+    const opts = {};
+    const installPath = process.env.PDFJS_INSTALL_PATH;
     if (installPath) {
       opts.cwd = installPath;
       distPath = path.relative(installPath, distPath);
@@ -2189,15 +2199,15 @@ gulp.task(
 gulp.task(
   "dist-repo-git",
   gulp.series("dist-pre", function (done) {
-    var VERSION = getVersionJSON().version;
+    const VERSION = getVersionJSON().version;
 
     console.log();
     console.log("### Committing changes");
 
-    var reason = process.env.PDFJS_UPDATE_REASON;
+    let reason = process.env.PDFJS_UPDATE_REASON;
     // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
     if (typeof reason === "string") {
-      var reasonParts = /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(
+      const reasonParts = /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(
         reason
       );
 
@@ -2210,7 +2220,8 @@ gulp.task(
           reasonParts[3];
       }
     }
-    var message = "PDF.js version " + VERSION + (reason ? " - " + reason : "");
+    const message =
+      "PDF.js version " + VERSION + (reason ? " - " + reason : "");
     safeSpawnSync("git", ["add", "*"], { cwd: DIST_DIR });
     safeSpawnSync("git", ["commit", "-am", message], { cwd: DIST_DIR });
     safeSpawnSync("git", ["tag", "-a", "v" + VERSION, "-m", message], {
@@ -2238,7 +2249,7 @@ gulp.task(
     // Create a mozcentral build.
     rimraf.sync(BASELINE_DIR + BUILD_DIR);
 
-    var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
+    const workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
     safeSpawnSync("gulp", ["mozcentral"], {
       env: process.env,
       cwd: workingDirectory,
@@ -2282,7 +2293,7 @@ gulp.task(
       .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
       .on("end", function () {
         safeSpawnSync("git", ["add", "-A"], { cwd: MOZCENTRAL_BASELINE_DIR });
-        var diff = safeSpawnSync(
+        const diff = safeSpawnSync(
           "git",
           ["diff", "--binary", "--cached", "--unified=8"],
           { cwd: MOZCENTRAL_BASELINE_DIR }

@@ -15,6 +15,7 @@
 
 import { createPromiseCapability, shadow } from "pdfjs-lib";
 import { apiPageLayoutToSpreadMode } from "./ui_utils.js";
+import { RenderingStates } from "./pdf_rendering_queue.js";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions
@@ -30,7 +31,7 @@ import { apiPageLayoutToSpreadMode } from "./ui_utils.js";
 
 class PDFScriptingManager {
   /**
-   * @param {PDFScriptingManager} options
+   * @param {PDFScriptingManagerOptions} options
    */
   constructor({
     eventBus,
@@ -40,10 +41,12 @@ class PDFScriptingManager {
   }) {
     this._pdfDocument = null;
     this._pdfViewer = null;
+    this._closeCapability = null;
     this._destroyCapability = null;
 
     this._scripting = null;
     this._mouseState = Object.create(null);
+    this._pageEventsReady = false;
     this._ready = false;
 
     this._eventBus = eventBus;
@@ -88,6 +91,7 @@ class PDFScriptingManager {
 
     if (!objects && !docActions) {
       // No FieldObjects or JavaScript actions were found in the document.
+      await this._destroyScripting();
       return;
     }
     if (pdfDocument !== this._pdfDocument) {
@@ -96,17 +100,35 @@ class PDFScriptingManager {
     this._scripting = this._createScripting();
 
     this._internalEvents.set("updatefromsandbox", event => {
+      if (event?.source !== window) {
+        return;
+      }
       this._updateFromSandbox(event.detail);
     });
     this._internalEvents.set("dispatcheventinsandbox", event => {
       this._scripting?.dispatchEventInSandbox(event.detail);
     });
 
-    this._internalEvents.set("pageopen", event => {
-      this._pageOpen(event.pageNumber, event.actionsPromise);
+    this._internalEvents.set("pagechanging", ({ pageNumber, previous }) => {
+      if (pageNumber === previous) {
+        return; // The current page didn't change.
+      }
+      this._dispatchPageClose(previous);
+      this._dispatchPageOpen(pageNumber);
     });
-    this._internalEvents.set("pageclose", event => {
-      this._pageClose(event.pageNumber);
+    this._internalEvents.set("pagerendered", ({ pageNumber }) => {
+      if (!this._pageOpenPending.has(pageNumber)) {
+        return; // No pending "PageOpen" event for the newly rendered page.
+      }
+      if (pageNumber !== this._pdfViewer.currentPageNumber) {
+        return; // The newly rendered page is no longer the current one.
+      }
+      this._dispatchPageOpen(pageNumber);
+    });
+    this._internalEvents.set("pagesdestroy", async event => {
+      await this._dispatchPageClose(this._pdfViewer.currentPageNumber);
+
+      this._closeCapability?.resolve();
     });
 
     this._domEvents.set("mousedown", event => {
@@ -154,7 +176,10 @@ class PDFScriptingManager {
       id: "doc",
       name: "Open",
     });
-    await this._pdfViewer.initializeScriptingEvents();
+    await this._dispatchPageOpen(
+      this._pdfViewer.currentPageNumber,
+      /* initialize = */ true
+    );
 
     // Defer this slightly, to ensure that scripting is *fully* initialized.
     Promise.resolve().then(() => {
@@ -221,6 +246,13 @@ class PDFScriptingManager {
   /**
    * @private
    */
+  get _pageOpenPending() {
+    return shadow(this, "_pageOpenPending", new Set());
+  }
+
+  /**
+   * @private
+   */
   get _visitedPages() {
     return shadow(this, "_visitedPages", new Map());
   }
@@ -273,48 +305,65 @@ class PDFScriptingManager {
   /**
    * @private
    */
-  async _pageOpen(pageNumber, actionsPromise) {
+  async _dispatchPageOpen(pageNumber, initialize = false) {
     const pdfDocument = this._pdfDocument,
       visitedPages = this._visitedPages;
 
-    visitedPages.set(
-      pageNumber,
-      (async () => {
-        // Avoid sending, and thus serializing, the `actions` data when the
-        // *same* page is opened several times.
-        let actions = null;
-        if (!visitedPages.has(pageNumber)) {
-          actions = await actionsPromise;
-          if (pdfDocument !== this._pdfDocument) {
-            return; // The document was closed while the actions resolved.
-          }
-        }
+    if (initialize) {
+      this._closeCapability = createPromiseCapability();
 
-        await this._scripting?.dispatchEventInSandbox({
-          id: "page",
-          name: "PageOpen",
-          pageNumber,
-          actions,
-        });
-      })()
-    );
+      this._pageEventsReady = true;
+    }
+    if (!this._pageEventsReady) {
+      return; // Scripting isn't fully initialized yet.
+    }
+    const pageView = this._pdfViewer.getPageView(/* index = */ pageNumber - 1);
+
+    if (pageView?.renderingState !== RenderingStates.FINISHED) {
+      this._pageOpenPending.add(pageNumber);
+      return; // Wait for the page to finish rendering.
+    }
+    this._pageOpenPending.delete(pageNumber);
+
+    const actionsPromise = (async () => {
+      // Avoid sending, and thus serializing, the `actions` data more than once.
+      const actions = await (!visitedPages.has(pageNumber)
+        ? pageView.pdfPage?.getJSActions()
+        : null);
+      if (pdfDocument !== this._pdfDocument) {
+        return; // The document was closed while the actions resolved.
+      }
+
+      await this._scripting?.dispatchEventInSandbox({
+        id: "page",
+        name: "PageOpen",
+        pageNumber,
+        actions,
+      });
+    })();
+    visitedPages.set(pageNumber, actionsPromise);
   }
 
   /**
    * @private
    */
-  async _pageClose(pageNumber) {
+  async _dispatchPageClose(pageNumber) {
     const pdfDocument = this._pdfDocument,
       visitedPages = this._visitedPages;
 
+    if (!this._pageEventsReady) {
+      return; // Scripting isn't fully initialized yet.
+    }
+    if (this._pageOpenPending.has(pageNumber)) {
+      return; // The page is still rendering; no "PageOpen" event dispatched.
+    }
     const actionsPromise = visitedPages.get(pageNumber);
     if (!actionsPromise) {
-      // Ensure that the "pageclose" event was preceded by a "pageopen" event.
-      return;
+      return; // The "PageClose" event must be preceded by a "PageOpen" event.
     }
     visitedPages.set(pageNumber, null);
 
-    // Ensure that the "pageopen" event is handled first.
+    // Ensure that the "PageOpen" event is dispatched first.
     await actionsPromise;
     if (pdfDocument !== this._pdfDocument) {
       return; // The document was closed while the actions resolved.
@@ -373,12 +422,26 @@ class PDFScriptingManager {
    * @private
    */
   async _destroyScripting() {
-    this._pdfDocument = null; // Ensure that it's *always* reset synchronously.
-
     if (!this._scripting) {
+      this._pdfDocument = null;
+
       this._destroyCapability?.resolve();
       return;
     }
+    if (this._closeCapability) {
+      await Promise.race([
+        this._closeCapability.promise,
+        new Promise(resolve => {
+          // Avoid the scripting/sandbox-destruction hanging indefinitely.
+          setTimeout(resolve, 1000);
+        }),
+      ]).catch(reason => {
+        // Ignore any errors, to ensure that the sandbox is always destroyed.
+      });
+      this._closeCapability = null;
+    }
+    this._pdfDocument = null;
+
     try {
       await this._scripting.destroySandbox();
     } catch (ex) {}
@@ -393,10 +456,12 @@ class PDFScriptingManager {
     }
     this._domEvents.clear();
 
+    this._pageOpenPending.clear();
     this._visitedPages.clear();
 
     this._scripting = null;
     delete this._mouseState.isDown;
+    this._pageEventsReady = false;
     this._ready = false;
 
     this._destroyCapability?.resolve();

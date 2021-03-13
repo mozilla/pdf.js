@@ -481,6 +481,9 @@ class RadioButtonField extends Field {
   }
 
   set value(value) {
+    if (value === null) {
+      this._value = "";
+    }
     const i = this.exportValues.indexOf(value);
     if (0 <= i && i < this._radioIds.length) {
       this._id = this._radioIds[i];

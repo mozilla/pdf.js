@@ -1,3 +1,5 @@
+/* eslint-disable no-var */
+
 const fs = require("fs");
 const crypto = require("crypto");
 const execSync = require("child_process").execSync;

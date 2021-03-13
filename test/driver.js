@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 /* globals pdfjsLib, pdfjsViewer */
 
 "use strict";
@@ -74,32 +75,39 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       div.className = "textLayer";
       foreignObject.appendChild(div);
 
-      // Rendering text layer as HTML.
-      var task = pdfjsLib.renderTextLayer({
-        textContent,
-        container: div,
-        viewport,
-        enhanceTextSelection,
-      });
-      Promise.all([stylePromise, task.promise]).then(function (results) {
-        task.expandTextDivs(true);
-        style.textContent = results[0];
-        svg.appendChild(foreignObject);
+      stylePromise
+        .then(async cssRules => {
+          style.textContent = cssRules;
 
-        // We need to have UTF-8 encoded XML.
-        var svg_xml = unescape(
-          encodeURIComponent(new XMLSerializer().serializeToString(svg))
-        );
-        var img = new Image();
-        img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-        img.onload = function () {
-          ctx.drawImage(img, 0, 0);
-          resolve();
-        };
-        img.onerror = function (e) {
-          reject(new Error("Error rasterizing text layer " + e));
-        };
-      });
+          // Rendering text layer as HTML.
+          var task = pdfjsLib.renderTextLayer({
+            textContent,
+            container: div,
+            viewport,
+            enhanceTextSelection,
+          });
+          await task.promise;
+
+          task.expandTextDivs(true);
+          svg.appendChild(foreignObject);
+
+          // We need to have UTF-8 encoded XML.
+          var svg_xml = unescape(
+            encodeURIComponent(new XMLSerializer().serializeToString(svg))
+          );
+          var img = new Image();
+          img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
+          img.onload = function () {
+            ctx.drawImage(img, 0, 0);
+            resolve();
+          };
+          img.onerror = function (e) {
+            reject(new Error("Error rasterizing text layer " + e));
+          };
+        })
+        .catch(reason => {
+          reject(new Error(`rasterizeTextLayer: "${reason?.message}".`));
+        });
     });
   }
 
@@ -208,45 +216,46 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
-      stylePromise.then(function (common, overrides) {
-        style.textContent = common + overrides;
+      stylePromise
+        .then(async (common, overrides) => {
+          style.textContent = common + overrides;
 
-        var annotation_viewport = viewport.clone({ dontFlip: true });
-        var parameters = {
-          viewport: annotation_viewport,
-          div,
-          annotations,
-          page,
-          linkService: new pdfjsViewer.SimpleLinkService(),
-          imageResourcesPath,
-          renderInteractiveForms,
-        };
-        pdfjsLib.AnnotationLayer.render(parameters);
+          var annotation_viewport = viewport.clone({ dontFlip: true });
+          var parameters = {
+            viewport: annotation_viewport,
+            div,
+            annotations,
+            page,
+            linkService: new pdfjsViewer.SimpleLinkService(),
+            imageResourcesPath,
+            renderInteractiveForms,
+          };
+          pdfjsLib.AnnotationLayer.render(parameters);
 
-        // Inline SVG images from text annotations.
-        var images = div.getElementsByTagName("img");
-        var imagePromises = inlineAnnotationImages(images);
-        var converted = Promise.all(imagePromises).then(function (data) {
-          var loadedPromises = [];
-          for (var i = 0, ii = data.length; i < ii; i++) {
-            images[i].src = data[i];
-            loadedPromises.push(
-              new Promise(function (resolveImage, rejectImage) {
-                images[i].onload = resolveImage;
-                images[i].onerror = function (e) {
-                  rejectImage(new Error("Error loading image " + e));
-                };
-              })
-            );
-          }
-          return loadedPromises;
-        });
+          // Inline SVG images from text annotations.
+          var images = div.getElementsByTagName("img");
+          var imagePromises = inlineAnnotationImages(images);
 
-        foreignObject.appendChild(div);
-        svg.appendChild(foreignObject);
+          await Promise.all(imagePromises).then(function (data) {
+            var loadedPromises = [];
+            for (var i = 0, ii = data.length; i < ii; i++) {
+              images[i].src = data[i];
+              loadedPromises.push(
+                new Promise(function (resolveImage, rejectImage) {
+                  images[i].onload = resolveImage;
+                  images[i].onerror = function (e) {
+                    rejectImage(new Error("Error loading image " + e));
+                  };
+                })
+              );
+            }
+            return loadedPromises;
+          });
 
-        // We need to have UTF-8 encoded XML.
-        converted.then(function () {
+          foreignObject.appendChild(div);
+          svg.appendChild(foreignObject);
+
+          // We need to have UTF-8 encoded XML.
           var svg_xml = unescape(
             encodeURIComponent(new XMLSerializer().serializeToString(svg))
           );
@@ -259,8 +268,10 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           img.onerror = function (e) {
             reject(new Error("Error rasterizing annotation layer " + e));
           };
+        })
+        .catch(reason => {
+          reject(new Error(`rasterizeAnnotationLayer: "${reason?.message}".`));
         });
-      });
     });
   }
 

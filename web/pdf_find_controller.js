@@ -893,7 +893,7 @@ class PDFFindController {
       total = this._matchesCountTotal;
     if (matchIdx !== -1) {
       for (let i = 0; i < pageIdx; i++) {
-        current += (this._pageMatches[i] && this._pageMatches[i].length) || 0;
+        current += this._pageMatches[i]?.length || 0;
       }
       current += matchIdx + 1;
     }
@@ -919,7 +919,7 @@ class PDFFindController {
       state,
       previous,
       matchesCount: this._requestMatchesCount(),
-      rawQuery: this._state ? this._state.query : null,
+      rawQuery: this._state?.query ?? null,
     });
   }
 }

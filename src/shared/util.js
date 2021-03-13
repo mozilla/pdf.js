@@ -597,9 +597,14 @@ function objectSize(obj) {
   return Object.keys(obj).length;
 }
 
-// Ensures that the returned Object has a `null` prototype.
-function objectFromEntries(iterable) {
-  return Object.assign(Object.create(null), Object.fromEntries(iterable));
+// Ensure that the returned Object has a `null` prototype; hence why
+// `Object.fromEntries(...)` is not used.
+function objectFromMap(map) {
+  const obj = Object.create(null);
+  for (const [key, value] of map) {
+    obj[key] = value;
+  }
+  return obj;
 }
 
 // Checks the endianness of the platform.
@@ -1006,7 +1011,7 @@ export {
   isSameOrigin,
   isString,
   MissingPDFException,
-  objectFromEntries,
+  objectFromMap,
   objectSize,
   OPS,
   PageActionEventType,
