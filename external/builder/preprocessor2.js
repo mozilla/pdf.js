@@ -34,14 +34,14 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
         if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
           throw new Error("No code for testing is given");
         }
-        var isTrue = !!evalWithDefines(arg.value, ctx.defines);
+        const isTrue = !!evalWithDefines(arg.value, ctx.defines);
         return { type: "Literal", value: isTrue, loc };
       case "eval":
         arg = args[0];
         if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
           throw new Error("No code for eval is given");
         }
-        var result = evalWithDefines(arg.value, ctx.defines);
+        const result = evalWithDefines(arg.value, ctx.defines);
         if (
           typeof result === "boolean" ||
           typeof result === "string" ||
@@ -62,14 +62,14 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
         if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
           throw new Error("Path to JSON is not provided");
         }
-        var jsonPath = arg.value;
+        let jsonPath = arg.value;
         if (jsonPath.indexOf(ROOT_PREFIX) === 0) {
           jsonPath = path.join(
             ctx.rootPath,
             jsonPath.substring(ROOT_PREFIX.length)
           );
         }
-        var jsonContent = fs.readFileSync(jsonPath).toString();
+        const jsonContent = fs.readFileSync(jsonPath).toString();
         const parsedJSON = acorn.parse("(" + jsonContent + ")", {
           ecmaVersion: ACORN_ECMA_VERSION,
         });
@@ -175,7 +175,7 @@ function postprocessNode(ctx, node) {
               case "string":
               case "boolean":
               case "number":
-                var equal = node.left.value === node.right.value;
+                const equal = node.left.value === node.right.value;
                 return {
                   type: "Literal",
                   value: (node.operator[0] === "=") === equal,
@@ -210,7 +210,7 @@ function postprocessNode(ctx, node) {
       }
       break;
     case "BlockStatement":
-      var subExpressionIndex = 0;
+      let subExpressionIndex = 0;
       while (subExpressionIndex < node.body.length) {
         switch (node.body[subExpressionIndex].type) {
           case "EmptyStatement":
@@ -219,7 +219,7 @@ function postprocessNode(ctx, node) {
             continue;
           case "BlockStatement":
             // Block statements inside a block are moved to the parent one.
-            var subChildren = node.body[subExpressionIndex].body;
+            const subChildren = node.body[subExpressionIndex].body;
             Array.prototype.splice.apply(
               node.body,
               [subExpressionIndex, 1].concat(subChildren)
@@ -240,7 +240,7 @@ function postprocessNode(ctx, node) {
       break;
     case "FunctionDeclaration":
     case "FunctionExpression":
-      var block = node.body;
+      const block = node.body;
       if (
         block.body.length > 0 &&
         block.body[block.body.length - 1].type === "ReturnStatement" &&
@@ -292,7 +292,7 @@ function fixComments(ctx, node) {
 function traverseTree(ctx, node) {
   // generic node processing
   for (const i in node) {
-    var child = node[i];
+    const child = node[i];
     if (typeof child === "object" && child !== null && child.type) {
       const result = traverseTree(ctx, child);
       if (result !== child) {
