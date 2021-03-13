@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "../.eslintrc"
+  ],
+
+  "rules": {
+    // ECMAScript 6
+    "no-var": "error",
+  },
+}
