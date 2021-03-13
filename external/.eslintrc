@@ -6,4 +6,9 @@
   "env": {
     "node": true,
   },
+
+  "rules": {
+    // ECMAScript 6
+    "no-var": "off",
+  },
 }
