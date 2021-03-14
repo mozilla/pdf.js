@@ -10,7 +10,6 @@ external/quickjs/
 src/shared/cffStandardStrings.js
 src/shared/fonts_utils.js
 test/tmp/
-test/features/
 test/pdfs/
 test/resources/
 *~/

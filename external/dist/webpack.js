@@ -15,8 +15,8 @@
 
 "use strict";
 
-var pdfjs = require("./build/pdf.js");
-var PdfjsWorker = require("worker-loader?esModule=false&filename=[name].js!./build/pdf.worker.js");
+const pdfjs = require("./build/pdf.js");
+const PdfjsWorker = require("worker-loader?esModule=false&filename=[name].js!./build/pdf.worker.js");
 
 if (typeof window !== "undefined" && "Worker" in window) {
   pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();
