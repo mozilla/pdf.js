@@ -34,8 +34,8 @@ function composePage(
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
   // The physical size of the canvas as specified by the PDF document.
-  canvas.style.width = Math.floor(size.width * CSS_UNITS) + "px";
-  canvas.style.height = Math.floor(size.height * CSS_UNITS) + "px";
+  canvas.style.width = Math.floor(size.width * size.scale * CSS_UNITS) + "px";
+  canvas.style.height = Math.floor(size.height * size.scale * CSS_UNITS) + "px";
 
   const canvasWrapper = document.createElement("div");
   canvasWrapper.appendChild(canvas);

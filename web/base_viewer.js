@@ -1336,6 +1336,7 @@ class BaseViewer {
       return {
         width: viewport.width,
         height: viewport.height,
+        scale: pageView.scale,
         rotation: viewport.rotation,
       };
     });
