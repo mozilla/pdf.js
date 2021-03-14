@@ -206,6 +206,8 @@ PDFPrintService.prototype = {
 
     const wrapper = document.createElement("div");
     wrapper.appendChild(img);
+    wrapper.style.width = img.style.width;
+    wrapper.style.height = img.style.height;
     this.printContainer.appendChild(wrapper);
 
     return new Promise(function (resolve, reject) {
