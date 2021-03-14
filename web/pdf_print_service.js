@@ -163,15 +163,7 @@ PDFPrintService.prototype = {
     this.pageStyleSheet = document.createElement("style");
     const pageSize = this.pagesOverview[0];
     this.pageStyleSheet.textContent =
-      // "size:<width> <height>" is what we need. But also add "A4" because
-      // Firefox incorrectly reports support for the other value.
-      "@supports ((size:A4) and (size:1pt 1pt)) {" +
-      "@page { size: " +
-      pageSize.width +
-      "pt " +
-      pageSize.height +
-      "pt;}" +
-      "}";
+      "@page { size: " + pageSize.width + "pt " + pageSize.height + "pt;}";
     body.appendChild(this.pageStyleSheet);
   },
 
@@ -273,6 +265,8 @@ PDFPrintService.prototype = {
 
     const wrapper = document.createElement("div");
     wrapper.appendChild(img);
+    wrapper.style.width = img.style.width;
+    wrapper.style.height = img.style.height;
     this.printContainer.appendChild(wrapper);
 
     return new Promise(function (resolve, reject) {
