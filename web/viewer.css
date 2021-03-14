@@ -1758,12 +1758,9 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   }
   /* wrapper around (scaled) print canvas elements */
   #printContainer > div {
-    position: relative;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 1px;
-    overflow: visible;
+    /* Without the following max-height declaration, Chromium might create extra
+     * blank pages, even though it shouldn't! */
+    max-height: 100%;
     page-break-after: always;
     page-break-inside: avoid;
   }
