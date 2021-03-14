@@ -39,6 +39,8 @@ function composePage(
 
   const canvasWrapper = document.createElement("div");
   canvasWrapper.appendChild(canvas);
+  canvasWrapper.style.width = canvas.style.width;
+  canvasWrapper.style.height = canvas.style.height;
   printContainer.appendChild(canvasWrapper);
 
   // A callback for a given page may be executed multiple times for different
