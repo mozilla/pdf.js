@@ -14,27 +14,30 @@
  */
 
 exports.optimizeCMap = function (data) {
-  var i = 1;
+  let i = 1;
   while (i < data.body.length) {
     if (data.body[i - 1].type === data.body[i].type) {
-      data.body[i - 1].items = data.body[i - 1].items.concat(data.body[i].items);
+      data.body[i - 1].items = data.body[i - 1].items.concat(
+        data.body[i].items
+      );
       data.body.splice(i, 1);
     } else {
       i++;
     }
   }
   // split into groups with different lengths
-  var i = 0;
+  i = 0;
   while (i < data.body.length) {
-    var item = data.body[i];
-    var keys = Object.keys(item.items[0]).filter(function (i) {
-      return typeof item.items[0][i] === 'string';
+    const item = data.body[i];
+    const keys = Object.keys(item.items[0]).filter(function (val) {
+      return typeof item.items[0][val] === "string";
     });
-    var j = 1;
+    let j = 1;
     while (j < item.items.length) {
-      var different = false;
-      for (var q = 0; q < keys.length && !different; q++) {
-        different = item.items[j - 1][keys[q]].length !== item.items[j][keys[q]].length;
+      let different = false;
+      for (let q = 0; q < keys.length && !different; q++) {
+        different =
+          item.items[j - 1][keys[q]].length !== item.items[j][keys[q]].length;
       }
       if (different) {
         break;
@@ -44,41 +47,44 @@ exports.optimizeCMap = function (data) {
     if (j < item.items.length) {
       data.body.splice(i + 1, 0, {
         type: item.type,
-        items: item.items.splice(j, item.items.length - j)
+        items: item.items.splice(j, item.items.length - j),
       });
     }
     i++;
   }
   // find sequences of single char ranges
-  var i = 0;
+  i = 0;
   while (i < data.body.length) {
-    var item = data.body[i];
+    const item = data.body[i];
     if (item.type === 3 || item.type === 5) {
-      var j = 0;
+      let j = 0;
       while (j < item.items.length) {
-        var q = j;
-        while (j < item.items.length && item.items[j].start === item.items[j].end) {
+        const q = j;
+        while (
+          j < item.items.length &&
+          item.items[j].start === item.items[j].end
+        ) {
           j++;
         }
-        if ((j - q) >= 9) {
+        if (j - q >= 9) {
           if (j < item.items.length) {
             data.body.splice(i + 1, 0, {
               type: item.type,
-              items: item.items.splice(j, item.items.length - j)
+              items: item.items.splice(j, item.items.length - j),
             });
           }
           if (q > 0) {
             data.body.splice(i + 1, 0, {
               type: item.type - 1,
-              items: item.items.splice(q, j - q).map(function (i) {
-                return {char: i.start, code: i.code };
-              })
+              items: item.items.splice(q, j - q).map(function (val) {
+                return { char: val.start, code: val.code };
+              }),
             });
             i++;
           } else {
             item.type -= 1;
-            item.items = item.items.map(function (i) {
-              return {char: i.start, code: i.code };
+            item.items = item.items.map(function (val) {
+              return { char: val.start, code: val.code };
             });
           }
           continue;
@@ -89,31 +95,34 @@ exports.optimizeCMap = function (data) {
     i++;
   }
 
-  //  find sequences of increasing code/ranges order
-  var i = 0;
+  // find sequences of increasing code/ranges order
+  i = 0;
   while (i < data.body.length) {
-    var item = data.body[i];
+    const item = data.body[i];
     if (item.type >= 2 && item.type <= 5) {
-      var j = 1;
-      var startProp = item.type === 2 || item.type === 4 ? 'char' : 'start';
-      var endProp = item.type === 2 || item.type === 4 ? 'char' : 'end';
+      let j = 1;
+      const startProp = item.type === 2 || item.type === 4 ? "char" : "start";
+      const endProp = item.type === 2 || item.type === 4 ? "char" : "end";
       while (j < item.items.length) {
-        var q = j - 1;
-        while (j < item.items.length && incHex(item.items[j - 1][endProp]) === item.items[j][startProp]) {
+        const q = j - 1;
+        while (
+          j < item.items.length &&
+          incHex(item.items[j - 1][endProp]) === item.items[j][startProp]
+        ) {
           j++;
         }
-        if ((j - q) >= 9) {
+        if (j - q >= 9) {
           if (j < item.items.length) {
             data.body.splice(i + 1, 0, {
               type: item.type,
-              items: item.items.splice(j, item.items.length - j)
+              items: item.items.splice(j, item.items.length - j),
             });
           }
           if (q > 0) {
             data.body.splice(i + 1, 0, {
               type: item.type,
               items: item.items.splice(q, j - q),
-              sequence: true
+              sequence: true,
             });
             i++;
           } else {
@@ -128,61 +137,68 @@ exports.optimizeCMap = function (data) {
   }
 
   // split non-sequences two groups where codes are close
-  var i = 0;
+  i = 0;
   while (i < data.body.length) {
-    var item = data.body[i];
+    const item = data.body[i];
     if (!item.sequence && (item.type === 2 || item.type === 3)) {
-      var subitems = item.items;
-      var codes = subitems.map(function (i) {
-        return i.code;
+      const subitems = item.items;
+      const codes = subitems.map(function (val) {
+        return val.code;
       });
       codes.sort(function (a, b) {
         return a - b;
       });
-      var maxDistance = 100, minItems = 10, itemsPerBucket = 50;
-      if (subitems.length > minItems && codes[codes.length - 1] - codes[0] > maxDistance) {
-        var gapsCount = Math.max(2, (subitems.length / itemsPerBucket) | 0);
-        var gaps = [];
-        for (var q = 0; q < gapsCount; q++) {
-          gaps.push({length: 0});
+      const maxDistance = 100,
+        minItems = 10,
+        itemsPerBucket = 50;
+      if (
+        subitems.length > minItems &&
+        codes[codes.length - 1] - codes[0] > maxDistance
+      ) {
+        const gapsCount = Math.max(2, (subitems.length / itemsPerBucket) | 0);
+        const gaps = [];
+        for (let q = 0; q < gapsCount; q++) {
+          gaps.push({ length: 0 });
         }
-        for (var j = 1; j < codes.length; j++) {
-          var gapLength = codes[j] - codes[j - 1];
-          var q = 0;
+        for (let j = 1; j < codes.length; j++) {
+          const gapLength = codes[j] - codes[j - 1];
+          let q = 0;
           while (q < gaps.length && gaps[q].length > gapLength) {
             q++;
           }
           if (q >= gaps.length) {
             continue;
           }
-          var q0 = q;
+          let q0 = q;
           while (q < gaps.length) {
             if (gaps[q].length < gaps[q0].length) {
               q0 = q;
             }
             q++;
           }
-          gaps[q0] = {length: gapLength, boundary: codes[j]};
+          gaps[q0] = { length: gapLength, boundary: codes[j] };
         }
-        var groups = gaps.filter(function (g) {
-          return g.length >= maxDistance;
-        }).map(function (g) {
+        const groups = gaps
+          .filter(function (g) {
+            return g.length >= maxDistance;
+          })
+          .map(function (g) {
             return g.boundary;
           });
         groups.sort(function (a, b) {
           return a - b;
         });
         if (groups.length > 1) {
-          var buckets = [item.items = []];
-          for (var j = 0; j < groups.length; j++) {
-            var newItem = {type: item.type, items: []}
+          const buckets = [(item.items = [])];
+          for (let j = 0; j < groups.length; j++) {
+            const newItem = { type: item.type, items: [] };
             buckets.push(newItem.items);
             i++;
             data.body.splice(i, 0, newItem);
           }
-          for (var j = 0; j < subitems.length; j++) {
-            var code = subitems[j].code;
-            var q = 0;
+          for (let j = 0; j < subitems.length; j++) {
+            const code = subitems[j].code;
+            let q = 0;
             while (q < groups.length && groups[q] <= code) {
               q++;
             }
@@ -196,11 +212,12 @@ exports.optimizeCMap = function (data) {
 };
 
 function incHex(a) {
-  var c = 1, s = '';
-  for (var i = a.length - 1; i >= 0; i--) {
+  let c = 1,
+    s = "";
+  for (let i = a.length - 1; i >= 0; i--) {
     c += parseInt(a[i], 16);
     if (c >= 16) {
-      s = '0' + s;
+      s = "0" + s;
       c = 1;
     } else {
       s = c.toString(16) + s;
