@@ -1,5 +1,3 @@
-/* eslint-disable no-var */
-
 const fs = require("fs");
 const crypto = require("crypto");
 const execSync = require("child_process").execSync;
@@ -25,8 +23,8 @@ if (!fs.existsSync(file)) {
 }
 
 function calculateMD5(pdfFile, callback) {
-  var hash = crypto.createHash("md5");
-  var stream = fs.createReadStream(pdfFile);
+  const hash = crypto.createHash("md5");
+  const stream = fs.createReadStream(pdfFile);
   stream.on("data", function (data) {
     hash.update(data);
   });
@@ -34,7 +32,7 @@ function calculateMD5(pdfFile, callback) {
     callback(err);
   });
   stream.on("end", function () {
-    var result = hash.digest("hex");
+    const result = hash.digest("hex");
     callback(null, result);
   });
 }
