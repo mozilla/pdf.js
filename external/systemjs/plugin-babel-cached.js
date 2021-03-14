@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
+
 var babel = require("plugin-babel");
 
 var cacheExpiration = 60 /* min */ * 60 * 1000;
