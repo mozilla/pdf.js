@@ -23,6 +23,7 @@ import {
   assert,
   escapeString,
   getModificationDate,
+  isArrayEqual,
   isAscii,
   isString,
   OPS,
@@ -2290,6 +2291,17 @@ class LineAnnotation extends MarkupAnnotation {
         : [0, 0, 0];
 
       const borderWidth = this.borderStyle.width;
+
+      // If the /Rect-entry is empty, create a fallback rectangle such that we
+      // get similar rendering/highlighting behaviour as in Adobe Reader.
+      if (isArrayEqual(this.rectangle, [0, 0, 0, 0])) {
+        this.rectangle = [
+          this.data.lineCoordinates[0] - 2 * borderWidth,
+          this.data.lineCoordinates[1] - 2 * borderWidth,
+          this.data.lineCoordinates[2] + 2 * borderWidth,
+          this.data.lineCoordinates[3] + 2 * borderWidth,
+        ];
+      }
 
       this._setDefaultAppearance({
         xref: parameters.xref,
