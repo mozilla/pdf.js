@@ -40,6 +40,7 @@ import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  isDataScheme,
   loadScript,
   PageViewport,
   RenderingCancelledException,
@@ -285,6 +286,15 @@ function getDocument(src) {
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
 
+  if (
+    typeof params.docBaseUrl !== "string" ||
+    isDataScheme(params.docBaseUrl)
+  ) {
+    // Ignore "data:"-URLs, since they can't be used to recover valid absolute
+    // URLs anyway. We want to avoid sending them to the worker-thread, since
+    // they contain the *entire* PDF document and can thus be arbitrarily long.
+    params.docBaseUrl = null;
+  }
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }

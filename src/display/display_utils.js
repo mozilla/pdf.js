@@ -708,6 +708,7 @@ export {
   DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  isDataScheme,
   isFetchSupported,
   isPdfFile,
   isValidFetchUrl,
