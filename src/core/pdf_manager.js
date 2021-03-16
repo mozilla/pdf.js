@@ -13,16 +13,22 @@
  * limitations under the License.
  */
 
-import {
-  createValidAbsoluteUrl,
-  shadow,
-  unreachable,
-  warn,
-} from "../shared/util.js";
+import { createValidAbsoluteUrl, unreachable, warn } from "../shared/util.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
 import { MissingDataException } from "./core_utils.js";
 import { PDFDocument } from "./document.js";
 import { Stream } from "./stream.js";
+
+function parseDocBaseUrl(url) {
+  if (url) {
+    const absoluteUrl = createValidAbsoluteUrl(url);
+    if (absoluteUrl) {
+      return absoluteUrl.href;
+    }
+    warn(`Invalid absolute docBaseUrl: "${url}".`);
+  }
+  return null;
+}
 
 class BasePdfManager {
   constructor() {
@@ -40,16 +46,7 @@ class BasePdfManager {
   }
 
   get docBaseUrl() {
-    let docBaseUrl = null;
-    if (this._docBaseUrl) {
-      const absoluteUrl = createValidAbsoluteUrl(this._docBaseUrl);
-      if (absoluteUrl) {
-        docBaseUrl = absoluteUrl.href;
-      } else {
-        warn(`Invalid absolute docBaseUrl: "${this._docBaseUrl}".`);
-      }
-    }
-    return shadow(this, "docBaseUrl", docBaseUrl);
+    return this._docBaseUrl;
   }
 
   onLoadedStream() {
@@ -111,7 +108,7 @@ class LocalPdfManager extends BasePdfManager {
 
     this._docId = docId;
     this._password = password;
-    this._docBaseUrl = docBaseUrl;
+    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
     this.evaluatorOptions = evaluatorOptions;
 
     const stream = new Stream(data);
@@ -146,7 +143,7 @@ class NetworkPdfManager extends BasePdfManager {
 
     this._docId = docId;
     this._password = args.password;
-    this._docBaseUrl = docBaseUrl;
+    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
     this.msgHandler = args.msgHandler;
     this.evaluatorOptions = evaluatorOptions;
 
