@@ -4655,6 +4655,13 @@
        "annotations": true,
        "type": "eq"
     },
+    {  "id": "annotation-line-without-appearance-empty-Rect",
+       "file": "pdfs/annotation-line-without-appearance-empty-Rect.pdf",
+       "md5": "65f2d3ef80acfea637718c3fc66043b7",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "issue12705",
        "file": "pdfs/issue12705.pdf",
        "md5": "d8725b9dcfef72fd4fa4a39cab711624",
