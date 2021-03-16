@@ -1763,6 +1763,15 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
     max-height: 100%;
     page-break-after: always;
     page-break-inside: avoid;
+
+    /* If we're smaller than the page, center the canvas horizontally and
+     * vertically */
+    min-height: 100%;
+    min-width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
   }
   #printContainer canvas,
   #printContainer img {
