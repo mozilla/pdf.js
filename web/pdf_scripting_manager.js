@@ -260,7 +260,7 @@ class PDFScriptingManager {
   /**
    * @private
    */
-  _updateFromSandbox(detail) {
+  async _updateFromSandbox(detail) {
     const { id, command, value } = detail;
     if (!id) {
       switch (command) {
@@ -277,9 +277,8 @@ class PDFScriptingManager {
           this._pdfViewer.currentPageNumber = value + 1;
           break;
         case "print":
-          this._pdfViewer.pagesPromise.then(() => {
-            this._eventBus.dispatch("print", { source: this });
-          });
+          await this._pdfViewer.pagesPromise;
+          this._eventBus.dispatch("print", { source: this });
           break;
         case "println":
           console.log(value);
