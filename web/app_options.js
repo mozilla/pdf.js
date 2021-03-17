@@ -67,9 +67,7 @@ const defaultOptions = {
   },
   enableScripting: {
     /** @type {boolean} */
-    value:
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING"),
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableWebGL: {
