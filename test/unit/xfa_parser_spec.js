@@ -117,7 +117,7 @@ describe("XFAParser", function () {
             anchorType: "topLeft",
             colSpan: 1,
             columnWidths: [0],
-            h: 0,
+            h: "",
             hAlign: "left",
             id: "",
             layout: "position",
@@ -134,7 +134,7 @@ describe("XFAParser", function () {
             scope: "name",
             use: "",
             usehref: "",
-            w: 0,
+            w: "",
             x: 0,
             y: 0,
             proto: {
