@@ -250,7 +250,7 @@ const defaultOptions = {
 };
 if (
   typeof PDFJSDev === "undefined" ||
-  PDFJSDev.test("!PRODUCTION || (GENERIC && !LIB)")
+  PDFJSDev.test("!PRODUCTION || GENERIC")
 ) {
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
