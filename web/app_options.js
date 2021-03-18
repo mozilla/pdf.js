@@ -271,6 +271,11 @@ if (
     kind: OptionKind.VIEWER,
   };
 } else if (PDFJSDev.test("CHROME")) {
+  defaultOptions.disableTelemetry = {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value: "../build/pdf.sandbox.js",

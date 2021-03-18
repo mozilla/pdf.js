@@ -289,8 +289,7 @@ function getVersionJSON() {
 
 function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
   const chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
-  let chromePrefsKeys = Object.keys(chromePrefs.properties);
-  chromePrefsKeys = chromePrefsKeys.filter(function (key) {
+  const chromePrefsKeys = Object.keys(chromePrefs.properties).filter(key => {
     const description = chromePrefs.properties[key].description;
     // Deprecated keys are allowed in the managed preferences file.
     // The code maintained is responsible for adding migration logic to
@@ -301,15 +300,9 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
 
   const webPrefsKeys = Object.keys(webPrefs);
   webPrefsKeys.sort();
-  const telemetryIndex = chromePrefsKeys.indexOf("disableTelemetry");
-  if (telemetryIndex >= 0) {
-    chromePrefsKeys.splice(telemetryIndex, 1);
-  } else {
-    console.log("Warning: disableTelemetry key not found in chrome prefs!");
-    return false;
-  }
+
   if (webPrefsKeys.length !== chromePrefsKeys.length) {
-    console.log("Warning: Prefs objects haven't the same length");
+    console.log("Warning: Pref objects doesn't have the same length.");
     return false;
   }
 
@@ -324,7 +317,8 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
     } else if (chromePrefs.properties[value].default !== webPrefs[value]) {
       ret = false;
       console.log(
-        `Warning: not the same values: ${chromePrefs.properties[value].default} !== ${webPrefs[value]}`
+        `Warning: not the same values (for "${value}"): ` +
+          `${chromePrefs.properties[value].default} !== ${webPrefs[value]}`
       );
     }
   }
