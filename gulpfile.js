@@ -172,6 +172,7 @@ function createWebpackConfig(
     disableVersionInfo = false,
     disableSourceMaps = false,
     disableLicenseHeader = false,
+    defaultPreferencesDir = null,
   } = {}
 ) {
   const versionInfo = !disableVersionInfo
@@ -181,6 +182,9 @@ function createWebpackConfig(
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: defines.TESTING || process.env.TESTING === "true",
+    DEFAULT_PREFERENCES: defaultPreferencesDir
+      ? getDefaultPreferences(defaultPreferencesDir)
+      : {},
   });
   const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
@@ -283,7 +287,7 @@ function getVersionJSON() {
   return JSON.parse(fs.readFileSync(BUILD_DIR + "version.json").toString());
 }
 
-function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
+function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
   const chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
   let chromePrefsKeys = Object.keys(chromePrefs.properties);
   chromePrefsKeys = chromePrefsKeys.filter(function (key) {
@@ -294,7 +298,7 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
     return !description || !description.startsWith("DEPRECATED.");
   });
   chromePrefsKeys.sort();
-  const webPrefs = JSON.parse(fs.readFileSync(webPrefsPath).toString());
+
   const webPrefsKeys = Object.keys(webPrefs);
   webPrefsKeys.sort();
   const telemetryIndex = chromePrefsKeys.indexOf("disableTelemetry");
@@ -454,12 +458,18 @@ function createWorkerBundle(defines) {
     .pipe(replaceJSRootName(workerAMDName, "pdfjsWorker"));
 }
 
-function createWebBundle(defines) {
+function createWebBundle(defines, options) {
   const viewerOutputName = "viewer.js";
 
-  const viewerFileConfig = createWebpackConfig(defines, {
-    filename: viewerOutputName,
-  });
+  const viewerFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: viewerOutputName,
+    },
+    {
+      defaultPreferencesDir: options.defaultPreferencesDir,
+    }
+  );
   return gulp.src("./web/viewer.js").pipe(webpack2Stream(viewerFileConfig));
 }
 
@@ -647,9 +657,17 @@ gulp.task("buildnumber", function (done) {
   );
 });
 
-gulp.task("default_preferences-pre", function () {
+function buildDefaultPreferences(defines, dir) {
   console.log();
-  console.log("### Building `default_preferences.json`");
+  console.log("### Building default preferences");
+
+  const bundleDefines = builder.merge(defines, {
+    LIB: true,
+    SKIP_BABEL: false,
+    BUNDLE_VERSION: 0, // Dummy version
+    BUNDLE_BUILD: 0, // Dummy build
+    TESTING: defines.TESTING || process.env.TESTING === "true",
+  });
 
   // Refer to the comment in the 'lib' task below.
   function babelPluginReplaceNonWebPackRequire(babel) {
@@ -664,10 +682,12 @@ gulp.task("default_preferences-pre", function () {
     };
   }
   function preprocess(content) {
+    const skipBabel =
+      bundleDefines.SKIP_BABEL || /\/\*\s*no-babel-preset\s*\*\//.test(content);
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     return babel.transform(content, {
       sourceType: "module",
-      presets: undefined, // SKIP_BABEL
+      presets: skipBabel ? undefined : ["@babel/preset-env"],
       plugins: [
         "@babel/plugin-proposal-logical-assignment-operators",
         "@babel/plugin-transform-modules-commonjs",
@@ -679,12 +699,7 @@ gulp.task("default_preferences-pre", function () {
   const ctx = {
     rootPath: __dirname,
     saveComments: false,
-    defines: builder.merge(DEFINES, {
-      GENERIC: true,
-      LIB: true,
-      BUNDLE_VERSION: 0, // Dummy version
-      BUNDLE_BUILD: 0, // Dummy build
-    }),
+    defines: bundleDefines,
     map: {
       "pdfjs-lib": "../pdf",
     },
@@ -696,26 +711,17 @@ gulp.task("default_preferences-pre", function () {
     }),
   ])
     .pipe(transform("utf8", preprocess))
-    .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + "lib/"));
-});
+    .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + dir));
+}
 
-gulp.task(
-  "default_preferences",
-  gulp.series("default_preferences-pre", function (done) {
-    const AppOptionsLib = require("./" +
-      DEFAULT_PREFERENCES_DIR +
-      "lib/web/app_options.js");
-    const AppOptions = AppOptionsLib.AppOptions;
-    const OptionKind = AppOptionsLib.OptionKind;
+function getDefaultPreferences(dir) {
+  const { AppOptions, OptionKind } = require("./" +
+    DEFAULT_PREFERENCES_DIR +
+    dir +
+    "web/app_options.js");
 
-    createStringSource(
-      "default_preferences.json",
-      JSON.stringify(AppOptions.getAll(OptionKind.PREFERENCE), null, 2)
-    )
-      .pipe(gulp.dest(BUILD_DIR))
-      .on("end", done);
-  })
-);
+  return AppOptions.getAll(OptionKind.PREFERENCE);
+}
 
 gulp.task("locale", function () {
   const VIEWER_LOCALE_OUTPUT = "web/locale/";
@@ -827,7 +833,11 @@ function buildGeneric(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
-    createWebBundle(defines).pipe(gulp.dest(dir + "web")),
+    createWebBundle(defines, {
+      defaultPreferencesDir: defines.SKIP_BABEL
+        ? "generic/"
+        : "generic-legacy/",
+    }).pipe(gulp.dest(dir + "web")),
     gulp.src(COMMON_WEB_FILES, { base: "web/" }).pipe(gulp.dest(dir + "web")),
     gulp.src("LICENSE").pipe(gulp.dest(dir)),
     gulp
@@ -857,11 +867,13 @@ gulp.task(
   "generic",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     "locale",
     function scripting() {
       const defines = builder.merge(DEFINES, { GENERIC: true });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "generic/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       console.log();
@@ -879,14 +891,16 @@ gulp.task(
   "generic-legacy",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     "locale",
     function scripting() {
       const defines = builder.merge(DEFINES, {
         GENERIC: true,
         SKIP_BABEL: false,
       });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "generic-legacy/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       console.log();
@@ -985,7 +999,11 @@ function buildMinified(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
-    createWebBundle(defines).pipe(gulp.dest(dir + "web")),
+    createWebBundle(defines, {
+      defaultPreferencesDir: defines.SKIP_BABEL
+        ? "minified/"
+        : "minified-legacy/",
+    }).pipe(gulp.dest(dir + "web")),
     createImageDecodersBundle(
       builder.merge(defines, { IMAGE_DECODERS: true })
     ).pipe(gulp.dest(dir + "image_decoders")),
@@ -1016,11 +1034,13 @@ gulp.task(
   "minified-pre",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     "locale",
     function scripting() {
       const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "minified/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       console.log();
@@ -1036,7 +1056,6 @@ gulp.task(
   "minified-legacy-pre",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     "locale",
     function scripting() {
       const defines = builder.merge(DEFINES, {
@@ -1044,7 +1063,10 @@ gulp.task(
         GENERIC: true,
         SKIP_BABEL: false,
       });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "minified-legacy/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       console.log();
@@ -1155,10 +1177,14 @@ function preprocessDefaultPreferences(content) {
   const MODIFICATION_WARNING =
     "//\n// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!\n//\n";
 
+  const bundleDefines = builder.merge(DEFINES, {
+    DEFAULT_PREFERENCES: getDefaultPreferences("mozcentral/"),
+  });
+
   content = preprocessor2.preprocessPDFJSCode(
     {
       rootPath: __dirname,
-      defines: DEFINES,
+      defines: bundleDefines,
     },
     content
   );
@@ -1177,78 +1203,93 @@ function preprocessDefaultPreferences(content) {
 
 gulp.task(
   "mozcentral-pre",
-  gulp.series("buildnumber", "default_preferences", function () {
-    console.log();
-    console.log("### Building mozilla-central extension");
-    const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
+  gulp.series(
+    "buildnumber",
+    function scripting() {
+      const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
+      return buildDefaultPreferences(defines, "mozcentral/");
+    },
+    function () {
+      console.log();
+      console.log("### Building mozilla-central extension");
+      const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
 
-    const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
-      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
-      MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
-      FIREFOX_EXTENSION_DIR = "extensions/firefox/",
-      MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/",
-      FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + "/firefox/content/";
+      const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
+        MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
+        MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
+        FIREFOX_EXTENSION_DIR = "extensions/firefox/",
+        MOZCENTRAL_L10N_DIR =
+          MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/",
+        FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + "/firefox/content/";
 
-    // Clear out everything in the firefox extension build directory
-    rimraf.sync(MOZCENTRAL_DIR);
+      // Clear out everything in the firefox extension build directory
+      rimraf.sync(MOZCENTRAL_DIR);
 
-    const versionJSON = getVersionJSON();
-    const version = versionJSON.version,
-      commit = versionJSON.commit;
+      const versionJSON = getVersionJSON();
+      const version = versionJSON.version,
+        commit = versionJSON.commit;
 
-    // Ignore the fallback cursor images, since they're unnecessary in Firefox.
-    const MOZCENTRAL_COMMON_WEB_FILES = [
-      ...COMMON_WEB_FILES,
-      "!web/images/*.cur",
-    ];
+      // Ignore the fallback cursor images, since they're unnecessary in
+      // Firefox.
+      const MOZCENTRAL_COMMON_WEB_FILES = [
+        ...COMMON_WEB_FILES,
+        "!web/images/*.cur",
+      ];
 
-    return merge([
-      createMainBundle(defines).pipe(
-        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-      ),
-      createScriptingBundle(defines).pipe(
-        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-      ),
-      createSandboxExternal(defines).pipe(
-        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-      ),
-      createWorkerBundle(defines).pipe(
-        gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-      ),
-      createWebBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
-      gulp
-        .src(MOZCENTRAL_COMMON_WEB_FILES, { base: "web/" })
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
-      gulp
-        .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
-          base: "external/bcmaps",
-        })
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/cmaps")),
+      return merge([
+        createMainBundle(defines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+        ),
+        createScriptingBundle(defines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+        ),
+        createSandboxExternal(defines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+        ),
+        createWorkerBundle(defines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
+        ),
+        createWebBundle(defines, { defaultPreferencesDir: "mozcentral/" }).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
+        ),
+        gulp
+          .src(MOZCENTRAL_COMMON_WEB_FILES, { base: "web/" })
+          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
+        gulp
+          .src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
+            base: "external/bcmaps",
+          })
+          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/cmaps")),
 
-      preprocessHTML("web/viewer.html", defines).pipe(
-        gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
-      ),
-      preprocessCSS("web/viewer.css", "mozcentral", defines, true)
-        .pipe(
-          postcss([
-            autoprefixer({ overrideBrowserslist: ["last 1 firefox versions"] }),
-          ])
-        )
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
+        preprocessHTML("web/viewer.html", defines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
+        ),
+        preprocessCSS("web/viewer.css", "mozcentral", defines, true)
+          .pipe(
+            postcss([
+              autoprefixer({
+                overrideBrowserslist: ["last 1 firefox versions"],
+              }),
+            ])
+          )
+          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
-      gulp.src("l10n/en-US/*.properties").pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
-      gulp
-        .src(FIREFOX_EXTENSION_DIR + "README.mozilla")
-        .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
-        .pipe(replace(/\bPDFJSSCRIPT_COMMIT\b/g, commit))
-        .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-      gulp.src("LICENSE").pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-      gulp
-        .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.jsm")
-        .pipe(transform("utf8", preprocessDefaultPreferences))
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
-    ]);
-  })
+        gulp
+          .src("l10n/en-US/*.properties")
+          .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
+        gulp
+          .src(FIREFOX_EXTENSION_DIR + "README.mozilla")
+          .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
+          .pipe(replace(/\bPDFJSSCRIPT_COMMIT\b/g, commit))
+          .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
+        gulp.src("LICENSE").pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
+        gulp
+          .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.jsm")
+          .pipe(transform("utf8", preprocessDefaultPreferences))
+          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
+      ]);
+    }
+  )
 );
 
 gulp.task("mozcentral", gulp.series("mozcentral-pre"));
@@ -1257,14 +1298,16 @@ gulp.task(
   "chromium-pre",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     "locale",
     function scripting() {
       const defines = builder.merge(DEFINES, {
         CHROME: true,
         SKIP_BABEL: false,
       });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "chromium/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       console.log();
@@ -1292,7 +1335,7 @@ gulp.task(
         createSandboxBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
-        createWebBundle(defines).pipe(
+        createWebBundle(defines, { defaultPreferencesDir: "chromium/" }).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
         ),
         gulp
@@ -1422,7 +1465,10 @@ function buildLib(defines, dir) {
   const bundleDefines = builder.merge(defines, {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
-    TESTING: process.env.TESTING === "true",
+    TESTING: defines.TESTING || process.env.TESTING === "true",
+    DEFAULT_PREFERENCES: getDefaultPreferences(
+      defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
+    ),
   });
   const ctx = {
     rootPath: __dirname,
@@ -1459,10 +1505,12 @@ gulp.task(
   "lib",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     function scripting() {
       const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "lib/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
@@ -1479,14 +1527,16 @@ gulp.task(
   "lib-legacy",
   gulp.series(
     "buildnumber",
-    "default_preferences",
     function scripting() {
       const defines = builder.merge(DEFINES, {
         GENERIC: true,
         LIB: true,
         SKIP_BABEL: false,
       });
-      return createTemporaryScriptingBundle(defines);
+      return merge([
+        buildDefaultPreferences(defines, "lib-legacy/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
     },
     function () {
       const defines = builder.merge(DEFINES, {
@@ -1747,21 +1797,30 @@ gulp.task("lint", function (done) {
 
 gulp.task(
   "lint-chromium",
-  gulp.series("default_preferences", function (done) {
-    console.log();
-    console.log("### Checking supplemental Chromium files");
+  gulp.series(
+    function scripting() {
+      const defines = builder.merge(DEFINES, {
+        CHROME: true,
+        SKIP_BABEL: false,
+      });
+      return buildDefaultPreferences(defines, "lint-chromium/");
+    },
+    function (done) {
+      console.log();
+      console.log("### Checking supplemental Chromium files");
 
-    if (
-      !checkChromePreferencesFile(
-        "extensions/chromium/preferences_schema.json",
-        "build/default_preferences.json"
-      )
-    ) {
-      done(new Error("chromium/preferences_schema is not in sync."));
-      return;
+      if (
+        !checkChromePreferencesFile(
+          "extensions/chromium/preferences_schema.json",
+          getDefaultPreferences("lint-chromium/")
+        )
+      ) {
+        done(new Error("chromium/preferences_schema is not in sync."));
+        return;
+      }
+      done();
     }
-    done();
-  })
+  )
 );
 
 gulp.task(
@@ -2270,7 +2329,8 @@ gulp.task("externaltest", function (done) {
 gulp.task(
   "npm-test",
   gulp.series(
-    gulp.parallel("lint", "externaltest", "unittestcli", "typestest"),
-    "lint-chromium"
+    gulp.parallel("lint", "externaltest", "unittestcli"),
+    "lint-chromium",
+    "typestest"
   )
 );
