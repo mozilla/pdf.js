@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { getPDFFileNameFromURL } from "./ui_utils.js";
-import { loadScript } from "pdfjs-lib";
+import { getPdfFilenameFromUrl, loadScript } from "pdfjs-lib";
 
 async function docPropertiesLookup(pdfDocument) {
   const url = "",
@@ -37,7 +36,7 @@ async function docPropertiesLookup(pdfDocument) {
     ...info,
     baseURL: baseUrl,
     filesize: contentLength,
-    filename: contentDispositionFilename || getPDFFileNameFromURL(url),
+    filename: contentDispositionFilename || getPdfFilenameFromUrl(url),
     metadata: metadata?.getRaw(),
     authors: metadata?.get("dc:creator"),
     numPages: pdfDocument.numPages,
