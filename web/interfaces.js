@@ -207,6 +207,18 @@ class IPDFAnnotationLayerFactory {
 /**
  * @interface
  */
+class IPDFXfaLayerFactory {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPage} pdfPage
+   * @returns {XfaLayerBuilder}
+   */
+  createXfaLayerBuilder(pageDiv, pdfPage) {}
+}
+
+/**
+ * @interface
+ */
 class IL10n {
   /**
    * @returns {Promise<string>} - Resolves to the current locale.
@@ -243,5 +255,6 @@ export {
   IPDFHistory,
   IPDFLinkService,
   IPDFTextLayerFactory,
+  IPDFXfaLayerFactory,
   IRenderableView,
 };

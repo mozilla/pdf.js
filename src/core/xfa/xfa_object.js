@@ -20,6 +20,7 @@ import { NamespaceIds } from "./namespaces.js";
 // We use these symbols to avoid name conflict between tags
 // and properties/methods names.
 const $appendChild = Symbol();
+const $childrenToHTML = Symbol();
 const $clean = Symbol();
 const $cleanup = Symbol();
 const $clone = Symbol();
@@ -27,6 +28,7 @@ const $consumed = Symbol();
 const $content = Symbol("content");
 const $data = Symbol("data");
 const $dump = Symbol();
+const $extra = Symbol("extra");
 const $finalize = Symbol();
 const $getAttributeIt = Symbol();
 const $getChildrenByClass = Symbol();
@@ -56,6 +58,8 @@ const $setId = Symbol();
 const $setSetAttributes = Symbol();
 const $setValue = Symbol();
 const $text = Symbol();
+const $toHTML = Symbol();
+const $uid = Symbol("uid");
 
 const _applyPrototype = Symbol();
 const _attributes = Symbol();
@@ -73,6 +77,8 @@ const _parent = Symbol("parent");
 const _setAttributes = Symbol();
 const _validator = Symbol();
 
+let uid = 0;
+
 class XFAObject {
   constructor(nsId, name, hasChildren = false) {
     this[$namespaceId] = nsId;
@@ -80,6 +86,7 @@ class XFAObject {
     this[_hasChildren] = hasChildren;
     this[_parent] = null;
     this[_children] = [];
+    this[$uid] = `${name}${uid++}`;
   }
 
   [$onChild](child) {
@@ -250,6 +257,23 @@ class XFAObject {
     }
 
     return dumped;
+  }
+
+  [$toHTML]() {
+    return null;
+  }
+
+  [$childrenToHTML]({ filter = null, include = true }) {
+    const res = [];
+    this[$getChildren]().forEach(node => {
+      if (!filter || include === filter.has(node[$nodeName])) {
+        const html = node[$toHTML]();
+        if (html) {
+          res.push(html);
+        }
+      }
+    });
+    return res;
   }
 
   [$setSetAttributes](attributes) {
@@ -604,6 +628,17 @@ class XmlObject extends XFAObject {
     }
   }
 
+  [$toHTML]() {
+    if (this[$nodeName] === "#text") {
+      return {
+        name: "#text",
+        value: this[$content],
+      };
+    }
+
+    return null;
+  }
+
   [$getChildren](name = null) {
     if (!name) {
       return this[_children];
@@ -766,6 +801,7 @@ class Option10 extends IntegerObject {
 
 export {
   $appendChild,
+  $childrenToHTML,
   $clean,
   $cleanup,
   $clone,
@@ -773,6 +809,7 @@ export {
   $content,
   $data,
   $dump,
+  $extra,
   $finalize,
   $getAttributeIt,
   $getChildren,
@@ -801,6 +838,8 @@ export {
   $setSetAttributes,
   $setValue,
   $text,
+  $toHTML,
+  $uid,
   ContentObject,
   IntegerObject,
   Option01,

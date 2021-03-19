@@ -74,7 +74,7 @@ function getMeasurement(str, def = "0") {
   }
   return {
     value: sign === "-" ? -value : value,
-    unit,
+    unit: unit || "pt",
   };
 }
 
