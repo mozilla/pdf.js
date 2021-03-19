@@ -297,7 +297,7 @@ class AppOptions {
     }
     const defaultOption = defaultOptions[name];
     if (defaultOption !== undefined) {
-      return defaultOption.compatibility || defaultOption.value;
+      return defaultOption.compatibility ?? defaultOption.value;
     }
     return undefined;
   }
@@ -329,7 +329,7 @@ class AppOptions {
       options[name] =
         userOption !== undefined
           ? userOption
-          : defaultOption.compatibility || defaultOption.value;
+          : defaultOption.compatibility ?? defaultOption.value;
     }
     return options;
   }
