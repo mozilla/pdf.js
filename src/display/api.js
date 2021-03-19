@@ -1468,6 +1468,7 @@ class PDFPageProxy {
     this.objs.clear();
     this.annotationsPromise = null;
     this._jsActionsPromise = null;
+    this._xfaPromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1502,6 +1503,7 @@ class PDFPageProxy {
     this.objs.clear();
     this.annotationsPromise = null;
     this._jsActionsPromise = null;
+    this._xfaPromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
