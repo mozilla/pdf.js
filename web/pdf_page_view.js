@@ -125,6 +125,10 @@ class PDFPageView {
     div.style.width = Math.floor(this.viewport.width) + "px";
     div.style.height = Math.floor(this.viewport.height) + "px";
     div.setAttribute("data-page-number", this.id);
+    div.setAttribute("role", "region");
+    this.l10n.get("page_landmark", { page: this.id }).then(msg => {
+      div.setAttribute("aria-label", msg);
+    });
     this.div = div;
 
     container.appendChild(div);
@@ -259,6 +263,10 @@ class PDFPageView {
 
     this.loadingIconDiv = document.createElement("div");
     this.loadingIconDiv.className = "loadingIcon";
+    this.loadingIconDiv.setAttribute("role", "img");
+    this.l10n.get("loading").then(msg => {
+      this.loadingIconDiv?.setAttribute("aria-label", msg);
+    });
     div.appendChild(this.loadingIconDiv);
   }
 
@@ -617,9 +625,6 @@ class PDFPageView {
 
     const viewport = this.viewport;
     const canvas = document.createElement("canvas");
-    this.l10n.get("page_canvas", { page: this.id }).then(msg => {
-      canvas.setAttribute("aria-label", msg);
-    });
 
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.

@@ -45,7 +45,7 @@ const DEFAULT_L10N_STRINGS = {
     "Toggle Sidebar (document contains outline/attachments/layers)",
 
   additional_layers: "Additional Layers",
-  page_canvas: "Page {{page}}",
+  page_landmark: "Page {{page}}",
   thumb_page_title: "Page {{page}}",
   thumb_page_canvas: "Thumbnail of Page {{page}}",
 
@@ -70,6 +70,7 @@ const DEFAULT_L10N_STRINGS = {
   page_scale_actual: "Actual Size",
   page_scale_percent: "{{scale}}%",
 
+  loading: "Loading…",
   loading_error: "An error occurred while loading the PDF.",
   invalid_file_error: "Invalid or corrupted PDF file.",
   missing_file_error: "Missing PDF file.",
