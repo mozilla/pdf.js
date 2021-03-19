@@ -62,7 +62,7 @@ const defaultOptions = {
   },
   enablePrintAutoRotate: {
     /** @type {boolean} */
-    value: false,
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableScripting: {
