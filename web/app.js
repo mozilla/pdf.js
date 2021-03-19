@@ -22,7 +22,6 @@ import {
   DEFAULT_SCALE_VALUE,
   EventBus,
   getActiveOrFocusedElement,
-  getPDFFileNameFromURL,
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
@@ -44,6 +43,7 @@ import {
   createPromiseCapability,
   getDocument,
   getFilenameFromUrl,
+  getPdfFilenameFromUrl,
   GlobalWorkerOptions,
   InvalidPDFException,
   isPdfFile,
@@ -749,7 +749,7 @@ const PDFViewerApplication = {
   setTitleUsingUrl(url = "") {
     this.url = url;
     this.baseUrl = url.split("#")[0];
-    let title = getPDFFileNameFromURL(url, "");
+    let title = getPdfFilenameFromUrl(url, "");
     if (!title) {
       try {
         title = decodeURIComponent(getFilenameFromUrl(url)) || url;
@@ -773,7 +773,7 @@ const PDFViewerApplication = {
   get _docFilename() {
     // Use `this.url` instead of `this.baseUrl` to perform filename detection
     // based on the reference fragment as ultimate fallback if needed.
-    return this._contentDispositionFilename || getPDFFileNameFromURL(this.url);
+    return this._contentDispositionFilename || getPdfFilenameFromUrl(this.url);
   },
 
   /**
