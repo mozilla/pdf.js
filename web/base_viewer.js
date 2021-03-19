@@ -1347,25 +1347,21 @@ class BaseViewer {
    * @returns {Array} Array of objects with width/height/rotation fields.
    */
   getPagesOverview() {
-    const pagesOverview = this._pages.map(function (pageView) {
+    return this._pages.map(pageView => {
       const viewport = pageView.pdfPage.getViewport({ scale: 1 });
-      return {
-        width: viewport.width,
-        height: viewport.height,
-        rotation: viewport.rotation,
-      };
-    });
-    if (!this.enablePrintAutoRotate) {
-      return pagesOverview;
-    }
-    return pagesOverview.map(function (size) {
-      if (isPortraitOrientation(size)) {
-        return size;
+
+      if (!this.enablePrintAutoRotate || isPortraitOrientation(viewport)) {
+        return {
+          width: viewport.width,
+          height: viewport.height,
+          rotation: viewport.rotation,
+        };
       }
+      // Landscape orientation.
       return {
-        width: size.height,
-        height: size.width,
-        rotation: (size.rotation - 90) % 360,
+        width: viewport.height,
+        height: viewport.width,
+        rotation: (viewport.rotation - 90) % 360,
       };
     });
   }
