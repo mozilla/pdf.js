@@ -188,14 +188,15 @@ class WorkerMessageHandler {
         await pdfManager.ensureDoc("checkFirstPage");
       }
 
-      const [numPages, fingerprint] = await Promise.all([
+      const [numPages, fingerprint, isPureXfa] = await Promise.all([
         pdfManager.ensureDoc("numPages"),
         pdfManager.ensureDoc("fingerprint"),
+        pdfManager.ensureDoc("isPureXfa"),
       ]);
-      return { numPages, fingerprint };
+      return { numPages, fingerprint, isPureXfa };
     }
 
-    function getPdfManager(data, evaluatorOptions) {
+    function getPdfManager(data, evaluatorOptions, enableXfa) {
       var pdfManagerCapability = createPromiseCapability();
       let newPdfManager;
 
@@ -207,6 +208,7 @@ class WorkerMessageHandler {
             source.data,
             source.password,
             evaluatorOptions,
+            enableXfa,
             docBaseUrl
           );
           pdfManagerCapability.resolve(newPdfManager);
@@ -246,6 +248,7 @@ class WorkerMessageHandler {
               rangeChunkSize: source.rangeChunkSize,
             },
             evaluatorOptions,
+            enableXfa,
             docBaseUrl
           );
           // There may be a chance that `newPdfManager` is not initialized for
@@ -277,6 +280,7 @@ class WorkerMessageHandler {
             pdfFile,
             source.password,
             evaluatorOptions,
+            enableXfa,
             docBaseUrl
           );
           pdfManagerCapability.resolve(newPdfManager);
@@ -399,7 +403,7 @@ class WorkerMessageHandler {
         fontExtraProperties: data.fontExtraProperties,
       };
 
-      getPdfManager(data, evaluatorOptions)
+      getPdfManager(data, evaluatorOptions, data.enableXfa)
         .then(function (newPdfManager) {
           if (terminated) {
             // We were in a process of setting up the manager, but it got
@@ -485,6 +489,16 @@ class WorkerMessageHandler {
       return pdfManager.getPage(pageIndex).then(function (page) {
         return page.jsActions;
       });
+    });
+
+    handler.on("GetPageXfa", function wphSetupGetXfa({ pageIndex }) {
+      return pdfManager.getPage(pageIndex).then(function (page) {
+        return pdfManager.ensure(page, "xfaData");
+      });
+    });
+
+    handler.on("GetIsPureXfa", function wphSetupGetIsPureXfa(data) {
+      return pdfManager.ensureDoc("isPureXfa");
     });
 
     handler.on("GetOutline", function wphSetupGetOutline(data) {
