@@ -1365,7 +1365,7 @@ class BaseViewer {
       return {
         width: size.height,
         height: size.width,
-        rotation: (size.rotation + 90) % 360,
+        rotation: (size.rotation - 90) % 360,
       };
     });
   }
