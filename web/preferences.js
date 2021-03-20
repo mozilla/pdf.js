@@ -29,7 +29,7 @@ class BasePreferences {
       value: Object.freeze(
         typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
           ? AppOptions.getAll(OptionKind.PREFERENCE)
-          : PDFJSDev.json("$ROOT/build/default_preferences.json")
+          : PDFJSDev.eval("DEFAULT_PREFERENCES")
       ),
       writable: false,
       enumerable: true,
