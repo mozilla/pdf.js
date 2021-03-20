@@ -669,49 +669,17 @@ function buildDefaultPreferences(defines, dir) {
     TESTING: defines.TESTING || process.env.TESTING === "true",
   });
 
-  // Refer to the comment in the 'lib' task below.
-  function babelPluginReplaceNonWebPackRequire(babel) {
-    return {
-      visitor: {
-        Identifier(curPath, state) {
-          if (curPath.node.name === "__non_webpack_require__") {
-            curPath.replaceWith(babel.types.identifier("require"));
-          }
-        },
-      },
-    };
-  }
-  function preprocess(content) {
-    const skipBabel =
-      bundleDefines.SKIP_BABEL || /\/\*\s*no-babel-preset\s*\*\//.test(content);
-    content = preprocessor2.preprocessPDFJSCode(ctx, content);
-    return babel.transform(content, {
-      sourceType: "module",
-      presets: skipBabel ? undefined : ["@babel/preset-env"],
-      plugins: [
-        "@babel/plugin-proposal-logical-assignment-operators",
-        "@babel/plugin-transform-modules-commonjs",
-        babelPluginReplaceNonWebPackRequire,
-      ],
-    }).code;
-  }
-  const babel = require("@babel/core");
-  const ctx = {
-    rootPath: __dirname,
-    saveComments: false,
-    defines: bundleDefines,
-    map: {
-      "pdfjs-lib": "../pdf",
-    },
-  };
-  const preprocessor2 = require("./external/builder/preprocessor2.js");
-  return merge([
+  const inputStream = merge([
     gulp.src(["web/{app_options,viewer_compatibility}.js"], {
       base: ".",
     }),
-  ])
-    .pipe(transform("utf8", preprocess))
-    .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + dir));
+  ]);
+
+  return buildLibHelper(
+    bundleDefines,
+    inputStream,
+    DEFAULT_PREFERENCES_DIR + dir
+  );
 }
 
 function getDefaultPreferences(dir) {
@@ -1417,7 +1385,7 @@ gulp.task("types", function (done) {
   exec(`"node_modules/.bin/tsc" --${args} src/pdf.js`, done);
 });
 
-function buildLib(defines, dir) {
+function buildLibHelper(bundleDefines, inputStream, outputDir) {
   // When we create a bundle, webpack is run on the source and it will replace
   // require with __webpack_require__. When we want to use the real require,
   // __non_webpack_require__ has to be used.
@@ -1461,15 +1429,6 @@ function buildLib(defines, dir) {
     return licenseHeaderLibre + content;
   }
   const babel = require("@babel/core");
-  const versionInfo = getVersionJSON();
-  const bundleDefines = builder.merge(defines, {
-    BUNDLE_VERSION: versionInfo.version,
-    BUNDLE_BUILD: versionInfo.commit,
-    TESTING: defines.TESTING || process.env.TESTING === "true",
-    DEFAULT_PREFERENCES: getDefaultPreferences(
-      defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
-    ),
-  });
   const ctx = {
     rootPath: __dirname,
     saveComments: false,
@@ -1482,7 +1441,24 @@ function buildLib(defines, dir) {
     .readFileSync("./src/license_header_libre.js")
     .toString();
   const preprocessor2 = require("./external/builder/preprocessor2.js");
-  return merge([
+  return inputStream
+    .pipe(transform("utf8", preprocess))
+    .pipe(gulp.dest(outputDir));
+}
+
+function buildLib(defines, dir) {
+  const versionInfo = getVersionJSON();
+
+  const bundleDefines = builder.merge(defines, {
+    BUNDLE_VERSION: versionInfo.version,
+    BUNDLE_BUILD: versionInfo.commit,
+    TESTING: defines.TESTING || process.env.TESTING === "true",
+    DEFAULT_PREFERENCES: getDefaultPreferences(
+      defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
+    ),
+  });
+
+  const inputStream = merge([
     gulp.src(
       [
         "src/{core,display,shared}/**/*.js",
@@ -1496,9 +1472,9 @@ function buildLib(defines, dir) {
       { base: "." }
     ),
     gulp.src("test/unit/*.js", { base: "." }),
-  ])
-    .pipe(transform("utf8", preprocess))
-    .pipe(gulp.dest(dir));
+  ]);
+
+  return buildLibHelper(bundleDefines, inputStream, dir);
 }
 
 gulp.task(
