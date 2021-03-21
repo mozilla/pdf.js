@@ -79,7 +79,7 @@ describe("annotation", function () {
 
   let pdfManagerMock, idFactoryMock, partialEvaluator;
 
-  beforeAll(async function (done) {
+  beforeAll(async function () {
     pdfManagerMock = new PDFManagerMock({
       docBaseUrl: null,
     });
@@ -108,8 +108,6 @@ describe("annotation", function () {
       fontCache: new RefSetCache(),
       builtInCMapCache,
     });
-
-    done();
   });
 
   afterAll(function () {
