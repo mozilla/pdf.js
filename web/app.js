@@ -518,7 +518,6 @@ const PDFViewerApplication = {
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enableScripting: AppOptions.get("enableScripting"),
-      enableXfa: AppOptions.get("enableXfa"),
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -1561,7 +1560,12 @@ const PDFViewerApplication = {
       this.setTitle(contentDispositionFilename);
     }
 
-    if (info.IsXFAPresent && !info.IsAcroFormPresent) {
+    if (
+      info.IsXFAPresent &&
+      !info.IsAcroFormPresent &&
+      // Note: `isPureXfa === true` implies that `enableXfa = true` was set.
+      !pdfDocument.isPureXfa
+    ) {
       console.warn("Warning: XFA is not supported");
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     } else if (
