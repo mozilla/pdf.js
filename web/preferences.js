@@ -35,25 +35,16 @@ class BasePreferences {
       enumerable: true,
       configurable: false,
     });
-    this.prefs = Object.assign(Object.create(null), this.defaults);
+    this.prefs = Object.create(null);
 
     this._initializedPromise = this._readFromStorage(this.defaults).then(
       prefs => {
-        if (!prefs) {
-          return;
-        }
-        for (const name in prefs) {
-          const defaultValue = this.defaults[name],
-            prefValue = prefs[name];
-          // Ignore preferences not present in, or whose types don't match,
-          // the default values.
-          if (
-            defaultValue === undefined ||
-            typeof prefValue !== typeof defaultValue
-          ) {
-            continue;
+        for (const name in this.defaults) {
+          const prefValue = prefs?.[name];
+          // Ignore preferences whose types don't match the default values.
+          if (typeof prefValue === typeof this.defaults[name]) {
+            this.prefs[name] = prefValue;
           }
-          this.prefs[name] = prefValue;
         }
       }
     );
@@ -86,7 +77,7 @@ class BasePreferences {
    */
   async reset() {
     await this._initializedPromise;
-    this.prefs = Object.assign(Object.create(null), this.defaults);
+    this.prefs = Object.create(null);
     return this._writeToStorage(this.defaults);
   }
 
@@ -114,8 +105,7 @@ class BasePreferences {
         value = value.toString();
       } else {
         throw new Error(
-          `Set preference: "${value}" is a ${valueType}, ` +
-            `expected a ${defaultType}.`
+          `Set preference: "${value}" is a ${valueType}, expected a ${defaultType}.`
         );
       }
     } else {
