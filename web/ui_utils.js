@@ -581,64 +581,6 @@ function noContextMenuHandler(evt) {
   evt.preventDefault();
 }
 
-function isDataSchema(url) {
-  let i = 0;
-  const ii = url.length;
-  while (i < ii && url[i].trim() === "") {
-    i++;
-  }
-  return url.substring(i, i + 5).toLowerCase() === "data:";
-}
-
-/**
- * Returns the filename or guessed filename from the url (see issue 3455).
- * @param {string} url - The original PDF location.
- * @param {string} defaultFilename - The value returned if the filename is
- *   unknown, or the protocol is unsupported.
- * @returns {string} Guessed PDF filename.
- */
-function getPDFFileNameFromURL(url, defaultFilename = "document.pdf") {
-  if (window.PDFViewerApplication.appConfig.filenameForDownload) {
-    return window.PDFViewerApplication.appConfig.filenameForDownload;
-  }
-
-  if (typeof url !== "string") {
-    return defaultFilename;
-  }
-  if (isDataSchema(url)) {
-    console.warn(
-      "getPDFFileNameFromURL: " +
-        'ignoring "data:" URL for performance reasons.'
-    );
-    return defaultFilename;
-  }
-  const reURI = /^(?:(?:[^:]+:)?\/\/[^/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
-  //              SCHEME        HOST        1.PATH  2.QUERY   3.REF
-  // Pattern to get last matching NAME.pdf
-  const reFilename = /[^/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
-  const splitURI = reURI.exec(url);
-  let suggestedFilename =
-    reFilename.exec(splitURI[1]) ||
-    reFilename.exec(splitURI[2]) ||
-    reFilename.exec(splitURI[3]);
-  if (suggestedFilename) {
-    suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.includes("%")) {
-      // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
-      try {
-        suggestedFilename = reFilename.exec(
-          decodeURIComponent(suggestedFilename)
-        )[0];
-      } catch (ex) {
-        // Possible (extremely rare) errors:
-        // URIError "Malformed URI", e.g. for "%AA.pdf"
-        // TypeError "null has no properties", e.g. for "%2F.pdf"
-      }
-    }
-  }
-  return suggestedFilename || defaultFilename;
-}
-
 function normalizeWheelEventDirection(evt) {
   let delta = Math.hypot(evt.deltaX, evt.deltaY);
   const angle = Math.atan2(evt.deltaY, evt.deltaX);
@@ -753,11 +695,11 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 const animationStarted = new Promise(function (resolve) {
   if (
     typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("LIB && TESTING") &&
+    PDFJSDev.test("LIB") &&
     typeof window === "undefined"
   ) {
     // Prevent "ReferenceError: window is not defined" errors when running the
-    // unit-tests in Node.js/Travis.
+    // unit-tests in Node.js environments.
     setTimeout(resolve, 20);
     return;
   }
@@ -1093,7 +1035,6 @@ export {
   getActiveOrFocusedElement,
   getOutputScale,
   getPageSizeInches,
-  getPDFFileNameFromURL,
   getVisibleElements,
   isPortraitOrientation,
   isValidRotation,

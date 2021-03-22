@@ -40,6 +40,7 @@ import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  isDataScheme,
   loadScript,
   PageViewport,
   RenderingCancelledException,
@@ -170,6 +171,8 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
+ * @property {boolean} [enableXfa] - Render Xfa forms if any.
+ *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
  *   context to create elements with and to load resources, such as fonts,
  *   into. Defaults to the current document.
@@ -292,7 +295,17 @@ function getDocument(src) {
   params.ignoreErrors = params.stopAtErrors !== true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
+  params.enableXfa = params.enableXfa === true;
 
+  if (
+    typeof params.docBaseUrl !== "string" ||
+    isDataScheme(params.docBaseUrl)
+  ) {
+    // Ignore "data:"-URLs, since they can't be used to recover valid absolute
+    // URLs anyway. We want to avoid sending them to the worker-thread, since
+    // they contain the *entire* PDF document and can thus be arbitrarily long.
+    params.docBaseUrl = null;
+  }
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }
@@ -452,6 +465,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
       fontExtraProperties: source.fontExtraProperties,
+      enableXfa: source.enableXfa,
     })
     .then(function (workerId) {
       if (worker.destroyed) {
@@ -686,6 +700,13 @@ class PDFDocumentProxy {
    */
   get fingerprint() {
     return this._pdfInfo.fingerprint;
+  }
+
+  /**
+   * @type {boolean} True if only XFA form.
+   */
+  get isPureXfa() {
+    return this._pdfInfo.isPureXfa;
   }
 
   /**
@@ -1180,6 +1201,16 @@ class PDFPageProxy {
   }
 
   /**
+   * @returns {Promise<Object | null>} A promise that is resolved with
+   *   an {Object} with a fake DOM object (a tree structure where elements
+   *   are {Object} with a name, attributes (class, style, ...), value and
+   *   children, very similar to a HTML DOM tree), or `null` if no XFA exists.
+   */
+  getXfa() {
+    return (this._xfaPromise ||= this._transport.getPageXfa(this._pageIndex));
+  }
+
+  /**
    * Begins the process of rendering a page to the desired context.
    *
    * @param {RenderParameters} params Page render parameters.
@@ -1461,6 +1492,7 @@ class PDFPageProxy {
     this.objs.clear();
     this.annotationsPromise = null;
     this._jsActionsPromise = null;
+    this._xfaPromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1495,6 +1527,7 @@ class PDFPageProxy {
     this.objs.clear();
     this.annotationsPromise = null;
     this._jsActionsPromise = null;
+    this._xfaPromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
@@ -2729,6 +2762,12 @@ class WorkerTransport {
 
   getPageJSActions(pageIndex) {
     return this.messageHandler.sendWithPromise("GetPageJSActions", {
+      pageIndex,
+    });
+  }
+
+  getPageXfa(pageIndex) {
+    return this.messageHandler.sendWithPromise("GetPageXfa", {
       pageIndex,
     });
   }

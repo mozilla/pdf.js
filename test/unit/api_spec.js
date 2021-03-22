@@ -2033,78 +2033,70 @@ describe("api", function () {
         .catch(done.fail);
     });
 
-    it("caches image resources at the document/page level as expected (issue 11878)", async function (done) {
+    it("caches image resources at the document/page level as expected (issue 11878)", async function () {
       const { NUM_PAGES_THRESHOLD } = GlobalImageCache,
         EXPECTED_WIDTH = 2550,
         EXPECTED_HEIGHT = 3300;
 
       const loadingTask = getDocument(buildGetDocumentParams("issue11878.pdf"));
+      const pdfDoc = await loadingTask.promise;
       let firstImgData = null;
 
-      try {
-        const pdfDoc = await loadingTask.promise;
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const pdfPage = await pdfDoc.getPage(i);
+        const opList = await pdfPage.getOperatorList();
 
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-          const pdfPage = await pdfDoc.getPage(i);
-          const opList = await pdfPage.getOperatorList();
+        const { commonObjs, objs } = pdfPage;
+        const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+        const [objId, width, height] = opList.argsArray[imgIndex];
 
-          const { commonObjs, objs } = pdfPage;
-          const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
-          const [objId, width, height] = opList.argsArray[imgIndex];
+        if (i < NUM_PAGES_THRESHOLD) {
+          expect(objId).toEqual(`img_p${i - 1}_1`);
 
-          if (i < NUM_PAGES_THRESHOLD) {
-            expect(objId).toEqual(`img_p${i - 1}_1`);
+          expect(objs.has(objId)).toEqual(true);
+          expect(commonObjs.has(objId)).toEqual(false);
+        } else {
+          expect(objId).toEqual(
+            `g_${loadingTask.docId}_img_p${NUM_PAGES_THRESHOLD - 1}_1`
+          );
 
-            expect(objs.has(objId)).toEqual(true);
-            expect(commonObjs.has(objId)).toEqual(false);
-          } else {
-            expect(objId).toEqual(
-              `g_${loadingTask.docId}_img_p${NUM_PAGES_THRESHOLD - 1}_1`
-            );
-
-            expect(objs.has(objId)).toEqual(false);
-            expect(commonObjs.has(objId)).toEqual(true);
-          }
-          expect(width).toEqual(EXPECTED_WIDTH);
-          expect(height).toEqual(EXPECTED_HEIGHT);
-
-          // Ensure that the actual image data is identical for all pages.
-          if (i === 1) {
-            firstImgData = objs.get(objId);
-
-            expect(firstImgData.width).toEqual(EXPECTED_WIDTH);
-            expect(firstImgData.height).toEqual(EXPECTED_HEIGHT);
-
-            expect(firstImgData.kind).toEqual(ImageKind.RGB_24BPP);
-            expect(firstImgData.data instanceof Uint8ClampedArray).toEqual(
-              true
-            );
-            expect(firstImgData.data.length).toEqual(25245000);
-          } else {
-            const objsPool = i >= NUM_PAGES_THRESHOLD ? commonObjs : objs;
-            const currentImgData = objsPool.get(objId);
-
-            expect(currentImgData.width).toEqual(firstImgData.width);
-            expect(currentImgData.height).toEqual(firstImgData.height);
-
-            expect(currentImgData.kind).toEqual(firstImgData.kind);
-            expect(currentImgData.data instanceof Uint8ClampedArray).toEqual(
-              true
-            );
-            expect(
-              currentImgData.data.every((value, index) => {
-                return value === firstImgData.data[index];
-              })
-            ).toEqual(true);
-          }
+          expect(objs.has(objId)).toEqual(false);
+          expect(commonObjs.has(objId)).toEqual(true);
         }
+        expect(width).toEqual(EXPECTED_WIDTH);
+        expect(height).toEqual(EXPECTED_HEIGHT);
 
-        await loadingTask.destroy();
-        firstImgData = null;
-        done();
-      } catch (ex) {
-        done.fail(ex);
+        // Ensure that the actual image data is identical for all pages.
+        if (i === 1) {
+          firstImgData = objs.get(objId);
+
+          expect(firstImgData.width).toEqual(EXPECTED_WIDTH);
+          expect(firstImgData.height).toEqual(EXPECTED_HEIGHT);
+
+          expect(firstImgData.kind).toEqual(ImageKind.RGB_24BPP);
+          expect(firstImgData.data instanceof Uint8ClampedArray).toEqual(true);
+          expect(firstImgData.data.length).toEqual(25245000);
+        } else {
+          const objsPool = i >= NUM_PAGES_THRESHOLD ? commonObjs : objs;
+          const currentImgData = objsPool.get(objId);
+
+          expect(currentImgData.width).toEqual(firstImgData.width);
+          expect(currentImgData.height).toEqual(firstImgData.height);
+
+          expect(currentImgData.kind).toEqual(firstImgData.kind);
+          expect(currentImgData.data instanceof Uint8ClampedArray).toEqual(
+            true
+          );
+          expect(
+            currentImgData.data.every((value, index) => {
+              return value === firstImgData.data[index];
+            })
+          ).toEqual(true);
+        }
       }
+
+      await loadingTask.destroy();
+      firstImgData = null;
     });
   });
   describe("Multiple `getDocument` instances", function () {

@@ -17,6 +17,7 @@
 import {
   addLinkAttributes,
   getFilenameFromUrl,
+  getPdfFilenameFromUrl,
   isFetchSupported,
   isPdfFile,
   isValidFetchUrl,
@@ -58,6 +59,7 @@ import { AnnotationLayer } from "./display/annotation_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { renderTextLayer } from "./display/text_layer.js";
 import { SVGGraphics } from "./display/svg.js";
+import { XfaLayer } from "./display/xfa_layer.js";
 
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsVersion =
@@ -100,6 +102,7 @@ export {
   // From "./display/display_utils.js":
   addLinkAttributes,
   getFilenameFromUrl,
+  getPdfFilenameFromUrl,
   isPdfFile,
   LinkTarget,
   loadScript,
@@ -139,4 +142,6 @@ export {
   renderTextLayer,
   // From "./display/svg.js":
   SVGGraphics,
+  // From "./display/xfa_layer.js":
+  XfaLayer,
 };

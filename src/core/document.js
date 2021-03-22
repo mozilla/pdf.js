@@ -15,6 +15,7 @@
 
 import {
   assert,
+  bytesToString,
   FormatError,
   info,
   InvalidPDFException,
@@ -28,6 +29,7 @@ import {
   shadow,
   stringToBytes,
   stringToPDFString,
+  stringToUTF8String,
   unreachable,
   Util,
   warn,
@@ -56,6 +58,7 @@ import { calculateMD5 } from "./crypto.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
+import { XFAFactory } from "./xfa/factory.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
@@ -79,6 +82,7 @@ class Page {
     builtInCMapCache,
     globalImageCache,
     nonBlendModesSet,
+    xfaFactory,
   }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -91,6 +95,7 @@ class Page {
     this.nonBlendModesSet = nonBlendModesSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+    this.xfaFactory = xfaFactory;
 
     const idCounters = {
       obj: 0,
@@ -137,6 +142,11 @@ class Page {
   }
 
   _getBoundingBox(name) {
+    if (this.xfaData) {
+      const { width, height } = this.xfaData.attributes.style;
+      return [0, 0, parseInt(width), parseInt(height)];
+    }
+
     const box = this._getInheritableProperty(name, /* getArray = */ true);
 
     if (Array.isArray(box) && box.length === 4) {
@@ -229,6 +239,13 @@ class Page {
       stream = new NullStream();
     }
     return stream;
+  }
+
+  get xfaData() {
+    if (this.xfaFactory) {
+      return shadow(this, "xfaData", this.xfaFactory.getPage(this.pageIndex));
+    }
+    return shadow(this, "xfaData", null);
   }
 
   save(handler, task, annotationStorage) {
@@ -695,6 +712,9 @@ class PDFDocument {
   }
 
   get numPages() {
+    if (this.xfaFactory) {
+      return shadow(this, "numPages", this.xfaFactory.numberPages);
+    }
     const linearization = this.linearization;
     const num = linearization ? linearization.numPages : this.catalog.numPages;
     return shadow(this, "numPages", num);
@@ -730,6 +750,80 @@ class PDFDocument {
         Array.isArray(rectangle) && rectangle.every(value => value === 0);
       return isSignature && isInvisible;
     });
+  }
+
+  get xfaData() {
+    const acroForm = this.catalog.acroForm;
+    if (!acroForm) {
+      return null;
+    }
+
+    const xfa = acroForm.get("XFA");
+    const entries = {
+      "xdp:xdp": "",
+      template: "",
+      datasets: "",
+      config: "",
+      connectionSet: "",
+      localeSet: "",
+      stylesheet: "",
+      "/xdp:xdp": "",
+    };
+    if (isStream(xfa) && !xfa.isEmpty) {
+      try {
+        entries["xdp:xdp"] = stringToUTF8String(bytesToString(xfa.getBytes()));
+        return entries;
+      } catch (_) {
+        warn("XFA - Invalid utf-8 string.");
+        return null;
+      }
+    }
+
+    if (!Array.isArray(xfa) || xfa.length === 0) {
+      return null;
+    }
+
+    for (let i = 0, ii = xfa.length; i < ii; i += 2) {
+      let name;
+      if (i === 0) {
+        name = "xdp:xdp";
+      } else if (i === ii - 2) {
+        name = "/xdp:xdp";
+      } else {
+        name = xfa[i];
+      }
+
+      if (!entries.hasOwnProperty(name)) {
+        continue;
+      }
+      const data = this.xref.fetchIfRef(xfa[i + 1]);
+      if (!isStream(data) || data.isEmpty) {
+        continue;
+      }
+      try {
+        entries[name] = stringToUTF8String(bytesToString(data.getBytes()));
+      } catch (_) {
+        warn("XFA - Invalid utf-8 string.");
+        return null;
+      }
+    }
+    return entries;
+  }
+
+  get xfaFactory() {
+    if (
+      this.pdfManager.enableXfa &&
+      this.formInfo.hasXfa &&
+      !this.formInfo.hasAcroForm
+    ) {
+      const data = this.xfaData;
+      return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
+    }
+    return shadow(this, "xfaFaxtory", null);
+  }
+
+  get isPureXfa() {
+    return this.xfaFactory !== null;
   }
 
   get formInfo() {
@@ -918,6 +1012,24 @@ class PDFDocument {
     }
     const { catalog, linearization } = this;
 
+    if (this.xfaFactory) {
+      return Promise.resolve(
+        new Page({
+          pdfManager: this.pdfManager,
+          xref: this.xref,
+          pageIndex,
+          pageDict: Dict.empty,
+          ref: null,
+          globalIdFactory: this._globalIdFactory,
+          fontCache: catalog.fontCache,
+          builtInCMapCache: catalog.builtInCMapCache,
+          globalImageCache: catalog.globalImageCache,
+          nonBlendModesSet: catalog.nonBlendModesSet,
+          xfaFactory: this.xfaFactory,
+        })
+      );
+    }
+
     const promise =
       linearization && linearization.pageFirst === pageIndex
         ? this._getLinearizationPage(pageIndex)
@@ -935,6 +1047,7 @@ class PDFDocument {
         builtInCMapCache: catalog.builtInCMapCache,
         globalImageCache: catalog.globalImageCache,
         nonBlendModesSet: catalog.nonBlendModesSet,
+        xfaFactory: null,
       });
     }));
   }

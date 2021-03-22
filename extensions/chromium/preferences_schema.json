@@ -158,7 +158,7 @@
     },
     "enableScripting": {
       "type": "boolean",
-      "default": false
+      "default": true
     },
     "enablePermissions": {
       "type": "boolean",
@@ -178,7 +178,7 @@
       "title": "Automatically rotate printed pages",
       "description": "When enabled, landscape pages are rotated when printed.",
       "type": "boolean",
-      "default": false
+      "default": true
     },
     "scrollModeOnLoad": {
       "title": "Scroll mode on load",

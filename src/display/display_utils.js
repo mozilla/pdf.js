@@ -451,13 +451,23 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
   link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
 }
 
+function isDataScheme(url) {
+  const ii = url.length;
+  let i = 0;
+  while (i < ii && url[i].trim() === "") {
+    i++;
+  }
+  return url.substring(i, i + 5).toLowerCase() === "data:";
+}
+
 function isPdfFile(filename) {
   return typeof filename === "string" && /\.pdf$/i.test(filename);
 }
 
 /**
- * Gets the file name from a given URL.
+ * Gets the filename from a given URL.
  * @param {string} url
+ * @returns {string}
  */
 function getFilenameFromUrl(url) {
   const anchor = url.indexOf("#");
@@ -467,6 +477,48 @@ function getFilenameFromUrl(url) {
     query > 0 ? query : url.length
   );
   return url.substring(url.lastIndexOf("/", end) + 1, end);
+}
+
+/**
+ * Returns the filename or guessed filename from the url (see issue 3455).
+ * @param {string} url - The original PDF location.
+ * @param {string} defaultFilename - The value returned if the filename is
+ *   unknown, or the protocol is unsupported.
+ * @returns {string} Guessed PDF filename.
+ */
+function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
+  if (typeof url !== "string") {
+    return defaultFilename;
+  }
+  if (isDataScheme(url)) {
+    warn('getPdfFilenameFromUrl: ignore "data:"-URL for performance reasons.');
+    return defaultFilename;
+  }
+  const reURI = /^(?:(?:[^:]+:)?\/\/[^/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
+  //              SCHEME        HOST        1.PATH  2.QUERY   3.REF
+  // Pattern to get last matching NAME.pdf
+  const reFilename = /[^/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
+  const splitURI = reURI.exec(url);
+  let suggestedFilename =
+    reFilename.exec(splitURI[1]) ||
+    reFilename.exec(splitURI[2]) ||
+    reFilename.exec(splitURI[3]);
+  if (suggestedFilename) {
+    suggestedFilename = suggestedFilename[0];
+    if (suggestedFilename.includes("%")) {
+      // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
+      try {
+        suggestedFilename = reFilename.exec(
+          decodeURIComponent(suggestedFilename)
+        )[0];
+      } catch (ex) {
+        // Possible (extremely rare) errors:
+        // URIError "Malformed URI", e.g. for "%AA.pdf"
+        // TypeError "null has no properties", e.g. for "%2F.pdf"
+      }
+    }
+  }
+  return suggestedFilename || defaultFilename;
 }
 
 class StatTimer {
@@ -655,6 +707,8 @@ export {
   DOMCMapReaderFactory,
   DOMSVGFactory,
   getFilenameFromUrl,
+  getPdfFilenameFromUrl,
+  isDataScheme,
   isFetchSupported,
   isPdfFile,
   isValidFetchUrl,

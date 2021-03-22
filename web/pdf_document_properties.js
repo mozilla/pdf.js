@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFDateString } from "pdfjs-lib";
 import {
-  getPageSizeInches,
-  getPDFFileNameFromURL,
-  isPortraitOrientation,
-} from "./ui_utils.js";
+  createPromiseCapability,
+  getPdfFilenameFromUrl,
+  PDFDateString,
+} from "pdfjs-lib";
+import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
 
 const DEFAULT_FIELD_CONTENT = "-";
 
@@ -140,7 +140,7 @@ class PDFDocumentProperties {
       pageSize,
       isLinearized,
     ] = await Promise.all([
-      contentDispositionFilename || getPDFFileNameFromURL(this.url),
+      contentDispositionFilename || getPdfFilenameFromUrl(this.url),
       this._parseFileSize(contentLength),
       this._parseDate(info.CreationDate),
       this._parseDate(info.ModDate),
