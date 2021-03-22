@@ -125,18 +125,13 @@ class BasePreferences {
    */
   async get(name) {
     await this._initializedPromise;
-    const defaultValue = this.defaults[name];
+    const defaultValue = this.defaults[name],
+      prefValue = this.prefs[name];
 
     if (defaultValue === undefined) {
       throw new Error(`Get preference: "${name}" is undefined.`);
-    } else {
-      const prefValue = this.prefs[name];
-
-      if (prefValue !== undefined) {
-        return prefValue;
-      }
     }
-    return defaultValue;
+    return prefValue !== undefined ? prefValue : defaultValue;
   }
 
   /**
@@ -146,7 +141,13 @@ class BasePreferences {
    */
   async getAll() {
     await this._initializedPromise;
-    return Object.assign(Object.create(null), this.defaults, this.prefs);
+    const obj = Object.create(null);
+
+    for (const name in this.defaults) {
+      const prefValue = this.prefs[name];
+      obj[name] = prefValue !== undefined ? prefValue : this.defaults[name];
+    }
+    return obj;
   }
 }
 
