@@ -187,16 +187,27 @@ class EventDispatcher {
         continue;
       }
 
+      event.value = null;
       const target = this._objects[targetId];
       this.runActions(source, target, event, "Calculate");
+      if (!event.rc) {
+        continue;
+      }
+      if (event.value !== null) {
+        target.wrapped.value = event.value;
+      }
+
+      event.value = target.obj.value;
       this.runActions(target, target, event, "Validate");
       if (!event.rc) {
         continue;
       }
 
-      target.wrapped.value = event.value;
+      event.value = target.obj.value;
       this.runActions(target, target, event, "Format");
-      target.wrapped.valueAsString = event.value;
+      if (event.value !== null) {
+        target.wrapped.valueAsString = event.value;
+      }
     }
   }
 }

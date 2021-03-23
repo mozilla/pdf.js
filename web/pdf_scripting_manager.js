@@ -308,10 +308,9 @@ class PDFScriptingManager {
     if (element) {
       element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
     } else {
-      if (value !== undefined && value !== null) {
-        // The element hasn't been rendered yet, use the AnnotationStorage.
-        this._pdfDocument?.annotationStorage.setValue(id, value);
-      }
+      delete detail.id;
+      // The element hasn't been rendered yet, use the AnnotationStorage.
+      this._pdfDocument?.annotationStorage.setValue(id, detail);
     }
   }
 
