@@ -205,13 +205,7 @@ class PDFHistory {
           `"${explicitDest}" is not a valid explicitDest parameter.`
       );
       return;
-    } else if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.linkService.pagesCount
-      )
-    ) {
+    } else if (!this._isValidPage(pageNumber)) {
       // Allow an unset `pageNumber` if and only if the history is still empty;
       // please refer to the `this._destination.page = null;` comment above.
       if (pageNumber !== null || this._destination) {
@@ -281,13 +275,7 @@ class PDFHistory {
     if (!this._initialized) {
       return;
     }
-    if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.linkService.pagesCount
-      )
-    ) {
+    if (!this._isValidPage(pageNumber)) {
       console.error(
         `PDFHistory.pushPage: "${pageNumber}" is not a valid page number.`
       );
@@ -482,6 +470,15 @@ class PDFHistory {
   /**
    * @private
    */
+  _isValidPage(val) {
+    return (
+      Number.isInteger(val) && val > 0 && val <= this.linkService.pagesCount
+    );
+  }
+
+  /**
+   * @private
+   */
   _isValidState(state, checkReload = false) {
     if (!state) {
       return false;
@@ -548,14 +545,7 @@ class PDFHistory {
     const nameddest = params.nameddest || "";
     let page = params.page | 0;
 
-    if (
-      !(
-        Number.isInteger(page) &&
-        page > 0 &&
-        page <= this.linkService.pagesCount
-      ) ||
-      (checkNameddest && nameddest.length > 0)
-    ) {
+    if (!this._isValidPage(page) || (checkNameddest && nameddest.length > 0)) {
       page = null;
     }
     return { hash, page, rotation: this.linkService.rotation };
