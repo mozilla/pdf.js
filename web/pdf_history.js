@@ -292,6 +292,8 @@ class PDFHistory {
     }
 
     this._pushOrReplaceState({
+      // Simulate an internal destination, for `this._tryPushCurrentPosition`:
+      dest: null,
       hash: `page=${pageNumber}`,
       page: pageNumber,
       rotation: this.linkService.rotation,
@@ -458,7 +460,7 @@ class PDFHistory {
       //  - contains an internal destination, since in this case we
       //    cannot ensure that the document position has actually changed.
       //  - was set through the user changing the hash of the document.
-      if (this._destination.dest || !this._destination.first) {
+      if (this._destination.dest !== undefined || !this._destination.first) {
         return;
       }
       // To avoid "flooding" the browser history, replace the current entry.
