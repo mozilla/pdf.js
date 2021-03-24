@@ -265,7 +265,7 @@ class PDFHistory {
       // being scrolled into view, to avoid potentially inconsistent state.
       this._popStateInProgress = true;
       // We defer the resetting of `this._popStateInProgress`, to account for
-      // e.g. zooming occuring when the new destination is being navigated to.
+      // e.g. zooming occurring when the new destination is being navigated to.
       Promise.resolve().then(() => {
         this._popStateInProgress = false;
       });
@@ -314,7 +314,7 @@ class PDFHistory {
       // being scrolled into view, to avoid potentially inconsistent state.
       this._popStateInProgress = true;
       // We defer the resetting of `this._popStateInProgress`, to account for
-      // e.g. zooming occuring when the new page is being navigated to.
+      // e.g. zooming occurring when the new page is being navigated to.
       Promise.resolve().then(() => {
         this._popStateInProgress = false;
       });
