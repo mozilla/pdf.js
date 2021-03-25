@@ -20,3 +20,43 @@
   z-index: 200;
   transform-origin: 0 0;
 }
+
+.xfaLayer * {
+  color: inherit;
+  font: inherit;
+  font-kerning: inherit;
+  letter-spacing: inherit;
+  text-decoration: inherit;
+  vertical-align: inherit;
+}
+
+.xfaFont {
+  color: black;
+  font-weight: normal;
+  font-kerning: none;
+  font-size: 10px;
+  font-style: normal;
+  letter-spacing: 0;
+  text-decoration: none;
+  vertical-align: 0;
+}
+
+.xfaDraw {
+  z-index: 200;
+  background-color: #ff000080;
+}
+
+.xfaExclgroup {
+  z-index: 300;
+  background-color: #0000ff80;
+}
+
+.xfaField {
+  z-index: 300;
+  background-color: #00ff0080;
+}
+
+.xfaSubform {
+  z-index: 100;
+  background-color: #ffff0080;
+}
