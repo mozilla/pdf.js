@@ -81,9 +81,9 @@ describe("XFAParser", function () {
       };
       const mediumAttributes = {
         id: "",
-        long: { value: 0, unit: "pt" },
+        long: 0,
         orientation: "portrait",
-        short: { value: 0, unit: "pt" },
+        short: 0,
         stock: "",
         trayIn: "auto",
         trayOut: "auto",
@@ -116,17 +116,17 @@ describe("XFAParser", function () {
             allowMacro: 0,
             anchorType: "topLeft",
             colSpan: 1,
-            columnWidths: [{ value: 0, unit: "pt" }],
-            h: { value: 0, unit: "pt" },
+            columnWidths: [0],
+            h: 0,
             hAlign: "left",
             id: "",
             layout: "position",
             locale: "",
-            maxH: { value: 0, unit: "pt" },
-            maxW: { value: 0, unit: "pt" },
+            maxH: 0,
+            maxW: 0,
             mergeMode: "consumeData",
-            minH: { value: 0, unit: "pt" },
-            minW: { value: 0, unit: "pt" },
+            minH: 0,
+            minW: 0,
             name: "",
             presence: "visible",
             relevant: [],
@@ -134,15 +134,15 @@ describe("XFAParser", function () {
             scope: "name",
             use: "",
             usehref: "",
-            w: { value: 0, unit: "pt" },
-            x: { value: 0, unit: "pt" },
-            y: { value: 0, unit: "pt" },
+            w: 0,
+            x: 0,
+            y: 0,
             proto: {
               area: {
                 ...attributes,
                 colSpan: 1,
-                x: { value: 0, unit: "pt" },
-                y: { value: -3.14, unit: "in" },
+                x: 0,
+                y: -226.08,
                 relevant: [
                   { excluded: true, viewname: "foo" },
                   { excluded: false, viewname: "bar" },
@@ -162,19 +162,19 @@ describe("XFAParser", function () {
                 {
                   ...mediumAttributes,
                   imagingBBox: {
-                    x: { value: 1, unit: "pt" },
-                    y: { value: 2, unit: "in" },
-                    width: { value: 3.4, unit: "cm" },
-                    height: { value: 5.67, unit: "px" },
+                    x: 1,
+                    y: 144,
+                    width: 96.3779527559055,
+                    height: 5.67,
                   },
                 },
                 {
                   ...mediumAttributes,
                   imagingBBox: {
-                    x: { value: -1, unit: "pt" },
-                    y: { value: -1, unit: "pt" },
-                    width: { value: -1, unit: "pt" },
-                    height: { value: -1, unit: "pt" },
+                    x: -1,
+                    y: -1,
+                    width: -1,
+                    height: -1,
                   },
                 },
               ],
@@ -288,7 +288,7 @@ describe("XFAParser", function () {
       let font = root.template.subform.field[0].font;
       expect(font.typeface).toEqual("Foo");
       expect(font.overline).toEqual(0);
-      expect(font.size).toEqual({ value: 123, unit: "pt" });
+      expect(font.size).toEqual(123);
       expect(font.weight).toEqual("bold");
       expect(font.posture).toEqual("italic");
       expect(font.fill.color.value).toEqual({ r: 1, g: 2, b: 3 });
@@ -297,7 +297,7 @@ describe("XFAParser", function () {
       font = root.template.subform.field[1].font;
       expect(font.typeface).toEqual("Foo");
       expect(font.overline).toEqual(0);
-      expect(font.size).toEqual({ value: 456, unit: "pt" });
+      expect(font.size).toEqual(456);
       expect(font.weight).toEqual("bold");
       expect(font.posture).toEqual("normal");
       expect(font.fill.color.value).toEqual({ r: 4, g: 5, b: 6 });
@@ -387,7 +387,7 @@ describe("XFAParser", function () {
 
       expect(font.typeface).toEqual("helvetica");
       expect(font.overline).toEqual(0);
-      expect(font.size).toEqual({ value: 31, unit: "pt" });
+      expect(font.size).toEqual(31);
       expect(font.weight).toEqual("normal");
       expect(font.posture).toEqual("italic");
       expect(font.fill.color.value).toEqual({ r: 7, g: 8, b: 9 });
@@ -1005,10 +1005,7 @@ describe("XFAParser", function () {
       ).toBe("myfont");
       expect(
         searchNode(form, form, "Id.LastName.font.size")[0][$text]()
-      ).toEqual({
-        value: 123.4,
-        unit: "pt",
-      });
+      ).toEqual(123.4);
       expect(
         searchNode(form, form, "Id.LastName.assist.toolTip")[0][$dump]()
           .$content

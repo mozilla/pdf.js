@@ -30,6 +30,7 @@ import {
   $setSetAttributes,
   $setValue,
   $toHTML,
+  $toStyle,
   $uid,
   ContentObject,
   Option01,
@@ -50,8 +51,8 @@ import {
   getRelevant,
   getStringOption,
 } from "./utils.js";
-import { measureToString, setPosition, setWidthHeight } from "./html_utils.js";
-import { warn } from "../../shared/util.js";
+import { measureToString, toStyle } from "./html_utils.js";
+import { Util, warn } from "../../shared/util.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
 
@@ -614,6 +615,10 @@ class Color extends XFAObject {
   [$hasSettableValue]() {
     return false;
   }
+
+  [$toStyle]() {
+    return Util.makeHexColor(this.value.r, this.value.g, this.value.b);
+  }
 }
 
 class Comb extends XFAObject {
@@ -680,7 +685,7 @@ class ContentArea extends XFAObject {
       children: [],
       attributes: {
         style,
-        className: "xfa-contentarea",
+        class: "xfaContentarea",
         id: this[$uid],
       },
     };
@@ -896,10 +901,10 @@ class Draw extends XFAObject {
       "invisible",
     ]);
     this.relevant = getRelevant(attributes.relevant);
-    this.rotate = getFloat({
+    this.rotate = getInteger({
       data: attributes.rotate,
       defaultValue: 0,
-      validate: x => true,
+      validate: x => x % 90 === 0,
     });
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
@@ -923,6 +928,38 @@ class Draw extends XFAObject {
 
   [$setValue](value) {
     _setValue(this, value);
+  }
+
+  [$toHTML]() {
+    if (!this.value) {
+      return null;
+    }
+
+    const style = toStyle(
+      this,
+      "font",
+      "dimensions",
+      "position",
+      "rotate",
+      "anchorType"
+    );
+
+    const clazz = ["xfaDraw"];
+    if (this.font) {
+      clazz.push("xfaFont");
+    }
+
+    const attributes = {
+      style,
+      id: this[$uid],
+      class: clazz.join(" "),
+    };
+
+    return {
+      name: "div",
+      attributes,
+      children: [],
+    };
   }
 }
 
@@ -1269,6 +1306,31 @@ class ExclGroup extends XFAObject {
       field.value[$setValue](nodeBoolean);
     }
   }
+
+  [$toHTML]() {
+    if (!this.value) {
+      return null;
+    }
+
+    const style = toStyle(this, "dimensions", "position", "anchorType");
+    const attributes = {
+      style,
+      id: this[$uid],
+      class: "xfaExclgroup",
+    };
+
+    const children = this[$childrenToHTML]({
+      // TODO: exObject & exclGroup
+      filter: new Set(["field"]),
+      include: true,
+    });
+
+    return {
+      name: "div",
+      attributes,
+      children,
+    };
+  }
 }
 
 class Execute extends XFAObject {
@@ -1360,7 +1422,11 @@ class Field extends XFAObject {
       "invisible",
     ]);
     this.relevant = getRelevant(attributes.relevant);
-    this.rotate = getStringOption(attributes.rotate, ["0", "angle"]);
+    this.rotate = getInteger({
+      data: attributes.rotate,
+      defaultValue: 0,
+      validate: x => x % 90 === 0,
+    });
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.w = getMeasurement(attributes.w);
@@ -1394,6 +1460,38 @@ class Field extends XFAObject {
   [$setValue](value) {
     _setValue(this, value);
   }
+
+  [$toHTML]() {
+    if (!this.value) {
+      return null;
+    }
+
+    const style = toStyle(
+      this,
+      "font",
+      "dimensions",
+      "position",
+      "rotate",
+      "anchorType"
+    );
+
+    const clazz = ["xfaField"];
+    if (this.font) {
+      clazz.push("xfaFont");
+    }
+
+    const attributes = {
+      style,
+      id: this[$uid],
+      class: clazz.join(" "),
+    };
+
+    return {
+      name: "div",
+      attributes,
+      children: [],
+    };
+  }
 }
 
 class Fill extends XFAObject {
@@ -1417,6 +1515,26 @@ class Fill extends XFAObject {
     this.radial = null;
     this.solid = null;
     this.stipple = null;
+  }
+
+  [$toStyle]() {
+    let fill = "#000000";
+    for (const name of Object.getOwnPropertyNames(this)) {
+      if (name === "extras" || name === "color") {
+        continue;
+      }
+      const obj = this[name];
+      if (!(obj instanceof XFAObject)) {
+        continue;
+      }
+
+      fill = obj[$toStyle](this.color);
+      break;
+    }
+
+    return {
+      color: fill,
+    };
   }
 }
 
@@ -1521,6 +1639,80 @@ class Font extends XFAObject {
     this.weight = getStringOption(attributes.weight, ["normal", "bold"]);
     this.extras = null;
     this.fill = null;
+  }
+
+  [$toStyle]() {
+    const style = toStyle(this, "fill");
+    if (style.color) {
+      if (!style.color.startsWith("#")) {
+        // We've a gradient which is not possible for a font color
+        // so use a workaround.
+        style.backgroundClip = "text";
+        style.background = style.color;
+        style.color = "transparent";
+      } else if (style.color === "#000000") {
+        delete style.color;
+      }
+    }
+
+    if (this.baselineShift) {
+      style.verticalAlign = measureToString(this.baselineShift);
+    }
+
+    // TODO: fontHorizontalScale
+    // TODO: fontVerticalScale
+
+    if (this.kerningMode !== "none") {
+      style.fontKerning = "normal";
+    }
+
+    if (this.letterSpacing) {
+      style.letterSpacing = measureToString(this.letterSpacing);
+    }
+
+    if (this.lineThrough !== 0) {
+      style.textDecoration = "line-through";
+      if (this.lineThrough === 2) {
+        style.textDecorationStyle = "double";
+      }
+    }
+
+    // TODO: lineThroughPeriod
+
+    if (this.overline !== 0) {
+      style.textDecoration = "overline";
+      if (this.overline === 2) {
+        style.textDecorationStyle = "double";
+      }
+    }
+
+    // TODO: overlinePeriod
+
+    if (this.posture !== "normal") {
+      style.fontStyle = this.posture;
+    }
+
+    const fontSize = measureToString(this.size);
+    if (fontSize !== "10px") {
+      style.fontSize = fontSize;
+    }
+
+    style.fontFamily = this.typeface;
+
+    if (this.underline !== 0) {
+      style.textDecoration = "underline";
+      if (this.underline === 2) {
+        style.textDecorationStyle = "double";
+      }
+    }
+
+    // TODO: underlinePeriod
+
+    if (this.weight !== "normal") {
+      style.fontWeight = this.weight;
+    }
+
+    return style;
   }
 }
 
@@ -1754,6 +1946,13 @@ class Linear extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.color = null;
     this.extras = null;
+  }
+
+  [$toStyle](startColor) {
+    startColor = startColor ? startColor[$toStyle]() : "#FFFFFF";
+    const transf = this.type.replace(/([RBLT])/, " $1").toLowerCase();
+    const endColor = this.color ? this.color[$toStyle]() : "#000000";
+    return `linear-gradient(${transf}, ${startColor}, ${endColor})`;
   }
 }
 
@@ -1989,11 +2188,11 @@ class PageArea extends XFAObject {
 
     // TODO: handle the case where there are several content areas.
     const contentArea = children.find(
-      node => node.attributes.className === "xfa-contentarea"
+      node => node.attributes.class === "xfaContentarea"
     );
 
     const style = Object.create(null);
-    if (this.medium && this.medium.short.value && this.medium.long.value) {
+    if (this.medium && this.medium.short && this.medium.long) {
       style.width = measureToString(this.medium.short);
       style.height = measureToString(this.medium.long);
     } else {
@@ -2133,6 +2332,32 @@ class Pattern extends XFAObject {
     this.color = null;
     this.extras = null;
   }
+
+  [$toStyle](startColor) {
+    startColor = startColor ? startColor[$toStyle]() : "#FFFFFF";
+    const endColor = this.color ? this.color[$toStyle]() : "#000000";
+    const width = 5;
+    const cmd = "repeating-linear-gradient";
+    const colors = `${startColor},${startColor} ${width}px,${endColor} ${width}px,${endColor} ${
+      2 * width
+    }px`;
+    switch (this.type) {
+      case "crossHatch":
+        return `${cmd}(to top,${colors}) ${cmd}(to right,${colors})`;
+      case "crossDiagonal":
+        return `${cmd}(45deg,${colors}) ${cmd}(-45deg,${colors})`;
+      case "diagonalLeft":
+        return `${cmd}(45deg,${colors})`;
+      case "diagonalRight":
+        return `${cmd}(-45deg,${colors})`;
+      case "horizontal":
+        return `${cmd}(to top,${colors})`;
+      case "vertical":
+        return `${cmd}(to right,${colors})`;
+    }
+
+    return "";
+  }
 }
 
 class Picture extends StringObject {
@@ -2270,6 +2495,16 @@ class Radial extends XFAObject {
     this.color = null;
     this.extras = null;
   }
+
+  [$toStyle](startColor) {
+    startColor = startColor ? startColor[$toStyle]() : "#FFFFFF";
+    const endColor = this.color ? this.color[$toStyle]() : "#000000";
+    const colors =
+      this.type === "toEdge"
+        ? `${startColor},${endColor}`
+        : `${endColor},${startColor}`;
+    return `radial-gradient(circle to center, ${colors})`;
+  }
 }
 
 class Reason extends StringObject {
@@ -2393,6 +2628,10 @@ class Solid extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.extras = null;
   }
+
+  [$toStyle](startColor) {
+    return startColor ? startColor[$toStyle]() : "#FFFFFF";
+  }
 }
 
 class Speak extends StringObject {
@@ -2429,6 +2668,15 @@ class Stipple extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.color = null;
     this.extras = null;
+  }
+
+  [$toStyle](bgColor) {
+    const alpha = this.rate / 100;
+    return Util.makeHexColor(
+      Math.round(bgColor.value.r * (1 - alpha) + this.value.r * alpha),
+      Math.round(bgColor.value.g * (1 - alpha) + this.value.g * alpha),
+      Math.round(bgColor.value.b * (1 - alpha) + this.value.b * alpha)
+    );
   }
 }
 
@@ -2568,17 +2816,16 @@ class Subform extends XFAObject {
       page = pageAreas[pageNumber][$toHTML]();
     }
 
-    const style = Object.create(null);
-    setWidthHeight(this, style);
-    setPosition(this, style);
+    const style = toStyle(this, "dimensions", "position");
 
     const attributes = {
       style,
       id: this[$uid],
+      class: "xfaSubform",
     };
 
     if (this.name) {
-      attributes["xfa-name"] = this.name;
+      attributes.xfaName = this.name;
     }
 
     const children = this[$childrenToHTML]({

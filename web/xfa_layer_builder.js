@@ -57,7 +57,6 @@ class XfaLayerBuilder {
       } else {
         // Create an xfa layer div and render the form
         this.div = document.createElement("div");
-        this.div.className = "xfaLayer";
         this.pageDiv.appendChild(this.div);
         parameters.div = this.div;
 
