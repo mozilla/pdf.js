@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { shadow } from "pdfjs-lib";
+
 /**
  * Construct a GrabToPan instance for a given HTML element.
  * @param options.element {Element}
@@ -95,9 +97,9 @@ GrabToPan.prototype = {
    * @returns {boolean} Whether to not react to the click event.
    */
   ignoreTarget: function GrabToPan_ignoreTarget(node) {
-    // Use matchesSelector to check whether the clicked element
-    // is (a child of) an input element / link
-    return node[matchesSelector](
+    // Use `this._matchesSelector` to check whether the clicked element
+    // is (a child of) an input element / link.
+    return node[this._matchesSelector](
       "a[href], a[href] *, input, textarea, button, button *, select, option"
     );
   },
@@ -176,21 +178,27 @@ GrabToPan.prototype = {
     // Note: ChildNode.remove doesn't throw if the parentNode is undefined.
     this.overlay.remove();
   },
-};
 
-// Get the correct (vendor-prefixed) name of the matches method.
-let matchesSelector;
-["webkitM", "mozM", "m"].some(function (prefix) {
-  let name = prefix + "atches";
-  if (name in document.documentElement) {
-    matchesSelector = name;
-  }
-  name += "Selector";
-  if (name in document.documentElement) {
-    matchesSelector = name;
-  }
-  return matchesSelector; // If found, then truthy, and [].some() ends.
-});
+  /**
+   * @private
+   */
+  get _matchesSelector() {
+    // Get the correct (vendor-prefixed) name of the matches method.
+    let matchesSelector;
+    ["webkitM", "mozM", "m"].some(function (prefix) {
+      let name = prefix + "atches";
+      if (name in document.documentElement) {
+        matchesSelector = name;
+      }
+      name += "Selector";
+      if (name in document.documentElement) {
+        matchesSelector = name;
+      }
+      return matchesSelector; // If found, then truthy, and [].some() ends.
+    });
+    return shadow(this, "_matchesSelector", matchesSelector);
+  },
+};
 
 // Browser sniffing because it's impossible to feature-detect
 // whether event.which for onmousemove is reliable
