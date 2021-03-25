@@ -14,6 +14,7 @@
  */
 
 import {
+  $acceptWhitespace,
   $clean,
   $finalize,
   $nsAttributes,
@@ -49,6 +50,11 @@ class XFAParser extends XMLParserBase {
   }
 
   onText(text) {
+    if (this._current[$acceptWhitespace]()) {
+      this._current[$onText](text);
+      return;
+    }
+
     if (this._whiteRegex.test(text)) {
       return;
     }
