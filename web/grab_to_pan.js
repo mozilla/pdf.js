@@ -192,15 +192,6 @@ let matchesSelector;
   return matchesSelector; // If found, then truthy, and [].some() ends.
 });
 
-// Browser sniffing because it's impossible to feature-detect
-// whether event.which for onmousemove is reliable
-const chrome = window.chrome;
-const isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
-//                                         ^ Chrome 15+       ^ Opera 15+
-const isSafari6plus =
-  /Apple/.test(navigator.vendor) &&
-  /Version\/([6-9]\d*|[1-5]\d+)/.test(navigator.userAgent);
-
 /**
  * Whether the left mouse is not pressed.
  * @param event {MouseEvent}
@@ -211,13 +202,26 @@ function isLeftMouseReleased(event) {
   if ("buttons" in event) {
     // http://www.w3.org/TR/DOM-Level-3-Events/#events-MouseEvent-buttons
     // Firefox 15+
+    // Chrome 43+
+    // Safari 11.1+
     return !(event.buttons & 1);
   }
-  if (isChrome15OrOpera15plus || isSafari6plus) {
-    // Chrome 14+
-    // Opera 15+
-    // Safari 6.0+
-    return event.which === 0;
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    // Browser sniffing because it's impossible to feature-detect
+    // whether event.which for onmousemove is reliable.
+    const chrome = window.chrome;
+    const isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
+    //                                         ^ Chrome 15+       ^ Opera 15+
+    const isSafari6plus =
+      /Apple/.test(navigator.vendor) &&
+      /Version\/([6-9]\d*|[1-5]\d+)/.test(navigator.userAgent);
+
+    if (isChrome15OrOpera15plus || isSafari6plus) {
+      // Chrome 14+
+      // Opera 15+
+      // Safari 6.0+
+      return event.which === 0;
+    }
   }
   return false;
 }
