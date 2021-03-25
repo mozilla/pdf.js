@@ -194,7 +194,6 @@ let matchesSelector;
 
 // Browser sniffing because it's impossible to feature-detect
 // whether event.which for onmousemove is reliable
-const isNotIEorIsIE10plus = !document.documentMode || document.documentMode > 9;
 const chrome = window.chrome;
 const isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
 //                                         ^ Chrome 15+       ^ Opera 15+
@@ -209,10 +208,9 @@ const isSafari6plus =
  *                    False if unsure or if the left mouse button is pressed.
  */
 function isLeftMouseReleased(event) {
-  if ("buttons" in event && isNotIEorIsIE10plus) {
+  if ("buttons" in event) {
     // http://www.w3.org/TR/DOM-Level-3-Events/#events-MouseEvent-buttons
     // Firefox 15+
-    // Internet Explorer 10+
     return !(event.buttons & 1);
   }
   if (isChrome15OrOpera15plus || isSafari6plus) {
