@@ -185,7 +185,7 @@ GrabToPan.prototype = {
   get _matchesSelector() {
     // Get the correct (vendor-prefixed) name of the matches method.
     let matchesSelector;
-    ["webkitM", "mozM", "m"].some(function (prefix) {
+    ["m", "mozM", "webkitM"].some(function (prefix) {
       let name = prefix + "atches";
       if (name in document.documentElement) {
         matchesSelector = name;
