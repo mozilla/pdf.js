@@ -653,6 +653,12 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue13147",
+       "file": "pdfs/issue13147.pdf",
+       "md5": "83db23f29b5e1a80d31d5069299e29cc",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "fit11-talk",
        "file": "pdfs/fit11-talk.pdf",
        "md5": "eb7b224107205db4fea9f7df0185f77d",
