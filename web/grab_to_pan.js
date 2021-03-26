@@ -95,9 +95,8 @@ GrabToPan.prototype = {
    * @returns {boolean} Whether to not react to the click event.
    */
   ignoreTarget: function GrabToPan_ignoreTarget(node) {
-    // Use matchesSelector to check whether the clicked element
-    // is (a child of) an input element / link
-    return node[matchesSelector](
+    // Check whether the clicked element is, a child of, an input element/link.
+    return node.matches(
       "a[href], a[href] *, input, textarea, button, button *, select, option"
     );
   },
@@ -177,20 +176,6 @@ GrabToPan.prototype = {
     this.overlay.remove();
   },
 };
-
-// Get the correct (vendor-prefixed) name of the matches method.
-let matchesSelector;
-["webkitM", "mozM", "m"].some(function (prefix) {
-  let name = prefix + "atches";
-  if (name in document.documentElement) {
-    matchesSelector = name;
-  }
-  name += "Selector";
-  if (name in document.documentElement) {
-    matchesSelector = name;
-  }
-  return matchesSelector; // If found, then truthy, and [].some() ends.
-});
 
 /**
  * Whether the left mouse is not pressed.
