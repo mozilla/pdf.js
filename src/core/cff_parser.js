@@ -1556,7 +1556,9 @@ class CFFCompiler {
   }
 
   compileHeader(header) {
-    return [header.major, header.minor, header.hdrSize, header.offSize];
+    // `header.hdrSize` can be any value but we only write 4 values
+    // so header size is 4 (prevents OTS from rejecting the font).
+    return [header.major, header.minor, 4, header.offSize];
   }
 
   compileNameIndex(names) {
