@@ -1758,16 +1758,13 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   }
   /* wrapper around (scaled) print canvas elements */
   #printContainer > div {
-    /* Without the following max-height declaration, Chromium might create extra
-     * blank pages, even though it shouldn't! */
-    max-height: 100%;
     page-break-after: always;
     page-break-inside: avoid;
 
-    /* If we're smaller than the page, center the canvas horizontally and
-     * vertically */
-    min-height: 100%;
-    min-width: 100%;
+    /* The wrapper always cover the whole page. */
+    height: 100%;
+    width: 100%;
+
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1775,6 +1772,10 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   }
   #printContainer canvas,
   #printContainer img {
+    /* The intrinsic canvas / image size will make sure that we fit the page. */
+    max-width: 100%;
+    max-height: 100%;
+
     direction: ltr;
     display: block;
   }
