@@ -42,6 +42,7 @@ import {
   isName,
   isRef,
   isStream,
+  Name,
   Ref,
 } from "./primitives.js";
 import {
@@ -49,6 +50,7 @@ import {
   getInheritableProperty,
   isWhiteSpace,
   MissingDataException,
+  validateCSSFont,
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
@@ -852,6 +854,71 @@ class PDFDocument {
 
   get isPureXfa() {
     return this.xfaFactory !== null;
+  }
+
+  async loadXfaFonts(handler, task) {
+    const acroForm = await this.pdfManager.ensureCatalog("acroForm");
+
+    const resources = await acroForm.getAsync("DR");
+    if (!(resources instanceof Dict)) {
+      return;
+    }
+    const objectLoader = new ObjectLoader(resources, ["Font"], this.xref);
+    await objectLoader.load();
+
+    const fontRes = resources.get("Font");
+    if (!(fontRes instanceof Dict)) {
+      return;
+    }
+
+    const partialEvaluator = new PartialEvaluator({
+      xref: this.xref,
+      handler,
+      pageIndex: -1,
+      idFactory: this._globalIdFactory,
+      fontCache: this.catalog.fontCache,
+      builtInCMapCache: this.catalog.builtInCMapCache,
+    });
+    const operatorList = new OperatorList();
+    const initialState = {
+      font: null,
+      clone() {
+        return this;
+      },
+    };
+
+    const fonts = new Map();
+    fontRes.forEach((fontName, font) => {
+      fonts.set(fontName, font);
+    });
+    const promises = [];
+
+    for (const [fontName, font] of fonts) {
+      const descriptor = font.get("FontDescriptor");
+      if (descriptor instanceof Dict) {
+        const fontFamily = descriptor.get("FontFamily");
+        const fontWeight = descriptor.get("FontWeight");
+        const italicAngle = descriptor.get("ItalicAngle");
+        const cssFontInfo = { fontFamily, fontWeight, italicAngle };
+
+        if (!validateCSSFont(cssFontInfo)) {
+          continue;
+        }
+
+        const promise = partialEvaluator.handleSetFont(
+          resources,
+          [Name.get(fontName), 1],
+          /* fontRef = */ null,
+          operatorList,
+          task,
+          initialState,
+          /* fallbackFontDict = */ null,
+          /* cssFontInfo = */ cssFontInfo
+        );
+        promises.push(promise.catch(() => {}));
+      }
+    }
+    await Promise.all(promises);
   }
 
   get formInfo() {

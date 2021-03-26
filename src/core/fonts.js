@@ -95,6 +95,7 @@ const EXPORT_DATA_PROPERTIES = [
   "bold",
   "charProcOperatorList",
   "composite",
+  "cssFontInfo",
   "data",
   "defaultVMetrics",
   "defaultWidth",
@@ -565,6 +566,7 @@ var Font = (function FontClosure() {
     this.loadedName = properties.loadedName;
     this.isType3Font = properties.isType3Font;
     this.missingFile = false;
+    this.cssFontInfo = properties.cssFontInfo;
 
     this.glyphCache = Object.create(null);
 
@@ -2963,23 +2965,31 @@ var Font = (function FontClosure() {
         glyphZeroId = 0;
       }
 
-      // Converting glyphs and ids into font's cmap table
-      var newMapping = adjustMapping(charCodeToGlyphId, hasGlyph, glyphZeroId);
-      this.toFontChar = newMapping.toFontChar;
-      tables.cmap = {
-        tag: "cmap",
-        data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphsOut),
-      };
-
-      if (!tables["OS/2"] || !validateOS2Table(tables["OS/2"], font)) {
-        tables["OS/2"] = {
-          tag: "OS/2",
-          data: createOS2Table(
-            properties,
-            newMapping.charCodeToGlyphId,
-            metricsOverride
-          ),
+      // When `cssFontInfo` is set, the font is used to render text in the HTML
+      // view (e.g. with Xfa) so nothing must be moved in the private area use.
+      if (!properties.cssFontInfo) {
+        // Converting glyphs and ids into font's cmap table
+        var newMapping = adjustMapping(
+          charCodeToGlyphId,
+          hasGlyph,
+          glyphZeroId
+        );
+        this.toFontChar = newMapping.toFontChar;
+        tables.cmap = {
+          tag: "cmap",
+          data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphsOut),
         };
+
+        if (!tables["OS/2"] || !validateOS2Table(tables["OS/2"], font)) {
+          tables["OS/2"] = {
+            tag: "OS/2",
+            data: createOS2Table(
+              properties,
+              newMapping.charCodeToGlyphId,
+              metricsOverride
+            ),
+          };
+        }
       }
 
       if (!isTrueType) {
