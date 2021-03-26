@@ -14,7 +14,6 @@
  */
 
 import { RenderingCancelledException, shadow } from "pdfjs-lib";
-import { CSS_UNITS } from "./ui_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 
 // Creates a placeholder with div and canvas with right size for the page.
@@ -33,14 +32,8 @@ function composePage(
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
-  // The physical size of the canvas as specified by the PDF document.
-  canvas.style.width = Math.floor(size.width * CSS_UNITS) + "px";
-  canvas.style.height = Math.floor(size.height * CSS_UNITS) + "px";
-
   const canvasWrapper = document.createElement("div");
   canvasWrapper.appendChild(canvas);
-  canvasWrapper.style.width = canvas.style.width;
-  canvasWrapper.style.height = canvas.style.height;
   printContainer.appendChild(canvasWrapper);
 
   // A callback for a given page may be executed multiple times for different
