@@ -2300,21 +2300,25 @@ function webViewerInitialized() {
 
     // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
     appConfig.mainContainer.addEventListener("dragover", function (evt) {
-      evt.preventDefault();
+      if (AppOptions.get("enableDragAndDrop")) { // #686 modified by ngx-extended-pdf-viewer
+        evt.preventDefault();
 
-      evt.dataTransfer.dropEffect = "move";
+        evt.dataTransfer.dropEffect = "move";
+      } // #686 end of modification
     });
     appConfig.mainContainer.addEventListener("drop", function (evt) {
-      evt.preventDefault();
+      if (AppOptions.get("enableDragAndDrop")) { // #686 modified by ngx-extended-pdf-viewer
+        evt.preventDefault();
 
-      const files = evt.dataTransfer.files;
-      if (!files || files.length === 0) {
-        return;
-      }
-      PDFViewerApplication.eventBus.dispatch("fileinputchange", {
-        source: this,
-        fileInput: evt.dataTransfer,
-      });
+        const files = evt.dataTransfer.files;
+        if (!files || files.length === 0) {
+          return;
+        }
+        PDFViewerApplication.eventBus.dispatch("fileinputchange",  {
+          source: this,
+          fileInput: evt.dataTransfer,
+        });
+      } // #686 end of modification
     });
   } else {
     appConfig.toolbar.openFile.hidden = true;
