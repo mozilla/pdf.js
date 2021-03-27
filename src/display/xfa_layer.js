@@ -36,9 +36,13 @@ class XfaLayer {
     }
     const stack = [[root, -1, rootHtml]];
 
-    parameters.div.appendChild(rootHtml);
+    const rootDiv = parameters.div;
+    rootDiv.appendChild(rootHtml);
     const coeffs = parameters.viewport.transform.join(",");
-    parameters.div.style.transform = `matrix(${coeffs})`;
+    rootDiv.style.transform = `matrix(${coeffs})`;
+
+    // Set defaults.
+    rootDiv.setAttribute("class", "xfaLayer xfaFont");
 
     while (stack.length > 0) {
       const [parent, i, html] = stack[stack.length - 1];

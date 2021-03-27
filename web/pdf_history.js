@@ -205,13 +205,7 @@ class PDFHistory {
           `"${explicitDest}" is not a valid explicitDest parameter.`
       );
       return;
-    } else if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.linkService.pagesCount
-      )
-    ) {
+    } else if (!this._isValidPage(pageNumber)) {
       // Allow an unset `pageNumber` if and only if the history is still empty;
       // please refer to the `this._destination.page = null;` comment above.
       if (pageNumber !== null || this._destination) {
@@ -265,7 +259,7 @@ class PDFHistory {
       // being scrolled into view, to avoid potentially inconsistent state.
       this._popStateInProgress = true;
       // We defer the resetting of `this._popStateInProgress`, to account for
-      // e.g. zooming occuring when the new destination is being navigated to.
+      // e.g. zooming occurring when the new destination is being navigated to.
       Promise.resolve().then(() => {
         this._popStateInProgress = false;
       });
@@ -281,13 +275,7 @@ class PDFHistory {
     if (!this._initialized) {
       return;
     }
-    if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.linkService.pagesCount
-      )
-    ) {
+    if (!this._isValidPage(pageNumber)) {
       console.error(
         `PDFHistory.pushPage: "${pageNumber}" is not a valid page number.`
       );
@@ -304,6 +292,8 @@ class PDFHistory {
     }
 
     this._pushOrReplaceState({
+      // Simulate an internal destination, for `this._tryPushCurrentPosition`:
+      dest: null,
       hash: `page=${pageNumber}`,
       page: pageNumber,
       rotation: this.linkService.rotation,
@@ -314,7 +304,7 @@ class PDFHistory {
       // being scrolled into view, to avoid potentially inconsistent state.
       this._popStateInProgress = true;
       // We defer the resetting of `this._popStateInProgress`, to account for
-      // e.g. zooming occuring when the new page is being navigated to.
+      // e.g. zooming occurring when the new page is being navigated to.
       Promise.resolve().then(() => {
         this._popStateInProgress = false;
       });
@@ -470,13 +460,22 @@ class PDFHistory {
       //  - contains an internal destination, since in this case we
       //    cannot ensure that the document position has actually changed.
       //  - was set through the user changing the hash of the document.
-      if (this._destination.dest || !this._destination.first) {
+      if (this._destination.dest !== undefined || !this._destination.first) {
         return;
       }
       // To avoid "flooding" the browser history, replace the current entry.
       forceReplace = true;
     }
     this._pushOrReplaceState(position, forceReplace);
+  }
+
+  /**
+   * @private
+   */
+  _isValidPage(val) {
+    return (
+      Number.isInteger(val) && val > 0 && val <= this.linkService.pagesCount
+    );
   }
 
   /**
@@ -548,14 +547,7 @@ class PDFHistory {
     const nameddest = params.nameddest || "";
     let page = params.page | 0;
 
-    if (
-      !(
-        Number.isInteger(page) &&
-        page > 0 &&
-        page <= this.linkService.pagesCount
-      ) ||
-      (checkNameddest && nameddest.length > 0)
-    ) {
+    if (!this._isValidPage(page) || (checkNameddest && nameddest.length > 0)) {
       page = null;
     }
     return { hash, page, rotation: this.linkService.rotation };

@@ -17,7 +17,6 @@ import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import canvasSize from "canvas-size";
 import { CSS_UNITS } from "./ui_utils.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
-import { warn } from "../src/shared/util.js";
 
 let activeService = null;
 let overlayManager = null;
@@ -55,36 +54,23 @@ function renderPage(
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
-  // The physical size of the img as specified by the PDF document.
-  const width = Math.floor(size.width * CSS_UNITS) + "px";
-  const height = Math.floor(size.height * CSS_UNITS) + "px";
-  // end of modification
-
   const ctx = scratchCanvas.getContext("2d");
   ctx.save();
   ctx.fillStyle = "rgb(255, 255, 255)";
   ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
   ctx.restore();
 
-  return pdfDocument
-    .getPage(pageNumber)
-    .then(function (pdfPage) {
-      const renderContext = {
-        canvasContext: ctx,
-        transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
-        viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
-        intent: "print",
-        annotationStorage: pdfDocument.annotationStorage,
-        optionalContentConfigPromise,
-      };
-      return pdfPage.render(renderContext).promise;
-    })
-    .then(function () {
-      return {
-        width,
-        height,
-      };
-    });
+  return pdfDocument.getPage(pageNumber).then(function (pdfPage) {
+    const renderContext = {
+      canvasContext: ctx,
+      transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
+      viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
+      intent: "print",
+      annotationStorage: pdfDocument.annotationStorage,
+      optionalContentConfigPromise,
+    };
+    return pdfPage.render(renderContext).promise;
+  });
 }
 
  // modified (added) by ngx-extended-pdf-viewer #530
@@ -245,12 +231,9 @@ PDFPrintService.prototype = {
     return new Promise(renderNextPage);
   },
 
-  useRenderedPage(printItem) {
+  useRenderedPage() {
     this.throwIfInactive();
     const img = document.createElement("img");
-    img.style.width = printItem.width;
-    img.style.height = printItem.height;
-
     const scratchCanvas = this.scratchCanvas;
     if (
       "toBlob" in scratchCanvas &&
@@ -265,8 +248,6 @@ PDFPrintService.prototype = {
 
     const wrapper = document.createElement("div");
     wrapper.appendChild(img);
-    wrapper.style.width = img.style.width;
-    wrapper.style.height = img.style.height;
     this.printContainer.appendChild(wrapper);
 
     return new Promise(function (resolve, reject) {
