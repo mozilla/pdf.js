@@ -388,6 +388,11 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
+    // Normalize the rotation, by clamping it to the [0, 360) range.
+    rotation %= 360;
+    if (rotation < 0) {
+      rotation += 360;
+    }
     if (this._pagesRotation === rotation) {
       return; // The rotation didn't change.
     }
