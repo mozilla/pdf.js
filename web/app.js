@@ -2274,10 +2274,9 @@ function webViewerInitialized() {
   }
 }
 
-let webViewerOpenFileViaURL;
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  webViewerOpenFileViaURL = function (file) {
-    if (file && file.lastIndexOf("file:", 0) === 0) {
+function webViewerOpenFileViaURL(file) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    if (file?.lastIndexOf("file:", 0) === 0) {
       // file:-scheme. Load the contents in the main thread because QtWebKit
       // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
       // very quickly, so there is no need to set up progress event listeners.
@@ -2295,18 +2294,14 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     if (file) {
       PDFViewerApplication.open(file);
     }
-  };
-} else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-  webViewerOpenFileViaURL = function (file) {
+  } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
     PDFViewerApplication.setTitleUsingUrl(file);
     PDFViewerApplication.initPassiveLoading();
-  };
-} else {
-  webViewerOpenFileViaURL = function (file) {
+  } else {
     if (file) {
       throw new Error("Not implemented: webViewerOpenFileViaURL");
     }
-  };
+  }
 }
 
 function webViewerResetPermissions() {
