@@ -250,8 +250,11 @@ class PageViewport {
     const centerX = (viewBox[2] + viewBox[0]) / 2;
     const centerY = (viewBox[3] + viewBox[1]) / 2;
     let rotateA, rotateB, rotateC, rotateD;
-    rotation = rotation % 360;
-    rotation = rotation < 0 ? rotation + 360 : rotation;
+    // Normalize the rotation, by clamping it to the [0, 360) range.
+    rotation %= 360;
+    if (rotation < 0) {
+      rotation += 360;
+    }
     switch (rotation) {
       case 180:
         rotateA = -1;
