@@ -2276,21 +2276,6 @@ function webViewerInitialized() {
 
 function webViewerOpenFileViaURL(file) {
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    if (file?.lastIndexOf("file:", 0) === 0) {
-      // file:-scheme. Load the contents in the main thread because QtWebKit
-      // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
-      // very quickly, so there is no need to set up progress event listeners.
-      PDFViewerApplication.setTitleUsingUrl(file);
-      const xhr = new XMLHttpRequest();
-      xhr.onload = function () {
-        PDFViewerApplication.open(new Uint8Array(xhr.response));
-      };
-      xhr.open("GET", file);
-      xhr.responseType = "arraybuffer";
-      xhr.send();
-      return;
-    }
-
     if (file) {
       PDFViewerApplication.open(file);
     }
