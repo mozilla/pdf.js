@@ -2151,12 +2151,13 @@ var XRef = (function XRefClosure() {
           "invalid first and n parameters for ObjStm stream"
         );
       }
-      const parser = new Parser({
+      let parser = new Parser({
         lexer: new Lexer(stream),
         xref: this,
         allowStreams: true,
       });
       const nums = new Array(n);
+      const offsets = new Array(n);
       // read the object numbers to populate cache
       for (let i = 0; i < n; ++i) {
         const num = parser.getObj();
@@ -2172,17 +2173,27 @@ var XRef = (function XRefClosure() {
           );
         }
         nums[i] = num;
+        offsets[i] = offset;
       }
+
+      const start = (stream.start || 0) + first;
       const entries = new Array(n);
       // read stream objects for cache
       for (let i = 0; i < n; ++i) {
+        const length = i < n - 1 ? offsets[i + 1] - offsets[i] : undefined;
+        if (length < 0) {
+          throw new FormatError("Invalid offset in the ObjStm stream.");
+        }
+        parser = new Parser({
+          lexer: new Lexer(
+            stream.makeSubStream(start + offsets[i], length, stream.dict)
+          ),
+          xref: this,
+          allowStreams: true,
+        });
+
         const obj = parser.getObj();
         entries[i] = obj;
-        // The ObjStm should not contain 'endobj'. If it's present, skip over it
-        // to support corrupt PDFs (fixes issue 5241, bug 898610, bug 1037816).
-        if (parser.buf1 instanceof Cmd && parser.buf1.cmd === "endobj") {
-          parser.shift();
-        }
         if (isStream(obj)) {
           continue;
         }
