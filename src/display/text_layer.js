@@ -75,8 +75,8 @@ const renderTextLayer = (function renderTextLayerClosure() {
     const metrics = ctx.measureText("");
 
     // Both properties aren't available by default in Firefox.
-    let ascent = metrics.fontBoundingBoxAscent;
-    let descent = Math.abs(metrics.fontBoundingBoxDescent);
+    let ascent = metrics?.fontBoundingBoxAscent; // #707 modified by ngx-extended-pdf-viewer
+    let descent = Math.abs(metrics?.fontBoundingBoxDescent); // #707 modified by ngx-extended-pdf-viewer
     if (ascent) {
       ctx.restore();
       const ratio = ascent / (ascent + descent);
@@ -663,13 +663,15 @@ const renderTextLayer = (function renderTextLayerClosure() {
           this._layoutTextLastFontFamily = fontFamily;
         }
         // Only measure the width for multi-char text divs, see `appendText`.
-        const { width } = this._layoutTextCtx.measureText(textDiv.textContent);
+        try { // #707 modified by ngx-extended-pdf-viewer
+          const { width } = this._layoutTextCtx.measureText(textDiv.textContent);
 
-        if (width > 0) {
-          textDivProperties.scale = textDivProperties.canvasWidth / width;
-          transform = `scaleX(${textDivProperties.scale})`;
-        }
-      }
+          if (width > 0) {
+            textDivProperties.scale = textDivProperties.canvasWidth / width;
+            transform = `scaleX(${textDivProperties.scale})`;
+          }
+        } catch (fingerprintIsBlockedException) {} // #707 modified by ngx-extended-pdf-viewer
+    }
       if (textDivProperties.angle !== 0) {
         transform = `rotate(${textDivProperties.angle}deg) ${transform}`;
       }

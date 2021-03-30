@@ -273,10 +273,12 @@ class Toolbar {
 
     let maxWidth = 0;
     for (const predefinedValue of await predefinedValuesPromise) {
-      const { width } = ctx.measureText(predefinedValue);
-      if (width > maxWidth) {
-        maxWidth = width;
-      }
+      try { // #707 modified by ngx-extended-pdf-viewer
+        const { width } = ctx.measureText(predefinedValue);
+        if (width > maxWidth) {
+          maxWidth = width;
+        }
+      } catch (fingerprintIsBlockedException) {} // #707 modified by ngx-extended-pdf-viewer
     }
     const overflow = SCALE_SELECT_WIDTH - SCALE_SELECT_CONTAINER_WIDTH;
     maxWidth += 2 * overflow;
