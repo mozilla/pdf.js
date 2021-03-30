@@ -392,6 +392,20 @@ var Driver = (function DriverClosure() {
         task.pageNum = task.firstPage || 1;
         task.stats = { times: [] };
 
+        // Support *linked* test-cases for the other suites, e.g. unit- and
+        // integration-tests, without needing to run them as reference-tests.
+        if (task.type === "other") {
+          this._log(`Skipping file "${task.file}"\n`);
+
+          if (!task.link) {
+            this._nextPage(task, 'Expected "other" test-case to be linked.');
+            return;
+          }
+          this.currentTask++;
+          this._nextTask();
+          return;
+        }
+
         this._log('Loading file "' + task.file + '"\n');
 
         const absoluteUrl = new URL(task.file, window.location).href;
