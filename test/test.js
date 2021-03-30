@@ -1000,7 +1000,10 @@ function main() {
   } else if (options.fontTest) {
     startUnitTest("/test/font/font_test.html", "font");
   } else if (options.integration) {
-    startIntegrationTest();
+    // Allows linked PDF files in integration-tests as well.
+    ensurePDFsDownloaded(function () {
+      startIntegrationTest();
+    });
   } else {
     startRefTest(options.masterMode, options.reftest);
   }
