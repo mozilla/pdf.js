@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { createActionsMap, FieldType, getFieldType } from "./common.js";
 import { Color } from "./color.js";
-import { createActionsMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 
 class Field extends PDFObject {
@@ -82,8 +82,11 @@ class Field extends PDFObject {
     this._textColor = data.textColor || ["G", 0];
     this._value = data.value || "";
     this._valueAsString = data.valueAsString;
+    this._kidIds = data.kidIds || null;
+    this._fieldType = getFieldType(this._actions);
 
     this._globalEval = data.globalEval;
+    this._appObjects = data.appObjects;
   }
 
   get currentValueIndices() {
@@ -200,7 +203,23 @@ class Field extends PDFObject {
   }
 
   set value(value) {
-    this._value = value;
+    if (value === "") {
+      this._value = "";
+    } else if (typeof value === "string") {
+      switch (this._fieldType) {
+        case FieldType.number:
+        case FieldType.percent:
+          value = parseFloat(value);
+          if (!isNaN(value)) {
+            this._value = value;
+          }
+          break;
+        default:
+          this._value = value;
+      }
+    } else {
+      this._value = value;
+    }
     if (this._isChoice) {
       if (this.multipleSelection) {
         const values = new Set(value);
@@ -332,6 +351,10 @@ class Field extends PDFObject {
   }
 
   getArray() {
+    if (this._kidIds) {
+      return this._kidIds.map(id => this._appObjects[id].wrapped);
+    }
+
     if (this._children === null) {
       this._children = this._document.obj._getChildren(this._fieldPath);
     }

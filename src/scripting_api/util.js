@@ -372,6 +372,10 @@ class Util extends PDFObject {
   }
 
   scand(cFormat, cDate) {
+    if (cDate === "") {
+      return new Date();
+    }
+
     switch (cFormat) {
       case 0:
         return this.scand("D:yyyymmddHHMMss", cDate);
@@ -525,14 +529,14 @@ class Util extends PDFObject {
         }
       );
 
-      this._scandCache.set(cFormat, [new RegExp(re, "g"), actions]);
+      this._scandCache.set(cFormat, [re, actions]);
     }
 
-    const [regexForFormat, actions] = this._scandCache.get(cFormat);
+    const [re, actions] = this._scandCache.get(cFormat);
 
-    const matches = regexForFormat.exec(cDate);
-    if (matches.length !== actions.length + 1) {
-      throw new Error("Invalid date in util.scand");
+    const matches = new RegExp(re, "g").exec(cDate);
+    if (!matches || matches.length !== actions.length + 1) {
+      return null;
     }
 
     const data = {

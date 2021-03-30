@@ -287,19 +287,34 @@ function _collectJS(entry, xref, list, parents) {
 
 function collectActions(xref, dict, eventType) {
   const actions = Object.create(null);
-  if (dict.has("AA")) {
-    const additionalActions = dict.get("AA");
-    for (const key of additionalActions.getKeys()) {
-      const action = eventType[key];
-      if (!action) {
+  const additionalActionsDicts = getInheritableProperty({
+    dict,
+    key: "AA",
+    stopWhenFound: false,
+  });
+  if (additionalActionsDicts) {
+    // additionalActionsDicts contains dicts from ancestors
+    // as they're found in the tree from bottom to top.
+    // So the dicts are visited in reverse order to guarantee
+    // that actions from elder ancestors will be overwritten
+    // by ones from younger ancestors.
+    for (let i = additionalActionsDicts.length - 1; i >= 0; i--) {
+      const additionalActions = additionalActionsDicts[i];
+      if (!(additionalActions instanceof Dict)) {
         continue;
       }
-      const actionDict = additionalActions.getRaw(key);
-      const parents = new RefSet();
-      const list = [];
-      _collectJS(actionDict, xref, list, parents);
-      if (list.length > 0) {
-        actions[action] = list;
+      for (const key of additionalActions.getKeys()) {
+        const action = eventType[key];
+        if (!action) {
+          continue;
+        }
+        const actionDict = additionalActions.getRaw(key);
+        const parents = new RefSet();
+        const list = [];
+        _collectJS(actionDict, xref, list, parents);
+        if (list.length > 0) {
+          actions[action] = list;
+        }
       }
     }
   }
