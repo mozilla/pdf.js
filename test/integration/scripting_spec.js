@@ -695,4 +695,71 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in issue13132.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue13132.pdf", "#\\31 71R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must compute sum of fields", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.evaluate(() => {
+            window.document.getElementById("171R").scrollIntoView();
+          });
+
+          let sum = 0;
+          for (const [id, val] of [
+            ["#\\31 38R", 1],
+            ["#\\37 7R", 2],
+            ["#\\39 3R", 3],
+            ["#\\31 51R", 4],
+            ["#\\37 9R", 5],
+          ]) {
+            const prev = await page.$eval("#\\31 71R", el => el.value);
+
+            await page.type(id, val.toString(), { delay: 100 });
+            await page.keyboard.press("Tab");
+
+            await page.waitForFunction(
+              _prev =>
+                getComputedStyle(document.querySelector("#\\31 71R")).value !==
+                _prev,
+              {},
+              prev
+            );
+
+            sum += val;
+
+            const total = await page.$eval("#\\31 71R", el => el.value);
+            expect(total).withContext(`In ${browserName}`).toEqual(`£${sum}`);
+          }
+
+          // Some unrendered annotations have been updated, so check
+          // that they've the correct value when rendered.
+          await page.evaluate(() => {
+            window.document
+              .querySelectorAll('[data-page-number="4"][class="page"]')[0]
+              .scrollIntoView();
+          });
+          await page.waitForSelector("#\\32 99R", {
+            timeout: 0,
+          });
+
+          const total = await page.$eval("#\\32 99R", el => el.value);
+          expect(total).withContext(`In ${browserName}`).toEqual(`£${sum}`);
+        })
+      );
+    });
+  });
 });

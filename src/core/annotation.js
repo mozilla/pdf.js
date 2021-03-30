@@ -64,10 +64,11 @@ class AnnotationFactory {
    * @param {Object} ref
    * @param {PDFManager} pdfManager
    * @param {Object} idFactory
+   * @param {boolean} collectFields
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
-  static create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory, collectFields) {
     return pdfManager.ensureCatalog("acroForm").then(acroForm => {
       return pdfManager.ensure(this, "_create", [
         xref,
@@ -75,6 +76,7 @@ class AnnotationFactory {
         pdfManager,
         idFactory,
         acroForm,
+        collectFields,
       ]);
     });
   }
@@ -82,7 +84,7 @@ class AnnotationFactory {
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm) {
+  static _create(xref, ref, pdfManager, idFactory, acroForm, collectFields) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -103,6 +105,7 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      collectFields,
     };
 
     switch (subtype) {
@@ -178,15 +181,17 @@ class AnnotationFactory {
         return new FileAttachmentAnnotation(parameters);
 
       default:
-        if (!subtype) {
-          warn("Annotation is missing the required /Subtype.");
-        } else {
-          warn(
-            'Unimplemented annotation type "' +
-              subtype +
-              '", ' +
-              "falling back to base annotation."
-          );
+        if (!collectFields) {
+          if (!subtype) {
+            warn("Annotation is missing the required /Subtype.");
+          } else {
+            warn(
+              'Unimplemented annotation type "' +
+                subtype +
+                '", ' +
+                "falling back to base annotation."
+            );
+          }
         }
         return new Annotation(parameters);
     }
@@ -344,6 +349,31 @@ class Annotation {
       rect: this.rectangle,
       subtype: params.subtype,
     };
+
+    if (params.collectFields) {
+      // Fields can act as container for other fields and have
+      // some actions even if no Annotation inherit from them.
+      // Those fields can be referenced by CO (calculation order).
+      const kids = dict.get("Kids");
+      if (Array.isArray(kids)) {
+        const kidIds = [];
+        for (const kid of kids) {
+          if (isRef(kid)) {
+            kidIds.push(kid.toString());
+          }
+        }
+        if (kidIds.length !== 0) {
+          this.data.kidIds = kidIds;
+        }
+      }
+
+      this.data.actions = collectActions(
+        params.xref,
+        dict,
+        AnnotationActionEventType
+      );
+      this.data.fieldName = this._constructFieldName(dict);
+    }
 
     this._fallbackFontDict = null;
   }
@@ -644,6 +674,15 @@ class Annotation {
    * @returns {Object | null}
    */
   getFieldObject() {
+    if (this.data.kidIds) {
+      return {
+        id: this.data.id,
+        actions: this.data.actions,
+        name: this.data.fieldName,
+        type: "",
+        kidIds: this.data.kidIds,
+      };
+    }
     return null;
   }
 
@@ -669,6 +708,65 @@ class Annotation {
     for (const stream of this._streams) {
       stream.reset();
     }
+  }
+
+  /**
+   * Construct the (fully qualified) field name from the (partial) field
+   * names of the field and its ancestors.
+   *
+   * @private
+   * @memberof Annotation
+   * @param {Dict} dict - Complete widget annotation dictionary
+   * @returns {string}
+   */
+  _constructFieldName(dict) {
+    // Both the `Parent` and `T` fields are optional. While at least one of
+    // them should be provided, bad PDF generators may fail to do so.
+    if (!dict.has("T") && !dict.has("Parent")) {
+      warn("Unknown field name, falling back to empty field name.");
+      return "";
+    }
+
+    // If no parent exists, the partial and fully qualified names are equal.
+    if (!dict.has("Parent")) {
+      return stringToPDFString(dict.get("T"));
+    }
+
+    // Form the fully qualified field name by appending the partial name to
+    // the parent's fully qualified name, separated by a period.
+    const fieldName = [];
+    if (dict.has("T")) {
+      fieldName.unshift(stringToPDFString(dict.get("T")));
+    }
+
+    let loopDict = dict;
+    const visited = new RefSet();
+    if (dict.objId) {
+      visited.put(dict.objId);
+    }
+    while (loopDict.has("Parent")) {
+      loopDict = loopDict.get("Parent");
+      if (
+        !(loopDict instanceof Dict) ||
+        (loopDict.objId && visited.has(loopDict.objId))
+      ) {
+        // Even though it is not allowed according to the PDF specification,
+        // bad PDF generators may provide a `Parent` entry that is not a
+        // dictionary, but `null` for example (issue 8143).
+        //
+        // If parent has been already visited, it means that we're
+        // in an infinite loop.
+        break;
+      }
+      if (loopDict.objId) {
+        visited.put(loopDict.objId);
+      }
+
+      if (loopDict.has("T")) {
+        fieldName.unshift(stringToPDFString(loopDict.get("T")));
+      }
+    }
+    return fieldName.join(".");
   }
 }
 
@@ -995,8 +1093,16 @@ class WidgetAnnotation extends Annotation {
     this.ref = params.ref;
 
     data.annotationType = AnnotationType.WIDGET;
-    data.fieldName = this._constructFieldName(dict);
-    data.actions = collectActions(params.xref, dict, AnnotationActionEventType);
+    if (data.fieldName === undefined) {
+      data.fieldName = this._constructFieldName(dict);
+    }
+    if (data.actions === undefined) {
+      data.actions = collectActions(
+        params.xref,
+        dict,
+        AnnotationActionEventType
+      );
+    }
 
     const fieldValue = getInheritableProperty({
       dict,
@@ -1057,65 +1163,6 @@ class WidgetAnnotation extends Annotation {
       this.setFlags(AnnotationFlag.HIDDEN);
       data.hidden = true;
     }
-  }
-
-  /**
-   * Construct the (fully qualified) field name from the (partial) field
-   * names of the field and its ancestors.
-   *
-   * @private
-   * @memberof WidgetAnnotation
-   * @param {Dict} dict - Complete widget annotation dictionary
-   * @returns {string}
-   */
-  _constructFieldName(dict) {
-    // Both the `Parent` and `T` fields are optional. While at least one of
-    // them should be provided, bad PDF generators may fail to do so.
-    if (!dict.has("T") && !dict.has("Parent")) {
-      warn("Unknown field name, falling back to empty field name.");
-      return "";
-    }
-
-    // If no parent exists, the partial and fully qualified names are equal.
-    if (!dict.has("Parent")) {
-      return stringToPDFString(dict.get("T"));
-    }
-
-    // Form the fully qualified field name by appending the partial name to
-    // the parent's fully qualified name, separated by a period.
-    const fieldName = [];
-    if (dict.has("T")) {
-      fieldName.unshift(stringToPDFString(dict.get("T")));
-    }
-
-    let loopDict = dict;
-    const visited = new RefSet();
-    if (dict.objId) {
-      visited.put(dict.objId);
-    }
-    while (loopDict.has("Parent")) {
-      loopDict = loopDict.get("Parent");
-      if (
-        !(loopDict instanceof Dict) ||
-        (loopDict.objId && visited.has(loopDict.objId))
-      ) {
-        // Even though it is not allowed according to the PDF specification,
-        // bad PDF generators may provide a `Parent` entry that is not a
-        // dictionary, but `null` for example (issue 8143).
-        //
-        // If parent has been already visited, it means that we're
-        // in an infinite loop.
-        break;
-      }
-      if (loopDict.objId) {
-        visited.put(loopDict.objId);
-      }
-
-      if (loopDict.has("T")) {
-        fieldName.unshift(stringToPDFString(loopDict.get("T")));
-      }
-    }
-    return fieldName.join(".");
   }
 
   /**

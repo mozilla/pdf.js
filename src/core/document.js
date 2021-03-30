@@ -471,7 +471,8 @@ class Page {
               this.xref,
               annotationRef,
               this.pdfManager,
-              this._localIdFactory
+              this._localIdFactory,
+              /* collectFields */ false
             ).catch(function (reason) {
               warn(`_parsedAnnotations: "${reason}".`);
               return null;
@@ -1098,7 +1099,8 @@ class PDFDocument {
         this.xref,
         fieldRef,
         this.pdfManager,
-        this._localIdFactory
+        this._localIdFactory,
+        /* collectFields */ true
       )
         .then(annotation => annotation && annotation.getFieldObject())
         .catch(function (reason) {
