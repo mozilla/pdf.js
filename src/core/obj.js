@@ -60,6 +60,7 @@ import { CipherTransformFactory } from "./crypto.js";
 import { ColorSpace } from "./colorspace.js";
 import { GlobalImageCache } from "./image_utils.js";
 import { MetadataParser } from "./metadata_parser.js";
+import { StructTreeRoot } from "./struct_tree.js";
 
 function fetchDestination(dest) {
   return isDict(dest) ? dest.get("D") : dest;
@@ -198,6 +199,32 @@ class Catalog {
     }
 
     return markInfo;
+  }
+
+  get structTreeRoot() {
+    let structTree = null;
+    try {
+      structTree = this._readStructTreeRoot();
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn("Unable read to structTreeRoot info.");
+    }
+    return shadow(this, "structTreeRoot", structTree);
+  }
+
+  /**
+   * @private
+   */
+  _readStructTreeRoot() {
+    const obj = this._catDict.get("StructTreeRoot");
+    if (!isDict(obj)) {
+      return null;
+    }
+    const root = new StructTreeRoot(obj);
+    root.init();
+    return root;
   }
 
   get toplevelPagesDict() {
@@ -2626,4 +2653,4 @@ const ObjectLoader = (function () {
   return ObjectLoader;
 })();
 
-export { Catalog, FileSpec, ObjectLoader, XRef };
+export { Catalog, FileSpec, NumberTree, ObjectLoader, XRef };

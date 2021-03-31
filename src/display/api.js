@@ -1013,13 +1013,17 @@ class PDFDocumentProxy {
  *   whitespace with standard spaces (0x20). The default value is `false`.
  * @property {boolean} disableCombineTextItems - Do not attempt to combine
  *   same line {@link TextItem}'s. The default value is `false`.
+ * @property {boolean} [includeMarkedContent] - When true include marked
+ *   content items in the items array of TextContent. The default is `false`.
  */
 
 /**
  * Page text content.
  *
  * @typedef {Object} TextContent
- * @property {Array<TextItem>} items - Array of {@link TextItem} objects.
+ * @property {Array<TextItem | TextMarkedContent>} items - Array of
+ *   {@link TextItem} and {@link TextMarkedContent} objects. TextMarkedContent
+ *   items are included when includeMarkedContent is true.
  * @property {Object<string, TextStyle>} styles - {@link TextStyle} objects,
  *   indexed by font name.
  */
@@ -1034,6 +1038,17 @@ class PDFDocumentProxy {
  * @property {number} width - Width in device space.
  * @property {number} height - Height in device space.
  * @property {string} fontName - Font name used by PDF.js for converted font.
+ *
+ */
+
+/**
+ * Page text marked content part.
+ *
+ * @typedef {Object} TextMarkedContent
+ * @property {string} type - Either 'beginMarkedContent',
+ *   'beginMarkedContentProps', or 'endMarkedContent'.
+ * @property {string} id - The marked content identifier. Only used for type
+ *   'beginMarkedContentProps'.
  */
 
 /**
@@ -1087,6 +1102,25 @@ class PDFDocumentProxy {
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
  *   the configuration will be fetched automatically with the default visibility
  *   states set.
+ */
+
+/**
+ * Structure tree node. The root node will have a role "Root".
+ *
+ * @typedef {Object} StructTreeNode
+ * @property {Array<StructTreeNode | StructTreeContent>} children - Array of
+ *   {@link StructTreeNode} and {@link StructTreeContent} objects.
+ * @property {string} role - element's role, already mapped if a role map exists
+ * in the PDF.
+ */
+
+/**
+ * Structure tree content.
+ *
+ * @typedef {Object} StructTreeContent
+ * @property {string} type - either "content" for page and stream structure
+ *   elements or "object" for object references.
+ * @property {string} id - unique id that will map to the text layer.
  */
 
 /**
@@ -1408,6 +1442,7 @@ class PDFPageProxy {
   streamTextContent({
     normalizeWhitespace = false,
     disableCombineTextItems = false,
+    includeMarkedContent = false,
   } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
@@ -1417,6 +1452,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         normalizeWhitespace: normalizeWhitespace === true,
         combineTextItems: disableCombineTextItems !== true,
+        includeMarkedContent: includeMarkedContent === true,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
@@ -1458,6 +1494,16 @@ class PDFPageProxy {
   }
 
   /**
+   * @returns {Promise<StructTreeNode>} A promise that is resolved with a
+   *   {@link StructTreeNode} object that represents the page's structure tree.
+   */
+  getStructTree() {
+    return (this._structTreePromise ||= this._transport.getStructTree(
+      this._pageIndex
+    ));
+  }
+
+  /**
    * Destroys the page object.
    * @private
    */
@@ -1486,6 +1532,7 @@ class PDFPageProxy {
     this._annotationsPromise = null;
     this._jsActionsPromise = null;
     this._xfaPromise = null;
+    this._structTreePromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1521,6 +1568,7 @@ class PDFPageProxy {
     this._annotationsPromise = null;
     this._jsActionsPromise = null;
     this._xfaPromise = null;
+    this._structTreePromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
@@ -2751,6 +2799,12 @@ class WorkerTransport {
 
   getPageXfa(pageIndex) {
     return this.messageHandler.sendWithPromise("GetPageXfa", {
+      pageIndex,
+    });
+  }
+
+  getStructTree(pageIndex) {
+    return this.messageHandler.sendWithPromise("GetStructTree", {
       pageIndex,
     });
   }

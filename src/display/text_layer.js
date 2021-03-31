@@ -638,6 +638,23 @@ const renderTextLayer = (function renderTextLayerClosure() {
 
     _processItems(items, styleCache) {
       for (let i = 0, len = items.length; i < len; i++) {
+        if (items[i].str === undefined) {
+          if (
+            items[i].type === "beginMarkedContentProps" ||
+            items[i].type === "beginMarkedContent"
+          ) {
+            const parent = this._container;
+            this._container = document.createElement("span");
+            this._container.classList.add("markedContent");
+            if (items[i].id !== null) {
+              this._container.setAttribute("id", `${items[i].id}`);
+            }
+            parent.appendChild(this._container);
+          } else if (items[i].type === "endMarkedContent") {
+            this._container = this._container.parentNode;
+          }
+          continue;
+        }
         this._textContentItemsStr.push(items[i].str);
         appendText(this, items[i], styleCache, this._layoutTextCtx);
       }
