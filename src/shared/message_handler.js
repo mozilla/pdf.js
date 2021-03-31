@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* Copyright 2018 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -533,7 +534,9 @@ class MessageHandler {
               reason: wrapReason(reason),
             });
           }
-        );
+        ).catch((reason) => {
+          console.log("Caught an error of the worker thread: " + reason);
+        });
         this.streamSinks[streamId].sinkCapability.reject(
           wrapReason(data.reason)
         );
