@@ -51,7 +51,7 @@ import {
   getRelevant,
   getStringOption,
 } from "./utils.js";
-import { measureToString, toStyle } from "./html_utils.js";
+import { layoutClass, measureToString, toStyle } from "./html_utils.js";
 import { Util, warn } from "../../shared/util.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
@@ -115,8 +115,8 @@ class Area extends XFAObject {
     this.relevant = getRelevant(attributes.relevant);
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
-    this.x = getMeasurement(attributes.x);
-    this.y = getMeasurement(attributes.y);
+    this.x = getMeasurement(attributes.x, "0pt");
+    this.y = getMeasurement(attributes.y, "0pt");
     this.desc = null;
     this.extras = null;
     this.area = new XFAObjectArray();
@@ -346,6 +346,10 @@ class BooleanElement extends Option01 {
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
   }
+
+  [$toHTML]() {
+    return this[$content] === 1;
+  }
 }
 
 class Border extends XFAObject {
@@ -368,6 +372,83 @@ class Border extends XFAObject {
     this.extras = null;
     this.fill = null;
     this.margin = null;
+  }
+
+  [$toStyle](widths, margins) {
+    // TODO: incomplete.
+    const edgeStyles = this.edge.children.map(node => node[$toStyle]());
+    const cornerStyles = this.edge.children.map(node => node[$toStyle]());
+    let style;
+    if (this.margin) {
+      style = this.margin[$toStyle]();
+      if (margins) {
+        margins.push(
+          this.margin.topInset,
+          this.margin.rightInset,
+          this.margin.bottomInset,
+          this.margin.leftInset
+        );
+      }
+    } else {
+      style = Object.create(null);
+      if (margins) {
+        margins.push(0, 0, 0, 0);
+      }
+    }
+
+    if (this.fill) {
+      Object.assign(style, this.fill[$toStyle]());
+    }
+
+    if (edgeStyles.length > 0) {
+      if (widths) {
+        this.edge.children.forEach(node => widths.push(node.thickness));
+        if (widths.length < 4) {
+          const last = widths[widths.length - 1];
+          for (let i = widths.length; i < 4; i++) {
+            widths.push(last);
+          }
+        }
+      }
+
+      if (edgeStyles.length === 2 || edgeStyles.length === 3) {
+        const last = edgeStyles[edgeStyles.length - 1];
+        for (let i = edgeStyles.length; i < 4; i++) {
+          edgeStyles.push(last);
+        }
+      }
+
+      style.borderWidth = edgeStyles.map(s => s.width).join(" ");
+      style.borderColor = edgeStyles.map(s => s.color).join(" ");
+      style.borderStyle = edgeStyles.map(s => s.style).join(" ");
+    } else {
+      if (widths) {
+        widths.push(0, 0, 0, 0);
+      }
+    }
+
+    if (cornerStyles.length > 0) {
+      if (cornerStyles.length === 2 || cornerStyles.length === 3) {
+        const last = cornerStyles[cornerStyles.length - 1];
+        for (let i = cornerStyles.length; i < 4; i++) {
+          cornerStyles.push(last);
+        }
+      }
+
+      style.borderRadius = cornerStyles.map(s => s.radius).join(" ");
+    }
+
+    switch (this.presence) {
+      case "invisible":
+      case "hidden":
+        style.borderStyle = "";
+        break;
+      case "inactive":
+        style.borderStyle = "none";
+        break;
+    }
+
+    return style;
   }
 }
 
@@ -471,6 +552,17 @@ class Button extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.extras = null;
   }
+
+  [$toHTML]() {
+    // TODO: highlight.
+    return {
+      name: "button",
+      attributes: {
+        class: "xfaButton",
+        style: {},
+      },
+    };
+  }
 }
 
 class Calculate extends XFAObject {
@@ -520,6 +612,47 @@ class Caption extends XFAObject {
 
   [$setValue](value) {
     _setValue(this, value);
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    if (!this.value) {
+      return null;
+    }
+
+    const value = this.value[$toHTML]();
+    if (!value) {
+      return null;
+    }
+    const children = [];
+    if (typeof value === "string") {
+      children.push({
+        name: "#text",
+        value,
+      });
+    } else {
+      children.push(value);
+    }
+
+    const style = toStyle(this, "font", "margin", "para", "visibility");
+    switch (this.placement) {
+      case "left":
+      case "right":
+        style.minWidth = measureToString(this.reserve);
+        break;
+      case "top":
+      case "bottom":
+        style.minHeight = measureToString(this.reserve);
+        break;
+    }
+
+    return {
+      name: "div",
+      attributes: {
+        style,
+      },
+      children,
+    };
   }
 }
 
@@ -575,6 +708,83 @@ class CheckButton extends XFAObject {
     this.extras = null;
     this.margin = null;
   }
+
+  [$toHTML]() {
+    // TODO: shape and mark == default.
+    const style = toStyle(this, "border", "margin");
+    const size = measureToString(this.size);
+
+    style.width = style.height = size;
+
+    let mark, radius;
+    if (this.shape === "square") {
+      mark = "■";
+      radius = "10%";
+    } else {
+      mark = "●";
+      radius = "50%";
+    }
+
+    if (!style.borderRadius) {
+      style.borderRadius = radius;
+    }
+
+    if (this.mark !== "default") {
+      // TODO: To avoid some rendering issues we should use svg
+      // to draw marks.
+      switch (this.mark) {
+        case "check":
+          mark = "✓";
+          break;
+        case "circle":
+          mark = "●";
+          break;
+        case "cross":
+          mark = "✕";
+          break;
+        case "diamond":
+          mark = "♦";
+          break;
+        case "square":
+          mark = "■";
+          break;
+        case "star":
+          mark = "★";
+          break;
+      }
+    }
+
+    if (size !== "10px") {
+      style.fontSize = size;
+      style.lineHeight = size;
+      style.width = size;
+      style.height = size;
+    }
+
+    return {
+      name: "label",
+      attributes: {
+        class: "xfaLabel",
+      },
+      children: [
+        {
+          name: "input",
+          attributes: {
+            class: "xfaCheckbox",
+            type: "checkbox",
+          },
+        },
+        {
+          name: "span",
+          attributes: {
+            class: "xfaCheckboxMark",
+            mark,
+            style,
+          },
+        },
+      ],
+    };
+  }
 }
 
 class ChoiceList extends XFAObject {
@@ -598,6 +808,27 @@ class ChoiceList extends XFAObject {
     this.border = null;
     this.extras = null;
     this.margin = null;
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    const style = toStyle(this, "border", "margin");
+    return {
+      name: "label",
+      attributes: {
+        class: "xfaLabel",
+      },
+      children: [
+        {
+          name: "select",
+          attributes: {
+            class: "xfaSxelect",
+            multiple: this.open === "multiSelect",
+            style,
+          },
+        },
+      ],
+    };
   }
 }
 
@@ -662,8 +893,8 @@ class ContentArea extends XFAObject {
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.w = getMeasurement(attributes.w);
-    this.x = getMeasurement(attributes.x);
-    this.y = getMeasurement(attributes.y);
+    this.x = getMeasurement(attributes.x, "0pt");
+    this.y = getMeasurement(attributes.y, "0pt");
     this.desc = null;
     this.extras = null;
   }
@@ -727,12 +958,19 @@ class Corner extends XFAObject {
     this.extras = null;
   }
 
-  [$finalize]() {
-    this.color = this.color || getColor(null, [0, 0, 0]);
+  [$toStyle]() {
+    // In using CSS it's only possible to handle radius
+    // (at least with basic css).
+    // Is there a real use (interest ?) of all these properties ?
+    // Maybe it's possible to implement them using svg and border-image...
+    // TODO: implement all the missing properties.
+    const style = toStyle(this, "visibility");
+    style.radius = measureToString(this.radius);
+    return style;
   }
 }
 
-class Date extends ContentObject {
+class DateElement extends ContentObject {
   constructor(attributes) {
     super(TEMPLATE_NS_ID, "date");
     this.id = attributes.id || "";
@@ -743,6 +981,10 @@ class Date extends ContentObject {
 
   [$finalize]() {
     this[$content] = new Date(this[$content].trim());
+  }
+
+  [$toHTML]() {
+    return this[$content].toString();
   }
 }
 
@@ -757,6 +999,10 @@ class DateTime extends ContentObject {
 
   [$finalize]() {
     this[$content] = new Date(this[$content].trim());
+  }
+
+  [$toHTML]() {
+    return this[$content].toString();
   }
 }
 
@@ -776,6 +1022,29 @@ class DateTimeEdit extends XFAObject {
     this.comb = null;
     this.extras = null;
     this.margin = null;
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    // When the picker is host we should use type=date for the input
+    // but we need to put the buttons outside the text-field.
+    const style = toStyle(this, "border", "font", "margin");
+    const html = {
+      name: "input",
+      attributes: {
+        type: "text",
+        class: "xfaTextfield",
+        style,
+      },
+    };
+
+    return {
+      name: "label",
+      attributes: {
+        class: "xfaLabel",
+      },
+      children: [html],
+    };
   }
 }
 
@@ -801,6 +1070,10 @@ class Decimal extends ContentObject {
   [$finalize]() {
     const number = parseFloat(this[$content].trim());
     this[$content] = isNaN(number) ? null : number;
+  }
+
+  [$toHTML]() {
+    return this[$content] !== null ? this[$content].toString() : "";
   }
 }
 
@@ -878,7 +1151,7 @@ class Draw extends XFAObject {
       defaultValue: 1,
       validate: x => x >= 1,
     });
-    this.h = getMeasurement(attributes.h);
+    this.h = attributes.h ? getMeasurement(attributes.h) : "";
     this.hAlign = getStringOption(attributes.hAlign, [
       "left",
       "center",
@@ -889,10 +1162,10 @@ class Draw extends XFAObject {
     ]);
     this.id = attributes.id || "";
     this.locale = attributes.locale || "";
-    this.maxH = getMeasurement(attributes.maxH);
-    this.maxW = getMeasurement(attributes.maxW);
-    this.minH = getMeasurement(attributes.minH);
-    this.minW = getMeasurement(attributes.minW);
+    this.maxH = getMeasurement(attributes.maxH, "0pt");
+    this.maxW = getMeasurement(attributes.maxW, "0pt");
+    this.minH = getMeasurement(attributes.minH, "0pt");
+    this.minW = getMeasurement(attributes.minW, "0pt");
     this.name = attributes.name || "";
     this.presence = getStringOption(attributes.presence, [
       "visible",
@@ -908,9 +1181,9 @@ class Draw extends XFAObject {
     });
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
-    this.w = getMeasurement(attributes.w);
-    this.x = getMeasurement(attributes.x);
-    this.y = getMeasurement(attributes.y);
+    this.w = attributes.w ? getMeasurement(attributes.w) : "";
+    this.x = getMeasurement(attributes.x, "0pt");
+    this.y = getMeasurement(attributes.y, "0pt");
     this.assist = null;
     this.border = null;
     this.caption = null;
@@ -940,6 +1213,7 @@ class Draw extends XFAObject {
       "font",
       "dimensions",
       "position",
+      "presence",
       "rotate",
       "anchorType"
     );
@@ -954,6 +1228,10 @@ class Draw extends XFAObject {
       id: this[$uid],
       class: clazz.join(" "),
     };
+
+    if (this.name) {
+      attributes.xfaName = this.name;
+    }
 
     return {
       name: "div",
@@ -992,8 +1270,50 @@ class Edge extends XFAObject {
     this.extras = null;
   }
 
-  [$finalize]() {
-    this.color = this.color || getColor(null, [0, 0, 0]);
+  [$toStyle]() {
+    // TODO: dashDot & dashDotDot.
+    const style = toStyle(this, "visibility");
+    Object.assign(style, {
+      linecap: this.cap,
+      width: measureToString(this.thickness),
+      color: this.color ? this.color[$toHTML]() : "#000000",
+      style: "",
+    });
+
+    if (this.presence !== "visible") {
+      style.style = "none";
+    } else {
+      switch (this.stroke) {
+        case "solid":
+          style.style = "solid";
+          break;
+        case "dashDot":
+          style.style = "dashed";
+          break;
+        case "dashDotDot":
+          style.style = "dashed";
+          break;
+        case "dashed":
+          style.style = "dashed";
+          break;
+        case "dotted":
+          style.style = "dotted";
+          break;
+        case "embossed":
+          style.style = "ridge";
+          break;
+        case "etched":
+          style.style = "groove";
+          break;
+        case "lowered":
+          style.style = "inset";
+          break;
+        case "raised":
+          style.style = "outset";
+          break;
+      }
+    }
+    return style;
   }
 }
 
@@ -1228,7 +1548,7 @@ class ExclGroup extends XFAObject {
       defaultValue: 1,
       validate: x => x >= 1,
     });
-    this.h = getMeasurement(attributes.h);
+    this.h = attributes.h ? getMeasurement(attributes.h) : "";
     this.hAlign = getStringOption(attributes.hAlign, [
       "left",
       "center",
@@ -1247,10 +1567,10 @@ class ExclGroup extends XFAObject {
       "table",
       "tb",
     ]);
-    this.maxH = getMeasurement(attributes.maxH);
-    this.maxW = getMeasurement(attributes.maxW);
-    this.minH = getMeasurement(attributes.minH);
-    this.minW = getMeasurement(attributes.minW);
+    this.maxH = getMeasurement(attributes.maxH, "0pt");
+    this.maxW = getMeasurement(attributes.maxW, "0pt");
+    this.minH = getMeasurement(attributes.minH, "0pt");
+    this.minW = getMeasurement(attributes.minW, "0pt");
     this.name = attributes.name || "";
     this.presence = getStringOption(attributes.presence, [
       "visible",
@@ -1261,9 +1581,9 @@ class ExclGroup extends XFAObject {
     this.relevant = getRelevant(attributes.relevant);
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
-    this.w = getMeasurement(attributes.w);
-    this.x = getMeasurement(attributes.x);
-    this.y = getMeasurement(attributes.y);
+    this.w = attributes.w ? getMeasurement(attributes.w) : "";
+    this.x = getMeasurement(attributes.x, "0pt");
+    this.y = getMeasurement(attributes.y, "0pt");
     this.assist = null;
     this.bind = null;
     this.border = null;
@@ -1399,7 +1719,7 @@ class Field extends XFAObject {
       defaultValue: 1,
       validate: x => x >= 1,
     });
-    this.h = getMeasurement(attributes.h);
+    this.h = attributes.h ? getMeasurement(attributes.h) : "";
     this.hAlign = getStringOption(attributes.hAlign, [
       "left",
       "center",
@@ -1410,10 +1730,10 @@ class Field extends XFAObject {
     ]);
     this.id = attributes.id || "";
     this.locale = attributes.locale || "";
-    this.maxH = getMeasurement(attributes.maxH);
-    this.maxW = getMeasurement(attributes.maxW);
-    this.minH = getMeasurement(attributes.minH);
-    this.minW = getMeasurement(attributes.minW);
+    this.maxH = getMeasurement(attributes.maxH, "0pt");
+    this.maxW = getMeasurement(attributes.maxW, "0pt");
+    this.minH = getMeasurement(attributes.minH, "0pt");
+    this.minW = getMeasurement(attributes.minW, "0pt");
     this.name = attributes.name || "";
     this.presence = getStringOption(attributes.presence, [
       "visible",
@@ -1429,9 +1749,9 @@ class Field extends XFAObject {
     });
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
-    this.w = getMeasurement(attributes.w);
-    this.x = getMeasurement(attributes.x);
-    this.y = getMeasurement(attributes.y);
+    this.w = attributes.w ? getMeasurement(attributes.w) : "";
+    this.x = getMeasurement(attributes.x, "0pt");
+    this.y = getMeasurement(attributes.y, "0pt");
     this.assist = null;
     this.bind = null;
     this.border = null;
@@ -1462,7 +1782,7 @@ class Field extends XFAObject {
   }
 
   [$toHTML]() {
-    if (!this.value) {
+    if (!this.ui) {
       return null;
     }
 
@@ -1472,10 +1792,39 @@ class Field extends XFAObject {
       "dimensions",
       "position",
       "rotate",
-      "anchorType"
+      "anchorType",
+      "presence"
     );
 
+    // Get border width in order to compute margin and padding.
+    const borderWidths = [];
+    const marginWidths = [];
+    if (this.border) {
+      Object.assign(style, this.border[$toStyle](borderWidths, marginWidths));
+    }
+
+    if (this.margin) {
+      style.paddingTop = measureToString(
+        this.margin.topInset - borderWidths[0] - marginWidths[0]
+      );
+      style.paddingRight = measureToString(
+        this.margin.rightInset - borderWidths[1] - marginWidths[1]
+      );
+      style.paddingBottom = measureToString(
+        this.margin.bottomInset - borderWidths[2] - marginWidths[2]
+      );
+      style.paddingLeft = measureToString(
+        this.margin.leftInset - borderWidths[3] - marginWidths[3]
+      );
+    } else {
+      style.paddingTop = measureToString(-borderWidths[0] - marginWidths[0]);
+      style.paddingRight = measureToString(-borderWidths[1] - marginWidths[1]);
+      style.paddingBottom = measureToString(-borderWidths[2] - marginWidths[2]);
+      style.paddingLeft = measureToString(-borderWidths[3] - marginWidths[3]);
+    }
+
     const clazz = ["xfaField"];
+    // If no font, font properties are inherited.
     if (this.font) {
       clazz.push("xfaFont");
     }
@@ -1486,11 +1835,68 @@ class Field extends XFAObject {
       class: clazz.join(" "),
     };
 
-    return {
+    if (this.name) {
+      attributes.xfaName = this.name;
+    }
+
+    const children = [];
+    const html = {
       name: "div",
       attributes,
-      children: [],
+      children,
     };
+
+    const ui = this.ui ? this.ui[$toHTML]() : null;
+    if (!ui) {
+      return html;
+    }
+
+    if (!ui.attributes.style) {
+      ui.attributes.style = Object.create(null);
+    }
+    children.push(ui);
+
+    if (this.value && ui.name !== "button") {
+      // TODO: should be ok with string but html ??
+      ui.children[0].attributes.value = this.value[$toHTML]();
+    }
+
+    const caption = this.caption ? this.caption[$toHTML]() : null;
+    if (!caption) {
+      return html;
+    }
+
+    if (ui.name === "button") {
+      ui.attributes.style.background = style.color;
+      delete style.color;
+      if (caption.name === "div") {
+        caption.name = "span";
+      }
+      ui.children = [caption];
+      return html;
+    }
+
+    ui.children.splice(0, 0, caption);
+    switch (this.caption.placement) {
+      case "left":
+        ui.attributes.style.flexDirection = "row";
+        break;
+      case "right":
+        ui.attributes.style.flexDirection = "row-reverse";
+        break;
+      case "top":
+        ui.attributes.style.flexDirection = "column";
+        break;
+      case "bottom":
+        ui.attributes.style.flexDirection = "column-reverse";
+        break;
+      case "inline":
+        delete ui.attributes.class;
+        caption.attributes.style.float = "left";
+        break;
+    }
+
+    return html;
   }
 }
 
@@ -1509,7 +1915,7 @@ class Fill extends XFAObject {
     this.color = null;
     this.extras = null;
 
-    // One-of properties
+    // One-of properties or none
     this.linear = null;
     this.pattern = null;
     this.radial = null;
@@ -1518,7 +1924,6 @@ class Fill extends XFAObject {
   }
 
   [$toStyle]() {
-    let fill = "#000000";
     for (const name of Object.getOwnPropertyNames(this)) {
       if (name === "extras" || name === "color") {
         continue;
@@ -1528,12 +1933,13 @@ class Fill extends XFAObject {
         continue;
       }
 
-      fill = obj[$toStyle](this.color);
-      break;
+      return {
+        color: obj[$toStyle](this.color),
+      };
     }
 
     return {
-      color: fill,
+      color: this.color ? this.color[$toStyle]() : "#000000",
     };
   }
 }
@@ -1581,6 +1987,10 @@ class Float extends ContentObject {
   [$finalize]() {
     const number = parseFloat(this[$content].trim());
     this[$content] = isNaN(number) ? null : number;
+  }
+
+  [$toHTML]() {
+    return this[$content] !== null ? this[$content].toString() : "";
   }
 }
 
@@ -1798,6 +2208,31 @@ class Image extends StringObject {
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
   }
+
+  [$toHTML]() {
+    const html = {
+      name: "img",
+      attributes: {
+        style: {},
+      },
+    };
+
+    if (this.href) {
+      html.attributes.src = new URL(this.href);
+      return html;
+    }
+
+    if (this.transferEncoding === "base64") {
+      const buffer = Uint8Array.from(atob(this[$content]), c =>
+        c.charCodeAt(0)
+      );
+      const blob = new Blob([buffer], { type: this.contentType });
+      html.attributes.src = URL.createObjectURL(blob);
+      return html;
+    }
+
+    return null;
+  }
 }
 
 class ImageEdit extends XFAObject {
@@ -1825,6 +2260,10 @@ class Integer extends ContentObject {
   [$finalize]() {
     const number = parseInt(this[$content].trim(), 10);
     this[$content] = isNaN(number) ? null : number;
+  }
+
+  [$toHTML]() {
+    return this[$content] !== null ? this[$content].toString() : "";
   }
 }
 
@@ -1999,6 +2438,15 @@ class Margin extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.extras = null;
   }
+
+  [$toStyle]() {
+    return {
+      marginLeft: measureToString(this.leftInset),
+      marginRight: measureToString(this.rightInset),
+      marginTop: measureToString(this.topInset),
+      marginBottom: measureToString(this.bottomInset),
+    };
+  }
 }
 
 class Mdp extends XFAObject {
@@ -2067,6 +2515,27 @@ class NumericEdit extends XFAObject {
     this.comb = null;
     this.extras = null;
     this.margin = null;
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    const style = toStyle(this, "border", "font", "margin");
+    const html = {
+      name: "input",
+      attributes: {
+        type: "text",
+        class: "xfaTextfield",
+        style,
+      },
+    };
+
+    return {
+      name: "label",
+      attributes: {
+        class: "xfaLabel",
+      },
+      children: [html],
+    };
   }
 }
 
@@ -2294,6 +2763,35 @@ class Para extends XFAObject {
       validate: x => x >= 0,
     });
     this.hyphenation = null;
+  }
+
+  [$toHTML]() {
+    const style = {
+      marginLeft: measureToString(this.marginLeft),
+      marginRight: measureToString(this.marginRight),
+      paddingTop: measureToString(this.spaceAbove),
+      paddingBottom: measureToString(this.spaceBelow),
+      textIndent: measureToString(this.textIndent),
+      verticalAlign: this.vAlign,
+    };
+
+    if (this.lineHeight.value >= 0) {
+      style.lineHeight = measureToString(this.lineHeight);
+    }
+
+    if (this.tabDefault) {
+      style.tabSize = measureToString(this.tabDefault);
+    }
+
+    if (this.tabStops.length > 0) {
+      // TODO
+    }
+
+    if (this.hyphenatation) {
+      Object.assign(style, this.hyphenatation[$toHTML]());
+    }
+
+    return style;
   }
 }
 
@@ -2714,7 +3212,7 @@ class Subform extends XFAObject {
       .trim()
       .split(/\s+/)
       .map(x => (x === "-1" ? -1 : getMeasurement(x)));
-    this.h = getMeasurement(attributes.h);
+    this.h = attributes.h ? getMeasurement(attributes.h) : "";
     this.hAlign = getStringOption(attributes.hAlign, [
       "left",
       "center",
@@ -2734,14 +3232,14 @@ class Subform extends XFAObject {
       "tb",
     ]);
     this.locale = attributes.locale || "";
-    this.maxH = getMeasurement(attributes.maxH);
-    this.maxW = getMeasurement(attributes.maxW);
+    this.maxH = getMeasurement(attributes.maxH, "0pt");
+    this.maxW = getMeasurement(attributes.maxW, "0pt");
     this.mergeMode = getStringOption(attributes.mergeMode, [
       "consumeData",
       "matchTemplate",
     ]);
-    this.minH = getMeasurement(attributes.minH);
-    this.minW = getMeasurement(attributes.minW);
+    this.minH = getMeasurement(attributes.minH, "0pt");
+    this.minW = getMeasurement(attributes.minW, "0pt");
     this.name = attributes.name || "";
     this.presence = getStringOption(attributes.presence, [
       "visible",
@@ -2757,9 +3255,9 @@ class Subform extends XFAObject {
     this.scope = getStringOption(attributes.scope, ["name", "none"]);
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
-    this.w = getMeasurement(attributes.w);
-    this.x = getMeasurement(attributes.x);
-    this.y = getMeasurement(attributes.y);
+    this.w = attributes.w ? getMeasurement(attributes.w) : "";
+    this.x = getMeasurement(attributes.x, "0pt");
+    this.y = getMeasurement(attributes.y, "0pt");
     this.assist = null;
     this.bind = null;
     this.bookend = null;
@@ -2816,12 +3314,17 @@ class Subform extends XFAObject {
       page = pageAreas[pageNumber][$toHTML]();
     }
 
-    const style = toStyle(this, "dimensions", "position");
+    const style = toStyle(this, "dimensions", "position", "presence");
+    const clazz = ["xfaSubform"];
+    const cl = layoutClass(this);
+    if (cl) {
+      clazz.push(cl);
+    }
 
     const attributes = {
       style,
       id: this[$uid],
-      class: "xfaSubform",
+      class: clazz.join(" "),
     };
 
     if (this.name) {
@@ -3014,6 +3517,13 @@ class Text extends ContentObject {
     warn(`XFA - Invalid content in Text: ${child[$nodeName]}.`);
     return false;
   }
+
+  [$toHTML]() {
+    if (typeof this[$content] === "string") {
+      return this[$content];
+    }
+    return this[$content][$toHTML]();
+  }
 }
 
 class TextEdit extends XFAObject {
@@ -3047,6 +3557,37 @@ class TextEdit extends XFAObject {
     this.extras = null;
     this.margin = null;
   }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    const style = toStyle(this, "border", "font", "margin");
+    let html;
+    if (this.multiline === 1) {
+      html = {
+        name: "textarea",
+        attributes: {
+          style,
+        },
+      };
+    } else {
+      html = {
+        name: "input",
+        attributes: {
+          type: "text",
+          class: "xfaTextfield",
+          style,
+        },
+      };
+    }
+
+    return {
+      name: "label",
+      attributes: {
+        class: "xfaLabel",
+      },
+      children: [html],
+    };
+  }
 }
 
 class Time extends StringObject {
@@ -3061,6 +3602,10 @@ class Time extends StringObject {
   [$finalize]() {
     // TODO
     this[$content] = new Date(this[$content]);
+  }
+
+  [$toHTML]() {
+    return this[$content].toString();
   }
 }
 
@@ -3148,6 +3693,22 @@ class Ui extends XFAObject {
     this.signature = null;
     this.textEdit = null;
   }
+
+  [$toHTML]() {
+    // TODO: picture.
+    for (const name of Object.getOwnPropertyNames(this)) {
+      if (name === "extras" || name === "picture") {
+        continue;
+      }
+      const obj = this[name];
+      if (!(obj instanceof XFAObject)) {
+        continue;
+      }
+
+      return obj[$toHTML]();
+    }
+    return null;
+  }
 }
 
 class Validate extends XFAObject {
@@ -3225,6 +3786,19 @@ class Value extends XFAObject {
 
     this[value[$nodeName]] = value;
     this[$appendChild](value);
+  }
+
+  [$toHTML]() {
+    for (const name of Object.getOwnPropertyNames(this)) {
+      const obj = this[name];
+      if (!(obj instanceof XFAObject)) {
+        continue;
+      }
+
+      return obj[$toHTML]();
+    }
+
+    return null;
   }
 }
 
@@ -3364,7 +3938,7 @@ class TemplateNamespace {
   }
 
   static date(attrs) {
-    return new Date(attrs);
+    return new DateElement(attrs);
   }
 
   static dateTime(attrs) {
