@@ -668,15 +668,14 @@ describe("Interaction", () => {
             ]) {
               const current = await page.$eval(
                 ref,
-                (el, _propName) => getComputedStyle(el)[_propName],
+                (el, _propName) => el.style[_propName],
                 propName
               );
 
               await page.click(`[data-annotation-id='${id}R']`);
               await page.waitForFunction(
                 (_ref, _current, _propName) =>
-                  getComputedStyle(document.querySelector(_ref))[_propName] !==
-                  _current,
+                  document.querySelector(_ref).style[_propName] !== _current,
                 {},
                 ref,
                 current,
@@ -685,10 +684,12 @@ describe("Interaction", () => {
 
               const color = await page.$eval(
                 ref,
-                (el, _propName) => getComputedStyle(el)[_propName],
+                (el, _propName) => el.style[_propName],
                 propName
               );
-              expect(color).withContext(`In ${browserName}`).toEqual(expected);
+              expect(color)
+                .withContext(`In ${browserName}, current is ${current}`)
+                .toEqual(expected);
             }
           }
         })
