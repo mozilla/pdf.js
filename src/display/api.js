@@ -226,49 +226,53 @@ function getDocument(src) {
     worker = null;
 
   for (const key in source) {
-    if (key === "url" && typeof window !== "undefined") {
-      // The full path is required in the 'url' field.
-      params[key] = new URL(source[key], window.location).href;
-      continue;
-    } else if (key === "range") {
-      rangeTransport = source[key];
-      continue;
-    } else if (key === "worker") {
-      worker = source[key];
-      continue;
-    } else if (key === "data") {
-      // Converting string or array-like data to Uint8Array.
-      const pdfBytes = source[key];
-      if (
-        typeof PDFJSDev !== "undefined" &&
-        PDFJSDev.test("GENERIC") &&
-        isNodeJS &&
-        typeof Buffer !== "undefined" && // eslint-disable-line no-undef
-        pdfBytes instanceof Buffer // eslint-disable-line no-undef
-      ) {
-        params[key] = new Uint8Array(pdfBytes);
-      } else if (pdfBytes instanceof Uint8Array) {
-        // Use the data as-is when it's already a Uint8Array.
-        params[key] = pdfBytes;
-      } else if (typeof pdfBytes === "string") {
-        params[key] = stringToBytes(pdfBytes);
-      } else if (
-        typeof pdfBytes === "object" &&
-        pdfBytes !== null &&
-        !isNaN(pdfBytes.length)
-      ) {
-        params[key] = new Uint8Array(pdfBytes);
-      } else if (isArrayBuffer(pdfBytes)) {
-        params[key] = new Uint8Array(pdfBytes);
-      } else {
-        throw new Error(
-          "Invalid PDF binary data: either typed array, " +
-            "string, or array-like object is expected in the data property."
-        );
-      }
-      continue;
+    const value = source[key];
+
+    switch (key) {
+      case "url":
+        if (typeof window !== "undefined") {
+          // The full path is required in the 'url' field.
+          params[key] = new URL(value, window.location).href;
+          continue;
+        }
+        break;
+      case "range":
+        rangeTransport = value;
+        continue;
+      case "worker":
+        worker = value;
+        continue;
+      case "data":
+        // Converting string or array-like data to Uint8Array.
+        if (
+          typeof PDFJSDev !== "undefined" &&
+          PDFJSDev.test("GENERIC") &&
+          isNodeJS &&
+          typeof Buffer !== "undefined" && // eslint-disable-line no-undef
+          value instanceof Buffer // eslint-disable-line no-undef
+        ) {
+          params[key] = new Uint8Array(value);
+        } else if (value instanceof Uint8Array) {
+          break; // Use the data as-is when it's already a Uint8Array.
+        } else if (typeof value === "string") {
+          params[key] = stringToBytes(value);
+        } else if (
+          typeof value === "object" &&
+          value !== null &&
+          !isNaN(value.length)
+        ) {
+          params[key] = new Uint8Array(value);
+        } else if (isArrayBuffer(value)) {
+          params[key] = new Uint8Array(value);
+        } else {
+          throw new Error(
+            "Invalid PDF binary data: either typed array, " +
+              "string, or array-like object is expected in the data property."
+          );
+        }
+        continue;
     }
-    params[key] = source[key];
+    params[key] = value;
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
