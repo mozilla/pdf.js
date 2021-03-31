@@ -111,7 +111,7 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
- * @property {string} [url] - The URL of the PDF.
+ * @property {string|URL} [url] - The URL of the PDF.
  * @property {TypedArray|Array<number>|string} [data] - Binary PDF data. Use
  *    typed arrays (Uint8Array) to improve the memory usage. If PDF data is
  *    BASE64-encoded, use `atob()` to convert it to a binary string first.
@@ -186,32 +186,22 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  */
 
 /**
- * @typedef {Object} PDFDocumentStats
- * @property {Object<string, boolean>} streamTypes - Used stream types in the
- *   document (an item is set to true if specific stream ID was used in the
- *   document).
- * @property {Object<string, boolean>} fontTypes - Used font types in the
- *   document (an item is set to true if specific font ID was used in the
- *   document).
- */
-
-/**
  * This is the main entry point for loading a PDF and interacting with it.
  *
  * NOTE: If a URL is used to fetch the PDF data a standard Fetch API call (or
  * XHR as fallback) is used, which means it must follow same origin rules,
  * e.g. no cross-domain requests without CORS.
  *
- * @param {string|TypedArray|DocumentInitParameters|PDFDataRangeTransport} src -
- *   Can be a URL to where a PDF file is located, a typed array (Uint8Array)
- *   already populated with data or parameter object.
+ * @param {string|URL|TypedArray|PDFDataRangeTransport|DocumentInitParameters}
+ *   src - Can be a URL where a PDF file is located, a typed array (Uint8Array)
+ *         already populated with data, or a parameter object.
  * @returns {PDFDocumentLoadingTask}
  */
 function getDocument(src) {
   const task = new PDFDocumentLoadingTask();
 
   let source;
-  if (typeof src === "string") {
+  if (typeof src === "string" || src instanceof URL) {
     source = { url: src };
   } else if (isArrayBuffer(src)) {
     source = { data: src };
@@ -221,7 +211,7 @@ function getDocument(src) {
     if (typeof src !== "object") {
       throw new Error(
         "Invalid parameter in getDocument, " +
-          "need either Uint8Array, string or a parameter object"
+          "need either string, URL, Uint8Array, or parameter object."
       );
     }
     if (!src.url && !src.data && !src.range) {
@@ -236,49 +226,63 @@ function getDocument(src) {
     worker = null;
 
   for (const key in source) {
-    if (key === "url" && typeof window !== "undefined") {
-      // The full path is required in the 'url' field.
-      params[key] = new URL(source[key], window.location).href;
-      continue;
-    } else if (key === "range") {
-      rangeTransport = source[key];
-      continue;
-    } else if (key === "worker") {
-      worker = source[key];
-      continue;
-    } else if (key === "data") {
-      // Converting string or array-like data to Uint8Array.
-      const pdfBytes = source[key];
-      if (
-        typeof PDFJSDev !== "undefined" &&
-        PDFJSDev.test("GENERIC") &&
-        isNodeJS &&
-        typeof Buffer !== "undefined" && // eslint-disable-line no-undef
-        pdfBytes instanceof Buffer // eslint-disable-line no-undef
-      ) {
-        params[key] = new Uint8Array(pdfBytes);
-      } else if (pdfBytes instanceof Uint8Array) {
-        // Use the data as-is when it's already a Uint8Array.
-        params[key] = pdfBytes;
-      } else if (typeof pdfBytes === "string") {
-        params[key] = stringToBytes(pdfBytes);
-      } else if (
-        typeof pdfBytes === "object" &&
-        pdfBytes !== null &&
-        !isNaN(pdfBytes.length)
-      ) {
-        params[key] = new Uint8Array(pdfBytes);
-      } else if (isArrayBuffer(pdfBytes)) {
-        params[key] = new Uint8Array(pdfBytes);
-      } else {
+    const value = source[key];
+
+    switch (key) {
+      case "url":
+        if (typeof window !== "undefined") {
+          try {
+            // The full path is required in the 'url' field.
+            params[key] = new URL(value, window.location).href;
+            continue;
+          } catch (ex) {
+            warn(`Cannot create valid URL: "${ex}".`);
+          }
+        } else if (typeof value === "string" || value instanceof URL) {
+          params[key] = value.toString(); // Support Node.js environments.
+          continue;
+        }
         throw new Error(
-          "Invalid PDF binary data: either typed array, " +
-            "string, or array-like object is expected in the data property."
+          "Invalid PDF url data: " +
+            "either string or URL-object is expected in the url property."
         );
-      }
-      continue;
+      case "range":
+        rangeTransport = value;
+        continue;
+      case "worker":
+        worker = value;
+        continue;
+      case "data":
+        // Converting string or array-like data to Uint8Array.
+        if (
+          typeof PDFJSDev !== "undefined" &&
+          PDFJSDev.test("GENERIC") &&
+          isNodeJS &&
+          typeof Buffer !== "undefined" && // eslint-disable-line no-undef
+          value instanceof Buffer // eslint-disable-line no-undef
+        ) {
+          params[key] = new Uint8Array(value);
+        } else if (value instanceof Uint8Array) {
+          break; // Use the data as-is when it's already a Uint8Array.
+        } else if (typeof value === "string") {
+          params[key] = stringToBytes(value);
+        } else if (
+          typeof value === "object" &&
+          value !== null &&
+          !isNaN(value.length)
+        ) {
+          params[key] = new Uint8Array(value);
+        } else if (isArrayBuffer(value)) {
+          params[key] = new Uint8Array(value);
+        } else {
+          throw new Error(
+            "Invalid PDF binary data: either typed array, " +
+              "string, or array-like object is expected in the data property."
+          );
+        }
+        continue;
     }
-    params[key] = source[key];
+    params[key] = value;
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
@@ -890,6 +894,16 @@ class PDFDocumentProxy {
   getDownloadInfo() {
     return this._transport.downloadInfoCapability.promise;
   }
+
+  /**
+   * @typedef {Object} PDFDocumentStats
+   * @property {Object<string, boolean>} streamTypes - Used stream types in the
+   *   document (an item is set to true if specific stream ID was used in the
+   *   document).
+   * @property {Object<string, boolean>} fontTypes - Used font types in the
+   *   document (an item is set to true if specific font ID was used in the
+   *   document).
+   */
 
   /**
    * @returns {Promise<PDFDocumentStats>} A promise this is resolved with

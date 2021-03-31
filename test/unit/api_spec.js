@@ -73,6 +73,36 @@ describe("api", function () {
   }
 
   describe("getDocument", function () {
+    it("creates pdf doc from URL-string", async function () {
+      const urlStr = TEST_PDFS_PATH + basicApiFileName;
+      const loadingTask = getDocument(urlStr);
+      const pdfDocument = await loadingTask.promise;
+
+      expect(typeof urlStr).toEqual("string");
+      expect(pdfDocument instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDocument.numPages).toEqual(3);
+
+      await loadingTask.destroy();
+    });
+
+    it("creates pdf doc from URL-object", async function () {
+      if (isNodeJS) {
+        pending("window.location is not supported in Node.js.");
+      }
+      const urlObj = new URL(
+        TEST_PDFS_PATH + basicApiFileName,
+        window.location
+      );
+      const loadingTask = getDocument(urlObj);
+      const pdfDocument = await loadingTask.promise;
+
+      expect(urlObj instanceof URL).toEqual(true);
+      expect(pdfDocument instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDocument.numPages).toEqual(3);
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from URL", function (done) {
       const loadingTask = getDocument(basicApiGetDocumentParams);
 
