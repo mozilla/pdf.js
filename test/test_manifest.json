@@ -595,6 +595,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue13107",
+      "file": "pdfs/issue13107_reduced.pdf",
+      "md5": "13c8d12223dec2752d3c90d250db32b7",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "bug1186827",
        "file": "pdfs/bug1186827.pdf",
        "md5": "6c5526ae1a9d66cb517153001afc196e",
