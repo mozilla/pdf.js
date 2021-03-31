@@ -111,7 +111,7 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
- * @property {string} [url] - The URL of the PDF.
+ * @property {string|URL} [url] - The URL of the PDF.
  * @property {TypedArray|Array<number>|string} [data] - Binary PDF data. Use
  *    typed arrays (Uint8Array) to improve the memory usage. If PDF data is
  *    BASE64-encoded, use `atob()` to convert it to a binary string first.
@@ -192,16 +192,16 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * XHR as fallback) is used, which means it must follow same origin rules,
  * e.g. no cross-domain requests without CORS.
  *
- * @param {string|TypedArray|DocumentInitParameters|PDFDataRangeTransport} src -
- *   Can be a URL to where a PDF file is located, a typed array (Uint8Array)
- *   already populated with data or parameter object.
+ * @param {string|URL|TypedArray|PDFDataRangeTransport|DocumentInitParameters}
+ *   src - Can be a URL where a PDF file is located, a typed array (Uint8Array)
+ *         already populated with data, or a parameter object.
  * @returns {PDFDocumentLoadingTask}
  */
 function getDocument(src) {
   const task = new PDFDocumentLoadingTask();
 
   let source;
-  if (typeof src === "string") {
+  if (typeof src === "string" || src instanceof URL) {
     source = { url: src };
   } else if (isArrayBuffer(src)) {
     source = { data: src };
@@ -211,7 +211,7 @@ function getDocument(src) {
     if (typeof src !== "object") {
       throw new Error(
         "Invalid parameter in getDocument, " +
-          "need either Uint8Array, string or a parameter object"
+          "need either string, URL, Uint8Array, or parameter object."
       );
     }
     if (!src.url && !src.data && !src.range) {
@@ -231,11 +231,21 @@ function getDocument(src) {
     switch (key) {
       case "url":
         if (typeof window !== "undefined") {
-          // The full path is required in the 'url' field.
-          params[key] = new URL(value, window.location).href;
+          try {
+            // The full path is required in the 'url' field.
+            params[key] = new URL(value, window.location).href;
+            continue;
+          } catch (ex) {
+            warn(`Cannot create valid URL: "${ex}".`);
+          }
+        } else if (typeof value === "string" || value instanceof URL) {
+          params[key] = value.toString(); // Support Node.js environments.
           continue;
         }
-        break;
+        throw new Error(
+          "Invalid PDF url data: " +
+            "either string or URL-object is expected in the url property."
+        );
       case "range":
         rangeTransport = value;
         continue;
