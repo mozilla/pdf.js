@@ -128,9 +128,7 @@ class AnnotationFactory {
             return new ChoiceWidgetAnnotation(parameters);
         }
         warn(
-          'Unimplemented widget field type "' +
-            fieldType +
-            '", ' +
+          `Unimplemented widget field type "${fieldType}", ` +
             "falling back to base field type."
         );
         return new WidgetAnnotation(parameters);
@@ -186,9 +184,7 @@ class AnnotationFactory {
             warn("Annotation is missing the required /Subtype.");
           } else {
             warn(
-              'Unimplemented annotation type "' +
-                subtype +
-                '", ' +
+              `Unimplemented annotation type "${subtype}", ` +
                 "falling back to base annotation."
             );
           }
@@ -1119,14 +1115,15 @@ class WidgetAnnotation extends Annotation {
     data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
 
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
+
     const defaultAppearance =
-      getInheritableProperty({ dict, key: "DA" }) ||
-      params.acroForm.get("DA") ||
-      "";
-    data.defaultAppearance = isString(defaultAppearance)
+      getInheritableProperty({ dict, key: "DA" }) || params.acroForm.get("DA");
+    this._defaultAppearance = isString(defaultAppearance)
       ? defaultAppearance
       : "";
-    data.defaultAppearanceData = parseDefaultAppearance(data.defaultAppearance);
+    data.defaultAppearanceData = parseDefaultAppearance(
+      this._defaultAppearance
+    );
 
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = isName(fieldType) ? fieldType.name : null;
@@ -1232,7 +1229,7 @@ class WidgetAnnotation extends Annotation {
 
         // Even if there is an appearance stream, ignore it. This is the
         // behaviour used by Adobe Reader.
-        if (!this.data.defaultAppearance || content === null) {
+        if (!this._defaultAppearance || content === null) {
           return operatorList;
         }
 
@@ -1378,15 +1375,14 @@ class WidgetAnnotation extends Annotation {
     const totalHeight = this.data.rect[3] - this.data.rect[1];
     const totalWidth = this.data.rect[2] - this.data.rect[0];
 
-    if (!this.data.defaultAppearance) {
+    if (!this._defaultAppearance) {
       // The DA is required and must be a string.
       // If there is no font named Helvetica in the resource dictionary,
       // the evaluator will fall back to a default font.
       // Doing so prevents exceptions and allows saving/printing
       // the file as expected.
-      this.data.defaultAppearance = "/Helvetica 0 Tf 0 g";
       this.data.defaultAppearanceData = parseDefaultAppearance(
-        this.data.defaultAppearance
+        (this._defaultAppearance = "/Helvetica 0 Tf 0 g")
       );
     }
 
@@ -1487,7 +1483,7 @@ class WidgetAnnotation extends Annotation {
 
   _computeFontSize(height, lineCount) {
     let { fontSize } = this.data.defaultAppearanceData;
-    if (fontSize === null || fontSize === 0) {
+    if (!fontSize) {
       // A zero value for size means that the font shall be auto-sized:
       // its size shall be computed as a function of the height of the
       // annotation rectangle (see 12.7.3.3).
@@ -1516,13 +1512,13 @@ class WidgetAnnotation extends Annotation {
       }
 
       const { fontName, fontColor } = this.data.defaultAppearanceData;
-      this.data.defaultAppearance = createDefaultAppearance({
+      this._defaultAppearance = createDefaultAppearance({
         fontSize,
         fontName,
         fontColor,
       });
     }
-    return [this.data.defaultAppearance, fontSize];
+    return [this._defaultAppearance, fontSize];
   }
 
   _renderText(text, font, fontSize, totalWidth, alignment, hPadding, vPadding) {
