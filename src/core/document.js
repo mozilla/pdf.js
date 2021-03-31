@@ -58,6 +58,7 @@ import { calculateMD5 } from "./crypto.js";
 import { Linearization } from "./parser.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
+import { StructTreePage } from "./struct_tree.js";
 import { XFAFactory } from "./xfa/factory.js";
 
 const DEFAULT_USER_UNIT = 1.0;
@@ -103,6 +104,10 @@ class Page {
     this._localIdFactory = class extends globalIdFactory {
       static createObjId() {
         return `p${pageIndex}_${++idCounters.obj}`;
+      }
+
+      static getPageObjId() {
+        return `page${ref.toString()}`;
       }
     };
   }
@@ -406,6 +411,7 @@ class Page {
     handler,
     task,
     normalizeWhitespace,
+    includeMarkedContent,
     sink,
     combineTextItems,
   }) {
@@ -437,10 +443,20 @@ class Page {
         task,
         resources: this.resources,
         normalizeWhitespace,
+        includeMarkedContent,
         combineTextItems,
         sink,
       });
     });
+  }
+
+  async getStructTree() {
+    const structTreeRoot = await this.pdfManager.ensureCatalog(
+      "structTreeRoot"
+    );
+    const tree = new StructTreePage(structTreeRoot, this.pageDict);
+    tree.parse();
+    return tree;
   }
 
   getAnnotationsData(intent) {
@@ -603,6 +619,10 @@ class PDFDocument {
 
       static createObjId() {
         unreachable("Abstract method `createObjId` called.");
+      }
+
+      static getPageObjId() {
+        unreachable("Abstract method `getPageObjId` called.");
       }
     };
   }

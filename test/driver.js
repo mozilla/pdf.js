@@ -572,6 +572,7 @@ var Driver = (function DriverClosure() {
                 initPromise = page
                   .getTextContent({
                     normalizeWhitespace: true,
+                    includeMarkedContent: true,
                   })
                   .then(function (textContent) {
                     return rasterizeTextLayer(

@@ -34,6 +34,7 @@
     "pdf_history_spec.js",
     "primitives_spec.js",
     "stream_spec.js",
+    "struct_tree_spec.js",
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
