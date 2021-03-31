@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
-import { $toStyle, XFAObject } from "./xfa_object.js";
+import { $getParent, $toStyle, XFAObject } from "./xfa_object.js";
 import { warn } from "../../shared/util.js";
 
 function measureToString(m) {
+  if (typeof m === "string") {
+    return "0px";
+  }
   return Number.isInteger(m) ? `${m}px` : `${m.toFixed(2)}px`;
 }
 
@@ -56,31 +59,34 @@ const converters = {
     if (node.w) {
       style.width = measureToString(node.w);
     } else {
-      if (node.maxW && node.maxW.value > 0) {
+      style.width = "auto";
+      if (node.maxW > 0) {
         style.maxWidth = measureToString(node.maxW);
       }
-      if (node.minW && node.minW.value > 0) {
-        style.minWidth = measureToString(node.minW);
-      }
+      style.minWidth = measureToString(node.minW);
     }
 
     if (node.h) {
       style.height = measureToString(node.h);
     } else {
-      if (node.maxH && node.maxH.value > 0) {
+      style.height = "auto";
+      if (node.maxH > 0) {
         style.maxHeight = measureToString(node.maxH);
       }
-      if (node.minH && node.minH.value > 0) {
-        style.minHeight = measureToString(node.minH);
-      }
+      style.minHeight = measureToString(node.minH);
     }
   },
   position(node, style) {
-    if (node.x !== "" || node.y !== "") {
-      style.position = "absolute";
-      style.left = measureToString(node.x);
-      style.top = measureToString(node.y);
+    const parent = node[$getParent]();
+    if (parent && parent.layout && parent.layout !== "position") {
+      // IRL, we've some x/y in tb layout.
+      // Specs say x/y is only used in positioned layout.
+      return;
     }
+
+    style.position = "absolute";
+    style.left = measureToString(node.x);
+    style.top = measureToString(node.y);
   },
   rotate(node, style) {
     if (node.rotate) {
@@ -91,7 +97,39 @@ const converters = {
       style.transformOrigin = "top left";
     }
   },
+  presence(node, style) {
+    switch (node.presence) {
+      case "invisible":
+        style.visibility = "hidden";
+        break;
+      case "hidden":
+      case "inactive":
+        style.display = "none";
+        break;
+    }
+  },
 };
+
+function layoutClass(node) {
+  switch (node.layout) {
+    case "position":
+      return "xfaPosition";
+    case "lr-tb":
+      return "xfaLrTb";
+    case "rl-row":
+      return "xfaRlRow";
+    case "rl-tb":
+      return "xfaRlTb";
+    case "row":
+      return "xfaRow";
+    case "table":
+      return "xfaTable";
+    case "tb":
+      return "xfaTb";
+    default:
+      return "xfaPosition";
+  }
+}
 
 function toStyle(node, ...names) {
   const style = Object.create(null);
@@ -117,4 +155,4 @@ function toStyle(node, ...names) {
   return style;
 }
 
-export { measureToString, toStyle };
+export { layoutClass, measureToString, toStyle };
