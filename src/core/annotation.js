@@ -128,9 +128,7 @@ class AnnotationFactory {
             return new ChoiceWidgetAnnotation(parameters);
         }
         warn(
-          'Unimplemented widget field type "' +
-            fieldType +
-            '", ' +
+          `Unimplemented widget field type "${fieldType}", ` +
             "falling back to base field type."
         );
         return new WidgetAnnotation(parameters);
@@ -186,9 +184,7 @@ class AnnotationFactory {
             warn("Annotation is missing the required /Subtype.");
           } else {
             warn(
-              'Unimplemented annotation type "' +
-                subtype +
-                '", ' +
+              `Unimplemented annotation type "${subtype}", ` +
                 "falling back to base annotation."
             );
           }
