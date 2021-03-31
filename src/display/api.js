@@ -186,16 +186,6 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  */
 
 /**
- * @typedef {Object} PDFDocumentStats
- * @property {Object<string, boolean>} streamTypes - Used stream types in the
- *   document (an item is set to true if specific stream ID was used in the
- *   document).
- * @property {Object<string, boolean>} fontTypes - Used font types in the
- *   document (an item is set to true if specific font ID was used in the
- *   document).
- */
-
-/**
  * This is the main entry point for loading a PDF and interacting with it.
  *
  * NOTE: If a URL is used to fetch the PDF data a standard Fetch API call (or
@@ -890,6 +880,16 @@ class PDFDocumentProxy {
   getDownloadInfo() {
     return this._transport.downloadInfoCapability.promise;
   }
+
+  /**
+   * @typedef {Object} PDFDocumentStats
+   * @property {Object<string, boolean>} streamTypes - Used stream types in the
+   *   document (an item is set to true if specific stream ID was used in the
+   *   document).
+   * @property {Object<string, boolean>} fontTypes - Used font types in the
+   *   document (an item is set to true if specific font ID was used in the
+   *   document).
+   */
 
   /**
    * @returns {Promise<PDFDocumentStats>} A promise this is resolved with
