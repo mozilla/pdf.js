@@ -803,6 +803,11 @@ class BaseViewer {
   }
 
   _setScale(value, noScroll = false) {
+    // #90 modified by ngx-extended-pdf-viewer
+    if (null === value) {
+      value = "auto";
+    }
+    // #90 end of modification
     let scale = parseFloat(value);
 
     if (scale > 0) {
