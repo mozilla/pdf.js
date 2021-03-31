@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1840,8 +1841,6 @@ const PDFViewerApplication = {
       // #556 #543 modified by ngx-extended-pdf-viewer
       if (defaultZoomOption) {
         this.pdfViewer.currentScaleValue = defaultZoomOption;
-      } else {
-        this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
       }
       // #556 #543 end of modification
     }
@@ -2515,17 +2514,29 @@ function webViewerUpdateViewarea(evt) {
     store = PDFViewerApplication.store;
 
   if (store && PDFViewerApplication.isInitialViewSet) {
+    // #90 #543 modified by ngx-extended-pdf-viewer
+    const settings = {};
+    if (location.pageNumber) {
+      settings.page = location.pageNumber;
+    }
+    if (location.scale) {
+      settings.zoom = location.scale;
+    }
+    if (location.left) {
+      settings.scrollLeft = location.left;
+    }
+    if (location.top) {
+      settings.scrollTop = location.top;
+    }
+    if (location.rotation) {
+      settings.rotation = location.rotation;
+    }
     store
-      .setMultiple({
-        page: location.pageNumber,
-        zoom: location.scale,
-        scrollLeft: location.left,
-        scrollTop: location.top,
-        rotation: location.rotation,
-      })
+      .setMultiple(settings)
       .catch(function () {
         /* unable to write to storage */
       });
+      // #90 #543 end of modification
   }
   const href = PDFViewerApplication.pdfLinkService.getAnchorUrl(
     location.pdfOpenParams
