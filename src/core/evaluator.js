@@ -794,12 +794,8 @@ class PartialEvaluator {
     state,
     fallbackFontDict = null
   ) {
-    // TODO(mack): Not needed?
-    var fontName;
-    if (fontArgs) {
-      fontArgs = fontArgs.slice();
-      fontName = fontArgs[0].name;
-    }
+    const fontName =
+      fontArgs && fontArgs[0] instanceof Name ? fontArgs[0].name : null;
 
     return this.loadFont(fontName, fontRef, resources, fallbackFontDict)
       .then(translated => {

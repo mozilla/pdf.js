@@ -1470,7 +1470,7 @@ class WidgetAnnotation extends Annotation {
     const { fontName, fontSize } = this.data.defaultAppearanceData;
     await evaluator.handleSetFont(
       this._fieldResources.mergedResources,
-      [fontName, fontSize],
+      [fontName && Name.get(fontName), fontSize],
       /* fontRef = */ null,
       operatorList,
       task,
@@ -1565,26 +1565,26 @@ class WidgetAnnotation extends Annotation {
       acroFormResources,
     } = this._fieldResources;
 
-    const fontNameStr =
+    const fontName =
       this.data.defaultAppearanceData &&
-      this.data.defaultAppearanceData.fontName.name;
-    if (!fontNameStr) {
+      this.data.defaultAppearanceData.fontName;
+    if (!fontName) {
       return localResources || Dict.empty;
     }
 
     for (const resources of [localResources, appearanceResources]) {
       if (resources instanceof Dict) {
         const localFont = resources.get("Font");
-        if (localFont instanceof Dict && localFont.has(fontNameStr)) {
+        if (localFont instanceof Dict && localFont.has(fontName)) {
           return resources;
         }
       }
     }
     if (acroFormResources instanceof Dict) {
       const acroFormFont = acroFormResources.get("Font");
-      if (acroFormFont instanceof Dict && acroFormFont.has(fontNameStr)) {
+      if (acroFormFont instanceof Dict && acroFormFont.has(fontName)) {
         const subFontDict = new Dict(xref);
-        subFontDict.set(fontNameStr, acroFormFont.getRaw(fontNameStr));
+        subFontDict.set(fontName, acroFormFont.getRaw(fontName));
 
         const subResourcesDict = new Dict(xref);
         subResourcesDict.set("Font", subFontDict);
