@@ -1284,10 +1284,7 @@ class PDFPageProxy {
     }
 
     const complete = error => {
-      const i = intentState.renderTasks.indexOf(internalRenderTask);
-      if (i >= 0) {
-        intentState.renderTasks.splice(i, 1);
-      }
+      intentState.renderTasks.delete(internalRenderTask);
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup once rendering has finished (regardless of cleanupAfterRender).
@@ -1332,10 +1329,7 @@ class PDFPageProxy {
       pdfBug: this._pdfBug,
     });
 
-    if (!intentState.renderTasks) {
-      intentState.renderTasks = [];
-    }
-    intentState.renderTasks.push(internalRenderTask);
+    (intentState.renderTasks ||= new Set()).add(internalRenderTask);
     const renderTask = internalRenderTask.task;
 
     Promise.all([
@@ -1370,10 +1364,7 @@ class PDFPageProxy {
       if (intentState.operatorList.lastChunk) {
         intentState.opListReadCapability.resolve(intentState.operatorList);
 
-        const i = intentState.renderTasks.indexOf(opListTask);
-        if (i >= 0) {
-          intentState.renderTasks.splice(i, 1);
-        }
+        intentState.renderTasks.delete(opListTask);
       }
     }
 
@@ -1389,8 +1380,7 @@ class PDFPageProxy {
       opListTask = Object.create(null);
       opListTask.operatorListChanged = operatorListChanged;
       intentState.opListReadCapability = createPromiseCapability();
-      intentState.renderTasks = [];
-      intentState.renderTasks.push(opListTask);
+      (intentState.renderTasks ||= new Set()).add(opListTask);
       intentState.operatorList = {
         fnArray: [],
         argsArray: [],
@@ -1518,7 +1508,7 @@ class PDFPageProxy {
       return false;
     }
     for (const { renderTasks, operatorList } of this._intentStates.values()) {
-      if (renderTasks.length !== 0 || !operatorList.lastChunk) {
+      if (renderTasks.size > 0 || !operatorList.lastChunk) {
         return false;
       }
     }
@@ -1565,8 +1555,8 @@ class PDFPageProxy {
     intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
 
     // Notify all the rendering tasks there are more operators to be consumed.
-    for (let i = 0; i < intentState.renderTasks.length; i++) {
-      intentState.renderTasks[i].operatorListChanged();
+    for (const internalRenderTask of intentState.renderTasks) {
+      internalRenderTask.operatorListChanged();
     }
 
     if (operatorListChunk.lastChunk) {
@@ -1615,8 +1605,8 @@ class PDFPageProxy {
             // Mark operator list as complete.
             intentState.operatorList.lastChunk = true;
 
-            for (let i = 0; i < intentState.renderTasks.length; i++) {
-              intentState.renderTasks[i].operatorListChanged();
+            for (const internalRenderTask of intentState.renderTasks) {
+              internalRenderTask.operatorListChanged();
             }
             this._tryCleanup();
           }
@@ -1650,7 +1640,7 @@ class PDFPageProxy {
     if (!force) {
       // Ensure that an Error occurring in *only* one `InternalRenderTask`, e.g.
       // multiple render() calls on the same canvas, won't break all rendering.
-      if (intentState.renderTasks.length !== 0) {
+      if (intentState.renderTasks.size > 0) {
         return;
       }
       // Don't immediately abort parsing on the worker-thread when rendering is
