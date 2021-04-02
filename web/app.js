@@ -465,7 +465,7 @@ const PDFViewerApplication = {
     this.overlayManager = new OverlayManager();
 
     const pdfRenderingQueue = new PDFRenderingQueue();
-    pdfRenderingQueue.onIdle = this.cleanup.bind(this);
+    pdfRenderingQueue.onIdle = this._cleanup.bind(this);
     this.pdfRenderingQueue = pdfRenderingQueue;
 
     const pdfLinkService = new PDFLinkService({
@@ -1767,7 +1767,10 @@ const PDFViewerApplication = {
     }
   },
 
-  cleanup() {
+  /**
+   * @private
+   */
+  _cleanup() {
     if (!this.pdfDocument) {
       return; // run cleanup when document is loaded
     }
@@ -1775,9 +1778,9 @@ const PDFViewerApplication = {
     this.pdfThumbnailViewer.cleanup();
 
     // We don't want to remove fonts used by active page SVGs.
-    if (this.pdfViewer.renderer !== RendererType.SVG) {
-      this.pdfDocument.cleanup();
-    }
+    this.pdfDocument.cleanup(
+      /* keepLoadedFonts = */ this.pdfViewer.renderer === RendererType.SVG
+    );
   },
 
   forceRendering() {
