@@ -17,7 +17,6 @@ import {
   createDefaultAppearance,
   parseDefaultAppearance,
 } from "../../src/core/default_appearance.js";
-import { Name } from "../../src/core/primitives.js";
 
 describe("Default appearance", function () {
   describe("parseDefaultAppearance and createDefaultAppearance", function () {
@@ -25,7 +24,7 @@ describe("Default appearance", function () {
       const da = "/F1 12 Tf 0.10 0.20 0.30 rg";
       const result = {
         fontSize: 12,
-        fontName: Name.get("F1"),
+        fontName: "F1",
         fontColor: new Uint8ClampedArray([26, 51, 76]),
       };
       expect(parseDefaultAppearance(da)).toEqual(result);
@@ -37,7 +36,7 @@ describe("Default appearance", function () {
         )
       ).toEqual({
         fontSize: 13,
-        fontName: Name.get("F2"),
+        fontName: "F2",
         fontColor: new Uint8ClampedArray([76, 51, 26]),
       });
     });
@@ -47,7 +46,7 @@ describe("Default appearance", function () {
         "q Q 0.10 0.20 0.30 rg /F1 12 Tf q 0.30 0.20 0.10 rg /F2 13 Tf Q";
       expect(parseDefaultAppearance(da)).toEqual({
         fontSize: 12,
-        fontName: Name.get("F1"),
+        fontName: "F1",
         fontColor: new Uint8ClampedArray([26, 51, 76]),
       });
     });

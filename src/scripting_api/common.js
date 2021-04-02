@@ -13,6 +13,14 @@
  * limitations under the License.
  */
 
+const FieldType = {
+  none: 0,
+  number: 1,
+  percent: 2,
+  date: 3,
+  time: 4,
+};
+
 function createActionsMap(actions) {
   const actionsMap = new Map();
   if (actions) {
@@ -23,4 +31,28 @@ function createActionsMap(actions) {
   return actionsMap;
 }
 
-export { createActionsMap };
+function getFieldType(actions) {
+  let format = actions.get("Format");
+  if (!format) {
+    return FieldType.none;
+  }
+
+  format = format[0];
+
+  format = format.trim();
+  if (format.startsWith("AFNumber_")) {
+    return FieldType.number;
+  }
+  if (format.startsWith("AFPercent_")) {
+    return FieldType.percent;
+  }
+  if (format.startsWith("AFDate_")) {
+    return FieldType.date;
+  }
+  if (format.startsWith("AFTime__")) {
+    return FieldType.time;
+  }
+  return FieldType.none;
+}
+
+export { createActionsMap, FieldType, getFieldType };

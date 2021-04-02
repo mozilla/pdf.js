@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-import { isName, Name } from "./primitives.js";
 import { OPS, warn } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { escapePDFName } from "./core_utils.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
+import { Name } from "./primitives.js";
 import { StringStream } from "./stream.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
@@ -32,8 +32,8 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
     };
     const result = {
       fontSize: 0,
-      fontName: Name.get(""),
-      fontColor: new Uint8ClampedArray([0, 0, 0]) /* black */,
+      fontName: "",
+      fontColor: /* black = */ new Uint8ClampedArray(3),
     };
 
     try {
@@ -51,8 +51,8 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
         switch (fn | 0) {
           case OPS.setFont:
             const [fontName, fontSize] = args;
-            if (isName(fontName)) {
-              result.fontName = fontName;
+            if (fontName instanceof Name) {
+              result.fontName = fontName.name;
             }
             if (typeof fontSize === "number" && fontSize > 0) {
               result.fontSize = fontSize;
@@ -93,7 +93,7 @@ function createDefaultAppearance({ fontSize, fontName, fontColor }) {
         .map(c => (c / 255).toFixed(2))
         .join(" ") + " rg";
   }
-  return `/${escapePDFName(fontName.name)} ${fontSize} Tf ${colorCmd}`;
+  return `/${escapePDFName(fontName)} ${fontSize} Tf ${colorCmd}`;
 }
 
 export { createDefaultAppearance, parseDefaultAppearance };

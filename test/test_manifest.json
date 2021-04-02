@@ -595,6 +595,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue13107",
+      "file": "pdfs/issue13107_reduced.pdf",
+      "md5": "13c8d12223dec2752d3c90d250db32b7",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "bug1186827",
        "file": "pdfs/bug1186827.pdf",
        "md5": "6c5526ae1a9d66cb517153001afc196e",
@@ -2560,6 +2566,12 @@
        "rounds": 1,
        "link": true,
        "type": "load"
+    },
+    {  "id": "issue13132",
+       "file": "pdfs/issue13132.pdf",
+       "md5": "1b28964b9188047bc6c786302c95029f",
+       "link": true,
+       "type": "other"
     },
     {  "id": "issue4722",
        "file": "pdfs/issue4722.pdf",

@@ -42,6 +42,13 @@ const MAX_SIZE_TO_COMPILE = 1000;
 
 const FULL_CHUNK_HEIGHT = 16;
 
+// Because of https://bugs.chromium.org/p/chromium/issues/detail?id=1170396
+// some curves aren't rendered correctly.
+// Multiplying lineWidth by this factor should help to have "correct"
+// rendering with no artifacts.
+// Once the bug is fixed upstream, we can remove this constant and its use.
+const LINEWIDTH_SCALE_FACTOR = 1.000001;
+
 function addContextCurrentTransform(ctx) {
   // If the context doesn't expose a `mozCurrentTransform`, add a JS based one.
   if (!ctx.mozCurrentTransform) {
@@ -52,9 +59,32 @@ function addContextCurrentTransform(ctx) {
     ctx._originalTranslate = ctx.translate;
     ctx._originalTransform = ctx.transform;
     ctx._originalSetTransform = ctx.setTransform;
+    ctx._originalResetTransform = ctx.resetTransform;
 
     ctx._transformMatrix = ctx._transformMatrix || [1, 0, 0, 1, 0, 0];
     ctx._transformStack = [];
+
+    try {
+      // The call to getOwnPropertyDescriptor throws an exception in Node.js:
+      // "TypeError: Method lineWidth called on incompatible receiver
+      //  #<CanvasRenderingContext2D>".
+      const desc = Object.getOwnPropertyDescriptor(
+        Object.getPrototypeOf(ctx),
+        "lineWidth"
+      );
+
+      ctx._setLineWidth = desc.set;
+      ctx._getLineWidth = desc.get;
+
+      Object.defineProperty(ctx, "lineWidth", {
+        set: function setLineWidth(width) {
+          this._setLineWidth(width * LINEWIDTH_SCALE_FACTOR);
+        },
+        get: function getLineWidth() {
+          return this._getLineWidth();
+        },
+      });
+    } catch (_) {}
 
     Object.defineProperty(ctx, "mozCurrentTransform", {
       get: function getCurrentTransform() {
@@ -142,6 +172,12 @@ function addContextCurrentTransform(ctx) {
       this._transformMatrix = [a, b, c, d, e, f];
 
       ctx._originalSetTransform(a, b, c, d, e, f);
+    };
+
+    ctx.resetTransform = function ctxResetTransform() {
+      this._transformMatrix = [1, 0, 0, 1, 0, 0];
+
+      ctx._originalResetTransform();
     };
 
     ctx.rotate = function ctxRotate(angle) {
@@ -2692,9 +2728,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
             this._combinedScaleFactor * pixelHeight
           );
         } else if (absDet > Number.EPSILON) {
-          // The multiplication by the constant 1.0000001 is here to have
-          // a number slightly greater than what we "exactly" want.
-          this._cachedGetSinglePixelWidth = pixelHeight * 1.0000001;
+          this._cachedGetSinglePixelWidth = pixelHeight;
         } else {
           // Matrix is non-invertible.
           this._cachedGetSinglePixelWidth = 1;

@@ -2923,14 +2923,21 @@ var Font = (function FontClosure() {
         }
 
         // Last, try to map any missing charcodes using the post table.
-        if (properties.glyphNames && baseEncoding.length) {
+        if (
+          properties.glyphNames &&
+          (baseEncoding.length || this.differences.length)
+        ) {
           for (let i = 0; i < 256; ++i) {
-            if (charCodeToGlyphId[i] === undefined && baseEncoding[i]) {
-              glyphName = baseEncoding[i];
-              const glyphId = properties.glyphNames.indexOf(glyphName);
-              if (glyphId > 0 && hasGlyph(glyphId)) {
-                charCodeToGlyphId[i] = glyphId;
-              }
+            if (charCodeToGlyphId[i] !== undefined) {
+              continue;
+            }
+            glyphName = this.differences[i] || baseEncoding[i];
+            if (!glyphName) {
+              continue;
+            }
+            const glyphId = properties.glyphNames.indexOf(glyphName);
+            if (glyphId > 0 && hasGlyph(glyphId)) {
+              charCodeToGlyphId[i] = glyphId;
             }
           }
         }
