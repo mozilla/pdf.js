@@ -113,9 +113,9 @@ class DownloadManager {
    *   the "open with" dialog.
    */
   download(blob, url, filename, sourceEventType = "download") {
-    if (viewerCompatibilityParams.disableCreateObjectURL) {
+    if (viewerCompatibilityParams.disableCreateObjectURL && url) { // #629 modified by ngx-extended-pdf-viewer
       // URL.createObjectURL is not supported
-      this.downloadUrl(url, filename);
+        this.downloadUrl(url, filename);
       return;
     }
     const blobUrl = URL.createObjectURL(blob);
