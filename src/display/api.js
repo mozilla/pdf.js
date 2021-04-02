@@ -1180,14 +1180,14 @@ class PDFPageProxy {
    *   {Array} of the annotation objects.
    */
   getAnnotations({ intent = null } = {}) {
-    if (!this.annotationsPromise || this.annotationsIntent !== intent) {
-      this.annotationsPromise = this._transport.getAnnotations(
+    if (!this._annotationsPromise || this._annotationsIntent !== intent) {
+      this._annotationsPromise = this._transport.getAnnotations(
         this._pageIndex,
         intent
       );
-      this.annotationsIntent = intent;
+      this._annotationsIntent = intent;
     }
-    return this.annotationsPromise;
+    return this._annotationsPromise;
   }
 
   /**
@@ -1490,7 +1490,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    this.annotationsPromise = null;
+    this._annotationsPromise = null;
     this._jsActionsPromise = null;
     this._xfaPromise = null;
     this.pendingCleanup = false;
@@ -1525,7 +1525,7 @@ class PDFPageProxy {
 
     this._intentStates.clear();
     this.objs.clear();
-    this.annotationsPromise = null;
+    this._annotationsPromise = null;
     this._jsActionsPromise = null;
     this._xfaPromise = null;
     if (resetStats && this._stats) {
