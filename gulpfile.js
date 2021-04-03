@@ -428,7 +428,7 @@ function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
 
 function createSandboxBundle(defines, extraOptions = undefined) {
   const sandboxAMDName = "pdfjs-dist/build/pdf.sandbox";
-  const sandboxOutputName = "pdf.sandbox.js";
+  const sandboxOutputName = addSuffix("pdf.sandbox.js", defines);
 
   const scriptingPath = TMP_DIR + "pdf.scripting.js";
   // Insert the source as a string to be `eval`-ed in the sandbox.
@@ -1068,9 +1068,10 @@ gulp.task(
 async function parseMinified(dir, suffix) {
   const pdfFile = fs.readFileSync(dir + "/build/pdf" + suffix + ".js").toString();
   const pdfWorkerFile = fs.readFileSync(dir + "/build/pdf.worker" + suffix + ".js").toString();
-/*  const pdfSandboxFile = fs
-    .readFileSync(dir + "/build/pdf.sandbox.js")
+  const pdfSandboxFile = fs
+    .readFileSync(dir + "/build/pdf.sandbox" + suffix + ".js")
     .toString();
+  /*
   const pdfImageDecodersFile = fs
     .readFileSync(dir + "/image_decoders/pdf.image_decoders.js")
     .toString();
@@ -1136,6 +1137,32 @@ async function parseMinified(dir, suffix) {
   fs.writeFileSync(
     dir + "/build/pdf" + suffix + ".min.js.map",
     miniPdf.map
+  );
+
+  const pdfSandboxSource = fs
+    .readFileSync(dir + "/build/pdf.sandbox" + suffix + ".js.map")
+    .toString();
+  options = {
+    compress: {
+      // V8 chokes on very long sequences, work around that.
+      sequences: false,
+    },
+    keep_classnames: true,
+    keep_fnames: true,
+    sourceMap: {
+      content: pdfSandboxSource,
+      url: "pdf.sandbox" + suffix + ".min.js.map",
+    },
+  };
+
+  const miniPdfSandbox = await Terser.minify(pdfSandboxFile, options);
+  fs.writeFileSync(
+    dir + "/build/pdf.sandbox" + suffix + ".min.js",
+    miniPdfSandbox.code
+  );
+  fs.writeFileSync(
+    dir + "/build/pdf.sandbox" + suffix + ".min.js.map",
+    miniPdfSandbox.map
   );
 
   const pdfWorkerSource = fs

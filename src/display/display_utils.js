@@ -595,7 +595,13 @@ function isValidFetchUrl(url, baseUrl) {
 function loadScript(src, removeScriptElement = false) {
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = src;
+    // modified by ngx-extended-pdf-viewer
+    if (src.constructor.name === "Function") {
+      script.src = src();
+    } else {
+      script.src = src;
+    }
+    // end of modification
 
     script.onload = function (evt) {
       if (removeScriptElement) {
