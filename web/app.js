@@ -802,7 +802,19 @@ const PDFViewerApplication = {
     }
 
     if (!this.pdfLoadingTask) {
-      return undefined;
+      return;
+    }
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.pdfDocument?.annotationStorage.size > 0 &&
+      this._annotationStorageModified
+    ) {
+      try {
+        // Trigger saving, to prevent data loss in forms; see issue 12257.
+        await this.save({ sourceEventType: "save" });
+      } catch (reason) {
+        // Ignoring errors, to ensure that document closing won't break.
+      }
     }
     const promises = [];
 
@@ -851,8 +863,6 @@ const PDFViewerApplication = {
       PDFBug.cleanup();
     }
     await Promise.all(promises);
-
-    return undefined;
   },
 
   /**
@@ -1707,11 +1717,19 @@ const PDFViewerApplication = {
     }
     const { annotationStorage } = pdfDocument;
 
-    annotationStorage.onSetModified = function () {
+    annotationStorage.onSetModified = () => {
       window.addEventListener("beforeunload", beforeUnload);
+
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        this._annotationStorageModified = true;
+      }
     };
-    annotationStorage.onResetModified = function () {
+    annotationStorage.onResetModified = () => {
       window.removeEventListener("beforeunload", beforeUnload);
+
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        delete this._annotationStorageModified;
+      }
     };
   },
 
