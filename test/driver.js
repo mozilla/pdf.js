@@ -635,14 +635,13 @@ var Driver = (function DriverClosure() {
                 optionalContentConfigPromise: task.optionalContentConfigPromise,
               };
               if (renderPrint) {
-                const annotationStorage = task.annotationStorage;
-                if (annotationStorage) {
-                  const docAnnotationStorage = task.pdfDoc.annotationStorage;
-                  const entries = Object.entries(annotationStorage);
+                if (task.annotationStorage) {
+                  const entries = Object.entries(task.annotationStorage),
+                    docAnnotationStorage = task.pdfDoc.annotationStorage;
                   for (const [key, value] of entries) {
                     docAnnotationStorage.setValue(key, value);
                   }
-                  renderContext.annotationStorage = docAnnotationStorage;
+                  renderContext.includeAnnotationStorage = true;
                 }
                 renderContext.intent = "print";
               }
