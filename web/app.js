@@ -998,9 +998,7 @@ const PDFViewerApplication = {
     try {
       this._ensureDownloadComplete();
 
-      const data = await this.pdfDocument.saveDocument(
-        this.pdfDocument.annotationStorage
-      );
+      const data = await this.pdfDocument.saveDocument();
       const blob = new Blob([data], { type: "application/pdf" });
 
       await this.downloadManager.download(blob, url, filename, sourceEventType);
