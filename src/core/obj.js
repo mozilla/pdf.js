@@ -1944,18 +1944,18 @@ var XRef = (function XRefClosure() {
       // Keep track of already parsed XRef tables, to prevent an infinite loop
       // when parsing corrupt PDF files where e.g. the /Prev entries create a
       // circular dependency between tables (fixes bug1393476.pdf).
-      const startXRefParsedCache = Object.create(null);
+      const startXRefParsedCache = new Set();
 
       try {
         while (this.startXRefQueue.length) {
           var startXRef = this.startXRefQueue[0];
 
-          if (startXRefParsedCache[startXRef]) {
+          if (startXRefParsedCache.has(startXRef)) {
             warn("readXRef - skipping XRef table since it was already parsed.");
             this.startXRefQueue.shift();
             continue;
           }
-          startXRefParsedCache[startXRef] = true;
+          startXRefParsedCache.add(startXRef);
 
           stream.pos = startXRef + stream.start;
 
