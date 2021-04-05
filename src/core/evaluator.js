@@ -1974,7 +1974,7 @@ class PartialEvaluator {
     normalizeWhitespace = false,
     combineTextItems = false,
     sink,
-    seenStyles = Object.create(null),
+    seenStyles = new Set(),
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
@@ -2024,17 +2024,19 @@ class PartialEvaluator {
       if (textContentItem.initialized) {
         return textContentItem;
       }
-      var font = textState.font;
-      if (!(font.loadedName in seenStyles)) {
-        seenStyles[font.loadedName] = true;
-        textContent.styles[font.loadedName] = {
+      const font = textState.font,
+        loadedName = font.loadedName;
+      if (!seenStyles.has(loadedName)) {
+        seenStyles.add(loadedName);
+
+        textContent.styles[loadedName] = {
           fontFamily: font.fallbackName,
           ascent: font.ascent,
           descent: font.descent,
           vertical: font.vertical,
         };
       }
-      textContentItem.fontName = font.loadedName;
+      textContentItem.fontName = loadedName;
 
       // 9.4.4 Text Space Details
       var tsm = [
