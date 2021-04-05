@@ -921,10 +921,13 @@ class PDFDocumentProxy {
    * NOTE: Do not, under any circumstances, call this method when rendering is
    * currently ongoing since that may lead to rendering errors.
    *
+   * @param {boolean} [keepLoadedFonts] - Let fonts remain attached to the DOM.
+   *   NOTE: This will increase persistent memory usage, hence don't use this
+   *   option unless absolutely necessary. The default value is `false`.
    * @returns {Promise} A promise that is resolved when clean-up has finished.
    */
-  cleanup() {
-    return this._transport.startCleanup();
+  cleanup(keepLoadedFonts = false) {
+    return this._transport.startCleanup(keepLoadedFonts || this.isPureXfa);
   }
 
   /**
@@ -1180,14 +1183,14 @@ class PDFPageProxy {
    *   {Array} of the annotation objects.
    */
   getAnnotations({ intent = null } = {}) {
-    if (!this.annotationsPromise || this.annotationsIntent !== intent) {
-      this.annotationsPromise = this._transport.getAnnotations(
+    if (!this._annotationsPromise || this._annotationsIntent !== intent) {
+      this._annotationsPromise = this._transport.getAnnotations(
         this._pageIndex,
         intent
       );
-      this.annotationsIntent = intent;
+      this._annotationsIntent = intent;
     }
-    return this.annotationsPromise;
+    return this._annotationsPromise;
   }
 
   /**
@@ -1480,7 +1483,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    this.annotationsPromise = null;
+    this._annotationsPromise = null;
     this._jsActionsPromise = null;
     this._xfaPromise = null;
     this.pendingCleanup = false;
@@ -1515,7 +1518,7 @@ class PDFPageProxy {
 
     this._intentStates.clear();
     this.objs.clear();
-    this.annotationsPromise = null;
+    this._annotationsPromise = null;
     this._jsActionsPromise = null;
     this._xfaPromise = null;
     if (resetStats && this._stats) {
@@ -2789,24 +2792,28 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetStats", null);
   }
 
-  startCleanup() {
-    return this.messageHandler.sendWithPromise("Cleanup", null).then(() => {
-      for (let i = 0, ii = this.pageCache.length; i < ii; i++) {
-        const page = this.pageCache[i];
-        if (page) {
-          const cleanupSuccessful = page.cleanup();
+  async startCleanup(keepLoadedFonts = false) {
+    await this.messageHandler.sendWithPromise("Cleanup", null);
 
-          if (!cleanupSuccessful) {
-            throw new Error(
-              `startCleanup: Page ${i + 1} is currently rendering.`
-            );
-          }
-        }
+    if (this.destroyed) {
+      return; // No need to manually clean-up when destruction has started.
+    }
+    for (let i = 0, ii = this.pageCache.length; i < ii; i++) {
+      const page = this.pageCache[i];
+      if (!page) {
+        continue;
       }
-      this.commonObjs.clear();
+      const cleanupSuccessful = page.cleanup();
+
+      if (!cleanupSuccessful) {
+        throw new Error(`startCleanup: Page ${i + 1} is currently rendering.`);
+      }
+    }
+    this.commonObjs.clear();
+    if (!keepLoadedFonts) {
       this.fontLoader.clear();
-      this._hasJSActionsPromise = null;
-    });
+    }
+    this._hasJSActionsPromise = null;
   }
 
   get loadingParams() {
