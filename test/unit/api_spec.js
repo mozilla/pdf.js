@@ -1339,12 +1339,10 @@ describe("api", function () {
         .catch(done.fail);
     });
 
-    it("cleans up document resources", function (done) {
-      const promise = pdfDocument.cleanup();
-      promise.then(function () {
-        expect(true).toEqual(true);
-        done();
-      }, done.fail);
+    it("cleans up document resources", async function () {
+      await pdfDocument.cleanup();
+
+      expect(true).toEqual(true);
     });
 
     it("checks that fingerprints are unique", function (done) {
@@ -1982,85 +1980,69 @@ describe("api", function () {
       ]).then(done);
     });
 
-    it("cleans up document resources after rendering of page", function (done) {
+    it("cleans up document resources after rendering of page", async function () {
       const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
-      let canvasAndCtx;
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
 
-      loadingTask.promise
-        .then(pdfDoc => {
-          return pdfDoc.getPage(1).then(pdfPage => {
-            const viewport = pdfPage.getViewport({ scale: 1 });
-            canvasAndCtx = CanvasFactory.create(
-              viewport.width,
-              viewport.height
-            );
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const canvasAndCtx = CanvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
 
-            const renderTask = pdfPage.render({
-              canvasContext: canvasAndCtx.context,
-              canvasFactory: CanvasFactory,
-              viewport,
-            });
-            return renderTask.promise.then(() => {
-              return pdfDoc.cleanup();
-            });
-          });
-        })
-        .then(() => {
-          expect(true).toEqual(true);
+      const renderTask = pdfPage.render({
+        canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
+        viewport,
+      });
+      await renderTask.promise;
 
-          CanvasFactory.destroy(canvasAndCtx);
-          loadingTask.destroy().then(done);
-        }, done.fail);
+      await pdfDoc.cleanup();
+
+      expect(true).toEqual(true);
+
+      CanvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
     });
 
-    it("cleans up document resources during rendering of page", function (done) {
+    it("cleans up document resources during rendering of page", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("tracemonkey.pdf")
       );
-      let canvasAndCtx;
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
 
-      loadingTask.promise
-        .then(pdfDoc => {
-          return pdfDoc.getPage(1).then(pdfPage => {
-            const viewport = pdfPage.getViewport({ scale: 1 });
-            canvasAndCtx = CanvasFactory.create(
-              viewport.width,
-              viewport.height
-            );
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const canvasAndCtx = CanvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
 
-            const renderTask = pdfPage.render({
-              canvasContext: canvasAndCtx.context,
-              canvasFactory: CanvasFactory,
-              viewport,
-            });
+      const renderTask = pdfPage.render({
+        canvasContext: canvasAndCtx.context,
+        canvasFactory: CanvasFactory,
+        viewport,
+      });
+      // Ensure that clean-up runs during rendering.
+      renderTask.onContinue = function (cont) {
+        waitSome(cont);
+      };
 
-            renderTask.onContinue = function (cont) {
-              waitSome(cont);
-            };
+      try {
+        await pdfDoc.cleanup();
 
-            return pdfDoc
-              .cleanup()
-              .then(
-                () => {
-                  throw new Error("shall fail cleanup");
-                },
-                reason => {
-                  expect(reason instanceof Error).toEqual(true);
-                  expect(reason.message).toEqual(
-                    "startCleanup: Page 1 is currently rendering."
-                  );
-                }
-              )
-              .then(() => {
-                return renderTask.promise;
-              })
-              .then(() => {
-                CanvasFactory.destroy(canvasAndCtx);
-                loadingTask.destroy().then(done);
-              });
-          });
-        })
-        .catch(done.fail);
+        throw new Error("shall fail cleanup");
+      } catch (reason) {
+        expect(reason instanceof Error).toEqual(true);
+        expect(reason.message).toEqual(
+          "startCleanup: Page 1 is currently rendering."
+        );
+      }
+      await renderTask.promise;
+
+      CanvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
     });
 
     it("caches image resources at the document/page level as expected (issue 11878)", async function () {
