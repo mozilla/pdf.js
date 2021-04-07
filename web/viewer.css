@@ -97,7 +97,7 @@
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
 }
 
-@media (prefers-color-scheme: dark) {
+
   :root {
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
@@ -139,7 +139,7 @@
      * here; hence why we still have two versions of this particular image. */
     --loading-icon: url(images/loading-dark.svg);
   }
-}
+
 
 * {
   padding: 0;
