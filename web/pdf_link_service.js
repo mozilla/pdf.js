@@ -108,16 +108,6 @@ class PDFLinkService {
   }
 
   /**
-   * @deprecated
-   */
-  navigateTo(dest) {
-    console.error(
-      "Deprecated method: `navigateTo`, use `goToDestination` instead."
-    );
-    this.goToDestination(dest);
-  }
-
-  /**
    * @private
    */
   _goToDestinationHelper(rawDest, namedDest = null, explicitDest) {

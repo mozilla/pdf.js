@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { deprecated } from "./display_utils.js";
 import { objectFromMap } from "../shared/util.js";
 
 /**
@@ -27,7 +26,7 @@ class AnnotationStorage {
     // Callbacks to signal when the modification state is set or reset.
     // This is used by the viewer to only bind on `beforeunload` if forms
     // are actually edited to prevent doing so unconditionally since that
-    // can have undesirable efffects.
+    // can have undesirable effects.
     this.onSetModified = null;
     this.onResetModified = null;
   }
@@ -44,19 +43,6 @@ class AnnotationStorage {
   getValue(key, defaultValue) {
     const obj = this._storage.get(key);
     return obj !== undefined ? obj : defaultValue;
-  }
-
-  /**
-   * @deprecated
-   */
-  getOrCreateValue(key, defaultValue) {
-    deprecated("Use getValue instead.");
-    if (this._storage.has(key)) {
-      return this._storage.get(key);
-    }
-
-    this._storage.set(key, defaultValue);
-    return defaultValue;
   }
 
   /**
