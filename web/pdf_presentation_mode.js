@@ -155,28 +155,10 @@ class PDFPresentationMode {
     } else if (this.active) {
       state = PresentationModeState.FULLSCREEN;
     }
-
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      this.eventBus.dispatch("presentationmodechanged", {
-        source: this,
-        state,
-      });
-    } else {
-      this.eventBus.dispatch("presentationmodechanged", {
-        source: this,
-        state,
-        get active() {
-          throw new Error(
-            "Deprecated parameter: `active`, please use `state` instead."
-          );
-        },
-        get switchInProgress() {
-          throw new Error(
-            "Deprecated parameter: `switchInProgress`, please use `state` instead."
-          );
-        },
-      });
-    }
+    this.eventBus.dispatch("presentationmodechanged", {
+      source: this,
+      state,
+    });
   }
 
   /**
