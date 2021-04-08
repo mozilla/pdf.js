@@ -122,13 +122,13 @@ class PDFThumbnailView {
       };
     this.disableCanvasToImageConversion = disableCanvasToImageConversion;
 
-    this.pageWidth = this.viewport.width;
-    this.pageHeight = this.viewport.height;
-    this.pageRatio = this.pageWidth / this.pageHeight;
+    const pageWidth = this.viewport.width,
+      pageHeight = this.viewport.height,
+      pageRatio = pageWidth / pageHeight;
 
     this.canvasWidth = THUMBNAIL_WIDTH;
-    this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
-    this.scale = this.canvasWidth / this.pageWidth;
+    this.canvasHeight = (this.canvasWidth / pageRatio) | 0;
+    this.scale = this.canvasWidth / pageWidth;
 
     this.l10n = l10n;
 
@@ -172,12 +172,12 @@ class PDFThumbnailView {
     this.cancelRendering();
     this.renderingState = RenderingStates.INITIAL;
 
-    this.pageWidth = this.viewport.width;
-    this.pageHeight = this.viewport.height;
-    this.pageRatio = this.pageWidth / this.pageHeight;
+    const pageWidth = this.viewport.width,
+      pageHeight = this.viewport.height,
+      pageRatio = pageWidth / pageHeight;
 
-    this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
-    this.scale = this.canvasWidth / this.pageWidth;
+    this.canvasHeight = (this.canvasWidth / pageRatio) | 0;
+    this.scale = this.canvasWidth / pageWidth;
 
     this.div.removeAttribute("data-loaded");
     const ring = this.ring;
