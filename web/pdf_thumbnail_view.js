@@ -181,10 +181,7 @@ class PDFThumbnailView {
 
     this.div.removeAttribute("data-loaded");
     const ring = this.ring;
-    const childNodes = ring.childNodes;
-    for (let i = childNodes.length - 1; i >= 0; i--) {
-      ring.removeChild(childNodes[i]);
-    }
+    ring.textContent = ""; // Remove the thumbnail from the DOM.
     const borderAdjustment = 2 * THUMBNAIL_CANVAS_BORDER_WIDTH;
     ring.style.width = this.canvasWidth + borderAdjustment + "px";
     ring.style.height = this.canvasHeight + borderAdjustment + "px";
