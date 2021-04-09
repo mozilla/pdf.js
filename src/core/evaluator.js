@@ -1913,7 +1913,10 @@ class PartialEvaluator {
               return;
             }
             // Other marked content types aren't supported yet.
-            args = [args[0].name];
+            args = [
+              args[0].name,
+              args[1] instanceof Dict ? args[1].get("MCID") : null,
+            ];
 
             break;
           case OPS.beginMarkedContent:
@@ -1973,6 +1976,7 @@ class PartialEvaluator {
     stateManager = null,
     normalizeWhitespace = false,
     combineTextItems = false,
+    includeMarkedContent = false,
     sink,
     seenStyles = new Set(),
   }) {
@@ -2573,6 +2577,7 @@ class PartialEvaluator {
                     stateManager: xObjStateManager,
                     normalizeWhitespace,
                     combineTextItems,
+                    includeMarkedContent,
                     sink: sinkWrapper,
                     seenStyles,
                   })
@@ -2650,6 +2655,38 @@ class PartialEvaluator {
               })
             );
             return;
+          case OPS.beginMarkedContent:
+            if (includeMarkedContent) {
+              textContent.items.push({
+                type: "beginMarkedContent",
+                tag: isName(args[0]) ? args[0].name : null,
+              });
+            }
+            break;
+          case OPS.beginMarkedContentProps:
+            if (includeMarkedContent) {
+              flushTextContentItem();
+              let mcid = null;
+              if (isDict(args[1])) {
+                mcid = args[1].get("MCID");
+              }
+              textContent.items.push({
+                type: "beginMarkedContentProps",
+                id: Number.isInteger(mcid)
+                  ? `${self.idFactory.getPageObjId()}_mcid${mcid}`
+                  : null,
+                tag: isName(args[0]) ? args[0].name : null,
+              });
+            }
+            break;
+          case OPS.endMarkedContent:
+            if (includeMarkedContent) {
+              flushTextContentItem();
+              textContent.items.push({
+                type: "endMarkedContent",
+              });
+            }
+            break;
         } // switch
         if (textContent.items.length >= sink.desiredSize) {
           // Wait for ready, if we reach highWaterMark.

@@ -175,7 +175,7 @@ select {
   display: none !important;
 }
 
-.pdfViewer.enablePermissions .textLayer > span {
+.pdfViewer.enablePermissions .textLayer span {
   user-select: none !important;
   cursor: not-allowed;
 }
@@ -195,12 +195,12 @@ select {
   display: none;
 }
 
-.pdfPresentationMode:fullscreen .textLayer > span {
+.pdfPresentationMode:fullscreen .textLayer span {
   cursor: none;
 }
 
 .pdfPresentationMode.pdfPresentationModeControls > *,
-.pdfPresentationMode.pdfPresentationModeControls .textLayer > span {
+.pdfPresentationMode.pdfPresentationModeControls .textLayer span {
   cursor: default;
 }
 
@@ -1653,19 +1653,19 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   mix-blend-mode: screen;
 }
 
-#viewer.textLayer-visible .textLayer > span {
+#viewer.textLayer-visible .textLayer span {
   background-color: rgba(255, 255, 0, 0.1);
   color: rgba(0, 0, 0, 1);
   border: solid 1px rgba(255, 0, 0, 0.5);
   box-sizing: border-box;
 }
 
-#viewer.textLayer-hover .textLayer > span:hover {
+#viewer.textLayer-hover .textLayer span:hover {
   background-color: rgba(255, 255, 255, 1);
   color: rgba(0, 0, 0, 1);
 }
 
-#viewer.textLayer-shadow .textLayer > span {
+#viewer.textLayer-shadow .textLayer span {
   background-color: rgba(255, 255, 255, 0.6);
   color: rgba(0, 0, 0, 1);
 }

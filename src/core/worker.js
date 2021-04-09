@@ -717,6 +717,7 @@ class WorkerMessageHandler {
             task,
             sink,
             normalizeWhitespace: data.normalizeWhitespace,
+            includeMarkedContent: data.includeMarkedContent,
             combineTextItems: data.combineTextItems,
           })
           .then(
@@ -743,6 +744,18 @@ class WorkerMessageHandler {
             }
           );
       });
+    });
+
+    handler.on("GetStructTree", function wphGetStructTree(data) {
+      const pageIndex = data.pageIndex;
+      return pdfManager
+        .getPage(pageIndex)
+        .then(function (page) {
+          return pdfManager.ensure(page, "getStructTree");
+        })
+        .then(function (structTree) {
+          return structTree.serializable;
+        });
     });
 
     handler.on("FontFallback", function (data) {
