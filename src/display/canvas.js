@@ -2226,7 +2226,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupStack.push(currentCtx);
       this.groupLevel++;
 
-      // Reseting mask state, masks will be applied on restore of the group.
+      // Resetting mask state, masks will be applied on restore of the group.
       this.current.activeSMask = null;
     },
 
