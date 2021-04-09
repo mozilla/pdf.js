@@ -49,6 +49,7 @@ import { viewerCompatibilityParams } from "./viewer_compatibility.js";
  *   The default value is `TextLayerMode.ENABLE`.
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  * @property {IPDFXfaLayerFactory} xfaLayerFactory
+ * @property {IPDFStructTreeLayerFactory} structTreeLayerFactory
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
@@ -102,6 +103,7 @@ class PDFPageView {
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
+    this.structTreeLayerFactory = options.structTreeLayerFactory;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
@@ -116,6 +118,7 @@ class PDFPageView {
     this.textLayer = null;
     this.zoomLayer = null;
     this.xfaLayer = null;
+    this.structTreeLayer = null;
 
     const div = document.createElement("div");
     div.className = "page";
@@ -354,6 +357,10 @@ class PDFPageView {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
     }
+    if (this._onTextLayerRendered) {
+      this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
+      this._onTextLayerRendered = null;
+    }
   }
 
   cssTransform(target, redrawAnnotations = false) {
@@ -556,11 +563,12 @@ class PDFPageView {
     this.paintTask = paintTask;
 
     const resultPromise = paintTask.promise.then(
-      function () {
-        return finishPaintTask(null).then(function () {
+      () => {
+        return finishPaintTask(null).then(() => {
           if (textLayer) {
             const readableStream = pdfPage.streamTextContent({
               normalizeWhitespace: true,
+              includeMarkedContent: true,
             });
             textLayer.setTextContentStream(readableStream);
             textLayer.render();
@@ -597,6 +605,29 @@ class PDFPageView {
         );
       }
       this._renderXfaLayer();
+    }
+
+    // The structure tree is currently only supported when the text layer is
+    // enabled and a canvas is used for rendering.
+    if (this.structTreeLayerFactory && this.textLayer && this.canvas) {
+      // The structure tree must be generated after the text layer for the
+      // aria-owns to work.
+      this._onTextLayerRendered = event => {
+        if (event.pageNumber !== this.id) {
+          return;
+        }
+        this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
+        this._onTextLayerRendered = null;
+        this.pdfPage.getStructTree().then(tree => {
+          const treeDom = this.structTreeLayer.render(tree);
+          treeDom.classList.add("structTree");
+          this.canvas.appendChild(treeDom);
+        });
+      };
+      this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
+      this.structTreeLayer = this.structTreeLayerFactory.createStructTreeLayerBuilder(
+        pdfPage
+      );
     }
 
     div.setAttribute("data-loaded", true);

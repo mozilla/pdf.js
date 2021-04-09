@@ -41,6 +41,7 @@ import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
+import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
@@ -545,6 +546,7 @@ class BaseViewer {
             textLayerMode: this.textLayerMode,
             annotationLayerFactory: this,
             xfaLayerFactory,
+            structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
@@ -1324,6 +1326,16 @@ class BaseViewer {
   createXfaLayerBuilder(pageDiv, pdfPage) {
     return new XfaLayerBuilder({
       pageDiv,
+      pdfPage,
+    });
+  }
+
+  /**
+   * @param {PDFPage} pdfPage
+   * @returns {StructTreeLayerBuilder}
+   */
+  createStructTreeLayerBuilder(pdfPage) {
+    return new StructTreeLayerBuilder({
       pdfPage,
     });
   }
