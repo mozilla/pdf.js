@@ -675,7 +675,7 @@ class PDFDocumentProxy {
    * @type {AnnotationStorage} Storage for annotation data in forms.
    */
   get annotationStorage() {
-    return shadow(this, "annotationStorage", new AnnotationStorage());
+    return this._transport.annotationStorage;
   }
 
   /**
@@ -954,13 +954,26 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @param {AnnotationStorage} annotationStorage - Storage for annotation
-   *   data in forms.
    * @returns {Promise<Uint8Array>} A promise that is resolved with a
    *   {Uint8Array} containing the full data of the saved document.
    */
-  saveDocument(annotationStorage) {
-    return this._transport.saveDocument(annotationStorage);
+  saveDocument() {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      arguments.length > 0
+    ) {
+      deprecated("saveDocument no longer accepts any options.");
+    }
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this._transport.annotationStorage.size <= 0
+    ) {
+      deprecated(
+        "saveDocument called while `annotationStorage` is empty, " +
+          "please use the getData-method instead."
+      );
+    }
+    return this._transport.saveDocument();
   }
 
   /**
@@ -1068,7 +1081,7 @@ class PDFDocumentProxy {
  *   some operations. The default value is `false`.
  * @property {boolean} [renderInteractiveForms] - Whether or not interactive
  *   form elements are rendered in the display layer. If so, we do not render
- *   them on the canvas as well.
+ *   them on the canvas as well. The default value is `false`.
  * @property {Array<any>} [transform] - Additional transform, applied just
  *   before viewport transform.
  * @property {Object} [imageLayer] - An object that has `beginLayout`,
@@ -1080,8 +1093,9 @@ class PDFDocumentProxy {
  *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
  *   a `CanvasPattern` object (a repetitive image). The default value is
  *   'rgb(255,255,255)'.
- * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
- *   data in forms.
+ * @property {boolean} [includeAnnotationStorage] - Render stored interactive
+ *   form element data, from the {@link AnnotationStorage}-instance, onto the
+ *   canvas itself; useful e.g. for printing. The default value is `false`.
  * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
  *   A promise that should resolve with an {@link OptionalContentConfig}
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
@@ -1230,9 +1244,19 @@ class PDFPageProxy {
     imageLayer = null,
     canvasFactory = null,
     background = null,
-    annotationStorage = null,
+    includeAnnotationStorage = false,
     optionalContentConfigPromise = null,
   }) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      arguments[0]?.annotationStorage !== undefined
+    ) {
+      deprecated(
+        "render no longer accepts an `annotationStorage` option, " +
+          "please use the `includeAnnotationStorage`-boolean instead."
+      );
+      includeAnnotationStorage ||= !!arguments[0].annotationStorage;
+    }
     if (this._stats) {
       this._stats.time("Overall");
     }
@@ -1264,6 +1288,9 @@ class PDFPageProxy {
     const webGLContext = new WebGLContext({
       enable: enableWebGL,
     });
+    const annotationStorage = includeAnnotationStorage
+      ? this._transport.annotationStorage.serializable
+      : null;
 
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
@@ -1282,7 +1309,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         renderInteractiveForms: renderInteractiveForms === true,
-        annotationStorage: annotationStorage?.serializable || null,
+        annotationStorage,
       });
     }
 
@@ -2192,8 +2219,8 @@ class WorkerTransport {
     this.setupMessageHandler();
   }
 
-  get loadingTaskSettled() {
-    return this.loadingTask._capability.settled;
+  get annotationStorage() {
+    return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
   destroy() {
@@ -2220,21 +2247,14 @@ class WorkerTransport {
     });
     this.pageCache.length = 0;
     this.pagePromises.length = 0;
+    // Allow `AnnotationStorage`-related clean-up when destroying the document.
+    if (this.hasOwnProperty("annotationStorage")) {
+      this.annotationStorage.resetModified();
+    }
     // We also need to wait for the worker to finish its long running tasks.
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
     waitOn.push(terminated);
-    // Allow `AnnotationStorage`-related clean-up when destroying the document.
-    if (this.loadingTaskSettled) {
-      const annotationStorageResetModified = this.loadingTask.promise
-        .then(pdfDocument => {
-          // Avoid initializing the `annotationStorage` if it doesn't exist.
-          if (pdfDocument.hasOwnProperty("annotationStorage")) {
-            pdfDocument.annotationStorage.resetModified();
-          }
-        })
-        .catch(() => {});
-      waitOn.push(annotationStorageResetModified);
-    }
+
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();
@@ -2669,17 +2689,15 @@ class WorkerTransport {
     });
   }
 
-  saveDocument(annotationStorage) {
+  saveDocument() {
     return this.messageHandler
       .sendWithPromise("SaveDocument", {
         numPages: this._numPages,
-        annotationStorage: annotationStorage?.serializable || null,
+        annotationStorage: this.annotationStorage.serializable,
         filename: this._fullReader?.filename ?? null,
       })
       .finally(() => {
-        if (annotationStorage) {
-          annotationStorage.resetModified();
-        }
+        this.annotationStorage.resetModified();
       });
   }
 
