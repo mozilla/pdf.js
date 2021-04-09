@@ -434,9 +434,12 @@ class PDFSidebar {
       onTreeLoaded(evt.outlineCount, this.outlineButton, SidebarView.OUTLINE);
 
       if (evt.enableCurrentOutlineItemButton) {
-        this.pdfViewer.pagesPromise.then(() => {
-          this._currentOutlineItemButton.disabled = !this.isInitialViewSet;
-        });
+        // #645 modified by ngx-extended-pdf-viewer
+        if (this.pdfViewer.pagesPromise) { // #645 modified by ngx-extended-pdf-viewer
+          this.pdfViewer.pagesPromise.then(() => {
+            this._currentOutlineItemButton.disabled = !this.isInitialViewSet;
+          });
+        } // #645 modified by ngx-extended-pdf-viewer
       }
     });
 
