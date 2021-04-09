@@ -1513,7 +1513,12 @@ class PDFPageProxy {
    */
   cleanup(resetStats = false) {
     this.pendingCleanup = true;
-    return this._tryCleanup(resetStats);
+    // #645 modified by ngx-extended-pdf-viewer
+    if (!this._tryCleanup(resetStats)) {
+      this.cleanupAfterRender = true;
+    }
+    return true;
+    // #645 end of modification
   }
 
   /**
