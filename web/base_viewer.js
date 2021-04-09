@@ -552,7 +552,6 @@ class BaseViewer {
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
             l10n: this.l10n,
-            enableScripting: this.enableScripting,
           });
           this._pages.push(pageView);
         }
@@ -1296,7 +1295,7 @@ class BaseViewer {
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n,
-    enableScripting = false,
+    enableScripting = null,
     hasJSActionsPromise = null,
     mouseState = null
   ) {
@@ -1310,7 +1309,7 @@ class BaseViewer {
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
-      enableScripting,
+      enableScripting: enableScripting ?? this.enableScripting,
       hasJSActionsPromise:
         hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
       mouseState: mouseState || this._scriptingManager?.mouseState,
