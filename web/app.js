@@ -1583,6 +1583,11 @@ const PDFViewerApplication = {
       this._delayedFallback(UNSUPPORTED_FEATURES.forms);
     }
 
+    if (info.IsSignaturesPresent) {
+      console.warn("Warning: Digital signatures validation is not supported");
+      this.fallback(UNSUPPORTED_FEATURES.signatures);
+    }
+
     // Telemetry labels must be C++ variable friendly.
     let versionId = "other";
     if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
