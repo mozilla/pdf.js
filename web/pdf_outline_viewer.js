@@ -53,6 +53,15 @@ class PDFOutlineViewer extends BaseTreeViewer {
     });
     this.eventBus._on("pagesloaded", evt => {
       this._isPagesLoaded = !!evt.pagesCount;
+
+      // If the capability is still pending, note the `_dispatchEvent`-method,
+      // we know that the `currentOutlineItem`-button should be enabled here.
+      if (
+        this._currentOutlineItemCapability &&
+        !this._currentOutlineItemCapability.settled
+      ) {
+        this._currentOutlineItemCapability.resolve(/* enabled = */ true);
+      }
     });
     this.eventBus._on("sidebarviewchanged", evt => {
       this._sidebarView = evt.view;
@@ -66,17 +75,32 @@ class PDFOutlineViewer extends BaseTreeViewer {
     this._pageNumberToDestHashCapability = null;
     this._currentPageNumber = 1;
     this._isPagesLoaded = false;
+
+    if (
+      this._currentOutlineItemCapability &&
+      !this._currentOutlineItemCapability.settled
+    ) {
+      this._currentOutlineItemCapability.resolve(/* enabled = */ false);
+    }
+    this._currentOutlineItemCapability = null;
   }
 
   /**
    * @private
    */
   _dispatchEvent(outlineCount) {
+    this._currentOutlineItemCapability = createPromiseCapability();
+    if (
+      outlineCount === 0 ||
+      this._pdfDocument?.loadingParams.disableAutoFetch
+    ) {
+      this._currentOutlineItemCapability.resolve(/* enabled = */ false);
+    }
+
     this.eventBus.dispatch("outlineloaded", {
       source: this,
       outlineCount,
-      enableCurrentOutlineItemButton:
-        outlineCount > 0 && !this._pdfDocument?.loadingParams.disableAutoFetch,
+      currentOutlineItemPromise: this._currentOutlineItemCapability.promise,
     });
   }
 
