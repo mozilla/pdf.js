@@ -257,9 +257,8 @@ describe("ui_utils", function () {
   describe("waitOnEventOrTimeout", function () {
     let eventBus;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       eventBus = new EventBus();
-      done();
     });
 
     afterAll(function () {

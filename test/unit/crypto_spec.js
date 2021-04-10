@@ -639,7 +639,7 @@ describe("CipherTransformFactory", function () {
   let fileId1, fileId2, dict1, dict2, dict3;
   let aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     fileId1 = unescape("%F6%C6%AF%17%F3rR%8DRM%9A%80%D1%EF%DF%18");
     fileId2 = unescape("%3CL_%3AD%96%AF@%9A%9D%B3%3Cx%1Cv%AC");
 
@@ -775,8 +775,6 @@ describe("CipherTransformFactory", function () {
       P: -1084,
       R: 6,
     });
-
-    done();
   });
 
   afterAll(function () {
@@ -839,7 +837,7 @@ describe("CipherTransformFactory", function () {
   });
 
   describe("Encrypt and decrypt", function () {
-    it("should encrypt and decrypt using ARCFour", function (done) {
+    it("should encrypt and decrypt using ARCFour", function () {
       dict3.CF = buildDict({
         Identity: buildDict({
           CFM: Name.get("V2"),
@@ -847,9 +845,8 @@ describe("CipherTransformFactory", function () {
       });
       const dict = buildDict(dict3);
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "hello world");
-      done();
     });
-    it("should encrypt and decrypt using AES128", function (done) {
+    it("should encrypt and decrypt using AES128", function () {
       dict3.CF = buildDict({
         Identity: buildDict({
           CFM: Name.get("AESV2"),
@@ -869,9 +866,8 @@ describe("CipherTransformFactory", function () {
         "user",
         "aaaaaaaaaaaaaaaaaaa"
       );
-      done();
     });
-    it("should encrypt and decrypt using AES256", function (done) {
+    it("should encrypt and decrypt using AES256", function () {
       dict3.CF = buildDict({
         Identity: buildDict({
           CFM: Name.get("AESV3"),
@@ -891,7 +887,6 @@ describe("CipherTransformFactory", function () {
         "user",
         "aaaaaaaaaaaaaaaaaaaaaa"
       );
-      done();
     });
   });
 });

@@ -55,14 +55,12 @@ describe("api", function () {
 
   let CanvasFactory;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     CanvasFactory = new DefaultCanvasFactory();
-    done();
   });
 
-  afterAll(function (done) {
+  afterAll(function () {
     CanvasFactory = null;
-    done();
   });
 
   function waitSome(callback) {

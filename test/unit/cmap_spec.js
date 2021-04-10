@@ -22,7 +22,7 @@ import { StringStream } from "../../src/core/stream.js";
 describe("cmap", function () {
   let fetchBuiltInCMap;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     // Allow CMap testing in Node.js, e.g. for Travis.
     const CMapReaderFactory = new DefaultCMapReaderFactory({
       baseUrl: CMAP_PARAMS.cMapUrl,
@@ -34,7 +34,6 @@ describe("cmap", function () {
         name,
       });
     };
-    done();
   });
 
   afterAll(function () {

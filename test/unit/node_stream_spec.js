@@ -40,7 +40,7 @@ describe("node_stream", function () {
   ).href;
   const pdfLength = 1016315;
 
-  beforeAll(done => {
+  beforeAll(function () {
     // Create http server to serve pdf data for tests.
     server = http
       .createServer((request, response) => {
@@ -77,13 +77,11 @@ describe("node_stream", function () {
       })
       .listen(0); /* Listen on a random free port */
     port = server.address().port;
-    done();
   });
 
-  afterAll(done => {
+  afterAll(function () {
     // Close the server from accepting new connections after all test finishes.
     server.close();
-    done();
   });
 
   it("read both http(s) and filesystem pdf files", function (done) {
