@@ -77,6 +77,7 @@ describe("document", function () {
       const pdfDocument = getDocument(null);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -90,6 +91,7 @@ describe("document", function () {
       let pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -98,6 +100,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: true,
         hasFields: false,
       });
@@ -106,6 +109,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -114,6 +118,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: true,
         hasFields: false,
       });
@@ -127,6 +132,7 @@ describe("document", function () {
       let pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -135,6 +141,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: true,
       });
@@ -146,6 +153,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: true,
       });
@@ -169,6 +177,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm, xref);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: true,
         hasXfa: false,
         hasFields: true,
       });
