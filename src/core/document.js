@@ -828,7 +828,12 @@ class PDFDocument {
   }
 
   get formInfo() {
-    const formInfo = { hasFields: false, hasAcroForm: false, hasXfa: false };
+    const formInfo = {
+      hasFields: false,
+      hasAcroForm: false,
+      hasXfa: false,
+      hasSignatures: false,
+    };
     const acroForm = this.catalog.acroForm;
     if (!acroForm) {
       return shadow(this, "formInfo", formInfo);
@@ -854,9 +859,11 @@ class PDFDocument {
       // the first bit of the `SigFlags` integer (see Table 219 in the
       // specification).
       const sigFlags = acroForm.get("SigFlags");
+      const hasSignatures = !!(sigFlags & 0x1);
       const hasOnlyDocumentSignatures =
-        !!(sigFlags & 0x1) && this._hasOnlyDocumentSignatures(fields);
+        hasSignatures && this._hasOnlyDocumentSignatures(fields);
       formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
+      formInfo.hasSignatures = hasSignatures;
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -894,6 +901,7 @@ class PDFDocument {
       IsAcroFormPresent: this.formInfo.hasAcroForm,
       IsXFAPresent: this.formInfo.hasXfa,
       IsCollectionPresent: !!this.catalog.collection,
+      IsSignaturesPresent: this.formInfo.hasSignatures,
     };
 
     let infoDict;
