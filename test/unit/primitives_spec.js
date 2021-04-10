@@ -90,7 +90,7 @@ describe("primitives", function () {
     const testFontFile2 = "file2";
     const testFontFile3 = "file3";
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       emptyDict = new Dict();
 
       dictWithSizeKey = new Dict();
@@ -100,8 +100,6 @@ describe("primitives", function () {
       dictWithManyKeys.set("FontFile", testFontFile);
       dictWithManyKeys.set("FontFile2", testFontFile2);
       dictWithManyKeys.set("FontFile3", testFontFile3);
-
-      done();
     });
 
     afterAll(function () {
@@ -431,9 +429,8 @@ describe("primitives", function () {
     const obj2 = Name.get("bar");
     let cache;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       cache = new RefSetCache();
-      done();
     });
 
     afterEach(function () {
