@@ -41,7 +41,7 @@ describe("CFFParser", function () {
 
   let fontData, parser, cff;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     // This example font comes from the CFF spec:
     // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
     const exampleFont =
@@ -61,22 +61,19 @@ describe("CFFParser", function () {
       fontArr.push(parseInt(hex, 16));
     }
     fontData = new Stream(fontArr);
-    done();
   });
 
   afterAll(function () {
     fontData = null;
   });
 
-  beforeEach(function (done) {
+  beforeEach(function () {
     parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
     cff = parser.parse();
-    done();
   });
 
-  afterEach(function (done) {
+  afterEach(function () {
     parser = cff = null;
-    done();
   });
 
   it("parses header", function () {
