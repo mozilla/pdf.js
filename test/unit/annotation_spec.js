@@ -194,10 +194,9 @@ describe("annotation", function () {
   describe("getQuadPoints", function () {
     let dict, rect;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       dict = new Dict();
       rect = [];
-      done();
     });
 
     afterEach(function () {
@@ -299,10 +298,9 @@ describe("annotation", function () {
   describe("Annotation", function () {
     let dict, ref;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       dict = new Dict();
       ref = Ref.get(1, 0);
-      done();
     });
 
     afterAll(function () {
@@ -497,10 +495,9 @@ describe("annotation", function () {
   describe("MarkupAnnotation", function () {
     let dict, ref;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       dict = new Dict();
       ref = Ref.get(1, 0);
-      done();
     });
 
     afterAll(function () {
@@ -1336,11 +1333,10 @@ describe("annotation", function () {
   describe("WidgetAnnotation", function () {
     let widgetDict;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       widgetDict = new Dict();
       widgetDict.set("Type", Name.get("Annot"));
       widgetDict.set("Subtype", Name.get("Widget"));
-      done();
     });
 
     afterEach(function () {
@@ -1438,7 +1434,7 @@ describe("annotation", function () {
   describe("TextWidgetAnnotation", function () {
     let textWidgetDict, helvRefObj, gothRefObj;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       textWidgetDict = new Dict();
       textWidgetDict.set("Type", Name.get("Annot"));
       textWidgetDict.set("Subtype", Name.get("Widget"));
@@ -1486,8 +1482,6 @@ describe("annotation", function () {
       textWidgetDict.set("DA", "/Helv 5 Tf");
       textWidgetDict.set("DR", resourceDict);
       textWidgetDict.set("Rect", [0, 0, 32, 10]);
-
-      done();
     });
 
     afterEach(function () {
@@ -2315,12 +2309,11 @@ describe("annotation", function () {
   describe("ButtonWidgetAnnotation", function () {
     let buttonWidgetDict;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       buttonWidgetDict = new Dict();
       buttonWidgetDict.set("Type", Name.get("Annot"));
       buttonWidgetDict.set("Subtype", Name.get("Widget"));
       buttonWidgetDict.set("FT", Name.get("Btn"));
-      done();
     });
 
     afterEach(function () {
@@ -3275,7 +3268,7 @@ describe("annotation", function () {
   describe("ChoiceWidgetAnnotation", function () {
     let choiceWidgetDict, fontRefObj;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       choiceWidgetDict = new Dict();
       choiceWidgetDict.set("Type", Name.get("Annot"));
       choiceWidgetDict.set("Subtype", Name.get("Widget"));
@@ -3296,8 +3289,6 @@ describe("annotation", function () {
       choiceWidgetDict.set("DA", "/Helv 5 Tf");
       choiceWidgetDict.set("DR", resourceDict);
       choiceWidgetDict.set("Rect", [0, 0, 32, 10]);
-
-      done();
     });
 
     afterEach(function () {

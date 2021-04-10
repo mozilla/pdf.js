@@ -59,14 +59,13 @@ describe("evaluator", function () {
 
   let partialEvaluator;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     partialEvaluator = new PartialEvaluator({
       xref: new XRefMock(),
       handler: new HandlerMock(),
       pageIndex: 0,
       idFactory: createIdFactory(/* pageIndex = */ 0),
     });
-    done();
   });
 
   afterAll(function () {

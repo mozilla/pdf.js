@@ -20,7 +20,7 @@ import { StringStream } from "../../src/core/stream.js";
 
 describe("Writer", function () {
   describe("Incremental update", function () {
-    it("should update a file with new objects", function (done) {
+    it("should update a file with new objects", function () {
       const originalData = new Uint8Array();
       const newRefs = [
         { ref: Ref.get(123, 0x2d), data: "abc\n" },
@@ -58,12 +58,11 @@ describe("Writer", function () {
         "%%EOF\n";
 
       expect(data).toEqual(expected);
-      done();
     });
   });
 
   describe("writeDict", function () {
-    it("should write a Dict", function (done) {
+    it("should write a Dict", function () {
       const dict = new Dict(null);
       dict.set("A", Name.get("B"));
       dict.set("B", Ref.get(123, 456));
@@ -93,10 +92,9 @@ describe("Writer", function () {
         "endstream\n>>>>";
 
       expect(buffer.join("")).toEqual(expected);
-      done();
     });
 
-    it("should write a Dict in escaping PDF names", function (done) {
+    it("should write a Dict in escaping PDF names", function () {
       const dict = new Dict(null);
       dict.set("\xfeA#", Name.get("hello"));
       dict.set("B", Name.get("#hello"));
@@ -108,7 +106,6 @@ describe("Writer", function () {
       const expected = "<< /#feA#23 /hello /B /#23hello /C /he#fello#ff>>";
 
       expect(buffer.join("")).toEqual(expected);
-      done();
     });
   });
 });

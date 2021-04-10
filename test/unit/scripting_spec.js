@@ -34,7 +34,7 @@ describe("Scripting", function () {
     });
   }
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     test_id = 0;
     ref = 1;
     send_queue = new Map();
@@ -70,7 +70,6 @@ describe("Scripting", function () {
         return promise.then(sbx => sbx.evalForTesting(code, key));
       },
     };
-    done();
   });
 
   afterAll(function () {
@@ -204,13 +203,12 @@ describe("Scripting", function () {
   });
 
   describe("Util", function () {
-    beforeAll(function (done) {
+    beforeAll(function () {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
       });
-      done();
     });
 
     describe("printd", function () {
@@ -486,13 +484,12 @@ describe("Scripting", function () {
   });
 
   describe("Color", function () {
-    beforeAll(function (done) {
+    beforeAll(function () {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
       });
-      done();
     });
 
     function round(color) {
@@ -566,13 +563,12 @@ describe("Scripting", function () {
   });
 
   describe("App", function () {
-    beforeAll(function (done) {
+    beforeAll(function () {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
       });
-      done();
     });
 
     it("should test language", async () => {
@@ -593,14 +589,13 @@ describe("Scripting", function () {
   });
 
   describe("AForm", function () {
-    beforeAll(function (done) {
+    beforeAll(function () {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
         objects: {},
         calculationOrder: [],
         dispatchEventName: "_dispatchMe",
       });
-      done();
     });
 
     describe("AFExtractNums", function () {
