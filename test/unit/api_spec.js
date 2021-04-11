@@ -1702,6 +1702,69 @@ describe("api", function () {
         .catch(done.fail);
     });
 
+    it("gets empty structure tree", async function () {
+      const tree = await page.getStructTree();
+
+      expect(tree).toEqual(null);
+    });
+    it("gets simple structure tree", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("structure_simple.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const tree = await pdfPage.getStructTree();
+
+      expect(tree).toEqual({
+        role: "Root",
+        children: [
+          {
+            role: "Document",
+            children: [
+              {
+                role: "H1",
+                children: [
+                  {
+                    role: "NonStruct",
+                    children: [{ type: "content", id: "page2R_mcid0" }],
+                  },
+                ],
+              },
+              {
+                role: "P",
+                children: [
+                  {
+                    role: "NonStruct",
+                    children: [{ type: "content", id: "page2R_mcid1" }],
+                  },
+                ],
+              },
+              {
+                role: "H2",
+                children: [
+                  {
+                    role: "NonStruct",
+                    children: [{ type: "content", id: "page2R_mcid2" }],
+                  },
+                ],
+              },
+              {
+                role: "P",
+                children: [
+                  {
+                    role: "NonStruct",
+                    children: [{ type: "content", id: "page2R_mcid3" }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets operator list", function (done) {
       const promise = page.getOperatorList();
       promise
