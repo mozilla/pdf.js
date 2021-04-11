@@ -54,13 +54,15 @@ class PDFOutlineViewer extends BaseTreeViewer {
     this.eventBus._on("pagesloaded", evt => {
       this._isPagesLoaded = !!evt.pagesCount;
 
-      // If the capability is still pending, note the `_dispatchEvent`-method,
-      // we know that the `currentOutlineItem`-button should be enabled here.
+      // If the capability is still pending, see the `_dispatchEvent`-method,
+      // we know that the `currentOutlineItem`-button can be enabled here.
       if (
         this._currentOutlineItemCapability &&
         !this._currentOutlineItemCapability.settled
       ) {
-        this._currentOutlineItemCapability.resolve(/* enabled = */ true);
+        this._currentOutlineItemCapability.resolve(
+          /* enabled = */ this._isPagesLoaded
+        );
       }
     });
     this.eventBus._on("sidebarviewchanged", evt => {
@@ -95,6 +97,8 @@ class PDFOutlineViewer extends BaseTreeViewer {
       this._pdfDocument?.loadingParams.disableAutoFetch
     ) {
       this._currentOutlineItemCapability.resolve(/* enabled = */ false);
+    } else if (this._isPagesLoaded) {
+      this._currentOutlineItemCapability.resolve(/* enabled = */ true);
     }
 
     this.eventBus.dispatch("outlineloaded", {
