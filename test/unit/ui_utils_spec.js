@@ -178,9 +178,9 @@ describe("ui_utils", function () {
       expect(onceCount).toEqual(1);
     });
 
-    it("should not re-dispatch to DOM", function (done) {
+    it("should not re-dispatch to DOM", async function () {
       if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
+        pending("Document is not supported in Node.js.");
       }
       const eventBus = new EventBus();
       let count = 0;
@@ -189,18 +189,17 @@ describe("ui_utils", function () {
         count++;
       });
       function domEventListener() {
-        done.fail("shall not dispatch DOM event.");
+        // Shouldn't get here.
+        expect(false).toEqual(true);
       }
       document.addEventListener("test", domEventListener);
 
       eventBus.dispatch("test");
 
-      Promise.resolve().then(() => {
-        expect(count).toEqual(1);
+      await Promise.resolve();
+      expect(count).toEqual(1);
 
-        document.removeEventListener("test", domEventListener);
-        done();
-      });
+      document.removeEventListener("test", domEventListener);
     });
   });
 
@@ -265,13 +264,14 @@ describe("ui_utils", function () {
       eventBus = null;
     });
 
-    it("should reject invalid parameters", function (done) {
+    it("should reject invalid parameters", async function () {
       const invalidTarget = waitOnEventOrTimeout({
         target: "window",
         name: "DOMContentLoaded",
       }).then(
         function () {
-          throw new Error("Should reject invalid parameters.");
+          // Shouldn't get here.
+          expect(false).toEqual(true);
         },
         function (reason) {
           expect(reason instanceof Error).toEqual(true);
@@ -283,7 +283,8 @@ describe("ui_utils", function () {
         name: "",
       }).then(
         function () {
-          throw new Error("Should reject invalid parameters.");
+          // Shouldn't get here.
+          expect(false).toEqual(true);
         },
         function (reason) {
           expect(reason instanceof Error).toEqual(true);
@@ -296,22 +297,20 @@ describe("ui_utils", function () {
         delay: -1000,
       }).then(
         function () {
-          throw new Error("Should reject invalid parameters.");
+          // Shouldn't get here.
+          expect(false).toEqual(true);
         },
         function (reason) {
           expect(reason instanceof Error).toEqual(true);
         }
       );
 
-      Promise.all([invalidTarget, invalidName, invalidDelay]).then(
-        done,
-        done.fail
-      );
+      await Promise.all([invalidTarget, invalidName, invalidDelay]);
     });
 
-    it("should resolve on event, using the DOM", function (done) {
+    it("should resolve on event, using the DOM", async function () {
       if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
+        pending("Document is not supported in Node.js.");
       }
       const button = document.createElement("button");
 
@@ -323,15 +322,13 @@ describe("ui_utils", function () {
       // Immediately dispatch the expected event.
       button.click();
 
-      buttonClicked.then(function (type) {
-        expect(type).toEqual(WaitOnType.EVENT);
-        done();
-      }, done.fail);
+      const type = await buttonClicked;
+      expect(type).toEqual(WaitOnType.EVENT);
     });
 
-    it("should resolve on timeout, using the DOM", function (done) {
+    it("should resolve on timeout, using the DOM", async function () {
       if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
+        pending("Document is not supported in Node.js.");
       }
       const button = document.createElement("button");
 
@@ -342,13 +339,11 @@ describe("ui_utils", function () {
       });
       // Do *not* dispatch the event, and wait for the timeout.
 
-      buttonClicked.then(function (type) {
-        expect(type).toEqual(WaitOnType.TIMEOUT);
-        done();
-      }, done.fail);
+      const type = await buttonClicked;
+      expect(type).toEqual(WaitOnType.TIMEOUT);
     });
 
-    it("should resolve on event, using the EventBus", function (done) {
+    it("should resolve on event, using the EventBus", async function () {
       const pageRendered = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
@@ -357,13 +352,11 @@ describe("ui_utils", function () {
       // Immediately dispatch the expected event.
       eventBus.dispatch("pagerendered");
 
-      pageRendered.then(function (type) {
-        expect(type).toEqual(WaitOnType.EVENT);
-        done();
-      }, done.fail);
+      const type = await pageRendered;
+      expect(type).toEqual(WaitOnType.EVENT);
     });
 
-    it("should resolve on timeout, using the EventBus", function (done) {
+    it("should resolve on timeout, using the EventBus", async function () {
       const pageRendered = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
@@ -371,10 +364,8 @@ describe("ui_utils", function () {
       });
       // Do *not* dispatch the event, and wait for the timeout.
 
-      pageRendered.then(function (type) {
-        expect(type).toEqual(WaitOnType.TIMEOUT);
-        done();
-      }, done.fail);
+      const type = await pageRendered;
+      expect(type).toEqual(WaitOnType.TIMEOUT);
     });
   });
 
