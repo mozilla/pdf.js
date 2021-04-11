@@ -454,6 +454,13 @@ class Page {
     const structTreeRoot = await this.pdfManager.ensureCatalog(
       "structTreeRoot"
     );
+    return this.pdfManager.ensure(this, "_parseStructTree", [structTreeRoot]);
+  }
+
+  /**
+   * @private
+   */
+  _parseStructTree(structTreeRoot) {
     const tree = new StructTreePage(structTreeRoot, this.pageDict);
     tree.parse();
     return tree;
