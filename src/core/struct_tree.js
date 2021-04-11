@@ -328,6 +328,10 @@ class StructTreePage {
       }
       nodeToSerializable(child, root);
     }
+
+    if (root.children.length === 0) {
+      return null;
+    }
     return root;
   }
 }

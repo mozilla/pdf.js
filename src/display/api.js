@@ -1522,7 +1522,8 @@ class PDFPageProxy {
 
   /**
    * @returns {Promise<StructTreeNode>} A promise that is resolved with a
-   *   {@link StructTreeNode} object that represents the page's structure tree.
+   *   {@link StructTreeNode} object that represents the page's structure tree,
+   *   or `null` when no structure tree is present for the current page.
    */
   getStructTree() {
     return (this._structTreePromise ||= this._transport.getStructTree(
