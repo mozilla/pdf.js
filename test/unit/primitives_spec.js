@@ -169,40 +169,28 @@ describe("primitives", function () {
       ).toEqual(testFontFile);
     });
 
-    it("should asynchronously fetch unknown keys", function (done) {
+    it("should asynchronously fetch unknown keys", async function () {
       const keyPromises = [
         dictWithManyKeys.getAsync("Size"),
         dictWithSizeKey.getAsync("FontFile", "FontFile2", "FontFile3"),
       ];
 
-      Promise.all(keyPromises)
-        .then(function (values) {
-          expect(values[0]).toBeUndefined();
-          expect(values[1]).toBeUndefined();
-          done();
-        })
-        .catch(function (reason) {
-          done.fail(reason);
-        });
+      const values = await Promise.all(keyPromises);
+      expect(values[0]).toBeUndefined();
+      expect(values[1]).toBeUndefined();
     });
 
-    it("should asynchronously fetch correct values for multiple stored keys", function (done) {
+    it("should asynchronously fetch correct values for multiple stored keys", async function () {
       const keyPromises = [
         dictWithManyKeys.getAsync("FontFile3"),
         dictWithManyKeys.getAsync("FontFile2", "FontFile3"),
         dictWithManyKeys.getAsync("FontFile", "FontFile2", "FontFile3"),
       ];
 
-      Promise.all(keyPromises)
-        .then(function (values) {
-          expect(values[0]).toEqual(testFontFile3);
-          expect(values[1]).toEqual(testFontFile2);
-          expect(values[2]).toEqual(testFontFile);
-          done();
-        })
-        .catch(function (reason) {
-          done.fail(reason);
-        });
+      const values = await Promise.all(keyPromises);
+      expect(values[0]).toEqual(testFontFile3);
+      expect(values[1]).toEqual(testFontFile2);
+      expect(values[2]).toEqual(testFontFile);
     });
 
     it("should callback for each stored key", function () {
@@ -218,7 +206,7 @@ describe("primitives", function () {
       expect(callbackSpyCalls.count()).toEqual(3);
     });
 
-    it("should handle keys pointing to indirect objects, both sync and async", function (done) {
+    it("should handle keys pointing to indirect objects, both sync and async", async function () {
       const fontRef = Ref.get(1, 0);
       const xref = new XRefMock([{ ref: fontRef, data: testFontFile }]);
       const fontDict = new Dict(xref);
@@ -229,15 +217,12 @@ describe("primitives", function () {
         testFontFile
       );
 
-      fontDict
-        .getAsync("FontFile", "FontFile2", "FontFile3")
-        .then(function (value) {
-          expect(value).toEqual(testFontFile);
-          done();
-        })
-        .catch(function (reason) {
-          done.fail(reason);
-        });
+      const value = await fontDict.getAsync(
+        "FontFile",
+        "FontFile2",
+        "FontFile3"
+      );
+      expect(value).toEqual(testFontFile);
     });
 
     it("should handle arrays containing indirect objects", function () {
