@@ -619,6 +619,9 @@ class PDFPageView {
         this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
         this._onTextLayerRendered = null;
         this.pdfPage.getStructTree().then(tree => {
+          if (!tree) {
+            return;
+          }
           const treeDom = this.structTreeLayer.render(tree);
           treeDom.classList.add("structTree");
           this.canvas.appendChild(treeDom);
