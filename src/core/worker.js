@@ -487,7 +487,7 @@ class WorkerMessageHandler {
 
     handler.on("GetPageJSActions", function ({ pageIndex }) {
       return pdfManager.getPage(pageIndex).then(function (page) {
-        return page.jsActions;
+        return pdfManager.ensure(page, "jsActions");
       });
     });
 
