@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { $getParent, $toStyle, XFAObject } from "./xfa_object.js";
+import { $extra, $getParent, $toStyle, XFAObject } from "./xfa_object.js";
 import { warn } from "../../shared/util.js";
 
 function measureToString(m) {
@@ -56,8 +56,17 @@ const converters = {
     }
   },
   dimensions(node, style) {
-    if (node.w) {
-      style.width = measureToString(node.w);
+    const parent = node[$getParent]();
+    const extra = parent[$extra];
+    let width = node.w;
+    if (extra && extra.columnWidths) {
+      width = extra.columnWidths[extra.currentColumn];
+      extra.currentColumn =
+        (extra.currentColumn + 1) % extra.columnWidths.length;
+    }
+
+    if (width !== "") {
+      style.width = measureToString(width);
     } else {
       style.width = "auto";
       if (node.maxW > 0) {
@@ -66,7 +75,7 @@ const converters = {
       style.minWidth = measureToString(node.minW);
     }
 
-    if (node.h) {
+    if (node.h !== "") {
       style.height = measureToString(node.h);
     } else {
       style.height = "auto";
@@ -106,6 +115,53 @@ const converters = {
       case "inactive":
         style.display = "none";
         break;
+    }
+  },
+  hAlign(node, style) {
+    switch (node.hAlign) {
+      case "justifyAll":
+        style.textAlign = "justify-all";
+        break;
+      case "radix":
+        // TODO: implement this correctly !
+        style.textAlign = "left";
+        break;
+      default:
+        style.textAlign = node.hAlign;
+    }
+  },
+  borderMarginPadding(node, style) {
+    // Get border width in order to compute margin and padding.
+    const borderWidths = [0, 0, 0, 0];
+    const marginWidths = [0, 0, 0, 0];
+    const marginNode = node.margin
+      ? [
+          node.margin.topInset,
+          node.margin.rightInset,
+          node.margin.bottomInset,
+          node.margin.leftInset,
+        ]
+      : [0, 0, 0, 0];
+    if (node.border) {
+      Object.assign(style, node.border[$toStyle](borderWidths, marginWidths));
+    }
+
+    if (borderWidths.every(x => x === 0)) {
+      // No border: margin & padding are padding
+      if (node.margin) {
+        Object.assign(style, node.margin[$toStyle]());
+      }
+      style.padding = style.margin;
+      delete style.margin;
+    } else {
+      style.padding =
+        measureToString(marginNode[0] - borderWidths[0] - marginWidths[0]) +
+        " " +
+        measureToString(marginNode[1] - borderWidths[1] - marginWidths[1]) +
+        " " +
+        measureToString(marginNode[2] - borderWidths[2] - marginWidths[2]) +
+        " " +
+        measureToString(marginNode[3] - borderWidths[3] - marginWidths[3]);
     }
   },
 };
@@ -155,4 +211,26 @@ function toStyle(node, ...names) {
   return style;
 }
 
-export { layoutClass, measureToString, toStyle };
+function addExtraDivForMargin(html) {
+  const style = html.attributes.style;
+  if (style.margin) {
+    const padding = style.margin;
+    delete style.margin;
+    const width = style.width || "auto";
+    const height = style.height || "auto";
+
+    style.width = "100%";
+    style.height = "100%";
+
+    return {
+      name: "div",
+      attributes: {
+        style: { padding, width, height },
+      },
+      children: [html],
+    };
+  }
+  return html;
+}
+
+export { addExtraDivForMargin, layoutClass, measureToString, toStyle };

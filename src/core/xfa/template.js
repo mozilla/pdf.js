@@ -41,6 +41,12 @@ import {
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import {
+  addExtraDivForMargin,
+  layoutClass,
+  measureToString,
+  toStyle,
+} from "./html_utils.js";
+import {
   getBBox,
   getColor,
   getFloat,
@@ -51,7 +57,6 @@ import {
   getRelevant,
   getStringOption,
 } from "./utils.js";
-import { layoutClass, measureToString, toStyle } from "./html_utils.js";
 import { Util, warn } from "../../shared/util.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
@@ -130,6 +135,36 @@ class Area extends XFAObject {
 
   [$isTransparent]() {
     return true;
+  }
+
+  [$toHTML]() {
+    // TODO: incomplete.
+    this[$extra] = Object.create(null);
+
+    const style = toStyle(this, "position");
+    const attributes = {
+      style,
+      id: this[$uid],
+      class: "xfaArea",
+    };
+
+    if (this.name) {
+      attributes.xfaName = this.name;
+    }
+
+    const children = this[$childrenToHTML]({
+      // TODO: exObject & exclGroup
+      filter: new Set(["area", "draw", "field", "subform", "subformSet"]),
+      include: true,
+    });
+
+    const html = {
+      name: "div",
+      attributes,
+      children,
+    };
+
+    return html;
   }
 }
 
@@ -376,56 +411,42 @@ class Border extends XFAObject {
 
   [$toStyle](widths, margins) {
     // TODO: incomplete.
-    const edgeStyles = this.edge.children.map(node => node[$toStyle]());
-    const cornerStyles = this.edge.children.map(node => node[$toStyle]());
+    const edges = this.edge.children.slice();
+    if (edges.length < 4) {
+      const defaultEdge = edges[edges.length - 1] || new Edge({});
+      for (let i = edges.length; i < 4; i++) {
+        edges.push(defaultEdge);
+      }
+    }
+
+    if (widths) {
+      for (let i = 0; i < 4; i++) {
+        widths[i] = edges[i].thickness;
+      }
+    }
+
+    const edgeStyles = edges.map(node => node[$toStyle]());
+    const cornerStyles = this.corner.children.map(node => node[$toStyle]());
     let style;
     if (this.margin) {
       style = this.margin[$toStyle]();
       if (margins) {
-        margins.push(
-          this.margin.topInset,
-          this.margin.rightInset,
-          this.margin.bottomInset,
-          this.margin.leftInset
-        );
+        margins[0] = this.margin.topInset;
+        margins[1] = this.margin.rightInset;
+        margins[2] = this.margin.bottomInset;
+        margins[3] = this.margin.leftInset;
       }
     } else {
       style = Object.create(null);
-      if (margins) {
-        margins.push(0, 0, 0, 0);
-      }
     }
 
     if (this.fill) {
       Object.assign(style, this.fill[$toStyle]());
     }
 
-    if (edgeStyles.length > 0) {
-      if (widths) {
-        this.edge.children.forEach(node => widths.push(node.thickness));
-        if (widths.length < 4) {
-          const last = widths[widths.length - 1];
-          for (let i = widths.length; i < 4; i++) {
-            widths.push(last);
-          }
-        }
-      }
-
-      if (edgeStyles.length === 2 || edgeStyles.length === 3) {
-        const last = edgeStyles[edgeStyles.length - 1];
-        for (let i = edgeStyles.length; i < 4; i++) {
-          edgeStyles.push(last);
-        }
-      }
-
-      style.borderWidth = edgeStyles.map(s => s.width).join(" ");
-      style.borderColor = edgeStyles.map(s => s.color).join(" ");
-      style.borderStyle = edgeStyles.map(s => s.style).join(" ");
-    } else {
-      if (widths) {
-        widths.push(0, 0, 0, 0);
-      }
-    }
+    style.borderWidth = edgeStyles.map(s => s.width).join(" ");
+    style.borderColor = edgeStyles.map(s => s.color).join(" ");
+    style.borderStyle = edgeStyles.map(s => s.style).join(" ");
 
     if (cornerStyles.length > 0) {
       if (cornerStyles.length === 2 || cornerStyles.length === 3) {
@@ -718,7 +739,7 @@ class CheckButton extends XFAObject {
 
     let mark, radius;
     if (this.shape === "square") {
-      mark = "■";
+      mark = "▪";
       radius = "10%";
     } else {
       mark = "●";
@@ -746,7 +767,7 @@ class CheckButton extends XFAObject {
           mark = "♦";
           break;
         case "square":
-          mark = "■";
+          mark = "▪";
           break;
         case "star":
           mark = "★";
@@ -822,7 +843,7 @@ class ChoiceList extends XFAObject {
         {
           name: "select",
           attributes: {
-            class: "xfaSxelect",
+            class: "xfaSelect",
             multiple: this.open === "multiSelect",
             style,
           },
@@ -1211,11 +1232,13 @@ class Draw extends XFAObject {
     const style = toStyle(
       this,
       "font",
+      "hAlign",
       "dimensions",
       "position",
       "presence",
       "rotate",
-      "anchorType"
+      "anchorType",
+      "borderMarginPadding"
     );
 
     const clazz = ["xfaDraw"];
@@ -1233,11 +1256,35 @@ class Draw extends XFAObject {
       attributes.xfaName = this.name;
     }
 
-    return {
+    let html = {
       name: "div",
       attributes,
       children: [],
     };
+
+    const value = this.value ? this.value[$toHTML]() : null;
+    if (value === null) {
+      return html;
+    }
+
+    html.children.push(value);
+
+    if (this.para && value.attributes.class === "xfaRich") {
+      const paraStyle = this.para[$toStyle]();
+      if (!value.attributes.style) {
+        value.attributes.style = paraStyle;
+      } else {
+        for (const [key, val] of Object.entries(paraStyle)) {
+          if (!(key in value.attributes.style)) {
+            value.attributes.style[key] = val;
+          }
+        }
+      }
+    }
+
+    html = addExtraDivForMargin(html);
+
+    return html;
   }
 }
 
@@ -1493,6 +1540,15 @@ class ExData extends ContentObject {
     }
 
     return false;
+  }
+
+  [$toHTML]() {
+    if (this.contentType !== "text/html" || !this[$content]) {
+      // TODO: fix other cases.
+      return null;
+    }
+
+    return this[$content][$toHTML]();
   }
 }
 
@@ -1793,35 +1849,9 @@ class Field extends XFAObject {
       "position",
       "rotate",
       "anchorType",
-      "presence"
+      "presence",
+      "borderMarginPadding"
     );
-
-    // Get border width in order to compute margin and padding.
-    const borderWidths = [];
-    const marginWidths = [];
-    if (this.border) {
-      Object.assign(style, this.border[$toStyle](borderWidths, marginWidths));
-    }
-
-    if (this.margin) {
-      style.paddingTop = measureToString(
-        this.margin.topInset - borderWidths[0] - marginWidths[0]
-      );
-      style.paddingRight = measureToString(
-        this.margin.rightInset - borderWidths[1] - marginWidths[1]
-      );
-      style.paddingBottom = measureToString(
-        this.margin.bottomInset - borderWidths[2] - marginWidths[2]
-      );
-      style.paddingLeft = measureToString(
-        this.margin.leftInset - borderWidths[3] - marginWidths[3]
-      );
-    } else {
-      style.paddingTop = measureToString(-borderWidths[0] - marginWidths[0]);
-      style.paddingRight = measureToString(-borderWidths[1] - marginWidths[1]);
-      style.paddingBottom = measureToString(-borderWidths[2] - marginWidths[2]);
-      style.paddingLeft = measureToString(-borderWidths[3] - marginWidths[3]);
-    }
 
     const clazz = ["xfaField"];
     // If no font, font properties are inherited.
@@ -1840,7 +1870,7 @@ class Field extends XFAObject {
     }
 
     const children = [];
-    const html = {
+    let html = {
       name: "div",
       attributes,
       children,
@@ -1857,8 +1887,7 @@ class Field extends XFAObject {
     children.push(ui);
 
     if (this.value && ui.name !== "button") {
-      // TODO: should be ok with string but html ??
-      ui.children[0].attributes.value = this.value[$toHTML]();
+      ui.children[0].attributes.value = this.value[$toHTML]().value;
     }
 
     const caption = this.caption ? this.caption[$toHTML]() : null;
@@ -1867,8 +1896,8 @@ class Field extends XFAObject {
     }
 
     if (ui.name === "button") {
-      ui.attributes.style.background = style.color;
-      delete style.color;
+      ui.attributes.style.background = style.background;
+      delete style.background;
       if (caption.name === "div") {
         caption.name = "span";
       }
@@ -1895,6 +1924,8 @@ class Field extends XFAObject {
         caption.attributes.style.float = "left";
         break;
     }
+
+    html = addExtraDivForMargin(html);
 
     return html;
   }
@@ -1938,9 +1969,13 @@ class Fill extends XFAObject {
       };
     }
 
-    return {
-      color: this.color ? this.color[$toStyle]() : "#000000",
-    };
+    if (this.color) {
+      return {
+        background: this.color[$toStyle](),
+      };
+    }
+
+    return {};
   }
 }
 
@@ -2053,15 +2088,18 @@ class Font extends XFAObject {
 
   [$toStyle]() {
     const style = toStyle(this, "fill");
-    if (style.color) {
-      if (!style.color.startsWith("#")) {
+    const color = style.background;
+    if (color) {
+      if (color === "#000000") {
+        delete style.background;
+      } else if (!color.startsWith("#")) {
         // We've a gradient which is not possible for a font color
         // so use a workaround.
         style.backgroundClip = "text";
-        style.background = style.color;
         style.color = "transparent";
-      } else if (style.color === "#000000") {
-        delete style.color;
+      } else {
+        style.color = color;
+        delete style.background;
       }
     }
 
@@ -2213,6 +2251,7 @@ class Image extends StringObject {
     const html = {
       name: "img",
       attributes: {
+        class: "xfaImage",
         style: {},
       },
     };
@@ -2441,10 +2480,14 @@ class Margin extends XFAObject {
 
   [$toStyle]() {
     return {
-      marginLeft: measureToString(this.leftInset),
-      marginRight: measureToString(this.rightInset),
-      marginTop: measureToString(this.topInset),
-      marginBottom: measureToString(this.bottomInset),
+      margin:
+        measureToString(this.topInset) +
+        " " +
+        measureToString(this.rightInset) +
+        " " +
+        measureToString(this.bottomInset) +
+        " " +
+        measureToString(this.leftInset),
     };
   }
 }
@@ -2730,26 +2773,40 @@ class Para extends XFAObject {
       "right",
     ]);
     this.id = attributes.id || "";
-    this.lineHeight = getMeasurement(attributes.lineHeight, "0pt");
-    this.marginLeft = getMeasurement(attributes.marginLeft, "0");
-    this.marginRight = getMeasurement(attributes.marginRight, "0");
+    this.lineHeight = attributes.lineHeight
+      ? getMeasurement(attributes.lineHeight, "0pt")
+      : "";
+    this.marginLeft = attributes.marginLeft
+      ? getMeasurement(attributes.marginLeft, "0pt")
+      : "";
+    this.marginRight = attributes.marginRight
+      ? getMeasurement(attributes.marginRight, "0pt")
+      : "";
     this.orphans = getInteger({
       data: attributes.orphans,
       defaultValue: 0,
       validate: x => x >= 0,
     });
     this.preserve = attributes.preserve || "";
-    this.radixOffset = getMeasurement(attributes.radixOffset, "0");
-    this.spaceAbove = getMeasurement(attributes.spaceAbove, "0");
-    this.spaceBelow = getMeasurement(attributes.spaceBelow, "0");
+    this.radixOffset = attributes.radixOffset
+      ? getMeasurement(attributes.radixOffset, "0pt")
+      : "";
+    this.spaceAbove = attributes.spaceAbove
+      ? getMeasurement(attributes.spaceAbove, "0pt")
+      : "";
+    this.spaceBelow = attributes.spaceBelow
+      ? getMeasurement(attributes.spaceBelow, "0pt")
+      : "";
     this.tabDefault = attributes.tabDefault
       ? getMeasurement(this.tabDefault)
-      : null;
+      : "";
     this.tabStops = (attributes.tabStops || "")
       .trim()
       .split(/\s+/)
       .map((x, i) => (i % 2 === 1 ? getMeasurement(x) : x));
-    this.textIndent = getMeasurement(attributes.textIndent, "0");
+    this.textIndent = attributes.textIndent
+      ? getMeasurement(attributes.textIndent, "0pt")
+      : "";
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.vAlign = getStringOption(attributes.vAlign, [
@@ -2765,21 +2822,31 @@ class Para extends XFAObject {
     this.hyphenation = null;
   }
 
-  [$toHTML]() {
-    const style = {
-      marginLeft: measureToString(this.marginLeft),
-      marginRight: measureToString(this.marginRight),
-      paddingTop: measureToString(this.spaceAbove),
-      paddingBottom: measureToString(this.spaceBelow),
-      textIndent: measureToString(this.textIndent),
-      verticalAlign: this.vAlign,
-    };
+  [$toStyle]() {
+    const style = toStyle(this, "hAlign");
+    if (this.marginLeft !== "") {
+      style.marginLeft = measureToString(this.marginLeft);
+    }
+    if (this.marginRight !== "") {
+      style.marginRight = measureToString(this.marginRight);
+    }
+    if (this.spaceAbove !== "") {
+      style.marginTop = measureToString(this.spaceAbove);
+    }
+    if (this.spaceBelow !== "") {
+      style.marginBottom = measureToString(this.spaceBelow);
+    }
+    if (this.textIndent !== "") {
+      style.textIndent = measureToString(this.textIndent);
+    }
 
-    if (this.lineHeight.value >= 0) {
+    // TODO: vAlign
+
+    if (this.lineHeight !== "") {
       style.lineHeight = measureToString(this.lineHeight);
     }
 
-    if (this.tabDefault) {
+    if (this.tabDefault !== "") {
       style.tabSize = measureToString(this.tabDefault);
     }
 
@@ -2788,7 +2855,7 @@ class Para extends XFAObject {
     }
 
     if (this.hyphenatation) {
-      Object.assign(style, this.hyphenatation[$toHTML]());
+      Object.assign(style, this.hyphenatation[$toStyle]());
     }
 
     return style;
@@ -3294,6 +3361,14 @@ class Subform extends XFAObject {
     // TODO: incomplete.
     this[$extra] = Object.create(null);
 
+    if (this.layout === "row") {
+      const columnWidths = this[$getParent]().columnWidths;
+      if (Array.isArray(columnWidths) && columnWidths.length > 0) {
+        this[$extra].columnWidths = columnWidths;
+        this[$extra].currentColumn = 0;
+      }
+    }
+
     const parent = this[$getParent]();
     let page = null;
     if (parent[$nodeName] === "template") {
@@ -3520,8 +3595,67 @@ class Text extends ContentObject {
 
   [$toHTML]() {
     if (typeof this[$content] === "string") {
-      return this[$content];
+      // \u2028 is a line separator.
+      // \u2029 is a paragraph separator.
+      const html = {
+        name: "span",
+        attributes: {
+          class: "xfaRich",
+          style: {},
+        },
+        value: this[$content],
+      };
+
+      if (this[$content].includes("\u2029")) {
+        // We've plain text containing a paragraph separator
+        // so convert it into a set of <p>.
+        html.name = "div";
+        html.children = [];
+        this[$content]
+          .split("\u2029")
+          .map(para =>
+            // Convert a paragraph into a set of <span> (for lines)
+            // separated by <br>.
+            para.split(/[\u2028\n]/).reduce((acc, line) => {
+              acc.push(
+                {
+                  name: "span",
+                  value: line,
+                },
+                {
+                  name: "br",
+                }
+              );
+              return acc;
+            }, [])
+          )
+          .forEach(lines => {
+            html.children.push({
+              name: "p",
+              children: lines,
+            });
+          });
+      } else if (/[\u2028\n]/.test(this[$content])) {
+        html.name = "div";
+        html.children = [];
+        // Convert plain text into a set of <span> (for lines)
+        // separated by <br>.
+        this[$content].split(/[\u2028\n]/).forEach(line => {
+          html.children.push(
+            {
+              name: "span",
+              value: line,
+            },
+            {
+              name: "br",
+            }
+          );
+        });
+      }
+
+      return html;
     }
+
     return this[$content][$toHTML]();
   }
 }
@@ -3562,10 +3696,11 @@ class TextEdit extends XFAObject {
     // TODO: incomplete.
     const style = toStyle(this, "border", "font", "margin");
     let html;
-    if (this.multiline === 1) {
+    if (this.multiLine === 1) {
       html = {
         name: "textarea",
         attributes: {
+          class: "xfaTextfield",
           style,
         },
       };
