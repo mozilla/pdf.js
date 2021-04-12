@@ -743,15 +743,9 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetStructTree", function wphGetStructTree(data) {
-      const pageIndex = data.pageIndex;
-      return pdfManager
-        .getPage(pageIndex)
-        .then(function (page) {
-          return pdfManager.ensure(page, "getStructTree");
-        })
-        .then(function (structTree) {
-          return structTree.serializable;
-        });
+      return pdfManager.getPage(data.pageIndex).then(function (page) {
+        return pdfManager.ensure(page, "getStructTree");
+      });
     });
 
     handler.on("FontFallback", function (data) {
