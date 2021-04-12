@@ -497,10 +497,6 @@ class WorkerMessageHandler {
       });
     });
 
-    handler.on("GetIsPureXfa", function wphSetupGetIsPureXfa(data) {
-      return pdfManager.ensureDoc("isPureXfa");
-    });
-
     handler.on("GetOutline", function wphSetupGetOutline(data) {
       return pdfManager.ensureCatalog("documentOutline");
     });
