@@ -668,7 +668,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         if (elementData.formattedValue) {
           event.target.value = elementData.formattedValue;
         }
-        event.target.setSelectionRange(0, 0);
         elementData.beforeInputSelectionRange = null;
       };
 
