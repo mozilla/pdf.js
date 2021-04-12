@@ -19,6 +19,7 @@ import { NamespaceIds } from "./namespaces.js";
 
 // We use these symbols to avoid name conflict between tags
 // and properties/methods names.
+const $acceptWhitespace = Symbol();
 const $appendChild = Symbol();
 const $childrenToHTML = Symbol();
 const $clean = Symbol();
@@ -129,6 +130,10 @@ class XFAObject {
       this.hasOwnProperty(child[$nodeName]) &&
       child[$namespaceId] === this[$namespaceId]
     );
+  }
+
+  [$acceptWhitespace]() {
+    return false;
   }
 
   [$setId](ids) {
@@ -805,6 +810,7 @@ class Option10 extends IntegerObject {
 }
 
 export {
+  $acceptWhitespace,
   $appendChild,
   $childrenToHTML,
   $clean,
