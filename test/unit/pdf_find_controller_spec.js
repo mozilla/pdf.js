@@ -145,6 +145,7 @@ describe("pdf_find_controller", function () {
       parameters: {
         query: "Dynamic",
         caseSensitive: false,
+        accentSensitive: false,
         entireWord: false,
         phraseSearch: true,
         findPrevious: false,
@@ -169,6 +170,7 @@ describe("pdf_find_controller", function () {
       parameters: {
         query: "conference",
         caseSensitive: false,
+        accentSensitive: false,
         entireWord: false,
         phraseSearch: true,
         findPrevious: true,
@@ -190,11 +192,36 @@ describe("pdf_find_controller", function () {
       parameters: {
         query: "Dynamic",
         caseSensitive: true,
+        accentSensitive: false,
         entireWord: false,
         phraseSearch: true,
         findPrevious: false,
       },
       matchesPerPage: [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+    });
+  });
+
+  it("performs a accent insensitive search", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "pr13227.pdf"
+    );
+    // contains Hétérogénéité
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      parameters: {
+        query: "Heterogeneite",
+        caseSensitive: true,
+        accentSensitive: false,
+        entireWord: false,
+        phraseSearch: true,
+        findPrevious: false,
+      },
+      matchesPerPage: [1],
       selectedMatch: {
         pageIndex: 0,
         matchIndex: 0,
@@ -213,6 +240,7 @@ describe("pdf_find_controller", function () {
       parameters: {
         query: "Government",
         caseSensitive: false,
+        accentSensitive: false,
         entireWord: true,
         phraseSearch: true,
         findPrevious: false,
@@ -236,6 +264,7 @@ describe("pdf_find_controller", function () {
       parameters: {
         query: "alternate solution",
         caseSensitive: false,
+        accentSensitive: false,
         entireWord: false,
         phraseSearch: false,
         findPrevious: false,
@@ -259,6 +288,7 @@ describe("pdf_find_controller", function () {
       parameters: {
         query: "fraction",
         caseSensitive: false,
+        accentSensitive: false,
         entireWord: false,
         phraseSearch: true,
         findPrevious: false,

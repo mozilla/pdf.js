@@ -216,6 +216,7 @@ class MozL10n {
     "findagain",
     "findhighlightallchange",
     "findcasesensitivitychange",
+    "findaccentsensitivitychange",
     "findentirewordchange",
     "findbarclose",
   ];
@@ -233,6 +234,7 @@ class MozL10n {
       query: detail.query,
       phraseSearch: true,
       caseSensitive: !!detail.caseSensitive,
+      accentSensitive: !!detail.accentSensitive,
       entireWord: !!detail.entireWord,
       highlightAll: !!detail.highlightAll,
       findPrevious: !!detail.findPrevious,

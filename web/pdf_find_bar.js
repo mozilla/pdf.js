@@ -32,6 +32,7 @@ class PDFFindBar {
     this.findField = options.findField;
     this.highlightAll = options.highlightAllCheckbox;
     this.caseSensitive = options.caseSensitiveCheckbox;
+    this.accentSensitive = options.accentSensitiveCheckbox;
     this.entireWord = options.entireWordCheckbox;
     this.findMsg = options.findMsg;
     this.findResultsCount = options.findResultsCount;
@@ -78,6 +79,10 @@ class PDFFindBar {
       this.dispatchEvent("casesensitivitychange");
     });
 
+    this.accentSensitive.addEventListener("click", () => {
+      this.dispatchEvent("accentsensitivitychange");
+    });
+
     this.entireWord.addEventListener("click", () => {
       this.dispatchEvent("entirewordchange");
     });
@@ -96,6 +101,7 @@ class PDFFindBar {
       query: this.findField.value,
       phraseSearch: true,
       caseSensitive: this.caseSensitive.checked,
+      accentSensitive: this.accentSensitive.checked,
       entireWord: this.entireWord.checked,
       highlightAll: this.highlightAll.checked,
       findPrevious: findPrev,
