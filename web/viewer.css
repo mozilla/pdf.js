@@ -33,12 +33,14 @@
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
   --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
+  --toolbar-icon-hover-bg-color: rgba(0, 0, 0, 1);
 
   --sidebar-narrow-bg-color: rgba(237, 237, 240, 0.9);
   --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
   --toolbar-bg-color: rgba(249, 249, 250, 1);
   --toolbar-border-color: rgba(204, 204, 204, 1);
   --button-hover-color: rgba(221, 222, 223, 1);
+  --toggled-btn-color: rgba(0, 0, 0, 1);
   --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
   --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
   --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
@@ -54,10 +56,12 @@
   --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
-  --doorhanger-hover-color: rgba(237, 237, 237, 1);
+  --doorhanger-hover-color: rgba(12, 12, 13, 1);
+  --doorhanger-hover-bg-color: rgba(237, 237, 237, 1);
   --doorhanger-separator-color: rgba(222, 222, 222, 1);
+  --overlay-button-border: 0 none;
   --overlay-button-bg-color: rgba(12, 12, 13, 0.1);
-  --overlay-button-hover-color: rgba(12, 12, 13, 0.3);
+  --overlay-button-hover-bg-color: rgba(12, 12, 13, 0.3);
 
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
@@ -108,12 +112,14 @@
     --scrollbar-color: rgba(121, 121, 123, 1);
     --scrollbar-bg-color: rgba(35, 35, 39, 1);
     --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
+    --toolbar-icon-hover-bg-color: rgba(255, 255, 255, 1);
 
     --sidebar-narrow-bg-color: rgba(42, 42, 46, 0.9);
     --sidebar-toolbar-bg-color: rgba(50, 50, 52, 1);
     --toolbar-bg-color: rgba(56, 56, 61, 1);
     --toolbar-border-color: rgba(12, 12, 13, 1);
     --button-hover-color: rgba(102, 102, 103, 1);
+    --toggled-btn-color: rgba(255, 255, 255, 1);
     --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
     --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
     --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
@@ -129,15 +135,36 @@
     --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
-    --doorhanger-hover-color: rgba(93, 94, 98, 1);
+    --doorhanger-hover-color: rgba(249, 249, 250, 1);
+    --doorhanger-hover-bg-color: rgba(93, 94, 98, 1);
     --doorhanger-separator-color: rgba(92, 92, 97, 1);
     --overlay-button-bg-color: rgba(92, 92, 97, 1);
-    --overlay-button-hover-color: rgba(115, 115, 115, 1);
+    --overlay-button-hover-bg-color: rgba(115, 115, 115, 1);
 
     /* This image is used in <input> elements, which unfortunately means that
      * the `mask-image` approach used with all of the other images doesn't work
      * here; hence why we still have two versions of this particular image. */
     --loading-icon: url(images/loading-dark.svg);
+  }
+}
+
+@media screen and (forced-colors: active) {
+  :root {
+    --main-color: ButtonText;
+    --button-hover-color: Highlight;
+    --doorhanger-hover-bg-color: Highlight;
+    --toolbar-icon-opacity: 1;
+    --toolbar-icon-bg-color: ButtonText;
+    --toolbar-icon-hover-bg-color: ButtonFace;
+    --toggled-btn-color: HighlightText;
+    --toggled-btn-bg-color: LinkText;
+    --doorhanger-hover-color: ButtonFace;
+    --doorhanger-border-color-whcm: 1px solid ButtonText;
+    --doorhanger-triangle-opacity-whcm: 0;
+    --overlay-button-border: 1px solid Highlight;
+    --overlay-button-hover-bg-color: Highlight;
+    --overlay-button-hover-color: ButtonFace;
+    --field-border-color: ButtonText;
   }
 }
 
@@ -224,10 +251,12 @@ select {
 html[dir="ltr"] #sidebarContainer {
   transition-property: left;
   left: calc(0px - var(--sidebar-width));
+  border-right: var(--doorhanger-border-color-whcm);
 }
 html[dir="rtl"] #sidebarContainer {
   transition-property: right;
   right: calc(0px - var(--sidebar-width));
+  border-left: var(--doorhanger-border-color-whcm);
 }
 
 #outerContainer.sidebarResizing #sidebarContainer {
@@ -535,6 +564,7 @@ html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
 
 .findbar label:hover,
 .findbar input:focus + label {
+  color: var(--toggled-btn-color);
   background-color: var(--button-hover-color);
 }
 
@@ -549,6 +579,7 @@ html[dir="rtl"] #findInput {
 
 .findbar .toolbarField[type="checkbox"]:checked + .toolbarLabel {
   background-color: var(--toggled-btn-bg-color) !important;
+  color: var(--toggled-btn-color);
 }
 
 #findInput {
@@ -603,6 +634,7 @@ html[dir="rtl"] .secondaryToolbar {
   border-radius: 2px;
   box-shadow: 0 1px 5px var(--doorhanger-border-color),
     0 0 0 1px var(--doorhanger-border-color);
+  border: var(--doorhanger-border-color-whcm);
 }
 .doorHanger:after,
 .doorHanger:before,
@@ -615,6 +647,7 @@ html[dir="rtl"] .secondaryToolbar {
   width: 0;
   position: absolute;
   pointer-events: none;
+  opacity: var(--doorhanger-triangle-opacity-whcm);
 }
 .doorHanger:after,
 .doorHangerRight:after {
@@ -660,7 +693,7 @@ html[dir="ltr"] .doorHangerRight:before {
   background-color: rgba(217, 217, 217, 1);
   color: rgba(82, 82, 82, 1);
   text-align: center;
-  padding: 3px 4px;
+  padding: 4px 5px;
   margin: 5px;
 }
 
@@ -727,13 +760,15 @@ html[dir="rtl"] .splitToolbarButton > .toolbarButton {
   width: 28px;
   height: 28px;
 }
-.overlayButton {
-  background-color: var(--overlay-button-bg-color);
-}
 
 .overlayButton:hover,
 .overlayButton:focus {
-  background-color: var(--overlay-button-hover-color);
+  background-color: var(--overlay-button-hover-bg-color);
+}
+
+.overlayButton:hover > span,
+.overlayButton:focus > span {
+  color: var(--overlay-button-hover-color);
 }
 
 .toolbarButton > span {
@@ -826,13 +861,23 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 }
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus {
-  background-color: var(--doorhanger-hover-color);
+  background-color: var(--doorhanger-hover-bg-color);
+  color: var(--doorhanger-hover-color);
 }
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton.toggled,
 .secondaryToolbarButton.toggled {
   background-color: var(--toggled-btn-bg-color);
+  color: var(--toggled-btn-color);
+}
+
+.secondaryToolbarButton.toggled::before {
+  background-color: var(--toggled-btn-color);
+}
+
+.toolbarButton.toggled::before {
+  background-color: var(--toggled-btn-color);
 }
 
 .toolbarButton.toggled:hover:active,
@@ -878,16 +923,15 @@ html[dir="ltr"] .dropdownToolbarButton > select {
 html[dir="rtl"] .dropdownToolbarButton > select {
   padding-right: 4px;
 }
-.dropdownToolbarButton > select:hover {
-  background-color: var(--button-hover-color);
-}
-
+.dropdownToolbarButton > select:hover,
 .dropdownToolbarButton > select:focus {
   background-color: var(--button-hover-color);
+  color: var(--toggled-btn-color);
 }
 
 .dropdownToolbarButton > select > option {
   background: var(--doorhanger-bg-color);
+  color: var(--main-color);
 }
 
 #customScaleOption {
@@ -921,10 +965,23 @@ html[dir="rtl"] .dropdownToolbarButton > select {
   mask-size: cover;
 }
 
+.dropdownToolbarButton:hover::after,
+.dropdownToolbarButton:focus::after,
+.dropdownToolbarButton:active::after {
+  background-color: var(--toolbar-icon-hover-bg-color);
+}
+
 .toolbarButton::before {
   opacity: var(--toolbar-icon-opacity);
   top: 6px;
   left: 6px;
+}
+
+.toolbarButton:hover::before,
+.toolbarButton:focus::before,
+.secondaryToolbarButton:hover::before,
+.secondaryToolbarButton:focus::before {
+  background-color: var(--toolbar-icon-hover-bg-color);
 }
 
 .secondaryToolbarButton::before {
@@ -1248,9 +1305,8 @@ html[dir="rtl"] .toolbarField[type="checkbox"] {
 
 .toolbarLabel {
   min-width: 16px;
-  padding: 6px;
+  padding: 7px;
   margin: 2px;
-  border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 2px;
   color: var(--main-color);
   font-size: 12px;
@@ -1261,10 +1317,10 @@ html[dir="rtl"] .toolbarField[type="checkbox"] {
 }
 
 html[dir="ltr"] #numPages.toolbarLabel {
-  padding-left: 2px;
+  padding-left: 3px;
 }
 html[dir="rtl"] #numPages.toolbarLabel {
-  padding-right: 2px;
+  padding-right: 3px;
 }
 
 #thumbnailView {
@@ -1483,6 +1539,9 @@ html[dir="rtl"] .treeItemToggler::before {
   width: auto;
   margin: 3px 4px 2px !important;
   padding: 2px 11px;
+  color: var(--main-color);
+  background-color: var(--overlay-button-bg-color);
+  border: var(--overlay-button-border) !important;
 }
 
 #overlayContainer {
