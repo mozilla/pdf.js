@@ -34,7 +34,6 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { Catalog, XRef } from "./obj.js";
 import {
   clearPrimitiveCaches,
   Dict,
@@ -55,12 +54,14 @@ import {
 import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
+import { Catalog } from "./obj.js";
 import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { StructTreePage } from "./struct_tree.js";
 import { XFAFactory } from "./xfa/factory.js";
+import { XRef } from "./xref.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
