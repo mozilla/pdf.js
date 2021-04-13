@@ -856,9 +856,6 @@ class Catalog {
     return shadow(this, "viewerPreferences", prefs);
   }
 
-  /**
-   * NOTE: "JavaScript" actions are, for now, handled by `get javaScript` below.
-   */
   get openAction() {
     const obj = this._catDict.get("OpenAction");
     const openAction = Object.create(null);
@@ -923,9 +920,9 @@ class Catalog {
       }
 
       if (javaScript === null) {
-        javaScript = Object.create(null);
+        javaScript = new Map();
       }
-      javaScript[name] = stringToPDFString(js);
+      javaScript.set(name, stringToPDFString(js));
     }
 
     if (obj && obj.has("JavaScript")) {
@@ -955,23 +952,23 @@ class Catalog {
     return shadow(
       this,
       "javaScript",
-      javaScript ? Object.values(javaScript) : null
+      javaScript ? [...javaScript.values()] : null
     );
   }
 
   get jsActions() {
-    const js = this._collectJavaScript();
+    const javaScript = this._collectJavaScript();
     let actions = collectActions(
       this.xref,
       this._catDict,
       DocumentActionEventType
     );
 
-    if (!actions && js) {
-      actions = Object.create(null);
-    }
-    if (actions && js) {
-      for (const [key, val] of Object.entries(js)) {
+    if (javaScript) {
+      if (!actions) {
+        actions = Object.create(null);
+      }
+      for (const [key, val] of javaScript) {
         if (key in actions) {
           actions[key].push(val);
         } else {
@@ -979,7 +976,6 @@ class Catalog {
         }
       }
     }
-
     return shadow(this, "jsActions", actions);
   }
 
