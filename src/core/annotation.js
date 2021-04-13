@@ -48,7 +48,7 @@ import {
   Name,
   RefSet,
 } from "./primitives.js";
-import { Catalog } from "./obj.js";
+import { Catalog } from "./catalog.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
 import { ObjectLoader } from "./object_loader.js";

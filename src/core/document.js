@@ -54,7 +54,7 @@ import {
 import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
-import { Catalog } from "./obj.js";
+import { Catalog } from "./catalog.js";
 import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
