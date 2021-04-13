@@ -1014,6 +1014,23 @@ describe("api", function () {
         .catch(done.fail);
     });
 
+    it("gets hasJSActions, in document without javaScript", async function () {
+      const hasJSActions = await pdfDocument.hasJSActions();
+
+      expect(hasJSActions).toEqual(false);
+    });
+    it("gets hasJSActions, in document with javaScript", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("doc_actions.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const hasJSActions = await pdfDoc.hasJSActions();
+
+      expect(hasJSActions).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets JSActions (none)", function (done) {
       const promise = pdfDocument.getJSActions();
       promise
