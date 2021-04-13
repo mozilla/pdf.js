@@ -667,6 +667,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       let blurListener = event => {
         if (elementData.formattedValue) {
           event.target.value = elementData.formattedValue;
+          event.target.scrollLeft = 0;
         }
         elementData.beforeInputSelectionRange = null;
       };
