@@ -487,7 +487,7 @@ class WorkerMessageHandler {
 
     handler.on("GetPageJSActions", function ({ pageIndex }) {
       return pdfManager.getPage(pageIndex).then(function (page) {
-        return page.jsActions;
+        return pdfManager.ensure(page, "jsActions");
       });
     });
 
@@ -495,10 +495,6 @@ class WorkerMessageHandler {
       return pdfManager.getPage(pageIndex).then(function (page) {
         return pdfManager.ensure(page, "xfaData");
       });
-    });
-
-    handler.on("GetIsPureXfa", function wphSetupGetIsPureXfa(data) {
-      return pdfManager.ensureDoc("isPureXfa");
     });
 
     handler.on("GetOutline", function wphSetupGetOutline(data) {
@@ -747,15 +743,9 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetStructTree", function wphGetStructTree(data) {
-      const pageIndex = data.pageIndex;
-      return pdfManager
-        .getPage(pageIndex)
-        .then(function (page) {
-          return pdfManager.ensure(page, "getStructTree");
-        })
-        .then(function (structTree) {
-          return structTree.serializable;
-        });
+      return pdfManager.getPage(data.pageIndex).then(function (page) {
+        return pdfManager.ensure(page, "getStructTree");
+      });
     });
 
     handler.on("FontFallback", function (data) {
