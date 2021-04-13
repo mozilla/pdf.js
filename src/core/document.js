@@ -517,7 +517,6 @@ class Page {
       this.pageDict,
       PageActionEventType
     );
-
     return shadow(this, "jsActions", actions);
   }
 }
