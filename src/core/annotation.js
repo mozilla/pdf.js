@@ -34,7 +34,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { Catalog, FileSpec, ObjectLoader } from "./obj.js";
+import { Catalog, FileSpec } from "./obj.js";
 import { collectActions, getInheritableProperty } from "./core_utils.js";
 import {
   createDefaultAppearance,
@@ -50,6 +50,7 @@ import {
   RefSet,
 } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
+import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
