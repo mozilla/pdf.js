@@ -17,6 +17,23 @@
 import { isDict, isStream } from "./primitives.js";
 import { stringToPDFString, warn } from "../shared/util.js";
 
+function pickPlatformItem(dict) {
+  // Look for the filename in this order:
+  // UF, F, Unix, Mac, DOS
+  if (dict.has("UF")) {
+    return dict.get("UF");
+  } else if (dict.has("F")) {
+    return dict.get("F");
+  } else if (dict.has("Unix")) {
+    return dict.get("Unix");
+  } else if (dict.has("Mac")) {
+    return dict.get("Mac");
+  } else if (dict.has("DOS")) {
+    return dict.get("DOS");
+  }
+  return null;
+}
+
 /**
  * "A PDF file can refer to the contents of another file by using a File
  * Specification (PDF 1.1)", see the spec (7.11) for more details.
@@ -24,9 +41,8 @@ import { stringToPDFString, warn } from "../shared/util.js";
  * TODO: support the 'URL' file system (with caching if !/V), portable
  * collections attributes and related files (/RF)
  */
-var FileSpec = (function FileSpecClosure() {
-  // eslint-disable-next-line no-shadow
-  function FileSpec(root, xref) {
+class FileSpec {
+  constructor(root, xref) {
     if (!root || !isDict(root)) {
       return;
     }
@@ -48,66 +64,47 @@ var FileSpec = (function FileSpecClosure() {
     }
   }
 
-  function pickPlatformItem(dict) {
-    // Look for the filename in this order:
-    // UF, F, Unix, Mac, DOS
-    if (dict.has("UF")) {
-      return dict.get("UF");
-    } else if (dict.has("F")) {
-      return dict.get("F");
-    } else if (dict.has("Unix")) {
-      return dict.get("Unix");
-    } else if (dict.has("Mac")) {
-      return dict.get("Mac");
-    } else if (dict.has("DOS")) {
-      return dict.get("DOS");
+  get filename() {
+    if (!this._filename && this.root) {
+      var filename = pickPlatformItem(this.root) || "unnamed";
+      this._filename = stringToPDFString(filename)
+        .replace(/\\\\/g, "\\")
+        .replace(/\\\//g, "/")
+        .replace(/\\/g, "/");
     }
-    return null;
+    return this._filename;
   }
 
-  FileSpec.prototype = {
-    get filename() {
-      if (!this._filename && this.root) {
-        var filename = pickPlatformItem(this.root) || "unnamed";
-        this._filename = stringToPDFString(filename)
-          .replace(/\\\\/g, "\\")
-          .replace(/\\\//g, "/")
-          .replace(/\\/g, "/");
-      }
-      return this._filename;
-    },
-    get content() {
-      if (!this.contentAvailable) {
-        return null;
-      }
-      if (!this.contentRef && this.root) {
-        this.contentRef = pickPlatformItem(this.root.get("EF"));
-      }
-      var content = null;
-      if (this.contentRef) {
-        var xref = this.xref;
-        var fileObj = xref.fetchIfRef(this.contentRef);
-        if (fileObj && isStream(fileObj)) {
-          content = fileObj.getBytes();
-        } else {
-          warn(
-            "Embedded file specification points to non-existing/invalid " +
-              "content"
-          );
-        }
+  get content() {
+    if (!this.contentAvailable) {
+      return null;
+    }
+    if (!this.contentRef && this.root) {
+      this.contentRef = pickPlatformItem(this.root.get("EF"));
+    }
+    var content = null;
+    if (this.contentRef) {
+      var xref = this.xref;
+      var fileObj = xref.fetchIfRef(this.contentRef);
+      if (fileObj && isStream(fileObj)) {
+        content = fileObj.getBytes();
       } else {
-        warn("Embedded file specification does not have a content");
+        warn(
+          "Embedded file specification points to non-existing/invalid content"
+        );
       }
-      return content;
-    },
-    get serializable() {
-      return {
-        filename: this.filename,
-        content: this.content,
-      };
-    },
-  };
-  return FileSpec;
-})();
+    } else {
+      warn("Embedded file specification does not have a content");
+    }
+    return content;
+  }
+
+  get serializable() {
+    return {
+      filename: this.filename,
+      content: this.content,
+    };
+  }
+}
 
 export { FileSpec };
