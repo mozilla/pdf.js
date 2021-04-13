@@ -454,7 +454,13 @@ class Page {
     const structTreeRoot = await this.pdfManager.ensureCatalog(
       "structTreeRoot"
     );
-    return this.pdfManager.ensure(this, "_parseStructTree", [structTreeRoot]);
+    if (!structTreeRoot) {
+      return null;
+    }
+    const structTree = await this.pdfManager.ensure(this, "_parseStructTree", [
+      structTreeRoot,
+    ]);
+    return structTree.serializable;
   }
 
   /**
