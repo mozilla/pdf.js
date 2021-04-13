@@ -15,7 +15,7 @@
 
 import { isDict, isName, isRef } from "./primitives.js";
 import { isString, stringToPDFString, warn } from "../shared/util.js";
-import { NumberTree } from "./obj.js";
+import { NumberTree } from "./name_number_tree.js";
 
 const MAX_DEPTH = 40;
 
