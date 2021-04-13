@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { isDict, isStream } from "./primitives.js";
 import { stringToPDFString, warn } from "../shared/util.js";
@@ -66,7 +65,7 @@ class FileSpec {
 
   get filename() {
     if (!this._filename && this.root) {
-      var filename = pickPlatformItem(this.root) || "unnamed";
+      const filename = pickPlatformItem(this.root) || "unnamed";
       this._filename = stringToPDFString(filename)
         .replace(/\\\\/g, "\\")
         .replace(/\\\//g, "/")
@@ -82,10 +81,9 @@ class FileSpec {
     if (!this.contentRef && this.root) {
       this.contentRef = pickPlatformItem(this.root.get("EF"));
     }
-    var content = null;
+    let content = null;
     if (this.contentRef) {
-      var xref = this.xref;
-      var fileObj = xref.fetchIfRef(this.contentRef);
+      const fileObj = this.xref.fetchIfRef(this.contentRef);
       if (fileObj && isStream(fileObj)) {
         content = fileObj.getBytes();
       } else {
