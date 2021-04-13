@@ -668,6 +668,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         if (elementData.formattedValue) {
           event.target.value = elementData.formattedValue;
         }
+        // Reset the cursor position to the start of the field (issue 12359).
         event.target.scrollLeft = 0;
         elementData.beforeInputSelectionRange = null;
       };
