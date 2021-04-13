@@ -523,7 +523,6 @@ class Page {
       this.pageDict,
       PageActionEventType
     );
-
     return shadow(this, "jsActions", actions);
   }
 }
@@ -1189,19 +1188,28 @@ class PDFDocument {
   }
 
   get hasJSActions() {
-    return shadow(
-      this,
-      "hasJSActions",
-      this.fieldObjects.then(fieldObjects => {
-        return (
-          (fieldObjects !== null &&
-            Object.values(fieldObjects).some(fieldObject =>
-              fieldObject.some(object => object.actions !== null)
-            )) ||
-          !!this.catalog.jsActions
-        );
-      })
-    );
+    const promise = this.pdfManager.ensure(this, "_parseHasJSActions");
+    return shadow(this, "hasJSActions", promise);
+  }
+
+  /**
+   * @private
+   */
+  async _parseHasJSActions() {
+    const [catalogJsActions, fieldObjects] = await Promise.all([
+      this.pdfManager.ensureCatalog("jsActions"),
+      this.pdfManager.ensure(this, "fieldObjects"),
+    ]);
+
+    if (catalogJsActions) {
+      return true;
+    }
+    if (fieldObjects) {
+      return Object.values(fieldObjects).some(fieldObject =>
+        fieldObject.some(object => object.actions !== null)
+      );
+    }
+    return false;
   }
 
   get calculationOrderIds() {
