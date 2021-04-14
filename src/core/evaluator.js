@@ -1306,6 +1306,43 @@ class PartialEvaluator {
     throw new FormatError(`Unknown PatternName: ${patternName}`);
   }
 
+  _parseVisibilityExpression(array, nestingCounter, currentResult) {
+    const MAX_NESTING = 10;
+    if (++nestingCounter > MAX_NESTING) {
+      warn("Visibility expression is too deeply nested");
+      return;
+    }
+    const length = array.length;
+    const operator = this.xref.fetchIfRef(array[0]);
+    if (length < 2 || !isName(operator)) {
+      warn("Invalid visibility expression");
+      return;
+    }
+    switch (operator.name) {
+      case "And":
+      case "Or":
+      case "Not":
+        currentResult.push(operator.name);
+        break;
+      default:
+        warn(`Invalid operator ${operator.name} in visibility expression`);
+        return;
+    }
+    for (let i = 1; i < length; i++) {
+      const raw = array[i];
+      const object = this.xref.fetchIfRef(raw);
+      if (Array.isArray(object)) {
+        const nestedResult = [];
+        currentResult.push(nestedResult);
+        // Recursively parse a subarray.
+        this._parseVisibilityExpression(object, nestingCounter, nestedResult);
+      } else if (isRef(raw)) {
+        // Reference to an OCG dictionary.
+        currentResult.push(raw.toString());
+      }
+    }
+  }
+
   async parseMarkedContentProps(contentProperties, resources) {
     let optionalContent;
     if (isName(contentProperties)) {
@@ -1324,6 +1361,18 @@ class PartialEvaluator {
         id: optionalContent.objId,
       };
     } else if (optionalContentType === "OCMD") {
+      const expression = optionalContent.get("VE");
+      if (Array.isArray(expression)) {
+        const result = [];
+        this._parseVisibilityExpression(expression, 0, result);
+        if (result.length > 0) {
+          return {
+            type: "OCMD",
+            expression: result,
+          };
+        }
+      }
+
       const optionalContentGroups = optionalContent.get("OCGs");
       if (
         Array.isArray(optionalContentGroups) ||
@@ -1339,19 +1388,13 @@ class PartialEvaluator {
           groupIds.push(optionalContentGroups.objId);
         }
 
-        let expression = null;
-        if (optionalContent.get("VE")) {
-          // TODO support visibility expression.
-          expression = true;
-        }
-
         return {
           type: optionalContentType,
           ids: groupIds,
           policy: isName(optionalContent.get("P"))
             ? optionalContent.get("P").name
             : null,
-          expression,
+          expression: null,
         };
       } else if (isRef(optionalContentGroups)) {
         return {
