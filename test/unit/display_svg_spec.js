@@ -59,17 +59,15 @@ function withZlib(isZlibRequired, callback) {
 describe("SVGGraphics", function () {
   let loadingTask;
   let page;
-  beforeAll(function (done) {
+
+  beforeAll(async function () {
     loadingTask = getDocument(buildGetDocumentParams("xobject-image.pdf"));
-    loadingTask.promise.then(function (doc) {
-      doc.getPage(1).then(function (firstPage) {
-        page = firstPage;
-        done();
-      });
-    });
+    const doc = await loadingTask.promise;
+    page = await doc.getPage(1);
   });
-  afterAll(function (done) {
-    loadingTask.destroy().then(done);
+
+  afterAll(async function () {
+    await loadingTask.destroy();
   });
 
   describe("paintImageXObject", function () {
@@ -129,39 +127,33 @@ describe("SVGGraphics", function () {
       }
     });
 
-    it("should produce a reasonably small svg:image", function (done) {
+    it("should produce a reasonably small svg:image", async function () {
       if (!isNodeJS) {
         pending("zlib.deflateSync is not supported in non-Node environments.");
       }
-      withZlib(true, getSVGImage)
-        .then(function (svgImg) {
-          expect(svgImg.nodeName).toBe("svg:image");
-          expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
-          expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
-          const imgUrl = svgImg.getAttributeNS(XLINK_NS, "href");
-          // forceDataSchema = true, so the generated URL should be a data:-URL.
-          expect(imgUrl).toMatch(/^data:image\/png;base64,/);
-          // Test whether the generated image has a reasonable file size.
-          // I obtained a data URL of size 366 with Node 8.1.3 and zlib 1.2.11.
-          // Without zlib (uncompressed), the size of the data URL was excessive
-          // (80246).
-          expect(imgUrl.length).toBeLessThan(367);
-        })
-        .then(done, done.fail);
+      const svgImg = await withZlib(true, getSVGImage);
+      expect(svgImg.nodeName).toBe("svg:image");
+      expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
+      expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
+      const imgUrl = svgImg.getAttributeNS(XLINK_NS, "href");
+      // forceDataSchema = true, so the generated URL should be a data:-URL.
+      expect(imgUrl).toMatch(/^data:image\/png;base64,/);
+      // Test whether the generated image has a reasonable file size.
+      // I obtained a data URL of size 366 with Node 8.1.3 and zlib 1.2.11.
+      // Without zlib (uncompressed), the size of the data URL was excessive
+      // (80246).
+      expect(imgUrl.length).toBeLessThan(367);
     });
 
-    it("should be able to produce a svg:image without zlib", function (done) {
-      withZlib(false, getSVGImage)
-        .then(function (svgImg) {
-          expect(svgImg.nodeName).toBe("svg:image");
-          expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
-          expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
-          const imgUrl = svgImg.getAttributeNS(XLINK_NS, "href");
-          expect(imgUrl).toMatch(/^data:image\/png;base64,/);
-          // The size of our naively generated PNG file is excessive :(
-          expect(imgUrl.length).toBe(80246);
-        })
-        .then(done, done.fail);
+    it("should be able to produce a svg:image without zlib", async function () {
+      const svgImg = await withZlib(false, getSVGImage);
+      expect(svgImg.nodeName).toBe("svg:image");
+      expect(svgImg.getAttributeNS(null, "width")).toBe("200px");
+      expect(svgImg.getAttributeNS(null, "height")).toBe("100px");
+      const imgUrl = svgImg.getAttributeNS(XLINK_NS, "href");
+      expect(imgUrl).toMatch(/^data:image\/png;base64,/);
+      // The size of our naively generated PNG file is excessive :(
+      expect(imgUrl.length).toBe(80246);
     });
   });
 });
