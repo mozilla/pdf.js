@@ -588,43 +588,40 @@ describe("CipherTransformFactory", function () {
     return dict;
   }
 
-  function ensurePasswordCorrect(done, dict, fileId, password) {
+  function ensurePasswordCorrect(dict, fileId, password) {
     try {
       const factory = new CipherTransformFactory(dict, fileId, password);
       expect("createCipherTransform" in factory).toEqual(true);
     } catch (ex) {
-      done.fail("Password should be accepted: " + ex);
-      return;
+      // Shouldn't get here.
+      expect(false).toEqual(true);
     }
-    done();
   }
 
-  function ensurePasswordNeeded(done, dict, fileId, password) {
+  function ensurePasswordNeeded(dict, fileId, password) {
     try {
       // eslint-disable-next-line no-new
       new CipherTransformFactory(dict, fileId, password);
+
+      // Shouldn't get here.
+      expect(false).toEqual(true);
     } catch (ex) {
       expect(ex instanceof PasswordException).toEqual(true);
       expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
-
-      done();
-      return;
     }
-    done.fail("Password should be rejected.");
   }
 
-  function ensurePasswordIncorrect(done, dict, fileId, password) {
+  function ensurePasswordIncorrect(dict, fileId, password) {
     try {
       // eslint-disable-next-line no-new
       new CipherTransformFactory(dict, fileId, password);
+
+      // Shouldn't get here.
+      expect(false).toEqual(true);
     } catch (ex) {
       expect(ex instanceof PasswordException).toEqual(true);
       expect(ex.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
-
-      done();
-      return;
     }
-    done.fail("Password should be rejected.");
   }
 
   function ensureEncryptDecryptIsIdentity(dict, fileId, password, string) {
@@ -784,55 +781,55 @@ describe("CipherTransformFactory", function () {
 
   describe("#ctor", function () {
     describe("AES256 Revision 5", function () {
-      it("should accept user password", function (done) {
-        ensurePasswordCorrect(done, aes256Dict, fileId1, "user");
+      it("should accept user password", function () {
+        ensurePasswordCorrect(aes256Dict, fileId1, "user");
       });
-      it("should accept owner password", function (done) {
-        ensurePasswordCorrect(done, aes256Dict, fileId1, "owner");
+      it("should accept owner password", function () {
+        ensurePasswordCorrect(aes256Dict, fileId1, "owner");
       });
-      it("should not accept blank password", function (done) {
-        ensurePasswordNeeded(done, aes256Dict, fileId1);
+      it("should not accept blank password", function () {
+        ensurePasswordNeeded(aes256Dict, fileId1);
       });
-      it("should not accept wrong password", function (done) {
-        ensurePasswordIncorrect(done, aes256Dict, fileId1, "wrong");
+      it("should not accept wrong password", function () {
+        ensurePasswordIncorrect(aes256Dict, fileId1, "wrong");
       });
-      it("should accept blank password", function (done) {
-        ensurePasswordCorrect(done, aes256BlankDict, fileId1);
+      it("should accept blank password", function () {
+        ensurePasswordCorrect(aes256BlankDict, fileId1);
       });
     });
 
     describe("AES256 Revision 6", function () {
-      it("should accept user password", function (done) {
-        ensurePasswordCorrect(done, aes256IsoDict, fileId1, "user");
+      it("should accept user password", function () {
+        ensurePasswordCorrect(aes256IsoDict, fileId1, "user");
       });
-      it("should accept owner password", function (done) {
-        ensurePasswordCorrect(done, aes256IsoDict, fileId1, "owner");
+      it("should accept owner password", function () {
+        ensurePasswordCorrect(aes256IsoDict, fileId1, "owner");
       });
-      it("should not accept blank password", function (done) {
-        ensurePasswordNeeded(done, aes256IsoDict, fileId1);
+      it("should not accept blank password", function () {
+        ensurePasswordNeeded(aes256IsoDict, fileId1);
       });
-      it("should not accept wrong password", function (done) {
-        ensurePasswordIncorrect(done, aes256IsoDict, fileId1, "wrong");
+      it("should not accept wrong password", function () {
+        ensurePasswordIncorrect(aes256IsoDict, fileId1, "wrong");
       });
-      it("should accept blank password", function (done) {
-        ensurePasswordCorrect(done, aes256IsoBlankDict, fileId1);
+      it("should accept blank password", function () {
+        ensurePasswordCorrect(aes256IsoBlankDict, fileId1);
       });
     });
 
-    it("should accept user password", function (done) {
-      ensurePasswordCorrect(done, dict1, fileId1, "123456");
+    it("should accept user password", function () {
+      ensurePasswordCorrect(dict1, fileId1, "123456");
     });
-    it("should accept owner password", function (done) {
-      ensurePasswordCorrect(done, dict1, fileId1, "654321");
+    it("should accept owner password", function () {
+      ensurePasswordCorrect(dict1, fileId1, "654321");
     });
-    it("should not accept blank password", function (done) {
-      ensurePasswordNeeded(done, dict1, fileId1);
+    it("should not accept blank password", function () {
+      ensurePasswordNeeded(dict1, fileId1);
     });
-    it("should not accept wrong password", function (done) {
-      ensurePasswordIncorrect(done, dict1, fileId1, "wrong");
+    it("should not accept wrong password", function () {
+      ensurePasswordIncorrect(dict1, fileId1, "wrong");
     });
-    it("should accept blank password", function (done) {
-      ensurePasswordCorrect(done, dict2, fileId2);
+    it("should accept blank password", function () {
+      ensurePasswordCorrect(dict2, fileId2);
     });
   });
 
