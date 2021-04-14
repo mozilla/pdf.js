@@ -14,7 +14,7 @@
     "canvas": "^2.7.0",
     "core-js": "^3.10.0",
     "cross-env": "^7.0.3",
-    "es-module-shims": "^0.6.0",
+    "es-module-shims": "^0.10.4",
     "escodegen": "^2.0.0",
     "eslint": "^7.23.0",
     "eslint-config-prettier": "^6.15.0",
