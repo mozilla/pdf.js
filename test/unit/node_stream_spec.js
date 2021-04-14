@@ -18,7 +18,7 @@ import { AbortException } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { PDFNodeStream } from "../../src/display/node_stream.js";
 
-// Ensure that these test only runs in Node.js environments.
+// Ensure that these tests only run in Node.js environments.
 if (!isNodeJS) {
   throw new Error(
     'The "node_stream" unit-tests can only be run in Node.js environments.'
@@ -84,7 +84,7 @@ describe("node_stream", function () {
     server.close();
   });
 
-  it("read both http(s) and filesystem pdf files", function (done) {
+  it("read both http(s) and filesystem pdf files", async function () {
     const stream1 = new PDFNodeStream({
       url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
       rangeChunkSize: 65536,
@@ -135,23 +135,17 @@ describe("node_stream", function () {
       });
     };
 
-    const readPromise = Promise.all([read1(), read2(), promise1, promise2]);
-    readPromise
-      .then(result => {
-        expect(isStreamingSupported1).toEqual(false);
-        expect(isRangeSupported1).toEqual(false);
-        expect(isStreamingSupported2).toEqual(false);
-        expect(isRangeSupported2).toEqual(false);
-        expect(len1).toEqual(pdfLength);
-        expect(len1).toEqual(len2);
-        done();
-      })
-      .catch(reason => {
-        done.fail(reason);
-      });
+    await Promise.all([read1(), read2(), promise1, promise2]);
+
+    expect(isStreamingSupported1).toEqual(false);
+    expect(isRangeSupported1).toEqual(false);
+    expect(isStreamingSupported2).toEqual(false);
+    expect(isRangeSupported2).toEqual(false);
+    expect(len1).toEqual(pdfLength);
+    expect(len1).toEqual(len2);
   });
 
-  it("read custom ranges for both http(s) and filesystem urls", function (done) {
+  it("read custom ranges for both http(s) and filesystem urls", async function () {
     const rangeSize = 32768;
     const stream1 = new PDFNodeStream({
       url: `http://127.0.0.1:${port}/tracemonkey.pdf`,
@@ -225,7 +219,7 @@ describe("node_stream", function () {
       });
     };
 
-    const readPromises = Promise.all([
+    await Promise.all([
       read(range11Reader, result11),
       read(range12Reader, result12),
       read(range21Reader, result21),
@@ -234,22 +228,15 @@ describe("node_stream", function () {
       promise2,
     ]);
 
-    readPromises
-      .then(function () {
-        expect(result11.value).toEqual(rangeSize);
-        expect(result12.value).toEqual(tailSize);
-        expect(result21.value).toEqual(rangeSize);
-        expect(result22.value).toEqual(tailSize);
-        expect(isStreamingSupported1).toEqual(false);
-        expect(isRangeSupported1).toEqual(true);
-        expect(fullReaderCancelled1).toEqual(true);
-        expect(isStreamingSupported2).toEqual(false);
-        expect(isRangeSupported2).toEqual(true);
-        expect(fullReaderCancelled2).toEqual(true);
-        done();
-      })
-      .catch(function (reason) {
-        done.fail(reason);
-      });
+    expect(result11.value).toEqual(rangeSize);
+    expect(result12.value).toEqual(tailSize);
+    expect(result21.value).toEqual(rangeSize);
+    expect(result22.value).toEqual(tailSize);
+    expect(isStreamingSupported1).toEqual(false);
+    expect(isRangeSupported1).toEqual(true);
+    expect(fullReaderCancelled1).toEqual(true);
+    expect(isStreamingSupported2).toEqual(false);
+    expect(isRangeSupported2).toEqual(true);
+    expect(fullReaderCancelled2).toEqual(true);
   });
 });
