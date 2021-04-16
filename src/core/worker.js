@@ -193,6 +193,17 @@ class WorkerMessageHandler {
         pdfManager.ensureDoc("fingerprint"),
         pdfManager.ensureDoc("isPureXfa"),
       ]);
+
+      if (isPureXfa) {
+        const task = new WorkerTask("Load fonts for Xfa");
+        startWorkerTask(task);
+        await pdfManager
+          .loadXfaFonts(handler, task)
+          .catch(reason => {
+            // Ignore errors, to allow the document to load.
+          })
+          .then(() => finishWorkerTask(task));
+      }
       return { numPages, fingerprint, isPureXfa };
     }
 
