@@ -792,12 +792,19 @@ class PartialEvaluator {
     operatorList,
     task,
     state,
-    fallbackFontDict = null
+    fallbackFontDict = null,
+    cssFontInfo = null
   ) {
     const fontName =
       fontArgs && fontArgs[0] instanceof Name ? fontArgs[0].name : null;
 
-    return this.loadFont(fontName, fontRef, resources, fallbackFontDict)
+    return this.loadFont(
+      fontName,
+      fontRef,
+      resources,
+      fallbackFontDict,
+      cssFontInfo
+    )
       .then(translated => {
         if (!translated.font.isType3Font) {
           return translated;
@@ -986,7 +993,13 @@ class PartialEvaluator {
     });
   }
 
-  loadFont(fontName, font, resources, fallbackFontDict = null) {
+  loadFont(
+    fontName,
+    font,
+    resources,
+    fallbackFontDict = null,
+    cssFontInfo = null
+  ) {
     const errorFont = async () => {
       return new TranslatedFont({
         loadedName: "g_font_error",
@@ -1055,6 +1068,7 @@ class PartialEvaluator {
     let preEvaluatedFont;
     try {
       preEvaluatedFont = this.preEvaluateFont(font);
+      preEvaluatedFont.cssFontInfo = cssFontInfo;
     } catch (reason) {
       warn(`loadFont - preEvaluateFont failed: "${reason}".`);
       return errorFont();
@@ -3572,6 +3586,7 @@ class PartialEvaluator {
       flags: descriptor.get("Flags"),
       italicAngle: descriptor.get("ItalicAngle"),
       isType3Font: false,
+      cssFontInfo: preEvaluatedFont.cssFontInfo,
     };
 
     if (composite) {
