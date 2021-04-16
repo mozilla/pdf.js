@@ -258,7 +258,6 @@ const PDFViewerApplication = {
   metadata: null,
   _contentDispositionFilename: null,
   _contentLength: null,
-  triggerDelayedFallback: null,
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
@@ -840,7 +839,6 @@ const PDFViewerApplication = {
     this.metadata = null;
     this._contentDispositionFilename = null;
     this._contentLength = null;
-    this.triggerDelayedFallback = null;
     this._saveInProgress = false;
 
     this._cancelIdleCallbacks();
@@ -1018,27 +1016,6 @@ const PDFViewerApplication = {
       this.save(options);
     } else {
       this.download(options);
-    }
-  },
-
-  /**
-   * For PDF documents that contain e.g. forms and javaScript, we should only
-   * trigger the fallback bar once the user has interacted with the page.
-   * @private
-   */
-  _delayedFallback(featureId) {
-    // Ensure that telemetry is always reported, since it's not guaranteed
-    // that the fallback bar will be shown (depends on user interaction).
-    this.externalServices.reportTelemetry({
-      type: "unsupportedFeature",
-      featureId,
-    });
-
-    if (!this.triggerDelayedFallback) {
-      this.triggerDelayedFallback = () => {
-        this.fallback(featureId);
-        this.triggerDelayedFallback = null;
-      };
     }
   },
 
@@ -1496,8 +1473,8 @@ const PDFViewerApplication = {
           // Don't warn/fallback for empty JavaScript actions.
           return false;
         }
-        console.warn("Warning: JavaScript is not supported");
-        this._delayedFallback(UNSUPPORTED_FEATURES.javaScript);
+        console.warn("Warning: JavaScript support is not enabled");
+        this.fallback(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1576,13 +1553,13 @@ const PDFViewerApplication = {
       !pdfDocument.isPureXfa
     ) {
       console.warn("Warning: XFA is not supported");
-      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+      this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
       !this.pdfViewer.renderInteractiveForms
     ) {
       console.warn("Warning: Interactive form support is not enabled");
-      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+      this.fallback(UNSUPPORTED_FEATURES.forms);
     }
 
     if (info.IsSignaturesPresent) {
@@ -1989,7 +1966,6 @@ const PDFViewerApplication = {
     });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
-    window.addEventListener("keyup", webViewerKeyUp);
     window.addEventListener("resize", _boundEvents.windowResize);
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2067,7 +2043,6 @@ const PDFViewerApplication = {
     });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
-    window.removeEventListener("keyup", webViewerKeyUp);
     window.removeEventListener("resize", _boundEvents.windowResize);
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2796,15 +2771,6 @@ function webViewerTouchStart(evt) {
 }
 
 function webViewerClick(evt) {
-  // Avoid triggering the fallback bar when the user clicks on the
-  // toolbar or sidebar.
-  if (
-    PDFViewerApplication.triggerDelayedFallback &&
-    PDFViewerApplication.pdfViewer.containsElement(evt.target)
-  ) {
-    PDFViewerApplication.triggerDelayedFallback();
-  }
-
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
     return;
   }
@@ -2815,16 +2781,6 @@ function webViewerClick(evt) {
       evt.target !== appConfig.secondaryToolbar.toggleButton)
   ) {
     PDFViewerApplication.secondaryToolbar.close();
-  }
-}
-
-function webViewerKeyUp(evt) {
-  if (evt.keyCode === 9) {
-    // The user is tabbing into the viewer. Trigger the fallback bar if it has
-    // not already been displayed.
-    if (PDFViewerApplication.triggerDelayedFallback) {
-      PDFViewerApplication.triggerDelayedFallback();
-    }
   }
 }
 
