@@ -1062,16 +1062,6 @@ const PDFViewerApplication = {
     }
     this._fellback = true;
 
-    // Ensure that, for signatures, a warning is shown in non-Firefox builds.
-    if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      featureId === UNSUPPORTED_FEATURES.signatures
-    ) {
-      this.l10n.get("unsupported_feature_signatures").then(msg => {
-        this._otherError(msg);
-      });
-    }
-
     this.externalServices
       .fallback({
         featureId,
