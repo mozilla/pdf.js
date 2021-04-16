@@ -1048,13 +1048,6 @@ const PDFViewerApplication = {
       featureId,
     });
 
-    // Don't show the fallback bar for things that are *very* unlikely to cause
-    // user-visible errors, to avoid bothering the user unnecessarily.
-    switch (featureId) {
-      case UNSUPPORTED_FEATURES.errorFontLoadNative:
-      case UNSUPPORTED_FEATURES.errorFontMissing:
-        return;
-    }
     // Only trigger the fallback once so we don't spam the user with messages
     // for one PDF.
     if (this._fellback) {
