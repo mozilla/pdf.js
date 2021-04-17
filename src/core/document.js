@@ -865,7 +865,9 @@ class PDFDocument {
 
   async loadXfaFonts(handler, task) {
     const acroForm = await this.pdfManager.ensureCatalog("acroForm");
-
+    if (!acroForm) {
+      return;
+    }
     const resources = await acroForm.getAsync("DR");
     if (!(resources instanceof Dict)) {
       return;
@@ -902,28 +904,34 @@ class PDFDocument {
 
     for (const [fontName, font] of fonts) {
       const descriptor = font.get("FontDescriptor");
-      if (descriptor instanceof Dict) {
-        const fontFamily = descriptor.get("FontFamily");
-        const fontWeight = descriptor.get("FontWeight");
-        const italicAngle = descriptor.get("ItalicAngle");
-        const cssFontInfo = { fontFamily, fontWeight, italicAngle };
-
-        if (!validateCSSFont(cssFontInfo)) {
-          continue;
-        }
-
-        const promise = partialEvaluator.handleSetFont(
-          resources,
-          [Name.get(fontName), 1],
-          /* fontRef = */ null,
-          operatorList,
-          task,
-          initialState,
-          /* fallbackFontDict = */ null,
-          /* cssFontInfo = */ cssFontInfo
-        );
-        promises.push(promise.catch(() => {}));
+      if (!(descriptor instanceof Dict)) {
+        continue;
       }
+      const fontFamily = descriptor.get("FontFamily");
+      const fontWeight = descriptor.get("FontWeight");
+      const italicAngle = descriptor.get("ItalicAngle");
+      const cssFontInfo = { fontFamily, fontWeight, italicAngle };
+
+      if (!validateCSSFont(cssFontInfo)) {
+        continue;
+      }
+      promises.push(
+        partialEvaluator
+          .handleSetFont(
+            resources,
+            [Name.get(fontName), 1],
+            /* fontRef = */ null,
+            operatorList,
+            task,
+            initialState,
+            /* fallbackFontDict = */ null,
+            /* cssFontInfo = */ cssFontInfo
+          )
+          .catch(function (reason) {
+            warn(`loadXfaFonts: "${reason}".`);
+            return null;
+          })
+      );
     }
     await Promise.all(promises);
   }
@@ -1257,7 +1265,7 @@ class PDFDocument {
   }
 
   get hasJSActions() {
-    const promise = this.pdfManager.ensure(this, "_parseHasJSActions");
+    const promise = this.pdfManager.ensureDoc("_parseHasJSActions");
     return shadow(this, "hasJSActions", promise);
   }
 
@@ -1267,7 +1275,7 @@ class PDFDocument {
   async _parseHasJSActions() {
     const [catalogJsActions, fieldObjects] = await Promise.all([
       this.pdfManager.ensureCatalog("jsActions"),
-      this.pdfManager.ensure(this, "fieldObjects"),
+      this.pdfManager.ensureDoc("fieldObjects"),
     ]);
 
     if (catalogJsActions) {
