@@ -53,18 +53,18 @@ describe("document", function () {
         get docId() {
           return "d0";
         },
+        ensureDoc(prop, args) {
+          return pdfManager.ensure(pdfDocument, prop, args);
+        },
         ensureCatalog(prop, args) {
           return pdfManager.ensure(catalog, prop, args);
         },
-        ensure(obj, prop, args) {
-          return new Promise(function (resolve) {
-            const value = obj[prop];
-            if (typeof value === "function") {
-              resolve(value.apply(obj, args));
-            } else {
-              resolve(value);
-            }
-          });
+        async ensure(obj, prop, args) {
+          const value = obj[prop];
+          if (typeof value === "function") {
+            return value.apply(obj, args);
+          }
+          return value;
         },
       };
       const pdfDocument = new PDFDocument(pdfManager, stream);

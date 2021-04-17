@@ -2966,7 +2966,7 @@ var Font = (function FontClosure() {
       }
 
       // When `cssFontInfo` is set, the font is used to render text in the HTML
-      // view (e.g. with Xfa) so nothing must be moved in the private area use.
+      // view (e.g. with Xfa) so nothing must be moved in the private use area.
       if (!properties.cssFontInfo) {
         // Converting glyphs and ids into font's cmap table
         var newMapping = adjustMapping(

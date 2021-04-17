@@ -195,7 +195,7 @@ class WorkerMessageHandler {
       ]);
 
       if (isPureXfa) {
-        const task = new WorkerTask("Load fonts for Xfa");
+        const task = new WorkerTask("loadXfaFonts");
         startWorkerTask(task);
         await pdfManager
           .loadXfaFonts(handler, task)
