@@ -51,6 +51,11 @@ describe("ui_utils", function () {
       expect(binarySearchFirstItem([2, 3, 4], isGreater3)).toEqual(2);
       expect(binarySearchFirstItem([4, 5, 6], isGreater3)).toEqual(0);
     });
+    it("three numeric entries and a start index", function () {
+      expect(binarySearchFirstItem([0, 1, 2, 3, 4], isGreater3, 2)).toEqual(4);
+      expect(binarySearchFirstItem([2, 3, 4], isGreater3, 2)).toEqual(2);
+      expect(binarySearchFirstItem([4, 5, 6], isGreater3, 1)).toEqual(1);
+    });
   });
 
   describe("isValidRotation", function () {

@@ -227,8 +227,8 @@ function removeNullCharacters(str, replaceInvisible = false) {
  * @returns {number} Index of the first array element to pass the test,
  *                   or |items.length| if no such element exists.
  */
-function binarySearchFirstItem(items, condition) {
-  let minIndex = 0;
+function binarySearchFirstItem(items, condition, start = 0) {
+  let minIndex = start;
   let maxIndex = items.length - 1;
 
   if (maxIndex < 0 || !condition(items[maxIndex])) {
