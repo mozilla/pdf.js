@@ -218,6 +218,7 @@ class MozL10n {
     "findcasesensitivitychange",
     "findentirewordchange",
     "findbarclose",
+    "finddiacriticmatchingchange",
   ];
   const findLen = "find".length;
 
@@ -238,6 +239,7 @@ class MozL10n {
       entireWord: !!detail.entireWord,
       highlightAll: !!detail.highlightAll,
       findPrevious: !!detail.findPrevious,
+      matchDiacritics: !!detail.matchDiacritics,
     });
   };
 
