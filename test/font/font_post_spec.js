@@ -19,29 +19,25 @@ describe("font_post", function () {
   );
 
   describe("post table removal on bad post table values", function () {
-    it("has invalid version number", function (done) {
-      CMapFactory.create({
+    it("has invalid version number", async function () {
+      const cMap = await CMapFactory.create({
         encoding: Name.get("Identity-H"),
-      }).then(function (cMap) {
-        const font = new Font("font", new Stream(font2109), {
-          loadedName: "font",
-          type: "CIDFontType2",
-          differences: [],
-          defaultEncoding: [],
-          cMap,
-          toUnicode: new ToUnicodeMap([]),
-        });
-        ttx(font.data, function (output) {
-          verifyTtxOutput(output);
-          expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(
-            true
-          );
-          done();
-        });
       });
+      const font = new Font("font", new Stream(font2109), {
+        loadedName: "font",
+        type: "CIDFontType2",
+        differences: [],
+        defaultEncoding: [],
+        cMap,
+        toUnicode: new ToUnicodeMap([]),
+      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(true);
     });
 
-    it("has invalid glyph name indexes", function (done) {
+    it("has invalid glyph name indexes", async function () {
       const font = new Font("font", new Stream(font2189), {
         loadedName: "font",
         type: "TrueType",
@@ -49,16 +45,13 @@ describe("font_post", function () {
         defaultEncoding: [],
         toUnicode: new ToUnicodeMap([]),
       });
-      ttx(font.data, function (output) {
-        verifyTtxOutput(output);
-        expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(
-          true
-        );
-        done();
-      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(true);
     });
 
-    it("has right amount of glyphs specified", function (done) {
+    it("has right amount of glyphs specified", async function () {
       const font = new Font("font", new Stream(font2374), {
         loadedName: "font",
         type: "TrueType",
@@ -66,13 +59,10 @@ describe("font_post", function () {
         defaultEncoding: [],
         toUnicode: new ToUnicodeMap([]),
       });
-      ttx(font.data, function (output) {
-        verifyTtxOutput(output);
-        expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(
-          true
-        );
-        done();
-      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(true);
     });
   });
 });

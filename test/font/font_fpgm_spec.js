@@ -11,26 +11,24 @@ describe("font_fpgm", function () {
   );
 
   describe("Fixes fpgm table", function () {
-    it("table was truncated in the middle of functions", function (done) {
-      CMapFactory.create({
+    it("table was truncated in the middle of functions", async function () {
+      const cMap = await CMapFactory.create({
         encoding: Name.get("Identity-H"),
-      }).then(function (cMap) {
-        const font = new Font("font", new Stream(font2324), {
-          loadedName: "font",
-          type: "CIDFontType2",
-          differences: [],
-          defaultEncoding: [],
-          cMap,
-          toUnicode: new ToUnicodeMap([]),
-        });
-        ttx(font.data, function (output) {
-          verifyTtxOutput(output);
-          expect(
-            /(ENDF\[ \]|SVTCA\[0\])\s*<\/assembly>\s*<\/fpgm>/.test(output)
-          ).toEqual(true);
-          done();
-        });
       });
+      const font = new Font("font", new Stream(font2324), {
+        loadedName: "font",
+        type: "CIDFontType2",
+        differences: [],
+        defaultEncoding: [],
+        cMap,
+        toUnicode: new ToUnicodeMap([]),
+      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(
+        /(ENDF\[ \]|SVTCA\[0\])\s*<\/assembly>\s*<\/fpgm>/.test(output)
+      ).toEqual(true);
     });
   });
 });
