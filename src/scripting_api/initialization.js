@@ -94,15 +94,29 @@ function initSandbox(params) {
       obj.doc = _document;
       obj.fieldPath = name;
       obj.appObjects = appObjects;
+
       let field;
-      if (obj.type === "radiobutton") {
-        const otherButtons = annotations.slice(1);
-        field = new RadioButtonField(otherButtons, obj);
-      } else if (obj.type === "checkbox") {
-        const otherButtons = annotations.slice(1);
-        field = new CheckboxField(otherButtons, obj);
-      } else {
-        field = new Field(obj);
+      switch (obj.type) {
+        case "radiobutton": {
+          const otherButtons = annotations.slice(1);
+          field = new RadioButtonField(otherButtons, obj);
+          break;
+        }
+        case "checkbox": {
+          const otherButtons = annotations.slice(1);
+          field = new CheckboxField(otherButtons, obj);
+          break;
+        }
+        case "text":
+          if (annotations.length <= 1) {
+            field = new Field(obj);
+            break;
+          }
+          obj.siblings = annotations.map(x => x.id).slice(1);
+          field = new Field(obj);
+          break;
+        default:
+          field = new Field(obj);
       }
 
       const wrapped = new Proxy(field, proxyHandler);
