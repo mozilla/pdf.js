@@ -140,6 +140,16 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  printRangeStart: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
+  printRangeEnd: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER,
+  },
   printResolution: {
     /** @type {number} */
     value: 150,

@@ -1819,6 +1819,14 @@ const PDFViewerApplication = {
       optionalContentConfigPromise,
       this.l10n
     );
+    const printRangeStart = AppOptions.get("printRangeStart");
+    const printRangeEnd = AppOptions.get("printRangeEnd");
+    if (printRangeStart > 0 && printRangeEnd > 0)
+    {
+      printService.currentPage = printRangeStart - 2;
+      printService.pagesOverview = printService.pagesOverview.slice(0, printRangeEnd);
+    }
+
     this.printService = printService;
     this.forceRendering();
 
