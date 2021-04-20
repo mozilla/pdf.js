@@ -922,12 +922,17 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getValue(id, {
+    let value = storage.getValue(id, {
       value:
         data.fieldValue &&
         ((data.exportValue && data.exportValue === data.fieldValue) ||
           (!data.exportValue && data.fieldValue !== "Off")),
     }).value;
+    if (typeof value === "string") {
+      // The value has been changed through js and set in annotationStorage.
+      value = value !== "Off";
+      storage.setValue(id, { value });
+    }
 
     this.container.className = "buttonWidgetAnnotation checkBox";
 
@@ -1012,9 +1017,14 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getValue(id, {
+    let value = storage.getValue(id, {
       value: data.fieldValue === data.buttonValue,
     }).value;
+    if (typeof value === "string") {
+      // The value has been changed through js and set in annotationStorage.
+      value = value !== data.buttonValue;
+      storage.setValue(id, { value });
+    }
 
     const element = document.createElement("input");
     element.disabled = data.readOnly;

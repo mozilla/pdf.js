@@ -96,23 +96,33 @@ class EventDispatcher {
       }
     }
 
-    if (name === "Keystroke") {
-      savedChange = {
-        value: event.value,
-        change: event.change,
-        selStart: event.selStart,
-        selEnd: event.selEnd,
-      };
-    } else if (name === "Blur" || name === "Focus") {
-      Object.defineProperty(event, "value", {
-        configurable: false,
-        writable: false,
-        enumerable: true,
-        value: event.value,
-      });
-    } else if (name === "Validate") {
-      this.runValidation(source, event);
-      return;
+    switch (name) {
+      case "Keystroke":
+        savedChange = {
+          value: event.value,
+          change: event.change,
+          selStart: event.selStart,
+          selEnd: event.selEnd,
+        };
+        break;
+      case "Blur":
+      case "Focus":
+        Object.defineProperty(event, "value", {
+          configurable: false,
+          writable: false,
+          enumerable: true,
+          value: event.value,
+        });
+        break;
+      case "Validate":
+        this.runValidation(source, event);
+        return;
+      case "Action":
+        this.runActions(source, source, event, name);
+        if (this._document.obj.calculate) {
+          this.runCalculate(source, event);
+        }
+        return;
     }
 
     this.runActions(source, source, event, name);
@@ -143,8 +153,10 @@ class EventDispatcher {
     if (event.rc) {
       if (hasRan) {
         source.wrapped.value = event.value;
+        source.wrapped.valueAsString = event.value;
       } else {
         source.obj.value = event.value;
+        source.obj.valueAsString = event.value;
       }
 
       if (this._document.obj.calculate) {
@@ -184,6 +196,11 @@ class EventDispatcher {
 
     for (const targetId of this._calculationOrder) {
       if (!(targetId in this._objects)) {
+        continue;
+      }
+
+      if (!this._document.obj.calculate) {
+        // An action may have changed calculate value.
         continue;
       }
 

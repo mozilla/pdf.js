@@ -38,6 +38,14 @@ class ProxyHandler {
   }
 
   set(obj, prop, value) {
+    if (obj._kidIds) {
+      // If the field is a container for other fields then
+      // dispatch the kids.
+      obj._kidIds.forEach(id => {
+        obj._appObjects[id].wrapped[prop] = value;
+      });
+    }
+
     if (typeof prop === "string" && !prop.startsWith("_") && prop in obj) {
       const old = obj[prop];
       obj[prop] = value;
@@ -46,7 +54,12 @@ class ProxyHandler {
         data[prop] = obj[prop];
 
         // send the updated value to the other side
-        obj._send(data);
+        if (!obj._siblings) {
+          obj._send(data);
+        } else {
+          data.siblings = obj._siblings;
+          obj._send(data);
+        }
       }
     } else {
       obj._expandos[prop] = value;
