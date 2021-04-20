@@ -318,12 +318,13 @@ class Page {
       "getContentStream"
     );
     const resourcesPromise = this.loadResources([
-      "ExtGState",
       "ColorSpace",
+      "ExtGState",
+      "Font",
       "Pattern",
+      "Properties",
       "Shading",
       "XObject",
-      "Font",
     ]);
 
     const partialEvaluator = new PartialEvaluator({
@@ -425,8 +426,9 @@ class Page {
     );
     const resourcesPromise = this.loadResources([
       "ExtGState",
-      "XObject",
       "Font",
+      "Properties",
+      "XObject",
     ]);
 
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
