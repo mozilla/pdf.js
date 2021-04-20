@@ -968,7 +968,7 @@ const PDFViewerApplication = {
     throw new Error("PDF document not downloaded.");
   },
 
-  async download({ sourceEventType = "download", shouldPrint } = {}) {
+  async download({ sourceEventType = "download", shouldPrint = false} = {}) {
     const url = this.baseUrl,
       filename = this._docFilename;
     try {
@@ -1897,7 +1897,9 @@ const PDFViewerApplication = {
     eventBus._on("namedaction", webViewerNamedAction);
     eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
     eventBus._on("presentationmode", webViewerPresentationMode);
-    eventBus._on("print", webViewerDownload.bind(null, true)); // shield modification
+    eventBus._on("print", () => {
+      webViewerDownload(true);
+    }); // shield modification
     eventBus._on("download", webViewerDownload);
     eventBus._on("save", webViewerSave);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -2168,16 +2170,21 @@ function reportPageStatsPDFBug({ pageNumber }) {
 function webViewerInitialized() {
   const appConfig = PDFViewerApplication.appConfig;
   let file;
+  const queryString = document.location.search.substring(1);
+  const params = parseQueryString(queryString);
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    const queryString = document.location.search.substring(1);
-    const params = parseQueryString(queryString);
+
     file = "file" in params ? params.file : AppOptions.get("defaultUrl");
+
     validateFileURL(file);
   } else if (PDFJSDev.test("MOZCENTRAL")) {
     file = window.location.href;
   } else if (PDFJSDev.test("CHROME")) {
     file = AppOptions.get("defaultUrl");
   }
+
+  const printingAllowed = 'print' in params && params.print === 'true';
+  const downloadAllowed = 'download' in params && params.download === 'true';
 
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     const fileInput = document.createElement("input");
@@ -2240,12 +2247,16 @@ function webViewerInitialized() {
     });
   }
 
-  if (!PDFViewerApplication.supportsPrinting) {
+  if (!PDFViewerApplication.supportsPrinting || !printingAllowed) {
     appConfig.toolbar.print.classList.add("hidden");
     appConfig.secondaryToolbar.printButton.classList.add("hidden");
   }
 
-  if (!PDFViewerApplication.supportsFullscreen) {
+  if (!downloadAllowed) {
+    appConfig.toolbar.download.classList.add("hidden");
+    appConfig.secondaryToolbar.downloadButton.classList.add("hidden");
+  }
+  if (!PDFViewerApplication.supportsPrinting || !printingAllowed) {
     appConfig.toolbar.presentationModeButton.classList.add("hidden");
     appConfig.secondaryToolbar.presentationModeButton.classList.add("hidden");
   }
@@ -2524,6 +2535,7 @@ function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
 }
 function webViewerDownload(shouldPrint) {
+  shouldPrint = typeof shouldPrint === "boolean" && shouldPrint;
   PDFViewerApplication.downloadOrSave({ sourceEventType: "download", shouldPrint });
 }
 function webViewerSave() {

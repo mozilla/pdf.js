@@ -37,7 +37,7 @@ function createFetchOptions(headers, withCredentials, abortController) {
     headers,
     signal: abortController?.signal,
     mode: "cors",
-    credentials: withCredentials ? "include" : "same-origin",
+    credentials: "same-origin",
     redirect: "follow",
   };
 }

@@ -118,7 +118,7 @@ class DownloadManager {
       this.downloadUrl(url, filename);
       return;
     }
-    const blobUrl = URL.createObjectURL(blob);
+    let blobUrl = URL.createObjectURL(blob);
     if(shouldPrint) blobUrl += '#shield-pdfjs-download-print'
     download(blobUrl, filename);
   }

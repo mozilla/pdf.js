@@ -63,42 +63,42 @@
   --overlay-button-bg-color: rgba(12, 12, 13, 0.1);
   --overlay-button-hover-bg-color: rgba(12, 12, 13, 0.3);
 
-  --loading-icon: url(images/loading.svg);
-  --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
-  --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
-  --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
-  --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
-  --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
-  --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
-  --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
-  --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
-  --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
-  --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
-  --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
-  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
-  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
-  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
-  --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
-  --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
-  --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
-  --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
-  --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
-  --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
-  --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
-  --findbarButton-next-icon: url(images/findbarButton-next.svg);
-  --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage.svg);
-  --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage.svg);
-  --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw.svg);
-  --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
-  --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
-  --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
-  --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
-  --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
-  --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped.svg);
-  --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
-  --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
-  --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
-  --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --loading-icon: url("images/loading.svg");
+  --treeitem-expanded-icon: url("images/treeitem-expanded.svg");
+  --treeitem-collapsed-icon: url("images/treeitem-collapsed.svg");
+  --toolbarButton-menuArrow-icon: url("images/toolbarButton-menuArrow.svg");
+  --toolbarButton-sidebarToggle-icon: url("images/toolbarButton-sidebarToggle.svg");
+  --toolbarButton-secondaryToolbarToggle-icon: url("images/toolbarButton-secondaryToolbarToggle.svg");
+  --toolbarButton-pageUp-icon: url("images/toolbarButton-pageUp.svg");
+  --toolbarButton-pageDown-icon: url("images/toolbarButton-pageDown.svg");
+  --toolbarButton-zoomOut-icon: url("images/toolbarButton-zoomOut.svg");
+  --toolbarButton-zoomIn-icon: url("images/toolbarButton-zoomIn.svg");
+  --toolbarButton-presentationMode-icon: url("images/toolbarButton-presentationMode.svg");
+  --toolbarButton-print-icon: url("images/toolbarButton-print.svg");
+  --toolbarButton-openFile-icon: url("images/toolbarButton-openFile.svg");
+  --toolbarButton-download-icon: url("images/toolbarButton-download.svg");
+  --toolbarButton-bookmark-icon: url("images/toolbarButton-bookmark.svg");
+  --toolbarButton-viewThumbnail-icon: url("images/toolbarButton-viewThumbnail.svg");
+  --toolbarButton-viewOutline-icon: url("images/toolbarButton-viewOutline.svg");
+  --toolbarButton-viewAttachments-icon: url("images/toolbarButton-viewAttachments.svg");
+  --toolbarButton-viewLayers-icon: url("images/toolbarButton-viewLayers.svg");
+  --toolbarButton-currentOutlineItem-icon: url("images/toolbarButton-currentOutlineItem.svg");
+  --toolbarButton-search-icon: url("images/toolbarButton-search.svg");
+  --findbarButton-previous-icon: url("images/findbarButton-previous.svg");
+  --findbarButton-next-icon: url("images/findbarButton-next.svg");
+  --secondaryToolbarButton-firstPage-icon: url("images/secondaryToolbarButton-firstPage.svg");
+  --secondaryToolbarButton-lastPage-icon: url("images/secondaryToolbarButton-lastPage.svg");
+  --secondaryToolbarButton-rotateCcw-icon: url("images/secondaryToolbarButton-rotateCcw.svg");
+  --secondaryToolbarButton-rotateCw-icon: url("images/secondaryToolbarButton-rotateCw.svg");
+  --secondaryToolbarButton-selectTool-icon: url("images/secondaryToolbarButton-selectTool.svg");
+  --secondaryToolbarButton-handTool-icon: url("images/secondaryToolbarButton-handTool.svg");
+  --secondaryToolbarButton-scrollVertical-icon: url("images/secondaryToolbarButton-scrollVertical.svg");
+  --secondaryToolbarButton-scrollHorizontal-icon: url("images/secondaryToolbarButton-scrollHorizontal.svg");
+  --secondaryToolbarButton-scrollWrapped-icon: url("images/secondaryToolbarButton-scrollWrapped.svg");
+  --secondaryToolbarButton-spreadNone-icon: url("images/secondaryToolbarButton-spreadNone.svg");
+  --secondaryToolbarButton-spreadOdd-icon: url("images/secondaryToolbarButton-spreadOdd.svg");
+  --secondaryToolbarButton-spreadEven-icon: url("images/secondaryToolbarButton-spreadEven.svg");
+  --secondaryToolbarButton-documentProperties-icon: url("images/secondaryToolbarButton-documentProperties.svg");
 }
 
 @media (prefers-color-scheme: dark) {
@@ -144,7 +144,7 @@
     /* This image is used in <input> elements, which unfortunately means that
      * the `mask-image` approach used with all of the other images doesn't work
      * here; hence why we still have two versions of this particular image. */
-    --loading-icon: url(images/loading-dark.svg);
+    --loading-icon: url("images/loading-dark.svg");
   }
 }
 
