@@ -2853,7 +2853,7 @@ class PartialEvaluator {
     }
 
     if (baseEncodingName) {
-      properties.defaultEncoding = getEncoding(baseEncodingName).slice();
+      properties.defaultEncoding = getEncoding(baseEncodingName);
     } else {
       var isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
       var isNonsymbolicFont = !!(properties.flags & FontFlags.Nonsymbolic);
