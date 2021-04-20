@@ -200,9 +200,6 @@ function adjustToUnicode(properties, builtInEncoding) {
   if (properties.hasIncludedToUnicodeMap) {
     return; // The font dictionary has a `ToUnicode` entry.
   }
-  if (properties.hasEncoding) {
-    return; // The font dictionary has an `Encoding` entry.
-  }
   if (builtInEncoding === properties.defaultEncoding) {
     return; // No point in trying to adjust `toUnicode` if the encodings match.
   }
@@ -212,6 +209,12 @@ function adjustToUnicode(properties, builtInEncoding) {
   var toUnicode = [],
     glyphsUnicodeMap = getGlyphsUnicode();
   for (var charCode in builtInEncoding) {
+    if (
+      properties.hasEncoding &&
+      properties.differences[charCode] !== undefined
+    ) {
+      continue; // The font dictionary has an `Encoding`/`Differences` entry.
+    }
     var glyphName = builtInEncoding[charCode];
     var unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
     if (unicode !== -1) {
@@ -4012,6 +4015,7 @@ var CFFFont = (function CFFFontClosure() {
       // anyway and hope the font loaded.
       this.data = file;
     }
+    this._createBuiltInEncoding();
   }
 
   CFFFont.prototype = {
@@ -4056,6 +4060,32 @@ var CFFFont = (function CFFFontClosure() {
     },
     hasGlyphId: function CFFFont_hasGlyphID(id) {
       return this.cff.hasGlyphId(id);
+    },
+
+    /**
+     * @private
+     */
+    _createBuiltInEncoding() {
+      const { charset, encoding } = this.cff;
+      if (!charset || !encoding) {
+        return;
+      }
+      const charsets = charset.charset,
+        encodings = encoding.encoding;
+      const map = [];
+
+      for (const charCode in encodings) {
+        const glyphId = encodings[charCode];
+        if (glyphId >= 0) {
+          const glyphName = charsets[glyphId];
+          if (glyphName) {
+            map[charCode] = glyphName;
+          }
+        }
+      }
+      if (map.length > 0) {
+        this.properties.builtInEncoding = map;
+      }
     },
   };
 
