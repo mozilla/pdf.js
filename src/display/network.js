@@ -81,7 +81,8 @@ class NetworkManager {
       xhr,
     });
 
-    xhr.open("GET", this.url);
+    // The third parameter is required for avoiding side-effect
+    xhr.open("GET", this.url, true);
     xhr.withCredentials = this.withCredentials;
     for (const property in this.httpHeaders) {
       const value = this.httpHeaders[property];
