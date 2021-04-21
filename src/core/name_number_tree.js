@@ -32,9 +32,9 @@ class NameOrNumberTree {
   }
 
   getAll() {
-    const dict = Object.create(null);
+    const map = new Map();
     if (!this.root) {
-      return dict;
+      return map;
     }
     const xref = this.xref;
     // Reading Name/Number tree.
@@ -59,13 +59,14 @@ class NameOrNumberTree {
         continue;
       }
       const entries = obj.get(this._type);
-      if (Array.isArray(entries)) {
-        for (let i = 0, ii = entries.length; i < ii; i += 2) {
-          dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
-        }
+      if (!Array.isArray(entries)) {
+        continue;
+      }
+      for (let i = 0, ii = entries.length; i < ii; i += 2) {
+        map.set(xref.fetchIfRef(entries[i]), xref.fetchIfRef(entries[i + 1]));
       }
     }
-    return dict;
+    return map;
   }
 
   get(key) {
