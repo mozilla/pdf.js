@@ -173,6 +173,9 @@ const renderTextLayer = (function renderTextLayerClosure() {
     textDiv.style.fontSize = `${fontHeight}px`;
     textDiv.style.fontFamily = style.fontFamily;
 
+    // Keeps screen readers from pausing on every new text span.
+    textDiv.setAttribute("role", "presentation");
+
     textDiv.textContent = geom.str;
     // geom.dir may be 'ttb' for vertical texts.
     textDiv.dir = geom.dir;
