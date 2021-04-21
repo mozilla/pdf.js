@@ -65,24 +65,16 @@ function encodeFontData(data) {
   return buffer;
 }
 
-function ttx(data, callback) {
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", "/ttx");
+async function ttx(data) {
+  const response = await fetch("/ttx", {
+    method: "POST",
+    body: encodeFontData(data),
+  });
 
-  const encodedData = encodeFontData(data);
-  xhr.setRequestHeader("Content-type", "text/plain");
-  xhr.setRequestHeader("Content-length", encodedData.length);
-
-  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        callback(xhr.responseText);
-      } else {
-        callback("<error>Transport error: " + xhr.statusText + "</error>");
-      }
-    }
-  };
-  xhr.send(encodedData);
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  return response.text();
 }
 
 function verifyTtxOutput(output) {
