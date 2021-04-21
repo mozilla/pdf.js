@@ -201,8 +201,8 @@ function incrementalUpdate({
   if (xrefInfo.infoRef !== null) {
     newXref.set("Info", xrefInfo.infoRef);
   }
-  if (xrefInfo.encrypt !== null) {
-    newXref.set("Encrypt", xrefInfo.encrypt);
+  if (xrefInfo.encryptRef !== null) {
+    newXref.set("Encrypt", xrefInfo.encryptRef);
   }
 
   // Add a ref for the new xref and sort them
@@ -226,7 +226,7 @@ function incrementalUpdate({
 
   newXref.set("Index", indexes);
 
-  if (xrefInfo.fileIds.length !== 0) {
+  if (Array.isArray(xrefInfo.fileIds) && xrefInfo.fileIds.length > 0) {
     const md5 = computeMD5(baseOffset, xrefInfo);
     newXref.set("ID", [xrefInfo.fileIds[0], md5]);
   }
