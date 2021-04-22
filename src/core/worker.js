@@ -633,11 +633,11 @@ class WorkerMessageHandler {
 
             newXrefInfo = {
               rootRef: xref.trailer.getRaw("Root") || null,
-              encrypt: xref.trailer.getRaw("Encrypt") || null,
+              encryptRef: xref.trailer.getRaw("Encrypt") || null,
               newRef: xref.getNewRef(),
               infoRef: xref.trailer.getRaw("Info") || null,
               info: infoObj,
-              fileIds: xref.trailer.getRaw("ID") || null,
+              fileIds: xref.trailer.get("ID") || null,
               startXRef,
               filename,
             };
