@@ -894,18 +894,20 @@ class Catalog {
 
   _collectJavaScript() {
     const obj = this._catDict.get("Names");
-
     let javaScript = null;
+
     function appendIfJavaScriptDict(name, jsDict) {
-      const type = jsDict.get("S");
-      if (!isName(type, "JavaScript")) {
+      if (!(jsDict instanceof Dict)) {
+        return;
+      }
+      if (!isName(jsDict.get("S"), "JavaScript")) {
         return;
       }
 
       let js = jsDict.get("JS");
       if (isStream(js)) {
         js = bytesToString(js.getBytes());
-      } else if (!isString(js)) {
+      } else if (typeof js !== "string") {
         return;
       }
 
@@ -918,17 +920,12 @@ class Catalog {
     if (obj instanceof Dict && obj.has("JavaScript")) {
       const nameTree = new NameTree(obj.getRaw("JavaScript"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
-        // We don't use most JavaScript in PDF documents. This code is
-        // defensive so we don't cause errors on document load.
-        if (value instanceof Dict) {
-          appendIfJavaScriptDict(key, value);
-        }
+        appendIfJavaScriptDict(key, value);
       }
     }
-
-    // Append OpenAction "JavaScript" actions to the JavaScript array.
+    // Append OpenAction "JavaScript" actions, if any, to the JavaScript map.
     const openAction = this._catDict.get("OpenAction");
-    if (isDict(openAction) && isName(openAction.get("S"), "JavaScript")) {
+    if (openAction) {
       appendIfJavaScriptDict("OpenAction", openAction);
     }
 
