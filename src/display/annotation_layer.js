@@ -625,6 +625,18 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable });
   }
 
+  setPropertyOnSiblings(base, key, value, keyInStorage) {
+    const storage = this.annotationStorage;
+    for (const element of document.getElementsByName(base.name)) {
+      if (element !== base) {
+        element[key] = value;
+        const data = Object.create(null);
+        data[keyInStorage] = value;
+        storage.setValue(element.getAttribute("id"), data);
+      }
+    }
+  }
+
   render() {
     const storage = this.annotationStorage;
     const id = this.data.id;
@@ -660,8 +672,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       elementData.userValue = textContent;
       element.setAttribute("id", id);
 
-      element.addEventListener("input", function (event) {
+      element.addEventListener("input", event => {
         storage.setValue(id, { value: event.target.value });
+        this.setPropertyOnSiblings(
+          element,
+          "value",
+          event.target.value,
+          "value"
+        );
       });
 
       let blurListener = event => {
