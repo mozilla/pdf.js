@@ -514,9 +514,8 @@ class Catalog {
     const obj = this._readDests(),
       dests = Object.create(null);
     if (obj instanceof NameTree) {
-      const names = obj.getAll();
-      for (const name in names) {
-        dests[name] = fetchDestination(names[name]);
+      for (const [key, value] of obj.getAll()) {
+        dests[key] = fetchDestination(value);
       }
     } else if (obj instanceof Dict) {
       obj.forEach(function (key, value) {
@@ -582,8 +581,9 @@ class Catalog {
       currentIndex = 1;
 
     for (let i = 0, ii = this.numPages; i < ii; i++) {
-      if (i in nums) {
-        const labelDict = nums[i];
+      const labelDict = nums.get(i);
+
+      if (labelDict !== undefined) {
         if (!isDict(labelDict)) {
           throw new FormatError("PageLabel is not a dictionary.");
         }
@@ -879,15 +879,14 @@ class Catalog {
     const obj = this._catDict.get("Names");
     let attachments = null;
 
-    if (obj && obj.has("EmbeddedFiles")) {
+    if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
       const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
-      const names = nameTree.getAll();
-      for (const name in names) {
-        const fs = new FileSpec(names[name], this.xref);
+      for (const [key, value] of nameTree.getAll()) {
+        const fs = new FileSpec(value, this.xref);
         if (!attachments) {
           attachments = Object.create(null);
         }
-        attachments[stringToPDFString(name)] = fs.serializable;
+        attachments[stringToPDFString(key)] = fs.serializable;
       }
     }
     return shadow(this, "attachments", attachments);
@@ -895,18 +894,20 @@ class Catalog {
 
   _collectJavaScript() {
     const obj = this._catDict.get("Names");
-
     let javaScript = null;
+
     function appendIfJavaScriptDict(name, jsDict) {
-      const type = jsDict.get("S");
-      if (!isName(type, "JavaScript")) {
+      if (!(jsDict instanceof Dict)) {
+        return;
+      }
+      if (!isName(jsDict.get("S"), "JavaScript")) {
         return;
       }
 
       let js = jsDict.get("JS");
       if (isStream(js)) {
         js = bytesToString(js.getBytes());
-      } else if (!isString(js)) {
+      } else if (typeof js !== "string") {
         return;
       }
 
@@ -916,22 +917,15 @@ class Catalog {
       javaScript.set(name, stringToPDFString(js));
     }
 
-    if (obj && obj.has("JavaScript")) {
+    if (obj instanceof Dict && obj.has("JavaScript")) {
       const nameTree = new NameTree(obj.getRaw("JavaScript"), this.xref);
-      const names = nameTree.getAll();
-      for (const name in names) {
-        // We don't use most JavaScript in PDF documents. This code is
-        // defensive so we don't cause errors on document load.
-        const jsDict = names[name];
-        if (isDict(jsDict)) {
-          appendIfJavaScriptDict(name, jsDict);
-        }
+      for (const [key, value] of nameTree.getAll()) {
+        appendIfJavaScriptDict(key, value);
       }
     }
-
-    // Append OpenAction "JavaScript" actions to the JavaScript array.
+    // Append OpenAction "JavaScript" actions, if any, to the JavaScript map.
     const openAction = this._catDict.get("OpenAction");
-    if (isDict(openAction) && isName(openAction.get("S"), "JavaScript")) {
+    if (openAction) {
       appendIfJavaScriptDict("OpenAction", openAction);
     }
 
