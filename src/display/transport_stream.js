@@ -147,10 +147,9 @@ class PDFDataTransportStream {
     if (this._fullRequestReader) {
       this._fullRequestReader.cancel(reason);
     }
-    const readers = this._rangeReaders.slice(0);
-    readers.forEach(function (rangeReader) {
-      rangeReader.cancel(reason);
-    });
+    for (const reader of this._rangeReaders.slice(0)) {
+      reader.cancel(reason);
+    }
     this._pdfDataRangeTransport.abort();
   }
 }
@@ -228,10 +227,10 @@ class PDFDataTransportStreamReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function (requestCapability) {
+    for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
-    });
-    this._requests = [];
+    }
+    this._requests.length = 0;
   }
 
   progressiveDone() {
@@ -264,10 +263,10 @@ class PDFDataTransportStreamRangeReader {
     } else {
       const requestsCapability = this._requests.shift();
       requestsCapability.resolve({ value: chunk, done: false });
-      this._requests.forEach(function (requestCapability) {
+      for (const requestCapability of this._requests) {
         requestCapability.resolve({ value: undefined, done: true });
-      });
-      this._requests = [];
+      }
+      this._requests.length = 0;
     }
     this._done = true;
     this._stream._removeRangeReader(this);
@@ -293,10 +292,10 @@ class PDFDataTransportStreamRangeReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function (requestCapability) {
+    for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
-    });
-    this._requests = [];
+    }
+    this._requests.length = 0;
     this._stream._removeRangeReader(this);
   }
 }

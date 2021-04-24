@@ -785,10 +785,10 @@ class WorkerMessageHandler {
         cancelXHRs(new AbortException("Worker was terminated."));
       }
 
-      WorkerTasks.forEach(function (task) {
+      for (const task of WorkerTasks) {
         waitOn.push(task.finished);
         task.terminate();
-      });
+      }
 
       return Promise.all(waitOn).then(function () {
         // Notice that even if we destroying handler, resolved response promise

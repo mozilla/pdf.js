@@ -343,9 +343,9 @@ class AnnotationElement {
       assert(this.quadrilaterals, "Missing quadrilaterals during rendering");
     }
 
-    this.quadrilaterals.forEach(quadrilateral => {
+    for (const quadrilateral of this.quadrilaterals) {
       quadrilateral.className = className;
-    });
+    }
     return this.quadrilaterals;
   }
 
@@ -1445,11 +1445,11 @@ class PopupElement {
     }
 
     // Attach the event listeners to the trigger element.
-    this.trigger.forEach(element => {
+    for (const element of this.trigger) {
       element.addEventListener("click", this._toggle.bind(this));
       element.addEventListener("mouseover", this._show.bind(this, false));
       element.addEventListener("mouseout", this._hide.bind(this, false));
-    });
+    }
     popup.addEventListener("click", this._hide.bind(this, true));
 
     wrapper.appendChild(popup);
@@ -2104,9 +2104,9 @@ class AnnotationLayer {
         `[data-annotation-id="${data.id}"]`
       );
       if (elements) {
-        elements.forEach(element => {
+        for (const element of elements) {
           element.style.transform = transform;
-        });
+        }
       }
     }
     parameters.div.hidden = false;
