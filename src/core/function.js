@@ -1337,13 +1337,14 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
       }
 
       var result = [];
-      instructions.forEach(function (instruction) {
-        var statementBuilder = new ExpressionBuilderVisitor();
+      for (const instruction of instructions) {
+        const statementBuilder = new ExpressionBuilderVisitor();
         instruction.visit(statementBuilder);
         result.push(statementBuilder.toString());
-      });
-      stack.forEach(function (expr, i) {
-        var statementBuilder = new ExpressionBuilderVisitor();
+      }
+      for (let i = 0, ii = stack.length; i < ii; i++) {
+        const expr = stack[i],
+          statementBuilder = new ExpressionBuilderVisitor();
         expr.visit(statementBuilder);
         var min = range[i * 2],
           max = range[i * 2 + 1];
@@ -1359,7 +1360,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
         out.unshift("dest[destOffset + ", i, "] = ");
         out.push(";");
         result.push(out.join(""));
-      });
+      }
       return result.join("\n");
     }
   }
