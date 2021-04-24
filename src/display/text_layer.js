@@ -312,8 +312,8 @@ const renderTextLayer = (function renderTextLayerClosure() {
       // Finding intersections with expanded box.
       const points = [[0, 0], [0, b.size[1]], [b.size[0], 0], b.size];
       const ts = new Float64Array(64);
-      points.forEach(function (p, j) {
-        const t = Util.applyTransform(p, m);
+      for (let j = 0, jj = points.length; j < jj; j++) {
+        const t = Util.applyTransform(points[j], m);
         ts[j + 0] = c && (e.left - t[0]) / c;
         ts[j + 4] = s && (e.top - t[1]) / s;
         ts[j + 8] = c && (e.right - t[0]) / c;
@@ -333,7 +333,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
         ts[j + 52] = c && (e.top - t[1]) / -c;
         ts[j + 56] = s && (e.right - t[0]) / s;
         ts[j + 60] = c && (e.bottom - t[1]) / -c;
-      });
+      }
       // Not based on math, but to simplify calculations, using cos and sin
       // absolute values to not exceed the box (it can but insignificantly).
       const boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
@@ -358,8 +358,9 @@ const renderTextLayer = (function renderTextLayerClosure() {
       };
     });
     expandBoundsLTR(width, bounds);
+
     const expanded = new Array(boxes.length);
-    bounds.forEach(function (b) {
+    for (const b of bounds) {
       const i = b.index;
       expanded[i] = {
         left: b.x1New,
@@ -367,7 +368,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
         right: b.x2New,
         bottom: 0,
       };
-    });
+    }
 
     // Rotating on 90 degrees and extending extended boxes. Reusing the bounds
     // array and objects.
@@ -384,11 +385,11 @@ const renderTextLayer = (function renderTextLayerClosure() {
     });
     expandBoundsLTR(height, bounds);
 
-    bounds.forEach(function (b) {
+    for (const b of bounds) {
       const i = b.index;
       expanded[i].top = b.x1New;
       expanded[i].bottom = b.x2New;
-    });
+    }
     return expanded;
   }
 
@@ -416,7 +417,7 @@ const renderTextLayer = (function renderTextLayerClosure() {
       },
     ];
 
-    bounds.forEach(function (boundary) {
+    for (const boundary of bounds) {
       // Searching for the affected part of horizon.
       // TODO red-black tree or simple binary search
       let i = 0;
@@ -555,15 +556,15 @@ const renderTextLayer = (function renderTextLayerClosure() {
         horizon,
         [i, j - i + 1].concat(changedHorizon)
       );
-    });
+    }
 
     // Set new x2 for all unset boundaries.
-    horizon.forEach(function (horizonPart) {
+    for (const horizonPart of horizon) {
       const affectedBoundary = horizonPart.boundary;
       if (affectedBoundary.x2New === undefined) {
         affectedBoundary.x2New = Math.max(width, affectedBoundary.x2);
       }
-    });
+    }
   }
 
   /**

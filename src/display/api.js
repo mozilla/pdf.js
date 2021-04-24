@@ -2289,11 +2289,11 @@ class WorkerTransport {
     const waitOn = [];
     // We need to wait for all renderings to be completed, e.g.
     // timeout/rAF can take a long time.
-    this.pageCache.forEach(function (page) {
+    for (const page of this.pageCache) {
       if (page) {
         waitOn.push(page._destroy());
       }
-    });
+    }
     this.pageCache.length = 0;
     this.pagePromises.length = 0;
     // Allow `AnnotationStorage`-related clean-up when destroying the document.

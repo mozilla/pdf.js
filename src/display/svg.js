@@ -1370,9 +1370,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         // The previous clipping group content can go out of order -- resetting
         // cached clipGroups.
         current.clipGroup = null;
-        this.extraStack.forEach(function (prev) {
+        for (const prev of this.extraStack) {
           prev.clipGroup = null;
-        });
+        }
         // Intersect with the previous clipping path.
         clipPath.setAttributeNS(null, "clip-path", current.activeClipUrl);
       }

@@ -1394,9 +1394,9 @@ class PartialEvaluator {
       ) {
         const groupIds = [];
         if (Array.isArray(optionalContentGroups)) {
-          optionalContent.get("OCGs").forEach(ocg => {
+          for (const ocg of optionalContentGroups) {
             groupIds.push(ocg.toString());
-          });
+          }
         } else {
           // Dictionary, just use the obj id.
           groupIds.push(optionalContentGroups.objId);
