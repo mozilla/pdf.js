@@ -230,7 +230,7 @@ class PDFDataTransportStreamReader {
     for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
     }
-    this._requests = [];
+    this._requests.length = 0;
   }
 
   progressiveDone() {
@@ -266,7 +266,7 @@ class PDFDataTransportStreamRangeReader {
       for (const requestCapability of this._requests) {
         requestCapability.resolve({ value: undefined, done: true });
       }
-      this._requests = [];
+      this._requests.length = 0;
     }
     this._done = true;
     this._stream._removeRangeReader(this);
@@ -295,7 +295,7 @@ class PDFDataTransportStreamRangeReader {
     for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
     }
-    this._requests = [];
+    this._requests.length = 0;
     this._stream._removeRangeReader(this);
   }
 }
