@@ -18,6 +18,12 @@ Refer to the `main.js` and `webpack.config.js` files for the source code.
 Note that PDF.js packaging requires packaging of the main application and
 the worker code, and the `workerSrc` path shall be set to the latter file.
 
+### Minification
+
+If you are configuring Webpack to output a minified build, please note that you
+*must* configure the minifier to keep original class/function names intact;
+otherwise the build is not guaranteed to work correctly.
+
 ## Worker loading
 
 If you are getting the `Setting up fake worker` warning, make sure you are
