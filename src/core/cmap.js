@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import {
   CMapCompressionType,
@@ -26,7 +25,7 @@ import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
 
-var BUILT_IN_CMAPS = [
+const BUILT_IN_CMAPS = [
   // << Start unicode maps.
   "Adobe-GB1-UCS2",
   "Adobe-CNS1-UCS2",
@@ -240,7 +239,7 @@ class CMap {
     if (high - low > MAX_MAP_RANGE) {
       throw new Error("mapBfRange - ignoring data above MAX_MAP_RANGE.");
     }
-    var lastByte = dstLow.length - 1;
+    const lastByte = dstLow.length - 1;
     while (low <= high) {
       this._map[low++] = dstLow;
       // Only the last byte has to be incremented.
@@ -437,10 +436,10 @@ class IdentityCMap extends CMap {
   }
 }
 
-var BinaryCMapReader = (function BinaryCMapReaderClosure() {
+const BinaryCMapReader = (function BinaryCMapReaderClosure() {
   function hexToInt(a, size) {
-    var n = 0;
-    for (var i = 0; i <= size; i++) {
+    let n = 0;
+    for (let i = 0; i <= size; i++) {
       n = (n << 8) | a[i];
     }
     return n >>> 0;
@@ -459,8 +458,8 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   }
 
   function addHex(a, b, size) {
-    var c = 0;
-    for (var i = size; i >= 0; i--) {
+    let c = 0;
+    for (let i = size; i >= 0; i--) {
       c += a[i] + b[i];
       a[i] = c & 255;
       c >>= 8;
@@ -468,16 +467,16 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   }
 
   function incHex(a, size) {
-    var c = 1;
-    for (var i = size; i >= 0 && c > 0; i--) {
+    let c = 1;
+    for (let i = size; i >= 0 && c > 0; i--) {
       c += a[i];
       a[i] = c & 255;
       c >>= 8;
     }
   }
 
-  var MAX_NUM_SIZE = 16;
-  var MAX_ENCODED_NUM_SIZE = 19; // ceil(MAX_NUM_SIZE * 7 / 8)
+  const MAX_NUM_SIZE = 16;
+  const MAX_ENCODED_NUM_SIZE = 19; // ceil(MAX_NUM_SIZE * 7 / 8)
 
   class BinaryCMapStream {
     constructor(data) {
@@ -495,10 +494,10 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
     }
 
     readNumber() {
-      var n = 0;
-      var last;
+      let n = 0;
+      let last;
       do {
-        var b = this.readByte();
+        const b = this.readByte();
         if (b < 0) {
           throw new FormatError("unexpected EOF in bcmap");
         }
@@ -509,7 +508,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
     }
 
     readSigned() {
-      var n = this.readNumber();
+      const n = this.readNumber();
       return n & 1 ? ~(n >>> 1) : n >>> 1;
     }
 
@@ -519,18 +518,18 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
     }
 
     readHexNumber(num, size) {
-      var last;
-      var stack = this.tmpBuf,
-        sp = 0;
+      let last;
+      const stack = this.tmpBuf;
+      let sp = 0;
       do {
-        var b = this.readByte();
+        const b = this.readByte();
         if (b < 0) {
           throw new FormatError("unexpected EOF in bcmap");
         }
         last = !(b & 0x80);
         stack[sp++] = b & 0x7f;
       } while (!last);
-      var i = size,
+      let i = size,
         buffer = 0,
         bufferSize = 0;
       while (i >= 0) {
@@ -547,18 +546,18 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
 
     readHexSigned(num, size) {
       this.readHexNumber(num, size);
-      var sign = num[size] & 1 ? 255 : 0;
-      var c = 0;
-      for (var i = 0; i <= size; i++) {
+      const sign = num[size] & 1 ? 255 : 0;
+      let c = 0;
+      for (let i = 0; i <= size; i++) {
         c = ((c & 1) << 8) | num[i];
         num[i] = (c >> 1) ^ sign;
       }
     }
 
     readString() {
-      var len = this.readNumber();
-      var s = "";
-      for (var i = 0; i < len; i++) {
+      const len = this.readNumber();
+      let s = "";
+      for (let i = 0; i < len; i++) {
         s += String.fromCharCode(this.readNumber());
       }
       return s;
@@ -568,21 +567,21 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   // eslint-disable-next-line no-shadow
   class BinaryCMapReader {
     async process(data, cMap, extend) {
-      var stream = new BinaryCMapStream(data);
-      var header = stream.readByte();
+      const stream = new BinaryCMapStream(data);
+      const header = stream.readByte();
       cMap.vertical = !!(header & 1);
 
-      var useCMap = null;
-      var start = new Uint8Array(MAX_NUM_SIZE);
-      var end = new Uint8Array(MAX_NUM_SIZE);
-      var char = new Uint8Array(MAX_NUM_SIZE);
-      var charCode = new Uint8Array(MAX_NUM_SIZE);
-      var tmp = new Uint8Array(MAX_NUM_SIZE);
-      var code;
+      let useCMap = null;
+      const start = new Uint8Array(MAX_NUM_SIZE);
+      const end = new Uint8Array(MAX_NUM_SIZE);
+      const char = new Uint8Array(MAX_NUM_SIZE);
+      const charCode = new Uint8Array(MAX_NUM_SIZE);
+      const tmp = new Uint8Array(MAX_NUM_SIZE);
+      let code;
 
-      var b;
+      let b;
       while ((b = stream.readByte()) >= 0) {
-        var type = b >> 5;
+        const type = b >> 5;
         if (type === 7) {
           // metadata, e.g. comment or usecmap
           switch (b & 0x1f) {
@@ -595,16 +594,15 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           }
           continue;
         }
-        var sequence = !!(b & 0x10);
-        var dataSize = b & 15;
+        const sequence = !!(b & 0x10);
+        const dataSize = b & 15;
 
         if (dataSize + 1 > MAX_NUM_SIZE) {
           throw new Error("BinaryCMapReader.process: Invalid dataSize.");
         }
 
-        var ucs2DataSize = 1;
-        var subitemsCount = stream.readNumber();
-        var i;
+        const ucs2DataSize = 1;
+        const subitemsCount = stream.readNumber();
         switch (type) {
           case 0: // codespacerange
             stream.readHex(start, dataSize);
@@ -615,7 +613,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
               hexToInt(start, dataSize),
               hexToInt(end, dataSize)
             );
-            for (i = 1; i < subitemsCount; i++) {
+            for (let i = 1; i < subitemsCount; i++) {
               incHex(end, dataSize);
               stream.readHexNumber(start, dataSize);
               addHex(start, end, dataSize);
@@ -634,7 +632,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             addHex(end, start, dataSize);
             stream.readNumber(); // code
             // undefined range, skipping
-            for (i = 1; i < subitemsCount; i++) {
+            for (let i = 1; i < subitemsCount; i++) {
               incHex(end, dataSize);
               stream.readHexNumber(start, dataSize);
               addHex(start, end, dataSize);
@@ -648,7 +646,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             stream.readHex(char, dataSize);
             code = stream.readNumber();
             cMap.mapOne(hexToInt(char, dataSize), code);
-            for (i = 1; i < subitemsCount; i++) {
+            for (let i = 1; i < subitemsCount; i++) {
               incHex(char, dataSize);
               if (!sequence) {
                 stream.readHexNumber(tmp, dataSize);
@@ -668,7 +666,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
               hexToInt(end, dataSize),
               code
             );
-            for (i = 1; i < subitemsCount; i++) {
+            for (let i = 1; i < subitemsCount; i++) {
               incHex(end, dataSize);
               if (!sequence) {
                 stream.readHexNumber(start, dataSize);
@@ -693,7 +691,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
               hexToInt(char, ucs2DataSize),
               hexToStr(charCode, dataSize)
             );
-            for (i = 1; i < subitemsCount; i++) {
+            for (let i = 1; i < subitemsCount; i++) {
               incHex(char, ucs2DataSize);
               if (!sequence) {
                 stream.readHexNumber(tmp, ucs2DataSize);
@@ -718,7 +716,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
               hexToInt(end, ucs2DataSize),
               hexToStr(charCode, dataSize)
             );
-            for (i = 1; i < subitemsCount; i++) {
+            for (let i = 1; i < subitemsCount; i++) {
               incHex(end, ucs2DataSize);
               if (!sequence) {
                 stream.readHexNumber(start, ucs2DataSize);
@@ -751,10 +749,10 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   return BinaryCMapReader;
 })();
 
-var CMapFactory = (function CMapFactoryClosure() {
+const CMapFactory = (function CMapFactoryClosure() {
   function strToInt(str) {
-    var a = 0;
-    for (var i = 0; i < str.length; i++) {
+    let a = 0;
+    for (let i = 0; i < str.length; i++) {
       a = (a << 8) | str.charCodeAt(i);
     }
     return a >>> 0;
@@ -774,7 +772,7 @@ var CMapFactory = (function CMapFactoryClosure() {
 
   function parseBfChar(cMap, lexer) {
     while (true) {
-      var obj = lexer.getObj();
+      let obj = lexer.getObj();
       if (isEOF(obj)) {
         break;
       }
@@ -782,18 +780,18 @@ var CMapFactory = (function CMapFactoryClosure() {
         return;
       }
       expectString(obj);
-      var src = strToInt(obj);
+      const src = strToInt(obj);
       obj = lexer.getObj();
       // TODO are /dstName used?
       expectString(obj);
-      var dst = obj;
+      const dst = obj;
       cMap.mapOne(src, dst);
     }
   }
 
   function parseBfRange(cMap, lexer) {
     while (true) {
-      var obj = lexer.getObj();
+      let obj = lexer.getObj();
       if (isEOF(obj)) {
         break;
       }
@@ -801,17 +799,17 @@ var CMapFactory = (function CMapFactoryClosure() {
         return;
       }
       expectString(obj);
-      var low = strToInt(obj);
+      const low = strToInt(obj);
       obj = lexer.getObj();
       expectString(obj);
-      var high = strToInt(obj);
+      const high = strToInt(obj);
       obj = lexer.getObj();
       if (Number.isInteger(obj) || isString(obj)) {
-        var dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
+        const dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
         cMap.mapBfRange(low, high, dstLow);
       } else if (isCmd(obj, "[")) {
         obj = lexer.getObj();
-        var array = [];
+        const array = [];
         while (!isCmd(obj, "]") && !isEOF(obj)) {
           array.push(obj);
           obj = lexer.getObj();
@@ -826,7 +824,7 @@ var CMapFactory = (function CMapFactoryClosure() {
 
   function parseCidChar(cMap, lexer) {
     while (true) {
-      var obj = lexer.getObj();
+      let obj = lexer.getObj();
       if (isEOF(obj)) {
         break;
       }
@@ -834,17 +832,17 @@ var CMapFactory = (function CMapFactoryClosure() {
         return;
       }
       expectString(obj);
-      var src = strToInt(obj);
+      const src = strToInt(obj);
       obj = lexer.getObj();
       expectInt(obj);
-      var dst = obj;
+      const dst = obj;
       cMap.mapOne(src, dst);
     }
   }
 
   function parseCidRange(cMap, lexer) {
     while (true) {
-      var obj = lexer.getObj();
+      let obj = lexer.getObj();
       if (isEOF(obj)) {
         break;
       }
@@ -852,20 +850,20 @@ var CMapFactory = (function CMapFactoryClosure() {
         return;
       }
       expectString(obj);
-      var low = strToInt(obj);
+      const low = strToInt(obj);
       obj = lexer.getObj();
       expectString(obj);
-      var high = strToInt(obj);
+      const high = strToInt(obj);
       obj = lexer.getObj();
       expectInt(obj);
-      var dstLow = obj;
+      const dstLow = obj;
       cMap.mapCidRange(low, high, dstLow);
     }
   }
 
   function parseCodespaceRange(cMap, lexer) {
     while (true) {
-      var obj = lexer.getObj();
+      let obj = lexer.getObj();
       if (isEOF(obj)) {
         break;
       }
@@ -875,37 +873,36 @@ var CMapFactory = (function CMapFactoryClosure() {
       if (!isString(obj)) {
         break;
       }
-      var low = strToInt(obj);
+      const low = strToInt(obj);
       obj = lexer.getObj();
       if (!isString(obj)) {
         break;
       }
-      var high = strToInt(obj);
+      const high = strToInt(obj);
       cMap.addCodespaceRange(obj.length, low, high);
     }
     throw new FormatError("Invalid codespace range.");
   }
 
   function parseWMode(cMap, lexer) {
-    var obj = lexer.getObj();
+    const obj = lexer.getObj();
     if (Number.isInteger(obj)) {
       cMap.vertical = !!obj;
     }
   }
 
   function parseCMapName(cMap, lexer) {
-    var obj = lexer.getObj();
+    const obj = lexer.getObj();
     if (isName(obj) && isString(obj.name)) {
       cMap.name = obj.name;
     }
   }
 
   async function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
-    var previous;
-    var embeddedUseCMap;
+    let previous, embeddedUseCMap;
     objLoop: while (true) {
       try {
-        var obj = lexer.getObj();
+        const obj = lexer.getObj();
         if (isEOF(obj)) {
           break;
         } else if (isName(obj)) {
@@ -966,8 +963,8 @@ var CMapFactory = (function CMapFactoryClosure() {
     // If there aren't any code space ranges defined clone all the parent ones
     // into this cMap.
     if (cMap.numCodespaceRanges === 0) {
-      var useCodespaceRanges = cMap.useCMap.codespaceRanges;
-      for (var i = 0; i < useCodespaceRanges.length; i++) {
+      const useCodespaceRanges = cMap.useCMap.codespaceRanges;
+      for (let i = 0; i < useCodespaceRanges.length; i++) {
         cMap.codespaceRanges[i] = useCodespaceRanges[i].slice();
       }
       cMap.numCodespaceRanges = cMap.useCMap.numCodespaceRanges;
@@ -997,7 +994,7 @@ var CMapFactory = (function CMapFactoryClosure() {
     }
 
     const { cMapData, compressionType } = await fetchBuiltInCMap(name);
-    var cMap = new CMap(true);
+    const cMap = new CMap(true);
 
     if (compressionType === CMapCompressionType.BINARY) {
       return new BinaryCMapReader().process(cMapData, cMap, useCMap => {
@@ -1005,7 +1002,7 @@ var CMapFactory = (function CMapFactoryClosure() {
       });
     }
     if (compressionType === CMapCompressionType.NONE) {
-      var lexer = new Lexer(new Stream(cMapData));
+      const lexer = new Lexer(new Stream(cMapData));
       return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
     }
     throw new Error(
@@ -1015,9 +1012,9 @@ var CMapFactory = (function CMapFactoryClosure() {
 
   return {
     async create(params) {
-      var encoding = params.encoding;
-      var fetchBuiltInCMap = params.fetchBuiltInCMap;
-      var useCMap = params.useCMap;
+      const encoding = params.encoding;
+      const fetchBuiltInCMap = params.fetchBuiltInCMap;
+      const useCMap = params.useCMap;
 
       if (isName(encoding)) {
         return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
