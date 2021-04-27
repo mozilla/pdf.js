@@ -14,12 +14,6 @@
  */
 
 import {
-  Ascii85Stream,
-  FlateStream,
-  NullStream,
-  PredictorStream,
-} from "./stream.js";
-import {
   assert,
   bytesToString,
   FormatError,
@@ -39,7 +33,9 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
+import { FlateStream, NullStream, PredictorStream } from "./stream.js";
 import { isWhiteSpace, MissingDataException } from "./core_utils.js";
+import { Ascii85Stream } from "./ascii_85_stream.js";
 import { AsciiHexStream } from "./ascii_hex_stream.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
