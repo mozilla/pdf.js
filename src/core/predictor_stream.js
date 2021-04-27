@@ -17,13 +17,12 @@ import { DecodeStream } from "./stream.js";
 import { FormatError } from "../shared/util.js";
 import { isDict } from "./primitives.js";
 
-const PredictorStream = (function PredictorStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function PredictorStream(str, maybeLength, params) {
+class PredictorStream extends DecodeStream {
+  constructor(str, maybeLength, params) {
     if (!isDict(params)) {
       return str; // no prediction
     }
-    const predictor = (this.predictor = params.get("Predictor") || 1);
+    const predictor = params.get("Predictor") || 1;
 
     if (predictor <= 1) {
       return str; // no prediction
@@ -31,6 +30,8 @@ const PredictorStream = (function PredictorStreamClosure() {
     if (predictor !== 2 && (predictor < 10 || predictor > 15)) {
       throw new FormatError(`Unsupported predictor: ${predictor}`);
     }
+    super(maybeLength);
+    this.predictor = predictor;
 
     if (predictor === 2) {
       this.readBlock = this.readBlockTiff;
@@ -48,13 +49,10 @@ const PredictorStream = (function PredictorStreamClosure() {
     this.pixBytes = (colors * bits + 7) >> 3;
     this.rowBytes = (columns * colors * bits + 7) >> 3;
 
-    DecodeStream.call(this, maybeLength);
     return this;
   }
 
-  PredictorStream.prototype = Object.create(DecodeStream.prototype);
-
-  PredictorStream.prototype.readBlockTiff = function predictorStreamReadBlockTiff() {
+  readBlockTiff() {
     const rowBytes = this.rowBytes;
 
     const bufferLength = this.bufferLength;
@@ -138,9 +136,9 @@ const PredictorStream = (function PredictorStreamClosure() {
       }
     }
     this.bufferLength += rowBytes;
-  };
+  }
 
-  PredictorStream.prototype.readBlockPng = function predictorStreamReadBlockPng() {
+  readBlockPng() {
     const rowBytes = this.rowBytes;
     const pixBytes = this.pixBytes;
 
@@ -234,9 +232,7 @@ const PredictorStream = (function PredictorStreamClosure() {
         throw new FormatError(`Unsupported predictor: ${predictor}`);
     }
     this.bufferLength += rowBytes;
-  };
-
-  return PredictorStream;
-})();
+  }
+}
 
 export { PredictorStream };
