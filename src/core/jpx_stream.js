@@ -22,12 +22,12 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 class JpxStream extends DecodeStream {
-  constructor(stream, maybeLength, dict, params) {
+  constructor(stream, maybeLength, params) {
     super(maybeLength);
 
     this.stream = stream;
+    this.dict = stream.dict;
     this.maybeLength = maybeLength;
-    this.dict = dict;
     this.params = params;
   }
 
