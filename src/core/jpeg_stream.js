@@ -22,9 +22,8 @@ import { shadow } from "../shared/util.js";
  * For JPEG's we use a library to decode these images and the stream behaves
  * like all the other DecodeStreams.
  */
-const JpegStream = (function JpegStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function JpegStream(stream, maybeLength, dict, params) {
+class JpegStream extends DecodeStream {
+  constructor(stream, maybeLength, dict, params) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
     let ch;
@@ -35,30 +34,25 @@ const JpegStream = (function JpegStreamClosure() {
         break;
       }
     }
+    super(maybeLength);
+
     this.stream = stream;
     this.maybeLength = maybeLength;
     this.dict = dict;
     this.params = params;
-
-    DecodeStream.call(this, maybeLength);
   }
 
-  JpegStream.prototype = Object.create(DecodeStream.prototype);
+  get bytes() {
+    // If `this.maybeLength` is null, we'll get the entire stream.
+    return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
+  }
 
-  Object.defineProperty(JpegStream.prototype, "bytes", {
-    get: function JpegStream_bytes() {
-      // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
-    },
-    configurable: true,
-  });
-
-  JpegStream.prototype.ensureBuffer = function (requested) {
+  ensureBuffer(requested) {
     // No-op, since `this.readBlock` will always parse the entire image and
     // directly insert all of its data into `this.buffer`.
-  };
+  }
 
-  JpegStream.prototype.readBlock = function () {
+  readBlock() {
     if (this.eof) {
       return;
     }
@@ -105,9 +99,7 @@ const JpegStream = (function JpegStreamClosure() {
     this.buffer = data;
     this.bufferLength = data.length;
     this.eof = true;
-  };
-
-  return JpegStream;
-})();
+  }
+}
 
 export { JpegStream };
