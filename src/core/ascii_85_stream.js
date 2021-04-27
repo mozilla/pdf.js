@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 import { isWhiteSpace } from "./core_utils.js";
 
-var Ascii85Stream = (function Ascii85StreamClosure() {
+const Ascii85Stream = (function Ascii85StreamClosure() {
   // eslint-disable-next-line no-shadow
   function Ascii85Stream(str, maybeLength) {
     this.str = str;
@@ -35,13 +34,13 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
   Ascii85Stream.prototype = Object.create(DecodeStream.prototype);
 
   Ascii85Stream.prototype.readBlock = function Ascii85Stream_readBlock() {
-    var TILDA_CHAR = 0x7e; // '~'
-    var Z_LOWER_CHAR = 0x7a; // 'z'
-    var EOF = -1;
+    const TILDA_CHAR = 0x7e; // '~'
+    const Z_LOWER_CHAR = 0x7a; // 'z'
+    const EOF = -1;
 
-    var str = this.str;
+    const str = this.str;
 
-    var c = str.getByte();
+    let c = str.getByte();
     while (isWhiteSpace(c)) {
       c = str.getByte();
     }
@@ -51,9 +50,8 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
       return;
     }
 
-    var bufferLength = this.bufferLength,
-      buffer;
-    var i;
+    const bufferLength = this.bufferLength;
+    let buffer, i;
 
     // special code for z
     if (c === Z_LOWER_CHAR) {
@@ -63,7 +61,7 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
       }
       this.bufferLength += 4;
     } else {
-      var input = this.input;
+      const input = this.input;
       input[0] = c;
       for (i = 1; i < 5; ++i) {
         c = str.getByte();
@@ -87,7 +85,7 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
         }
         this.eof = true;
       }
-      var t = 0;
+      let t = 0;
       for (i = 0; i < 5; ++i) {
         t = t * 85 + (input[i] - 0x21);
       }
