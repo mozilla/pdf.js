@@ -2552,6 +2552,36 @@ class InkAnnotation extends MarkupAnnotation {
         });
       }
     }
+
+    if (!this.appearance) {
+      // The default stroke color is black.
+      const strokeColor = this.color
+        ? Array.from(this.color).map(c => c / 255)
+        : [0, 0, 0];
+
+      const borderWidth = this.borderStyle.width || 1;
+
+      this._setDefaultAppearance({
+        xref: parameters.xref,
+        extra: `${borderWidth} w`,
+        strokeColor,
+        pointsCallback: (buffer, points) => {
+          // According to the specification, see "12.5.6.13 Ink Annotations":
+          //   When drawn, the points shall be connected by straight lines or
+          //   curves in an implementation-dependent way.
+          // In order to simplify things, we utilize straight lines for now.
+          for (const inkList of this.data.inkLists) {
+            for (let i = 0, ii = inkList.length; i < ii; i++) {
+              buffer.push(
+                `${inkList[i].x} ${inkList[i].y} ${i === 0 ? "m" : "l"}`
+              );
+            }
+            buffer.push("S");
+          }
+          return [points[0].x, points[1].x, points[3].y, points[1].y];
+        },
+      });
+    }
   }
 }
 

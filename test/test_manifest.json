@@ -4511,6 +4511,12 @@
          }
        }
     },
+    {  "id": "annotation-ink-without-appearance",
+       "file": "pdfs/annotation-ink-without-appearance.pdf",
+       "md5": "eb06ad4ac260060082ef86435a2feed5",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4883",
       "file": "pdfs/issue4883.pdf",
       "md5": "2fac0d9a189ca5fcef8626153d050be8",
