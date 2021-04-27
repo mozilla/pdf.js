@@ -26,7 +26,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { isDict, isName, Name } from "./primitives.js";
-import { DecryptStream } from "./stream.js";
+import { DecryptStream } from "./decrypt_stream.js";
 
 class ARCFourCipher {
   constructor(key) {
