@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 
-var LZWStream = (function LZWStreamClosure() {
+const LZWStream = (function LZWStreamClosure() {
   // eslint-disable-next-line no-shadow
   function LZWStream(str, maybeLength, earlyChange) {
     this.str = str;
@@ -24,8 +23,8 @@ var LZWStream = (function LZWStreamClosure() {
     this.cachedData = 0;
     this.bitsCached = 0;
 
-    var maxLzwDictionarySize = 4096;
-    var lzwState = {
+    const maxLzwDictionarySize = 4096;
+    const lzwState = {
       earlyChange,
       codeLength: 9,
       nextCode: 258,
@@ -35,7 +34,7 @@ var LZWStream = (function LZWStreamClosure() {
       currentSequence: new Uint8Array(maxLzwDictionarySize),
       currentSequenceLength: 0,
     };
-    for (var i = 0; i < 256; ++i) {
+    for (let i = 0; i < 256; ++i) {
       lzwState.dictionaryValues[i] = i;
       lzwState.dictionaryLengths[i] = 1;
     }
@@ -47,10 +46,10 @@ var LZWStream = (function LZWStreamClosure() {
   LZWStream.prototype = Object.create(DecodeStream.prototype);
 
   LZWStream.prototype.readBits = function LZWStream_readBits(n) {
-    var bitsCached = this.bitsCached;
-    var cachedData = this.cachedData;
+    let bitsCached = this.bitsCached;
+    let cachedData = this.cachedData;
     while (bitsCached < n) {
-      var c = this.str.getByte();
+      const c = this.str.getByte();
       if (c === -1) {
         this.eof = true;
         return null;
@@ -65,33 +64,33 @@ var LZWStream = (function LZWStreamClosure() {
   };
 
   LZWStream.prototype.readBlock = function LZWStream_readBlock() {
-    var blockSize = 512;
-    var estimatedDecodedSize = blockSize * 2,
+    const blockSize = 512,
       decodedSizeDelta = blockSize;
-    var i, j, q;
+    let estimatedDecodedSize = blockSize * 2;
+    let i, j, q;
 
-    var lzwState = this.lzwState;
+    const lzwState = this.lzwState;
     if (!lzwState) {
       return; // eof was found
     }
 
-    var earlyChange = lzwState.earlyChange;
-    var nextCode = lzwState.nextCode;
-    var dictionaryValues = lzwState.dictionaryValues;
-    var dictionaryLengths = lzwState.dictionaryLengths;
-    var dictionaryPrevCodes = lzwState.dictionaryPrevCodes;
-    var codeLength = lzwState.codeLength;
-    var prevCode = lzwState.prevCode;
-    var currentSequence = lzwState.currentSequence;
-    var currentSequenceLength = lzwState.currentSequenceLength;
+    const earlyChange = lzwState.earlyChange;
+    let nextCode = lzwState.nextCode;
+    const dictionaryValues = lzwState.dictionaryValues;
+    const dictionaryLengths = lzwState.dictionaryLengths;
+    const dictionaryPrevCodes = lzwState.dictionaryPrevCodes;
+    let codeLength = lzwState.codeLength;
+    let prevCode = lzwState.prevCode;
+    const currentSequence = lzwState.currentSequence;
+    let currentSequenceLength = lzwState.currentSequenceLength;
 
-    var decodedLength = 0;
-    var currentBufferLength = this.bufferLength;
-    var buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
+    let decodedLength = 0;
+    let currentBufferLength = this.bufferLength;
+    let buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
 
     for (i = 0; i < blockSize; i++) {
-      var code = this.readBits(codeLength);
-      var hasPrev = currentSequenceLength > 0;
+      const code = this.readBits(codeLength);
+      const hasPrev = currentSequenceLength > 0;
       if (code < 256) {
         currentSequence[0] = code;
         currentSequenceLength = 1;
