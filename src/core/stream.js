@@ -15,9 +15,8 @@
 
 import { stringToBytes } from "../shared/util.js";
 
-const Stream = (function StreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function Stream(arrayBuffer, start, length, dict) {
+class Stream {
+  constructor(arrayBuffer, start, length, dict) {
     this.bytes =
       arrayBuffer instanceof Uint8Array
         ? arrayBuffer
@@ -28,120 +27,113 @@ const Stream = (function StreamClosure() {
     this.dict = dict;
   }
 
-  // required methods for a stream. if a particular stream does not
-  // implement these, an error should be thrown
-  Stream.prototype = {
-    get length() {
-      return this.end - this.start;
-    },
-    get isEmpty() {
-      return this.length === 0;
-    },
-    getByte: function Stream_getByte() {
-      if (this.pos >= this.end) {
-        return -1;
-      }
-      return this.bytes[this.pos++];
-    },
-    getUint16: function Stream_getUint16() {
-      const b0 = this.getByte();
-      const b1 = this.getByte();
-      if (b0 === -1 || b1 === -1) {
-        return -1;
-      }
-      return (b0 << 8) + b1;
-    },
-    getInt32: function Stream_getInt32() {
-      const b0 = this.getByte();
-      const b1 = this.getByte();
-      const b2 = this.getByte();
-      const b3 = this.getByte();
-      return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-    },
-    // Returns subarray of original buffer, should only be read.
-    getBytes(length, forceClamped = false) {
-      const bytes = this.bytes;
-      const pos = this.pos;
-      const strEnd = this.end;
+  get length() {
+    return this.end - this.start;
+  }
 
-      if (!length) {
-        const subarray = bytes.subarray(pos, strEnd);
-        // `this.bytes` is always a `Uint8Array` here.
-        return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
-      }
-      let end = pos + length;
-      if (end > strEnd) {
-        end = strEnd;
-      }
-      this.pos = end;
-      const subarray = bytes.subarray(pos, end);
+  get isEmpty() {
+    return this.length === 0;
+  }
+
+  getByte() {
+    if (this.pos >= this.end) {
+      return -1;
+    }
+    return this.bytes[this.pos++];
+  }
+
+  getUint16() {
+    const b0 = this.getByte();
+    const b1 = this.getByte();
+    if (b0 === -1 || b1 === -1) {
+      return -1;
+    }
+    return (b0 << 8) + b1;
+  }
+
+  getInt32() {
+    const b0 = this.getByte();
+    const b1 = this.getByte();
+    const b2 = this.getByte();
+    const b3 = this.getByte();
+    return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
+  }
+
+  // Returns subarray of original buffer, should only be read.
+  getBytes(length, forceClamped = false) {
+    const bytes = this.bytes;
+    const pos = this.pos;
+    const strEnd = this.end;
+
+    if (!length) {
+      const subarray = bytes.subarray(pos, strEnd);
       // `this.bytes` is always a `Uint8Array` here.
       return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
-    },
-    peekByte: function Stream_peekByte() {
-      const peekedByte = this.getByte();
-      if (peekedByte !== -1) {
-        this.pos--;
-      }
-      return peekedByte;
-    },
-    peekBytes(length, forceClamped = false) {
-      const bytes = this.getBytes(length, forceClamped);
-      this.pos -= bytes.length;
-      return bytes;
-    },
-
-    getByteRange(begin, end) {
-      if (begin < 0) {
-        begin = 0;
-      }
-      if (end > this.end) {
-        end = this.end;
-      }
-      return this.bytes.subarray(begin, end);
-    },
-
-    skip: function Stream_skip(n) {
-      if (!n) {
-        n = 1;
-      }
-      this.pos += n;
-    },
-    reset: function Stream_reset() {
-      this.pos = this.start;
-    },
-    moveStart: function Stream_moveStart() {
-      this.start = this.pos;
-    },
-    makeSubStream: function Stream_makeSubStream(start, length, dict) {
-      return new Stream(this.bytes.buffer, start, length, dict);
-    },
-  };
-
-  return Stream;
-})();
-
-const StringStream = (function StringStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function StringStream(str) {
-    const bytes = stringToBytes(str);
-    Stream.call(this, bytes);
+    }
+    let end = pos + length;
+    if (end > strEnd) {
+      end = strEnd;
+    }
+    this.pos = end;
+    const subarray = bytes.subarray(pos, end);
+    // `this.bytes` is always a `Uint8Array` here.
+    return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
   }
 
-  StringStream.prototype = Stream.prototype;
-
-  return StringStream;
-})();
-
-const NullStream = (function NullStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function NullStream() {
-    Stream.call(this, new Uint8Array(0));
+  peekByte() {
+    const peekedByte = this.getByte();
+    if (peekedByte !== -1) {
+      this.pos--;
+    }
+    return peekedByte;
   }
 
-  NullStream.prototype = Stream.prototype;
+  peekBytes(length, forceClamped = false) {
+    const bytes = this.getBytes(length, forceClamped);
+    this.pos -= bytes.length;
+    return bytes;
+  }
 
-  return NullStream;
-})();
+  getByteRange(begin, end) {
+    if (begin < 0) {
+      begin = 0;
+    }
+    if (end > this.end) {
+      end = this.end;
+    }
+    return this.bytes.subarray(begin, end);
+  }
+
+  skip(n) {
+    if (!n) {
+      n = 1;
+    }
+    this.pos += n;
+  }
+
+  reset() {
+    this.pos = this.start;
+  }
+
+  moveStart() {
+    this.start = this.pos;
+  }
+
+  makeSubStream(start, length, dict = null) {
+    return new Stream(this.bytes.buffer, start, length, dict);
+  }
+}
+
+class StringStream extends Stream {
+  constructor(str) {
+    super(stringToBytes(str));
+  }
+}
+
+class NullStream extends Stream {
+  constructor() {
+    super(new Uint8Array(0));
+  }
+}
 
 export { NullStream, Stream, StringStream };
