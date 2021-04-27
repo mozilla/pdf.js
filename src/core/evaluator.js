@@ -47,7 +47,6 @@ import {
   Ref,
   RefSet,
 } from "./primitives.js";
-import { DecodeStream, NullStream } from "./stream.js";
 import {
   ErrorFont,
   Font,
@@ -85,10 +84,12 @@ import {
 } from "./image_utils.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
+import { DecodeStream } from "./decode_stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
+import { NullStream } from "./stream.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
 

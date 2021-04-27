@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 
 const chunkSize = 512;
 

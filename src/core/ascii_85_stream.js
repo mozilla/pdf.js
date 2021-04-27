@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { isWhiteSpace } from "./core_utils.js";
 
 class Ascii85Stream extends DecodeStream {

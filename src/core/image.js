@@ -16,7 +16,7 @@
 import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
 import { isName, isStream, Name } from "./primitives.js";
 import { ColorSpace } from "./colorspace.js";
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 

@@ -14,7 +14,7 @@
  */
 
 import { isDict, isStream } from "./primitives.js";
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { Jbig2Image } from "./jbig2.js";
 import { shadow } from "../shared/util.js";
 
