@@ -19,7 +19,6 @@ import {
   FlateStream,
   NullStream,
   PredictorStream,
-  RunLengthStream,
 } from "./stream.js";
 import {
   assert,
@@ -47,6 +46,7 @@ import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
 import { LZWStream } from "./lzw_stream.js";
+import { RunLengthStream } from "./run_length_stream.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;
