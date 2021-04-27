@@ -15,18 +15,15 @@
 
 import { DecodeStream } from "./stream.js";
 
-const RunLengthStream = (function RunLengthStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function RunLengthStream(str, maybeLength) {
+class RunLengthStream extends DecodeStream {
+  constructor(str, maybeLength) {
+    super(maybeLength);
+
     this.str = str;
     this.dict = str.dict;
-
-    DecodeStream.call(this, maybeLength);
   }
 
-  RunLengthStream.prototype = Object.create(DecodeStream.prototype);
-
-  RunLengthStream.prototype.readBlock = function RunLengthStream_readBlock() {
+  readBlock() {
     // The repeatHeader has following format. The first byte defines type of run
     // and amount of bytes to repeat/copy: n = 0 through 127 - copy next n bytes
     // (in addition to the second byte from the header), n = 129 through 255 -
@@ -58,9 +55,7 @@ const RunLengthStream = (function RunLengthStreamClosure() {
       }
     }
     this.bufferLength = bufferLength;
-  };
-
-  return RunLengthStream;
-})();
+  }
+}
 
 export { RunLengthStream };
