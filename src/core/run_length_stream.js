@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 
-var RunLengthStream = (function RunLengthStreamClosure() {
+const RunLengthStream = (function RunLengthStreamClosure() {
   // eslint-disable-next-line no-shadow
   function RunLengthStream(str, maybeLength) {
     this.str = str;
@@ -32,29 +31,29 @@ var RunLengthStream = (function RunLengthStreamClosure() {
     // and amount of bytes to repeat/copy: n = 0 through 127 - copy next n bytes
     // (in addition to the second byte from the header), n = 129 through 255 -
     // duplicate the second byte from the header (257 - n) times, n = 128 - end.
-    var repeatHeader = this.str.getBytes(2);
+    const repeatHeader = this.str.getBytes(2);
     if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] === 128) {
       this.eof = true;
       return;
     }
 
-    var buffer;
-    var bufferLength = this.bufferLength;
-    var n = repeatHeader[0];
+    let buffer;
+    let bufferLength = this.bufferLength;
+    let n = repeatHeader[0];
     if (n < 128) {
       // copy n bytes
       buffer = this.ensureBuffer(bufferLength + n + 1);
       buffer[bufferLength++] = repeatHeader[1];
       if (n > 0) {
-        var source = this.str.getBytes(n);
+        const source = this.str.getBytes(n);
         buffer.set(source, bufferLength);
         bufferLength += n;
       }
     } else {
       n = 257 - n;
-      var b = repeatHeader[1];
+      const b = repeatHeader[1];
       buffer = this.ensureBuffer(bufferLength + n + 1);
-      for (var i = 0; i < n; i++) {
+      for (let i = 0; i < n; i++) {
         buffer[bufferLength++] = b;
       }
     }
