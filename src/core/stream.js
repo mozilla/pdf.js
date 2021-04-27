@@ -1148,54 +1148,6 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
   return AsciiHexStream;
 })();
 
-var RunLengthStream = (function RunLengthStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function RunLengthStream(str, maybeLength) {
-    this.str = str;
-    this.dict = str.dict;
-
-    DecodeStream.call(this, maybeLength);
-  }
-
-  RunLengthStream.prototype = Object.create(DecodeStream.prototype);
-
-  RunLengthStream.prototype.readBlock = function RunLengthStream_readBlock() {
-    // The repeatHeader has following format. The first byte defines type of run
-    // and amount of bytes to repeat/copy: n = 0 through 127 - copy next n bytes
-    // (in addition to the second byte from the header), n = 129 through 255 -
-    // duplicate the second byte from the header (257 - n) times, n = 128 - end.
-    var repeatHeader = this.str.getBytes(2);
-    if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] === 128) {
-      this.eof = true;
-      return;
-    }
-
-    var buffer;
-    var bufferLength = this.bufferLength;
-    var n = repeatHeader[0];
-    if (n < 128) {
-      // copy n bytes
-      buffer = this.ensureBuffer(bufferLength + n + 1);
-      buffer[bufferLength++] = repeatHeader[1];
-      if (n > 0) {
-        var source = this.str.getBytes(n);
-        buffer.set(source, bufferLength);
-        bufferLength += n;
-      }
-    } else {
-      n = 257 - n;
-      var b = repeatHeader[1];
-      buffer = this.ensureBuffer(bufferLength + n + 1);
-      for (var i = 0; i < n; i++) {
-        buffer[bufferLength++] = b;
-      }
-    }
-    this.bufferLength = bufferLength;
-  };
-
-  return RunLengthStream;
-})();
-
 var NullStream = (function NullStreamClosure() {
   // eslint-disable-next-line no-shadow
   function NullStream() {
@@ -1215,7 +1167,6 @@ export {
   FlateStream,
   NullStream,
   PredictorStream,
-  RunLengthStream,
   Stream,
   StreamsSequenceStream,
   StringStream,
