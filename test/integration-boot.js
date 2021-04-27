@@ -28,6 +28,7 @@ async function runTests(results) {
       "scripting_spec.js",
       "annotation_spec.js",
       "accessibility_spec.js",
+      "find_spec.js",
     ],
   });
 
