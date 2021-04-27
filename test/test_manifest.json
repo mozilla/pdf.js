@@ -4989,6 +4989,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-polyline-polygon-without-appearance",
+       "file": "pdfs/annotation-polyline-polygon-without-appearance.pdf",
+       "md5": "b776937148e9f7c4de6bea552e23b92f",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
+    },
     {  "id": "issue4872",
        "file": "pdfs/issue4872.pdf",
        "md5": "21c6cbc682140d6f6017bbeb45892053",
