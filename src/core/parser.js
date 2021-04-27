@@ -33,7 +33,7 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
-import { FlateStream, NullStream, PredictorStream } from "./stream.js";
+import { FlateStream, NullStream } from "./stream.js";
 import { isWhiteSpace, MissingDataException } from "./core_utils.js";
 import { Ascii85Stream } from "./ascii_85_stream.js";
 import { AsciiHexStream } from "./ascii_hex_stream.js";
@@ -42,6 +42,7 @@ import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
 import { LZWStream } from "./lzw_stream.js";
+import { PredictorStream } from "./predictor_stream.js";
 import { RunLengthStream } from "./run_length_stream.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
