@@ -15,23 +15,20 @@
 
 import { DecodeStream } from "./stream.js";
 
-const DecryptStream = (function DecryptStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function DecryptStream(str, maybeLength, decrypt) {
+const chunkSize = 512;
+
+class DecryptStream extends DecodeStream {
+  constructor(str, maybeLength, decrypt) {
+    super(maybeLength);
+
     this.str = str;
     this.dict = str.dict;
     this.decrypt = decrypt;
     this.nextChunk = null;
     this.initialized = false;
-
-    DecodeStream.call(this, maybeLength);
   }
 
-  const chunkSize = 512;
-
-  DecryptStream.prototype = Object.create(DecodeStream.prototype);
-
-  DecryptStream.prototype.readBlock = function DecryptStream_readBlock() {
+  readBlock() {
     let chunk;
     if (this.initialized) {
       chunk = this.nextChunk;
@@ -56,9 +53,7 @@ const DecryptStream = (function DecryptStreamClosure() {
       buffer[bufferLength++] = chunk[i];
     }
     this.bufferLength = bufferLength;
-  };
-
-  return DecryptStream;
-})();
+  }
+}
 
 export { DecryptStream };
