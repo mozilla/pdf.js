@@ -765,11 +765,11 @@ class Parser {
       }
       if (name === "DCTDecode" || name === "DCT") {
         xrefStreamStats[StreamType.DCT] = true;
-        return new JpegStream(stream, maybeLength, stream.dict, params);
+        return new JpegStream(stream, maybeLength, params);
       }
       if (name === "JPXDecode" || name === "JPX") {
         xrefStreamStats[StreamType.JPX] = true;
-        return new JpxStream(stream, maybeLength, stream.dict, params);
+        return new JpxStream(stream, maybeLength, params);
       }
       if (name === "ASCII85Decode" || name === "A85") {
         xrefStreamStats[StreamType.A85] = true;
@@ -789,7 +789,7 @@ class Parser {
       }
       if (name === "JBIG2Decode") {
         xrefStreamStats[StreamType.JBIG] = true;
-        return new Jbig2Stream(stream, maybeLength, stream.dict, params);
+        return new Jbig2Stream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);
       return stream;
