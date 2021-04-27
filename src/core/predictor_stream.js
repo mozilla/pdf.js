@@ -12,19 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 import { FormatError } from "../shared/util.js";
 import { isDict } from "./primitives.js";
 
-var PredictorStream = (function PredictorStreamClosure() {
+const PredictorStream = (function PredictorStreamClosure() {
   // eslint-disable-next-line no-shadow
   function PredictorStream(str, maybeLength, params) {
     if (!isDict(params)) {
       return str; // no prediction
     }
-    var predictor = (this.predictor = params.get("Predictor") || 1);
+    const predictor = (this.predictor = params.get("Predictor") || 1);
 
     if (predictor <= 1) {
       return str; // no prediction
@@ -42,9 +41,9 @@ var PredictorStream = (function PredictorStreamClosure() {
     this.str = str;
     this.dict = str.dict;
 
-    var colors = (this.colors = params.get("Colors") || 1);
-    var bits = (this.bits = params.get("BitsPerComponent") || 8);
-    var columns = (this.columns = params.get("Columns") || 1);
+    const colors = (this.colors = params.get("Colors") || 1);
+    const bits = (this.bits = params.get("BitsPerComponent") || 8);
+    const columns = (this.columns = params.get("Columns") || 1);
 
     this.pixBytes = (colors * bits + 7) >> 3;
     this.rowBytes = (columns * colors * bits + 7) >> 3;
@@ -56,32 +55,32 @@ var PredictorStream = (function PredictorStreamClosure() {
   PredictorStream.prototype = Object.create(DecodeStream.prototype);
 
   PredictorStream.prototype.readBlockTiff = function predictorStreamReadBlockTiff() {
-    var rowBytes = this.rowBytes;
+    const rowBytes = this.rowBytes;
 
-    var bufferLength = this.bufferLength;
-    var buffer = this.ensureBuffer(bufferLength + rowBytes);
+    const bufferLength = this.bufferLength;
+    const buffer = this.ensureBuffer(bufferLength + rowBytes);
 
-    var bits = this.bits;
-    var colors = this.colors;
+    const bits = this.bits;
+    const colors = this.colors;
 
-    var rawBytes = this.str.getBytes(rowBytes);
+    const rawBytes = this.str.getBytes(rowBytes);
     this.eof = !rawBytes.length;
     if (this.eof) {
       return;
     }
 
-    var inbuf = 0,
+    let inbuf = 0,
       outbuf = 0;
-    var inbits = 0,
+    let inbits = 0,
       outbits = 0;
-    var pos = bufferLength;
-    var i;
+    let pos = bufferLength;
+    let i;
 
     if (bits === 1 && colors === 1) {
       // Optimized version of the loop in the "else"-branch
       // for 1 bit-per-component and 1 color TIFF images.
       for (i = 0; i < rowBytes; ++i) {
-        var c = rawBytes[i] ^ inbuf;
+        let c = rawBytes[i] ^ inbuf;
         c ^= c >> 1;
         c ^= c >> 2;
         c ^= c >> 4;
@@ -97,12 +96,12 @@ var PredictorStream = (function PredictorStreamClosure() {
         pos++;
       }
     } else if (bits === 16) {
-      var bytesPerPixel = colors * 2;
+      const bytesPerPixel = colors * 2;
       for (i = 0; i < bytesPerPixel; ++i) {
         buffer[pos++] = rawBytes[i];
       }
       for (; i < rowBytes; i += 2) {
-        var sum =
+        const sum =
           ((rawBytes[i] & 0xff) << 8) +
           (rawBytes[i + 1] & 0xff) +
           ((buffer[pos - bytesPerPixel] & 0xff) << 8) +
@@ -111,13 +110,13 @@ var PredictorStream = (function PredictorStreamClosure() {
         buffer[pos++] = sum & 0xff;
       }
     } else {
-      var compArray = new Uint8Array(colors + 1);
-      var bitMask = (1 << bits) - 1;
-      var j = 0,
+      const compArray = new Uint8Array(colors + 1);
+      const bitMask = (1 << bits) - 1;
+      let j = 0,
         k = bufferLength;
-      var columns = this.columns;
+      const columns = this.columns;
       for (i = 0; i < columns; ++i) {
-        for (var kk = 0; kk < colors; ++kk) {
+        for (let kk = 0; kk < colors; ++kk) {
           if (inbits < bits) {
             inbuf = (inbuf << 8) | (rawBytes[j++] & 0xff);
             inbits += 8;
@@ -142,25 +141,25 @@ var PredictorStream = (function PredictorStreamClosure() {
   };
 
   PredictorStream.prototype.readBlockPng = function predictorStreamReadBlockPng() {
-    var rowBytes = this.rowBytes;
-    var pixBytes = this.pixBytes;
+    const rowBytes = this.rowBytes;
+    const pixBytes = this.pixBytes;
 
-    var predictor = this.str.getByte();
-    var rawBytes = this.str.getBytes(rowBytes);
+    const predictor = this.str.getByte();
+    const rawBytes = this.str.getBytes(rowBytes);
     this.eof = !rawBytes.length;
     if (this.eof) {
       return;
     }
 
-    var bufferLength = this.bufferLength;
-    var buffer = this.ensureBuffer(bufferLength + rowBytes);
+    const bufferLength = this.bufferLength;
+    const buffer = this.ensureBuffer(bufferLength + rowBytes);
 
-    var prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
+    let prevRow = buffer.subarray(bufferLength - rowBytes, bufferLength);
     if (prevRow.length === 0) {
       prevRow = new Uint8Array(rowBytes);
     }
 
-    var i,
+    let i,
       j = bufferLength,
       up,
       c;
@@ -204,19 +203,19 @@ var PredictorStream = (function PredictorStreamClosure() {
         }
         for (; i < rowBytes; ++i) {
           up = prevRow[i];
-          var upLeft = prevRow[i - pixBytes];
-          var left = buffer[j - pixBytes];
-          var p = left + up - upLeft;
+          const upLeft = prevRow[i - pixBytes];
+          const left = buffer[j - pixBytes];
+          const p = left + up - upLeft;
 
-          var pa = p - left;
+          let pa = p - left;
           if (pa < 0) {
             pa = -pa;
           }
-          var pb = p - up;
+          let pb = p - up;
           if (pb < 0) {
             pb = -pb;
           }
-          var pc = p - upLeft;
+          let pc = p - upLeft;
           if (pc < 0) {
             pc = -pc;
           }
