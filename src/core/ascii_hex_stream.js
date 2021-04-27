@@ -15,25 +15,22 @@
 
 import { DecodeStream } from "./stream.js";
 
-const AsciiHexStream = (function AsciiHexStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function AsciiHexStream(str, maybeLength) {
-    this.str = str;
-    this.dict = str.dict;
-
-    this.firstDigit = -1;
-
+class AsciiHexStream extends DecodeStream {
+  constructor(str, maybeLength) {
     // Most streams increase in size when decoded, but AsciiHex streams shrink
     // by 50%.
     if (maybeLength) {
       maybeLength = 0.5 * maybeLength;
     }
-    DecodeStream.call(this, maybeLength);
+    super(maybeLength);
+
+    this.str = str;
+    this.dict = str.dict;
+
+    this.firstDigit = -1;
   }
 
-  AsciiHexStream.prototype = Object.create(DecodeStream.prototype);
-
-  AsciiHexStream.prototype.readBlock = function AsciiHexStream_readBlock() {
+  readBlock() {
     const UPSTREAM_BLOCK_SIZE = 8000;
     const bytes = this.str.getBytes(UPSTREAM_BLOCK_SIZE);
     if (!bytes.length) {
@@ -46,8 +43,7 @@ const AsciiHexStream = (function AsciiHexStreamClosure() {
     let bufferLength = this.bufferLength;
 
     let firstDigit = this.firstDigit;
-    for (let i = 0, ii = bytes.length; i < ii; i++) {
-      const ch = bytes[i];
+    for (const ch of bytes) {
       let digit;
       if (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) {
         digit = ch & 0x0f;
@@ -77,9 +73,7 @@ const AsciiHexStream = (function AsciiHexStreamClosure() {
     }
     this.firstDigit = firstDigit;
     this.bufferLength = bufferLength;
-  };
-
-  return AsciiHexStream;
-})();
+  }
+}
 
 export { AsciiHexStream };
