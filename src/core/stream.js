@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { stringToBytes } from "../shared/util.js";
 
-var Stream = (function StreamClosure() {
+const Stream = (function StreamClosure() {
   // eslint-disable-next-line no-shadow
   function Stream(arrayBuffer, start, length, dict) {
     this.bytes =
@@ -45,32 +44,32 @@ var Stream = (function StreamClosure() {
       return this.bytes[this.pos++];
     },
     getUint16: function Stream_getUint16() {
-      var b0 = this.getByte();
-      var b1 = this.getByte();
+      const b0 = this.getByte();
+      const b1 = this.getByte();
       if (b0 === -1 || b1 === -1) {
         return -1;
       }
       return (b0 << 8) + b1;
     },
     getInt32: function Stream_getInt32() {
-      var b0 = this.getByte();
-      var b1 = this.getByte();
-      var b2 = this.getByte();
-      var b3 = this.getByte();
+      const b0 = this.getByte();
+      const b1 = this.getByte();
+      const b2 = this.getByte();
+      const b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
     // Returns subarray of original buffer, should only be read.
     getBytes(length, forceClamped = false) {
-      var bytes = this.bytes;
-      var pos = this.pos;
-      var strEnd = this.end;
+      const bytes = this.bytes;
+      const pos = this.pos;
+      const strEnd = this.end;
 
       if (!length) {
         const subarray = bytes.subarray(pos, strEnd);
         // `this.bytes` is always a `Uint8Array` here.
         return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
       }
-      var end = pos + length;
+      let end = pos + length;
       if (end > strEnd) {
         end = strEnd;
       }
@@ -80,14 +79,14 @@ var Stream = (function StreamClosure() {
       return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
     },
     peekByte: function Stream_peekByte() {
-      var peekedByte = this.getByte();
+      const peekedByte = this.getByte();
       if (peekedByte !== -1) {
         this.pos--;
       }
       return peekedByte;
     },
     peekBytes(length, forceClamped = false) {
-      var bytes = this.getBytes(length, forceClamped);
+      const bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -122,7 +121,7 @@ var Stream = (function StreamClosure() {
   return Stream;
 })();
 
-var StringStream = (function StringStreamClosure() {
+const StringStream = (function StringStreamClosure() {
   // eslint-disable-next-line no-shadow
   function StringStream(str) {
     const bytes = stringToBytes(str);
@@ -134,7 +133,7 @@ var StringStream = (function StringStreamClosure() {
   return StringStream;
 })();
 
-var NullStream = (function NullStreamClosure() {
+const NullStream = (function NullStreamClosure() {
   // eslint-disable-next-line no-shadow
   function NullStream() {
     Stream.call(this, new Uint8Array(0));
