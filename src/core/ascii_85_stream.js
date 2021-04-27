@@ -16,24 +16,21 @@
 import { DecodeStream } from "./stream.js";
 import { isWhiteSpace } from "./core_utils.js";
 
-const Ascii85Stream = (function Ascii85StreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function Ascii85Stream(str, maybeLength) {
-    this.str = str;
-    this.dict = str.dict;
-    this.input = new Uint8Array(5);
-
+class Ascii85Stream extends DecodeStream {
+  constructor(str, maybeLength) {
     // Most streams increase in size when decoded, but Ascii85 streams
     // typically shrink by ~20%.
     if (maybeLength) {
       maybeLength = 0.8 * maybeLength;
     }
-    DecodeStream.call(this, maybeLength);
+    super(maybeLength);
+
+    this.str = str;
+    this.dict = str.dict;
+    this.input = new Uint8Array(5);
   }
 
-  Ascii85Stream.prototype = Object.create(DecodeStream.prototype);
-
-  Ascii85Stream.prototype.readBlock = function Ascii85Stream_readBlock() {
+  readBlock() {
     const TILDA_CHAR = 0x7e; // '~'
     const Z_LOWER_CHAR = 0x7a; // 'z'
     const EOF = -1;
@@ -95,9 +92,7 @@ const Ascii85Stream = (function Ascii85StreamClosure() {
         t >>= 8;
       }
     }
-  };
-
-  return Ascii85Stream;
-})();
+  }
+}
 
 export { Ascii85Stream };
