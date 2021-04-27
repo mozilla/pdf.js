@@ -2507,6 +2507,31 @@ class PolylineAnnotation extends MarkupAnnotation {
         y: rawVertices[i + 1],
       });
     }
+
+    if (!this.appearance) {
+      // The default stroke color is black.
+      const strokeColor = this.color
+        ? Array.from(this.color).map(c => c / 255)
+        : [0, 0, 0];
+
+      const borderWidth = this.borderStyle.width || 1;
+
+      this._setDefaultAppearance({
+        xref: parameters.xref,
+        extra: `${borderWidth} w`,
+        strokeColor,
+        pointsCallback: (buffer, points) => {
+          const vertices = this.data.vertices;
+          for (let i = 0, ii = vertices.length; i < ii; i++) {
+            buffer.push(
+              `${vertices[i].x} ${vertices[i].y} ${i === 0 ? "m" : "l"}`
+            );
+          }
+          buffer.push("S");
+          return [points[0].x, points[1].x, points[3].y, points[1].y];
+        },
+      });
+    }
   }
 }
 
