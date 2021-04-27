@@ -61,12 +61,8 @@ class ObjectLoader {
   }
 
   async load() {
-    // Don't walk the graph if all the data is already loaded; note that only
-    // `ChunkedStream` instances have a `allChunksLoaded` method.
-    if (
-      !this.xref.stream.allChunksLoaded ||
-      this.xref.stream.allChunksLoaded()
-    ) {
+    // Don't walk the graph if all the data is already loaded.
+    if (this.xref.stream.isDataLoaded) {
       return undefined;
     }
 
@@ -115,12 +111,12 @@ class ObjectLoader {
       if (currentNode && currentNode.getBaseStreams) {
         const baseStreams = currentNode.getBaseStreams();
         let foundMissingData = false;
-        for (let i = 0, ii = baseStreams.length; i < ii; i++) {
-          const stream = baseStreams[i];
-          if (stream.allChunksLoaded && !stream.allChunksLoaded()) {
-            foundMissingData = true;
-            pendingRequests.push({ begin: stream.start, end: stream.end });
+        for (const stream of baseStreams) {
+          if (stream.isDataLoaded) {
+            continue;
           }
+          foundMissingData = true;
+          pendingRequests.push({ begin: stream.start, end: stream.end });
         }
         if (foundMissingData) {
           nodesToRevisit.push(currentNode);
@@ -133,8 +129,7 @@ class ObjectLoader {
     if (pendingRequests.length) {
       await this.xref.stream.manager.requestRanges(pendingRequests);
 
-      for (let i = 0, ii = nodesToRevisit.length; i < ii; i++) {
-        const node = nodesToRevisit[i];
+      for (const node of nodesToRevisit) {
         // Remove any reference nodes from the current `RefSet` so they
         // aren't skipped when we revist them.
         if (node instanceof Ref) {

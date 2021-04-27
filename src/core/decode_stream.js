@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { BaseStream } from "./base_stream.js";
 import { Stream } from "./stream.js";
-import { unreachable } from "../shared/util.js";
 
 // Lots of DecodeStreams are created whose buffers are never used.  For these
 // we share a single empty buffer. This is (a) space-efficient and (b) avoids
@@ -23,8 +23,9 @@ import { unreachable } from "../shared/util.js";
 const emptyBuffer = new Uint8Array(0);
 
 // Super class for the decoding streams.
-class DecodeStream {
+class DecodeStream extends BaseStream {
   constructor(maybeMinBufferLength) {
+    super();
     this._rawMinBufferLength = maybeMinBufferLength || 0;
 
     this.pos = 0;
@@ -38,11 +39,6 @@ class DecodeStream {
         this.minBufferLength *= 2;
       }
     }
-  }
-
-  // eslint-disable-next-line getter-return
-  get length() {
-    unreachable("Should not access DecodeStream.length");
   }
 
   get isEmpty() {
@@ -77,23 +73,6 @@ class DecodeStream {
     return this.buffer[this.pos++];
   }
 
-  getUint16() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    if (b0 === -1 || b1 === -1) {
-      return -1;
-    }
-    return (b0 << 8) + b1;
-  }
-
-  getInt32() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    const b2 = this.getByte();
-    const b3 = this.getByte();
-    return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-  }
-
   getBytes(length, forceClamped = false) {
     const pos = this.pos;
     let end;
@@ -124,18 +103,8 @@ class DecodeStream {
       : subarray;
   }
 
-  peekByte() {
-    const peekedByte = this.getByte();
-    if (peekedByte !== -1) {
-      this.pos--;
-    }
-    return peekedByte;
-  }
-
-  peekBytes(length, forceClamped = false) {
-    const bytes = this.getBytes(length, forceClamped);
-    this.pos -= bytes.length;
-    return bytes;
+  reset() {
+    this.pos = 0;
   }
 
   makeSubStream(start, length, dict = null) {
@@ -150,21 +119,6 @@ class DecodeStream {
       }
     }
     return new Stream(this.buffer, start, length, dict);
-  }
-
-  getByteRange(begin, end) {
-    unreachable("Should not call DecodeStream.getByteRange");
-  }
-
-  skip(n) {
-    if (!n) {
-      n = 1;
-    }
-    this.pos += n;
-  }
-
-  reset() {
-    this.pos = 0;
   }
 
   getBaseStreams() {
