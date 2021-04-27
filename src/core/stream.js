@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
+import { BaseStream } from "./base_stream.js";
 import { stringToBytes } from "../shared/util.js";
 
-class Stream {
+class Stream extends BaseStream {
   constructor(arrayBuffer, start, length, dict) {
+    super();
+
     this.bytes =
       arrayBuffer instanceof Uint8Array
         ? arrayBuffer
@@ -42,24 +45,6 @@ class Stream {
     return this.bytes[this.pos++];
   }
 
-  getUint16() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    if (b0 === -1 || b1 === -1) {
-      return -1;
-    }
-    return (b0 << 8) + b1;
-  }
-
-  getInt32() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    const b2 = this.getByte();
-    const b3 = this.getByte();
-    return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-  }
-
-  // Returns subarray of original buffer, should only be read.
   getBytes(length, forceClamped = false) {
     const bytes = this.bytes;
     const pos = this.pos;
@@ -80,20 +65,6 @@ class Stream {
     return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
   }
 
-  peekByte() {
-    const peekedByte = this.getByte();
-    if (peekedByte !== -1) {
-      this.pos--;
-    }
-    return peekedByte;
-  }
-
-  peekBytes(length, forceClamped = false) {
-    const bytes = this.getBytes(length, forceClamped);
-    this.pos -= bytes.length;
-    return bytes;
-  }
-
   getByteRange(begin, end) {
     if (begin < 0) {
       begin = 0;
@@ -102,13 +73,6 @@ class Stream {
       end = this.end;
     }
     return this.bytes.subarray(begin, end);
-  }
-
-  skip(n) {
-    if (!n) {
-      n = 1;
-    }
-    this.pos += n;
   }
 
   reset() {
