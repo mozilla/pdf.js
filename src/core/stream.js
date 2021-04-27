@@ -1081,73 +1081,6 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
   return Ascii85Stream;
 })();
 
-var AsciiHexStream = (function AsciiHexStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function AsciiHexStream(str, maybeLength) {
-    this.str = str;
-    this.dict = str.dict;
-
-    this.firstDigit = -1;
-
-    // Most streams increase in size when decoded, but AsciiHex streams shrink
-    // by 50%.
-    if (maybeLength) {
-      maybeLength = 0.5 * maybeLength;
-    }
-    DecodeStream.call(this, maybeLength);
-  }
-
-  AsciiHexStream.prototype = Object.create(DecodeStream.prototype);
-
-  AsciiHexStream.prototype.readBlock = function AsciiHexStream_readBlock() {
-    var UPSTREAM_BLOCK_SIZE = 8000;
-    var bytes = this.str.getBytes(UPSTREAM_BLOCK_SIZE);
-    if (!bytes.length) {
-      this.eof = true;
-      return;
-    }
-
-    var maxDecodeLength = (bytes.length + 1) >> 1;
-    var buffer = this.ensureBuffer(this.bufferLength + maxDecodeLength);
-    var bufferLength = this.bufferLength;
-
-    var firstDigit = this.firstDigit;
-    for (var i = 0, ii = bytes.length; i < ii; i++) {
-      var ch = bytes[i],
-        digit;
-      if (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) {
-        digit = ch & 0x0f;
-      } else if (
-        (ch >= /* 'A' = */ 0x41 && ch <= /* 'Z' = */ 0x46) ||
-        (ch >= /* 'a' = */ 0x61 && ch <= /* 'z' = */ 0x66)
-      ) {
-        digit = (ch & 0x0f) + 9;
-      } else if (ch === /* '>' = */ 0x3e) {
-        this.eof = true;
-        break;
-      } else {
-        // Probably whitespace, ignoring.
-        continue;
-      }
-      if (firstDigit < 0) {
-        firstDigit = digit;
-      } else {
-        buffer[bufferLength++] = (firstDigit << 4) | digit;
-        firstDigit = -1;
-      }
-    }
-    if (firstDigit >= 0 && this.eof) {
-      // incomplete byte
-      buffer[bufferLength++] = firstDigit << 4;
-      firstDigit = -1;
-    }
-    this.firstDigit = firstDigit;
-    this.bufferLength = bufferLength;
-  };
-
-  return AsciiHexStream;
-})();
-
 var NullStream = (function NullStreamClosure() {
   // eslint-disable-next-line no-shadow
   function NullStream() {
@@ -1161,7 +1094,6 @@ var NullStream = (function NullStreamClosure() {
 
 export {
   Ascii85Stream,
-  AsciiHexStream,
   DecodeStream,
   DecryptStream,
   FlateStream,
