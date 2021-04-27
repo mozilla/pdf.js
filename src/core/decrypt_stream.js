@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 
-var DecryptStream = (function DecryptStreamClosure() {
+const DecryptStream = (function DecryptStreamClosure() {
   // eslint-disable-next-line no-shadow
   function DecryptStream(str, maybeLength, decrypt) {
     this.str = str;
@@ -28,12 +27,12 @@ var DecryptStream = (function DecryptStreamClosure() {
     DecodeStream.call(this, maybeLength);
   }
 
-  var chunkSize = 512;
+  const chunkSize = 512;
 
   DecryptStream.prototype = Object.create(DecodeStream.prototype);
 
   DecryptStream.prototype.readBlock = function DecryptStream_readBlock() {
-    var chunk;
+    let chunk;
     if (this.initialized) {
       chunk = this.nextChunk;
     } else {
@@ -45,16 +44,15 @@ var DecryptStream = (function DecryptStreamClosure() {
       return;
     }
     this.nextChunk = this.str.getBytes(chunkSize);
-    var hasMoreData = this.nextChunk && this.nextChunk.length > 0;
+    const hasMoreData = this.nextChunk && this.nextChunk.length > 0;
 
-    var decrypt = this.decrypt;
+    const decrypt = this.decrypt;
     chunk = decrypt(chunk, !hasMoreData);
 
-    var bufferLength = this.bufferLength;
-    var i,
-      n = chunk.length;
-    var buffer = this.ensureBuffer(bufferLength + n);
-    for (i = 0; i < n; i++) {
+    let bufferLength = this.bufferLength;
+    const n = chunk.length,
+      buffer = this.ensureBuffer(bufferLength + n);
+    for (let i = 0; i < n; i++) {
       buffer[bufferLength++] = chunk[i];
     }
     this.bufferLength = bufferLength;
