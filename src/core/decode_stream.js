@@ -12,18 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { Stream } from "./stream.js";
 import { unreachable } from "../shared/util.js";
 
 // super class for the decoding streams
-var DecodeStream = (function DecodeStreamClosure() {
+const DecodeStream = (function DecodeStreamClosure() {
   // Lots of DecodeStreams are created whose buffers are never used.  For these
   // we share a single empty buffer. This is (a) space-efficient and (b) avoids
   // having special cases that would be required if we used |null| for an empty
   // buffer.
-  var emptyBuffer = new Uint8Array(0);
+  const emptyBuffer = new Uint8Array(0);
 
   // eslint-disable-next-line no-shadow
   function DecodeStream(maybeMinBufferLength) {
@@ -55,20 +54,20 @@ var DecodeStream = (function DecodeStreamClosure() {
       return this.bufferLength === 0;
     },
     ensureBuffer: function DecodeStream_ensureBuffer(requested) {
-      var buffer = this.buffer;
+      const buffer = this.buffer;
       if (requested <= buffer.byteLength) {
         return buffer;
       }
-      var size = this.minBufferLength;
+      let size = this.minBufferLength;
       while (size < requested) {
         size *= 2;
       }
-      var buffer2 = new Uint8Array(size);
+      const buffer2 = new Uint8Array(size);
       buffer2.set(buffer);
       return (this.buffer = buffer2);
     },
     getByte: function DecodeStream_getByte() {
-      var pos = this.pos;
+      const pos = this.pos;
       while (this.bufferLength <= pos) {
         if (this.eof) {
           return -1;
@@ -78,23 +77,23 @@ var DecodeStream = (function DecodeStreamClosure() {
       return this.buffer[this.pos++];
     },
     getUint16: function DecodeStream_getUint16() {
-      var b0 = this.getByte();
-      var b1 = this.getByte();
+      const b0 = this.getByte();
+      const b1 = this.getByte();
       if (b0 === -1 || b1 === -1) {
         return -1;
       }
       return (b0 << 8) + b1;
     },
     getInt32: function DecodeStream_getInt32() {
-      var b0 = this.getByte();
-      var b1 = this.getByte();
-      var b2 = this.getByte();
-      var b3 = this.getByte();
+      const b0 = this.getByte();
+      const b1 = this.getByte();
+      const b2 = this.getByte();
+      const b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
     getBytes(length, forceClamped = false) {
-      var end,
-        pos = this.pos;
+      const pos = this.pos;
+      let end;
 
       if (length) {
         this.ensureBuffer(pos + length);
@@ -103,7 +102,7 @@ var DecodeStream = (function DecodeStreamClosure() {
         while (!this.eof && this.bufferLength < end) {
           this.readBlock();
         }
-        var bufEnd = this.bufferLength;
+        const bufEnd = this.bufferLength;
         if (end > bufEnd) {
           end = bufEnd;
         }
@@ -122,14 +121,14 @@ var DecodeStream = (function DecodeStreamClosure() {
         : subarray;
     },
     peekByte: function DecodeStream_peekByte() {
-      var peekedByte = this.getByte();
+      const peekedByte = this.getByte();
       if (peekedByte !== -1) {
         this.pos--;
       }
       return peekedByte;
     },
     peekBytes(length, forceClamped = false) {
-      var bytes = this.getBytes(length, forceClamped);
+      const bytes = this.getBytes(length, forceClamped);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -139,7 +138,7 @@ var DecodeStream = (function DecodeStreamClosure() {
           this.readBlock();
         }
       } else {
-        var end = start + length;
+        const end = start + length;
         while (this.bufferLength <= end && !this.eof) {
           this.readBlock();
         }
@@ -171,7 +170,7 @@ var DecodeStream = (function DecodeStreamClosure() {
   return DecodeStream;
 })();
 
-var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
+const StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
   // eslint-disable-next-line no-shadow
   function StreamsSequenceStream(streams) {
     this.streams = streams;
@@ -191,24 +190,24 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
   StreamsSequenceStream.prototype = Object.create(DecodeStream.prototype);
 
   StreamsSequenceStream.prototype.readBlock = function streamSequenceStreamReadBlock() {
-    var streams = this.streams;
+    const streams = this.streams;
     if (streams.length === 0) {
       this.eof = true;
       return;
     }
-    var stream = streams.shift();
-    var chunk = stream.getBytes();
-    var bufferLength = this.bufferLength;
-    var newLength = bufferLength + chunk.length;
-    var buffer = this.ensureBuffer(newLength);
+    const stream = streams.shift();
+    const chunk = stream.getBytes();
+    const bufferLength = this.bufferLength;
+    const newLength = bufferLength + chunk.length;
+    const buffer = this.ensureBuffer(newLength);
     buffer.set(chunk, bufferLength);
     this.bufferLength = newLength;
   };
 
   StreamsSequenceStream.prototype.getBaseStreams = function StreamsSequenceStream_getBaseStreams() {
-    var baseStreams = [];
-    for (var i = 0, ii = this.streams.length; i < ii; i++) {
-      var stream = this.streams[i];
+    const baseStreams = [];
+    for (let i = 0, ii = this.streams.length; i < ii; i++) {
+      const stream = this.streams[i];
       if (stream.getBaseStreams) {
         baseStreams.push(...stream.getBaseStreams());
       }
