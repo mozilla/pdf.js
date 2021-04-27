@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 
-var AsciiHexStream = (function AsciiHexStreamClosure() {
+const AsciiHexStream = (function AsciiHexStreamClosure() {
   // eslint-disable-next-line no-shadow
   function AsciiHexStream(str, maybeLength) {
     this.str = str;
@@ -35,21 +34,21 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
   AsciiHexStream.prototype = Object.create(DecodeStream.prototype);
 
   AsciiHexStream.prototype.readBlock = function AsciiHexStream_readBlock() {
-    var UPSTREAM_BLOCK_SIZE = 8000;
-    var bytes = this.str.getBytes(UPSTREAM_BLOCK_SIZE);
+    const UPSTREAM_BLOCK_SIZE = 8000;
+    const bytes = this.str.getBytes(UPSTREAM_BLOCK_SIZE);
     if (!bytes.length) {
       this.eof = true;
       return;
     }
 
-    var maxDecodeLength = (bytes.length + 1) >> 1;
-    var buffer = this.ensureBuffer(this.bufferLength + maxDecodeLength);
-    var bufferLength = this.bufferLength;
+    const maxDecodeLength = (bytes.length + 1) >> 1;
+    const buffer = this.ensureBuffer(this.bufferLength + maxDecodeLength);
+    let bufferLength = this.bufferLength;
 
-    var firstDigit = this.firstDigit;
-    for (var i = 0, ii = bytes.length; i < ii; i++) {
-      var ch = bytes[i],
-        digit;
+    let firstDigit = this.firstDigit;
+    for (let i = 0, ii = bytes.length; i < ii; i++) {
+      const ch = bytes[i];
+      let digit;
       if (ch >= /* '0' = */ 0x30 && ch <= /* '9' = */ 0x39) {
         digit = ch & 0x0f;
       } else if (
