@@ -15,9 +15,10 @@
 
 import { DecodeStream } from "./stream.js";
 
-const LZWStream = (function LZWStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function LZWStream(str, maybeLength, earlyChange) {
+class LZWStream extends DecodeStream {
+  constructor(str, maybeLength, earlyChange) {
+    super(maybeLength);
+
     this.str = str;
     this.dict = str.dict;
     this.cachedData = 0;
@@ -39,13 +40,9 @@ const LZWStream = (function LZWStreamClosure() {
       lzwState.dictionaryLengths[i] = 1;
     }
     this.lzwState = lzwState;
-
-    DecodeStream.call(this, maybeLength);
   }
 
-  LZWStream.prototype = Object.create(DecodeStream.prototype);
-
-  LZWStream.prototype.readBits = function LZWStream_readBits(n) {
+  readBits(n) {
     let bitsCached = this.bitsCached;
     let cachedData = this.cachedData;
     while (bitsCached < n) {
@@ -61,9 +58,9 @@ const LZWStream = (function LZWStreamClosure() {
     this.cachedData = cachedData;
     this.lastCode = null;
     return (cachedData >>> bitsCached) & ((1 << n) - 1);
-  };
+  }
 
-  LZWStream.prototype.readBlock = function LZWStream_readBlock() {
+  readBlock() {
     const blockSize = 512,
       decodedSizeDelta = blockSize;
     let estimatedDecodedSize = blockSize * 2;
@@ -147,9 +144,7 @@ const LZWStream = (function LZWStreamClosure() {
     lzwState.currentSequenceLength = currentSequenceLength;
 
     this.bufferLength = currentBufferLength;
-  };
-
-  return LZWStream;
-})();
+  }
+}
 
 export { LZWStream };
