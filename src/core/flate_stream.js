@@ -18,19 +18,18 @@
  * of XPDF's implementation, made available under the Apache 2.0 open source
  * license.
  */
-/* eslint-disable no-var */
 
 import { DecodeStream } from "./stream.js";
 import { FormatError } from "../shared/util.js";
 
-var FlateStream = (function FlateStreamClosure() {
+const FlateStream = (function FlateStreamClosure() {
   // prettier-ignore
-  var codeLenCodeMap = new Int32Array([
+  const codeLenCodeMap = new Int32Array([
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
   ]);
 
   // prettier-ignore
-  var lengthDecode = new Int32Array([
+  const lengthDecode = new Int32Array([
     0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009, 0x0000a,
     0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017, 0x2001b, 0x2001f,
     0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043, 0x40053, 0x40063, 0x40073,
@@ -38,7 +37,7 @@ var FlateStream = (function FlateStreamClosure() {
   ]);
 
   // prettier-ignore
-  var distDecode = new Int32Array([
+  const distDecode = new Int32Array([
     0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009, 0x2000d,
     0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061, 0x60081, 0x600c1,
     0x70101, 0x70181, 0x80201, 0x80301, 0x90401, 0x90601, 0xa0801, 0xa0c01,
@@ -46,7 +45,7 @@ var FlateStream = (function FlateStreamClosure() {
   ]);
 
   // prettier-ignore
-  var fixedLitCodeTab = [new Int32Array([
+  const fixedLitCodeTab = [new Int32Array([
     0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030, 0x900c0,
     0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080, 0x80040, 0x900e0,
     0x70104, 0x80058, 0x80018, 0x90090, 0x70114, 0x80078, 0x80038, 0x900d0,
@@ -114,7 +113,7 @@ var FlateStream = (function FlateStreamClosure() {
   ]), 9];
 
   // prettier-ignore
-  var fixedDistCodeTab = [new Int32Array([
+  const fixedDistCodeTab = [new Int32Array([
     0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c, 0x5001c,
     0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016, 0x5000e, 0x00000,
     0x50001, 0x50011, 0x50009, 0x50019, 0x50005, 0x50015, 0x5000d, 0x5001d,
@@ -126,8 +125,8 @@ var FlateStream = (function FlateStreamClosure() {
     this.str = str;
     this.dict = str.dict;
 
-    var cmf = str.getByte();
-    var flg = str.getByte();
+    const cmf = str.getByte();
+    const flg = str.getByte();
     if (cmf === -1 || flg === -1) {
       throw new FormatError(`Invalid header in flate stream: ${cmf}, ${flg}`);
     }
@@ -152,11 +151,11 @@ var FlateStream = (function FlateStreamClosure() {
   FlateStream.prototype = Object.create(DecodeStream.prototype);
 
   FlateStream.prototype.getBits = function FlateStream_getBits(bits) {
-    var str = this.str;
-    var codeSize = this.codeSize;
-    var codeBuf = this.codeBuf;
+    const str = this.str;
+    let codeSize = this.codeSize;
+    let codeBuf = this.codeBuf;
 
-    var b;
+    let b;
     while (codeSize < bits) {
       if ((b = str.getByte()) === -1) {
         throw new FormatError("Bad encoding in flate stream");
@@ -172,13 +171,13 @@ var FlateStream = (function FlateStreamClosure() {
   };
 
   FlateStream.prototype.getCode = function FlateStream_getCode(table) {
-    var str = this.str;
-    var codes = table[0];
-    var maxLen = table[1];
-    var codeSize = this.codeSize;
-    var codeBuf = this.codeBuf;
+    const str = this.str;
+    const codes = table[0];
+    const maxLen = table[1];
+    let codeSize = this.codeSize;
+    let codeBuf = this.codeBuf;
 
-    var b;
+    let b;
     while (codeSize < maxLen) {
       if ((b = str.getByte()) === -1) {
         // premature end of stream. code might however still be valid.
@@ -188,9 +187,9 @@ var FlateStream = (function FlateStreamClosure() {
       codeBuf |= b << codeSize;
       codeSize += 8;
     }
-    var code = codes[codeBuf & ((1 << maxLen) - 1)];
-    var codeLen = code >> 16;
-    var codeVal = code & 0xffff;
+    const code = codes[codeBuf & ((1 << maxLen) - 1)];
+    const codeLen = code >> 16;
+    const codeVal = code & 0xffff;
     if (codeLen < 1 || codeSize < codeLen) {
       throw new FormatError("Bad encoding in flate stream");
     }
@@ -202,11 +201,11 @@ var FlateStream = (function FlateStreamClosure() {
   FlateStream.prototype.generateHuffmanTable = function flateStreamGenerateHuffmanTable(
     lengths
   ) {
-    var n = lengths.length;
+    const n = lengths.length;
 
     // find max code length
-    var maxLen = 0;
-    var i;
+    let maxLen = 0;
+    let i;
     for (i = 0; i < n; ++i) {
       if (lengths[i] > maxLen) {
         maxLen = lengths[i];
@@ -214,18 +213,18 @@ var FlateStream = (function FlateStreamClosure() {
     }
 
     // build the table
-    var size = 1 << maxLen;
-    var codes = new Int32Array(size);
+    const size = 1 << maxLen;
+    const codes = new Int32Array(size);
     for (
-      var len = 1, code = 0, skip = 2;
+      let len = 1, code = 0, skip = 2;
       len <= maxLen;
       ++len, code <<= 1, skip <<= 1
     ) {
-      for (var val = 0; val < n; ++val) {
+      for (let val = 0; val < n; ++val) {
         if (lengths[val] === len) {
           // bit-reverse the code
-          var code2 = 0;
-          var t = code;
+          let code2 = 0;
+          let t = code;
           for (i = 0; i < len; ++i) {
             code2 = (code2 << 1) | (t & 1);
             t >>= 1;
@@ -244,10 +243,10 @@ var FlateStream = (function FlateStreamClosure() {
   };
 
   FlateStream.prototype.readBlock = function FlateStream_readBlock() {
-    var buffer, len;
-    var str = this.str;
+    let buffer, len;
+    const str = this.str;
     // read block header
-    var hdr = this.getBits(3);
+    let hdr = this.getBits(3);
     if (hdr & 1) {
       this.eof = true;
     }
@@ -255,12 +254,12 @@ var FlateStream = (function FlateStreamClosure() {
 
     if (hdr === 0) {
       // uncompressed block
-      var b;
+      let b;
 
       if ((b = str.getByte()) === -1) {
         throw new FormatError("Bad block header in flate stream");
       }
-      var blockLen = b;
+      let blockLen = b;
       if ((b = str.getByte()) === -1) {
         throw new FormatError("Bad block header in flate stream");
       }
@@ -268,7 +267,7 @@ var FlateStream = (function FlateStreamClosure() {
       if ((b = str.getByte()) === -1) {
         throw new FormatError("Bad block header in flate stream");
       }
-      var check = b;
+      let check = b;
       if ((b = str.getByte()) === -1) {
         throw new FormatError("Bad block header in flate stream");
       }
@@ -300,35 +299,35 @@ var FlateStream = (function FlateStreamClosure() {
       return;
     }
 
-    var litCodeTable;
-    var distCodeTable;
+    let litCodeTable;
+    let distCodeTable;
     if (hdr === 1) {
       // compressed block, fixed codes
       litCodeTable = fixedLitCodeTab;
       distCodeTable = fixedDistCodeTab;
     } else if (hdr === 2) {
       // compressed block, dynamic codes
-      var numLitCodes = this.getBits(5) + 257;
-      var numDistCodes = this.getBits(5) + 1;
-      var numCodeLenCodes = this.getBits(4) + 4;
+      const numLitCodes = this.getBits(5) + 257;
+      const numDistCodes = this.getBits(5) + 1;
+      const numCodeLenCodes = this.getBits(4) + 4;
 
       // build the code lengths code table
-      var codeLenCodeLengths = new Uint8Array(codeLenCodeMap.length);
+      const codeLenCodeLengths = new Uint8Array(codeLenCodeMap.length);
 
-      var i;
+      let i;
       for (i = 0; i < numCodeLenCodes; ++i) {
         codeLenCodeLengths[codeLenCodeMap[i]] = this.getBits(3);
       }
-      var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
+      const codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
 
       // build the literal and distance code tables
       len = 0;
       i = 0;
-      var codes = numLitCodes + numDistCodes;
-      var codeLengths = new Uint8Array(codes);
-      var bitsLength, bitsOffset, what;
+      const codes = numLitCodes + numDistCodes;
+      const codeLengths = new Uint8Array(codes);
+      let bitsLength, bitsOffset, what;
       while (i < codes) {
-        var code = this.getCode(codeLenCodeTab);
+        const code = this.getCode(codeLenCodeTab);
         if (code === 16) {
           bitsLength = 2;
           bitsOffset = 3;
@@ -346,7 +345,7 @@ var FlateStream = (function FlateStreamClosure() {
           continue;
         }
 
-        var repeatLength = this.getBits(bitsLength) + bitsOffset;
+        let repeatLength = this.getBits(bitsLength) + bitsOffset;
         while (repeatLength-- > 0) {
           codeLengths[i++] = what;
         }
@@ -363,10 +362,10 @@ var FlateStream = (function FlateStreamClosure() {
     }
 
     buffer = this.buffer;
-    var limit = buffer ? buffer.length : 0;
-    var pos = this.bufferLength;
+    let limit = buffer ? buffer.length : 0;
+    let pos = this.bufferLength;
     while (true) {
-      var code1 = this.getCode(litCodeTable);
+      let code1 = this.getCode(litCodeTable);
       if (code1 < 256) {
         if (pos + 1 >= limit) {
           buffer = this.ensureBuffer(pos + 1);
@@ -381,7 +380,7 @@ var FlateStream = (function FlateStreamClosure() {
       }
       code1 -= 257;
       code1 = lengthDecode[code1];
-      var code2 = code1 >> 16;
+      let code2 = code1 >> 16;
       if (code2 > 0) {
         code2 = this.getBits(code2);
       }
@@ -392,12 +391,12 @@ var FlateStream = (function FlateStreamClosure() {
       if (code2 > 0) {
         code2 = this.getBits(code2);
       }
-      var dist = (code1 & 0xffff) + code2;
+      const dist = (code1 & 0xffff) + code2;
       if (pos + len >= limit) {
         buffer = this.ensureBuffer(pos + len);
         limit = buffer.length;
       }
-      for (var k = 0; k < len; ++k, ++pos) {
+      for (let k = 0; k < len; ++k, ++pos) {
         buffer[pos] = buffer[pos - dist];
       }
     }
