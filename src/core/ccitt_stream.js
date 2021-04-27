@@ -15,7 +15,7 @@
 
 import { Dict, isDict } from "./primitives.js";
 import { CCITTFaxDecoder } from "./ccitt.js";
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 
 class CCITTFaxStream extends DecodeStream {
   constructor(str, maybeLength, params) {

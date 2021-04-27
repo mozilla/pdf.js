@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { isDict } from "./primitives.js";
 import { JpegImage } from "./jpg.js";
 import { shadow } from "../shared/util.js";
