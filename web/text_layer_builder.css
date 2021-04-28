@@ -33,6 +33,7 @@
 }
 
 .textLayer .highlight {
+  position: relative;
   margin: -1px;
   padding: 1px;
   background-color: rgba(180, 0, 170, 1);
