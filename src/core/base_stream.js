@@ -94,6 +94,13 @@ class BaseStream {
   makeSubStream(start, length, dict = null) {
     unreachable("Abstract method `makeSubStream` called");
   }
+
+  /**
+   * @returns {Array | null}
+   */
+  getBaseStreams() {
+    return null;
+  }
 }
 
 export { BaseStream };

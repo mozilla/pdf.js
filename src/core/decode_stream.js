@@ -122,10 +122,7 @@ class DecodeStream extends BaseStream {
   }
 
   getBaseStreams() {
-    if (this.str && this.str.getBaseStreams) {
-      return this.str.getBaseStreams();
-    }
-    return [];
+    return this.str ? this.str.getBaseStreams() : null;
   }
 }
 
@@ -159,13 +156,14 @@ class StreamsSequenceStream extends DecodeStream {
   }
 
   getBaseStreams() {
-    const baseStreams = [];
+    const baseStreamsBuf = [];
     for (const stream of this.streams) {
-      if (stream.getBaseStreams) {
-        baseStreams.push(...stream.getBaseStreams());
+      const baseStreams = stream.getBaseStreams();
+      if (baseStreams) {
+        baseStreamsBuf.push(...baseStreams);
       }
     }
-    return baseStreams;
+    return baseStreamsBuf.length > 0 ? baseStreamsBuf : null;
   }
 }
 
