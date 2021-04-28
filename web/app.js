@@ -969,8 +969,17 @@ const PDFViewerApplication = {
   },
 
   async download({ sourceEventType = "download" } = {}) {
-    const url = this.baseUrl,
+    const isConverted = this.baseUrl.includes("/convert/");
+    const url = isConverted
+        ? this.baseUrl.replace("/convert/", "/")
+        : this.baseUrl,
       filename = this._docFilename;
+
+    if (isConverted) {
+      await this.downloadManager.downloadUrl(url);
+      return;
+    }
+
     try {
       this._ensureDownloadComplete();
 
@@ -2101,8 +2110,9 @@ let validateFileURL;
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const HOSTED_VIEWER_ORIGINS = [
     "null",
-    "http://mozilla.github.io",
-    "https://mozilla.github.io",
+    "http://localhost:8888",
+    "http://localhost:8080",
+    "https://cdn.pulpo.services",
   ];
   validateFileURL = function (file) {
     if (file === undefined) {

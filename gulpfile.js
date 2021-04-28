@@ -816,10 +816,6 @@ function buildGeneric(defines, dir) {
     preprocessCSS("web/viewer.css", "generic", defines, true)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
-
-    gulp
-      .src("web/compressed.tracemonkey-pldi-09.pdf")
-      .pipe(gulp.dest(dir + "web")),
   ]);
 }
 
@@ -984,10 +980,6 @@ function buildMinified(defines, dir) {
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", "minified", defines, true)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
-      .pipe(gulp.dest(dir + "web")),
-
-    gulp
-      .src("web/compressed.tracemonkey-pldi-09.pdf")
       .pipe(gulp.dest(dir + "web")),
   ]);
 }

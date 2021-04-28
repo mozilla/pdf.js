@@ -48,9 +48,6 @@
   position: relative;
   overflow: visible;
   border: var(--page-border);
-  background-clip: content-box;
-  border-image: url(images/shadow.png) 9 9 repeat;
-  background-color: rgba(255, 255, 255, 1);
 }
 
 .pdfViewer.removePageBorders .page {
