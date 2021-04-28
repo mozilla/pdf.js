@@ -108,18 +108,20 @@ class ObjectLoader {
           pendingRequests.push({ begin: ex.begin, end: ex.end });
         }
       }
-      if (currentNode && currentNode.getBaseStreams) {
+      if (isStream(currentNode)) {
         const baseStreams = currentNode.getBaseStreams();
-        let foundMissingData = false;
-        for (const stream of baseStreams) {
-          if (stream.isDataLoaded) {
-            continue;
+        if (baseStreams) {
+          let foundMissingData = false;
+          for (const stream of baseStreams) {
+            if (stream.isDataLoaded) {
+              continue;
+            }
+            foundMissingData = true;
+            pendingRequests.push({ begin: stream.start, end: stream.end });
           }
-          foundMissingData = true;
-          pendingRequests.push({ begin: stream.start, end: stream.end });
-        }
-        if (foundMissingData) {
-          nodesToRevisit.push(currentNode);
+          if (foundMissingData) {
+            nodesToRevisit.push(currentNode);
+          }
         }
       }
 
