@@ -18,17 +18,18 @@ import {
   arraysToBytes,
   createPromiseCapability,
 } from "../shared/util.js";
-import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
+import { Stream } from "./stream.js";
 
-class ChunkedStream extends BaseStream {
+class ChunkedStream extends Stream {
   constructor(length, chunkSize, manager) {
-    super();
+    super(
+      /* arrayBuffer = */ new Uint8Array(length),
+      /* start = */ 0,
+      /* length = */ length,
+      /* dict = */ null
+    );
 
-    this.bytes = new Uint8Array(length);
-    this.start = 0;
-    this.pos = 0;
-    this.end = length;
     this.chunkSize = chunkSize;
     this._loadedChunks = new Set();
     this.numChunks = Math.ceil(length / chunkSize);
@@ -149,14 +150,6 @@ class ChunkedStream extends BaseStream {
     return this._loadedChunks.has(chunk);
   }
 
-  get length() {
-    return this.end - this.start;
-  }
-
-  get isEmpty() {
-    return this.length === 0;
-  }
-
   getByte() {
     const pos = this.pos;
     if (pos >= this.end) {
@@ -207,14 +200,6 @@ class ChunkedStream extends BaseStream {
       this.ensureRange(begin, end);
     }
     return this.bytes.subarray(begin, end);
-  }
-
-  reset() {
-    this.pos = this.start;
-  }
-
-  moveStart() {
-    this.start = this.pos;
   }
 
   makeSubStream(start, length, dict = null) {
