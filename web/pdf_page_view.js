@@ -618,9 +618,16 @@ class PDFPageView {
         }
         this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
         this._onTextLayerRendered = null;
+
+        if (!this.canvas) {
+          return; // The canvas was removed, prevent errors below.
+        }
         this.pdfPage.getStructTree().then(tree => {
           if (!tree) {
             return;
+          }
+          if (!this.canvas) {
+            return; // The canvas was removed, prevent errors below.
           }
           const treeDom = this.structTreeLayer.render(tree);
           treeDom.classList.add("structTree");
