@@ -49,7 +49,6 @@ class Field extends PDFObject {
     this.multiline = data.multiline;
     this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
-    this.page = data.page;
     this.password = data.password;
     this.print = data.print;
     this.radiosInUnison = data.radiosInUnison;
@@ -78,6 +77,7 @@ class Field extends PDFObject {
     this._fillColor = data.fillColor || ["T"];
     this._isChoice = Array.isArray(data.items);
     this._items = data.items || [];
+    this._page = data.page || 0;
     this._strokeColor = data.strokeColor || ["G", 0];
     this._textColor = data.textColor || ["G", 0];
     this._value = data.value || "";
@@ -178,6 +178,14 @@ class Field extends PDFObject {
 
   set borderColor(color) {
     this.strokeColor = color;
+  }
+
+  get page() {
+    return this._page;
+  }
+
+  set page(_) {
+    throw new Error("field.page is read-only");
   }
 
   get textColor() {
