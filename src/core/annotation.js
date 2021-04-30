@@ -71,22 +71,34 @@ class AnnotationFactory {
    *   instance.
    */
   static create(xref, ref, pdfManager, idFactory, collectFields) {
-    return pdfManager.ensureCatalog("acroForm").then(acroForm => {
-      return pdfManager.ensure(this, "_create", [
+    return Promise.all([
+      pdfManager.ensureCatalog("acroForm"),
+      collectFields ? this._getPageIndex(xref, ref, pdfManager) : -1,
+    ]).then(([acroForm, pageIndex]) =>
+      pdfManager.ensure(this, "_create", [
         xref,
         ref,
         pdfManager,
         idFactory,
         acroForm,
         collectFields,
-      ]);
-    });
+        pageIndex,
+      ])
+    );
   }
 
   /**
    * @private
    */
-  static _create(xref, ref, pdfManager, idFactory, acroForm, collectFields) {
+  static _create(
+    xref,
+    ref,
+    pdfManager,
+    idFactory,
+    acroForm,
+    collectFields,
+    pageIndex = -1
+  ) {
     const dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return undefined;
@@ -108,6 +120,7 @@ class AnnotationFactory {
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
       collectFields,
+      pageIndex,
     };
 
     switch (subtype) {
@@ -194,6 +207,26 @@ class AnnotationFactory {
           }
         }
         return new Annotation(parameters);
+    }
+  }
+
+  static async _getPageIndex(xref, ref, pdfManager) {
+    try {
+      const annotDict = await xref.fetchIfRefAsync(ref);
+      if (!isDict(annotDict)) {
+        return -1;
+      }
+      const pageRef = annotDict.getRaw("P");
+      if (!isRef(pageRef)) {
+        return -1;
+      }
+      const pageIndex = await pdfManager.ensureCatalog("getPageIndex", [
+        pageRef,
+      ]);
+      return pageIndex;
+    } catch (ex) {
+      warn(`_getPageIndex: "${ex}".`);
+      return -1;
     }
   }
 }
@@ -373,6 +406,7 @@ class Annotation {
         AnnotationActionEventType
       );
       this.data.fieldName = this._constructFieldName(dict);
+      this.data.pageIndex = params.pageIndex;
     }
 
     this._fallbackFontDict = null;
@@ -681,6 +715,7 @@ class Annotation {
         name: this.data.fieldName,
         type: "",
         kidIds: this.data.kidIds,
+        page: this.data.pageIndex,
       };
     }
     return null;
@@ -1775,6 +1810,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       name: this.data.fieldName,
       rect: this.data.rect,
       actions: this.data.actions,
+      page: this.data.pageIndex,
       type: "text",
     };
   }
@@ -2106,6 +2142,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       rect: this.data.rect,
       hidden: this.data.hidden,
       actions: this.data.actions,
+      page: this.data.pageIndex,
       type,
     };
   }
@@ -2186,6 +2223,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       hidden: this.data.hidden,
       actions: this.data.actions,
       items: this.data.options,
+      page: this.data.pageIndex,
       type,
     };
   }
@@ -2205,6 +2243,7 @@ class SignatureWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value: null,
+      page: this.data.pageIndex,
       type: "signature",
     };
   }

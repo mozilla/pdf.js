@@ -762,4 +762,44 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("Check field properties", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("evaljs.pdf", "#\\35 5R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check page index", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await clearInput(page, "#\\35 5R");
+          await page.type(
+            "#\\35 5R",
+            `
+            ['Text1', 'Text2', 'Text4',
+             'List Box7', 'Group6'].map(x => this.getField(x).page).join(',')
+          `
+          );
+
+          // Click on execute button to eval the above code.
+          await page.click("[data-annotation-id='57R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\35 6R").value !== ""`
+          );
+
+          const text = await page.$eval("#\\35 6R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("0,0,1,1,1");
+        })
+      );
+    });
+  });
 });

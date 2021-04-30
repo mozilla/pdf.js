@@ -70,6 +70,7 @@ class Catalog {
     this.builtInCMapCache = new Map();
     this.globalImageCache = new GlobalImageCache();
     this.pageKidsCountCache = new RefSetCache();
+    this.pageIndexCache = new RefSetCache();
     this.nonBlendModesSet = new RefSet();
   }
 
@@ -983,6 +984,7 @@ class Catalog {
     clearPrimitiveCaches();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
+    this.pageIndexCache.clear();
     this.nonBlendModesSet.clear();
 
     const promises = [];
@@ -1112,6 +1114,11 @@ class Catalog {
   }
 
   getPageIndex(pageRef) {
+    const cachedPageIndex = this.pageIndexCache.get(pageRef);
+    if (cachedPageIndex !== undefined) {
+      return Promise.resolve(cachedPageIndex);
+    }
+
     // The page tree nodes have the count of all the leaves below them. To get
     // how many pages are before we just have to walk up the tree and keep
     // adding the count of siblings to the left of the node.
@@ -1191,16 +1198,16 @@ class Catalog {
     }
 
     let total = 0;
-    function next(ref) {
-      return pagesBeforeRef(ref).then(function (args) {
+    const next = ref =>
+      pagesBeforeRef(ref).then(args => {
         if (!args) {
+          this.pageIndexCache.put(pageRef, total);
           return total;
         }
         const [count, parentRef] = args;
         total += count;
         return next(parentRef);
       });
-    }
 
     return next(pageRef);
   }
