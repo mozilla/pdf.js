@@ -1495,12 +1495,14 @@ describe("api", function () {
       });
 
       const data = await Promise.all([defaultPromise, parametersPromise]);
+
       expect(!!data[0].items).toEqual(true);
-      expect(data[0].items.length).toEqual(7);
+      expect(data[0].items.length).toEqual(12);
       expect(!!data[0].styles).toEqual(true);
 
-      // A simple check that ensures the two `textContent` object match.
-      expect(JSON.stringify(data[0])).toEqual(JSON.stringify(data[1]));
+      expect(!!data[1].items).toEqual(true);
+      expect(data[1].items.length).toEqual(7);
+      expect(!!data[1].styles).toEqual(true);
     });
 
     it("gets text content, with correct properties (issue 8276)", async function () {
@@ -1520,6 +1522,7 @@ describe("api", function () {
         str: "Issue 8276",
         transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
         width: 77.49,
+        hasEOL: false,
       });
       expect(styles.Times).toEqual({
         fontFamily: "serif",
