@@ -422,7 +422,7 @@ class FontFaceObject {
       return this.compiledGlyphs[character];
     }
 
-    let cmds, current;
+    let cmds;
     try {
       cmds = objs.get(this.loadedName + "_path_" + character);
     } catch (ex) {
@@ -441,27 +441,22 @@ class FontFaceObject {
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...
     if (this.isEvalSupported && IsEvalSupportedCached.value) {
-      let args,
-        js = "";
-      for (let i = 0, ii = cmds.length; i < ii; i++) {
-        current = cmds[i];
-
-        if (current.args !== undefined) {
-          args = current.args.join(",");
-        } else {
-          args = "";
-        }
-        js += "c." + current.cmd + "(" + args + ");\n";
+      const jsBuf = [];
+      for (const current of cmds) {
+        const args = current.args !== undefined ? current.args.join(",") : "";
+        jsBuf.push("c.", current.cmd, "(", args, ");\n");
       }
       // eslint-disable-next-line no-new-func
-      return (this.compiledGlyphs[character] = new Function("c", "size", js));
+      return (this.compiledGlyphs[character] = new Function(
+        "c",
+        "size",
+        jsBuf.join("")
+      ));
     }
     // ... but fall back on using Function.prototype.apply() if we're
     // blocked from using eval() for whatever reason (like CSP policies).
     return (this.compiledGlyphs[character] = function (c, size) {
-      for (let i = 0, ii = cmds.length; i < ii; i++) {
-        current = cmds[i];
-
+      for (const current of cmds) {
         if (current.cmd === "scale") {
           current.args = [size, -size];
         }
