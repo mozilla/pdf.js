@@ -397,7 +397,7 @@ class FontFaceObject {
     if (!this.data || this.disableFontFace) {
       return null;
     }
-    const data = bytesToString(new Uint8Array(this.data));
+    const data = bytesToString(this.data);
     // Add the @font-face rule to the document.
     const url = `url(data:${this.mimetype};base64,${btoa(data)});`;
     let rule;
