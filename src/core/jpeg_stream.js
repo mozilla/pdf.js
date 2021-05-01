@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { isDict } from "./primitives.js";
 import { JpegImage } from "./jpg.js";
 import { shadow } from "../shared/util.js";
@@ -23,7 +23,7 @@ import { shadow } from "../shared/util.js";
  * like all the other DecodeStreams.
  */
 class JpegStream extends DecodeStream {
-  constructor(stream, maybeLength, dict, params) {
+  constructor(stream, maybeLength, params) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
     let ch;
@@ -37,8 +37,8 @@ class JpegStream extends DecodeStream {
     super(maybeLength);
 
     this.stream = stream;
+    this.dict = stream.dict;
     this.maybeLength = maybeLength;
-    this.dict = dict;
     this.params = params;
   }
 

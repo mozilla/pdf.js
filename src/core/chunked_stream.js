@@ -19,13 +19,17 @@ import {
   createPromiseCapability,
 } from "../shared/util.js";
 import { MissingDataException } from "./core_utils.js";
+import { Stream } from "./stream.js";
 
-class ChunkedStream {
+class ChunkedStream extends Stream {
   constructor(length, chunkSize, manager) {
-    this.bytes = new Uint8Array(length);
-    this.start = 0;
-    this.pos = 0;
-    this.end = length;
+    super(
+      /* arrayBuffer = */ new Uint8Array(length),
+      /* start = */ 0,
+      /* length = */ length,
+      /* dict = */ null
+    );
+
     this.chunkSize = chunkSize;
     this._loadedChunks = new Set();
     this.numChunks = Math.ceil(length / chunkSize);
@@ -46,15 +50,11 @@ class ChunkedStream {
     return chunks;
   }
 
-  getBaseStreams() {
-    return [this];
-  }
-
   get numChunksLoaded() {
     return this._loadedChunks.size;
   }
 
-  allChunksLoaded() {
+  get isDataLoaded() {
     return this.numChunksLoaded === this.numChunks;
   }
 
@@ -150,14 +150,6 @@ class ChunkedStream {
     return this._loadedChunks.has(chunk);
   }
 
-  get length() {
-    return this.end - this.start;
-  }
-
-  get isEmpty() {
-    return this.length === 0;
-  }
-
   getByte() {
     const pos = this.pos;
     if (pos >= this.end) {
@@ -169,24 +161,6 @@ class ChunkedStream {
     return this.bytes[this.pos++];
   }
 
-  getUint16() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    if (b0 === -1 || b1 === -1) {
-      return -1;
-    }
-    return (b0 << 8) + b1;
-  }
-
-  getInt32() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    const b2 = this.getByte();
-    const b3 = this.getByte();
-    return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-  }
-
-  // Returns subarray of original buffer, should only be read.
   getBytes(length, forceClamped = false) {
     const bytes = this.bytes;
     const pos = this.pos;
@@ -215,20 +189,6 @@ class ChunkedStream {
     return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
   }
 
-  peekByte() {
-    const peekedByte = this.getByte();
-    if (peekedByte !== -1) {
-      this.pos--;
-    }
-    return peekedByte;
-  }
-
-  peekBytes(length, forceClamped = false) {
-    const bytes = this.getBytes(length, forceClamped);
-    this.pos -= bytes.length;
-    return bytes;
-  }
-
   getByteRange(begin, end) {
     if (begin < 0) {
       begin = 0;
@@ -242,22 +202,7 @@ class ChunkedStream {
     return this.bytes.subarray(begin, end);
   }
 
-  skip(n) {
-    if (!n) {
-      n = 1;
-    }
-    this.pos += n;
-  }
-
-  reset() {
-    this.pos = this.start;
-  }
-
-  moveStart() {
-    this.start = this.pos;
-  }
-
-  makeSubStream(start, length, dict) {
+  makeSubStream(start, length, dict = null) {
     if (length) {
       if (start + length > this.progressiveDataLength) {
         this.ensureRange(start, start + length);
@@ -291,18 +236,25 @@ class ChunkedStream {
       }
       return missingChunks;
     };
-    ChunkedStreamSubstream.prototype.allChunksLoaded = function () {
-      if (this.numChunksLoaded === this.numChunks) {
-        return true;
-      }
-      return this.getMissingChunks().length === 0;
-    };
+    Object.defineProperty(ChunkedStreamSubstream.prototype, "isDataLoaded", {
+      get() {
+        if (this.numChunksLoaded === this.numChunks) {
+          return true;
+        }
+        return this.getMissingChunks().length === 0;
+      },
+      configurable: true,
+    });
 
     const subStream = new ChunkedStreamSubstream();
     subStream.pos = subStream.start = start;
     subStream.end = start + length || this.end;
     subStream.dict = dict;
     return subStream;
+  }
+
+  getBaseStreams() {
+    return [this];
   }
 }
 
@@ -521,7 +473,7 @@ class ChunkedStreamManager {
       this.stream.onReceiveData(begin, chunk);
     }
 
-    if (this.stream.allChunksLoaded()) {
+    if (this.stream.isDataLoaded) {
       this._loadedStreamCapability.resolve(this.stream);
     }
 

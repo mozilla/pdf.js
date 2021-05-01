@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { JpxImage } from "./jpx.js";
 import { shadow } from "../shared/util.js";
 
@@ -22,12 +22,12 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 class JpxStream extends DecodeStream {
-  constructor(stream, maybeLength, dict, params) {
+  constructor(stream, maybeLength, params) {
     super(maybeLength);
 
     this.stream = stream;
+    this.dict = stream.dict;
     this.maybeLength = maybeLength;
-    this.dict = dict;
     this.params = params;
   }
 

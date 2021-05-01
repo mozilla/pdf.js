@@ -14,7 +14,7 @@
  */
 
 import { isDict, isStream } from "./primitives.js";
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { Jbig2Image } from "./jbig2.js";
 import { shadow } from "../shared/util.js";
 
@@ -23,12 +23,12 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 class Jbig2Stream extends DecodeStream {
-  constructor(stream, maybeLength, dict, params) {
+  constructor(stream, maybeLength, params) {
     super(maybeLength);
 
     this.stream = stream;
+    this.dict = stream.dict;
     this.maybeLength = maybeLength;
-    this.dict = dict;
     this.params = params;
   }
 
