@@ -14,6 +14,7 @@
  */
 
 import { assert, unreachable } from "../shared/util.js";
+import { BaseStream } from "./base_stream.js";
 
 const EOF = {};
 
@@ -383,7 +384,7 @@ function isRefsEqual(v1, v2) {
 }
 
 function isStream(v) {
-  return typeof v === "object" && v !== null && v.getBytes !== undefined;
+  return v instanceof BaseStream;
 }
 
 function clearPrimitiveCaches() {

@@ -53,7 +53,7 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { NullStream, Stream, StreamsSequenceStream } from "./stream.js";
+import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
@@ -61,6 +61,7 @@ import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
+import { StreamsSequenceStream } from "./decode_stream.js";
 import { StructTreePage } from "./struct_tree.js";
 import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
