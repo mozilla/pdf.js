@@ -315,8 +315,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       this.insertRule(rule);
 
       const names = [];
-      for (i = 0, ii = fonts.length; i < ii; i++) {
-        names.push(fonts[i].loadedName);
+      for (const font of fonts) {
+        names.push(font.loadedName);
       }
       names.push(loadTestFontId);
 
@@ -326,10 +326,10 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       div.style.position = "absolute";
       div.style.top = div.style.left = "0px";
 
-      for (i = 0, ii = names.length; i < ii; ++i) {
+      for (const name of names) {
         const span = this._document.createElement("span");
         span.textContent = "Hi";
-        span.style.fontFamily = names[i];
+        span.style.fontFamily = name;
         div.appendChild(span);
       }
       this._document.body.appendChild(div);
