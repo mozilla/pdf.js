@@ -32,15 +32,13 @@ class ARCFourCipher {
     this.a = 0;
     this.b = 0;
     const s = new Uint8Array(256);
-    let i,
-      j = 0,
-      tmp,
-      keyLength = key.length;
-    for (i = 0; i < 256; ++i) {
+    const keyLength = key.length;
+
+    for (let i = 0; i < 256; ++i) {
       s[i] = i;
     }
-    for (i = 0; i < 256; ++i) {
-      tmp = s[i];
+    for (let i = 0, j = 0; i < 256; ++i) {
+      const tmp = s[i];
       j = (j + tmp + key[i % keyLength]) & 0xff;
       s[i] = s[j];
       s[j] = tmp;
@@ -49,19 +47,16 @@ class ARCFourCipher {
   }
 
   encryptBlock(data) {
-    let i,
-      n = data.length,
-      tmp,
-      tmp2;
     let a = this.a,
-      b = this.b,
-      s = this.s;
+      b = this.b;
+    const s = this.s;
+    const n = data.length;
     const output = new Uint8Array(n);
-    for (i = 0; i < n; ++i) {
+    for (let i = 0; i < n; ++i) {
       a = (a + 1) & 0xff;
-      tmp = s[a];
+      const tmp = s[a];
       b = (b + tmp) & 0xff;
-      tmp2 = s[b];
+      const tmp2 = s[b];
       s[a] = tmp2;
       s[b] = tmp;
       output[i] = data[i] ^ s[(tmp + tmp2) & 0xff];
@@ -110,12 +105,12 @@ const calculateMD5 = (function calculateMD5Closure() {
     // pre-processing
     const paddedLength = (length + 72) & ~63; // data + 9 extra bytes
     const padded = new Uint8Array(paddedLength);
-    let i, j, n;
+    let i, j;
     for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
     }
     padded[i++] = 0x80;
-    n = paddedLength - 8;
+    const n = paddedLength - 8;
     while (i < n) {
       padded[i++] = 0;
     }
@@ -136,7 +131,7 @@ const calculateMD5 = (function calculateMD5Closure() {
           (padded[i + 2] << 16) |
           (padded[i + 3] << 24);
       }
-      var a = h0,
+      let a = h0,
         b = h1,
         c = h2,
         d = h3,
@@ -328,12 +323,12 @@ const calculateSHA256 = (function calculateSHA256Closure() {
     // pre-processing
     const paddedLength = Math.ceil((length + 9) / 64) * 64;
     const padded = new Uint8Array(paddedLength);
-    let i, j, n;
+    let i, j;
     for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
     }
     padded[i++] = 0x80;
-    n = paddedLength - 8;
+    const n = paddedLength - 8;
     while (i < n) {
       padded[i++] = 0;
     }
@@ -365,7 +360,7 @@ const calculateSHA256 = (function calculateSHA256Closure() {
             w[j - 16]) |
           0;
       }
-      var a = h0,
+      let a = h0,
         b = h1,
         c = h2,
         d = h3,
@@ -548,12 +543,12 @@ const calculateSHA512 = (function calculateSHA512Closure() {
     // pre-processing
     const paddedLength = Math.ceil((length + 17) / 128) * 128;
     const padded = new Uint8Array(paddedLength);
-    let i, j, n;
+    let i, j;
     for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
     }
     padded[i++] = 0x80;
-    n = paddedLength - 16;
+    const n = paddedLength - 16;
     while (i < n) {
       padded[i++] = 0;
     }
@@ -588,9 +583,9 @@ const calculateSHA512 = (function calculateSHA512Closure() {
       h = new Word64(0, 0);
     const t1 = new Word64(0, 0),
       t2 = new Word64(0, 0);
-    let tmp1 = new Word64(0, 0),
-      tmp2 = new Word64(0, 0),
-      tmp3;
+    const tmp1 = new Word64(0, 0),
+      tmp2 = new Word64(0, 0);
+    let tmp3;
 
     // for each 1024 bit block
     for (i = 0; i < paddedLength; ) {
@@ -1522,8 +1517,8 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
     encryptMetadata
   ) {
     const hashDataSize = 40 + ownerPassword.length + fileId.length;
-    let hashData = new Uint8Array(hashDataSize),
-      i = 0,
+    const hashData = new Uint8Array(hashDataSize);
+    let i = 0,
       j,
       n;
     if (password) {
@@ -1573,10 +1568,9 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
-      let derivedKey = new Uint8Array(n),
-        k;
+      const derivedKey = new Uint8Array(n);
       for (j = 1; j <= 19; ++j) {
-        for (k = 0; k < n; ++k) {
+        for (let k = 0; k < n; ++k) {
           derivedKey[k] = encryptionKey[k] ^ j;
         }
         cipher = new ARCFourCipher(derivedKey);
@@ -1600,15 +1594,13 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   function decodeUserPassword(password, ownerPassword, revision, keyLength) {
-    let hashData = new Uint8Array(32),
-      i = 0,
-      j,
-      n;
-    n = Math.min(32, password.length);
+    const hashData = new Uint8Array(32);
+    let i = 0;
+    const n = Math.min(32, password.length);
     for (; i < n; ++i) {
       hashData[i] = password[i];
     }
-    j = 0;
+    let j = 0;
     while (i < 32) {
       hashData[i++] = defaultPasswordBytes[j++];
     }
@@ -1623,10 +1615,9 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
     let cipher, userPassword;
     if (revision >= 3) {
       userPassword = ownerPassword;
-      let derivedKey = new Uint8Array(keyLengthInBytes),
-        k;
+      const derivedKey = new Uint8Array(keyLengthInBytes);
       for (j = 19; j >= 0; j--) {
-        for (k = 0; k < keyLengthInBytes; ++k) {
+        for (let k = 0; k < keyLengthInBytes; ++k) {
           derivedKey[k] = hash[k] ^ j;
         }
         cipher = new ARCFourCipher(derivedKey);
@@ -1642,10 +1633,10 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
   const identityName = Name.get("Identity");
 
   function buildObjectKey(num, gen, encryptionKey, isAes = false) {
-    let key = new Uint8Array(encryptionKey.length + 9),
-      i,
-      n;
-    for (i = 0, n = encryptionKey.length; i < n; ++i) {
+    const key = new Uint8Array(encryptionKey.length + 9);
+    const n = encryptionKey.length;
+    let i;
+    for (i = 0; i < n; ++i) {
       key[i] = encryptionKey[i];
     }
     key[i++] = num & 0xff;
