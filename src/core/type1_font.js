@@ -24,8 +24,8 @@ import {
   CFFStrings,
   CFFTopDict,
 } from "./cff_parser.js";
-import { isWhiteSpace, MissingDataException } from "./core_utils.js";
 import { SEAC_ANALYSIS_ENABLED, type1FontGlyphMapping } from "./fonts_utils.js";
+import { isWhiteSpace } from "./core_utils.js";
 import { Stream } from "./stream.js";
 import { Type1Parser } from "./type1_parser.js";
 import { warn } from "../shared/util.js";
@@ -68,9 +68,6 @@ function getHeaderBlock(stream, suggestedLength) {
     headerBytes = stream.getBytes(suggestedLength);
     headerBytesLength = headerBytes.length;
   } catch (ex) {
-    if (ex instanceof MissingDataException) {
-      throw ex;
-    }
     // Ignore errors if the `suggestedLength` is huge enough that a Uint8Array
     // cannot hold the result of `getBytes`, and fallback to simply checking
     // the entire stream (fixes issue3928.pdf).
