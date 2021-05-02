@@ -1486,7 +1486,7 @@ var Font = (function FontClosure() {
       }
 
       function readTableEntry(file) {
-        var tag = bytesToString(file.getBytes(4));
+        var tag = file.getString(4);
 
         var checksum = file.getInt32() >>> 0;
         var offset = file.getInt32() >>> 0;
@@ -1516,7 +1516,7 @@ var Font = (function FontClosure() {
 
       function readOpenTypeHeader(ttf) {
         return {
-          version: bytesToString(ttf.getBytes(4)),
+          version: ttf.getString(4),
           numTables: ttf.getUint16(),
           searchRange: ttf.getUint16(),
           entrySelector: ttf.getUint16(),
@@ -1525,7 +1525,7 @@ var Font = (function FontClosure() {
       }
 
       function readTrueTypeCollectionHeader(ttc) {
-        const ttcTag = bytesToString(ttc.getBytes(4));
+        const ttcTag = ttc.getString(4);
         assert(ttcTag === "ttcf", "Must be a TrueType Collection font.");
 
         const majorVersion = ttc.getUint16();
@@ -2344,7 +2344,7 @@ var Font = (function FontClosure() {
             }
             names[1][nameIndex] = str;
           } else {
-            names[0][nameIndex] = bytesToString(font.getBytes(record.length));
+            names[0][nameIndex] = font.getString(record.length);
           }
         }
         return names;

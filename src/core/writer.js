@@ -31,7 +31,7 @@ function writeDict(dict, buffer, transform) {
 function writeStream(stream, buffer, transform) {
   writeDict(stream.dict, buffer, transform);
   buffer.push(" stream\n");
-  let string = bytesToString(stream.getBytes());
+  let string = stream.getString();
   if (transform !== null) {
     string = transform.encryptString(string);
   }
@@ -129,7 +129,7 @@ function updateXFA(datasetsRef, newRefs, xref) {
     return;
   }
   const datasets = xref.fetchIfRef(datasetsRef);
-  const str = bytesToString(datasets.getBytes());
+  const str = datasets.getString();
   const xml = new SimpleXMLParser({ hasAttributes: true }).parseFromString(str);
 
   for (const { xfa } of newRefs) {

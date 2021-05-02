@@ -16,7 +16,6 @@
 import {
   assert,
   BaseException,
-  bytesToString,
   objectSize,
   stringToPDFString,
   warn,
@@ -269,7 +268,7 @@ function _collectJS(entry, xref, list, parents) {
       const js = entry.get("JS");
       let code;
       if (isStream(js)) {
-        code = bytesToString(js.getBytes());
+        code = js.getString();
       } else {
         code = js;
       }

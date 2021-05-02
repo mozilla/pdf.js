@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { shadow, unreachable } from "../shared/util.js";
+import { bytesToString, shadow, unreachable } from "../shared/util.js";
 
 class BaseStream {
   constructor() {
@@ -77,6 +77,10 @@ class BaseStream {
 
   getByteRange(begin, end) {
     unreachable("Abstract method `getByteRange` called");
+  }
+
+  getString(length) {
+    return bytesToString(this.getBytes(length, /* forceClamped = */ false));
   }
 
   skip(n) {
