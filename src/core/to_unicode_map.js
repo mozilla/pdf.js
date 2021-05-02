@@ -15,99 +15,89 @@
 
 import { unreachable } from "../shared/util.js";
 
-const ToUnicodeMap = (function ToUnicodeMapClosure() {
-  // eslint-disable-next-line no-shadow
-  function ToUnicodeMap(cmap = []) {
+class ToUnicodeMap {
+  constructor(cmap = []) {
     // The elements of this._map can be integers or strings, depending on how
     // `cmap` was created.
     this._map = cmap;
   }
 
-  ToUnicodeMap.prototype = {
-    get length() {
-      return this._map.length;
-    },
+  get length() {
+    return this._map.length;
+  }
 
-    forEach(callback) {
-      for (const charCode in this._map) {
-        callback(charCode, this._map[charCode].charCodeAt(0));
+  forEach(callback) {
+    for (const charCode in this._map) {
+      callback(charCode, this._map[charCode].charCodeAt(0));
+    }
+  }
+
+  has(i) {
+    return this._map[i] !== undefined;
+  }
+
+  get(i) {
+    return this._map[i];
+  }
+
+  charCodeOf(value) {
+    // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
+    // are both very sparse and very large (see issue8372.pdf).
+    const map = this._map;
+    if (map.length <= 0x10000) {
+      return map.indexOf(value);
+    }
+    for (const charCode in map) {
+      if (map[charCode] === value) {
+        return charCode | 0;
       }
-    },
+    }
+    return -1;
+  }
 
-    has(i) {
-      return this._map[i] !== undefined;
-    },
+  amend(map) {
+    for (const charCode in map) {
+      this._map[charCode] = map[charCode];
+    }
+  }
+}
 
-    get(i) {
-      return this._map[i];
-    },
-
-    charCodeOf(value) {
-      // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
-      // are both very sparse and very large (see issue8372.pdf).
-      const map = this._map;
-      if (map.length <= 0x10000) {
-        return map.indexOf(value);
-      }
-      for (const charCode in map) {
-        if (map[charCode] === value) {
-          return charCode | 0;
-        }
-      }
-      return -1;
-    },
-
-    amend(map) {
-      for (const charCode in map) {
-        this._map[charCode] = map[charCode];
-      }
-    },
-  };
-
-  return ToUnicodeMap;
-})();
-
-const IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
-  // eslint-disable-next-line no-shadow
-  function IdentityToUnicodeMap(firstChar, lastChar) {
+class IdentityToUnicodeMap {
+  constructor(firstChar, lastChar) {
     this.firstChar = firstChar;
     this.lastChar = lastChar;
   }
 
-  IdentityToUnicodeMap.prototype = {
-    get length() {
-      return this.lastChar + 1 - this.firstChar;
-    },
+  get length() {
+    return this.lastChar + 1 - this.firstChar;
+  }
 
-    forEach(callback) {
-      for (let i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
-        callback(i, i);
-      }
-    },
+  forEach(callback) {
+    for (let i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
+      callback(i, i);
+    }
+  }
 
-    has(i) {
-      return this.firstChar <= i && i <= this.lastChar;
-    },
+  has(i) {
+    return this.firstChar <= i && i <= this.lastChar;
+  }
 
-    get(i) {
-      if (this.firstChar <= i && i <= this.lastChar) {
-        return String.fromCharCode(i);
-      }
-      return undefined;
-    },
+  get(i) {
+    if (this.firstChar <= i && i <= this.lastChar) {
+      return String.fromCharCode(i);
+    }
+    return undefined;
+  }
 
-    charCodeOf(v) {
-      return Number.isInteger(v) && v >= this.firstChar && v <= this.lastChar
-        ? v
-        : -1;
-    },
+  charCodeOf(v) {
+    return Number.isInteger(v) && v >= this.firstChar && v <= this.lastChar
+      ? v
+      : -1;
+  }
 
-    amend(map) {
-      unreachable("Should not call amend()");
-    },
-  };
-
-  return IdentityToUnicodeMap;
-})();
+  amend(map) {
+    unreachable("Should not call amend()");
+  }
+}
 
 export { IdentityToUnicodeMap, ToUnicodeMap };
