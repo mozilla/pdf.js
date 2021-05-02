@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import {
   CFF,
@@ -32,17 +31,16 @@ import { Type1Parser } from "./type1_parser.js";
 import { warn } from "../shared/util.js";
 
 // Type1Font is also a CIDFontType0.
-var Type1Font = (function Type1FontClosure() {
+const Type1Font = (function Type1FontClosure() {
   function findBlock(streamBytes, signature, startIndex) {
-    var streamBytesLength = streamBytes.length;
-    var signatureLength = signature.length;
-    var scanLength = streamBytesLength - signatureLength;
+    const streamBytesLength = streamBytes.length;
+    const signatureLength = signature.length;
+    const scanLength = streamBytesLength - signatureLength;
 
-    var i = startIndex,
-      j,
+    let i = startIndex,
       found = false;
     while (i < scanLength) {
-      j = 0;
+      let j = 0;
       while (j < signatureLength && streamBytes[i + j] === signature[j]) {
         j++;
       }
@@ -64,10 +62,10 @@ var Type1Font = (function Type1FontClosure() {
   }
 
   function getHeaderBlock(stream, suggestedLength) {
-    var EEXEC_SIGNATURE = [0x65, 0x65, 0x78, 0x65, 0x63];
+    const EEXEC_SIGNATURE = [0x65, 0x65, 0x78, 0x65, 0x63];
 
-    var streamStartPos = stream.pos; // Save the initial stream position.
-    var headerBytes, headerBytesLength, block;
+    const streamStartPos = stream.pos; // Save the initial stream position.
+    let headerBytes, headerBytesLength, block;
     try {
       headerBytes = stream.getBytes(suggestedLength);
       headerBytesLength = headerBytes.length;
@@ -101,10 +99,10 @@ var Type1Font = (function Type1FontClosure() {
     warn('Invalid "Length1" property in Type1 font -- trying to recover.');
     stream.pos = streamStartPos; // Reset the stream position.
 
-    var SCAN_BLOCK_LENGTH = 2048;
-    var actualLength;
+    const SCAN_BLOCK_LENGTH = 2048;
+    let actualLength;
     while (true) {
-      var scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
+      const scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
       block = findBlock(scanBytes, EEXEC_SIGNATURE, 0);
 
       if (block.length === 0) {
@@ -146,7 +144,7 @@ var Type1Font = (function Type1FontClosure() {
     // NOTE: This means that the function can include the fixed-content portion
     // in the returned eexec block. In practice this does *not* seem to matter,
     // since `Type1Parser_extractFontProgram` will skip over any non-commands.
-    var eexecBytes = stream.getBytes();
+    const eexecBytes = stream.getBytes();
     return {
       stream: new Stream(eexecBytes),
       length: eexecBytes.length,
@@ -158,11 +156,11 @@ var Type1Font = (function Type1FontClosure() {
     // Some bad generators embed pfb file as is, we have to strip 6-byte header.
     // Also, length1 and length2 might be off by 6 bytes as well.
     // http://www.math.ubc.ca/~cass/piscript/type1.pdf
-    var PFB_HEADER_SIZE = 6;
-    var headerBlockLength = properties.length1;
-    var eexecBlockLength = properties.length2;
-    var pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
-    var pfbHeaderPresent = pfbHeader[0] === 0x80 && pfbHeader[1] === 0x01;
+    const PFB_HEADER_SIZE = 6;
+    let headerBlockLength = properties.length1;
+    let eexecBlockLength = properties.length2;
+    let pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
+    const pfbHeaderPresent = pfbHeader[0] === 0x80 && pfbHeader[1] === 0x01;
     if (pfbHeaderPresent) {
       file.skip(PFB_HEADER_SIZE);
       headerBlockLength =
@@ -173,8 +171,8 @@ var Type1Font = (function Type1FontClosure() {
     }
 
     // Get the data block containing glyphs and subrs information
-    var headerBlock = getHeaderBlock(file, headerBlockLength);
-    var headerBlockParser = new Type1Parser(
+    const headerBlock = getHeaderBlock(file, headerBlockLength);
+    const headerBlockParser = new Type1Parser(
       headerBlock.stream,
       false,
       SEAC_ANALYSIS_ENABLED
@@ -191,20 +189,20 @@ var Type1Font = (function Type1FontClosure() {
     }
 
     // Decrypt the data blocks and retrieve it's content
-    var eexecBlock = getEexecBlock(file, eexecBlockLength);
-    var eexecBlockParser = new Type1Parser(
+    const eexecBlock = getEexecBlock(file, eexecBlockLength);
+    const eexecBlockParser = new Type1Parser(
       eexecBlock.stream,
       true,
       SEAC_ANALYSIS_ENABLED
     );
-    var data = eexecBlockParser.extractFontProgram(properties);
+    const data = eexecBlockParser.extractFontProgram(properties);
     for (const key in data.properties) {
       properties[key] = data.properties[key];
     }
 
-    var charstrings = data.charstrings;
-    var type2Charstrings = this.getType2Charstrings(charstrings);
-    var subrs = this.getType2Subrs(data.subrs);
+    const charstrings = data.charstrings;
+    const type2Charstrings = this.getType2Charstrings(charstrings);
+    const subrs = this.getType2Subrs(data.subrs);
 
     this.charstrings = charstrings;
     this.data = this.wrap(
@@ -223,16 +221,16 @@ var Type1Font = (function Type1FontClosure() {
     },
 
     getCharset: function Type1Font_getCharset() {
-      var charset = [".notdef"];
-      var charstrings = this.charstrings;
-      for (var glyphId = 0; glyphId < charstrings.length; glyphId++) {
+      const charset = [".notdef"];
+      const charstrings = this.charstrings;
+      for (let glyphId = 0; glyphId < charstrings.length; glyphId++) {
         charset.push(charstrings[glyphId].glyphName);
       }
       return charset;
     },
 
     getGlyphMapping: function Type1Font_getGlyphMapping(properties) {
-      var charstrings = this.charstrings;
+      const charstrings = this.charstrings;
 
       if (properties.composite) {
         const charCodeToGlyphId = Object.create(null);
@@ -249,15 +247,15 @@ var Type1Font = (function Type1FontClosure() {
         return charCodeToGlyphId;
       }
 
-      var glyphNames = [".notdef"],
-        glyphId;
+      const glyphNames = [".notdef"];
+      let builtInEncoding, glyphId;
       for (glyphId = 0; glyphId < charstrings.length; glyphId++) {
         glyphNames.push(charstrings[glyphId].glyphName);
       }
-      var encoding = properties.builtInEncoding;
+      const encoding = properties.builtInEncoding;
       if (encoding) {
-        var builtInEncoding = Object.create(null);
-        for (var charCode in encoding) {
+        builtInEncoding = Object.create(null);
+        for (const charCode in encoding) {
           glyphId = glyphNames.indexOf(encoding[charCode]);
           if (glyphId >= 0) {
             builtInEncoding[charCode] = glyphId;
@@ -276,15 +274,15 @@ var Type1Font = (function Type1FontClosure() {
         // notdef is always defined.
         return true;
       }
-      var glyph = this.charstrings[id - 1];
+      const glyph = this.charstrings[id - 1];
       return glyph.charstring.length > 0;
     },
 
     getSeacs: function Type1Font_getSeacs(charstrings) {
-      var i, ii;
-      var seacMap = [];
+      let i, ii;
+      const seacMap = [];
       for (i = 0, ii = charstrings.length; i < ii; i++) {
-        var charstring = charstrings[i];
+        const charstring = charstrings[i];
         if (charstring.seac) {
           // Offset by 1 for .notdef
           seacMap[i + 1] = charstring.seac;
@@ -296,16 +294,16 @@ var Type1Font = (function Type1FontClosure() {
     getType2Charstrings: function Type1Font_getType2Charstrings(
       type1Charstrings
     ) {
-      var type2Charstrings = [];
-      for (var i = 0, ii = type1Charstrings.length; i < ii; i++) {
+      const type2Charstrings = [];
+      for (let i = 0, ii = type1Charstrings.length; i < ii; i++) {
         type2Charstrings.push(type1Charstrings[i].charstring);
       }
       return type2Charstrings;
     },
 
     getType2Subrs: function Type1Font_getType2Subrs(type1Subrs) {
-      var bias = 0;
-      var count = type1Subrs.length;
+      let bias = 0;
+      const count = type1Subrs.length;
       if (count < 1133) {
         bias = 107;
       } else if (count < 33769) {
@@ -315,8 +313,8 @@ var Type1Font = (function Type1FontClosure() {
       }
 
       // Add a bunch of empty subrs to deal with the Type2 bias
-      var type2Subrs = [];
-      var i;
+      const type2Subrs = [];
+      let i;
       for (i = 0; i < bias; i++) {
         type2Subrs.push([0x0b]);
       }
@@ -335,12 +333,12 @@ var Type1Font = (function Type1FontClosure() {
       subrs,
       properties
     ) {
-      var cff = new CFF();
+      const cff = new CFF();
       cff.header = new CFFHeader(1, 0, 4, 4);
 
       cff.names = [name];
 
-      var topDict = new CFFTopDict();
+      const topDict = new CFFTopDict();
       // CFF strings IDs 0...390 are predefined names, so refering
       // to entries in our own String INDEX starts at SID 391.
       topDict.setByName("version", 391);
@@ -356,7 +354,7 @@ var Type1Font = (function Type1FontClosure() {
       topDict.setByName("Private", null); // placeholder
       cff.topDict = topDict;
 
-      var strings = new CFFStrings();
+      const strings = new CFFStrings();
       strings.add("Version 0.11"); // Version
       strings.add("See original notice"); // Notice
       strings.add(name); // FullName
@@ -366,9 +364,9 @@ var Type1Font = (function Type1FontClosure() {
 
       cff.globalSubrIndex = new CFFIndex();
 
-      var count = glyphs.length;
-      var charsetArray = [".notdef"];
-      var i, ii;
+      const count = glyphs.length;
+      const charsetArray = [".notdef"];
+      let i, ii;
       for (i = 0; i < count; i++) {
         const glyphName = charstrings[i].glyphName;
         const index = CFFStandardStrings.indexOf(glyphName);
@@ -379,16 +377,16 @@ var Type1Font = (function Type1FontClosure() {
       }
       cff.charset = new CFFCharset(false, 0, charsetArray);
 
-      var charStringsIndex = new CFFIndex();
+      const charStringsIndex = new CFFIndex();
       charStringsIndex.add([0x8b, 0x0e]); // .notdef
       for (i = 0; i < count; i++) {
         charStringsIndex.add(glyphs[i]);
       }
       cff.charStrings = charStringsIndex;
 
-      var privateDict = new CFFPrivateDict();
+      const privateDict = new CFFPrivateDict();
       privateDict.setByName("Subrs", null); // placeholder
-      var fields = [
+      const fields = [
         "BlueValues",
         "OtherBlues",
         "FamilyBlues",
@@ -405,15 +403,15 @@ var Type1Font = (function Type1FontClosure() {
         "StdVW",
       ];
       for (i = 0, ii = fields.length; i < ii; i++) {
-        var field = fields[i];
+        const field = fields[i];
         if (!(field in properties.privateData)) {
           continue;
         }
-        var value = properties.privateData[field];
+        const value = properties.privateData[field];
         if (Array.isArray(value)) {
           // All of the private dictionary array data in CFF must be stored as
           // "delta-encoded" numbers.
-          for (var j = value.length - 1; j > 0; j--) {
+          for (let j = value.length - 1; j > 0; j--) {
             value[j] -= value[j - 1]; // ... difference from previous value
           }
         }
@@ -421,13 +419,13 @@ var Type1Font = (function Type1FontClosure() {
       }
       cff.topDict.privateDict = privateDict;
 
-      var subrIndex = new CFFIndex();
+      const subrIndex = new CFFIndex();
       for (i = 0, ii = subrs.length; i < ii; i++) {
         subrIndex.add(subrs[i]);
       }
       privateDict.subrsIndex = subrIndex;
 
-      var compiler = new CFFCompiler(cff);
+      const compiler = new CFFCompiler(cff);
       return compiler.compile();
     },
   };
