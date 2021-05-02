@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { FontType, info } from "../shared/util.js";
 import { getEncoding, StandardEncoding } from "./encodings.js";
@@ -26,9 +25,9 @@ import { getUnicodeForGlyph } from "./unicode.js";
 // Linux (freetype) requires that when a seac style endchar is used
 // that the charset must be a predefined one, however we build a
 // custom one. Windows just refuses to draw glyphs with seac operators.
-var SEAC_ANALYSIS_ENABLED = true;
+const SEAC_ANALYSIS_ENABLED = true;
 
-var FontFlags = {
+const FontFlags = {
   FixedPitch: 1,
   Serif: 2,
   Symbolic: 4,
@@ -41,7 +40,7 @@ var FontFlags = {
 };
 
 // prettier-ignore
-var MacStandardGlyphOrdering = [
+const MacStandardGlyphOrdering = [
   ".notdef", ".null", "nonmarkingreturn", "space", "exclam", "quotedbl",
   "numbersign", "dollar", "percent", "ampersand", "quotesingle", "parenleft",
   "parenright", "asterisk", "plus", "comma", "hyphen", "period", "slash",
@@ -109,9 +108,9 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
     return name;
   }
   // The glyph name is non-standard, trying to recover.
-  var unicode = getUnicodeForGlyph(name, glyphsUnicodeMap);
+  const unicode = getUnicodeForGlyph(name, glyphsUnicodeMap);
   if (unicode !== -1) {
-    for (var key in glyphsUnicodeMap) {
+    for (const key in glyphsUnicodeMap) {
       if (glyphsUnicodeMap[key] === unicode) {
         return key;
       }
@@ -132,9 +131,9 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
  * @returns {Object} A char code to glyph ID map.
  */
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
-  var charCodeToGlyphId = Object.create(null);
-  var glyphId, charCode, baseEncoding;
-  var isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+  const charCodeToGlyphId = Object.create(null);
+  let glyphId, charCode, baseEncoding;
+  const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
   if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
@@ -168,18 +167,18 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   }
 
   // Lastly, merge in the differences.
-  var differences = properties.differences,
-    glyphsUnicodeMap;
+  const differences = properties.differences;
+  let glyphsUnicodeMap;
   if (differences) {
     for (charCode in differences) {
-      var glyphName = differences[charCode];
+      const glyphName = differences[charCode];
       glyphId = glyphNames.indexOf(glyphName);
 
       if (glyphId === -1) {
         if (!glyphsUnicodeMap) {
           glyphsUnicodeMap = getGlyphsUnicode();
         }
-        var standardGlyphName = recoverGlyphName(glyphName, glyphsUnicodeMap);
+        const standardGlyphName = recoverGlyphName(glyphName, glyphsUnicodeMap);
         if (standardGlyphName !== glyphName) {
           glyphId = glyphNames.indexOf(standardGlyphName);
         }
