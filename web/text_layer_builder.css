@@ -24,7 +24,8 @@
   line-height: 1;
 }
 
-.textLayer span {
+.textLayer span,
+.textLayer br {
   color: transparent;
   position: absolute;
   white-space: pre;
