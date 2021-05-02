@@ -12,21 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { CFFCompiler, CFFParser } from "./cff_parser.js";
 import { SEAC_ANALYSIS_ENABLED, type1FontGlyphMapping } from "./fonts_utils.js";
 import { warn } from "../shared/util.js";
 
-var CFFFont = (function CFFFontClosure() {
+const CFFFont = (function CFFFontClosure() {
   // eslint-disable-next-line no-shadow
   function CFFFont(file, properties) {
     this.properties = properties;
 
-    var parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
+    const parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
     this.cff = parser.parse();
     this.cff.duplicateFirstGlyph();
-    var compiler = new CFFCompiler(this.cff);
+    const compiler = new CFFCompiler(this.cff);
     this.seacs = this.cff.seacs;
     try {
       this.data = compiler.compile();
@@ -47,11 +46,11 @@ var CFFFont = (function CFFFontClosure() {
       return this.cff.charset.charset;
     },
     getGlyphMapping: function CFFFont_getGlyphMapping() {
-      var cff = this.cff;
-      var properties = this.properties;
-      var charsets = cff.charset.charset;
-      var charCodeToGlyphId;
-      var glyphId;
+      const cff = this.cff;
+      const properties = this.properties;
+      const charsets = cff.charset.charset;
+      let charCodeToGlyphId;
+      let glyphId;
 
       if (properties.composite) {
         charCodeToGlyphId = Object.create(null);
@@ -60,7 +59,7 @@ var CFFFont = (function CFFFontClosure() {
           // If the font is actually a CID font then we should use the charset
           // to map CIDs to GIDs.
           for (glyphId = 0; glyphId < charsets.length; glyphId++) {
-            var cid = charsets[glyphId];
+            const cid = charsets[glyphId];
             charCode = properties.cMap.charCodeOf(cid);
             charCodeToGlyphId[charCode] = glyphId;
           }
@@ -75,7 +74,7 @@ var CFFFont = (function CFFFontClosure() {
         return charCodeToGlyphId;
       }
 
-      var encoding = cff.encoding ? cff.encoding.encoding : null;
+      const encoding = cff.encoding ? cff.encoding.encoding : null;
       charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
       return charCodeToGlyphId;
     },
