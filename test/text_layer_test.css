@@ -23,7 +23,8 @@
   bottom: 0;
   line-height: 1;
 }
-.textLayer span {
+.textLayer span,
+.textLayer br {
   position: absolute;
   white-space: pre;
   -webkit-transform-origin: 0% 0%;
