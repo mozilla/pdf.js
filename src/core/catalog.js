@@ -14,23 +14,6 @@
  */
 
 import {
-  bytesToString,
-  createPromiseCapability,
-  createValidAbsoluteUrl,
-  DocumentActionEventType,
-  FormatError,
-  info,
-  isBool,
-  isNum,
-  isString,
-  objectSize,
-  PermissionFlag,
-  shadow,
-  stringToPDFString,
-  stringToUTF8String,
-  warn,
-} from "../shared/util.js";
-import {
   clearPrimitiveCaches,
   Dict,
   isDict,
@@ -46,6 +29,22 @@ import {
   MissingDataException,
   toRomanNumerals,
 } from "./core_utils.js";
+import {
+  createPromiseCapability,
+  createValidAbsoluteUrl,
+  DocumentActionEventType,
+  FormatError,
+  info,
+  isBool,
+  isNum,
+  isString,
+  objectSize,
+  PermissionFlag,
+  shadow,
+  stringToPDFString,
+  stringToUTF8String,
+  warn,
+} from "../shared/util.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
@@ -136,7 +135,7 @@ class Catalog {
         // charsets, let's just hope that the author of the PDF was reasonable
         // enough to stick with the XML default charset, which is UTF-8.
         try {
-          const data = stringToUTF8String(bytesToString(stream.getBytes()));
+          const data = stringToUTF8String(stream.getString());
           if (data) {
             metadata = new MetadataParser(data).serializable;
           }
@@ -906,7 +905,7 @@ class Catalog {
 
       let js = jsDict.get("JS");
       if (isStream(js)) {
-        js = bytesToString(js.getBytes());
+        js = js.getString();
       } else if (typeof js !== "string") {
         return;
       }
@@ -1344,7 +1343,7 @@ class Catalog {
           let js;
 
           if (isStream(jsAction)) {
-            js = bytesToString(jsAction.getBytes());
+            js = jsAction.getString();
           } else if (isString(jsAction)) {
             js = jsAction;
           }

@@ -15,7 +15,6 @@
 
 import {
   assert,
-  bytesToString,
   FormatError,
   info,
   InvalidPDFException,
@@ -811,7 +810,7 @@ class PDFDocument {
     };
     if (isStream(xfa) && !xfa.isEmpty) {
       try {
-        entries["xdp:xdp"] = stringToUTF8String(bytesToString(xfa.getBytes()));
+        entries["xdp:xdp"] = stringToUTF8String(xfa.getString());
         return entries;
       } catch (_) {
         warn("XFA - Invalid utf-8 string.");
@@ -841,7 +840,7 @@ class PDFDocument {
         continue;
       }
       try {
-        entries[name] = stringToUTF8String(bytesToString(data.getBytes()));
+        entries[name] = stringToUTF8String(data.getString());
       } catch (_) {
         warn("XFA - Invalid utf-8 string.");
         return null;
