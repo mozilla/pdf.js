@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { unreachable } from "../shared/util.js";
 
-var ToUnicodeMap = (function ToUnicodeMapClosure() {
+const ToUnicodeMap = (function ToUnicodeMapClosure() {
   // eslint-disable-next-line no-shadow
   function ToUnicodeMap(cmap = []) {
     // The elements of this._map can be integers or strings, depending on how
@@ -30,7 +29,7 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
     },
 
     forEach(callback) {
-      for (var charCode in this._map) {
+      for (const charCode in this._map) {
         callback(charCode, this._map[charCode].charCodeAt(0));
       }
     },
@@ -59,7 +58,7 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
     },
 
     amend(map) {
-      for (var charCode in map) {
+      for (const charCode in map) {
         this._map[charCode] = map[charCode];
       }
     },
@@ -68,7 +67,7 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
   return ToUnicodeMap;
 })();
 
-var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
+const IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
   // eslint-disable-next-line no-shadow
   function IdentityToUnicodeMap(firstChar, lastChar) {
     this.firstChar = firstChar;
@@ -81,7 +80,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     forEach(callback) {
-      for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
+      for (let i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
         callback(i, i);
       }
     },
