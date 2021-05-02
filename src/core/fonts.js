@@ -297,8 +297,8 @@ const Font = (function FontClosure() {
       );
     }
 
+    let data;
     try {
-      var data;
       switch (type) {
         case "MMType1":
           info("MMType1 font (" + name + "), falling back to Type1.");
@@ -307,7 +307,7 @@ const Font = (function FontClosure() {
         case "CIDFontType0":
           this.mimetype = "font/opentype";
 
-          var cff =
+          const cff =
             subtype === "Type1C" || subtype === "CIDFontType0C"
               ? new CFFFont(file, properties)
               : new Type1Font(name, file, properties);
@@ -474,8 +474,8 @@ const Font = (function FontClosure() {
   }
 
   function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
-    let toFontChar = [],
-      unicode;
+    const toFontChar = [];
+    let unicode;
     for (let i = 0, ii = encoding.length; i < ii; i++) {
       unicode = getUnicodeForGlyph(encoding[i], glyphsUnicodeMap);
       if (unicode !== -1) {
@@ -1299,7 +1299,7 @@ const Font = (function FontClosure() {
         // - symbolic fonts the preference is a 3,0 table then a 1,0 table
         // The following takes advantage of the fact that the tables are sorted
         // to work.
-        for (var i = 0; i < numTables; i++) {
+        for (let i = 0; i < numTables; i++) {
           const platformId = file.getUint16();
           const encodingId = file.getUint16();
           const offset = file.getInt32() >>> 0;
@@ -1392,8 +1392,8 @@ const Font = (function FontClosure() {
           // might be changed
           const segCount = file.getUint16() >> 1;
           file.skip(6); // skipping range fields
-          let segIndex,
-            segments = [];
+          const segments = [];
+          let segIndex;
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segments.push({ end: file.getUint16() });
           }
@@ -1406,7 +1406,8 @@ const Font = (function FontClosure() {
             segments[segIndex].delta = file.getUint16();
           }
 
-          let offsetsCount = 0;
+          let offsetsCount = 0,
+            offsetIndex;
           for (segIndex = 0; segIndex < segCount; segIndex++) {
             segment = segments[segIndex];
             const rangeOffset = file.getUint16();
@@ -1415,7 +1416,7 @@ const Font = (function FontClosure() {
               continue;
             }
 
-            var offsetIndex = (rangeOffset >> 1) - (segCount - segIndex);
+            offsetIndex = (rangeOffset >> 1) - (segCount - segIndex);
             segment.offsetIndex = offsetIndex;
             offsetsCount = Math.max(
               offsetsCount,
@@ -1480,7 +1481,7 @@ const Font = (function FontClosure() {
         mappings.sort(function (a, b) {
           return a.charCode - b.charCode;
         });
-        for (i = 1; i < mappings.length; i++) {
+        for (let i = 1; i < mappings.length; i++) {
           if (mappings[i - 1].charCode === mappings[i].charCode) {
             mappings.splice(i, 1);
             i--;
@@ -1887,12 +1888,12 @@ const Font = (function FontClosure() {
             glyphNames = MacStandardGlyphOrdering;
             break;
           case 0x00020000:
-            var numGlyphs = font.getUint16();
+            const numGlyphs = font.getUint16();
             if (numGlyphs !== maxpNumGlyphs) {
               valid = false;
               break;
             }
-            var glyphNameIndexes = [];
+            const glyphNameIndexes = [];
             for (i = 0; i < numGlyphs; ++i) {
               const index = font.getUint16();
               if (index >= 32768) {
@@ -1904,8 +1905,8 @@ const Font = (function FontClosure() {
             if (!valid) {
               break;
             }
-            var customNames = [];
-            var strBuf = [];
+            const customNames = [],
+              strBuf = [];
             while (font.pos < end) {
               const stringLength = font.getByte();
               strBuf.length = stringLength;
@@ -2522,7 +2523,7 @@ const Font = (function FontClosure() {
         ) {
           const glyphsUnicodeMap = getGlyphsUnicode();
           for (let charCode = 0; charCode < 256; charCode++) {
-            var glyphName, standardGlyphName;
+            let glyphName;
             if (this.differences && charCode in this.differences) {
               glyphName = this.differences[charCode];
             } else if (
@@ -2537,9 +2538,12 @@ const Font = (function FontClosure() {
               continue;
             }
             // Ensure that non-standard glyph names are resolved to valid ones.
-            standardGlyphName = recoverGlyphName(glyphName, glyphsUnicodeMap);
+            const standardGlyphName = recoverGlyphName(
+              glyphName,
+              glyphsUnicodeMap
+            );
 
-            var unicodeOrCharCode;
+            let unicodeOrCharCode;
             if (cmapPlatformId === 3 && cmapEncodingId === 1) {
               unicodeOrCharCode = glyphsUnicodeMap[standardGlyphName];
             } else if (cmapPlatformId === 1 && cmapEncodingId === 0) {
@@ -2595,7 +2599,7 @@ const Font = (function FontClosure() {
             if (charCodeToGlyphId[i] !== undefined) {
               continue;
             }
-            glyphName = this.differences[i] || baseEncoding[i];
+            const glyphName = this.differences[i] || baseEncoding[i];
             if (!glyphName) {
               continue;
             }
