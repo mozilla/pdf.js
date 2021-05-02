@@ -20,7 +20,7 @@ import {
   CFFParser,
   CFFStrings,
 } from "../../src/core/cff_parser.js";
-import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("CFFParser", function () {

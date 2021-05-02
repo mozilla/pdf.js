@@ -47,7 +47,8 @@ import {
   Ref,
   RefSet,
 } from "./primitives.js";
-import { ErrorFont, Font, FontFlags, getFontType } from "./fonts.js";
+import { ErrorFont, Font } from "./fonts.js";
+import { FontFlags, getFontType } from "./fonts_utils.js";
 import {
   getEncoding,
   MacRomanEncoding,
