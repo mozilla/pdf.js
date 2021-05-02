@@ -24,7 +24,6 @@ import {
   isNum,
   shadow,
   string32,
-  unreachable,
   warn,
 } from "../shared/util.js";
 import {
@@ -59,6 +58,7 @@ import {
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
 } from "./unicode.js";
+import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import {
   isWhiteSpace,
   MissingDataException,
@@ -312,101 +312,6 @@ var Glyph = (function GlyphClosure() {
   };
 
   return Glyph;
-})();
-
-var ToUnicodeMap = (function ToUnicodeMapClosure() {
-  // eslint-disable-next-line no-shadow
-  function ToUnicodeMap(cmap = []) {
-    // The elements of this._map can be integers or strings, depending on how
-    // `cmap` was created.
-    this._map = cmap;
-  }
-
-  ToUnicodeMap.prototype = {
-    get length() {
-      return this._map.length;
-    },
-
-    forEach(callback) {
-      for (var charCode in this._map) {
-        callback(charCode, this._map[charCode].charCodeAt(0));
-      }
-    },
-
-    has(i) {
-      return this._map[i] !== undefined;
-    },
-
-    get(i) {
-      return this._map[i];
-    },
-
-    charCodeOf(value) {
-      // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
-      // are both very sparse and very large (see issue8372.pdf).
-      const map = this._map;
-      if (map.length <= 0x10000) {
-        return map.indexOf(value);
-      }
-      for (const charCode in map) {
-        if (map[charCode] === value) {
-          return charCode | 0;
-        }
-      }
-      return -1;
-    },
-
-    amend(map) {
-      for (var charCode in map) {
-        this._map[charCode] = map[charCode];
-      }
-    },
-  };
-
-  return ToUnicodeMap;
-})();
-
-var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
-  // eslint-disable-next-line no-shadow
-  function IdentityToUnicodeMap(firstChar, lastChar) {
-    this.firstChar = firstChar;
-    this.lastChar = lastChar;
-  }
-
-  IdentityToUnicodeMap.prototype = {
-    get length() {
-      return this.lastChar + 1 - this.firstChar;
-    },
-
-    forEach(callback) {
-      for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
-        callback(i, i);
-      }
-    },
-
-    has(i) {
-      return this.firstChar <= i && i <= this.lastChar;
-    },
-
-    get(i) {
-      if (this.firstChar <= i && i <= this.lastChar) {
-        return String.fromCharCode(i);
-      }
-      return undefined;
-    },
-
-    charCodeOf(v) {
-      return Number.isInteger(v) && v >= this.firstChar && v <= this.lastChar
-        ? v
-        : -1;
-    },
-
-    amend(map) {
-      unreachable("Should not call amend()");
-    },
-  };
-
-  return IdentityToUnicodeMap;
 })();
 
 /**
@@ -3949,12 +3854,4 @@ var CFFFont = (function CFFFontClosure() {
   return CFFFont;
 })();
 
-export {
-  ErrorFont,
-  Font,
-  FontFlags,
-  getFontType,
-  IdentityToUnicodeMap,
-  SEAC_ANALYSIS_ENABLED,
-  ToUnicodeMap,
-};
+export { ErrorFont, Font, FontFlags, getFontType, SEAC_ANALYSIS_ENABLED };
