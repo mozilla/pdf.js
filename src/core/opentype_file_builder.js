@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { readUint32 } from "./core_utils.js";
 import { string32 } from "../shared/util.js";
 
-var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
+const OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
   function writeInt16(dest, offset, num) {
     dest[offset] = (num >> 8) & 0xff;
     dest[offset + 1] = num & 0xff;
@@ -31,7 +30,7 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
   }
 
   function writeData(dest, offset, data) {
-    var i, ii;
+    let i, ii;
     if (data instanceof Uint8Array) {
       dest.set(data, offset);
     } else if (typeof data === "string") {
@@ -56,13 +55,13 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
     entriesCount,
     entrySize
   ) {
-    var maxPower2 = 1,
+    let maxPower2 = 1,
       log2 = 0;
     while ((maxPower2 ^ entriesCount) > maxPower2) {
       maxPower2 <<= 1;
       log2++;
     }
-    var searchRange = maxPower2 * entrySize;
+    const searchRange = maxPower2 * entrySize;
     return {
       range: searchRange,
       entry: log2,
@@ -70,31 +69,31 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
     };
   };
 
-  var OTF_HEADER_SIZE = 12;
-  var OTF_TABLE_ENTRY_SIZE = 16;
+  const OTF_HEADER_SIZE = 12;
+  const OTF_TABLE_ENTRY_SIZE = 16;
 
   OpenTypeFileBuilder.prototype = {
     toArray: function OpenTypeFileBuilder_toArray() {
-      var sfnt = this.sfnt;
+      let sfnt = this.sfnt;
 
       // Tables needs to be written by ascendant alphabetic order
-      var tables = this.tables;
-      var tablesNames = Object.keys(tables);
+      const tables = this.tables;
+      const tablesNames = Object.keys(tables);
       tablesNames.sort();
-      var numTables = tablesNames.length;
+      const numTables = tablesNames.length;
 
-      var i, j, jj, table, tableName;
+      let i, j, jj, table, tableName;
       // layout the tables data
-      var offset = OTF_HEADER_SIZE + numTables * OTF_TABLE_ENTRY_SIZE;
-      var tableOffsets = [offset];
+      let offset = OTF_HEADER_SIZE + numTables * OTF_TABLE_ENTRY_SIZE;
+      const tableOffsets = [offset];
       for (i = 0; i < numTables; i++) {
         table = tables[tablesNames[i]];
-        var paddedLength = ((table.length + 3) & ~3) >>> 0;
+        const paddedLength = ((table.length + 3) & ~3) >>> 0;
         offset += paddedLength;
         tableOffsets.push(offset);
       }
 
-      var file = new Uint8Array(offset);
+      const file = new Uint8Array(offset);
       // write the table data first (mostly for checksum)
       for (i = 0; i < numTables; i++) {
         table = tables[tablesNames[i]];
@@ -114,7 +113,7 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
       // numTables (2 bytes)
       writeInt16(file, 4, numTables);
 
-      var searchParams = OpenTypeFileBuilder.getSearchParams(numTables, 16);
+      const searchParams = OpenTypeFileBuilder.getSearchParams(numTables, 16);
 
       // searchRange (2 bytes)
       writeInt16(file, 6, searchParams.range);
@@ -133,9 +132,9 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
         file[offset + 3] = tableName.charCodeAt(3) & 0xff;
 
         // checksum
-        var checksum = 0;
+        let checksum = 0;
         for (j = tableOffsets[i], jj = tableOffsets[i + 1]; j < jj; j += 4) {
-          var quad = readUint32(file, j);
+          const quad = readUint32(file, j);
           checksum = (checksum + quad) >>> 0;
         }
         writeInt32(file, offset + 4, checksum);
