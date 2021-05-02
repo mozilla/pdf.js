@@ -72,6 +72,7 @@ import {
   MissingDataException,
   readUint32,
 } from "./core_utils.js";
+import { CFFFont } from "./cff_font.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { IdentityCMap } from "./cmap.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
@@ -3590,101 +3591,6 @@ var Type1Font = (function Type1FontClosure() {
   };
 
   return Type1Font;
-})();
-
-var CFFFont = (function CFFFontClosure() {
-  // eslint-disable-next-line no-shadow
-  function CFFFont(file, properties) {
-    this.properties = properties;
-
-    var parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
-    this.cff = parser.parse();
-    this.cff.duplicateFirstGlyph();
-    var compiler = new CFFCompiler(this.cff);
-    this.seacs = this.cff.seacs;
-    try {
-      this.data = compiler.compile();
-    } catch (e) {
-      warn("Failed to compile font " + properties.loadedName);
-      // There may have just been an issue with the compiler, set the data
-      // anyway and hope the font loaded.
-      this.data = file;
-    }
-    this._createBuiltInEncoding();
-  }
-
-  CFFFont.prototype = {
-    get numGlyphs() {
-      return this.cff.charStrings.count;
-    },
-    getCharset: function CFFFont_getCharset() {
-      return this.cff.charset.charset;
-    },
-    getGlyphMapping: function CFFFont_getGlyphMapping() {
-      var cff = this.cff;
-      var properties = this.properties;
-      var charsets = cff.charset.charset;
-      var charCodeToGlyphId;
-      var glyphId;
-
-      if (properties.composite) {
-        charCodeToGlyphId = Object.create(null);
-        let charCode;
-        if (cff.isCIDFont) {
-          // If the font is actually a CID font then we should use the charset
-          // to map CIDs to GIDs.
-          for (glyphId = 0; glyphId < charsets.length; glyphId++) {
-            var cid = charsets[glyphId];
-            charCode = properties.cMap.charCodeOf(cid);
-            charCodeToGlyphId[charCode] = glyphId;
-          }
-        } else {
-          // If it is NOT actually a CID font then CIDs should be mapped
-          // directly to GIDs.
-          for (glyphId = 0; glyphId < cff.charStrings.count; glyphId++) {
-            charCode = properties.cMap.charCodeOf(glyphId);
-            charCodeToGlyphId[charCode] = glyphId;
-          }
-        }
-        return charCodeToGlyphId;
-      }
-
-      var encoding = cff.encoding ? cff.encoding.encoding : null;
-      charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
-      return charCodeToGlyphId;
-    },
-    hasGlyphId: function CFFFont_hasGlyphID(id) {
-      return this.cff.hasGlyphId(id);
-    },
-
-    /**
-     * @private
-     */
-    _createBuiltInEncoding() {
-      const { charset, encoding } = this.cff;
-      if (!charset || !encoding) {
-        return;
-      }
-      const charsets = charset.charset,
-        encodings = encoding.encoding;
-      const map = [];
-
-      for (const charCode in encodings) {
-        const glyphId = encodings[charCode];
-        if (glyphId >= 0) {
-          const glyphName = charsets[glyphId];
-          if (glyphName) {
-            map[charCode] = glyphName;
-          }
-        }
-      }
-      if (map.length > 0) {
-        this.properties.builtInEncoding = map;
-      }
-    },
-  };
-
-  return CFFFont;
 })();
 
 export { ErrorFont, Font };
