@@ -68,13 +68,6 @@ import { XRef } from "./xref.js";
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
-function isAnnotationRenderable(annotation, intent) {
-  return (
-    (intent === "display" && annotation.viewable) ||
-    (intent === "print" && annotation.printable)
-  );
-}
-
 class Page {
   constructor({
     pdfManager,
@@ -274,7 +267,7 @@ class Page {
     return this._parsedAnnotations.then(function (annotations) {
       const newRefsPromises = [];
       for (const annotation of annotations) {
-        if (!isAnnotationRenderable(annotation, "print")) {
+        if (!annotation.mustBePrinted(annotationStorage)) {
           continue;
         }
         newRefsPromises.push(
@@ -377,8 +370,9 @@ class Page {
         const opListPromises = [];
         for (const annotation of annotations) {
           if (
-            isAnnotationRenderable(annotation, intent) &&
-            !annotation.isHidden(annotationStorage)
+            (intent === "display" &&
+              annotation.mustBeViewed(annotationStorage)) ||
+            (intent === "print" && annotation.mustBePrinted(annotationStorage))
           ) {
             opListPromises.push(
               annotation
@@ -482,7 +476,13 @@ class Page {
     return this._parsedAnnotations.then(function (annotations) {
       const annotationsData = [];
       for (let i = 0, ii = annotations.length; i < ii; i++) {
-        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+        // Get the annotation even if it's hidden because
+        // JS can change its display.
+        if (
+          !intent ||
+          (intent === "display" && annotations[i].viewable) ||
+          (intent === "print" && annotations[i].printable)
+        ) {
           annotationsData.push(annotations[i].data);
         }
       }
