@@ -439,13 +439,40 @@ class Annotation {
     );
   }
 
-  isHidden(annotationStorage) {
+  /**
+   * Check if the annotation must be displayed by taking into account
+   * the value found in the annotationStorage which may have been set
+   * through JS.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   */
+  mustBeViewed(annotationStorage) {
     const storageEntry =
       annotationStorage && annotationStorage.get(this.data.id);
     if (storageEntry && storageEntry.hidden !== undefined) {
-      return storageEntry.hidden;
+      return !storageEntry.hidden;
     }
-    return this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
+    return this.viewable && !this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
+  }
+
+  /**
+   * Check if the annotation must be printed by taking into account
+   * the value found in the annotationStorage which may have been set
+   * through JS.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   */
+  mustBePrinted(annotationStorage) {
+    const storageEntry =
+      annotationStorage && annotationStorage.get(this.data.id);
+    if (storageEntry && storageEntry.print !== undefined) {
+      return storageEntry.print;
+    }
+    return this.printable;
   }
 
   /**

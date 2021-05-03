@@ -809,6 +809,41 @@ describe("Interaction", () => {
         })
       );
     });
+
+    it("must check display", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const [type, vis] of [
+            ["hidden", "hidden"],
+            ["noPrint", "visible"],
+            ["noView", "hidden"],
+            ["visible", "visible"],
+          ]) {
+            let visibility = await page.$eval(
+              "#\\35 6R",
+              el => getComputedStyle(el).visibility
+            );
+
+            await clearInput(page, "#\\35 5R");
+            await page.type(
+              "#\\35 5R",
+              `this.getField("Text2").display = display.${type};`
+            );
+
+            await page.click("[data-annotation-id='57R']");
+            await page.waitForFunction(
+              `getComputedStyle(document.querySelector("#\\\\35 6R")).visibility !== "${visibility}"`
+            );
+
+            visibility = await page.$eval(
+              "#\\35 6R",
+              el => getComputedStyle(el).visibility
+            );
+            expect(visibility).withContext(`In ${browserName}`).toEqual(vis);
+          }
+        })
+      );
+    });
   });
 
   describe("in issue13269.pdf", () => {
