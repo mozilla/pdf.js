@@ -16,6 +16,7 @@
 
 "use strict";
 
+// eslint-disable-next-line no-var
 var FontInspector = (function FontInspectorClosure() {
   var fonts;
   var active = false;
@@ -158,6 +159,8 @@ var FontInspector = (function FontInspectorClosure() {
 var opMap;
 
 // Manages all the page steppers.
+//
+// eslint-disable-next-line no-var
 var StepperManager = (function StepperManagerClosure() {
   var steppers = [];
   var stepperDiv = null;
@@ -239,8 +242,8 @@ var StepperManager = (function StepperManagerClosure() {
   };
 })();
 
-// The stepper for each page's IRQueue.
-var Stepper = (function StepperClosure() {
+// The stepper for each page's operatorList.
+const Stepper = (function StepperClosure() {
   // Shorter way to create element and optionally set textContent.
   function c(tag, textContent) {
     var d = document.createElement(tag);
@@ -282,17 +285,18 @@ var Stepper = (function StepperClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function Stepper(panel, pageIndex, initialBreakPoints) {
-    this.panel = panel;
-    this.breakPoint = 0;
-    this.nextBreakPoint = null;
-    this.pageIndex = pageIndex;
-    this.breakPoints = initialBreakPoints;
-    this.currentIdx = -1;
-    this.operatorListIdx = 0;
-  }
-  Stepper.prototype = {
-    init: function init(operatorList) {
+  class Stepper {
+    constructor(panel, pageIndex, initialBreakPoints) {
+      this.panel = panel;
+      this.breakPoint = 0;
+      this.nextBreakPoint = null;
+      this.pageIndex = pageIndex;
+      this.breakPoints = initialBreakPoints;
+      this.currentIdx = -1;
+      this.operatorListIdx = 0;
+    }
+
+    init(operatorList) {
       var panel = this.panel;
       var content = c("div", "c=continue, s=step");
       var table = c("table");
@@ -307,8 +311,9 @@ var Stepper = (function StepperClosure() {
       panel.appendChild(content);
       this.table = table;
       this.updateOperatorList(operatorList);
-    },
-    updateOperatorList: function updateOperatorList(operatorList) {
+    }
+
+    updateOperatorList(operatorList) {
       var self = this;
 
       function cboxOnClick() {
@@ -383,8 +388,9 @@ var Stepper = (function StepperClosure() {
       }
       this.operatorListIdx = operatorList.fnArray.length;
       this.table.appendChild(chunk);
-    },
-    getNextBreakPoint: function getNextBreakPoint() {
+    }
+
+    getNextBreakPoint() {
       this.breakPoints.sort(function (a, b) {
         return a - b;
       });
@@ -394,33 +400,33 @@ var Stepper = (function StepperClosure() {
         }
       }
       return null;
-    },
-    breakIt: function breakIt(idx, callback) {
+    }
+
+    breakIt(idx, callback) {
       StepperManager.selectStepper(this.pageIndex, true);
-      var self = this;
-      var dom = document;
-      self.currentIdx = idx;
-      var listener = function (e) {
-        switch (e.keyCode) {
+      this.currentIdx = idx;
+
+      const listener = evt => {
+        switch (evt.keyCode) {
           case 83: // step
-            dom.removeEventListener("keydown", listener);
-            self.nextBreakPoint = self.currentIdx + 1;
-            self.goTo(-1);
+            document.removeEventListener("keydown", listener);
+            this.nextBreakPoint = this.currentIdx + 1;
+            this.goTo(-1);
             callback();
             break;
           case 67: // continue
-            dom.removeEventListener("keydown", listener);
-            var breakPoint = self.getNextBreakPoint();
-            self.nextBreakPoint = breakPoint;
-            self.goTo(-1);
+            document.removeEventListener("keydown", listener);
+            this.nextBreakPoint = this.getNextBreakPoint();
+            this.goTo(-1);
             callback();
             break;
         }
       };
-      dom.addEventListener("keydown", listener);
-      self.goTo(idx);
-    },
-    goTo: function goTo(idx) {
+      document.addEventListener("keydown", listener);
+      this.goTo(idx);
+    }
+
+    goTo(idx) {
       var allRows = this.panel.getElementsByClassName("line");
       for (var x = 0, xx = allRows.length; x < xx; ++x) {
         var row = allRows[x];
@@ -431,11 +437,12 @@ var Stepper = (function StepperClosure() {
           row.style.backgroundColor = null;
         }
       }
-    },
-  };
+    }
+  }
   return Stepper;
 })();
 
+// eslint-disable-next-line no-var
 var Stats = (function Stats() {
   var stats = [];
   function clear(node) {
