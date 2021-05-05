@@ -498,6 +498,10 @@ describe("Interaction", () => {
       pages = await loadAndWait("js-authors.pdf", "#\\32 5R");
     });
 
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
     it("must print authors in a text field", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -645,6 +649,10 @@ describe("Interaction", () => {
 
     beforeAll(async () => {
       pages = await loadAndWait("js-colors.pdf", "#\\33 4R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
     });
 
     it("must change colors", async () => {
