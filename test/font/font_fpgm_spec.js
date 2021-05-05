@@ -1,8 +1,9 @@
 import { decodeFontData, ttx, verifyTtxOutput } from "./fontutils.js";
-import { Font, ToUnicodeMap } from "../../src/core/fonts.js";
 import { CMapFactory } from "../../src/core/cmap.js";
+import { Font } from "../../src/core/fonts.js";
 import { Name } from "../../src/core/primitives.js";
 import { Stream } from "../../src/core/stream.js";
+import { ToUnicodeMap } from "../../src/core/to_unicode_map.js";
 
 describe("font_fpgm", function () {
   const font2324 = decodeFontData(
