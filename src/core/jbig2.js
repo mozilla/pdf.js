@@ -281,14 +281,8 @@ const Jbig2Image = (function Jbig2ImageClosure() {
   function decodeBitmapTemplate0(width, height, decodingContext) {
     const decoder = decodingContext.decoder;
     const contexts = decodingContext.contextCache.getContexts("GB");
-    let contextLabel,
-      i,
-      j,
-      pixel,
-      row,
-      row1,
-      row2,
-      bitmap = [];
+    const bitmap = [];
+    let contextLabel, i, j, pixel, row, row1, row2;
 
     // ...ooooo....
     // ..ooooooo... Context template for current pixel (X)
@@ -547,7 +541,7 @@ const Jbig2Image = (function Jbig2ImageClosure() {
       const row = new Uint8Array(width);
       bitmap.push(row);
       for (let j = 0; j < width; j++) {
-        var i0, j0;
+        let i0, j0;
         let contextLabel = 0;
         for (k = 0; k < codingTemplateLength; k++) {
           i0 = i + codingTemplateY[k];
@@ -629,7 +623,7 @@ const Jbig2Image = (function Jbig2ImageClosure() {
         }
         currentWidth += deltaWidth;
         totalWidth += currentWidth;
-        var bitmap;
+        let bitmap;
         if (refinement) {
           // 6.5.8.2 Refinement/aggregate-coded symbol bitmap
           const numberOfInstances = decodeInteger(
@@ -756,9 +750,11 @@ const Jbig2Image = (function Jbig2ImageClosure() {
     }
 
     // 6.5.10 Exported symbols
-    const exportedSymbols = [];
-    let flags = [],
-      currentFlag = false;
+    const exportedSymbols = [],
+      flags = [];
+    let currentFlag = false,
+      i,
+      ii;
     const totalSymbolsLength = symbols.length + numberOfNewSymbols;
     while (flags.length < totalSymbolsLength) {
       let runLength = huffman
@@ -769,7 +765,7 @@ const Jbig2Image = (function Jbig2ImageClosure() {
       }
       currentFlag = !currentFlag;
     }
-    for (var i = 0, ii = symbols.length; i < ii; i++) {
+    for (i = 0, ii = symbols.length; i < ii; i++) {
       if (flags[i]) {
         exportedSymbols.push(symbols[i]);
       }
@@ -879,7 +875,7 @@ const Jbig2Image = (function Jbig2ImageClosure() {
         }
         const offsetT = t - (referenceCorner & 1 ? 0 : symbolHeight - 1);
         const offsetS = currentS - (referenceCorner & 2 ? symbolWidth - 1 : 0);
-        var s2, t2, symbolRow;
+        let s2, t2, symbolRow;
         if (transposed) {
           // Place Symbol Bitmap from T1,S1
           for (s2 = 0; s2 < symbolHeight; s2++) {
@@ -1289,20 +1285,20 @@ const Jbig2Image = (function Jbig2ImageClosure() {
       combinationOperator: data[start + 16] & 7,
     };
   }
-  var RegionSegmentInformationFieldLength = 17;
+  const RegionSegmentInformationFieldLength = 17;
 
   function processSegment(segment, visitor) {
     const header = segment.header;
 
-    let data = segment.data,
-      position = segment.start,
+    const data = segment.data,
       end = segment.end;
+    let position = segment.start;
     let args, at, i, atLength;
     switch (header.type) {
       case 0: // SymbolDictionary
         // 7.4.2 Symbol dictionary segment syntax
-        var dictionary = {};
-        var dictionaryFlags = readUint16(data, position); // 7.4.2.1.1
+        const dictionary = {};
+        const dictionaryFlags = readUint16(data, position); // 7.4.2.1.1
         dictionary.huffman = !!(dictionaryFlags & 1);
         dictionary.refinement = !!(dictionaryFlags & 2);
         dictionary.huffmanDHSelector = (dictionaryFlags >> 2) & 3;
@@ -1352,10 +1348,10 @@ const Jbig2Image = (function Jbig2ImageClosure() {
         break;
       case 6: // ImmediateTextRegion
       case 7: // ImmediateLosslessTextRegion
-        var textRegion = {};
+        const textRegion = {};
         textRegion.info = readRegionSegmentInformation(data, position);
         position += RegionSegmentInformationFieldLength;
-        var textRegionSegmentFlags = readUint16(data, position);
+        const textRegionSegmentFlags = readUint16(data, position);
         position += 2;
         textRegion.huffman = !!(textRegionSegmentFlags & 1);
         textRegion.refinement = !!(textRegionSegmentFlags & 2);
@@ -1436,10 +1432,10 @@ const Jbig2Image = (function Jbig2ImageClosure() {
         break;
       case 38: // ImmediateGenericRegion
       case 39: // ImmediateLosslessGenericRegion
-        var genericRegion = {};
+        const genericRegion = {};
         genericRegion.info = readRegionSegmentInformation(data, position);
         position += RegionSegmentInformationFieldLength;
-        var genericRegionSegmentFlags = data[position++];
+        const genericRegionSegmentFlags = data[position++];
         genericRegion.mmr = !!(genericRegionSegmentFlags & 1);
         genericRegion.template = (genericRegionSegmentFlags >> 1) & 3;
         genericRegion.prediction = !!(genericRegionSegmentFlags & 8);
@@ -1458,7 +1454,7 @@ const Jbig2Image = (function Jbig2ImageClosure() {
         args = [genericRegion, data, position, end];
         break;
       case 48: // PageInformation
-        var pageInfo = {
+        const pageInfo = {
           width: readUint32(data, position),
           height: readUint32(data, position + 4),
           resolutionX: readUint32(data, position + 8),
@@ -1467,7 +1463,7 @@ const Jbig2Image = (function Jbig2ImageClosure() {
         if (pageInfo.height === 0xffffffff) {
           delete pageInfo.height;
         }
-        var pageSegmentFlags = data[position + 16];
+        const pageSegmentFlags = data[position + 16];
         readUint16(data, position + 17); // pageStripingInformation
         pageInfo.lossless = !!(pageSegmentFlags & 1);
         pageInfo.refinement = !!(pageSegmentFlags & 2);
