@@ -47,14 +47,8 @@ import {
   Ref,
   RefSet,
 } from "./primitives.js";
-import {
-  ErrorFont,
-  Font,
-  FontFlags,
-  getFontType,
-  IdentityToUnicodeMap,
-  ToUnicodeMap,
-} from "./fonts.js";
+import { ErrorFont, Font } from "./fonts.js";
+import { FontFlags, getFontType } from "./fonts_utils.js";
 import {
   getEncoding,
   MacRomanEncoding,
@@ -74,6 +68,7 @@ import {
   getSymbolsFonts,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
+import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
 import {
