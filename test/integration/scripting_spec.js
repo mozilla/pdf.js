@@ -787,7 +787,7 @@ describe("Interaction", () => {
             `
             ['Text1', 'Text2', 'Text4',
              'List Box7', 'Group6'].map(x => this.getField(x).page).join(',')
-          `
+            `
           );
 
           // Click on execute button to eval the above code.
@@ -798,6 +798,45 @@ describe("Interaction", () => {
 
           const text = await page.$eval("#\\35 6R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("0,0,1,1,1");
+        })
+      );
+    });
+  });
+
+  describe("in issue13269.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue13269.pdf", "#\\32 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update fields with the same name from JS", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.type("#\\32 7R", "hello");
+          await page.keyboard.press("Enter");
+
+          await Promise.all(
+            [4, 5, 6].map(async n =>
+              page.waitForFunction(
+                `document.querySelector("#\\\\32 ${n}R").value !== ""`
+              )
+            )
+          );
+
+          const expected = "hello world";
+          for (const n of [4, 5, 6]) {
+            const text = await page.$eval(`#\\32 ${n}R`, el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expected);
+          }
         })
       );
     });

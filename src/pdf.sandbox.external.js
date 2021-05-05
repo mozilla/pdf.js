@@ -117,6 +117,12 @@ class SandboxSupportBase {
         }
         this.win.alert(cMsg);
       },
+      confirm: cMsg => {
+        if (typeof cMsg !== "string") {
+          return false;
+        }
+        return this.win.confirm(cMsg);
+      },
       prompt: (cQuestion, cDefault) => {
         if (typeof cQuestion !== "string" || typeof cDefault !== "string") {
           return null;
