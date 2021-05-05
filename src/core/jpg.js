@@ -81,14 +81,13 @@ const JpegImage = (function JpegImageClosure() {
 
   function buildHuffmanTable(codeLengths, values) {
     let k = 0,
-      code = [],
       i,
       j,
       length = 16;
     while (length > 0 && !codeLengths[length - 1]) {
       length--;
     }
-    code.push({ children: [], index: 0 });
+    const code = [{ children: [], index: 0 }];
     let p = code[0],
       q;
     for (i = 0; i < length; i++) {
@@ -267,8 +266,8 @@ const JpegImage = (function JpegImageClosure() {
         eobrun--;
         return;
       }
-      let k = spectralStart,
-        e = spectralEnd;
+      let k = spectralStart;
+      const e = spectralEnd;
       while (k <= e) {
         const rs = decodeHuffman(component.huffmanTableAC);
         const s = rs & 15,
@@ -774,8 +773,8 @@ const JpegImage = (function JpegImageClosure() {
       function prepareComponents(frame) {
         const mcusPerLine = Math.ceil(frame.samplesPerLine / 8 / frame.maxH);
         const mcusPerColumn = Math.ceil(frame.scanLines / 8 / frame.maxV);
-        for (let i = 0; i < frame.components.length; i++) {
-          component = frame.components[i];
+        for (let i = 0, ii = frame.components.length; i < ii; i++) {
+          const component = frame.components[i];
           const blocksPerLine = Math.ceil(
             (Math.ceil(frame.samplesPerLine / 8) * component.h) / frame.maxH
           );
@@ -795,7 +794,7 @@ const JpegImage = (function JpegImageClosure() {
         frame.mcusPerColumn = mcusPerColumn;
       }
 
-      var offset = 0;
+      let offset = 0;
       let jfif = null;
       let adobe = null;
       let frame, resetInterval;
@@ -813,7 +812,7 @@ const JpegImage = (function JpegImageClosure() {
       offset += 2;
 
       markerLoop: while (fileMarker !== /* EOI (End of Image) = */ 0xffd9) {
-        var i, j, l;
+        let i, j, l;
         switch (fileMarker) {
           case 0xffe0: // APP0 (Application Specific)
           case 0xffe1: // APP1
@@ -832,7 +831,7 @@ const JpegImage = (function JpegImageClosure() {
           case 0xffee: // APP14
           case 0xffef: // APP15
           case 0xfffe: // COM (Comment)
-            var appData = readDataBlock();
+            const appData = readDataBlock();
 
             if (fileMarker === 0xffe0) {
               // 'JFIF\x00'
@@ -880,8 +879,8 @@ const JpegImage = (function JpegImageClosure() {
           case 0xffdb: // DQT (Define Quantization Tables)
             const quantizationTablesLength = readUint16(data, offset);
             offset += 2;
-            var quantizationTablesEnd = quantizationTablesLength + offset - 2;
-            var z;
+            const quantizationTablesEnd = quantizationTablesLength + offset - 2;
+            let z;
             while (offset < quantizationTablesEnd) {
               const quantizationTableSpec = data[offset++];
               const tableData = new Uint16Array(64);
@@ -924,12 +923,11 @@ const JpegImage = (function JpegImageClosure() {
             offset += 2;
             frame.components = [];
             frame.componentIds = {};
-            var componentsCount = data[offset++],
-              componentId;
-            var maxH = 0,
+            const componentsCount = data[offset++];
+            let maxH = 0,
               maxV = 0;
             for (i = 0; i < componentsCount; i++) {
-              componentId = data[offset];
+              const componentId = data[offset];
               const h = data[offset + 1] >> 4;
               const v = data[offset + 1] & 15;
               if (maxH < h) {
@@ -991,22 +989,21 @@ const JpegImage = (function JpegImageClosure() {
 
             offset += 2; // Skip marker length.
 
-            var selectorsCount = data[offset++];
-            var components = [],
-              component;
+            const selectorsCount = data[offset++],
+              components = [];
             for (i = 0; i < selectorsCount; i++) {
               const index = data[offset++];
               const componentIndex = frame.componentIds[index];
-              component = frame.components[componentIndex];
+              const component = frame.components[componentIndex];
               component.index = index;
               const tableSpec = data[offset++];
               component.huffmanTableDC = huffmanTablesDC[tableSpec >> 4];
               component.huffmanTableAC = huffmanTablesAC[tableSpec & 15];
               components.push(component);
             }
-            var spectralStart = data[offset++];
-            var spectralEnd = data[offset++];
-            var successiveApproximation = data[offset++];
+            const spectralStart = data[offset++],
+              spectralEnd = data[offset++],
+              successiveApproximation = data[offset++];
             try {
               const processed = decodeScan(
                 data,
@@ -1082,8 +1079,8 @@ const JpegImage = (function JpegImageClosure() {
       this.jfif = jfif;
       this.adobe = adobe;
       this.components = [];
-      for (i = 0; i < frame.components.length; i++) {
-        component = frame.components[i];
+      for (let i = 0, ii = frame.components.length; i < ii; i++) {
+        const component = frame.components[i];
 
         // Prevent errors when DQT markers are placed after SOF{n} markers,
         // by assigning the `quantizationTable` entry after the entire image
