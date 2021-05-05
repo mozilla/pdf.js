@@ -271,7 +271,7 @@ class PDFScriptingManager {
       this._pdfViewer.isInPresentationMode ||
       this._pdfViewer.isChangingPresentationMode;
 
-    const { id, command, value } = detail;
+    const { id, siblings, command, value } = detail;
     if (!id) {
       switch (command) {
         case "clear":
@@ -309,13 +309,17 @@ class PDFScriptingManager {
       }
     }
 
-    const element = document.getElementById(id);
-    if (element) {
-      element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
-    } else {
-      delete detail.id;
-      // The element hasn't been rendered yet, use the AnnotationStorage.
-      this._pdfDocument?.annotationStorage.setValue(id, detail);
+    delete detail.id;
+
+    const ids = siblings ? [id, ...siblings] : [id];
+    for (const elementId of ids) {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
+      } else {
+        // The element hasn't been rendered yet, use the AnnotationStorage.
+        this._pdfDocument?.annotationStorage.setValue(elementId, detail);
+      }
     }
   }
 
