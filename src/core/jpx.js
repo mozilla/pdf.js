@@ -45,8 +45,8 @@ const JpxImage = (function JpxImageClosure() {
         return;
       }
 
-      let position = 0,
-        length = data.length;
+      const length = data.length;
+      let position = 0;
       while (position < length) {
         let headerSize = 8;
         let lbox = readUint32(data, position);
@@ -75,7 +75,7 @@ const JpxImage = (function JpxImageClosure() {
             break;
           case 0x636f6c72: // 'colr'
             // Colorspaces are not used, the CS from the PDF is used.
-            var method = data[position];
+            const method = data[position];
             if (method === 1) {
               // enumerated colorspace
               const colorspace = readUint32(data, position + 3);
@@ -108,7 +108,7 @@ const JpxImage = (function JpxImageClosure() {
           case 0x69686472: // 'ihdr'
             break;
           default:
-            var headerType = String.fromCharCode(
+            const headerType = String.fromCharCode(
               (tbox >> 24) & 0xff,
               (tbox >> 16) & 0xff,
               (tbox >> 8) & 0xff,
@@ -156,7 +156,7 @@ const JpxImage = (function JpxImageClosure() {
           const code = readUint16(data, position);
           position += 2;
 
-          var length = 0,
+          let length = 0,
             j,
             sqcd,
             spqcds,
@@ -171,7 +171,7 @@ const JpxImage = (function JpxImageClosure() {
               break;
             case 0xff51: // Image and tile size (SIZ)
               length = readUint16(data, position);
-              var siz = {};
+              const siz = {};
               siz.Xsiz = readUint32(data, position + 4);
               siz.Ysiz = readUint32(data, position + 8);
               siz.XOsiz = readUint32(data, position + 12);
@@ -180,9 +180,9 @@ const JpxImage = (function JpxImageClosure() {
               siz.YTsiz = readUint32(data, position + 24);
               siz.XTOsiz = readUint32(data, position + 28);
               siz.YTOsiz = readUint32(data, position + 32);
-              var componentsCount = readUint16(data, position + 36);
+              const componentsCount = readUint16(data, position + 36);
               siz.Csiz = componentsCount;
-              var components = [];
+              const components = [];
               j = position + 38;
               for (let i = 0; i < componentsCount; i++) {
                 const component = {
@@ -203,7 +203,7 @@ const JpxImage = (function JpxImageClosure() {
               break;
             case 0xff5c: // Quantization default (QCD)
               length = readUint16(data, position);
-              var qcd = {};
+              const qcd = {};
               j = position + 2;
               sqcd = data[j++];
               switch (sqcd & 0x1f) {
@@ -227,7 +227,7 @@ const JpxImage = (function JpxImageClosure() {
               qcd.guardBits = sqcd >> 5;
               spqcds = [];
               while (j < length + position) {
-                var spqcd = {};
+                const spqcd = {};
                 if (spqcdSize === 8) {
                   spqcd.epsilon = data[j++] >> 3;
                   spqcd.mu = 0;
@@ -248,9 +248,9 @@ const JpxImage = (function JpxImageClosure() {
               break;
             case 0xff5d: // Quantization component (QCC)
               length = readUint16(data, position);
-              var qcc = {};
+              const qcc = {};
               j = position + 2;
-              var cqcc;
+              let cqcc;
               if (context.SIZ.Csiz < 257) {
                 cqcc = data[j++];
               } else {
@@ -279,7 +279,7 @@ const JpxImage = (function JpxImageClosure() {
               qcc.guardBits = sqcd >> 5;
               spqcds = [];
               while (j < length + position) {
-                spqcd = {};
+                const spqcd = {};
                 if (spqcdSize === 8) {
                   spqcd.epsilon = data[j++] >> 3;
                   spqcd.mu = 0;
@@ -299,9 +299,9 @@ const JpxImage = (function JpxImageClosure() {
               break;
             case 0xff52: // Coding style default (COD)
               length = readUint16(data, position);
-              var cod = {};
+              const cod = {};
               j = position + 2;
-              var scod = data[j++];
+              const scod = data[j++];
               cod.entropyCoderWithCustomPrecincts = !!(scod & 1);
               cod.sopMarkerUsed = !!(scod & 2);
               cod.ephMarkerUsed = !!(scod & 4);
@@ -313,7 +313,7 @@ const JpxImage = (function JpxImageClosure() {
               cod.decompositionLevelsCount = data[j++];
               cod.xcb = (data[j++] & 0xf) + 2;
               cod.ycb = (data[j++] & 0xf) + 2;
-              var blockStyle = data[j++];
+              const blockStyle = data[j++];
               cod.selectiveArithmeticCodingBypass = !!(blockStyle & 1);
               cod.resetContextProbabilities = !!(blockStyle & 2);
               cod.terminationOnEachCodingPass = !!(blockStyle & 4);
@@ -332,7 +332,7 @@ const JpxImage = (function JpxImageClosure() {
                 }
                 cod.precinctsSizes = precinctsSizes;
               }
-              var unsupported = [];
+              const unsupported = [];
               if (cod.selectiveArithmeticCodingBypass) {
                 unsupported.push("selectiveArithmeticCodingBypass");
               }
@@ -431,8 +431,8 @@ const JpxImage = (function JpxImageClosure() {
   function calculateTileGrids(context, components) {
     const siz = context.SIZ;
     // Section B.3 Division into tile and tile-components
-    let tile,
-      tiles = [];
+    const tiles = [];
+    let tile;
     const numXtiles = Math.ceil((siz.Xsiz - siz.XTOsiz) / siz.XTsiz);
     const numYtiles = Math.ceil((siz.Ysiz - siz.YTOsiz) / siz.YTsiz);
     for (let q = 0; q < numYtiles; q++) {
@@ -1006,7 +1006,7 @@ const JpxImage = (function JpxImageClosure() {
         buildPrecincts(context, resolution, blocksDimensions);
         resolutions.push(resolution);
 
-        var subband;
+        let subband;
         if (r === 0) {
           // one sub-band (LL) with last decomposition
           subband = {};
@@ -1177,9 +1177,9 @@ const JpxImage = (function JpxImageClosure() {
       if (!readBits(1)) {
         continue;
       }
-      const layerNumber = packet.layerNumber;
-      var queue = [],
-        codeblock;
+      const layerNumber = packet.layerNumber,
+        queue = [];
+      let codeblock;
       for (let i = 0, ii = packet.codeblocks.length; i < ii; i++) {
         codeblock = packet.codeblocks[i];
         let precinct = codeblock.precinct;
@@ -1187,13 +1187,13 @@ const JpxImage = (function JpxImageClosure() {
         const codeblockRow = codeblock.cby - precinct.cbyMin;
         let codeblockIncluded = false;
         let firstTimeInclusion = false;
-        var valueReady;
+        let valueReady, zeroBitPlanesTree;
         if (codeblock.included !== undefined) {
           codeblockIncluded = !!readBits(1);
         } else {
           // reading inclusion tree
           precinct = codeblock.precinct;
-          var inclusionTree, zeroBitPlanesTree;
+          let inclusionTree;
           if (precinct.inclusionTree !== undefined) {
             inclusionTree = precinct.inclusionTree;
           } else {
@@ -1306,21 +1306,20 @@ const JpxImage = (function JpxImageClosure() {
         continue;
       }
 
-      var bitModel, currentCodingpassType;
-      bitModel = new BitModel(
+      const bitModel = new BitModel(
         blockWidth,
         blockHeight,
         codeblock.subbandType,
         codeblock.zeroBitPlanes,
         mb
       );
-      currentCodingpassType = 2; // first bit plane starts from cleanup
+      let currentCodingpassType = 2; // first bit plane starts from cleanup
 
       // collect data
-      let data = codeblock.data,
-        totalLength = 0,
+      const data = codeblock.data;
+      let totalLength = 0,
         codingpasses = 0;
-      var j, jj, dataItem;
+      let j, jj, dataItem;
       for (j = 0, jj = data.length; j < jj; j++) {
         dataItem = data[j];
         totalLength += dataItem.end - dataItem.start;
@@ -1361,7 +1360,7 @@ const JpxImage = (function JpxImageClosure() {
       const magnitude = bitModel.coefficentsMagnitude;
       const bitsDecoded = bitModel.bitsDecoded;
       const magnitudeCorrection = reversible ? 0 : 0.5;
-      var k, n, nb;
+      let k, n, nb;
       position = 0;
       // Do the interleaving of Section F.3.3 here, so we do not need
       // to copy later. LL level is not interleaved, just copied.
@@ -1419,7 +1418,7 @@ const JpxImage = (function JpxImageClosure() {
       const coefficients = new Float32Array(width * height);
 
       for (let j = 0, jj = resolution.subbands.length; j < jj; j++) {
-        var mu, epsilon;
+        let mu, epsilon;
         if (!scalarExpounded) {
           // formula E-5
           mu = spqcds[0].mu;
@@ -1483,8 +1482,7 @@ const JpxImage = (function JpxImageClosure() {
     for (let i = 0, ii = context.tiles.length; i < ii; i++) {
       const tile = context.tiles[i];
       const transformedTiles = [];
-      var c;
-      for (c = 0; c < componentsCount; c++) {
+      for (let c = 0; c < componentsCount; c++) {
         transformedTiles[c] = transformTile(context, tile, c);
       }
       const tile0 = transformedTiles[0];
@@ -1498,8 +1496,8 @@ const JpxImage = (function JpxImageClosure() {
       };
 
       // Section G.2.2 Inverse multi component transform
-      var shift, offset;
-      var pos = 0,
+      let shift, offset;
+      let pos = 0,
         j,
         jj,
         y0,
@@ -1551,7 +1549,7 @@ const JpxImage = (function JpxImageClosure() {
         }
       } else {
         // no multi-component transform
-        for (c = 0; c < componentsCount; c++) {
+        for (let c = 0; c < componentsCount; c++) {
           const items = transformedTiles[c].items;
           shift = components[c].precision - 8;
           offset = (128 << shift) + 0.5;
@@ -1586,7 +1584,7 @@ const JpxImage = (function JpxImageClosure() {
   }
 
   // Section B.10.2 Tag trees
-  var TagTree = (function TagTreeClosure() {
+  const TagTree = (function TagTreeClosure() {
     // eslint-disable-next-line no-shadow
     function TagTree(width, height) {
       const levelsLength = log2(Math.max(width, height)) + 1;
@@ -1648,7 +1646,7 @@ const JpxImage = (function JpxImageClosure() {
     return TagTree;
   })();
 
-  var InclusionTree = (function InclusionTreeClosure() {
+  const InclusionTree = (function InclusionTreeClosure() {
     // eslint-disable-next-line no-shadow
     function InclusionTree(width, height, defaultValue) {
       const levelsLength = log2(Math.max(width, height)) + 1;
@@ -1731,7 +1729,7 @@ const JpxImage = (function JpxImageClosure() {
   })();
 
   // Section D. Coefficient bit modeling
-  var BitModel = (function BitModelClosure() {
+  const BitModel = (function BitModelClosure() {
     const UNIFORM_CONTEXT = 17;
     const RUNLENGTH_CONTEXT = 18;
     // Table D-1
@@ -1970,7 +1968,7 @@ const JpxImage = (function JpxImageClosure() {
         const length = width * height;
         const width4 = width * 4;
 
-        for (var index0 = 0, indexNext; index0 < length; index0 = indexNext) {
+        for (let index0 = 0, indexNext; index0 < length; index0 = indexNext) {
           indexNext = Math.min(length, index0 + width4);
           for (let j = 0; j < width; j++) {
             for (let index = index0 + j; index < indexNext; index += width) {
@@ -2036,7 +2034,7 @@ const JpxImage = (function JpxImageClosure() {
               neighborsSignificance[index0 + threeRowsDown] === 0;
             let i1 = 0,
               index = index0;
-            var i = i0,
+            let i = i0,
               sign;
             if (allEmpty) {
               const hasSignificantCoefficent = decoder.readBit(
@@ -2147,9 +2145,9 @@ const JpxImage = (function JpxImageClosure() {
       u0,
       v0
     ) {
-      let llWidth = ll.width,
-        llHeight = ll.height,
-        llItems = ll.items;
+      const llWidth = ll.width,
+        llHeight = ll.height;
+      let llItems = ll.items;
       const width = hl_lh_hh.width;
       const height = hl_lh_hh.height;
       const items = hl_lh_hh.items;
@@ -2253,7 +2251,7 @@ const JpxImage = (function JpxImageClosure() {
   })();
 
   // Section 3.8.2 Irreversible 9-7 filter
-  var IrreversibleTransform = (function IrreversibleTransformClosure() {
+  const IrreversibleTransform = (function IrreversibleTransformClosure() {
     // eslint-disable-next-line no-shadow
     function IrreversibleTransform() {
       Transform.call(this);
@@ -2351,7 +2349,7 @@ const JpxImage = (function JpxImageClosure() {
   })();
 
   // Section 3.8.1 Reversible 5-3 filter
-  var ReversibleTransform = (function ReversibleTransformClosure() {
+  const ReversibleTransform = (function ReversibleTransformClosure() {
     // eslint-disable-next-line no-shadow
     function ReversibleTransform() {
       Transform.call(this);
