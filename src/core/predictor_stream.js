@@ -19,10 +19,12 @@ import { isDict } from "./primitives.js";
 
 class PredictorStream extends DecodeStream {
   constructor(str, maybeLength, params) {
+    super(maybeLength);
+
     if (!isDict(params)) {
       return str; // no prediction
     }
-    const predictor = params.get("Predictor") || 1;
+    const predictor = (this.predictor = params.get("Predictor") || 1);
 
     if (predictor <= 1) {
       return str; // no prediction
@@ -30,8 +32,6 @@ class PredictorStream extends DecodeStream {
     if (predictor !== 2 && (predictor < 10 || predictor > 15)) {
       throw new FormatError(`Unsupported predictor: ${predictor}`);
     }
-    super(maybeLength);
-    this.predictor = predictor;
 
     if (predictor === 2) {
       this.readBlock = this.readBlockTiff;
