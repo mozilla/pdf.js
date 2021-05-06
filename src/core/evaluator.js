@@ -393,7 +393,8 @@ class PartialEvaluator {
     } else {
       bbox = null;
     }
-    let optionalContent = null;
+    let optionalContent = null,
+      groupOptions = null;
     if (dict.has("OC")) {
       optionalContent = await this.parseMarkedContentProps(
         dict.get("OC"),
@@ -403,7 +404,7 @@ class PartialEvaluator {
     }
     const group = dict.get("Group");
     if (group) {
-      var groupOptions = {
+      groupOptions = {
         matrix,
         bbox,
         smask,
@@ -1004,8 +1005,8 @@ class PartialEvaluator {
       });
     };
 
-    let fontRef,
-      xref = this.xref;
+    const xref = this.xref;
+    let fontRef;
     if (font) {
       // Loading by ref.
       if (!isRef(font)) {
@@ -1070,8 +1071,8 @@ class PartialEvaluator {
     }
     const { descriptor, hash } = preEvaluatedFont;
 
-    let fontRefIsRef = isRef(fontRef),
-      fontID;
+    const fontRefIsRef = isRef(fontRef);
+    let fontID;
     if (fontRefIsRef) {
       fontID = `f${fontRef.toString()}`;
     }
@@ -1464,12 +1465,9 @@ class PartialEvaluator {
       };
       task.ensureNotTerminated();
       timeSlotManager.reset();
-      let stop,
-        operation = {},
-        i,
-        ii,
-        cs,
-        name;
+
+      const operation = {};
+      let stop, i, ii, cs;
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are used beyond this loop, so we
         // cannot reuse the same array on each iteration. Therefore we pass
@@ -1483,9 +1481,9 @@ class PartialEvaluator {
         let fn = operation.fn;
 
         switch (fn | 0) {
-          case OPS.paintXObject:
+          case OPS.paintXObject: {
             // eagerly compile XForm objects
-            name = args[0].name;
+            const name = args[0].name;
             if (name) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
@@ -1591,8 +1589,9 @@ class PartialEvaluator {
               })
             );
             return;
-          case OPS.setFont:
-            var fontSize = args[1];
+          }
+          case OPS.setFont: {
+            const fontSize = args[1];
             // eagerly collect all fonts
             next(
               self
@@ -1611,14 +1610,15 @@ class PartialEvaluator {
                 })
             );
             return;
+          }
           case OPS.beginText:
             parsingText = true;
             break;
           case OPS.endText:
             parsingText = false;
             break;
-          case OPS.endInlineImage:
-            var cacheKey = args[0].cacheKey;
+          case OPS.endInlineImage: {
+            const cacheKey = args[0].cacheKey;
             if (cacheKey) {
               const localImage = localImageCache.getByName(cacheKey);
               if (localImage) {
@@ -1639,6 +1639,7 @@ class PartialEvaluator {
               })
             );
             return;
+          }
           case OPS.showText:
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
@@ -1651,10 +1652,10 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            var arr = args[0];
-            var combinedGlyphs = [];
-            var arrLength = arr.length;
-            var state = stateManager.state;
+            const arr = args[0],
+              arrLength = arr.length,
+              combinedGlyphs = [],
+              state = stateManager.state;
             for (i = 0; i < arrLength; ++i) {
               const arrItem = arr[i];
               if (isString(arrItem)) {
@@ -1826,18 +1827,18 @@ class PartialEvaluator {
             fn = OPS.setStrokeRGBColor;
             break;
 
-          case OPS.shadingFill:
-            var shadingRes = resources.get("Shading");
+          case OPS.shadingFill: {
+            const shadingRes = resources.get("Shading");
             if (!shadingRes) {
               throw new FormatError("No shading resource found");
             }
 
-            var shading = shadingRes.get(args[0].name);
+            const shading = shadingRes.get(args[0].name);
             if (!shading) {
               throw new FormatError("No shading object found");
             }
 
-            var shadingFill = Pattern.parseShading(
+            const shadingFill = Pattern.parseShading(
               shading,
               null,
               xref,
@@ -1846,12 +1847,13 @@ class PartialEvaluator {
               self._pdfFunctionFactory,
               localColorSpaceCache
             );
-            var patternIR = shadingFill.getIR();
+            const patternIR = shadingFill.getIR();
             args = [patternIR];
             fn = OPS.shadingFill;
             break;
-          case OPS.setGState:
-            name = args[0].name;
+          }
+          case OPS.setGState: {
+            const name = args[0].name;
             if (name) {
               const localGStateObj = localGStateCache.getByName(name);
               if (localGStateObj) {
@@ -1911,6 +1913,7 @@ class PartialEvaluator {
               })
             );
             return;
+          }
           case OPS.moveTo:
           case OPS.lineTo:
           case OPS.curveTo:
@@ -2214,8 +2217,8 @@ class PartialEvaluator {
       // Replaces all whitespaces with standard spaces (0x20), to avoid
       // alignment issues between the textLayer and the canvas if the text
       // contains e.g. tabs (fixes issue6612.pdf).
+      const ii = str.length;
       let i = 0,
-        ii = str.length,
         code;
       while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7f) {
         i++;
@@ -2548,8 +2551,9 @@ class PartialEvaluator {
       };
       task.ensureNotTerminated();
       timeSlotManager.reset();
+
+      const operation = {};
       let stop,
-        operation = {},
         args = [];
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are not used beyond this loop, so
@@ -2565,9 +2569,9 @@ class PartialEvaluator {
         args = operation.args;
 
         switch (fn | 0) {
-          case OPS.setFont:
+          case OPS.setFont: {
             // Optimization to ignore multiple identical Tf commands.
-            var fontNameArg = args[0].name,
+            const fontNameArg = args[0].name,
               fontSizeArg = args[1];
             if (
               textState.font &&
@@ -2582,6 +2586,7 @@ class PartialEvaluator {
             textState.fontSize = fontSizeArg;
             next(handleSetFont(fontNameArg, null));
             return;
+          }
           case OPS.setTextRise:
             flushTextContentItem();
             textState.textRise = args[0];
@@ -2731,13 +2736,13 @@ class PartialEvaluator {
               isFirstChunk: true,
             });
             break;
-          case OPS.paintXObject:
+          case OPS.paintXObject: {
             flushTextContentItem();
             if (!xobjs) {
               xobjs = resources.get("XObject") || Dict.empty;
             }
 
-            var name = args[0].name;
+            const name = args[0].name;
             if (name && emptyXObjectCache.getByName(name)) {
               break;
             }
@@ -2848,8 +2853,9 @@ class PartialEvaluator {
               })
             );
             return;
-          case OPS.setGState:
-            name = args[0].name;
+          }
+          case OPS.setGState: {
+            const name = args[0].name;
             if (name && emptyGStateCache.getByName(name)) {
               break;
             }
@@ -2902,6 +2908,7 @@ class PartialEvaluator {
               })
             );
             return;
+          }
           case OPS.beginMarkedContent:
             if (includeMarkedContent) {
               textContent.items.push({
@@ -3557,8 +3564,9 @@ class PartialEvaluator {
     }
 
     const descriptor = dict.get("FontDescriptor");
+    let hash;
     if (descriptor) {
-      var hash = new MurmurHash3_64();
+      hash = new MurmurHash3_64();
       const encoding = baseDict.getRaw("Encoding");
       if (isName(encoding)) {
         hash.update(encoding.name);
@@ -3732,7 +3740,7 @@ class PartialEvaluator {
       throw new FormatError("invalid font name");
     }
 
-    let fontFile;
+    let fontFile, subtype, length1, length2, length3;
     try {
       fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
     } catch (ex) {
@@ -3744,13 +3752,13 @@ class PartialEvaluator {
     }
     if (fontFile) {
       if (fontFile.dict) {
-        var subtype = fontFile.dict.get("Subtype");
-        if (subtype) {
-          subtype = subtype.name;
+        const subtypeEntry = fontFile.dict.get("Subtype");
+        if (subtypeEntry instanceof Name) {
+          subtype = subtypeEntry.name;
         }
-        var length1 = fontFile.dict.get("Length1");
-        var length2 = fontFile.dict.get("Length2");
-        var length3 = fontFile.dict.get("Length3");
+        length1 = fontFile.dict.get("Length1");
+        length2 = fontFile.dict.get("Length2");
+        length3 = fontFile.dict.get("Length3");
       }
     }
 
