@@ -3620,6 +3620,27 @@ class PartialEvaluator {
         uint8array = new Uint8Array(new Uint32Array(widths).buffer);
         hash.update(uint8array);
       }
+
+      if (composite) {
+        const compositeWidths = dict.get("W") || baseDict.get("W");
+        if (Array.isArray(compositeWidths)) {
+          const widthsBuf = [];
+          for (const entry of compositeWidths) {
+            if (isNum(entry) || isRef(entry)) {
+              widthsBuf.push(entry.toString());
+            } else if (Array.isArray(entry)) {
+              const subWidthsBuf = [];
+              for (const element of entry) {
+                if (isNum(element) || isRef(element)) {
+                  subWidthsBuf.push(element.toString());
+                }
+              }
+              widthsBuf.push(`[${subWidthsBuf.join()}]`);
+            }
+          }
+          hash.update(widthsBuf.join());
+        }
+      }
     }
 
     return {
