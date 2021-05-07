@@ -2978,10 +2978,9 @@ class PartialEvaluator {
     const xref = this.xref;
     let cidToGidBytes;
     // 9.10.2
-    const toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
-    const toUnicodePromise = toUnicode
-      ? this.readToUnicode(toUnicode)
-      : Promise.resolve(undefined);
+    const toUnicodePromise = this.readToUnicode(
+      properties.toUnicode || dict.get("ToUnicode") || baseDict.get("ToUnicode")
+    );
 
     if (properties.composite) {
       // CIDSystemInfo helps to match CID to glyphs
@@ -3289,8 +3288,10 @@ class PartialEvaluator {
     );
   }
 
-  readToUnicode(toUnicode) {
-    const cmapObj = toUnicode;
+  readToUnicode(cmapObj) {
+    if (!cmapObj) {
+      return Promise.resolve(null);
+    }
     if (isName(cmapObj)) {
       return CMapFactory.create({
         encoding: cmapObj,
@@ -3541,7 +3542,7 @@ class PartialEvaluator {
     }
 
     let composite = false;
-    let uint8array;
+    let hash, toUnicode;
     if (type.name === "Type0") {
       // If font is a composite
       //  - get the descendant font
@@ -3566,7 +3567,6 @@ class PartialEvaluator {
     const firstChar = dict.get("FirstChar") || 0,
       lastChar = dict.get("LastChar") || (composite ? 0xffff : 0xff);
     const descriptor = dict.get("FontDescriptor");
-    let hash;
     if (descriptor) {
       hash = new MurmurHash3_64();
 
@@ -3601,10 +3601,10 @@ class PartialEvaluator {
 
       hash.update(`${firstChar}-${lastChar}`); // Fixes issue10665_reduced.pdf
 
-      const toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
+      toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
       if (isStream(toUnicode)) {
         const stream = toUnicode.str || toUnicode;
-        uint8array = stream.buffer
+        const uint8array = stream.buffer
           ? new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength)
           : new Uint8Array(
               stream.bytes.buffer,
@@ -3659,18 +3659,22 @@ class PartialEvaluator {
       type: type.name,
       firstChar,
       lastChar,
+      toUnicode,
       hash: hash ? hash.hexdigest() : "",
     };
   }
 
-  async translateFont(preEvaluatedFont) {
-    const baseDict = preEvaluatedFont.baseDict;
-    const dict = preEvaluatedFont.dict;
-    const composite = preEvaluatedFont.composite;
-    let descriptor = preEvaluatedFont.descriptor;
-    const type = preEvaluatedFont.type;
-    const firstChar = preEvaluatedFont.firstChar,
-      lastChar = preEvaluatedFont.lastChar;
+  async translateFont({
+    descriptor,
+    dict,
+    baseDict,
+    composite,
+    type,
+    firstChar,
+    lastChar,
+    toUnicode,
+    cssFontInfo,
+  }) {
     let properties;
 
     if (!descriptor) {
@@ -3710,6 +3714,7 @@ class PartialEvaluator {
           flags,
           firstChar,
           lastChar,
+          toUnicode,
         };
         const widths = dict.get("Widths");
         return this.extractDataStructures(dict, dict, properties).then(
@@ -3806,6 +3811,7 @@ class PartialEvaluator {
       fontMatrix: dict.getArray("FontMatrix") || FONT_IDENTITY_MATRIX,
       firstChar,
       lastChar,
+      toUnicode,
       bbox: descriptor.getArray("FontBBox"),
       ascent: descriptor.get("Ascent"),
       descent: descriptor.get("Descent"),
@@ -3814,7 +3820,7 @@ class PartialEvaluator {
       flags: descriptor.get("Flags"),
       italicAngle: descriptor.get("ItalicAngle"),
       isType3Font: false,
-      cssFontInfo: preEvaluatedFont.cssFontInfo,
+      cssFontInfo,
     };
 
     if (composite) {
