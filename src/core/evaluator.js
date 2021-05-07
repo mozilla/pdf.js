@@ -3563,10 +3563,13 @@ class PartialEvaluator {
       composite = true;
     }
 
+    const firstChar = dict.get("FirstChar") || 0,
+      lastChar = dict.get("LastChar") || (composite ? 0xffff : 0xff);
     const descriptor = dict.get("FontDescriptor");
     let hash;
     if (descriptor) {
       hash = new MurmurHash3_64();
+
       const encoding = baseDict.getRaw("Encoding");
       if (isName(encoding)) {
         hash.update(encoding.name);
@@ -3596,9 +3599,7 @@ class PartialEvaluator {
         }
       }
 
-      const firstChar = dict.get("FirstChar") || 0;
-      const lastChar = dict.get("LastChar") || (composite ? 0xffff : 0xff);
-      hash.update(`${firstChar}-${lastChar}`);
+      hash.update(`${firstChar}-${lastChar}`); // Fixes issue10665_reduced.pdf
 
       const toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
       if (isStream(toUnicode)) {
@@ -3656,6 +3657,8 @@ class PartialEvaluator {
       baseDict,
       composite,
       type: type.name,
+      firstChar,
+      lastChar,
       hash: hash ? hash.hexdigest() : "",
     };
   }
@@ -3666,10 +3669,9 @@ class PartialEvaluator {
     const composite = preEvaluatedFont.composite;
     let descriptor = preEvaluatedFont.descriptor;
     const type = preEvaluatedFont.type;
-    const maxCharIndex = composite ? 0xffff : 0xff;
+    const firstChar = preEvaluatedFont.firstChar,
+      lastChar = preEvaluatedFont.lastChar;
     let properties;
-    const firstChar = dict.get("FirstChar") || 0;
-    const lastChar = dict.get("LastChar") || maxCharIndex;
 
     if (!descriptor) {
       if (type === "Type3") {
@@ -3802,8 +3804,8 @@ class PartialEvaluator {
       composite,
       fixedPitch: false,
       fontMatrix: dict.getArray("FontMatrix") || FONT_IDENTITY_MATRIX,
-      firstChar: firstChar || 0,
-      lastChar: lastChar || maxCharIndex,
+      firstChar,
+      lastChar,
       bbox: descriptor.getArray("FontBBox"),
       ascent: descriptor.get("Ascent"),
       descent: descriptor.get("Descent"),
