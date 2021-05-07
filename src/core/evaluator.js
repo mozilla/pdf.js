@@ -3622,6 +3622,8 @@ class PartialEvaluator {
       }
 
       if (composite) {
+        hash.update("compositeFont");
+
         const compositeWidths = dict.get("W") || baseDict.get("W");
         if (Array.isArray(compositeWidths)) {
           const widthsBuf = [];
