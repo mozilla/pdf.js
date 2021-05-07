@@ -159,6 +159,10 @@
       "type": "boolean",
       "default": false
     },
+    "enableXfa": {
+      "type": "boolean",
+      "default": false
+    },
     "historyUpdateUrl": {
       "type": "boolean",
       "default": false
