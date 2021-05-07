@@ -206,7 +206,7 @@ const defaultOptions = {
   enableXfa: {
     /** @type {boolean} */
     value: false,
-    kind: OptionKind.API,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   fontExtraProperties: {
     /** @type {boolean} */
