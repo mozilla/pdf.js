@@ -132,6 +132,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue13343",
+       "file": "pdfs/issue13343.pdf",
+       "md5": "f8bf1888839e15254555092c504e1900",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug921760",
        "file": "pdfs/bug921760.pdf",
        "md5": "1aa136d786a65b0d7cce7bdb3c58c6c3",
