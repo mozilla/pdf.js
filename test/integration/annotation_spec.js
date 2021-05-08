@@ -72,6 +72,10 @@ describe("Checkbox annotation", () => {
         pages.map(async ([browserName, page]) => {
           for (const selector of selectors) {
             await page.click(selector);
+            await page.waitForFunction(
+              `document.querySelector("${selector} > :first-child").checked`
+            );
+
             for (const otherSelector of selectors) {
               const checked = await page.$eval(
                 `${otherSelector} > :first-child`,
