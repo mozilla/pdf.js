@@ -67,6 +67,10 @@ describe("Interaction", () => {
           await page.type("#\\34 16R", "3.14159", { delay: 200 });
           await page.click("#\\34 19R");
 
+          await page.waitForFunction(
+            `getComputedStyle(document.querySelector("#\\\\34 27R")).visibility !== "hidden"`
+          );
+
           visibility = await page.$eval(
             "#\\34 27R",
             el => getComputedStyle(el).visibility
@@ -79,6 +83,10 @@ describe("Interaction", () => {
           await clearInput(page, "#\\34 16R");
           // and leave it
           await page.click("#\\34 19R");
+
+          await page.waitForFunction(
+            `getComputedStyle(document.querySelector("#\\\\34 27R")).visibility !== "visible"`
+          );
 
           visibility = await page.$eval(
             "#\\34 27R",
@@ -531,6 +539,7 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           for (const num of [7, 6, 4, 3, 2, 1]) {
+            await clearInput(page, "#\\33 3R");
             await page.click(`option[value=Export${num}]`);
             await page.waitForFunction(
               `document.querySelector("#\\\\33 3R").value !== ""`
@@ -560,6 +569,7 @@ describe("Interaction", () => {
           );
 
           for (const num of [7, 6, 4, 3, 2, 1]) {
+            await clearInput(page, "#\\33 3R");
             await page.click(`option[value=Export${num}]`);
             await page.waitForFunction(
               `document.querySelector("#\\\\33 3R").value !== ""`
@@ -579,6 +589,7 @@ describe("Interaction", () => {
           let len = 6;
           for (const num of [1, 3, 5, 6, 431, -1, 0]) {
             ++len;
+            await clearInput(page, "#\\33 3R");
             await clearInput(page, "#\\33 9R");
             await page.type("#\\33 9R", `${num},Insert${num},Tresni${num}`, {
               delay: 10,
@@ -611,6 +622,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           let len = 6;
           // Click on Restore button.
+          await clearInput(page, "#\\33 3R");
           await page.click("[data-annotation-id='37R']");
           await page.waitForFunction(
             `document.querySelector("#\\\\33 0R").children.length === ${len}`
