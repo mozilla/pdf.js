@@ -233,8 +233,7 @@ const createMeshCanvas = (function createMeshCanvasClosure() {
     colors,
     figures,
     backgroundColor,
-    cachedCanvases,
-    webGLContext
+    cachedCanvases
   ) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
@@ -273,49 +272,29 @@ const createMeshCanvas = (function createMeshCanvasClosure() {
     const paddedWidth = width + BORDER_SIZE * 2;
     const paddedHeight = height + BORDER_SIZE * 2;
 
-    let canvas, tmpCanvas, i, ii;
-    if (webGLContext.isEnabled) {
-      canvas = webGLContext.drawFigures({
-        width,
-        height,
-        backgroundColor,
-        figures,
-        context,
-      });
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
-      tmpCanvas = cachedCanvases.getCanvas(
-        "mesh",
-        paddedWidth,
-        paddedHeight,
-        false
-      );
-      tmpCanvas.context.drawImage(canvas, BORDER_SIZE, BORDER_SIZE);
-      canvas = tmpCanvas.canvas;
-    } else {
-      tmpCanvas = cachedCanvases.getCanvas(
-        "mesh",
-        paddedWidth,
-        paddedHeight,
-        false
-      );
-      const tmpCtx = tmpCanvas.context;
+    const tmpCanvas = cachedCanvases.getCanvas(
+      "mesh",
+      paddedWidth,
+      paddedHeight,
+      false
+    );
+    const tmpCtx = tmpCanvas.context;
 
-      const data = tmpCtx.createImageData(width, height);
-      if (backgroundColor) {
-        const bytes = data.data;
-        for (i = 0, ii = bytes.length; i < ii; i += 4) {
-          bytes[i] = backgroundColor[0];
-          bytes[i + 1] = backgroundColor[1];
-          bytes[i + 2] = backgroundColor[2];
-          bytes[i + 3] = 255;
-        }
+    const data = tmpCtx.createImageData(width, height);
+    if (backgroundColor) {
+      const bytes = data.data;
+      for (let i = 0, ii = bytes.length; i < ii; i += 4) {
+        bytes[i] = backgroundColor[0];
+        bytes[i + 1] = backgroundColor[1];
+        bytes[i + 2] = backgroundColor[2];
+        bytes[i + 3] = 255;
       }
-      for (i = 0; i < figures.length; i++) {
-        drawFigure(data, figures[i], context);
-      }
-      tmpCtx.putImageData(data, BORDER_SIZE, BORDER_SIZE);
-      canvas = tmpCanvas.canvas;
     }
+    for (let i = 0, ii = figures.length; i < ii; i++) {
+      drawFigure(data, figures[i], context);
+    }
+    tmpCtx.putImageData(data, BORDER_SIZE, BORDER_SIZE);
+    const canvas = tmpCanvas.canvas;
 
     return {
       canvas,
@@ -362,8 +341,7 @@ ShadingIRs.Mesh = {
           colors,
           figures,
           shadingFill ? null : background,
-          owner.cachedCanvases,
-          owner.webGLContext
+          owner.cachedCanvases
         );
 
         if (!shadingFill) {

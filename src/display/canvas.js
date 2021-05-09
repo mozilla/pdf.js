@@ -808,7 +808,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
-  function composeSMask(ctx, smask, layerCtx, webGLContext) {
+  function composeSMask(ctx, smask, layerCtx) {
     const mask = smask.canvas;
     const maskCtx = smask.context;
 
@@ -821,27 +821,13 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       smask.offsetY
     );
 
-    const backdrop = smask.backdrop || null;
-    if (!smask.transferMap && webGLContext.isEnabled) {
-      const composed = webGLContext.composeSMask({
-        layer: layerCtx.canvas,
-        mask,
-        properties: {
-          subtype: smask.subtype,
-          backdrop,
-        },
-      });
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(composed, smask.offsetX, smask.offsetY);
-      return;
-    }
     genericComposeSMask(
       maskCtx,
       layerCtx,
       mask.width,
       mask.height,
       smask.subtype,
-      backdrop,
+      smask.backdrop,
       smask.transferMap
     );
     ctx.drawImage(mask, 0, 0);
@@ -859,7 +845,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       commonObjs,
       objs,
       canvasFactory,
-      webGLContext,
       imageLayer,
       optionalContentConfig
     ) {
@@ -873,7 +858,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.commonObjs = commonObjs;
       this.objs = objs;
       this.canvasFactory = canvasFactory;
-      this.webGLContext = webGLContext;
       this.imageLayer = imageLayer;
       this.groupStack = [];
       this.processingType3 = null;
@@ -1042,7 +1026,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       this.cachedCanvases.clear();
-      this.webGLContext.clear();
 
       if (this.imageLayer) {
         this.imageLayer.endLayout();
@@ -1192,12 +1175,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupLevel--;
       this.ctx = this.groupStack.pop();
 
-      composeSMask(
-        this.ctx,
-        this.current.activeSMask,
-        groupCtx,
-        this.webGLContext
-      );
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
       this.ctx.restore();
       this.ctx.save(); // save is needed since SMask will be resumed.
       copyCtxState(groupCtx, this.ctx);
@@ -1235,12 +1213,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.groupLevel--;
       this.ctx = this.groupStack.pop();
 
-      composeSMask(
-        this.ctx,
-        this.current.activeSMask,
-        groupCtx,
-        this.webGLContext
-      );
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
       this.ctx.restore();
       copyCtxState(groupCtx, this.ctx);
       // Transform was changed in the SMask canvas, reflecting this change on
@@ -2004,8 +1977,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
               ctx,
               this.commonObjs,
               this.objs,
-              this.canvasFactory,
-              this.webGLContext
+              this.canvasFactory
             );
           },
         };
