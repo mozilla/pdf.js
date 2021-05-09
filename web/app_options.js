@@ -70,11 +70,6 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  enableWebGL: {
-    /** @type {boolean} */
-    value: false,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  },
   externalLinkRel: {
     /** @type {string} */
     value: "noopener noreferrer nofollow",

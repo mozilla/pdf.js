@@ -57,7 +57,6 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
-import { WebGLContext } from "./webgl.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
@@ -1092,8 +1091,6 @@ class PDFDocumentProxy {
  *   the `PDFPageProxy.getViewport` method.
  * @property {string} [intent] - Rendering intent, can be 'display' or 'print'.
  *   The default value is 'display'.
- * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
- *   some operations. The default value is `false`.
  * @property {boolean} [renderInteractiveForms] - Whether or not interactive
  *   form elements are rendered in the display layer. If so, we do not render
  *   them on the canvas as well. The default value is `false`.
@@ -1272,7 +1269,6 @@ class PDFPageProxy {
     canvasContext,
     viewport,
     intent = "display",
-    enableWebGL = false,
     renderInteractiveForms = false,
     transform = null,
     imageLayer = null,
@@ -1319,9 +1315,6 @@ class PDFPageProxy {
     const canvasFactoryInstance =
       canvasFactory ||
       new DefaultCanvasFactory({ ownerDocument: this._ownerDocument });
-    const webGLContext = new WebGLContext({
-      enable: enableWebGL,
-    });
     const annotationStorage = includeAnnotationStorage
       ? this._transport.annotationStorage.serializable
       : null;
@@ -1388,7 +1381,6 @@ class PDFPageProxy {
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
-      webGLContext,
       useRequestAnimationFrame: renderingIntent !== "print",
       pdfBug: this._pdfBug,
     });
@@ -3022,7 +3014,6 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       operatorList,
       pageIndex,
       canvasFactory,
-      webGLContext,
       useRequestAnimationFrame = false,
       pdfBug = false,
     }) {
@@ -3034,7 +3025,6 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
       this.operatorList = operatorList;
       this._pageIndex = pageIndex;
       this.canvasFactory = canvasFactory;
-      this.webGLContext = webGLContext;
       this._pdfBug = pdfBug;
 
       this.running = false;
@@ -3093,7 +3083,6 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         this.commonObjs,
         this.objs,
         this.canvasFactory,
-        this.webGLContext,
         imageLayer,
         optionalContentConfig
       );

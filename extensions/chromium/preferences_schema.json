@@ -52,12 +52,6 @@
       ],
       "default": 0
     },
-    "enableWebGL": {
-      "title": "Enable WebGL",
-      "description": "Whether to enable WebGL.",
-      "type": "boolean",
-      "default": false
-    },
     "pdfBugEnabled": {
       "title": "Enable debugging tools",
       "description": "Whether to enable debugging tools.",

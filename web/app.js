@@ -354,9 +354,6 @@ const PDFViewerApplication = {
     if ("disablehistory" in hashParams) {
       AppOptions.set("disableHistory", hashParams.disablehistory === "true");
     }
-    if ("webgl" in hashParams) {
-      AppOptions.set("enableWebGL", hashParams.webgl === "true");
-    }
     if ("verbosity" in hashParams) {
       AppOptions.set("verbosity", hashParams.verbosity | 0);
     }
@@ -511,7 +508,6 @@ const PDFViewerApplication = {
       findController,
       scriptingManager: pdfScriptingManager,
       renderer: AppOptions.get("renderer"),
-      enableWebGL: AppOptions.get("enableWebGL"),
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
@@ -1520,8 +1516,7 @@ const PDFViewerApplication = {
     console.log(
       `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
         `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
-        `(PDF.js: ${version || "-"}` +
-        `${this.pdfViewer.enableWebGL ? " [WebGL]" : ""})`
+        `(PDF.js: ${version || "-"})`
     );
 
     let pdfTitle = info?.Title;
