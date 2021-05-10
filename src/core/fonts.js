@@ -57,6 +57,7 @@ import {
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { CFFFont } from "./cff_font.js";
 import { FontRendererFactory } from "./font_renderer.js";
+import { GlyfTable } from "./glyf.js";
 import { IdentityCMap } from "./cmap.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
 import { readUint32 } from "./core_utils.js";
@@ -2323,6 +2324,51 @@ class Font {
     font.pos = (font.start || 0) + tables.maxp.offset;
     const version = font.getInt32();
     const numGlyphs = font.getUint16();
+
+    if (
+      properties.scaleFactors &&
+      properties.scaleFactors.length === numGlyphs &&
+      isTrueType
+    ) {
+      const { scaleFactors } = properties;
+      const isGlyphLocationsLong = int16(
+        tables.head.data[50],
+        tables.head.data[51]
+      );
+
+      const glyphs = new GlyfTable({
+        glyfTable: tables.glyf.data,
+        isGlyphLocationsLong,
+        locaTable: tables.loca.data,
+        numGlyphs,
+      });
+      glyphs.scale(scaleFactors);
+
+      const { glyf, loca, isLocationLong } = glyphs.write();
+      tables.glyf.data = glyf;
+      tables.loca.data = loca;
+
+      if (isLocationLong !== !!isGlyphLocationsLong) {
+        tables.head.data[50] = 0;
+        tables.head.data[51] = isLocationLong ? 1 : 0;
+      }
+
+      const metrics = tables.hmtx.data;
+
+      for (let i = 0; i < numGlyphs; i++) {
+        const j = 4 * i;
+        const advanceWidth = Math.round(
+          scaleFactors[i] * int16(metrics[j], metrics[j + 1])
+        );
+        metrics[j] = (advanceWidth >> 8) & 0xff;
+        metrics[j + 1] = advanceWidth & 0xff;
+        const lsb = Math.round(
+          scaleFactors[i] * signedInt16(metrics[j + 2], metrics[j + 3])
+        );
+        writeSignedInt16(metrics, j + 2, lsb);
+      }
+    }
+
     // Glyph 0 is duplicated and appended.
     let numGlyphsOut = numGlyphs + 1;
     let dupFirstEntry = true;
