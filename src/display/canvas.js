@@ -1386,24 +1386,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       ctx.globalAlpha = this.current.strokeAlpha;
       if (this.contentVisible) {
         if (typeof strokeColor === "object" && strokeColor?.getPattern) {
-          // for patterns, we transform to pattern space, calculate
-          // the pattern, call stroke, and restore to user space
-          ctx.save();
-          // The current transform will be replaced while building the pattern,
-          // but the line width needs to be adjusted by the current transform,
-          // so we must scale it. To properly fix this we should be using a
-          // pattern transform instead (see #10955).
-          const transform = ctx.mozCurrentTransform;
-          const scale = Util.singularValueDecompose2dScale(transform)[0];
-          ctx.strokeStyle = strokeColor.getPattern(ctx, this);
           const lineWidth = this.getSinglePixelWidth();
-          const scaledLineWidth = this.current.lineWidth * scale;
-          if (lineWidth < 0 && -lineWidth >= scaledLineWidth) {
-            ctx.resetTransform();
-            ctx.lineWidth = Math.round(this._combinedScaleFactor);
-          } else {
-            ctx.lineWidth = Math.max(lineWidth, scaledLineWidth);
-          }
+          ctx.save();
+          ctx.strokeStyle = strokeColor.getPattern(ctx, this);
+          // Prevent drawing too thin lines by enforcing a minimum line width.
+          ctx.lineWidth = Math.max(lineWidth, this.current.lineWidth);
           ctx.stroke();
           ctx.restore();
         } else {
@@ -1444,9 +1431,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (isPatternFill) {
         ctx.save();
-        if (this.baseTransform) {
-          ctx.setTransform.apply(ctx, this.baseTransform);
-        }
         ctx.fillStyle = fillColor.getPattern(ctx, this);
         needRestore = true;
       }
