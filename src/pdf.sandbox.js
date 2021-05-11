@@ -21,9 +21,6 @@ const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
-const TESTING =
-  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING");
-
 class SandboxSupport extends SandboxSupportBase {
   exportValueToSandbox(val) {
     // The communication with the Quickjs sandbox is based on strings
@@ -58,16 +55,17 @@ class Sandbox {
   }
 
   create(data) {
-    if (TESTING) {
+    if (PDFJSDev.test("!PRODUCTION || TESTING")) {
       this._module.ccall("nukeSandbox", null, []);
     }
     const code = [PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE")];
-    if (!TESTING) {
-      code.push("delete dump;");
-    } else {
+
+    if (PDFJSDev.test("!PRODUCTION || TESTING")) {
       code.push(
         `globalThis.sendResultForTesting = callExternalFunction.bind(null, "send");`
       );
+    } else {
+      code.push("delete dump;");
     }
 
     let success = false;
@@ -124,7 +122,7 @@ class Sandbox {
   }
 
   evalForTesting(code, key) {
-    if (TESTING) {
+    if (PDFJSDev.test("!PRODUCTION || TESTING")) {
       this._module.ccall(
         "evalInSandbox",
         null,
@@ -138,6 +136,8 @@ class Sandbox {
           this._alertOnError,
         ]
       );
+    } else {
+      throw new Error("Not implemented: evalForTesting");
     }
   }
 }
