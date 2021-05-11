@@ -1192,8 +1192,8 @@ describe("annotation", function () {
       expect(data.url).toBeUndefined();
       expect(data.unsafeUrl).toBeUndefined();
       expect(data.dest).toEqual([
-        { num: 17, gen: 0 },
-        { name: "XYZ" },
+        Ref.get(17, 0),
+        Name.get("XYZ"),
         0,
         841.89,
         null,
