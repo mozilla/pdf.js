@@ -245,18 +245,17 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
         unreachable(`getPattern type unknown: ${shadingType}`);
       }
 
-      const matrix = this.matrix;
-      if (matrix) {
-        p0 = Util.applyTransform(p0, matrix);
-        p1 = Util.applyTransform(p1, matrix);
-        if (shadingType === ShadingType.RADIAL) {
-          const scale = Util.singularValueDecompose2dScale(matrix);
-          r0 *= scale[0];
-          r1 *= scale[1];
-        }
-      }
-
-      return ["RadialAxial", type, this.bbox, this.colorStops, p0, p1, r0, r1];
+      return [
+        "RadialAxial",
+        type,
+        this.bbox,
+        this.colorStops,
+        p0,
+        p1,
+        r0,
+        r1,
+        this.matrix,
+      ];
     },
   };
 
