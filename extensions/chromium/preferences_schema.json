@@ -133,14 +133,6 @@
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
       "default": false
     },
-    "renderer": {
-      "type": "string",
-      "enum": [
-        "canvas",
-        "svg"
-      ],
-      "default": "canvas"
-    },
     "renderInteractiveForms": {
       "type": "boolean",
       "default": true
