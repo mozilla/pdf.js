@@ -22,6 +22,7 @@ import {
   isNum,
   OPS,
   TextRenderingMode,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -29,11 +30,16 @@ import { DOMSVGFactory } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
 
 /** @type {any} */
-let SVGGraphics = function () {
-  throw new Error("Not implemented: SVGGraphics");
+let SVGGraphics = class {
+  constructor() {
+    unreachable("Not implemented: SVGGraphics");
+  }
 };
 
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+if (
+  typeof PDFJSDev === "undefined" ||
+  PDFJSDev.test("!PRODUCTION || GENERIC")
+) {
   const SVG_DEFAULTS = {
     fontStyle: "normal",
     fontWeight: "normal",
@@ -438,8 +444,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   let maskCount = 0;
   let shadingCount = 0;
 
-  // eslint-disable-next-line no-shadow
-  SVGGraphics = class SVGGraphics {
+  SVGGraphics = class {
     constructor(commonObjs, objs, forceDataSchema = false) {
       this.svgFactory = new DOMSVGFactory();
 
