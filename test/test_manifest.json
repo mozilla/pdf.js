@@ -491,6 +491,12 @@
        "lastPage": 2,
        "type": "load"
     },
+    {  "id": "issue7847_radial",
+       "file": "pdfs/issue7847_radial.pdf",
+       "md5": "59dc206ec5dd6e6f701943e4694e4147",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "rotation",
        "file": "pdfs/rotation.pdf",
        "md5": "4fb25ada00ce7528569d9791c14decf5",
@@ -640,6 +646,12 @@
        "file": "pdfs/wdsg_fitc.pdf",
        "md5": "5bb1c2b83705d4cdfc43197ee74f07f9",
        "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue6769_no_matrix",
+       "file": "pdfs/issue6769_no_matrix.pdf",
+       "md5": "f88806137fb4592975052ff3508d7b1e",
        "rounds": 1,
        "type": "eq"
     },
@@ -2558,6 +2570,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6769",
+       "file": "pdfs/issue6769.pdf",
+       "md5": "724b94d6bd1e8010403328446d0ab061",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4304",
        "file": "pdfs/issue4304.pdf",
        "md5": "1b1205bf0d7c1ad22a154b60da8e694d",
@@ -3982,6 +4000,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue11473",
+       "file": "pdfs/issue11473.pdf",
+       "md5": "c530851b0523c81784ab4ea3115a7c67",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug1140761",
        "file": "pdfs/bug1140761.pdf",
        "md5": "b74eced7634d4f248dc6265f8225d432",
@@ -4397,6 +4421,12 @@
        "rounds": 1,
        "type": "eq",
        "about": "Support for CMap GBKp-EUC-H"
+    },
+    {  "id": "issue13325_reduced",
+       "file": "pdfs/issue13325_reduced.pdf",
+       "md5": "a9311230d2e3388070711be8748a1aa0",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
