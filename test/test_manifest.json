@@ -383,6 +383,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue8565",
+       "file": "pdfs/issue8565.pdf",
+       "md5": "84e0e2fc2775bc489beac475503dd67b",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "arabiccidtruetype-text",
        "file": "pdfs/ArabicCIDTrueType.pdf",
        "md5": "d66dbd18bdb572d3ac8b88b32de2ece6",

@@ -538,6 +538,8 @@ const TilingPattern = (function TilingPatternClosure() {
 
       graphics.executeOperatorList(operatorList);
 
+      graphics.endDrawing();
+
       return {
         canvas: tmpCanvas.canvas,
         scaleX: dimx.scale,
