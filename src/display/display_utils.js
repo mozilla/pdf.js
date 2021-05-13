@@ -490,6 +490,12 @@ function getFilenameFromUrl(url) {
  * @returns {string} Guessed PDF filename.
  */
 function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
+  // modified by ngx-extended-pdf-viewer
+  if (window.PDFViewerApplication.appConfig.filenameForDownload) {
+    return window.PDFViewerApplication.appConfig.filenameForDownload;
+  }
+  // end of modification by ngx-extended-pdf-viewer
+
   if (typeof url !== "string") {
     return defaultFilename;
   }
