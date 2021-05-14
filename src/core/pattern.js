@@ -36,22 +36,12 @@ const ShadingType = {
   TENSOR_PATCH_MESH: 7,
 };
 
-const Pattern = (function PatternClosure() {
-  // Constructor should define this.getPattern
-  // eslint-disable-next-line no-shadow
-  function Pattern() {
-    unreachable("should not call Pattern constructor");
+class Pattern {
+  constructor() {
+    unreachable("Cannot initialize Pattern.");
   }
 
-  Pattern.prototype = {
-    // Input: current Canvas context
-    // Output: the appropriate fillStyle or strokeStyle
-    getPattern: function Pattern_getPattern(ctx) {
-      unreachable(`Should not call Pattern.getStyle: ${ctx}`);
-    },
-  };
-
-  Pattern.parseShading = function (
+  static parseShading(
     shading,
     matrix,
     xref,
@@ -67,7 +57,6 @@ const Pattern = (function PatternClosure() {
       switch (type) {
         case ShadingType.AXIAL:
         case ShadingType.RADIAL:
-          // Both radial and axial shadings are handled by RadialAxial shading.
           return new Shadings.RadialAxial(
             dict,
             matrix,
@@ -101,9 +90,8 @@ const Pattern = (function PatternClosure() {
       warn(ex);
       return new Shadings.Dummy();
     }
-  };
-  return Pattern;
-})();
+  }
+}
 
 const Shadings = {};
 
@@ -263,20 +251,21 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 // All mesh shading. For now, they will be presented as set of the triangles
 // to be drawn on the canvas and rgb color for each vertex.
 Shadings.Mesh = (function MeshClosure() {
-  function MeshStreamReader(stream, context) {
-    this.stream = stream;
-    this.context = context;
-    this.buffer = 0;
-    this.bufferLength = 0;
+  class MeshStreamReader {
+    constructor(stream, context) {
+      this.stream = stream;
+      this.context = context;
+      this.buffer = 0;
+      this.bufferLength = 0;
 
-    const numComps = context.numComps;
-    this.tmpCompsBuf = new Float32Array(numComps);
-    const csNumComps = context.colorSpace.numComps;
-    this.tmpCsCompsBuf = context.colorFn
-      ? new Float32Array(csNumComps)
-      : this.tmpCompsBuf;
-  }
-  MeshStreamReader.prototype = {
+      const numComps = context.numComps;
+      this.tmpCompsBuf = new Float32Array(numComps);
+      const csNumComps = context.colorSpace.numComps;
+      this.tmpCsCompsBuf = context.colorFn
+        ? new Float32Array(csNumComps)
+        : this.tmpCompsBuf;
+    }
+
     get hasData() {
       if (this.stream.end) {
         return this.stream.pos < this.stream.end;
@@ -291,8 +280,9 @@ Shadings.Mesh = (function MeshClosure() {
       this.buffer = nextByte;
       this.bufferLength = 8;
       return true;
-    },
-    readBits: function MeshStreamReader_readBits(n) {
+    }
+
+    readBits(n) {
       let buffer = this.buffer;
       let bufferLength = this.bufferLength;
       if (n === 32) {
@@ -329,15 +319,18 @@ Shadings.Mesh = (function MeshClosure() {
       this.bufferLength = bufferLength;
       this.buffer = buffer & ((1 << bufferLength) - 1);
       return buffer >> bufferLength;
-    },
-    align: function MeshStreamReader_align() {
+    }
+
+    align() {
       this.buffer = 0;
       this.bufferLength = 0;
-    },
-    readFlag: function MeshStreamReader_readFlag() {
+    }
+
+    readFlag() {
       return this.readBits(this.context.bitsPerFlag);
-    },
-    readCoordinate: function MeshStreamReader_readCoordinate() {
+    }
+
+    readCoordinate() {
       const bitsPerCoordinate = this.context.bitsPerCoordinate;
       const xi = this.readBits(bitsPerCoordinate);
       const yi = this.readBits(bitsPerCoordinate);
@@ -350,8 +343,9 @@ Shadings.Mesh = (function MeshClosure() {
         xi * scale * (decode[1] - decode[0]) + decode[0],
         yi * scale * (decode[3] - decode[2]) + decode[2],
       ];
-    },
-    readComponents: function MeshStreamReader_readComponents() {
+    }
+
+    readComponents() {
       const numComps = this.context.numComps;
       const bitsPerComponent = this.context.bitsPerComponent;
       const scale =
@@ -369,8 +363,8 @@ Shadings.Mesh = (function MeshClosure() {
         this.context.colorFn(components, 0, color, 0);
       }
       return this.context.colorSpace.getRgb(color, 0);
-    },
-  };
+    }
+  }
 
   function decodeType4Shading(mesh, reader) {
     const coords = mesh.coords;
