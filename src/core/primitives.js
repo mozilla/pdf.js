@@ -118,16 +118,24 @@ class Dict {
 
   // Same as get(), but dereferences all elements if the result is an Array.
   getArray(key1, key2, key3) {
-    let value = this.get(key1, key2, key3);
-    if (!Array.isArray(value) || !this.xref) {
-      return value;
-    }
-    value = value.slice(); // Ensure that we don't modify the Dict data.
-    for (let i = 0, ii = value.length; i < ii; i++) {
-      if (!(value[i] instanceof Ref)) {
-        continue;
+    let value = this._map[key1];
+    if (value === undefined && key2 !== undefined) {
+      value = this._map[key2];
+      if (value === undefined && key3 !== undefined) {
+        value = this._map[key3];
       }
-      value[i] = this.xref.fetch(value[i], this.suppressEncryption);
+    }
+    if (value instanceof Ref && this.xref) {
+      value = this.xref.fetch(value, this.suppressEncryption);
+    }
+
+    if (Array.isArray(value)) {
+      value = value.slice(); // Ensure that we don't modify the Dict data.
+      for (let i = 0, ii = value.length; i < ii; i++) {
+        if (value[i] instanceof Ref && this.xref) {
+          value[i] = this.xref.fetch(value[i], this.suppressEncryption);
+        }
+      }
     }
     return value;
   }

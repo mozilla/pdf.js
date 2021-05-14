@@ -54,6 +54,7 @@ import {
 } from "./core_utils.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
+import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
 import { Linearization } from "./parser.js";
@@ -136,7 +137,7 @@ class Page {
   }
 
   get content() {
-    return this.pageDict.get("Contents");
+    return this.pageDict.getArray("Contents");
   }
 
   get resources() {
@@ -229,25 +230,20 @@ class Page {
     return shadow(this, "rotate", rotate);
   }
 
+  /**
+   * @returns {Promise<BaseStream>}
+   */
   getContentStream() {
-    const content = this.content;
-    let stream;
-
-    if (Array.isArray(content)) {
-      // Fetching the individual streams from the array.
-      const xref = this.xref;
-      const streams = [];
-      for (const subStream of content) {
-        streams.push(xref.fetchIfRef(subStream));
+    return this.pdfManager.ensure(this, "content").then(content => {
+      if (content instanceof BaseStream) {
+        return content;
       }
-      stream = new StreamsSequenceStream(streams);
-    } else if (isStream(content)) {
-      stream = content;
-    } else {
+      if (Array.isArray(content)) {
+        return new StreamsSequenceStream(content);
+      }
       // Replace non-existent page content with empty content.
-      stream = new NullStream();
-    }
-    return stream;
+      return new NullStream();
+    });
   }
 
   get xfaData() {
@@ -313,10 +309,7 @@ class Page {
     renderInteractiveForms,
     annotationStorage,
   }) {
-    const contentStreamPromise = this.pdfManager.ensure(
-      this,
-      "getContentStream"
-    );
+    const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
       "ColorSpace",
       "ExtGState",
@@ -420,10 +413,7 @@ class Page {
     sink,
     combineTextItems,
   }) {
-    const contentStreamPromise = this.pdfManager.ensure(
-      this,
-      "getContentStream"
-    );
+    const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
       "ExtGState",
       "Font",
