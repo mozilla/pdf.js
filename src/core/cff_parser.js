@@ -626,6 +626,14 @@ const CFFParser = (function CFFParserClosure() {
                   ", expected: " +
                   validationCommand.min
               );
+
+              if (stackSize === 0) {
+                // Just "fix" the outline in replacing command by a endchar:
+                // it could lead to wrong rendering of some glyphs or not.
+                // For example, the pdf in #6132 is well-rendered.
+                data[j - 1] = 14;
+                return true;
+              }
               return false;
             }
           }

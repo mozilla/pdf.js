@@ -2616,6 +2616,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6132",
+       "file": "pdfs/issue6132.pdf",
+       "md5": "bd1e6252ca642acf2cd05db1748a073c",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4875",
        "file": "pdfs/issue4875.pdf",
        "md5": "9a558e18029a42c0ef4e9a8755e24733",
