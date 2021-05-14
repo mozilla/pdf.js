@@ -125,7 +125,6 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.matrix = matrix;
     this.coordsArr = dict.getArray("Coords");
     this.shadingType = dict.get("ShadingType");
-    this.type = "Pattern";
     const cs = ColorSpace.parse({
       cs: dict.getRaw("ColorSpace") || dict.getRaw("CS"),
       xref,
@@ -133,7 +132,6 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       pdfFunctionFactory,
       localColorSpaceCache,
     });
-    this.cs = cs;
     const bbox = dict.getArray("BBox");
     if (Array.isArray(bbox) && bbox.length === 4) {
       this.bbox = Util.normalizeRect(bbox);
@@ -851,7 +849,6 @@ Shadings.Mesh = (function MeshClosure() {
     const dict = stream.dict;
     this.matrix = matrix;
     this.shadingType = dict.get("ShadingType");
-    this.type = "Pattern";
     const bbox = dict.getArray("BBox");
     if (Array.isArray(bbox) && bbox.length === 4) {
       this.bbox = Util.normalizeRect(bbox);
@@ -865,7 +862,6 @@ Shadings.Mesh = (function MeshClosure() {
       pdfFunctionFactory,
       localColorSpaceCache,
     });
-    this.cs = cs;
     this.background = dict.has("Background")
       ? cs.getRgb(dict.get("Background"), 0)
       : null;
@@ -946,9 +942,7 @@ Shadings.Mesh = (function MeshClosure() {
 })();
 
 Shadings.Dummy = (function DummyClosure() {
-  function Dummy() {
-    this.type = "Pattern";
-  }
+  function Dummy() {}
 
   Dummy.prototype = {
     getIR: function Dummy_getIR() {
