@@ -13,9 +13,13 @@
  * limitations under the License.
  */
 
-import { FormatError, info, shadow, Util } from "../shared/util.js";
-
-const ShadingIRs = {};
+import {
+  FormatError,
+  info,
+  shadow,
+  unreachable,
+  Util,
+} from "../shared/util.js";
 
 let svgElement;
 
@@ -41,249 +45,265 @@ function applyBoundingBox(ctx, bbox) {
   ctx.clip(region);
 }
 
-ShadingIRs.RadialAxial = {
-  fromIR: function RadialAxial_fromIR(raw) {
-    const type = raw[1];
-    const bbox = raw[2];
-    const colorStops = raw[3];
-    const p0 = raw[4];
-    const p1 = raw[5];
-    const r0 = raw[6];
-    const r1 = raw[7];
-    const matrix = raw[8];
-
-    return {
-      getPattern: function RadialAxial_getPattern(ctx, owner, shadingFill) {
-        const tmpCanvas = owner.cachedCanvases.getCanvas(
-          "pattern",
-          ctx.canvas.width,
-          ctx.canvas.height,
-          true
-        );
-
-        const tmpCtx = tmpCanvas.context;
-        tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-        tmpCtx.beginPath();
-        tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-
-        if (!shadingFill) {
-          tmpCtx.setTransform.apply(tmpCtx, owner.baseTransform);
-          if (matrix) {
-            tmpCtx.transform.apply(tmpCtx, matrix);
-          }
-        } else {
-          tmpCtx.setTransform.apply(tmpCtx, ctx.mozCurrentTransform);
-        }
-        applyBoundingBox(tmpCtx, bbox);
-
-        let grad;
-        if (type === "axial") {
-          grad = tmpCtx.createLinearGradient(p0[0], p0[1], p1[0], p1[1]);
-        } else if (type === "radial") {
-          grad = tmpCtx.createRadialGradient(
-            p0[0],
-            p0[1],
-            r0,
-            p1[0],
-            p1[1],
-            r1
-          );
-        }
-
-        for (let i = 0, ii = colorStops.length; i < ii; ++i) {
-          const c = colorStops[i];
-          grad.addColorStop(c[0], c[1]);
-        }
-
-        tmpCtx.fillStyle = grad;
-        tmpCtx.fill();
-
-        const pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
-        pattern.setTransform(createMatrix(ctx.mozCurrentTransformInverse));
-        return pattern;
-      },
-    };
-  },
-};
-
-const createMeshCanvas = (function createMeshCanvasClosure() {
-  function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
-    // Very basic Gouraud-shaded triangle rasterization algorithm.
-    const coords = context.coords,
-      colors = context.colors;
-    const bytes = data.data,
-      rowSize = data.width * 4;
-    let tmp;
-    if (coords[p1 + 1] > coords[p2 + 1]) {
-      tmp = p1;
-      p1 = p2;
-      p2 = tmp;
-      tmp = c1;
-      c1 = c2;
-      c2 = tmp;
+class BaseShadingPattern {
+  constructor() {
+    if (this.constructor === BaseShadingPattern) {
+      unreachable("Cannot initialize BaseShadingPattern.");
     }
-    if (coords[p2 + 1] > coords[p3 + 1]) {
-      tmp = p2;
-      p2 = p3;
-      p3 = tmp;
-      tmp = c2;
-      c2 = c3;
-      c3 = tmp;
-    }
-    if (coords[p1 + 1] > coords[p2 + 1]) {
-      tmp = p1;
-      p1 = p2;
-      p2 = tmp;
-      tmp = c1;
-      c1 = c2;
-      c2 = tmp;
-    }
-    const x1 = (coords[p1] + context.offsetX) * context.scaleX;
-    const y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
-    const x2 = (coords[p2] + context.offsetX) * context.scaleX;
-    const y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
-    const x3 = (coords[p3] + context.offsetX) * context.scaleX;
-    const y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
-    if (y1 >= y3) {
-      return;
-    }
-    const c1r = colors[c1],
-      c1g = colors[c1 + 1],
-      c1b = colors[c1 + 2];
-    const c2r = colors[c2],
-      c2g = colors[c2 + 1],
-      c2b = colors[c2 + 2];
-    const c3r = colors[c3],
-      c3g = colors[c3 + 1],
-      c3b = colors[c3 + 2];
+  }
 
-    const minY = Math.round(y1),
-      maxY = Math.round(y3);
-    let xa, car, cag, cab;
-    let xb, cbr, cbg, cbb;
-    for (let y = minY; y <= maxY; y++) {
-      if (y < y2) {
-        let k;
-        if (y < y1) {
-          k = 0;
-        } else if (y1 === y2) {
-          k = 1;
-        } else {
-          k = (y1 - y) / (y1 - y2);
-        }
-        xa = x1 - (x1 - x2) * k;
-        car = c1r - (c1r - c2r) * k;
-        cag = c1g - (c1g - c2g) * k;
-        cab = c1b - (c1b - c2b) * k;
-      } else {
-        let k;
-        if (y > y3) {
-          k = 1;
-        } else if (y2 === y3) {
-          k = 0;
-        } else {
-          k = (y2 - y) / (y2 - y3);
-        }
-        xa = x2 - (x2 - x3) * k;
-        car = c2r - (c2r - c3r) * k;
-        cag = c2g - (c2g - c3g) * k;
-        cab = c2b - (c2b - c3b) * k;
+  getPattern() {
+    unreachable("Abstract method `getPattern` called.");
+  }
+}
+
+class RadialAxialShadingPattern extends BaseShadingPattern {
+  constructor(IR) {
+    super();
+    this._type = IR[1];
+    this._bbox = IR[2];
+    this._colorStops = IR[3];
+    this._p0 = IR[4];
+    this._p1 = IR[5];
+    this._r0 = IR[6];
+    this._r1 = IR[7];
+    this._matrix = IR[8];
+  }
+
+  getPattern(ctx, owner, shadingFill) {
+    const tmpCanvas = owner.cachedCanvases.getCanvas(
+      "pattern",
+      ctx.canvas.width,
+      ctx.canvas.height,
+      true
+    );
+
+    const tmpCtx = tmpCanvas.context;
+    tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
+    tmpCtx.beginPath();
+    tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
+
+    if (!shadingFill) {
+      tmpCtx.setTransform.apply(tmpCtx, owner.baseTransform);
+      if (this._matrix) {
+        tmpCtx.transform.apply(tmpCtx, this._matrix);
       }
+    } else {
+      tmpCtx.setTransform.apply(tmpCtx, ctx.mozCurrentTransform);
+    }
+    applyBoundingBox(tmpCtx, this._bbox);
 
+    let grad;
+    if (this._type === "axial") {
+      grad = tmpCtx.createLinearGradient(
+        this._p0[0],
+        this._p0[1],
+        this._p1[0],
+        this._p1[1]
+      );
+    } else if (this._type === "radial") {
+      grad = tmpCtx.createRadialGradient(
+        this._p0[0],
+        this._p0[1],
+        this._r0,
+        this._p1[0],
+        this._p1[1],
+        this._r1
+      );
+    }
+
+    for (const colorStop of this._colorStops) {
+      grad.addColorStop(colorStop[0], colorStop[1]);
+    }
+    tmpCtx.fillStyle = grad;
+    tmpCtx.fill();
+
+    const pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
+    pattern.setTransform(createMatrix(ctx.mozCurrentTransformInverse));
+    return pattern;
+  }
+}
+
+function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
+  // Very basic Gouraud-shaded triangle rasterization algorithm.
+  const coords = context.coords,
+    colors = context.colors;
+  const bytes = data.data,
+    rowSize = data.width * 4;
+  let tmp;
+  if (coords[p1 + 1] > coords[p2 + 1]) {
+    tmp = p1;
+    p1 = p2;
+    p2 = tmp;
+    tmp = c1;
+    c1 = c2;
+    c2 = tmp;
+  }
+  if (coords[p2 + 1] > coords[p3 + 1]) {
+    tmp = p2;
+    p2 = p3;
+    p3 = tmp;
+    tmp = c2;
+    c2 = c3;
+    c3 = tmp;
+  }
+  if (coords[p1 + 1] > coords[p2 + 1]) {
+    tmp = p1;
+    p1 = p2;
+    p2 = tmp;
+    tmp = c1;
+    c1 = c2;
+    c2 = tmp;
+  }
+  const x1 = (coords[p1] + context.offsetX) * context.scaleX;
+  const y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
+  const x2 = (coords[p2] + context.offsetX) * context.scaleX;
+  const y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
+  const x3 = (coords[p3] + context.offsetX) * context.scaleX;
+  const y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
+  if (y1 >= y3) {
+    return;
+  }
+  const c1r = colors[c1],
+    c1g = colors[c1 + 1],
+    c1b = colors[c1 + 2];
+  const c2r = colors[c2],
+    c2g = colors[c2 + 1],
+    c2b = colors[c2 + 2];
+  const c3r = colors[c3],
+    c3g = colors[c3 + 1],
+    c3b = colors[c3 + 2];
+
+  const minY = Math.round(y1),
+    maxY = Math.round(y3);
+  let xa, car, cag, cab;
+  let xb, cbr, cbg, cbb;
+  for (let y = minY; y <= maxY; y++) {
+    if (y < y2) {
       let k;
       if (y < y1) {
         k = 0;
-      } else if (y > y3) {
+      } else if (y1 === y2) {
         k = 1;
       } else {
-        k = (y1 - y) / (y1 - y3);
+        k = (y1 - y) / (y1 - y2);
       }
-      xb = x1 - (x1 - x3) * k;
-      cbr = c1r - (c1r - c3r) * k;
-      cbg = c1g - (c1g - c3g) * k;
-      cbb = c1b - (c1b - c3b) * k;
-      const x1_ = Math.round(Math.min(xa, xb));
-      const x2_ = Math.round(Math.max(xa, xb));
-      let j = rowSize * y + x1_ * 4;
-      for (let x = x1_; x <= x2_; x++) {
-        k = (xa - x) / (xa - xb);
-        if (k < 0) {
-          k = 0;
-        } else if (k > 1) {
-          k = 1;
-        }
-        bytes[j++] = (car - (car - cbr) * k) | 0;
-        bytes[j++] = (cag - (cag - cbg) * k) | 0;
-        bytes[j++] = (cab - (cab - cbb) * k) | 0;
-        bytes[j++] = 255;
+      xa = x1 - (x1 - x2) * k;
+      car = c1r - (c1r - c2r) * k;
+      cag = c1g - (c1g - c2g) * k;
+      cab = c1b - (c1b - c2b) * k;
+    } else {
+      let k;
+      if (y > y3) {
+        k = 1;
+      } else if (y2 === y3) {
+        k = 0;
+      } else {
+        k = (y2 - y) / (y2 - y3);
       }
+      xa = x2 - (x2 - x3) * k;
+      car = c2r - (c2r - c3r) * k;
+      cag = c2g - (c2g - c3g) * k;
+      cab = c2b - (c2b - c3b) * k;
+    }
+
+    let k;
+    if (y < y1) {
+      k = 0;
+    } else if (y > y3) {
+      k = 1;
+    } else {
+      k = (y1 - y) / (y1 - y3);
+    }
+    xb = x1 - (x1 - x3) * k;
+    cbr = c1r - (c1r - c3r) * k;
+    cbg = c1g - (c1g - c3g) * k;
+    cbb = c1b - (c1b - c3b) * k;
+    const x1_ = Math.round(Math.min(xa, xb));
+    const x2_ = Math.round(Math.max(xa, xb));
+    let j = rowSize * y + x1_ * 4;
+    for (let x = x1_; x <= x2_; x++) {
+      k = (xa - x) / (xa - xb);
+      if (k < 0) {
+        k = 0;
+      } else if (k > 1) {
+        k = 1;
+      }
+      bytes[j++] = (car - (car - cbr) * k) | 0;
+      bytes[j++] = (cag - (cag - cbg) * k) | 0;
+      bytes[j++] = (cab - (cab - cbb) * k) | 0;
+      bytes[j++] = 255;
     }
   }
+}
 
-  function drawFigure(data, figure, context) {
-    const ps = figure.coords;
-    const cs = figure.colors;
-    let i, ii;
-    switch (figure.type) {
-      case "lattice":
-        const verticesPerRow = figure.verticesPerRow;
-        const rows = Math.floor(ps.length / verticesPerRow) - 1;
-        const cols = verticesPerRow - 1;
-        for (i = 0; i < rows; i++) {
-          let q = i * verticesPerRow;
-          for (let j = 0; j < cols; j++, q++) {
-            drawTriangle(
-              data,
-              context,
-              ps[q],
-              ps[q + 1],
-              ps[q + verticesPerRow],
-              cs[q],
-              cs[q + 1],
-              cs[q + verticesPerRow]
-            );
-            drawTriangle(
-              data,
-              context,
-              ps[q + verticesPerRow + 1],
-              ps[q + 1],
-              ps[q + verticesPerRow],
-              cs[q + verticesPerRow + 1],
-              cs[q + 1],
-              cs[q + verticesPerRow]
-            );
-          }
-        }
-        break;
-      case "triangles":
-        for (i = 0, ii = ps.length; i < ii; i += 3) {
+function drawFigure(data, figure, context) {
+  const ps = figure.coords;
+  const cs = figure.colors;
+  let i, ii;
+  switch (figure.type) {
+    case "lattice":
+      const verticesPerRow = figure.verticesPerRow;
+      const rows = Math.floor(ps.length / verticesPerRow) - 1;
+      const cols = verticesPerRow - 1;
+      for (i = 0; i < rows; i++) {
+        let q = i * verticesPerRow;
+        for (let j = 0; j < cols; j++, q++) {
           drawTriangle(
             data,
             context,
-            ps[i],
-            ps[i + 1],
-            ps[i + 2],
-            cs[i],
-            cs[i + 1],
-            cs[i + 2]
+            ps[q],
+            ps[q + 1],
+            ps[q + verticesPerRow],
+            cs[q],
+            cs[q + 1],
+            cs[q + verticesPerRow]
+          );
+          drawTriangle(
+            data,
+            context,
+            ps[q + verticesPerRow + 1],
+            ps[q + 1],
+            ps[q + verticesPerRow],
+            cs[q + verticesPerRow + 1],
+            cs[q + 1],
+            cs[q + verticesPerRow]
           );
         }
-        break;
-      default:
-        throw new Error("illegal figure");
-    }
+      }
+      break;
+    case "triangles":
+      for (i = 0, ii = ps.length; i < ii; i += 3) {
+        drawTriangle(
+          data,
+          context,
+          ps[i],
+          ps[i + 1],
+          ps[i + 2],
+          cs[i],
+          cs[i + 1],
+          cs[i + 2]
+        );
+      }
+      break;
+    default:
+      throw new Error("illegal figure");
+  }
+}
+
+class MeshShadingPattern extends BaseShadingPattern {
+  constructor(IR) {
+    super();
+    this._coords = IR[2];
+    this._colors = IR[3];
+    this._figures = IR[4];
+    this._bounds = IR[5];
+    this._matrix = IR[6];
+    this._bbox = IR[7];
+    this._background = IR[8];
   }
 
-  // eslint-disable-next-line no-shadow
-  function createMeshCanvas(
-    bounds,
-    combinesScale,
-    coords,
-    colors,
-    figures,
-    backgroundColor,
-    cachedCanvases
-  ) {
+  _createMeshCanvas(combinedScale, backgroundColor, cachedCanvases) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
     const EXPECTED_SCALE = 1.1;
@@ -293,25 +313,25 @@ const createMeshCanvas = (function createMeshCanvasClosure() {
     // createPattern with 'no-repeat' will bleed edges across entire area.
     const BORDER_SIZE = 2;
 
-    const offsetX = Math.floor(bounds[0]);
-    const offsetY = Math.floor(bounds[1]);
-    const boundsWidth = Math.ceil(bounds[2]) - offsetX;
-    const boundsHeight = Math.ceil(bounds[3]) - offsetY;
+    const offsetX = Math.floor(this._bounds[0]);
+    const offsetY = Math.floor(this._bounds[1]);
+    const boundsWidth = Math.ceil(this._bounds[2]) - offsetX;
+    const boundsHeight = Math.ceil(this._bounds[3]) - offsetY;
 
     const width = Math.min(
-      Math.ceil(Math.abs(boundsWidth * combinesScale[0] * EXPECTED_SCALE)),
+      Math.ceil(Math.abs(boundsWidth * combinedScale[0] * EXPECTED_SCALE)),
       MAX_PATTERN_SIZE
     );
     const height = Math.min(
-      Math.ceil(Math.abs(boundsHeight * combinesScale[1] * EXPECTED_SCALE)),
+      Math.ceil(Math.abs(boundsHeight * combinedScale[1] * EXPECTED_SCALE)),
       MAX_PATTERN_SIZE
     );
     const scaleX = boundsWidth / width;
     const scaleY = boundsHeight / height;
 
     const context = {
-      coords,
-      colors,
+      coords: this._coords,
+      colors: this._colors,
       offsetX: -offsetX,
       offsetY: -offsetY,
       scaleX: 1 / scaleX,
@@ -339,8 +359,8 @@ const createMeshCanvas = (function createMeshCanvasClosure() {
         bytes[i + 3] = 255;
       }
     }
-    for (let i = 0, ii = figures.length; i < ii; i++) {
-      drawFigure(data, figures[i], context);
+    for (const figure of this._figures) {
+      drawFigure(data, figure, context);
     }
     tmpCtx.putImageData(data, BORDER_SIZE, BORDER_SIZE);
     const canvas = tmpCanvas.canvas;
@@ -353,81 +373,62 @@ const createMeshCanvas = (function createMeshCanvasClosure() {
       scaleY,
     };
   }
-  return createMeshCanvas;
-})();
 
-ShadingIRs.Mesh = {
-  fromIR: function Mesh_fromIR(raw) {
-    // var type = raw[1];
-    const coords = raw[2];
-    const colors = raw[3];
-    const figures = raw[4];
-    const bounds = raw[5];
-    const matrix = raw[6];
-    const bbox = raw[7];
-    const background = raw[8];
-    return {
-      getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
-        applyBoundingBox(ctx, bbox);
-        let scale;
-        if (shadingFill) {
-          scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);
-        } else {
-          // Obtain scale from matrix and current transformation matrix.
-          scale = Util.singularValueDecompose2dScale(owner.baseTransform);
-          if (matrix) {
-            const matrixScale = Util.singularValueDecompose2dScale(matrix);
-            scale = [scale[0] * matrixScale[0], scale[1] * matrixScale[1]];
-          }
-        }
+  getPattern(ctx, owner, shadingFill) {
+    applyBoundingBox(ctx, this._bbox);
+    let scale;
+    if (shadingFill) {
+      scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);
+    } else {
+      // Obtain scale from matrix and current transformation matrix.
+      scale = Util.singularValueDecompose2dScale(owner.baseTransform);
+      if (this._matrix) {
+        const matrixScale = Util.singularValueDecompose2dScale(this._matrix);
+        scale = [scale[0] * matrixScale[0], scale[1] * matrixScale[1]];
+      }
+    }
 
-        // Rasterizing on the main thread since sending/queue large canvases
-        // might cause OOM.
-        const temporaryPatternCanvas = createMeshCanvas(
-          bounds,
-          scale,
-          coords,
-          colors,
-          figures,
-          shadingFill ? null : background,
-          owner.cachedCanvases
-        );
+    // Rasterizing on the main thread since sending/queue large canvases
+    // might cause OOM.
+    const temporaryPatternCanvas = this._createMeshCanvas(
+      scale,
+      shadingFill ? null : this._background,
+      owner.cachedCanvases
+    );
 
-        if (!shadingFill) {
-          ctx.setTransform.apply(ctx, owner.baseTransform);
-          if (matrix) {
-            ctx.transform.apply(ctx, matrix);
-          }
-        }
+    if (!shadingFill) {
+      ctx.setTransform.apply(ctx, owner.baseTransform);
+      if (this._matrix) {
+        ctx.transform.apply(ctx, this._matrix);
+      }
+    }
 
-        ctx.translate(
-          temporaryPatternCanvas.offsetX,
-          temporaryPatternCanvas.offsetY
-        );
-        ctx.scale(temporaryPatternCanvas.scaleX, temporaryPatternCanvas.scaleY);
+    ctx.translate(
+      temporaryPatternCanvas.offsetX,
+      temporaryPatternCanvas.offsetY
+    );
+    ctx.scale(temporaryPatternCanvas.scaleX, temporaryPatternCanvas.scaleY);
 
-        return ctx.createPattern(temporaryPatternCanvas.canvas, "no-repeat");
-      },
-    };
-  },
-};
-
-ShadingIRs.Dummy = {
-  fromIR: function Dummy_fromIR() {
-    return {
-      getPattern: function Dummy_fromIR_getPattern() {
-        return "hotpink";
-      },
-    };
-  },
-};
-
-function getShadingPatternFromIR(raw) {
-  const shadingIR = ShadingIRs[raw[0]];
-  if (!shadingIR) {
-    throw new Error(`Unknown IR type: ${raw[0]}`);
+    return ctx.createPattern(temporaryPatternCanvas.canvas, "no-repeat");
   }
-  return shadingIR.fromIR(raw);
+}
+
+class DummyShadingPattern extends BaseShadingPattern {
+  getPattern() {
+    return "hotpink";
+  }
+}
+
+function getShadingPattern(IR) {
+  switch (IR[0]) {
+    case "RadialAxial":
+      return new RadialAxialShadingPattern(IR);
+    case "Mesh":
+      return new MeshShadingPattern(IR);
+    case "Dummy":
+      return new DummyShadingPattern();
+  }
+  throw new Error(`Unknown IR type: ${IR[0]}`);
 }
 
 const PaintType = {
@@ -624,4 +625,4 @@ class TilingPattern {
   }
 }
 
-export { getShadingPatternFromIR, TilingPattern };
+export { getShadingPattern, TilingPattern };
