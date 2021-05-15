@@ -79,10 +79,9 @@ const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 const AUTOPREFIXER_CONFIG = {
   overrideBrowserslist: [
     "last 2 versions",
-    "Chrome >= 49", // Last supported on Windows XP
-    "Firefox >= 52", // Last supported on Windows XP
+    "Chrome >= 68",
     "Firefox ESR",
-    "Safari >= 10",
+    "Safari >= 11.1",
     "> 0.5%",
     "not IE > 0",
     "not dead",
@@ -1321,7 +1320,7 @@ gulp.task(
         ),
         preprocessCSS("web/viewer.css", "chrome", defines, true)
           .pipe(
-            postcss([autoprefixer({ overrideBrowserslist: ["chrome >= 49"] })])
+            postcss([autoprefixer({ overrideBrowserslist: ["chrome >= 68"] })])
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
