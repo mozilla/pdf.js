@@ -825,7 +825,7 @@ class PartialEvaluator {
               loadedName: "g_font_error",
               font: new ErrorFont(`Type3 font load error: ${reason}`),
               dict: translated.font,
-              extraProperties: this.options.fontExtraProperties,
+              evaluatorOptions: this.options,
             });
           });
       })
@@ -850,7 +850,12 @@ class PartialEvaluator {
         font.disableFontFace ||
         this.options.disableFontFace
       ) {
-        PartialEvaluator.buildFontPaths(font, glyphs, this.handler);
+        PartialEvaluator.buildFontPaths(
+          font,
+          glyphs,
+          this.handler,
+          this.options
+        );
       }
     }
     return glyphs;
@@ -1002,7 +1007,7 @@ class PartialEvaluator {
         loadedName: "g_font_error",
         font: new ErrorFont(`Font "${fontName}" is not available.`),
         dict: font,
-        extraProperties: this.options.fontExtraProperties,
+        evaluatorOptions: this.options,
       });
     };
 
@@ -1147,7 +1152,7 @@ class PartialEvaluator {
             loadedName: font.loadedName,
             font: translatedFont,
             dict: font,
-            extraProperties: this.options.fontExtraProperties,
+            evaluatorOptions: this.options,
           })
         );
       })
@@ -1178,7 +1183,7 @@ class PartialEvaluator {
               reason instanceof Error ? reason.message : reason
             ),
             dict: font,
-            extraProperties: this.options.fontExtraProperties,
+            evaluatorOptions: this.options,
           })
         );
       });
@@ -3841,16 +3846,30 @@ class PartialEvaluator {
     );
   }
 
-  static buildFontPaths(font, glyphs, handler) {
+  static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
     function buildPath(fontChar) {
-      if (font.renderer.hasBuiltPath(fontChar)) {
-        return;
+      const glyphName = `${font.loadedName}_path_${fontChar}`;
+      try {
+        if (font.renderer.hasBuiltPath(fontChar)) {
+          return;
+        }
+        handler.send("commonobj", [
+          glyphName,
+          "FontPath",
+          font.renderer.getPathJs(fontChar),
+        ]);
+      } catch (reason) {
+        if (evaluatorOptions.ignoreErrors) {
+          // Error in the font data -- sending unsupported feature notification
+          // and allow glyph path building to continue.
+          handler.send("UnsupportedFeature", {
+            featureId: UNSUPPORTED_FEATURES.errorFontBuildPath,
+          });
+          warn(`buildFontPaths - ignoring ${glyphName} glyph: "${reason}".`);
+          return;
+        }
+        throw reason;
       }
-      handler.send("commonobj", [
-        `${font.loadedName}_path_${fontChar}`,
-        "FontPath",
-        font.renderer.getPathJs(fontChar),
-      ]);
     }
 
     for (const glyph of glyphs) {
@@ -3877,11 +3896,11 @@ class PartialEvaluator {
 }
 
 class TranslatedFont {
-  constructor({ loadedName, font, dict, extraProperties = false }) {
+  constructor({ loadedName, font, dict, evaluatorOptions }) {
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
-    this._extraProperties = extraProperties;
+    this._evaluatorOptions = evaluatorOptions || DefaultPartialEvaluatorOptions;
     this.type3Loaded = null;
     this.type3Dependencies = font.isType3Font ? new Set() : null;
     this.sent = false;
@@ -3896,7 +3915,7 @@ class TranslatedFont {
     handler.send("commonobj", [
       this.loadedName,
       "Font",
-      this.font.exportData(this._extraProperties),
+      this.font.exportData(this._evaluatorOptions.fontExtraProperties),
     ]);
   }
 
@@ -3912,8 +3931,12 @@ class TranslatedFont {
     // message was received on the worker-thread.
     // To ensure that all 'FontPath's are available on the main-thread, when
     // font loading failed, attempt to resend *all* previously parsed glyphs.
-    const glyphs = this.font.glyphCacheValues;
-    PartialEvaluator.buildFontPaths(this.font, glyphs, handler);
+    PartialEvaluator.buildFontPaths(
+      this.font,
+      /* glyphs = */ this.font.glyphCacheValues,
+      handler,
+      this._evaluatorOptions
+    );
   }
 
   loadType3Data(evaluator, resources, task) {

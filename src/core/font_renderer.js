@@ -734,14 +734,24 @@ class CompiledFont {
   }
 
   getPathJs(unicode) {
-    const cmap = lookupCmap(this.cmap, unicode);
-    let fn = this.compiledGlyphs[cmap.glyphId];
+    const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
+    let fn = this.compiledGlyphs[glyphId];
     if (!fn) {
-      fn = this.compileGlyph(this.glyphs[cmap.glyphId], cmap.glyphId);
-      this.compiledGlyphs[cmap.glyphId] = fn;
+      try {
+        fn = this.compileGlyph(this.glyphs[glyphId], glyphId);
+        this.compiledGlyphs[glyphId] = fn;
+      } catch (ex) {
+        // Avoid attempting to re-compile a corrupt glyph.
+        this.compiledGlyphs[glyphId] = NOOP;
+
+        if (this.compiledCharCodeToGlyphId[charCode] === undefined) {
+          this.compiledCharCodeToGlyphId[charCode] = glyphId;
+        }
+        throw ex;
+      }
     }
-    if (this.compiledCharCodeToGlyphId[cmap.charCode] === undefined) {
-      this.compiledCharCodeToGlyphId[cmap.charCode] = cmap.glyphId;
+    if (this.compiledCharCodeToGlyphId[charCode] === undefined) {
+      this.compiledCharCodeToGlyphId[charCode] = glyphId;
     }
     return fn;
   }
@@ -781,10 +791,10 @@ class CompiledFont {
   }
 
   hasBuiltPath(unicode) {
-    const cmap = lookupCmap(this.cmap, unicode);
+    const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
     return (
-      this.compiledGlyphs[cmap.glyphId] !== undefined &&
-      this.compiledCharCodeToGlyphId[cmap.charCode] !== undefined
+      this.compiledGlyphs[glyphId] !== undefined &&
+      this.compiledCharCodeToGlyphId[charCode] !== undefined
     );
   }
 }
