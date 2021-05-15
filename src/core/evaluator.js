@@ -3672,10 +3672,11 @@ class PartialEvaluator {
     toUnicode,
     cssFontInfo,
   }) {
+    const isType3Font = type === "Type3";
     let properties;
 
     if (!descriptor) {
-      if (type === "Type3") {
+      if (isType3Font) {
         // FontDescriptor is only required for Type3 fonts when the document
         // is a tagged pdf. Create a barbebones one to get by.
         descriptor = new Dict(null);
@@ -3712,6 +3713,7 @@ class PartialEvaluator {
           firstChar,
           lastChar,
           toUnicode,
+          isType3Font,
         };
         const widths = dict.get("Widths");
         return this.extractDataStructures(dict, dict, properties).then(
@@ -3751,7 +3753,7 @@ class PartialEvaluator {
       baseFont = Name.get(baseFont);
     }
 
-    if (type !== "Type3") {
+    if (!isType3Font) {
       const fontNameStr = fontName && fontName.name;
       const baseFontStr = baseFont && baseFont.name;
       if (fontNameStr !== baseFontStr) {
@@ -3816,7 +3818,7 @@ class PartialEvaluator {
       capHeight: descriptor.get("CapHeight"),
       flags: descriptor.get("Flags"),
       italicAngle: descriptor.get("ItalicAngle"),
-      isType3Font: false,
+      isType3Font,
       cssFontInfo,
     };
 
@@ -3838,9 +3840,6 @@ class PartialEvaluator {
       newProperties => {
         this.extractWidths(dict, descriptor, newProperties);
 
-        if (type === "Type3") {
-          newProperties.isType3Font = true;
-        }
         return new Font(fontName.name, fontFile, newProperties);
       }
     );
