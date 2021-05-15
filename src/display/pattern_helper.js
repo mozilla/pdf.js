@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, Util } from "../shared/util.js";
+import { FormatError, info, shadow, Util } from "../shared/util.js";
 
 const ShadingIRs = {};
 
@@ -430,19 +430,18 @@ function getShadingPatternFromIR(raw) {
   return shadingIR.fromIR(raw);
 }
 
-/**
- * @type {any}
- */
-const TilingPattern = (function TilingPatternClosure() {
-  const PaintType = {
-    COLORED: 1,
-    UNCOLORED: 2,
-  };
+const PaintType = {
+  COLORED: 1,
+  UNCOLORED: 2,
+};
 
-  const MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
+class TilingPattern {
+  // 10in @ 300dpi shall be enough.
+  static get MAX_PATTERN_SIZE() {
+    return shadow(this, "MAX_PATTERN_SIZE", 3000);
+  }
 
-  // eslint-disable-next-line no-shadow
-  function TilingPattern(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
+  constructor(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
     this.bbox = IR[4];
@@ -451,193 +450,178 @@ const TilingPattern = (function TilingPatternClosure() {
     this.paintType = IR[7];
     this.tilingType = IR[8];
     this.color = color;
+    this.ctx = ctx;
     this.canvasGraphicsFactory = canvasGraphicsFactory;
     this.baseTransform = baseTransform;
-    this.ctx = ctx;
   }
 
-  TilingPattern.prototype = {
-    createPatternCanvas: function TilinPattern_createPatternCanvas(owner) {
-      const operatorList = this.operatorList;
-      const bbox = this.bbox;
-      const xstep = this.xstep;
-      const ystep = this.ystep;
-      const paintType = this.paintType;
-      const tilingType = this.tilingType;
-      const color = this.color;
-      const canvasGraphicsFactory = this.canvasGraphicsFactory;
+  createPatternCanvas(owner) {
+    const operatorList = this.operatorList;
+    const bbox = this.bbox;
+    const xstep = this.xstep;
+    const ystep = this.ystep;
+    const paintType = this.paintType;
+    const tilingType = this.tilingType;
+    const color = this.color;
+    const canvasGraphicsFactory = this.canvasGraphicsFactory;
 
-      info("TilingType: " + tilingType);
+    info("TilingType: " + tilingType);
 
-      // A tiling pattern as defined by PDF spec 8.7.2 is a cell whose size is
-      // described by bbox, and may repeat regularly by shifting the cell by
-      // xstep and ystep.
-      // Because the HTML5 canvas API does not support pattern repetition with
-      // gaps in between, we use the xstep/ystep instead of the bbox's size.
-      //
-      // This has the following consequences (similarly for ystep):
-      //
-      // - If xstep is the same as bbox, then there is no observable difference.
-      //
-      // - If xstep is larger than bbox, then the pattern canvas is partially
-      //   empty: the area bounded by bbox is painted, the outside area is void.
-      //
-      // - If xstep is smaller than bbox, then the pixels between xstep and the
-      //   bbox boundary will be missing. This is INCORRECT behavior.
-      //   "Figures on adjacent tiles should not overlap" (PDF spec 8.7.3.1),
-      //   but overlapping cells without common pixels are still valid.
-      //   TODO: Fix the implementation, to allow this scenario to be painted
-      //   correctly.
+    // A tiling pattern as defined by PDF spec 8.7.2 is a cell whose size is
+    // described by bbox, and may repeat regularly by shifting the cell by
+    // xstep and ystep.
+    // Because the HTML5 canvas API does not support pattern repetition with
+    // gaps in between, we use the xstep/ystep instead of the bbox's size.
+    //
+    // This has the following consequences (similarly for ystep):
+    //
+    // - If xstep is the same as bbox, then there is no observable difference.
+    //
+    // - If xstep is larger than bbox, then the pattern canvas is partially
+    //   empty: the area bounded by bbox is painted, the outside area is void.
+    //
+    // - If xstep is smaller than bbox, then the pixels between xstep and the
+    //   bbox boundary will be missing. This is INCORRECT behavior.
+    //   "Figures on adjacent tiles should not overlap" (PDF spec 8.7.3.1),
+    //   but overlapping cells without common pixels are still valid.
+    //   TODO: Fix the implementation, to allow this scenario to be painted
+    //   correctly.
 
-      const x0 = bbox[0],
-        y0 = bbox[1],
-        x1 = bbox[2],
-        y1 = bbox[3];
+    const x0 = bbox[0],
+      y0 = bbox[1],
+      x1 = bbox[2],
+      y1 = bbox[3];
 
-      // Obtain scale from matrix and current transformation matrix.
-      const matrixScale = Util.singularValueDecompose2dScale(this.matrix);
-      const curMatrixScale = Util.singularValueDecompose2dScale(
-        this.baseTransform
-      );
-      const combinedScale = [
-        matrixScale[0] * curMatrixScale[0],
-        matrixScale[1] * curMatrixScale[1],
-      ];
+    // Obtain scale from matrix and current transformation matrix.
+    const matrixScale = Util.singularValueDecompose2dScale(this.matrix);
+    const curMatrixScale = Util.singularValueDecompose2dScale(
+      this.baseTransform
+    );
+    const combinedScale = [
+      matrixScale[0] * curMatrixScale[0],
+      matrixScale[1] * curMatrixScale[1],
+    ];
 
-      // Use width and height values that are as close as possible to the end
-      // result when the pattern is used. Too low value makes the pattern look
-      // blurry. Too large value makes it look too crispy.
-      const dimx = this.getSizeAndScale(
-        xstep,
-        this.ctx.canvas.width,
-        combinedScale[0]
-      );
-      const dimy = this.getSizeAndScale(
-        ystep,
-        this.ctx.canvas.height,
-        combinedScale[1]
-      );
+    // Use width and height values that are as close as possible to the end
+    // result when the pattern is used. Too low value makes the pattern look
+    // blurry. Too large value makes it look too crispy.
+    const dimx = this.getSizeAndScale(
+      xstep,
+      this.ctx.canvas.width,
+      combinedScale[0]
+    );
+    const dimy = this.getSizeAndScale(
+      ystep,
+      this.ctx.canvas.height,
+      combinedScale[1]
+    );
 
-      const tmpCanvas = owner.cachedCanvases.getCanvas(
-        "pattern",
-        dimx.size,
-        dimy.size,
-        true
-      );
-      const tmpCtx = tmpCanvas.context;
-      const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
-      graphics.groupLevel = owner.groupLevel;
+    const tmpCanvas = owner.cachedCanvases.getCanvas(
+      "pattern",
+      dimx.size,
+      dimy.size,
+      true
+    );
+    const tmpCtx = tmpCanvas.context;
+    const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
+    graphics.groupLevel = owner.groupLevel;
 
-      this.setFillAndStrokeStyleToContext(graphics, paintType, color);
+    this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
-      graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
+    graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
 
-      this.clipBbox(graphics, bbox, x0, y0, x1, y1);
+    this.clipBbox(graphics, bbox, x0, y0, x1, y1);
 
-      graphics.baseTransform = graphics.ctx.mozCurrentTransform.slice();
+    graphics.baseTransform = graphics.ctx.mozCurrentTransform.slice();
 
-      graphics.executeOperatorList(operatorList);
+    graphics.executeOperatorList(operatorList);
 
-      graphics.endDrawing();
+    graphics.endDrawing();
 
-      return {
-        canvas: tmpCanvas.canvas,
-        scaleX: dimx.scale,
-        scaleY: dimy.scale,
-      };
-    },
+    return {
+      canvas: tmpCanvas.canvas,
+      scaleX: dimx.scale,
+      scaleY: dimy.scale,
+    };
+  }
 
-    getSizeAndScale: function TilingPattern_getSizeAndScale(
-      step,
-      realOutputSize,
-      scale
-    ) {
-      // xstep / ystep may be negative -- normalize.
-      step = Math.abs(step);
-      // MAX_PATTERN_SIZE is used to avoid OOM situation.
-      // Use the destination canvas's size if it is bigger than the hard-coded
-      // limit of MAX_PATTERN_SIZE to avoid clipping patterns that cover the
-      // whole canvas.
-      const maxSize = Math.max(MAX_PATTERN_SIZE, realOutputSize);
-      let size = Math.ceil(step * scale);
-      if (size >= maxSize) {
-        size = maxSize;
-      } else {
-        scale = size / step;
+  getSizeAndScale(step, realOutputSize, scale) {
+    // xstep / ystep may be negative -- normalize.
+    step = Math.abs(step);
+    // MAX_PATTERN_SIZE is used to avoid OOM situation.
+    // Use the destination canvas's size if it is bigger than the hard-coded
+    // limit of MAX_PATTERN_SIZE to avoid clipping patterns that cover the
+    // whole canvas.
+    const maxSize = Math.max(TilingPattern.MAX_PATTERN_SIZE, realOutputSize);
+    let size = Math.ceil(step * scale);
+    if (size >= maxSize) {
+      size = maxSize;
+    } else {
+      scale = size / step;
+    }
+    return { scale, size };
+  }
+
+  clipBbox(graphics, bbox, x0, y0, x1, y1) {
+    if (Array.isArray(bbox) && bbox.length === 4) {
+      const bboxWidth = x1 - x0;
+      const bboxHeight = y1 - y0;
+      graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
+      graphics.clip();
+      graphics.endPath();
+    }
+  }
+
+  setFillAndStrokeStyleToContext(graphics, paintType, color) {
+    const context = graphics.ctx,
+      current = graphics.current;
+    switch (paintType) {
+      case PaintType.COLORED:
+        const ctx = this.ctx;
+        context.fillStyle = ctx.fillStyle;
+        context.strokeStyle = ctx.strokeStyle;
+        current.fillColor = ctx.fillStyle;
+        current.strokeColor = ctx.strokeStyle;
+        break;
+      case PaintType.UNCOLORED:
+        const cssColor = Util.makeHexColor(color[0], color[1], color[2]);
+        context.fillStyle = cssColor;
+        context.strokeStyle = cssColor;
+        // Set color needed by image masks (fixes issues 3226 and 8741).
+        current.fillColor = cssColor;
+        current.strokeColor = cssColor;
+        break;
+      default:
+        throw new FormatError(`Unsupported paint type: ${paintType}`);
+    }
+  }
+
+  getPattern(ctx, owner, shadingFill) {
+    ctx = this.ctx;
+    // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
+    let matrix = ctx.mozCurrentTransformInverse;
+    if (!shadingFill) {
+      matrix = Util.transform(matrix, owner.baseTransform);
+      if (this.matrix) {
+        matrix = Util.transform(matrix, this.matrix);
       }
-      return { scale, size };
-    },
+    }
 
-    clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
-      if (Array.isArray(bbox) && bbox.length === 4) {
-        const bboxWidth = x1 - x0;
-        const bboxHeight = y1 - y0;
-        graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
-        graphics.clip();
-        graphics.endPath();
-      }
-    },
+    const temporaryPatternCanvas = this.createPatternCanvas(owner);
 
-    setFillAndStrokeStyleToContext: function setFillAndStrokeStyleToContext(
-      graphics,
-      paintType,
-      color
-    ) {
-      const context = graphics.ctx,
-        current = graphics.current;
-      switch (paintType) {
-        case PaintType.COLORED:
-          const ctx = this.ctx;
-          context.fillStyle = ctx.fillStyle;
-          context.strokeStyle = ctx.strokeStyle;
-          current.fillColor = ctx.fillStyle;
-          current.strokeColor = ctx.strokeStyle;
-          break;
-        case PaintType.UNCOLORED:
-          const cssColor = Util.makeHexColor(color[0], color[1], color[2]);
-          context.fillStyle = cssColor;
-          context.strokeStyle = cssColor;
-          // Set color needed by image masks (fixes issues 3226 and 8741).
-          current.fillColor = cssColor;
-          current.strokeColor = cssColor;
-          break;
-        default:
-          throw new FormatError(`Unsupported paint type: ${paintType}`);
-      }
-    },
+    let domMatrix = createMatrix(matrix);
+    // Rescale and so that the ctx.createPattern call generates a pattern with
+    // the desired size.
+    domMatrix = domMatrix.scale(
+      1 / temporaryPatternCanvas.scaleX,
+      1 / temporaryPatternCanvas.scaleY
+    );
 
-    getPattern: function TilingPattern_getPattern(ctx, owner, shadingFill) {
-      ctx = this.ctx;
-      // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
-      let matrix = ctx.mozCurrentTransformInverse;
-      if (!shadingFill) {
-        matrix = Util.transform(matrix, owner.baseTransform);
-        if (this.matrix) {
-          matrix = Util.transform(matrix, this.matrix);
-        }
-      }
+    const pattern = ctx.createPattern(temporaryPatternCanvas.canvas, "repeat");
+    pattern.setTransform(domMatrix);
 
-      const temporaryPatternCanvas = this.createPatternCanvas(owner);
-
-      let domMatrix = createMatrix(matrix);
-      // Rescale and so that the ctx.createPattern call generates a pattern with
-      // the desired size.
-      domMatrix = domMatrix.scale(
-        1 / temporaryPatternCanvas.scaleX,
-        1 / temporaryPatternCanvas.scaleY
-      );
-
-      const pattern = ctx.createPattern(
-        temporaryPatternCanvas.canvas,
-        "repeat"
-      );
-      pattern.setTransform(domMatrix);
-
-      return pattern;
-    },
-  };
-
-  return TilingPattern;
-})();
+    return pattern;
+  }
+}
 
 export { getShadingPatternFromIR, TilingPattern };
