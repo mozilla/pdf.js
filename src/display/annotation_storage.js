@@ -38,11 +38,19 @@ class AnnotationStorage {
    * @public
    * @memberof AnnotationStorage
    * @param {string} key
+   * @param {string} fieldName name of the input field
    * @param {Object} defaultValue
    * @returns {Object}
    */
-  getValue(key, defaultValue) {
-    const obj = this._storage.get(key);
+  // #718 modified by ngx-extended-pdf-viewer
+  getValue(key, fieldname, defaultValue) {
+    let obj = this._storage.get(key);
+    if (obj === undefined) {
+      if (window.getFormValue) {
+        obj = window.getFormValue(fieldname);
+      }
+    }
+    // #718 end of modification by ngx-extended-pdf-viewer
     return obj !== undefined ? obj : defaultValue;
   }
 
@@ -65,14 +73,21 @@ class AnnotationStorage {
    * @public
    * @memberof AnnotationStorage
    * @param {string} key
+   * @param {string} fieldName name of the input field
    * @param {Object} value
    */
-  setValue(key, value) {
+  // #718 modified by ngx-extended-pdf-viewer
+  setValue(key, fieldname, value) {
+    // #718 end of modification by ngx-extended-pdf-viewer
     const obj = this._storage.get(key);
     let modified = false;
     if (obj !== undefined) {
       for (const [entry, val] of Object.entries(value)) {
-        if (obj[entry] !== val) {
+        if (
+          entry !== "radioValue" && // #718 modified by ngx-extended-pdf-viewer
+          entry !== "emitMessage" && // #718 modified by ngx-extended-pdf-viewer
+          obj[entry] !== val
+        ) {
           modified = true;
           obj[entry] = val;
         }
@@ -82,7 +97,24 @@ class AnnotationStorage {
       modified = true;
     }
     if (modified) {
-      this._setModified();
+      if (fieldname) {
+        this._setModified();
+        // #718 modified by ngx-extended-pdf-viewer
+        if (window.setFormValue) {
+          if (value.items) {
+            window.setFormValue(fieldname, value.items);
+          } else if (value.emitMessage === false) {
+            // ignore this field
+          } else if (value.radioValue) {
+            window.setFormValue(fieldname, value.radioValue);
+          } else {
+            for (const val of Object.values(value)) {
+              window.setFormValue(fieldname, val);
+            }
+          }
+        }
+      }
+      // #718 end of modification by ngx-extended-pdf-viewer
     }
   }
 

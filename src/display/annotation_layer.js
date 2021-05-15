@@ -636,7 +636,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
-      const storedData = storage.getValue(id, {
+      const storedData = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
         value: this.data.fieldValue,
         valueAsString: this.data.fieldValue,
       });
@@ -660,8 +660,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       elementData.userValue = textContent;
       element.setAttribute("id", id);
 
-      element.addEventListener("input", function (event) {
-        storage.setValue(id, { value: event.target.value });
+      element.addEventListener("input", event => {
+        storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+          value: event.target.value,
+        });
       });
 
       let blurListener = event => {
@@ -684,7 +686,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           const actions = {
             value() {
               elementData.userValue = detail.value || "";
-              storage.setValue(id, { value: elementData.userValue.toString() });
+              storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+                value: elementData.userValue.toString(),
+              });
               if (!elementData.formattedValue) {
                 event.target.value = elementData.userValue;
               }
@@ -695,7 +699,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 // Input hasn't the focus so display formatted string
                 event.target.value = elementData.formattedValue;
               }
-              storage.setValue(id, {
+              storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
                 formattedValue: elementData.formattedValue,
               });
             },
@@ -710,7 +714,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               event.target.style.visibility = detail.hidden
                 ? "hidden"
                 : "visible";
-              storage.setValue(id, { hidden: detail.hidden });
+              storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+                hidden: detail.hidden,
+              });
             },
             editable() {
               event.target.disabled = !detail.editable;
@@ -903,7 +909,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getValue(id, {
+    const value = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
       value:
         data.fieldValue &&
         ((data.exportValue && data.exportValue === data.fieldValue) ||
@@ -921,18 +927,21 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     }
     element.setAttribute("id", id);
 
-    element.addEventListener("change", function (event) {
+    element.addEventListener("change", event => { // #718 modified by ngx-extended-pdf-viewer
       const name = event.target.name;
       for (const checkbox of document.getElementsByName(name)) {
         if (checkbox !== event.target) {
           checkbox.checked = false;
           storage.setValue(
             checkbox.parentNode.getAttribute("data-annotation-id"),
+            this.data.fieldName, // #718 modified by ngx-extended-pdf-viewer
             { value: false }
           );
         }
       }
-      storage.setValue(id, { value: event.target.checked });
+      storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+        value: event.target.checked,
+      });
     });
 
     if (this.enableScripting && this.hasJSActions) {
@@ -941,7 +950,9 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
         const actions = {
           value() {
             event.target.checked = detail.value !== "Off";
-            storage.setValue(id, { value: event.target.checked });
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+              value: event.target.checked,
+            });
           },
           focus() {
             setTimeout(() => event.target.focus({ preventScroll: false }), 0);
@@ -950,7 +961,9 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
             event.target.style.visibility = detail.hidden
               ? "hidden"
               : "visible";
-            storage.setValue(id, { hidden: detail.hidden });
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+              hidden: detail.hidden,
+            });
           },
           editable() {
             event.target.disabled = !detail.editable;
@@ -993,7 +1006,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getValue(id, {
+    const value = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
       value: data.fieldValue === data.buttonValue,
     }).value;
 
@@ -1006,14 +1019,20 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     }
     element.setAttribute("id", id);
 
-    element.addEventListener("change", function (event) {
+    element.addEventListener("change", event => { // #718 modified by ngx-extended-pdf-viewer
       const { target } = event;
       for (const radio of document.getElementsByName(target.name)) {
         if (radio !== target) {
-          storage.setValue(radio.getAttribute("id"), { value: false });
+          storage.setValue(radio.getAttribute("id"), this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+            value: false,
+            emitMessage: false, // #718 modified by ngx-extended-pdf-viewer
+          });
         }
       }
-      storage.setValue(id, { value: target.checked });
+      storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+        value: target.checked,
+        radioValue: this.data.buttonValue, // #718 modified by ngx-extended-pdf-viewer
+      });
     });
 
     if (this.enableScripting && this.hasJSActions) {
@@ -1026,7 +1045,9 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
             for (const radio of document.getElementsByName(event.target.name)) {
               const radioId = radio.getAttribute("id");
               radio.checked = radioId === id && checked;
-              storage.setValue(radioId, { value: radio.checked });
+              storage.setValue(radioId, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+                value: radio.checked,
+              });
             }
           },
           focus() {
@@ -1036,7 +1057,9 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
             event.target.style.visibility = detail.hidden
               ? "hidden"
               : "visible";
-            storage.setValue(id, { hidden: detail.hidden });
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+              hidden: detail.hidden,
+            });
           },
           editable() {
             event.target.disabled = !detail.editable;
@@ -1102,7 +1125,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     // two field types is implemented, we should use the same pattern as the
     // other interactive widgets where the return value of `getValue`
     // is used and the full array of field values is stored.
-    storage.getValue(id, {
+    storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
       value:
         this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
     });
@@ -1162,7 +1185,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             Array.prototype.forEach.call(options, option => {
               option.selected = values.has(option.value);
             });
-            storage.setValue(id, {
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
               value: getValue(event, /* isExport */ true),
             });
           },
@@ -1183,7 +1206,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
                 options[0].selected = true;
               }
             }
-            storage.setValue(id, {
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
               value: getValue(event, /* isExport */ true),
               items: getItems(event),
             });
@@ -1192,7 +1215,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             while (selectElement.length !== 0) {
               selectElement.remove(0);
             }
-            storage.setValue(id, { value: null, items: [] });
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+              value: null,
+              items: [],
+            });
           },
           insert() {
             const { index, displayValue, exportValue } = detail.insert;
@@ -1203,7 +1229,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               optionElement,
               selectElement.children[index]
             );
-            storage.setValue(id, {
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
               value: getValue(event, /* isExport */ true),
               items: getItems(event),
             });
@@ -1223,7 +1249,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             if (selectElement.options.length > 0) {
               selectElement.options[0].selected = true;
             }
-            storage.setValue(id, {
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
               value: getValue(event, /* isExport */ true),
               items: getItems(event),
             });
@@ -1234,7 +1260,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             Array.prototype.forEach.call(options, (option, i) => {
               option.selected = indices.has(i);
             });
-            storage.setValue(id, {
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
               value: getValue(event, /* isExport */ true),
             });
           },
@@ -1245,7 +1271,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             event.target.style.visibility = detail.hidden
               ? "hidden"
               : "visible";
-            storage.setValue(id, { hidden: detail.hidden });
+            storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+              hidden: detail.hidden,
+            });
           },
           editable() {
             event.target.disabled = !detail.editable;
@@ -1260,7 +1288,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.addEventListener("input", event => {
         const exportValue = getValue(event, /* isExport */ true);
         const value = getValue(event, /* isExport */ false);
-        storage.setValue(id, { value: exportValue });
+        storage.setValue(id, this.data.fieldName, { value: exportValue }); // #718 modified by ngx-extended-pdf-viewer
 
         this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
           source: this,
@@ -1290,8 +1318,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         event => event.target.checked
       );
     } else {
-      selectElement.addEventListener("input", function (event) {
-        storage.setValue(id, { value: getValue(event) });
+      selectElement.addEventListener("input", event => { // #718 modified by ngx-extended-pdf-viewer
+        storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+          value: getValue(event),
+          radioValue: getValue(event, true), // #718 modified by ngx-extended-pdf-viewer
+        });
       });
     }
 
