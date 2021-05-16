@@ -26,7 +26,8 @@ function rewriteWebArchiveUrl(url) {
   // Web Archive URLs need to be transformed to add `if_` after the ID.
   // Without this, an HTML page containing an iframe with the PDF file
   // will be served instead (issue 8920).
-  var webArchiveRegex = /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
+  var webArchiveRegex =
+    /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
   var urlParts = webArchiveRegex.exec(url);
   if (urlParts) {
     return urlParts[1] + (urlParts[2] + "if_") + urlParts[3];

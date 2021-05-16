@@ -27,9 +27,8 @@ function getTopLeftPixel(canvasContext) {
 }
 
 describe("custom canvas rendering", function () {
-  const transparentGetDocumentParams = buildGetDocumentParams(
-    "transparent.pdf"
-  );
+  const transparentGetDocumentParams =
+    buildGetDocumentParams("transparent.pdf");
 
   let CanvasFactory;
   let loadingTask;

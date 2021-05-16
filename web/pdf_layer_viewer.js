@@ -181,7 +181,8 @@ class PDFLayerViewer extends BaseTreeViewer {
       return;
     }
     // Fetch the default optional content configuration...
-    const optionalContentConfig = await this._pdfDocument.getOptionalContentConfig();
+    const optionalContentConfig =
+      await this._pdfDocument.getOptionalContentConfig();
 
     this.eventBus.dispatch("optionalcontentconfig", {
       source: this,

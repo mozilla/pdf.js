@@ -100,6 +100,7 @@ if (
     if (isReadableStreamSupported) {
       return;
     }
-    globalThis.ReadableStream = require("web-streams-polyfill/dist/ponyfill.js").ReadableStream;
+    globalThis.ReadableStream =
+      require("web-streams-polyfill/dist/ponyfill.js").ReadableStream;
   })();
 }

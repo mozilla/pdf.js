@@ -317,13 +317,8 @@ class TextLayerBuilder {
     if (!this.renderingDone) {
       return;
     }
-    const {
-      findController,
-      matches,
-      pageIdx,
-      textContentItemsStr,
-      textDivs,
-    } = this;
+    const { findController, matches, pageIdx, textContentItemsStr, textDivs } =
+      this;
     let clearedUntilDivIdx = -1;
 
     // Clear all current matches.

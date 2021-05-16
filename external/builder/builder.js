@@ -122,7 +122,8 @@ function preprocess(inFilename, outFilename, defines) {
   let line;
   let state = STATE_NONE;
   const stack = [];
-  const control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
+  const control =
+    /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
 
   while ((line = readLine()) !== null) {
     ++lineNumber;
