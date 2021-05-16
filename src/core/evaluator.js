@@ -394,7 +394,8 @@ class PartialEvaluator {
     } else {
       bbox = null;
     }
-    let optionalContent = null;
+    let optionalContent = null,
+      groupOptions;
     if (dict.has("OC")) {
       optionalContent = await this.parseMarkedContentProps(
         dict.get("OC"),
@@ -404,7 +405,7 @@ class PartialEvaluator {
     }
     const group = dict.get("Group");
     if (group) {
-      var groupOptions = {
+      groupOptions = {
         matrix,
         bbox,
         smask,
@@ -3766,7 +3767,7 @@ class PartialEvaluator {
       throw new FormatError("invalid font name");
     }
 
-    let fontFile;
+    let fontFile, subtype, length1, length2, length3;
     try {
       fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
     } catch (ex) {
@@ -3778,13 +3779,13 @@ class PartialEvaluator {
     }
     if (fontFile) {
       if (fontFile.dict) {
-        var subtype = fontFile.dict.get("Subtype");
-        if (subtype) {
-          subtype = subtype.name;
+        const subtypeEntry = fontFile.dict.get("Subtype");
+        if (subtypeEntry instanceof Name) {
+          subtype = subtypeEntry.name;
         }
-        var length1 = fontFile.dict.get("Length1");
-        var length2 = fontFile.dict.get("Length2");
-        var length3 = fontFile.dict.get("Length3");
+        length1 = fontFile.dict.get("Length1");
+        length2 = fontFile.dict.get("Length2");
+        length3 = fontFile.dict.get("Length3");
       }
     }
 
