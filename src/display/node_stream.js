@@ -330,15 +330,13 @@ class PDFNodeStreamFullReader extends BaseFullReader {
         // here: https://nodejs.org/api/http.html#http_message_headers.
         return this._readableStream.headers[name.toLowerCase()];
       };
-      const {
-        allowRangeRequests,
-        suggestedLength,
-      } = validateRangeRequestCapabilities({
-        getResponseHeader,
-        isHttp: stream.isHttp,
-        rangeChunkSize: this._rangeChunkSize,
-        disableRange: this._disableRange,
-      });
+      const { allowRangeRequests, suggestedLength } =
+        validateRangeRequestCapabilities({
+          getResponseHeader,
+          isHttp: stream.isHttp,
+          rangeChunkSize: this._rangeChunkSize,
+          disableRange: this._disableRange,
+        });
 
       this._isRangeSupported = allowRangeRequests;
       // Setting right content length.

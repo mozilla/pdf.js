@@ -305,15 +305,13 @@ class PDFNetworkStreamFullRequestReader {
     const getResponseHeader = name => {
       return fullRequestXhr.getResponseHeader(name);
     };
-    const {
-      allowRangeRequests,
-      suggestedLength,
-    } = validateRangeRequestCapabilities({
-      getResponseHeader,
-      isHttp: this._manager.isHttp,
-      rangeChunkSize: this._rangeChunkSize,
-      disableRange: this._disableRange,
-    });
+    const { allowRangeRequests, suggestedLength } =
+      validateRangeRequestCapabilities({
+        getResponseHeader,
+        isHttp: this._manager.isHttp,
+        rangeChunkSize: this._rangeChunkSize,
+        disableRange: this._disableRange,
+      });
 
     if (allowRangeRequests) {
       this._isRangeSupported = true;

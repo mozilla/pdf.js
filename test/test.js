@@ -843,8 +843,8 @@ function unitTestPostHandler(req, res) {
 }
 
 async function startBrowser(browserName, startUrl = "") {
-  const revisions = require("puppeteer/lib/cjs/puppeteer/revisions.js")
-    .PUPPETEER_REVISIONS;
+  const revisions =
+    require("puppeteer/lib/cjs/puppeteer/revisions.js").PUPPETEER_REVISIONS;
   const wantedRevision =
     browserName === "chrome" ? revisions.chromium : revisions.firefox;
 

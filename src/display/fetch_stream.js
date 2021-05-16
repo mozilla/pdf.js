@@ -141,15 +141,13 @@ class PDFFetchStreamReader {
         const getResponseHeader = name => {
           return response.headers.get(name);
         };
-        const {
-          allowRangeRequests,
-          suggestedLength,
-        } = validateRangeRequestCapabilities({
-          getResponseHeader,
-          isHttp: this._stream.isHttp,
-          rangeChunkSize: this._rangeChunkSize,
-          disableRange: this._disableRange,
-        });
+        const { allowRangeRequests, suggestedLength } =
+          validateRangeRequestCapabilities({
+            getResponseHeader,
+            isHttp: this._stream.isHttp,
+            rangeChunkSize: this._rangeChunkSize,
+            disableRange: this._disableRange,
+          });
 
         this._isRangeSupported = allowRangeRequests;
         // Setting right content length.

@@ -1589,11 +1589,8 @@ class WidgetAnnotation extends Annotation {
         "Expected `_defaultAppearanceData` to have been set."
       );
     }
-    const {
-      localResources,
-      appearanceResources,
-      acroFormResources,
-    } = this._fieldResources;
+    const { localResources, appearanceResources, acroFormResources } =
+      this._fieldResources;
 
     const fontName =
       this.data.defaultAppearanceData &&

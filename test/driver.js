@@ -422,7 +422,8 @@ var Driver = (function DriverClosure() {
           loadingTask.promise.then(
             doc => {
               task.pdfDoc = doc;
-              task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+              task.optionalContentConfigPromise =
+                doc.getOptionalContentConfig();
 
               this._nextPage(task, failure);
             },
@@ -600,9 +601,8 @@ var Driver = (function DriverClosure() {
                   }
                   annotationLayerCanvas.width = viewport.width;
                   annotationLayerCanvas.height = viewport.height;
-                  var annotationLayerContext = annotationLayerCanvas.getContext(
-                    "2d"
-                  );
+                  var annotationLayerContext =
+                    annotationLayerCanvas.getContext("2d");
                   annotationLayerContext.clearRect(
                     0,
                     0,

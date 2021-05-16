@@ -1066,12 +1066,8 @@ describe("api", function () {
     });
 
     it("gets metadata", async function () {
-      const {
-        info,
-        metadata,
-        contentDispositionFilename,
-        contentLength,
-      } = await pdfDocument.getMetadata();
+      const { info, metadata, contentDispositionFilename, contentLength } =
+        await pdfDocument.getMetadata();
 
       expect(info.Title).toEqual("Basic API Test");
       // Custom, non-standard, information dictionary entries.
@@ -1096,12 +1092,8 @@ describe("api", function () {
         buildGetDocumentParams("tracemonkey.pdf")
       );
       const pdfDoc = await loadingTask.promise;
-      const {
-        info,
-        metadata,
-        contentDispositionFilename,
-        contentLength,
-      } = await pdfDoc.getMetadata();
+      const { info, metadata, contentDispositionFilename, contentLength } =
+        await pdfDoc.getMetadata();
 
       expect(info.Creator).toEqual("TeX");
       expect(info.Producer).toEqual("pdfeTeX-1.21a");
@@ -1132,12 +1124,8 @@ describe("api", function () {
     it("gets metadata, with missing PDF header (bug 1606566)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("bug1606566.pdf"));
       const pdfDoc = await loadingTask.promise;
-      const {
-        info,
-        metadata,
-        contentDispositionFilename,
-        contentLength,
-      } = await pdfDoc.getMetadata();
+      const { info, metadata, contentDispositionFilename, contentLength } =
+        await pdfDoc.getMetadata();
 
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual(null);
@@ -1445,13 +1433,12 @@ describe("api", function () {
           docBaseUrl: "qwerty.pdf",
         })
       );
-      const invalidDocBaseUrlPromise = invalidDocBaseUrlLoadingTask.promise.then(
-        function (pdfDoc) {
+      const invalidDocBaseUrlPromise =
+        invalidDocBaseUrlLoadingTask.promise.then(function (pdfDoc) {
           return pdfDoc.getPage(1).then(function (pdfPage) {
             return pdfPage.getAnnotations();
           });
-        }
-      );
+        });
 
       const [
         defaultAnnotations,
@@ -1804,7 +1791,8 @@ describe("api", function () {
     });
 
     it("multiple render() on the same canvas", async function () {
-      const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
+      const optionalContentConfigPromise =
+        pdfDocument.getOptionalContentConfig();
 
       const viewport = page.getViewport({ scale: 1 });
       const canvasAndCtx = CanvasFactory.create(

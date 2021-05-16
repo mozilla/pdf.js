@@ -999,12 +999,14 @@ class Font {
         map[+charCode] = GlyphMapForStandardFonts[charCode];
       }
       if (/Arial-?Black/i.test(name)) {
-        const SupplementalGlyphMapForArialBlack = getSupplementalGlyphMapForArialBlack();
+        const SupplementalGlyphMapForArialBlack =
+          getSupplementalGlyphMapForArialBlack();
         for (const charCode in SupplementalGlyphMapForArialBlack) {
           map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
         }
       } else if (/Calibri/i.test(name)) {
-        const SupplementalGlyphMapForCalibri = getSupplementalGlyphMapForCalibri();
+        const SupplementalGlyphMapForCalibri =
+          getSupplementalGlyphMapForCalibri();
         for (const charCode in SupplementalGlyphMapForCalibri) {
           map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
         }
@@ -1801,22 +1803,7 @@ class Font {
         // glyf table cannot be empty -- redoing the glyf and loca tables
         // to have single glyph with one point
         const simpleGlyph = new Uint8Array([
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          49,
-          0,
+          0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0,
         ]);
         for (i = 0, j = itemSize; i < numGlyphsOut; i++, j += itemSize) {
           itemEncode(locaData, j, simpleGlyph.length);
@@ -2707,9 +2694,8 @@ class Font {
           return charCode | 0;
         }
       }
-      newMapping.charCodeToGlyphId[
-        newMapping.nextAvailableFontCharCode
-      ] = glyphId;
+      newMapping.charCodeToGlyphId[newMapping.nextAvailableFontCharCode] =
+        glyphId;
       return newMapping.nextAvailableFontCharCode++;
     }
 

@@ -3205,9 +3205,8 @@ class PartialEvaluator {
       // text-extraction. For simple fonts, containing encoding information,
       // use a fallback ToUnicode map to improve this (fixes issue8229.pdf).
       if (!properties.composite && properties.hasEncoding) {
-        properties.fallbackToUnicode = this._buildSimpleFontToUnicode(
-          properties
-        );
+        properties.fallbackToUnicode =
+          this._buildSimpleFontToUnicode(properties);
       }
 
       return Promise.resolve(properties.toUnicode);

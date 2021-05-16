@@ -75,8 +75,12 @@ function getAscent(fontFamily, ctx) {
   ctx.strokeStyle = "red";
   ctx.clearRect(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE);
   ctx.strokeText("g", 0, 0);
-  let pixels = ctx.getImageData(0, 0, DEFAULT_FONT_SIZE, DEFAULT_FONT_SIZE)
-    .data;
+  let pixels = ctx.getImageData(
+    0,
+    0,
+    DEFAULT_FONT_SIZE,
+    DEFAULT_FONT_SIZE
+  ).data;
   descent = 0;
   for (let i = pixels.length - 1 - 3; i >= 0; i -= 4) {
     if (pixels[i] > 0) {
