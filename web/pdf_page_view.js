@@ -365,10 +365,14 @@ class PDFPageView {
     const width = this.viewport.width;
     const height = this.viewport.height;
     const div = this.div;
-    target.style.width = target.parentNode.style.width = div.style.width =
-      Math.floor(width) + "px";
-    target.style.height = target.parentNode.style.height = div.style.height =
-      Math.floor(height) + "px";
+    target.style.width =
+      target.parentNode.style.width =
+      div.style.width =
+        Math.floor(width) + "px";
+    target.style.height =
+      target.parentNode.style.height =
+      div.style.height =
+        Math.floor(height) + "px";
     // The canvas may have been originally rotated; rotate relative to that.
     const relativeRotation =
       this.viewport.rotation - this.paintedViewportMap.get(target).rotation;
@@ -579,17 +583,18 @@ class PDFPageView {
 
     if (this.annotationLayerFactory) {
       if (!this.annotationLayer) {
-        this.annotationLayer = this.annotationLayerFactory.createAnnotationLayerBuilder(
-          div,
-          pdfPage,
-          /* annotationStorage = */ null,
-          this.imageResourcesPath,
-          this.renderInteractiveForms,
-          this.l10n,
-          /* enableScripting */ null,
-          /* hasJSActionsPromise = */ null,
-          /* mouseState = */ null
-        );
+        this.annotationLayer =
+          this.annotationLayerFactory.createAnnotationLayerBuilder(
+            div,
+            pdfPage,
+            /* annotationStorage = */ null,
+            this.imageResourcesPath,
+            this.renderInteractiveForms,
+            this.l10n,
+            /* enableScripting */ null,
+            /* hasJSActionsPromise = */ null,
+            /* mouseState = */ null
+          );
       }
       this._renderAnnotationLayer();
     }
@@ -632,9 +637,8 @@ class PDFPageView {
         });
       };
       this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
-      this.structTreeLayer = this.structTreeLayerFactory.createStructTreeLayerBuilder(
-        pdfPage
-      );
+      this.structTreeLayer =
+        this.structTreeLayerFactory.createStructTreeLayerBuilder(pdfPage);
     }
 
     div.setAttribute("data-loaded", true);

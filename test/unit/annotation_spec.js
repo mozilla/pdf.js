@@ -230,24 +230,10 @@ describe("annotation", function () {
 
     it("should process quadpoints in the standard order", function () {
       rect = [10, 10, 20, 20];
-      dict.set("QuadPoints", [
-        10,
-        20,
-        20,
-        20,
-        10,
-        10,
-        20,
-        10,
-        11,
-        19,
-        19,
-        19,
-        11,
-        11,
-        19,
-        11,
-      ]);
+      dict.set(
+        "QuadPoints",
+        [10, 20, 20, 20, 10, 10, 20, 10, 11, 19, 19, 19, 11, 11, 19, 11]
+      );
       expect(getQuadPoints(dict, rect)).toEqual([
         [
           { x: 10, y: 20 },

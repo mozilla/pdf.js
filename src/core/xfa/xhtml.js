@@ -117,9 +117,8 @@ function mapStyle(styleStr) {
         style.transform = newValue;
       }
     } else {
-      style[
-        key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())
-      ] = newValue;
+      style[key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())] =
+        newValue;
     }
   }
   return style;
