@@ -27,7 +27,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { getShadingPatternFromIR, TilingPattern } from "./pattern_helper.js";
+import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -1973,7 +1973,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           baseTransform
         );
       } else {
-        pattern = getShadingPatternFromIR(IR);
+        pattern = getShadingPattern(IR);
       }
       return pattern;
     }
@@ -2007,7 +2007,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       const ctx = this.ctx;
 
       this.save();
-      const pattern = getShadingPatternFromIR(patternIR);
+      const pattern = getShadingPattern(patternIR);
       ctx.fillStyle = pattern.getPattern(ctx, this, true);
 
       const inv = ctx.mozCurrentTransformInverse;
