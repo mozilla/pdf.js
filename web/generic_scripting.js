@@ -18,14 +18,9 @@ import { getPdfFilenameFromUrl, loadScript } from "pdfjs-lib";
 async function docPropertiesLookup(pdfDocument) {
   const url = "",
     baseUrl = url.split("#")[0];
-  /* eslint-disable prefer-const */
-  let {
-    info,
-    metadata,
-    contentDispositionFilename,
-    contentLength,
-  } = await pdfDocument.getMetadata();
-  /* eslint-enable prefer-const */
+  // eslint-disable-next-line prefer-const
+  let { info, metadata, contentDispositionFilename, contentLength } =
+    await pdfDocument.getMetadata();
 
   if (!contentLength) {
     const { length } = await pdfDocument.getDownloadInfo();

@@ -756,8 +756,8 @@ gulp.task("cmaps", function (done) {
     }
   });
 
-  const compressCmaps = require("./external/cmapscompress/compress.js")
-    .compressCmaps;
+  const compressCmaps =
+    require("./external/cmapscompress/compress.js").compressCmaps;
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
   done();
 });
@@ -1415,7 +1415,8 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
         babelPluginReplaceNonWebPackRequire,
       ],
     }).code;
-    const removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
+    const removeCjsSrc =
+      /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
     content = content.replace(removeCjsSrc, (all, prefix, interop, suffix) => {
       return prefix + suffix;
     });
@@ -2176,9 +2177,8 @@ gulp.task(
     let reason = process.env.PDFJS_UPDATE_REASON;
     // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
     if (typeof reason === "string") {
-      const reasonParts = /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(
-        reason
-      );
+      const reasonParts =
+        /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
 
       if (reasonParts) {
         reason =

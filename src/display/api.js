@@ -3070,13 +3070,8 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         this.stepper.init(this.operatorList);
         this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
       }
-      const {
-        canvasContext,
-        viewport,
-        transform,
-        imageLayer,
-        background,
-      } = this.params;
+      const { canvasContext, viewport, transform, imageLayer, background } =
+        this.params;
 
       this.gfx = new CanvasGraphics(
         canvasContext,

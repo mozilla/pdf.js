@@ -284,7 +284,8 @@ class Util extends PDFObject {
       seconds: oDate.getSeconds(),
     };
 
-    const patterns = /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t|\\.)/g;
+    const patterns =
+      /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t|\\.)/g;
     return cFormat.replace(patterns, function (match, pattern) {
       if (pattern in handlers) {
         return handlers[pattern](data);
@@ -517,7 +518,8 @@ class Util extends PDFObject {
 
       // escape the string
       const escapedFormat = cFormat.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
-      const patterns = /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t)/g;
+      const patterns =
+        /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t)/g;
       const actions = [];
 
       const re = escapedFormat.replace(
