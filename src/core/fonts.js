@@ -135,9 +135,6 @@ function adjustToUnicode(properties, builtInEncoding) {
   if (properties.isInternalFont) {
     return;
   }
-  if (properties.hasIncludedToUnicodeMap) {
-    return; // The font dictionary has a `ToUnicode` entry.
-  }
   if (builtInEncoding === properties.defaultEncoding) {
     return; // No point in trying to adjust `toUnicode` if the encodings match.
   }
@@ -147,11 +144,17 @@ function adjustToUnicode(properties, builtInEncoding) {
   const toUnicode = [],
     glyphsUnicodeMap = getGlyphsUnicode();
   for (const charCode in builtInEncoding) {
-    if (
-      properties.hasEncoding &&
-      properties.differences[charCode] !== undefined
-    ) {
-      continue; // The font dictionary has an `Encoding`/`Differences` entry.
+    if (properties.hasIncludedToUnicodeMap) {
+      if (properties.toUnicode.has(charCode)) {
+        continue; // The font dictionary has a `ToUnicode` entry.
+      }
+    } else {
+      if (
+        properties.hasEncoding &&
+        properties.differences[charCode] !== undefined
+      ) {
+        continue; // The font dictionary has an `Encoding`/`Differences` entry.
+      }
     }
     const glyphName = builtInEncoding[charCode];
     const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
@@ -159,7 +162,9 @@ function adjustToUnicode(properties, builtInEncoding) {
       toUnicode[charCode] = String.fromCharCode(unicode);
     }
   }
-  properties.toUnicode.amend(toUnicode);
+  if (toUnicode.length > 0) {
+    properties.toUnicode.amend(toUnicode);
+  }
 }
 
 class Glyph {
