@@ -583,35 +583,81 @@ class WidgetAnnotationElement extends AnnotationElement {
     }
   }
 
-  _setColor(event) {
-    const { detail, target } = event;
-    const { style } = target;
-    for (const name of [
-      "bgColor",
-      "fillColor",
-      "fgColor",
-      "textColor",
-      "borderColor",
-      "strokeColor",
-    ]) {
-      let color = detail[name];
-      if (!color) {
-        continue;
-      }
-      color = ColorConverters[`${color[0]}_HTML`](color.slice(1));
-      switch (name) {
-        case "bgColor":
-        case "fillColor":
-          style.backgroundColor = color;
-          break;
-        case "fgColor":
-        case "textColor":
-          style.color = color;
-          break;
-        case "borderColor":
-        case "strokeColor":
-          style.borderColor = color;
-          break;
+  _dispatchEventFromSandbox(actions, jsEvent) {
+    const setColor = (jsName, styleName, event) => {
+      const color = event.detail[jsName];
+      event.target.style[styleName] = ColorConverters[`${color[0]}_HTML`](
+        color.slice(1)
+      );
+    };
+
+    const commonActions = {
+      display: event => {
+        const hidden = event.detail.display % 2 === 1;
+        event.target.style.visibility = hidden ? "hidden" : "visible";
+        this.annotationStorage.setValue(this.data.id, {
+          hidden,
+          print: event.detail.display === 0 || event.detail.display === 3,
+        });
+      },
+      print: event => {
+        this.annotationStorage.setValue(this.data.id, {
+          print: event.detail.print,
+        });
+      },
+      hidden: event => {
+        event.target.style.visibility = event.detail.hidden
+          ? "hidden"
+          : "visible";
+        this.annotationStorage.setValue(this.data.id, {
+          hidden: event.detail.hidden,
+        });
+      },
+      focus: event => {
+        setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+      },
+      userName: event => {
+        // tooltip
+        event.target.title = event.detail.userName;
+      },
+      readonly: event => {
+        if (event.detail.readonly) {
+          event.target.setAttribute("readonly", "");
+        } else {
+          event.target.removeAttribute("readonly");
+        }
+      },
+      required: event => {
+        if (event.detail.required) {
+          event.target.setAttribute("required", "");
+        } else {
+          event.target.removeAttribute("required");
+        }
+      },
+      bgColor: event => {
+        setColor("bgColor", "backgroundColor", event);
+      },
+      fillColor: event => {
+        setColor("fillColor", "backgroundColor", event);
+      },
+      fgColor: event => {
+        setColor("fgColor", "color", event);
+      },
+      textColor: event => {
+        setColor("textColor", "color", event);
+      },
+      borderColor: event => {
+        setColor("borderColor", "borderColor", event);
+      },
+      strokeColor: event => {
+        setColor("strokeColor", "borderColor", event);
+      },
+    };
+
+    for (const name of Object.keys(jsEvent.detail)) {
+      const action = actions[name] || commonActions[name];
+      if (action) {
+        action(jsEvent);
       }
     }
   }
@@ -698,18 +744,17 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
         });
 
-        element.addEventListener("updatefromsandbox", event => {
-          const { detail } = event;
+        element.addEventListener("updatefromsandbox", jsEvent => {
           const actions = {
-            value() {
-              elementData.userValue = detail.value || "";
+            value(event) {
+              elementData.userValue = event.detail.value || "";
               storage.setValue(id, { value: elementData.userValue.toString() });
               if (!elementData.formattedValue) {
                 event.target.value = elementData.userValue;
               }
             },
-            valueAsString() {
-              elementData.formattedValue = detail.valueAsString || "";
+            valueAsString(event) {
+              elementData.formattedValue = event.detail.valueAsString || "";
               if (event.target !== document.activeElement) {
                 // Input hasn't the focus so display formatted string
                 event.target.value = elementData.formattedValue;
@@ -718,33 +763,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 formattedValue: elementData.formattedValue,
               });
             },
-            focus() {
-              setTimeout(() => event.target.focus({ preventScroll: false }), 0);
-            },
-            userName() {
-              // tooltip
-              event.target.title = detail.userName;
-            },
-            hidden() {
-              event.target.style.visibility = detail.hidden
-                ? "hidden"
-                : "visible";
-              storage.setValue(id, { hidden: detail.hidden });
-            },
-            editable() {
-              event.target.disabled = !detail.editable;
-            },
-            selRange() {
-              const [selStart, selEnd] = detail.selRange;
+            selRange(event) {
+              const [selStart, selEnd] = event.detail.selRange;
               if (selStart >= 0 && selEnd < event.target.value.length) {
                 event.target.setSelectionRange(selStart, selEnd);
               }
             },
           };
-          Object.keys(detail)
-            .filter(name => name in actions)
-            .forEach(name => actions[name]());
-          this._setColor(event);
+          this._dispatchEventFromSandbox(actions, jsEvent);
         });
 
         // Even if the field hasn't any actions
@@ -960,30 +986,14 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     });
 
     if (this.enableScripting && this.hasJSActions) {
-      element.addEventListener("updatefromsandbox", event => {
-        const { detail } = event;
+      element.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
-          value() {
-            event.target.checked = detail.value !== "Off";
+          value(event) {
+            event.target.checked = event.detail.value !== "Off";
             storage.setValue(id, { value: event.target.checked });
           },
-          focus() {
-            setTimeout(() => event.target.focus({ preventScroll: false }), 0);
-          },
-          hidden() {
-            event.target.style.visibility = detail.hidden
-              ? "hidden"
-              : "visible";
-            storage.setValue(id, { hidden: detail.hidden });
-          },
-          editable() {
-            event.target.disabled = !detail.editable;
-          },
         };
-        Object.keys(detail)
-          .filter(name => name in actions)
-          .forEach(name => actions[name]());
-        this._setColor(event);
+        this._dispatchEventFromSandbox(actions, jsEvent);
       });
 
       this._setEventListeners(
@@ -1047,34 +1057,18 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
 
     if (this.enableScripting && this.hasJSActions) {
       const pdfButtonValue = data.buttonValue;
-      element.addEventListener("updatefromsandbox", event => {
-        const { detail } = event;
+      element.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
-          value() {
-            const checked = pdfButtonValue === detail.value;
+          value(event) {
+            const checked = pdfButtonValue === event.detail.value;
             for (const radio of document.getElementsByName(event.target.name)) {
               const radioId = radio.getAttribute("id");
               radio.checked = radioId === id && checked;
               storage.setValue(radioId, { value: radio.checked });
             }
           },
-          focus() {
-            setTimeout(() => event.target.focus({ preventScroll: false }), 0);
-          },
-          hidden() {
-            event.target.style.visibility = detail.hidden
-              ? "hidden"
-              : "visible";
-            storage.setValue(id, { hidden: detail.hidden });
-          },
-          editable() {
-            event.target.disabled = !detail.editable;
-          },
         };
-        Object.keys(detail)
-          .filter(name => name in actions)
-          .forEach(name => actions[name]());
-        this._setColor(event);
+        this._dispatchEventFromSandbox(actions, jsEvent);
       });
 
       this._setEventListeners(
@@ -1181,12 +1175,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     };
 
     if (this.enableScripting && this.hasJSActions) {
-      selectElement.addEventListener("updatefromsandbox", event => {
-        const { detail } = event;
+      selectElement.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
-          value() {
+          value(event) {
             const options = selectElement.options;
-            const value = detail.value;
+            const value = event.detail.value;
             const values = new Set(Array.isArray(value) ? value : [value]);
             Array.prototype.forEach.call(options, option => {
               option.selected = values.has(option.value);
@@ -1195,12 +1188,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               value: getValue(event, /* isExport */ true),
             });
           },
-          multipleSelection() {
+          multipleSelection(event) {
             selectElement.multiple = true;
           },
-          remove() {
+          remove(event) {
             const options = selectElement.options;
-            const index = detail.remove;
+            const index = event.detail.remove;
             options[index].selected = false;
             selectElement.remove(index);
             if (options.length > 0) {
@@ -1217,14 +1210,14 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               items: getItems(event),
             });
           },
-          clear() {
+          clear(event) {
             while (selectElement.length !== 0) {
               selectElement.remove(0);
             }
             storage.setValue(id, { value: null, items: [] });
           },
-          insert() {
-            const { index, displayValue, exportValue } = detail.insert;
+          insert(event) {
+            const { index, displayValue, exportValue } = event.detail.insert;
             const optionElement = document.createElement("option");
             optionElement.textContent = displayValue;
             optionElement.value = exportValue;
@@ -1237,8 +1230,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               items: getItems(event),
             });
           },
-          items() {
-            const { items } = detail;
+          items(event) {
+            const { items } = event.detail;
             while (selectElement.length !== 0) {
               selectElement.remove(0);
             }
@@ -1257,8 +1250,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               items: getItems(event),
             });
           },
-          indices() {
-            const indices = new Set(detail.indices);
+          indices(event) {
+            const indices = new Set(event.detail.indices);
             const options = event.target.options;
             Array.prototype.forEach.call(options, (option, i) => {
               option.selected = indices.has(i);
@@ -1267,23 +1260,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               value: getValue(event, /* isExport */ true),
             });
           },
-          focus() {
-            setTimeout(() => event.target.focus({ preventScroll: false }), 0);
-          },
-          hidden() {
-            event.target.style.visibility = detail.hidden
-              ? "hidden"
-              : "visible";
-            storage.setValue(id, { hidden: detail.hidden });
-          },
-          editable() {
-            event.target.disabled = !detail.editable;
+          editable(event) {
+            event.target.disabled = !event.detail.editable;
           },
         };
-        Object.keys(detail)
-          .filter(name => name in actions)
-          .forEach(name => actions[name]());
-        this._setColor(event);
+        this._dispatchEventFromSandbox(actions, jsEvent);
       });
 
       selectElement.addEventListener("input", event => {
