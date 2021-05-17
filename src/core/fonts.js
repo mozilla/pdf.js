@@ -2667,12 +2667,20 @@ class Font {
       glyphZeroId = font.numGlyphs - 1;
     }
     const mapping = font.getGlyphMapping(properties);
-    const newMapping = adjustMapping(
-      mapping,
-      font.hasGlyphId.bind(font),
-      glyphZeroId
-    );
-    this.toFontChar = newMapping.toFontChar;
+    let newMapping = null;
+    let newCharCodeToGlyphId = mapping;
+
+    // When `cssFontInfo` is set, the font is used to render text in the HTML
+    // view (e.g. with Xfa) so nothing must be moved in the private use area.
+    if (!properties.cssFontInfo) {
+      newMapping = adjustMapping(
+        mapping,
+        font.hasGlyphId.bind(font),
+        glyphZeroId
+      );
+      this.toFontChar = newMapping.toFontChar;
+      newCharCodeToGlyphId = newMapping.charCodeToGlyphId;
+    }
     const numGlyphs = font.numGlyphs;
 
     function getCharCodes(charCodeToGlyphId, glyphId) {
@@ -2700,7 +2708,7 @@ class Font {
     }
 
     const seacs = font.seacs;
-    if (SEAC_ANALYSIS_ENABLED && seacs && seacs.length) {
+    if (newMapping && SEAC_ANALYSIS_ENABLED && seacs && seacs.length) {
       const matrix = properties.fontMatrix || FONT_IDENTITY_MATRIX;
       const charset = font.getCharset();
       const seacMap = Object.create(null);
@@ -2754,15 +2762,9 @@ class Font {
     // PostScript Font Program
     builder.addTable("CFF ", font.data);
     // OS/2 and Windows Specific metrics
-    builder.addTable(
-      "OS/2",
-      createOS2Table(properties, newMapping.charCodeToGlyphId)
-    );
+    builder.addTable("OS/2", createOS2Table(properties, newCharCodeToGlyphId));
     // Character to glyphs mapping
-    builder.addTable(
-      "cmap",
-      createCmapTable(newMapping.charCodeToGlyphId, numGlyphs)
-    );
+    builder.addTable("cmap", createCmapTable(newCharCodeToGlyphId, numGlyphs));
     // Font header
     builder.addTable(
       "head",
