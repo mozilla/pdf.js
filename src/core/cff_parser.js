@@ -640,7 +640,9 @@ const CFFParser = (function CFFParserClosure() {
             } else if (stackSize > 1) {
               warn("Found too many parameters for stack-clearing command");
             }
-            if (stackSize > 0 && stack[stackSize - 1] >= 0) {
+            if (stackSize > 0) {
+              // Width can be any number since its the difference
+              // from nominalWidthX.
               state.width = stack[stackSize - 1];
             }
           }
