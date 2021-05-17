@@ -310,6 +310,7 @@ class PDFScriptingManager {
     }
 
     delete detail.id;
+    delete detail.siblings;
 
     const ids = siblings ? [id, ...siblings] : [id];
     for (const elementId of ids) {
