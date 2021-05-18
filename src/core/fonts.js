@@ -167,6 +167,29 @@ function adjustToUnicode(properties, builtInEncoding) {
   }
 }
 
+/**
+ * NOTE: This function should only be called at the *end* of font-parsing,
+ *       after e.g. `adjustToUnicode` has run, to prevent any issues.
+ */
+function amendFallbackToUnicode(properties) {
+  if (!properties.fallbackToUnicode) {
+    return;
+  }
+  if (properties.toUnicode instanceof IdentityToUnicodeMap) {
+    return;
+  }
+  const toUnicode = [];
+  for (const charCode in properties.fallbackToUnicode) {
+    if (properties.toUnicode.has(charCode)) {
+      continue; // The font dictionary has a `ToUnicode` entry.
+    }
+    toUnicode[charCode] = properties.fallbackToUnicode[charCode];
+  }
+  if (toUnicode.length > 0) {
+    properties.toUnicode.amend(toUnicode);
+  }
+}
+
 class Glyph {
   constructor(
     originalCharCode,
@@ -854,8 +877,6 @@ class Font {
     this.defaultEncoding = properties.defaultEncoding;
 
     this.toUnicode = properties.toUnicode;
-    this.fallbackToUnicode = properties.fallbackToUnicode || new ToUnicodeMap();
-
     this.toFontChar = [];
 
     if (properties.type === "Type3") {
@@ -941,6 +962,7 @@ class Font {
       return;
     }
 
+    amendFallbackToUnicode(properties);
     this.data = data;
     this.fontType = getFontType(type, subtype, properties.isStandardFont);
 
@@ -1099,6 +1121,8 @@ class Font {
       }
       this.toFontChar = map;
     }
+
+    amendFallbackToUnicode(properties);
     this.loadedName = fontName.split("-")[0];
     this.fontType = getFontType(type, subtype, properties.isStandardFont);
   }
@@ -2957,15 +2981,12 @@ class Font {
     width = isNum(width) ? width : this.defaultWidth;
     const vmetric = this.vmetrics && this.vmetrics[widthCode];
 
-    let unicode =
-      this.toUnicode.get(charcode) ||
-      this.fallbackToUnicode.get(charcode) ||
-      charcode;
+    let unicode = this.toUnicode.get(charcode) || charcode;
     if (typeof unicode === "number") {
       unicode = String.fromCharCode(unicode);
     }
 
-    let isInFont = charcode in this.toFontChar;
+    let isInFont = this.toFontChar[charcode] !== undefined;
     // First try the toFontChar map, if it's not there then try falling
     // back to the char code.
     fontCharCode = this.toFontChar[charcode] || charcode;
