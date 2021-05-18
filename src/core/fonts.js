@@ -2550,12 +2550,9 @@ class Font {
         const glyphsUnicodeMap = getGlyphsUnicode();
         for (let charCode = 0; charCode < 256; charCode++) {
           let glyphName;
-          if (this.differences && charCode in this.differences) {
+          if (this.differences[charCode] !== undefined) {
             glyphName = this.differences[charCode];
-          } else if (
-            charCode in baseEncoding &&
-            baseEncoding[charCode] !== ""
-          ) {
+          } else if (baseEncoding[charCode] !== "") {
             glyphName = baseEncoding[charCode];
           } else {
             glyphName = StandardEncoding[charCode];
