@@ -145,6 +145,7 @@ class XMLParserBase {
       pos < s.length &&
       !isWhitespace(s, pos) &&
       s[pos] !== ">" &&
+      s[pos] !== "?" &&
       s[pos] !== "/"
     ) {
       ++pos;
