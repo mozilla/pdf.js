@@ -3178,10 +3178,10 @@ class PartialEvaluator {
   }
 
   /**
-   * @returns {ToUnicodeMap}
+   * @returns {Array}
    * @private
    */
-  _buildSimpleFontToUnicode(properties, forceGlyphs = false) {
+  _simpleFontToUnicode(properties, forceGlyphs = false) {
     assert(!properties.composite, "Must be a simple font.");
 
     const toUnicode = [];
@@ -3242,7 +3242,7 @@ class PartialEvaluator {
                 Number.isNaN(code) &&
                 Number.isInteger(parseInt(codeStr, 16))
               ) {
-                return this._buildSimpleFontToUnicode(
+                return this._simpleFontToUnicode(
                   properties,
                   /* forceGlyphs */ true
                 );
@@ -3275,7 +3275,7 @@ class PartialEvaluator {
       }
       toUnicode[charcode] = String.fromCharCode(glyphsUnicodeMap[glyphName]);
     }
-    return new ToUnicodeMap(toUnicode);
+    return toUnicode;
   }
 
   /**
@@ -3294,8 +3294,7 @@ class PartialEvaluator {
       // text-extraction. For simple fonts, containing encoding information,
       // use a fallback ToUnicode map to improve this (fixes issue8229.pdf).
       if (!properties.composite && properties.hasEncoding) {
-        properties.fallbackToUnicode =
-          this._buildSimpleFontToUnicode(properties);
+        properties.fallbackToUnicode = this._simpleFontToUnicode(properties);
       }
       return properties.toUnicode;
     }
@@ -3306,7 +3305,7 @@ class PartialEvaluator {
     // in pratice it seems better to always try to create a toUnicode map
     // based of the default encoding.
     if (!properties.composite /* is simple font */) {
-      return this._buildSimpleFontToUnicode(properties);
+      return new ToUnicodeMap(this._simpleFontToUnicode(properties));
     }
 
     // If the font is a composite font that uses one of the predefined CMaps
