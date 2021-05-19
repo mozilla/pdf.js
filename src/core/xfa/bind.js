@@ -22,6 +22,7 @@ import {
   $finalize,
   $getAttributeIt,
   $getChildren,
+  $getDataValue,
   $getParent,
   $getRealChildrenByNameIt,
   $global,
@@ -88,7 +89,7 @@ class Binder {
 
     if (formNode[$hasSettableValue]()) {
       if (data[$isDataValue]()) {
-        const value = data[$content].trim();
+        const value = data[$getDataValue]();
         // TODO: use picture.
         formNode[$setValue](createText(value));
         formNode[$data] = data;
@@ -114,7 +115,7 @@ class Binder {
     }
   }
 
-  _findDataByNameToConsume(name, dataNode, global) {
+  _findDataByNameToConsume(name, isValue, dataNode, global) {
     if (!name) {
       return null;
     }
@@ -130,9 +131,16 @@ class Binder {
         /* allTransparent = */ false,
         /* skipConsumed = */ true
       );
-      match = generator.next().value;
-      if (match) {
-        return match;
+      // Try to find a match of the same kind.
+      while (true) {
+        match = generator.next().value;
+        if (!match) {
+          break;
+        }
+
+        if (isValue === match[$isDataValue]()) {
+          return match;
+        }
       }
       if (
         dataNode[$namespaceId] === NamespaceIds.datasets.id &&
@@ -149,7 +157,7 @@ class Binder {
 
     // Secondly, if global try to find it just under the root of datasets
     // (which is the location of global variables).
-    generator = this.datasets[$getRealChildrenByNameIt](
+    generator = this.data[$getRealChildrenByNameIt](
       name,
       /* allTransparent = */ false,
       /* skipConsumed = */ false
@@ -478,6 +486,7 @@ class Binder {
       if (child.bind) {
         switch (child.bind.match) {
           case "none":
+            this._bindElement(child, dataNode);
             continue;
           case "global":
             global = true;
@@ -485,6 +494,7 @@ class Binder {
           case "dataRef":
             if (!child.bind.ref) {
               warn(`XFA - ref is empty in node ${child[$nodeName]}.`);
+              this._bindElement(child, dataNode);
               continue;
             }
             ref = child.bind.ref;
@@ -545,6 +555,7 @@ class Binder {
           while (matches.length < max) {
             const found = this._findDataByNameToConsume(
               child.name,
+              child[$hasSettableValue](),
               dataNode,
               global
             );
@@ -580,6 +591,8 @@ class Binder {
         }
         this._bindOccurrences(child, match, picture);
       } else if (min > 0) {
+        this._setProperties(child, dataNode);
+        this._bindItems(child, dataNode);
         this._bindElement(child, dataNode);
       } else {
         uselessNodes.push(child);

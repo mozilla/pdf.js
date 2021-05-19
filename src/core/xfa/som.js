@@ -275,19 +275,32 @@ function createDataNode(root, container, expr) {
   }
 
   for (let ii = parsed.length; i < ii; i++) {
-    const { cacheName, index } = parsed[i];
+    const { name, operator, index } = parsed[i];
     if (!isFinite(index)) {
       parsed[i].index = 0;
       return createNodes(root, parsed.slice(i));
     }
 
-    const cached = somCache.get(root);
-    if (!cached) {
-      warn(`XFA - createDataNode must be called after searchNode.`);
-      return null;
+    let children;
+    switch (operator) {
+      case operators.dot:
+        children = root[$getChildrenByName](name, false);
+        break;
+      case operators.dotDot:
+        children = root[$getChildrenByName](name, true);
+        break;
+      case operators.dotHash:
+        children = root[$getChildrenByClass](name);
+        if (children instanceof XFAObjectArray) {
+          children = children.children;
+        } else {
+          children = [children];
+        }
+        break;
+      default:
+        break;
     }
 
-    const children = cached.get(cacheName);
     if (children.length === 0) {
       return createNodes(root, parsed.slice(i));
     }
