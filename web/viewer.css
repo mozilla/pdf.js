@@ -1920,3 +1920,16 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
     display: none;
   }
 }
+
+.toolbarButton.showText {
+  width: auto;
+
+}
+
+.toolbarButton.showText > span {
+  display: inherit;
+  width: inherit;
+  height: inherit;
+  text-align: left;
+  padding: 5px 0 0 20px
+}

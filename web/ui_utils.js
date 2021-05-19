@@ -994,6 +994,19 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+function getDocumentFromHtml() {
+  return document.getElementById('defaultUrl') && document.getElementById('defaultUrl').value;
+}
+
+function getDownloadUrlFromHtml() {
+  var downloadUrl = document.getElementById('downloadUrl') && document.getElementById('downloadUrl').value;
+  var fileExtension = document.getElementById('fileExtension') && document.getElementById('fileExtension').value;
+  if (fileExtension && fileExtension !== 'pdf' && downloadUrl) {
+    return downloadUrl;
+  }
+  return getDocumentFromHtml();
+}
+
 export {
   animationStarted,
   apiPageLayoutToSpreadMode,
@@ -1037,4 +1050,7 @@ export {
   waitOnEventOrTimeout,
   WaitOnType,
   watchScroll,
+  getDownloadUrlFromHtml,
+  getDocumentFromHtml
+
 };
