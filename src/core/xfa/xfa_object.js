@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 
-import { getInteger, getKeyword } from "./utils.js";
+import { getInteger, getKeyword, HTMLResult } from "./utils.js";
 import { shadow, warn } from "../../shared/util.js";
 import { NamespaceIds } from "./namespaces.js";
 
 // We use these symbols to avoid name conflict between tags
 // and properties/methods names.
 const $acceptWhitespace = Symbol();
+const $addHTML = Symbol();
 const $appendChild = Symbol();
+const $break = Symbol();
 const $childrenToHTML = Symbol();
 const $clean = Symbol();
 const $cleanup = Symbol();
@@ -31,16 +33,21 @@ const $data = Symbol("data");
 const $dump = Symbol();
 const $extra = Symbol("extra");
 const $finalize = Symbol();
+const $flushHTML = Symbol();
 const $getAttributeIt = Symbol();
+const $getAvailableSpace = Symbol();
 const $getChildrenByClass = Symbol();
 const $getChildrenByName = Symbol();
 const $getChildrenByNameIt = Symbol();
+const $getDataValue = Symbol();
 const $getRealChildrenByNameIt = Symbol();
 const $getChildren = Symbol();
+const $getNextPage = Symbol();
 const $getParent = Symbol();
 const $global = Symbol();
 const $hasItem = Symbol();
 const $hasSettableValue = Symbol();
+const $ids = Symbol();
 const $indexOf = Symbol();
 const $insertAt = Symbol();
 const $isDataValue = Symbol();
@@ -55,6 +62,7 @@ const $onChildCheck = Symbol();
 const $onText = Symbol();
 const $removeChild = Symbol();
 const $resolvePrototypes = Symbol();
+const $searchNode = Symbol();
 const $setId = Symbol();
 const $setSetAttributes = Symbol();
 const $setValue = Symbol();
@@ -70,6 +78,7 @@ const _children = Symbol("_children");
 const _cloneAttribute = Symbol();
 const _dataValue = Symbol();
 const _defaultValue = Symbol();
+const _filteredChildrenGenerator = Symbol();
 const _getPrototype = Symbol();
 const _getUnsetAttributes = Symbol();
 const _hasChildren = Symbol();
@@ -270,20 +279,67 @@ class XFAObject {
   }
 
   [$toHTML]() {
+    return HTMLResult.EMPTY;
+  }
+
+  *[_filteredChildrenGenerator](filter, include) {
+    for (const node of this[$getChildren]()) {
+      if (!filter || include === filter.has(node[$nodeName])) {
+        const availableSpace = this[$getAvailableSpace]();
+        const res = node[$toHTML](availableSpace);
+        if (!res.success) {
+          this[$extra].failingNode = node;
+        }
+        yield res;
+      }
+    }
+  }
+
+  [$flushHTML]() {
     return null;
   }
 
+  [$addHTML](html, bbox) {
+    this[$extra].children.push(html);
+  }
+
+  [$getAvailableSpace]() {}
+
   [$childrenToHTML]({ filter = null, include = true }) {
-    const res = [];
-    this[$getChildren]().forEach(node => {
-      if (!filter || include === filter.has(node[$nodeName])) {
-        const html = node[$toHTML]();
-        if (html) {
-          res.push(html);
-        }
+    if (!this[$extra].generator) {
+      this[$extra].generator = this[_filteredChildrenGenerator](
+        filter,
+        include
+      );
+    } else {
+      const availableSpace = this[$getAvailableSpace]();
+      const res = this[$extra].failingNode[$toHTML](availableSpace);
+      if (!res.success) {
+        return false;
       }
-    });
-    return res;
+      if (res.html) {
+        this[$addHTML](res.html, res.bbox);
+      }
+      delete this[$extra].failingNode;
+    }
+
+    while (true) {
+      const gen = this[$extra].generator.next();
+      if (gen.done) {
+        break;
+      }
+      const res = gen.value;
+      if (!res.success) {
+        return false;
+      }
+      if (res.html) {
+        this[$addHTML](res.html, res.bbox);
+      }
+    }
+
+    this[$extra].generator = null;
+
+    return true;
   }
 
   [$setSetAttributes](attributes) {
@@ -640,13 +696,13 @@ class XmlObject extends XFAObject {
 
   [$toHTML]() {
     if (this[$nodeName] === "#text") {
-      return {
+      return HTMLResult.success({
         name: "#text",
         value: this[$content],
-      };
+      });
     }
 
-    return null;
+    return HTMLResult.EMPTY;
   }
 
   [$getChildren](name = null) {
@@ -710,9 +766,25 @@ class XmlObject extends XFAObject {
 
   [$isDataValue]() {
     if (this[_dataValue] === null) {
-      return this[_children].length === 0;
+      return (
+        this[_children].length === 0 ||
+        this[_children][0][$namespaceId] === NamespaceIds.xhtml.id
+      );
     }
     return this[_dataValue];
+  }
+
+  [$getDataValue]() {
+    if (this[_dataValue] === null) {
+      if (this[_children].length === 0) {
+        return this[$content].trim();
+      }
+      if (this[_children][0][$namespaceId] === NamespaceIds.xhtml.id) {
+        return this[_children][0][$text]().trim();
+      }
+      return null;
+    }
+    return this[$content].trim();
   }
 
   [$dump]() {
@@ -811,7 +883,9 @@ class Option10 extends IntegerObject {
 
 export {
   $acceptWhitespace,
+  $addHTML,
   $appendChild,
+  $break,
   $childrenToHTML,
   $clean,
   $cleanup,
@@ -822,16 +896,21 @@ export {
   $dump,
   $extra,
   $finalize,
+  $flushHTML,
   $getAttributeIt,
+  $getAvailableSpace,
   $getChildren,
   $getChildrenByClass,
   $getChildrenByName,
   $getChildrenByNameIt,
+  $getDataValue,
+  $getNextPage,
   $getParent,
   $getRealChildrenByNameIt,
   $global,
   $hasItem,
   $hasSettableValue,
+  $ids,
   $indexOf,
   $insertAt,
   $isDataValue,
@@ -845,6 +924,7 @@ export {
   $onText,
   $removeChild,
   $resolvePrototypes,
+  $searchNode,
   $setId,
   $setSetAttributes,
   $setValue,
