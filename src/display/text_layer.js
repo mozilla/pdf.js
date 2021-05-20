@@ -40,6 +40,8 @@ import {
  *   text runs occurs.
  * @property {boolean} [enhanceTextSelection] - Whether to turn on the text
  *   selection enhancement.
+ * @property {"span" | "div" } [textDivElementType] - Allows to specify type
+ * of text elements for backwards compatibility. Defaults to span.
  */
 
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -117,7 +119,7 @@ function getAscent(fontFamily, ctx) {
 
 function appendText(task, geom, styles, ctx) {
   // Initialize all used properties to keep the caches monomorphic.
-  const textDiv = document.createElement("span");
+  const textDiv = document.createElement(task._textDivElementType);
   const textDivProperties = {
     angle: 0,
     canvasWidth: 0,
@@ -563,6 +565,7 @@ class TextLayerRenderTask {
     textDivs,
     textContentItemsStr,
     enhanceTextSelection,
+    textDivElementType = "span",
   }) {
     this._textContent = textContent;
     this._textContentStream = textContentStream;
@@ -572,6 +575,7 @@ class TextLayerRenderTask {
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
     this._enhanceTextSelection = !!enhanceTextSelection;
+    this._textDivElementType = textDivElementType;
     this._fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
     this._reader = null;
@@ -839,6 +843,7 @@ function renderTextLayer(renderParameters) {
     textDivs: renderParameters.textDivs,
     textContentItemsStr: renderParameters.textContentItemsStr,
     enhanceTextSelection: renderParameters.enhanceTextSelection,
+    textDivElementType: renderParameters.textDivElementType,
   });
   task._render(renderParameters.timeout);
   return task;

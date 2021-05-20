@@ -26,6 +26,8 @@ const EXPAND_DIVS_TIMEOUT = 300; // ms
  * @property {PDFFindController} findController
  * @property {boolean} enhanceTextSelection - Option to turn on improved
  *   text selection.
+ * @property {"span" | "div" } [textDivElementType] - Allows to specify type
+ * of text elements for backwards compatibility. Defaults to span.
  */
 
 /**
@@ -42,6 +44,7 @@ class TextLayerBuilder {
     viewport,
     findController = null,
     enhanceTextSelection = false,
+    textDivElementType = "span",
   }) {
     this.textLayerDiv = textLayerDiv;
     this.eventBus = eventBus;
@@ -57,6 +60,7 @@ class TextLayerBuilder {
     this.findController = findController;
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = enhanceTextSelection;
+    this.textDivElementType = textDivElementType;
 
     this._onUpdateTextLayerMatches = null;
     this._bindMouse();
@@ -104,6 +108,7 @@ class TextLayerBuilder {
       textContentItemsStr: this.textContentItemsStr,
       timeout,
       enhanceTextSelection: this.enhanceTextSelection,
+      textDivElementType: this.textDivElementType,
     });
     this.textLayerRenderTask.promise.then(
       () => {
