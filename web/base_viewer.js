@@ -517,6 +517,12 @@ class BaseViewer {
     };
     this.eventBus._on("pagerendered", this._onAfterDraw);
 
+    if (isPureXfa) {
+      // Keep all rendered pages active for XFA-documents.
+      const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, pagesCount);
+      this._buffer.resize(newCacheSize);
+    }
+
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
     firstPagePromise
@@ -1036,8 +1042,13 @@ class BaseViewer {
     if (numVisiblePages === 0) {
       return;
     }
-    const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
-    this._buffer.resize(newCacheSize, visiblePages);
+    if (!this.pdfDocument?.isPureXfa) {
+      const newCacheSize = Math.max(
+        DEFAULT_CACHE_SIZE,
+        2 * numVisiblePages + 1
+      );
+      this._buffer.resize(newCacheSize, visiblePages);
+    }
 
     this.renderingQueue.renderHighestPriority(visible);
 
