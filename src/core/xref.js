@@ -408,9 +408,9 @@ class XRef {
     const CHECK_CONTENT_LENGTH = 25;
 
     const trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
-    // prettier-ignore
-    const startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
-                                           101, 102]);
+    const startxrefBytes = new Uint8Array([
+      115, 116, 97, 114, 116, 120, 114, 101, 102,
+    ]);
     const objBytes = new Uint8Array([111, 98, 106]);
     const xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
 
