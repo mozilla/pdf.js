@@ -917,6 +917,12 @@
        "link": true,
        "type": "load"
     },
+    {  "id": "issue10272",
+       "file": "pdfs/issue10272.pdf",
+       "md5": "bf3b2f74c6878d38a70dc0825f1b9a02",
+       "link": true,
+       "type": "other"
+    },
     {  "id": "issue10388",
        "file": "pdfs/issue10388_reduced.pdf",
        "md5": "62a6b2adbea1535432bd94a3516e2d4c",

@@ -730,8 +730,9 @@ class PDFDocumentProxy {
 
   /**
    * @param {string} id - The named destination to get.
-   * @returns {Promise<Array<any>>} A promise that is resolved with all
-   *   information of the given named destination.
+   * @returns {Promise<Array<any> | null>} A promise that is resolved with all
+   *   information of the given named destination, or `null` when the named
+   *   destination is not present in the PDF file.
    */
   getDestination(id) {
     return this._transport.getDestination(id);

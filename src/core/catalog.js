@@ -53,7 +53,10 @@ import { MetadataParser } from "./metadata_parser.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
 function fetchDestination(dest) {
-  return isDict(dest) ? dest.get("D") : dest;
+  if (dest instanceof Dict) {
+    dest = dest.get("D");
+  }
+  return Array.isArray(dest) ? dest : null;
 }
 
 class Catalog {
@@ -515,22 +518,41 @@ class Catalog {
       dests = Object.create(null);
     if (obj instanceof NameTree) {
       for (const [key, value] of obj.getAll()) {
-        dests[key] = fetchDestination(value);
+        const dest = fetchDestination(value);
+        if (dest) {
+          dests[key] = dest;
+        }
       }
     } else if (obj instanceof Dict) {
       obj.forEach(function (key, value) {
-        if (value) {
-          dests[key] = fetchDestination(value);
+        const dest = fetchDestination(value);
+        if (dest) {
+          dests[key] = dest;
         }
       });
     }
     return shadow(this, "destinations", dests);
   }
 
-  getDestination(destinationId) {
+  getDestination(id) {
     const obj = this._readDests();
-    if (obj instanceof NameTree || obj instanceof Dict) {
-      return fetchDestination(obj.get(destinationId) || null);
+    if (obj instanceof NameTree) {
+      const dest = fetchDestination(obj.get(id));
+      if (dest) {
+        return dest;
+      }
+      // Fallback to checking the *entire* NameTree, in an attempt to handle
+      // corrupt PDF documents with out-of-order NameTrees (fixes issue 10272).
+      const allDest = this.destinations[id];
+      if (allDest) {
+        warn(`Found "${id}" at an incorrect position in the NameTree.`);
+        return allDest;
+      }
+    } else if (obj instanceof Dict) {
+      const dest = fetchDestination(obj.get(id));
+      if (dest) {
+        return dest;
+      }
     }
     return null;
   }
