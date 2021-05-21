@@ -669,6 +669,24 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets a destination, from out-of-order /Names (NameTree) dictionary (issue 10272)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("issue10272.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const destination = await pdfDoc.getDestination("link_1");
+      expect(destination).toEqual([
+        { num: 17, gen: 0 },
+        { name: "XYZ" },
+        69,
+        125,
+        0,
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("gets non-string destination", async function () {
       let numberPromise = pdfDocument.getDestination(4.3);
       let booleanPromise = pdfDocument.getDestination(true);
