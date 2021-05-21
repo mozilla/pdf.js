@@ -155,6 +155,19 @@ class Toolbar {
         value: this.value,
       });
     });
+    // Here we depend on browsers dispatching the "click" event *after* the
+    // "change" event, when the <select>-element changes.
+    scaleSelect.addEventListener("click", function (evt) {
+      const target = evt.target;
+      // Remove focus when an <option>-element was *clicked*, to improve the UX
+      // for mouse users (fixes bug 1300525 and issue 4923).
+      if (
+        this.value === self.pageScaleValue &&
+        target.tagName.toUpperCase() === "OPTION"
+      ) {
+        this.blur();
+      }
+    });
     // Suppress context menus for some controls.
     scaleSelect.oncontextmenu = noContextMenuHandler;
 
