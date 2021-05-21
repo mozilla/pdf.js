@@ -123,10 +123,9 @@ describe("CFFParser", function () {
     "ignores reserved commands in parseDict, and refuses to add privateDict " +
       "keys with invalid values (bug 1308536)",
     function () {
-      // prettier-ignore
       const bytes = new Uint8Array([
-      64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6
-    ]);
+        64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6,
+      ]);
       parser.bytes = bytes;
       const topDict = cff.topDict;
       topDict.setByName("Private", [bytes.length, 0]);
