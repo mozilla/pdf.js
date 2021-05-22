@@ -2248,24 +2248,25 @@ class Image extends StringObject {
   }
 
   [$toHTML]() {
-    const html = {
-      name: "img",
-      attributes: {
-        class: "xfaImage",
-        style: {},
-      },
-    };
-
-    if (this.href) {
-      html.attributes.src = new URL(this.href).href;
-      return html;
+    if (this.href || !this[$content]) {
+      // TODO: href can be a Name refering to an internal stream
+      // containing a picture.
+      // In general, we don't get remote data and use what we have
+      // in the pdf itself, so no picture for non null href.
+      return null;
     }
 
     if (this.transferEncoding === "base64") {
       const buffer = stringToBytes(atob(this[$content]));
       const blob = new Blob([buffer], { type: this.contentType });
-      html.attributes.src = URL.createObjectURL(blob);
-      return html;
+      return {
+        name: "img",
+        attributes: {
+          class: "xfaImage",
+          style: {},
+          src: URL.createObjectURL(blob),
+        },
+      };
     }
 
     return null;
