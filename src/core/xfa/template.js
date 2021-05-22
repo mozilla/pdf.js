@@ -57,7 +57,7 @@ import {
   getRelevant,
   getStringOption,
 } from "./utils.js";
-import { Util, warn } from "../../shared/util.js";
+import { stringToBytes, Util, warn } from "../../shared/util.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
 
@@ -2262,9 +2262,7 @@ class Image extends StringObject {
     }
 
     if (this.transferEncoding === "base64") {
-      const buffer = Uint8Array.from(atob(this[$content]), c =>
-        c.charCodeAt(0)
-      );
+      const buffer = stringToBytes(atob(this[$content]));
       const blob = new Blob([buffer], { type: this.contentType });
       html.attributes.src = URL.createObjectURL(blob);
       return html;
