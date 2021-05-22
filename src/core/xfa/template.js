@@ -2257,7 +2257,7 @@ class Image extends StringObject {
     };
 
     if (this.href) {
-      html.attributes.src = new URL(this.href);
+      html.attributes.src = new URL(this.href).href;
       return html;
     }
 
