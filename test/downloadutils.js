@@ -38,11 +38,9 @@ function rewriteWebArchiveUrl(url) {
 function downloadFile(file, url, callback, redirects) {
   url = rewriteWebArchiveUrl(url);
 
-  var completed = false;
   var protocol = /^https:\/\//.test(url) ? https : http;
   protocol
     .get(url, function (response) {
-      var redirectTo;
       if (
         response.statusCode === 301 ||
         response.statusCode === 302 ||
@@ -52,56 +50,28 @@ function downloadFile(file, url, callback, redirects) {
         if (redirects > 10) {
           callback("Too many redirects");
         }
-        redirectTo = response.headers.location;
+        var redirectTo = response.headers.location;
         redirectTo = require("url").resolve(url, redirectTo);
-        downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
-        return;
-      }
-      if (response.statusCode === 404 && !url.includes("web.archive.org")) {
-        // trying waybackmachine
-        redirectTo = "http://web.archive.org/web/" + url;
         downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
         return;
       }
 
       if (response.statusCode !== 200) {
-        if (!completed) {
-          completed = true;
-          callback("HTTP " + response.statusCode);
-        }
+        callback("HTTP " + response.statusCode);
         return;
       }
       var stream = fs.createWriteStream(file);
       stream.on("error", function (err) {
-        if (!completed) {
-          completed = true;
-          callback(err);
-        }
+        callback(err);
       });
       response.pipe(stream);
       stream.on("finish", function () {
         stream.end();
-        if (!completed) {
-          completed = true;
-          callback();
-        }
+        callback();
       });
     })
     .on("error", function (err) {
-      if (!completed) {
-        if (
-          typeof err === "object" &&
-          err.errno === "ENOTFOUND" &&
-          !url.includes("web.archive.org")
-        ) {
-          // trying waybackmachine
-          var redirectTo = "http://web.archive.org/web/" + url;
-          downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
-          return;
-        }
-        completed = true;
-        callback(err);
-      }
+      callback(err);
     });
 }
 
