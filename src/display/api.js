@@ -1800,7 +1800,10 @@ class LoopbackPort {
         }
         return result;
       }
-      result = Array.isArray(value) ? [] : {};
+      if (value instanceof URL) {
+        throw new Error(`LoopbackPort.postMessage - cannot clone: ${value}`);
+      }
+      result = Array.isArray(value) ? [] : Object.create(null);
       cloned.set(value, result); // Adding to cache now for cyclic references.
       // Cloning all value and object properties, however ignoring properties
       // defined via getter.
