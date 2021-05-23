@@ -268,7 +268,7 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[19, 48, 66]],
+      pageMatches: [[19, 46, 62]],
       pageMatchesLength: [[8, 8, 8]],
     });
   });

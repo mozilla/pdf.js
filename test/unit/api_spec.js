@@ -73,6 +73,10 @@ describe("api", function () {
     }, WAIT_TIMEOUT);
   }
 
+  function mergeText(items) {
+    return items.map(chunk => chunk.str + (chunk.hasEOL ? "\n" : "")).join("");
+  }
+
   describe("getDocument", function () {
     it("creates pdf doc from URL-string", async function () {
       const urlStr = TEST_PDFS_PATH + basicApiFileName;
@@ -1604,11 +1608,17 @@ describe("api", function () {
       const data = await Promise.all([defaultPromise, parametersPromise]);
 
       expect(!!data[0].items).toEqual(true);
-      expect(data[0].items.length).toEqual(12);
+      expect(data[0].items.length).toEqual(11);
       expect(!!data[0].styles).toEqual(true);
 
+      const page1 = mergeText(data[0].items);
+      expect(page1).toEqual(`Table Of Content
+Chapter 1 .......................................................... 2
+Paragraph 1.1 ...................................................... 3
+page 1 / 3`);
+
       expect(!!data[1].items).toEqual(true);
-      expect(data[1].items.length).toEqual(7);
+      expect(data[1].items.length).toEqual(6);
       expect(!!data[1].styles).toEqual(true);
     });
 
@@ -1639,6 +1649,107 @@ describe("api", function () {
         descent: NaN,
         vertical: false,
       });
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with no extra spaces (issue 13226)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue13226.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(text).toEqual(
+        "Mitarbeiterinnen und Mitarbeiter arbeiten in über 100 Ländern engagiert im Dienste"
+      );
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with merged spaces (issue 13201)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue13201.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(
+          "Abstract. A purely peer-to-peer version of electronic cash would allow online"
+        )
+      ).toEqual(true);
+      expect(
+        text.includes(
+          "avoid mediating disputes. The cost of mediation increases transaction costs, limiting the"
+        )
+      ).toEqual(true);
+      expect(
+        text.includes(
+          "system is secure as long as honest nodes collectively control more CPU power than any"
+        )
+      ).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with no spaces between letters of words (issue 11913)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue11913.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(
+          "1. The first of these cases arises from the tragic handicap which has blighted the life of the Plaintiff, and from the response of the"
+        )
+      ).toEqual(true);
+      expect(
+        text.includes(
+          "argued in this Court the appeal raises narrower, but important, issues which may be summarised as follows:-"
+        )
+      ).toEqual(true);
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with merged spaces (issue 10900)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue10900.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(`3 3 3 3
+851.5 854.9 839.3 837.5
+633.6 727.8 789.9 796.2
+1,485.1 1,582.7 1,629.2 1,633.7
+114.2 121.7 125.3 130.7
+13.0x 13.0x 13.0x 12.5x`)
+      ).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with spaces (issue 10640)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue10640.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(`Open Sans is a humanist sans serif typeface designed by Steve Matteson.
+Open Sans was designed with an upright stress, open forms and a neu-
+tral, yet friendly appearance. It was optimized for print, web, and mobile
+interfaces, and has excellent legibility characteristics in its letterforms (see
+figure \x81 on the following page). This font is available from the Google Font
+Directory [\x81] as TrueType files licensed under the Apache License version \x82.\x80.
+This package provides support for this font in LATEX. It includes Type \x81
+versions of the fonts, converted for this package using FontForge from its
+sources, for full support with Dvips.`)
+      ).toEqual(true);
 
       await loadingTask.destroy();
     });

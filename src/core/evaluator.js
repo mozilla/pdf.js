@@ -2169,6 +2169,8 @@ class PartialEvaluator {
     stateManager = stateManager || new StateManager(new TextState());
 
     const WhitespaceRegexp = /\s/g;
+    const DiacriticRegExp = new RegExp("^\\p{Mn}$", "u");
+    const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
       items: [],
@@ -2182,34 +2184,37 @@ class PartialEvaluator {
       width: 0,
       height: 0,
       vertical: false,
-      lastCharSize: 0,
       prevTransform: null,
       textAdvanceScale: 0,
-      spaceWidth: 0,
       spaceInFlowMin: 0,
       spaceInFlowMax: 0,
       trackingSpaceMin: Infinity,
+      negativeSpaceMax: -Infinity,
       transform: null,
       fontName: null,
       hasEOL: false,
-      isLastCharWhiteSpace: false,
     };
 
     // Used in addFakeSpaces.
-    // wsw stands for whitespace width.
 
-    // A white <= wsw * TRACKING_SPACE_FACTOR is a tracking space
+    // A white <= fontSize * TRACKING_SPACE_FACTOR is a tracking space
     // so it doesn't count as a space.
-    const TRACKING_SPACE_FACTOR = 0.3;
+    const TRACKING_SPACE_FACTOR = 0.1;
 
-    // A white with a width in [wsw * MIN_FACTOR; wsw * MAX_FACTOR]
+    // A negative white < fontSize * NEGATIVE_SPACE_FACTOR induces
+    // a break (a new chunk of text is created).
+    // It doesn't change anything when the text is copied but
+    // it improves potential mismatch between text layer and canvas.
+    const NEGATIVE_SPACE_FACTOR = -0.2;
+
+    // A white with a width in [fontSize * MIN_FACTOR; fontSize * MAX_FACTOR]
     // is a space which will be inserted in the current flow of words.
     // If the width is outside of this range then the flow is broken
     // (which means a new span in the text layer).
     // It's useful to adjust the best as possible the span in the layer
     // to what is displayed in the canvas.
-    const SPACE_IN_FLOW_MIN_FACTOR = 0.3;
-    const SPACE_IN_FLOW_MAX_FACTOR = 1.3;
+    const SPACE_IN_FLOW_MIN_FACTOR = 0.1;
+    const SPACE_IN_FLOW_MAX_FACTOR = 0.6;
 
     const self = this;
     const xref = this.xref;
@@ -2294,18 +2299,15 @@ class PartialEvaluator {
       );
       const scaleCtmX = Math.hypot(textState.ctm[0], textState.ctm[1]);
       textContentItem.textAdvanceScale = scaleCtmX * scaleLineX;
-      textContentItem.lastCharSize = textContentItem.lastCharSize || 0;
 
-      const spaceWidth = (font.spaceWidth / 1000) * textState.fontSize;
-      if (spaceWidth) {
-        textContentItem.spaceWidth = spaceWidth;
-        textContentItem.trackingSpaceMin = spaceWidth * TRACKING_SPACE_FACTOR;
-        textContentItem.spaceInFlowMin = spaceWidth * SPACE_IN_FLOW_MIN_FACTOR;
-        textContentItem.spaceInFlowMax = spaceWidth * SPACE_IN_FLOW_MAX_FACTOR;
-      } else {
-        textContentItem.spaceWidth = 0;
-        textContentItem.trackingSpaceMin = Infinity;
-      }
+      textContentItem.trackingSpaceMin =
+        textState.fontSize * TRACKING_SPACE_FACTOR;
+      textContentItem.negativeSpaceMax =
+        textState.fontSize * NEGATIVE_SPACE_FACTOR;
+      textContentItem.spaceInFlowMin =
+        textState.fontSize * SPACE_IN_FLOW_MIN_FACTOR;
+      textContentItem.spaceInFlowMax =
+        textState.fontSize * SPACE_IN_FLOW_MAX_FACTOR;
 
       textContentItem.hasEOL = false;
 
@@ -2395,7 +2397,7 @@ class PartialEvaluator {
         });
     }
 
-    function compareWithLastPosition(fontSize) {
+    function compareWithLastPosition() {
       if (
         !combineTextItems ||
         !textState.font ||
@@ -2405,36 +2407,76 @@ class PartialEvaluator {
       }
 
       const currentTransform = getCurrentTextTransform();
-      const posX = currentTransform[4];
-      const posY = currentTransform[5];
-      const lastPosX = textContentItem.prevTransform[4];
-      const lastPosY = textContentItem.prevTransform[5];
+      let posX = currentTransform[4];
+      let posY = currentTransform[5];
+      let lastPosX = textContentItem.prevTransform[4];
+      let lastPosY = textContentItem.prevTransform[5];
 
       if (lastPosX === posX && lastPosY === posY) {
         return;
       }
 
-      const advanceX = (posX - lastPosX) / textContentItem.textAdvanceScale;
-      const advanceY = (posY - lastPosY) / textContentItem.textAdvanceScale;
-      const HALF_LAST_CHAR = -0.5 * textContentItem.lastCharSize;
+      let rotate = 0;
+      // Take into account the rotation is the current transform.
+      // Only rotations with an angle of 0, 90, 180 or 270 are considered.
+      if (
+        currentTransform[0] &&
+        currentTransform[1] === 0 &&
+        currentTransform[2] === 0
+      ) {
+        rotate = currentTransform[0] > 0 ? 0 : 180;
+      } else if (
+        currentTransform[1] &&
+        currentTransform[0] === 0 &&
+        currentTransform[3] === 0
+      ) {
+        rotate += currentTransform[1] > 0 ? 90 : 270;
+      }
+
+      if (rotate !== 0) {
+        switch (rotate) {
+          case 90:
+            [posX, posY] = [posY, posX];
+            [lastPosX, lastPosY] = [lastPosY, lastPosX];
+            break;
+          case 180:
+            [posX, posY, lastPosX, lastPosY] = [
+              -posX,
+              -posY,
+              -lastPosX,
+              -lastPosY,
+            ];
+            break;
+          case 270:
+            [posX, posY] = [-posY, -posX];
+            [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
+            break;
+        }
+      }
 
       if (textState.font.vertical) {
-        if (
-          Math.abs(advanceX) >
-          textContentItem.width /
-            textContentItem.textAdvanceScale /* not the same column */
-        ) {
+        const advanceY = (lastPosY - posY) / textContentItem.textAdvanceScale;
+        const advanceX = posX - lastPosX;
+        if (advanceY < textContentItem.negativeSpaceMax) {
+          if (
+            Math.abs(advanceX) >
+            0.5 * textContentItem.width /* not the same column */
+          ) {
+            appendEOL();
+            return;
+          }
+
+          flushTextContentItem();
+          return;
+        }
+
+        if (Math.abs(advanceX) > textContentItem.height) {
           appendEOL();
           return;
         }
-
-        if (HALF_LAST_CHAR > advanceY) {
-          return;
-        }
-
-        if (advanceY > textContentItem.trackingSpaceMin) {
+        if (advanceY <= textContentItem.trackingSpaceMin) {
           textContentItem.height += advanceY;
-        } else if (!addFakeSpaces(advanceY, 0, textContentItem.prevTransform)) {
+        } else if (!addFakeSpaces(advanceY, textContentItem.prevTransform)) {
           if (textContentItem.str.length === 0) {
             textContent.items.push({
               str: " ",
@@ -2445,7 +2487,6 @@ class PartialEvaluator {
               fontName: textContentItem.fontName,
               hasEOL: false,
             });
-            textContentItem.isLastCharWhiteSpace = true;
           } else {
             textContentItem.height += advanceY;
           }
@@ -2454,22 +2495,28 @@ class PartialEvaluator {
         return;
       }
 
-      if (
-        Math.abs(advanceY) >
-        textContentItem.height /
-          textContentItem.textAdvanceScale /* not the same line */
-      ) {
-        appendEOL();
+      const advanceX = (posX - lastPosX) / textContentItem.textAdvanceScale;
+      const advanceY = posY - lastPosY;
+      if (advanceX < textContentItem.negativeSpaceMax) {
+        if (
+          Math.abs(advanceY) >
+          0.5 * textContentItem.height /* not the same line */
+        ) {
+          appendEOL();
+          return;
+        }
+        flushTextContentItem();
         return;
       }
 
-      if (HALF_LAST_CHAR > advanceX) {
+      if (Math.abs(advanceY) > textContentItem.height) {
+        appendEOL();
         return;
       }
 
       if (advanceX <= textContentItem.trackingSpaceMin) {
         textContentItem.width += advanceX;
-      } else if (!addFakeSpaces(advanceX, 0, textContentItem.prevTransform)) {
+      } else if (!addFakeSpaces(advanceX, textContentItem.prevTransform)) {
         if (textContentItem.str.length === 0) {
           textContent.items.push({
             str: " ",
@@ -2480,14 +2527,13 @@ class PartialEvaluator {
             fontName: textContentItem.fontName,
             hasEOL: false,
           });
-          textContentItem.isLastCharWhiteSpace = true;
         } else {
           textContentItem.width += advanceX;
         }
       }
     }
 
-    function buildTextContentItem({ chars, extraSpacing, isFirstChunk }) {
+    function buildTextContentItem({ chars, extraSpacing }) {
       const font = textState.font;
       if (!chars) {
         // Just move according to the space we have.
@@ -2499,87 +2545,91 @@ class PartialEvaluator {
               0
             );
           } else {
-            textState.translateTextMatrix(0, charSpacing);
+            textState.translateTextMatrix(0, -charSpacing);
           }
         }
 
         return;
       }
 
-      const NormalizedUnicodes = getNormalizedUnicodes();
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
-      if (isFirstChunk) {
-        compareWithLastPosition(scale);
-      }
-
-      let textChunk = ensureTextContentItem();
-      let size = 0;
-      let lastCharSize = 0;
-
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
         let charSpacing =
-          textState.charSpacing + (i === ii - 1 ? extraSpacing : 0);
+          textState.charSpacing + (i + 1 === ii ? extraSpacing : 0);
+
+        let glyphWidth = glyph.width;
+        if (font.vertical) {
+          glyphWidth = glyph.vmetric ? glyph.vmetric[0] : -glyphWidth;
+        }
+        let scaledDim = glyphWidth * scale;
 
         let glyphUnicode = glyph.unicode;
-        if (glyph.isSpace) {
-          charSpacing += textState.wordSpacing;
-          textChunk.isLastCharWhiteSpace = true;
-        } else {
-          glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
-          glyphUnicode = reverseIfRtl(glyphUnicode);
-          textChunk.isLastCharWhiteSpace = false;
+        if (
+          glyphUnicode === " " &&
+          (i === 0 ||
+            i + 1 === ii ||
+            glyphs[i - 1].unicode === " " ||
+            glyphs[i + 1].unicode === " ")
+        ) {
+          // Don't push a " " in the textContentItem
+          // (except when it's between two non-spaces chars),
+          // it will be done (if required) in next call to
+          // compareWithLastPosition.
+          // This way we can merge real spaces and spaces due to cursor moves.
+          if (!font.vertical) {
+            charSpacing += scaledDim + textState.wordSpacing;
+            textState.translateTextMatrix(
+              charSpacing * textState.textHScale,
+              0
+            );
+          } else {
+            charSpacing += -scaledDim + textState.wordSpacing;
+            textState.translateTextMatrix(0, -charSpacing);
+          }
+          continue;
         }
-        textChunk.str.push(glyphUnicode);
 
-        const glyphWidth =
-          font.vertical && glyph.vmetric ? glyph.vmetric[0] : glyph.width;
+        compareWithLastPosition();
 
-        let scaledDim = glyphWidth * scale;
+        // Must be called after compareWithLastPosition because
+        // the textContentItem could have been flushed.
+        const textChunk = ensureTextContentItem();
+        if (DiacriticRegExp.test(glyph.unicode)) {
+          scaledDim = 0;
+        }
+
         if (!font.vertical) {
           scaledDim *= textState.textHScale;
           textState.translateTextMatrix(scaledDim, 0);
+          textChunk.width += scaledDim;
         } else {
           textState.translateTextMatrix(0, scaledDim);
           scaledDim = Math.abs(scaledDim);
+          textChunk.height += scaledDim;
         }
-        size += scaledDim;
+
+        if (scaledDim) {
+          // Save the position of the last visible character.
+          textChunk.prevTransform = getCurrentTextTransform();
+        }
+
+        glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
+        glyphUnicode = reverseIfRtl(glyphUnicode);
+        textChunk.str.push(glyphUnicode);
 
         if (charSpacing) {
           if (!font.vertical) {
-            charSpacing *= textState.textHScale;
-          }
-
-          scaledDim += charSpacing;
-          const wasSplit =
-            charSpacing > textContentItem.trackingSpaceMin &&
-            addFakeSpaces(charSpacing, size);
-          if (!font.vertical) {
-            textState.translateTextMatrix(charSpacing, 0);
+            textState.translateTextMatrix(
+              charSpacing * textState.textHScale,
+              0
+            );
           } else {
-            textState.translateTextMatrix(0, charSpacing);
-          }
-
-          if (wasSplit) {
-            textChunk = ensureTextContentItem();
-            size = 0;
-          } else {
-            size += charSpacing;
+            textState.translateTextMatrix(0, -charSpacing);
           }
         }
-
-        lastCharSize = scaledDim;
       }
-
-      textChunk.lastCharSize = lastCharSize;
-      if (!font.vertical) {
-        textChunk.width += size;
-      } else {
-        textChunk.height += size;
-      }
-
-      textChunk.prevTransform = getCurrentTextTransform();
     }
 
     function appendEOL() {
@@ -2597,19 +2647,15 @@ class PartialEvaluator {
           hasEOL: true,
         });
       }
-
-      textContentItem.isLastCharWhiteSpace = false;
-      textContentItem.lastCharSize = 0;
     }
 
-    function addFakeSpaces(width, size, transf = null) {
+    function addFakeSpaces(width, transf) {
       if (
         textContentItem.spaceInFlowMin <= width &&
         width <= textContentItem.spaceInFlowMax
       ) {
         if (textContentItem.initialized) {
           textContentItem.str.push(" ");
-          textContentItem.isLastCharWhiteSpace = true;
         }
         return false;
       }
@@ -2617,22 +2663,12 @@ class PartialEvaluator {
       const fontName = textContentItem.fontName;
 
       let height = 0;
-      width *= textContentItem.textAdvanceScale;
-      if (!textContentItem.vertical) {
-        textContentItem.width += size;
-      } else {
-        textContentItem.height += size;
+      if (textContentItem.vertical) {
         height = width;
         width = 0;
       }
 
       flushTextContentItem();
-
-      if (textContentItem.isLastCharWhiteSpace) {
-        return true;
-      }
-
-      textContentItem.isLastCharWhiteSpace = true;
       textContent.items.push({
         str: " ",
         // TODO: check if using the orientation from last chunk is
@@ -2640,7 +2676,7 @@ class PartialEvaluator {
         dir: "ltr",
         width,
         height,
-        transform: transf ? transf : getCurrentTextTransform(),
+        transform: transf || getCurrentTextTransform(),
         fontName,
         hasEOL: false,
       });
@@ -2731,15 +2767,12 @@ class PartialEvaluator {
             next(handleSetFont(fontNameArg, null));
             return;
           case OPS.setTextRise:
-            flushTextContentItem();
             textState.textRise = args[0];
             break;
           case OPS.setHScale:
-            flushTextContentItem();
             textState.textHScale = args[0] / 100;
             break;
           case OPS.setLeading:
-            flushTextContentItem();
             textState.leading = args[0];
             break;
           case OPS.moveText:
@@ -2747,13 +2780,11 @@ class PartialEvaluator {
             textState.textMatrix = textState.textLineMatrix.slice();
             break;
           case OPS.setLeadingMoveText:
-            flushTextContentItem();
             textState.leading = -args[1];
             textState.translateTextLineMatrix(args[0], args[1]);
             textState.textMatrix = textState.textLineMatrix.slice();
             break;
           case OPS.nextLine:
-            appendEOL();
             textState.carriageReturn();
             break;
           case OPS.setTextMatrix:
@@ -2782,7 +2813,6 @@ class PartialEvaluator {
             textState.wordSpacing = args[0];
             break;
           case OPS.beginText:
-            flushTextContentItem();
             textState.textMatrix = IDENTITY_MATRIX.slice();
             textState.textLineMatrix = IDENTITY_MATRIX.slice();
             break;
@@ -2795,7 +2825,6 @@ class PartialEvaluator {
             const spaceFactor =
               ((textState.font.vertical ? 1 : -1) * textState.fontSize) / 1000;
             const elements = args[0];
-            let isFirstChunk = true;
             for (let i = 0, ii = elements.length; i < ii - 1; i++) {
               const item = elements[i];
               if (typeof item === "string") {
@@ -2814,11 +2843,7 @@ class PartialEvaluator {
                 buildTextContentItem({
                   chars: str,
                   extraSpacing: item * spaceFactor,
-                  isFirstChunk,
                 });
-                if (str && isFirstChunk) {
-                  isFirstChunk = false;
-                }
               }
             }
 
@@ -2833,7 +2858,6 @@ class PartialEvaluator {
               buildTextContentItem({
                 chars: str,
                 extraSpacing: 0,
-                isFirstChunk,
               });
             }
             break;
@@ -2842,11 +2866,9 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-
             buildTextContentItem({
               chars: args[0],
               extraSpacing: 0,
-              isFirstChunk: true,
             });
             break;
           case OPS.nextLineShowText:
@@ -2854,13 +2876,10 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            textContentItem.hasEOL = true;
-            flushTextContentItem();
             textState.carriageReturn();
             buildTextContentItem({
               chars: args[0],
               extraSpacing: 0,
-              isFirstChunk: true,
             });
             break;
           case OPS.nextLineSetSpacingShowText:
@@ -2868,15 +2887,12 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            textContentItem.hasEOL = true;
-            flushTextContentItem();
             textState.wordSpacing = args[0];
             textState.charSpacing = args[1];
             textState.carriageReturn();
             buildTextContentItem({
               chars: args[2],
               extraSpacing: 0,
-              isFirstChunk: true,
             });
             break;
           case OPS.paintXObject:

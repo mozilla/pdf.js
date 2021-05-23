@@ -13,6 +13,7 @@
 !issue1155r.pdf
 !issue2017r.pdf
 !bug1727053.pdf
+!issue11913.pdf
 !issue2391-1.pdf
 !issue2391-2.pdf
 !issue14046.pdf
@@ -182,6 +183,7 @@
 !issue11931.pdf
 !issue1655r.pdf
 !issue6541.pdf
+!issue10640.pdf
 !issue2948.pdf
 !issue6231_1.pdf
 !issue10402.pdf
@@ -285,6 +287,7 @@
 !issue2840.pdf
 !issue4061.pdf
 !issue4668.pdf
+!issue13226.pdf
 !PDFJS-7562-reduced.pdf
 !issue11768_reduced.pdf
 !issue5039.pdf
@@ -440,6 +443,7 @@
 !annotation-fileattachment.pdf
 !annotation-text-widget.pdf
 !annotation-choice-widget.pdf
+!issue10900.pdf
 !annotation-button-widget.pdf
 !annotation-polyline-polygon.pdf
 !annotation-polyline-polygon-without-appearance.pdf
@@ -462,6 +466,7 @@
 !issue9972-3.pdf
 !tiling-pattern-box.pdf
 !tiling-pattern-large-steps.pdf
+!issue13201.pdf
 !issue11555.pdf
 !issue12337.pdf
 !pr12564.pdf
