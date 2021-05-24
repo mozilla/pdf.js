@@ -1390,9 +1390,7 @@ class WidgetAnnotation extends Annotation {
 
     const bufferNew = [`${newRef.num} ${newRef.gen} obj\n`];
     writeDict(appearanceDict, bufferNew, newTransform);
-    bufferNew.push(" stream\n");
-    bufferNew.push(appearance);
-    bufferNew.push("\nendstream\nendobj\n");
+    bufferNew.push(" stream\n", appearance, "\nendstream\nendobj\n");
 
     return [
       // data for the original object
@@ -2421,9 +2419,11 @@ class LineAnnotation extends MarkupAnnotation {
         extra: `${borderWidth} w`,
         strokeColor,
         pointsCallback: (buffer, points) => {
-          buffer.push(`${lineCoordinates[0]} ${lineCoordinates[1]} m`);
-          buffer.push(`${lineCoordinates[2]} ${lineCoordinates[3]} l`);
-          buffer.push("S");
+          buffer.push(
+            `${lineCoordinates[0]} ${lineCoordinates[1]} m`,
+            `${lineCoordinates[2]} ${lineCoordinates[3]} l`,
+            "S"
+          );
           return [
             points[0].x - borderWidth,
             points[1].x + borderWidth,
@@ -2523,21 +2523,14 @@ class CircleAnnotation extends MarkupAnnotation {
           const xOffset = ((x1 - x0) / 2) * controlPointsDistance;
           const yOffset = ((y1 - y0) / 2) * controlPointsDistance;
 
-          buffer.push(`${xMid} ${y1} m`);
           buffer.push(
-            `${xMid + xOffset} ${y1} ${x1} ${yMid + yOffset} ${x1} ${yMid} c`
+            `${xMid} ${y1} m`,
+            `${xMid + xOffset} ${y1} ${x1} ${yMid + yOffset} ${x1} ${yMid} c`,
+            `${x1} ${yMid - yOffset} ${xMid + xOffset} ${y0} ${xMid} ${y0} c`,
+            `${xMid - xOffset} ${y0} ${x0} ${yMid - yOffset} ${x0} ${yMid} c`,
+            `${x0} ${yMid + yOffset} ${xMid - xOffset} ${y1} ${xMid} ${y1} c`,
+            "h"
           );
-          buffer.push(
-            `${x1} ${yMid - yOffset} ${xMid + xOffset} ${y0} ${xMid} ${y0} c`
-          );
-          buffer.push(
-            `${xMid - xOffset} ${y0} ${x0} ${yMid - yOffset} ${x0} ${yMid} c`
-          );
-          buffer.push(
-            `${x0} ${yMid + yOffset} ${xMid - xOffset} ${y1} ${xMid} ${y1} c`
-          );
-
-          buffer.push("h");
           if (fillColor) {
             buffer.push("B");
           } else {
@@ -2693,11 +2686,13 @@ class HighlightAnnotation extends MarkupAnnotation {
           fillColor,
           blendMode: "Multiply",
           pointsCallback: (buffer, points) => {
-            buffer.push(`${points[0].x} ${points[0].y} m`);
-            buffer.push(`${points[1].x} ${points[1].y} l`);
-            buffer.push(`${points[3].x} ${points[3].y} l`);
-            buffer.push(`${points[2].x} ${points[2].y} l`);
-            buffer.push("f");
+            buffer.push(
+              `${points[0].x} ${points[0].y} m`,
+              `${points[1].x} ${points[1].y} l`,
+              `${points[3].x} ${points[3].y} l`,
+              `${points[2].x} ${points[2].y} l`,
+              "f"
+            );
             return [points[0].x, points[1].x, points[3].y, points[1].y];
           },
         });
@@ -2728,9 +2723,11 @@ class UnderlineAnnotation extends MarkupAnnotation {
           extra: "[] 0 d 1 w",
           strokeColor,
           pointsCallback: (buffer, points) => {
-            buffer.push(`${points[2].x} ${points[2].y} m`);
-            buffer.push(`${points[3].x} ${points[3].y} l`);
-            buffer.push("S");
+            buffer.push(
+              `${points[2].x} ${points[2].y} m`,
+              `${points[3].x} ${points[3].y} l`,
+              "S"
+            );
             return [points[0].x, points[1].x, points[3].y, points[1].y];
           },
         });
@@ -2806,14 +2803,12 @@ class StrikeOutAnnotation extends MarkupAnnotation {
           strokeColor,
           pointsCallback: (buffer, points) => {
             buffer.push(
-              `${(points[0].x + points[2].x) / 2}` +
-                ` ${(points[0].y + points[2].y) / 2} m`
+              `${(points[0].x + points[2].x) / 2} ` +
+                `${(points[0].y + points[2].y) / 2} m`,
+              `${(points[1].x + points[3].x) / 2} ` +
+                `${(points[1].y + points[3].y) / 2} l`,
+              "S"
             );
-            buffer.push(
-              `${(points[1].x + points[3].x) / 2}` +
-                ` ${(points[1].y + points[3].y) / 2} l`
-            );
-            buffer.push("S");
             return [points[0].x, points[1].x, points[3].y, points[1].y];
           },
         });

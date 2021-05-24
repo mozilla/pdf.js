@@ -234,11 +234,13 @@ function compileGlyf(code, cmds, font) {
       }
       const subglyph = font.glyphs[glyphIndex];
       if (subglyph) {
-        cmds.push({ cmd: "save" });
-        cmds.push({
-          cmd: "transform",
-          args: [scaleX, scale01, scale10, scaleY, x, y],
-        });
+        cmds.push(
+          { cmd: "save" },
+          {
+            cmd: "transform",
+            args: [scaleX, scale01, scale10, scaleY, x, y],
+          }
+        );
         compileGlyf(subglyph, cmds, font);
         cmds.push({ cmd: "restore" });
       }
@@ -524,8 +526,7 @@ function compileCharString(charStringCode, cmds, font, glyphId) {
             const bchar = stack.pop();
             y = stack.pop();
             x = stack.pop();
-            cmds.push({ cmd: "save" });
-            cmds.push({ cmd: "translate", args: [x, y] });
+            cmds.push({ cmd: "save" }, { cmd: "translate", args: [x, y] });
             let cmap = lookupCmap(
               font.cmap,
               String.fromCharCode(font.glyphNameMap[StandardEncoding[achar]])
@@ -774,11 +775,11 @@ class CompiledFont {
       }
     }
 
-    const cmds = [];
-    cmds.push({ cmd: "save" });
-    cmds.push({ cmd: "transform", args: fontMatrix.slice() });
-    cmds.push({ cmd: "scale", args: ["size", "-size"] });
-
+    const cmds = [
+      { cmd: "save" },
+      { cmd: "transform", args: fontMatrix.slice() },
+      { cmd: "scale", args: ["size", "-size"] },
+    ];
     this.compileGlyphImpl(code, cmds, glyphId);
 
     cmds.push({ cmd: "restore" });
