@@ -43,6 +43,7 @@
       "ignoreCase": true,
     }],
     "unicorn/no-abusive-eslint-disable": "error",
+    "unicorn/no-array-push-push": "error",
     "unicorn/no-instanceof-array": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 

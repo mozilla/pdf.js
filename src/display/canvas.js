@@ -366,8 +366,7 @@ function compileType3Glyph(imgData) {
         points[p] &= (type >> 2) | (type << 2);
       }
 
-      coords.push(p % width1);
-      coords.push((p / width1) | 0);
+      coords.push(p % width1, (p / width1) | 0);
 
       if (!points[p]) {
         --count;
