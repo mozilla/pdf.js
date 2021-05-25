@@ -17,6 +17,7 @@ import {
   $acceptWhitespace,
   $childrenToHTML,
   $content,
+  $extra,
   $nodeName,
   $onText,
   $text,
@@ -24,8 +25,8 @@ import {
   XmlObject,
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
-import { getMeasurement } from "./utils.js";
-import { measureToString } from "./html_utils.js";
+import { fixTextIndent, getFonts, measureToString } from "./html_utils.js";
+import { getMeasurement, HTMLResult } from "./utils.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
 
@@ -79,14 +80,16 @@ const StyleMapping = new Map([
   ],
   ["xfa-spacerun", ""],
   ["xfa-tab-stops", ""],
-  ["font-size", value => measureToString(getMeasurement(value))],
+  ["font-size", value => measureToString(1 * getMeasurement(value))],
   ["letter-spacing", value => measureToString(getMeasurement(value))],
-  ["line-height", value => measureToString(getMeasurement(value))],
+  ["line-height", value => measureToString(0.99 * getMeasurement(value))],
   ["margin", value => measureToString(getMeasurement(value))],
   ["margin-bottom", value => measureToString(getMeasurement(value))],
   ["margin-left", value => measureToString(getMeasurement(value))],
   ["margin-right", value => measureToString(getMeasurement(value))],
   ["margin-top", value => measureToString(getMeasurement(value))],
+  ["text-indent", value => measureToString(getMeasurement(value))],
+  ["font-family", value => getFonts(value)],
 ]);
 
 const spacesRegExp = /\s+/g;
@@ -121,6 +124,8 @@ function mapStyle(styleStr) {
         newValue;
     }
   }
+
+  fixTextIndent(style);
   return style;
 }
 
@@ -162,16 +167,27 @@ class XhtmlObject extends XmlObject {
     }
   }
 
-  [$toHTML]() {
-    return {
+  [$toHTML](availableSpace) {
+    const children = [];
+    this[$extra] = {
+      children,
+    };
+
+    this[$childrenToHTML]({});
+
+    if (children.length === 0 && !this[$content]) {
+      return HTMLResult.EMPTY;
+    }
+
+    return HTMLResult.success({
       name: this[$nodeName],
       attributes: {
         href: this.href,
         style: mapStyle(this.style),
       },
-      children: this[$childrenToHTML]({}),
+      children,
       value: this[$content] || "",
-    };
+    });
   }
 }
 
@@ -193,10 +209,15 @@ class Body extends XhtmlObject {
     super(attributes, "body");
   }
 
-  [$toHTML]() {
-    const html = super[$toHTML]();
+  [$toHTML](availableSpace) {
+    const res = super[$toHTML](availableSpace);
+    const { html } = res;
+    if (!html) {
+      return HTMLResult.EMPTY;
+    }
+    html.name = "div";
     html.attributes.class = "xfaRich";
-    return html;
+    return res;
   }
 }
 
@@ -209,10 +230,10 @@ class Br extends XhtmlObject {
     return "\n";
   }
 
-  [$toHTML]() {
-    return {
+  [$toHTML](availableSpace) {
+    return HTMLResult.success({
       name: "br",
-    };
+    });
   }
 }
 
@@ -221,34 +242,39 @@ class Html extends XhtmlObject {
     super(attributes, "html");
   }
 
-  [$toHTML]() {
-    const children = this[$childrenToHTML]({});
+  [$toHTML](availableSpace) {
+    const children = [];
+    this[$extra] = {
+      children,
+    };
+
+    this[$childrenToHTML]({});
     if (children.length === 0) {
-      return {
+      return HTMLResult.success({
         name: "div",
         attributes: {
           class: "xfaRich",
           style: {},
         },
         value: this[$content] || "",
-      };
+      });
     }
 
     if (children.length === 1) {
       const child = children[0];
       if (child.attributes && child.attributes.class === "xfaRich") {
-        return child;
+        return HTMLResult.success(child);
       }
     }
 
-    return {
+    return HTMLResult.success({
       name: "div",
       attributes: {
         class: "xfaRich",
         style: {},
       },
       children,
-    };
+    });
   }
 }
 
@@ -273,6 +299,10 @@ class Ol extends XhtmlObject {
 class P extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "p");
+  }
+
+  [$text]() {
+    return super[$text]() + "\n";
   }
 }
 
