@@ -161,11 +161,7 @@ class AForm {
     // sepStyle is an integer in [0;4]
     sepStyle = Math.min(Math.max(0, Math.floor(sepStyle)), 4);
 
-    buf.push("%,");
-    buf.push(sepStyle);
-    buf.push(".");
-    buf.push(nDec.toString());
-    buf.push("f");
+    buf.push("%,", sepStyle, ".", nDec.toString(), "f");
 
     if (!bCurrencyPrepend) {
       buf.push(strCurrency);
