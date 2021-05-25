@@ -18,6 +18,7 @@ const dimConverters = {
   cm: x => (x / 2.54) * 72,
   mm: x => (x / (10 * 2.54)) * 72,
   in: x => x * 72,
+  px: x => x,
 };
 const measurementPattern = /([+-]?[0-9]+\.?[0-9]*)(.*)/;
 
@@ -163,6 +164,21 @@ function getBBox(data) {
   return { x, y, width, height };
 }
 
+class HTMLResult {
+  constructor(success, html, bbox) {
+    this.success = success;
+    this.html = html;
+    this.bbox = bbox;
+  }
+
+  static success(html, bbox = null) {
+    return new HTMLResult(true, html, bbox);
+  }
+}
+
+HTMLResult.FAILURE = new HTMLResult(false, null, null);
+HTMLResult.EMPTY = new HTMLResult(true, null, null);
+
 export {
   getBBox,
   getColor,
@@ -173,4 +189,5 @@ export {
   getRatio,
   getRelevant,
   getStringOption,
+  HTMLResult,
 };

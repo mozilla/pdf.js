@@ -24,6 +24,8 @@
 .xfaLayer * {
   color: inherit;
   font: inherit;
+  font-style: inherit;
+  font-weight: inherit;
   font-kerning: inherit;
   letter-spacing: inherit;
   text-align: inherit;
@@ -31,6 +33,14 @@
   vertical-align: inherit;
   box-sizing: border-box;
   background: transparent;
+}
+
+.xfaLayer a {
+  color: blue;
+}
+
+.xfaRich li {
+  margin-left: 3em;
 }
 
 .xfaFont {
@@ -58,6 +68,7 @@
 
 .xfaRich {
   z-index: 300;
+  line-height: 1.2;
 }
 
 .xfaSubform {
@@ -76,23 +87,52 @@
   flex: 1 1 auto;
 }
 
+.xfaBorderDiv {
+  background: transparent;
+  position: absolute;
+  pointer-events: none;
+}
+
+.xfaWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+}
+
+.xfaContentArea {
+  overflow: hidden;
+}
+
+.xfaTextfield,
+.xfaSelect {
+  background-color: rgba(0, 54, 255, 0.13);
+}
+
+.xfaTextfield:focus,
+.xfaSelect:focus {
+  background-color: transparent;
+}
+
 .xfaTextfield,
 .xfaSelect {
   width: 100%;
   height: 100%;
-  flex: 1 1 auto;
+  flex: 100 1 0;
   border: none;
   resize: none;
 }
 
-.xfaLabel > input[type="checkbox"] {
+.xfaLabel > input[type="radio"] {
   /* Use this trick to make the checkbox invisible but
        but still focusable. */
   position: absolute;
   left: -99999px;
 }
 
-.xfaLabel > input[type="checkbox"]:focus + .xfaCheckboxMark {
+.xfaLabel > input[type="radio"]:focus + .xfaCheckboxMark {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
 }
 
@@ -133,17 +173,46 @@
   white-space: pre-wrap;
 }
 
-.xfaImage,
-.xfaRich {
+.xfaImage {
   width: 100%;
   height: 100%;
 }
 
-.xfaLrTb,
-.xfaRlTb,
-.xfaTb,
+.xfaRich {
+  width: 100%;
+  height: auto;
+}
+
 .xfaPosition {
   display: block;
+}
+
+.xfaLrTb,
+.xfaRlTb,
+.xfaTb {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.xfaLr,
+.xfaRl,
+.xfaTb > div {
+  flex: 1 1 auto;
+}
+
+.xfaTb > div {
+  justify-content: left;
+}
+
+.xfaLr > div {
+  display: inline;
+  float: left;
+}
+
+.xfaRl > div {
+  display: inline;
+  float: right;
 }
 
 .xfaPosition {

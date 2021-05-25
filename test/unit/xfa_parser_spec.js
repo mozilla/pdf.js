@@ -332,7 +332,7 @@ describe("XFAParser", function () {
         [
           " The first line of this paragraph is indented a half-inch.\n",
           " Successive lines are not indented.\n",
-          " This is the last line of the paragraph.\n ",
+          " This is the last line of the paragraph.\n \n",
         ].join("")
       );
     });
