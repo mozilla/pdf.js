@@ -1135,10 +1135,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     // two field types is implemented, we should use the same pattern as the
     // other interactive widgets where the return value of `getValue`
     // is used and the full array of field values is stored.
-    storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
-      value:
-        this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
-    });
+    const value = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+      value: this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
+    }).value; // #718 modified by ngx-extended-pdf-viewer
+
+    this.data.fieldValue = value; // #718 modified by ngx-extended-pdf-viewer
 
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;

@@ -44,7 +44,6 @@ class AnnotationStorage {
    */
   // #718 modified by ngx-extended-pdf-viewer
   getValue(key, fieldname, defaultValue, radioButtonField = undefined) {
-    console.log(`getValue(${key}, ${fieldname}, ${JSON.stringify(defaultValue)}`);
     let obj = this._storage.get(key);
     if (obj === undefined) {
       if (window.getFormValue) {
@@ -52,8 +51,13 @@ class AnnotationStorage {
         // necessary because radio buttons don't have a reference to their field
         const ngObj = window.getFormValue(fieldname);
         if (ngObj !== undefined && ngObj.value !== undefined) {
-          this.setValue(key, undefined, defaultValue); // second parameter is undefined to prevent infinite loops
-          obj = ngObj;
+          if (radioButtonField) {
+            const value = { value: ngObj.value === radioButtonField };
+            obj = value;
+          } else {
+            obj = ngObj;
+          }
+          this.setValue(key, undefined, obj); // second parameter is undefined to prevent infinite loops
         }
       }
     }
