@@ -1006,9 +1006,15 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    const value = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
-      value: data.fieldValue === data.buttonValue,
-    }).value;
+    const value = storage.getValue(
+      id,
+      this.data.fieldName,
+      {
+        // #718 modified by ngx-extended-pdf-viewer
+        value: data.fieldValue === data.buttonValue,
+      },
+      this.data.buttonValue // #718 modified by ngx-extended-pdf-viewer
+    ).value;
 
     const element = document.createElement("input");
     element.disabled = data.readOnly;
@@ -1023,13 +1029,17 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
       const { target } = event;
       for (const radio of document.getElementsByName(target.name)) {
         if (radio !== target) {
+          if (window.setFormValue) { // #718 modified by ngx-extended-pdf-viewer
+            window.setFormValue(radio.getAttribute("id"), false); // #718 modified by ngx-extended-pdf-viewer
+          } // #718 modified by ngx-extended-pdf-viewer
           storage.setValue(radio.getAttribute("id"), this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
             value: false,
             emitMessage: false, // #718 modified by ngx-extended-pdf-viewer
           });
         }
       }
-      storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+      storage.setValue(id, this.data.fieldName, {
+        // #718 modified by ngx-extended-pdf-viewer
         value: target.checked,
         radioValue: this.data.buttonValue, // #718 modified by ngx-extended-pdf-viewer
       });

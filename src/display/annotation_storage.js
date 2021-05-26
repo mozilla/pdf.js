@@ -43,11 +43,18 @@ class AnnotationStorage {
    * @returns {Object}
    */
   // #718 modified by ngx-extended-pdf-viewer
-  getValue(key, fieldname, defaultValue) {
+  getValue(key, fieldname, defaultValue, radioButtonField = undefined) {
+    console.log(`getValue(${key}, ${fieldname}, ${JSON.stringify(defaultValue)}`);
     let obj = this._storage.get(key);
     if (obj === undefined) {
       if (window.getFormValue) {
-        obj = window.getFormValue(fieldname);
+        window.assignFormIdAndFieldName(key, fieldname, radioButtonField);
+        // necessary because radio buttons don't have a reference to their field
+        const ngObj = window.getFormValue(fieldname);
+        if (ngObj !== undefined && ngObj.value !== undefined) {
+          this.setValue(key, undefined, defaultValue); // second parameter is undefined to prevent infinite loops
+          obj = ngObj;
+        }
       }
     }
     // #718 end of modification by ngx-extended-pdf-viewer
@@ -77,7 +84,7 @@ class AnnotationStorage {
    * @param {Object} value
    */
   // #718 modified by ngx-extended-pdf-viewer
-  setValue(key, fieldname, value) {
+  setValue(key, fieldname, value, radioButtonField = undefined) {
     // #718 end of modification by ngx-extended-pdf-viewer
     const obj = this._storage.get(key);
     let modified = false;
@@ -97,9 +104,9 @@ class AnnotationStorage {
       modified = true;
     }
     if (modified) {
-      if (fieldname) {
-        this._setModified();
-        // #718 modified by ngx-extended-pdf-viewer
+      this._setModified();
+      // #718 modified by ngx-extended-pdf-viewer
+      if (fieldname || radioButtonField) {
         if (window.setFormValue) {
           if (value.items) {
             window.setFormValue(fieldname, value.items);
