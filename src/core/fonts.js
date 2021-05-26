@@ -722,6 +722,11 @@ function createPostTable(properties) {
   ); // maxMemType1
 }
 
+function createPostscriptName(name) {
+  // See https://docs.microsoft.com/en-us/typography/opentype/spec/recom#name.
+  return name.replace(/[^\x21-\x7E]|[[\](){}<>/%]/g, "").slice(0, 63);
+}
+
 function createNameTable(name, proto) {
   if (!proto) {
     proto = [[], []]; // no strings and unicode strings
@@ -734,7 +739,7 @@ function createNameTable(name, proto) {
     proto[0][3] || "uniqueID", // 3.Unique ID
     proto[0][4] || name, // 4.Full font name
     proto[0][5] || "Version 0.11", // 5.Version
-    proto[0][6] || "", // 6.Postscript name
+    proto[0][6] || createPostscriptName(name), // 6.Postscript name
     proto[0][7] || "Unknown", // 7.Trademark
     proto[0][8] || "Unknown", // 8.Manufacturer
     proto[0][9] || "Unknown", // 9.Designer
