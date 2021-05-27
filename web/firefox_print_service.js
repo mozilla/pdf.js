@@ -14,6 +14,7 @@
  */
 
 import { RenderingCancelledException, shadow } from "pdfjs-lib";
+import { getXfaHtmlForPrinting } from "./ui_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 
 // Creates a placeholder with div and canvas with right size for the page.
@@ -33,6 +34,7 @@ function composePage(
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
   const canvasWrapper = document.createElement("div");
+  canvasWrapper.setAttribute("class", "printedPage");
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 
@@ -129,6 +131,11 @@ FirefoxPrintService.prototype = {
 
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
+
+    if (pdfDocument.isPureXfa) {
+      getXfaHtmlForPrinting(printContainer, pdfDocument);
+      return;
+    }
 
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
       composePage(

@@ -26,9 +26,10 @@ class XfaLayerBuilder {
   /**
    * @param {XfaLayerBuilderOptions} options
    */
-  constructor({ pageDiv, pdfPage, annotationStorage }) {
+  constructor({ pageDiv, pdfPage, xfaHtml, annotationStorage }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
+    this.xfaHtml = xfaHtml;
     this.annotationStorage = annotationStorage;
 
     this.div = null;
@@ -42,34 +43,55 @@ class XfaLayerBuilder {
    *   annotations is complete.
    */
   render(viewport, intent = "display") {
-    return this.pdfPage
-      .getXfa()
-      .then(xfa => {
-        if (this._cancelled) {
-          return;
-        }
-        const parameters = {
-          viewport: viewport.clone({ dontFlip: true }),
-          div: this.div,
-          xfa,
-          page: this.pdfPage,
-          annotationStorage: this.annotationStorage,
-        };
+    if (intent === "display") {
+      return this.pdfPage
+        .getXfa()
+        .then(xfa => {
+          if (this._cancelled) {
+            return;
+          }
+          const parameters = {
+            viewport: viewport.clone({ dontFlip: true }),
+            div: this.div,
+            xfa,
+            page: this.pdfPage,
+            annotationStorage: this.annotationStorage,
+          };
 
-        if (this.div) {
-          XfaLayer.update(parameters);
-        } else {
-          // Create an xfa layer div and render the form
-          this.div = document.createElement("div");
-          this.pageDiv.appendChild(this.div);
-          parameters.div = this.div;
+          if (this.div) {
+            XfaLayer.update(parameters);
+          } else {
+            // Create an xfa layer div and render the form
+            this.div = document.createElement("div");
+            this.pageDiv.appendChild(this.div);
+            parameters.div = this.div;
 
-          XfaLayer.render(parameters);
-        }
-      })
-      .catch(error => {
-        console.error(error);
-      });
+            XfaLayer.render(parameters);
+          }
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    }
+
+    // intent === "print".
+    viewport.dontFlip = true;
+    const parameters = {
+      viewport,
+      div: this.div,
+      xfa: this.xfaHtml,
+      page: null,
+      annotationStorage: this.annotationStorage,
+    };
+
+    // Create an xfa layer div and render the form
+    const div = document.createElement("div");
+    this.pageDiv.appendChild(div);
+    parameters.div = div;
+
+    XfaLayer.render(parameters);
+
+    return null;
   }
 
   cancel() {
@@ -92,12 +114,19 @@ class DefaultXfaLayerFactory {
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
    * @param {AnnotationStorage} [annotationStorage]
+   * @param {Object} [xfaHtml]
    */
-  createXfaLayerBuilder(pageDiv, pdfPage, annotationStorage = null) {
+  createXfaLayerBuilder(
+    pageDiv,
+    pdfPage,
+    annotationStorage = null,
+    xfaHtml = null
+  ) {
     return new XfaLayerBuilder({
       pageDiv,
       pdfPage,
       annotationStorage,
+      xfaHtml,
     });
   }
 }

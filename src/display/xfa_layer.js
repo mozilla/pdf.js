@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { PageViewport } from "./display_utils.js";
+
 class XfaLayer {
   static setupStorage(html, fieldId, element, storage) {
     const storedData = storage.getValue(fieldId, { value: null });
@@ -100,7 +102,12 @@ class XfaLayer {
 
     const rootDiv = parameters.div;
     rootDiv.appendChild(rootHtml);
-    const coeffs = parameters.viewport.transform.join(",");
+
+    let { viewport } = parameters;
+    if (!(viewport instanceof PageViewport)) {
+      viewport = new PageViewport(viewport);
+    }
+    const coeffs = viewport.transform.join(",");
     rootDiv.style.transform = `matrix(${coeffs})`;
 
     // Set defaults.
