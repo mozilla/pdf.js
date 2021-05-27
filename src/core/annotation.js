@@ -1070,6 +1070,8 @@ class MarkupAnnotation extends Annotation {
     strokeColor,
     fillColor,
     blendMode,
+    strokeAlpha,
+    fillAlpha,
     pointsCallback,
   }) {
     let minX = Number.MAX_VALUE;
@@ -1123,6 +1125,12 @@ class MarkupAnnotation extends Annotation {
     const gsDict = new Dict(xref);
     if (blendMode) {
       gsDict.set("BM", Name.get(blendMode));
+    }
+    if (typeof strokeAlpha === "number") {
+      gsDict.set("CA", strokeAlpha);
+    }
+    if (typeof fillAlpha === "number") {
+      gsDict.set("ca", fillAlpha);
     }
 
     const stateDict = new Dict(xref);
@@ -2400,6 +2408,19 @@ class LineAnnotation extends MarkupAnnotation {
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
+      const strokeAlpha = parameters.dict.get("CA");
+
+      // The default fill color is transparent. Setting the fill colour is
+      // necessary if/when we want to add support for non-default line endings.
+      let fillColor = null,
+        interiorColor = parameters.dict.getArray("IC");
+      if (interiorColor) {
+        interiorColor = getRgbColor(interiorColor);
+        fillColor = interiorColor
+          ? Array.from(interiorColor).map(c => c / 255)
+          : null;
+      }
+      const fillAlpha = fillColor ? strokeAlpha : null;
 
       const borderWidth = this.borderStyle.width;
 
@@ -2418,6 +2439,9 @@ class LineAnnotation extends MarkupAnnotation {
         xref: parameters.xref,
         extra: `${borderWidth} w`,
         strokeColor,
+        fillColor,
+        strokeAlpha,
+        fillAlpha,
         pointsCallback: (buffer, points) => {
           buffer.push(
             `${lineCoordinates[0]} ${lineCoordinates[1]} m`,
@@ -2447,22 +2471,26 @@ class SquareAnnotation extends MarkupAnnotation {
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
+      const strokeAlpha = parameters.dict.get("CA");
 
       // The default fill color is transparent.
-      let fillColor = null;
-      let interiorColor = parameters.dict.getArray("IC");
+      let fillColor = null,
+        interiorColor = parameters.dict.getArray("IC");
       if (interiorColor) {
         interiorColor = getRgbColor(interiorColor);
         fillColor = interiorColor
           ? Array.from(interiorColor).map(c => c / 255)
           : null;
       }
+      const fillAlpha = fillColor ? strokeAlpha : null;
 
       this._setDefaultAppearance({
         xref: parameters.xref,
         extra: `${this.borderStyle.width} w`,
         strokeColor,
         fillColor,
+        strokeAlpha,
+        fillAlpha,
         pointsCallback: (buffer, points) => {
           const x = points[2].x + this.borderStyle.width / 2;
           const y = points[2].y + this.borderStyle.width / 2;
@@ -2492,6 +2520,7 @@ class CircleAnnotation extends MarkupAnnotation {
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
+      const strokeAlpha = parameters.dict.get("CA");
 
       // The default fill color is transparent.
       let fillColor = null;
@@ -2502,6 +2531,7 @@ class CircleAnnotation extends MarkupAnnotation {
           ? Array.from(interiorColor).map(c => c / 255)
           : null;
       }
+      const fillAlpha = fillColor ? strokeAlpha : null;
 
       // Circles are approximated by Bézier curves with four segments since
       // there is no circle primitive in the PDF specification. For the control
@@ -2513,6 +2543,8 @@ class CircleAnnotation extends MarkupAnnotation {
         extra: `${this.borderStyle.width} w`,
         strokeColor,
         fillColor,
+        strokeAlpha,
+        fillAlpha,
         pointsCallback: (buffer, points) => {
           const x0 = points[0].x + this.borderStyle.width / 2;
           const y0 = points[0].y - this.borderStyle.width / 2;
@@ -2569,6 +2601,7 @@ class PolylineAnnotation extends MarkupAnnotation {
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
+      const strokeAlpha = parameters.dict.get("CA");
 
       const borderWidth = this.borderStyle.width || 1;
 
@@ -2576,6 +2609,7 @@ class PolylineAnnotation extends MarkupAnnotation {
         xref: parameters.xref,
         extra: `${borderWidth} w`,
         strokeColor,
+        strokeAlpha,
         pointsCallback: (buffer, points) => {
           const vertices = this.data.vertices;
           for (let i = 0, ii = vertices.length; i < ii; i++) {
@@ -2639,6 +2673,7 @@ class InkAnnotation extends MarkupAnnotation {
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
+      const strokeAlpha = parameters.dict.get("CA");
 
       const borderWidth = this.borderStyle.width || 1;
 
@@ -2646,6 +2681,7 @@ class InkAnnotation extends MarkupAnnotation {
         xref: parameters.xref,
         extra: `${borderWidth} w`,
         strokeColor,
+        strokeAlpha,
         pointsCallback: (buffer, points) => {
           // According to the specification, see "12.5.6.13 Ink Annotations":
           //   When drawn, the points shall be connected by straight lines or
@@ -2681,10 +2717,13 @@ class HighlightAnnotation extends MarkupAnnotation {
         const fillColor = this.color
           ? Array.from(this.color).map(c => c / 255)
           : [1, 1, 0];
+        const fillAlpha = parameters.dict.get("CA");
+
         this._setDefaultAppearance({
           xref: parameters.xref,
           fillColor,
           blendMode: "Multiply",
+          fillAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
               `${points[0].x} ${points[0].y} m`,
@@ -2718,10 +2757,13 @@ class UnderlineAnnotation extends MarkupAnnotation {
         const strokeColor = this.color
           ? Array.from(this.color).map(c => c / 255)
           : [0, 0, 0];
+        const strokeAlpha = parameters.dict.get("CA");
+
         this._setDefaultAppearance({
           xref: parameters.xref,
           extra: "[] 0 d 1 w",
           strokeColor,
+          strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
               `${points[2].x} ${points[2].y} m`,
@@ -2754,10 +2796,13 @@ class SquigglyAnnotation extends MarkupAnnotation {
         const strokeColor = this.color
           ? Array.from(this.color).map(c => c / 255)
           : [0, 0, 0];
+        const strokeAlpha = parameters.dict.get("CA");
+
         this._setDefaultAppearance({
           xref: parameters.xref,
           extra: "[] 0 d 1 w",
           strokeColor,
+          strokeAlpha,
           pointsCallback: (buffer, points) => {
             const dy = (points[0].y - points[2].y) / 6;
             let shift = dy;
@@ -2797,10 +2842,13 @@ class StrikeOutAnnotation extends MarkupAnnotation {
         const strokeColor = this.color
           ? Array.from(this.color).map(c => c / 255)
           : [0, 0, 0];
+        const strokeAlpha = parameters.dict.get("CA");
+
         this._setDefaultAppearance({
           xref: parameters.xref,
           extra: "[] 0 d 1 w",
           strokeColor,
+          strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
               `${(points[0].x + points[2].x) / 2} ` +
