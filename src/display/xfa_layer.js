@@ -16,20 +16,26 @@
 import { PageViewport } from "./display_utils.js";
 
 class XfaLayer {
-  static setupStorage(html, fieldId, element, storage) {
+  static setupStorage(html, fieldId, element, storage, intent) {
     const storedData = storage.getValue(fieldId, { value: null });
     switch (element.name) {
       case "textarea":
         html.textContent = storedData.value !== null ? storedData.value : "";
+        if (intent === "print") {
+          break;
+        }
         html.addEventListener("input", event => {
           storage.setValue(fieldId, { value: event.target.value });
         });
         break;
       case "input":
-        if (storedData.value !== null) {
-          html.setAttribute("value", storedData.value);
-        }
         if (element.attributes.type === "radio") {
+          if (storedData.value) {
+            html.setAttribute("checked", true);
+          }
+          if (intent === "print") {
+            break;
+          }
           html.addEventListener("change", event => {
             const { target } = event;
             for (const radio of document.getElementsByName(target.name)) {
@@ -40,7 +46,23 @@ class XfaLayer {
             }
             storage.setValue(fieldId, { value: target.checked });
           });
+        } else if (element.attributes.type === "checkbox") {
+          if (storedData.value) {
+            html.setAttribute("checked", true);
+          }
+          if (intent === "print") {
+            break;
+          }
+          html.addEventListener("input", event => {
+            storage.setValue(fieldId, { value: event.target.checked });
+          });
         } else {
+          if (storedData.value !== null) {
+            html.setAttribute("value", storedData.value);
+          }
+          if (intent === "print") {
+            break;
+          }
           html.addEventListener("input", event => {
             storage.setValue(fieldId, { value: event.target.value });
           });
@@ -66,8 +88,13 @@ class XfaLayer {
     }
   }
 
-  static setAttributes(html, element, storage) {
+  static setAttributes(html, element, storage, intent) {
     const { attributes } = element;
+    if (attributes.type === "radio") {
+      // Avoid to have a radio group when printing with the same as one
+      // already displayed.
+      attributes.name = `${attributes.name}-${intent}`;
+    }
     for (const [key, value] of Object.entries(attributes)) {
       if (value === null || value === undefined || key === "fieldId") {
         continue;
@@ -94,6 +121,7 @@ class XfaLayer {
   static render(parameters) {
     const storage = parameters.annotationStorage;
     const root = parameters.xfa;
+    const intent = parameters.intent;
     const rootHtml = document.createElement(root.name);
     if (root.attributes) {
       this.setAttributes(rootHtml, root);
@@ -134,7 +162,7 @@ class XfaLayer {
       const childHtml = document.createElement(name);
       html.appendChild(childHtml);
       if (child.attributes) {
-        this.setAttributes(childHtml, child, storage);
+        this.setAttributes(childHtml, child, storage, intent);
       }
 
       if (child.children && child.children.length > 0) {
