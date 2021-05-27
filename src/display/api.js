@@ -708,11 +708,15 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @param {{num: number, gen: number}} ref - The page reference. Must have
-   *   the `num` and `gen` properties.
-   * @returns {Promise<{num: number, gen: number}>} A promise that is resolved
-   *   with the page index (starting from zero) that is associated with the
-   *   reference.
+   * @typedef {Object} RefProxy
+   * @property {number} num
+   * @property {number} gen
+   */
+
+  /**
+   * @param {RefProxy} ref - The page reference.
+   * @returns {Promise<number>} A promise that is resolved with the page index,
+   *   starting from zero, that is associated with the reference.
    */
   getPageIndex(ref) {
     return this._transport.getPageIndex(ref);
