@@ -23,7 +23,6 @@ import {
   assert,
   escapeString,
   getModificationDate,
-  isArrayEqual,
   isAscii,
   isString,
   OPS,
@@ -2422,17 +2421,19 @@ class LineAnnotation extends MarkupAnnotation {
       }
       const fillAlpha = fillColor ? strokeAlpha : null;
 
-      const borderWidth = this.borderStyle.width;
+      const borderWidth = this.borderStyle.width || 1,
+        borderAdjust = 2 * borderWidth;
 
-      // If the /Rect-entry is empty, create a fallback rectangle such that we
-      // get similar rendering/highlighting behaviour as in Adobe Reader.
-      if (isArrayEqual(this.rectangle, [0, 0, 0, 0])) {
-        this.rectangle = [
-          this.data.lineCoordinates[0] - 2 * borderWidth,
-          this.data.lineCoordinates[1] - 2 * borderWidth,
-          this.data.lineCoordinates[2] + 2 * borderWidth,
-          this.data.lineCoordinates[3] + 2 * borderWidth,
-        ];
+      // If the /Rect-entry is empty/wrong, create a fallback rectangle so that
+      // we get similar rendering/highlighting behaviour as in Adobe Reader.
+      const bbox = [
+        this.data.lineCoordinates[0] - borderAdjust,
+        this.data.lineCoordinates[1] - borderAdjust,
+        this.data.lineCoordinates[2] + borderAdjust,
+        this.data.lineCoordinates[3] + borderAdjust,
+      ];
+      if (!Util.intersect(this.rectangle, bbox)) {
+        this.rectangle = bbox;
       }
 
       this._setDefaultAppearance({
@@ -2603,7 +2604,21 @@ class PolylineAnnotation extends MarkupAnnotation {
         : [0, 0, 0];
       const strokeAlpha = parameters.dict.get("CA");
 
-      const borderWidth = this.borderStyle.width || 1;
+      const borderWidth = this.borderStyle.width || 1,
+        borderAdjust = 2 * borderWidth;
+
+      // If the /Rect-entry is empty/wrong, create a fallback rectangle so that
+      // we get similar rendering/highlighting behaviour as in Adobe Reader.
+      const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+      for (const vertex of this.data.vertices) {
+        bbox[0] = Math.min(bbox[0], vertex.x - borderAdjust);
+        bbox[1] = Math.min(bbox[1], vertex.y - borderAdjust);
+        bbox[2] = Math.max(bbox[2], vertex.x + borderAdjust);
+        bbox[3] = Math.max(bbox[3], vertex.y + borderAdjust);
+      }
+      if (!Util.intersect(this.rectangle, bbox)) {
+        this.rectangle = bbox;
+      }
 
       this._setDefaultAppearance({
         xref: parameters.xref,
@@ -2675,7 +2690,23 @@ class InkAnnotation extends MarkupAnnotation {
         : [0, 0, 0];
       const strokeAlpha = parameters.dict.get("CA");
 
-      const borderWidth = this.borderStyle.width || 1;
+      const borderWidth = this.borderStyle.width || 1,
+        borderAdjust = 2 * borderWidth;
+
+      // If the /Rect-entry is empty/wrong, create a fallback rectangle so that
+      // we get similar rendering/highlighting behaviour as in Adobe Reader.
+      const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+      for (const inkLists of this.data.inkLists) {
+        for (const vertex of inkLists) {
+          bbox[0] = Math.min(bbox[0], vertex.x - borderAdjust);
+          bbox[1] = Math.min(bbox[1], vertex.y - borderAdjust);
+          bbox[2] = Math.max(bbox[2], vertex.x + borderAdjust);
+          bbox[3] = Math.max(bbox[3], vertex.y + borderAdjust);
+        }
+      }
+      if (!Util.intersect(this.rectangle, bbox)) {
+        this.rectangle = bbox;
+      }
 
       this._setDefaultAppearance({
         xref: parameters.xref,
