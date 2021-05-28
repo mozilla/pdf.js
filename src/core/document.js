@@ -901,7 +901,11 @@ class PDFDocument {
       }
       const fontFamily = descriptor.get("FontFamily");
       const fontWeight = descriptor.get("FontWeight");
-      const italicAngle = descriptor.get("ItalicAngle");
+
+      // Angle is expressed in degrees counterclockwise in PDF
+      // when it's clockwise in CSS
+      // (see https://drafts.csswg.org/css-fonts-4/#valdef-font-style-oblique-angle)
+      const italicAngle = -descriptor.get("ItalicAngle");
       const cssFontInfo = { fontFamily, fontWeight, italicAngle };
 
       if (!validateCSSFont(cssFontInfo)) {
