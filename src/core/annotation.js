@@ -2676,7 +2676,17 @@ class HighlightAnnotation extends MarkupAnnotation {
       null
     ));
     if (quadPoints) {
-      if (!this.appearance) {
+      const resources =
+        this.appearance && this.appearance.dict.get("Resources");
+
+      if (!this.appearance || !(resources && resources.has("ExtGState"))) {
+        if (this.appearance) {
+          // Workaround for cases where there's no /ExtGState-entry directly
+          // available, e.g. when the appearance stream contains a /XObject of
+          // the /Form-type, since that causes the highlighting to completely
+          // obsure the PDF content below it (fixes issue13242.pdf).
+          warn("HighlightAnnotation - ignoring built-in appearance stream.");
+        }
         // Default color is yellow in Acrobat Reader
         const fillColor = this.color
           ? Array.from(this.color).map(c => c / 255)
