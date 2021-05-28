@@ -941,11 +941,14 @@ class CheckButton extends XFAObject {
       style.height = size;
     }
 
+    const fieldId = this[$getParent]()[$getParent]()[$uid];
     const input = {
       name: "input",
       attributes: {
         class: "xfaCheckbox",
+        fieldId,
         type: "radio",
+        id: `${fieldId}-radio`,
       },
     };
 
@@ -1023,6 +1026,7 @@ class ChoiceList extends XFAObject {
 
     const selectAttributes = {
       class: "xfaSelect",
+      fieldId: this[$getParent]()[$getParent]()[$uid],
       style,
     };
 
@@ -1249,6 +1253,7 @@ class DateTimeEdit extends XFAObject {
       name: "input",
       attributes: {
         type: "text",
+        fieldId: this[$getParent]()[$getParent]()[$uid],
         class: "xfaTextfield",
         style,
       },
@@ -3012,6 +3017,7 @@ class NumericEdit extends XFAObject {
       name: "input",
       attributes: {
         type: "text",
+        fieldId: this[$getParent]()[$getParent]()[$uid],
         class: "xfaTextfield",
         style,
       },
@@ -4550,6 +4556,7 @@ class TextEdit extends XFAObject {
       html = {
         name: "textarea",
         attributes: {
+          fieldId: this[$getParent]()[$getParent]()[$uid],
           class: "xfaTextfield",
           style,
         },
@@ -4559,6 +4566,7 @@ class TextEdit extends XFAObject {
         name: "input",
         attributes: {
           type: "text",
+          fieldId: this[$getParent]()[$getParent]()[$uid],
           class: "xfaTextfield",
           style,
         },
