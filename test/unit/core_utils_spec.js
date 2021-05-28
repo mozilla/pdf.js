@@ -22,6 +22,7 @@ import {
   log2,
   parseXFAPath,
   toRomanNumerals,
+  validateCSSFont,
 } from "../../src/core/core_utils.js";
 import { XRefMock } from "./test_utils.js";
 
@@ -231,6 +232,105 @@ describe("core_utils", function () {
     it("should get a correctly encoded basic ascii string", function () {
       const str = "hello world";
       expect(encodeToXmlString(str)).toEqual(str);
+    });
+  });
+
+  describe("validateCSSFont", function () {
+    it("Check font family", function () {
+      const cssFontInfo = {
+        fontFamily: `"blah blah " blah blah"`,
+        fontWeight: 0,
+        italicAngle: 0,
+      };
+
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `"blah blah \\" blah blah"`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = `'blah blah ' blah blah'`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `'blah blah \\' blah blah'`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = `"blah blah `;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `blah blah"`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `'blah blah `;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `blah blah'`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = "blah 0blah blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah -0blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah --blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah -blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = "blah fdqAJqjHJK23kl23__--Kj blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = "blah fdqAJqjH$JK23kl23__--Kj blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+    });
+
+    it("Check font weight", function () {
+      const cssFontInfo = {
+        fontFamily: "blah",
+        fontWeight: 100,
+        italicAngle: 0,
+      };
+
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("100");
+
+      cssFontInfo.fontWeight = "700";
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("700");
+
+      cssFontInfo.fontWeight = "normal";
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("normal");
+
+      cssFontInfo.fontWeight = 314;
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("400");
+    });
+
+    it("Check italic angle", function () {
+      const cssFontInfo = {
+        fontFamily: "blah",
+        fontWeight: 100,
+        italicAngle: 10,
+      };
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("10");
+
+      cssFontInfo.italicAngle = -123;
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("14");
+
+      cssFontInfo.italicAngle = "91";
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("14");
+
+      cssFontInfo.italicAngle = 2.718;
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("2.718");
     });
   });
 });

@@ -28,8 +28,6 @@ class App extends PDFObject {
   constructor(data) {
     super(data);
 
-    this.calculate = true;
-
     this._constants = null;
     this._focusRect = true;
     this._fs = null;
@@ -68,6 +66,7 @@ class App extends PDFObject {
     this._timeoutCallbackId = 0;
     this._globalEval = data.globalEval;
     this._externalCall = data.externalCall;
+    this._document = data._document;
   }
 
   // This function is called thanks to the proxy
@@ -189,6 +188,14 @@ class App extends PDFObject {
 
   set activeDocs(_) {
     throw new Error("app.activeDocs is read-only");
+  }
+
+  get calculate() {
+    return this._document.obj.calculate;
+  }
+
+  set calculate(calculate) {
+    this._document.obj.calculate = calculate;
   }
 
   get constants() {
@@ -427,7 +434,21 @@ class App extends PDFObject {
     oDoc = null,
     oCheckbox = null
   ) {
+    if (typeof cMsg === "object") {
+      nType = cMsg.nType;
+      cMsg = cMsg.cMsg;
+    }
+    cMsg = (cMsg || "").toString();
+    nType =
+      typeof nType !== "number" || isNaN(nType) || nType < 0 || nType > 3
+        ? 0
+        : nType;
+    if (nType >= 2) {
+      return this._externalCall("confirm", [cMsg]) ? 4 : 3;
+    }
+
     this._externalCall("alert", [cMsg]);
+    return 1;
   }
 
   beep() {
@@ -543,10 +564,21 @@ class App extends PDFObject {
   }
 
   response(cQuestion, cTitle = "", cDefault = "", bPassword = "", cLabel = "") {
+    if (typeof cQuestion === "object") {
+      cDefault = cQuestion.cDefault;
+      cQuestion = cQuestion.cQuestion;
+    }
+    cQuestion = (cQuestion || "").toString();
+    cDefault = (cDefault || "").toString();
     return this._externalCall("prompt", [cQuestion, cDefault || ""]);
   }
 
-  setInterval(cExpr, nMilliseconds) {
+  setInterval(cExpr, nMilliseconds = 0) {
+    if (typeof cExpr === "object") {
+      nMilliseconds = cExpr.nMilliseconds || 0;
+      cExpr = cExpr.cExpr;
+    }
+
     if (typeof cExpr !== "string") {
       throw new TypeError("First argument of app.setInterval must be a string");
     }
@@ -560,7 +592,12 @@ class App extends PDFObject {
     return this._registerTimeout(callbackId, true);
   }
 
-  setTimeOut(cExpr, nMilliseconds) {
+  setTimeOut(cExpr, nMilliseconds = 0) {
+    if (typeof cExpr === "object") {
+      nMilliseconds = cExpr.nMilliseconds || 0;
+      cExpr = cExpr.cExpr;
+    }
+
     if (typeof cExpr !== "string") {
       throw new TypeError("First argument of app.setTimeOut must be a string");
     }

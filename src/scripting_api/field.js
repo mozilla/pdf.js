@@ -49,7 +49,6 @@ class Field extends PDFObject {
     this.multiline = data.multiline;
     this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
-    this.page = data.page;
     this.password = data.password;
     this.print = data.print;
     this.radiosInUnison = data.radiosInUnison;
@@ -78,15 +77,18 @@ class Field extends PDFObject {
     this._fillColor = data.fillColor || ["T"];
     this._isChoice = Array.isArray(data.items);
     this._items = data.items || [];
+    this._page = data.page || 0;
     this._strokeColor = data.strokeColor || ["G", 0];
     this._textColor = data.textColor || ["G", 0];
     this._value = data.value || "";
-    this._valueAsString = data.valueAsString;
     this._kidIds = data.kidIds || null;
     this._fieldType = getFieldType(this._actions);
+    this._siblings = data.siblings || null;
 
     this._globalEval = data.globalEval;
     this._appObjects = data.appObjects;
+
+    this.valueAsString = data.valueAsString || this._value;
   }
 
   get currentValueIndices() {
@@ -180,6 +182,14 @@ class Field extends PDFObject {
     this.strokeColor = color;
   }
 
+  get page() {
+    return this._page;
+  }
+
+  set page(_) {
+    throw new Error("field.page is read-only");
+  }
+
   get textColor() {
     return this._textColor;
   }
@@ -238,6 +248,9 @@ class Field extends PDFObject {
   }
 
   get valueAsString() {
+    if (this._valueAsString === undefined) {
+      this._valueAsString = this._value ? this._value.toString() : "";
+    }
     return this._valueAsString;
   }
 
@@ -278,6 +291,9 @@ class Field extends PDFObject {
     }
     this._buttonCaption[nFace] = cCaption;
     // TODO: send to the annotation layer
+    // Right now the button is drawn on the canvas using its appearance so
+    // update the caption means redraw...
+    // We should probably have an html button for this annotation.
   }
 
   buttonSetIcon(oIcon, nFace = 0) {
@@ -504,7 +520,7 @@ class RadioButtonField extends Field {
   }
 
   set value(value) {
-    if (value === null) {
+    if (value === null || value === undefined) {
       this._value = "";
     }
     const i = this.exportValues.indexOf(value);
@@ -566,7 +582,7 @@ class CheckboxField extends RadioButtonField {
   }
 
   set value(value) {
-    if (value === "Off") {
+    if (!value || value === "Off") {
       this._value = "Off";
     } else {
       super.value = value;

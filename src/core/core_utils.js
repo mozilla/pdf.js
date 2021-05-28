@@ -16,9 +16,9 @@
 import {
   assert,
   BaseException,
-  bytesToString,
   objectSize,
   stringToPDFString,
+  warn,
 } from "../shared/util.js";
 import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
 
@@ -145,7 +145,7 @@ function toRomanNumerals(number, lowerCase = false) {
   number %= 10;
   romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
   // Ones
-  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
+  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]); // eslint-disable-line unicorn/no-array-push-push
 
   const romanStr = romanBuf.join("");
   return lowerCase ? romanStr.toLowerCase() : romanStr;
@@ -268,7 +268,7 @@ function _collectJS(entry, xref, list, parents) {
       const js = entry.get("JS");
       let code;
       if (isStream(js)) {
-        code = bytesToString(js.getBytes());
+        code = js.getString();
       } else {
         code = js;
       }
@@ -376,6 +376,70 @@ function encodeToXmlString(str) {
   return buffer.join("");
 }
 
+function validateCSSFont(cssFontInfo) {
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-style.
+  const DEFAULT_CSS_FONT_OBLIQUE = "14";
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight.
+  const DEFAULT_CSS_FONT_WEIGHT = "400";
+  const CSS_FONT_WEIGHT_VALUES = new Set([
+    "100",
+    "200",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+    "1000",
+    "normal",
+    "bold",
+    "bolder",
+    "lighter",
+  ]);
+
+  const { fontFamily, fontWeight, italicAngle } = cssFontInfo;
+
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
+  if (/^".*"$/.test(fontFamily)) {
+    if (/[^\\]"/.test(fontFamily.slice(1, fontFamily.length - 1))) {
+      warn(`XFA - FontFamily contains some unescaped ": ${fontFamily}.`);
+      return false;
+    }
+  } else if (/^'.*'$/.test(fontFamily)) {
+    if (/[^\\]'/.test(fontFamily.slice(1, fontFamily.length - 1))) {
+      warn(`XFA - FontFamily contains some unescaped ': ${fontFamily}.`);
+      return false;
+    }
+  } else {
+    // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
+    for (const ident of fontFamily.split(/[ \t]+/)) {
+      if (
+        /^([0-9]|(-([0-9]|-)))/.test(ident) ||
+        !/^[a-zA-Z0-9\-_\\]+$/.test(ident)
+      ) {
+        warn(
+          `XFA - FontFamily contains some invalid <custom-ident>: ${fontFamily}.`
+        );
+        return false;
+      }
+    }
+  }
+
+  const weight = fontWeight ? fontWeight.toString() : "";
+  cssFontInfo.fontWeight = CSS_FONT_WEIGHT_VALUES.has(weight)
+    ? weight
+    : DEFAULT_CSS_FONT_WEIGHT;
+
+  const angle = parseFloat(italicAngle);
+  cssFontInfo.italicAngle =
+    isNaN(angle) || angle < -90 || angle > 90
+      ? DEFAULT_CSS_FONT_OBLIQUE
+      : italicAngle.toString();
+
+  return true;
+}
+
 export {
   collectActions,
   encodeToXmlString,
@@ -391,6 +455,7 @@ export {
   readUint16,
   readUint32,
   toRomanNumerals,
+  validateCSSFont,
   XRefEntryException,
   XRefParseException,
 };

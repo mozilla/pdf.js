@@ -52,12 +52,6 @@
       ],
       "default": 0
     },
-    "enableWebGL": {
-      "title": "Enable WebGL",
-      "description": "Whether to enable WebGL.",
-      "type": "boolean",
-      "default": false
-    },
     "pdfBugEnabled": {
       "title": "Enable debugging tools",
       "description": "Whether to enable debugging tools.",
@@ -144,13 +138,6 @@
       "type": "boolean",
       "description": "Display the PDF without page borders",
       "default": "false"
-    },    "renderer": {
-      "type": "string",
-      "enum": [
-        "canvas",
-        "svg"
-      ],
-      "default": "canvas"
     },
     "renderInteractiveForms": {
       "type": "boolean",
@@ -161,6 +148,10 @@
       "default": true
     },
     "enablePermissions": {
+      "type": "boolean",
+      "default": false
+    },
+    "enableXfa": {
       "type": "boolean",
       "default": false
     },

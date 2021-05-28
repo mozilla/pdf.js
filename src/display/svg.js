@@ -22,6 +22,7 @@ import {
   isNum,
   OPS,
   TextRenderingMode,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -31,11 +32,16 @@ import { DOMSVGFactory } from "./display_utils.js";
 // end of modification
 
 /** @type {any} */
-let SVGGraphics = function () {
-  throw new Error("Not implemented: SVGGraphics");
+let SVGGraphics = class {
+  constructor() {
+    unreachable("Not implemented: SVGGraphics");
+  }
 };
 
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+if (
+  typeof PDFJSDev === "undefined" ||
+  PDFJSDev.test("!PRODUCTION || GENERIC")
+) {
   const SVG_DEFAULTS = {
     fontStyle: "normal",
     fontWeight: "normal",
@@ -48,14 +54,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   const convertImgDataToPng = (function () {
     const PNG_HEADER = new Uint8Array([
-      0x89,
-      0x50,
-      0x4e,
-      0x47,
-      0x0d,
-      0x0a,
-      0x1a,
-      0x0a,
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
     ]);
     const CHUNK_WRAPPER_SIZE = 12;
 
@@ -411,8 +410,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   let maskCount = 0;
   let shadingCount = 0;
 
-  // eslint-disable-next-line no-shadow
-  SVGGraphics = class SVGGraphics {
+  SVGGraphics = class {
     constructor(commonObjs, objs, forceDataSchema = false) {
       this.svgFactory = new DOMSVGFactory();
 
@@ -1343,9 +1341,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         // The previous clipping group content can go out of order -- resetting
         // cached clipGroups.
         current.clipGroup = null;
-        this.extraStack.forEach(function (prev) {
+        for (const prev of this.extraStack) {
           prev.clipGroup = null;
-        });
+        }
         // Intersect with the previous clipping path.
         clipPath.setAttributeNS(null, "clip-path", current.activeClipUrl);
       }

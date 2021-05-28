@@ -209,7 +209,6 @@ class PDFThumbnailViewer {
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
             checkSetImageDisabled,
-            disableCanvasToImageConversion: false,
             l10n: this.l10n,
           });
           this._thumbnails.push(thumbnail);

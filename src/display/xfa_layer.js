@@ -21,7 +21,11 @@ class XfaLayer {
       }
 
       if (key !== "style") {
-        html.setAttribute(key, value);
+        if (key === "textContent") {
+          html.textContent = value;
+        } else {
+          html.setAttribute(key, value);
+        }
       } else {
         Object.assign(html.style, value);
       }

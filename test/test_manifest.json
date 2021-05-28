@@ -132,6 +132,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue13343",
+       "file": "pdfs/issue13343.pdf",
+       "md5": "f8bf1888839e15254555092c504e1900",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug921760",
        "file": "pdfs/bug921760.pdf",
        "md5": "1aa136d786a65b0d7cce7bdb3c58c6c3",
@@ -377,6 +383,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue8565",
+       "file": "pdfs/issue8565.pdf",
+       "md5": "84e0e2fc2775bc489beac475503dd67b",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "arabiccidtruetype-text",
        "file": "pdfs/ArabicCIDTrueType.pdf",
        "md5": "d66dbd18bdb572d3ac8b88b32de2ece6",
@@ -388,6 +400,12 @@
        "md5": "76de93f9116b01b693bf8583b3e76d91",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "bug854315",
+       "file": "pdfs/bug854315.pdf",
+       "md5": "675754c07f71c068d2997905a5456f05",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "bug868745",
        "file": "pdfs/bug868745.pdf",
@@ -478,6 +496,12 @@
        "firstPage": 1,
        "lastPage": 2,
        "type": "load"
+    },
+    {  "id": "issue7847_radial",
+       "file": "pdfs/issue7847_radial.pdf",
+       "md5": "59dc206ec5dd6e6f701943e4694e4147",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "rotation",
        "file": "pdfs/rotation.pdf",
@@ -628,6 +652,12 @@
        "file": "pdfs/wdsg_fitc.pdf",
        "md5": "5bb1c2b83705d4cdfc43197ee74f07f9",
        "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue6769_no_matrix",
+       "file": "pdfs/issue6769_no_matrix.pdf",
+       "md5": "f88806137fb4592975052ff3508d7b1e",
        "rounds": 1,
        "type": "eq"
     },
@@ -886,6 +916,12 @@
        "rounds": 1,
        "link": true,
        "type": "load"
+    },
+    {  "id": "issue10272",
+       "file": "pdfs/issue10272.pdf",
+       "md5": "bf3b2f74c6878d38a70dc0825f1b9a02",
+       "link": true,
+       "type": "other"
     },
     {  "id": "issue10388",
        "file": "pdfs/issue10388_reduced.pdf",
@@ -2546,6 +2582,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6769",
+       "file": "pdfs/issue6769.pdf",
+       "md5": "724b94d6bd1e8010403328446d0ab061",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4304",
        "file": "pdfs/issue4304.pdf",
        "md5": "1b1205bf0d7c1ad22a154b60da8e694d",
@@ -2629,6 +2671,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "visibility_expressions",
+       "file": "pdfs/visibility_expressions.pdf",
+       "md5": "bc530d90984ddaa2cc7e0cd53fc2cf34",
+       "rounds": 1,
+       "type": "eq"
+   },
     {  "id": "issue7580-text",
        "file": "pdfs/issue7580.pdf",
        "md5": "44dd5a9b4373fcab9890cf567722a766",
@@ -3093,6 +3141,12 @@
        "md5": "462f96c877f5761fc3176156e3526184",
        "rounds": 1,
        "link": true,
+       "type": "eq"
+    },
+    {  "id": "issue13193",
+       "file": "pdfs/issue13193.pdf",
+       "md5": "38cf058f58b7dc5dc54e1602580936a7",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue1655",
@@ -3958,6 +4012,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue11473",
+       "file": "pdfs/issue11473.pdf",
+       "md5": "c530851b0523c81784ab4ea3115a7c67",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug1140761",
        "file": "pdfs/bug1140761.pdf",
        "md5": "b74eced7634d4f248dc6265f8225d432",
@@ -4374,6 +4434,12 @@
        "type": "eq",
        "about": "Support for CMap GBKp-EUC-H"
     },
+    {  "id": "issue13325_reduced",
+       "file": "pdfs/issue13325_reduced.pdf",
+       "md5": "a9311230d2e3388070711be8748a1aa0",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",
@@ -4492,6 +4558,12 @@
            "value": "收文"
          }
        }
+    },
+    {  "id": "annotation-ink-without-appearance",
+       "file": "pdfs/annotation-ink-without-appearance.pdf",
+       "md5": "eb06ad4ac260060082ef86435a2feed5",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue4883",
       "file": "pdfs/issue4883.pdf",
@@ -4964,6 +5036,13 @@
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    {  "id": "annotation-polyline-polygon-without-appearance",
+       "file": "pdfs/annotation-polyline-polygon-without-appearance.pdf",
+       "md5": "b776937148e9f7c4de6bea552e23b92f",
+       "rounds": 1,
+       "annotations": true,
+       "type": "eq"
     },
     {  "id": "issue4872",
        "file": "pdfs/issue4872.pdf",

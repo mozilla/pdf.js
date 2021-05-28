@@ -199,7 +199,7 @@ class DefaultExternalServices {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: createPromiseCapability(),
-  fellback: false,
+  _fellback: false,
   appConfig: null,
   pdfDocument: null,
   pdfLoadingTask: null,
@@ -259,7 +259,6 @@ const PDFViewerApplication = {
   metadata: null,
   _contentDispositionFilename: null,
   _contentLength: null,
-  triggerDelayedFallback: null,
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
@@ -361,16 +360,6 @@ const PDFViewerApplication = {
     if ("disablehistory" in hashParams) {
       AppOptions.set("disableHistory", hashParams.disablehistory === "true");
     }
-    if ("webgl" in hashParams) {
-      AppOptions.set("enableWebGL", hashParams.webgl === "true");
-    }
-    if ("removepageborders" in hashParams) {
-      // #194
-      AppOptions.set(
-        "removePageBorders",
-        hashParams["removepageborders"] === "true"
-      ); // #194
-    }
     if ("verbosity" in hashParams) {
       AppOptions.set("verbosity", hashParams.verbosity | 0);
     }
@@ -439,20 +428,23 @@ const PDFViewerApplication = {
     try {
       const styleSheet = document.styleSheets[0];
       const cssRules = styleSheet?.cssRules || [];
+      const mediaMatcher =
+        typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+          ? "-moz-toolbar-prefers-color-scheme"
+          : "prefers-color-scheme";
+      const mediaRule = `(${mediaMatcher}: dark)`;
+      const mediaRegex = new RegExp(
+        `^@media \\(${mediaMatcher}: dark\\) {\\n\\s*([\\w\\s-.,:;/\\\\{}()]+)\\n}$`
+      );
       for (let i = 0, ii = cssRules.length; i < ii; i++) {
         const rule = cssRules[i];
-        if (
-          rule instanceof CSSMediaRule &&
-          rule.media?.[0] === "(prefers-color-scheme: dark)"
-        ) {
+        if (rule instanceof CSSMediaRule && rule.media?.[0] === mediaRule) {
           if (cssTheme === ViewerCssTheme.LIGHT) {
             styleSheet.deleteRule(i);
             return;
           }
           // cssTheme === ViewerCssTheme.DARK
-          const darkRules = /^@media \(prefers-color-scheme: dark\) {\n\s*([\w\s-.,:;/\\{}()]+)\n}$/.exec(
-            rule.cssText
-          );
+          const darkRules = mediaRegex.exec(rule.cssText);
           if (darkRules?.[1]) {
             styleSheet.deleteRule(i);
             styleSheet.insertRule(darkRules[1], i);
@@ -526,7 +518,6 @@ const PDFViewerApplication = {
       findController,
       scriptingManager: pdfScriptingManager,
       renderer: AppOptions.get("renderer"),
-      enableWebGL: AppOptions.get("enableWebGL"),
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
@@ -884,6 +875,7 @@ const PDFViewerApplication = {
       this.pdfDocumentProperties.setDocument(null);
     }
     webViewerResetPermissions();
+    this._fellback = false;
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
@@ -893,7 +885,6 @@ const PDFViewerApplication = {
     this.metadata = null;
     this._contentDispositionFilename = null;
     this._contentLength = null;
-    this.triggerDelayedFallback = null;
     this._saveInProgress = false;
 
     this._cancelIdleCallbacks();
@@ -1063,9 +1054,7 @@ const PDFViewerApplication = {
     try {
       this._ensureDownloadComplete();
 
-      const data = await this.pdfDocument.saveDocument(
-        this.pdfDocument.annotationStorage
-      );
+      const data = await this.pdfDocument.saveDocument();
       const blob = new Blob([data], { type: "application/pdf" });
 
       await this.downloadManager.download(blob, url, filename, sourceEventType);
@@ -1087,46 +1076,19 @@ const PDFViewerApplication = {
     }
   },
 
-  /**
-   * For PDF documents that contain e.g. forms and javaScript, we should only
-   * trigger the fallback bar once the user has interacted with the page.
-   * @private
-   */
-  _delayedFallback(featureId) {
-    // Ensure that telemetry is always reported, since it's not guaranteed
-    // that the fallback bar will be shown (depends on user interaction).
-    this.externalServices.reportTelemetry({
-      type: "unsupportedFeature",
-      featureId,
-    });
-
-    if (!this.triggerDelayedFallback) {
-      this.triggerDelayedFallback = () => {
-        this.fallback(featureId);
-        this.triggerDelayedFallback = null;
-      };
-    }
-  },
-
   fallback(featureId) {
     this.externalServices.reportTelemetry({
       type: "unsupportedFeature",
       featureId,
     });
 
-    // Don't show the fallback bar for things that are *very* unlikely to cause
-    // user-visible errors, to avoid bothering the user unnecessarily.
-    switch (featureId) {
-      case UNSUPPORTED_FEATURES.errorFontLoadNative:
-      case UNSUPPORTED_FEATURES.errorFontMissing:
-        return;
-    }
     // Only trigger the fallback once so we don't spam the user with messages
     // for one PDF.
-    if (this.fellback) {
+    if (this._fellback) {
       return;
     }
-    this.fellback = true;
+    this._fellback = true;
+
     this.externalServices
       .fallback({
         featureId,
@@ -1450,14 +1412,23 @@ const PDFViewerApplication = {
 
     onePageRendered.then(() => {
       pdfDocument.getOutline().then(outline => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the outline resolved.
+        }
         this.pdfOutlineViewer.render({ outline, pdfDocument });
       });
       pdfDocument.getAttachments().then(attachments => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the attachments resolved.
+        }
         this.pdfAttachmentViewer.render({ attachments });
       });
       // Ensure that the layers accurately reflects the current state in the
       // viewer itself, rather than the default state provided by the API.
       pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the layers resolved.
+        }
         this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
       });
       if (
@@ -1559,8 +1530,8 @@ const PDFViewerApplication = {
           // Don't warn/fallback for empty JavaScript actions.
           return false;
         }
-        console.warn("Warning: JavaScript is not supported");
-        this._delayedFallback(UNSUPPORTED_FEATURES.javaScript);
+        console.warn("Warning: JavaScript support is not enabled");
+        this.fallback(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1584,12 +1555,8 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeMetadata(pdfDocument) {
-    const {
-      info,
-      metadata,
-      contentDispositionFilename,
-      contentLength,
-    } = await pdfDocument.getMetadata();
+    const { info, metadata, contentDispositionFilename, contentLength } =
+      await pdfDocument.getMetadata();
 
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the metadata resolved.
@@ -1649,14 +1616,19 @@ const PDFViewerApplication = {
       // Note: `isPureXfa === true` implies that `enableXfa = true` was set.
       !pdfDocument.isPureXfa
     ) {
-      console.warn("Warning: XFA is not supported");
-      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+      console.warn("Warning: XFA is not enabled");
+      this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
       !this.pdfViewer.renderInteractiveForms
     ) {
       console.warn("Warning: Interactive form support is not enabled");
-      this._delayedFallback(UNSUPPORTED_FEATURES.forms);
+      this.fallback(UNSUPPORTED_FEATURES.forms);
+    }
+
+    if (info.IsSignaturesPresent) {
+      console.warn("Warning: Digital signatures validation is not supported");
+      this.fallback(UNSUPPORTED_FEATURES.signatures);
     }
 
     // Telemetry labels must be C++ variable friendly.
@@ -1881,7 +1853,8 @@ const PDFViewerApplication = {
 
   forceRendering() {
     this.pdfRenderingQueue.printing = !!this.printService;
-    this.pdfRenderingQueue.isThumbnailViewEnabled = this.pdfSidebar.isThumbnailViewVisible;
+    this.pdfRenderingQueue.isThumbnailViewEnabled =
+      this.pdfSidebar.isThumbnailViewVisible;
     this.pdfRenderingQueue.renderHighestPriority();
   },
 
@@ -1917,8 +1890,8 @@ const PDFViewerApplication = {
     const pagesOverview = this.pdfViewer.getPagesOverview();
     const printContainer = this.appConfig.printContainer;
     const printResolution = AppOptions.get("printResolution");
-    const optionalContentConfigPromise = this.pdfViewer
-      .optionalContentConfigPromise;
+    const optionalContentConfigPromise =
+      this.pdfViewer.optionalContentConfigPromise;
 
     const printService = PDFPrintServiceFactory.instance.createPrintService(
       this.pdfDocument,
@@ -2065,7 +2038,6 @@ const PDFViewerApplication = {
     });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
-    window.addEventListener("keyup", webViewerKeyUp);
     window.addEventListener("resize", _boundEvents.windowResize);
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2143,7 +2115,6 @@ const PDFViewerApplication = {
     });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
-    window.removeEventListener("keyup", webViewerKeyUp);
     window.removeEventListener("resize", _boundEvents.windowResize);
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2542,7 +2513,8 @@ function webViewerUpdateViewarea(evt) {
     location.pdfOpenParams
   );
   PDFViewerApplication.appConfig.toolbar.viewBookmark.href = href;
-  PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href = href;
+  PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href =
+    href;
 
   // Show/hide the loading indicator in the page number input element.
   const currentPage = PDFViewerApplication.pdfViewer.getPageView(
@@ -2827,10 +2799,8 @@ function setZoomDisabledTimeout() {
 }
 
 function webViewerWheel(evt) {
-  const {
-    pdfViewer,
-    supportedMouseWheelZoomModifierKeys,
-  } = PDFViewerApplication;
+  const { pdfViewer, supportedMouseWheelZoomModifierKeys } =
+    PDFViewerApplication;
 
   if (pdfViewer.isInPresentationMode) {
     return;
@@ -2922,15 +2892,6 @@ function webViewerTouchStart(evt) {
 }
 
 function webViewerClick(evt) {
-  // Avoid triggering the fallback bar when the user clicks on the
-  // toolbar or sidebar.
-  if (
-    PDFViewerApplication.triggerDelayedFallback &&
-    PDFViewerApplication.pdfViewer.containsElement(evt.target)
-  ) {
-    PDFViewerApplication.triggerDelayedFallback();
-  }
-
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
     return;
   }
@@ -2956,16 +2917,6 @@ function webViewerClick(evt) {
     }
 
     PDFViewerApplication.secondaryToolbar.close();
-  }
-}
-
-function webViewerKeyUp(evt) {
-  if (evt.keyCode === 9) {
-    // The user is tabbing into the viewer. Trigger the fallback bar if it has
-    // not already been displayed.
-    if (PDFViewerApplication.triggerDelayedFallback) {
-      PDFViewerApplication.triggerDelayedFallback();
-    }
   }
 }
 

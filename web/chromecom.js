@@ -184,9 +184,8 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     )[chrome.i18n.getUILanguage?.()];
 
     if (i18nFileAccessLabel) {
-      document.getElementById(
-        "chrome-file-access-label"
-      ).textContent = i18nFileAccessLabel;
+      document.getElementById("chrome-file-access-label").textContent =
+        i18nFileAccessLabel;
     }
 
     const link = document.getElementById("chrome-link-to-extensions-page");

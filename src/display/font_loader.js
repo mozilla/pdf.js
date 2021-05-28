@@ -61,9 +61,9 @@ class BaseFontLoader {
   }
 
   clear() {
-    this.nativeFontFaces.forEach(nativeFontFace => {
+    for (const nativeFontFace of this.nativeFontFaces) {
       this._document.fonts.delete(nativeFontFace);
-    });
+    }
     this.nativeFontFaces.length = 0;
 
     if (this.styleElement) {
@@ -315,8 +315,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       this.insertRule(rule);
 
       const names = [];
-      for (i = 0, ii = fonts.length; i < ii; i++) {
-        names.push(fonts[i].loadedName);
+      for (const font of fonts) {
+        names.push(font.loadedName);
       }
       names.push(loadTestFontId);
 
@@ -326,10 +326,10 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       div.style.position = "absolute";
       div.style.top = div.style.left = "0px";
 
-      for (i = 0, ii = names.length; i < ii; ++i) {
+      for (const name of names) {
         const span = this._document.createElement("span");
         span.textContent = "Hi";
-        span.style.fontFamily = names[i];
+        span.style.fontFamily = name;
         div.appendChild(span);
       }
       this._document.body.appendChild(div);
@@ -370,7 +370,22 @@ class FontFaceObject {
     if (!this.data || this.disableFontFace) {
       return null;
     }
-    const nativeFontFace = new FontFace(this.loadedName, this.data, {});
+    let nativeFontFace;
+    if (!this.cssFontInfo) {
+      nativeFontFace = new FontFace(this.loadedName, this.data, {});
+    } else {
+      const css = {
+        weight: this.cssFontInfo.fontWeight,
+      };
+      if (this.cssFontInfo.italicAngle) {
+        css.style = `oblique ${this.cssFontInfo.italicAngle}deg`;
+      }
+      nativeFontFace = new FontFace(
+        this.cssFontInfo.fontFamily,
+        this.data,
+        css
+      );
+    }
 
     if (this.fontRegistry) {
       this.fontRegistry.registerFont(this);
@@ -382,10 +397,19 @@ class FontFaceObject {
     if (!this.data || this.disableFontFace) {
       return null;
     }
-    const data = bytesToString(new Uint8Array(this.data));
+    const data = bytesToString(this.data);
     // Add the @font-face rule to the document.
     const url = `url(data:${this.mimetype};base64,${btoa(data)});`;
-    const rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
+    let rule;
+    if (!this.cssFontInfo) {
+      rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
+    } else {
+      let css = `font-weight: ${this.cssFontInfo.fontWeight};`;
+      if (this.cssFontInfo.italicAngle) {
+        css += `font-style: oblique ${this.cssFontInfo.italicAngle}deg;`;
+      }
+      rule = `@font-face {font-family:"${this.cssFontInfo.fontFamily}";${css}src:${url}}`;
+    }
 
     if (this.fontRegistry) {
       this.fontRegistry.registerFont(this, url);
@@ -398,7 +422,7 @@ class FontFaceObject {
       return this.compiledGlyphs[character];
     }
 
-    let cmds, current;
+    let cmds;
     try {
       cmds = objs.get(this.loadedName + "_path_" + character);
     } catch (ex) {
@@ -417,27 +441,22 @@ class FontFaceObject {
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...
     if (this.isEvalSupported && IsEvalSupportedCached.value) {
-      let args,
-        js = "";
-      for (let i = 0, ii = cmds.length; i < ii; i++) {
-        current = cmds[i];
-
-        if (current.args !== undefined) {
-          args = current.args.join(",");
-        } else {
-          args = "";
-        }
-        js += "c." + current.cmd + "(" + args + ");\n";
+      const jsBuf = [];
+      for (const current of cmds) {
+        const args = current.args !== undefined ? current.args.join(",") : "";
+        jsBuf.push("c.", current.cmd, "(", args, ");\n");
       }
       // eslint-disable-next-line no-new-func
-      return (this.compiledGlyphs[character] = new Function("c", "size", js));
+      return (this.compiledGlyphs[character] = new Function(
+        "c",
+        "size",
+        jsBuf.join("")
+      ));
     }
     // ... but fall back on using Function.prototype.apply() if we're
     // blocked from using eval() for whatever reason (like CSP policies).
     return (this.compiledGlyphs[character] = function (c, size) {
-      for (let i = 0, ii = cmds.length; i < ii; i++) {
-        current = cmds[i];
-
+      for (const current of cmds) {
         if (current.cmd === "scale") {
           current.args = [size, -size];
         }

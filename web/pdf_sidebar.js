@@ -435,11 +435,13 @@ class PDFSidebar {
 
       if (evt.enableCurrentOutlineItemButton) {
         // #645 modified by ngx-extended-pdf-viewer
-        if (this.pdfViewer.pagesPromise) { // #645 modified by ngx-extended-pdf-viewer
-          this.pdfViewer.pagesPromise.then(() => {
-            this._currentOutlineItemButton.disabled = !this.isInitialViewSet;
-          });
-        } // #645 modified by ngx-extended-pdf-viewer
+        if (evt.currentOutlineItemPromise) { // #645 modified by ngx-extended-pdf-viewer
+	      	evt.currentOutlineItemPromise.then(enabled => {
+	        if (!this.isInitialViewSet) {
+	          return;
+	        }
+	        this._currentOutlineItemButton.disabled = !enabled;
+	      });        } // #645 modified by ngx-extended-pdf-viewer
       }
     });
 

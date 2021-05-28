@@ -81,10 +81,9 @@ const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 const AUTOPREFIXER_CONFIG = {
   overrideBrowserslist: [
     "last 2 versions",
-    "Chrome >= 49", // Last supported on Windows XP
-    "Firefox >= 52", // Last supported on Windows XP
+    "Chrome >= 68",
     "Firefox ESR",
-    "Safari >= 10",
+    "Safari >= 11.1",
     "> 0.5%",
     "not IE > 0",
     "not dead",
@@ -778,8 +777,8 @@ gulp.task("cmaps", function (done) {
     }
   });
 
-  const compressCmaps = require("./external/cmapscompress/compress.js")
-    .compressCmaps;
+  const compressCmaps =
+    require("./external/cmapscompress/compress.js").compressCmaps;
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
   done();
 });
@@ -1413,7 +1412,7 @@ gulp.task(
         ),
         preprocessCSS("web/viewer.css", "chrome", defines, true)
           .pipe(
-            postcss([autoprefixer({ overrideBrowserslist: ["chrome >= 49"] })])
+            postcss([autoprefixer({ overrideBrowserslist: ["chrome >= 68"] })])
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
@@ -1523,7 +1522,8 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
         babelPluginReplaceNonWebPackRequire,
       ],
     }).code;
-    const removeCjsSrc = /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
+    const removeCjsSrc =
+      /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
     content = content.replace(removeCjsSrc, (all, prefix, interop, suffix) => {
       return prefix + suffix;
     });
@@ -2263,9 +2263,8 @@ gulp.task(
     let reason = process.env.PDFJS_UPDATE_REASON;
     // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
     if (typeof reason === "string") {
-      const reasonParts = /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(
-        reason
-      );
+      const reasonParts =
+        /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
 
       if (reasonParts) {
         reason =

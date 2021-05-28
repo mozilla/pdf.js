@@ -24,7 +24,8 @@
   line-height: 1;
 }
 
-.textLayer > span {
+.textLayer span,
+.textLayer br {
   color: transparent;
   position: absolute;
   white-space: pre;
@@ -33,6 +34,7 @@
 }
 
 .textLayer .highlight {
+  position: relative;
   margin: -1px;
   padding: 1px;
   background-color: rgba(180, 0, 170, 1);

@@ -34,6 +34,7 @@
     "pdf_history_spec.js",
     "primitives_spec.js",
     "stream_spec.js",
+    "struct_tree_spec.js",
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
@@ -41,6 +42,7 @@
     "writer_spec.js",
     "xfa_formcalc_spec.js",
     "xfa_parser_spec.js",
+    "xfa_tohtml_spec.js",
     "xml_spec.js"
   ]
 }

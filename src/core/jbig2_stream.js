@@ -14,7 +14,7 @@
  */
 
 import { isDict, isStream } from "./primitives.js";
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { Jbig2Image } from "./jbig2.js";
 import { shadow } from "../shared/util.js";
 
@@ -22,33 +22,27 @@ import { shadow } from "../shared/util.js";
  * For JBIG2's we use a library to decode these images and
  * the stream behaves like all the other DecodeStreams.
  */
-const Jbig2Stream = (function Jbig2StreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function Jbig2Stream(stream, maybeLength, dict, params) {
-    this.stream = stream;
-    this.maybeLength = maybeLength;
-    this.dict = dict;
-    this.params = params;
+class Jbig2Stream extends DecodeStream {
+  constructor(stream, maybeLength, params) {
+    super(maybeLength);
 
-    DecodeStream.call(this, maybeLength);
+    this.stream = stream;
+    this.dict = stream.dict;
+    this.maybeLength = maybeLength;
+    this.params = params;
   }
 
-  Jbig2Stream.prototype = Object.create(DecodeStream.prototype);
+  get bytes() {
+    // If `this.maybeLength` is null, we'll get the entire stream.
+    return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
+  }
 
-  Object.defineProperty(Jbig2Stream.prototype, "bytes", {
-    get() {
-      // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
-    },
-    configurable: true,
-  });
-
-  Jbig2Stream.prototype.ensureBuffer = function (requested) {
+  ensureBuffer(requested) {
     // No-op, since `this.readBlock` will always parse the entire image and
     // directly insert all of its data into `this.buffer`.
-  };
+  }
 
-  Jbig2Stream.prototype.readBlock = function () {
+  readBlock() {
     if (this.eof) {
       return;
     }
@@ -73,9 +67,7 @@ const Jbig2Stream = (function Jbig2StreamClosure() {
     this.buffer = data;
     this.bufferLength = dataLength;
     this.eof = true;
-  };
-
-  return Jbig2Stream;
-})();
+  }
+}
 
 export { Jbig2Stream };

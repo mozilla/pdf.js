@@ -289,33 +289,33 @@ describe("util", function () {
   });
 
   describe("createPromiseCapability", function () {
-    it("should resolve with correct data", function (done) {
+    it("should resolve with correct data", async function () {
       const promiseCapability = createPromiseCapability();
       expect(promiseCapability.settled).toEqual(false);
 
       promiseCapability.resolve({ test: "abc" });
 
-      promiseCapability.promise.then(function (data) {
-        expect(promiseCapability.settled).toEqual(true);
-
-        expect(data).toEqual({ test: "abc" });
-        done();
-      }, done.fail);
+      const data = await promiseCapability.promise;
+      expect(promiseCapability.settled).toEqual(true);
+      expect(data).toEqual({ test: "abc" });
     });
 
-    it("should reject with correct reason", function (done) {
+    it("should reject with correct reason", async function () {
       const promiseCapability = createPromiseCapability();
       expect(promiseCapability.settled).toEqual(false);
 
       promiseCapability.reject(new Error("reason"));
 
-      promiseCapability.promise.then(done.fail, function (reason) {
-        expect(promiseCapability.settled).toEqual(true);
+      try {
+        await promiseCapability.promise;
 
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(promiseCapability.settled).toEqual(true);
         expect(reason instanceof Error).toEqual(true);
         expect(reason.message).toEqual("reason");
-        done();
-      });
+      }
     });
   });
 

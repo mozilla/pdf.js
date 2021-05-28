@@ -51,21 +51,18 @@ import { warn } from "../src/shared/util.js";
  *   The default value is `TextLayerMode.ENABLE`.
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  * @property {IPDFXfaLayerFactory} xfaLayerFactory
+ * @property {IPDFStructTreeLayerFactory} structTreeLayerFactory
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default value is `true`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
- * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
- *   some operations. The default value is `false`.
  * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
  *   value is `false`.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
- * @property {boolean} [enableScripting] - Enable embedded script execution.
- *   The default value is `false`.
  */
 
 const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
@@ -106,10 +103,9 @@ class PDFPageView {
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
+    this.structTreeLayerFactory = options.structTreeLayerFactory;
     this.renderer = options.renderer || RendererType.CANVAS;
-    this.enableWebGL = options.enableWebGL || false;
     this.l10n = options.l10n || NullL10n;
-    this.enableScripting = options.enableScripting === true;
 
     this.paintTask = null;
     this.paintedViewportMap = new WeakMap();
@@ -121,6 +117,7 @@ class PDFPageView {
     this.textLayer = null;
     this.zoomLayer = null;
     this.xfaLayer = null;
+    this.structTreeLayer = null;
 
     const div = document.createElement("div");
     div.className = "page";
@@ -359,6 +356,10 @@ class PDFPageView {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
     }
+    if (this._onTextLayerRendered) {
+      this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
+      this._onTextLayerRendered = null;
+    }
   }
 
   cssTransform(target, redrawAnnotations = false) {
@@ -366,10 +367,14 @@ class PDFPageView {
     const width = this.viewport.width;
     const height = this.viewport.height;
     const div = this.div;
-    target.style.width = target.parentNode.style.width = div.style.width =
-      Math.floor(width) + "px";
-    target.style.height = target.parentNode.style.height = div.style.height =
-      Math.floor(height) + "px";
+    target.style.width =
+      target.parentNode.style.width =
+      div.style.width =
+        Math.floor(width) + "px";
+    target.style.height =
+      target.parentNode.style.height =
+      div.style.height =
+        Math.floor(height) + "px";
     // The canvas may have been originally rotated; rotate relative to that.
     const relativeRotation =
       this.viewport.rotation - this.paintedViewportMap.get(target).rotation;
@@ -561,11 +566,12 @@ class PDFPageView {
     this.paintTask = paintTask;
 
     const resultPromise = paintTask.promise.then(
-      function () {
-        return finishPaintTask(null).then(function () {
+      () => {
+        return finishPaintTask(null).then(() => {
           if (textLayer) {
             const readableStream = pdfPage.streamTextContent({
               normalizeWhitespace: true,
+              includeMarkedContent: true,
             });
             textLayer.setTextContentStream(readableStream);
             textLayer.render();
@@ -579,17 +585,18 @@ class PDFPageView {
 
     if (this.annotationLayerFactory) {
       if (!this.annotationLayer) {
-        this.annotationLayer = this.annotationLayerFactory.createAnnotationLayerBuilder(
-          div,
-          pdfPage,
-          /* annotationStorage = */ null,
-          this.imageResourcesPath,
-          this.renderInteractiveForms,
-          this.l10n,
-          this.enableScripting,
-          /* hasJSActionsPromise = */ null,
-          /* mouseState = */ null
-        );
+        this.annotationLayer =
+          this.annotationLayerFactory.createAnnotationLayerBuilder(
+            div,
+            pdfPage,
+            /* annotationStorage = */ null,
+            this.imageResourcesPath,
+            this.renderInteractiveForms,
+            this.l10n,
+            /* enableScripting */ null,
+            /* hasJSActionsPromise = */ null,
+            /* mouseState = */ null
+          );
       }
       this._renderAnnotationLayer();
     }
@@ -602,6 +609,38 @@ class PDFPageView {
         );
       }
       this._renderXfaLayer();
+    }
+
+    // The structure tree is currently only supported when the text layer is
+    // enabled and a canvas is used for rendering.
+    if (this.structTreeLayerFactory && this.textLayer && this.canvas) {
+      // The structure tree must be generated after the text layer for the
+      // aria-owns to work.
+      this._onTextLayerRendered = event => {
+        if (event.pageNumber !== this.id) {
+          return;
+        }
+        this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
+        this._onTextLayerRendered = null;
+
+        if (!this.canvas) {
+          return; // The canvas was removed, prevent errors below.
+        }
+        this.pdfPage.getStructTree().then(tree => {
+          if (!tree) {
+            return;
+          }
+          if (!this.canvas) {
+            return; // The canvas was removed, prevent errors below.
+          }
+          const treeDom = this.structTreeLayer.render(tree);
+          treeDom.classList.add("structTree");
+          this.canvas.appendChild(treeDom);
+        });
+      };
+      this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
+      this.structTreeLayer =
+        this.structTreeLayerFactory.createStructTreeLayerBuilder(pdfPage);
     }
 
     div.setAttribute("data-loaded", true);
@@ -714,7 +753,6 @@ class PDFPageView {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
-      enableWebGL: this.enableWebGL,
       renderInteractiveForms: this.renderInteractiveForms,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
     };

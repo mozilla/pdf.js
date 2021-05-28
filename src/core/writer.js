@@ -31,12 +31,11 @@ function writeDict(dict, buffer, transform) {
 function writeStream(stream, buffer, transform) {
   writeDict(stream.dict, buffer, transform);
   buffer.push(" stream\n");
-  let string = bytesToString(stream.getBytes());
+  let string = stream.getString();
   if (transform !== null) {
     string = transform.encryptString(string);
   }
-  buffer.push(string);
-  buffer.push("\nendstream\n");
+  buffer.push(string, "\nendstream\n");
 }
 
 function writeArray(array, buffer, transform) {
@@ -129,7 +128,7 @@ function updateXFA(datasetsRef, newRefs, xref) {
     return;
   }
   const datasets = xref.fetchIfRef(datasetsRef);
-  const str = bytesToString(datasets.getBytes());
+  const str = datasets.getString();
   const xml = new SimpleXMLParser({ hasAttributes: true }).parseFromString(str);
 
   for (const { xfa } of newRefs) {
@@ -201,8 +200,8 @@ function incrementalUpdate({
   if (xrefInfo.infoRef !== null) {
     newXref.set("Info", xrefInfo.infoRef);
   }
-  if (xrefInfo.encrypt !== null) {
-    newXref.set("Encrypt", xrefInfo.encrypt);
+  if (xrefInfo.encryptRef !== null) {
+    newXref.set("Encrypt", xrefInfo.encryptRef);
   }
 
   // Add a ref for the new xref and sort them
@@ -219,14 +218,13 @@ function incrementalUpdate({
     maxOffset = Math.max(maxOffset, baseOffset);
     xrefTableData.push([1, baseOffset, Math.min(ref.gen, 0xffff)]);
     baseOffset += data.length;
-    indexes.push(ref.num);
-    indexes.push(1);
+    indexes.push(ref.num, 1);
     buffer.push(data);
   }
 
   newXref.set("Index", indexes);
 
-  if (xrefInfo.fileIds.length !== 0) {
+  if (Array.isArray(xrefInfo.fileIds) && xrefInfo.fileIds.length > 0) {
     const md5 = computeMD5(baseOffset, xrefInfo);
     newXref.set("ID", [xrefInfo.fileIds[0], md5]);
   }

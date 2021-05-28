@@ -24,7 +24,12 @@ async function runTests(results) {
   jasmine.loadConfig({
     random: false,
     spec_dir: "integration",
-    spec_files: ["scripting_spec.js", "annotation_spec.js"],
+    spec_files: [
+      "scripting_spec.js",
+      "annotation_spec.js",
+      "accessibility_spec.js",
+      "find_spec.js",
+    ],
   });
 
   jasmine.addReporter({

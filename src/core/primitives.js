@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { assert, unreachable } from "../shared/util.js";
+import { assert, shadow, unreachable } from "../shared/util.js";
+import { BaseStream } from "./base_stream.js";
 
 const EOF = {};
 
@@ -21,21 +22,21 @@ const Name = (function NameClosure() {
   let nameCache = Object.create(null);
 
   // eslint-disable-next-line no-shadow
-  function Name(name) {
-    this.name = name;
+  class Name {
+    constructor(name) {
+      this.name = name;
+    }
+
+    static get(name) {
+      const nameValue = nameCache[name];
+      // eslint-disable-next-line no-restricted-syntax
+      return nameValue ? nameValue : (nameCache[name] = new Name(name));
+    }
+
+    static _clearCache() {
+      nameCache = Object.create(null);
+    }
   }
-
-  Name.prototype = {};
-
-  Name.get = function Name_get(name) {
-    const nameValue = nameCache[name];
-    // eslint-disable-next-line no-restricted-syntax
-    return nameValue ? nameValue : (nameCache[name] = new Name(name));
-  };
-
-  Name._clearCache = function () {
-    nameCache = Object.create(null);
-  };
 
   return Name;
 })();
@@ -44,142 +45,146 @@ const Cmd = (function CmdClosure() {
   let cmdCache = Object.create(null);
 
   // eslint-disable-next-line no-shadow
-  function Cmd(cmd) {
-    this.cmd = cmd;
+  class Cmd {
+    constructor(cmd) {
+      this.cmd = cmd;
+    }
+
+    static get(cmd) {
+      const cmdValue = cmdCache[cmd];
+      // eslint-disable-next-line no-restricted-syntax
+      return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
+    }
+
+    static _clearCache() {
+      cmdCache = Object.create(null);
+    }
   }
-
-  Cmd.prototype = {};
-
-  Cmd.get = function Cmd_get(cmd) {
-    const cmdValue = cmdCache[cmd];
-    // eslint-disable-next-line no-restricted-syntax
-    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
-  };
-
-  Cmd._clearCache = function () {
-    cmdCache = Object.create(null);
-  };
 
   return Cmd;
 })();
 
-const Dict = (function DictClosure() {
-  const nonSerializable = function nonSerializableClosure() {
-    return nonSerializable; // creating closure on some variable
-  };
+const nonSerializable = function nonSerializableClosure() {
+  return nonSerializable; // Creating closure on some variable.
+};
 
-  // xref is optional
-  // eslint-disable-next-line no-shadow
-  function Dict(xref) {
+class Dict {
+  constructor(xref = null) {
     // Map should only be used internally, use functions below to access.
     this._map = Object.create(null);
     this.xref = xref;
     this.objId = null;
     this.suppressEncryption = false;
-    this.__nonSerializable__ = nonSerializable; // disable cloning of the Dict
+    this.__nonSerializable__ = nonSerializable; // Disable cloning of the Dict.
   }
 
-  Dict.prototype = {
-    assignXref: function Dict_assignXref(newXref) {
-      this.xref = newXref;
-    },
+  assignXref(newXref) {
+    this.xref = newXref;
+  }
 
-    get size() {
-      return Object.keys(this._map).length;
-    },
+  get size() {
+    return Object.keys(this._map).length;
+  }
 
-    // automatically dereferences Ref objects
-    get(key1, key2, key3) {
-      let value = this._map[key1];
-      if (value === undefined && key2 !== undefined) {
-        value = this._map[key2];
-        if (value === undefined && key3 !== undefined) {
-          value = this._map[key3];
-        }
+  // Automatically dereferences Ref objects.
+  get(key1, key2, key3) {
+    let value = this._map[key1];
+    if (value === undefined && key2 !== undefined) {
+      value = this._map[key2];
+      if (value === undefined && key3 !== undefined) {
+        value = this._map[key3];
       }
-      if (value instanceof Ref && this.xref) {
-        return this.xref.fetch(value, this.suppressEncryption);
-      }
-      return value;
-    },
+    }
+    if (value instanceof Ref && this.xref) {
+      return this.xref.fetch(value, this.suppressEncryption);
+    }
+    return value;
+  }
 
-    // Same as get(), but returns a promise and uses fetchIfRefAsync().
-    async getAsync(key1, key2, key3) {
-      let value = this._map[key1];
-      if (value === undefined && key2 !== undefined) {
-        value = this._map[key2];
-        if (value === undefined && key3 !== undefined) {
-          value = this._map[key3];
-        }
+  // Same as get(), but returns a promise and uses fetchIfRefAsync().
+  async getAsync(key1, key2, key3) {
+    let value = this._map[key1];
+    if (value === undefined && key2 !== undefined) {
+      value = this._map[key2];
+      if (value === undefined && key3 !== undefined) {
+        value = this._map[key3];
       }
-      if (value instanceof Ref && this.xref) {
-        return this.xref.fetchAsync(value, this.suppressEncryption);
-      }
-      return value;
-    },
+    }
+    if (value instanceof Ref && this.xref) {
+      return this.xref.fetchAsync(value, this.suppressEncryption);
+    }
+    return value;
+  }
 
-    // Same as get(), but dereferences all elements if the result is an Array.
-    getArray(key1, key2, key3) {
-      let value = this.get(key1, key2, key3);
-      if (!Array.isArray(value) || !this.xref) {
-        return value;
+  // Same as get(), but dereferences all elements if the result is an Array.
+  getArray(key1, key2, key3) {
+    let value = this._map[key1];
+    if (value === undefined && key2 !== undefined) {
+      value = this._map[key2];
+      if (value === undefined && key3 !== undefined) {
+        value = this._map[key3];
       }
+    }
+    if (value instanceof Ref && this.xref) {
+      value = this.xref.fetch(value, this.suppressEncryption);
+    }
+
+    if (Array.isArray(value)) {
       value = value.slice(); // Ensure that we don't modify the Dict data.
       for (let i = 0, ii = value.length; i < ii; i++) {
-        if (!(value[i] instanceof Ref)) {
-          continue;
+        if (value[i] instanceof Ref && this.xref) {
+          value[i] = this.xref.fetch(value[i], this.suppressEncryption);
         }
-        value[i] = this.xref.fetch(value[i], this.suppressEncryption);
       }
-      return value;
-    },
+    }
+    return value;
+  }
 
-    // no dereferencing
-    getRaw: function Dict_getRaw(key) {
-      return this._map[key];
-    },
+  // No dereferencing.
+  getRaw(key) {
+    return this._map[key];
+  }
 
-    getKeys: function Dict_getKeys() {
-      return Object.keys(this._map);
-    },
+  getKeys() {
+    return Object.keys(this._map);
+  }
 
-    // no dereferencing
-    getRawValues: function Dict_getRawValues() {
-      return Object.values(this._map);
-    },
+  // No dereferencing.
+  getRawValues() {
+    return Object.values(this._map);
+  }
 
-    set: function Dict_set(key, value) {
-      if (
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")) &&
-        value === undefined
-      ) {
-        unreachable('Dict.set: The "value" cannot be undefined.');
-      }
-      this._map[key] = value;
-    },
+  set(key, value) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) &&
+      value === undefined
+    ) {
+      unreachable('Dict.set: The "value" cannot be undefined.');
+    }
+    this._map[key] = value;
+  }
 
-    has: function Dict_has(key) {
-      return this._map[key] !== undefined;
-    },
+  has(key) {
+    return this._map[key] !== undefined;
+  }
 
-    forEach: function Dict_forEach(callback) {
-      for (const key in this._map) {
-        callback(key, this.get(key));
-      }
-    },
-  };
+  forEach(callback) {
+    for (const key in this._map) {
+      callback(key, this.get(key));
+    }
+  }
 
-  Dict.empty = (function () {
+  static get empty() {
     const emptyDict = new Dict(null);
 
     emptyDict.set = (key, value) => {
       unreachable("Should not call `set` on the empty dictionary.");
     };
-    return emptyDict;
-  })();
+    return shadow(this, "empty", emptyDict);
+  }
 
-  Dict.merge = function ({ xref, dictArray, mergeSubDicts = false }) {
+  static merge({ xref, dictArray, mergeSubDicts = false }) {
     const mergedDict = new Dict(xref);
 
     if (!mergeSubDicts) {
@@ -234,41 +239,39 @@ const Dict = (function DictClosure() {
     properties.clear();
 
     return mergedDict.size > 0 ? mergedDict : Dict.empty;
-  };
-
-  return Dict;
-})();
+  }
+}
 
 const Ref = (function RefClosure() {
   let refCache = Object.create(null);
 
   // eslint-disable-next-line no-shadow
-  function Ref(num, gen) {
-    this.num = num;
-    this.gen = gen;
-  }
+  class Ref {
+    constructor(num, gen) {
+      this.num = num;
+      this.gen = gen;
+    }
 
-  Ref.prototype = {
-    toString: function Ref_toString() {
+    toString() {
       // This function is hot, so we make the string as compact as possible.
       // |this.gen| is almost always zero, so we treat that case specially.
       if (this.gen === 0) {
         return `${this.num}R`;
       }
       return `${this.num}R${this.gen}`;
-    },
-  };
+    }
 
-  Ref.get = function (num, gen) {
-    const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
-    const refValue = refCache[key];
-    // eslint-disable-next-line no-restricted-syntax
-    return refValue ? refValue : (refCache[key] = new Ref(num, gen));
-  };
+    static get(num, gen) {
+      const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
+      const refValue = refCache[key];
+      // eslint-disable-next-line no-restricted-syntax
+      return refValue ? refValue : (refCache[key] = new Ref(num, gen));
+    }
 
-  Ref._clearCache = function () {
-    refCache = Object.create(null);
-  };
+    static _clearCache() {
+      refCache = Object.create(null);
+    }
+  }
 
   return Ref;
 })();
@@ -383,7 +386,7 @@ function isRefsEqual(v1, v2) {
 }
 
 function isStream(v) {
-  return typeof v === "object" && v !== null && v.getBytes !== undefined;
+  return v instanceof BaseStream;
 }
 
 function clearPrimitiveCaches() {

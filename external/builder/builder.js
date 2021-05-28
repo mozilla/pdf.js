@@ -122,7 +122,8 @@ function preprocess(inFilename, outFilename, defines) {
   let line;
   let state = STATE_NONE;
   const stack = [];
-  const control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
+  const control =
+    /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
 
   while ((line = readLine()) !== null) {
     ++lineNumber;
@@ -269,6 +270,12 @@ function preprocessCSS(mode, source, destination) {
   content = expandImports(content, source);
   if (mode === "mozcentral") {
     content = removePrefixed(content, hasPrefixedMozcentral);
+    // In the mozcentral version the color theme should be based on the Firefox
+    // theme instead of the system theme.
+    content = content.replace(
+      "prefers-color-scheme",
+      "-moz-toolbar-prefers-color-scheme"
+    );
   }
   fs.writeFileSync(destination, content);
 }

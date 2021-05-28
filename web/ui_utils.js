@@ -786,22 +786,22 @@ class EventBus {
     let externalListeners;
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
-    eventListeners.slice(0).forEach(({ listener, external, once }) => {
+    for (const { listener, external, once } of eventListeners.slice(0)) {
       if (once) {
         this._off(eventName, listener);
       }
       if (external) {
         (externalListeners ||= []).push(listener);
-        return;
+        continue;
       }
       listener.apply(null, args);
-    });
+    }
     // Dispatch any "external" listeners *after* the internal ones, to give the
     // viewer components time to handle events and update their state first.
     if (externalListeners) {
-      externalListeners.forEach(listener => {
+      for (const listener of externalListeners) {
         listener.apply(null, args);
-      });
+      }
       externalListeners = null;
     }
     if (

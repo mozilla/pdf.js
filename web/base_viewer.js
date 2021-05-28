@@ -41,6 +41,7 @@ import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
+import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
@@ -72,8 +73,6 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
  *   landscape pages upon printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
- * @property {boolean} [enableWebGL] - Enables WebGL accelerated rendering for
- *   some operations. The default value is `false`.
  * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
  *   value is `false`.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
@@ -197,7 +196,6 @@ class BaseViewer {
     this.renderInteractiveForms = options.renderInteractiveForms !== false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
-    this.enableWebGL = options.enableWebGL || false;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
@@ -574,15 +572,14 @@ class BaseViewer {
             textLayerMode: this.textLayerMode,
             annotationLayerFactory: this,
             xfaLayerFactory,
+            structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             removePageBorders: this.removePageBorders, // #194
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
-            enableWebGL: this.enableWebGL,
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
             l10n: this.l10n,
-            enableScripting: this.enableScripting,
           });
           this._pages.push(pageView);
         }
@@ -1364,7 +1361,7 @@ class BaseViewer {
     imageResourcesPath = "",
     renderInteractiveForms = false,
     l10n = NullL10n,
-    enableScripting = false,
+    enableScripting = null,
     hasJSActionsPromise = null,
     mouseState = null
   ) {
@@ -1378,7 +1375,7 @@ class BaseViewer {
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
-      enableScripting,
+      enableScripting: enableScripting ?? this.enableScripting,
       hasJSActionsPromise:
         hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
       mouseState: mouseState || this._scriptingManager?.mouseState,
@@ -1393,6 +1390,16 @@ class BaseViewer {
   createXfaLayerBuilder(pageDiv, pdfPage) {
     return new XfaLayerBuilder({
       pageDiv,
+      pdfPage,
+    });
+  }
+
+  /**
+   * @param {PDFPage} pdfPage
+   * @returns {StructTreeLayerBuilder}
+   */
+  createStructTreeLayerBuilder(pdfPage) {
+    return new StructTreeLayerBuilder({
       pdfPage,
     });
   }

@@ -422,7 +422,8 @@ var Driver = (function DriverClosure() {
           loadingTask.promise.then(
             doc => {
               task.pdfDoc = doc;
-              task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+              task.optionalContentConfigPromise =
+                doc.getOptionalContentConfig();
 
               this._nextPage(task, failure);
             },
@@ -572,6 +573,7 @@ var Driver = (function DriverClosure() {
                 initPromise = page
                   .getTextContent({
                     normalizeWhitespace: true,
+                    includeMarkedContent: true,
                   })
                   .then(function (textContent) {
                     return rasterizeTextLayer(
@@ -599,9 +601,8 @@ var Driver = (function DriverClosure() {
                   }
                   annotationLayerCanvas.width = viewport.width;
                   annotationLayerCanvas.height = viewport.height;
-                  var annotationLayerContext = annotationLayerCanvas.getContext(
-                    "2d"
-                  );
+                  var annotationLayerContext =
+                    annotationLayerCanvas.getContext("2d");
                   annotationLayerContext.clearRect(
                     0,
                     0,
@@ -635,14 +636,13 @@ var Driver = (function DriverClosure() {
                 optionalContentConfigPromise: task.optionalContentConfigPromise,
               };
               if (renderPrint) {
-                const annotationStorage = task.annotationStorage;
-                if (annotationStorage) {
-                  const docAnnotationStorage = task.pdfDoc.annotationStorage;
-                  const entries = Object.entries(annotationStorage);
+                if (task.annotationStorage) {
+                  const entries = Object.entries(task.annotationStorage),
+                    docAnnotationStorage = task.pdfDoc.annotationStorage;
                   for (const [key, value] of entries) {
                     docAnnotationStorage.setValue(key, value);
                   }
-                  renderContext.annotationStorage = docAnnotationStorage;
+                  renderContext.includeAnnotationStorage = true;
                 }
                 renderContext.intent = "print";
               }

@@ -28,7 +28,7 @@ describe("XFAFactory", function () {
           <contentArea x="123pt" w="456pt" h="789pt"/>
           <medium stock="default" short="456pt" long="789pt"/>
           <draw y="1pt" w="11pt" h="22pt" rotate="90" x="2pt">
-            <font size="7pt" typeface="Arial" baselineShift="2pt">
+            <font size="7pt" typeface="FooBar" baselineShift="2pt">
               <fill>
                 <color value="12,23,34"/>
                 <solid/>
@@ -43,6 +43,7 @@ describe("XFAFactory", function () {
       <subform name="first">
       </subform>
       <subform name="second">
+        <breakBefore targetType="pageArea" startNew="1"/>
       </subform>
     </subform>
   </template>
@@ -73,16 +74,23 @@ describe("XFAFactory", function () {
         position: "absolute",
       });
 
-      const draw = page1.children[1];
-      expect(draw.attributes.class).toEqual("xfaDraw xfaFont");
-      expect(draw.attributes.style).toEqual({
-        color: "#0c1722",
-        fontFamily: "Arial",
-        fontSize: "7px",
-        height: "22px",
+      const wrapper = page1.children[1];
+      const draw = wrapper.children[0];
+
+      expect(wrapper.attributes.class).toEqual("xfaWrapper");
+      expect(wrapper.attributes.style).toEqual({
         left: "2px",
         position: "absolute",
         top: "1px",
+      });
+
+      expect(draw.attributes.class).toEqual("xfaDraw xfaFont");
+      expect(draw.attributes.style).toEqual({
+        color: "#0c1722",
+        fontFamily: "FooBar",
+        fontSize: "6.93px",
+        height: "22px",
+        padding: "1px 4px 2px 3px",
         transform: "rotate(-90deg)",
         transformOrigin: "top left",
         verticalAlign: "2px",
@@ -91,7 +99,7 @@ describe("XFAFactory", function () {
 
       // draw element must be on each page.
       expect(draw.attributes.style).toEqual(
-        factory.getPage(1).children[1].attributes.style
+        factory.getPage(1).children[1].children[0].attributes.style
       );
     });
   });

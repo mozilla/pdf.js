@@ -67,6 +67,10 @@ describe("Interaction", () => {
           await page.type("#\\34 16R", "3.14159", { delay: 200 });
           await page.click("#\\34 19R");
 
+          await page.waitForFunction(
+            `getComputedStyle(document.querySelector("#\\\\34 27R")).visibility !== "hidden"`
+          );
+
           visibility = await page.$eval(
             "#\\34 27R",
             el => getComputedStyle(el).visibility
@@ -79,6 +83,10 @@ describe("Interaction", () => {
           await clearInput(page, "#\\34 16R");
           // and leave it
           await page.click("#\\34 19R");
+
+          await page.waitForFunction(
+            `getComputedStyle(document.querySelector("#\\\\34 27R")).visibility !== "visible"`
+          );
 
           visibility = await page.$eval(
             "#\\34 27R",
@@ -498,6 +506,10 @@ describe("Interaction", () => {
       pages = await loadAndWait("js-authors.pdf", "#\\32 5R");
     });
 
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
     it("must print authors in a text field", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -527,6 +539,7 @@ describe("Interaction", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           for (const num of [7, 6, 4, 3, 2, 1]) {
+            await clearInput(page, "#\\33 3R");
             await page.click(`option[value=Export${num}]`);
             await page.waitForFunction(
               `document.querySelector("#\\\\33 3R").value !== ""`
@@ -556,6 +569,7 @@ describe("Interaction", () => {
           );
 
           for (const num of [7, 6, 4, 3, 2, 1]) {
+            await clearInput(page, "#\\33 3R");
             await page.click(`option[value=Export${num}]`);
             await page.waitForFunction(
               `document.querySelector("#\\\\33 3R").value !== ""`
@@ -575,6 +589,7 @@ describe("Interaction", () => {
           let len = 6;
           for (const num of [1, 3, 5, 6, 431, -1, 0]) {
             ++len;
+            await clearInput(page, "#\\33 3R");
             await clearInput(page, "#\\33 9R");
             await page.type("#\\33 9R", `${num},Insert${num},Tresni${num}`, {
               delay: 10,
@@ -607,6 +622,7 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           let len = 6;
           // Click on Restore button.
+          await clearInput(page, "#\\33 3R");
           await page.click("[data-annotation-id='37R']");
           await page.waitForFunction(
             `document.querySelector("#\\\\33 0R").children.length === ${len}`
@@ -645,6 +661,10 @@ describe("Interaction", () => {
 
     beforeAll(async () => {
       pages = await loadAndWait("js-colors.pdf", "#\\33 4R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
     });
 
     it("must change colors", async () => {
@@ -758,6 +778,120 @@ describe("Interaction", () => {
 
           const total = await page.$eval("#\\32 99R", el => el.value);
           expect(total).withContext(`In ${browserName}`).toEqual(`£${sum}`);
+        })
+      );
+    });
+  });
+
+  describe("Check field properties", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("evaljs.pdf", "#\\35 5R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check page index", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await clearInput(page, "#\\35 5R");
+          await page.type(
+            "#\\35 5R",
+            `
+            ['Text1', 'Text2', 'Text4',
+             'List Box7', 'Group6'].map(x => this.getField(x).page).join(',')
+            `
+          );
+
+          // Click on execute button to eval the above code.
+          await page.click("[data-annotation-id='57R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\35 6R").value !== ""`
+          );
+
+          const text = await page.$eval("#\\35 6R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("0,0,1,1,1");
+        })
+      );
+    });
+
+    it("must check display", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const [type, vis] of [
+            ["hidden", "hidden"],
+            ["noPrint", "visible"],
+            ["noView", "hidden"],
+            ["visible", "visible"],
+          ]) {
+            let visibility = await page.$eval(
+              "#\\35 6R",
+              el => getComputedStyle(el).visibility
+            );
+
+            await clearInput(page, "#\\35 5R");
+            await page.type(
+              "#\\35 5R",
+              `this.getField("Text2").display = display.${type};`
+            );
+
+            await page.click("[data-annotation-id='57R']");
+            await page.waitForFunction(
+              `getComputedStyle(document.querySelector("#\\\\35 6R")).visibility !== "${visibility}"`
+            );
+
+            visibility = await page.$eval(
+              "#\\35 6R",
+              el => getComputedStyle(el).visibility
+            );
+            expect(visibility).withContext(`In ${browserName}`).toEqual(vis);
+          }
+        })
+      );
+    });
+  });
+
+  describe("in issue13269.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue13269.pdf", "#\\32 7R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must update fields with the same name from JS", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.type("#\\32 7R", "hello");
+          await page.keyboard.press("Enter");
+
+          await Promise.all(
+            [4, 5, 6].map(async n =>
+              page.waitForFunction(
+                `document.querySelector("#\\\\32 ${n}R").value !== ""`
+              )
+            )
+          );
+
+          const expected = "hello world";
+          for (const n of [4, 5, 6]) {
+            const text = await page.$eval(`#\\32 ${n}R`, el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expected);
+          }
         })
       );
     });

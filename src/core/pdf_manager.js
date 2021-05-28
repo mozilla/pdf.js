@@ -73,6 +73,10 @@ class BasePdfManager {
     return this.pdfDocument.fontFallback(id, handler);
   }
 
+  loadXfaFonts(handler, task) {
+    return this.pdfDocument.loadXfaFonts(handler, task);
+  }
+
   cleanup(manuallyTriggered = false) {
     return this.pdfDocument.cleanup(manuallyTriggered);
   }

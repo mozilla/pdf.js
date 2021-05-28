@@ -1,6 +1,6 @@
 "use strict";
 
-const builder = require("./builder");
+const builder = require("./builder.js");
 const fs = require("fs");
 const path = require("path");
 

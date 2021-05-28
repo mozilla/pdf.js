@@ -28,9 +28,8 @@ describe("display_utils", function () {
   describe("DOMCanvasFactory", function () {
     let canvasFactory;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       canvasFactory = new DOMCanvasFactory();
-      done();
     });
 
     afterAll(function () {
@@ -121,9 +120,8 @@ describe("display_utils", function () {
   describe("DOMSVGFactory", function () {
     let svgFactory;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       svgFactory = new DOMSVGFactory();
-      done();
     });
 
     afterAll(function () {
