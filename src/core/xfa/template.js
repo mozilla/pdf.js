@@ -1465,15 +1465,15 @@ class Draw extends XFAObject {
       "borderMarginPadding"
     );
 
-    const clazz = ["xfaDraw"];
+    const classNames = ["xfaDraw"];
     if (this.font) {
-      clazz.push("xfaFont");
+      classNames.push("xfaFont");
     }
 
     const attributes = {
       style,
       id: this[$uid],
-      class: clazz.join(" "),
+      class: classNames.join(" "),
     };
 
     if (this.name) {
@@ -2012,14 +2012,14 @@ class ExclGroup extends XFAObject {
       "borderMarginPadding",
       "hAlign"
     );
-    const clazz = ["xfaExclgroup"];
+    const classNames = ["xfaExclgroup"];
     const cl = layoutClass(this);
     if (cl) {
-      clazz.push(cl);
+      classNames.push(cl);
     }
 
     attributes.style = style;
-    attributes.class = clazz.join(" ");
+    attributes.class = classNames.join(" ");
 
     if (this.name) {
       attributes.xfaName = this.name;
@@ -2257,16 +2257,16 @@ class Field extends XFAObject {
       "hAlign"
     );
 
-    const clazz = ["xfaField"];
+    const classNames = ["xfaField"];
     // If no font, font properties are inherited.
     if (this.font) {
-      clazz.push("xfaFont");
+      classNames.push("xfaFont");
     }
 
     const attributes = {
       style,
       id: this[$uid],
-      class: clazz.join(" "),
+      class: classNames.join(" "),
     };
 
     if (this.name) {
@@ -3988,14 +3988,14 @@ class Subform extends XFAObject {
       "borderMarginPadding",
       "hAlign"
     );
-    const clazz = ["xfaSubform"];
+    const classNames = ["xfaSubform"];
     const cl = layoutClass(this);
     if (cl) {
-      clazz.push(cl);
+      classNames.push(cl);
     }
 
     attributes.style = style;
-    attributes.class = clazz.join(" ");
+    attributes.class = classNames.join(" ");
 
     if (this.name) {
       attributes.xfaName = this.name;
