@@ -1317,12 +1317,16 @@ class BaseViewer {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
    * @returns {XfaLayerBuilder}
    */
-  createXfaLayerBuilder(pageDiv, pdfPage) {
+  createXfaLayerBuilder(pageDiv, pdfPage, annotationStorage = null) {
     return new XfaLayerBuilder({
       pageDiv,
       pdfPage,
+      annotationStorage:
+        annotationStorage || this.pdfDocument?.annotationStorage,
     });
   }
 
