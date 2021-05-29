@@ -33,6 +33,6 @@ Webpack users. You will need to install
 dependency in your project in order to use `pdfjs-dist/webpack` (configuring
 `worker-loader` is not necessary; just installing it is sufficient).
 
-    import pdfjsLib from 'pdfjs-dist/webpack';
+    import * as pdfjsLib from 'pdfjs-dist/webpack';
 
 For a full working example refer to [this repository](https://github.com/yurydelendik/pdfjs-react).
