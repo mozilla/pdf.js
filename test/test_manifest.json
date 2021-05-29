@@ -115,6 +115,19 @@
        "type": "eq",
        "about": "Causes cmap to be created with invalid glyph ids."
     },
+    {  "id": "issue13447-eq",
+       "file": "pdfs/issue13447.pdf",
+       "md5": "a729709950d69ec1cfc516bf559e995d",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue13447-annotations",
+       "file": "pdfs/issue13447.pdf",
+       "md5": "a729709950d69ec1cfc516bf559e995d",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "bug946506",
        "file": "pdfs/bug946506.pdf",
        "md5": "c28911b5c31bdc337c2ce404c5971cfc",
@@ -2323,6 +2336,13 @@
        "link": true,
        "lastPage": 1,
        "type": "eq"
+    },
+    {  "id": "issue13242",
+       "file": "pdfs/issue13242.pdf",
+       "md5": "ceb2da908c972087eb90e6bae240bce9",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
     },
     {  "id": "issue7229",
        "file": "pdfs/issue7229.pdf",

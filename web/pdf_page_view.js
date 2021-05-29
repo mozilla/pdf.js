@@ -605,7 +605,8 @@ class PDFPageView {
       if (!this.xfaLayer) {
         this.xfaLayer = this.xfaLayerFactory.createXfaLayerBuilder(
           div,
-          pdfPage
+          pdfPage,
+          /* annotationStorage = */ null
         );
       }
       this._renderXfaLayer();

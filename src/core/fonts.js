@@ -807,7 +807,8 @@ class Font {
     this.missingFile = false;
     this.cssFontInfo = properties.cssFontInfo;
 
-    this.glyphCache = Object.create(null);
+    this._charsCache = Object.create(null);
+    this._glyphCache = Object.create(null);
 
     this.isSerifFont = !!(properties.flags & FontFlags.Serif);
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
@@ -2951,7 +2952,7 @@ class Font {
       }
     }
 
-    let glyph = this.glyphCache[charcode];
+    let glyph = this._glyphCache[charcode];
     if (
       !glyph ||
       !glyph.matchesForCache(
@@ -2975,57 +2976,46 @@ class Font {
         isSpace,
         isInFont
       );
-      this.glyphCache[charcode] = glyph;
+      this._glyphCache[charcode] = glyph;
     }
     return glyph;
   }
 
   charsToGlyphs(chars) {
-    let charsCache = this.charsCache;
-    let glyphs, glyph, charcode;
-
-    // if we translated this string before, just grab it from the cache
-    if (charsCache) {
-      glyphs = charsCache[chars];
-      if (glyphs) {
-        return glyphs;
-      }
+    // If we translated this string before, just grab it from the cache.
+    let glyphs = this._charsCache[chars];
+    if (glyphs) {
+      return glyphs;
     }
-
-    // lazily create the translation cache
-    if (!charsCache) {
-      charsCache = this.charsCache = Object.create(null);
-    }
-
     glyphs = [];
-    const charsCacheKey = chars;
-    let i = 0,
-      ii;
 
     if (this.cMap) {
-      // composite fonts have multi-byte strings convert the string from
-      // single-byte to multi-byte
-      const c = Object.create(null);
-      while (i < chars.length) {
+      // Composite fonts have multi-byte strings, convert the string from
+      // single-byte to multi-byte.
+      const c = Object.create(null),
+        ii = chars.length;
+      let i = 0;
+      while (i < ii) {
         this.cMap.readCharCode(chars, i, c);
-        charcode = c.charcode;
-        const length = c.length;
+        const { charcode, length } = c;
         i += length;
         // Space is char with code 0x20 and length 1 in multiple-byte codes.
-        const isSpace = length === 1 && chars.charCodeAt(i - 1) === 0x20;
-        glyph = this._charToGlyph(charcode, isSpace);
+        const glyph = this._charToGlyph(
+          charcode,
+          length === 1 && chars.charCodeAt(i - 1) === 0x20
+        );
         glyphs.push(glyph);
       }
     } else {
-      for (i = 0, ii = chars.length; i < ii; ++i) {
-        charcode = chars.charCodeAt(i);
-        glyph = this._charToGlyph(charcode, charcode === 0x20);
+      for (let i = 0, ii = chars.length; i < ii; ++i) {
+        const charcode = chars.charCodeAt(i);
+        const glyph = this._charToGlyph(charcode, charcode === 0x20);
         glyphs.push(glyph);
       }
     }
 
-    // Enter the translated string into the cache
-    return (charsCache[charsCacheKey] = glyphs);
+    // Enter the translated string into the cache.
+    return (this._charsCache[chars] = glyphs);
   }
 
   /**
@@ -3057,7 +3047,7 @@ class Font {
   }
 
   get glyphCacheValues() {
-    return Object.values(this.glyphCache);
+    return Object.values(this._glyphCache);
   }
 
   /**

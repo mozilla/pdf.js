@@ -941,11 +941,14 @@ class CheckButton extends XFAObject {
       style.height = size;
     }
 
+    const fieldId = this[$getParent]()[$getParent]()[$uid];
     const input = {
       name: "input",
       attributes: {
         class: "xfaCheckbox",
+        fieldId,
         type: "radio",
+        id: `${fieldId}-radio`,
       },
     };
 
@@ -1023,6 +1026,7 @@ class ChoiceList extends XFAObject {
 
     const selectAttributes = {
       class: "xfaSelect",
+      fieldId: this[$getParent]()[$getParent]()[$uid],
       style,
     };
 
@@ -1249,6 +1253,7 @@ class DateTimeEdit extends XFAObject {
       name: "input",
       attributes: {
         type: "text",
+        fieldId: this[$getParent]()[$getParent]()[$uid],
         class: "xfaTextfield",
         style,
       },
@@ -1465,15 +1470,15 @@ class Draw extends XFAObject {
       "borderMarginPadding"
     );
 
-    const clazz = ["xfaDraw"];
+    const classNames = ["xfaDraw"];
     if (this.font) {
-      clazz.push("xfaFont");
+      classNames.push("xfaFont");
     }
 
     const attributes = {
       style,
       id: this[$uid],
-      class: clazz.join(" "),
+      class: classNames.join(" "),
     };
 
     if (this.name) {
@@ -2012,14 +2017,14 @@ class ExclGroup extends XFAObject {
       "borderMarginPadding",
       "hAlign"
     );
-    const clazz = ["xfaExclgroup"];
+    const classNames = ["xfaExclgroup"];
     const cl = layoutClass(this);
     if (cl) {
-      clazz.push(cl);
+      classNames.push(cl);
     }
 
     attributes.style = style;
-    attributes.class = clazz.join(" ");
+    attributes.class = classNames.join(" ");
 
     if (this.name) {
       attributes.xfaName = this.name;
@@ -2257,16 +2262,16 @@ class Field extends XFAObject {
       "hAlign"
     );
 
-    const clazz = ["xfaField"];
+    const classNames = ["xfaField"];
     // If no font, font properties are inherited.
     if (this.font) {
-      clazz.push("xfaFont");
+      classNames.push("xfaFont");
     }
 
     const attributes = {
       style,
       id: this[$uid],
-      class: clazz.join(" "),
+      class: classNames.join(" "),
     };
 
     if (this.name) {
@@ -3012,6 +3017,7 @@ class NumericEdit extends XFAObject {
       name: "input",
       attributes: {
         type: "text",
+        fieldId: this[$getParent]()[$getParent]()[$uid],
         class: "xfaTextfield",
         style,
       },
@@ -3988,14 +3994,14 @@ class Subform extends XFAObject {
       "borderMarginPadding",
       "hAlign"
     );
-    const clazz = ["xfaSubform"];
+    const classNames = ["xfaSubform"];
     const cl = layoutClass(this);
     if (cl) {
-      clazz.push(cl);
+      classNames.push(cl);
     }
 
     attributes.style = style;
-    attributes.class = clazz.join(" ");
+    attributes.class = classNames.join(" ");
 
     if (this.name) {
       attributes.xfaName = this.name;
@@ -4550,6 +4556,7 @@ class TextEdit extends XFAObject {
       html = {
         name: "textarea",
         attributes: {
+          fieldId: this[$getParent]()[$getParent]()[$uid],
           class: "xfaTextfield",
           style,
         },
@@ -4559,6 +4566,7 @@ class TextEdit extends XFAObject {
         name: "input",
         attributes: {
           type: "text",
+          fieldId: this[$getParent]()[$getParent]()[$uid],
           class: "xfaTextfield",
           style,
         },
