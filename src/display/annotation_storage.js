@@ -58,6 +58,16 @@ class AnnotationStorage {
           }
           this.setValue(key, undefined, obj); // second parameter is undefined to prevent infinite loops
         }
+        if (obj === undefined && defaultValue !== undefined && defaultValue.value !== undefined && defaultValue.value !== "") {
+          // send the pre-filled form value to Angular via (formDataChange)
+          if (radioButtonField) {
+            if (defaultValue.value) {
+              window.setFormValue(fieldname, radioButtonField);
+            }
+          } else {
+            window.setFormValue(fieldname, defaultValue.value);
+          }
+        }
       }
     }
     // #718 end of modification by ngx-extended-pdf-viewer
