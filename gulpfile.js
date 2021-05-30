@@ -2006,6 +2006,7 @@ gulp.task("wintersmith", function (done) {
       done(error);
       return;
     }
+    const { stableVersion, betaVersion } = config;
     replaceInFile(
       GH_PAGES_DIR + "/getting_started/index.html",
       /STABLE_VERSION/g,

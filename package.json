@@ -20,12 +20,12 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-fetch-options": "^0.0.5",
     "eslint-plugin-html": "^6.1.2",
-    "eslint-plugin-import": "^2.23.3",
+    "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-mozilla": "^2.10.0",
     "eslint-plugin-no-unsanitized": "^3.1.5",
     "eslint-plugin-prettier": "^3.4.0",
     "eslint-plugin-sort-exports": "^0.4.0",
-    "eslint-plugin-unicorn": "^31.0.0",
+    "eslint-plugin-unicorn": "^32.0.1",
     "globals": "^13.9.0",
     "gulp": "^4.0.2",
     "gulp-postcss": "^9.0.0",
@@ -41,6 +41,7 @@
     "postcss": "^8.3.0",
     "postcss-calc": "^8.0.0",
     "prettier": "^2.3.0",
+    "puppeteer": "^9.1.1",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^13.13.1",
@@ -59,17 +60,15 @@
     "webpack": "^5.38.1",
     "webpack-stream": "^6.1.2",
     "wintersmith": "^2.5.0",
-    "yargs": "^16.2.0"
+    "yargs": "^17.0.1"
   },
   "scripts": {
+    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js",
     "test": "gulp npm-test"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0",
-  "dependencies": {
-    "canvas-size": "^1.2.4"
-  }
+  "license": "Apache-2.0"
 }
