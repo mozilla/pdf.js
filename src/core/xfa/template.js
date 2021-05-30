@@ -2677,7 +2677,7 @@ class Image extends StringObject {
 
   [$toHTML]() {
     if (this.href || !this[$content]) {
-      // TODO: href can be a Name refering to an internal stream
+      // TODO: href can be a Name referring to an internal stream
       // containing a picture.
       // In general, we don't get remote data and use what we have
       // in the pdf itself, so no picture for non null href.
