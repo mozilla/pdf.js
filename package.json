@@ -41,7 +41,6 @@
     "postcss": "^8.3.0",
     "postcss-calc": "^8.0.0",
     "prettier": "^2.3.0",
-    "puppeteer": "^9.1.1",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^13.13.1",
@@ -63,12 +62,14 @@
     "yargs": "^17.0.1"
   },
   "scripts": {
-    "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js",
     "test": "gulp npm-test"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "dependencies": {
+    "canvas-size": "^1.2.4"
+  }
 }
