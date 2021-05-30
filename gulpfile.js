@@ -1907,20 +1907,6 @@ gulp.task("wintersmith", function (done) {
     }
     const { stableVersion, betaVersion } = config;
 
-    // Create appropriate file names for the legacy builds. This logic can be
-    // removed and/or simplified, once the stable version is past the cutoff.
-    const CUTOFF_VERSION = "2.7.570";
-    replaceInFile(
-      GH_PAGES_DIR + "/getting_started/index.html",
-      /STABLE_VERSION_LEGACY/g,
-      stableVersion + (stableVersion <= CUTOFF_VERSION ? "-es5" : "-legacy")
-    );
-    replaceInFile(
-      GH_PAGES_DIR + "/getting_started/index.html",
-      /BETA_VERSION_LEGACY/g,
-      betaVersion + (betaVersion <= CUTOFF_VERSION ? "-es5" : "-legacy")
-    );
-
     replaceInFile(
       GH_PAGES_DIR + "/getting_started/index.html",
       /STABLE_VERSION/g,

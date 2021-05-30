@@ -54,8 +54,8 @@ Before downloading PDF.js please take a moment to understand the different layer
       Includes the generic build of PDF.js and the viewer.
     </p>
     <span class="GROUP_CLASS">
-      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION_LEGACY-dist.zip">Stable (vSTABLE_VERSION)</a>
-      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION_LEGACY-dist.zip">Beta (vBETA_VERSION)</a>
+      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-legacy-dist.zip">Stable (vSTABLE_VERSION)</a>
+      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-legacy-dist.zip">Beta (vBETA_VERSION)</a>
     </span>
   </div>
   <div class="col-md-4">
