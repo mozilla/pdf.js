@@ -964,12 +964,6 @@ class PDFDocumentProxy {
   saveDocument() {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      arguments.length > 0
-    ) {
-      deprecated("saveDocument no longer accepts any options.");
-    }
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       this._transport.annotationStorage.size <= 0
     ) {
       deprecated(
@@ -1282,16 +1276,6 @@ class PDFPageProxy {
     includeAnnotationStorage = false,
     optionalContentConfigPromise = null,
   }) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      arguments[0]?.annotationStorage !== undefined
-    ) {
-      deprecated(
-        "render no longer accepts an `annotationStorage` option, " +
-          "please use the `includeAnnotationStorage`-boolean instead."
-      );
-      includeAnnotationStorage ||= !!arguments[0].annotationStorage;
-    }
     if (this._stats) {
       this._stats.time("Overall");
     }
