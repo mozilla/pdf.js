@@ -60,7 +60,7 @@
     "webpack": "^5.38.1",
     "webpack-stream": "^6.1.2",
     "wintersmith": "^2.5.0",
-    "yargs": "^16.2.0"
+    "yargs": "^17.0.1"
   },
   "scripts": {
     "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js",
