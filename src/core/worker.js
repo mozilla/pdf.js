@@ -187,13 +187,13 @@ class WorkerMessageHandler {
         await pdfManager.ensureDoc("checkFirstPage");
       }
 
-      const [numPages, fingerprint, isPureXfa] = await Promise.all([
+      const [numPages, fingerprint, htmlForXfa] = await Promise.all([
         pdfManager.ensureDoc("numPages"),
         pdfManager.ensureDoc("fingerprint"),
-        pdfManager.ensureDoc("isPureXfa"),
+        pdfManager.ensureDoc("htmlForXfa"),
       ]);
 
-      if (isPureXfa) {
+      if (htmlForXfa) {
         const task = new WorkerTask("loadXfaFonts");
         startWorkerTask(task);
         await pdfManager
@@ -203,7 +203,7 @@ class WorkerMessageHandler {
           })
           .then(() => finishWorkerTask(task));
       }
-      return { numPages, fingerprint, isPureXfa };
+      return { numPages, fingerprint, htmlForXfa };
     }
 
     function getPdfManager(data, evaluatorOptions, enableXfa) {
@@ -498,12 +498,6 @@ class WorkerMessageHandler {
     handler.on("GetPageJSActions", function ({ pageIndex }) {
       return pdfManager.getPage(pageIndex).then(function (page) {
         return pdfManager.ensure(page, "jsActions");
-      });
-    });
-
-    handler.on("GetPageXfa", function wphSetupGetXfa({ pageIndex }) {
-      return pdfManager.getPage(pageIndex).then(function (page) {
-        return pdfManager.ensure(page, "xfaData");
       });
     });
 
