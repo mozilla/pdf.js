@@ -304,6 +304,56 @@ describe("XFAParser", function () {
       expect(font.extras.id).toEqual("id2");
     });
 
+    it("should parse a xfa document and apply some prototypes through usehref", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <proto>
+        <draw name="foo">
+          <font typeface="Foo" size="123pt" weight="bold" posture="italic">
+            <fill>
+              <color value="1,2,3"/>
+            </fill>
+          </font>
+        </draw>
+      </proto>
+      <field>
+        <font usehref=".#som($template.#subform.foo.#font)"/>
+      </field>
+      <field>
+        <font usehref=".#som($template.#subform.foo.#font)" size="456pt" weight="bold" posture="normal">
+          <fill>
+            <color value="4,5,6"/>
+          </fill>
+          <extras id="id2"/>
+        </font>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      let font = root.template.subform.field[0].font;
+      expect(font.typeface).toEqual("Foo");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual(123);
+      expect(font.weight).toEqual("bold");
+      expect(font.posture).toEqual("italic");
+      expect(font.fill.color.value).toEqual({ r: 1, g: 2, b: 3 });
+      expect(font.extras).toEqual(undefined);
+
+      font = root.template.subform.field[1].font;
+      expect(font.typeface).toEqual("Foo");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual(456);
+      expect(font.weight).toEqual("bold");
+      expect(font.posture).toEqual("normal");
+      expect(font.fill.color.value).toEqual({ r: 4, g: 5, b: 6 });
+      expect(font.extras.id).toEqual("id2");
+    });
+
     it("should parse a xfa document with xhtml", function () {
       const xml = `
 <?xml version="1.0"?>
