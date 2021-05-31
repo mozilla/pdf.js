@@ -22,18 +22,35 @@ class XFAFactory {
     try {
       this.root = new XFAParser().parse(XFAFactory._createDocument(data));
       this.form = new Binder(this.root).bind();
-      this.pages = this.form[$toHTML]();
+      this._createPages();
     } catch (e) {
       console.log(e);
     }
   }
 
-  getPage(pageIndex) {
-    return this.pages.children[pageIndex];
+  _createPages() {
+    this.pages = this.form[$toHTML]();
+    this.dims = this.pages.children.map(c => {
+      const { width, height } = c.attributes.style;
+      return [0, 0, parseInt(width), parseInt(height)];
+    });
+  }
+
+  getBoundingBox(pageIndex) {
+    return this.dims[pageIndex];
   }
 
   get numberPages() {
-    return this.pages.children.length;
+    return this.dims.length;
+  }
+
+  getPages() {
+    if (!this.pages) {
+      this._createPages();
+    }
+    const pages = this.pages;
+    this.pages = null;
+    return pages;
   }
 
   static _createDocument(data) {

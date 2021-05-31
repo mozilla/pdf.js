@@ -146,8 +146,7 @@ class Page {
 
   _getBoundingBox(name) {
     if (this.xfaData) {
-      const { width, height } = this.xfaData.attributes.style;
-      return [0, 0, parseInt(width), parseInt(height)];
+      return this.xfaData.bbox;
     }
 
     const box = this._getInheritableProperty(name, /* getArray = */ true);
@@ -241,7 +240,9 @@ class Page {
 
   get xfaData() {
     if (this.xfaFactory) {
-      return shadow(this, "xfaData", this.xfaFactory.getPage(this.pageIndex));
+      return shadow(this, "xfaData", {
+        bbox: this.xfaFactory.getBoundingBox(this.pageIndex),
+      });
     }
     return shadow(this, "xfaData", null);
   }
@@ -851,8 +852,11 @@ class PDFDocument {
     return shadow(this, "xfaFaxtory", null);
   }
 
-  get isPureXfa() {
-    return this.xfaFactory !== null;
+  get htmlForXfa() {
+    if (this.xfaFactory) {
+      return this.xfaFactory.getPages();
+    }
+    return null;
   }
 
   async loadXfaFonts(handler, task) {

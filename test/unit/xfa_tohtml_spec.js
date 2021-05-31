@@ -57,7 +57,8 @@ describe("XFAFactory", function () {
 
       expect(factory.numberPages).toEqual(2);
 
-      const page1 = factory.getPage(0);
+      const pages = factory.getPages();
+      const page1 = pages.children[0];
       expect(page1.attributes.style).toEqual({
         height: "789px",
         width: "456px",
@@ -99,7 +100,7 @@ describe("XFAFactory", function () {
 
       // draw element must be on each page.
       expect(draw.attributes.style).toEqual(
-        factory.getPage(1).children[1].children[0].attributes.style
+        pages.children[1].children[1].children[0].attributes.style
       );
     });
   });
