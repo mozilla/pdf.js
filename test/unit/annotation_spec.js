@@ -2281,7 +2281,7 @@ describe("annotation", function () {
         { ref: buttonWidgetRef, data: buttonWidgetDict },
       ]);
       const task = new WorkerTask("test print");
-      partialEvaluator.options = { ignoreErrors: true };
+      const checkboxEvaluator = partialEvaluator.clone({ ignoreErrors: true });
 
       const annotation = await AnnotationFactory.create(
         xref,
@@ -2293,7 +2293,7 @@ describe("annotation", function () {
       annotationStorage.set(annotation.data.id, { value: true });
 
       const operatorList = await annotation.getOperatorList(
-        partialEvaluator,
+        checkboxEvaluator,
         task,
         false,
         annotationStorage
