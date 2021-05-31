@@ -3866,9 +3866,6 @@ class Subform extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
-    if (this.name === "helpText") {
-      return HTMLResult.EMPTY;
-    }
     if (this[$extra] && this[$extra].afterBreakAfter) {
       const ret = this[$extra].afterBreakAfter;
       delete this[$extra];
@@ -3889,8 +3886,6 @@ class Subform extends XFAObject {
         "XFA - Several breakBefore or breakAfter in subforms: please file a bug."
       );
     }
-
-    // TODO: implement usehref (probably in bind.js).
 
     // TODO: incomplete.
     fixDimensions(this);

@@ -21,6 +21,7 @@ import {
   $nsAttributes,
   $onChild,
   $resolvePrototypes,
+  $root,
   XFAObject,
 } from "./xfa_object.js";
 import { NamespaceSetUp } from "./setup.js";
@@ -43,6 +44,10 @@ class Root extends XFAObject {
   [$finalize]() {
     super[$finalize]();
     if (this.element.template instanceof Template) {
+      // Set the root element in $ids using a symbol in order
+      // to avoid conflict with real IDs.
+      this[$ids].set($root, this.element);
+
       this.element.template[$resolvePrototypes](this[$ids]);
       this.element.template[$ids] = this[$ids];
     }
