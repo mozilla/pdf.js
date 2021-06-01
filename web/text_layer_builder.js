@@ -239,7 +239,7 @@ class TextLayerBuilder {
       const node = document.createTextNode(content);
       if (className) {
         const span = document.createElement("span");
-        span.className = className;
+        span.className = `${className} appended`;
         span.appendChild(node);
         div.appendChild(span);
         return;
