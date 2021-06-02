@@ -66,7 +66,7 @@ describe("XFAFactory", function () {
 
       expect(page1.children.length).toEqual(2);
       const container = page1.children[0];
-      expect(container.attributes.class).toEqual("xfaContentarea");
+      expect(container.attributes.class).toEqual(["xfaContentarea"]);
       expect(container.attributes.style).toEqual({
         height: "789px",
         width: "456px",
@@ -78,24 +78,29 @@ describe("XFAFactory", function () {
       const wrapper = page1.children[1];
       const draw = wrapper.children[0];
 
-      expect(wrapper.attributes.class).toEqual("xfaWrapper");
+      expect(wrapper.attributes.class).toEqual(["xfaWrapper"]);
       expect(wrapper.attributes.style).toEqual({
+        alignSelf: "start",
+        height: "22px",
         left: "2px",
         position: "absolute",
         top: "1px",
+        transform: "rotate(-90deg)",
+        transformOrigin: "top left",
+        width: "11px",
       });
 
-      expect(draw.attributes.class).toEqual("xfaDraw xfaFont");
+      expect(draw.attributes.class).toEqual([
+        "xfaDraw",
+        "xfaFont",
+        "xfaWrapped",
+      ]);
       expect(draw.attributes.style).toEqual({
         color: "#0c1722",
         fontFamily: "FooBar",
         fontSize: "6.93px",
-        height: "22px",
-        padding: "1px 4px 2px 3px",
-        transform: "rotate(-90deg)",
-        transformOrigin: "top left",
+        margin: "1px 4px 2px 3px",
         verticalAlign: "2px",
-        width: "11px",
       });
 
       // draw element must be on each page.
