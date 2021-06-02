@@ -262,3 +262,10 @@
 .xfaTable .xfaRlRow > div {
   flex: 1;
 }
+
+@media print {
+  .xfaTextfield,
+  .xfaSelect {
+    background-color: transparent;
+  }
+}

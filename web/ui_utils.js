@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { DefaultXfaLayerFactory } from "./xfa_layer_builder.js";
+
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
@@ -1020,6 +1022,29 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+function getXfaHtmlForPrinting(printContainer, pdfDocument) {
+  const xfaHtml = pdfDocument.allXfaHtml;
+  const factory = new DefaultXfaLayerFactory();
+  const scale = Math.round(CSS_UNITS * 100) / 100;
+  for (const xfaPage of xfaHtml.children) {
+    const page = document.createElement("div");
+    page.setAttribute("class", "xfaPrintedPage");
+    printContainer.appendChild(page);
+
+    const { width, height } = xfaPage.attributes.style;
+    const viewBox = [0, 0, parseInt(width), parseInt(height)];
+    const viewport = { viewBox, scale, rotation: 0 };
+
+    const builder = factory.createXfaLayerBuilder(
+      page,
+      null,
+      pdfDocument.annotationStorage,
+      xfaPage
+    );
+    builder.render(viewport, "print");
+  }
+}
+
 export {
   animationStarted,
   apiPageLayoutToSpreadMode,
@@ -1036,6 +1061,7 @@ export {
   getOutputScale,
   getPageSizeInches,
   getVisibleElements,
+  getXfaHtmlForPrinting,
   isPortraitOrientation,
   isValidRotation,
   isValidScrollMode,

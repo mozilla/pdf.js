@@ -709,7 +709,15 @@ class PDFDocumentProxy {
    * @type {boolean} True if only XFA form.
    */
   get isPureXfa() {
-    return this._pdfInfo.isPureXfa;
+    return !!this._transport._htmlForXfa;
+  }
+
+  /**
+   * @type {Object | null} An object representing a HTML tree structure
+   * to render the XFA, or `null` when no XFA form exists.
+   */
+  get allXfaHtml() {
+    return this._transport._htmlForXfa;
   }
 
   /**
@@ -1267,8 +1275,8 @@ class PDFPageProxy {
    *   are {Object} with a name, attributes (class, style, ...), value and
    *   children, very similar to a HTML DOM tree), or `null` if no XFA exists.
    */
-  getXfa() {
-    return (this._xfaPromise ||= this._transport.getPageXfa(this._pageIndex));
+  async getXfa() {
+    return this._transport._htmlForXfa?.children[this._pageIndex] || null;
   }
 
   /**
@@ -1554,7 +1562,6 @@ class PDFPageProxy {
     this.objs.clear();
     this._annotationsPromise = null;
     this._jsActionsPromise = null;
-    this._xfaPromise = null;
     this._structTreePromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
@@ -1595,7 +1602,6 @@ class PDFPageProxy {
     this.objs.clear();
     this._annotationsPromise = null;
     this._jsActionsPromise = null;
-    this._xfaPromise = null;
     this._structTreePromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
@@ -2473,6 +2479,8 @@ class WorkerTransport {
 
     messageHandler.on("GetDoc", ({ pdfInfo }) => {
       this._numPages = pdfInfo.numPages;
+      this._htmlForXfa = pdfInfo.htmlForXfa;
+      delete pdfInfo.htmlForXfa;
       loadingTask._capability.resolve(new PDFDocumentProxy(pdfInfo, this));
     });
 
@@ -2825,12 +2833,6 @@ class WorkerTransport {
 
   getPageJSActions(pageIndex) {
     return this.messageHandler.sendWithPromise("GetPageJSActions", {
-      pageIndex,
-    });
-  }
-
-  getPageXfa(pageIndex) {
-    return this.messageHandler.sendWithPromise("GetPageXfa", {
       pageIndex,
     });
   }

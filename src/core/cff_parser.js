@@ -599,6 +599,12 @@ const CFFParser = (function CFFParserClosure() {
         } else if (value === 11) {
           state.stackSize = stackSize;
           return true;
+        } else if (value === 0 && j === data.length) {
+          // Operator 0 is not used according to the current spec and
+          // it's the last char and consequently it's likely a terminator.
+          // So just replace it by endchar command to make OTS happy.
+          data[j - 1] = 14;
+          validationCommand = CharstringValidationData[14];
         } else {
           validationCommand = CharstringValidationData[value];
         }
