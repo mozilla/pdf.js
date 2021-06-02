@@ -172,68 +172,22 @@ const converters = {
       }
     } else {
       switch (node.hAlign) {
-        case "right":
+        case "left":
+          style.alignSelf = "start";
+          break;
         case "center":
-          style.justifyContent = node.hAlign;
+          style.alignSelf = "center";
+          break;
+        case "right":
+          style.alignSelf = "end";
           break;
       }
     }
   },
-  borderMarginPadding(node, style) {
-    // Get border width in order to compute margin and padding.
-    const borderWidths = [0, 0, 0, 0];
-    const borderInsets = [0, 0, 0, 0];
-    const marginNode = node.margin
-      ? [
-          node.margin.topInset,
-          node.margin.rightInset,
-          node.margin.bottomInset,
-          node.margin.leftInset,
-        ]
-      : [0, 0, 0, 0];
-
-    let borderMargin;
-    if (node.border) {
-      Object.assign(style, node.border[$toStyle](borderWidths, borderInsets));
-      borderMargin = style.margin;
-      delete style.margin;
-    }
-
-    if (borderWidths.every(x => x === 0)) {
-      if (marginNode.every(x => x === 0)) {
-        return;
-      }
-
-      // No border: margin & padding are padding
-      Object.assign(style, node.margin[$toStyle]());
-      style.padding = style.margin;
-      delete style.margin;
-      delete style.outline;
-      delete style.outlineOffset;
-      return;
-    }
-
+  margin(node, style) {
     if (node.margin) {
-      Object.assign(style, node.margin[$toStyle]());
-      style.padding = style.margin;
-      delete style.margin;
+      style.margin = node.margin[$toStyle]().margin;
     }
-
-    if (!style.borderWidth) {
-      // We've an outline so no need to fake one.
-      return;
-    }
-
-    style.borderData = {
-      borderWidth: style.borderWidth,
-      borderColor: style.borderColor,
-      borderStyle: style.borderStyle,
-      margin: borderMargin,
-    };
-
-    delete style.borderWidth;
-    delete style.borderColor;
-    delete style.borderStyle;
   },
 };
 
@@ -441,92 +395,99 @@ function toStyle(node, ...names) {
   return style;
 }
 
-function addExtraDivForBorder(html) {
-  const style = html.attributes.style;
-  const data = style.borderData;
-  const children = [];
+function createWrapper(node, html) {
+  const { attributes } = html;
+  const { style } = attributes;
 
-  const attributes = {
-    class: "xfaWrapper",
-    style: Object.create(null),
+  const wrapper = {
+    name: "div",
+    attributes: {
+      class: ["xfaWrapper"],
+      style: Object.create(null),
+    },
+    children: [html],
   };
 
-  for (const key of ["top", "left"]) {
+  attributes.class.push("xfaWrapped");
+
+  if (node.border) {
+    const { widths, insets } = node.border[$extra];
+    let shiftH = 0;
+    let shiftW = 0;
+    switch (node.border.hand) {
+      case "even":
+        shiftW = widths[0] / 2;
+        shiftH = widths[3] / 2;
+        break;
+      case "left":
+        shiftW = widths[0];
+        shiftH = widths[3];
+        break;
+    }
+    const insetsW = insets[1] + insets[3];
+    const insetsH = insets[0] + insets[2];
+    const border = {
+      name: "div",
+      attributes: {
+        class: ["xfaBorder"],
+        style: {
+          top: `${insets[0] - widths[0] + shiftW}px`,
+          left: `${insets[3] - widths[3] + shiftH}px`,
+          width: insetsW ? `calc(100% - ${insetsW}px)` : "100%",
+          height: insetsH ? `calc(100% - ${insetsH}px)` : "100%",
+        },
+      },
+      children: [],
+    };
+
+    for (const key of [
+      "border",
+      "borderWidth",
+      "borderColor",
+      "borderRadius",
+      "borderStyle",
+    ]) {
+      if (style[key] !== undefined) {
+        border.attributes.style[key] = style[key];
+        delete style[key];
+      }
+    }
+    wrapper.children.push(border);
+  }
+
+  for (const key of [
+    "background",
+    "backgroundClip",
+    "top",
+    "left",
+    "width",
+    "height",
+    "minWidth",
+    "minHeight",
+    "maxWidth",
+    "maxHeight",
+    "transform",
+    "transformOrigin",
+  ]) {
     if (style[key] !== undefined) {
-      attributes.style[key] = style[key];
+      wrapper.attributes.style[key] = style[key];
+      delete style[key];
     }
   }
 
-  delete style.top;
-  delete style.left;
-
   if (style.position === "absolute") {
-    attributes.style.position = "absolute";
+    wrapper.attributes.style.position = "absolute";
   } else {
-    attributes.style.position = "relative";
+    wrapper.attributes.style.position = "relative";
   }
   delete style.position;
 
-  if (style.justifyContent) {
-    attributes.style.justifyContent = style.justifyContent;
-    delete style.justifyContent;
+  if (style.alignSelf) {
+    wrapper.attributes.style.alignSelf = style.alignSelf;
+    delete style.alignSelf;
   }
 
-  if (data) {
-    delete style.borderData;
-
-    let insets;
-    if (data.margin) {
-      insets = data.margin.split(" ");
-      delete data.margin;
-    } else {
-      insets = ["0px", "0px", "0px", "0px"];
-    }
-
-    let width = "100%";
-    let height = width;
-
-    if (insets[1] !== "0px" || insets[3] !== "0px") {
-      width = `calc(100% - ${parseInt(insets[1]) + parseInt(insets[3])}px`;
-    }
-
-    if (insets[0] !== "0px" || insets[2] !== "0px") {
-      height = `calc(100% - ${parseInt(insets[0]) + parseInt(insets[2])}px`;
-    }
-
-    const borderStyle = {
-      top: insets[0],
-      left: insets[3],
-      width,
-      height,
-    };
-
-    for (const [k, v] of Object.entries(data)) {
-      borderStyle[k] = v;
-    }
-
-    if (style.transform) {
-      borderStyle.transform = style.transform;
-    }
-
-    const borderDiv = {
-      name: "div",
-      attributes: {
-        class: "xfaBorderDiv",
-        style: borderStyle,
-      },
-    };
-
-    children.push(borderDiv);
-  }
-
-  children.push(html);
-
-  return {
-    name: "div",
-    attributes,
-    children,
-  };
+  return wrapper;
 }
 
 function fixTextIndent(styles) {
@@ -535,11 +496,12 @@ function fixTextIndent(styles) {
     return;
   }
 
+  // If indent is negative then it's a hanging indent.
   const align = styles.textAlign || "left";
   if (align === "left" || align === "right") {
-    const name = "margin" + (align === "left" ? "Left" : "Right");
-    const margin = getMeasurement(styles[name], "0px");
-    styles[name] = `${margin - indent}pt`;
+    const name = "padding" + (align === "left" ? "Left" : "Right");
+    const padding = getMeasurement(styles[name], "0px");
+    styles[name] = `${padding - indent}px`;
   }
 }
 
@@ -573,8 +535,8 @@ function getFonts(family) {
 }
 
 export {
-  addExtraDivForBorder,
   computeBbox,
+  createWrapper,
   fixDimensions,
   fixTextIndent,
   getFonts,
