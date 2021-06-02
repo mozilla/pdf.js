@@ -890,71 +890,45 @@ class CheckButton extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
-    // TODO: shape and mark == default.
-    const style = toStyle(this, "border", "margin");
+    // TODO: border, shape and mark.
+
+    const style = toStyle("margin");
     const size = measureToString(this.size);
 
     style.width = style.height = size;
 
-    let mark, radius;
-    if (this.shape === "square") {
-      mark = "▪";
-      radius = "10%";
-    } else {
-      mark = "●";
-      radius = "50%";
-    }
-
-    if (!style.borderRadius) {
-      style.borderRadius = radius;
-    }
-
-    if (this.mark !== "default") {
-      // TODO: To avoid some rendering issues we should use svg
-      // to draw marks.
-      switch (this.mark) {
-        case "check":
-          mark = "✓";
-          break;
-        case "circle":
-          mark = "●";
-          break;
-        case "cross":
-          mark = "✕";
-          break;
-        case "diamond":
-          mark = "♦";
-          break;
-        case "square":
-          mark = "▪";
-          break;
-        case "star":
-          mark = "★";
-          break;
-      }
-    }
-
-    if (size !== "10px") {
-      style.fontSize = size;
-      style.lineHeight = size;
-      style.width = size;
-      style.height = size;
-    }
-
+    let type;
+    let className;
+    let groupId;
+    let id;
     const fieldId = this[$getParent]()[$getParent]()[$uid];
+    const container = this[$getParent]()[$getParent]()[$getParent]();
+    if (container instanceof ExclGroup) {
+      groupId = container[$uid];
+      type = "radio";
+      className = "xfaRadio";
+      id = `${fieldId}-radio`;
+    } else {
+      type = "checkbox";
+      className = "xfaCheckbox";
+    }
+
     const input = {
       name: "input",
       attributes: {
-        class: "xfaCheckbox",
+        class: className,
+        style,
         fieldId,
-        type: "radio",
-        id: `${fieldId}-radio`,
+        type,
       },
     };
 
-    const container = this[$getParent]()[$getParent]()[$getParent]();
-    if (container instanceof ExclGroup) {
-      input.attributes.name = container[$uid];
+    if (id) {
+      input.attributes.id = id;
+    }
+
+    if (groupId) {
+      input.attributes.name = groupId;
     }
 
     return HTMLResult.success({
@@ -962,17 +936,7 @@ class CheckButton extends XFAObject {
       attributes: {
         class: "xfaLabel",
       },
-      children: [
-        input,
-        {
-          name: "span",
-          attributes: {
-            class: "xfaCheckboxMark",
-            mark,
-            style,
-          },
-        },
-      ],
+      children: [input],
     });
   }
 }
