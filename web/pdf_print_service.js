@@ -228,9 +228,12 @@ PDFPrintService.prototype = {
         this._printResolution,
         this._optionalContentConfigPromise
       )
-        .then(() => {
-          this.useRenderedPage.bind(this);
-        })
+        .then(
+          // modified by ngx-extended-pdf-viewer to repair printing
+          // (the fat arrow function seems to be wrong)
+          this.useRenderedPage.bind(this)
+          // end of modification
+        )
         .then(() => {
           renderNextPage(resolve, reject);
         }, reject);
