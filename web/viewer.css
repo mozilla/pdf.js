@@ -1839,8 +1839,8 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
     position: relative;
   }
 
-  .printedPage canvas,
-  .printedPage img {
+  #printContainer > .printedPage canvas,
+  #printContainer > .printedPage img {
     /* The intrinsic canvas / image size will make sure that we fit the page. */
     max-width: 100%;
     max-height: 100%;

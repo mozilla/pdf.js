@@ -1002,7 +1002,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
   const scale = Math.round(CSS_UNITS * 100) / 100;
   for (const xfaPage of xfaHtml.children) {
     const page = document.createElement("div");
-    page.setAttribute("class", "xfaPrintedPage");
+    page.className = "xfaPrintedPage";
     printContainer.appendChild(page);
 
     const { width, height } = xfaPage.attributes.style;
