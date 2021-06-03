@@ -97,10 +97,11 @@ function getOutputScale(ctx) {
  * @param {Object} element - The element to be visible.
  * @param {Object} spot - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
- * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
- *   the CSS rule `overflow: hidden;` set. The default is false.
+ * @param {boolean} [scrollMatches] - When scrolling search results into view,
+ *   ignore elements that either: Contains marked content identifiers,
+ *   or have the CSS-rule `overflow: hidden;` set. The default value is `false`.
  */
-function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
+function scrollIntoView(element, spot, scrollMatches = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
@@ -114,8 +115,9 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   while (
     (parent.clientHeight === parent.scrollHeight &&
       parent.clientWidth === parent.scrollWidth) ||
-    (skipOverflowHiddenElements &&
-      getComputedStyle(parent).overflow === "hidden")
+    (scrollMatches &&
+      (parent.classList.contains("markedContent") ||
+        getComputedStyle(parent).overflow === "hidden"))
   ) {
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
