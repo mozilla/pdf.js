@@ -1920,3 +1920,18 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
     display: none;
   }
 }
+
+.toolbarButton.showText {
+  width: inherit;
+}
+.toolbarButton.showText::before {
+  left: inherit;
+  right: 5px;
+}
+.toolbarButton.showText > span {
+  display: inherit;
+  width: inherit;
+  height: inherit;
+  margin-top: 5px;
+  margin-right: 20px;
+}
