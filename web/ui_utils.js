@@ -117,12 +117,9 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
     (skipOverflowHiddenElements &&
       getComputedStyle(parent).overflow === "hidden")
   ) {
-    if (parent.dataset._scaleY) {
-      offsetY /= parent.dataset._scaleY;
-      offsetX /= parent.dataset._scaleX;
-    }
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
+
     parent = parent.offsetParent;
     if (!parent) {
       return; // no need to scroll
