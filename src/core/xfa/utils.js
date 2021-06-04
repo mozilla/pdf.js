@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { shadow } from "../../shared/util.js";
+
 const dimConverters = {
   pt: x => x,
   cm: x => (x / 2.54) * 72,
@@ -165,6 +167,14 @@ function getBBox(data) {
 }
 
 class HTMLResult {
+  static get FAILURE() {
+    return shadow(this, "FAILURE", new HTMLResult(false, null, null));
+  }
+
+  static get EMPTY() {
+    return shadow(this, "EMPTY", new HTMLResult(true, null, null));
+  }
+
   constructor(success, html, bbox) {
     this.success = success;
     this.html = html;
@@ -175,9 +185,6 @@ class HTMLResult {
     return new HTMLResult(true, html, bbox);
   }
 }
-
-HTMLResult.FAILURE = new HTMLResult(false, null, null);
-HTMLResult.EMPTY = new HTMLResult(true, null, null);
 
 export {
   getBBox,
