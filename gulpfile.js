@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* eslint-env node */
-/* globals target */
 
 "use strict";
 
@@ -1846,17 +1845,6 @@ gulp.task("clean", function (done) {
   console.log("### Cleaning up project builds");
 
   rimraf(BUILD_DIR, done);
-});
-
-gulp.task("makefile", function () {
-  let makefileContent = "help:\n\tgulp\n\n";
-  const targetsNames = [];
-  for (const i in target) {
-    makefileContent += i + ":\n\tgulp " + i + "\n\n";
-    targetsNames.push(i);
-  }
-  makefileContent += ".PHONY: " + targetsNames.join(" ") + "\n";
-  return createStringSource("Makefile", makefileContent).pipe(gulp.dest("."));
 });
 
 gulp.task("importl10n", function (done) {
