@@ -1699,6 +1699,19 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
 #PDFBug table {
   font-size: 10px;
 }
+#PDFBug table.showText {
+  border-collapse: collapse;
+  text-align: center;
+}
+#PDFBug table.showText,
+#PDFBug table.showText tr,
+#PDFBug table.showText td {
+  border: 1px solid black;
+  padding: 1px;
+}
+#PDFBug table.showText td.advance {
+  color: grey;
+}
 
 #viewer.textLayer-visible .textLayer {
   opacity: 1;
