@@ -1031,9 +1031,8 @@ class PartialEvaluator {
       }
     }
     if (!fontRef) {
-      const partialMsg = `Font "${
-        fontName || (font && font.toString())
-      }" is not available`;
+      const partialMsg = `Font "${fontName || (font && font.toString())
+        }" is not available`;
 
       if (!this.options.ignoreErrors && !this.parsingType3Font) {
         warn(`${partialMsg}.`);
@@ -1178,7 +1177,7 @@ class PartialEvaluator {
           );
           const xrefFontStats = xref.stats.fontTypes;
           xrefFontStats[fontType] = true;
-        } catch (ex) {}
+        } catch (ex) { }
 
         fontCapability.resolve(
           new TranslatedFont({
@@ -2019,7 +2018,7 @@ class PartialEvaluator {
         });
         warn(
           `getOperatorList - ignoring errors during "${task.name}" ` +
-            `task: "${reason}".`
+          `task: "${reason}".`
         );
 
         closePendingRestoreOPS();
@@ -2235,7 +2234,7 @@ class PartialEvaluator {
       const text = textChunk.str.join("");
       const bidiResult = bidi(text, -1, textChunk.vertical);
       const str = normalizeWhitespace
-        ? replaceWhitespace(bidiResult.str)
+        ? replaceWhitespace(bidiResult.str) + " "
         : bidiResult.str;
       return {
         str,
@@ -2285,7 +2284,7 @@ class PartialEvaluator {
         if (
           Math.abs(advanceX) >
           textContentItem.width /
-            textContentItem.textAdvanceScale /* not the same column */
+          textContentItem.textAdvanceScale /* not the same column */
         ) {
           appendEOL();
           return;
@@ -2320,7 +2319,7 @@ class PartialEvaluator {
       if (
         Math.abs(advanceY) >
         textContentItem.height /
-          textContentItem.textAdvanceScale /* not the same line */
+        textContentItem.textAdvanceScale /* not the same line */
       ) {
         appendEOL();
         return;
@@ -2965,7 +2964,7 @@ class PartialEvaluator {
         // Error(s) in the TextContent -- allow text-extraction to continue.
         warn(
           `getTextContent - ignoring errors during "${task.name}" ` +
-            `task: "${reason}".`
+          `task: "${reason}".`
         );
 
         flushTextContentItem();
@@ -3608,10 +3607,10 @@ class PartialEvaluator {
         const uint8array = stream.buffer
           ? new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength)
           : new Uint8Array(
-              stream.bytes.buffer,
-              stream.start,
-              stream.end - stream.start
-            );
+            stream.bytes.buffer,
+            stream.start,
+            stream.end - stream.start
+          );
         hash.update(uint8array);
       } else if (isName(toUnicode)) {
         hash.update(toUnicode.name);
@@ -3763,7 +3762,7 @@ class PartialEvaluator {
       if (fontNameStr !== baseFontStr) {
         info(
           `The FontDescriptor's FontName is "${fontNameStr}" but ` +
-            `should be the same as the Font's BaseFont "${baseFontStr}".`
+          `should be the same as the Font's BaseFont "${baseFontStr}".`
         );
         // Workaround for cases where e.g. fontNameStr = 'Arial' and
         // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
@@ -4381,7 +4380,7 @@ class EvaluatorPreprocessor {
               fn >= OPS.moveTo &&
               fn <= OPS.endPath && // Path operator
               ++this._numInvalidPathOPS >
-                EvaluatorPreprocessor.MAX_INVALID_PATH_OPS
+              EvaluatorPreprocessor.MAX_INVALID_PATH_OPS
             ) {
               throw new FormatError(`Invalid ${partialMsg}`);
             }
@@ -4396,7 +4395,7 @@ class EvaluatorPreprocessor {
         } else if (argsLength > numArgs) {
           info(
             `Command ${cmd}: expected [0, ${numArgs}] args, ` +
-              `but received ${argsLength} args.`
+            `but received ${argsLength} args.`
           );
         }
 
