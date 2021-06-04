@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* eslint-env node */
-/* globals target */
 
 "use strict";
 
@@ -597,14 +596,16 @@ function makeRef(done, bot) {
 gulp.task("default", function (done) {
   console.log("Available tasks:");
   const tasks = Object.keys(gulp.registry().tasks());
-  tasks.sort();
-  tasks.forEach(function (taskName) {
+  for (const taskName of tasks.sort()) {
+    if (taskName.endsWith("-pre")) {
+      continue;
+    }
     console.log("  " + taskName);
-  });
+  }
   done();
 });
 
-gulp.task("buildnumber", function (done) {
+function createBuildNumber(done) {
   console.log();
   console.log("### Getting extension build number");
 
@@ -648,7 +649,7 @@ gulp.task("buildnumber", function (done) {
       });
     }
   );
-});
+}
 
 function buildDefaultPreferences(defines, dir) {
   console.log();
@@ -827,16 +828,16 @@ function buildGeneric(defines, dir) {
 gulp.task(
   "generic",
   gulp.series(
-    "buildnumber",
+    createBuildNumber,
     "locale",
-    function scripting() {
+    function scriptingGeneric() {
       const defines = builder.merge(DEFINES, { GENERIC: true });
       return merge([
         buildDefaultPreferences(defines, "generic/"),
         createTemporaryScriptingBundle(defines),
       ]);
     },
-    function () {
+    function createGeneric() {
       console.log();
       console.log("### Creating generic viewer");
       const defines = builder.merge(DEFINES, { GENERIC: true });
@@ -851,9 +852,9 @@ gulp.task(
 gulp.task(
   "generic-legacy",
   gulp.series(
-    "buildnumber",
+    createBuildNumber,
     "locale",
-    function scripting() {
+    function scriptingGenericLegacy() {
       const defines = builder.merge(DEFINES, {
         GENERIC: true,
         SKIP_BABEL: false,
@@ -863,7 +864,7 @@ gulp.task(
         createTemporaryScriptingBundle(defines),
       ]);
     },
-    function () {
+    function createGenericLegacy() {
       console.log();
       console.log("### Creating generic (legacy) viewer");
       const defines = builder.merge(DEFINES, {
@@ -896,7 +897,7 @@ function buildComponents(defines, dir) {
 
 gulp.task(
   "components",
-  gulp.series("buildnumber", function () {
+  gulp.series(createBuildNumber, function createComponents() {
     console.log();
     console.log("### Creating generic components");
     const defines = builder.merge(DEFINES, { COMPONENTS: true, GENERIC: true });
@@ -907,7 +908,7 @@ gulp.task(
 
 gulp.task(
   "components-legacy",
-  gulp.series("buildnumber", function () {
+  gulp.series(createBuildNumber, function createComponentsLegacy() {
     console.log();
     console.log("### Creating generic (legacy) components");
     const defines = builder.merge(DEFINES, {
@@ -922,7 +923,7 @@ gulp.task(
 
 gulp.task(
   "image_decoders",
-  gulp.series("buildnumber", function () {
+  gulp.series(createBuildNumber, function createImageDecoders() {
     console.log();
     console.log("### Creating image decoders");
     const defines = builder.merge(DEFINES, {
@@ -938,7 +939,7 @@ gulp.task(
 
 gulp.task(
   "image_decoders-legacy",
-  gulp.series("buildnumber", function () {
+  gulp.series(createBuildNumber, function createImageDecodersLegacy() {
     console.log();
     console.log("### Creating (legacy) image decoders");
     const defines = builder.merge(DEFINES, {
@@ -990,58 +991,6 @@ function buildMinified(defines, dir) {
       .pipe(gulp.dest(dir + "web")),
   ]);
 }
-
-gulp.task(
-  "minified-pre",
-  gulp.series(
-    "buildnumber",
-    "locale",
-    function scripting() {
-      const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
-      return merge([
-        buildDefaultPreferences(defines, "minified/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    function () {
-      console.log();
-      console.log("### Creating minified viewer");
-      const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
-
-      return buildMinified(defines, MINIFIED_DIR);
-    }
-  )
-);
-
-gulp.task(
-  "minified-legacy-pre",
-  gulp.series(
-    "buildnumber",
-    "locale",
-    function scripting() {
-      const defines = builder.merge(DEFINES, {
-        MINIFIED: true,
-        GENERIC: true,
-        SKIP_BABEL: false,
-      });
-      return merge([
-        buildDefaultPreferences(defines, "minified-legacy/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    function () {
-      console.log();
-      console.log("### Creating minified (legacy) viewer");
-      const defines = builder.merge(DEFINES, {
-        MINIFIED: true,
-        GENERIC: true,
-        SKIP_BABEL: false,
-      });
-
-      return buildMinified(defines, MINIFIED_LEGACY_DIR);
-    }
-  )
-);
 
 async function parseMinified(dir) {
   const pdfFile = fs.readFileSync(dir + "/build/pdf.js").toString();
@@ -1116,18 +1065,62 @@ async function parseMinified(dir) {
 
 gulp.task(
   "minified",
-  gulp.series("minified-pre", async function (done) {
-    await parseMinified(MINIFIED_DIR);
-    done();
-  })
+  gulp.series(
+    createBuildNumber,
+    "locale",
+    function scriptingMinified() {
+      const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+      return merge([
+        buildDefaultPreferences(defines, "minified/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
+    },
+    function createMinified() {
+      console.log();
+      console.log("### Creating minified viewer");
+      const defines = builder.merge(DEFINES, { MINIFIED: true, GENERIC: true });
+
+      return buildMinified(defines, MINIFIED_DIR);
+    },
+    async function compressMinified(done) {
+      await parseMinified(MINIFIED_DIR);
+      done();
+    }
+  )
 );
 
 gulp.task(
   "minified-legacy",
-  gulp.series("minified-legacy-pre", async function (done) {
-    await parseMinified(MINIFIED_LEGACY_DIR);
-    done();
-  })
+  gulp.series(
+    createBuildNumber,
+    "locale",
+    function scriptingMinifiedLegacy() {
+      const defines = builder.merge(DEFINES, {
+        MINIFIED: true,
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
+      return merge([
+        buildDefaultPreferences(defines, "minified-legacy/"),
+        createTemporaryScriptingBundle(defines),
+      ]);
+    },
+    function createMinifiedLegacy() {
+      console.log();
+      console.log("### Creating minified (legacy) viewer");
+      const defines = builder.merge(DEFINES, {
+        MINIFIED: true,
+        GENERIC: true,
+        SKIP_BABEL: false,
+      });
+
+      return buildMinified(defines, MINIFIED_LEGACY_DIR);
+    },
+    async function compressMinifiedLegacy(done) {
+      await parseMinified(MINIFIED_LEGACY_DIR);
+      done();
+    }
+  )
 );
 
 function preprocessDefaultPreferences(content) {
@@ -1163,14 +1156,14 @@ function preprocessDefaultPreferences(content) {
 }
 
 gulp.task(
-  "mozcentral-pre",
+  "mozcentral",
   gulp.series(
-    "buildnumber",
-    function scripting() {
+    createBuildNumber,
+    function scriptingMozcentral() {
       const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
       return buildDefaultPreferences(defines, "mozcentral/");
     },
-    function () {
+    function createMozcentral() {
       console.log();
       console.log("### Building mozilla-central extension");
       const defines = builder.merge(DEFINES, { MOZCENTRAL: true });
@@ -1253,14 +1246,12 @@ gulp.task(
   )
 );
 
-gulp.task("mozcentral", gulp.series("mozcentral-pre"));
-
 gulp.task(
-  "chromium-pre",
+  "chromium",
   gulp.series(
-    "buildnumber",
+    createBuildNumber,
     "locale",
-    function scripting() {
+    function scriptingChromium() {
       const defines = builder.merge(DEFINES, {
         CHROME: true,
         SKIP_BABEL: false,
@@ -1270,7 +1261,7 @@ gulp.task(
         createTemporaryScriptingBundle(defines),
       ]);
     },
-    function () {
+    function createChromium() {
       console.log();
       console.log("### Building Chromium extension");
       const defines = builder.merge(DEFINES, {
@@ -1342,8 +1333,6 @@ gulp.task(
     }
   )
 );
-
-gulp.task("chromium", gulp.series("chromium-pre"));
 
 gulp.task("jsdoc", function (done) {
   console.log();
@@ -1474,15 +1463,15 @@ function buildLib(defines, dir) {
 gulp.task(
   "lib",
   gulp.series(
-    "buildnumber",
-    function scripting() {
+    createBuildNumber,
+    function scriptingLib() {
       const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
       return merge([
         buildDefaultPreferences(defines, "lib/"),
         createTemporaryScriptingBundle(defines),
       ]);
     },
-    function () {
+    function createLib() {
       const defines = builder.merge(DEFINES, { GENERIC: true, LIB: true });
 
       return merge([
@@ -1496,8 +1485,8 @@ gulp.task(
 gulp.task(
   "lib-legacy",
   gulp.series(
-    "buildnumber",
-    function scripting() {
+    createBuildNumber,
+    function scriptingLibLegacy() {
       const defines = builder.merge(DEFINES, {
         GENERIC: true,
         LIB: true,
@@ -1508,7 +1497,7 @@ gulp.task(
         createTemporaryScriptingBundle(defines),
       ]);
     },
-    function () {
+    function createLibLegacy() {
       const defines = builder.merge(DEFINES, {
         GENERIC: true,
         LIB: true,
@@ -1535,7 +1524,7 @@ function compressPublish(targetName, dir) {
 
 gulp.task(
   "publish",
-  gulp.series("generic", "generic-legacy", function (done) {
+  gulp.series("generic", "generic-legacy", function createPublish(done) {
     const version = JSON.parse(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
@@ -1556,18 +1545,18 @@ gulp.task(
   })
 );
 
-gulp.task("testing-pre", function (done) {
+function setTestEnv(done) {
   process.env.TESTING = "true";
   // TODO: Re-write the relevant unit-tests, which are using `new Date(...)`,
   //       to not required the following time-zone hack since it doesn't work
   //       when the unit-tests are run directly in the browser.
   process.env.TZ = "UTC";
   done();
-});
+}
 
 gulp.task(
   "test",
-  gulp.series("testing-pre", "generic", "components", function () {
+  gulp.series(setTestEnv, "generic", "components", function runTest() {
     return streamqueue(
       { objectMode: true },
       createTestSource("unit"),
@@ -1579,7 +1568,7 @@ gulp.task(
 
 gulp.task(
   "bottest",
-  gulp.series("testing-pre", "generic", "components", function () {
+  gulp.series(setTestEnv, "generic", "components", function runBotTest() {
     return streamqueue(
       { objectMode: true },
       createTestSource("unit", true),
@@ -1592,79 +1581,85 @@ gulp.task(
 
 gulp.task(
   "browsertest",
-  gulp.series("testing-pre", "generic", "components", function () {
+  gulp.series(setTestEnv, "generic", "components", function runBrowserTest() {
     return createTestSource("browser");
   })
 );
 
 gulp.task(
   "unittest",
-  gulp.series("testing-pre", "generic", function () {
+  gulp.series(setTestEnv, "generic", function runUnitTest() {
     return createTestSource("unit");
   })
 );
 
 gulp.task(
   "integrationtest",
-  gulp.series("testing-pre", "generic", function () {
+  gulp.series(setTestEnv, "generic", function runIntegrationTest() {
     return createTestSource("integration");
   })
 );
 
 gulp.task(
   "fonttest",
-  gulp.series("testing-pre", function () {
+  gulp.series(setTestEnv, function runFontTest() {
     return createTestSource("font");
   })
 );
 
 gulp.task(
   "makeref",
-  gulp.series("testing-pre", "generic", "components", function (done) {
+  gulp.series(setTestEnv, "generic", "components", function runMakeref(done) {
     makeRef(done);
   })
 );
 
 gulp.task(
   "botmakeref",
-  gulp.series("testing-pre", "generic", "components", function (done) {
-    makeRef(done, true);
-  })
-);
-
-gulp.task(
-  "typestest-pre",
-  gulp.series("testing-pre", "generic", "types", function () {
-    const [packageJsonSrc] = packageBowerJson();
-    return merge([
-      packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
-      gulp
-        .src([
-          GENERIC_DIR + "build/pdf.js",
-          GENERIC_DIR + "build/pdf.worker.js",
-          SRC_DIR + "pdf.worker.entry.js",
-        ])
-        .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
-      gulp
-        .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
-        .pipe(gulp.dest(TYPESTEST_DIR + "types/")),
-    ]);
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    function runBotMakeref(done) {
+      makeRef(done, true);
+    }
+  )
 );
 
 gulp.task(
   "typestest",
-  gulp.series("typestest-pre", function (done) {
-    exec('"node_modules/.bin/tsc" -p test/types', function (err, stdout) {
-      if (err) {
-        console.log(`Couldn't compile TypeScript test: ${stdout}`);
-      }
-      done(err);
-    });
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "types",
+    function createTypesTest() {
+      const [packageJsonSrc] = packageBowerJson();
+      return merge([
+        packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
+        gulp
+          .src([
+            GENERIC_DIR + "build/pdf.js",
+            GENERIC_DIR + "build/pdf.worker.js",
+            SRC_DIR + "pdf.worker.entry.js",
+          ])
+          .pipe(gulp.dest(TYPESTEST_DIR + "build/")),
+        gulp
+          .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+          .pipe(gulp.dest(TYPESTEST_DIR + "types/")),
+      ]);
+    },
+    function runTypesTest(done) {
+      exec('"node_modules/.bin/tsc" -p test/types', function (err, stdout) {
+        if (err) {
+          console.log(`Couldn't compile TypeScript test: ${stdout}`);
+        }
+        done(err);
+      });
+    }
+  )
 );
 
-gulp.task("baseline", function (done) {
+function createBaseline(done) {
   console.log();
   console.log("### Creating baseline environment");
 
@@ -1701,11 +1696,11 @@ gulp.task("baseline", function (done) {
       }
     );
   });
-});
+}
 
 gulp.task(
   "unittestcli",
-  gulp.series("testing-pre", "lib-legacy", function (done) {
+  gulp.series(setTestEnv, "lib-legacy", function runUnitTestCli(done) {
     const options = [
       "node_modules/jasmine/bin/jasmine",
       "JASMINE_CONFIG_PATH=test/unit/clitests.json",
@@ -1768,14 +1763,14 @@ gulp.task("lint", function (done) {
 gulp.task(
   "lint-chromium",
   gulp.series(
-    function scripting() {
+    function scriptingLintChromium() {
       const defines = builder.merge(DEFINES, {
         CHROME: true,
         SKIP_BABEL: false,
       });
       return buildDefaultPreferences(defines, "lint-chromium/");
     },
-    function (done) {
+    function runLintChromium(done) {
       console.log();
       console.log("### Checking supplemental Chromium files");
 
@@ -1796,13 +1791,13 @@ gulp.task(
 gulp.task(
   "dev-sandbox",
   gulp.series(
-    function scripting() {
+    function scriptingDevSandbox() {
       const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
       return createTemporaryScriptingBundle(defines, {
         disableVersionInfo: true,
       });
     },
-    function () {
+    function createDevSandbox() {
       console.log();
       console.log("### Building development sandbox");
 
@@ -1818,30 +1813,31 @@ gulp.task(
   )
 );
 
-gulp.task("watch-dev-sandbox", function () {
-  gulp.watch(
-    [
-      "src/pdf.{sandbox,sandbox.external,scripting}.js",
-      "src/scripting_api/*.js",
-      "src/shared/scripting_utils.js",
-      "external/quickjs/*.js",
-    ],
-    { ignoreInitial: false },
-    gulp.series("dev-sandbox")
-  );
-});
-
 gulp.task(
   "server",
-  gulp.parallel("watch-dev-sandbox", function () {
-    console.log();
-    console.log("### Starting local server");
+  gulp.parallel(
+    function watchDevSandbox() {
+      gulp.watch(
+        [
+          "src/pdf.{sandbox,sandbox.external,scripting}.js",
+          "src/scripting_api/*.js",
+          "src/shared/scripting_utils.js",
+          "external/quickjs/*.js",
+        ],
+        { ignoreInitial: false },
+        gulp.series("dev-sandbox")
+      );
+    },
+    function createServer() {
+      console.log();
+      console.log("### Starting local server");
 
-    const WebServer = require("./test/webserver.js").WebServer;
-    const server = new WebServer();
-    server.port = 8888;
-    server.start();
-  })
+      const WebServer = require("./test/webserver.js").WebServer;
+      const server = new WebServer();
+      server.port = 8888;
+      server.start();
+    }
+  )
 );
 
 gulp.task("clean", function (done) {
@@ -1849,17 +1845,6 @@ gulp.task("clean", function (done) {
   console.log("### Cleaning up project builds");
 
   rimraf(BUILD_DIR, done);
-});
-
-gulp.task("makefile", function () {
-  let makefileContent = "help:\n\tgulp\n\n";
-  const targetsNames = [];
-  for (const i in target) {
-    makefileContent += i + ":\n\tgulp " + i + "\n\n";
-    targetsNames.push(i);
-  }
-  makefileContent += ".PHONY: " + targetsNames.join(" ") + "\n";
-  return createStringSource("Makefile", makefileContent).pipe(gulp.dest("."));
 });
 
 gulp.task("importl10n", function (done) {
@@ -1874,7 +1859,7 @@ gulp.task("importl10n", function (done) {
   locales.downloadL10n(L10N_DIR, done);
 });
 
-gulp.task("gh-pages-prepare", function () {
+function ghPagesPrepare() {
   console.log();
   console.log("### Creating web site");
 
@@ -1895,7 +1880,7 @@ gulp.task("gh-pages-prepare", function () {
       .src(JSDOC_BUILD_DIR + "**/*", { base: JSDOC_BUILD_DIR })
       .pipe(gulp.dest(GH_PAGES_DIR + "api/draft/")),
   ]);
-});
+}
 
 gulp.task("wintersmith", function (done) {
   const wintersmith = require("wintersmith");
@@ -1937,7 +1922,7 @@ gulp.task("wintersmith", function (done) {
   });
 });
 
-gulp.task("gh-pages-git", function (done) {
+function ghPagesGit(done) {
   const VERSION = getVersionJSON().version;
   const reason = process.env.PDFJS_UPDATE_REASON;
 
@@ -1962,7 +1947,7 @@ gulp.task("gh-pages-git", function (done) {
   console.log();
   console.log("Website built in " + GH_PAGES_DIR);
   done();
-});
+}
 
 gulp.task(
   "web",
@@ -1970,9 +1955,9 @@ gulp.task(
     "generic",
     "generic-legacy",
     "jsdoc",
-    "gh-pages-prepare",
+    ghPagesPrepare,
     "wintersmith",
-    "gh-pages-git"
+    ghPagesGit
   )
 );
 
@@ -2041,7 +2026,7 @@ gulp.task(
     "minified",
     "minified-legacy",
     "types",
-    function () {
+    function createDist() {
       console.log();
       console.log("### Cloning baseline distribution");
 
@@ -2139,7 +2124,7 @@ gulp.task(
 
 gulp.task(
   "dist-install",
-  gulp.series("dist-pre", function (done) {
+  gulp.series("dist-pre", function createDistInstall(done) {
     let distPath = DIST_DIR;
     const opts = {};
     const installPath = process.env.PDFJS_INSTALL_PATH;
@@ -2153,8 +2138,8 @@ gulp.task(
 );
 
 gulp.task(
-  "dist-repo-git",
-  gulp.series("dist-pre", function (done) {
+  "dist",
+  gulp.series("dist-pre", function createDist(done) {
     const VERSION = getVersionJSON().version;
 
     console.log();
@@ -2193,11 +2178,9 @@ gulp.task(
   })
 );
 
-gulp.task("dist", gulp.series("dist-repo-git"));
-
 gulp.task(
   "mozcentralbaseline",
-  gulp.series("baseline", function (done) {
+  gulp.series(createBaseline, function createMozcentralBaseline(done) {
     console.log();
     console.log("### Creating mozcentral baseline environment");
 
@@ -2232,38 +2215,44 @@ gulp.task(
 
 gulp.task(
   "mozcentraldiff",
-  gulp.series("mozcentral", "mozcentralbaseline", function (done) {
-    console.log();
-    console.log("### Creating mozcentral diff");
+  gulp.series(
+    "mozcentral",
+    "mozcentralbaseline",
+    function createMozcentralDiff(done) {
+      console.log();
+      console.log("### Creating mozcentral diff");
 
-    // Create the diff between the current mozcentral build and the
-    // baseline mozcentral build, which both exist at this point.
-    // The mozcentral baseline directory is a Git repository, so we
-    // remove all files and copy the current mozcentral build files
-    // into it to create the diff.
-    rimraf.sync(MOZCENTRAL_BASELINE_DIR + "*");
+      // Create the diff between the current mozcentral build and the
+      // baseline mozcentral build, which both exist at this point.
+      // The mozcentral baseline directory is a Git repository, so we
+      // remove all files and copy the current mozcentral build files
+      // into it to create the diff.
+      rimraf.sync(MOZCENTRAL_BASELINE_DIR + "*");
 
-    gulp
-      .src([BUILD_DIR + "mozcentral/**/*"])
-      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
-      .on("end", function () {
-        safeSpawnSync("git", ["add", "-A"], { cwd: MOZCENTRAL_BASELINE_DIR });
-        const diff = safeSpawnSync(
-          "git",
-          ["diff", "--binary", "--cached", "--unified=8"],
-          { cwd: MOZCENTRAL_BASELINE_DIR }
-        ).stdout;
+      gulp
+        .src([BUILD_DIR + "mozcentral/**/*"])
+        .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+        .on("end", function () {
+          safeSpawnSync("git", ["add", "-A"], { cwd: MOZCENTRAL_BASELINE_DIR });
+          const diff = safeSpawnSync(
+            "git",
+            ["diff", "--binary", "--cached", "--unified=8"],
+            { cwd: MOZCENTRAL_BASELINE_DIR }
+          ).stdout;
 
-        createStringSource(MOZCENTRAL_DIFF_FILE, diff)
-          .pipe(gulp.dest(BUILD_DIR))
-          .on("end", function () {
-            console.log(
-              "Result diff can be found at " + BUILD_DIR + MOZCENTRAL_DIFF_FILE
-            );
-            done();
-          });
-      });
-  })
+          createStringSource(MOZCENTRAL_DIFF_FILE, diff)
+            .pipe(gulp.dest(BUILD_DIR))
+            .on("end", function () {
+              console.log(
+                "Result diff can be found at " +
+                  BUILD_DIR +
+                  MOZCENTRAL_DIFF_FILE
+              );
+              done();
+            });
+        });
+    }
+  )
 );
 
 gulp.task("externaltest", function (done) {
