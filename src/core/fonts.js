@@ -159,6 +159,7 @@ function adjustToUnicode(properties, builtInEncoding) {
 
 class Glyph {
   constructor(
+    originalCharCode,
     fontChar,
     unicode,
     accent,
@@ -168,6 +169,7 @@ class Glyph {
     isSpace,
     isInFont
   ) {
+    this.originalCharCode = originalCharCode;
     this.fontChar = fontChar;
     this.unicode = unicode;
     this.accent = accent;
@@ -179,6 +181,7 @@ class Glyph {
   }
 
   matchesForCache(
+    originalCharCode,
     fontChar,
     unicode,
     accent,
@@ -189,6 +192,7 @@ class Glyph {
     isInFont
   ) {
     return (
+      this.originalCharCode === originalCharCode &&
       this.fontChar === fontChar &&
       this.unicode === unicode &&
       this.accent === accent &&
@@ -2956,6 +2960,7 @@ class Font {
     if (
       !glyph ||
       !glyph.matchesForCache(
+        charcode,
         fontChar,
         unicode,
         accent,
@@ -2967,6 +2972,7 @@ class Font {
       )
     ) {
       glyph = new Glyph(
+        charcode,
         fontChar,
         unicode,
         accent,
