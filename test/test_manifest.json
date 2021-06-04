@@ -930,6 +930,14 @@
        "link": true,
        "type": "load"
     },
+    {  "id": "xfa_fish_licence",
+       "file": "pdfs/xfa_fish_licence.pdf",
+       "md5": "9b993128bbd7f4217098fd44116ebec2",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "issue10272",
        "file": "pdfs/issue10272.pdf",
        "md5": "bf3b2f74c6878d38a70dc0825f1b9a02",
@@ -4200,6 +4208,14 @@
       "rounds": 1,
       "type": "eq",
       "about": "A CIDFontType0 font with a CFF font that isn't actually CID."
+    },
+    {  "id": "xfa_imm1295e",
+       "file": "pdfs/xfa_imm1295e.pdf",
+       "md5": "b995232fda9bb7fa57856ff7f4cda046",
+       "rounds": 1,
+       "link": true,
+       "enableXfa": true,
+       "type": "eq"
     },
     {  "id": "scorecard_reduced",
        "file": "pdfs/scorecard_reduced.pdf",
