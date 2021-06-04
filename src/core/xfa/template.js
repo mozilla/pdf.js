@@ -80,6 +80,7 @@ import { stringToBytes, Util, warn } from "../../shared/util.js";
 import { searchNode } from "./som.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
+const SVG_NS = "http://www.w3.org/2000/svg";
 
 // In case of lr-tb (and rl-tb) layouts, we try:
 //  - to put the container at the end of a line
@@ -171,6 +172,10 @@ const NOSPACE = 1;
 const VALID = 2;
 function checkDimensions(node, space) {
   const [x, y, w, h] = getTransformedBBox(node);
+  if (node.w === 0 || node.h === 0) {
+    return VALID;
+  }
+
   if (node.w !== "" && Math.round(x + w - space.width) > 1) {
     const area = getRoot(node)[$extra].currentContentArea;
     if (x + w > area.w) {
@@ -226,6 +231,73 @@ class Arc extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.edge = null;
     this.fill = null;
+  }
+
+  [$toHTML]() {
+    const edge = this.edge ? this.edge : new Edge({});
+    const edgeStyle = edge[$toStyle]();
+    const style = Object.create(null);
+    if (this.fill) {
+      Object.assign(style, this.fill[$toStyle]());
+    } else {
+      style.fill = "transparent";
+    }
+    style.strokeWidth = measureToString(Math.round(edge.thickness));
+    style.stroke = edgeStyle.color;
+    let arc;
+    const attributes = {
+      xmlns: SVG_NS,
+      style: {
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+      },
+    };
+
+    if (this.startAngle === 0 && this.sweepAngle === 360) {
+      arc = {
+        name: "ellipse",
+        attributes: {
+          xmlns: SVG_NS,
+          cx: "50%",
+          cy: "50%",
+          rx: "50%",
+          ry: "50%",
+          style,
+        },
+      };
+    } else {
+      const startAngle = (this.startAngle * Math.PI) / 180;
+      const sweepAngle = (this.sweepAngle * Math.PI) / 180;
+      const largeArc = this.sweepAngle - this.startAngle > 180 ? 1 : 0;
+      const [x1, y1, x2, y2] = [
+        50 * (1 + Math.cos(startAngle)),
+        50 * (1 - Math.sin(startAngle)),
+        50 * (1 + Math.cos(sweepAngle)),
+        50 * (1 - Math.sin(sweepAngle)),
+      ];
+
+      arc = {
+        name: "path",
+        attributes: {
+          xmlns: SVG_NS,
+          d: `M ${x1} ${y1} A 50 50 0 ${largeArc} 0 ${x2} ${y2}`,
+          vectorEffect: "non-scaling-stroke",
+          style,
+        },
+      };
+
+      Object.assign(attributes, {
+        viewBox: "0 0 100 100",
+        preserveAspectRatio: "none",
+      });
+    }
+
+    return HTMLResult.success({
+      name: "svg",
+      children: [arc],
+      attributes,
+    });
   }
 }
 
@@ -1170,7 +1242,7 @@ class Corner extends XFAObject {
     // Maybe it's possible to implement them using svg and border-image...
     // TODO: implement all the missing properties.
     const style = toStyle(this, "visibility");
-    style.radius = measureToString(this.radius);
+    style.radius = measureToString(this.join === "square" ? 0 : this.radius);
     return style;
   }
 }
@@ -1412,12 +1484,7 @@ class Draw extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
-    if (
-      this.presence === "hidden" ||
-      this.presence === "inactive" ||
-      this.h === 0 ||
-      this.w === 0
-    ) {
+    if (this.presence === "hidden" || this.presence === "inactive") {
       return HTMLResult.EMPTY;
     }
 
@@ -1485,7 +1552,7 @@ class Draw extends XFAObject {
     }
 
     html.children.push(value);
-    if (value.attributes.class.includes("xfaRich")) {
+    if (value.attributes.class && value.attributes.class.includes("xfaRich")) {
       if (this.h === "") {
         style.height = "auto";
       }
@@ -2379,6 +2446,9 @@ class Fill extends XFAObject {
     if (parent instanceof Border) {
       propName = "background";
     }
+    if (parent instanceof Rectangle) {
+      propName = "fill";
+    }
     const style = Object.create(null);
     for (const name of Object.getOwnPropertyNames(this)) {
       if (name === "extras" || name === "color") {
@@ -2852,6 +2922,57 @@ class Line extends XFAObject {
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.edge = null;
+  }
+
+  [$toHTML]() {
+    const parent = this[$getParent]()[$getParent]();
+    const edge = this.edge ? this.edge : new Edge({});
+    const edgeStyle = edge[$toStyle]();
+    const style = Object.create(null);
+    style.strokeWidth = measureToString(Math.round(edge.thickness));
+    style.stroke = edgeStyle.color;
+    let x1, y1, x2, y2;
+    let width = "100%";
+    let height = "100%";
+
+    if (parent.w <= edge.thickness) {
+      [x1, y1, x2, y2] = ["50%", 0, "50%", "100%"];
+      width = style.strokeWidth;
+    } else if (parent.h <= edge.thickness) {
+      [x1, y1, x2, y2] = [0, "50%", "100%", "50%"];
+      height = style.strokeWidth;
+    } else {
+      if (this.slope === "\\") {
+        [x1, y1, x2, y2] = [0, 0, "100%", "100%"];
+      } else {
+        [x1, y1, x2, y2] = [0, "100%", "100%", 0];
+      }
+    }
+
+    const line = {
+      name: "line",
+      attributes: {
+        xmlns: SVG_NS,
+        x1,
+        y1,
+        x2,
+        y2,
+        style,
+      },
+    };
+
+    return HTMLResult.success({
+      name: "svg",
+      children: [line],
+      attributes: {
+        xmlns: SVG_NS,
+        width,
+        height,
+        style: {
+          position: "absolute",
+        },
+      },
+    });
   }
 }
 
@@ -3630,6 +3751,53 @@ class Rectangle extends XFAObject {
     this.corner = new XFAObjectArray(4);
     this.edge = new XFAObjectArray(4);
     this.fill = null;
+  }
+
+  [$toHTML]() {
+    const edge = this.edge.children.length
+      ? this.edge.children[0]
+      : new Edge({});
+    const edgeStyle = edge[$toStyle]();
+    const style = Object.create(null);
+    if (this.fill) {
+      Object.assign(style, this.fill[$toStyle]());
+    } else {
+      style.fill = "transparent";
+    }
+    style.strokeWidth = measureToString(2 * edge.thickness);
+    style.stroke = edgeStyle.color;
+
+    const corner = this.corner.children.length
+      ? this.corner.children[0]
+      : new Corner({});
+    const cornerStyle = corner[$toStyle]();
+
+    const rect = {
+      name: "rect",
+      attributes: {
+        xmlns: SVG_NS,
+        width: "100%",
+        height: "100%",
+        x: 0,
+        y: 0,
+        rx: cornerStyle.radius,
+        ry: cornerStyle.radius,
+        style,
+      },
+    };
+
+    return HTMLResult.success({
+      name: "svg",
+      children: [rect],
+      attributes: {
+        xmlns: SVG_NS,
+        style: {
+          position: "absolute",
+        },
+        width: "100%",
+        height: "100%",
+      },
+    });
   }
 }
 
