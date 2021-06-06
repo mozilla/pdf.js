@@ -65,7 +65,7 @@ describe("XFAFactory", function () {
       });
 
       expect(page1.children.length).toEqual(2);
-      const container = page1.children[0];
+      const container = page1.children[1];
       expect(container.attributes.class).toEqual(["xfaContentarea"]);
       expect(container.attributes.style).toEqual({
         height: "789px",
@@ -75,7 +75,7 @@ describe("XFAFactory", function () {
         position: "absolute",
       });
 
-      const wrapper = page1.children[1];
+      const wrapper = page1.children[0];
       const draw = wrapper.children[0];
 
       expect(wrapper.attributes.class).toEqual(["xfaWrapper"]);
@@ -105,7 +105,7 @@ describe("XFAFactory", function () {
 
       // draw element must be on each page.
       expect(draw.attributes.style).toEqual(
-        pages.children[1].children[1].children[0].attributes.style
+        pages.children[1].children[0].children[0].attributes.style
       );
     });
   });
