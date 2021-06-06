@@ -4935,6 +4935,12 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue6605",
+       "file": "pdfs/issue6605.pdf",
+       "md5": "67158a9c6d0e966ece55f7c433e18cc5",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "annotation-choice-widget-forms",
        "file": "pdfs/annotation-choice-widget.pdf",
        "md5": "7dfb0d743a0da0f4a71b209ab43b0be5",
