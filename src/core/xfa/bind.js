@@ -577,6 +577,10 @@ class Binder {
             // what we've in template.
             match = new XmlObject(dataNode[$namespaceId], child.name);
             dataNode[$appendChild](match);
+
+            // Don't bind the value in newly created node because it's empty.
+            this._bindElement(child, match);
+            continue;
           }
           match = [match];
         }

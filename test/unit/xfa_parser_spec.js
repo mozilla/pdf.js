@@ -749,6 +749,66 @@ describe("XFAParser", function () {
       ).toBe("xyz");
     });
 
+    it("should make a basic binding and create a non-existing node", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="A" mergeMode="matchTemplate">
+      <subform name="B">
+        <field name="C">
+        </field>
+        <field name="D">
+          <value>
+            <text>foobar</text>
+          </value>
+        </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <A>
+      </A>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      const form = binder.bind();
+      const data = binder.getData();
+
+      expect(
+        searchNode(form, form, "A.B.D.value.text")[0][$dump]().$content
+      ).toBe("foobar");
+
+      const expected = {
+        $name: "A",
+        attributes: {},
+        children: [
+          {
+            $name: "B",
+            attributes: {},
+            children: [
+              {
+                $name: "C",
+                attributes: {},
+                children: [],
+              },
+              {
+                $name: "D",
+                attributes: {},
+                children: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(searchNode(data, data, "A")[0][$dump]()).toEqual(expected);
+    });
+
     it("should make another basic binding", function () {
       const xml = `
 <?xml version="1.0"?>
