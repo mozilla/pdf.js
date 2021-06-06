@@ -51,6 +51,7 @@ const $hasSettableValue = Symbol();
 const $ids = Symbol();
 const $indexOf = Symbol();
 const $insertAt = Symbol();
+const $isCDATAXml = Symbol();
 const $isDataValue = Symbol();
 const $isDescendent = Symbol();
 const $isTransparent = Symbol();
@@ -145,6 +146,10 @@ class XFAObject {
   }
 
   [$acceptWhitespace]() {
+    return false;
+  }
+
+  [$isCDATAXml]() {
     return false;
   }
 
@@ -970,6 +975,7 @@ export {
   $ids,
   $indexOf,
   $insertAt,
+  $isCDATAXml,
   $isDataValue,
   $isDescendent,
   $isTransparent,

@@ -29,6 +29,7 @@ import {
   $hasItem,
   $hasSettableValue,
   $ids,
+  $isCDATAXml,
   $isTransparent,
   $namespaceId,
   $nodeName,
@@ -1744,6 +1745,10 @@ class ExData extends ContentObject {
     ]);
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
+  }
+
+  [$isCDATAXml]() {
+    return this.contentType === "text/html";
   }
 
   [$onChild](child) {
