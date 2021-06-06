@@ -1113,8 +1113,10 @@ if (
       const paintType = args[7];
 
       const tilingId = `shading${shadingCount++}`;
-      const [tx0, ty0] = Util.applyTransform([x0, y0], matrix);
-      const [tx1, ty1] = Util.applyTransform([x1, y1], matrix);
+      const [tx0, ty0, tx1, ty1] = Util.normalizeRect([
+        ...Util.applyTransform([x0, y0], matrix),
+        ...Util.applyTransform([x1, y1], matrix),
+      ]);
       const [xscale, yscale] = Util.singularValueDecompose2dScale(matrix);
       const txstep = xstep * xscale;
       const tystep = ystep * yscale;
