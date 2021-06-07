@@ -16,7 +16,9 @@
 import {
   $acceptWhitespace,
   $clean,
+  $content,
   $finalize,
+  $isCDATAXml,
   $nsAttributes,
   $onChild,
   $onText,
@@ -150,6 +152,13 @@ class XFAParser extends XMLParserBase {
 
   onEndElement(name) {
     const node = this._current;
+    if (node[$isCDATAXml]() && typeof node[$content] === "string") {
+      const parser = new XFAParser();
+      const root = parser.parse(node[$content]);
+      node[$content] = null;
+      node[$onChild](root);
+    }
+
     node[$finalize]();
     this._current = this._stack.pop();
     if (this._current[$onChild](node)) {

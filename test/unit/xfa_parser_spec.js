@@ -256,6 +256,38 @@ describe("XFAParser", function () {
       expect(root[$dump]()).toEqual(expected);
     });
 
+    it("should parse a xfa document and parse CDATA when needed", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <field>
+        <extras>
+          <exData contentType="text/html" name="foo">
+            <![CDATA[<body xmlns="http://www.w3.org/1999/xhtml">
+              <span>hello</span></body>]]>
+          </exData>
+        </extra>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const exdata = searchNode(root, root, "foo")[0];
+      const body = exdata[$dump]().$content[$dump]();
+      const expected = {
+        $name: "body",
+        attributes: {},
+        children: [
+          { $content: "hello", $name: "span", attributes: {}, children: [] },
+        ],
+      };
+
+      expect(body).toEqual(expected);
+    });
+
     it("should parse a xfa document and apply some prototypes", function () {
       const xml = `
 <?xml version="1.0"?>
