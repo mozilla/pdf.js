@@ -25,27 +25,60 @@ const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function loadStyles(styles) {
+  styles = Object.values(styles);
+  if (styles.every(style => style.promise)) {
+    return Promise.all(styles.map(style => style.promise));
+  }
+
+  for (const style of styles) {
+    style.promise = new Promise(function (resolve, reject) {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", style.file);
+      xhr.onload = function () {
+        resolve(xhr.responseText);
+      };
+      xhr.onerror = function (e) {
+        reject(new Error(`Error fetching style (${style.file}): ${e}`));
+      };
+      xhr.send(null);
+    });
+  }
+
+  return Promise.all(styles.map(style => style.promise));
+}
+
+function writeSVG(svgElement, ctx, resolve, reject) {
+  // We need to have UTF-8 encoded XML.
+  const svg_xml = unescape(
+    encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
+  );
+  const img = new Image();
+  img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
+  img.onload = function () {
+    ctx.drawImage(img, 0, 0);
+    resolve();
+  };
+  img.onerror = function (e) {
+    reject(new Error("Error rasterizing text layer " + e));
+  };
+}
 
 /**
  * @class
  */
 var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
-  var SVG_NS = "http://www.w3.org/2000/svg";
+  const styles = {
+    common: {
+      file: "./text_layer_test.css",
+      promise: null,
+    },
+  };
 
-  var textLayerStylePromise = null;
   function getTextLayerStyle() {
-    if (textLayerStylePromise) {
-      return textLayerStylePromise;
-    }
-    textLayerStylePromise = new Promise(function (resolve) {
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", "./text_layer_test.css");
-      xhr.onload = function () {
-        resolve(xhr.responseText);
-      };
-      xhr.send(null);
-    });
-    return textLayerStylePromise;
+    return loadStyles(styles);
   }
 
   // eslint-disable-next-line no-shadow
@@ -92,19 +125,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
           task.expandTextDivs(true);
           svg.appendChild(foreignObject);
 
-          // We need to have UTF-8 encoded XML.
-          var svg_xml = unescape(
-            encodeURIComponent(new XMLSerializer().serializeToString(svg))
-          );
-          var img = new Image();
-          img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-          img.onload = function () {
-            ctx.drawImage(img, 0, 0);
-            resolve();
-          };
-          img.onerror = function (e) {
-            reject(new Error("Error rasterizing text layer " + e));
-          };
+          writeSVG(svg, ctx, resolve, reject);
         })
         .catch(reason => {
           reject(new Error(`rasterizeTextLayer: "${reason?.message}".`));
@@ -119,8 +140,6 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
  * @class
  */
 var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
-  const SVG_NS = "http://www.w3.org/2000/svg";
-
   /**
    * For the reference tests, the entire annotation layer must be visible. To
    * achieve this, we load the common styles as used by the viewer and extend
@@ -142,27 +161,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   };
 
   function getAnnotationLayerStyle() {
-    // Use the cached promises if they are available.
-    if (styles.common.promise && styles.overrides.promise) {
-      return Promise.all([styles.common.promise, styles.overrides.promise]);
-    }
-
-    // Load the style files and cache the results.
-    for (const key in styles) {
-      styles[key].promise = new Promise(function (resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", styles[key].file);
-        xhr.onload = function () {
-          resolve(xhr.responseText);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error("Error fetching annotation style " + e));
-        };
-        xhr.send(null);
-      });
-    }
-
-    return Promise.all([styles.common.promise, styles.overrides.promise]);
+    return loadStyles(styles);
   }
 
   function inlineAnnotationImages(images) {
@@ -256,19 +255,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           foreignObject.appendChild(div);
           svg.appendChild(foreignObject);
 
-          // We need to have UTF-8 encoded XML.
-          var svg_xml = unescape(
-            encodeURIComponent(new XMLSerializer().serializeToString(svg))
-          );
-          var img = new Image();
-          img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-          img.onload = function () {
-            ctx.drawImage(img, 0, 0);
-            resolve();
-          };
-          img.onerror = function (e) {
-            reject(new Error("Error rasterizing annotation layer " + e));
-          };
+          writeSVG(svg, ctx, resolve, reject);
         })
         .catch(reason => {
           reject(new Error(`rasterizeAnnotationLayer: "${reason?.message}".`));
@@ -277,6 +264,65 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   }
 
   return rasterizeAnnotationLayer;
+})();
+
+/**
+ * @class
+ */
+var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
+  const styles = {
+    common: {
+      file: "../web/xfa_layer_builder.css",
+      promise: null,
+    },
+  };
+
+  function getXfaLayerStyle() {
+    return loadStyles(styles);
+  }
+
+  // eslint-disable-next-line no-shadow
+  function rasterizeXfaLayer(ctx, viewport, xfa, fontRules) {
+    return new Promise(function (resolve, reject) {
+      // Building SVG with size of the viewport.
+      const svg = document.createElementNS(SVG_NS, "svg:svg");
+      svg.setAttribute("width", viewport.width + "px");
+      svg.setAttribute("height", viewport.height + "px");
+      const foreignObject = document.createElementNS(
+        SVG_NS,
+        "svg:foreignObject"
+      );
+      foreignObject.setAttribute("x", "0");
+      foreignObject.setAttribute("y", "0");
+      foreignObject.setAttribute("width", viewport.width + "px");
+      foreignObject.setAttribute("height", viewport.height + "px");
+      const style = document.createElement("style");
+      const stylePromise = getXfaLayerStyle();
+      foreignObject.appendChild(style);
+      const div = document.createElement("div");
+      foreignObject.appendChild(div);
+
+      stylePromise
+        .then(async cssRules => {
+          style.textContent = fontRules + "\n" + cssRules;
+
+          pdfjsLib.XfaLayer.render({
+            xfa,
+            div,
+            viewport: viewport.clone({ dontFlip: true }),
+          });
+
+          svg.appendChild(foreignObject);
+
+          writeSVG(svg, ctx, resolve, reject);
+        })
+        .catch(reason => {
+          reject(new Error(`rasterizeXfaLayer: "${reason?.message}".`));
+        });
+    });
+  }
+
+  return rasterizeXfaLayer;
 })();
 
 /**
@@ -392,6 +438,7 @@ var Driver = (function DriverClosure() {
         task.round = 0;
         task.pageNum = task.firstPage || 1;
         task.stats = { times: [] };
+        task.enableXfa = task.enableXfa === true;
 
         // Support *linked* test-cases for the other suites, e.g. unit- and
         // integration-tests, without needing to run them as reference-tests.
@@ -411,6 +458,17 @@ var Driver = (function DriverClosure() {
 
         const absoluteUrl = new URL(task.file, window.location).href;
         try {
+          let xfaStyleElement = null;
+          if (task.enableXfa) {
+            // Need to get the font definitions to inject them in the SVG.
+            // So we create this element and those definitions will be
+            // appended in font_loader.js.
+            xfaStyleElement = document.createElement("style");
+            document.documentElement
+              .getElementsByTagName("head")[0]
+              .appendChild(xfaStyleElement);
+          }
+
           const loadingTask = pdfjsLib.getDocument({
             url: absoluteUrl,
             password: task.password,
@@ -422,9 +480,18 @@ var Driver = (function DriverClosure() {
             pdfBug: true,
             useSystemFonts: task.useSystemFonts,
             useWorkerFetch: task.useWorkerFetch,
+            enableXfa: task.enableXfa,
+            styleElement: xfaStyleElement,
           });
           loadingTask.promise.then(
             doc => {
+              if (task.enableXfa) {
+                task.fontRules = "";
+                for (const rule of xfaStyleElement.sheet.cssRules) {
+                  task.fontRules += rule.cssText + "\n";
+                }
+              }
+
               task.pdfDoc = doc;
               task.optionalContentConfigPromise =
                 doc.getOptionalContentConfig();
@@ -552,7 +619,8 @@ var Driver = (function DriverClosure() {
               // Initialize various `eq` test subtypes, see comment below.
               var renderAnnotations = false,
                 renderForms = false,
-                renderPrint = false;
+                renderPrint = false,
+                renderXfa = false;
 
               var textLayerCanvas, annotationLayerCanvas;
               var initPromise;
@@ -594,9 +662,10 @@ var Driver = (function DriverClosure() {
                 renderAnnotations = !!task.annotations;
                 renderForms = !!task.forms;
                 renderPrint = !!task.print;
+                renderXfa = !!task.enableXfa;
 
                 // Render the annotation layer if necessary.
-                if (renderAnnotations || renderForms) {
+                if (renderAnnotations || renderForms || renderXfa) {
                   // Create a dummy canvas for the drawing operations.
                   annotationLayerCanvas = self.annotationLayerCanvas;
                   if (!annotationLayerCanvas) {
@@ -614,19 +683,31 @@ var Driver = (function DriverClosure() {
                     annotationLayerCanvas.height
                   );
 
-                  // The annotation builder will draw its content on the canvas.
-                  initPromise = page
-                    .getAnnotations({ intent: "display" })
-                    .then(function (annotations) {
-                      return rasterizeAnnotationLayer(
+                  if (!renderXfa) {
+                    // The annotation builder will draw its content
+                    // on the canvas.
+                    initPromise = page
+                      .getAnnotations({ intent: "display" })
+                      .then(function (annotations) {
+                        return rasterizeAnnotationLayer(
+                          annotationLayerContext,
+                          viewport,
+                          annotations,
+                          page,
+                          IMAGE_RESOURCES_PATH,
+                          renderForms
+                        );
+                      });
+                  } else {
+                    initPromise = page.getXfa().then(function (xfa) {
+                      return rasterizeXfaLayer(
                         annotationLayerContext,
                         viewport,
-                        annotations,
-                        page,
-                        IMAGE_RESOURCES_PATH,
-                        renderForms
+                        xfa,
+                        task.fontRules
                       );
                     });
+                  }
                 } else {
                   annotationLayerCanvas = null;
                   initPromise = Promise.resolve();
