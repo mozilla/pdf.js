@@ -18,22 +18,9 @@ import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
   BaseStandardFontDataFactory,
-} from "./display_utils.js";
+} from "./base_factory.js";
 import { isNodeJS } from "../shared/is_node.js";
 import { unreachable } from "../shared/util.js";
-
-function fetchData(url) {
-  return new Promise((resolve, reject) => {
-    const fs = __non_webpack_require__("fs");
-    fs.readFile(url, (error, data) => {
-      if (error || !data) {
-        reject(new Error(error));
-        return;
-      }
-      resolve(new Uint8Array(data));
-    });
-  });
-}
 
 let NodeCanvasFactory = class {
   constructor() {
@@ -54,6 +41,19 @@ let NodeStandardFontDataFactory = class {
 };
 
 if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
+  const fetchData = function (url) {
+    return new Promise((resolve, reject) => {
+      const fs = __non_webpack_require__("fs");
+      fs.readFile(url, (error, data) => {
+        if (error || !data) {
+          reject(new Error(error));
+          return;
+        }
+        resolve(new Uint8Array(data));
+      });
+    });
+  };
+
   NodeCanvasFactory = class extends BaseCanvasFactory {
     create(width, height) {
       if (width <= 0 || height <= 0) {
