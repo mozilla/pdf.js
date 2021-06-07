@@ -40,13 +40,18 @@ import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMStandardFontDataFactory,
   loadScript,
   PageViewport,
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-import { NodeCanvasFactory, NodeCMapReaderFactory } from "./node_utils.js";
+import {
+  NodeCanvasFactory,
+  NodeCMapReaderFactory,
+  NodeStandardFontDataFactory,
+} from "./node_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { apiCompatibilityParams } from "./api_compatibility.js";
 import { CanvasGraphics } from "./canvas.js";
@@ -69,6 +74,10 @@ const DefaultCMapReaderFactory =
   (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
     ? NodeCMapReaderFactory
     : DOMCMapReaderFactory;
+const DefaultStandardFontDataFactory =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
+    ? NodeStandardFontDataFactory
+    : DOMStandardFontDataFactory;
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -143,6 +152,16 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   reading built-in CMap files. Providing a custom factory is useful for
  *   environments without Fetch API or `XMLHttpRequest` support, such as
  *   Node.js. The default value is {DOMCMapReaderFactory}.
+ * @property {string} [standardFontDataUrl] - The URL where the standard font
+ *   files are located. Include the trailing slash.
+ * @property {boolean} [standardFontDataWorkerFetch] - Enable fetching the font
+ *   data from the worker thread. When `true`, StandardFontDataFactory will be
+ *   ignored. The default value is `true` in web environment and `false` for
+ *   for Node.
+ * @property {Object} [StandardFontDataFactory] - The factory that will be used
+ *   when reading the standard font files. Providing a custom factory is useful
+ *   for environments without Fetch API or `XMLHttpRequest` support, such as
+ *   Node.js. The default value is {DOMStandardFontDataFactory}.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
@@ -271,12 +290,18 @@ function getDocument(src) {
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.CMapReaderFactory =
     params.CMapReaderFactory || DefaultCMapReaderFactory;
+  params.StandardFontDataFactory =
+    params.StandardFontDataFactory || DefaultStandardFontDataFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
 
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
+  }
+  if (typeof params.standardFontDataWorkerFetch !== "boolean") {
+    params.standardFontDataWorkerFetch =
+      params.StandardFontDataFactory === DOMStandardFontDataFactory;
   }
   if (typeof params.isEvalSupported !== "boolean") {
     params.isEvalSupported = true;
@@ -425,6 +450,9 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
       fontExtraProperties: source.fontExtraProperties,
+      standardFontDataUrl: source.standardFontDataWorkerFetch
+        ? source.standardFontDataUrl
+        : null,
     })
     .then(function (workerId) {
       if (worker.destroyed) {
@@ -2107,6 +2135,9 @@ class WorkerTransport {
       baseUrl: params.cMapUrl,
       isCompressed: params.cMapPacked,
     });
+    this.StandardFontDataFactory = new params.StandardFontDataFactory({
+      baseUrl: params.standardFontDataUrl,
+    });
 
     this.destroyed = false;
     this.destroyCapability = null;
@@ -2509,6 +2540,13 @@ class WorkerTransport {
       "UnsupportedFeature",
       this._onUnsupportedFeature.bind(this)
     );
+
+    messageHandler.on("FetchStandardFontData", data => {
+      if (this.destroyed) {
+        return Promise.reject(new Error("Worker was destroyed"));
+      }
+      return this.StandardFontDataFactory.fetch(data);
+    });
 
     messageHandler.on("FetchBuiltInCMap", (data, sink) => {
       if (this.destroyed) {
@@ -3051,6 +3089,7 @@ export {
   build,
   DefaultCanvasFactory,
   DefaultCMapReaderFactory,
+  DefaultStandardFontDataFactory,
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,

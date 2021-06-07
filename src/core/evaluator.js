@@ -71,7 +71,9 @@ import {
 } from "./unicode.js";
 import {
   getSerifFonts,
+  getStandardFontName,
   getStdFontMap,
+  getStdFontNameToFileMap,
   getSymbolsFonts,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
@@ -83,6 +85,7 @@ import {
   LocalImageCache,
   LocalTilingPatternCache,
 } from "./image_utils.js";
+import { NullStream, Stream } from "./stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./stream.js";
@@ -98,6 +101,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   fontExtraProperties: false,
+  standardFontDataUrl: null,
 });
 
 const PatternType = {
@@ -385,6 +389,34 @@ class PartialEvaluator {
       this.builtInCMapCache.set(name, data);
     }
     return data;
+  }
+
+  async fetchStandardFontData(name) {
+    const standardFontNameToFileName = getStdFontNameToFileMap();
+    const filename = standardFontNameToFileName[name];
+    if (this.options.standardFontDataUrl !== null) {
+      const url = `${this.options.standardFontDataUrl}${filename}.pfb`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        warn(
+          `fetchStandardFontData failed to fetch file "${url}" with "${response.statusText}".`
+        );
+        return null;
+      }
+      return new Stream(await response.arrayBuffer());
+    }
+    // Get the data on the main thread instead.
+    try {
+      const data = await this.handler.sendWithPromise("FetchStandardFontData", {
+        filename,
+      });
+      return new Stream(data);
+    } catch (e) {
+      warn(
+        `fetchStandardFontData failed to fetch file "${filename}" with "${e}".`
+      );
+    }
+    return null;
   }
 
   async buildFormXObject(
@@ -3381,6 +3413,7 @@ class PartialEvaluator {
         properties = {
           type,
           name: baseFontName,
+          loadedName: baseDict.loadedName,
           widths: metrics.widths,
           defaultWidth: metrics.defaultWidth,
           flags,
@@ -3388,6 +3421,12 @@ class PartialEvaluator {
           lastChar,
         };
         const widths = dict.get("Widths");
+        const standardFontName = getStandardFontName(baseFontName);
+        let file = null;
+        if (standardFontName) {
+          file = await this.fetchStandardFontData(standardFontName);
+          properties.isStandardFont = !!file;
+        }
         return this.extractDataStructures(dict, dict, properties).then(
           newProperties => {
             if (widths) {
@@ -3403,7 +3442,7 @@ class PartialEvaluator {
                 newProperties
               );
             }
-            return new Font(baseFontName, null, newProperties);
+            return new Font(baseFontName, file, newProperties);
           }
         );
       }
@@ -3447,6 +3486,7 @@ class PartialEvaluator {
     }
 
     var fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+    let isStandardFont = false;
     if (fontFile) {
       if (fontFile.dict) {
         var subtype = fontFile.dict.get("Subtype");
@@ -3456,6 +3496,12 @@ class PartialEvaluator {
         var length1 = fontFile.dict.get("Length1");
         var length2 = fontFile.dict.get("Length2");
         var length3 = fontFile.dict.get("Length3");
+      }
+    } else if (type === "Type1") {
+      const standardFontName = getStandardFontName(fontName.name);
+      if (standardFontName) {
+        fontFile = await this.fetchStandardFontData(standardFontName);
+        isStandardFont = !!fontFile;
       }
     }
 
@@ -3467,6 +3513,7 @@ class PartialEvaluator {
       length1,
       length2,
       length3,
+      isStandardFont,
       loadedName: baseDict.loadedName,
       composite,
       fixedPitch: false,

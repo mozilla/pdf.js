@@ -397,6 +397,7 @@ class WorkerMessageHandler {
         ignoreErrors: data.ignoreErrors,
         isEvalSupported: data.isEvalSupported,
         fontExtraProperties: data.fontExtraProperties,
+        standardFontDataUrl: data.standardFontDataUrl,
       };
 
       getPdfManager(data, evaluatorOptions)

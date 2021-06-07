@@ -196,6 +196,9 @@ function adjustWidths(properties) {
 }
 
 function adjustToUnicode(properties, builtInEncoding) {
+  if (properties.isStandardFont) {
+    return;
+  }
   if (properties.hasIncludedToUnicodeMap) {
     return; // The font dictionary has a `ToUnicode` entry.
   }
@@ -220,9 +223,12 @@ function adjustToUnicode(properties, builtInEncoding) {
   properties.toUnicode.amend(toUnicode);
 }
 
-function getFontType(type, subtype) {
+function getFontType(type, subtype, isStandardFont = false) {
   switch (type) {
     case "Type1":
+      if (isStandardFont) {
+        return FontType.TYPE1STANDARD;
+      }
       return subtype === "Type1C" ? FontType.TYPE1C : FontType.TYPE1;
     case "CIDFontType0":
       return subtype === "CIDFontType0C"
@@ -686,7 +692,7 @@ var Font = (function FontClosure() {
     }
 
     this.data = data;
-    this.fontType = getFontType(type, subtype);
+    this.fontType = getFontType(type, subtype, properties.isStandardFont);
 
     // Transfer some properties again that could change during font conversion
     this.fontMatrix = properties.fontMatrix;
@@ -1317,7 +1323,7 @@ var Font = (function FontClosure() {
       var name = this.name;
       var type = this.type;
       var subtype = this.subtype;
-      let fontName = name.replace(/[,_]/g, "-").replace(/\s/g, "");
+      let fontName = normalizeFontName(name);
       var stdFontMap = getStdFontMap(),
         nonStdFontMap = getNonStdFontMap();
       const isStandardFont = !!stdFontMap[fontName];
@@ -3487,7 +3493,17 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   var glyphId, charCode, baseEncoding;
   var isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
-  if (properties.baseEncodingName) {
+  if (properties.isStandardFont) {
+    baseEncoding = builtInEncoding;
+    for (charCode = 0; charCode < baseEncoding.length; charCode++) {
+      glyphId = glyphNames.indexOf(baseEncoding[charCode]);
+      if (glyphId >= 0) {
+        charCodeToGlyphId[charCode] = glyphId;
+      } else {
+        charCodeToGlyphId[charCode] = 0; // notdef
+      }
+    }
+  } else if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
     // that.
     baseEncoding = getEncoding(properties.baseEncodingName);
@@ -4006,6 +4022,9 @@ var CFFFont = (function CFFFontClosure() {
       }
 
       var encoding = cff.encoding ? cff.encoding.encoding : null;
+      if (properties.isStandardFont) {
+        encoding = properties.defaultEncoding;
+      }
       charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
       return charCodeToGlyphId;
     },
@@ -4017,6 +4036,10 @@ var CFFFont = (function CFFFontClosure() {
   return CFFFont;
 })();
 
+function normalizeFontName(name) {
+  return name.replace(/[,_]/g, "-").replace(/\s/g, "");
+}
+
 export {
   ErrorFont,
   Font,
@@ -4025,4 +4048,5 @@ export {
   IdentityToUnicodeMap,
   SEAC_ANALYSIS_ENABLED,
   ToUnicodeMap,
+  normalizeFontName,
 };
