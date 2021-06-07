@@ -16,52 +16,20 @@
 import {
   assert,
   BaseException,
-  CMapCompressionType,
   isString,
   removeNullCharacters,
   stringToBytes,
-  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
+import {
+  BaseCanvasFactory,
+  BaseCMapReaderFactory,
+  BaseStandardFontDataFactory,
+} from "./base_factory.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
-
-class BaseCanvasFactory {
-  constructor() {
-    if (this.constructor === BaseCanvasFactory) {
-      unreachable("Cannot initialize BaseCanvasFactory.");
-    }
-  }
-
-  create(width, height) {
-    unreachable("Abstract method `create` called.");
-  }
-
-  reset(canvasAndContext, width, height) {
-    if (!canvasAndContext.canvas) {
-      throw new Error("Canvas is not specified");
-    }
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
-    }
-    canvasAndContext.canvas.width = width;
-    canvasAndContext.canvas.height = height;
-  }
-
-  destroy(canvasAndContext) {
-    if (!canvasAndContext.canvas) {
-      throw new Error("Canvas is not specified");
-    }
-    // Zeroing the width and height cause Firefox to release graphics
-    // resources immediately, which can greatly reduce memory consumption.
-    canvasAndContext.canvas.width = 0;
-    canvasAndContext.canvas.height = 0;
-    canvasAndContext.canvas = null;
-    canvasAndContext.context = null;
-  }
-}
 
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {
@@ -134,75 +102,10 @@ function fetchData(url, asTypedArray) {
   });
 }
 
-class BaseCMapReaderFactory {
-  constructor({ baseUrl = null, isCompressed = false }) {
-    if (this.constructor === BaseCMapReaderFactory) {
-      unreachable("Cannot initialize BaseCMapReaderFactory.");
-    }
-    this.baseUrl = baseUrl;
-    this.isCompressed = isCompressed;
-  }
-
-  async fetch({ name }) {
-    if (!this.baseUrl) {
-      throw new Error(
-        'The CMap "baseUrl" parameter must be specified, ensure that ' +
-          'the "cMapUrl" and "cMapPacked" API parameters are provided.'
-      );
-    }
-    if (!name) {
-      throw new Error("CMap name must be specified.");
-    }
-    const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
-    const compressionType = this.isCompressed
-      ? CMapCompressionType.BINARY
-      : CMapCompressionType.NONE;
-
-    return this._fetchData(url, compressionType).catch(reason => {
-      throw new Error(
-        `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
-      );
-    });
-  }
-
-  /**
-   * @private
-   */
-  _fetchData(url, compressionType) {
-    unreachable("Abstract method `_fetchData` called.");
-  }
-}
-
 class DOMCMapReaderFactory extends BaseCMapReaderFactory {
   _fetchData(url, compressionType) {
     return fetchData(url, /* asTypedArray = */ this.isCompressed).then(data => {
       return { cMapData: data, compressionType };
-    });
-  }
-}
-
-class BaseStandardFontDataFactory {
-  constructor({ baseUrl = null }) {
-    if (this.constructor === BaseStandardFontDataFactory) {
-      unreachable("Cannot initialize BaseStandardFontDataFactory.");
-    }
-    this.baseUrl = baseUrl;
-  }
-
-  async fetch({ filename }) {
-    if (!this.baseUrl) {
-      throw new Error(
-        'The standard font "baseUrl" parameter must be specified, ensure that ' +
-          'the "standardFontDataUrl" API parameter is provided.'
-      );
-    }
-    if (!filename) {
-      throw new Error("Font filename must be specified.");
-    }
-    const url = this.baseUrl + filename + ".pfb";
-
-    return this._fetchData(url).catch(reason => {
-      throw new Error(`Unable to load font data at: ${url}`);
     });
   }
 }
@@ -740,9 +643,6 @@ class PDFDateString {
 
 export {
   addLinkAttributes,
-  BaseCanvasFactory,
-  BaseCMapReaderFactory,
-  BaseStandardFontDataFactory,
   DEFAULT_LINK_REL,
   deprecated,
   DOMCanvasFactory,
