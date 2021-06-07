@@ -20,6 +20,7 @@ import {
   unreachable,
   Util,
 } from "../shared/util.js";
+import { DOMSVGFactory } from "./display_utils.js";
 
 let svgElement;
 
@@ -29,7 +30,8 @@ function createMatrix(matrix) {
     return new DOMMatrix(matrix);
   }
   if (!svgElement) {
-    svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const svgFactory = new DOMSVGFactory();
+    svgElement = svgFactory.createElement("svg");
   }
   return svgElement.createSVGMatrix(matrix);
 }
