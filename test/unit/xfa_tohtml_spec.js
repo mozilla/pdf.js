@@ -97,7 +97,7 @@ describe("XFAFactory", function () {
       ]);
       expect(draw.attributes.style).toEqual({
         color: "#0c1722",
-        fontFamily: "FooBar",
+        fontFamily: '"FooBar","FooBar-PdfJS-XFA"',
         fontSize: "6.93px",
         margin: "1px 4px 2px 3px",
         verticalAlign: "2px",
