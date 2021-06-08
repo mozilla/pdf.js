@@ -125,6 +125,7 @@ describe("annotation", function () {
       idFactory: createIdFactory(/* pageIndex = */ 0),
       fontCache: new RefSetCache(),
       builtInCMapCache,
+      standardFontDataCache: new Map(),
     });
   });
 
