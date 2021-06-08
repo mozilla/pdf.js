@@ -152,19 +152,19 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   reading built-in CMap files. Providing a custom factory is useful for
  *   environments without Fetch API or `XMLHttpRequest` support, such as
  *   Node.js. The default value is {DOMCMapReaderFactory}.
- * @property {boolean} [useSystemFonts] - When true, fonts that aren't embedded
- *   in the PDF will fallback to a system font. Defaults to true for web
- *   environments and false for node.
+ * @property {boolean} [useSystemFonts] - When `true`, fonts that aren't
+ *   embedded in the PDF document will fallback to a system font.
+ *   The default value is `true` in web environments and `false` in Node.js.
  * @property {string} [standardFontDataUrl] - The URL where the standard font
  *   files are located. Include the trailing slash.
- * @property {boolean} [useWorkerFetch] - Enable using fetch in the worker for
- *   resources. This currently only used for fetching the font data from the
- *   worker thread. When `true`, StandardFontDataFactory will be ignored. The
- *   default value is `true` in web environment and `false` for Node.
  * @property {Object} [StandardFontDataFactory] - The factory that will be used
  *   when reading the standard font files. Providing a custom factory is useful
  *   for environments without Fetch API or `XMLHttpRequest` support, such as
  *   Node.js. The default value is {DOMStandardFontDataFactory}.
+ * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
+ *   worker-thread when reading CMap and standard font files. When `true`,
+ *   the `CMapReaderFactory` and `StandardFontDataFactory` options are ignored.
+ *   The default value is `true` in web wenvironments and `false` in Node.js.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
@@ -333,6 +333,7 @@ function getDocument(src) {
   }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
+      params.CMapReaderFactory === DOMCMapReaderFactory &&
       params.StandardFontDataFactory === DOMStandardFontDataFactory;
   }
   if (typeof params.isEvalSupported !== "boolean") {
@@ -487,6 +488,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       fontExtraProperties: source.fontExtraProperties,
       enableXfa: source.enableXfa,
       useSystemFonts: source.useSystemFonts,
+      cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
       standardFontDataUrl: source.useWorkerFetch
         ? source.standardFontDataUrl
         : null,
@@ -2680,35 +2682,18 @@ class WorkerTransport {
       this._onUnsupportedFeature.bind(this)
     );
 
+    messageHandler.on("FetchBuiltInCMap", data => {
+      if (this.destroyed) {
+        return Promise.reject(new Error("Worker was destroyed"));
+      }
+      return this.CMapReaderFactory.fetch(data);
+    });
+
     messageHandler.on("FetchStandardFontData", data => {
       if (this.destroyed) {
         return Promise.reject(new Error("Worker was destroyed"));
       }
       return this.StandardFontDataFactory.fetch(data);
-    });
-
-    messageHandler.on("FetchBuiltInCMap", (data, sink) => {
-      if (this.destroyed) {
-        sink.error(new Error("Worker was destroyed"));
-        return;
-      }
-      let fetched = false;
-
-      sink.onPull = () => {
-        if (fetched) {
-          sink.close();
-          return;
-        }
-        fetched = true;
-
-        this.CMapReaderFactory.fetch(data)
-          .then(function (builtInCMap) {
-            sink.enqueue(builtInCMap, 1, [builtInCMap.cMapData.buffer]);
-          })
-          .catch(function (reason) {
-            sink.error(reason);
-          });
-      };
     });
   }
 

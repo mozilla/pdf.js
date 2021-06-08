@@ -19,7 +19,7 @@
 
 const WAITING_TIME = 100; // ms
 const PDF_TO_CSS_UNITS = 96.0 / 72.0;
-const CMAP_URL = "../external/bcmaps/";
+const CMAP_URL = "/build/generic/web/cmaps/";
 const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
