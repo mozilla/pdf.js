@@ -74,7 +74,10 @@ class CFFFont {
       return charCodeToGlyphId;
     }
 
-    const encoding = cff.encoding ? cff.encoding.encoding : null;
+    let encoding = cff.encoding ? cff.encoding.encoding : null;
+    if (properties.isInternalFont) {
+      encoding = properties.defaultEncoding;
+    }
     charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
     return charCodeToGlyphId;
   }

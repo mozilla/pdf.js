@@ -26,6 +26,10 @@ const CMAP_PARAMS = {
   cMapPacked: true,
 };
 
+const STANDARD_FONT_DATA_URL = isNodeJS
+  ? "./external/standard_fonts/"
+  : "../../external/standard_fonts/";
+
 class DOMFileReaderFactory {
   static async fetch(params) {
     const response = await fetch(params.path);
@@ -61,6 +65,7 @@ function buildGetDocumentParams(filename, options) {
   params.url = isNodeJS
     ? TEST_PDFS_PATH + filename
     : new URL(TEST_PDFS_PATH + filename, window.location).href;
+  params.standardFontDataUrl = STANDARD_FONT_DATA_URL;
 
   for (const option in options) {
     params[option] = options[option];
@@ -146,6 +151,7 @@ export {
   createIdFactory,
   DefaultFileReaderFactory,
   isEmptyObj,
+  STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   XRefMock,
 };

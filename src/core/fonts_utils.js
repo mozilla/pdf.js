@@ -78,9 +78,12 @@ const MacStandardGlyphOrdering = [
   "threequarters", "franc", "Gbreve", "gbreve", "Idotaccent", "Scedilla",
   "scedilla", "Cacute", "cacute", "Ccaron", "ccaron", "dcroat"];
 
-function getFontType(type, subtype) {
+function getFontType(type, subtype, isStandardFont = false) {
   switch (type) {
     case "Type1":
+      if (isStandardFont) {
+        return FontType.TYPE1STANDARD;
+      }
       return subtype === "Type1C" ? FontType.TYPE1C : FontType.TYPE1;
     case "CIDFontType0":
       return subtype === "CIDFontType0C"
@@ -135,7 +138,17 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   let glyphId, charCode, baseEncoding;
   const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
-  if (properties.baseEncodingName) {
+  if (properties.isInternalFont) {
+    baseEncoding = builtInEncoding;
+    for (charCode = 0; charCode < baseEncoding.length; charCode++) {
+      glyphId = glyphNames.indexOf(baseEncoding[charCode]);
+      if (glyphId >= 0) {
+        charCodeToGlyphId[charCode] = glyphId;
+      } else {
+        charCodeToGlyphId[charCode] = 0; // notdef
+      }
+    }
+  } else if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
     // that.
     baseEncoding = getEncoding(properties.baseEncodingName);
@@ -193,10 +206,15 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   return charCodeToGlyphId;
 }
 
+function normalizeFontName(name) {
+  return name.replace(/[,_]/g, "-").replace(/\s/g, "");
+}
+
 export {
   FontFlags,
   getFontType,
   MacStandardGlyphOrdering,
+  normalizeFontName,
   recoverGlyphName,
   SEAC_ANALYSIS_ENABLED,
   type1FontGlyphMapping,

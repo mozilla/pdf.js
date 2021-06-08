@@ -217,6 +217,14 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API,
   },
+  standardFontDataUrl: {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+        ? "../external/standard_fonts/"
+        : "../web/standard_fonts/",
+    kind: OptionKind.API,
+  },
   verbosity: {
     /** @type {number} */
     value: 1,
