@@ -397,14 +397,16 @@ class PartialEvaluator {
       return new Stream(cachedData);
     }
 
-    // The symbol fonts are not consistent across platforms, always load the
-    // standard font data for them.
-    if (
-      this.options.useSystemFonts &&
-      name !== "Symbol" &&
-      name !== "ZapfDingbats"
-    ) {
-      return null;
+    if (!this.options.disableFontFace) {
+      // The symbol fonts are not consistent across platforms, always load the
+      // standard font data for them.
+      if (
+        this.options.useSystemFonts &&
+        name !== "Symbol" &&
+        name !== "ZapfDingbats"
+      ) {
+        return null;
+      }
     }
 
     const standardFontNameToFileName = getFontNameToFileMap(),
