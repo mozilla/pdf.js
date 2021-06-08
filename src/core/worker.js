@@ -412,6 +412,7 @@ class WorkerMessageHandler {
         isEvalSupported: data.isEvalSupported,
         fontExtraProperties: data.fontExtraProperties,
         useSystemFonts: data.useSystemFonts,
+        cMapUrl: data.cMapUrl,
         standardFontDataUrl: data.standardFontDataUrl,
       };
 

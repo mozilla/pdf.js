@@ -96,8 +96,9 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   fontExtraProperties: false,
-  standardFontDataUrl: null,
   useSystemFonts: true,
+  cMapUrl: null,
+  standardFontDataUrl: null,
 });
 
 const PatternType = {
@@ -360,23 +361,25 @@ class PartialEvaluator {
     if (cachedData) {
       return cachedData;
     }
-    const readableStream = this.handler.sendWithStream("FetchBuiltInCMap", {
-      name,
-    });
-    const reader = readableStream.getReader();
+    let data;
 
-    const data = await new Promise(function (resolve, reject) {
-      function pump() {
-        reader.read().then(function ({ value, done }) {
-          if (done) {
-            return;
-          }
-          resolve(value);
-          pump();
-        }, reject);
+    if (this.options.cMapUrl !== null) {
+      // Only compressed CMaps are (currently) supported here.
+      const url = `${this.options.cMapUrl}${name}.bcmap`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(
+          `fetchBuiltInCMap: failed to fetch file "${url}" with "${response.statusText}".`
+        );
       }
-      pump();
-    });
+      data = {
+        cMapData: new Uint8Array(await response.arrayBuffer()),
+        compressionType: CMapCompressionType.BINARY,
+      };
+    } else {
+      // Get the data on the main-thread instead.
+      data = await this.handler.sendWithPromise("FetchBuiltInCMap", { name });
+    }
 
     if (data.compressionType !== CMapCompressionType.NONE) {
       // Given the size of uncompressed CMaps, only cache compressed ones.
