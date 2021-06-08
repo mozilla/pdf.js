@@ -207,6 +207,7 @@ class PartialEvaluator {
     idFactory,
     fontCache,
     builtInCMapCache,
+    standardFontDataCache,
     globalImageCache,
     options = null,
   }) {
@@ -216,6 +217,7 @@ class PartialEvaluator {
     this.idFactory = idFactory;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
+    this.standardFontDataCache = standardFontDataCache;
     this.globalImageCache = globalImageCache;
     this.options = options || DefaultPartialEvaluatorOptions;
     this.parsingType3Font = false;
@@ -390,8 +392,13 @@ class PartialEvaluator {
   }
 
   async fetchStandardFontData(name) {
+    const cachedData = this.standardFontDataCache.get(name);
+    if (cachedData) {
+      return new Stream(cachedData);
+    }
+
     // The symbol fonts are not consistent across platforms, always load the
-    // font data for them.
+    // standard font data for them.
     if (
       this.options.useSystemFonts &&
       name !== "Symbol" &&
@@ -399,31 +406,42 @@ class PartialEvaluator {
     ) {
       return null;
     }
-    const standardFontNameToFileName = getFontNameToFileMap();
-    const filename = standardFontNameToFileName[name];
+
+    const standardFontNameToFileName = getFontNameToFileMap(),
+      filename = standardFontNameToFileName[name];
+    let data;
+
     if (this.options.standardFontDataUrl !== null) {
       const url = `${this.options.standardFontDataUrl}${filename}`;
       const response = await fetch(url);
       if (!response.ok) {
         warn(
-          `fetchStandardFontData failed to fetch file "${url}" with "${response.statusText}".`
+          `fetchStandardFontData: failed to fetch file "${url}" with "${response.statusText}".`
         );
-        return null;
+      } else {
+        data = await response.arrayBuffer();
       }
-      return new Stream(await response.arrayBuffer());
+    } else {
+      // Get the data on the main-thread instead.
+      try {
+        data = await this.handler.sendWithPromise("FetchStandardFontData", {
+          filename,
+        });
+      } catch (e) {
+        warn(
+          `fetchStandardFontData: failed to fetch file "${filename}" with "${e}".`
+        );
+      }
     }
-    // Get the data on the main thread instead.
-    try {
-      const data = await this.handler.sendWithPromise("FetchStandardFontData", {
-        filename,
-      });
-      return new Stream(data);
-    } catch (e) {
-      warn(
-        `fetchStandardFontData failed to fetch file "${filename}" with "${e}".`
-      );
+
+    if (!data) {
+      return null;
     }
-    return null;
+    // Cache the "raw" standard font data, to avoid fetching it repeateadly
+    // (see e.g. issue 11399).
+    this.standardFontDataCache.set(name, data);
+
+    return new Stream(data);
   }
 
   async buildFormXObject(

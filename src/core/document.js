@@ -79,6 +79,7 @@ class Page {
     globalIdFactory,
     fontCache,
     builtInCMapCache,
+    standardFontDataCache,
     globalImageCache,
     nonBlendModesSet,
     xfaFactory,
@@ -90,6 +91,7 @@ class Page {
     this.ref = ref;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
+    this.standardFontDataCache = standardFontDataCache;
     this.globalImageCache = globalImageCache;
     this.nonBlendModesSet = nonBlendModesSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
@@ -255,6 +257,7 @@ class Page {
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
+      standardFontDataCache: this.standardFontDataCache,
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
     });
@@ -321,6 +324,7 @@ class Page {
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
+      standardFontDataCache: this.standardFontDataCache,
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
     });
@@ -425,6 +429,7 @@ class Page {
         idFactory: this._localIdFactory,
         fontCache: this.fontCache,
         builtInCMapCache: this.builtInCMapCache,
+        standardFontDataCache: this.standardFontDataCache,
         globalImageCache: this.globalImageCache,
         options: this.evaluatorOptions,
       });
@@ -889,6 +894,7 @@ class PDFDocument {
       idFactory: this._globalIdFactory,
       fontCache: this.catalog.fontCache,
       builtInCMapCache: this.catalog.builtInCMapCache,
+      standardFontDataCache: this.catalog.standardFontDataCache,
       options,
     });
     const operatorList = new OperatorList();
@@ -1148,6 +1154,7 @@ class PDFDocument {
           globalIdFactory: this._globalIdFactory,
           fontCache: catalog.fontCache,
           builtInCMapCache: catalog.builtInCMapCache,
+          standardFontDataCache: catalog.standardFontDataCache,
           globalImageCache: catalog.globalImageCache,
           nonBlendModesSet: catalog.nonBlendModesSet,
           xfaFactory: this.xfaFactory,
@@ -1170,6 +1177,7 @@ class PDFDocument {
         globalIdFactory: this._globalIdFactory,
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
+        standardFontDataCache: catalog.standardFontDataCache,
         globalImageCache: catalog.globalImageCache,
         nonBlendModesSet: catalog.nonBlendModesSet,
         xfaFactory: null,
