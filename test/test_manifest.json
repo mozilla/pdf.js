@@ -2725,6 +2725,14 @@
        "rounds": 1,
        "type": "eq"
    },
+    {  "id": "hsbc",
+       "file": "pdfs/hsbc.pdf",
+       "md5": "34a63a9ed9cdf3790562a3dfd1703e48",
+       "rounds": 1,
+       "link": true,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "issue7580-text",
        "file": "pdfs/issue7580.pdf",
        "md5": "44dd5a9b4373fcab9890cf567722a766",

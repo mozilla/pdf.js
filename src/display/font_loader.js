@@ -29,6 +29,8 @@ class BaseFontLoader {
     docId,
     onUnsupportedFeature,
     ownerDocument = globalThis.document,
+    // For testing only.
+    styleElement = null,
   }) {
     if (this.constructor === BaseFontLoader) {
       unreachable("Cannot initialize BaseFontLoader.");
@@ -38,7 +40,10 @@ class BaseFontLoader {
     this._document = ownerDocument;
 
     this.nativeFontFaces = [];
-    this.styleElement = null;
+    this.styleElement =
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
+        ? styleElement
+        : null;
   }
 
   addNativeFontFace(nativeFontFace) {
@@ -55,7 +60,6 @@ class BaseFontLoader {
         .getElementsByTagName("head")[0]
         .appendChild(styleElement);
     }
-
     const styleSheet = styleElement.sheet;
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
   }
@@ -121,7 +125,18 @@ class BaseFontLoader {
   }
 
   get isFontLoadingAPISupported() {
-    return shadow(this, "isFontLoadingAPISupported", !!this._document?.fonts);
+    const hasFonts = !!this._document?.fonts;
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      return shadow(
+        this,
+        "isFontLoadingAPISupported",
+        hasFonts && !this.styleElement
+      );
+    }
+    return shadow(this, "isFontLoadingAPISupported", hasFonts);
   }
 
   // eslint-disable-next-line getter-return

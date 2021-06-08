@@ -33,6 +33,8 @@
   vertical-align: inherit;
   box-sizing: border-box;
   background: transparent;
+  padding: 0;
+  margin: 0;
 }
 
 .xfaLayer a {
