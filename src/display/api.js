@@ -2272,6 +2272,7 @@ class WorkerTransport {
       docId: loadingTask.docId,
       onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
       ownerDocument: params.ownerDocument,
+      styleElement: params.styleElement,
     });
     this._params = params;
     this.CMapReaderFactory = new params.CMapReaderFactory({
