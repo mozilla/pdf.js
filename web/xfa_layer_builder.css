@@ -33,6 +33,13 @@
   vertical-align: inherit;
   box-sizing: border-box;
   background: transparent;
+  padding: 0;
+  margin: 0;
+  pointer-events: auto;
+}
+
+.xfaLayer div {
+  pointer-events: none;
 }
 
 .xfaLayer a {
@@ -41,6 +48,10 @@
 
 .xfaRich li {
   margin-left: 3em;
+}
+
+.xfaLayer p {
+  margin-bottom: -1px;
 }
 
 .xfaFont {
@@ -68,38 +79,79 @@
 
 .xfaRich {
   z-index: 300;
-  line-height: 1.2;
 }
 
 .xfaSubform {
   z-index: 200;
 }
 
+.xfaCaption {
+  overflow: hidden;
+  flex: 0 1 auto;
+}
+
 .xfaLabel {
+  height: 100%;
+  width: 100%;
+}
+
+.xfaLeft {
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: 100%;
-  height: 100%;
 }
 
-.xfaCaption {
-  flex: 1 1 auto;
+.xfaLeft > .xfaCaption {
+  max-height: 100%;
 }
 
-.xfaBorderDiv {
+.xfaRight {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+
+.xfaRight > .xfaCaption {
+  max-height: 100%;
+}
+
+.xfaTop {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+}
+
+.xfaTop > .xfaCaption {
+  max-width: 100%;
+}
+
+.xfaBottom {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: start;
+}
+
+.xfaBottom > .xfaCaption {
+  max-width: 100%;
+}
+
+.xfaInline {
+  float: inline;
+}
+
+.xfaBorder {
   background: transparent;
   position: absolute;
   pointer-events: none;
 }
 
 .xfaWrapper {
-  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  height: auto;
+  align-items: stretch;
+}
+
+.xfaWrapped {
+  flex: 1 1 auto;
 }
 
 .xfaContentArea {
@@ -120,41 +172,9 @@
 .xfaSelect {
   width: 100%;
   height: 100%;
-  flex: 100 1 0;
+  flex: 1 1 0;
   border: none;
   resize: none;
-}
-
-.xfaLabel > input[type="radio"] {
-  /* Use this trick to make the checkbox invisible but
-       but still focusable. */
-  position: absolute;
-  left: -99999px;
-}
-
-.xfaLabel > input[type="radio"]:focus + .xfaCheckboxMark {
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
-}
-
-.xfaCheckboxMark {
-  cursor: pointer;
-  flex: 0 0 auto;
-  border-style: solid;
-  border-width: 2px;
-  border-color: #8f8f9d;
-  font-size: 10px;
-  line-height: 10px;
-  width: 10px;
-  height: 10px;
-  text-align: center;
-  vertical-align: middle;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.xfaCheckbox:checked + .xfaCheckboxMark::after {
-  content: attr(mark);
 }
 
 .xfaButton {
@@ -167,6 +187,13 @@
 
 .xfaButton:hover {
   background: Highlight;
+}
+
+.xfaCheckbox,
+.xfaRadio {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 .xfaRich {
@@ -183,10 +210,6 @@
   height: auto;
 }
 
-.xfaPosition {
-  display: block;
-}
-
 .xfaLrTb,
 .xfaRlTb,
 .xfaTb {
@@ -201,18 +224,28 @@
   flex: 1 1 auto;
 }
 
-.xfaTb > div {
-  justify-content: left;
+.xfaLr {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
 }
 
 .xfaLr > div {
-  display: inline;
-  float: left;
+  flex: 1 1 auto;
+}
+
+.xfaRl {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: stretch;
 }
 
 .xfaRl > div {
-  display: inline;
-  float: right;
+  flex: 1 1 auto;
+}
+
+.xfaTb > div {
+  justify-content: left;
 }
 
 .xfaPosition {
@@ -228,25 +261,20 @@
   align-items: center;
 }
 
-.xfaLrTb > div {
-  display: inline;
-  float: left;
-}
-
-.xfaRlTb > div {
-  display: inline;
-  float: right;
-}
-
 .xfaTable {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+}
+
+.xfaTable > div {
+  flex: 1 1 auto;
 }
 
 .xfaTable .xfaRow {
   display: flex;
   flex-direction: row;
-  flex: 1 1 auto;
+  align-items: stretch;
 }
 
 .xfaTable .xfaRow > div {
@@ -256,6 +284,7 @@
 .xfaTable .xfaRlRow {
   display: flex;
   flex-direction: row-reverse;
+  align-items: stretch;
   flex: 1;
 }
 

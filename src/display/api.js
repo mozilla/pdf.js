@@ -40,6 +40,7 @@ import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMStandardFontDataFactory,
   isDataScheme,
   loadScript,
   PageViewport,
@@ -47,7 +48,11 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-import { NodeCanvasFactory, NodeCMapReaderFactory } from "./node_utils.js";
+import {
+  NodeCanvasFactory,
+  NodeCMapReaderFactory,
+  NodeStandardFontDataFactory,
+} from "./node_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { apiCompatibilityParams } from "./api_compatibility.js";
 import { CanvasGraphics } from "./canvas.js";
@@ -77,6 +82,10 @@ const DefaultCMapReaderFactory =
   (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
     ? NodeCMapReaderFactory
     : DOMCMapReaderFactory;
+const DefaultStandardFontDataFactory =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
+    ? NodeStandardFontDataFactory
+    : DOMStandardFontDataFactory;
 
 /**
  * @typedef {function} IPDFStreamFactory
@@ -151,6 +160,19 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   reading built-in CMap files. Providing a custom factory is useful for
  *   environments without Fetch API or `XMLHttpRequest` support, such as
  *   Node.js. The default value is {DOMCMapReaderFactory}.
+ * @property {boolean} [useSystemFonts] - When true, fonts that aren't embedded
+ *   in the PDF will fallback to a system font. Defaults to true for web
+ *   environments and false for node.
+ * @property {string} [standardFontDataUrl] - The URL where the standard font
+ *   files are located. Include the trailing slash.
+ * @property {boolean} [useWorkerFetch] - Enable using fetch in the worker for
+ *   resources. This currently only used for fetching the font data from the
+ *   worker thread. When `true`, StandardFontDataFactory will be ignored. The
+ *   default value is `true` in web environment and `false` for Node.
+ * @property {Object} [StandardFontDataFactory] - The factory that will be used
+ *   when reading the standard font files. Providing a custom factory is useful
+ *   for environments without Fetch API or `XMLHttpRequest` support, such as
+ *   Node.js. The default value is {DOMStandardFontDataFactory}.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
@@ -295,6 +317,8 @@ function getDocument(src) {
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.CMapReaderFactory =
     params.CMapReaderFactory || DefaultCMapReaderFactory;
+  params.StandardFontDataFactory =
+    params.StandardFontDataFactory || DefaultStandardFontDataFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
@@ -311,6 +335,13 @@ function getDocument(src) {
   }
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
+  }
+  if (typeof params.useSystemFonts !== "boolean") {
+    params.useSystemFonts = !isNodeJS;
+  }
+  if (typeof params.useWorkerFetch !== "boolean") {
+    params.useWorkerFetch =
+      params.StandardFontDataFactory === DOMStandardFontDataFactory;
   }
   if (typeof params.isEvalSupported !== "boolean") {
     params.isEvalSupported = true;
@@ -469,6 +500,10 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       isEvalSupported: source.isEvalSupported,
       fontExtraProperties: source.fontExtraProperties,
       enableXfa: source.enableXfa,
+      useSystemFonts: source.useSystemFonts,
+      standardFontDataUrl: source.useWorkerFetch
+        ? source.standardFontDataUrl
+        : null,
     })
     .then(function (workerId) {
       if (worker.destroyed) {
@@ -1071,7 +1106,8 @@ class PDFDocumentProxy {
  * @property {number} width - Width in device space.
  * @property {number} height - Height in device space.
  * @property {string} fontName - Font name used by PDF.js for converted font.
- *
+ * @property {boolean} hasEOL - Indicating if the text content is followed by a
+ *   line-break.
  */
 
 /**
@@ -2260,6 +2296,7 @@ class WorkerTransport {
       docId: loadingTask.docId,
       onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
       ownerDocument: params.ownerDocument,
+      styleElement: params.styleElement,
     });
     this._params = params;
     // modified by ngx-extended-pdf-viewer #376
@@ -2272,6 +2309,10 @@ class WorkerTransport {
       isCompressed: params.cMapPacked,
     });
     // end of modification
+    this.StandardFontDataFactory = new params.StandardFontDataFactory({
+      baseUrl: params.standardFontDataUrl,
+    });
+
     this.destroyed = false;
     this.destroyCapability = null;
     this._passwordCapability = null;
@@ -2668,6 +2709,13 @@ class WorkerTransport {
       "UnsupportedFeature",
       this._onUnsupportedFeature.bind(this)
     );
+
+    messageHandler.on("FetchStandardFontData", data => {
+      if (this.destroyed) {
+        return Promise.reject(new Error("Worker was destroyed"));
+      }
+      return this.StandardFontDataFactory.fetch(data);
+    });
 
     messageHandler.on("FetchBuiltInCMap", (data, sink) => {
       if (this.destroyed) {
@@ -3211,6 +3259,7 @@ export {
   build,
   DefaultCanvasFactory,
   DefaultCMapReaderFactory,
+  DefaultStandardFontDataFactory,
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,

@@ -130,6 +130,7 @@
 !bug1513120_reduced.pdf
 !bug1538111.pdf
 !bug1552113.pdf
+!issue6132.pdf
 !issue9949.pdf
 !bug1308536.pdf
 !bug1337429.pdf
@@ -215,6 +216,7 @@
 !bug1473809.pdf
 !issue12120_reduced.pdf
 !pdfjsbad1586.pdf
+!standard_fonts.pdf
 !freeculture.pdf
 !issue6006.pdf
 !pdfkit_compressed.pdf
@@ -436,6 +438,7 @@
 !quadpoints.pdf
 !transparent.pdf
 !xobject-image.pdf
+!issue6605.pdf
 !ccitt_EndOfBlock_false.pdf
 !issue9972-1.pdf
 !issue9972-2.pdf

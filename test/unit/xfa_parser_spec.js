@@ -256,6 +256,38 @@ describe("XFAParser", function () {
       expect(root[$dump]()).toEqual(expected);
     });
 
+    it("should parse a xfa document and parse CDATA when needed", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <field>
+        <extras>
+          <exData contentType="text/html" name="foo">
+            <![CDATA[<body xmlns="http://www.w3.org/1999/xhtml">
+              <span>hello</span></body>]]>
+          </exData>
+        </extra>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const exdata = searchNode(root, root, "foo")[0];
+      const body = exdata[$dump]().$content[$dump]();
+      const expected = {
+        $name: "body",
+        attributes: {},
+        children: [
+          { $content: "hello", $name: "span", attributes: {}, children: [] },
+        ],
+      };
+
+      expect(body).toEqual(expected);
+    });
+
     it("should parse a xfa document and apply some prototypes", function () {
       const xml = `
 <?xml version="1.0"?>
@@ -274,6 +306,56 @@ describe("XFAParser", function () {
       </field>
       <field>
         <font use="#id1" size="456pt" weight="bold" posture="normal">
+          <fill>
+            <color value="4,5,6"/>
+          </fill>
+          <extras id="id2"/>
+        </font>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml)[$dump]();
+      let font = root.template.subform.field[0].font;
+      expect(font.typeface).toEqual("Foo");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual(123);
+      expect(font.weight).toEqual("bold");
+      expect(font.posture).toEqual("italic");
+      expect(font.fill.color.value).toEqual({ r: 1, g: 2, b: 3 });
+      expect(font.extras).toEqual(undefined);
+
+      font = root.template.subform.field[1].font;
+      expect(font.typeface).toEqual("Foo");
+      expect(font.overline).toEqual(0);
+      expect(font.size).toEqual(456);
+      expect(font.weight).toEqual("bold");
+      expect(font.posture).toEqual("normal");
+      expect(font.fill.color.value).toEqual({ r: 4, g: 5, b: 6 });
+      expect(font.extras.id).toEqual("id2");
+    });
+
+    it("should parse a xfa document and apply some prototypes through usehref", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <proto>
+        <draw name="foo">
+          <font typeface="Foo" size="123pt" weight="bold" posture="italic">
+            <fill>
+              <color value="1,2,3"/>
+            </fill>
+          </font>
+        </draw>
+      </proto>
+      <field>
+        <font usehref=".#som($template.#subform.foo.#font)"/>
+      </field>
+      <field>
+        <font usehref=".#som($template.#subform.foo.#font)" size="456pt" weight="bold" posture="normal">
           <fill>
             <color value="4,5,6"/>
           </fill>
@@ -697,6 +779,66 @@ describe("XFAParser", function () {
       expect(
         searchNode(form, form, "A.B.C.value.text")[0][$dump]().$content
       ).toBe("xyz");
+    });
+
+    it("should make a basic binding and create a non-existing node", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="A" mergeMode="matchTemplate">
+      <subform name="B">
+        <field name="C">
+        </field>
+        <field name="D">
+          <value>
+            <text>foobar</text>
+          </value>
+        </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <A>
+      </A>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      const form = binder.bind();
+      const data = binder.getData();
+
+      expect(
+        searchNode(form, form, "A.B.D.value.text")[0][$dump]().$content
+      ).toBe("foobar");
+
+      const expected = {
+        $name: "A",
+        attributes: {},
+        children: [
+          {
+            $name: "B",
+            attributes: {},
+            children: [
+              {
+                $name: "C",
+                attributes: {},
+                children: [],
+              },
+              {
+                $name: "D",
+                attributes: {},
+                children: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(searchNode(data, data, "A")[0][$dump]()).toEqual(expected);
     });
 
     it("should make another basic binding", function () {

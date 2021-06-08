@@ -82,6 +82,7 @@ class XfaLayerBuilder {
       xfa: this.xfaHtml,
       page: null,
       annotationStorage: this.annotationStorage,
+      intent,
     };
 
     // Create an xfa layer div and render the form

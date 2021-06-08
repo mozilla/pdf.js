@@ -64,7 +64,9 @@ import {
 } from "./unicode.js";
 import {
   getSerifFonts,
+  getStandardFontName,
   getStdFontMap,
+  getStdFontNameToFileMap,
   getSymbolsFonts,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
@@ -77,6 +79,7 @@ import {
   LocalImageCache,
   LocalTilingPatternCache,
 } from "./image_utils.js";
+import { NullStream, Stream } from "./stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
@@ -84,7 +87,6 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
-import { NullStream } from "./stream.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
 
@@ -94,6 +96,8 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   fontExtraProperties: false,
+  standardFontDataUrl: null,
+  useSystemFonts: true,
 });
 
 const PatternType = {
@@ -379,6 +383,43 @@ class PartialEvaluator {
       this.builtInCMapCache.set(name, data);
     }
     return data;
+  }
+
+  async fetchStandardFontData(name) {
+    // The symbol fonts are not consistent across platforms, always load the
+    // font data for them.
+    if (
+      this.options.useSystemFonts &&
+      name !== "Symbol" &&
+      name !== "ZapfDingbats"
+    ) {
+      return null;
+    }
+    const standardFontNameToFileName = getStdFontNameToFileMap();
+    const filename = standardFontNameToFileName[name];
+    if (this.options.standardFontDataUrl !== null) {
+      const url = `${this.options.standardFontDataUrl}${filename}.pfb`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        warn(
+          `fetchStandardFontData failed to fetch file "${url}" with "${response.statusText}".`
+        );
+        return null;
+      }
+      return new Stream(await response.arrayBuffer());
+    }
+    // Get the data on the main thread instead.
+    try {
+      const data = await this.handler.sendWithPromise("FetchStandardFontData", {
+        filename,
+      });
+      return new Stream(data);
+    } catch (e) {
+      warn(
+        `fetchStandardFontData failed to fetch file "${filename}" with "${e}".`
+      );
+    }
+    return null;
   }
 
   async buildFormXObject(
@@ -2115,7 +2156,7 @@ class PartialEvaluator {
 
       if (
         font.isType3Font &&
-        textState.fontSize <= 1 &&
+        (textState.fontSize <= 1 || font.isCharBBox) &&
         !isArrayEqual(textState.fontMatrix, FONT_IDENTITY_MATRIX)
       ) {
         const glyphHeight = font.bbox[3] - font.bbox[1];
@@ -2251,6 +2292,20 @@ class PartialEvaluator {
     function handleSetFont(fontName, fontRef) {
       return self
         .loadFont(fontName, fontRef, resources)
+        .then(function (translated) {
+          if (!translated.font.isType3Font) {
+            return translated;
+          }
+          return translated
+            .loadType3Data(self, resources, task)
+            .catch(function () {
+              // Ignore Type3-parsing errors, since we only use `loadType3Data`
+              // here to ensure that we'll always obtain a useful /FontBBox.
+            })
+            .then(function () {
+              return translated;
+            });
+        })
         .then(function (translated) {
           textState.font = translated.font;
           textState.fontMatrix =
@@ -3711,6 +3766,7 @@ class PartialEvaluator {
         properties = {
           type,
           name: baseFontName,
+          loadedName: baseDict.loadedName,
           widths: metrics.widths,
           defaultWidth: metrics.defaultWidth,
           flags,
@@ -3720,6 +3776,13 @@ class PartialEvaluator {
           isType3Font,
         };
         const widths = dict.get("Widths");
+        const standardFontName = getStandardFontName(baseFontName);
+        let file = null;
+        if (standardFontName) {
+          properties.isStandardFont = true;
+          file = await this.fetchStandardFontData(standardFontName);
+          properties.isInternalFont = !!file;
+        }
         return this.extractDataStructures(dict, dict, properties).then(
           newProperties => {
             if (widths) {
@@ -3735,7 +3798,7 @@ class PartialEvaluator {
                 newProperties
               );
             }
-            return new Font(baseFontName, null, newProperties);
+            return new Font(baseFontName, file, newProperties);
           }
         );
       }
@@ -3788,6 +3851,8 @@ class PartialEvaluator {
       warn(`translateFont - fetching "${fontName.name}" font file: "${ex}".`);
       fontFile = new NullStream();
     }
+    let isStandardFont = false;
+    let isInternalFont = false;
     if (fontFile) {
       if (fontFile.dict) {
         const subtypeEntry = fontFile.dict.get("Subtype");
@@ -3797,6 +3862,13 @@ class PartialEvaluator {
         length1 = fontFile.dict.get("Length1");
         length2 = fontFile.dict.get("Length2");
         length3 = fontFile.dict.get("Length3");
+      }
+    } else if (type === "Type1") {
+      const standardFontName = getStandardFontName(fontName.name);
+      if (standardFontName) {
+        isStandardFont = true;
+        fontFile = await this.fetchStandardFontData(standardFontName);
+        isInternalFont = !!fontFile;
       }
     }
 
@@ -3808,6 +3880,8 @@ class PartialEvaluator {
       length1,
       length2,
       length3,
+      isStandardFont,
+      isInternalFont,
       loadedName: baseDict.loadedName,
       composite,
       fixedPitch: false,
@@ -3815,7 +3889,7 @@ class PartialEvaluator {
       firstChar,
       lastChar,
       toUnicode,
-      bbox: descriptor.getArray("FontBBox"),
+      bbox: descriptor.getArray("FontBBox") || dict.getArray("FontBBox"),
       ascent: descriptor.get("Ascent"),
       descent: descriptor.get("Descent"),
       xHeight: descriptor.get("XHeight"),
@@ -3962,6 +4036,9 @@ class TranslatedFont {
     const fontResources = this.dict.get("Resources") || resources;
     const charProcOperatorList = Object.create(null);
 
+    const isEmptyBBox =
+      !translatedFont.bbox || isArrayEqual(translatedFont.bbox, [0, 0, 0, 0]);
+
     for (const key of charProcs.getKeys()) {
       loadCharProcsPromise = loadCharProcsPromise.then(() => {
         const glyphStream = charProcs.get(key);
@@ -3981,7 +4058,7 @@ class TranslatedFont {
             //   colour-related parameters) in the graphics state;
             //   any use of such operators shall be ignored."
             if (operatorList.fnArray[0] === OPS.setCharWidthAndBounds) {
-              this._removeType3ColorOperators(operatorList);
+              this._removeType3ColorOperators(operatorList, isEmptyBBox);
             }
             charProcOperatorList[key] = operatorList.getIR();
 
@@ -3996,8 +4073,12 @@ class TranslatedFont {
           });
       });
     }
-    this.type3Loaded = loadCharProcsPromise.then(function () {
+    this.type3Loaded = loadCharProcsPromise.then(() => {
       translatedFont.charProcOperatorList = charProcOperatorList;
+      if (this._bbox) {
+        translatedFont.isCharBBox = true;
+        translatedFont.bbox = this._bbox;
+      }
     });
     return this.type3Loaded;
   }
@@ -4005,7 +4086,7 @@ class TranslatedFont {
   /**
    * @private
    */
-  _removeType3ColorOperators(operatorList) {
+  _removeType3ColorOperators(operatorList, isEmptyBBox = false) {
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || TESTING")
@@ -4014,6 +4095,17 @@ class TranslatedFont {
         operatorList.fnArray[0] === OPS.setCharWidthAndBounds,
         "Type3 glyph shall start with the d1 operator."
       );
+    }
+    if (isEmptyBBox) {
+      if (!this._bbox) {
+        this._bbox = [Infinity, Infinity, -Infinity, -Infinity];
+      }
+      const charBBox = Util.normalizeRect(operatorList.argsArray[0].slice(2));
+
+      this._bbox[0] = Math.min(this._bbox[0], charBBox[0]);
+      this._bbox[1] = Math.min(this._bbox[1], charBBox[1]);
+      this._bbox[2] = Math.max(this._bbox[2], charBBox[2]);
+      this._bbox[3] = Math.max(this._bbox[3], charBBox[3]);
     }
     let i = 1,
       ii = operatorList.length;

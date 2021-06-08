@@ -228,13 +228,8 @@ PDFPrintService.prototype = {
         this._printResolution,
         this._optionalContentConfigPromise
       )
-        .then(
-          // modified by ngx-extended-pdf-viewer to repair printing
-          // (the fat arrow function seems to be wrong)
-          this.useRenderedPage.bind(this)
-          // end of modification
-        )
-        .then(() => {
+        .then(this.useRenderedPage.bind(this))
+        .then(function () {
           renderNextPage(resolve, reject);
         }, reject);
     };
@@ -257,7 +252,7 @@ PDFPrintService.prototype = {
     }
 
     const wrapper = document.createElement("div");
-    wrapper.setAttribute("class", "printedPage");
+    wrapper.className = "printedPage";
     wrapper.appendChild(img);
     this.printContainer.appendChild(wrapper);
 

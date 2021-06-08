@@ -32,6 +32,7 @@ const MATCH_SCROLL_OFFSET_TOP = -50; // px
 const MATCH_SCROLL_OFFSET_LEFT = -400; // px
 
 const CHARACTERS_TO_NORMALIZE = {
+  "\u2010": "-", // Hyphen
   "\u2018": "'", // Left single quotation mark
   "\u2019": "'", // Right single quotation mark
   "\u201A": "'", // Single low-9 quotation mark
@@ -235,7 +236,7 @@ class PDFFindController {
       left: MATCH_SCROLL_OFFSET_LEFT,
     };
     /** #492 modified by ngx-extended-pdf-viewer */
-    scrollIntoView(element, spot, /* skipOverflowHiddenElements = */ true, this._pageViewMode === 'infinite-scroll');
+    scrollIntoView(element, spot, /* scrollMatches = */ true, this._pageViewMode === 'infinite-scroll');
     /** #492 end of modification */
   }
 

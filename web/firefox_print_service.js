@@ -34,7 +34,7 @@ function composePage(
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
   const canvasWrapper = document.createElement("div");
-  canvasWrapper.setAttribute("class", "printedPage");
+  canvasWrapper.className = "printedPage";
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 

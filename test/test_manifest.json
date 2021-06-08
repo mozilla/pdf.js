@@ -1974,6 +1974,28 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "standard_fonts_system_fonts",
+       "file": "pdfs/standard_fonts.pdf",
+       "md5": "bb3a9ab3322328be983e8b4e8089843a",
+       "rounds": 1,
+       "type": "eq",
+       "useSystemFonts": true
+    },
+    {  "id": "standard_fonts_no_system_fonts",
+       "file": "pdfs/standard_fonts.pdf",
+       "md5": "bb3a9ab3322328be983e8b4e8089843a",
+       "rounds": 1,
+       "type": "eq",
+       "useSystemFonts": false
+    },
+    {  "id": "standard_fonts_main_thread_fetch",
+       "file": "pdfs/standard_fonts.pdf",
+       "md5": "bb3a9ab3322328be983e8b4e8089843a",
+       "rounds": 1,
+       "type": "eq",
+       "useSystemFonts": false,
+       "useWorkerFetch": false
+    },
     {  "id": "issue4573",
        "file": "pdfs/issue4573.pdf",
        "md5": "34b0c4fdee19e57033275b766c5f57a3",
@@ -2642,6 +2664,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6132",
+       "file": "pdfs/issue6132.pdf",
+       "md5": "bd1e6252ca642acf2cd05db1748a073c",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4875",
        "file": "pdfs/issue4875.pdf",
        "md5": "9a558e18029a42c0ef4e9a8755e24733",
@@ -2697,6 +2725,14 @@
        "rounds": 1,
        "type": "eq"
    },
+    {  "id": "hsbc",
+       "file": "pdfs/hsbc.pdf",
+       "md5": "34a63a9ed9cdf3790562a3dfd1703e48",
+       "rounds": 1,
+       "link": true,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "issue7580-text",
        "file": "pdfs/issue7580.pdf",
        "md5": "44dd5a9b4373fcab9890cf567722a766",
@@ -4928,6 +4964,12 @@
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    {  "id": "issue6605",
+       "file": "pdfs/issue6605.pdf",
+       "md5": "67158a9c6d0e966ece55f7c433e18cc5",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "annotation-choice-widget-forms",
        "file": "pdfs/annotation-choice-widget.pdf",
