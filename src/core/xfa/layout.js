@@ -46,6 +46,9 @@ import { measureToString } from "./html_utils.js";
  */
 
 function flushHTML(node) {
+  if (!node[$extra]) {
+    return null;
+  }
   const attributes = node[$extra].attributes;
   const html = {
     name: "div",
@@ -88,7 +91,7 @@ function addHTML(node, html, bbox) {
         extra.line = {
           name: "div",
           attributes: {
-            class: node.layout === "lr-tb" ? "xfaLr" : "xfaRl",
+            class: [node.layout === "lr-tb" ? "xfaLr" : "xfaRl"],
           },
           children: [],
         };
@@ -120,12 +123,7 @@ function addHTML(node, html, bbox) {
       extra.height = Math.max(extra.height, h);
       const height = measureToString(extra.height);
       for (const child of extra.children) {
-        if (child.attributes.class === "xfaWrapper") {
-          child.children[child.children.length - 1].attributes.style.height =
-            height;
-        } else {
-          child.attributes.style.height = height;
-        }
+        child.attributes.style.height = height;
       }
       break;
     }
@@ -148,6 +146,12 @@ function addHTML(node, html, bbox) {
 
 function getAvailableSpace(node) {
   const availableSpace = node[$extra].availableSpace;
+  const [marginW, marginH] = node.margin
+    ? [
+        node.margin.leftInset + node.margin.rightInset,
+        node.margin.topInset + node.margin.leftInset,
+      ]
+    : [0, 0];
 
   switch (node.layout) {
     case "lr-tb":
@@ -155,18 +159,18 @@ function getAvailableSpace(node) {
       switch (node[$extra].attempt) {
         case 0:
           return {
-            width: availableSpace.width - node[$extra].currentWidth,
-            height: availableSpace.height - node[$extra].prevHeight,
+            width: availableSpace.width - marginW - node[$extra].currentWidth,
+            height: availableSpace.height - marginH - node[$extra].prevHeight,
           };
         case 1:
           return {
-            width: availableSpace.width,
-            height: availableSpace.height - node[$extra].height,
+            width: availableSpace.width - marginW,
+            height: availableSpace.height - marginH - node[$extra].height,
           };
         default:
           return {
             width: Infinity,
-            height: availableSpace.height - node[$extra].prevHeight,
+            height: availableSpace.height - marginH - node[$extra].prevHeight,
           };
       }
     case "rl-row":
@@ -174,12 +178,12 @@ function getAvailableSpace(node) {
       const width = node[$extra].columnWidths
         .slice(node[$extra].currentColumn)
         .reduce((a, x) => a + x);
-      return { width, height: availableSpace.height };
+      return { width, height: availableSpace.height - marginH };
     case "table":
     case "tb":
       return {
-        width: availableSpace.width,
-        height: availableSpace.height - node[$extra].height,
+        width: availableSpace.width - marginW,
+        height: availableSpace.height - marginH - node[$extra].height,
       };
     case "position":
     default:

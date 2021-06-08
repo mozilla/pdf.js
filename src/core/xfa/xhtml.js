@@ -80,9 +80,9 @@ const StyleMapping = new Map([
   ],
   ["xfa-spacerun", ""],
   ["xfa-tab-stops", ""],
-  ["font-size", value => measureToString(1 * getMeasurement(value))],
+  ["font-size", value => measureToString(getMeasurement(value))],
   ["letter-spacing", value => measureToString(getMeasurement(value))],
-  ["line-height", value => measureToString(0.99 * getMeasurement(value))],
+  ["line-height", value => measureToString(getMeasurement(value))],
   ["margin", value => measureToString(getMeasurement(value))],
   ["margin-bottom", value => measureToString(getMeasurement(value))],
   ["margin-left", value => measureToString(getMeasurement(value))],
@@ -216,7 +216,7 @@ class Body extends XhtmlObject {
       return HTMLResult.EMPTY;
     }
     html.name = "div";
-    html.attributes.class = "xfaRich";
+    html.attributes.class = ["xfaRich"];
     return res;
   }
 }
@@ -253,7 +253,7 @@ class Html extends XhtmlObject {
       return HTMLResult.success({
         name: "div",
         attributes: {
-          class: "xfaRich",
+          class: ["xfaRich"],
           style: {},
         },
         value: this[$content] || "",
@@ -262,7 +262,7 @@ class Html extends XhtmlObject {
 
     if (children.length === 1) {
       const child = children[0];
-      if (child.attributes && child.attributes.class === "xfaRich") {
+      if (child.attributes && child.attributes.class.includes("xfaRich")) {
         return HTMLResult.success(child);
       }
     }
@@ -270,7 +270,7 @@ class Html extends XhtmlObject {
     return HTMLResult.success({
       name: "div",
       attributes: {
-        class: "xfaRich",
+        class: ["xfaRich"],
         style: {},
       },
       children,

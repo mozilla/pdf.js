@@ -20,7 +20,9 @@ class XfaLayer {
     const storedData = storage.getValue(fieldId, { value: null });
     switch (element.name) {
       case "textarea":
-        html.textContent = storedData.value !== null ? storedData.value : "";
+        if (storedData.value !== null) {
+          html.textContent = storedData.value;
+        }
         if (intent === "print") {
           break;
         }
@@ -103,6 +105,8 @@ class XfaLayer {
       if (key !== "style") {
         if (key === "textContent") {
           html.textContent = value;
+        } else if (key === "class") {
+          html.setAttribute(key, value.join(" "));
         } else {
           html.setAttribute(key, value);
         }
