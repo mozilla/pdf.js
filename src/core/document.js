@@ -876,6 +876,12 @@ class PDFDocument {
       return;
     }
 
+    const options = Object.assign(
+      Object.create(null),
+      this.pdfManager.evaluatorOptions
+    );
+    options.useSystemFonts = false;
+
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
@@ -883,6 +889,7 @@ class PDFDocument {
       idFactory: this._globalIdFactory,
       fontCache: this.catalog.fontCache,
       builtInCMapCache: this.catalog.builtInCMapCache,
+      options,
     });
     const operatorList = new OperatorList();
     const initialState = {

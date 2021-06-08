@@ -814,7 +814,11 @@ function buildGeneric(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
     gulp
       .src(
-        ["external/standard_fonts/*.pfb", "external/standard_fonts/LICENSE"],
+        [
+          "external/standard_fonts/*.pfb",
+          "external/standard_fonts/*.ttf",
+          "external/standard_fonts/LICENSE",
+        ],
         {
           base: "external/standard_fonts",
         }
@@ -990,7 +994,11 @@ function buildMinified(defines, dir) {
       .pipe(gulp.dest(dir + "web/cmaps")),
     gulp
       .src(
-        ["external/standard_fonts/*.pfb", "external/standard_fonts/LICENSE"],
+        [
+          "external/standard_fonts/*.pfb",
+          "external/standard_fonts/*.ttf",
+          "external/standard_fonts/LICENSE",
+        ],
         {
           base: "external/standard_fonts",
         }
@@ -1234,6 +1242,7 @@ gulp.task(
           .src(
             [
               "external/standard_fonts/*.pfb",
+              "external/standard_fonts/*.ttf",
               "external/standard_fonts/LICENSE",
             ],
             {
@@ -1335,6 +1344,7 @@ gulp.task(
           .src(
             [
               "external/standard_fonts/*.pfb",
+              "external/standard_fonts/*.ttf",
               "external/standard_fonts/LICENSE",
             ],
             {
