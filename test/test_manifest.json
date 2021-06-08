@@ -1974,6 +1974,28 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "standard_fonts_system_fonts",
+       "file": "pdfs/standard_fonts.pdf",
+       "md5": "bb3a9ab3322328be983e8b4e8089843a",
+       "rounds": 1,
+       "type": "eq",
+       "useSystemFonts": true
+    },
+    {  "id": "standard_fonts_no_system_fonts",
+       "file": "pdfs/standard_fonts.pdf",
+       "md5": "bb3a9ab3322328be983e8b4e8089843a",
+       "rounds": 1,
+       "type": "eq",
+       "useSystemFonts": false
+    },
+    {  "id": "standard_fonts_main_thread_fetch",
+       "file": "pdfs/standard_fonts.pdf",
+       "md5": "bb3a9ab3322328be983e8b4e8089843a",
+       "rounds": 1,
+       "type": "eq",
+       "useSystemFonts": false,
+       "useWorkerFetch": false
+    },
     {  "id": "issue4573",
        "file": "pdfs/issue4573.pdf",
        "md5": "34b0c4fdee19e57033275b766c5f57a3",

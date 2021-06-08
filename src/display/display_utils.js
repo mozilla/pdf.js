@@ -84,6 +84,56 @@ class DOMCanvasFactory extends BaseCanvasFactory {
   }
 }
 
+function fetchData(url, asTypedArray) {
+  if (
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+    (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
+  ) {
+    return fetch(url).then(async response => {
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      let data;
+      if (asTypedArray) {
+        data = new Uint8Array(await response.arrayBuffer());
+      } else {
+        data = stringToBytes(await response.text());
+      }
+      return data;
+    });
+  }
+
+  // The Fetch API is not supported.
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("GET", url, /* asTypedArray = */ true);
+
+    if (asTypedArray) {
+      request.responseType = "arraybuffer";
+    }
+    request.onreadystatechange = () => {
+      if (request.readyState !== XMLHttpRequest.DONE) {
+        return;
+      }
+      if (request.status === 200 || request.status === 0) {
+        let data;
+        if (asTypedArray && request.response) {
+          data = new Uint8Array(request.response);
+        } else if (!asTypedArray && request.responseText) {
+          data = stringToBytes(request.responseText);
+        }
+        if (data) {
+          resolve(data);
+          return;
+        }
+      }
+      reject(new Error(request.statusText));
+    };
+
+    request.send(null);
+  });
+}
+
 class BaseCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = false }) {
     if (this.constructor === BaseCMapReaderFactory) {
@@ -125,53 +175,41 @@ class BaseCMapReaderFactory {
 
 class DOMCMapReaderFactory extends BaseCMapReaderFactory {
   _fetchData(url, compressionType) {
-    if (
-      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-      (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
-    ) {
-      return fetch(url).then(async response => {
-        if (!response.ok) {
-          throw new Error(response.statusText);
-        }
-        let cMapData;
-        if (this.isCompressed) {
-          cMapData = new Uint8Array(await response.arrayBuffer());
-        } else {
-          cMapData = stringToBytes(await response.text());
-        }
-        return { cMapData, compressionType };
-      });
-    }
-
-    // The Fetch API is not supported.
-    return new Promise((resolve, reject) => {
-      const request = new XMLHttpRequest();
-      request.open("GET", url, true);
-
-      if (this.isCompressed) {
-        request.responseType = "arraybuffer";
-      }
-      request.onreadystatechange = () => {
-        if (request.readyState !== XMLHttpRequest.DONE) {
-          return;
-        }
-        if (request.status === 200 || request.status === 0) {
-          let cMapData;
-          if (this.isCompressed && request.response) {
-            cMapData = new Uint8Array(request.response);
-          } else if (!this.isCompressed && request.responseText) {
-            cMapData = stringToBytes(request.responseText);
-          }
-          if (cMapData) {
-            resolve({ cMapData, compressionType });
-            return;
-          }
-        }
-        reject(new Error(request.statusText));
-      };
-
-      request.send(null);
+    return fetchData(url, /* asTypedArray = */ this.isCompressed).then(data => {
+      return { cMapData: data, compressionType };
     });
+  }
+}
+
+class BaseStandardFontDataFactory {
+  constructor({ baseUrl = null }) {
+    if (this.constructor === BaseStandardFontDataFactory) {
+      unreachable("Cannot initialize BaseStandardFontDataFactory.");
+    }
+    this.baseUrl = baseUrl;
+  }
+
+  async fetch({ filename }) {
+    if (!this.baseUrl) {
+      throw new Error(
+        'The standard font "baseUrl" parameter must be specified, ensure that ' +
+          'the "standardFontDataUrl" API parameter is provided.'
+      );
+    }
+    if (!filename) {
+      throw new Error("Font filename must be specified.");
+    }
+    const url = this.baseUrl + filename + ".pfb";
+
+    return this._fetchData(url).catch(reason => {
+      throw new Error(`Unable to load font data at: ${url}`);
+    });
+  }
+}
+
+class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
+  _fetchData(url) {
+    return fetchData(url, /* asTypedArray = */ true);
   }
 }
 
@@ -704,10 +742,12 @@ export {
   addLinkAttributes,
   BaseCanvasFactory,
   BaseCMapReaderFactory,
+  BaseStandardFontDataFactory,
   DEFAULT_LINK_REL,
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMStandardFontDataFactory,
   DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,

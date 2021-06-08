@@ -1518,18 +1518,20 @@ describe("api", function () {
       const pdfPage = await pdfDoc.getPage(1);
       const { items, styles } = await pdfPage.getTextContent();
       expect(items.length).toEqual(1);
-      expect(Object.keys(styles)).toEqual(["Times"]);
+      // Font name will a random object id.
+      const fontName = items[0].fontName;
+      expect(Object.keys(styles)).toEqual([fontName]);
 
       expect(items[0]).toEqual({
         dir: "ltr",
-        fontName: "Times",
+        fontName,
         height: 18,
         str: "Issue 8276",
         transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
         width: 77.49,
         hasEOL: false,
       });
-      expect(styles.Times).toEqual({
+      expect(styles[fontName]).toEqual({
         fontFamily: "serif",
         ascent: NaN,
         descent: NaN,
@@ -1678,7 +1680,7 @@ describe("api", function () {
       const expectedStreamTypes = {};
       expectedStreamTypes[StreamType.FLATE] = true;
       const expectedFontTypes = {};
-      expectedFontTypes[FontType.TYPE1] = true;
+      expectedFontTypes[FontType.TYPE1STANDARD] = true;
       expectedFontTypes[FontType.CIDFONTTYPE2] = true;
 
       expect(stats).toEqual({
