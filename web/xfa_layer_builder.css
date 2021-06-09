@@ -135,10 +135,6 @@
   max-width: 100%;
 }
 
-.xfaInline {
-  float: inline;
-}
-
 .xfaBorder {
   background: transparent;
   position: absolute;

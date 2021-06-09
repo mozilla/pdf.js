@@ -2409,7 +2409,7 @@ class Field extends XFAObject {
         break;
       case "inline":
         // TODO;
-        ui.attributes.class.push("xfaInline");
+        ui.attributes.class.push("xfaLeft");
         break;
     }
 
