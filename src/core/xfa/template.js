@@ -3304,7 +3304,14 @@ class PageArea extends XFAObject {
     }
 
     this[$childrenToHTML]({
-      filter: new Set(["area", "draw", "field", "subform", "contentArea"]),
+      filter: new Set(["area", "draw", "field", "subform"]),
+      include: true,
+    });
+
+    // contentarea must be the last container to be sure it is
+    // on top of the others.
+    this[$childrenToHTML]({
+      filter: new Set(["contentArea"]),
       include: true,
     });
 
