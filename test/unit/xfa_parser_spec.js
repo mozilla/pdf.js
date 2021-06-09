@@ -1289,5 +1289,70 @@ describe("XFAParser", function () {
         )
       ).toEqual(["item1", "item2", "item1", "item2"]);
     });
+
+    it("should make binding and create nodes in data with some bind tag", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <subform name="A">
+        <occur max="-1"/>
+        <bind ref="$.root.foo[*]" match="dataRef"/>
+      </subform>
+      <subform name="B">
+        <occur max="2"/>
+        <bind ref="$.root.bar[2]" match="dataRef"/>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <root>
+      </root>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      binder.bind();
+      const data = binder.getData();
+
+      const expected = {
+        $name: "root",
+        children: [
+          {
+            $name: "root",
+            children: [
+              {
+                $name: "foo",
+                children: [],
+                attributes: {},
+              },
+              {
+                $name: "bar",
+                children: [],
+                attributes: {},
+              },
+              {
+                $name: "bar",
+                children: [],
+                attributes: {},
+              },
+              {
+                $name: "bar",
+                children: [],
+                attributes: {},
+              },
+            ],
+            attributes: {},
+          },
+        ],
+        attributes: {},
+      };
+
+      expect(searchNode(data, data, "root")[0][$dump]()).toEqual(expected);
+    });
   });
 });
