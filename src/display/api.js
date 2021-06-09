@@ -163,7 +163,7 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
  *   worker-thread when reading CMap and standard font files. When `true`,
  *   the `CMapReaderFactory` and `StandardFontDataFactory` options are ignored.
- *   The default value is `true` in web wenvironments and `false` in Node.js.
+ *   The default value is `true` in web environments and `false` in Node.js.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
@@ -329,7 +329,10 @@ function getDocument(src) {
     params.maxImageSize = -1;
   }
   if (typeof params.useSystemFonts !== "boolean") {
-    params.useSystemFonts = !isNodeJS;
+    params.useSystemFonts = !(
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      isNodeJS
+    );
   }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
@@ -2277,13 +2280,16 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this._params = params;
-    this.CMapReaderFactory = new params.CMapReaderFactory({
-      baseUrl: params.cMapUrl,
-      isCompressed: params.cMapPacked,
-    });
-    this.StandardFontDataFactory = new params.StandardFontDataFactory({
-      baseUrl: params.standardFontDataUrl,
-    });
+
+    if (!params.useWorkerFetch) {
+      this.CMapReaderFactory = new params.CMapReaderFactory({
+        baseUrl: params.cMapUrl,
+        isCompressed: params.cMapPacked,
+      });
+      this.StandardFontDataFactory = new params.StandardFontDataFactory({
+        baseUrl: params.standardFontDataUrl,
+      });
+    }
 
     this.destroyed = false;
     this.destroyCapability = null;
@@ -2684,14 +2690,28 @@ class WorkerTransport {
 
     messageHandler.on("FetchBuiltInCMap", data => {
       if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed"));
+        return Promise.reject(new Error("Worker was destroyed."));
+      }
+      if (!this.CMapReaderFactory) {
+        return Promise.reject(
+          new Error(
+            "CMapReaderFactory not initialized, see the `useWorkerFetch` parameter."
+          )
+        );
       }
       return this.CMapReaderFactory.fetch(data);
     });
 
     messageHandler.on("FetchStandardFontData", data => {
       if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed"));
+        return Promise.reject(new Error("Worker was destroyed."));
+      }
+      if (!this.StandardFontDataFactory) {
+        return Promise.reject(
+          new Error(
+            "StandardFontDataFactory not initialized, see the `useWorkerFetch` parameter."
+          )
+        );
       }
       return this.StandardFontDataFactory.fetch(data);
     });
