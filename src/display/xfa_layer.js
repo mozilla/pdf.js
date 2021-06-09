@@ -163,7 +163,13 @@ class XfaLayer {
         continue;
       }
 
-      const childHtml = document.createElement(name);
+      let childHtml;
+      if (child?.attributes?.xmlns) {
+        childHtml = document.createElementNS(child.attributes.xmlns, name);
+      } else {
+        childHtml = document.createElement(name);
+      }
+
       html.appendChild(childHtml);
       if (child.attributes) {
         this.setAttributes(childHtml, child, storage, intent);
