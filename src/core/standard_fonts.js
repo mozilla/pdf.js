@@ -90,21 +90,26 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t["TimesNewRomanPSMT-Italic"] = "Times-Italic";
 });
 
-const getStdFontNameToFileMap = getLookupTableFactory(function (t) {
-  t.Courier = "FoxitFixed";
-  t["Courier-Bold"] = "FoxitFixedBold";
-  t["Courier-BoldOblique"] = "FoxitFixedBoldItalic";
-  t["Courier-Oblique"] = "FoxitFixedItalic";
-  t.Helvetica = "FoxitSans";
-  t["Helvetica-Bold"] = "FoxitSansBold";
-  t["Helvetica-BoldOblique"] = "FoxitSansBoldItalic";
-  t["Helvetica-Oblique"] = "FoxitSansItalic";
-  t["Times-Roman"] = "FoxitSerif";
-  t["Times-Bold"] = "FoxitSerifBold";
-  t["Times-BoldItalic"] = "FoxitSerifBoldItalic";
-  t["Times-Italic"] = "FoxitSerifItalic";
-  t.Symbol = "FoxitSymbol";
-  t.ZapfDingbats = "FoxitDingbats";
+// Contains mapping for standard fonts and xfa fonts.
+const getFontNameToFileMap = getLookupTableFactory(function (t) {
+  t.Courier = "FoxitFixed.pfb";
+  t["Courier-Bold"] = "FoxitFixedBold.pfb";
+  t["Courier-BoldOblique"] = "FoxitFixedBoldItalic.pfb";
+  t["Courier-Oblique"] = "FoxitFixedItalic.pfb";
+  t.Helvetica = "FoxitSans.pfb";
+  t["Helvetica-Bold"] = "FoxitSansBold.pfb";
+  t["Helvetica-BoldOblique"] = "FoxitSansBoldItalic.pfb";
+  t["Helvetica-Oblique"] = "FoxitSansItalic.pfb";
+  t["Times-Roman"] = "FoxitSerif.pfb";
+  t["Times-Bold"] = "FoxitSerifBold.pfb";
+  t["Times-BoldItalic"] = "FoxitSerifBoldItalic.pfb";
+  t["Times-Italic"] = "FoxitSerifItalic.pfb";
+  t.Symbol = "FoxitSymbol.pfb";
+  t.ZapfDingbats = "FoxitDingbats.pfb";
+  t["LiberationSans-Regular"] = "LiberationSans-Regular.ttf";
+  t["LiberationSans-Bold"] = "LiberationSans-Bold.ttf";
+  t["LiberationSans-Italic"] = "LiberationSans-Italic.ttf";
+  t["LiberationSans-BoldItalic"] = "LiberationSans-BoldItalic.ttf";
 });
 
 /**
@@ -800,12 +805,12 @@ function getStandardFontName(name) {
 }
 
 export {
+  getFontNameToFileMap,
   getGlyphMapForStandardFonts,
   getNonStdFontMap,
   getSerifFonts,
   getStandardFontName,
   getStdFontMap,
-  getStdFontNameToFileMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
   getSymbolsFonts,

@@ -506,31 +506,11 @@ function fixTextIndent(styles) {
 }
 
 function getFonts(family) {
-  if (family.startsWith("'")) {
-    family = `"${family.slice(1, family.length - 1)}"`;
-  } else if (family.includes(" ") && !family.startsWith('"')) {
-    family = `"${family}"`;
+  if (family.startsWith("'") || family.startsWith('"')) {
+    family = family.slice(1, family.length - 1);
   }
 
-  // TODO in case Myriad is not available we should generate a new
-  // font based on helvetica but where glyphs have been rescaled in order
-  // to have the exact same metrics.
-  const fonts = [family];
-  switch (family) {
-    case `"Myriad Pro"`:
-      fonts.push(
-        `"Roboto Condensed"`,
-        `"Ubuntu Condensed"`,
-        `"Microsoft Sans Serif"`,
-        `"Apple Symbols"`,
-        "Helvetica",
-        `"sans serif"`
-      );
-      break;
-    case "Arial":
-      fonts.push("Helvetica", `"Liberation Sans"`, "Arimo", `"sans serif"`);
-      break;
-  }
+  const fonts = [`"${family}"`, `"${family}-PdfJS-XFA"`];
   return fonts.join(",");
 }
 
