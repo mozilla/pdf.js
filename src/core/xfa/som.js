@@ -245,7 +245,7 @@ function searchNode(
 function createNodes(root, path) {
   let node = null;
   for (const { name, index } of path) {
-    for (let i = 0; i <= index; i++) {
+    for (let i = 0, ii = !isFinite(index) ? 0 : index; i <= ii; i++) {
       node = new XmlObject(root[$namespaceId], name);
       root[$appendChild](node);
     }
