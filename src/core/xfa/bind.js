@@ -526,7 +526,10 @@ class Binder {
           if (this._isConsumeData()) {
             match[$consumed] = true;
           }
-          match = [match];
+
+          // Don't bind the value in newly created node because it's empty.
+          this._bindElement(child, match);
+          continue;
         } else {
           if (this._isConsumeData()) {
             // Filter out consumed nodes.
