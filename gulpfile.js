@@ -817,7 +817,8 @@ function buildGeneric(defines, dir) {
         [
           "external/standard_fonts/*.pfb",
           "external/standard_fonts/*.ttf",
-          "external/standard_fonts/LICENSE",
+          "external/standard_fonts/LICENSE_FOXIT",
+          "external/standard_fonts/LICENSE_LIBERATION",
         ],
         {
           base: "external/standard_fonts",
@@ -997,7 +998,8 @@ function buildMinified(defines, dir) {
         [
           "external/standard_fonts/*.pfb",
           "external/standard_fonts/*.ttf",
-          "external/standard_fonts/LICENSE",
+          "external/standard_fonts/LICENSE_FOXIT",
+          "external/standard_fonts/LICENSE_LIBERATION",
         ],
         {
           base: "external/standard_fonts",
@@ -1243,7 +1245,8 @@ gulp.task(
             [
               "external/standard_fonts/*.pfb",
               "external/standard_fonts/*.ttf",
-              "external/standard_fonts/LICENSE",
+              "external/standard_fonts/LICENSE_FOXIT",
+              "external/standard_fonts/LICENSE_LIBERATION",
             ],
             {
               base: "external/standard_fonts",
@@ -1345,7 +1348,8 @@ gulp.task(
             [
               "external/standard_fonts/*.pfb",
               "external/standard_fonts/*.ttf",
-              "external/standard_fonts/LICENSE",
+              "external/standard_fonts/LICENSE_FOXIT",
+              "external/standard_fonts/LICENSE_LIBERATION",
             ],
             {
               base: "external/standard_fonts",
