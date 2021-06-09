@@ -1410,14 +1410,18 @@ class WidgetAnnotation extends Annotation {
 
   async _getAppearance(evaluator, task, annotationStorage) {
     const isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
-    if (!annotationStorage || isPassword) {
+    if (isPassword) {
       return null;
     }
-    const storageEntry = annotationStorage.get(this.data.id);
-    let value = storageEntry && storageEntry.value;
+    const storageEntry = annotationStorage && annotationStorage.get(this.data.id);
+    let value = (storageEntry && storageEntry.value) || this.data.fieldValue;
     if (value === undefined) {
       // The annotation hasn't been rendered so use the appearance
       return null;
+    }
+
+    if (Array.isArray(this.data.fieldValue)) {
+      value = this.data.fieldValue[0] || "";
     }
 
     value = value.trim();
