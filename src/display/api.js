@@ -54,7 +54,6 @@ import {
   NodeStandardFontDataFactory,
 } from "./node_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
-import { apiCompatibilityParams } from "./api_compatibility.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { isNodeJS } from "../shared/is_node.js";
@@ -164,7 +163,7 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
  *   worker-thread when reading CMap and standard font files. When `true`,
  *   the `CMapReaderFactory` and `StandardFontDataFactory` options are ignored.
- *   The default value is `true` in web wenvironments and `false` in Node.js.
+ *   The default value is `true` in web environments and `false` in Node.js.
  * @property {boolean} [stopAtErrors] - Reject certain promises, e.g.
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
@@ -176,9 +175,10 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   as JavaScript. Primarily used to improve performance of font rendering, and
  *   when parsing PDF functions. The default value is `true`.
  * @property {boolean} [disableFontFace] - By default fonts are converted to
- *   OpenType fonts and loaded via `@font-face` rules. If disabled, fonts will
- *   be rendered using a built-in font renderer that constructs the glyphs with
- *   primitive path commands. The default value is `false`.
+ *   OpenType fonts and loaded via the Font Loading API or `@font-face` rules.
+ *   If disabled, fonts will be rendered using a built-in font renderer that
+ *   constructs the glyphs with primitive path commands.
+ *   The default value is `false` in web environments and `true` in Node.js.
  * @property {boolean} [fontExtraProperties] - Include additional properties,
  *   which are unused during rendering of PDF documents, when exporting the
  *   parsed font data from the worker-thread. This may be useful for debugging
@@ -329,7 +329,10 @@ function getDocument(src) {
     params.maxImageSize = -1;
   }
   if (typeof params.useSystemFonts !== "boolean") {
-    params.useSystemFonts = !isNodeJS;
+    params.useSystemFonts = !(
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      isNodeJS
+    );
   }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
@@ -340,7 +343,8 @@ function getDocument(src) {
     params.isEvalSupported = true;
   }
   if (typeof params.disableFontFace !== "boolean") {
-    params.disableFontFace = apiCompatibilityParams.disableFontFace || false;
+    params.disableFontFace =
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS;
   }
   if (typeof params.ownerDocument === "undefined") {
     params.ownerDocument = globalThis.document;
@@ -988,8 +992,7 @@ class PDFDocumentProxy {
 
   /**
    * @type {DocumentInitParameters} A subset of the current
-   *   {DocumentInitParameters}, which are either needed in the viewer and/or
-   *   whose default values may be affected by the `apiCompatibilityParams`.
+   *   {DocumentInitParameters}, which are needed in the viewer.
    */
   get loadingParams() {
     return this._transport.loadingParams;
@@ -2277,13 +2280,16 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this._params = params;
-    this.CMapReaderFactory = new params.CMapReaderFactory({
-      baseUrl: params.cMapUrl,
-      isCompressed: params.cMapPacked,
-    });
-    this.StandardFontDataFactory = new params.StandardFontDataFactory({
-      baseUrl: params.standardFontDataUrl,
-    });
+
+    if (!params.useWorkerFetch) {
+      this.CMapReaderFactory = new params.CMapReaderFactory({
+        baseUrl: params.cMapUrl,
+        isCompressed: params.cMapPacked,
+      });
+      this.StandardFontDataFactory = new params.StandardFontDataFactory({
+        baseUrl: params.standardFontDataUrl,
+      });
+    }
 
     this.destroyed = false;
     this.destroyCapability = null;
@@ -2684,14 +2690,28 @@ class WorkerTransport {
 
     messageHandler.on("FetchBuiltInCMap", data => {
       if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed"));
+        return Promise.reject(new Error("Worker was destroyed."));
+      }
+      if (!this.CMapReaderFactory) {
+        return Promise.reject(
+          new Error(
+            "CMapReaderFactory not initialized, see the `useWorkerFetch` parameter."
+          )
+        );
       }
       return this.CMapReaderFactory.fetch(data);
     });
 
     messageHandler.on("FetchStandardFontData", data => {
       if (this.destroyed) {
-        return Promise.reject(new Error("Worker was destroyed"));
+        return Promise.reject(new Error("Worker was destroyed."));
+      }
+      if (!this.StandardFontDataFactory) {
+        return Promise.reject(
+          new Error(
+            "StandardFontDataFactory not initialized, see the `useWorkerFetch` parameter."
+          )
+        );
       }
       return this.StandardFontDataFactory.fetch(data);
     });
@@ -2911,7 +2931,6 @@ class WorkerTransport {
     const params = this._params;
     return shadow(this, "loadingParams", {
       disableAutoFetch: params.disableAutoFetch,
-      disableFontFace: params.disableFontFace,
     });
   }
 }
