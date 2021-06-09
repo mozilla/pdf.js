@@ -107,7 +107,7 @@ class BaseStandardFontDataFactory {
     if (!filename) {
       throw new Error("Font filename must be specified.");
     }
-    const url = this.baseUrl + filename + ".pfb";
+    const url = `${this.baseUrl}${filename}`;
 
     return this._fetchData(url).catch(reason => {
       throw new Error(`Unable to load font data at: ${url}`);

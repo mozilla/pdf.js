@@ -1,4 +1,4 @@
-The files in this directory were extracted from Pdfium
+The pfb files in this directory were extracted from Pdfium
 
 Original copyright notice:
 

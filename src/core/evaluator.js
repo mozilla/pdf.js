@@ -58,17 +58,17 @@ import {
   ZapfDingbatsEncoding,
 } from "./encodings.js";
 import {
+  getFontNameToFileMap,
+  getSerifFonts,
+  getStandardFontName,
+  getStdFontMap,
+  getSymbolsFonts,
+} from "./standard_fonts.js";
+import {
   getNormalizedUnicodes,
   getUnicodeForGlyph,
   reverseIfRtl,
 } from "./unicode.js";
-import {
-  getSerifFonts,
-  getStandardFontName,
-  getStdFontMap,
-  getStdFontNameToFileMap,
-  getSymbolsFonts,
-} from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
@@ -86,6 +86,7 @@ import { DecodeStream } from "./decode_stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
+import { getXfaFontName } from "./xfa_fonts.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -398,10 +399,10 @@ class PartialEvaluator {
     ) {
       return null;
     }
-    const standardFontNameToFileName = getStdFontNameToFileMap();
+    const standardFontNameToFileName = getFontNameToFileMap();
     const filename = standardFontNameToFileName[name];
     if (this.options.standardFontDataUrl !== null) {
-      const url = `${this.options.standardFontDataUrl}${filename}.pfb`;
+      const url = `${this.options.standardFontDataUrl}${filename}`;
       const response = await fetch(url);
       if (!response.ok) {
         warn(
@@ -3856,6 +3857,7 @@ class PartialEvaluator {
     }
     let isStandardFont = false;
     let isInternalFont = false;
+    let glyphScaleFactors = null;
     if (fontFile) {
       if (fontFile.dict) {
         const subtypeEntry = fontFile.dict.get("Subtype");
@@ -3865,6 +3867,16 @@ class PartialEvaluator {
         length1 = fontFile.dict.get("Length1");
         length2 = fontFile.dict.get("Length2");
         length3 = fontFile.dict.get("Length3");
+      }
+    } else if (cssFontInfo) {
+      // We've a missing XFA font.
+      const standardFontName = getXfaFontName(fontName.name);
+      if (standardFontName) {
+        cssFontInfo.fontFamily = `${cssFontInfo.fontFamily}-PdfJS-XFA`;
+        glyphScaleFactors = standardFontName.factors || null;
+        fontFile = await this.fetchStandardFontData(standardFontName.name);
+        isInternalFont = !!fontFile;
+        type = "TrueType";
       }
     } else if (type === "Type1") {
       const standardFontName = getStandardFontName(fontName.name);
@@ -3901,6 +3913,7 @@ class PartialEvaluator {
       italicAngle: descriptor.get("ItalicAngle"),
       isType3Font,
       cssFontInfo,
+      scaleFactors: glyphScaleFactors,
     };
 
     if (composite) {
