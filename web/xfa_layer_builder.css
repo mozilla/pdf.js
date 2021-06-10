@@ -90,6 +90,11 @@
   flex: 0 1 auto;
 }
 
+.xfaCaptionForCheckButton {
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
 .xfaLabel {
   height: 100%;
   width: 100%;
@@ -101,17 +106,8 @@
   align-items: center;
 }
 
-.xfaLeft > .xfaCaption {
-  max-height: 100%;
-}
-
-.xfaRight {
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-}
-
-.xfaRight > .xfaCaption {
+.xfaLeft > .xfaCaption,
+.xfaLeft > .xfaCaptionForCheckButton {
   max-height: 100%;
 }
 
@@ -121,17 +117,8 @@
   align-items: flex-start;
 }
 
-.xfaTop > .xfaCaption {
-  max-width: 100%;
-}
-
-.xfaBottom {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-start;
-}
-
-.xfaBottom > .xfaCaption {
+.xfaTop > .xfaCaption,
+.xfaTop > .xfaCaptionForCheckButton {
   max-width: 100%;
 }
 
@@ -189,6 +176,7 @@
 .xfaRadio {
   width: 100%;
   height: 100%;
+  flex: 0 0 auto;
   border: none;
 }
 
