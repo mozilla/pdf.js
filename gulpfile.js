@@ -1380,6 +1380,7 @@ gulp.task("types", function (done) {
     "esModuleInterop",
     "forceConsistentCasingInFileNames",
     "emitDeclarationOnly",
+    "moduleResolution node",
   ].join(" --");
   exec(`"node_modules/.bin/tsc" --${args} src/pdf.js`, done);
 });
