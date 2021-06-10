@@ -2387,25 +2387,30 @@ class Field extends XFAObject {
       }
       ui.children.push(caption);
       return HTMLResult.success(html, bbox);
+    } else if (this.ui.checkButton) {
+      caption.attributes.class[0] = "xfaCaptionForCheckButton";
     }
 
     if (!ui.attributes.class) {
       ui.attributes.class = [];
     }
 
-    ui.children.splice(0, 0, caption);
     switch (this.caption.placement) {
       case "left":
+        ui.children.splice(0, 0, caption);
         ui.attributes.class.push("xfaLeft");
         break;
       case "right":
-        ui.attributes.class.push("xfaRight");
+        ui.children.push(caption);
+        ui.attributes.class.push("xfaLeft");
         break;
       case "top":
+        ui.children.splice(0, 0, caption);
         ui.attributes.class.push("xfaTop");
         break;
       case "bottom":
-        ui.attributes.class.push("xfaBottom");
+        ui.children.push(caption);
+        ui.attributes.class.push("xfaTop");
         break;
       case "inline":
         // TODO;
