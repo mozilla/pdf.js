@@ -4535,8 +4535,10 @@ class Template extends XFAObject {
           this[$extra].breakingNode = null;
 
           if (node.targetType === "auto") {
-            // Just ignore the break and do layout again.
-            i--;
+            html = root[$flushHTML]();
+            if (html) {
+              htmlContentAreas[i].children.push(html);
+            }
             continue;
           }
 
