@@ -14,6 +14,7 @@
     "canvas": "^2.8.0",
     "core-js": "^3.13.1",
     "cross-env": "^7.0.3",
+    "dommatrix": "^0.0.6",
     "es-module-shims": "^0.10.5",
     "escodegen": "^2.0.0",
     "eslint": "^7.27.0",
