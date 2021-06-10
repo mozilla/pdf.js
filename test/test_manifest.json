@@ -2741,6 +2741,14 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "hsbc_closure",
+       "file": "pdfs/xfa_hsbc_closure.pdf",
+       "md5": "7d101861d6232fe5f658e8aeca5c9891",
+       "rounds": 1,
+       "link": true,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_imm1344e",
        "file": "pdfs/xfa_imm1344e.pdf",
        "md5": "f9b8b6e7d385691efdea2544576f5eb2",
