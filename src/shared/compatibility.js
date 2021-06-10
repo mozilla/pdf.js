@@ -50,6 +50,14 @@ if (
     };
   })();
 
+  // Support: Node.js
+  (function checkDOMMatrix() {
+    if (globalThis.DOMMatrix || !isNodeJS) {
+      return;
+    }
+    globalThis.DOMMatrix = require("dommatrix/dist/dommatrix.js");
+  })();
+
   // Provides support for Object.fromEntries in legacy browsers.
   // Support: Firefox<63, Chrome<73, Safari<12.1, Node.js<12.0.0
   (function checkObjectFromEntries() {
