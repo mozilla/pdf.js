@@ -125,7 +125,7 @@ class XfaLayer {
   static render(parameters) {
     const storage = parameters.annotationStorage;
     const root = parameters.xfa;
-    const intent = parameters.intent;
+    const intent = parameters.intent || "display";
     const rootHtml = document.createElement(root.name);
     if (root.attributes) {
       this.setAttributes(rootHtml, root);
