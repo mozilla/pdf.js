@@ -106,6 +106,17 @@ function getRoot(node) {
   return parent;
 }
 
+function valueToHtml(value) {
+  return HTMLResult.success({
+    name: "span",
+    attributes: {
+      class: ["xfaRich"],
+      style: Object.create(null),
+    },
+    value,
+  });
+}
+
 function getTransformedBBox(node) {
   // Take into account rotation and anchor the get the
   // real bounding box.
@@ -615,7 +626,7 @@ class BooleanElement extends Option01 {
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(this[$content] === 1);
+    return valueToHtml(this[$content] === 1);
   }
 }
 
@@ -1257,11 +1268,12 @@ class DateElement extends ContentObject {
   }
 
   [$finalize]() {
-    this[$content] = new Date(this[$content].trim());
+    const date = this[$content].trim();
+    this[$content] = date ? new Date(date) : null;
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(this[$content].toString());
+    return valueToHtml(this[$content] ? this[$content].toString() : "");
   }
 }
 
@@ -1275,11 +1287,12 @@ class DateTime extends ContentObject {
   }
 
   [$finalize]() {
-    this[$content] = new Date(this[$content].trim());
+    const date = this[$content].trim();
+    this[$content] = date ? new Date(date) : null;
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(this[$content].toString());
+    return valueToHtml(this[$content] ? this[$content].toString() : "");
   }
 }
 
@@ -1351,7 +1364,7 @@ class Decimal extends ContentObject {
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(
+    return valueToHtml(
       this[$content] !== null ? this[$content].toString() : ""
     );
   }
@@ -2365,12 +2378,12 @@ class Field extends XFAObject {
       if (this.ui.imageEdit) {
         ui.children.push(this.value[$toHTML]().html);
       } else if (!this.ui.button) {
-        const value = this.value[$toHTML]().html;
+        const value = this.value[$toHTML]().html.value;
         if (value) {
           if (ui.children[0].name === "textarea") {
-            ui.children[0].attributes.textContent = value.value;
+            ui.children[0].attributes.textContent = value;
           } else {
-            ui.children[0].attributes.value = value.value;
+            ui.children[0].attributes.value = value;
           }
         }
       }
@@ -2522,7 +2535,7 @@ class Float extends ContentObject {
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(
+    return valueToHtml(
       this[$content] !== null ? this[$content].toString() : ""
     );
   }
@@ -2812,7 +2825,7 @@ class Integer extends ContentObject {
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(
+    return valueToHtml(
       this[$content] !== null ? this[$content].toString() : ""
     );
   }
@@ -4642,14 +4655,7 @@ class Text extends ContentObject {
     if (typeof this[$content] === "string") {
       // \u2028 is a line separator.
       // \u2029 is a paragraph separator.
-      const html = {
-        name: "span",
-        attributes: {
-          class: ["xfaRich"],
-          style: {},
-        },
-        value: this[$content],
-      };
+      const html = valueToHtml(this[$content]).html;
 
       if (this[$content].includes("\u2029")) {
         // We've plain text containing a paragraph separator
@@ -4782,12 +4788,13 @@ class Time extends StringObject {
   }
 
   [$finalize]() {
-    // TODO
-    this[$content] = new Date(this[$content]);
+    // TODO: need to handle the string as a time and not as a date.
+    const date = this[$content].trim();
+    this[$content] = date ? new Date(date) : null;
   }
 
   [$toHTML](availableSpace) {
-    return HTMLResult.success(this[$content].toString());
+    return valueToHtml(this[$content] ? this[$content].toString() : "");
   }
 }
 
