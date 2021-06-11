@@ -46,23 +46,18 @@ class DOMCanvasFactory extends BaseCanvasFactory {
   }
 }
 
-function fetchData(url, asTypedArray) {
+async function fetchData(url, asTypedArray = false) {
   if (
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
     (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
   ) {
-    return fetch(url).then(async response => {
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      let data;
-      if (asTypedArray) {
-        data = new Uint8Array(await response.arrayBuffer());
-      } else {
-        data = stringToBytes(await response.text());
-      }
-      return data;
-    });
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return asTypedArray
+      ? new Uint8Array(await response.arrayBuffer())
+      : stringToBytes(await response.text());
   }
 
   // The Fetch API is not supported.
