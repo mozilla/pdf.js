@@ -149,6 +149,7 @@
 .xfaTextfield:focus,
 .xfaSelect:focus {
   background-color: transparent;
+  outline: none;
 }
 
 .xfaTextfield,
