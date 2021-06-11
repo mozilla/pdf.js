@@ -26,6 +26,7 @@ import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
   BaseStandardFontDataFactory,
+  BaseSVGFactory,
 } from "./base_factory.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
@@ -109,25 +110,8 @@ class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
   }
 }
 
-class DOMSVGFactory {
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid SVG dimensions");
-    }
-    const svg = document.createElementNS(SVG_NS, "svg:svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("width", width + "px");
-    svg.setAttribute("height", height + "px");
-    svg.setAttribute("preserveAspectRatio", "none");
-    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-
-    return svg;
-  }
-
-  createElement(type) {
-    if (typeof type !== "string") {
-      throw new Error("Invalid SVG element type");
-    }
+class DOMSVGFactory extends BaseSVGFactory {
+  _createSVG(type) {
     return document.createElementNS(SVG_NS, type);
   }
 }
