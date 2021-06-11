@@ -43,7 +43,9 @@ const $getChildrenByNameIt = Symbol();
 const $getDataValue = Symbol();
 const $getRealChildrenByNameIt = Symbol();
 const $getChildren = Symbol();
+const $getContainedChildren = Symbol();
 const $getNextPage = Symbol();
+const $getSubformParent = Symbol();
 const $getParent = Symbol();
 const $global = Symbol();
 const $hasItem = Symbol();
@@ -255,6 +257,10 @@ class XFAObject {
     return this[_parent];
   }
 
+  [$getSubformParent]() {
+    return this[$getParent]();
+  }
+
   [$getChildren](name = null) {
     if (!name) {
       return this[_children];
@@ -296,8 +302,15 @@ class XFAObject {
     return HTMLResult.EMPTY;
   }
 
-  *[_filteredChildrenGenerator](filter, include) {
+  *[$getContainedChildren]() {
+    // This function is overriden in Subform and SubformSet.
     for (const node of this[$getChildren]()) {
+      yield node;
+    }
+  }
+
+  *[_filteredChildrenGenerator](filter, include) {
+    for (const node of this[$getContainedChildren]()) {
       if (!filter || include === filter.has(node[$nodeName])) {
         const availableSpace = this[$getAvailableSpace]();
         const res = node[$toHTML](availableSpace);
@@ -965,10 +978,12 @@ export {
   $getChildrenByClass,
   $getChildrenByName,
   $getChildrenByNameIt,
+  $getContainedChildren,
   $getDataValue,
   $getNextPage,
   $getParent,
   $getRealChildrenByNameIt,
+  $getSubformParent,
   $global,
   $hasItem,
   $hasSettableValue,
