@@ -25,8 +25,10 @@ import {
   $flushHTML,
   $getAvailableSpace,
   $getChildren,
+  $getContainedChildren,
   $getNextPage,
   $getParent,
+  $getSubformParent,
   $hasItem,
   $hasSettableValue,
   $ids,
@@ -104,6 +106,16 @@ function getRoot(node) {
     parent = parent[$getParent]();
   }
   return parent;
+}
+
+function* getContainedChildren(node) {
+  for (const child of node[$getChildren]()) {
+    if (child instanceof SubformSet) {
+      yield* child[$getContainedChildren]();
+      continue;
+    }
+    yield child;
+  }
 }
 
 function valueToHtml(value) {
@@ -336,6 +348,12 @@ class Area extends XFAObject {
     this.field = new XFAObjectArray();
     this.subform = new XFAObjectArray();
     this.subformSet = new XFAObjectArray();
+  }
+
+  *[$getContainedChildren]() {
+    // This function is overriden in order to fake that subforms under
+    // this set are in fact under parent subform.
+    yield* getContainedChildren(this);
   }
 
   [$isTransparent]() {
@@ -4077,6 +4095,12 @@ class Subform extends XFAObject {
     this.subformSet = new XFAObjectArray();
   }
 
+  *[$getContainedChildren]() {
+    // This function is overriden in order to fake that subforms under
+    // this set are in fact under parent subform.
+    yield* getContainedChildren(this);
+  }
+
   [$flushHTML]() {
     return flushHTML(this);
   }
@@ -4161,7 +4185,7 @@ class Subform extends XFAObject {
     ]);
 
     if (this.layout.includes("row")) {
-      const columnWidths = this[$getParent]().columnWidths;
+      const columnWidths = this[$getSubformParent]().columnWidths;
       if (Array.isArray(columnWidths) && columnWidths.length > 0) {
         this[$extra].columnWidths = columnWidths;
         this[$extra].currentColumn = 0;
@@ -4292,27 +4316,22 @@ class SubformSet extends XFAObject {
     this.breakBefore = new XFAObjectArray();
     this.subform = new XFAObjectArray();
     this.subformSet = new XFAObjectArray();
+
+    // TODO: need to handle break stuff and relation.
   }
 
-  [$toHTML]() {
-    const children = [];
-    if (!this[$extra]) {
-      this[$extra] = Object.create(null);
+  *[$getContainedChildren]() {
+    // This function is overriden in order to fake that subforms under
+    // this set are in fact under parent subform.
+    yield* getContainedChildren(this);
+  }
+
+  [$getSubformParent]() {
+    let parent = this[$getParent]();
+    while (!(parent instanceof Subform)) {
+      parent = parent[$getParent]();
     }
-    this[$extra].children = children;
-
-    this[$childrenToHTML]({
-      filter: new Set(["subform", "subformSet"]),
-      include: true,
-    });
-
-    return HTMLResult.success({
-      name: "div",
-      children,
-      attributes: {
-        id: this[$uid],
-      },
-    });
+    return parent;
   }
 }
 

@@ -16,6 +16,7 @@
 import {
   $extra,
   $getParent,
+  $getSubformParent,
   $nodeName,
   $toStyle,
   XFAObject,
@@ -296,7 +297,7 @@ function computeBbox(node, html, availableSpace) {
 }
 
 function fixDimensions(node) {
-  const parent = node[$getParent]();
+  const parent = node[$getSubformParent]();
   if (parent.layout && parent.layout.includes("row")) {
     const extra = parent[$extra];
     const colSpan = node.colSpan;
