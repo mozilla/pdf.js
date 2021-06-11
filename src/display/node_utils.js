@@ -55,16 +55,9 @@ if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
   };
 
   NodeCanvasFactory = class extends BaseCanvasFactory {
-    create(width, height) {
-      if (width <= 0 || height <= 0) {
-        throw new Error("Invalid canvas size");
-      }
+    _createCanvas(width, height) {
       const Canvas = __non_webpack_require__("canvas");
-      const canvas = Canvas.createCanvas(width, height);
-      return {
-        canvas,
-        context: canvas.getContext("2d"),
-      };
+      return Canvas.createCanvas(width, height);
     }
   };
 

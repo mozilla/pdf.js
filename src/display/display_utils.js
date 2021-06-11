@@ -26,6 +26,7 @@ import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
   BaseStandardFontDataFactory,
+  BaseSVGFactory,
 } from "./base_factory.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
@@ -37,38 +38,26 @@ class DOMCanvasFactory extends BaseCanvasFactory {
     this._document = ownerDocument;
   }
 
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
-    }
+  _createCanvas(width, height) {
     const canvas = this._document.createElement("canvas");
-    const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
-    return {
-      canvas,
-      context,
-    };
+    return canvas;
   }
 }
 
-function fetchData(url, asTypedArray) {
+async function fetchData(url, asTypedArray = false) {
   if (
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
     (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
   ) {
-    return fetch(url).then(async response => {
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      let data;
-      if (asTypedArray) {
-        data = new Uint8Array(await response.arrayBuffer());
-      } else {
-        data = stringToBytes(await response.text());
-      }
-      return data;
-    });
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return asTypedArray
+      ? new Uint8Array(await response.arrayBuffer())
+      : stringToBytes(await response.text());
   }
 
   // The Fetch API is not supported.
@@ -116,25 +105,8 @@ class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
   }
 }
 
-class DOMSVGFactory {
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid SVG dimensions");
-    }
-    const svg = document.createElementNS(SVG_NS, "svg:svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("width", width + "px");
-    svg.setAttribute("height", height + "px");
-    svg.setAttribute("preserveAspectRatio", "none");
-    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-
-    return svg;
-  }
-
-  createElement(type) {
-    if (typeof type !== "string") {
-      throw new Error("Invalid SVG element type");
-    }
+class DOMSVGFactory extends BaseSVGFactory {
+  _createSVG(type) {
     return document.createElementNS(SVG_NS, type);
   }
 }
