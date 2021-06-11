@@ -23,7 +23,14 @@ class BaseCanvasFactory {
   }
 
   create(width, height) {
-    unreachable("Abstract method `create` called.");
+    if (width <= 0 || height <= 0) {
+      throw new Error("Invalid canvas size");
+    }
+    const canvas = this._createCanvas(width, height);
+    return {
+      canvas,
+      context: canvas.getContext("2d"),
+    };
   }
 
   reset(canvasAndContext, width, height) {
@@ -47,6 +54,13 @@ class BaseCanvasFactory {
     canvasAndContext.canvas.height = 0;
     canvasAndContext.canvas = null;
     canvasAndContext.context = null;
+  }
+
+  /**
+   * @private
+   */
+  _createCanvas(width, height) {
+    unreachable("Abstract method `_createCanvas` called.");
   }
 }
 

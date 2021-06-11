@@ -37,18 +37,11 @@ class DOMCanvasFactory extends BaseCanvasFactory {
     this._document = ownerDocument;
   }
 
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
-    }
+  _createCanvas(width, height) {
     const canvas = this._document.createElement("canvas");
-    const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
-    return {
-      canvas,
-      context,
-    };
+    return canvas;
   }
 }
 
