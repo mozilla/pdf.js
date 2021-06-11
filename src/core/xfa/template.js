@@ -2391,6 +2391,8 @@ class Field extends XFAObject {
 
     const caption = this.caption ? this.caption[$toHTML]().html : null;
     if (!caption) {
+      // Even if no caption this class will help to center the ui.
+      ui.attributes.class.push("xfaLeft");
       return HTMLResult.success(createWrapper(this, html), bbox);
     }
 
