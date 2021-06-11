@@ -23,7 +23,14 @@ class BaseCanvasFactory {
   }
 
   create(width, height) {
-    unreachable("Abstract method `create` called.");
+    if (width <= 0 || height <= 0) {
+      throw new Error("Invalid canvas size");
+    }
+    const canvas = this._createCanvas(width, height);
+    return {
+      canvas,
+      context: canvas.getContext("2d"),
+    };
   }
 
   reset(canvasAndContext, width, height) {
@@ -47,6 +54,13 @@ class BaseCanvasFactory {
     canvasAndContext.canvas.height = 0;
     canvasAndContext.canvas = null;
     canvasAndContext.context = null;
+  }
+
+  /**
+   * @private
+   */
+  _createCanvas(width, height) {
+    unreachable("Abstract method `_createCanvas` called.");
   }
 }
 
@@ -122,8 +136,45 @@ class BaseStandardFontDataFactory {
   }
 }
 
+class BaseSVGFactory {
+  constructor() {
+    if (this.constructor === BaseSVGFactory) {
+      unreachable("Cannot initialize BaseSVGFactory.");
+    }
+  }
+
+  create(width, height) {
+    if (width <= 0 || height <= 0) {
+      throw new Error("Invalid SVG dimensions");
+    }
+    const svg = this._createSVG("svg:svg");
+    svg.setAttribute("version", "1.1");
+    svg.setAttribute("width", `${width}px`);
+    svg.setAttribute("height", `${height}px`);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+
+    return svg;
+  }
+
+  createElement(type) {
+    if (typeof type !== "string") {
+      throw new Error("Invalid SVG element type");
+    }
+    return this._createSVG(type);
+  }
+
+  /**
+   * @private
+   */
+  _createSVG(type) {
+    unreachable("Abstract method `_createSVG` called.");
+  }
+}
+
 export {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
   BaseStandardFontDataFactory,
+  BaseSVGFactory,
 };
