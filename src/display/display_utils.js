@@ -49,7 +49,7 @@ class DOMCanvasFactory extends BaseCanvasFactory {
 async function fetchData(url, asTypedArray = false) {
   if (
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-    (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
+    isValidFetchUrl(url, document.baseURI)
   ) {
     const response = await fetch(url);
     if (!response.ok) {
@@ -483,15 +483,6 @@ class StatTimer {
   }
 }
 
-function isFetchSupported() {
-  return (
-    typeof fetch !== "undefined" &&
-    typeof Response !== "undefined" &&
-    "body" in Response.prototype &&
-    typeof ReadableStream !== "undefined"
-  );
-}
-
 function isValidFetchUrl(url, baseUrl) {
   try {
     const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
@@ -626,7 +617,6 @@ export {
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   isDataScheme,
-  isFetchSupported,
   isPdfFile,
   isValidFetchUrl,
   LinkTarget,
