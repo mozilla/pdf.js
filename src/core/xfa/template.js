@@ -2480,14 +2480,17 @@ class Fill extends XFAObject {
 
   [$toStyle]() {
     const parent = this[$getParent]();
+    const style = Object.create(null);
+
     let propName = "color";
     if (parent instanceof Border) {
       propName = "background";
     }
-    if (parent instanceof Rectangle) {
+    if (parent instanceof Rectangle || parent instanceof Arc) {
       propName = "fill";
+      style.fill = "transparent";
     }
-    const style = Object.create(null);
+
     for (const name of Object.getOwnPropertyNames(this)) {
       if (name === "extras" || name === "color") {
         continue;
