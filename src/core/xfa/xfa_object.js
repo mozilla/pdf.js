@@ -23,7 +23,6 @@ import { searchNode } from "./som.js";
 const $acceptWhitespace = Symbol();
 const $addHTML = Symbol();
 const $appendChild = Symbol();
-const $break = Symbol();
 const $childrenToHTML = Symbol();
 const $clean = Symbol();
 const $cleanup = Symbol();
@@ -342,7 +341,7 @@ class XFAObject {
       const availableSpace = this[$getAvailableSpace]();
       const res = this[$extra].failingNode[$toHTML](availableSpace);
       if (!res.success) {
-        return false;
+        return res;
       }
       if (res.html) {
         this[$addHTML](res.html, res.bbox);
@@ -357,7 +356,7 @@ class XFAObject {
       }
       const res = gen.value;
       if (!res.success) {
-        return false;
+        return res;
       }
       if (res.html) {
         this[$addHTML](res.html, res.bbox);
@@ -366,7 +365,7 @@ class XFAObject {
 
     this[$extra].generator = null;
 
-    return true;
+    return HTMLResult.EMPTY;
   }
 
   [$setSetAttributes](attributes) {
@@ -960,7 +959,6 @@ export {
   $acceptWhitespace,
   $addHTML,
   $appendChild,
-  $break,
   $childrenToHTML,
   $clean,
   $cleanup,
