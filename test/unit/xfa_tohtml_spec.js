@@ -188,7 +188,7 @@ describe("XFAFactory", function () {
         </pageArea>
       </pageSet>
       <subform name="first">
-        <draw><value><text>foo</text></value></draw>
+        <draw w="1pt" h="1pt"><value><text>foo</text></value></draw>
       </subform>
     </subform>
   </template>
