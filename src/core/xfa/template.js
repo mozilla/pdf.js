@@ -2396,9 +2396,15 @@ class Field extends XFAObject {
       if (this.ui.imageEdit) {
         ui.children.push(this.value[$toHTML]().html);
       } else if (!this.ui.button) {
-        const value = this.value.exData
-          ? this.value.exData[$text]()
-          : this.value[$toHTML]().html.value;
+        let value = "";
+        if (this.value.exData) {
+          value = this.value.exData[$text]();
+        } else {
+          const htmlValue = this.value[$toHTML]().html;
+          if (htmlValue !== null) {
+            value = htmlValue.value;
+          }
+        }
         if (value) {
           if (ui.children[0].name === "textarea") {
             ui.children[0].attributes.textContent = value;
