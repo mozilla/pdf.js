@@ -187,13 +187,8 @@ class WorkerMessageHandler {
         await pdfManager.ensureDoc("checkFirstPage");
       }
 
-      const [numPages, fingerprint, htmlForXfa] = await Promise.all([
-        pdfManager.ensureDoc("numPages"),
-        pdfManager.ensureDoc("fingerprint"),
-        pdfManager.ensureDoc("htmlForXfa"),
-      ]);
-
-      if (htmlForXfa) {
+      const isPureXfa = await pdfManager.ensureDoc("isPureXfa");
+      if (isPureXfa) {
         const task = new WorkerTask("loadXfaFonts");
         startWorkerTask(task);
         await pdfManager
@@ -203,6 +198,17 @@ class WorkerMessageHandler {
           })
           .then(() => finishWorkerTask(task));
       }
+
+      const [numPages, fingerprint] = await Promise.all([
+        pdfManager.ensureDoc("numPages"),
+        pdfManager.ensureDoc("fingerprint"),
+      ]);
+
+      // Get htmlForXfa after numPages to avoid to create HTML twice.
+      const htmlForXfa = isPureXfa
+        ? await pdfManager.ensureDoc("htmlForXfa")
+        : null;
+
       return { numPages, fingerprint, htmlForXfa };
     }
 

@@ -34,6 +34,7 @@ const $dump = Symbol();
 const $extra = Symbol("extra");
 const $finalize = Symbol();
 const $flushHTML = Symbol();
+const $fonts = Symbol();
 const $getAttributeIt = Symbol();
 const $getAvailableSpace = Symbol();
 const $getChildrenByClass = Symbol();
@@ -46,6 +47,7 @@ const $getContainedChildren = Symbol();
 const $getNextPage = Symbol();
 const $getSubformParent = Symbol();
 const $getParent = Symbol();
+const $pushGlyphs = Symbol();
 const $global = Symbol();
 const $hasItem = Symbol();
 const $hasSettableValue = Symbol();
@@ -970,6 +972,7 @@ export {
   $extra,
   $finalize,
   $flushHTML,
+  $fonts,
   $getAttributeIt,
   $getAvailableSpace,
   $getChildren,
@@ -998,6 +1001,7 @@ export {
   $onChild,
   $onChildCheck,
   $onText,
+  $pushGlyphs,
   $removeChild,
   $resolvePrototypes,
   $root,

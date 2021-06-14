@@ -5341,5 +5341,13 @@
       "type": "eq",
       "forms": true,
       "lastPage": 1
+    },
+    {  "id": "xfa_issue13500",
+       "file": "pdfs/xfa_issue13500.pdf",
+       "md5": "b81274a19f5a95c1466db3648f1be491",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
     }
 ]

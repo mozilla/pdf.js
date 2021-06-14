@@ -18,17 +18,13 @@ import {
   $getParent,
   $getSubformParent,
   $nodeName,
+  $pushGlyphs,
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
 import { getMeasurement } from "./utils.js";
+import { TextMeasure } from "./text.js";
 import { warn } from "../../shared/util.js";
-
-const wordNonWordRegex = new RegExp(
-  "([\\p{N}\\p{L}\\p{M}]+)|([^\\p{N}\\p{L}\\p{M}]+)",
-  "gu"
-);
-const wordFirstRegex = new RegExp("^[\\p{N}\\p{L}\\p{M}]", "u");
 
 function measureToString(m) {
   if (typeof m === "string") {
@@ -192,65 +188,15 @@ const converters = {
   },
 };
 
-function layoutText(text, fontSize, space) {
-  // Try to guess width and height for the given text in taking into
-  // account the space where the text should fit.
-  // The computed dimensions are just an overestimation.
-  // TODO: base this estimation on real metrics.
-  let width = 0;
-  let height = 0;
-  let totalWidth = 0;
-  const lineHeight = fontSize * 1.5;
-  const averageCharSize = fontSize * 0.4;
-  const maxCharOnLine = Math.floor(space.width / averageCharSize);
-  const chunks = text.match(wordNonWordRegex);
-  let treatedChars = 0;
-
-  let i = 0;
-  let chunk = chunks[0];
-  while (chunk) {
-    const w = chunk.length * averageCharSize;
-    if (width + w <= space.width) {
-      width += w;
-      treatedChars += chunk.length;
-      chunk = chunks[i++];
-      continue;
-    }
-
-    if (!wordFirstRegex.test(chunk) || chunk.length > maxCharOnLine) {
-      const numOfCharOnLine = Math.floor(
-        (space.width - width) / averageCharSize
-      );
-      chunk = chunk.slice(numOfCharOnLine);
-      treatedChars += numOfCharOnLine;
-      if (height + lineHeight > space.height) {
-        return { width: 0, height: 0, splitPos: treatedChars };
-      }
-      totalWidth = Math.max(width, totalWidth);
-      width = 0;
-      height += lineHeight;
-      continue;
-    }
-
-    if (height + lineHeight > space.height) {
-      return { width: 0, height: 0, splitPos: treatedChars };
-    }
-
-    totalWidth = Math.max(width, totalWidth);
-    width = w;
-    height += lineHeight;
-    chunk = chunks[i++];
+function layoutText(text, xfaFont, fonts, width) {
+  const measure = new TextMeasure(xfaFont, fonts);
+  if (typeof text === "string") {
+    measure.addString(text);
+  } else {
+    text[$pushGlyphs](measure);
   }
 
-  if (totalWidth === 0) {
-    totalWidth = width;
-  }
-
-  if (totalWidth !== 0) {
-    height += lineHeight;
-  }
-
-  return { width: totalWidth, height, splitPos: -1 };
+  return measure.compute(width);
 }
 
 function computeBbox(node, html, availableSpace) {
