@@ -313,7 +313,7 @@ function createDataNode(root, container, expr) {
       }
       root = child;
     } else {
-      parsed[i].index = children.length - index;
+      parsed[i].index = index - children.length;
       return createNodes(root, parsed.slice(i));
     }
   }
