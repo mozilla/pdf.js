@@ -2405,6 +2405,10 @@ class Field extends XFAObject {
             value = htmlValue.value;
           }
         }
+        if (this.ui.textEdit && this.value.text && this.value.text.maxChars) {
+          ui.children[0].attributes.maxLength = this.value.text.maxChars;
+        }
+
         if (value) {
           if (ui.children[0].name === "textarea") {
             ui.children[0].attributes.textContent = value;
