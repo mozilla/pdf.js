@@ -17,7 +17,7 @@
 
 "use strict";
 
-var fs = require("fs");
+var fs = require("../src/shared/fs.js");
 var crypto = require("crypto");
 var http = require("http");
 var https = require("https");

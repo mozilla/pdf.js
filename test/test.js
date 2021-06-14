@@ -19,7 +19,7 @@
 
 var WebServer = require("./webserver.js").WebServer;
 var path = require("path");
-var fs = require("fs");
+var fs = require("../src/shared/fs.js");
 var os = require("os");
 var puppeteer = require("puppeteer");
 var url = require("url");

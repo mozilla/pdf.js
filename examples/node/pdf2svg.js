@@ -5,7 +5,7 @@
 // Node tool to dump SVG output into a file.
 //
 
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const util = require("util");
 const path = require("path");
 const stream = require("stream");

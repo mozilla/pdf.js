@@ -18,7 +18,7 @@
 "use strict";
 
 var assert = require("assert");
-var fs = require("fs");
+var fs = require("../../src/shared/fs.js");
 var vm = require("vm");
 
 var SRC_DIR = __dirname + "/../../";

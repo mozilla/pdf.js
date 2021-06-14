@@ -19,7 +19,7 @@
 
 var http = require("http");
 var path = require("path");
-var fs = require("fs");
+var fs = require("../src/shared/fs.js");
 
 var mimeTypes = {
   ".css": "text/css",

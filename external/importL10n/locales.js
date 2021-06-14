@@ -15,7 +15,7 @@
 
 "use strict";
 
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const https = require("https");
 const path = require("path");
 

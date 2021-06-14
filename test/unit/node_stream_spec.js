@@ -28,7 +28,7 @@ if (!isNodeJS) {
 const path = __non_webpack_require__("path");
 const url = __non_webpack_require__("url");
 const http = __non_webpack_require__("http");
-const fs = __non_webpack_require__("fs");
+const fs = __non_webpack_require__("../../src/shared/fs.js");
 
 describe("node_stream", function () {
   let server = null;

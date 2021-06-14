@@ -18,12 +18,11 @@
 
 const autoprefixer = require("autoprefixer");
 const calc = require("postcss-calc");
-const fs = require("fs");
+const fs = require("./src/shared/fs.js");
 const gulp = require("gulp");
 const postcss = require("gulp-postcss");
 const rename = require("gulp-rename");
 const replace = require("gulp-replace");
-const mkdirp = require("mkdirp");
 const path = require("path");
 const rimraf = require("rimraf");
 const stream = require("stream");
@@ -38,6 +37,7 @@ const webpackStream = require("webpack-stream");
 const Vinyl = require("vinyl");
 const vfs = require("vinyl-fs");
 const through = require("through2");
+const { mkdirp } = fs;
 
 const BUILD_DIR = "build/";
 const L10N_DIR = "l10n/";

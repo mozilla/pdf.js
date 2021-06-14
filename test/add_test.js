@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("../src/shared/fs.js");
 const crypto = require("crypto");
 const execSync = require("child_process").execSync;
 

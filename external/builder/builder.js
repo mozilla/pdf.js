@@ -1,6 +1,6 @@
 "use strict";
 
-const fs = require("fs"),
+const fs = require("../../src/shared/fs.js"),
   path = require("path"),
   vm = require("vm");
 

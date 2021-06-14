@@ -43,7 +43,7 @@ let NodeStandardFontDataFactory = class {
 if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
   const fetchData = function (url) {
     return new Promise((resolve, reject) => {
-      const fs = __non_webpack_require__("fs");
+      const fs = __non_webpack_require__("../shared/fs.js");
       fs.readFile(url, (error, data) => {
         if (error || !data) {
           reject(new Error(error));

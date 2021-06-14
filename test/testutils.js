@@ -17,7 +17,7 @@
 
 "use strict";
 
-var fs = require("fs");
+var fs = require("../src/shared/fs.js");
 var path = require("path");
 var rimrafSync = require("rimraf").sync;
 

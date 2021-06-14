@@ -1,7 +1,7 @@
 "use strict";
 
 const p2 = require("./preprocessor2.js");
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const path = require("path");
 
 let errors = 0;

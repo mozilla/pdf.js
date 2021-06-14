@@ -1,6 +1,6 @@
 "use strict";
 
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const ttest = require("ttest");
 
 const VALID_GROUP_BYS = ["browser", "pdf", "page", "round", "stat"];

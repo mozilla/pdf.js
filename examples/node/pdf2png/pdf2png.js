@@ -15,7 +15,7 @@
 
 const Canvas = require("canvas");
 const assert = require("assert").strict;
-const fs = require("fs");
+const fs = require("../../../src/shared/fs.js");
 
 function NodeCanvasFactory() {}
 NodeCanvasFactory.prototype = {

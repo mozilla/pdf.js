@@ -16,7 +16,7 @@
 
 "use strict";
 
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const path = require("path");
 const spawn = require("child_process").spawn;
 

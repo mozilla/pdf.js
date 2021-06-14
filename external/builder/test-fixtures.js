@@ -1,7 +1,7 @@
 "use strict";
 
 const builder = require("./builder.js");
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const path = require("path");
 
 let errors = 0;

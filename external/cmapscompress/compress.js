@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const path = require("path");
 const parseAdobeCMap = require("./parse.js").parseAdobeCMap;
 const optimizeCMap = require("./optimize.js").optimizeCMap;

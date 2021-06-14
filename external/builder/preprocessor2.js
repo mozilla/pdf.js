@@ -3,7 +3,7 @@
 const acorn = require("acorn");
 const escodegen = require("escodegen");
 const vm = require("vm");
-const fs = require("fs");
+const fs = require("../../src/shared/fs.js");
 const path = require("path");
 
 const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";

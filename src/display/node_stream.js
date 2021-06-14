@@ -31,7 +31,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-const fs = __non_webpack_require__("fs");
+const fs = __non_webpack_require__("../shared/fs.js");
 const http = __non_webpack_require__("http");
 const https = __non_webpack_require__("https");
 const url = __non_webpack_require__("url");
