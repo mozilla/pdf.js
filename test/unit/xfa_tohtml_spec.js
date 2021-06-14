@@ -16,6 +16,22 @@
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
 describe("XFAFactory", function () {
+  function searchHtmlNode(root, name, value) {
+    if (root[name] === value) {
+      return root;
+    }
+    if (!root.children) {
+      return null;
+    }
+    for (const child of root.children) {
+      const node = searchHtmlNode(child, name, value);
+      if (node) {
+        return node;
+      }
+    }
+    return null;
+  }
+
   describe("toHTML", function () {
     it("should convert some basic properties to CSS", function () {
       const xml = `
@@ -107,6 +123,46 @@ describe("XFAFactory", function () {
       expect(draw.attributes.style).toEqual(
         pages.children[1].children[0].children[0].attributes.style
       );
+    });
+
+    it("should have a maxLength property", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="123pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <field y="1pt" w="11pt" h="22pt" x="2pt">
+            <ui>
+              <textEdit/>
+            </ui>
+            <value>
+              <text maxChars="123"/>
+            </value>
+          </field>
+        </pageArea>
+      </pageSet>
+      <subform name="first">
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory({ "xdp:xdp": xml });
+
+      expect(factory.numberPages).toEqual(1);
+
+      const pages = factory.getPages();
+      const field = searchHtmlNode(pages, "name", "textarea");
+
+      expect(field.attributes.maxLength).toEqual(123);
     });
   });
 });
