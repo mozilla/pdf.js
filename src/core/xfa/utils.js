@@ -168,21 +168,30 @@ function getBBox(data) {
 
 class HTMLResult {
   static get FAILURE() {
-    return shadow(this, "FAILURE", new HTMLResult(false, null, null));
+    return shadow(this, "FAILURE", new HTMLResult(false, null, null, null));
   }
 
   static get EMPTY() {
-    return shadow(this, "EMPTY", new HTMLResult(true, null, null));
+    return shadow(this, "EMPTY", new HTMLResult(true, null, null, null));
   }
 
-  constructor(success, html, bbox) {
+  constructor(success, html, bbox, breakNode) {
     this.success = success;
     this.html = html;
     this.bbox = bbox;
+    this.breakNode = breakNode;
+  }
+
+  isBreak() {
+    return !!this.breakNode;
+  }
+
+  static breakNode(node) {
+    return new HTMLResult(false, null, null, node);
   }
 
   static success(html, bbox = null) {
-    return new HTMLResult(true, html, bbox);
+    return new HTMLResult(true, html, bbox, null);
   }
 }
 
