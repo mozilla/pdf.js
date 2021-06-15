@@ -1742,7 +1742,7 @@ gulp.task("lint", function (done) {
   const esLintOptions = [
     "node_modules/eslint/bin/eslint",
     "--ext",
-    ".js,.jsm",
+    ".js,.jsm,.json",
     ".",
     "--report-unused-disable-directives",
   ];

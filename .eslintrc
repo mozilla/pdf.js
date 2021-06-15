@@ -6,6 +6,7 @@
 
   "plugins": [
     "import",
+    "json",
     "mozilla",
     "no-unsanitized",
     "sort-exports",
@@ -13,6 +14,7 @@
   ],
 
   "extends": [
+    "plugin:json/recommended",
     "plugin:prettier/recommended"
   ],
 
