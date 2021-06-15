@@ -17,7 +17,6 @@ import {
   $acceptWhitespace,
   $addHTML,
   $appendChild,
-  $break,
   $childrenToHTML,
   $content,
   $extra,
@@ -90,6 +89,12 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 // If both tries failed then it's up to the parent
 // to handle the situation.
 const MAX_ATTEMPTS_FOR_LRTB_LAYOUT = 2;
+
+// It's possible to have a bug in the layout and so as
+// a consequence we could loop for ever in Template::toHTML()
+// so in order to avoid that (and avoid a OOM crash) we break
+// the loop after having MAX_EMPTY_PAGES empty pages.
+const MAX_EMPTY_PAGES = 3;
 
 function _setValue(templateNode, value) {
   if (!templateNode.value) {
@@ -194,26 +199,19 @@ const NOTHING = 0;
 const NOSPACE = 1;
 const VALID = 2;
 function checkDimensions(node, space) {
+  if (node[$getParent]().layout === "position") {
+    return VALID;
+  }
   const [x, y, w, h] = getTransformedBBox(node);
   if (node.w === 0 || node.h === 0) {
     return VALID;
   }
 
   if (node.w !== "" && Math.round(x + w - space.width) > 1) {
-    const area = getRoot(node)[$extra].currentContentArea;
-    if (x + w > area.w) {
-      return NOTHING;
-    }
-
     return NOSPACE;
   }
 
   if (node.h !== "" && Math.round(y + h - space.height) > 1) {
-    const area = getRoot(node)[$extra].currentContentArea;
-    if (y + h > area.h) {
-      return NOTHING;
-    }
-
     return NOSPACE;
   }
 
@@ -393,24 +391,26 @@ class Area extends XFAObject {
       availableSpace,
     };
 
-    if (
-      !this[$childrenToHTML]({
-        filter: new Set([
-          "area",
-          "draw",
-          "field",
-          "exclGroup",
-          "subform",
-          "subformSet",
-        ]),
-        include: true,
-      })
-    ) {
+    const result = this[$childrenToHTML]({
+      filter: new Set([
+        "area",
+        "draw",
+        "field",
+        "exclGroup",
+        "subform",
+        "subformSet",
+      ]),
+      include: true,
+    });
+
+    if (!result.success) {
+      if (result.isBreak()) {
+        return result;
+      }
       // Nothing to propose for the element which doesn't fit the
       // available space.
       delete this[$extra];
-      // TODO: return failure or not ?
-      return HTMLResult.empty;
+      return HTMLResult.FAILURE;
     }
 
     style.width = measureToString(this[$extra].width);
@@ -2121,22 +2121,28 @@ class ExclGroup extends XFAObject {
         this[$extra].attempt < MAX_ATTEMPTS_FOR_LRTB_LAYOUT;
         this[$extra].attempt++
       ) {
-        if (
-          this[$childrenToHTML]({
-            filter,
-            include: true,
-          })
-        ) {
+        const result = this[$childrenToHTML]({
+          filter,
+          include: true,
+        });
+        if (result.success) {
           break;
+        }
+        if (result.isBreak()) {
+          return result;
         }
       }
 
       failure = this[$extra].attempt === 2;
     } else {
-      failure = !this[$childrenToHTML]({
+      const result = this[$childrenToHTML]({
         filter,
         include: true,
       });
+      failure = !result.success;
+      if (failure && result.isBreak()) {
+        return result;
+      }
     }
 
     if (failure) {
@@ -4131,12 +4137,6 @@ class Subform extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
-    if (this[$extra] && this[$extra].afterBreakAfter) {
-      const ret = this[$extra].afterBreakAfter;
-      delete this[$extra];
-      return ret;
-    }
-
     if (this.presence === "hidden" || this.presence === "inactive") {
       return HTMLResult.EMPTY;
     }
@@ -4150,6 +4150,21 @@ class Subform extends XFAObject {
       warn(
         "XFA - Several breakBefore or breakAfter in subforms: please file a bug."
       );
+    }
+
+    if (this.breakBefore.children.length >= 1) {
+      const breakBefore = this.breakBefore.children[0];
+      if (!breakBefore[$extra]) {
+        // Set $extra to true to consume it.
+        breakBefore[$extra] = true;
+        return HTMLResult.breakNode(breakBefore);
+      }
+    }
+
+    if (this[$extra] && this[$extra].afterBreakAfter) {
+      const result = this[$extra].afterBreakAfter;
+      delete this[$extra];
+      return result;
     }
 
     // TODO: incomplete.
@@ -4174,15 +4189,6 @@ class Subform extends XFAObject {
       currentWidth: 0,
     });
 
-    if (this.breakBefore.children.length >= 1) {
-      const breakBefore = this.breakBefore.children[0];
-      if (!breakBefore[$extra]) {
-        breakBefore[$extra] = true;
-        getRoot(this)[$break](breakBefore);
-        return HTMLResult.FAILURE;
-      }
-    }
-
     switch (checkDimensions(this, availableSpace)) {
       case NOTHING:
         return HTMLResult.EMPTY;
@@ -4190,6 +4196,14 @@ class Subform extends XFAObject {
         return HTMLResult.FAILURE;
       default:
         break;
+    }
+
+    let noBreakOnOverflow = false;
+    if (this.overflow && this.overflow.target) {
+      const root = getRoot(this);
+      const target = root[$searchNode](this.overflow.target, this);
+      noBreakOnOverflow =
+        target && target[0] === root[$extra].currentContentArea;
     }
 
     const filter = new Set([
@@ -4232,32 +4246,32 @@ class Subform extends XFAObject {
       attributes.xfaName = this.name;
     }
 
-    let failure;
-    if (this.layout === "lr-tb" || this.layout === "rl-tb") {
-      for (
-        ;
-        this[$extra].attempt < MAX_ATTEMPTS_FOR_LRTB_LAYOUT;
-        this[$extra].attempt++
-      ) {
-        if (
-          this[$childrenToHTML]({
-            filter,
-            include: true,
-          })
-        ) {
-          break;
-        }
-      }
-
-      failure = this[$extra].attempt === 2;
-    } else {
-      failure = !this[$childrenToHTML]({
+    // If the container overflows into itself we add an extra
+    // layout step to accept finally the element which caused
+    // the overflow.
+    let maxRun =
+      this.layout === "lr-tb" || this.layout === "rl-tb"
+        ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
+        : 1;
+    maxRun += noBreakOnOverflow ? 1 : 0;
+    for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
+      const result = this[$childrenToHTML]({
         filter,
         include: true,
       });
+      if (result.success) {
+        break;
+      }
+      if (result.isBreak()) {
+        return result;
+      }
     }
 
-    if (failure) {
+    if (this[$extra].attempt === maxRun) {
+      if (this.overflow) {
+        getRoot(this)[$extra].overflowNode = this.overflow;
+      }
+
       if (this.layout === "position") {
         delete this[$extra];
       }
@@ -4294,19 +4308,17 @@ class Subform extends XFAObject {
       bbox = [this.x, this.y, width, height];
     }
 
+    const result = HTMLResult.success(createWrapper(this, html), bbox);
+
     if (this.breakAfter.children.length >= 1) {
       const breakAfter = this.breakAfter.children[0];
-      getRoot(this)[$break](breakAfter);
-      this[$extra].afterBreakAfter = HTMLResult.success(
-        createWrapper(this, html),
-        bbox
-      );
-      return HTMLResult.FAILURE;
+      this[$extra].afterBreakAfter = result;
+      return HTMLResult.breakNode(breakAfter);
     }
 
     delete this[$extra];
 
-    return HTMLResult.success(createWrapper(this, html), bbox);
+    return result;
   }
 }
 
@@ -4456,10 +4468,6 @@ class Template extends XFAObject {
     }
   }
 
-  [$break](node) {
-    this[$extra].breakingNode = node;
-  }
-
   [$searchNode](expr, container) {
     if (expr.startsWith("#")) {
       // This is an id.
@@ -4477,7 +4485,7 @@ class Template extends XFAObject {
     }
 
     this[$extra] = {
-      breakingNode: null,
+      overflowNode: null,
       pageNumber: 1,
       pagePosition: "first",
       oddOrEven: "odd",
@@ -4540,8 +4548,20 @@ class Template extends XFAObject {
     let targetPageArea;
     let leader = null;
     let trailer = null;
+    let hasSomething = true;
+    let hasSomethingCounter = 0;
 
     while (true) {
+      if (!hasSomething) {
+        // Nothing has been added in the previous page
+        if (++hasSomethingCounter === MAX_EMPTY_PAGES) {
+          warn("XFA - Something goes wrong: please file a bug.");
+          return mainHtml;
+        }
+      } else {
+        hasSomethingCounter = 0;
+      }
+
       targetPageArea = null;
       const page = pageArea[$toHTML]().html;
       mainHtml.children.push(page);
@@ -4560,6 +4580,17 @@ class Template extends XFAObject {
       const htmlContentAreas = page.children.filter(node =>
         node.attributes.class.includes("xfaContentarea")
       );
+
+      hasSomething = false;
+
+      const flush = index => {
+        const html = root[$flushHTML]();
+        if (html) {
+          hasSomething = true;
+          htmlContentAreas[index].children.push(html);
+        }
+      };
+
       for (let i = 0, ii = contentAreas.length; i < ii; i++) {
         const contentArea = (this[$extra].currentContentArea = contentAreas[i]);
         const space = { width: contentArea.w, height: contentArea.h };
@@ -4574,7 +4605,7 @@ class Template extends XFAObject {
           trailer = null;
         }
 
-        let html = root[$toHTML](space);
+        const html = root[$toHTML](space);
         if (html.success) {
           if (html.html) {
             htmlContentAreas[i].children.push(html.html);
@@ -4582,17 +4613,11 @@ class Template extends XFAObject {
           return mainHtml;
         }
 
-        // Check for breakBefore / breakAfter
-        let mustBreak = false;
-        if (this[$extra].breakingNode) {
-          const node = this[$extra].breakingNode;
-          this[$extra].breakingNode = null;
+        if (html.isBreak()) {
+          const node = html.breakNode;
 
           if (node.targetType === "auto") {
-            html = root[$flushHTML]();
-            if (html) {
-              htmlContentAreas[i].children.push(html);
-            }
+            flush(i);
             continue;
           }
 
@@ -4616,34 +4641,68 @@ class Template extends XFAObject {
 
           if (node.targetType === "pageArea") {
             if (startNew) {
-              mustBreak = true;
+              flush(i);
+              i = Infinity;
             } else if (target === pageArea || !(target instanceof PageArea)) {
               // Just ignore the break and do layout again.
               i--;
-              continue;
             } else {
               // We must stop the contentAreas filling and go to the next page.
               targetPageArea = target;
-              mustBreak = true;
+              flush(i);
+              i = Infinity;
             }
-          } else if (
-            target === "contentArea" ||
-            !(target instanceof ContentArea)
-          ) {
-            // Just ignore the break and do layout again.
-            i--;
-            continue;
+          } else if (node.targetType === "contentArea") {
+            const index = contentAreas.findIndex(e => e === target);
+            if (index !== -1) {
+              flush(i);
+              i = index - 1;
+            } else {
+              i--;
+            }
           }
+          continue;
         }
 
-        html = root[$flushHTML]();
-        if (html) {
-          htmlContentAreas[i].children.push(html);
+        if (this[$extra].overflowNode) {
+          const node = this[$extra].overflowNode;
+          this[$extra].overflowNode = null;
+
+          flush(i);
+
+          if (node.leader) {
+            leader = this[$searchNode](node.leader, node[$getParent]());
+            leader = leader ? leader[0] : null;
+          }
+
+          if (node.trailer) {
+            trailer = this[$searchNode](node.trailer, node[$getParent]());
+            trailer = trailer ? trailer[0] : null;
+          }
+
+          let target = null;
+          if (node.target) {
+            target = this[$searchNode](node.target, node[$getParent]());
+            target = target ? target[0] : target;
+          }
+
+          if (target instanceof PageArea) {
+            // We must stop the contentAreas filling and go to the next page.
+            targetPageArea = target;
+            i = Infinity;
+            continue;
+          } else if (target instanceof ContentArea) {
+            const index = contentAreas.findIndex(e => e === target);
+            if (index !== -1) {
+              i = index - 1;
+            } else {
+              i--;
+            }
+          }
+          continue;
         }
 
-        if (mustBreak) {
-          break;
-        }
+        flush(i);
       }
 
       this[$extra].pageNumber += 1;

@@ -146,12 +146,9 @@ function addHTML(node, html, bbox) {
 
 function getAvailableSpace(node) {
   const availableSpace = node[$extra].availableSpace;
-  const [marginW, marginH] = node.margin
-    ? [
-        node.margin.leftInset + node.margin.rightInset,
-        node.margin.topInset + node.margin.leftInset,
-      ]
-    : [0, 0];
+  const marginH = node.margin
+    ? node.margin.topInset + node.margin.bottomInset
+    : 0;
 
   switch (node.layout) {
     case "lr-tb":
@@ -159,35 +156,48 @@ function getAvailableSpace(node) {
       switch (node[$extra].attempt) {
         case 0:
           return {
-            width: availableSpace.width - marginW - node[$extra].currentWidth,
+            width: availableSpace.width - node[$extra].currentWidth,
             height: availableSpace.height - marginH - node[$extra].prevHeight,
           };
         case 1:
           return {
-            width: availableSpace.width - marginW,
+            width: availableSpace.width,
             height: availableSpace.height - marginH - node[$extra].height,
           };
         default:
+          // Overflow must stay in the container.
           return {
             width: Infinity,
-            height: availableSpace.height - marginH - node[$extra].prevHeight,
+            height: Infinity,
           };
       }
     case "rl-row":
     case "row":
-      const width = node[$extra].columnWidths
-        .slice(node[$extra].currentColumn)
-        .reduce((a, x) => a + x);
-      return { width, height: availableSpace.height - marginH };
+      if (node[$extra].attempt === 0) {
+        const width = node[$extra].columnWidths
+          .slice(node[$extra].currentColumn)
+          .reduce((a, x) => a + x);
+        return { width, height: availableSpace.height - marginH };
+      }
+      // Overflow must stay in the container.
+      return { width: Infinity, height: Infinity };
     case "table":
     case "tb":
-      return {
-        width: availableSpace.width - marginW,
-        height: availableSpace.height - marginH - node[$extra].height,
-      };
+      if (node[$extra].attempt === 0) {
+        return {
+          width: availableSpace.width,
+          height: availableSpace.height - marginH - node[$extra].height,
+        };
+      }
+      // Overflow must stay in the container.
+      return { width: Infinity, height: Infinity };
     case "position":
     default:
-      return availableSpace;
+      if (node[$extra].attempt === 0) {
+        return availableSpace;
+      }
+      // Overflow must stay in the container.
+      return { width: Infinity, height: Infinity };
   }
 }
 
