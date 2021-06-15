@@ -22,6 +22,7 @@
     "eslint-plugin-fetch-options": "^0.0.5",
     "eslint-plugin-html": "^6.1.2",
     "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-json": "^3.0.0",
     "eslint-plugin-mozilla": "^2.10.0",
     "eslint-plugin-no-unsanitized": "^3.1.5",
     "eslint-plugin-prettier": "^3.4.0",
