@@ -946,6 +946,14 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_candidate_petitions",
+       "file": "pdfs/xfa_candidate_petitions.pdf",
+       "md5": "0db96a00667f8f58f94cf81022e69341",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_annual_expense_report",
        "file": "pdfs/xfa_annual_expense_report.pdf",
        "md5": "06866e7a6bbc0346789208ef5f6e885c",
