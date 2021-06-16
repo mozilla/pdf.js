@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { $extra, $flushHTML } from "./xfa_object.js";
+import {
+  $extra,
+  $flushHTML,
+  $getParent,
+  $getTemplateRoot,
+  $isSplittable,
+} from "./xfa_object.js";
 import { measureToString } from "./html_utils.js";
 
 // Subform and ExclGroup have a layout so they share these functions.
@@ -146,59 +152,181 @@ function addHTML(node, html, bbox) {
 
 function getAvailableSpace(node) {
   const availableSpace = node[$extra].availableSpace;
-  const marginH = node.margin
+  const marginV = node.margin
     ? node.margin.topInset + node.margin.bottomInset
+    : 0;
+  const marginH = node.margin
+    ? node.margin.leftInset + node.margin.rightInset
     : 0;
 
   switch (node.layout) {
     case "lr-tb":
     case "rl-tb":
-      switch (node[$extra].attempt) {
-        case 0:
-          return {
-            width: availableSpace.width - node[$extra].currentWidth,
-            height: availableSpace.height - marginH - node[$extra].prevHeight,
-          };
-        case 1:
-          return {
-            width: availableSpace.width,
-            height: availableSpace.height - marginH - node[$extra].height,
-          };
-        default:
-          // Overflow must stay in the container.
-          return {
-            width: Infinity,
-            height: Infinity,
-          };
-      }
-    case "rl-row":
-    case "row":
-      if (node[$extra].attempt === 0) {
-        const width = node[$extra].columnWidths
-          .slice(node[$extra].currentColumn)
-          .reduce((a, x) => a + x);
-        return { width, height: availableSpace.height - marginH };
-      }
-      // Overflow must stay in the container.
-      return { width: Infinity, height: Infinity };
-    case "table":
-    case "tb":
       if (node[$extra].attempt === 0) {
         return {
-          width: availableSpace.width,
-          height: availableSpace.height - marginH - node[$extra].height,
+          width: availableSpace.width - marginH - node[$extra].currentWidth,
+          height: availableSpace.height - marginV - node[$extra].prevHeight,
         };
       }
-      // Overflow must stay in the container.
-      return { width: Infinity, height: Infinity };
+      return {
+        width: availableSpace.width - marginH,
+        height: availableSpace.height - marginV - node[$extra].height,
+      };
+    case "rl-row":
+    case "row":
+      const width = node[$extra].columnWidths
+        .slice(node[$extra].currentColumn)
+        .reduce((a, x) => a + x);
+      return { width, height: availableSpace.height - marginH };
+    case "table":
+    case "tb":
+      return {
+        width: availableSpace.width - marginH,
+        height: availableSpace.height - marginV - node[$extra].height,
+      };
     case "position":
     default:
-      if (node[$extra].attempt === 0) {
-        return availableSpace;
-      }
-      // Overflow must stay in the container.
-      return { width: Infinity, height: Infinity };
+      return availableSpace;
   }
 }
 
-export { addHTML, flushHTML, getAvailableSpace };
+function getTransformedBBox(node) {
+  // Take into account rotation and anchor the get the
+  // real bounding box.
+  let w = node.w === "" ? NaN : node.w;
+  let h = node.h === "" ? NaN : node.h;
+  let [centerX, centerY] = [0, 0];
+  switch (node.anchorType || "") {
+    case "bottomCenter":
+      [centerX, centerY] = [w / 2, h];
+      break;
+    case "bottomLeft":
+      [centerX, centerY] = [0, h];
+      break;
+    case "bottomRight":
+      [centerX, centerY] = [w, h];
+      break;
+    case "middleCenter":
+      [centerX, centerY] = [w / 2, h / 2];
+      break;
+    case "middleLeft":
+      [centerX, centerY] = [0, h / 2];
+      break;
+    case "middleRight":
+      [centerX, centerY] = [w, h / 2];
+      break;
+    case "topCenter":
+      [centerX, centerY] = [w / 2, 0];
+      break;
+    case "topRight":
+      [centerX, centerY] = [w, 0];
+      break;
+  }
+
+  let x;
+  let y;
+  switch (node.rotate || 0) {
+    case 0:
+      [x, y] = [-centerX, -centerY];
+      break;
+    case 90:
+      [x, y] = [-centerY, centerX];
+      [w, h] = [h, -w];
+      break;
+    case 180:
+      [x, y] = [centerX, centerY];
+      [w, h] = [-w, -h];
+      break;
+    case 270:
+      [x, y] = [centerY, -centerX];
+      [w, h] = [-h, w];
+      break;
+  }
+
+  return [
+    node.x + x + Math.min(0, w),
+    node.y + y + Math.min(0, h),
+    Math.abs(w),
+    Math.abs(h),
+  ];
+}
+
+/**
+ * Returning true means that the node will be layed out
+ * else the layout will go to its next step (changing of line
+ * in case of lr-tb or changing content area...).
+ */
+function checkDimensions(node, space) {
+  if (node.w === 0 || node.h === 0) {
+    return true;
+  }
+
+  if (space.width <= 0 || space.height <= 0) {
+    return false;
+  }
+
+  const parent = node[$getParent]();
+  const attempt = (node[$extra] && node[$extra].attempt) || 0;
+  switch (parent.layout) {
+    case "lr-tb":
+    case "rl-tb":
+      switch (attempt) {
+        case 0: {
+          let w, h;
+          if (node.w !== "" || node.h !== "") {
+            [, , w, h] = getTransformedBBox(node);
+          }
+          if (node.h !== "" && Math.round(h - space.height) > 1) {
+            return false;
+          }
+          if (node.w !== "") {
+            return Math.round(w - space.width) <= 1;
+          }
+
+          return node.minW <= space.width;
+        }
+        case 1: {
+          if (node.h !== "" && !node[$isSplittable]()) {
+            const [, , , h] = getTransformedBBox(node);
+            if (Math.round(h - space.height) > 1) {
+              return false;
+            }
+          }
+          return true;
+        }
+        default:
+          return true;
+      }
+    case "table":
+    case "tb":
+      if (attempt !== 1 && node.h !== "" && !node[$isSplittable]()) {
+        const [, , , h] = getTransformedBBox(node);
+        if (Math.round(h - space.height) > 1) {
+          return false;
+        }
+      }
+      return true;
+    case "position":
+      const [x, y, w, h] = getTransformedBBox(node);
+      const isWidthOk = node.w === "" || Math.round(w + x - space.width) <= 1;
+      const isHeightOk = node.h === "" || Math.round(h + y - space.height) <= 1;
+
+      if (isWidthOk && isHeightOk) {
+        return true;
+      }
+
+      const area = node[$getTemplateRoot]()[$extra].currentContentArea;
+      if (isWidthOk) {
+        return h + y > area.h;
+      }
+
+      return w + x > area.w;
+    case "rl-row":
+    case "row":
+    default:
+      // No layout, so accept everything.
+      return true;
+  }
+}
+
+export { addHTML, checkDimensions, flushHTML, getAvailableSpace };
