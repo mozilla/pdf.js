@@ -938,6 +938,14 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1716809",
+       "file": "pdfs/xfa_bug1716809.pdf",
+       "md5": "7192f9e27e8b84776d107f57cbe353d5",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_annual_expense_report",
        "file": "pdfs/xfa_annual_expense_report.pdf",
        "md5": "06866e7a6bbc0346789208ef5f6e885c",
