@@ -3178,10 +3178,10 @@ class PartialEvaluator {
   }
 
   /**
-   * @returns {ToUnicodeMap}
+   * @returns {Array}
    * @private
    */
-  _buildSimpleFontToUnicode(properties, forceGlyphs = false) {
+  _simpleFontToUnicode(properties, forceGlyphs = false) {
     assert(!properties.composite, "Must be a simple font.");
 
     const toUnicode = [];
@@ -3242,7 +3242,7 @@ class PartialEvaluator {
                 Number.isNaN(code) &&
                 Number.isInteger(parseInt(codeStr, 16))
               ) {
-                return this._buildSimpleFontToUnicode(
+                return this._simpleFontToUnicode(
                   properties,
                   /* forceGlyphs */ true
                 );
@@ -3275,7 +3275,7 @@ class PartialEvaluator {
       }
       toUnicode[charcode] = String.fromCharCode(glyphsUnicodeMap[glyphName]);
     }
-    return new ToUnicodeMap(toUnicode);
+    return toUnicode;
   }
 
   /**
@@ -3284,7 +3284,7 @@ class PartialEvaluator {
    * @returns {Promise} A Promise that is resolved with a
    *   {ToUnicodeMap|IdentityToUnicodeMap} object.
    */
-  buildToUnicode(properties) {
+  async buildToUnicode(properties) {
     properties.hasIncludedToUnicodeMap =
       !!properties.toUnicode && properties.toUnicode.length > 0;
 
@@ -3294,11 +3294,9 @@ class PartialEvaluator {
       // text-extraction. For simple fonts, containing encoding information,
       // use a fallback ToUnicode map to improve this (fixes issue8229.pdf).
       if (!properties.composite && properties.hasEncoding) {
-        properties.fallbackToUnicode =
-          this._buildSimpleFontToUnicode(properties);
+        properties.fallbackToUnicode = this._simpleFontToUnicode(properties);
       }
-
-      return Promise.resolve(properties.toUnicode);
+      return properties.toUnicode;
     }
 
     // According to the spec if the font is a simple font we should only map
@@ -3307,7 +3305,7 @@ class PartialEvaluator {
     // in pratice it seems better to always try to create a toUnicode map
     // based of the default encoding.
     if (!properties.composite /* is simple font */) {
-      return Promise.resolve(this._buildSimpleFontToUnicode(properties));
+      return new ToUnicodeMap(this._simpleFontToUnicode(properties));
     }
 
     // If the font is a composite font that uses one of the predefined CMaps
@@ -3330,42 +3328,37 @@ class PartialEvaluator {
       // b) Obtain the registry and ordering of the character collection used
       // by the font’s CMap (for example, Adobe and Japan1) from its
       // CIDSystemInfo dictionary.
-      const registry = properties.cidSystemInfo.registry;
-      const ordering = properties.cidSystemInfo.ordering;
+      const { registry, ordering } = properties.cidSystemInfo;
       // c) Construct a second CMap name by concatenating the registry and
       // ordering obtained in step (b) in the format registry–ordering–UCS2
       // (for example, Adobe–Japan1–UCS2).
-      const ucs2CMapName = Name.get(registry + "-" + ordering + "-UCS2");
+      const ucs2CMapName = Name.get(`${registry}-${ordering}-UCS2`);
       // d) Obtain the CMap with the name constructed in step (c) (available
       // from the ASN Web site; see the Bibliography).
-      return CMapFactory.create({
+      const ucs2CMap = await CMapFactory.create({
         encoding: ucs2CMapName,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
         useCMap: null,
-      }).then(function (ucs2CMap) {
-        const cMap = properties.cMap;
-        const toUnicode = [];
-        cMap.forEach(function (charcode, cid) {
-          if (cid > 0xffff) {
-            throw new FormatError("Max size of CID is 65,535");
-          }
-          // e) Map the CID obtained in step (a) according to the CMap
-          // obtained in step (d), producing a Unicode value.
-          const ucs2 = ucs2CMap.lookup(cid);
-          if (ucs2) {
-            toUnicode[charcode] = String.fromCharCode(
-              (ucs2.charCodeAt(0) << 8) + ucs2.charCodeAt(1)
-            );
-          }
-        });
-        return new ToUnicodeMap(toUnicode);
       });
+      const toUnicode = [];
+      properties.cMap.forEach(function (charcode, cid) {
+        if (cid > 0xffff) {
+          throw new FormatError("Max size of CID is 65,535");
+        }
+        // e) Map the CID obtained in step (a) according to the CMap
+        // obtained in step (d), producing a Unicode value.
+        const ucs2 = ucs2CMap.lookup(cid);
+        if (ucs2) {
+          toUnicode[charcode] = String.fromCharCode(
+            (ucs2.charCodeAt(0) << 8) + ucs2.charCodeAt(1)
+          );
+        }
+      });
+      return new ToUnicodeMap(toUnicode);
     }
 
     // The viewer's choice, just use an identity map.
-    return Promise.resolve(
-      new IdentityToUnicodeMap(properties.firstChar, properties.lastChar)
-    );
+    return new IdentityToUnicodeMap(properties.firstChar, properties.lastChar);
   }
 
   readToUnicode(cmapObj) {
