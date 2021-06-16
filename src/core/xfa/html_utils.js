@@ -469,6 +469,7 @@ function createWrapper(node, html) {
     "maxHeight",
     "transform",
     "transformOrigin",
+    "visibility",
   ]) {
     if (style[key] !== undefined) {
       wrapper.attributes.style[key] = style[key];
