@@ -18,6 +18,7 @@ import {
   $addHTML,
   $appendChild,
   $childrenToHTML,
+  $clean,
   $content,
   $extra,
   $finalize,
@@ -4820,11 +4821,7 @@ class TextEdit extends XFAObject {
       "on",
     ]);
     this.id = attributes.id || "";
-    this.multiLine = getInteger({
-      data: attributes.multiLine,
-      defaultValue: 1,
-      validate: x => x === 0,
-    });
+    this.multiLine = attributes.multiLine || "";
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.vScrollPolicy = getStringOption(attributes.vScrollPolicy, [
@@ -4836,6 +4833,17 @@ class TextEdit extends XFAObject {
     this.comb = null;
     this.extras = null;
     this.margin = null;
+  }
+
+  [$clean](builder) {
+    super[$clean](builder);
+    const parent = this[$getParent]();
+    const defaultValue = parent instanceof Draw ? 1 : 0;
+    this.multiLine = getInteger({
+      data: this.multiLine,
+      defaultValue,
+      validate: x => x === 0 || x === 1,
+    });
   }
 
   [$toHTML](availableSpace) {
