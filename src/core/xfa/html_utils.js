@@ -102,24 +102,12 @@ const converters = {
       style.width = measureToString(width);
     } else {
       style.width = "auto";
-      if (node.maxW > 0) {
-        style.maxWidth = measureToString(node.maxW);
-      }
-      if (parent.layout === "position") {
-        style.minWidth = measureToString(node.minW);
-      }
     }
 
     if (height !== "") {
       style.height = measureToString(height);
     } else {
       style.height = "auto";
-      if (node.maxH > 0) {
-        style.maxHeight = measureToString(node.maxH);
-      }
-      if (parent.layout === "position") {
-        style.minHeight = measureToString(node.minH);
-      }
     }
   },
   position(node, style) {
@@ -187,6 +175,20 @@ const converters = {
     }
   },
 };
+
+function setMinMaxDimensions(node, style) {
+  const parent = node[$getParent]();
+  if (parent.layout === "position") {
+    style.minWidth = measureToString(node.minW);
+    if (node.maxW) {
+      style.maxWidth = measureToString(node.maxW);
+    }
+    style.minHeight = measureToString(node.minH);
+    if (node.maxH) {
+      style.maxHeight = measureToString(node.maxH);
+    }
+  }
+}
 
 function layoutText(text, xfaFont, fonts, width) {
   const measure = new TextMeasure(xfaFont, fonts);
@@ -283,16 +285,9 @@ function fixDimensions(node) {
     }
   }
 
-  if (node.layout === "position") {
-    // Acrobat doesn't take into account min, max values
-    // for containers with positioned layout (which makes sense).
-    node.minW = node.minH = 0;
-    node.maxW = node.maxH = Infinity;
-  } else {
-    if (node.layout === "table") {
-      if (node.w === "" && Array.isArray(node.columnWidths)) {
-        node.w = node.columnWidths.reduce((a, x) => a + x, 0);
-      }
+  if (node.layout === "table") {
+    if (node.w === "" && Array.isArray(node.columnWidths)) {
+      node.w = node.columnWidths.reduce((a, x) => a + x, 0);
     }
   }
 }
@@ -471,5 +466,6 @@ export {
   layoutClass,
   layoutText,
   measureToString,
+  setMinMaxDimensions,
   toStyle,
 };

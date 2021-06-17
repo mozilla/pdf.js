@@ -60,6 +60,9 @@ describe("XFAFactory", function () {
       </subform>
       <subform name="second">
         <breakBefore targetType="pageArea" startNew="1"/>
+        <subform>
+          <draw w="1pt" h="1pt"><value><text>foo</text></value></draw>
+        </subform>
       </subform>
     </subform>
   </template>
@@ -133,7 +136,7 @@ describe("XFAFactory", function () {
     <subform name="root" mergeMode="matchTemplate">
       <pageSet>
         <pageArea>
-          <contentArea x="123pt" w="456pt" h="789pt"/>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
           <medium stock="default" short="456pt" long="789pt"/>
           <field y="1pt" w="11pt" h="22pt" x="2pt">
             <ui>
@@ -146,6 +149,7 @@ describe("XFAFactory", function () {
         </pageArea>
       </pageSet>
       <subform name="first">
+        <draw w="1pt" h="1pt"><value><text>foo</text></value></draw>
       </subform>
     </subform>
   </template>
