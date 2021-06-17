@@ -14,6 +14,11 @@
  */
 
 import {
+  createMatrix,
+  getShadingPattern,
+  TilingPattern,
+} from "./pattern_helper.js";
+import {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   ImageKind,
@@ -27,7 +32,6 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -191,6 +195,17 @@ function addContextCurrentTransform(ctx) {
 
     this._originalRotate(angle);
   };
+}
+
+function getAdjustmentTransformation(transform, width, height) {
+  // The pattern will be created at the size of the current page or form object,
+  // but the mask is usually scaled differently and offset, so we must account
+  // for these to shift and rescale the pattern to the correctly location.
+  let patternTransform = createMatrix(transform);
+  patternTransform = patternTransform.scale(1 / width, -1 / height);
+  patternTransform = patternTransform.translate(0, -height);
+  patternTransform = patternTransform.inverse();
+  return patternTransform;
 }
 
 class CachedCanvases {
@@ -2294,8 +2309,16 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       maskCtx.globalCompositeOperation = "source-in";
 
+      let patternTransform = null;
+      if (isPatternFill) {
+        patternTransform = getAdjustmentTransformation(
+          ctx.mozCurrentTransform,
+          width,
+          height
+        );
+      }
       maskCtx.fillStyle = isPatternFill
-        ? fillColor.getPattern(maskCtx, this)
+        ? fillColor.getPattern(maskCtx, this, false, patternTransform)
         : fillColor;
       maskCtx.fillRect(0, 0, width, height);
 
@@ -2332,14 +2355,23 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       maskCtx.globalCompositeOperation = "source-in";
 
+      const ctx = this.ctx;
+      let patternTransform = null;
+      if (isPatternFill) {
+        patternTransform = getAdjustmentTransformation(
+          ctx.mozCurrentTransform,
+          width,
+          height
+        );
+      }
+
       maskCtx.fillStyle = isPatternFill
-        ? fillColor.getPattern(maskCtx, this)
+        ? fillColor.getPattern(maskCtx, this, false, patternTransform)
         : fillColor;
       maskCtx.fillRect(0, 0, width, height);
 
       maskCtx.restore();
 
-      const ctx = this.ctx;
       for (let i = 0, ii = positions.length; i < ii; i += 2) {
         ctx.save();
         ctx.transform(
@@ -2381,8 +2413,17 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
         maskCtx.globalCompositeOperation = "source-in";
 
+        let patternTransform = null;
+        if (isPatternFill) {
+          patternTransform = getAdjustmentTransformation(
+            ctx.mozCurrentTransform,
+            width,
+            height
+          );
+        }
+
         maskCtx.fillStyle = isPatternFill
-          ? fillColor.getPattern(maskCtx, this)
+          ? fillColor.getPattern(maskCtx, this, false, patternTransform)
           : fillColor;
         maskCtx.fillRect(0, 0, width, height);
 
