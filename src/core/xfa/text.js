@@ -59,15 +59,25 @@ class FontInfo {
       fonts.Arial ||
       fonts.ArialMT ||
       Object.values(fonts)[0];
-    const pdfFont = font.regular;
-    const info = pdfFont.cssFontInfo;
+    if (font && font.regular) {
+      const pdfFont = font.regular;
+      const info = pdfFont.cssFontInfo;
+      const xfaFont = {
+        typeface: info.fontFamily,
+        posture: "normal",
+        weight: "normal",
+        size: 10,
+      };
+      return [pdfFont, xfaFont];
+    }
+
     const xfaFont = {
-      typeface: info.fontFamily,
+      typeface: "Courier",
       posture: "normal",
       weight: "normal",
       size: 10,
     };
-    return [pdfFont, xfaFont];
+    return [null, xfaFont];
   }
 }
 
@@ -124,27 +134,39 @@ class TextMeasure {
     }
 
     const lastFont = this.fontSelector.topFont();
-    const pdfFont = lastFont.pdfFont;
     const fontSize = lastFont.xfaFont.size;
-    const lineHeight = Math.round(Math.max(1, pdfFont.lineHeight) * fontSize);
-    const scale = fontSize / 1000;
+    if (lastFont.pdfFont) {
+      const pdfFont = lastFont.pdfFont;
+      const lineHeight = Math.round(Math.max(1, pdfFont.lineHeight) * fontSize);
+      const scale = fontSize / 1000;
 
+      for (const line of str.split(/[\u2029\n]/)) {
+        const encodedLine = pdfFont.encodeString(line).join("");
+        const glyphs = pdfFont.charsToGlyphs(encodedLine);
+
+        for (const glyph of glyphs) {
+          this.glyphs.push([
+            glyph.width * scale,
+            lineHeight,
+            glyph.unicode === " ",
+            false,
+          ]);
+        }
+
+        this.glyphs.push([0, 0, false, true]);
+      }
+      this.glyphs.pop();
+      return;
+    }
+
+    // When we have no font in the pdf, just use the font size as default width.
     for (const line of str.split(/[\u2029\n]/)) {
-      const encodedLine = pdfFont.encodeString(line).join("");
-      const glyphs = pdfFont.charsToGlyphs(encodedLine);
-
-      for (const glyph of glyphs) {
-        this.glyphs.push([
-          glyph.width * scale,
-          lineHeight,
-          glyph.unicode === " ",
-          false,
-        ]);
+      for (const char of line.split("")) {
+        this.glyphs.push([fontSize, fontSize, char === " ", false]);
       }
 
       this.glyphs.push([0, 0, false, true]);
     }
-
     this.glyphs.pop();
   }
 
