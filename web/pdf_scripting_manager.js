@@ -46,7 +46,6 @@ class PDFScriptingManager {
 
     this._scripting = null;
     this._mouseState = Object.create(null);
-    this._pageEventsReady = false;
     this._ready = false;
 
     this._eventBus = eventBus;
@@ -308,7 +307,6 @@ class PDFScriptingManager {
         return;
       }
     }
-
     delete detail.id;
     delete detail.siblings;
 
@@ -333,10 +331,8 @@ class PDFScriptingManager {
 
     if (initialize) {
       this._closeCapability = createPromiseCapability();
-
-      this._pageEventsReady = true;
     }
-    if (!this._pageEventsReady) {
+    if (!this._closeCapability) {
       return; // Scripting isn't fully initialized yet.
     }
     const pageView = this._pdfViewer.getPageView(/* index = */ pageNumber - 1);
@@ -373,7 +369,7 @@ class PDFScriptingManager {
     const pdfDocument = this._pdfDocument,
       visitedPages = this._visitedPages;
 
-    if (!this._pageEventsReady) {
+    if (!this._closeCapability) {
       return; // Scripting isn't fully initialized yet.
     }
     if (this._pageOpenPending.has(pageNumber)) {
@@ -481,7 +477,6 @@ class PDFScriptingManager {
 
     this._scripting = null;
     delete this._mouseState.isDown;
-    this._pageEventsReady = false;
     this._ready = false;
 
     this._destroyCapability?.resolve();
