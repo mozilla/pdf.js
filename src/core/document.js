@@ -857,6 +857,10 @@ class PDFDocument {
     return shadow(this, "xfaFaxtory", null);
   }
 
+  get isPureXfa() {
+    return this.xfaFactory && this.xfaFactory.isValid();
+  }
+
   get htmlForXfa() {
     if (this.xfaFactory) {
       return this.xfaFactory.getPages();
@@ -898,8 +902,14 @@ class PDFDocument {
       options,
     });
     const operatorList = new OperatorList();
+    const pdfFonts = [];
     const initialState = {
-      font: null,
+      get font() {
+        return pdfFonts[pdfFonts.length - 1];
+      },
+      set font(font) {
+        pdfFonts.push(font);
+      },
       clone() {
         return this;
       },
@@ -947,6 +957,7 @@ class PDFDocument {
       );
     }
     await Promise.all(promises);
+    this.xfaFactory.setFonts(pdfFonts);
   }
 
   get formInfo() {

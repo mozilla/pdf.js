@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-import { $toHTML } from "./xfa_object.js";
+import { $fonts, $toHTML } from "./xfa_object.js";
 import { Binder } from "./bind.js";
+import { warn } from "../../shared/util.js";
 import { XFAParser } from "./parser.js";
 
 class XFAFactory {
@@ -22,18 +23,25 @@ class XFAFactory {
     try {
       this.root = new XFAParser().parse(XFAFactory._createDocument(data));
       this.form = new Binder(this.root).bind();
-      this._createPages();
     } catch (e) {
-      console.log(e);
+      warn(`XFA - an error occured during parsing and binding: ${e}`);
     }
   }
 
+  isValid() {
+    return this.root && this.form;
+  }
+
   _createPages() {
-    this.pages = this.form[$toHTML]();
-    this.dims = this.pages.children.map(c => {
-      const { width, height } = c.attributes.style;
-      return [0, 0, parseInt(width), parseInt(height)];
-    });
+    try {
+      this.pages = this.form[$toHTML]();
+      this.dims = this.pages.children.map(c => {
+        const { width, height } = c.attributes.style;
+        return [0, 0, parseInt(width), parseInt(height)];
+      });
+    } catch (e) {
+      warn(`XFA - an error occured during layout: ${e}`);
+    }
   }
 
   getBoundingBox(pageIndex) {
@@ -41,7 +49,33 @@ class XFAFactory {
   }
 
   get numberPages() {
+    if (!this.pages) {
+      this._createPages();
+    }
     return this.dims.length;
+  }
+
+  setFonts(fonts) {
+    this.form[$fonts] = Object.create(null);
+    for (const font of fonts) {
+      const cssFontInfo = font.cssFontInfo;
+      const name = cssFontInfo.fontFamily;
+      if (!this.form[$fonts][name]) {
+        this.form[$fonts][name] = Object.create(null);
+      }
+      let property = "regular";
+      if (cssFontInfo.italicAngle !== "0") {
+        if (parseFloat(cssFontInfo.fontWeight) >= 700) {
+          property = "bolditalic";
+        } else {
+          property = "italic";
+        }
+      } else if (parseFloat(cssFontInfo.fontWeight) >= 700) {
+        property = "bold";
+      }
+
+      this.form[$fonts][name][property] = font;
+    }
   }
 
   getPages() {

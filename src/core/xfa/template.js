@@ -23,6 +23,7 @@ import {
   $extra,
   $finalize,
   $flushHTML,
+  $fonts,
   $getAvailableSpace,
   $getChildren,
   $getContainedChildren,
@@ -1522,14 +1523,51 @@ class Draw extends XFAObject {
 
     fixDimensions(this);
 
-    if (this.w !== "" && this.h === "" && this.value) {
-      const text = this.value[$text]();
-      if (text) {
-        const { height } = layoutText(text, this.font.size, {
-          width: this.w,
-          height: Infinity,
-        });
-        this.h = height || "";
+    if ((this.w === "" || this.h === "") && this.value) {
+      const maxWidth = this.w === "" ? availableSpace.width : this.w;
+      const fonts = getRoot(this)[$fonts];
+      let font = this.font;
+      if (!font) {
+        let parent = this[$getParent]();
+        while (!(parent instanceof Template)) {
+          if (parent.font) {
+            font = parent.font;
+            break;
+          }
+          parent = parent[$getParent]();
+        }
+      }
+
+      let height = null;
+      let width = null;
+      if (
+        this.value.exData &&
+        this.value.exData[$content] &&
+        this.value.exData.contentType === "text/html"
+      ) {
+        const res = layoutText(
+          this.value.exData[$content],
+          font,
+          fonts,
+          maxWidth
+        );
+        width = res.width;
+        height = res.height;
+      } else {
+        const text = this.value[$text]();
+        if (text) {
+          const res = layoutText(text, font, fonts, maxWidth);
+          width = res.width;
+          height = res.height;
+        }
+      }
+
+      if (width !== null && this.w === "") {
+        this.w = width;
+      }
+
+      if (height !== null && this.h === "") {
+        this.h = height;
       }
     }
 
@@ -2623,7 +2661,7 @@ class Font extends XFAObject {
     ]);
     this.posture = getStringOption(attributes.posture, ["normal", "italic"]);
     this.size = getMeasurement(attributes.size, "10pt");
-    this.typeface = attributes.typeface || "";
+    this.typeface = attributes.typeface || "Courier";
     this.underline = getInteger({
       data: attributes.underline,
       defaultValue: 0,
@@ -4484,7 +4522,6 @@ class Template extends XFAObject {
         children: [],
       });
     }
-
     this[$extra] = {
       overflowNode: null,
       pageNumber: 1,
