@@ -18,8 +18,10 @@ import {
   $childrenToHTML,
   $content,
   $extra,
+  $getChildren,
   $nodeName,
   $onText,
+  $pushGlyphs,
   $text,
   $toHTML,
   XmlObject,
@@ -167,6 +169,39 @@ class XhtmlObject extends XmlObject {
     }
   }
 
+  [$pushGlyphs](measure) {
+    const xfaFont = Object.create(null);
+    for (const [key, value] of this.style
+      .split(";")
+      .map(s => s.split(":", 2))) {
+      if (!key.startsWith("font-")) {
+        continue;
+      }
+      if (key === "font-family") {
+        xfaFont.typeface = value;
+      } else if (key === "font-size") {
+        xfaFont.size = getMeasurement(value);
+      } else if (key === "font-weight") {
+        xfaFont.weight = value;
+      } else if (key === "font-style") {
+        xfaFont.posture = value;
+      }
+    }
+    measure.pushFont(xfaFont);
+    if (this[$content]) {
+      measure.addString(this[$content]);
+    } else {
+      for (const child of this[$getChildren]()) {
+        if (child[$nodeName] === "#text") {
+          measure.addString(child[$content]);
+          continue;
+        }
+        child[$pushGlyphs](measure);
+      }
+    }
+    measure.popFont();
+  }
+
   [$toHTML](availableSpace) {
     const children = [];
     this[$extra] = {
@@ -202,6 +237,12 @@ class B extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "b");
   }
+
+  [$pushGlyphs](measure) {
+    measure.pushFont({ weight: "bold" });
+    super[$pushGlyphs](measure);
+    measure.popFont();
+  }
 }
 
 class Body extends XhtmlObject {
@@ -228,6 +269,10 @@ class Br extends XhtmlObject {
 
   [$text]() {
     return "\n";
+  }
+
+  [$pushGlyphs](measure) {
+    measure.addString("\n");
   }
 
   [$toHTML](availableSpace) {
@@ -282,6 +327,12 @@ class I extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "i");
   }
+
+  [$pushGlyphs](measure) {
+    measure.pushFont({ posture: "italic" });
+    super[$pushGlyphs](measure);
+    measure.popFont();
+  }
 }
 
 class Li extends XhtmlObject {
@@ -299,6 +350,11 @@ class Ol extends XhtmlObject {
 class P extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "p");
+  }
+
+  [$pushGlyphs](measure) {
+    super[$pushGlyphs](measure);
+    measure.addString("\n");
   }
 
   [$text]() {
