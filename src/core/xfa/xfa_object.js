@@ -47,7 +47,7 @@ const $getContainedChildren = Symbol();
 const $getNextPage = Symbol();
 const $getSubformParent = Symbol();
 const $getParent = Symbol();
-const $pushGlyphs = Symbol();
+const $getTemplateRoot = Symbol();
 const $global = Symbol();
 const $hasItem = Symbol();
 const $hasSettableValue = Symbol();
@@ -57,6 +57,7 @@ const $insertAt = Symbol();
 const $isCDATAXml = Symbol();
 const $isDataValue = Symbol();
 const $isDescendent = Symbol();
+const $isSplittable = Symbol();
 const $isTransparent = Symbol();
 const $lastAttribute = Symbol();
 const $namespaceId = Symbol("namespaceId");
@@ -65,6 +66,7 @@ const $nsAttributes = Symbol();
 const $onChild = Symbol();
 const $onChildCheck = Symbol();
 const $onText = Symbol();
+const $pushGlyphs = Symbol();
 const $removeChild = Symbol();
 const $root = Symbol("root");
 const $resolvePrototypes = Symbol();
@@ -160,6 +162,18 @@ class XFAObject {
     if (this.id && this[$namespaceId] === NamespaceIds.template.id) {
       ids.set(this.id, this);
     }
+  }
+
+  [$getTemplateRoot]() {
+    let parent = this[$getParent]();
+    while (parent[$nodeName] !== "template") {
+      parent = parent[$getParent]();
+    }
+    return parent;
+  }
+
+  [$isSplittable]() {
+    return false;
   }
 
   [$appendChild](child) {
@@ -985,6 +999,7 @@ export {
   $getParent,
   $getRealChildrenByNameIt,
   $getSubformParent,
+  $getTemplateRoot,
   $global,
   $hasItem,
   $hasSettableValue,
@@ -994,6 +1009,7 @@ export {
   $isCDATAXml,
   $isDataValue,
   $isDescendent,
+  $isSplittable,
   $isTransparent,
   $namespaceId,
   $nodeName,
