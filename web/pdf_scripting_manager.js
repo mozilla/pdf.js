@@ -96,7 +96,14 @@ class PDFScriptingManager {
     if (pdfDocument !== this._pdfDocument) {
       return; // The document was closed while the data resolved.
     }
-    this._scripting = this._createScripting();
+    try {
+      this._scripting = this._createScripting();
+    } catch (error) {
+      console.error(`PDFScriptingManager.setDocument: "${error?.message}".`);
+
+      await this._destroyScripting();
+      return;
+    }
 
     this._internalEvents.set("updatefromsandbox", event => {
       if (event?.source !== window) {
