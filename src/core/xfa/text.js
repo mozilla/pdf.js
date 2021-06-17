@@ -60,7 +60,7 @@ class FontInfo {
       fonts.ArialMT ||
       Object.values(fonts)[0];
     const pdfFont = font.regular;
-    const info = this.pdfFont.cssFontInfo;
+    const info = pdfFont.cssFontInfo;
     const xfaFont = {
       typeface: info.fontFamily,
       posture: "normal",
