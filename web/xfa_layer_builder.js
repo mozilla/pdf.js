@@ -44,9 +44,8 @@ class XfaLayerBuilder {
    */
   render(viewport, intent = "display") {
     if (intent === "print") {
-      viewport.dontFlip = true;
       const parameters = {
-        viewport,
+        viewport: viewport.clone({ dontFlip: true }),
         div: this.div,
         xfa: this.xfaHtml,
         page: null,
@@ -76,6 +75,7 @@ class XfaLayerBuilder {
           xfa,
           page: this.pdfPage,
           annotationStorage: this.annotationStorage,
+          intent,
         };
 
         if (this.div) {
