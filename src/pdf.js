@@ -18,6 +18,7 @@ import {
   addLinkAttributes,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getXfaPageViewport,
   isPdfFile,
   isValidFetchUrl,
   LinkTarget,
@@ -108,6 +109,7 @@ export {
   loadScript,
   PDFDateString,
   RenderingCancelledException,
+  getXfaPageViewport,
   // From "./display/api.js":
   build,
   getDocument,

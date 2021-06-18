@@ -15,19 +15,17 @@
 
 import { CSS_UNITS } from "./ui_utils.js";
 import { DefaultXfaLayerFactory } from "./xfa_layer_builder.js";
+import { getXfaPageViewport } from "pdfjs-lib";
 
 function getXfaHtmlForPrinting(printContainer, pdfDocument) {
   const xfaHtml = pdfDocument.allXfaHtml;
   const factory = new DefaultXfaLayerFactory();
   const scale = Math.round(CSS_UNITS * 100) / 100;
+
   for (const xfaPage of xfaHtml.children) {
     const page = document.createElement("div");
     page.className = "xfaPrintedPage";
     printContainer.appendChild(page);
-
-    const { width, height } = xfaPage.attributes.style;
-    const viewBox = [0, 0, parseInt(width), parseInt(height)];
-    const viewport = { viewBox, scale, rotation: 0 };
 
     const builder = factory.createXfaLayerBuilder(
       /* pageDiv = */ page,
@@ -35,6 +33,8 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
       /* annotationStorage = */ pdfDocument.annotationStorage,
       /* xfaHtml = */ xfaPage
     );
+    const viewport = getXfaPageViewport(xfaPage, { scale });
+
     builder.render(viewport, "print");
   }
 }
