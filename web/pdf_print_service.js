@@ -14,7 +14,7 @@
  */
 
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
-import { getXfaHtmlForPrinting } from "./ui_utils.js";
+import { getXfaHtmlForPrinting } from "./print_utils.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 let activeService = null;
