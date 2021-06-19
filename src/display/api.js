@@ -153,7 +153,9 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  *   Node.js. The default value is {DOMCMapReaderFactory}.
  * @property {boolean} [useSystemFonts] - When `true`, fonts that aren't
  *   embedded in the PDF document will fallback to a system font.
- *   The default value is `true` in web environments and `false` in Node.js.
+ *   The default value is `true` in web environments and `false` in Node.js;
+ *   unless `disableFontFace === true` in which case this defaults to `false`
+ *   regardless of the environment (to prevent completely broken fonts).
  * @property {string} [standardFontDataUrl] - The URL where the standard font
  *   files are located. Include the trailing slash.
  * @property {Object} [StandardFontDataFactory] - The factory that will be used
@@ -328,12 +330,6 @@ function getDocument(src) {
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }
-  if (typeof params.useSystemFonts !== "boolean") {
-    params.useSystemFonts = !(
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      isNodeJS
-    );
-  }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
       params.CMapReaderFactory === DOMCMapReaderFactory &&
@@ -345,6 +341,13 @@ function getDocument(src) {
   if (typeof params.disableFontFace !== "boolean") {
     params.disableFontFace =
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS;
+  }
+  if (typeof params.useSystemFonts !== "boolean") {
+    params.useSystemFonts =
+      !(
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+        isNodeJS
+      ) && !params.disableFontFace;
   }
   if (typeof params.ownerDocument === "undefined") {
     params.ownerDocument = globalThis.document;
