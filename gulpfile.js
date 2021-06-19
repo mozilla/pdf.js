@@ -1382,7 +1382,10 @@ gulp.task("types", function (done) {
     "emitDeclarationOnly",
     "moduleResolution node",
   ].join(" --");
-  exec(`"node_modules/.bin/tsc" --${args} src/pdf.js`, done);
+  exec(
+    `"node_modules/.bin/tsc" --${args} src/pdf.js web/pdf_viewer.component.js`,
+    done
+  );
 });
 
 function buildLibHelper(bundleDefines, inputStream, outputDir) {
@@ -1993,7 +1996,7 @@ function packageBowerJson() {
     name: DIST_NAME,
     version: VERSION,
     main: "build/pdf.js",
-    types: "types/pdf.d.ts",
+    types: "types/src/pdf.d.ts",
     description: DIST_DESCRIPTION,
     keywords: DIST_KEYWORDS,
     homepage: DIST_HOMEPAGE,
