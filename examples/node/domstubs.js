@@ -93,9 +93,7 @@ DOMElement.prototype = {
   },
 
   setAttribute: function DOMElement_setAttribute(name, value) {
-    value = value || "";
-    value = xmlEncode(value);
-    this.attributes[name] = value;
+    this.attributes[name] = value || "";
   },
 
   setAttributeNS: function DOMElement_setAttributeNS(NS, name, value) {
