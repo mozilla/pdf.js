@@ -1457,6 +1457,13 @@ class Draw extends XFAObject {
     fixDimensions(this);
 
     if ((this.w === "" || this.h === "") && this.value) {
+      let marginH = 0;
+      let marginV = 0;
+      if (this.margin) {
+        marginH = this.margin.leftInset + this.margin.rightInset;
+        marginV = this.margin.topInset + this.margin.bottomInset;
+      }
+
       const maxWidth = this.w === "" ? availableSpace.width : this.w;
       const fontFinder = this[$globalData].fontFinder;
       let font = this.font;
@@ -1496,11 +1503,11 @@ class Draw extends XFAObject {
       }
 
       if (width !== null && this.w === "") {
-        this.w = width;
+        this.w = width + marginH;
       }
 
       if (height !== null && this.h === "") {
-        this.h = height;
+        this.h = height + marginV;
       }
     }
 
