@@ -3143,7 +3143,7 @@ class PartialEvaluator {
       // Heuristic: we have to check if the font is a standard one also
       if (isSymbolicFont) {
         encoding = MacRomanEncoding;
-        if (!properties.file) {
+        if (!properties.file || properties.isInternalFont) {
           if (/Symbol/i.test(properties.name)) {
             encoding = SymbolSetEncoding;
           } else if (/Dingbats|Wingdings/i.test(properties.name)) {
@@ -3791,6 +3791,7 @@ class PartialEvaluator {
           isType3Font,
         };
         const widths = dict.get("Widths");
+
         const standardFontName = getStandardFontName(baseFontName);
         let file = null;
         if (standardFontName) {
@@ -3889,7 +3890,7 @@ class PartialEvaluator {
         isInternalFont = !!fontFile;
         type = "TrueType";
       }
-    } else if (type === "Type1") {
+    } else if (!isType3Font) {
       const standardFontName = getStandardFontName(fontName.name);
       if (standardFontName) {
         isStandardFont = true;
