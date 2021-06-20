@@ -836,6 +836,7 @@ function createNameTable(name, proto) {
 class Font {
   constructor(name, file, properties) {
     this.name = name;
+    this.psName = null;
     this.mimetype = null;
     this.disableFontFace = false;
 
@@ -2730,6 +2731,7 @@ class Font {
       // ... using existing 'name' table as prototype
       const namePrototype = readNameTable(tables.name);
       tables.name.data = createNameTable(name, namePrototype);
+      this.psName = namePrototype[0][6] || null;
     }
 
     const builder = new OpenTypeFileBuilder(header.version);

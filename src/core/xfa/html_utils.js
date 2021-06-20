@@ -190,8 +190,8 @@ function setMinMaxDimensions(node, style) {
   }
 }
 
-function layoutText(text, xfaFont, fonts, width) {
-  const measure = new TextMeasure(xfaFont, fonts);
+function layoutText(text, xfaFont, fontFinder, width) {
+  const measure = new TextMeasure(xfaFont, fontFinder);
   if (typeof text === "string") {
     measure.addString(text);
   } else {
@@ -448,13 +448,20 @@ function fixTextIndent(styles) {
   }
 }
 
-function getFonts(family) {
+function getFonts(family, fontFinder) {
   if (family.startsWith("'") || family.startsWith('"')) {
     family = family.slice(1, family.length - 1);
   }
 
-  const fonts = [`"${family}"`, `"${family}-PdfJS-XFA"`];
-  return fonts.join(",");
+  const pdfFont = fontFinder.find(family);
+  if (pdfFont) {
+    const { fontFamily } = pdfFont.regular.cssFontInfo;
+    if (fontFamily !== family) {
+      return `"${family}","${fontFamily}"`;
+    }
+  }
+
+  return `"${family}"`;
 }
 
 export {

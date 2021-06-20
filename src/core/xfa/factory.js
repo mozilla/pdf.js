@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-import { $fonts, $toHTML } from "./xfa_object.js";
+import { $globalData, $toHTML } from "./xfa_object.js";
 import { Binder } from "./bind.js";
+import { FontFinder } from "./fonts.js";
 import { warn } from "../../shared/util.js";
 import { XFAParser } from "./parser.js";
 
@@ -23,6 +24,7 @@ class XFAFactory {
     try {
       this.root = new XFAParser().parse(XFAFactory._createDocument(data));
       this.form = new Binder(this.root).bind();
+      this.form[$globalData].template = this.form;
     } catch (e) {
       warn(`XFA - an error occured during parsing and binding: ${e}`);
     }
@@ -56,26 +58,7 @@ class XFAFactory {
   }
 
   setFonts(fonts) {
-    this.form[$fonts] = Object.create(null);
-    for (const font of fonts) {
-      const cssFontInfo = font.cssFontInfo;
-      const name = cssFontInfo.fontFamily;
-      if (!this.form[$fonts][name]) {
-        this.form[$fonts][name] = Object.create(null);
-      }
-      let property = "regular";
-      if (cssFontInfo.italicAngle !== "0") {
-        if (parseFloat(cssFontInfo.fontWeight) >= 700) {
-          property = "bolditalic";
-        } else {
-          property = "italic";
-        }
-      } else if (parseFloat(cssFontInfo.fontWeight) >= 700) {
-        property = "bold";
-      }
-
-      this.form[$fonts][name][property] = font;
-    }
+    this.form[$globalData].fontFinder = new FontFinder(fonts);
   }
 
   getPages() {
