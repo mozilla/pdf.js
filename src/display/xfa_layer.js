@@ -181,6 +181,17 @@ class XfaLayer {
         childHtml.appendChild(document.createTextNode(child.value));
       }
     }
+
+    for (const el of rootDiv.querySelectorAll(
+      ".xfaDisabled input, .xfaDisabled textarea"
+    )) {
+      el.setAttribute("disabled", true);
+    }
+    for (const el of rootDiv.querySelectorAll(
+      ".xfaReadOnly input, .xfaReadOnly textarea"
+    )) {
+      el.setAttribute("readOnly", true);
+    }
   }
 
   /**
