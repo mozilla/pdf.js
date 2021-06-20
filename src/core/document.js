@@ -926,7 +926,9 @@ class PDFDocument {
       if (!(descriptor instanceof Dict)) {
         continue;
       }
-      const fontFamily = descriptor.get("FontFamily");
+      let fontFamily = descriptor.get("FontFamily");
+      // For example, "Wingdings 3" is not a valid font name in the css specs.
+      fontFamily = fontFamily.replace(/[ ]+([0-9])/g, "$1");
       const fontWeight = descriptor.get("FontWeight");
 
       // Angle is expressed in degrees counterclockwise in PDF
@@ -956,6 +958,7 @@ class PDFDocument {
           })
       );
     }
+
     await Promise.all(promises);
     this.xfaFactory.setFonts(pdfFonts);
   }

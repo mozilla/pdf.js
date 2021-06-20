@@ -17,19 +17,16 @@ const WIDTH_FACTOR = 1.2;
 const HEIGHT_FACTOR = 1.2;
 
 class FontInfo {
-  constructor(xfaFont, fonts) {
+  constructor(xfaFont, fontFinder) {
     if (!xfaFont) {
-      [this.pdfFont, this.xfaFont] = this.defaultFont(fonts);
+      [this.pdfFont, this.xfaFont] = this.defaultFont(fontFinder);
       return;
     }
 
     this.xfaFont = xfaFont;
-    let typeface = fonts[xfaFont.typeface];
+    const typeface = fontFinder.find(xfaFont.typeface);
     if (!typeface) {
-      typeface = fonts[`${xfaFont.typeface}-PdfJS-XFA`];
-    }
-    if (!typeface) {
-      [this.pdfFont, this.xfaFont] = this.defaultFont(fonts);
+      [this.pdfFont, this.xfaFont] = this.defaultFont(fontFinder);
       return;
     }
 
@@ -47,18 +44,17 @@ class FontInfo {
     }
 
     if (!this.pdfFont) {
-      [this.pdfFont, this.xfaFont] = this.defaultFont(fonts);
+      [this.pdfFont, this.xfaFont] = this.defaultFont(fontFinder);
     }
   }
 
-  defaultFont(fonts) {
+  defaultFont(fontFinder) {
     // TODO: Add a default font based on Liberation.
     const font =
-      fonts.Helvetica ||
-      fonts["Myriad Pro"] ||
-      fonts.Arial ||
-      fonts.ArialMT ||
-      Object.values(fonts)[0];
+      fontFinder.find("Helvetica", false) ||
+      fontFinder.find("Myriad Pro", false) ||
+      fontFinder.find("Arial", false) ||
+      fontFinder.getDefault();
     if (font && font.regular) {
       const pdfFont = font.regular;
       const info = pdfFont.cssFontInfo;
@@ -82,9 +78,9 @@ class FontInfo {
 }
 
 class FontSelector {
-  constructor(defaultXfaFont, fonts) {
-    this.fonts = fonts;
-    this.stack = [new FontInfo(defaultXfaFont, fonts)];
+  constructor(defaultXfaFont, fontFinder) {
+    this.fontFinder = fontFinder;
+    this.stack = [new FontInfo(defaultXfaFont, fontFinder)];
   }
 
   pushFont(xfaFont) {
@@ -95,7 +91,7 @@ class FontSelector {
       }
     }
 
-    const fontInfo = new FontInfo(xfaFont, this.fonts);
+    const fontInfo = new FontInfo(xfaFont, this.fontFinder);
     if (!fontInfo.pdfFont) {
       fontInfo.pdfFont = lastFont.pdfFont;
     }

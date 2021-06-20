@@ -23,7 +23,6 @@ import {
   $extra,
   $finalize,
   $flushHTML,
-  $fonts,
   $getAvailableSpace,
   $getChildren,
   $getContainedChildren,
@@ -31,6 +30,7 @@ import {
   $getParent,
   $getSubformParent,
   $getTemplateRoot,
+  $globalData,
   $hasItem,
   $hasSettableValue,
   $ids,
@@ -1441,7 +1441,7 @@ class Draw extends XFAObject {
 
     if ((this.w === "" || this.h === "") && this.value) {
       const maxWidth = this.w === "" ? availableSpace.width : this.w;
-      const fonts = this[$getTemplateRoot]()[$fonts];
+      const fontFinder = this[$globalData].fontFinder;
       let font = this.font;
       if (!font) {
         let parent = this[$getParent]();
@@ -1464,7 +1464,7 @@ class Draw extends XFAObject {
         const res = layoutText(
           this.value.exData[$content],
           font,
-          fonts,
+          fontFinder,
           maxWidth
         );
         width = res.width;
@@ -1472,7 +1472,7 @@ class Draw extends XFAObject {
       } else {
         const text = this.value[$text]();
         if (text) {
-          const res = layoutText(text, font, fonts, maxWidth);
+          const res = layoutText(text, font, fontFinder, maxWidth);
           width = res.width;
           height = res.height;
         }
@@ -2660,7 +2660,7 @@ class Font extends XFAObject {
       style.fontSize = fontSize;
     }
 
-    style.fontFamily = getFonts(this.typeface);
+    style.fontFamily = getFonts(this.typeface, this[$globalData].fontFinder);
 
     if (this.underline !== 0) {
       style.textDecoration = "underline";
