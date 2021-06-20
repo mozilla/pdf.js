@@ -448,6 +448,18 @@ function fixTextIndent(styles) {
   }
 }
 
+function setAccess(node, classNames) {
+  switch (node.access) {
+    case "nonInteractive":
+    case "readOnly":
+      classNames.push("xfaReadOnly");
+      break;
+    case "protected":
+      classNames.push("xfaDisabled");
+      break;
+  }
+}
+
 function getFonts(family, fontFinder) {
   if (family.startsWith("'") || family.startsWith('"')) {
     family = family.slice(1, family.length - 1);
@@ -473,6 +485,7 @@ export {
   layoutClass,
   layoutText,
   measureToString,
+  setAccess,
   setMinMaxDimensions,
   toStyle,
 };

@@ -72,6 +72,7 @@ import {
   layoutClass,
   layoutText,
   measureToString,
+  setAccess,
   setMinMaxDimensions,
   toStyle,
 } from "./html_utils.js";
@@ -2023,7 +2024,10 @@ class ExclGroup extends XFAObject {
     const children = [];
     const attributes = {
       id: this[$uid],
+      class: [],
     };
+
+    setAccess(this, attributes.class);
 
     if (!this[$extra]) {
       this[$extra] = Object.create(null);
@@ -2328,6 +2332,8 @@ class Field extends XFAObject {
       id: this[$uid],
       class: classNames,
     };
+
+    setAccess(this, classNames);
 
     if (this.name) {
       attributes.xfaName = this.name;
@@ -4171,7 +4177,10 @@ class Subform extends XFAObject {
     const children = [];
     const attributes = {
       id: this[$uid],
+      class: [],
     };
+
+    setAccess(this, attributes.class);
 
     if (!this[$extra]) {
       this[$extra] = Object.create(null);

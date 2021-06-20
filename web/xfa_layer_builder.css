@@ -277,6 +277,13 @@
   flex: 1;
 }
 
+.xfaDisabled input,
+.xfaDisabled textarea,
+.xfaReadOnly input,
+.xfaReadOnly textarea {
+  background: initial;
+}
+
 @media print {
   .xfaTextfield,
   .xfaSelect {
