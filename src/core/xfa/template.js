@@ -19,7 +19,6 @@ import {
   $appendChild,
   $childrenToHTML,
   $clean,
-  $cleanPage,
   $content,
   $extra,
   $finalize,
@@ -38,7 +37,6 @@ import {
   $isCDATAXml,
   $isSplittable,
   $isTransparent,
-  $isUsable,
   $namespaceId,
   $nodeName,
   $onChild,
@@ -2400,10 +2398,8 @@ class Field extends XFAObject {
 
     const caption = this.caption ? this.caption[$toHTML]().html : null;
     if (!caption) {
-      if (ui.attributes.class) {
-        // Even if no caption this class will help to center the ui.
-        ui.attributes.class.push("xfaLeft");
-      }
+      // Even if no caption this class will help to center the ui.
+      ui.attributes.class.push("xfaLeft");
       return HTMLResult.success(createWrapper(this, html), bbox);
     }
 
@@ -2637,8 +2633,13 @@ class Font extends XFAObject {
     // TODO: fontHorizontalScale
     // TODO: fontVerticalScale
 
-    style.fontKerning = this.kerningMode === "none" ? "none" : "normal";
-    style.letterSpacing = measureToString(this.letterSpacing);
+    if (this.kerningMode !== "none") {
+      style.fontKerning = "normal";
+    }
+
+    if (this.letterSpacing) {
+      style.letterSpacing = measureToString(this.letterSpacing);
+    }
 
     if (this.lineThrough !== 0) {
       style.textDecoration = "line-through";
@@ -2658,7 +2659,9 @@ class Font extends XFAObject {
 
     // TODO: overlinePeriod
 
-    style.fontStyle = this.posture;
+    if (this.posture !== "normal") {
+      style.fontStyle = this.posture;
+    }
 
     const fontSize = measureToString(0.99 * this.size);
     if (fontSize !== "10px") {
@@ -2676,7 +2679,9 @@ class Font extends XFAObject {
 
     // TODO: underlinePeriod
 
-    style.fontWeight = this.weight;
+    if (this.weight !== "normal") {
+      style.fontWeight = this.weight;
+    }
 
     return style;
   }
@@ -3281,39 +3286,24 @@ class PageArea extends XFAObject {
     this.subform = new XFAObjectArray();
   }
 
-  [$isUsable]() {
-    if (!this[$extra]) {
-      this[$extra] = {
-        numberOfUse: 0,
-      };
-      return true;
-    }
-    return (
-      !this.occur ||
-      this.occur.max === -1 ||
-      this[$extra].numberOfUse < this.occur.max
-    );
-  }
-
-  [$cleanPage]() {
-    delete this[$extra];
-  }
-
   [$getNextPage]() {
     if (!this[$extra]) {
       this[$extra] = {
-        numberOfUse: 0,
+        numberOfUse: 1,
       };
     }
-
     const parent = this[$getParent]();
     if (parent.relation === "orderedOccurrence") {
-      if (this[$isUsable]()) {
+      if (
+        this.occur &&
+        (this.occur.max === -1 || this[$extra].numberOfUse < this.occur.max)
+      ) {
         this[$extra].numberOfUse += 1;
         return this;
       }
     }
 
+    delete this[$extra];
     return parent[$getNextPage]();
   }
 
@@ -3323,6 +3313,12 @@ class PageArea extends XFAObject {
 
   [$toHTML]() {
     // TODO: incomplete.
+    if (!this[$extra]) {
+      this[$extra] = {
+        numberOfUse: 1,
+      };
+    }
+
     const children = [];
     this[$extra].children = children;
 
@@ -3393,57 +3389,43 @@ class PageSet extends XFAObject {
     this.pageSet = new XFAObjectArray();
   }
 
-  [$cleanPage]() {
-    for (const page of this.pageArea.children) {
-      page[$cleanPage]();
-    }
-    for (const page of this.pageSet.children) {
-      page[$cleanPage]();
-    }
-  }
-
-  [$isUsable]() {
-    return (
-      !this.occur ||
-      this.occur.max === -1 ||
-      this[$extra].numberOfUse < this.occur.max
-    );
-  }
-
   [$getNextPage]() {
     if (!this[$extra]) {
       this[$extra] = {
         numberOfUse: 1,
-        pageIndex: -1,
-        pageSetIndex: -1,
+        currentIndex: -1,
       };
     }
 
     if (this.relation === "orderedOccurrence") {
-      if (this[$extra].pageIndex + 1 < this.pageArea.children.length) {
-        this[$extra].pageIndex += 1;
-        const pageArea = this.pageArea.children[this[$extra].pageIndex];
-        return pageArea[$getNextPage]();
+      if (this[$extra].currentIndex + 1 < this.pageArea.children.length) {
+        this[$extra].currentIndex += 1;
+        return this.pageArea.children[this[$extra].currentIndex];
       }
 
-      if (this[$extra].pageSetIndex + 1 < this.pageSet.children.length) {
-        this[$extra].pageSetIndex += 1;
-        return this.pageSet.children[this[$extra].pageSetIndex][$getNextPage]();
+      if (this[$extra].currentIndex + 1 < this.pageSet.children.length) {
+        this[$extra].currentIndex += 1;
+        return this.pageSet.children[this[$extra].currentIndex];
       }
 
-      if (this[$isUsable]()) {
+      if (
+        this.occur &&
+        (this.occur.max === -1 || this[$extra].numberOfUse < this.occur.max)
+      ) {
         this[$extra].numberOfUse += 1;
-        this[$extra].pageIndex = -1;
-        this[$extra].pageSetIndex = -1;
-        return this[$getNextPage]();
+        this[$extra].currentIndex = 0;
+        if (this.pageArea.children.length > 0) {
+          return this.pageArea.children[0];
+        }
+        return this.pageSet.children[0][$getNextPage]();
       }
 
+      delete this[$extra];
       const parent = this[$getParent]();
       if (parent instanceof PageSet) {
         return parent[$getNextPage]();
       }
 
-      this[$cleanPage]();
       return this[$getNextPage]();
     }
     const pageNumber = this[$getTemplateRoot]()[$extra].pageNumber;
@@ -4513,8 +4495,6 @@ class Template extends XFAObject {
     };
 
     const root = this.subform.children[0];
-    root.pageSet[$cleanPage]();
-
     const pageAreas = root.pageSet.pageArea.children;
     const mainHtml = {
       name: "div",
@@ -4561,15 +4541,10 @@ class Template extends XFAObject {
       pageArea = pageAreas[0];
     }
 
-    pageArea[$extra] = {
-      numberOfUse: 1,
-    };
-
     const pageAreaParent = pageArea[$getParent]();
     pageAreaParent[$extra] = {
       numberOfUse: 1,
-      pageIndex: pageAreaParent.pageArea.children.indexOf(pageArea),
-      pageSetIndex: 0,
+      currentIndex: pageAreaParent.pageArea.children.indexOf(pageArea),
     };
 
     let targetPageArea;
@@ -4670,26 +4645,19 @@ class Template extends XFAObject {
           }
 
           if (node.targetType === "pageArea") {
-            if (!(target instanceof PageArea)) {
-              target = null;
-            }
-
             if (startNew) {
-              targetPageArea = target || pageArea;
               flush(i);
               i = Infinity;
-            } else if (target && target !== pageArea) {
+            } else if (target === pageArea || !(target instanceof PageArea)) {
+              // Just ignore the break and do layout again.
+              i--;
+            } else {
+              // We must stop the contentAreas filling and go to the next page.
               targetPageArea = target;
               flush(i);
               i = Infinity;
-            } else {
-              i--;
             }
           } else if (node.targetType === "contentArea") {
-            if (!(target instanceof ContentArea)) {
-              target = null;
-            }
-
             const index = contentAreas.findIndex(e => e === target);
             if (index !== -1) {
               flush(i);
@@ -4743,13 +4711,6 @@ class Template extends XFAObject {
       }
 
       this[$extra].pageNumber += 1;
-      if (targetPageArea) {
-        if (targetPageArea[$isUsable]()) {
-          targetPageArea[$extra].numberOfUse += 1;
-        } else {
-          targetPageArea = null;
-        }
-      }
       pageArea = targetPageArea || pageArea[$getNextPage]();
     }
   }
