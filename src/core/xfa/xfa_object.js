@@ -34,7 +34,6 @@ const $dump = Symbol();
 const $extra = Symbol("extra");
 const $finalize = Symbol();
 const $flushHTML = Symbol();
-const $fonts = Symbol();
 const $getAttributeIt = Symbol();
 const $getAvailableSpace = Symbol();
 const $getChildrenByClass = Symbol();
@@ -49,6 +48,7 @@ const $getSubformParent = Symbol();
 const $getParent = Symbol();
 const $getTemplateRoot = Symbol();
 const $global = Symbol();
+const $globalData = Symbol();
 const $hasItem = Symbol();
 const $hasSettableValue = Symbol();
 const $ids = Symbol();
@@ -107,6 +107,7 @@ class XFAObject {
     this[_parent] = null;
     this[_children] = [];
     this[$uid] = `${name}${uid++}`;
+    this[$globalData] = null;
   }
 
   [$onChild](child) {
@@ -986,7 +987,6 @@ export {
   $extra,
   $finalize,
   $flushHTML,
-  $fonts,
   $getAttributeIt,
   $getAvailableSpace,
   $getChildren,
@@ -1001,6 +1001,7 @@ export {
   $getSubformParent,
   $getTemplateRoot,
   $global,
+  $globalData,
   $hasItem,
   $hasSettableValue,
   $ids,

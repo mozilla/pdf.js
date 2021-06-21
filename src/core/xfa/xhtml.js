@@ -19,6 +19,7 @@ import {
   $content,
   $extra,
   $getChildren,
+  $globalData,
   $nodeName,
   $onText,
   $pushGlyphs,
@@ -91,13 +92,13 @@ const StyleMapping = new Map([
   ["margin-right", value => measureToString(getMeasurement(value))],
   ["margin-top", value => measureToString(getMeasurement(value))],
   ["text-indent", value => measureToString(getMeasurement(value))],
-  ["font-family", value => getFonts(value)],
+  ["font-family", (value, fontFinder) => getFonts(value, fontFinder)],
 ]);
 
 const spacesRegExp = /\s+/g;
 const crlfRegExp = /[\r\n]+/g;
 
-function mapStyle(styleStr) {
+function mapStyle(styleStr, fontFinder) {
   const style = Object.create(null);
   if (!styleStr) {
     return style;
@@ -112,7 +113,7 @@ function mapStyle(styleStr) {
       if (typeof mapping === "string") {
         newValue = mapping;
       } else {
-        newValue = mapping(value);
+        newValue = mapping(value, fontFinder);
       }
     }
     if (key.endsWith("scale")) {
@@ -218,7 +219,7 @@ class XhtmlObject extends XmlObject {
       name: this[$nodeName],
       attributes: {
         href: this.href,
-        style: mapStyle(this.style),
+        style: mapStyle(this.style, this[$globalData].fontFinder),
       },
       children,
       value: this[$content] || "",
