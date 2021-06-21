@@ -368,10 +368,14 @@ function createWrapper(node, html) {
     }
     const insetsW = insets[1] + insets[3];
     const insetsH = insets[0] + insets[2];
+    const classNames = ["xfaBorder"];
+    if (isPrintOnly(node.border)) {
+      classNames.push("xfaPrintOnly");
+    }
     const border = {
       name: "div",
       attributes: {
-        class: ["xfaBorder"],
+        class: classNames,
         style: {
           top: `${insets[0] - widths[0] + shiftW}px`,
           left: `${insets[3] - widths[3] + shiftH}px`,
@@ -460,6 +464,14 @@ function setAccess(node, classNames) {
   }
 }
 
+function isPrintOnly(node) {
+  return (
+    node.relevant.length > 0 &&
+    !node.relevant[0].excluded &&
+    node.relevant[0].viewname === "print"
+  );
+}
+
 function getFonts(family, fontFinder) {
   if (family.startsWith("'") || family.startsWith('"')) {
     family = family.slice(1, family.length - 1);
@@ -482,6 +494,7 @@ export {
   fixDimensions,
   fixTextIndent,
   getFonts,
+  isPrintOnly,
   layoutClass,
   layoutText,
   measureToString,
