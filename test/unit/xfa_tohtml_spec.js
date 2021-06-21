@@ -118,10 +118,6 @@ describe("XFAFactory", function () {
       expect(draw.attributes.style).toEqual({
         color: "#0c1722",
         fontFamily: '"FooBar"',
-        fontKerning: "none",
-        letterSpacing: "0px",
-        fontStyle: "normal",
-        fontWeight: "normal",
         fontSize: "6.93px",
         margin: "1px 4px 2px 3px",
         verticalAlign: "2px",
