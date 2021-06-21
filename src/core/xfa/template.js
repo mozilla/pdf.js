@@ -71,6 +71,7 @@ import {
   fixDimensions,
   fixTextIndent,
   getFonts,
+  isPrintOnly,
   layoutClass,
   layoutText,
   measureToString,
@@ -301,6 +302,10 @@ class Area extends XFAObject {
       id: this[$uid],
       class: ["xfaArea"],
     };
+
+    if (isPrintOnly(this)) {
+      attributes.class.push("xfaPrintOnly");
+    }
 
     if (this.name) {
       attributes.xfaName = this.name;
@@ -1140,12 +1145,19 @@ class ContentArea extends XFAObject {
       width: measureToString(this.w),
       height: measureToString(this.h),
     };
+
+    const classNames = ["xfaContentarea"];
+
+    if (isPrintOnly(this)) {
+      classNames.push("xfaPrintOnly");
+    }
+
     return HTMLResult.success({
       name: "div",
       children: [],
       attributes: {
         style,
-        class: ["xfaContentarea"],
+        class: classNames,
         id: this[$uid],
       },
     });
@@ -1514,6 +1526,9 @@ class Draw extends XFAObject {
     const classNames = ["xfaDraw"];
     if (this.font) {
       classNames.push("xfaFont");
+    }
+    if (isPrintOnly(this)) {
+      classNames.push("xfaPrintOnly");
     }
 
     const attributes = {
@@ -2083,6 +2098,10 @@ class ExclGroup extends XFAObject {
       classNames.push(cl);
     }
 
+    if (isPrintOnly(this)) {
+      classNames.push("xfaPrintOnly");
+    }
+
     attributes.style = style;
     attributes.class = classNames;
 
@@ -2329,6 +2348,10 @@ class Field extends XFAObject {
     // If no font, font properties are inherited.
     if (this.font) {
       classNames.push("xfaFont");
+    }
+
+    if (isPrintOnly(this)) {
+      classNames.push("xfaPrintOnly");
     }
 
     const attributes = {
