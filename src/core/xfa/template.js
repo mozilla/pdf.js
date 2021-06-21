@@ -182,7 +182,9 @@ class Arc extends XFAObject {
     } else {
       style.fill = "transparent";
     }
-    style.strokeWidth = measureToString(Math.round(edge.thickness));
+    style.strokeWidth = measureToString(
+      edge.presence === "visible" ? Math.round(edge.thickness) : 0
+    );
     style.stroke = edgeStyle.color;
     let arc;
     const attributes = {
@@ -2957,16 +2959,18 @@ class Line extends XFAObject {
     const edge = this.edge ? this.edge : new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
-    style.strokeWidth = measureToString(Math.round(edge.thickness));
+    const thickness =
+      edge.presence === "visible" ? Math.round(edge.thickness) : 0;
+    style.strokeWidth = measureToString(thickness);
     style.stroke = edgeStyle.color;
     let x1, y1, x2, y2;
     let width = "100%";
     let height = "100%";
 
-    if (parent.w <= edge.thickness) {
+    if (parent.w <= thickness) {
       [x1, y1, x2, y2] = ["50%", 0, "50%", "100%"];
       width = style.strokeWidth;
-    } else if (parent.h <= edge.thickness) {
+    } else if (parent.h <= thickness) {
       [x1, y1, x2, y2] = [0, "50%", "100%", "50%"];
       height = style.strokeWidth;
     } else {
@@ -3807,7 +3811,9 @@ class Rectangle extends XFAObject {
     } else {
       style.fill = "transparent";
     }
-    style.strokeWidth = measureToString(2 * edge.thickness);
+    style.strokeWidth = measureToString(
+      edge.presence === "visible" ? 2 * edge.thickness : 0
+    );
     style.stroke = edgeStyle.color;
 
     const corner = this.corner.children.length
