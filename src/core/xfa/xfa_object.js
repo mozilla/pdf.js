@@ -25,6 +25,7 @@ const $addHTML = Symbol();
 const $appendChild = Symbol();
 const $childrenToHTML = Symbol();
 const $clean = Symbol();
+const $cleanPage = Symbol();
 const $cleanup = Symbol();
 const $clone = Symbol();
 const $consumed = Symbol();
@@ -59,6 +60,7 @@ const $isDataValue = Symbol();
 const $isDescendent = Symbol();
 const $isSplittable = Symbol();
 const $isTransparent = Symbol();
+const $isUsable = Symbol();
 const $lastAttribute = Symbol();
 const $namespaceId = Symbol("namespaceId");
 const $nodeName = Symbol("nodeName");
@@ -978,6 +980,7 @@ export {
   $appendChild,
   $childrenToHTML,
   $clean,
+  $cleanPage,
   $cleanup,
   $clone,
   $consumed,
@@ -1012,6 +1015,7 @@ export {
   $isDescendent,
   $isSplittable,
   $isTransparent,
+  $isUsable,
   $namespaceId,
   $nodeName,
   $nsAttributes,
