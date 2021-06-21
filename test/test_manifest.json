@@ -962,6 +962,14 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1716838",
+       "file": "pdfs/xfa_bug1716838.pdf",
+       "md5": "564ecff67be690b43c2a144ae5967034",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_candidate_petitions",
        "file": "pdfs/xfa_candidate_petitions.pdf",
        "md5": "0db96a00667f8f58f94cf81022e69341",
