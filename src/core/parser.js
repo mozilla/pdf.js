@@ -1113,6 +1113,9 @@ class Lexer {
     }
     if (strBuf.length > 127) {
       warn(`Name token is longer than allowed by the spec: ${strBuf.length}`);
+    } else if (strBuf.length === 0) {
+      warn("Name token is empty.");
+      return Name.empty;
     }
     return Name.get(strBuf.join(""));
   }
