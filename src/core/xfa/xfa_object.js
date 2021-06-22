@@ -493,14 +493,16 @@ class XFAObject {
     }
 
     ancestors.add(proto);
+
     // The prototype can have a "use" attribute itself.
     const protoProto = proto[_getPrototype](ids, ancestors);
-    if (!protoProto) {
-      ancestors.delete(proto);
-      return proto;
+    if (protoProto) {
+      proto[_applyPrototype](protoProto, ids, ancestors);
     }
 
-    proto[_applyPrototype](protoProto, ids, ancestors);
+    // The prototype can have a child which itself has a "use" property.
+    proto[$resolvePrototypes](ids, ancestors);
+
     ancestors.delete(proto);
 
     return proto;
