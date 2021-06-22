@@ -19,6 +19,7 @@
 
 .xfaLayer {
   position: absolute;
+  text-align: initial;
   top: 0;
   left: 0;
   z-index: 200;
