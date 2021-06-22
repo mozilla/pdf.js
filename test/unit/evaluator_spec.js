@@ -325,7 +325,7 @@ describe("evaluator", function () {
         expect(false).toEqual(true);
       } catch (reason) {
         expect(reason instanceof FormatError).toEqual(true);
-        expect(reason.message).toEqual("XObject must be referred to by name.");
+        expect(reason.message).toEqual("XObject should be a stream");
       }
     });
 
