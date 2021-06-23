@@ -55,12 +55,12 @@ class Binder {
     this.root = root;
     this.datasets = root.datasets;
     if (root.datasets && root.datasets.data) {
-      this.emptyMerge = false;
       this.data = root.datasets.data;
     } else {
-      this.emptyMerge = true;
       this.data = new XmlObject(NamespaceIds.datasets.id, "data");
     }
+    this.emptyMerge = this.data[$getChildren]().length === 0;
+
     this.root.form = this.form = root.template[$clone]();
   }
 
@@ -477,6 +477,23 @@ class Binder {
 
       if (this._mergeMode === undefined && child[$nodeName] === "subform") {
         this._mergeMode = child.mergeMode === "consumeData";
+
+        // XFA specs p. 182:
+        // The highest-level subform and the data node representing
+        // the current record are special; they are always
+        // bound even if their names don't match.
+        const dataChildren = dataNode[$getChildren]();
+        if (dataChildren.length > 0) {
+          this._bindOccurrences(child, [dataChildren[0]], null);
+        } else if (this.emptyMerge) {
+          const dataChild = new XmlObject(
+            dataNode[$namespaceId],
+            child.name || "root"
+          );
+          dataNode[$appendChild](dataChild);
+          this._bindElement(child, dataChild);
+        }
+        continue;
       }
 
       let global = false;
@@ -570,20 +587,28 @@ class Binder {
           }
           match = matches.length > 0 ? matches : null;
         } else {
+          // If we've an empty merge, there are no reason
+          // to make multiple bind so skip consumed nodes.
           match = dataNode[$getRealChildrenByNameIt](
             child.name,
             /* allTransparent = */ false,
-            /* skipConsumed = */ false
+            /* skipConsumed = */ this.emptyMerge
           ).next().value;
           if (!match) {
             // We're in matchTemplate mode so create a node in data to reflect
             // what we've in template.
             match = new XmlObject(dataNode[$namespaceId], child.name);
+            if (this.emptyMerge) {
+              match[$consumed] = true;
+            }
             dataNode[$appendChild](match);
 
             // Don't bind the value in newly created node because it's empty.
             this._bindElement(child, match);
             continue;
+          }
+          if (this.emptyMerge) {
+            match[$consumed] = true;
           }
           match = [match];
         }
