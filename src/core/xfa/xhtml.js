@@ -28,7 +28,7 @@ import {
   XmlObject,
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
-import { fixTextIndent, getFonts, measureToString } from "./html_utils.js";
+import { fixTextIndent, measureToString, setFontFamily } from "./html_utils.js";
 import { getMeasurement, HTMLResult } from "./utils.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
@@ -92,7 +92,7 @@ const StyleMapping = new Map([
   ["margin-right", value => measureToString(getMeasurement(value))],
   ["margin-top", value => measureToString(getMeasurement(value))],
   ["text-indent", value => measureToString(getMeasurement(value))],
-  ["font-family", (value, fontFinder) => getFonts(value, fontFinder)],
+  ["font-family", value => value],
 ]);
 
 const spacesRegExp = /\s+/g;
@@ -126,6 +126,18 @@ function mapStyle(styleStr, fontFinder) {
       style[key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())] =
         newValue;
     }
+  }
+
+  if (style.fontFamily) {
+    setFontFamily(
+      {
+        typeface: style.fontFamily,
+        weight: style.fontWeight || "normal",
+        posture: style.fontStyle || "normal",
+      },
+      fontFinder,
+      style
+    );
   }
 
   fixTextIndent(style);
