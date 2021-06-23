@@ -33,6 +33,12 @@ const Name = (function NameClosure() {
       return nameValue ? nameValue : (nameCache[name] = new Name(name));
     }
 
+    static get empty() {
+      // eslint-disable-next-line no-restricted-syntax
+      const emptyName = new Name({ empty: true });
+      return shadow(this, "empty", emptyName);
+    }
+
     static _clearCache() {
       nameCache = Object.create(null);
     }
