@@ -24,6 +24,13 @@ const dimConverters = {
 };
 const measurementPattern = /([+-]?[0-9]+\.?[0-9]*)(.*)/;
 
+function stripQuotes(str) {
+  if (str.startsWith("'") || str.startsWith('"')) {
+    return str.slice(1, str.length - 1);
+  }
+  return str;
+}
+
 function getInteger({ data, defaultValue, validate }) {
   if (!data) {
     return defaultValue;
@@ -206,4 +213,5 @@ export {
   getRelevant,
   getStringOption,
   HTMLResult,
+  stripQuotes,
 };
