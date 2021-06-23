@@ -22,7 +22,8 @@ import {
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
-import { getMeasurement } from "./utils.js";
+import { getMeasurement, stripQuotes } from "./utils.js";
+import { selectFont } from "./fonts.js";
 import { TextMeasure } from "./text.js";
 import { warn } from "../../shared/util.js";
 
@@ -472,20 +473,25 @@ function isPrintOnly(node) {
   );
 }
 
-function getFonts(family, fontFinder) {
-  if (family.startsWith("'") || family.startsWith('"')) {
-    family = family.slice(1, family.length - 1);
-  }
+function setFontFamily(xfaFont, fontFinder, style) {
+  const name = stripQuotes(xfaFont.typeface);
+  const typeface = fontFinder.find(name);
 
-  const pdfFont = fontFinder.find(family);
-  if (pdfFont) {
-    const { fontFamily } = pdfFont.regular.cssFontInfo;
-    if (fontFamily !== family) {
-      return `"${family}","${fontFamily}"`;
+  style.fontFamily = `"${name}"`;
+  if (typeface) {
+    const { fontFamily } = typeface.regular.cssFontInfo;
+    if (fontFamily !== name) {
+      style.fontFamily += `,"${fontFamily}"`;
+    }
+    if (style.lineHeight) {
+      // Already something so don't overwrite.
+      return;
+    }
+    const pdfFont = selectFont(xfaFont, typeface);
+    if (pdfFont && pdfFont.lineHeight > 0) {
+      style.lineHeight = pdfFont.lineHeight;
     }
   }
-
-  return `"${family}"`;
 }
 
 export {
@@ -493,12 +499,12 @@ export {
   createWrapper,
   fixDimensions,
   fixTextIndent,
-  getFonts,
   isPrintOnly,
   layoutClass,
   layoutText,
   measureToString,
   setAccess,
+  setFontFamily,
   setMinMaxDimensions,
   toStyle,
 };

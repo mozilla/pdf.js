@@ -70,12 +70,12 @@ import {
   createWrapper,
   fixDimensions,
   fixTextIndent,
-  getFonts,
   isPrintOnly,
   layoutClass,
   layoutText,
   measureToString,
   setAccess,
+  setFontFamily,
   setMinMaxDimensions,
   toStyle,
 } from "./html_utils.js";
@@ -2695,7 +2695,7 @@ class Font extends XFAObject {
       style.fontSize = fontSize;
     }
 
-    style.fontFamily = getFonts(this.typeface, this[$globalData].fontFinder);
+    setFontFamily(this, this[$globalData].fontFinder, style);
 
     if (this.underline !== 0) {
       style.textDecoration = "underline";

@@ -24,6 +24,7 @@
   left: 0;
   z-index: 200;
   transform-origin: 0 0;
+  line-height: 1.2;
 }
 
 .xfaLayer * {
@@ -53,10 +54,6 @@
 
 .xfaRich li {
   margin-left: 3em;
-}
-
-.xfaLayer p {
-  margin-bottom: -1px;
 }
 
 .xfaFont {
