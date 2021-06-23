@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { PageViewport } from "./display_utils.js";
-
 class XfaLayer {
   static setupStorage(html, fieldId, element, storage, intent) {
     const storedData = storage.getValue(fieldId, { value: null });
@@ -134,13 +132,8 @@ class XfaLayer {
 
     const rootDiv = parameters.div;
     rootDiv.appendChild(rootHtml);
-
-    let { viewport } = parameters;
-    if (!(viewport instanceof PageViewport)) {
-      viewport = new PageViewport(viewport);
-    }
-    const coeffs = viewport.transform.join(",");
-    rootDiv.style.transform = `matrix(${coeffs})`;
+    const transform = `matrix(${parameters.viewport.transform.join(",")})`;
+    rootDiv.style.transform = transform;
 
     // Set defaults.
     rootDiv.setAttribute("class", "xfaLayer xfaFont");
