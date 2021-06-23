@@ -154,4 +154,17 @@ class FontFinder {
   }
 }
 
-export { FontFinder };
+function selectFont(xfaFont, typeface) {
+  if (xfaFont.posture === "italic") {
+    if (xfaFont.weight === "bold") {
+      return typeface.bolditalic;
+    }
+    return typeface.italic;
+  } else if (xfaFont.weight === "bold") {
+    return typeface.bold;
+  }
+
+  return typeface.regular;
+}
+
+export { FontFinder, selectFont };

@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { selectFont } from "./fonts.js";
+
 const WIDTH_FACTOR = 1.2;
 const HEIGHT_FACTOR = 1.2;
 
@@ -30,18 +32,7 @@ class FontInfo {
       return;
     }
 
-    this.pdfFont = null;
-    if (xfaFont.posture === "italic") {
-      if (xfaFont.weight === "bold") {
-        this.pdfFont = typeface.bolditalic;
-      } else {
-        this.pdfFont = typeface.italic;
-      }
-    } else if (xfaFont.weigth === "bold") {
-      this.pdfFont = typeface.bold;
-    } else {
-      this.pdfFont = typeface.regular;
-    }
+    this.pdfFont = selectFont(xfaFont, typeface);
 
     if (!this.pdfFont) {
       [this.pdfFont, this.xfaFont] = this.defaultFont(fontFinder);
