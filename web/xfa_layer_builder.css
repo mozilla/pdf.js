@@ -217,18 +217,10 @@
   align-items: stretch;
 }
 
-.xfaLr > div {
-  flex: 1 1 auto;
-}
-
 .xfaRl {
   display: flex;
   flex-direction: row-reverse;
   align-items: stretch;
-}
-
-.xfaRl > div {
-  flex: 1 1 auto;
 }
 
 .xfaTb > div {
