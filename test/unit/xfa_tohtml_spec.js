@@ -219,4 +219,55 @@ describe("XFAFactory", function () {
       expect(field2).not.toEqual(null);
     });
   });
+
+  it("should have an input or textarea", function () {
+    const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="123pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <field y="1pt" w="11pt" h="22pt" x="2pt">
+            <ui>
+              <textEdit multiLine="1"/>
+            </ui>
+          </field>
+        </pageArea>
+      </pageSet>
+      <subform name="first">
+        <field y="1pt" w="11pt" h="22pt" x="2pt" name="hello">
+          <ui>
+            <textEdit/>
+          </ui>
+          <value>
+            <integer/>
+          </value>
+        </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <toto>
+        <first>
+          <hello>123
+          </hello>
+        </first>
+      </toto>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+    `;
+    const factory = new XFAFactory({ "xdp:xdp": xml });
+
+    expect(factory.numberPages).toEqual(1);
+
+    const pages = factory.getPages();
+    const field1 = searchHtmlNode(pages, "name", "input");
+    expect(field1).not.toEqual(null);
+    expect(field1.attributes.value).toEqual("123");
+  });
 });
