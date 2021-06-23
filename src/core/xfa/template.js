@@ -2154,10 +2154,6 @@ class ExclGroup extends XFAObject {
       return HTMLResult.FAILURE;
     }
 
-    if (children.length === 0) {
-      return HTMLResult.EMPTY;
-    }
-
     let marginH = 0;
     let marginV = 0;
     if (this.margin) {
@@ -4337,10 +4333,6 @@ class Subform extends XFAObject {
       return HTMLResult.FAILURE;
     }
 
-    if (children.length === 0) {
-      return HTMLResult.EMPTY;
-    }
-
     let marginH = 0;
     let marginV = 0;
     if (this.margin) {
@@ -4649,7 +4641,8 @@ class Template extends XFAObject {
       const flush = index => {
         const html = root[$flushHTML]();
         if (html) {
-          hasSomething = true;
+          hasSomething =
+            hasSomething || (html.children && html.children.length !== 0);
           htmlContentAreas[index].children.push(html);
         }
       };
@@ -4671,7 +4664,9 @@ class Template extends XFAObject {
         const html = root[$toHTML](space);
         if (html.success) {
           if (html.html) {
-            hasSomething = true;
+            hasSomething =
+              hasSomething ||
+              (html.html.children && html.html.children.length !== 0);
             htmlContentAreas[i].children.push(html.html);
           } else if (!hasSomething) {
             mainHtml.children.pop();
