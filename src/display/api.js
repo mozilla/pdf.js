@@ -743,8 +743,10 @@ class PDFDocumentProxy {
   }
 
   /**
+   * NOTE: This is (mostly) intended to support printing of XFA forms.
+   *
    * @type {Object | null} An object representing a HTML tree structure
-   * to render the XFA, or `null` when no XFA form exists.
+   *   to render the XFA, or `null` when no XFA form exists.
    */
   get allXfaHtml() {
     return this._transport._htmlForXfa;

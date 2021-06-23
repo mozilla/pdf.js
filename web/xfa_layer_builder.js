@@ -43,56 +43,55 @@ class XfaLayerBuilder {
    *   annotations is complete.
    */
   render(viewport, intent = "display") {
-    if (intent === "display") {
-      return this.pdfPage
-        .getXfa()
-        .then(xfa => {
-          if (this._cancelled) {
-            return;
-          }
-          const parameters = {
-            viewport: viewport.clone({ dontFlip: true }),
-            div: this.div,
-            xfa,
-            page: this.pdfPage,
-            annotationStorage: this.annotationStorage,
-          };
+    if (intent === "print") {
+      const parameters = {
+        viewport: viewport.clone({ dontFlip: true }),
+        div: this.div,
+        xfa: this.xfaHtml,
+        page: null,
+        annotationStorage: this.annotationStorage,
+        intent,
+      };
 
-          if (this.div) {
-            XfaLayer.update(parameters);
-          } else {
-            // Create an xfa layer div and render the form
-            this.div = document.createElement("div");
-            this.pageDiv.appendChild(this.div);
-            parameters.div = this.div;
+      // Create an xfa layer div and render the form
+      const div = document.createElement("div");
+      this.pageDiv.appendChild(div);
+      parameters.div = div;
 
-            XfaLayer.render(parameters);
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
+      XfaLayer.render(parameters);
+      return Promise.resolve();
     }
 
-    // intent === "print".
-    viewport.dontFlip = true;
-    const parameters = {
-      viewport,
-      div: this.div,
-      xfa: this.xfaHtml,
-      page: null,
-      annotationStorage: this.annotationStorage,
-      intent,
-    };
+    // intent === "display"
+    return this.pdfPage
+      .getXfa()
+      .then(xfa => {
+        if (this._cancelled) {
+          return;
+        }
+        const parameters = {
+          viewport: viewport.clone({ dontFlip: true }),
+          div: this.div,
+          xfa,
+          page: this.pdfPage,
+          annotationStorage: this.annotationStorage,
+          intent,
+        };
 
-    // Create an xfa layer div and render the form
-    const div = document.createElement("div");
-    this.pageDiv.appendChild(div);
-    parameters.div = div;
+        if (this.div) {
+          XfaLayer.update(parameters);
+        } else {
+          // Create an xfa layer div and render the form
+          this.div = document.createElement("div");
+          this.pageDiv.appendChild(this.div);
+          parameters.div = this.div;
 
-    XfaLayer.render(parameters);
-
-    return null;
+          XfaLayer.render(parameters);
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
   }
 
   cancel() {

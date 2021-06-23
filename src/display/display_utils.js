@@ -606,6 +606,20 @@ class PDFDateString {
   }
 }
 
+/**
+ * NOTE: This is (mostly) intended to support printing of XFA forms.
+ */
+function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
+  const { width, height } = xfaPage.attributes.style;
+  const viewBox = [0, 0, parseInt(width), parseInt(height)];
+
+  return new PageViewport({
+    viewBox,
+    scale,
+    rotation,
+  });
+}
+
 export {
   addLinkAttributes,
   DEFAULT_LINK_REL,
@@ -616,6 +630,7 @@ export {
   DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getXfaPageViewport,
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
