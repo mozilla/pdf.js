@@ -1628,6 +1628,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue13610",
+       "file": "pdfs/issue13610.pdf",
+       "md5": "5b894c0b1b2279a245c23abd76648ca9",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "simpletype3font-text",
        "file": "pdfs/simpletype3font.pdf",
        "md5": "b374c7543920840c61999e9e86939f99",
