@@ -121,7 +121,7 @@
 
 .xfaTop > .xfaCaption,
 .xfaTop > .xfaCaptionForCheckButton {
-  max-width: 100%;
+  width: 100%;
 }
 
 .xfaBorder {
