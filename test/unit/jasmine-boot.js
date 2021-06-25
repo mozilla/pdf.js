@@ -88,6 +88,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/writer_spec.js",
       "pdfjs-test/unit/xfa_formcalc_spec.js",
       "pdfjs-test/unit/xfa_parser_spec.js",
+      "pdfjs-test/unit/xfa_serialize_data_spec.js",
       "pdfjs-test/unit/xfa_tohtml_spec.js",
       "pdfjs-test/unit/xml_spec.js",
     ].map(function (moduleName) {

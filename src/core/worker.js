@@ -564,8 +564,9 @@ class WorkerMessageHandler {
 
     handler.on(
       "SaveDocument",
-      function ({ numPages, annotationStorage, filename }) {
+      function ({ isPureXfa, numPages, annotationStorage, filename }) {
         pdfManager.requestLoadedStream();
+
         const promises = [
           pdfManager.onLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
@@ -573,19 +574,21 @@ class WorkerMessageHandler {
           pdfManager.ensureDoc("startXRef"),
         ];
 
-        for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
-          promises.push(
-            pdfManager.getPage(pageIndex).then(function (page) {
-              const task = new WorkerTask(`Save: page ${pageIndex}`);
-              startWorkerTask(task);
-
-              return page
-                .save(handler, task, annotationStorage)
-                .finally(function () {
-                  finishWorkerTask(task);
-                });
-            })
-          );
+        if (isPureXfa) {
+          promises.push(pdfManager.serializeXfaData(annotationStorage));
+        } else {
+          for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+            promises.push(
+              pdfManager.getPage(pageIndex).then(function (page) {
+                const task = new WorkerTask(`Save: page ${pageIndex}`);
+                return page
+                  .save(handler, task, annotationStorage)
+                  .finally(function () {
+                    finishWorkerTask(task);
+                  });
+              })
+            );
+          }
         }
 
         return Promise.all(promises).then(function ([
@@ -596,15 +599,23 @@ class WorkerMessageHandler {
           ...refs
         ]) {
           let newRefs = [];
-          for (const ref of refs) {
-            newRefs = ref
-              .filter(x => x !== null)
-              .reduce((a, b) => a.concat(b), newRefs);
-          }
+          let xfaData = null;
+          if (isPureXfa) {
+            xfaData = refs[0];
+            if (!xfaData) {
+              return stream.bytes;
+            }
+          } else {
+            for (const ref of refs) {
+              newRefs = ref
+                .filter(x => x !== null)
+                .reduce((a, b) => a.concat(b), newRefs);
+            }
 
-          if (newRefs.length === 0) {
-            // No new refs so just return the initial bytes
-            return stream.bytes;
+            if (newRefs.length === 0) {
+              // No new refs so just return the initial bytes
+              return stream.bytes;
+            }
           }
 
           const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || [];
@@ -652,6 +663,7 @@ class WorkerMessageHandler {
             newRefs,
             xref,
             datasetsRef: xfaDatasets,
+            xfaData,
           });
         });
       }
