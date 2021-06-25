@@ -15,6 +15,7 @@
 
 import { $globalData, $toHTML } from "./xfa_object.js";
 import { Binder } from "./bind.js";
+import { DataHandler } from "./data.js";
 import { FontFinder } from "./fonts.js";
 import { warn } from "../../shared/util.js";
 import { XFAParser } from "./parser.js";
@@ -23,7 +24,9 @@ class XFAFactory {
   constructor(data) {
     try {
       this.root = new XFAParser().parse(XFAFactory._createDocument(data));
-      this.form = new Binder(this.root).bind();
+      const binder = new Binder(this.root);
+      this.form = binder.bind();
+      this.dataHandler = new DataHandler(this.root, binder.getData());
       this.form[$globalData].template = this.form;
     } catch (e) {
       warn(`XFA - an error occured during parsing and binding: ${e}`);
@@ -68,6 +71,10 @@ class XFAFactory {
     const pages = this.pages;
     this.pages = null;
     return pages;
+  }
+
+  serializeData(storage) {
+    return this.dataHandler.serialize(storage);
   }
 
   static _createDocument(data) {

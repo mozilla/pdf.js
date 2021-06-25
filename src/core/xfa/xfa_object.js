@@ -15,6 +15,7 @@
 
 import { getInteger, getKeyword, HTMLResult } from "./utils.js";
 import { shadow, warn } from "../../shared/util.js";
+import { encodeToXmlString } from "../core_utils.js";
 import { NamespaceIds } from "./namespaces.js";
 import { searchNode } from "./som.js";
 
@@ -36,6 +37,7 @@ const $extra = Symbol("extra");
 const $finalize = Symbol();
 const $flushHTML = Symbol();
 const $getAttributeIt = Symbol();
+const $getAttributes = Symbol();
 const $getAvailableSpace = Symbol();
 const $getChildrenByClass = Symbol();
 const $getChildrenByName = Symbol();
@@ -50,12 +52,12 @@ const $getParent = Symbol();
 const $getTemplateRoot = Symbol();
 const $global = Symbol();
 const $globalData = Symbol();
-const $hasItem = Symbol();
 const $hasSettableValue = Symbol();
 const $ids = Symbol();
 const $indexOf = Symbol();
 const $insertAt = Symbol();
 const $isCDATAXml = Symbol();
+const $isBindable = Symbol();
 const $isDataValue = Symbol();
 const $isDescendent = Symbol();
 const $isSplittable = Symbol();
@@ -78,6 +80,7 @@ const $setSetAttributes = Symbol();
 const $setValue = Symbol();
 const $text = Symbol();
 const $toHTML = Symbol();
+const $toString = Symbol();
 const $toStyle = Symbol();
 const $uid = Symbol("uid");
 
@@ -100,6 +103,8 @@ const _setAttributes = Symbol();
 const _validator = Symbol();
 
 let uid = 0;
+
+const NS_DATASETS = NamespaceIds.datasets.id;
 
 class XFAObject {
   constructor(nsId, name, hasChildren = false) {
@@ -161,6 +166,10 @@ class XFAObject {
     return false;
   }
 
+  [$isBindable]() {
+    return false;
+  }
+
   [$setId](ids) {
     if (this.id && this[$namespaceId] === NamespaceIds.template.id) {
       ids.set(this.id, this);
@@ -205,10 +214,6 @@ class XFAObject {
       builder.clean(this[$cleanup]);
       delete this[$cleanup];
     }
-  }
-
-  [$hasItem]() {
-    return false;
   }
 
   [$indexOf](child) {
@@ -599,6 +604,7 @@ class XFAObject {
         shadow(clone, $symbol, this[$symbol]);
       }
     }
+    clone[$uid] = `${clone[$nodeName]}${uid++}`;
     clone[_children] = [];
 
     for (const name of Object.getOwnPropertyNames(this)) {
@@ -720,6 +726,7 @@ class XFAAttribute {
     this[$nodeName] = name;
     this[$content] = value;
     this[$consumed] = false;
+    this[$uid] = `attribute${uid++}`;
   }
 
   [$getParent]() {
@@ -728,6 +735,11 @@ class XFAAttribute {
 
   [$isDataValue]() {
     return true;
+  }
+
+  [$setValue](value) {
+    value = value.value || "";
+    this[$content] = value.toString();
   }
 
   [$text]() {
@@ -763,6 +775,44 @@ class XmlObject extends XFAObject {
       }
     }
     this[$consumed] = false;
+  }
+
+  [$toString](buf) {
+    const tagName = this[$nodeName];
+    if (tagName === "#text") {
+      buf.push(encodeToXmlString(this[$content]));
+      return;
+    }
+    const prefix = this[$namespaceId] === NS_DATASETS ? "xfa:" : "";
+    buf.push(`<${prefix}${tagName}`);
+    for (const [name, value] of this[_attributes].entries()) {
+      buf.push(` ${name}="${encodeToXmlString(value[$content])}"`);
+    }
+    if (this[_dataValue] !== null) {
+      if (this[_dataValue]) {
+        buf.push(` xfa:dataNode="dataValue"`);
+      } else {
+        buf.push(` xfa:dataNode="dataGroup"`);
+      }
+    }
+    if (!this[$content] && this[_children].length === 0) {
+      buf.push("/>");
+      return;
+    }
+
+    buf.push(">");
+    if (this[$content]) {
+      if (typeof this[$content] === "string") {
+        buf.push(encodeToXmlString(this[$content]));
+      } else {
+        this[$content][$toString](buf);
+      }
+    } else {
+      for (const child of this[_children]) {
+        child[$toString](buf);
+      }
+    }
+    buf.push(`</${prefix}${tagName}>`);
   }
 
   [$onChild](child) {
@@ -806,6 +856,10 @@ class XmlObject extends XFAObject {
     }
 
     return this[_children].filter(c => c[$nodeName] === name);
+  }
+
+  [$getAttributes]() {
+    return this[_attributes];
   }
 
   [$getChildrenByClass](name) {
@@ -880,6 +934,11 @@ class XmlObject extends XFAObject {
       return null;
     }
     return this[$content].trim();
+  }
+
+  [$setValue](value) {
+    value = value.value || "";
+    this[$content] = value.toString();
   }
 
   [$dump]() {
@@ -993,6 +1052,7 @@ export {
   $finalize,
   $flushHTML,
   $getAttributeIt,
+  $getAttributes,
   $getAvailableSpace,
   $getChildren,
   $getChildrenByClass,
@@ -1007,11 +1067,11 @@ export {
   $getTemplateRoot,
   $global,
   $globalData,
-  $hasItem,
   $hasSettableValue,
   $ids,
   $indexOf,
   $insertAt,
+  $isBindable,
   $isCDATAXml,
   $isDataValue,
   $isDescendent,
@@ -1034,6 +1094,7 @@ export {
   $setValue,
   $text,
   $toHTML,
+  $toString,
   $toStyle,
   $uid,
   ContentObject,

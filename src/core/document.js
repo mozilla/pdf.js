@@ -963,6 +963,13 @@ class PDFDocument {
     this.xfaFactory.setFonts(pdfFonts);
   }
 
+  async serializeXfaData(annotationStorage) {
+    if (this.xfaFactory) {
+      return this.xfaFactory.serializeData(annotationStorage);
+    }
+    return null;
+  }
+
   get formInfo() {
     const formInfo = {
       hasFields: false,
