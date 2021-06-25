@@ -1635,6 +1635,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue13626",
+       "file": "pdfs/issue13626.pdf",
+       "md5": "68bc1c2459d56e8c33f5a12a88c9df7d",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "simpletype3font-text",
        "file": "pdfs/simpletype3font.pdf",
        "md5": "b374c7543920840c61999e9e86939f99",
