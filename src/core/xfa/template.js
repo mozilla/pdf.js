@@ -21,6 +21,7 @@ import {
   $clean,
   $cleanPage,
   $content,
+  $data,
   $extra,
   $finalize,
   $flushHTML,
@@ -32,9 +33,9 @@ import {
   $getSubformParent,
   $getTemplateRoot,
   $globalData,
-  $hasItem,
   $hasSettableValue,
   $ids,
+  $isBindable,
   $isCDATAXml,
   $isSplittable,
   $isTransparent,
@@ -572,7 +573,7 @@ class BooleanElement extends Option01 {
   }
 
   [$toHTML](availableSpace) {
-    return valueToHtml(this[$content] === 1);
+    return valueToHtml(this[$content] === 1 ? "1" : "0");
   }
 }
 
@@ -950,17 +951,31 @@ class CheckButton extends XFAObject {
     let type;
     let className;
     let groupId;
-    let id;
-    const fieldId = this[$getParent]()[$getParent]()[$uid];
-    const container = this[$getParent]()[$getParent]()[$getParent]();
+    const field = this[$getParent]()[$getParent]();
+    const items =
+      (field.items.children.length &&
+        field.items.children[0][$toHTML]().html) ||
+      [];
+    const exportedValue = {
+      on: (items[0] || "on").toString(),
+      off: (items[1] || "off").toString(),
+    };
+
+    const value = (field.value && field.value[$text]()) || "off";
+    const checked = value === exportedValue.on || undefined;
+    const container = field[$getParent]();
+    const fieldId = field[$uid];
+    let dataId;
+
     if (container instanceof ExclGroup) {
       groupId = container[$uid];
       type = "radio";
       className = "xfaRadio";
-      id = `${fieldId}-radio`;
+      dataId = container[$data] && container[$data][$uid];
     } else {
       type = "checkbox";
       className = "xfaCheckbox";
+      dataId = field[$data] && field[$data][$uid];
     }
 
     const input = {
@@ -969,13 +984,12 @@ class CheckButton extends XFAObject {
         class: [className],
         style,
         fieldId,
+        dataId,
         type,
+        checked,
+        xfaOn: exportedValue.on,
       },
     };
-
-    if (id) {
-      input.attributes.id = id;
-    }
 
     if (groupId) {
       input.attributes.name = groupId;
@@ -1022,25 +1036,36 @@ class ChoiceList extends XFAObject {
     const children = [];
 
     if (field.items.children.length > 0) {
-      const displayed = field.items.children[0][$toHTML]().html;
-      const values = field.items.children[1]
-        ? field.items.children[1][$toHTML]().html
-        : [];
+      const items = field.items;
+      let displayedIndex = 0;
+      let saveIndex = 0;
+      if (items.children.length === 2) {
+        displayedIndex = items.children[0].save;
+        saveIndex = 1 - displayedIndex;
+      }
+      const displayed = items.children[displayedIndex][$toHTML]().html;
+      const values = items.children[saveIndex][$toHTML]().html;
 
+      const value = (field.value && field.value[$text]()) || "";
       for (let i = 0, ii = displayed.length; i < ii; i++) {
-        children.push({
+        const option = {
           name: "option",
           attributes: {
             value: values[i] || displayed[i],
           },
           value: displayed[i],
-        });
+        };
+        if (values[i] === value) {
+          option.attributes.selected = true;
+        }
+        children.push(option);
       }
     }
 
     const selectAttributes = {
       class: ["xfaSelect"],
-      fieldId: this[$getParent]()[$getParent]()[$uid],
+      fieldId: field[$uid],
+      dataId: field[$data] && field[$data][$uid],
       style,
     };
 
@@ -1272,11 +1297,13 @@ class DateTimeEdit extends XFAObject {
     // When the picker is host we should use type=date for the input
     // but we need to put the buttons outside the text-field.
     const style = toStyle(this, "border", "font", "margin");
+    const field = this[$getParent]()[$getParent]();
     const html = {
       name: "input",
       attributes: {
         type: "text",
-        fieldId: this[$getParent]()[$getParent]()[$uid],
+        fieldId: field[$uid],
+        dataId: field[$data] && field[$data][$uid],
         class: ["xfaTextfield"],
         style,
       },
@@ -1976,6 +2003,10 @@ class ExclGroup extends XFAObject {
     this.setProperty = new XFAObjectArray();
   }
 
+  [$isBindable]() {
+    return true;
+  }
+
   [$hasSettableValue]() {
     return true;
   }
@@ -1988,17 +2019,7 @@ class ExclGroup extends XFAObject {
         field.value = nodeValue;
       }
 
-      const nodeBoolean = new BooleanElement({});
-      nodeBoolean[$content] = 0;
-
-      for (const item of field.items.children) {
-        if (item[$hasItem](value)) {
-          nodeBoolean[$content] = 1;
-          break;
-        }
-      }
-
-      field.value[$setValue](nodeBoolean);
+      field.value[$setValue](value);
     }
   }
 
@@ -2310,6 +2331,10 @@ class Field extends XFAObject {
     this.connect = new XFAObjectArray();
     this.event = new XFAObjectArray();
     this.setProperty = new XFAObjectArray();
+  }
+
+  [$isBindable]() {
+    return true;
   }
 
   [$setValue](value) {
@@ -2906,15 +2931,6 @@ class Items extends XFAObject {
     this.time = new XFAObjectArray();
   }
 
-  [$hasItem](value) {
-    return (
-      this.hasOwnProperty(value[$nodeName]) &&
-      this[value[$nodeName]].children.some(
-        node => node[$content] === value[$content]
-      )
-    );
-  }
-
   [$toHTML]() {
     const output = [];
     for (const child of this[$getChildren]()) {
@@ -3182,11 +3198,13 @@ class NumericEdit extends XFAObject {
   [$toHTML](availableSpace) {
     // TODO: incomplete.
     const style = toStyle(this, "border", "font", "margin");
+    const field = this[$getParent]()[$getParent]();
     const html = {
       name: "input",
       attributes: {
         type: "text",
-        fieldId: this[$getParent]()[$getParent]()[$uid],
+        fieldId: field[$uid],
+        dataId: field[$data] && field[$data][$uid],
         class: ["xfaTextfield"],
         style,
       },
@@ -4151,6 +4169,10 @@ class Subform extends XFAObject {
     this.subformSet = new XFAObjectArray();
   }
 
+  [$isBindable]() {
+    return true;
+  }
+
   *[$getContainedChildren]() {
     // This function is overriden in order to fake that subforms under
     // this set are in fact under parent subform.
@@ -4924,11 +4946,13 @@ class TextEdit extends XFAObject {
     // TODO: incomplete.
     const style = toStyle(this, "border", "font", "margin");
     let html;
+    const field = this[$getParent]()[$getParent]();
     if (this.multiLine === 1) {
       html = {
         name: "textarea",
         attributes: {
-          fieldId: this[$getParent]()[$getParent]()[$uid],
+          dataId: field[$data] && field[$data][$uid],
+          fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
         },
@@ -4938,7 +4962,8 @@ class TextEdit extends XFAObject {
         name: "input",
         attributes: {
           type: "text",
-          fieldId: this[$getParent]()[$getParent]()[$uid],
+          dataId: field[$data] && field[$data][$uid],
+          fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
         },

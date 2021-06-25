@@ -29,6 +29,7 @@ import {
   $hasSettableValue,
   $indexOf,
   $insertAt,
+  $isBindable,
   $isDataValue,
   $isDescendent,
   $namespaceId,
@@ -87,12 +88,12 @@ class Binder {
     // data node (through $data property): we'll use it
     // to save form data.
 
+    formNode[$data] = data;
     if (formNode[$hasSettableValue]()) {
       if (data[$isDataValue]()) {
         const value = data[$getDataValue]();
         // TODO: use picture.
         formNode[$setValue](createText(value));
-        formNode[$data] = data;
       } else if (
         formNode instanceof Field &&
         formNode.ui &&
@@ -103,13 +104,11 @@ class Binder {
           .map(child => child[$content].trim())
           .join("\n");
         formNode[$setValue](createText(value));
-        formNode[$data] = data;
       } else if (this._isConsumeData()) {
         warn(`XFA - Nodes haven't the same type.`);
       }
     } else if (!data[$isDataValue]() || this._isMatchTemplate()) {
       this._bindElement(formNode, data);
-      formNode[$data] = data;
     } else {
       warn(`XFA - Nodes haven't the same type.`);
     }
@@ -493,6 +492,12 @@ class Binder {
           dataNode[$appendChild](dataChild);
           this._bindElement(child, dataChild);
         }
+        continue;
+      }
+
+      if (!child[$isBindable]()) {
+        // The node cannot contain some new data so there is nothing
+        // to create in the data node.
         continue;
       }
 
