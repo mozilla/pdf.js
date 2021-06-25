@@ -2790,6 +2790,7 @@ class WorkerTransport {
   saveDocument() {
     return this.messageHandler
       .sendWithPromise("SaveDocument", {
+        isPureXfa: !!this._htmlForXfa,
         numPages: this._numPages,
         annotationStorage: this.annotationStorage.serializable,
         filename: this._fullReader?.filename ?? null,

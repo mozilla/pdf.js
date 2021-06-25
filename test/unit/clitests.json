@@ -42,6 +42,7 @@
     "writer_spec.js",
     "xfa_formcalc_spec.js",
     "xfa_parser_spec.js",
+    "xfa_serialize_data_spec.js",
     "xfa_tohtml_spec.js",
     "xml_spec.js"
   ]
