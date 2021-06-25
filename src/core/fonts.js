@@ -1540,7 +1540,14 @@ class Font {
       };
     }
 
-    function sanitizeMetrics(file, header, metrics, numGlyphs, dupFirstEntry) {
+    function sanitizeMetrics(
+      file,
+      header,
+      metrics,
+      headTable,
+      numGlyphs,
+      dupFirstEntry
+    ) {
       if (!header) {
         if (metrics) {
           metrics.data = null;
@@ -1559,19 +1566,24 @@ class Font {
       file.pos += 2; // max_extent
       file.pos += 2; // caret_slope_rise
       file.pos += 2; // caret_slope_run
-      file.pos += 2; // caret_offset
+      const caretOffset = file.getUint16();
       file.pos += 8; // reserved
       file.pos += 2; // format
       let numOfMetrics = file.getUint16();
 
+      if (caretOffset !== 0) {
+        const macStyle = int16(headTable.data[44], headTable.data[45]);
+        if (!(macStyle & 2)) {
+          // Suppress OTS warnings about the `caretOffset` in the hhea-table.
+          header.data[22] = 0;
+          header.data[23] = 0;
+        }
+      }
+
       if (numOfMetrics > numGlyphs) {
         info(
-          "The numOfMetrics (" +
-            numOfMetrics +
-            ") should not be " +
-            "greater than the numGlyphs (" +
-            numGlyphs +
-            ")"
+          `The numOfMetrics (${numOfMetrics}) should not be ` +
+            `greater than the numGlyphs (${numGlyphs}).`
         );
         // Reduce numOfMetrics if it is greater than numGlyphs
         numOfMetrics = numGlyphs;
@@ -2457,6 +2469,7 @@ class Font {
       font,
       tables.hhea,
       tables.hmtx,
+      tables.head,
       numGlyphsOut,
       dupFirstEntry
     );
