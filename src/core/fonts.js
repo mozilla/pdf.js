@@ -1372,7 +1372,18 @@ class Font {
           }
         } else if (isSymbolicFont && platformId === 3 && encodingId === 0) {
           useTable = true;
-          canBreak = true;
+
+          let correctlySorted = true;
+          if (i < numTables - 1) {
+            const nextBytes = file.peekBytes(2),
+              nextPlatformId = int16(nextBytes[0], nextBytes[1]);
+            if (nextPlatformId < platformId) {
+              correctlySorted = false;
+            }
+          }
+          if (correctlySorted) {
+            canBreak = true;
+          }
         }
 
         if (useTable) {
