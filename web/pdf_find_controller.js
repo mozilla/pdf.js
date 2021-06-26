@@ -210,7 +210,12 @@ class PDFFindController {
     });
   }
 
-  scrollMatchIntoView({ element = null, pageIndex = -1, matchIndex = -1 }) {
+  scrollMatchIntoView({
+    element = null,
+    selectedLeft = 0,
+    pageIndex = -1,
+    matchIndex = -1,
+  }) {
     if (!this._scrollMatches || !element) {
       return;
     } else if (matchIndex === -1 || matchIndex !== this._selected.matchIdx) {
@@ -222,7 +227,7 @@ class PDFFindController {
 
     const spot = {
       top: MATCH_SCROLL_OFFSET_TOP,
-      left: MATCH_SCROLL_OFFSET_LEFT,
+      left: selectedLeft + MATCH_SCROLL_OFFSET_LEFT,
     };
     scrollIntoView(element, spot, /* scrollMatches = */ true);
   }
