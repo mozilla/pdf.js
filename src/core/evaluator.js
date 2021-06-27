@@ -3788,6 +3788,9 @@ class PartialEvaluator {
           firstChar,
           lastChar,
           toUnicode,
+          xHeight: 0,
+          capHeight: 0,
+          italicAngle: 0,
           isType3Font,
         };
         const widths = dict.get("Widths");
@@ -3919,10 +3922,10 @@ class PartialEvaluator {
       bbox: descriptor.getArray("FontBBox") || dict.getArray("FontBBox"),
       ascent: descriptor.get("Ascent"),
       descent: descriptor.get("Descent"),
-      xHeight: descriptor.get("XHeight"),
-      capHeight: descriptor.get("CapHeight"),
+      xHeight: descriptor.get("XHeight") || 0,
+      capHeight: descriptor.get("CapHeight") || 0,
       flags: descriptor.get("Flags"),
-      italicAngle: descriptor.get("ItalicAngle"),
+      italicAngle: descriptor.get("ItalicAngle") || 0,
       isType3Font,
       cssFontInfo,
       scaleFactors: glyphScaleFactors,
