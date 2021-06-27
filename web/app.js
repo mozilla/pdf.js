@@ -1826,6 +1826,7 @@ const PDFViewerApplication = {
     if (!this.pdfViewer.currentScaleValue) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
+      // eslint-disable-next-line no-undef
       const defaultZoomOption = PDFViewerApplicationOptions.get('defaultZoomValue');
       // #556 #543 modified by ngx-extended-pdf-viewer
       if (defaultZoomOption) {
