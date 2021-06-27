@@ -515,6 +515,12 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
 }
 
 /**
+ * @typedef {Object} OnProgressParameters
+ * @property {number} loaded - Currently loaded number of bytes.
+ * @property {number} total - Total number of bytes in the PDF file.
+ */
+
+/**
  * The loading task controls the operations required to load a PDF document
  * (such as network requests) and provides a way to listen for completion,
  * after which individual pages can be rendered.
@@ -528,8 +534,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  *   {@link PasswordResponses}).
  * @property {function} [onProgress] - Callback to be able to monitor the
  *   loading progress of the PDF file (necessary to implement e.g. a loading
- *   bar). The callback receives an {Object} with the properties `loaded`
- *   ({number}) and `total` ({number}) that indicate how many bytes are loaded.
+ *   bar). The callback receives an {@link OnProgressParameters} argument.
  * @property {function} [onUnsupportedFeature] - Callback for when an
  *   unsupported feature is used in the PDF document. The callback receives an
  *   {@link UNSUPPORTED_FEATURES} argument.
@@ -581,9 +586,8 @@ const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
       /**
        * Callback to be able to monitor the loading progress of the PDF file
-       * (necessary to implement e.g. a loading bar). The callback receives
-       * an {Object} with the properties `loaded` ({number}) and `total`
-       * ({number}) that indicate how many bytes are loaded.
+       * (necessary to implement e.g. a loading bar).
+       * The callback receives an {@link OnProgressParameters} argument.
        * @type {function}
        */
       this.onProgress = null;
