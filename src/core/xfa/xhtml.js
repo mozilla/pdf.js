@@ -29,7 +29,7 @@ import {
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import { fixTextIndent, measureToString, setFontFamily } from "./html_utils.js";
-import { getMeasurement, HTMLResult } from "./utils.js";
+import { getMeasurement, HTMLResult, stripQuotes } from "./utils.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
 
@@ -191,7 +191,7 @@ class XhtmlObject extends XmlObject {
         continue;
       }
       if (key === "font-family") {
-        xfaFont.typeface = value;
+        xfaFont.typeface = stripQuotes(value);
       } else if (key === "font-size") {
         xfaFont.size = getMeasurement(value);
       } else if (key === "font-weight") {
