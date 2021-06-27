@@ -18,7 +18,7 @@ import {
   addLinkAttributes,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
-  isFetchSupported,
+  getXfaPageViewport,
   isPdfFile,
   isValidFetchUrl,
   LinkTarget,
@@ -53,10 +53,8 @@ import {
   VerbosityLevel,
 } from "./shared/util.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
-// modified by ngx-extended-pdf-viewer
-// import { apiCompatibilityParams } from "./display/api_compatibility.js";
-// end of modification
 import { GlobalWorkerOptions } from "./display/worker_options.js";
+import { isNodeJS } from "./shared/is_node.js";
 import { renderTextLayer } from "./display/text_layer.js";
 import { SVGGraphics } from "./display/svg.js";
 import { XfaLayer } from "./display/xfa_layer.js";
@@ -73,29 +71,32 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     import("pdfjs/display/network.js"),
     import("pdfjs/display/fetch_stream.js"),
   ]);
-  setPDFNetworkStreamFactory(params => {
-    return streamsPromise.then(streams => {
-      const [{ PDFNetworkStream }, { PDFFetchStream }] = streams;
-      if (isFetchSupported() && isValidFetchUrl(params.url)) {
-        return new PDFFetchStream(params);
-      }
-      return new PDFNetworkStream(params);
-    });
-  });
-} else if (PDFJSDev.test("GENERIC")) {
-  // modified by ngx-extended-pdf-viewer - removed node.js support
-  const PDFNetworkStream = require("./display/network.js").PDFNetworkStream;
-  let PDFFetchStream;
-  if (isFetchSupported()) {
-    PDFFetchStream = require("./display/fetch_stream.js").PDFFetchStream;
-    // modified by ngx-extended-pdf-viewer - removed node.js support
-  }
-  setPDFNetworkStreamFactory(params => {
-    if (PDFFetchStream && isValidFetchUrl(params.url)) {
+
+  setPDFNetworkStreamFactory(async params => {
+    const [{ PDFNetworkStream }, { PDFFetchStream }] = await streamsPromise;
+    if (isValidFetchUrl(params.url)) {
       return new PDFFetchStream(params);
     }
     return new PDFNetworkStream(params);
   });
+} else if (PDFJSDev.test("GENERIC || CHROME")) {
+  if (PDFJSDev.test("GENERIC") && isNodeJS) {
+    const { PDFNodeStream } = require("./display/node_stream.js");
+
+    setPDFNetworkStreamFactory(params => {
+      return new PDFNodeStream(params);
+    });
+  } else {
+    const { PDFNetworkStream } = require("./display/network.js");
+    const { PDFFetchStream } = require("./display/fetch_stream.js");
+
+    setPDFNetworkStreamFactory(params => {
+      if (isValidFetchUrl(params.url)) {
+        return new PDFFetchStream(params);
+      }
+      return new PDFNetworkStream(params);
+    });
+  }
 }
 
 export {
@@ -108,6 +109,7 @@ export {
   loadScript,
   PDFDateString,
   RenderingCancelledException,
+  getXfaPageViewport,
   // From "./display/api.js":
   build,
   getDocument,
@@ -133,9 +135,6 @@ export {
   VerbosityLevel,
   // From "./display/annotation_layer.js":
   AnnotationLayer,
-  // modified by ngx-extended-pdf-viewer - removed node.js support
-  // apiCompatibilityParams,
-  // end of modification
   // From "./display/worker_options.js":
   GlobalWorkerOptions,
   // From "./display/text_layer.js":

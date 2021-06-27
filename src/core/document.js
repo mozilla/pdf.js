@@ -79,6 +79,7 @@ class Page {
     globalIdFactory,
     fontCache,
     builtInCMapCache,
+    standardFontDataCache,
     globalImageCache,
     nonBlendModesSet,
     xfaFactory,
@@ -90,6 +91,7 @@ class Page {
     this.ref = ref;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
+    this.standardFontDataCache = standardFontDataCache;
     this.globalImageCache = globalImageCache;
     this.nonBlendModesSet = nonBlendModesSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
@@ -255,6 +257,7 @@ class Page {
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
+      standardFontDataCache: this.standardFontDataCache,
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
     });
@@ -321,6 +324,7 @@ class Page {
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
+      standardFontDataCache: this.standardFontDataCache,
       globalImageCache: this.globalImageCache,
       options: this.evaluatorOptions,
     });
@@ -425,6 +429,7 @@ class Page {
         idFactory: this._localIdFactory,
         fontCache: this.fontCache,
         builtInCMapCache: this.builtInCMapCache,
+        standardFontDataCache: this.standardFontDataCache,
         globalImageCache: this.globalImageCache,
         options: this.evaluatorOptions,
       });
@@ -852,6 +857,10 @@ class PDFDocument {
     return shadow(this, "xfaFaxtory", null);
   }
 
+  get isPureXfa() {
+    return this.xfaFactory && this.xfaFactory.isValid();
+  }
+
   get htmlForXfa() {
     if (this.xfaFactory) {
       return this.xfaFactory.getPages();
@@ -876,6 +885,12 @@ class PDFDocument {
       return;
     }
 
+    const options = Object.assign(
+      Object.create(null),
+      this.pdfManager.evaluatorOptions
+    );
+    options.useSystemFonts = false;
+
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
       handler,
@@ -883,10 +898,18 @@ class PDFDocument {
       idFactory: this._globalIdFactory,
       fontCache: this.catalog.fontCache,
       builtInCMapCache: this.catalog.builtInCMapCache,
+      standardFontDataCache: this.catalog.standardFontDataCache,
+      options,
     });
     const operatorList = new OperatorList();
+    const pdfFonts = [];
     const initialState = {
-      font: null,
+      get font() {
+        return pdfFonts[pdfFonts.length - 1];
+      },
+      set font(font) {
+        pdfFonts.push(font);
+      },
       clone() {
         return this;
       },
@@ -903,7 +926,9 @@ class PDFDocument {
       if (!(descriptor instanceof Dict)) {
         continue;
       }
-      const fontFamily = descriptor.get("FontFamily");
+      let fontFamily = descriptor.get("FontFamily");
+      // For example, "Wingdings 3" is not a valid font name in the css specs.
+      fontFamily = fontFamily.replace(/[ ]+([0-9])/g, "$1");
       const fontWeight = descriptor.get("FontWeight");
 
       // Angle is expressed in degrees counterclockwise in PDF
@@ -933,7 +958,16 @@ class PDFDocument {
           })
       );
     }
+
     await Promise.all(promises);
+    this.xfaFactory.setFonts(pdfFonts);
+  }
+
+  async serializeXfaData(annotationStorage) {
+    if (this.xfaFactory) {
+      return this.xfaFactory.serializeData(annotationStorage);
+    }
+    return null;
   }
 
   get formInfo() {
@@ -1141,6 +1175,7 @@ class PDFDocument {
           globalIdFactory: this._globalIdFactory,
           fontCache: catalog.fontCache,
           builtInCMapCache: catalog.builtInCMapCache,
+          standardFontDataCache: catalog.standardFontDataCache,
           globalImageCache: catalog.globalImageCache,
           nonBlendModesSet: catalog.nonBlendModesSet,
           xfaFactory: this.xfaFactory,
@@ -1163,6 +1198,7 @@ class PDFDocument {
         globalIdFactory: this._globalIdFactory,
         fontCache: catalog.fontCache,
         builtInCMapCache: catalog.builtInCMapCache,
+        standardFontDataCache: catalog.standardFontDataCache,
         globalImageCache: catalog.globalImageCache,
         nonBlendModesSet: catalog.nonBlendModesSet,
         xfaFactory: null,

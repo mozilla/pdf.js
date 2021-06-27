@@ -14,7 +14,7 @@
  */
 
 import { RenderingCancelledException, shadow } from "pdfjs-lib";
-import { getXfaHtmlForPrinting } from "./ui_utils.js";
+import { getXfaHtmlForPrinting } from "./print_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 
 // Creates a placeholder with div and canvas with right size for the page.

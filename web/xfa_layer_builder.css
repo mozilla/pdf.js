@@ -13,12 +13,18 @@
  * limitations under the License.
  */
 
+.xfaPrintOnly {
+  display: none;
+}
+
 .xfaLayer {
   position: absolute;
+  text-align: initial;
   top: 0;
   left: 0;
   z-index: 200;
   transform-origin: 0 0;
+  line-height: 1.2;
 }
 
 .xfaLayer * {
@@ -48,10 +54,6 @@
 
 .xfaRich li {
   margin-left: 3em;
-}
-
-.xfaLayer p {
-  margin-bottom: -1px;
 }
 
 .xfaFont {
@@ -90,6 +92,11 @@
   flex: 0 1 auto;
 }
 
+.xfaCaptionForCheckButton {
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
 .xfaLabel {
   height: 100%;
   width: 100%;
@@ -101,42 +108,20 @@
   align-items: center;
 }
 
-.xfaLeft > .xfaCaption {
-  max-height: 100%;
-}
-
-.xfaRight {
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-}
-
-.xfaRight > .xfaCaption {
+.xfaLeft > .xfaCaption,
+.xfaLeft > .xfaCaptionForCheckButton {
   max-height: 100%;
 }
 
 .xfaTop {
   display: flex;
   flex-direction: column;
-  align-items: start;
+  align-items: flex-start;
 }
 
-.xfaTop > .xfaCaption {
-  max-width: 100%;
-}
-
-.xfaBottom {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: start;
-}
-
-.xfaBottom > .xfaCaption {
-  max-width: 100%;
-}
-
-.xfaInline {
-  float: inline;
+.xfaTop > .xfaCaption,
+.xfaTop > .xfaCaptionForCheckButton {
+  width: 100%;
 }
 
 .xfaBorder {
@@ -166,6 +151,7 @@
 .xfaTextfield:focus,
 .xfaSelect:focus {
   background-color: transparent;
+  outline: none;
 }
 
 .xfaTextfield,
@@ -193,6 +179,7 @@
 .xfaRadio {
   width: 100%;
   height: 100%;
+  flex: 0 0 auto;
   border: none;
 }
 
@@ -230,18 +217,10 @@
   align-items: stretch;
 }
 
-.xfaLr > div {
-  flex: 1 1 auto;
-}
-
 .xfaRl {
   display: flex;
   flex-direction: row-reverse;
   align-items: stretch;
-}
-
-.xfaRl > div {
-  flex: 1 1 auto;
 }
 
 .xfaTb > div {
@@ -292,9 +271,22 @@
   flex: 1;
 }
 
+.xfaDisabled input,
+.xfaDisabled textarea,
+.xfaReadOnly input,
+.xfaReadOnly textarea {
+  background: initial;
+}
+
 @media print {
   .xfaTextfield,
   .xfaSelect {
     background-color: transparent;
+  }
+
+  .xfaSelect {
+    appearance: none;
+    text-indent: 1px;
+    text-overflow: "";
   }
 }

@@ -16,52 +16,21 @@
 import {
   assert,
   BaseException,
-  CMapCompressionType,
   isString,
   removeNullCharacters,
   stringToBytes,
-  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
+import {
+  BaseCanvasFactory,
+  BaseCMapReaderFactory,
+  BaseStandardFontDataFactory,
+  BaseSVGFactory,
+} from "./base_factory.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
-
-class BaseCanvasFactory {
-  constructor() {
-    if (this.constructor === BaseCanvasFactory) {
-      unreachable("Cannot initialize BaseCanvasFactory.");
-    }
-  }
-
-  create(width, height) {
-    unreachable("Abstract method `create` called.");
-  }
-
-  reset(canvasAndContext, width, height) {
-    if (!canvasAndContext.canvas) {
-      throw new Error("Canvas is not specified");
-    }
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
-    }
-    canvasAndContext.canvas.width = width;
-    canvasAndContext.canvas.height = height;
-  }
-
-  destroy(canvasAndContext) {
-    if (!canvasAndContext.canvas) {
-      throw new Error("Canvas is not specified");
-    }
-    // Zeroing the width and height cause Firefox to release graphics
-    // resources immediately, which can greatly reduce memory consumption.
-    canvasAndContext.canvas.width = 0;
-    canvasAndContext.canvas.height = 0;
-    canvasAndContext.canvas = null;
-    canvasAndContext.context = null;
-  }
-}
 
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {
@@ -69,38 +38,26 @@ class DOMCanvasFactory extends BaseCanvasFactory {
     this._document = ownerDocument;
   }
 
-  create(width, height) {
-    if (width <= 0 || height <= 0) {
-      throw new Error("Invalid canvas size");
-    }
+  _createCanvas(width, height) {
     const canvas = this._document.createElement("canvas");
-    const context = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
-    return {
-      canvas,
-      context,
-    };
+    return canvas;
   }
 }
 
-function fetchData(url, asTypedArray) {
+async function fetchData(url, asTypedArray = false) {
   if (
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-    (isFetchSupported() && isValidFetchUrl(url, document.baseURI))
+    isValidFetchUrl(url, document.baseURI)
   ) {
-    return fetch(url).then(async response => {
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      let data;
-      if (asTypedArray) {
-        data = new Uint8Array(await response.arrayBuffer());
-      } else {
-        data = stringToBytes(await response.text());
-      }
-      return data;
-    });
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return asTypedArray
+      ? new Uint8Array(await response.arrayBuffer())
+      : stringToBytes(await response.text());
   }
 
   // The Fetch API is not supported.
@@ -134,75 +91,10 @@ function fetchData(url, asTypedArray) {
   });
 }
 
-class BaseCMapReaderFactory {
-  constructor({ baseUrl = null, isCompressed = false }) {
-    if (this.constructor === BaseCMapReaderFactory) {
-      unreachable("Cannot initialize BaseCMapReaderFactory.");
-    }
-    this.baseUrl = baseUrl;
-    this.isCompressed = isCompressed;
-  }
-
-  async fetch({ name }) {
-    if (!this.baseUrl) {
-      throw new Error(
-        'The CMap "baseUrl" parameter must be specified, ensure that ' +
-          'the "cMapUrl" and "cMapPacked" API parameters are provided.'
-      );
-    }
-    if (!name) {
-      throw new Error("CMap name must be specified.");
-    }
-    const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
-    const compressionType = this.isCompressed
-      ? CMapCompressionType.BINARY
-      : CMapCompressionType.NONE;
-
-    return this._fetchData(url, compressionType).catch(reason => {
-      throw new Error(
-        `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
-      );
-    });
-  }
-
-  /**
-   * @private
-   */
-  _fetchData(url, compressionType) {
-    unreachable("Abstract method `_fetchData` called.");
-  }
-}
-
 class DOMCMapReaderFactory extends BaseCMapReaderFactory {
   _fetchData(url, compressionType) {
     return fetchData(url, /* asTypedArray = */ this.isCompressed).then(data => {
       return { cMapData: data, compressionType };
-    });
-  }
-}
-
-class BaseStandardFontDataFactory {
-  constructor({ baseUrl = null }) {
-    if (this.constructor === BaseStandardFontDataFactory) {
-      unreachable("Cannot initialize BaseStandardFontDataFactory.");
-    }
-    this.baseUrl = baseUrl;
-  }
-
-  async fetch({ filename }) {
-    if (!this.baseUrl) {
-      throw new Error(
-        'The standard font "baseUrl" parameter must be specified, ensure that ' +
-          'the "standardFontDataUrl" API parameter is provided.'
-      );
-    }
-    if (!filename) {
-      throw new Error("Font filename must be specified.");
-    }
-    const url = this.baseUrl + filename + ".pfb";
-
-    return this._fetchData(url).catch(reason => {
-      throw new Error(`Unable to load font data at: ${url}`);
     });
   }
 }
@@ -213,23 +105,8 @@ class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
   }
 }
 
-class DOMSVGFactory {
-  create(width, height) {
-    assert(width > 0 && height > 0, "Invalid SVG dimensions");
-
-    const svg = document.createElementNS(SVG_NS, "svg:svg");
-    svg.setAttribute("version", "1.1");
-    svg.setAttribute("width", width + "px");
-    svg.setAttribute("height", height + "px");
-    svg.setAttribute("preserveAspectRatio", "none");
-    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-
-    return svg;
-  }
-
-  createElement(type) {
-    assert(typeof type === "string", "Invalid SVG element type");
-
+class DOMSVGFactory extends BaseSVGFactory {
+  _createSVG(type) {
     return document.createElementNS(SVG_NS, type);
   }
 }
@@ -612,15 +489,6 @@ class StatTimer {
   }
 }
 
-function isFetchSupported() {
-  return (
-    typeof fetch !== "undefined" &&
-    typeof Response !== "undefined" &&
-    "body" in Response.prototype &&
-    typeof ReadableStream !== "undefined"
-  );
-}
-
 function isValidFetchUrl(url, baseUrl) {
   try {
     const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
@@ -750,11 +618,22 @@ class PDFDateString {
   }
 }
 
+/**
+ * NOTE: This is (mostly) intended to support printing of XFA forms.
+ */
+function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
+  const { width, height } = xfaPage.attributes.style;
+  const viewBox = [0, 0, parseInt(width), parseInt(height)];
+
+  return new PageViewport({
+    viewBox,
+    scale,
+    rotation,
+  });
+}
+
 export {
   addLinkAttributes,
-  BaseCanvasFactory,
-  BaseCMapReaderFactory,
-  BaseStandardFontDataFactory,
   DEFAULT_LINK_REL,
   deprecated,
   DOMCanvasFactory,
@@ -763,8 +642,8 @@ export {
   DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getXfaPageViewport,
   isDataScheme,
-  isFetchSupported,
   isPdfFile,
   isValidFetchUrl,
   LinkTarget,

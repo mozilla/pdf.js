@@ -232,7 +232,7 @@ class TextLayerBuilder {
     function beginText(begin, className) {
       const divIdx = begin.divIdx;
       textDivs[divIdx].textContent = "";
-      appendTextToDiv(divIdx, 0, begin.offset, className);
+      return appendTextToDiv(divIdx, 0, begin.offset, className);
     }
 
     function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
@@ -247,9 +247,10 @@ class TextLayerBuilder {
         span.className = `${className} appended`;
         span.appendChild(node);
         div.appendChild(span);
-        return;
+        return className.includes("selected") ? span.offsetLeft : 0;
       }
       div.appendChild(node);
+      return 0;
     }
 
     let i0 = selectedMatchIdx,
@@ -270,14 +271,7 @@ class TextLayerBuilder {
       const highlightSuffix =
         (isSelected ? " selected" : "") + " color" + match.color; // #201
 
-      if (isSelected) {
-        // Attempt to scroll the selected match into view.
-        findController.scrollMatchIntoView({
-          element: textDivs[begin.divIdx],
-          pageIndex: pageIdx,
-          matchIndex: selectedMatchIdx,
-        });
-      }
+      let selectedLeft = 0;
 
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
@@ -292,14 +286,14 @@ class TextLayerBuilder {
       }
 
       if (begin.divIdx === end.divIdx) {
-        appendTextToDiv(
+        selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           end.offset,
           "highlight" + highlightSuffix
         );
       } else {
-        appendTextToDiv(
+        selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           infinity.offset,
@@ -311,6 +305,16 @@ class TextLayerBuilder {
         beginText(end, "highlight end" + highlightSuffix);
       }
       prevEnd = end;
+
+      if (isSelected) {
+        // Attempt to scroll the selected match into view.
+        findController.scrollMatchIntoView({
+          element: textDivs[begin.divIdx],
+          selectedLeft,
+          pageIndex: pageIdx,
+          matchIndex: selectedMatchIdx,
+        });
+      }
     }
 
     if (prevEnd) {

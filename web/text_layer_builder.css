@@ -15,6 +15,7 @@
 
 .textLayer {
   position: absolute;
+  text-align: initial;
   left: 0;
   top: 0;
   right: 0;

@@ -18,14 +18,17 @@ import {
   $childrenToHTML,
   $content,
   $extra,
+  $getChildren,
+  $globalData,
   $nodeName,
   $onText,
+  $pushGlyphs,
   $text,
   $toHTML,
   XmlObject,
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
-import { fixTextIndent, getFonts, measureToString } from "./html_utils.js";
+import { fixTextIndent, measureToString, setFontFamily } from "./html_utils.js";
 import { getMeasurement, HTMLResult } from "./utils.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
@@ -89,13 +92,13 @@ const StyleMapping = new Map([
   ["margin-right", value => measureToString(getMeasurement(value))],
   ["margin-top", value => measureToString(getMeasurement(value))],
   ["text-indent", value => measureToString(getMeasurement(value))],
-  ["font-family", value => getFonts(value)],
+  ["font-family", value => value],
 ]);
 
 const spacesRegExp = /\s+/g;
 const crlfRegExp = /[\r\n]+/g;
 
-function mapStyle(styleStr) {
+function mapStyle(styleStr, fontFinder) {
   const style = Object.create(null);
   if (!styleStr) {
     return style;
@@ -110,7 +113,7 @@ function mapStyle(styleStr) {
       if (typeof mapping === "string") {
         newValue = mapping;
       } else {
-        newValue = mapping(value);
+        newValue = mapping(value, fontFinder);
       }
     }
     if (key.endsWith("scale")) {
@@ -123,6 +126,18 @@ function mapStyle(styleStr) {
       style[key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())] =
         newValue;
     }
+  }
+
+  if (style.fontFamily) {
+    setFontFamily(
+      {
+        typeface: style.fontFamily,
+        weight: style.fontWeight || "normal",
+        posture: style.fontStyle || "normal",
+      },
+      fontFinder,
+      style
+    );
   }
 
   fixTextIndent(style);
@@ -167,6 +182,39 @@ class XhtmlObject extends XmlObject {
     }
   }
 
+  [$pushGlyphs](measure) {
+    const xfaFont = Object.create(null);
+    for (const [key, value] of this.style
+      .split(";")
+      .map(s => s.split(":", 2))) {
+      if (!key.startsWith("font-")) {
+        continue;
+      }
+      if (key === "font-family") {
+        xfaFont.typeface = value;
+      } else if (key === "font-size") {
+        xfaFont.size = getMeasurement(value);
+      } else if (key === "font-weight") {
+        xfaFont.weight = value;
+      } else if (key === "font-style") {
+        xfaFont.posture = value;
+      }
+    }
+    measure.pushFont(xfaFont);
+    if (this[$content]) {
+      measure.addString(this[$content]);
+    } else {
+      for (const child of this[$getChildren]()) {
+        if (child[$nodeName] === "#text") {
+          measure.addString(child[$content]);
+          continue;
+        }
+        child[$pushGlyphs](measure);
+      }
+    }
+    measure.popFont();
+  }
+
   [$toHTML](availableSpace) {
     const children = [];
     this[$extra] = {
@@ -183,7 +231,7 @@ class XhtmlObject extends XmlObject {
       name: this[$nodeName],
       attributes: {
         href: this.href,
-        style: mapStyle(this.style),
+        style: mapStyle(this.style, this[$globalData].fontFinder),
       },
       children,
       value: this[$content] || "",
@@ -201,6 +249,12 @@ class A extends XhtmlObject {
 class B extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "b");
+  }
+
+  [$pushGlyphs](measure) {
+    measure.pushFont({ weight: "bold" });
+    super[$pushGlyphs](measure);
+    measure.popFont();
   }
 }
 
@@ -228,6 +282,10 @@ class Br extends XhtmlObject {
 
   [$text]() {
     return "\n";
+  }
+
+  [$pushGlyphs](measure) {
+    measure.addString("\n");
   }
 
   [$toHTML](availableSpace) {
@@ -282,6 +340,12 @@ class I extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "i");
   }
+
+  [$pushGlyphs](measure) {
+    measure.pushFont({ posture: "italic" });
+    super[$pushGlyphs](measure);
+    measure.popFont();
+  }
 }
 
 class Li extends XhtmlObject {
@@ -299,6 +363,11 @@ class Ol extends XhtmlObject {
 class P extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "p");
+  }
+
+  [$pushGlyphs](measure) {
+    super[$pushGlyphs](measure);
+    measure.addString("\n");
   }
 
   [$text]() {

@@ -16,18 +16,16 @@
 import {
   $extra,
   $getParent,
+  $getSubformParent,
   $nodeName,
+  $pushGlyphs,
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
-import { getMeasurement } from "./utils.js";
+import { getMeasurement, stripQuotes } from "./utils.js";
+import { selectFont } from "./fonts.js";
+import { TextMeasure } from "./text.js";
 import { warn } from "../../shared/util.js";
-
-const wordNonWordRegex = new RegExp(
-  "([\\p{N}\\p{L}\\p{M}]+)|([^\\p{N}\\p{L}\\p{M}]+)",
-  "gu"
-);
-const wordFirstRegex = new RegExp("^[\\p{N}\\p{L}\\p{M}]", "u");
 
 function measureToString(m) {
   if (typeof m === "string") {
@@ -105,24 +103,12 @@ const converters = {
       style.width = measureToString(width);
     } else {
       style.width = "auto";
-      if (node.maxW > 0) {
-        style.maxWidth = measureToString(node.maxW);
-      }
-      if (parent.layout === "position") {
-        style.minWidth = measureToString(node.minW);
-      }
     }
 
     if (height !== "") {
       style.height = measureToString(height);
     } else {
       style.height = "auto";
-      if (node.maxH > 0) {
-        style.maxHeight = measureToString(node.maxH);
-      }
-      if (parent.layout === "position") {
-        style.minHeight = measureToString(node.minH);
-      }
     }
   },
   position(node, style) {
@@ -191,65 +177,29 @@ const converters = {
   },
 };
 
-function layoutText(text, fontSize, space) {
-  // Try to guess width and height for the given text in taking into
-  // account the space where the text should fit.
-  // The computed dimensions are just an overestimation.
-  // TODO: base this estimation on real metrics.
-  let width = 0;
-  let height = 0;
-  let totalWidth = 0;
-  const lineHeight = fontSize * 1.5;
-  const averageCharSize = fontSize * 0.4;
-  const maxCharOnLine = Math.floor(space.width / averageCharSize);
-  const chunks = text.match(wordNonWordRegex);
-  let treatedChars = 0;
-
-  let i = 0;
-  let chunk = chunks[0];
-  while (chunk) {
-    const w = chunk.length * averageCharSize;
-    if (width + w <= space.width) {
-      width += w;
-      treatedChars += chunk.length;
-      chunk = chunks[i++];
-      continue;
+function setMinMaxDimensions(node, style) {
+  const parent = node[$getParent]();
+  if (parent.layout === "position") {
+    style.minWidth = measureToString(node.minW);
+    if (node.maxW) {
+      style.maxWidth = measureToString(node.maxW);
     }
-
-    if (!wordFirstRegex.test(chunk) || chunk.length > maxCharOnLine) {
-      const numOfCharOnLine = Math.floor(
-        (space.width - width) / averageCharSize
-      );
-      chunk = chunk.slice(numOfCharOnLine);
-      treatedChars += numOfCharOnLine;
-      if (height + lineHeight > space.height) {
-        return { width: 0, height: 0, splitPos: treatedChars };
-      }
-      totalWidth = Math.max(width, totalWidth);
-      width = 0;
-      height += lineHeight;
-      continue;
+    style.minHeight = measureToString(node.minH);
+    if (node.maxH) {
+      style.maxHeight = measureToString(node.maxH);
     }
+  }
+}
 
-    if (height + lineHeight > space.height) {
-      return { width: 0, height: 0, splitPos: treatedChars };
-    }
-
-    totalWidth = Math.max(width, totalWidth);
-    width = w;
-    height += lineHeight;
-    chunk = chunks[i++];
+function layoutText(text, xfaFont, fontFinder, width) {
+  const measure = new TextMeasure(xfaFont, fontFinder);
+  if (typeof text === "string") {
+    measure.addString(text);
+  } else {
+    text[$pushGlyphs](measure);
   }
 
-  if (totalWidth === 0) {
-    totalWidth = width;
-  }
-
-  if (totalWidth !== 0) {
-    height += lineHeight;
-  }
-
-  return { width: totalWidth, height, splitPos: -1 };
+  return measure.compute(width);
 }
 
 function computeBbox(node, html, availableSpace) {
@@ -296,7 +246,7 @@ function computeBbox(node, html, availableSpace) {
 }
 
 function fixDimensions(node) {
-  const parent = node[$getParent]();
+  const parent = node[$getSubformParent]();
   if (parent.layout && parent.layout.includes("row")) {
     const extra = parent[$extra];
     const colSpan = node.colSpan;
@@ -336,16 +286,9 @@ function fixDimensions(node) {
     }
   }
 
-  if (node.layout === "position") {
-    // Acrobat doesn't take into account min, max values
-    // for containers with positioned layout (which makes sense).
-    node.minW = node.minH = 0;
-    node.maxW = node.maxH = Infinity;
-  } else {
-    if (node.layout === "table") {
-      if (node.w === "" && Array.isArray(node.columnWidths)) {
-        node.w = node.columnWidths.reduce((a, x) => a + x, 0);
-      }
+  if (node.layout === "table") {
+    if (node.w === "" && Array.isArray(node.columnWidths)) {
+      node.w = node.columnWidths.reduce((a, x) => a + x, 0);
     }
   }
 }
@@ -426,10 +369,14 @@ function createWrapper(node, html) {
     }
     const insetsW = insets[1] + insets[3];
     const insetsH = insets[0] + insets[2];
+    const classNames = ["xfaBorder"];
+    if (isPrintOnly(node.border)) {
+      classNames.push("xfaPrintOnly");
+    }
     const border = {
       name: "div",
       attributes: {
-        class: ["xfaBorder"],
+        class: classNames,
         style: {
           top: `${insets[0] - widths[0] + shiftW}px`,
           left: `${insets[3] - widths[3] + shiftH}px`,
@@ -468,6 +415,7 @@ function createWrapper(node, html) {
     "maxHeight",
     "transform",
     "transformOrigin",
+    "visibility",
   ]) {
     if (style[key] !== undefined) {
       wrapper.attributes.style[key] = style[key];
@@ -505,33 +453,45 @@ function fixTextIndent(styles) {
   }
 }
 
-function getFonts(family) {
-  if (family.startsWith("'")) {
-    family = `"${family.slice(1, family.length - 1)}"`;
-  } else if (family.includes(" ") && !family.startsWith('"')) {
-    family = `"${family}"`;
+function setAccess(node, classNames) {
+  switch (node.access) {
+    case "nonInteractive":
+    case "readOnly":
+      classNames.push("xfaReadOnly");
+      break;
+    case "protected":
+      classNames.push("xfaDisabled");
+      break;
   }
+}
 
-  // TODO in case Myriad is not available we should generate a new
-  // font based on helvetica but where glyphs have been rescaled in order
-  // to have the exact same metrics.
-  const fonts = [family];
-  switch (family) {
-    case `"Myriad Pro"`:
-      fonts.push(
-        `"Roboto Condensed"`,
-        `"Ubuntu Condensed"`,
-        `"Microsoft Sans Serif"`,
-        `"Apple Symbols"`,
-        "Helvetica",
-        `"sans serif"`
-      );
-      break;
-    case "Arial":
-      fonts.push("Helvetica", `"Liberation Sans"`, "Arimo", `"sans serif"`);
-      break;
+function isPrintOnly(node) {
+  return (
+    node.relevant.length > 0 &&
+    !node.relevant[0].excluded &&
+    node.relevant[0].viewname === "print"
+  );
+}
+
+function setFontFamily(xfaFont, fontFinder, style) {
+  const name = stripQuotes(xfaFont.typeface);
+  const typeface = fontFinder.find(name);
+
+  style.fontFamily = `"${name}"`;
+  if (typeface) {
+    const { fontFamily } = typeface.regular.cssFontInfo;
+    if (fontFamily !== name) {
+      style.fontFamily += `,"${fontFamily}"`;
+    }
+    if (style.lineHeight) {
+      // Already something so don't overwrite.
+      return;
+    }
+    const pdfFont = selectFont(xfaFont, typeface);
+    if (pdfFont && pdfFont.lineHeight > 0) {
+      style.lineHeight = pdfFont.lineHeight;
+    }
   }
-  return fonts.join(",");
 }
 
 export {
@@ -539,9 +499,12 @@ export {
   createWrapper,
   fixDimensions,
   fixTextIndent,
-  getFonts,
+  isPrintOnly,
   layoutClass,
   layoutText,
   measureToString,
+  setAccess,
+  setFontFamily,
+  setMinMaxDimensions,
   toStyle,
 };

@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-import { PageViewport } from "./display_utils.js";
-
 class XfaLayer {
-  static setupStorage(html, fieldId, element, storage, intent) {
-    const storedData = storage.getValue(fieldId, { value: null });
+  static setupStorage(html, id, element, storage, intent) {
+    const storedData = storage.getValue(id, { value: null });
     switch (element.name) {
       case "textarea":
         if (storedData.value !== null) {
@@ -27,36 +25,22 @@ class XfaLayer {
           break;
         }
         html.addEventListener("input", event => {
-          storage.setValue(fieldId, { value: event.target.value });
+          storage.setValue(id, { value: event.target.value });
         });
         break;
       case "input":
-        if (element.attributes.type === "radio") {
-          if (storedData.value) {
+        if (
+          element.attributes.type === "radio" ||
+          element.attributes.type === "checkbox"
+        ) {
+          if (storedData.value === element.attributes.exportedValue) {
             html.setAttribute("checked", true);
           }
           if (intent === "print") {
             break;
           }
           html.addEventListener("change", event => {
-            const { target } = event;
-            for (const radio of document.getElementsByName(target.name)) {
-              if (radio !== target) {
-                const id = radio.id;
-                storage.setValue(id.split("-")[0], { value: false });
-              }
-            }
-            storage.setValue(fieldId, { value: target.checked });
-          });
-        } else if (element.attributes.type === "checkbox") {
-          if (storedData.value) {
-            html.setAttribute("checked", true);
-          }
-          if (intent === "print") {
-            break;
-          }
-          html.addEventListener("input", event => {
-            storage.setValue(fieldId, { value: event.target.checked });
+            storage.setValue(id, { value: event.target.getAttribute("xfaOn") });
           });
         } else {
           if (storedData.value !== null) {
@@ -66,7 +50,7 @@ class XfaLayer {
             break;
           }
           html.addEventListener("input", event => {
-            storage.setValue(fieldId, { value: event.target.value });
+            storage.setValue(id, { value: event.target.value });
           });
         }
         break;
@@ -82,9 +66,9 @@ class XfaLayer {
           const options = event.target.options;
           const value =
             options.selectedIndex === -1
-              ? null
+              ? ""
               : options[options.selectedIndex].value;
-          storage.setValue(fieldId, { value });
+          storage.setValue(id, { value });
         });
         break;
     }
@@ -98,7 +82,7 @@ class XfaLayer {
       attributes.name = `${attributes.name}-${intent}`;
     }
     for (const [key, value] of Object.entries(attributes)) {
-      if (value === null || value === undefined || key === "fieldId") {
+      if (value === null || value === undefined || key === "dataId") {
         continue;
       }
 
@@ -117,15 +101,15 @@ class XfaLayer {
 
     // Set the value after the others to be sure overwrite
     // any other values.
-    if (storage && attributes.fieldId !== undefined) {
-      this.setupStorage(html, attributes.fieldId, element, storage);
+    if (storage && attributes.dataId) {
+      this.setupStorage(html, attributes.dataId, element, storage);
     }
   }
 
   static render(parameters) {
     const storage = parameters.annotationStorage;
     const root = parameters.xfa;
-    const intent = parameters.intent;
+    const intent = parameters.intent || "display";
     const rootHtml = document.createElement(root.name);
     if (root.attributes) {
       this.setAttributes(rootHtml, root);
@@ -134,13 +118,8 @@ class XfaLayer {
 
     const rootDiv = parameters.div;
     rootDiv.appendChild(rootHtml);
-
-    let { viewport } = parameters;
-    if (!(viewport instanceof PageViewport)) {
-      viewport = new PageViewport(viewport);
-    }
-    const coeffs = viewport.transform.join(",");
-    rootDiv.style.transform = `matrix(${coeffs})`;
+    const transform = `matrix(${parameters.viewport.transform.join(",")})`;
+    rootDiv.style.transform = transform;
 
     // Set defaults.
     rootDiv.setAttribute("class", "xfaLayer xfaFont");
@@ -163,7 +142,13 @@ class XfaLayer {
         continue;
       }
 
-      const childHtml = document.createElement(name);
+      let childHtml;
+      if (child?.attributes?.xmlns) {
+        childHtml = document.createElementNS(child.attributes.xmlns, name);
+      } else {
+        childHtml = document.createElement(name);
+      }
+
       html.appendChild(childHtml);
       if (child.attributes) {
         this.setAttributes(childHtml, child, storage, intent);
@@ -174,6 +159,17 @@ class XfaLayer {
       } else if (child.value) {
         childHtml.appendChild(document.createTextNode(child.value));
       }
+    }
+
+    for (const el of rootDiv.querySelectorAll(
+      ".xfaDisabled input, .xfaDisabled textarea"
+    )) {
+      el.setAttribute("disabled", true);
+    }
+    for (const el of rootDiv.querySelectorAll(
+      ".xfaReadOnly input, .xfaReadOnly textarea"
+    )) {
+      el.setAttribute("readOnly", true);
     }
   }
 

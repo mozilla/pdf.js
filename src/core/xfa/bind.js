@@ -29,6 +29,7 @@ import {
   $hasSettableValue,
   $indexOf,
   $insertAt,
+  $isBindable,
   $isDataValue,
   $isDescendent,
   $namespaceId,
@@ -55,12 +56,12 @@ class Binder {
     this.root = root;
     this.datasets = root.datasets;
     if (root.datasets && root.datasets.data) {
-      this.emptyMerge = false;
       this.data = root.datasets.data;
     } else {
-      this.emptyMerge = true;
       this.data = new XmlObject(NamespaceIds.datasets.id, "data");
     }
+    this.emptyMerge = this.data[$getChildren]().length === 0;
+
     this.root.form = this.form = root.template[$clone]();
   }
 
@@ -87,12 +88,12 @@ class Binder {
     // data node (through $data property): we'll use it
     // to save form data.
 
+    formNode[$data] = data;
     if (formNode[$hasSettableValue]()) {
       if (data[$isDataValue]()) {
         const value = data[$getDataValue]();
         // TODO: use picture.
         formNode[$setValue](createText(value));
-        formNode[$data] = data;
       } else if (
         formNode instanceof Field &&
         formNode.ui &&
@@ -103,13 +104,11 @@ class Binder {
           .map(child => child[$content].trim())
           .join("\n");
         formNode[$setValue](createText(value));
-        formNode[$data] = data;
       } else if (this._isConsumeData()) {
         warn(`XFA - Nodes haven't the same type.`);
       }
     } else if (!data[$isDataValue]() || this._isMatchTemplate()) {
       this._bindElement(formNode, data);
-      formNode[$data] = data;
     } else {
       warn(`XFA - Nodes haven't the same type.`);
     }
@@ -477,6 +476,29 @@ class Binder {
 
       if (this._mergeMode === undefined && child[$nodeName] === "subform") {
         this._mergeMode = child.mergeMode === "consumeData";
+
+        // XFA specs p. 182:
+        // The highest-level subform and the data node representing
+        // the current record are special; they are always
+        // bound even if their names don't match.
+        const dataChildren = dataNode[$getChildren]();
+        if (dataChildren.length > 0) {
+          this._bindOccurrences(child, [dataChildren[0]], null);
+        } else if (this.emptyMerge) {
+          const dataChild = new XmlObject(
+            dataNode[$namespaceId],
+            child.name || "root"
+          );
+          dataNode[$appendChild](dataChild);
+          this._bindElement(child, dataChild);
+        }
+        continue;
+      }
+
+      if (!child[$isBindable]()) {
+        // The node cannot contain some new data so there is nothing
+        // to create in the data node.
+        continue;
       }
 
       let global = false;
@@ -526,7 +548,10 @@ class Binder {
           if (this._isConsumeData()) {
             match[$consumed] = true;
           }
-          match = [match];
+
+          // Don't bind the value in newly created node because it's empty.
+          this._bindElement(child, match);
+          continue;
         } else {
           if (this._isConsumeData()) {
             // Filter out consumed nodes.
@@ -567,20 +592,28 @@ class Binder {
           }
           match = matches.length > 0 ? matches : null;
         } else {
+          // If we've an empty merge, there are no reason
+          // to make multiple bind so skip consumed nodes.
           match = dataNode[$getRealChildrenByNameIt](
             child.name,
             /* allTransparent = */ false,
-            /* skipConsumed = */ false
+            /* skipConsumed = */ this.emptyMerge
           ).next().value;
           if (!match) {
             // We're in matchTemplate mode so create a node in data to reflect
             // what we've in template.
             match = new XmlObject(dataNode[$namespaceId], child.name);
+            if (this.emptyMerge) {
+              match[$consumed] = true;
+            }
             dataNode[$appendChild](match);
 
             // Don't bind the value in newly created node because it's empty.
             this._bindElement(child, match);
             continue;
+          }
+          if (this.emptyMerge) {
+            match[$consumed] = true;
           }
           match = [match];
         }
