@@ -490,6 +490,11 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.contentDispositionFilename =
       pdfDataRangeTransport.contentDispositionFilename;
   }
+  // #376 modified by ngx-extended-pdf-viewer
+  let cMapUrl = source.cMapUrl;
+  if (cMapUrl.constructor.name === "Function") {
+    cMapUrl = cMapUrl();
+  }
   return worker.messageHandler
     .sendWithPromise("GetDocRequest", {
       docId,
@@ -515,7 +520,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       fontExtraProperties: source.fontExtraProperties,
       enableXfa: source.enableXfa,
       useSystemFonts: source.useSystemFonts,
-      cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
+      cMapUrl: source.useWorkerFetch ? cMapUrl : null,
       standardFontDataUrl: source.useWorkerFetch
         ? source.standardFontDataUrl
         : null,
@@ -1879,7 +1884,9 @@ class LoopbackPort {
           continue;
         }
         if (typeof desc.value === "function") {
-          if (value.hasOwnProperty?.(i)) {
+          if (i === 'cMapUrl') {
+            result[i] = cloneValue(desc.value());
+          } else if (value.hasOwnProperty?.(i)) {
             throw new Error(
               `LoopbackPort.postMessage - cannot clone: ${value[i]}`
             );

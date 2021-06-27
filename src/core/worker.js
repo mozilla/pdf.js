@@ -449,6 +449,13 @@ class WorkerMessageHandler {
         standardFontDataUrl: data.standardFontDataUrl,
       };
 
+      // modified by ngx-extended-pdf-viewer #376
+      let cMapUrl = evaluatorOptions.cMapUrl;
+      if (cMapUrl.constructor.name === "Function") {
+        evaluatorOptions.cMapUrl = cMapUrl();
+      }
+      // #376 end of modification
+
       getPdfManager(data, evaluatorOptions, data.enableXfa)
         .then(function (newPdfManager) {
           if (terminated) {

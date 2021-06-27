@@ -366,9 +366,15 @@ class PartialEvaluator {
     }
     let data;
 
-    if (this.options.cMapUrl !== null) {
+    // modified by ngx-extended-pdf-viewer #376
+	  let cMapUrl = this.options.cMapUrl;
+	  if (cMapUrl.constructor.name === "Function") {
+	    cMapUrl = cMapUrl();
+	  }
+    if (cMapUrl !== null) {
       // Only compressed CMaps are (currently) supported here.
-      const url = `${this.options.cMapUrl}${name}.bcmap`;
+      const url = `${MapUrl}${name}.bcmap`;
+      // #376 end of modification
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(
