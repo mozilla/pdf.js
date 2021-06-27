@@ -938,6 +938,14 @@
        "lastPage": 2,
        "type": "eq"
     },
+    {  "id": "xfa_bug1718053",
+       "file": "pdfs/xfa_bug1718053.pdf",
+       "md5": "252d728d2c456dcb81699342a71c42ea",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_bug1717681",
        "file": "pdfs/xfa_bug1717681.pdf",
        "md5": "435b1eae7e017b1a932fe204d1ba8be5",
