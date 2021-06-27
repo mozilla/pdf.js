@@ -115,6 +115,12 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  */
 
 /**
+ * @typedef {Object} RefProxy
+ * @property {number} num
+ * @property {number} gen
+ */
+
+/**
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
@@ -762,12 +768,6 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @typedef {Object} RefProxy
-   * @property {number} num
-   * @property {number} gen
-   */
-
-  /**
    * @param {RefProxy} ref - The page reference.
    * @returns {Promise<number>} A promise that is resolved with the page index,
    *   starting from zero, that is associated with the reference.
@@ -1231,8 +1231,7 @@ class PDFPageProxy {
   }
 
   /**
-   * @type {Object} The reference that points to this page. It has `num` and
-   *   `gen` properties.
+   * @type {RefProxy | null} The reference that points to this page.
    */
   get ref() {
     return this._pageInfo.ref;
