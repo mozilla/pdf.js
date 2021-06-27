@@ -257,10 +257,28 @@ function int32(b0, b1, b2, b3) {
 }
 
 function string16(value) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      typeof value === "number" && Math.abs(value) < 2 ** 16,
+      `string16: Unexpected input "${value}".`
+    );
+  }
   return String.fromCharCode((value >> 8) & 0xff, value & 0xff);
 }
 
 function safeString16(value) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      typeof value === "number" && !Number.isNaN(value),
+      `safeString16: Unexpected input "${value}".`
+    );
+  }
   // clamp value to the 16-bit int range
   if (value > 0x7fff) {
     value = 0x7fff;
@@ -751,7 +769,7 @@ function createPostTable(properties) {
     string32(angle) + // italicAngle
     "\x00\x00" + // underlinePosition
     "\x00\x00" + // underlineThickness
-    string32(properties.fixedPitch) + // isFixedPitch
+    string32(properties.fixedPitch ? 1 : 0) + // isFixedPitch
     "\x00\x00\x00\x00" + // minMemType42
     "\x00\x00\x00\x00" + // maxMemType42
     "\x00\x00\x00\x00" + // minMemType1
