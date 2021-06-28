@@ -34,7 +34,9 @@ class XFAParser extends XMLParserBase {
     super();
     this._builder = new Builder();
     this._stack = [];
-    this._globalData = Object.create(null);
+    this._globalData = {
+      usedTypefaces: new Set(),
+    };
     this._ids = new Map();
     this._current = this._builder.buildRoot(this._ids);
     this._errorCode = XMLParserErrorCode.NoError;
