@@ -112,7 +112,6 @@ function addHTML(node, html, bbox) {
         extra.height = Math.max(extra.height, extra.prevHeight + h);
       } else {
         const [, , w, h] = bbox;
-        extra.width = Math.max(extra.width, extra.currentWidth);
         extra.currentWidth = w;
         extra.prevHeight = extra.height;
         extra.height += h;
@@ -120,6 +119,7 @@ function addHTML(node, html, bbox) {
         // The element has been added on a new line so switch to line mode now.
         extra.attempt = 0;
       }
+      extra.width = Math.max(extra.width, extra.currentWidth);
       break;
     case "rl-row":
     case "row": {
