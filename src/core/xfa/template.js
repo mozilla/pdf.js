@@ -2665,6 +2665,11 @@ class Font extends XFAObject {
     this.fill = null;
   }
 
+  [$clean](builder) {
+    super[$clean](builder);
+    this[$globalData].usedTypefaces.add(this.typeface);
+  }
+
   [$toStyle]() {
     const style = toStyle(this, "fill");
     const color = style.color;

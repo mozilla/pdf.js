@@ -17,6 +17,7 @@ import { $globalData, $toHTML } from "./xfa_object.js";
 import { Binder } from "./bind.js";
 import { DataHandler } from "./data.js";
 import { FontFinder } from "./fonts.js";
+import { stripQuotes } from "./utils.js";
 import { warn } from "../../shared/util.js";
 import { XFAParser } from "./parser.js";
 
@@ -62,6 +63,24 @@ class XFAFactory {
 
   setFonts(fonts) {
     this.form[$globalData].fontFinder = new FontFinder(fonts);
+    const missingFonts = [];
+    for (let typeface of this.form[$globalData].usedTypefaces) {
+      typeface = stripQuotes(typeface);
+      const font = this.form[$globalData].fontFinder.find(typeface);
+      if (!font) {
+        missingFonts.push(typeface);
+      }
+    }
+
+    if (missingFonts.length > 0) {
+      return missingFonts;
+    }
+
+    return null;
+  }
+
+  appendFonts(fonts) {
+    this.form[$globalData].fontFinder.add(fonts);
   }
 
   getPages() {
