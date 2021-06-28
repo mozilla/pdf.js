@@ -4222,6 +4222,46 @@ class Subform extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    if (this.break) {
+      // break element is deprecated so plug it on one of its replacement
+      // breakBefore or breakAfter.
+      if (this.break.after !== "auto" || this.break.afterTarget !== "") {
+        const node = new BreakAfter({
+          targetType: this.break.after,
+          target: this.break.afterTarget,
+          startNew: this.break.startNew.toString(),
+        });
+        node[$globalData] = this[$globalData];
+        this[$appendChild](node);
+        this.breakAfter.push(node);
+      }
+
+      if (this.break.before !== "auto" || this.break.beforeTarget !== "") {
+        const node = new BreakBefore({
+          targetType: this.break.before,
+          target: this.break.beforeTarget,
+          startNew: this.break.startNew.toString(),
+        });
+        node[$globalData] = this[$globalData];
+        this[$appendChild](node);
+        this.breakBefore.push(node);
+      }
+
+      if (this.break.overflowTarget !== "") {
+        const node = new Overflow({
+          target: this.break.overflowTarget,
+          leader: this.break.overflowLeader,
+          trailer: this.break.overflowTrailer,
+        });
+        node[$globalData] = this[$globalData];
+        this[$appendChild](node);
+        this.overflow.push(node);
+      }
+
+      this[$removeChild](this.break);
+      this.break = null;
+    }
+
     if (this.presence === "hidden" || this.presence === "inactive") {
       return HTMLResult.EMPTY;
     }
