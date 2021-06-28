@@ -16,6 +16,7 @@
 import {
   $acceptWhitespace,
   $childrenToHTML,
+  $clean,
   $content,
   $extra,
   $getChildren,
@@ -144,18 +145,23 @@ function mapStyle(styleStr, fontFinder) {
   return style;
 }
 
-function checkStyle(style) {
-  if (!style) {
+function checkStyle(node) {
+  if (!node.style) {
     return "";
   }
 
   // Remove any non-allowed keys.
-  return style
+  return node.style
     .trim()
     .split(/\s*;\s*/)
     .filter(s => !!s)
     .map(s => s.split(/\s*:\s*/, 2))
-    .filter(([key]) => VALID_STYLES.has(key))
+    .filter(([key, value]) => {
+      if (key === "font-family") {
+        node[$globalData].usedTypefaces.add(value);
+      }
+      return VALID_STYLES.has(key);
+    })
     .map(kv => kv.join(":"))
     .join(";");
 }
@@ -165,7 +171,12 @@ const NoWhites = new Set(["body", "html"]);
 class XhtmlObject extends XmlObject {
   constructor(attributes, name) {
     super(XHTML_NS_ID, name);
-    this.style = checkStyle(attributes.style);
+    this.style = attributes.style || "";
+  }
+
+  [$clean](builder) {
+    super[$clean](builder);
+    this.style = checkStyle(this);
   }
 
   [$acceptWhitespace]() {
