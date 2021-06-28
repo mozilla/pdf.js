@@ -1046,6 +1046,7 @@ class ChoiceList extends XFAObject {
       const displayed = items.children[displayedIndex][$toHTML]().html;
       const values = items.children[saveIndex][$toHTML]().html;
 
+      let selected = false;
       const value = (field.value && field.value[$text]()) || "";
       for (let i = 0, ii = displayed.length; i < ii; i++) {
         const option = {
@@ -1056,9 +1057,20 @@ class ChoiceList extends XFAObject {
           value: displayed[i],
         };
         if (values[i] === value) {
-          option.attributes.selected = true;
+          option.attributes.selected = selected = true;
         }
         children.push(option);
+      }
+
+      if (!selected) {
+        children.splice(0, 0, {
+          name: "option",
+          attributes: {
+            hidden: true,
+            selected: true,
+          },
+          value: " ",
+        });
       }
     }
 
