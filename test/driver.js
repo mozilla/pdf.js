@@ -66,6 +66,54 @@ function writeSVG(svgElement, ctx, resolve, reject) {
   };
 }
 
+function inlineImages(images) {
+  const imagePromises = [];
+  for (let i = 0, ii = images.length; i < ii; i++) {
+    imagePromises.push(
+      new Promise(function (resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = "blob";
+        xhr.onload = function () {
+          const reader = new FileReader();
+          reader.onloadend = function () {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(xhr.response);
+        };
+        xhr.onerror = function (e) {
+          reject(new Error("Error fetching inline image " + e));
+        };
+        xhr.open("GET", images[i].src);
+        xhr.send();
+      })
+    );
+  }
+  return Promise.all(imagePromises);
+}
+
+async function resolveImages(node, silentErrors = false) {
+  const images = node.getElementsByTagName("img");
+  const data = await inlineImages(images);
+
+  const loadedPromises = [];
+  for (let i = 0, ii = data.length; i < ii; i++) {
+    images[i].src = data[i];
+    loadedPromises.push(
+      new Promise(function (resolveImage, rejectImage) {
+        images[i].onload = resolveImage;
+        images[i].onerror = function (e) {
+          if (silentErrors) {
+            resolveImage();
+          } else {
+            rejectImage(new Error("Error loading image " + e));
+          }
+        };
+      })
+    );
+  }
+  await Promise.all(loadedPromises);
+}
+
 /**
  * @class
  */
@@ -164,30 +212,6 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     return loadStyles(styles);
   }
 
-  function inlineAnnotationImages(images) {
-    var imagePromises = [];
-    for (var i = 0, ii = images.length; i < ii; i++) {
-      var imagePromise = new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.responseType = "blob";
-        xhr.onload = function () {
-          var reader = new FileReader();
-          reader.onloadend = function () {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error("Error fetching inline annotation image " + e));
-        };
-        xhr.open("GET", images[i].src);
-        xhr.send();
-      });
-      imagePromises.push(imagePromise);
-    }
-    return imagePromises;
-  }
-
   // eslint-disable-next-line no-shadow
   function rasterizeAnnotationLayer(
     ctx,
@@ -233,25 +257,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           pdfjsLib.AnnotationLayer.render(parameters);
 
           // Inline SVG images from text annotations.
-          var images = div.getElementsByTagName("img");
-          var imagePromises = inlineAnnotationImages(images);
-
-          await Promise.all(imagePromises).then(function (data) {
-            var loadedPromises = [];
-            for (var i = 0, ii = data.length; i < ii; i++) {
-              images[i].src = data[i];
-              loadedPromises.push(
-                new Promise(function (resolveImage, rejectImage) {
-                  images[i].onload = resolveImage;
-                  images[i].onerror = function (e) {
-                    rejectImage(new Error("Error loading image " + e));
-                  };
-                })
-              );
-            }
-            return loadedPromises;
-          });
-
+          await resolveImages(div);
           foreignObject.appendChild(div);
           svg.appendChild(foreignObject);
 
@@ -312,6 +318,9 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
             viewport: viewport.clone({ dontFlip: true }),
           });
 
+          // Some unsupported type of images (e.g. tiff)
+          // lead to errors.
+          await resolveImages(div, /* silentErrors = */ true);
           svg.appendChild(foreignObject);
 
           writeSVG(svg, ctx, resolve, reject);
