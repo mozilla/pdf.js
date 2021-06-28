@@ -57,6 +57,7 @@ import { AnnotationFactory } from "./annotation.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
+import { getXfaFontWidths } from "./xfa_fonts.js";
 import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
@@ -960,7 +961,64 @@ class PDFDocument {
     }
 
     await Promise.all(promises);
-    this.xfaFactory.setFonts(pdfFonts);
+    const missingFonts = this.xfaFactory.setFonts(pdfFonts);
+
+    if (!missingFonts) {
+      return;
+    }
+
+    options.ignoreErrors = true;
+    promises.length = 0;
+    pdfFonts.length = 0;
+
+    for (const missing of missingFonts) {
+      for (const fontInfo of [
+        { name: "Regular", fontWeight: 400, italicAngle: 0 },
+        { name: "Bold", fontWeight: 700, italicAngle: 0 },
+        { name: "Italic", fontWeight: 400, italicAngle: 12 },
+        { name: "BoldItalic", fontWeight: 700, italicAngle: 12 },
+      ]) {
+        const name = `${missing}-${fontInfo.name}`;
+        const widths = getXfaFontWidths(name);
+        if (!widths) {
+          continue;
+        }
+
+        const dict = new Dict(null);
+        dict.set("BaseFont", Name.get(name));
+        dict.set("Type", Name.get("Font"));
+        dict.set("Subtype", Name.get("TrueType"));
+        dict.set("Encoding", Name.get("WinAnsiEncoding"));
+        const descriptor = new Dict(null);
+        descriptor.set("Widths", widths);
+        dict.set("FontDescriptor", descriptor);
+
+        promises.push(
+          partialEvaluator
+            .handleSetFont(
+              resources,
+              [Name.get(name), 1],
+              /* fontRef = */ null,
+              operatorList,
+              task,
+              initialState,
+              /* fallbackFontDict = */ dict,
+              /* cssFontInfo = */ {
+                fontFamily: missing,
+                fontWeight: fontInfo.fontWeight,
+                italicAngle: fontInfo.italicAngle,
+              }
+            )
+            .catch(function (reason) {
+              warn(`loadXfaFonts: "${reason}".`);
+              return null;
+            })
+        );
+      }
+    }
+
+    await Promise.all(promises);
+    this.xfaFactory.appendFonts(pdfFonts);
   }
 
   async serializeXfaData(annotationStorage) {
