@@ -962,6 +962,22 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_imm5257e",
+      "file": "pdfs/xfa_imm5257e.pdf",
+      "md5": "5b8dcc12d7461100f48b4b427c0f976e",
+      "rounds": 1,
+      "link": true,
+      "enableXfa": true,
+      "type": "eq"
+    },
+    {  "id": "MBTA-pretax-form-July2012",
+      "file": "pdfs/MBTA-pretax-form-July2012.pdf",
+      "md5": "c23beb39e1c91a780da9d4b60cbd157f",
+      "rounds": 1,
+      "link": true,
+      "enableXfa": true,
+      "type": "eq"
+    },
     {  "id": "xfa_bug1716380",
        "file": "pdfs/xfa_bug1716380.pdf",
        "md5": "1351f816f0509fe750ca61ef2bd40872",
