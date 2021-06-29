@@ -31,6 +31,9 @@ describe("font_post", function () {
         defaultEncoding: [],
         cMap,
         toUnicode: new ToUnicodeMap([]),
+        xHeight: 0,
+        capHeight: 0,
+        italicAngle: 0,
       });
       const output = await ttx(font.data);
 
@@ -45,6 +48,9 @@ describe("font_post", function () {
         differences: [],
         defaultEncoding: [],
         toUnicode: new ToUnicodeMap([]),
+        xHeight: 0,
+        capHeight: 0,
+        italicAngle: 0,
       });
       const output = await ttx(font.data);
 
@@ -59,6 +65,9 @@ describe("font_post", function () {
         differences: [],
         defaultEncoding: [],
         toUnicode: new ToUnicodeMap([]),
+        xHeight: 0,
+        capHeight: 0,
+        italicAngle: 0,
       });
       const output = await ttx(font.data);
 
