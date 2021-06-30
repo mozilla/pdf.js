@@ -181,7 +181,7 @@ class Arc extends XFAObject {
     const edge = this.edge ? this.edge : new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
-    if (this.fill) {
+    if (this.fill && this.fill.presence === "visible") {
       Object.assign(style, this.fill[$toStyle]());
     } else {
       style.fill = "transparent";
@@ -631,7 +631,7 @@ class Border extends XFAObject {
       Object.assign(style, this.margin[$toStyle]());
     }
 
-    if (this.fill) {
+    if (this.fill && this.fill.presence === "visible") {
       Object.assign(style, this.fill[$toStyle]());
     }
 
@@ -3918,7 +3918,7 @@ class Rectangle extends XFAObject {
       : new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
-    if (this.fill) {
+    if (this.fill && this.fill.presence === "visible") {
       Object.assign(style, this.fill[$toStyle]());
     } else {
       style.fill = "transparent";
