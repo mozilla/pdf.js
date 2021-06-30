@@ -43,6 +43,7 @@ const $getChildrenByClass = Symbol();
 const $getChildrenByName = Symbol();
 const $getChildrenByNameIt = Symbol();
 const $getDataValue = Symbol();
+const $getExtra = Symbol();
 const $getRealChildrenByNameIt = Symbol();
 const $getChildren = Symbol();
 const $getContainedChildren = Symbol();
@@ -177,11 +178,7 @@ class XFAObject {
   }
 
   [$getTemplateRoot]() {
-    let parent = this[$getParent]();
-    while (parent[$nodeName] !== "template") {
-      parent = parent[$getParent]();
-    }
-    return parent;
+    return this[$globalData].template;
   }
 
   [$isSplittable]() {
@@ -1060,6 +1057,7 @@ export {
   $getChildrenByNameIt,
   $getContainedChildren,
   $getDataValue,
+  $getExtra,
   $getNextPage,
   $getParent,
   $getRealChildrenByNameIt,
