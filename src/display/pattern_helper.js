@@ -72,7 +72,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     this._matrix = IR[8];
   }
 
-  getPattern(ctx, owner, shadingFill = false, patternTransform = null) {
+  getPattern(ctx, owner, inverse, shadingFill = false) {
     const tmpCanvas = owner.cachedCanvases.getCanvas(
       "pattern",
       owner.ctx.canvas.width,
@@ -121,11 +121,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     tmpCtx.fill();
 
     const pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
-    if (patternTransform) {
-      pattern.setTransform(patternTransform);
-    } else {
-      pattern.setTransform(createMatrix(ctx.mozCurrentTransformInverse));
-    }
+    pattern.setTransform(createMatrix(inverse));
     return pattern;
   }
 }
@@ -380,7 +376,7 @@ class MeshShadingPattern extends BaseShadingPattern {
     };
   }
 
-  getPattern(ctx, owner, shadingFill = false, patternTransform = null) {
+  getPattern(ctx, owner, inverse, shadingFill = false) {
     applyBoundingBox(ctx, this._bbox);
     let scale;
     if (shadingFill) {
@@ -535,9 +531,25 @@ class TilingPattern {
 
     this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
+    let adjustedX0 = x0;
+    let adjustedY0 = y0;
+    let adjustedX1 = x1;
+    let adjustedY1 = y1;
+    // Some bounding boxes have negative x0/y0 cordinates which will cause the
+    // some of the drawing to be off of the canvas. To avoid this shift the
+    // bounding box over.
+    if (x0 < 0) {
+      adjustedX0 = 0;
+      adjustedX1 += Math.abs(x0);
+    }
+    if (y0 < 0) {
+      adjustedY0 = 0;
+      adjustedY1 += Math.abs(y0);
+    }
+    tmpCtx.translate(-(dimx.scale * adjustedX0), -(dimy.scale * adjustedY0));
     graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
 
-    this.clipBbox(graphics, bbox, x0, y0, x1, y1);
+    this.clipBbox(graphics, adjustedX0, adjustedY0, adjustedX1, adjustedY1);
 
     graphics.baseTransform = graphics.ctx.mozCurrentTransform.slice();
 
@@ -549,6 +561,8 @@ class TilingPattern {
       canvas: tmpCanvas.canvas,
       scaleX: dimx.scale,
       scaleY: dimy.scale,
+      offsetX: adjustedX0,
+      offsetY: adjustedY0,
     };
   }
 
@@ -569,14 +583,12 @@ class TilingPattern {
     return { scale, size };
   }
 
-  clipBbox(graphics, bbox, x0, y0, x1, y1) {
-    if (Array.isArray(bbox) && bbox.length === 4) {
-      const bboxWidth = x1 - x0;
-      const bboxHeight = y1 - y0;
-      graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
-      graphics.clip();
-      graphics.endPath();
-    }
+  clipBbox(graphics, x0, y0, x1, y1) {
+    const bboxWidth = x1 - x0;
+    const bboxHeight = y1 - y0;
+    graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
+    graphics.clip();
+    graphics.endPath();
   }
 
   setFillAndStrokeStyleToContext(graphics, paintType, color) {
@@ -603,10 +615,9 @@ class TilingPattern {
     }
   }
 
-  getPattern(ctx, owner, shadingFill = false, patternTransform = null) {
-    ctx = this.ctx;
+  getPattern(ctx, owner, inverse, shadingFill = false) {
     // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
-    let matrix = ctx.mozCurrentTransformInverse;
+    let matrix = inverse;
     if (!shadingFill) {
       matrix = Util.transform(matrix, owner.baseTransform);
       if (this.matrix) {
@@ -619,6 +630,10 @@ class TilingPattern {
     let domMatrix = createMatrix(matrix);
     // Rescale and so that the ctx.createPattern call generates a pattern with
     // the desired size.
+    domMatrix = domMatrix.translate(
+      temporaryPatternCanvas.offsetX,
+      temporaryPatternCanvas.offsetY
+    );
     domMatrix = domMatrix.scale(
       1 / temporaryPatternCanvas.scaleX,
       1 / temporaryPatternCanvas.scaleY

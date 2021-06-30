@@ -14,11 +14,6 @@
  */
 
 import {
-  createMatrix,
-  getShadingPattern,
-  TilingPattern,
-} from "./pattern_helper.js";
-import {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   ImageKind,
@@ -32,6 +27,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -195,17 +191,6 @@ function addContextCurrentTransform(ctx) {
 
     this._originalRotate(angle);
   };
-}
-
-function getAdjustmentTransformation(transform, width, height) {
-  // The pattern will be created at the size of the current page or form object,
-  // but the mask is usually scaled differently and offset, so we must account
-  // for these to shift and rescale the pattern to the correctly location.
-  let patternTransform = createMatrix(transform);
-  patternTransform = patternTransform.scale(1 / width, -1 / height);
-  patternTransform = patternTransform.translate(0, -height);
-  patternTransform = patternTransform.inverse();
-  return patternTransform;
 }
 
 class CachedCanvases {
@@ -1046,6 +1031,154 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     }
 
+    _scaleImage(img, inverseTransform) {
+      // Vertical or horizontal scaling shall not be more than 2 to not lose the
+      // pixels during drawImage operation, painting on the temporary canvas(es)
+      // that are twice smaller in size.
+      const width = img.width;
+      const height = img.height;
+      let widthScale = Math.max(
+        Math.hypot(inverseTransform[0], inverseTransform[1]),
+        1
+      );
+      let heightScale = Math.max(
+        Math.hypot(inverseTransform[2], inverseTransform[3]),
+        1
+      );
+
+      let paintWidth = width,
+        paintHeight = height;
+      let tmpCanvasId = "prescale1";
+      let tmpCanvas, tmpCtx;
+      while (
+        (widthScale > 2 && paintWidth > 1) ||
+        (heightScale > 2 && paintHeight > 1)
+      ) {
+        let newWidth = paintWidth,
+          newHeight = paintHeight;
+        if (widthScale > 2 && paintWidth > 1) {
+          newWidth = Math.ceil(paintWidth / 2);
+          widthScale /= paintWidth / newWidth;
+        }
+        if (heightScale > 2 && paintHeight > 1) {
+          newHeight = Math.ceil(paintHeight / 2);
+          heightScale /= paintHeight / newHeight;
+        }
+        tmpCanvas = this.cachedCanvases.getCanvas(
+          tmpCanvasId,
+          newWidth,
+          newHeight
+        );
+        tmpCtx = tmpCanvas.context;
+        tmpCtx.clearRect(0, 0, newWidth, newHeight);
+        tmpCtx.drawImage(
+          img,
+          0,
+          0,
+          paintWidth,
+          paintHeight,
+          0,
+          0,
+          newWidth,
+          newHeight
+        );
+        img = tmpCanvas.canvas;
+        paintWidth = newWidth;
+        paintHeight = newHeight;
+        tmpCanvasId = tmpCanvasId === "prescale1" ? "prescale2" : "prescale1";
+      }
+      return {
+        img,
+        paintWidth,
+        paintHeight,
+      };
+    }
+
+    _createMaskCanvas(img) {
+      const ctx = this.ctx;
+      const width = img.width,
+        height = img.height;
+      const fillColor = this.current.fillColor;
+      const isPatternFill = this.current.patternFill;
+      const maskCanvas = this.cachedCanvases.getCanvas(
+        "maskCanvas",
+        width,
+        height
+      );
+      const maskCtx = maskCanvas.context;
+      putBinaryImageMask(maskCtx, img);
+
+      // Create the mask canvas at the size it will be drawn at and also set
+      // its transform to match the current transform so if there are any
+      // patterns applied they will be applied relative to the correct
+      // transform.
+      const objToCanvas = ctx.mozCurrentTransform;
+      let maskToCanvas = Util.transform(objToCanvas, [
+        1 / width,
+        0,
+        0,
+        -1 / height,
+        0,
+        0,
+      ]);
+      maskToCanvas = Util.transform(maskToCanvas, [1, 0, 0, 1, 0, -height]);
+      const cord1 = Util.applyTransform([0, 0], maskToCanvas);
+      const cord2 = Util.applyTransform([width, height], maskToCanvas);
+      const rect = Util.normalizeRect([cord1[0], cord1[1], cord2[0], cord2[1]]);
+      const drawnWidth = Math.ceil(rect[2] - rect[0]);
+      const drawnHeight = Math.ceil(rect[3] - rect[1]);
+      const fillCanvas = this.cachedCanvases.getCanvas(
+        "fillCanvas",
+        drawnWidth,
+        drawnHeight,
+        true
+      );
+      const fillCtx = fillCanvas.context;
+      // The offset will be the top-left cordinate mask.
+      const offsetX = Math.min(cord1[0], cord2[0]);
+      const offsetY = Math.min(cord1[1], cord2[1]);
+      fillCtx.translate(-offsetX, -offsetY);
+      fillCtx.transform.apply(fillCtx, maskToCanvas);
+      // Pre-scale if needed to improve image smoothing.
+      const scaled = this._scaleImage(
+        maskCanvas.canvas,
+        fillCtx.mozCurrentTransformInverse
+      );
+      fillCtx.drawImage(
+        scaled.img,
+        0,
+        0,
+        scaled.img.width,
+        scaled.img.height,
+        0,
+        0,
+        width,
+        height
+      );
+      fillCtx.globalCompositeOperation = "source-in";
+
+      const inverse = Util.transform(fillCtx.mozCurrentTransformInverse, [
+        1,
+        0,
+        0,
+        1,
+        -offsetX,
+        -offsetY,
+      ]);
+      fillCtx.fillStyle = isPatternFill
+        ? fillColor.getPattern(ctx, this, inverse, false)
+        : fillColor;
+
+      fillCtx.fillRect(0, 0, width, height);
+
+      // Round the offsets to avoid drawing fractional pixels.
+      return {
+        canvas: fillCanvas.canvas,
+        offsetX: Math.round(offsetX),
+        offsetY: Math.round(offsetY),
+      };
+    }
+
     // Graphics state
     setLineWidth(width) {
       this.current.lineWidth = width;
@@ -1375,7 +1508,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         if (typeof strokeColor === "object" && strokeColor?.getPattern) {
           const lineWidth = this.getSinglePixelWidth();
           ctx.save();
-          ctx.strokeStyle = strokeColor.getPattern(ctx, this);
+          ctx.strokeStyle = strokeColor.getPattern(
+            ctx,
+            this,
+            ctx.mozCurrentTransformInverse
+          );
           // Prevent drawing too thin lines by enforcing a minimum line width.
           ctx.lineWidth = Math.max(lineWidth, this.current.lineWidth);
           ctx.stroke();
@@ -1418,7 +1555,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (isPatternFill) {
         ctx.save();
-        ctx.fillStyle = fillColor.getPattern(ctx, this);
+        ctx.fillStyle = fillColor.getPattern(
+          ctx,
+          this,
+          ctx.mozCurrentTransformInverse
+        );
         needRestore = true;
       }
 
@@ -1748,7 +1889,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         // TODO: Patterns are not applied correctly to text if a non-embedded
         // font is used. E.g. issue 8111 and ShowText-ShadingPattern.pdf.
         ctx.save();
-        const pattern = current.fillColor.getPattern(ctx, this);
+        const pattern = current.fillColor.getPattern(
+          ctx,
+          this,
+          ctx.mozCurrentTransformInverse
+        );
         patternTransform = ctx.mozCurrentTransform;
         ctx.restore();
         ctx.fillStyle = pattern;
@@ -2022,7 +2167,12 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       this.save();
       const pattern = getShadingPattern(patternIR);
-      ctx.fillStyle = pattern.getPattern(ctx, this, true);
+      ctx.fillStyle = pattern.getPattern(
+        ctx,
+        this,
+        ctx.mozCurrentTransformInverse,
+        true
+      );
 
       const inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -2279,8 +2429,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       const ctx = this.ctx;
       const width = img.width,
         height = img.height;
-      const fillColor = this.current.fillColor;
-      const isPatternFill = this.current.patternFill;
 
       const glyph = this.processingType3;
 
@@ -2296,35 +2444,15 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         glyph.compiled(ctx);
         return;
       }
+      const mask = this._createMaskCanvas(img);
+      const maskCanvas = mask.canvas;
 
-      const maskCanvas = this.cachedCanvases.getCanvas(
-        "maskCanvas",
-        width,
-        height
-      );
-      const maskCtx = maskCanvas.context;
-      maskCtx.save();
-
-      putBinaryImageMask(maskCtx, img);
-
-      maskCtx.globalCompositeOperation = "source-in";
-
-      let patternTransform = null;
-      if (isPatternFill) {
-        patternTransform = getAdjustmentTransformation(
-          ctx.mozCurrentTransform,
-          width,
-          height
-        );
-      }
-      maskCtx.fillStyle = isPatternFill
-        ? fillColor.getPattern(maskCtx, this, false, patternTransform)
-        : fillColor;
-      maskCtx.fillRect(0, 0, width, height);
-
-      maskCtx.restore();
-
-      this.paintInlineImageXObject(maskCanvas.canvas);
+      ctx.save();
+      // The mask is drawn with the transform applied. Reset the current
+      // transform to draw to the identity.
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(maskCanvas, mask.offsetX, mask.offsetY);
+      ctx.restore();
     }
 
     paintImageMaskXObjectRepeat(
@@ -2338,54 +2466,27 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       if (!this.contentVisible) {
         return;
       }
-      const width = imgData.width;
-      const height = imgData.height;
-      const fillColor = this.current.fillColor;
-      const isPatternFill = this.current.patternFill;
-
-      const maskCanvas = this.cachedCanvases.getCanvas(
-        "maskCanvas",
-        width,
-        height
-      );
-      const maskCtx = maskCanvas.context;
-      maskCtx.save();
-
-      putBinaryImageMask(maskCtx, imgData);
-
-      maskCtx.globalCompositeOperation = "source-in";
-
       const ctx = this.ctx;
-      let patternTransform = null;
-      if (isPatternFill) {
-        patternTransform = getAdjustmentTransformation(
-          ctx.mozCurrentTransform,
-          width,
-          height
-        );
-      }
+      ctx.save();
+      const currentTransform = ctx.mozCurrentTransform;
+      ctx.transform(scaleX, skewX, skewY, scaleY, 0, 0);
+      const mask = this._createMaskCanvas(imgData);
 
-      maskCtx.fillStyle = isPatternFill
-        ? fillColor.getPattern(maskCtx, this, false, patternTransform)
-        : fillColor;
-      maskCtx.fillRect(0, 0, width, height);
-
-      maskCtx.restore();
-
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       for (let i = 0, ii = positions.length; i < ii; i += 2) {
-        ctx.save();
-        ctx.transform(
+        const trans = Util.transform(currentTransform, [
           scaleX,
           skewX,
           skewY,
           scaleY,
           positions[i],
-          positions[i + 1]
-        );
-        ctx.scale(1, -1);
-        ctx.drawImage(maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
-        ctx.restore();
+          positions[i + 1],
+        ]);
+
+        const [x, y] = Util.applyTransform([0, 0], trans);
+        ctx.drawImage(mask.canvas, x, y);
       }
+      ctx.restore();
     }
 
     paintImageMaskXObjectGroup(images) {
@@ -2413,17 +2514,13 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
         maskCtx.globalCompositeOperation = "source-in";
 
-        let patternTransform = null;
-        if (isPatternFill) {
-          patternTransform = getAdjustmentTransformation(
-            ctx.mozCurrentTransform,
-            width,
-            height
-          );
-        }
-
         maskCtx.fillStyle = isPatternFill
-          ? fillColor.getPattern(maskCtx, this, false, patternTransform)
+          ? fillColor.getPattern(
+              maskCtx,
+              this,
+              ctx.mozCurrentTransformInverse,
+              false
+            )
           : fillColor;
         maskCtx.fillRect(0, 0, width, height);
 
@@ -2491,17 +2588,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       // scale the image to the unit square
       ctx.scale(1 / width, -1 / height);
 
-      const currentTransform = ctx.mozCurrentTransformInverse;
-      let widthScale = Math.max(
-        Math.hypot(currentTransform[0], currentTransform[1]),
-        1
-      );
-      let heightScale = Math.max(
-        Math.hypot(currentTransform[2], currentTransform[3]),
-        1
-      );
-
-      let imgToPaint, tmpCanvas, tmpCtx;
+      let imgToPaint;
       // typeof check is needed due to node.js support, see issue #8489
       if (
         (typeof HTMLElement === "function" && imgData instanceof HTMLElement) ||
@@ -2509,61 +2596,26 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       ) {
         imgToPaint = imgData;
       } else {
-        tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", width, height);
-        tmpCtx = tmpCanvas.context;
+        const tmpCanvas = this.cachedCanvases.getCanvas(
+          "inlineImage",
+          width,
+          height
+        );
+        const tmpCtx = tmpCanvas.context;
         putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
         imgToPaint = tmpCanvas.canvas;
       }
 
-      let paintWidth = width,
-        paintHeight = height;
-      let tmpCanvasId = "prescale1";
-      // Vertical or horizontal scaling shall not be more than 2 to not lose the
-      // pixels during drawImage operation, painting on the temporary canvas(es)
-      // that are twice smaller in size.
-      while (
-        (widthScale > 2 && paintWidth > 1) ||
-        (heightScale > 2 && paintHeight > 1)
-      ) {
-        let newWidth = paintWidth,
-          newHeight = paintHeight;
-        if (widthScale > 2 && paintWidth > 1) {
-          newWidth = Math.ceil(paintWidth / 2);
-          widthScale /= paintWidth / newWidth;
-        }
-        if (heightScale > 2 && paintHeight > 1) {
-          newHeight = Math.ceil(paintHeight / 2);
-          heightScale /= paintHeight / newHeight;
-        }
-        tmpCanvas = this.cachedCanvases.getCanvas(
-          tmpCanvasId,
-          newWidth,
-          newHeight
-        );
-        tmpCtx = tmpCanvas.context;
-        tmpCtx.clearRect(0, 0, newWidth, newHeight);
-        tmpCtx.drawImage(
-          imgToPaint,
-          0,
-          0,
-          paintWidth,
-          paintHeight,
-          0,
-          0,
-          newWidth,
-          newHeight
-        );
-        imgToPaint = tmpCanvas.canvas;
-        paintWidth = newWidth;
-        paintHeight = newHeight;
-        tmpCanvasId = tmpCanvasId === "prescale1" ? "prescale2" : "prescale1";
-      }
-      ctx.drawImage(
+      const scaled = this._scaleImage(
         imgToPaint,
+        ctx.mozCurrentTransformInverse
+      );
+      ctx.drawImage(
+        scaled.img,
         0,
         0,
-        paintWidth,
-        paintHeight,
+        scaled.paintWidth,
+        scaled.paintHeight,
         0,
         -height,
         width,
@@ -2576,8 +2628,8 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           imgData,
           left: position[0],
           top: position[1],
-          width: width / currentTransform[0],
-          height: height / currentTransform[3],
+          width: width / ctx.mozCurrentTransformInverse[0],
+          height: height / ctx.mozCurrentTransformInverse[3],
         });
       }
       this.restore();
