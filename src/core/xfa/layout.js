@@ -257,70 +257,91 @@ function getTransformedBBox(node) {
  * in case of lr-tb or changing content area...).
  */
 function checkDimensions(node, space) {
+  if (node[$getTemplateRoot]()[$extra].firstUnsplittable === null) {
+    return true;
+  }
+
   if (node.w === 0 || node.h === 0) {
     return true;
   }
 
-  if (space.width <= 0 || space.height <= 0) {
-    return false;
-  }
-
   const parent = node[$getParent]();
-  const attempt = (node[$extra] && node[$extra].attempt) || 0;
+  const attempt = (parent[$extra] && parent[$extra].attempt) || 0;
+  let y, w, h;
   switch (parent.layout) {
     case "lr-tb":
     case "rl-tb":
-      switch (attempt) {
-        case 0: {
-          let w, h;
-          if (node.w !== "" || node.h !== "") {
-            [, , w, h] = getTransformedBBox(node);
-          }
+      if (node.w !== "" || node.h !== "") {
+        [, , w, h] = getTransformedBBox(node);
+      }
+      if (attempt === 0) {
+        // Try to put an element in the line.
+
+        if (!node[$getTemplateRoot]()[$extra].noLayoutFailure) {
           if (node.h !== "" && Math.round(h - space.height) > 1) {
+            // Not enough height.
             return false;
           }
           if (node.w !== "") {
+            // True if width is enough.
             return Math.round(w - space.width) <= 1;
           }
 
-          return node.minW <= space.width;
+          return space.width > 0;
         }
-        case 1: {
-          if (node.h !== "" && !node[$isSplittable]()) {
-            const [, , , h] = getTransformedBBox(node);
-            if (Math.round(h - space.height) > 1) {
-              return false;
-            }
-          }
-          return true;
+
+        // No layout failure.
+
+        // Put the element on the line but we can fail
+        // and then in the second step (next line) we'll accept.
+        if (node.w !== "") {
+          return Math.round(w - space.width) <= 1;
         }
-        default:
-          return true;
+
+        return space.width > 0;
       }
+
+      // Second attempt: try to put the element on the next line.
+
+      if (node[$getTemplateRoot]()[$extra].noLayoutFailure) {
+        // We cannot fail.
+        return true;
+      }
+
+      if (node.h !== "") {
+        // True if height is enough.
+        return Math.round(h - space.height) <= 1;
+      }
+
+      return space.height > 0;
     case "table":
     case "tb":
-      if (attempt !== 1 && node.h !== "" && !node[$isSplittable]()) {
-        const [, , , h] = getTransformedBBox(node);
-        if (Math.round(h - space.height) > 1) {
-          return false;
-        }
+      if (node[$getTemplateRoot]()[$extra].noLayoutFailure) {
+        return true;
       }
-      return true;
-    case "position":
-      const [x, y, w, h] = getTransformedBBox(node);
-      const isWidthOk = node.w === "" || Math.round(w + x - space.width) <= 1;
-      const isHeightOk = node.h === "" || Math.round(h + y - space.height) <= 1;
 
-      if (isWidthOk && isHeightOk) {
+      // If the node has a height then check
+      // if it's fine with available height. If the node
+      // is breakable then we can return true.
+      if (node.h !== "" && !node[$isSplittable]()) {
+        [, , , h] = getTransformedBBox(node);
+        return Math.round(h - space.height) <= 1;
+      }
+      // Else wait and see: this node will be layed out itself
+      // in the provided space and maybe a children won't fit.
+      return space.height > 0;
+    case "position":
+      if (node[$getTemplateRoot]()[$extra].noLayoutFailure) {
+        return true;
+      }
+
+      [, y, , h] = getTransformedBBox(node);
+      if (node.h === "" || Math.round(h + y - space.height) <= 1) {
         return true;
       }
 
       const area = node[$getTemplateRoot]()[$extra].currentContentArea;
-      if (isWidthOk) {
-        return h + y > area.h;
-      }
-
-      return w + x > area.w;
+      return h + y > area.h;
     case "rl-row":
     case "row":
     default:

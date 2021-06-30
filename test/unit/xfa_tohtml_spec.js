@@ -56,12 +56,16 @@ describe("XFAFactory", function () {
           </draw>
         </pageArea>
       </pageSet>
-      <subform name="first">
-      </subform>
       <subform name="second">
         <breakBefore targetType="pageArea" startNew="1"/>
         <subform>
           <draw w="1pt" h="1pt"><value><text>foo</text></value></draw>
+        </subform>
+      </subform>
+      <subform name="third">
+        <breakBefore targetType="pageArea" startNew="1"/>
+        <subform>
+          <draw w="1pt" h="1pt"><value><text>bar</text></value></draw>
         </subform>
       </subform>
     </subform>
@@ -92,7 +96,6 @@ describe("XFAFactory", function () {
         width: "456px",
         left: "123px",
         top: "0px",
-        position: "absolute",
       });
 
       const wrapper = page1.children[0];

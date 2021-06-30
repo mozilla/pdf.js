@@ -13,6 +13,15 @@
  * limitations under the License.
  */
 
+.xfaPage {
+  overflow: hidden;
+  position: relative;
+}
+
+.xfaContentarea {
+  position: absolute;
+}
+
 .xfaPrintOnly {
   display: none;
 }
@@ -137,10 +146,6 @@
 
 .xfaWrapped {
   flex: 1 1 auto;
-}
-
-.xfaContentArea {
-  overflow: hidden;
 }
 
 .xfaTextfield,
