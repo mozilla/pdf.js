@@ -21,58 +21,64 @@ class FontFinder {
     this.cache = new Map();
     this.warned = new Set();
     this.defaultFont = null;
+    this.add(pdfFonts);
+  }
+
+  add(pdfFonts) {
     for (const pdfFont of pdfFonts) {
-      const cssFontInfo = pdfFont.cssFontInfo;
-      const name = cssFontInfo.fontFamily;
-      let font = this.fonts.get(name);
-      if (!font) {
-        font = Object.create(null);
-        this.fonts.set(name, font);
-        if (!this.defaultFont) {
-          this.defaultFont = font;
-        }
-      }
-      let property = "";
-      if (cssFontInfo.italicAngle !== "0") {
-        if (parseFloat(cssFontInfo.fontWeight) >= 700) {
-          property = "bolditalic";
-        } else {
-          property = "italic";
-        }
-      } else if (parseFloat(cssFontInfo.fontWeight) >= 700) {
-        property = "bold";
-      }
-
-      if (!property) {
-        if (
-          pdfFont.name.includes("Bold") ||
-          (pdfFont.psName && pdfFont.psName.includes("Bold"))
-        ) {
-          property = "bold";
-        }
-        if (
-          pdfFont.name.includes("Italic") ||
-          pdfFont.name.endsWith("It") ||
-          (pdfFont.psName &&
-            (pdfFont.psName.includes("Italic") ||
-              pdfFont.psName.endsWith("It")))
-        ) {
-          property += "italic";
-        }
-      }
-
-      if (!property) {
-        property = "regular";
-      }
-
-      font[property] = pdfFont;
+      this.addPdfFont(pdfFont);
     }
-
     for (const pdfFont of this.fonts.values()) {
       if (!pdfFont.regular) {
         pdfFont.regular = pdfFont.italic || pdfFont.bold || pdfFont.bolditalic;
       }
     }
+  }
+
+  addPdfFont(pdfFont) {
+    const cssFontInfo = pdfFont.cssFontInfo;
+    const name = cssFontInfo.fontFamily;
+    let font = this.fonts.get(name);
+    if (!font) {
+      font = Object.create(null);
+      this.fonts.set(name, font);
+      if (!this.defaultFont) {
+        this.defaultFont = font;
+      }
+    }
+    let property = "";
+    if (cssFontInfo.italicAngle !== "0") {
+      if (parseFloat(cssFontInfo.fontWeight) >= 700) {
+        property = "bolditalic";
+      } else {
+        property = "italic";
+      }
+    } else if (parseFloat(cssFontInfo.fontWeight) >= 700) {
+      property = "bold";
+    }
+
+    if (!property) {
+      if (
+        pdfFont.name.includes("Bold") ||
+        (pdfFont.psName && pdfFont.psName.includes("Bold"))
+      ) {
+        property = "bold";
+      }
+      if (
+        pdfFont.name.includes("Italic") ||
+        pdfFont.name.endsWith("It") ||
+        (pdfFont.psName &&
+          (pdfFont.psName.includes("Italic") || pdfFont.psName.endsWith("It")))
+      ) {
+        property += "italic";
+      }
+    }
+
+    if (!property) {
+      property = "regular";
+    }
+
+    font[property] = pdfFont;
   }
 
   getDefault() {

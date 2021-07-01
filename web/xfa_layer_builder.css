@@ -13,6 +13,15 @@
  * limitations under the License.
  */
 
+.xfaPage {
+  overflow: hidden;
+  position: relative;
+}
+
+.xfaContentarea {
+  position: absolute;
+}
+
 .xfaPrintOnly {
   display: none;
 }
@@ -139,10 +148,6 @@
   flex: 1 1 auto;
 }
 
-.xfaContentArea {
-  overflow: hidden;
-}
-
 .xfaTextfield,
 .xfaSelect {
   background-color: rgba(0, 54, 255, 0.13);
@@ -188,6 +193,8 @@
 }
 
 .xfaImage {
+  object-position: left top;
+  object-fit: contain;
   width: 100%;
   height: 100%;
 }

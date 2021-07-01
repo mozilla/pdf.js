@@ -588,6 +588,15 @@ function arraysToBytes(arr) {
 }
 
 function string32(value) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      typeof value === "number" && Math.abs(value) < 2 ** 32,
+      `string32: Unexpected input "${value}".`
+    );
+  }
   return String.fromCharCode(
     (value >> 24) & 0xff,
     (value >> 16) & 0xff,
