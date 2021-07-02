@@ -290,7 +290,7 @@ class ChunkedStreamManager {
 
     let chunks = [],
       loaded = 0;
-    const promise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const readChunk = chunk => {
         try {
           if (!chunk.done) {
@@ -311,14 +311,12 @@ class ChunkedStreamManager {
         }
       };
       rangeReader.read().then(readChunk, reject);
-    });
-    promise.then(data => {
+    }).then(data => {
       if (this.aborted) {
         return; // Ignoring any data after abort.
       }
       this.onReceiveData({ chunk: data, begin });
     });
-    // TODO check errors
   }
 
   /**
@@ -369,7 +367,7 @@ class ChunkedStreamManager {
           groupedChunk.endChunk * this.chunkSize,
           this.length
         );
-        this.sendRequest(begin, end);
+        this.sendRequest(begin, end).catch(capability.reject);
       }
     }
 
