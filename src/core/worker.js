@@ -191,12 +191,15 @@ class WorkerMessageHandler {
       if (isPureXfa) {
         const task = new WorkerTask("loadXfaFonts");
         startWorkerTask(task);
-        await pdfManager
-          .loadXfaFonts(handler, task)
-          .catch(reason => {
-            // Ignore errors, to allow the document to load.
-          })
-          .then(() => finishWorkerTask(task));
+        await Promise.all([
+          pdfManager
+            .loadXfaFonts(handler, task)
+            .catch(reason => {
+              // Ignore errors, to allow the document to load.
+            })
+            .then(() => finishWorkerTask(task)),
+          pdfManager.loadXfaImages(),
+        ]);
       }
 
       const [numPages, fingerprint] = await Promise.all([
