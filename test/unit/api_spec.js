@@ -503,10 +503,25 @@ describe("api", function () {
       expect(pdfDocument.numPages).toEqual(3);
     });
 
-    it("gets fingerprint", function () {
-      expect(pdfDocument.fingerprint).toEqual(
-        "ea8b35919d6279a369e835bde778611b"
+    it("gets fingerprints", function () {
+      expect(pdfDocument.fingerprints).toEqual([
+        "ea8b35919d6279a369e835bde778611b",
+        null,
+      ]);
+    });
+
+    it("gets fingerprints, from modified document", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("annotation-tx.pdf")
       );
+      const pdfDoc = await loadingTask.promise;
+
+      expect(pdfDoc.fingerprints).toEqual([
+        "3ebd77c320274649a68f10dbf3b9f882",
+        "e7087346aa4b4ae0911c1f1643b57345",
+      ]);
+
+      await loadingTask.destroy();
     });
 
     it("gets page", async function () {
@@ -1203,13 +1218,13 @@ describe("api", function () {
         loadingTask1.promise,
         loadingTask2.promise,
       ]);
-      const fingerprint1 = data[0].fingerprint;
-      const fingerprint2 = data[1].fingerprint;
+      const fingerprints1 = data[0].fingerprints;
+      const fingerprints2 = data[1].fingerprints;
 
-      expect(fingerprint1).not.toEqual(fingerprint2);
+      expect(fingerprints1).not.toEqual(fingerprints2);
 
-      expect(fingerprint1).toEqual("2f695a83d6e7553c24fc08b7ac69712d");
-      expect(fingerprint2).toEqual("04c7126b34a46b6d4d6e7a1eff7edcb6");
+      expect(fingerprints1).toEqual(["2f695a83d6e7553c24fc08b7ac69712d", null]);
+      expect(fingerprints2).toEqual(["04c7126b34a46b6d4d6e7a1eff7edcb6", null]);
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
