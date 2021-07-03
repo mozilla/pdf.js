@@ -304,7 +304,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
         if (Array.isArray(explicitDest)) {
           const [destRef] = explicitDest;
 
-          if (destRef instanceof Object) {
+          if (typeof destRef === "object" && destRef !== null) {
             pageNumber = this.linkService._cachedPageNumber(destRef);
 
             if (!pageNumber) {
