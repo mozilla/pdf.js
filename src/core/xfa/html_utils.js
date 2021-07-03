@@ -445,12 +445,10 @@ function fixTextIndent(styles) {
   }
 
   // If indent is negative then it's a hanging indent.
-  const align = styles.textAlign || "left";
-  if (align === "left" || align === "right") {
-    const name = "padding" + (align === "left" ? "Left" : "Right");
-    const padding = getMeasurement(styles[name], "0px");
-    styles[name] = `${padding - indent}px`;
-  }
+  const align = styles.textAlign === "right" ? "right" : "left";
+  const name = "padding" + (align === "left" ? "Left" : "Right");
+  const padding = getMeasurement(styles[name], "0px");
+  styles[name] = `${padding - indent}px`;
 }
 
 function setAccess(node, classNames) {
