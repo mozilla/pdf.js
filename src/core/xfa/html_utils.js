@@ -481,7 +481,7 @@ function setFontFamily(xfaFont, fontFinder, style) {
   if (typeface) {
     const { fontFamily } = typeface.regular.cssFontInfo;
     if (fontFamily !== name) {
-      style.fontFamily += `,"${fontFamily}"`;
+      style.fontFamily = `"${fontFamily}"`;
     }
     if (style.lineHeight) {
       // Already something so don't overwrite.
