@@ -586,7 +586,7 @@ class XFAObject {
     if (Array.isArray(obj)) {
       return obj.map(x => XFAObject[_cloneAttribute](x));
     }
-    if (obj instanceof Object) {
+    if (typeof obj === "object" && obj !== null) {
       return Object.assign({}, obj);
     }
     return obj;
