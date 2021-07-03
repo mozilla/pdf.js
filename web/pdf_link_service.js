@@ -114,7 +114,7 @@ class PDFLinkService {
     const destRef = explicitDest[0];
     let pageNumber;
 
-    if (destRef instanceof Object) {
+    if (typeof destRef === "object" && destRef !== null) {
       pageNumber = this._cachedPageNumber(destRef);
 
       if (pageNumber === null) {
