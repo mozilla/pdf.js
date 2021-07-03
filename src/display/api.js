@@ -1805,6 +1805,16 @@ class LoopbackPort {
     function cloneValue(value) {
       // Trying to perform a structured clone close to the spec, including
       // transfers.
+      if (
+        typeof value === "function" ||
+        typeof value === "symbol" ||
+        value instanceof URL
+      ) {
+        throw new Error(
+          `LoopbackPort.postMessage - cannot clone: ${value?.toString()}`
+        );
+      }
+
       if (typeof value !== "object" || value === null) {
         return value;
       }
@@ -1843,9 +1853,6 @@ class LoopbackPort {
         }
         return result;
       }
-      if (value instanceof URL) {
-        throw new Error(`LoopbackPort.postMessage - cannot clone: ${value}`);
-      }
       result = Array.isArray(value) ? [] : Object.create(null);
       cloned.set(value, result); // Adding to cache now for cyclic references.
       // Cloning all value and object properties, however ignoring properties
@@ -1859,12 +1866,7 @@ class LoopbackPort {
         if (typeof desc.value === "undefined") {
           continue;
         }
-        if (typeof desc.value === "function") {
-          if (value.hasOwnProperty?.(i)) {
-            throw new Error(
-              `LoopbackPort.postMessage - cannot clone: ${value[i]}`
-            );
-          }
+        if (typeof desc.value === "function" && !value.hasOwnProperty?.(i)) {
           continue;
         }
         result[i] = cloneValue(desc.value);
