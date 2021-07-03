@@ -849,6 +849,7 @@ class PDFDocument {
   get xfaFactory() {
     if (
       this.pdfManager.enableXfa &&
+      this.catalog.needsRendering &&
       this.formInfo.hasXfa &&
       !this.formInfo.hasAcroForm
     ) {
