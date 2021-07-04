@@ -409,7 +409,7 @@ function writeSigned(n) {
       const d = fromHexDigit(n[i]);
       c = (c << 4) | (neg ? d ^ 15 : d);
       t += toHexDigit(c >> 3);
-      c = c & 7;
+      c &= 7;
     }
     t += toHexDigit((c << 1) | (neg ? 1 : 0));
     return writeNumber(t);

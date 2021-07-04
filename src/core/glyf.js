@@ -286,7 +286,7 @@ class SimpleGlyph {
       flags.push(flag);
       if (flag & REPEAT_FLAG) {
         const count = glyf.getUint8(++pos);
-        flag = flag ^ REPEAT_FLAG;
+        flag ^= REPEAT_FLAG;
         for (let m = 0; m < count; m++) {
           flags.push(flag);
         }
@@ -412,16 +412,15 @@ class SimpleGlyph {
         const x = contour.xCoordinates[i];
         let delta = x - lastX;
         if (delta === 0) {
-          flag = flag | X_IS_SAME_OR_POSITIVE_X_SHORT_VECTOR;
+          flag |= X_IS_SAME_OR_POSITIVE_X_SHORT_VECTOR;
           xCoordinates.push(0);
         } else {
           const abs = Math.abs(delta);
           if (abs <= 255) {
-            flag =
-              flag |
-              (delta >= 0
+            flag |=
+              delta >= 0
                 ? X_SHORT_VECTOR | X_IS_SAME_OR_POSITIVE_X_SHORT_VECTOR
-                : X_SHORT_VECTOR);
+                : X_SHORT_VECTOR;
             xCoordinates.push(abs);
           } else {
             xCoordinates.push(delta);
@@ -432,16 +431,15 @@ class SimpleGlyph {
         const y = contour.yCoordinates[i];
         delta = y - lastY;
         if (delta === 0) {
-          flag = flag | Y_IS_SAME_OR_POSITIVE_Y_SHORT_VECTOR;
+          flag |= Y_IS_SAME_OR_POSITIVE_Y_SHORT_VECTOR;
           yCoordinates.push(0);
         } else {
           const abs = Math.abs(delta);
           if (abs <= 255) {
-            flag =
-              flag |
-              (delta >= 0
+            flag |=
+              delta >= 0
                 ? Y_SHORT_VECTOR | Y_IS_SAME_OR_POSITIVE_Y_SHORT_VECTOR
-                : Y_SHORT_VECTOR);
+                : Y_SHORT_VECTOR;
             yCoordinates.push(abs);
           } else {
             yCoordinates.push(delta);
@@ -550,7 +548,7 @@ class CompositeGlyph {
         argument2 = glyf.getUint16(pos + 2);
       }
       pos += 4;
-      flags = flags ^ ARG_1_AND_2_ARE_WORDS;
+      flags ^= ARG_1_AND_2_ARE_WORDS;
     } else {
       argument1 = glyf.getUint8(pos);
       argument2 = glyf.getUint8(pos + 1);
@@ -652,7 +650,7 @@ class CompositeGlyph {
           this.argument2 <= 127
         )
       ) {
-        this.flags = this.flags | ARG_1_AND_2_ARE_WORDS;
+        this.flags |= ARG_1_AND_2_ARE_WORDS;
       }
     } else {
       if (
@@ -663,7 +661,7 @@ class CompositeGlyph {
           this.argument2 <= 255
         )
       ) {
-        this.flags = this.flags | ARG_1_AND_2_ARE_WORDS;
+        this.flags |= ARG_1_AND_2_ARE_WORDS;
       }
     }
 

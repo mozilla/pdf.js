@@ -312,7 +312,7 @@ const Type1CharString = (function Type1CharStringClosure() {
           }
           continue;
         } else if (value <= 246) {
-          value = value - 139;
+          value -= 139;
         } else if (value <= 250) {
           value = (value - 247) * 256 + encoded[++i] + 108;
         } else if (value <= 254) {
