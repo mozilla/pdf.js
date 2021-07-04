@@ -21,7 +21,7 @@ class Ascii85Stream extends DecodeStream {
     // Most streams increase in size when decoded, but Ascii85 streams
     // typically shrink by ~20%.
     if (maybeLength) {
-      maybeLength = 0.8 * maybeLength;
+      maybeLength *= 0.8;
     }
     super(maybeLength);
 
