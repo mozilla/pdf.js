@@ -534,7 +534,7 @@ const BinaryCMapReader = (function BinaryCMapReaderClosure() {
         bufferSize = 0;
       while (i >= 0) {
         while (bufferSize < 8 && stack.length > 0) {
-          buffer = (stack[--sp] << bufferSize) | buffer;
+          buffer |= stack[--sp] << bufferSize;
           bufferSize += 7;
         }
         num[i] = buffer & 255;

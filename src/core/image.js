@@ -471,7 +471,7 @@ class PDFImage {
           value = max;
         }
         output[i] = value;
-        buf = buf & ((1 << remainingBits) - 1);
+        buf &= (1 << remainingBits) - 1;
         bits = remainingBits;
       }
     }

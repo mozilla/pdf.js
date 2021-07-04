@@ -213,7 +213,7 @@ class Word64 {
       this.low = 0;
     } else {
       this.high = (this.high << places) | (this.low >>> (32 - places));
-      this.low = this.low << places;
+      this.low <<= places;
     }
   }
 
@@ -1165,7 +1165,7 @@ class AES128Cipher extends AESBaseCipher {
       t3 = s[t3];
       t4 = s[t4];
       // Rcon
-      t1 = t1 ^ rcon[i];
+      t1 ^= rcon[i];
       for (let n = 0; n < 4; ++n) {
         result[j] = t1 ^= result[j - 16];
         j++;
@@ -1218,7 +1218,7 @@ class AES256Cipher extends AESBaseCipher {
         t3 = s[t3];
         t4 = s[t4];
         // Rcon
-        t1 = t1 ^ r;
+        t1 ^= r;
         if ((r <<= 1) >= 256) {
           r = (r ^ 0x1b) & 0xff;
         }

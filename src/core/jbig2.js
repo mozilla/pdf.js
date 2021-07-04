@@ -1088,7 +1088,7 @@ function decodeHalftoneRegion(
       bit = 0;
       patternIndex = 0;
       for (j = bitsPerValue - 1; j >= 0; j--) {
-        bit = grayScaleBitPlanes[j][mg][ng] ^ bit; // Gray decoding
+        bit ^= grayScaleBitPlanes[j][mg][ng]; // Gray decoding
         patternIndex |= bit << j;
       }
       patternBitmap = patterns[patternIndex];
