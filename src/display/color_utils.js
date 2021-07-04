@@ -25,6 +25,43 @@ function getCacheId(rgb, theme) {
     .join(";");
 }
 
+function getNumbersFromString(str, splitter, range, units) {
+  const raw = str.split(splitter).filter(x => x);
+  const unitsList = Object.entries(units);
+  const numbers = raw
+    .map(r => r.trim())
+    .map((r, i) => {
+      let n;
+      const unit = unitsList.find(([u]) => r.endsWith(u));
+      if (unit) {
+        n =
+          (parseFloat(r.substring(0, r.length - unit[0].length)) / unit[1]) *
+          range[i];
+      } else {
+        n = parseFloat(r);
+      }
+      if (range[i] > 1) {
+        return Math.round(n);
+      }
+      return n;
+    });
+  return numbers;
+}
+
+const rgbSplitter = /rgba?|\(|\)|\/|,|\s/gi;
+const rgbRange = [255, 255, 255, 1];
+const rgbUnits = { "%": 100 };
+
+function parseRGB($rgb) {
+  const [r, g, b, a = 1] = getNumbersFromString(
+    $rgb,
+    rgbSplitter,
+    rgbRange,
+    rgbUnits
+  );
+  return { r, g, b, a };
+}
+
 function modifyColorWithCache(rgb, theme) {
   const id = getCacheId(rgb, theme);
   if (colorModificationCache.has(id)) {
@@ -155,4 +192,4 @@ function multiplyMatrices(m1, m2) {
   return result;
 }
 
-export { modifyColor };
+export { modifyColor, parseRGB };

@@ -27,8 +27,12 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+<<<<<<< master
 import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
 import { modifyColor } from "./color_utils.js";
+=======
+import { modifyColor, parseRGB } from "./color_utils.js";
+>>>>>>> Modify inline images
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -424,6 +428,7 @@ class CanvasExtraState {
     this.fillColor = "#000000";
     this.strokeColor = "#000000";
     this.textColor = "#000000";
+    this.backgroundColor = "#ffffff";
     this.darkMode = false;
     this.patternFill = false;
     // Note: fill alpha applies to all non-stroking operations
@@ -519,11 +524,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       let white = 0xffffffff;
       let black = IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
 
-      // darkMode can safely ignore the transferMapGray,
-      // because it will otherwise just effect the white,black values.
-      if (darkMode) {
-        [white, black] = [black, white];
-      } else if (transferMapGray) {
+      if (transferMapGray) {
         if (transferMapGray[0] === 0xff && transferMapGray[0xff] === 0) {
           [white, black] = [black, white];
         }
@@ -937,8 +938,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.restore();
       this.current.textColor = color || "rgb(0, 0, 0)";
 
-      // This is to pass the "color Scheme" option for the image rendering.
-      this.current.darkMode = darkMode;
+      if (darkMode) {
+        // This is to pass the "color Scheme" option for the image rendering.
+        this.current.darkMode = true;
+        this.current.backgroundColor = background || "rgb(255, 255, 255)";
+      }
 
       if (transparency) {
         const transparentCanvas = this.cachedCanvases.getCanvas(
@@ -1012,6 +1016,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         fnId = fnArray[i];
 
         if (fnId !== OPS.dependency) {
+          console.log(this[fnId].name);
           this[fnId].apply(this, argsArray[i]);
         } else {
           for (const depObjId of argsArray[i]) {
@@ -2196,13 +2201,34 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     setStrokeRGBColor(r, g, b) {
-      const color = Util.makeHexColor(r, g, b);
+      let color;
+      if (this.current.darkMode) {
+        color = Util.makeHexColor(...modifyColor({ r, g, b }));
+      } else {
+        color = Util.makeHexColor(r, g, b);
+      }
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     }
 
     setFillRGBColor(r, g, b) {
-      const color = Util.makeHexColor(r, g, b);
+      let color;
+      // Detect when PDF's wants to set a "white" background-color,
+      // which is something that the modifier doesn't really modify well.
+      if (this.current.darkMode) {
+        if (r === 255 && g === 255 && b === 255) {
+          const {
+            r: rf,
+            g: gf,
+            b: bf,
+          } = parseRGB(this.current.backgroundColor);
+          color = Util.makeHexColor(rf, gf, bf);
+        } else {
+          color = Util.makeHexColor(...modifyColor({ r, g, b }));
+        }
+      } else {
+        color = Util.makeHexColor(r, g, b);
+      }
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
       this.current.patternFill = false;
@@ -2626,6 +2652,9 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     paintInlineImageXObject(imgData) {
+      if (imgData) {
+        return;
+      }
       if (!this.contentVisible) {
         return;
       }
@@ -2655,7 +2684,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           tmpCtx,
           imgData,
           this.current.transferMaps,
-          this.current.darkMode
+          false // We already invert the image on our own.
         );
         imgToPaint = tmpCanvas.canvas;
       }
@@ -2664,6 +2693,27 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         imgToPaint,
         ctx.mozCurrentTransformInverse
       );
+      if (this.current.darkMode) {
+        const context = imgToPaint.getContext("2d");
+        const imageData = context.getImageData(
+          0,
+          0,
+          imgToPaint.width,
+          imgToPaint.height
+        );
+        const data = imageData.data;
+        let r, g, b;
+        for (let i = 0; i < data.length; i += 4) {
+          r = data[i];
+          g = data[i + 1];
+          b = data[i + 2];
+          [r, g, b] = modifyColor({ r, g, b });
+          data[i] = r; // red
+          data[i + 1] = g; // green
+          data[i + 2] = b; // blue
+        }
+        context.putImageData(imageData, 0, 0);
+      }
       ctx.drawImage(
         scaled.img,
         0,
