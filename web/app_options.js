@@ -133,6 +133,11 @@ const defaultOptions = {
     value: -1,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  colorSchemeOnLoad: {
+    /** @type {number} */
+    value: -1,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   textLayerMode: {
     /** @type {number} */
     value: 1,

@@ -19,10 +19,12 @@ import {
   apiPageLayoutToSpreadMode,
   apiPageModeToSidebarView,
   AutoPrintRegExp,
+  ColorScheme,
   colorSchemeMediaQuery,
   DEFAULT_SCALE_VALUE,
   EventBus,
   getActiveOrFocusedElement,
+  isValidColorScheme,
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
@@ -1230,6 +1232,7 @@ const PDFViewerApplication = {
         sidebarView: SidebarView.UNKNOWN,
         scrollMode: ScrollMode.UNKNOWN,
         spreadMode: SpreadMode.UNKNOWN,
+        colorScheme: ColorScheme.UNKNOWN,
       })
       .catch(() => {
         /* Unable to read from storage; ignoring errors. */
@@ -1265,6 +1268,7 @@ const PDFViewerApplication = {
           let sidebarView = AppOptions.get("sidebarViewOnLoad");
           let scrollMode = AppOptions.get("scrollModeOnLoad");
           let spreadMode = AppOptions.get("spreadModeOnLoad");
+          let colorScheme = AppOptions.get("colorSchemeOnLoad");
 
           if (stored.page && viewOnLoad !== ViewOnLoad.INITIAL) {
             hash =
@@ -1282,6 +1286,9 @@ const PDFViewerApplication = {
             if (spreadMode === SpreadMode.UNKNOWN) {
               spreadMode = stored.spreadMode | 0;
             }
+            if (colorScheme === ColorScheme.UNKNOWN) {
+              colorScheme = stored.colorScheme | 0;
+            }
           }
           // Always let the user preference/view history take precedence.
           if (pageMode && sidebarView === SidebarView.UNKNOWN) {
@@ -1290,12 +1297,16 @@ const PDFViewerApplication = {
           if (pageLayout && spreadMode === SpreadMode.UNKNOWN) {
             spreadMode = apiPageLayoutToSpreadMode(pageLayout);
           }
+          if (colorScheme && colorScheme === colorScheme.UNKNOWN) {
+            colorScheme = colorScheme.AUTOMATIC;
+          }
 
           this.setInitialView(hash, {
             rotation,
             sidebarView,
             scrollMode,
             spreadMode,
+            colorScheme,
           });
           this.eventBus.dispatch("documentinit", { source: this });
           // Make all navigation keys work on document load,
@@ -1713,25 +1724,28 @@ const PDFViewerApplication = {
 
   setInitialView(
     storedHash,
-    { rotation, sidebarView, scrollMode, spreadMode } = {}
+    { rotation, sidebarView, scrollMode, spreadMode, colorScheme } = {}
   ) {
     const setRotation = angle => {
       if (isValidRotation(angle)) {
         this.pdfViewer.pagesRotation = angle;
       }
     };
-    const setViewerModes = (scroll, spread) => {
+    const setViewerModes = (scroll, spread, color) => {
       if (isValidScrollMode(scroll)) {
         this.pdfViewer.scrollMode = scroll;
       }
       if (isValidSpreadMode(spread)) {
         this.pdfViewer.spreadMode = spread;
       }
+      if (isValidColorScheme(color)) {
+        this.pdfViewer.colorScheme = color;
+      }
     };
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
 
-    setViewerModes(scrollMode, spreadMode);
+    setViewerModes(scrollMode, spreadMode, colorScheme);
 
     if (this.initialBookmark) {
       setRotation(this.initialRotation);
@@ -2454,7 +2468,7 @@ function webViewerColorSchemeChanged(evt) {
   const store = PDFViewerApplication.store;
   if (store && PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    store.set("colorscheme", evt.mode).catch(function () {});
+    store.set("colorScheme", evt.mode).catch(function () {});
   }
 
   let viewerCssThemeMode = 0;
