@@ -2241,7 +2241,7 @@ class Transform {
 class IrreversibleTransform extends Transform {
   filter(x, offset, length) {
     const len = length >> 1;
-    offset = offset | 0;
+    offset |= 0;
     let j, n, current, next;
 
     const alpha = -1.586134342059924;
@@ -2327,7 +2327,7 @@ class IrreversibleTransform extends Transform {
 class ReversibleTransform extends Transform {
   filter(x, offset, length) {
     const len = length >> 1;
-    offset = offset | 0;
+    offset |= 0;
     let j, n;
 
     for (j = offset, n = len + 1; n--; j += 2) {

@@ -54,10 +54,10 @@ describe("find bar", () => {
           const firstA = await highlights[0].boundingBox();
           const secondA = await highlights[1].boundingBox();
           // Subtract the page offset from the text bounding boxes;
-          firstA.x = firstA.x - pageBox.x;
-          firstA.y = firstA.y - pageBox.y;
-          secondA.x = secondA.x - pageBox.x;
-          secondA.y = secondA.y - pageBox.y;
+          firstA.x -= pageBox.x;
+          firstA.y -= pageBox.y;
+          secondA.x -= pageBox.x;
+          secondA.y -= pageBox.y;
           // They should be on the same line.
           expect(firstA.y).withContext(`In ${browserName}`).toEqual(secondA.y);
           const fontSize = 26.66; // From the PDF.
