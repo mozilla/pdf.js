@@ -188,6 +188,7 @@
       },
     ],
     "no-unneeded-ternary": "error",
+    "operator-assignment": "error",
     "prefer-exponentiation-operator": "error",
     "spaced-comment": ["error", "always", {
       "block": {

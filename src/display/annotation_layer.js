@@ -202,8 +202,8 @@ class AnnotationElement {
         // Underline styles only have a bottom border, so we do not need
         // to adjust for all borders. This yields a similar result as
         // Adobe Acrobat/Reader.
-        width = width - 2 * data.borderStyle.width;
-        height = height - 2 * data.borderStyle.width;
+        width -= 2 * data.borderStyle.width;
+        height -= 2 * data.borderStyle.width;
       }
 
       const horizontalRadius = data.borderStyle.horizontalCornerRadius;

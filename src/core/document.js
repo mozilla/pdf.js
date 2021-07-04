@@ -216,7 +216,7 @@ class Page {
     if (rotate % 90 !== 0) {
       rotate = 0;
     } else if (rotate >= 360) {
-      rotate = rotate % 360;
+      rotate %= 360;
     } else if (rotate < 0) {
       // The spec doesn't cover negatives. Assume it's counterclockwise
       // rotation. The following is the other implementation of modulo.
