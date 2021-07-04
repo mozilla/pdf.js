@@ -19,6 +19,7 @@ import {
   apiPageLayoutToSpreadMode,
   apiPageModeToSidebarView,
   AutoPrintRegExp,
+  colorSchemeMediaQuery,
   DEFAULT_SCALE_VALUE,
   EventBus,
   getActiveOrFocusedElement,
@@ -269,7 +270,7 @@ const PDFViewerApplication = {
 
     await this._readPreferences();
     await this._parseHashParameters();
-    this._forceCssTheme();
+    this.initializeCSSTheme();
     await this._initializeL10n();
 
     if (
@@ -407,46 +408,44 @@ const PDFViewerApplication = {
     document.getElementsByTagName("html")[0].dir = dir;
   },
 
-  /**
-   * @private
-   */
-  _forceCssTheme() {
-    const cssTheme = AppOptions.get("viewerCssTheme");
-    if (
-      cssTheme === ViewerCssTheme.AUTOMATIC ||
-      !Object.values(ViewerCssTheme).includes(cssTheme)
-    ) {
-      return;
-    }
-    try {
-      const styleSheet = document.styleSheets[0];
-      const cssRules = styleSheet?.cssRules || [];
-      const mediaMatcher =
-        typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
-          ? "-moz-toolbar-prefers-color-scheme"
-          : "prefers-color-scheme";
-      const mediaRule = `(${mediaMatcher}: dark)`;
-      const mediaRegex = new RegExp(
-        `^@media \\(${mediaMatcher}: dark\\) {\\n\\s*([\\w\\s-.,:;/\\\\{}()]+)\\n}$`
-      );
-      for (let i = 0, ii = cssRules.length; i < ii; i++) {
-        const rule = cssRules[i];
-        if (rule instanceof CSSMediaRule && rule.media?.[0] === mediaRule) {
-          if (cssTheme === ViewerCssTheme.LIGHT) {
-            styleSheet.deleteRule(i);
-            return;
-          }
-          // cssTheme === ViewerCssTheme.DARK
-          const darkRules = mediaRegex.exec(rule.cssText);
-          if (darkRules?.[1]) {
-            styleSheet.deleteRule(i);
-            styleSheet.insertRule(darkRules[1], i);
-          }
-          return;
+  initializeCSSTheme() {
+    const onMediaQueryChange = () => {
+      if (AppOptions.get("viewerCssTheme") === ViewerCssTheme.AUTOMATIC) {
+        if (colorSchemeMediaQuery.matches) {
+          document.documentElement.classList.toggle("dark-mode", true);
+        } else {
+          document.documentElement.classList.toggle("dark-mode", false);
         }
       }
-    } catch (reason) {
-      console.error(`_forceCssTheme: "${reason?.message}".`);
+    };
+
+    // Workaround for Ios -12 devices.
+    if (
+      typeof MediaQueryList === "function" &&
+      typeof MediaQueryList.prototype.addEventListener === "function"
+    ) {
+      colorSchemeMediaQuery.addEventListener("change", onMediaQueryChange);
+    } else {
+      colorSchemeMediaQuery.addListener(onMediaQueryChange);
+    }
+    this.updateCSSTheme();
+  },
+
+  updateCSSTheme() {
+    const cssTheme = AppOptions.get("viewerCssTheme");
+    if (!Object.values(ViewerCssTheme).includes(cssTheme)) {
+      return;
+    }
+    if (cssTheme === ViewerCssTheme.AUTOMATIC) {
+      if (colorSchemeMediaQuery.matches) {
+        document.documentElement.classList.toggle("dark-mode", true);
+      } else {
+        document.documentElement.classList.toggle("dark-mode", false);
+      }
+    } else if (cssTheme === ViewerCssTheme.DARK) {
+      document.documentElement.classList.toggle("dark-mode", true);
+    } else {
+      document.documentElement.classList.toggle("dark-mode", false);
     }
   },
 
@@ -1912,6 +1911,8 @@ const PDFViewerApplication = {
     eventBus._on("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._on("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._on("switchcolorscheme", webViewerSwitchColorScheme);
+    eventBus._on("colorschemechanged", webViewerColorSchemeChanged);
     eventBus._on("documentproperties", webViewerDocumentProperties);
     eventBus._on("find", webViewerFind);
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
@@ -2008,6 +2009,8 @@ const PDFViewerApplication = {
     eventBus._off("scrollmodechanged", webViewerScrollModeChanged);
     eventBus._off("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._off("spreadmodechanged", webViewerSpreadModeChanged);
+    eventBus._off("switchcolorscheme", webViewerSwitchColorScheme);
+    eventBus._off("colorschemechanged", webViewerColorSchemeChanged);
     eventBus._off("documentproperties", webViewerDocumentProperties);
     eventBus._off("find", webViewerFind);
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
@@ -2447,6 +2450,23 @@ function webViewerSpreadModeChanged(evt) {
   }
 }
 
+function webViewerColorSchemeChanged(evt) {
+  const store = PDFViewerApplication.store;
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    store.set("colorscheme", evt.mode).catch(function () {});
+  }
+
+  let viewerCssThemeMode = 0;
+  if (evt.mode === 1) {
+    viewerCssThemeMode = 2;
+  } else if (evt.mode === 2) {
+    viewerCssThemeMode = 1;
+  }
+  AppOptions.set("viewerCssTheme", viewerCssThemeMode);
+  PDFViewerApplication.updateCSSTheme();
+}
+
 function webViewerResize() {
   const { pdfDocument, pdfViewer } = PDFViewerApplication;
   if (!pdfDocument) {
@@ -2589,6 +2609,9 @@ function webViewerSwitchScrollMode(evt) {
 }
 function webViewerSwitchSpreadMode(evt) {
   PDFViewerApplication.pdfViewer.spreadMode = evt.mode;
+}
+function webViewerSwitchColorScheme(evt) {
+  PDFViewerApplication.pdfViewer.colorScheme = evt.mode;
 }
 function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();

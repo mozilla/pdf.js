@@ -13,13 +13,15 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, version } from "pdfjs-lib";
 import {
+  ColorScheme,
+  colorSchemeMediaQuery,
   CSS_UNITS,
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
   getVisibleElements,
   isPortraitOrientation,
+  isValidColorScheme,
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
@@ -36,6 +38,7 @@ import {
   VERTICAL_PADDING,
   watchScroll,
 } from "./ui_utils.js";
+import { createPromiseCapability, version } from "pdfjs-lib";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
@@ -550,6 +553,7 @@ class BaseViewer {
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
             l10n: this.l10n,
+            colorScheme: this._getColorScheme(),
           });
           this._pages.push(pageView);
         }
@@ -664,6 +668,7 @@ class BaseViewer {
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._spreadMode = SpreadMode.NONE;
+    this._colorScheme = ColorScheme.SYSTEM;
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -1536,6 +1541,50 @@ class BaseViewer {
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
+  }
+
+  /**
+   * @private
+   */
+  _getColorScheme() {
+    const colorSchemeMode = this.colorScheme;
+    if (colorSchemeMode === 1) {
+      return "dark";
+    } else if (colorSchemeMode === 2) {
+      return "light";
+    }
+    if (colorSchemeMediaQuery.matches) {
+      return "dark";
+    }
+    return "light";
+  }
+
+  /**
+   * @type {number} One of the values in {ColorScheme}.
+   */
+  get colorScheme() {
+    return this._colorScheme;
+  }
+
+  /**
+   * @param {number} mode - Color scheme in which the
+   *   PDF should be rendered in.
+   *   The constants from {ColorScheme} should be used.
+   */
+  set colorScheme(mode) {
+    if (this._colorScheme === mode) {
+      return; // The Spread mode didn't change.
+    }
+    if (!isValidColorScheme(mode)) {
+      throw new Error(`Invalid spread mode: ${mode}`);
+    }
+    this._colorScheme = mode;
+    this.eventBus.dispatch("colorschemechanged", { source: this, mode });
+
+    for (let i = 0, ii = this._pages.length; i < ii; i++) {
+      this._pages[i].colorScheme = this._getColorScheme();
+      this._pages[i].update();
+    }
   }
 
   /**

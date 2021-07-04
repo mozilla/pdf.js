@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils.js";
+import {
+  ColorScheme,
+  SCROLLBAR_PADDING,
+  ScrollMode,
+  SpreadMode,
+} from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
 import { PDFSinglePageViewer } from "./pdf_single_page_viewer.js";
 
@@ -130,6 +135,24 @@ class SecondaryToolbar {
         close: true,
       },
       {
+        element: options.colorSchemeSystem,
+        eventName: "switchcolorscheme",
+        eventDetails: { mode: ColorScheme.SYSTEM },
+        close: true,
+      },
+      {
+        element: options.colorSchemeDark,
+        eventName: "switchcolorscheme",
+        eventDetails: { mode: ColorScheme.DARK },
+        close: true,
+      },
+      {
+        element: options.colorSchemeLight,
+        eventName: "switchcolorscheme",
+        eventDetails: { mode: ColorScheme.LIGHT },
+        close: true,
+      },
+      {
         element: options.documentPropertiesButton,
         eventName: "documentproperties",
         close: true,
@@ -157,6 +180,7 @@ class SecondaryToolbar {
     this._bindCursorToolsListener(options);
     this._bindScrollModeListener(options);
     this._bindSpreadModeListener(options);
+    this._bindColorSchemeListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus._on("resize", this._setMaxHeight.bind(this));
@@ -296,6 +320,30 @@ class SecondaryToolbar {
     this.eventBus._on("secondarytoolbarreset", evt => {
       if (evt.source === this) {
         spreadModeChanged({ mode: SpreadMode.NONE });
+      }
+    });
+  }
+
+  _bindColorSchemeListener(buttons) {
+    function colorSchemeChanged({ mode }) {
+      buttons.colorSchemeSystem.classList.toggle(
+        "toggled",
+        mode === ColorScheme.SYSTEM
+      );
+      buttons.colorSchemeLight.classList.toggle(
+        "toggled",
+        mode === ColorScheme.LIGHT
+      );
+      buttons.colorSchemeDark.classList.toggle(
+        "toggled",
+        mode === ColorScheme.DARK
+      );
+    }
+    this.eventBus._on("colorschemechanged", colorSchemeChanged);
+
+    this.eventBus._on("secondarytoolbarreset", evt => {
+      if (evt.source === this) {
+        colorSchemeChanged({ mode: ColorScheme.SYSTEM });
       }
     });
   }

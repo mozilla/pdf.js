@@ -66,6 +66,13 @@ const SpreadMode = {
   EVEN: 2,
 };
 
+const ColorScheme = {
+  UNKNOWN: -1,
+  SYSTEM: 0, // Default value.
+  DARK: 1,
+  LIGHT: 2,
+};
+
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
@@ -616,6 +623,14 @@ function isValidSpreadMode(mode) {
   );
 }
 
+function isValidColorScheme(mode) {
+  return (
+    Number.isInteger(mode) &&
+    Object.values(ColorScheme).includes(mode) &&
+    mode !== ColorScheme.UNKNOWN
+  );
+}
+
 function isPortraitOrientation(size) {
   return size.width <= size.height;
 }
@@ -993,6 +1008,8 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+const colorSchemeMediaQuery = matchMedia("(prefers-color-scheme: dark)");
+
 export {
   animationStarted,
   apiPageLayoutToSpreadMode,
@@ -1001,6 +1018,8 @@ export {
   AutoPrintRegExp,
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
+  ColorScheme,
+  colorSchemeMediaQuery,
   CSS_UNITS,
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
@@ -1010,6 +1029,7 @@ export {
   getPageSizeInches,
   getVisibleElements,
   isPortraitOrientation,
+  isValidColorScheme,
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,

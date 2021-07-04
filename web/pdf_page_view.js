@@ -117,6 +117,8 @@ class PDFPageView {
     this.xfaLayer = null;
     this.structTreeLayer = null;
 
+    this.colorScheme = options.colorScheme || "light";
+
     const div = document.createElement("div");
     div.className = "page";
     div.style.width = Math.floor(this.viewport.width) + "px";
@@ -737,6 +739,8 @@ class PDFPageView {
       viewport: this.viewport,
       renderInteractiveForms: this.renderInteractiveForms,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
+      background: this.colorScheme === "dark" ? "rgb(23, 23, 23)" : null,
+      color: this.colorScheme === "dark" ? "rgb(255, 255, 255)" : null,
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
