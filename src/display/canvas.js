@@ -28,6 +28,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
+import { modifyColor } from "./color_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -423,6 +424,7 @@ class CanvasExtraState {
     this.fillColor = "#000000";
     this.strokeColor = "#000000";
     this.textColor = "#000000";
+    this.darkMode = false;
     this.patternFill = false;
     // Note: fill alpha applies to all non-stroking operations
     this.fillAlpha = 1;
@@ -453,7 +455,12 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the number of steps before checking the execution time
   const EXECUTION_STEPS = 10;
 
-  function putBinaryImageData(ctx, imgData, transferMaps = null) {
+  function putBinaryImageData(
+    ctx,
+    imgData,
+    transferMaps = null,
+    darkMode = false
+  ) {
     if (typeof ImageData !== "undefined" && imgData instanceof ImageData) {
       ctx.putImageData(imgData, 0, 0);
       return;
@@ -512,7 +519,11 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       let white = 0xffffffff;
       let black = IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
 
-      if (transferMapGray) {
+      // darkMode can safely ignore the transferMapGray,
+      // because it will otherwise just effect the white,black values.
+      if (darkMode) {
+        [white, black] = [black, white];
+      } else if (transferMapGray) {
         if (transferMapGray[0] === 0xff && transferMapGray[0xff] === 0) {
           [white, black] = [black, white];
         }
@@ -571,17 +582,27 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
         srcPos += elemsInThisChunk;
 
-        if (hasTransferMaps) {
+        if (hasTransferMaps || darkMode) {
+          let r, g, b;
           for (let k = 0; k < elemsInThisChunk; k += 4) {
+            r = dest[k];
+            g = dest[k + 1];
+            b = dest[k + 2];
             if (transferMapRed) {
-              dest[k + 0] = transferMapRed[dest[k + 0]];
+              r = transferMapRed[r];
             }
             if (transferMapGreen) {
-              dest[k + 1] = transferMapGreen[dest[k + 1]];
+              dest[g] = transferMapGreen[g];
             }
             if (transferMapBlue) {
-              dest[k + 2] = transferMapBlue[dest[k + 2]];
+              dest[b] = transferMapBlue[b];
             }
+            if (darkMode) {
+              [r, g, b] = modifyColor({ r, g, b });
+            }
+            dest[k] = r;
+            dest[k + 1] = g;
+            dest[k + 2] = b;
           }
         }
 
@@ -592,17 +613,30 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         elemsInThisChunk = width * partialChunkHeight * 4;
         dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
 
-        if (hasTransferMaps) {
+        if (hasTransferMaps || darkMode) {
+          let r, g, b;
           for (let k = 0; k < elemsInThisChunk; k += 4) {
+            r = dest[k];
+            g = dest[k + 1];
+            b = dest[k + 2];
             if (transferMapRed) {
-              dest[k + 0] = transferMapRed[dest[k + 0]];
+              r = transferMapRed[r];
             }
             if (transferMapGreen) {
-              dest[k + 1] = transferMapGreen[dest[k + 1]];
+              g = transferMapGreen[g];
             }
             if (transferMapBlue) {
-              dest[k + 2] = transferMapBlue[dest[k + 2]];
+              b = transferMapBlue[b];
             }
+            if (darkMode) {
+              [r, g, b] = modifyColor({ r, g, b });
+              dest[k] = r;
+              dest[k + 1] = g;
+              dest[k + 2] = b;
+            }
+            dest[k] = r;
+            dest[k + 1] = g;
+            dest[k + 2] = b;
           }
         }
 
@@ -887,6 +921,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       transparency = false,
       background = null,
       color = null,
+      darkMode = false,
     }) {
       // For pdfs that use blend modes we have to clear the canvas else certain
       // blend modes can look wrong since we'd be blending with a white
@@ -901,6 +936,9 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.fillRect(0, 0, width, height);
       this.ctx.restore();
       this.current.textColor = color || "rgb(0, 0, 0)";
+
+      // This is to pass the "color Scheme" option for the image rendering.
+      this.current.darkMode = darkMode;
 
       if (transparency) {
         const transparentCanvas = this.cachedCanvases.getCanvas(
@@ -2613,7 +2651,12 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           height
         );
         const tmpCtx = tmpCanvas.context;
-        putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
+        putBinaryImageData(
+          tmpCtx,
+          imgData,
+          this.current.transferMaps,
+          this.current.darkMode
+        );
         imgToPaint = tmpCanvas.canvas;
       }
 
@@ -2656,7 +2699,12 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
       const tmpCtx = tmpCanvas.context;
-      putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
+      putBinaryImageData(
+        tmpCtx,
+        imgData,
+        this.current.transferMaps,
+        this.current.darkMode
+      );
 
       for (let i = 0, ii = map.length; i < ii; i++) {
         const entry = map[i];

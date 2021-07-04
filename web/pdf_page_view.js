@@ -741,6 +741,7 @@ class PDFPageView {
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       background: this.colorScheme === "dark" ? "rgb(23, 23, 23)" : null,
       color: this.colorScheme === "dark" ? "rgb(255, 255, 255)" : null,
+      darkMode: this.colorScheme === "dark",
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {

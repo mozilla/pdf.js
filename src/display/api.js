@@ -1346,6 +1346,7 @@ class PDFPageProxy {
     canvasFactory = null,
     background = null,
     color = null,
+    darkMode = false,
     includeAnnotationStorage = false,
     optionalContentConfigPromise = null,
   }) {
@@ -1438,6 +1439,7 @@ class PDFPageProxy {
         imageLayer,
         background,
         color,
+        darkMode,
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
@@ -3150,6 +3152,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         imageLayer,
         background,
         color,
+        darkMode,
       } = this.params;
 
       this.gfx = new CanvasGraphics(
@@ -3166,6 +3169,7 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         transparency,
         background,
         color,
+        darkMode,
       });
       this.operatorListIdx = 0;
       this.graphicsReady = true;
