@@ -190,6 +190,8 @@
 
 .xfaRich {
   white-space: pre-wrap;
+  width: auto;
+  height: auto;
 }
 
 .xfaImage {
@@ -197,11 +199,6 @@
   object-fit: contain;
   width: 100%;
   height: 100%;
-}
-
-.xfaRich {
-  width: 100%;
-  height: auto;
 }
 
 .xfaLrTb,

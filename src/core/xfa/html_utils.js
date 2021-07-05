@@ -14,11 +14,15 @@
  */
 
 import {
+  $content,
   $extra,
   $getParent,
   $getSubformParent,
+  $getTemplateRoot,
+  $globalData,
   $nodeName,
   $pushGlyphs,
+  $text,
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
@@ -191,8 +195,8 @@ function setMinMaxDimensions(node, style) {
   }
 }
 
-function layoutText(text, xfaFont, fontFinder, width) {
-  const measure = new TextMeasure(xfaFont, fontFinder);
+function layoutText(text, xfaFont, margin, lineHeight, fontFinder, width) {
+  const measure = new TextMeasure(xfaFont, margin, lineHeight, fontFinder);
   if (typeof text === "string") {
     measure.addString(text);
   } else {
@@ -200,6 +204,86 @@ function layoutText(text, xfaFont, fontFinder, width) {
   }
 
   return measure.compute(width);
+}
+
+function layoutNode(node, availableSpace) {
+  let height = null;
+  let width = null;
+
+  if ((!node.w || !node.h) && node.value) {
+    let marginH = 0;
+    let marginV = 0;
+    if (node.margin) {
+      marginH = node.margin.leftInset + node.margin.rightInset;
+      marginV = node.margin.topInset + node.margin.bottomInset;
+    }
+
+    let lineHeight = null;
+    let margin = null;
+    if (node.para) {
+      margin = Object.create(null);
+      lineHeight = node.para.lineHeight === "" ? null : node.para.lineHeight;
+      margin.top = node.para.spaceAbove === "" ? 0 : node.para.spaceAbove;
+      margin.bottom = node.para.spaceBelow === "" ? 0 : node.para.spaceBelow;
+      margin.left = node.para.marginLeft === "" ? 0 : node.para.marginLeft;
+      margin.right = node.para.marginRight === "" ? 0 : node.para.marginRight;
+    }
+
+    let font = node.font;
+    if (!font) {
+      const root = node[$getTemplateRoot]();
+      let parent = node[$getParent]();
+      while (parent !== root) {
+        if (parent.font) {
+          font = parent.font;
+          break;
+        }
+        parent = parent[$getParent]();
+      }
+    }
+
+    const maxWidth = !node.w ? availableSpace.width : node.w;
+    const fontFinder = node[$globalData].fontFinder;
+    if (
+      node.value.exData &&
+      node.value.exData[$content] &&
+      node.value.exData.contentType === "text/html"
+    ) {
+      const res = layoutText(
+        node.value.exData[$content],
+        font,
+        margin,
+        lineHeight,
+        fontFinder,
+        maxWidth
+      );
+      width = res.width;
+      height = res.height;
+    } else {
+      const text = node.value[$text]();
+      if (text) {
+        const res = layoutText(
+          text,
+          font,
+          margin,
+          lineHeight,
+          fontFinder,
+          maxWidth
+        );
+        width = res.width;
+        height = res.height;
+      }
+    }
+
+    if (width !== null && !node.w) {
+      width += marginH;
+    }
+
+    if (height !== null && !node.h) {
+      height += marginV;
+    }
+  }
+  return [width, height];
 }
 
 function computeBbox(node, html, availableSpace) {
@@ -501,7 +585,7 @@ export {
   fixTextIndent,
   isPrintOnly,
   layoutClass,
-  layoutText,
+  layoutNode,
   measureToString,
   setAccess,
   setFontFamily,
