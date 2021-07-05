@@ -2651,9 +2651,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     paintInlineImageXObject(imgData) {
-      if (imgData) {
-        return;
-      }
       if (!this.contentVisible) {
         return;
       }

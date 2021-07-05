@@ -20,7 +20,6 @@ import {
   apiPageModeToSidebarView,
   AutoPrintRegExp,
   ColorScheme,
-  colorSchemeMediaQuery,
   DEFAULT_SCALE_VALUE,
   EventBus,
   getActiveOrFocusedElement,
@@ -272,7 +271,7 @@ const PDFViewerApplication = {
 
     await this._readPreferences();
     await this._parseHashParameters();
-    this.initializeCSSTheme();
+    this._forceCssTheme();
     await this._initializeL10n();
 
     if (
@@ -410,44 +409,46 @@ const PDFViewerApplication = {
     document.getElementsByTagName("html")[0].dir = dir;
   },
 
-  initializeCSSTheme() {
-    const onMediaQueryChange = () => {
-      if (AppOptions.get("viewerCssTheme") === ViewerCssTheme.AUTOMATIC) {
-        if (colorSchemeMediaQuery.matches) {
-          document.documentElement.classList.toggle("dark-mode", true);
-        } else {
-          document.documentElement.classList.toggle("dark-mode", false);
-        }
-      }
-    };
-
-    // Workaround for Ios -12 devices.
-    if (
-      typeof MediaQueryList === "function" &&
-      typeof MediaQueryList.prototype.addEventListener === "function"
-    ) {
-      colorSchemeMediaQuery.addEventListener("change", onMediaQueryChange);
-    } else {
-      colorSchemeMediaQuery.addListener(onMediaQueryChange);
-    }
-    this.updateCSSTheme();
-  },
-
-  updateCSSTheme() {
+  /**
+   * @private
+   */
+  _forceCssTheme() {
     const cssTheme = AppOptions.get("viewerCssTheme");
-    if (!Object.values(ViewerCssTheme).includes(cssTheme)) {
+    if (
+      cssTheme === ViewerCssTheme.AUTOMATIC ||
+      !Object.values(ViewerCssTheme).includes(cssTheme)
+    ) {
       return;
     }
-    if (cssTheme === ViewerCssTheme.AUTOMATIC) {
-      if (colorSchemeMediaQuery.matches) {
-        document.documentElement.classList.toggle("dark-mode", true);
-      } else {
-        document.documentElement.classList.toggle("dark-mode", false);
+    try {
+      const styleSheet = document.styleSheets[0];
+      const cssRules = styleSheet?.cssRules || [];
+      const mediaMatcher =
+        typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+          ? "-moz-toolbar-prefers-color-scheme"
+          : "prefers-color-scheme";
+      const mediaRule = `(${mediaMatcher}: dark)`;
+      const mediaRegex = new RegExp(
+        `^@media \\(${mediaMatcher}: dark\\) {\\n\\s*([\\w\\s-.,:;/\\\\{}()]+)\\n}$`
+      );
+      for (let i = 0, ii = cssRules.length; i < ii; i++) {
+        const rule = cssRules[i];
+        if (rule instanceof CSSMediaRule && rule.media?.[0] === mediaRule) {
+          if (cssTheme === ViewerCssTheme.LIGHT) {
+            styleSheet.deleteRule(i);
+            return;
+          }
+          // cssTheme === ViewerCssTheme.DARK
+          const darkRules = mediaRegex.exec(rule.cssText);
+          if (darkRules?.[1]) {
+            styleSheet.deleteRule(i);
+            styleSheet.insertRule(darkRules[1], i);
+          }
+          return;
+        }
       }
-    } else if (cssTheme === ViewerCssTheme.DARK) {
-      document.documentElement.classList.toggle("dark-mode", true);
-    } else {
-      document.documentElement.classList.toggle("dark-mode", false);
+    } catch (reason) {
+      console.error(`_forceCssTheme: "${reason?.message}".`);
     }
   },
 
@@ -2470,15 +2471,6 @@ function webViewerColorSchemeChanged(evt) {
     // Only update the storage when the document has been loaded *and* rendered.
     store.set("colorScheme", evt.mode).catch(function () {});
   }
-
-  let viewerCssThemeMode = 0;
-  if (evt.mode === 1) {
-    viewerCssThemeMode = 2;
-  } else if (evt.mode === 2) {
-    viewerCssThemeMode = 1;
-  }
-  AppOptions.set("viewerCssTheme", viewerCssThemeMode);
-  PDFViewerApplication.updateCSSTheme();
 }
 
 function webViewerResize() {
