@@ -61,10 +61,6 @@ class XFAFactory {
     return this.dims.length;
   }
 
-  setImages(images) {
-    this.form[$globalData].images = images;
-  }
-
   setFonts(fonts) {
     this.form[$globalData].fontFinder = new FontFinder(fonts);
     const missingFonts = [];
