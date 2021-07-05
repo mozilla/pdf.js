@@ -923,7 +923,7 @@ class Catalog {
       const nameTree = new NameTree(obj.getRaw("XFAImages"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
         if (!xfaImages) {
-          xfaImages = new Dict(this.ref);
+          xfaImages = new Dict(this.xref);
         }
         xfaImages.set(key, value);
       }
