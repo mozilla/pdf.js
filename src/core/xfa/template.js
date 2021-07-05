@@ -897,7 +897,7 @@ class Caption extends XFAObject {
       "inactive",
       "invisible",
     ]);
-    this.reserve = getMeasurement(attributes.reserve);
+    this.reserve = Math.ceil(getMeasurement(attributes.reserve));
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.extras = null;
