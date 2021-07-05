@@ -1008,7 +1008,10 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
-const colorSchemeMediaQuery = matchMedia("(prefers-color-scheme: dark)");
+const colorSchemeMediaQuery =
+  typeof matchMedia !== "undefined"
+    ? matchMedia("(prefers-color-scheme: dark)")
+    : Object.create(null);
 
 export {
   animationStarted,

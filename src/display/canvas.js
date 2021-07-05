@@ -1016,7 +1016,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         fnId = fnArray[i];
 
         if (fnId !== OPS.dependency) {
-          console.log(this[fnId].name);
           this[fnId].apply(this, argsArray[i]);
         } else {
           for (const depObjId of argsArray[i]) {
