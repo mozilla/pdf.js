@@ -88,7 +88,17 @@ function inlineImages(images) {
       })
     );
   }
-  return Promise.all(imagePromises);
+
+  return Promise.race([
+    Promise.all(imagePromises),
+    new Promise((resolve, reject) => {
+      setTimeout(
+        reject,
+        60000,
+        new Error("Fetching inline images is too long")
+      );
+    }),
+  ]);
 }
 
 async function resolveImages(node, silentErrors = false) {
@@ -111,7 +121,12 @@ async function resolveImages(node, silentErrors = false) {
       })
     );
   }
-  await Promise.all(loadedPromises);
+  await Promise.race([
+    Promise.all(loadedPromises),
+    new Promise((resolve, reject) => {
+      setTimeout(reject, 60000, new Error("Resolving images is too long"));
+    }),
+  ]);
 }
 
 /**
