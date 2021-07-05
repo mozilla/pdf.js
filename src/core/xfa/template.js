@@ -74,7 +74,7 @@ import {
   fixTextIndent,
   isPrintOnly,
   layoutClass,
-  layoutText,
+  layoutNode,
   measureToString,
   setAccess,
   setFontFamily,
@@ -911,6 +911,26 @@ class Caption extends XFAObject {
     _setValue(this, value);
   }
 
+  [$getExtra](availableSpace) {
+    if (!this[$extra]) {
+      let { width, height } = availableSpace;
+      switch (this.placement) {
+        case "left":
+        case "right":
+        case "inline":
+          width = this.reserve <= 0 ? width : this.reserve;
+          break;
+        case "top":
+        case "bottom":
+          height = this.reserve <= 0 ? height : this.reserve;
+          break;
+      }
+
+      this[$extra] = layoutNode(this, { width, height });
+    }
+    return this[$extra];
+  }
+
   [$toHTML](availableSpace) {
     // TODO: incomplete.
     if (!this.value) {
@@ -921,6 +941,23 @@ class Caption extends XFAObject {
     if (!value) {
       return HTMLResult.EMPTY;
     }
+
+    const savedReserve = this.reserve;
+    if (this.reserve <= 0) {
+      const [w, h] = this[$getExtra](availableSpace);
+      switch (this.placement) {
+        case "left":
+        case "right":
+        case "inline":
+          this.reserve = w;
+          break;
+        case "top":
+        case "bottom":
+          this.reserve = h;
+          break;
+      }
+    }
+
     const children = [];
     if (typeof value === "string") {
       children.push({
@@ -937,19 +974,17 @@ class Caption extends XFAObject {
       case "right":
         if (this.reserve > 0) {
           style.width = measureToString(this.reserve);
-        } else {
-          style.minWidth = measureToString(this.reserve);
         }
         break;
       case "top":
       case "bottom":
         if (this.reserve > 0) {
           style.height = measureToString(this.reserve);
-        } else {
-          style.minHeight = measureToString(this.reserve);
         }
         break;
     }
+
+    this.reserve = savedReserve;
 
     return HTMLResult.success({
       name: "div",
@@ -1569,63 +1604,22 @@ class Draw extends XFAObject {
 
     fixDimensions(this);
 
-    if ((this.w === "" || this.h === "") && this.value) {
-      let marginH = 0;
-      let marginV = 0;
-      if (this.margin) {
-        marginH = this.margin.leftInset + this.margin.rightInset;
-        marginV = this.margin.topInset + this.margin.bottomInset;
-      }
-
-      const maxWidth = this.w === "" ? availableSpace.width : this.w;
-      const fontFinder = this[$globalData].fontFinder;
-      let font = this.font;
-      if (!font) {
-        let parent = this[$getParent]();
-        while (!(parent instanceof Template)) {
-          if (parent.font) {
-            font = parent.font;
-            break;
-          }
-          parent = parent[$getParent]();
-        }
-      }
-
-      let height = null;
-      let width = null;
-      if (
-        this.value.exData &&
-        this.value.exData[$content] &&
-        this.value.exData.contentType === "text/html"
-      ) {
-        const res = layoutText(
-          this.value.exData[$content],
-          font,
-          fontFinder,
-          maxWidth
-        );
-        width = res.width;
-        height = res.height;
-      } else {
-        const text = this.value[$text]();
-        if (text) {
-          const res = layoutText(text, font, fontFinder, maxWidth);
-          width = res.width;
-          height = res.height;
-        }
-      }
-
-      if (width !== null && this.w === "") {
-        this.w = width + marginH;
-      }
-
-      if (height !== null && this.h === "") {
-        this.h = height + marginV;
-      }
+    // If at least one dimension is missing and we've a text
+    // then we can guess it in laying out the text.
+    const savedW = this.w;
+    const savedH = this.h;
+    const [w, h] = layoutNode(this, availableSpace);
+    if (w && this.w === "") {
+      this.w = w;
+    }
+    if (h && this.h === "") {
+      this.h = h;
     }
 
     setFirstUnsplittable(this);
     if (!checkDimensions(this, availableSpace)) {
+      this.w = savedW;
+      this.h = savedH;
       return HTMLResult.FAILURE;
     }
     unsetFirstUnsplittable(this);
@@ -1673,6 +1667,8 @@ class Draw extends XFAObject {
 
     const value = this.value ? this.value[$toHTML](availableSpace).html : null;
     if (value === null) {
+      this.w = savedW;
+      this.h = savedH;
       return HTMLResult.success(createWrapper(this, html), bbox);
     }
 
@@ -1713,6 +1709,9 @@ class Draw extends XFAObject {
         }
       }
     }
+
+    this.w = savedW;
+    this.h = savedH;
 
     return HTMLResult.success(createWrapper(this, html), bbox);
   }
@@ -2460,10 +2459,66 @@ class Field extends XFAObject {
       return HTMLResult.EMPTY;
     }
 
+    if (this.caption) {
+      // Maybe we already tried to layout this field with
+      // another availableSpace, so to avoid to use the cached
+      // value just delete it.
+      delete this.caption[$extra];
+    }
+
+    const caption = this.caption
+      ? this.caption[$toHTML](availableSpace).html
+      : null;
+    const savedW = this.w;
+    const savedH = this.h;
+    if (this.w === "" || this.h === "") {
+      let marginH = 0;
+      let marginV = 0;
+      if (this.margin) {
+        marginH = this.margin.leftInset + this.margin.rightInset;
+        marginV = this.margin.topInset + this.margin.bottomInset;
+      }
+
+      let width = null;
+      let height = null;
+
+      if (this.caption) {
+        [width, height] = this.caption[$getExtra](availableSpace);
+        if (this.ui instanceof CheckButton) {
+          switch (this.caption.placement) {
+            case "left":
+            case "right":
+            case "inline":
+              width += this.ui.size;
+              break;
+            case "top":
+            case "bottom":
+              height += this.ui.size;
+              break;
+          }
+        }
+      }
+      if (width && this.w === "") {
+        this.w = Math.min(
+          this.maxW <= 0 ? Infinity : this.maxW,
+          Math.max(this.minW, width + marginH)
+        );
+      }
+
+      if (height && this.h === "") {
+        this.h = Math.min(
+          this.maxH <= 0 ? Infinity : this.maxH,
+          Math.max(this.minH, height + marginV)
+        );
+      }
+    }
+
     fixDimensions(this);
 
     setFirstUnsplittable(this);
     if (!checkDimensions(this, availableSpace)) {
+      this.w = savedW;
+      this.h = savedH;
       return HTMLResult.FAILURE;
     }
     unsetFirstUnsplittable(this);
@@ -2559,12 +2614,14 @@ class Field extends XFAObject {
       }
     }
 
-    const caption = this.caption ? this.caption[$toHTML]().html : null;
     if (!caption) {
       if (ui.attributes.class) {
         // Even if no caption this class will help to center the ui.
         ui.attributes.class.push("xfaLeft");
       }
+      this.w = savedW;
+      this.h = savedH;
+
       return HTMLResult.success(createWrapper(this, html), bbox);
     }
 
@@ -2605,6 +2662,8 @@ class Field extends XFAObject {
         break;
     }
 
+    this.w = savedW;
+    this.h = savedH;
     return HTMLResult.success(createWrapper(this, html), bbox);
   }
 }
