@@ -77,10 +77,6 @@ class BasePdfManager {
     return this.pdfDocument.loadXfaFonts(handler, task);
   }
 
-  loadXfaImages() {
-    return this.pdfDocument.loadXfaImages();
-  }
-
   serializeXfaData(annotationStorage) {
     return this.pdfDocument.serializeXfaData(annotationStorage);
   }
