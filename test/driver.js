@@ -97,7 +97,6 @@ async function resolveImages(node, silentErrors = false) {
 
   const loadedPromises = [];
   for (let i = 0, ii = data.length; i < ii; i++) {
-    images[i].src = data[i];
     loadedPromises.push(
       new Promise(function (resolveImage, rejectImage) {
         images[i].onload = resolveImage;
@@ -108,6 +107,7 @@ async function resolveImages(node, silentErrors = false) {
             rejectImage(new Error("Error loading image " + e));
           }
         };
+        images[i].src = data[i];
       })
     );
   }
