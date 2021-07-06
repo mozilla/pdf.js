@@ -1073,7 +1073,7 @@ class CheckButton extends XFAObject {
 
     const value = (field.value && field.value[$text]()) || "off";
     const checked = value === exportedValue.on || undefined;
-    const container = field[$getParent]();
+    const container = field[$getSubformParent]();
     const fieldId = field[$uid];
     let dataId;
 
@@ -2113,27 +2113,15 @@ class ExclGroup extends XFAObject {
   [$isSplittable]() {
     // We cannot cache the result here because the contentArea
     // can change.
-    if (!this[$getParent]()[$isSplittable]()) {
+    if (!this[$getSubformParent]()[$isSplittable]()) {
       return false;
-    }
-
-    const root = this[$getTemplateRoot]();
-    const contentArea = root[$extra].currentContentArea;
-    if (contentArea && Math.max(this.minH, this.h || 0) >= contentArea.h) {
-      return true;
     }
 
     if (this[$extra]._isSplittable !== undefined) {
       return this[$extra]._isSplittable;
     }
 
-    if (this.layout === "position") {
-      this[$extra]._isSplittable = false;
-      return false;
-    }
-
-    const parentLayout = this[$getParent]().layout;
-    if (parentLayout && parentLayout.includes("row")) {
+    if (this.layout === "position" || this.layout.includes("row")) {
       this[$extra]._isSplittable = false;
       return false;
     }
@@ -2205,8 +2193,8 @@ class ExclGroup extends XFAObject {
 
     const filter = new Set(["field"]);
 
-    if (this.layout === "row") {
-      const columnWidths = this[$getParent]().columnWidths;
+    if (this.layout.includes("row")) {
+      const columnWidths = this[$getSubformParent]().columnWidths;
       if (Array.isArray(columnWidths) && columnWidths.length > 0) {
         this[$extra].columnWidths = columnWidths;
         this[$extra].currentColumn = 0;
@@ -4387,6 +4375,14 @@ class Subform extends XFAObject {
     this.subformSet = new XFAObjectArray();
   }
 
+  [$getSubformParent]() {
+    const parent = this[$getParent]();
+    if (parent instanceof SubformSet) {
+      return parent[$getSubformParent]();
+    }
+    return parent;
+  }
+
   [$isBindable]() {
     return true;
   }
@@ -4412,36 +4408,26 @@ class Subform extends XFAObject {
   [$isSplittable]() {
     // We cannot cache the result here because the contentArea
     // can change.
-    if (!this[$getParent]()[$isSplittable]()) {
+    if (!this[$getSubformParent]()[$isSplittable]()) {
       return false;
     }
 
-    const root = this[$getTemplateRoot]();
-    const contentArea = root[$extra].currentContentArea;
-    if (contentArea && Math.max(this.minH, this.h || 0) >= contentArea.h) {
-      return true;
-    }
+    const contentArea = this[$getTemplateRoot]()[$extra].currentContentArea;
 
-    if (this.overflow) {
-      return this.overflow[$getExtra]().target !== contentArea;
+    if (this.overflow && this.overflow[$getExtra]().target === contentArea) {
+      return false;
     }
 
     if (this[$extra]._isSplittable !== undefined) {
       return this[$extra]._isSplittable;
     }
 
-    if (this.layout === "position") {
+    if (this.layout === "position" || this.layout.includes("row")) {
       this[$extra]._isSplittable = false;
       return false;
     }
 
     if (this.keep && this.keep.intact !== "none") {
-      this[$extra]._isSplittable = false;
-      return false;
-    }
-
-    const parentLayout = this[$getParent]().layout;
-    if (parentLayout && parentLayout.includes("row")) {
       this[$extra]._isSplittable = false;
       return false;
     }
