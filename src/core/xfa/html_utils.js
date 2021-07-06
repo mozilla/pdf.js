@@ -41,7 +41,7 @@ function measureToString(m) {
 
 const converters = {
   anchorType(node, style) {
-    const parent = node[$getParent]();
+    const parent = node[$getSubformParent]();
     if (!parent || (parent.layout && parent.layout !== "position")) {
       // anchorType is only used in a positioned layout.
       return;
@@ -78,7 +78,7 @@ const converters = {
     }
   },
   dimensions(node, style) {
-    const parent = node[$getParent]();
+    const parent = node[$getSubformParent]();
     let width = node.w;
     const height = node.h;
     if (parent.layout && parent.layout.includes("row")) {
@@ -116,7 +116,7 @@ const converters = {
     }
   },
   position(node, style) {
-    const parent = node[$getParent]();
+    const parent = node[$getSubformParent]();
     if (parent && parent.layout && parent.layout !== "position") {
       // IRL, we've some x/y in tb layout.
       // Specs say x/y is only used in positioned layout.
@@ -182,14 +182,18 @@ const converters = {
 };
 
 function setMinMaxDimensions(node, style) {
-  const parent = node[$getParent]();
+  const parent = node[$getSubformParent]();
   if (parent.layout === "position") {
-    style.minWidth = measureToString(node.minW);
-    if (node.maxW) {
+    if (node.minW > 0) {
+      style.minWidth = measureToString(node.minW);
+    }
+    if (node.maxW > 0) {
       style.maxWidth = measureToString(node.maxW);
     }
-    style.minHeight = measureToString(node.minH);
-    if (node.maxH) {
+    if (node.minH > 0) {
+      style.minHeight = measureToString(node.minH);
+    }
+    if (node.maxH > 0) {
       style.maxHeight = measureToString(node.maxH);
     }
   }
@@ -297,7 +301,7 @@ function computeBbox(node, html, availableSpace) {
     let width = node.w;
     if (width === "") {
       if (node.maxW === 0) {
-        const parent = node[$getParent]();
+        const parent = node[$getSubformParent]();
         if (parent.layout === "position" && parent.w !== "") {
           width = 0;
         } else {
@@ -312,7 +316,7 @@ function computeBbox(node, html, availableSpace) {
     let height = node.h;
     if (height === "") {
       if (node.maxH === 0) {
-        const parent = node[$getParent]();
+        const parent = node[$getSubformParent]();
         if (parent.layout === "position" && parent.h !== "") {
           height = 0;
         } else {
@@ -349,25 +353,9 @@ function fixDimensions(node) {
     }
   }
 
-  if (parent.w && node.w) {
-    node.w = Math.min(parent.w, node.w);
-  }
-
-  if (parent.h && node.h) {
-    node.h = Math.min(parent.h, node.h);
-  }
-
   if (parent.layout && parent.layout !== "position") {
     // Useless in this context.
     node.x = node.y = 0;
-    if (parent.layout === "tb") {
-      if (
-        parent.w !== "" &&
-        (node.w === "" || node.w === 0 || node.w > parent.w)
-      ) {
-        node.w = parent.w;
-      }
-    }
   }
 
   if (node.layout === "table") {

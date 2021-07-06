@@ -16,7 +16,7 @@
 import {
   $extra,
   $flushHTML,
-  $getParent,
+  $getSubformParent,
   $getTemplateRoot,
   $isSplittable,
 } from "./xfa_object.js";
@@ -265,7 +265,7 @@ function checkDimensions(node, space) {
     return true;
   }
 
-  const parent = node[$getParent]();
+  const parent = node[$getSubformParent]();
   const attempt = (parent[$extra] && parent[$extra].attempt) || 0;
   let y, w, h;
   switch (parent.layout) {
@@ -344,6 +344,15 @@ function checkDimensions(node, space) {
       return h + y > area.h;
     case "rl-row":
     case "row":
+      if (node[$getTemplateRoot]()[$extra].noLayoutFailure) {
+        return true;
+      }
+
+      if (node.h !== "") {
+        [, , , h] = getTransformedBBox(node);
+        return Math.round(h - space.height) <= 1;
+      }
+      return true;
     default:
       // No layout, so accept everything.
       return true;
