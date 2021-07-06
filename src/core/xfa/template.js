@@ -2991,56 +2991,59 @@ class Image extends StringObject {
   }
 
   [$toHTML]() {
-    if (this.href || !this[$content]) {
-      // TODO: href can be a Name referring to an internal stream
-      // containing a picture.
+    let buffer =
+      this[$globalData].images && this[$globalData].images.get(this.href);
+    if (!buffer && (this.href || !this[$content])) {
       // In general, we don't get remote data and use what we have
       // in the pdf itself, so no picture for non null href.
       return HTMLResult.EMPTY;
     }
 
-    // TODO: Firefox doesn't support natively tiff (and tif) format.
-    if (this.transferEncoding === "base64") {
-      const buffer = stringToBytes(atob(this[$content]));
-      const blob = new Blob([buffer], { type: this.contentType });
-      let style;
-      switch (this.aspect) {
-        case "fit":
-        case "actual":
-          // TODO: check what to do with actual.
-          // Normally we should return {auto, auto} for it but
-          // it implies some wrong rendering (see xfa_bug1716816.pdf).
-          break;
-        case "height":
-          style = {
-            width: "auto",
-            height: "100%",
-          };
-          break;
-        case "none":
-          style = {
-            width: "100%",
-            height: "100%",
-          };
-          break;
-        case "width":
-          style = {
-            width: "100%",
-            height: "auto",
-          };
-          break;
-      }
-      return HTMLResult.success({
-        name: "img",
-        attributes: {
-          class: ["xfaImage"],
-          style,
-          src: URL.createObjectURL(blob),
-        },
-      });
+    if (!buffer && this.transferEncoding === "base64") {
+      buffer = stringToBytes(atob(this[$content]));
     }
 
-    return HTMLResult.EMPTY;
+    if (!buffer) {
+      return HTMLResult.EMPTY;
+    }
+
+    // TODO: Firefox doesn't support natively tiff (and tif) format.
+    const blob = new Blob([buffer], { type: this.contentType });
+    let style;
+    switch (this.aspect) {
+      case "fit":
+      case "actual":
+        // TODO: check what to do with actual.
+        // Normally we should return {auto, auto} for it but
+        // it implies some wrong rendering (see xfa_bug1716816.pdf).
+        break;
+      case "height":
+        style = {
+          width: "auto",
+          height: "100%",
+        };
+        break;
+      case "none":
+        style = {
+          width: "100%",
+          height: "100%",
+        };
+        break;
+      case "width":
+        style = {
+          width: "100%",
+          height: "auto",
+        };
+        break;
+    }
+    return HTMLResult.success({
+      name: "img",
+      attributes: {
+        class: ["xfaImage"],
+        style,
+        src: URL.createObjectURL(blob),
+      },
+    });
   }
 }
 
