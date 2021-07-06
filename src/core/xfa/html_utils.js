@@ -420,40 +420,50 @@ function createWrapper(node, html) {
       class: ["xfaWrapper"],
       style: Object.create(null),
     },
-    children: [html],
+    children: [],
   };
 
   attributes.class.push("xfaWrapped");
 
   if (node.border) {
     const { widths, insets } = node.border[$extra];
-    let shiftH = 0;
-    let shiftW = 0;
+    let width, height;
+    let top = insets[0];
+    let left = insets[3];
+    const insetsH = insets[0] + insets[2];
+    const insetsW = insets[1] + insets[3];
     switch (node.border.hand) {
       case "even":
-        shiftW = widths[0] / 2;
-        shiftH = widths[3] / 2;
+        top -= widths[0] / 2;
+        left -= widths[3] / 2;
+        width = `calc(100% + ${(widths[1] + widths[3]) / 2 - insetsW}px)`;
+        height = `calc(100% + ${(widths[0] + widths[2]) / 2 - insetsH}px)`;
         break;
       case "left":
-        shiftW = widths[0];
-        shiftH = widths[3];
+        top -= widths[0];
+        left -= widths[3];
+        width = `calc(100% + ${widths[1] + widths[3] - insetsW}px)`;
+        height = `calc(100% + ${widths[0] + widths[2] - insetsH}px)`;
+        break;
+      case "right":
+        width = insetsW ? `calc(100% - ${insetsW}px)` : "100%";
+        height = insetsH ? `calc(100% - ${insetsH}px)` : "100%";
         break;
     }
-    const insetsW = insets[1] + insets[3];
-    const insetsH = insets[0] + insets[2];
     const classNames = ["xfaBorder"];
     if (isPrintOnly(node.border)) {
       classNames.push("xfaPrintOnly");
     }
+
     const border = {
       name: "div",
       attributes: {
         class: classNames,
         style: {
-          top: `${insets[0] - widths[0] + shiftW}px`,
-          left: `${insets[3] - widths[3] + shiftH}px`,
-          width: insetsW ? `calc(100% - ${insetsW}px)` : "100%",
-          height: insetsH ? `calc(100% - ${insetsH}px)` : "100%",
+          top: `${top}px`,
+          left: `${left}px`,
+          width,
+          height,
         },
       },
       children: [],
@@ -471,7 +481,9 @@ function createWrapper(node, html) {
         delete style[key];
       }
     }
-    wrapper.children.push(border);
+    wrapper.children.push(border, html);
+  } else {
+    wrapper.children.push(html);
   }
 
   for (const key of [
