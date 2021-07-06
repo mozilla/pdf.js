@@ -171,7 +171,7 @@ class BehaviorOverride extends ContentObject {
       this[$content]
         .trim()
         .split(/\s+/)
-        .filter(x => !!x && x.include(":"))
+        .filter(x => x.includes(":"))
         .map(x => x.split(":", 2))
     );
   }
