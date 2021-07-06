@@ -915,6 +915,22 @@ class Catalog {
     return shadow(this, "attachments", attachments);
   }
 
+  get xfaImages() {
+    const obj = this._catDict.get("Names");
+    let xfaImages = null;
+
+    if (obj instanceof Dict && obj.has("XFAImages")) {
+      const nameTree = new NameTree(obj.getRaw("XFAImages"), this.xref);
+      for (const [key, value] of nameTree.getAll()) {
+        if (!xfaImages) {
+          xfaImages = new Dict(this.xref);
+        }
+        xfaImages.set(key, value);
+      }
+    }
+    return shadow(this, "xfaImages", xfaImages);
+  }
+
   _collectJavaScript() {
     const obj = this._catDict.get("Names");
     let javaScript = null;
