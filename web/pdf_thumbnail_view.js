@@ -141,12 +141,15 @@ class PDFThumbnailView {
 
     const div = document.createElement("div");
     div.className = "thumbnail";
+
     div.setAttribute("data-page-number", this.id);
     this.div = div;
 
     const ring = document.createElement("div");
     ring.className = "thumbnailSelectionRing";
     const borderAdjustment = 2 * THUMBNAIL_CANVAS_BORDER_WIDTH;
+    ring.style.position = "relative";
+
     ring.style.width = this.canvasWidth + borderAdjustment + "px";
     ring.style.height = this.canvasHeight + borderAdjustment + "px";
     this.ring = ring;
@@ -267,6 +270,11 @@ class PDFThumbnailView {
     this.image = image;
 
     this.div.setAttribute("data-loaded", true);
+    // page indicator for thumbnails
+    const page_indicator = document.createElement("div");
+    page_indicator.className = "thumbnailPageIndicator";
+    page_indicator.innerText = this.id;
+    this.ring.appendChild(page_indicator);
     this.ring.appendChild(image);
 
     // Zeroing the width and height causes Firefox to release graphics

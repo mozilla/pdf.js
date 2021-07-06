@@ -1375,6 +1375,26 @@ html[dir="rtl"] .thumbnail {
   padding: 7px;
 }
 
+/* thumbnail page indicator */
+.thumbnailPageIndicator {
+  position: absolute;
+  z-index: 2;
+  color: #fff;
+  font-size: 11px;
+  font-family: monospace;
+  bottom: 7px;
+  right: -2px;
+  transform: translateX(-50%);
+  width: 17px;
+  height: 17px;
+  padding: 3px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgb(0 0 0 / 48%);
+}
+/* Ends thumbnail page indicator */
 a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
 .thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
   opacity: 0.9;
