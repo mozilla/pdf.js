@@ -2689,7 +2689,7 @@ class Fill extends XFAObject {
     }
     if (parent instanceof Rectangle || parent instanceof Arc) {
       propName = "fill";
-      style.fill = "transparent";
+      style.fill = "white";
     }
 
     for (const name of Object.getOwnPropertyNames(this)) {
