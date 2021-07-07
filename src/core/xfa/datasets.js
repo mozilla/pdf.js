@@ -15,7 +15,6 @@
 
 import {
   $appendChild,
-  $global,
   $namespaceId,
   $nodeName,
   $onChild,
@@ -47,8 +46,6 @@ class Datasets extends XFAObject {
         child[$namespaceId] === NamespaceIds.signature.id)
     ) {
       this[name] = child;
-    } else {
-      child[$global] = true;
     }
     this[$appendChild](child);
   }
