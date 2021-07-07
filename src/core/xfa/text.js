@@ -223,6 +223,7 @@ class TextMeasure {
       height = 0,
       currentLineWidth = 0,
       currentLineHeight = 0;
+    let isBroken = false;
 
     for (let i = 0, ii = this.glyphs.length; i < ii; i++) {
       const [glyphWidth, glyphHeight, isSpace, isEOL] = this.glyphs[i];
@@ -245,6 +246,7 @@ class TextMeasure {
           currentLineHeight = glyphHeight;
           lastSpacePos = -1;
           lastSpaceWidth = 0;
+          isBroken = true;
         } else {
           currentLineHeight = Math.max(glyphHeight, currentLineHeight);
           lastSpaceWidth = currentLineWidth;
@@ -269,6 +271,8 @@ class TextMeasure {
           width = Math.max(width, currentLineWidth);
           currentLineWidth = glyphWidth;
         }
+        isBroken = true;
+
         continue;
       }
 
@@ -279,7 +283,7 @@ class TextMeasure {
     width = Math.max(width, currentLineWidth);
     height += currentLineHeight + this.extraHeight;
 
-    return { width: WIDTH_FACTOR * width, height };
+    return { width: WIDTH_FACTOR * width, height, isBroken };
   }
 }
 

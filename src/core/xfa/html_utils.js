@@ -213,6 +213,7 @@ function layoutText(text, xfaFont, margin, lineHeight, fontFinder, width) {
 function layoutNode(node, availableSpace) {
   let height = null;
   let width = null;
+  let isBroken = false;
 
   if ((!node.w || !node.h) && node.value) {
     let marginH = 0;
@@ -263,6 +264,7 @@ function layoutNode(node, availableSpace) {
       );
       width = res.width;
       height = res.height;
+      isBroken = res.isBroken;
     } else {
       const text = node.value[$text]();
       if (text) {
@@ -276,6 +278,7 @@ function layoutNode(node, availableSpace) {
         );
         width = res.width;
         height = res.height;
+        isBroken = res.isBroken;
       }
     }
 
@@ -287,7 +290,7 @@ function layoutNode(node, availableSpace) {
       height += marginV;
     }
   }
-  return [width, height];
+  return { w: width, h: height, isBroken };
 }
 
 function computeBbox(node, html, availableSpace) {
