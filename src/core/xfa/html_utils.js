@@ -538,6 +538,8 @@ function fixTextIndent(styles) {
 function setAccess(node, classNames) {
   switch (node.access) {
     case "nonInteractive":
+      classNames.push("xfaNonInteractive");
+      break;
     case "readOnly":
       classNames.push("xfaReadOnly");
       break;
