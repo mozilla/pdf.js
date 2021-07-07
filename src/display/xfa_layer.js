@@ -161,13 +161,24 @@ class XfaLayer {
       }
     }
 
+    /**
+     * TODO: re-enable that stuff once we've JS implementation.
+     * See https://bugzilla.mozilla.org/show_bug.cgi?id=1719465.
+     *
+     * for (const el of rootDiv.querySelectorAll(
+     * ".xfaDisabled input, .xfaDisabled textarea"
+     * )) {
+     * el.setAttribute("disabled", true);
+     * }
+     * for (const el of rootDiv.querySelectorAll(
+     * ".xfaReadOnly input, .xfaReadOnly textarea"
+     * )) {
+     * el.setAttribute("readOnly", true);
+     * }
+     */
+
     for (const el of rootDiv.querySelectorAll(
-      ".xfaDisabled input, .xfaDisabled textarea"
-    )) {
-      el.setAttribute("disabled", true);
-    }
-    for (const el of rootDiv.querySelectorAll(
-      ".xfaReadOnly input, .xfaReadOnly textarea"
+      ".xfaNonInteractive input, .xfaNonInteractive textarea"
     )) {
       el.setAttribute("readOnly", true);
     }
