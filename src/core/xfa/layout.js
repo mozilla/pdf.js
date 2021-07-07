@@ -19,6 +19,7 @@ import {
   $getSubformParent,
   $getTemplateRoot,
   $isSplittable,
+  $isThereMoreWidth,
 } from "./xfa_object.js";
 import { measureToString } from "./html_utils.js";
 
@@ -75,6 +76,7 @@ function flushHTML(node) {
 
   node[$extra].children = [];
   delete node[$extra].line;
+  node[$extra].numberInLine = 0;
 
   return html;
 }
@@ -83,9 +85,9 @@ function addHTML(node, html, bbox) {
   const extra = node[$extra];
   const availableSpace = extra.availableSpace;
 
+  const [x, y, w, h] = bbox;
   switch (node.layout) {
     case "position": {
-      const [x, y, w, h] = bbox;
       extra.width = Math.max(extra.width, x + w);
       extra.height = Math.max(extra.height, y + h);
       extra.children.push(html);
@@ -102,16 +104,17 @@ function addHTML(node, html, bbox) {
           children: [],
         };
         extra.children.push(extra.line);
+        extra.numberInLine = 0;
       }
+
+      extra.numberInLine += 1;
       extra.line.children.push(html);
 
       if (extra.attempt === 0) {
         // Add the element on the line
-        const [, , w, h] = bbox;
         extra.currentWidth += w;
         extra.height = Math.max(extra.height, extra.prevHeight + h);
       } else {
-        const [, , w, h] = bbox;
         extra.currentWidth = w;
         extra.prevHeight = extra.height;
         extra.height += h;
@@ -124,7 +127,6 @@ function addHTML(node, html, bbox) {
     case "rl-row":
     case "row": {
       extra.children.push(html);
-      const [, , w, h] = bbox;
       extra.width += w;
       extra.height = Math.max(extra.height, h);
       const height = measureToString(extra.height);
@@ -134,14 +136,12 @@ function addHTML(node, html, bbox) {
       break;
     }
     case "table": {
-      const [, , w, h] = bbox;
       extra.width = Math.min(availableSpace.width, Math.max(extra.width, w));
       extra.height += h;
       extra.children.push(html);
       break;
     }
     case "tb": {
-      const [, , , h] = bbox;
       extra.width = availableSpace.width;
       extra.height += h;
       extra.children.push(html);
@@ -265,6 +265,7 @@ function checkDimensions(node, space) {
     return true;
   }
 
+  const ERROR = 2;
   const parent = node[$getSubformParent]();
   const attempt = (parent[$extra] && parent[$extra].attempt) || 0;
   let y, w, h;
@@ -274,17 +275,19 @@ function checkDimensions(node, space) {
       if (node.w !== "" || node.h !== "") {
         [, , w, h] = getTransformedBBox(node);
       }
+
       if (attempt === 0) {
         // Try to put an element in the line.
 
         if (!node[$getTemplateRoot]()[$extra].noLayoutFailure) {
-          if (node.h !== "" && Math.round(h - space.height) > 1) {
+          if (node.h !== "" && Math.round(h - space.height) > ERROR) {
             // Not enough height.
             return false;
           }
+
           if (node.w !== "") {
             // True if width is enough.
-            return Math.round(w - space.width) <= 1;
+            return Math.round(w - space.width) <= ERROR;
           }
 
           return space.width > 0;
@@ -295,7 +298,7 @@ function checkDimensions(node, space) {
         // Put the element on the line but we can fail
         // and then in the second step (next line) we'll accept.
         if (node.w !== "") {
-          return Math.round(w - space.width) <= 1;
+          return Math.round(w - space.width) <= ERROR;
         }
 
         return space.width > 0;
@@ -308,9 +311,16 @@ function checkDimensions(node, space) {
         return true;
       }
 
-      if (node.h !== "") {
-        // True if height is enough.
-        return Math.round(h - space.height) <= 1;
+      if (node.h !== "" && Math.round(h - space.height) > ERROR) {
+        return false;
+      }
+
+      if (node.w === "" || Math.round(w - space.width) <= ERROR) {
+        return space.height > 0;
+      }
+
+      if (parent[$isThereMoreWidth]()) {
+        return false;
       }
 
       return space.height > 0;
@@ -325,10 +335,19 @@ function checkDimensions(node, space) {
       // is breakable then we can return true.
       if (node.h !== "" && !node[$isSplittable]()) {
         [, , , h] = getTransformedBBox(node);
-        return Math.round(h - space.height) <= 1;
+        return Math.round(h - space.height) <= ERROR;
       }
       // Else wait and see: this node will be layed out itself
       // in the provided space and maybe a children won't fit.
+
+      if (node.w === "" || Math.round(w - space.width) <= ERROR) {
+        return space.height > 0;
+      }
+
+      if (parent[$isThereMoreWidth]()) {
+        return false;
+      }
+
       return space.height > 0;
     case "position":
       if (node[$getTemplateRoot]()[$extra].noLayoutFailure) {
@@ -336,7 +355,7 @@ function checkDimensions(node, space) {
       }
 
       [, y, , h] = getTransformedBBox(node);
-      if (node.h === "" || Math.round(h + y - space.height) <= 1) {
+      if (node.h === "" || Math.round(h + y - space.height) <= ERROR) {
         return true;
       }
 
@@ -350,7 +369,7 @@ function checkDimensions(node, space) {
 
       if (node.h !== "") {
         [, , , h] = getTransformedBBox(node);
-        return Math.round(h - space.height) <= 1;
+        return Math.round(h - space.height) <= ERROR;
       }
       return true;
     default:

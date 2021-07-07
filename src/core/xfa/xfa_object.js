@@ -62,6 +62,7 @@ const $isBindable = Symbol();
 const $isDataValue = Symbol();
 const $isDescendent = Symbol();
 const $isSplittable = Symbol();
+const $isThereMoreWidth = Symbol();
 const $isTransparent = Symbol();
 const $isUsable = Symbol();
 const $lastAttribute = Symbol();
@@ -182,6 +183,16 @@ class XFAObject {
   }
 
   [$isSplittable]() {
+    return false;
+  }
+
+  /**
+     Return true if this node (typically a container)
+     can provide more width during layout.
+     The goal is to help to know what a descendant must
+     do in case of horizontal overflow.
+   */
+  [$isThereMoreWidth]() {
     return false;
   }
 
@@ -1074,6 +1085,7 @@ export {
   $isDataValue,
   $isDescendent,
   $isSplittable,
+  $isThereMoreWidth,
   $isTransparent,
   $isUsable,
   $namespaceId,
