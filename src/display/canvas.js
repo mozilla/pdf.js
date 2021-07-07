@@ -456,12 +456,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the number of steps before checking the execution time
   const EXECUTION_STEPS = 10;
 
-  function putBinaryImageData(
-    ctx,
-    imgData,
-    transferMaps = null,
-    darkMode = false
-  ) {
+  function putBinaryImageData(ctx, imgData, transferMaps = null) {
     if (typeof ImageData !== "undefined" && imgData instanceof ImageData) {
       ctx.putImageData(imgData, 0, 0);
       return;
@@ -579,27 +574,17 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
         srcPos += elemsInThisChunk;
 
-        if (hasTransferMaps || darkMode) {
-          let r, g, b;
+        if (hasTransferMaps) {
           for (let k = 0; k < elemsInThisChunk; k += 4) {
-            r = dest[k];
-            g = dest[k + 1];
-            b = dest[k + 2];
             if (transferMapRed) {
-              r = transferMapRed[r];
+              dest[k + 0] = transferMapRed[dest[k + 0]];
             }
             if (transferMapGreen) {
-              dest[g] = transferMapGreen[g];
+              dest[k + 1] = transferMapGreen[dest[k + 1]];
             }
             if (transferMapBlue) {
-              dest[b] = transferMapBlue[b];
+              dest[k + 2] = transferMapBlue[dest[k + 2]];
             }
-            if (darkMode) {
-              [r, g, b] = modifyColor({ r, g, b });
-            }
-            dest[k] = r;
-            dest[k + 1] = g;
-            dest[k + 2] = b;
           }
         }
 
@@ -610,30 +595,17 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         elemsInThisChunk = width * partialChunkHeight * 4;
         dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
 
-        if (hasTransferMaps || darkMode) {
-          let r, g, b;
+        if (hasTransferMaps) {
           for (let k = 0; k < elemsInThisChunk; k += 4) {
-            r = dest[k];
-            g = dest[k + 1];
-            b = dest[k + 2];
             if (transferMapRed) {
-              r = transferMapRed[r];
+              dest[k + 0] = transferMapRed[dest[k + 0]];
             }
             if (transferMapGreen) {
-              g = transferMapGreen[g];
+              dest[k + 1] = transferMapGreen[dest[k + 1]];
             }
             if (transferMapBlue) {
-              b = transferMapBlue[b];
+              dest[k + 2] = transferMapBlue[dest[k + 2]];
             }
-            if (darkMode) {
-              [r, g, b] = modifyColor({ r, g, b });
-              dest[k] = r;
-              dest[k + 1] = g;
-              dest[k + 2] = b;
-            }
-            dest[k] = r;
-            dest[k + 1] = g;
-            dest[k + 2] = b;
           }
         }
 
@@ -2672,12 +2644,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           height
         );
         const tmpCtx = tmpCanvas.context;
-        putBinaryImageData(
-          tmpCtx,
-          imgData,
-          this.current.transferMaps,
-          false // We already invert the image on our own.
-        );
+        putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
         imgToPaint = tmpCanvas.canvas;
       }
 
@@ -2685,27 +2652,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         imgToPaint,
         ctx.mozCurrentTransformInverse
       );
-      if (this.current.darkMode) {
-        const context = imgToPaint.getContext("2d");
-        const imageData = context.getImageData(
-          0,
-          0,
-          imgToPaint.width,
-          imgToPaint.height
-        );
-        const data = imageData.data;
-        let r, g, b;
-        for (let i = 0; i < data.length; i += 4) {
-          r = data[i];
-          g = data[i + 1];
-          b = data[i + 2];
-          [r, g, b] = modifyColor({ r, g, b });
-          data[i] = r; // red
-          data[i + 1] = g; // green
-          data[i + 2] = b; // blue
-        }
-        context.putImageData(imageData, 0, 0);
-      }
       ctx.drawImage(
         scaled.img,
         0,
@@ -2741,12 +2687,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
 
       const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
       const tmpCtx = tmpCanvas.context;
-      putBinaryImageData(
-        tmpCtx,
-        imgData,
-        this.current.transferMaps,
-        this.current.darkMode
-      );
+      putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
 
       for (let i = 0, ii = map.length; i < ii; i++) {
         const entry = map[i];
