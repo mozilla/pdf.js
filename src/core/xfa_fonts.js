@@ -13,28 +13,38 @@
  * limitations under the License.
  */
 
-import { CalibriBoldFactors } from "./calibri_bold.js";
-import { CalibriBoldItalicFactors } from "./calibri_bold_italic.js";
-import { CalibriItalicFactors } from "./calibri_italic.js";
-import { CalibriRegularFactors } from "./calibri_regular.js";
+import {
+  CalibriBoldFactors,
+  CalibriBoldItalicFactors,
+  CalibriItalicFactors,
+  CalibriRegularFactors,
+} from "./calibri_factors.js";
+import {
+  HelveticaBoldFactors,
+  HelveticaBoldItalicFactors,
+  HelveticaItalicFactors,
+  HelveticaRegularFactors,
+} from "./helvetica_factors.js";
+import {
+  LiberationSansBoldItalicWidths,
+  LiberationSansBoldWidths,
+  LiberationSansItalicWidths,
+  LiberationSansRegularWidths,
+} from "./liberationsans_widths.js";
+import {
+  MyriadProBoldFactors,
+  MyriadProBoldItalicFactors,
+  MyriadProItalicFactors,
+  MyriadProRegularFactors,
+} from "./myriadpro_factors.js";
+import {
+  SegoeuiBoldFactors,
+  SegoeuiBoldItalicFactors,
+  SegoeuiItalicFactors,
+  SegoeuiRegularFactors,
+} from "./segoeui_factors.js";
 import { getLookupTableFactory } from "./core_utils.js";
-import { HelveticaBoldFactors } from "./helvetica_bold.js";
-import { HelveticaBoldItalicFactors } from "./helvetica_bold_italic.js";
-import { HelveticaItalicFactors } from "./helvetica_italic.js";
-import { HelveticaRegularFactors } from "./helvetica_regular.js";
-import { LiberationSansBoldItalicWidths } from "./liberationsans_bold_italic_widths.js";
-import { LiberationSansBoldWidths } from "./liberationsans_bold_widths.js";
-import { LiberationSansItalicWidths } from "./liberationsans_italic_widths.js";
-import { LiberationSansRegularWidths } from "./liberationsans_regular_widths.js";
-import { MyriadProBoldFactors } from "./myriadpro_bold.js";
-import { MyriadProBoldItalicFactors } from "./myriadpro_bold_italic.js";
-import { MyriadProItalicFactors } from "./myriadpro_italic.js";
-import { MyriadProRegularFactors } from "./myriadpro_regular.js";
 import { normalizeFontName } from "./fonts_utils.js";
-import { SegoeuiBoldFactors } from "./segoeui_bold.js";
-import { SegoeuiBoldItalicFactors } from "./segoeui_bold_italic.js";
-import { SegoeuiItalicFactors } from "./segoeui_italic.js";
-import { SegoeuiRegularFactors } from "./segoeui_regular.js";
 
 const getXFAFontMap = getLookupTableFactory(function (t) {
   t["MyriadPro-Regular"] = {
