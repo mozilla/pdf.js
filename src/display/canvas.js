@@ -28,7 +28,6 @@ import {
   warn,
 } from "../shared/util.js";
 import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
-import { modifyColor } from "./color_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -423,9 +422,6 @@ class CanvasExtraState {
     // Default fore and background colors
     this.fillColor = "#000000";
     this.strokeColor = "#000000";
-    this.textColor = "#000000";
-    this.backgroundColor = "#ffffff";
-    this.darkMode = false;
     this.patternFill = false;
     // Note: fill alpha applies to all non-stroking operations
     this.fillAlpha = 1;
@@ -889,7 +885,6 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       viewport,
       transparency = false,
       background = null,
-      color = null,
       darkMode = false,
     }) {
       // For pdfs that use blend modes we have to clear the canvas else certain
@@ -904,12 +899,10 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.fillStyle = background || "rgb(255, 255, 255)";
       this.ctx.fillRect(0, 0, width, height);
       this.ctx.restore();
-      this.current.textColor = color || "rgb(0, 0, 0)";
 
       if (darkMode) {
-        // This is to pass the "color Scheme" option for the image rendering.
-        this.current.darkMode = true;
-        this.current.backgroundColor = background || "rgb(255, 255, 255)";
+        this.ctx.canvas.style.filter =
+          "grayscale(0%) invert(100%) contrast(100%) brightness(100%) hue-rotate(180deg)";
       }
 
       if (transparency) {
@@ -1815,9 +1808,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           fillStrokeMode === TextRenderingMode.FILL ||
           fillStrokeMode === TextRenderingMode.FILL_STROKE
         ) {
-          this.ctx.fillStyle = this.current.textColor;
           ctx.fillText(character, x, y);
-          this.ctx.fillStyle = this.current.fillColor;
         }
         if (
           fillStrokeMode === TextRenderingMode.STROKE ||
@@ -1828,14 +1819,10 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.moveTo(x, y);
             ctx.resetTransform();
             ctx.lineWidth = Math.round(this._combinedScaleFactor);
-            this.ctx.strokeStyle = this.current.textColor;
             ctx.strokeText(character, 0, 0);
-            this.ctx.strokeStyle = this.current.strokeColor;
             ctx.restore();
           } else {
-            this.ctx.strokeStyle = this.current.textColor;
             ctx.strokeText(character, x, y);
-            this.ctx.strokeStyle = this.current.strokeColor;
           }
         }
       }
@@ -2003,10 +1990,8 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
         // file or if there isn't a font file so the fallback font is shown.
         if (this.contentVisible && (glyph.isInFont || font.missingFile)) {
           if (simpleFillText && !accent) {
-            this.ctx.fillStyle = this.current.textColor;
             // common case
             ctx.fillText(character, scaledX, scaledY);
-            this.ctx.fillStyle = this.current.fillColor;
           } else {
             this.paintChar(
               character,
@@ -2168,29 +2153,13 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     setStrokeRGBColor(r, g, b) {
-      let color;
-      if (this.current.darkMode) {
-        color = Util.makeHexColor(...modifyColor({ r, g, b }));
-      } else {
-        color = Util.makeHexColor(r, g, b);
-      }
+      const color = Util.makeHexColor(r, g, b);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     }
 
     setFillRGBColor(r, g, b) {
-      let color;
-      // Detect when PDF's wants to set a "white" background-color,
-      // which is something that the modifier doesn't really modify well.
-      if (this.current.darkMode) {
-        if (r === 255 && g === 255 && b === 255) {
-          color = this.current.backgroundColor;
-        } else {
-          color = Util.makeHexColor(...modifyColor({ r, g, b }));
-        }
-      } else {
-        color = Util.makeHexColor(r, g, b);
-      }
+      const color = Util.makeHexColor(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
       this.current.patternFill = false;

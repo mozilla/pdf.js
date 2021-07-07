@@ -224,7 +224,7 @@ class SecondaryToolbar {
     this.pagesCount = 0;
     this._updateUIState();
 
-    // Reset the Scroll/Spread/c buttons too, since they're document specific.
+    // Reset the Scroll/Spread buttons too, since they're document specific.
     this.eventBus.dispatch("secondarytoolbarreset", { source: this });
   }
 

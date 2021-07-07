@@ -1177,11 +1177,8 @@ class PDFDocumentProxy {
  *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
  *   a `CanvasPattern` object (a repetitive image). The default value is
  *   'rgb(255,255,255)'.
- * @property {Object | string} [color] - Color to use for the canvas.
- *   Any valid `canvas.strokeStyle` can be used: a `DOMString` parsed as CSS
- *   <color> value.The default value is 'rgb(0,0,0)'.
- * @property {boolean} [darkMode] - Indication if pdf.js should render objects
- *   assuming that the background/color is based on white-black.
+ * @property {boolean} [darkMode] - Indication if pdf.js should render the
+ *   pdf in a darker environment.
  * @property {boolean} [includeAnnotationStorage] - Render stored interactive
  *   form element data, from the {@link AnnotationStorage}-instance, onto the
  *   canvas itself; useful e.g. for printing. The default value is `false`.
@@ -1350,7 +1347,6 @@ class PDFPageProxy {
     imageLayer = null,
     canvasFactory = null,
     background = null,
-    color = null,
     darkMode = false,
     includeAnnotationStorage = false,
     optionalContentConfigPromise = null,
@@ -1443,7 +1439,6 @@ class PDFPageProxy {
         transform,
         imageLayer,
         background,
-        color,
         darkMode,
       },
       objs: this.objs,
@@ -3156,7 +3151,6 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         transform,
         imageLayer,
         background,
-        color,
         darkMode,
       } = this.params;
 
@@ -3173,7 +3167,6 @@ const InternalRenderTask = (function InternalRenderTaskClosure() {
         viewport,
         transparency,
         background,
-        color,
         darkMode,
       });
       this.operatorListIdx = 0;
