@@ -545,6 +545,12 @@ class Binder {
           // to have something to match with the given expression.
           // See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.364.2157&rep=rep1&type=pdf#page=199
           match = createDataNode(this.data, dataNode, ref);
+          if (!match) {
+            // For example if the node contains a .(...) then it isn't
+            // findable.
+            // TODO: remove this when .(...) is implemented.
+            continue;
+          }
           if (this._isConsumeData()) {
             match[$consumed] = true;
           }
