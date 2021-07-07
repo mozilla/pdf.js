@@ -254,6 +254,8 @@
   flex: 1;
 }
 
+.xfaNonInteractive input,
+.xfaNonInteractive textarea,
 .xfaDisabled input,
 .xfaDisabled textarea,
 .xfaReadOnly input,
