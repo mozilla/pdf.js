@@ -27,12 +27,8 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-<<<<<<< master
 import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
-import { modifyColor } from "./color_utils.js";
-=======
 import { modifyColor, parseRGB } from "./color_utils.js";
->>>>>>> Modify inline images
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
