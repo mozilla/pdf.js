@@ -172,6 +172,9 @@ function handleBreak(node) {
   let target = null;
   if (node.target) {
     target = root[$searchNode](node.target, node[$getParent]());
+    if (!target) {
+      return false;
+    }
     target = target ? target[0] : target;
   }
 
@@ -197,12 +200,12 @@ function handleBreak(node) {
     target = null;
   }
 
-  const pageArea = target[$getParent]();
-  const contentAreas = pageArea.contentArea.children;
+  const pageArea = target && target[$getParent]();
 
   let index;
   if (node.startNew) {
     if (target) {
+      const contentAreas = pageArea.contentArea.children;
       index = contentAreas.findIndex(e => e === target) - 1;
     } else {
       index = currentPageArea.contentArea.children.findIndex(
@@ -210,6 +213,7 @@ function handleBreak(node) {
       );
     }
   } else if (target && target !== currentContentArea) {
+    const contentAreas = pageArea.contentArea.children;
     index = contentAreas.findIndex(e => e === target) - 1;
   } else {
     return false;

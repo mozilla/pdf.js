@@ -994,7 +994,7 @@
        "enableXfa": true,
        "type": "eq"
     },
-    {  "id": "xfa_bug17176688_1",
+    {  "id": "xfa_bug1717668_1",
        "file": "pdfs/xfa_bug1717668_1.pdf",
        "md5": "564ecff67be690b43c2a144ae5967034",
        "link": true,
@@ -1002,7 +1002,7 @@
        "enableXfa": true,
        "type": "eq"
     },
-    {  "id": "xfa_bug17176688_2",
+    {  "id": "xfa_bug1717668_2",
        "file": "pdfs/xfa_bug1717668_2.pdf",
        "md5": "08aa8bf9fec5aa7b8ff13d9ba72ca8ac",
        "link": true,
@@ -1010,9 +1010,17 @@
        "enableXfa": true,
        "type": "eq"
     },
-    {  "id": "xfa_bug17176688_3",
+    {  "id": "xfa_bug1717668_3",
        "file": "pdfs/xfa_bug1717668_3.pdf",
        "md5": "4ff2531dbefebabc3f128d4ae20552a4",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
+    {  "id": "xfa_bug1717668_4",
+       "file": "pdfs/xfa_bug1717668_4.pdf",
+       "md5": "1c3dc4873ad6b84adb164ed69ed202f5",
        "link": true,
        "rounds": 1,
        "enableXfa": true,
