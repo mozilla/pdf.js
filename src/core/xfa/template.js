@@ -39,6 +39,7 @@ import {
   $isBindable,
   $isCDATAXml,
   $isSplittable,
+  $isThereMoreWidth,
   $isTransparent,
   $isUsable,
   $namespaceId,
@@ -948,7 +949,7 @@ class Caption extends XFAObject {
 
     const savedReserve = this.reserve;
     if (this.reserve <= 0) {
-      const [w, h] = this[$getExtra](availableSpace);
+      const { w, h } = this[$getExtra](availableSpace);
       switch (this.placement) {
         case "left":
         case "right":
@@ -1612,8 +1613,18 @@ class Draw extends XFAObject {
     // then we can guess it in laying out the text.
     const savedW = this.w;
     const savedH = this.h;
-    const [w, h] = layoutNode(this, availableSpace);
+    const { w, h, isBroken } = layoutNode(this, availableSpace);
     if (w && this.w === "") {
+      // If the parent layout is lr-tb with a w=100 and we already have a child
+      // which takes 90 on the current line.
+      // If we have a text with a length (in px) equal to 100 then it'll be
+      // splitted into almost 10 chunks: so it won't be nice.
+      // So if we've potentially more width to provide in some parent containers
+      // let's increase it to give a chance to have a better rendering.
+      if (isBroken && this[$getSubformParent]()[$isThereMoreWidth]()) {
+        return HTMLResult.FAILURE;
+      }
+
       this.w = w;
     }
     if (h && this.h === "") {
@@ -2114,10 +2125,20 @@ class ExclGroup extends XFAObject {
     }
   }
 
+  [$isThereMoreWidth]() {
+    return (
+      (this.layout.endsWith("-tb") &&
+        this[$extra].attempt === 0 &&
+        this[$extra].numberInLine > 0) ||
+      this[$getParent]()[$isThereMoreWidth]()
+    );
+  }
+
   [$isSplittable]() {
     // We cannot cache the result here because the contentArea
     // can change.
-    if (!this[$getSubformParent]()[$isSplittable]()) {
+    const parent = this[$getSubformParent]();
+    if (!parent[$isSplittable]()) {
       return false;
     }
 
@@ -2127,6 +2148,15 @@ class ExclGroup extends XFAObject {
 
     if (this.layout === "position" || this.layout.includes("row")) {
       this[$extra]._isSplittable = false;
+      return false;
+    }
+
+    if (
+      parent.layout &&
+      parent.layout.endsWith("-tb") &&
+      parent[$extra].numberInLine !== 0
+    ) {
+      // See comment in Subform::[$isSplittable] for an explanation.
       return false;
     }
 
@@ -2174,7 +2204,11 @@ class ExclGroup extends XFAObject {
       children,
       attributes,
       attempt: 0,
-      availableSpace,
+      numberInLine: 0,
+      availableSpace: {
+        width: Math.min(this.w || Infinity, availableSpace.width),
+        height: Math.min(this.h || Infinity, availableSpace.height),
+      },
       width: 0,
       height: 0,
       prevHeight: 0,
@@ -2232,33 +2266,25 @@ class ExclGroup extends XFAObject {
       attributes.xfaName = this.name;
     }
 
-    let failure;
-    if (this.layout === "lr-tb" || this.layout === "rl-tb") {
-      for (
-        ;
-        this[$extra].attempt < MAX_ATTEMPTS_FOR_LRTB_LAYOUT;
-        this[$extra].attempt++
-      ) {
-        const result = this[$childrenToHTML]({
-          filter,
-          include: true,
-        });
-        if (result.success) {
-          break;
-        }
-        if (result.isBreak()) {
-          return result;
-        }
+    const maxRun =
+      this.layout === "lr-tb" || this.layout === "rl-tb"
+        ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
+        : 1;
+    for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
+      if (this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
+        // If the layout is lr-tb then having attempt equals to
+        // MAX_ATTEMPTS_FOR_LRTB_LAYOUT-1 means that we're trying to layout
+        // on the next line so this on is empty.
+        this[$extra].numberInLine = 0;
       }
-
-      failure = this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT;
-    } else {
       const result = this[$childrenToHTML]({
         filter,
         include: true,
       });
-      failure = !result.success;
-      if (failure && result.isBreak()) {
+      if (result.success) {
+        break;
+      }
+      if (result.isBreak()) {
         return result;
       }
     }
@@ -2267,8 +2293,8 @@ class ExclGroup extends XFAObject {
       unsetFirstUnsplittable(this);
     }
 
-    if (failure) {
-      if (this[$isSplittable]()) {
+    if (this[$extra].attempt === maxRun) {
+      if (!isSplittable) {
         delete this[$extra];
       }
       return HTMLResult.FAILURE;
@@ -2475,7 +2501,15 @@ class Field extends XFAObject {
       let height = null;
 
       if (this.caption) {
-        [width, height] = this.caption[$getExtra](availableSpace);
+        const { w, h, isBroken } = this.caption[$getExtra](availableSpace);
+        // See comment in Draw::[$toHTML] to have an explanation
+        // about this line.
+        if (isBroken && this[$getSubformParent]()[$isThereMoreWidth]()) {
+          return HTMLResult.FAILURE;
+        }
+
+        width = w;
+        height = h;
         if (this.ui instanceof CheckButton) {
           switch (this.caption.placement) {
             case "left":
@@ -4391,6 +4425,15 @@ class Subform extends XFAObject {
     return true;
   }
 
+  [$isThereMoreWidth]() {
+    return (
+      (this.layout.endsWith("-tb") &&
+        this[$extra].attempt === 0 &&
+        this[$extra].numberInLine > 0) ||
+      this[$getParent]()[$isThereMoreWidth]()
+    );
+  }
+
   *[$getContainedChildren]() {
     // This function is overriden in order to fake that subforms under
     // this set are in fact under parent subform.
@@ -4412,7 +4455,8 @@ class Subform extends XFAObject {
   [$isSplittable]() {
     // We cannot cache the result here because the contentArea
     // can change.
-    if (!this[$getSubformParent]()[$isSplittable]()) {
+    const parent = this[$getSubformParent]();
+    if (!parent[$isSplittable]()) {
       return false;
     }
 
@@ -4433,6 +4477,20 @@ class Subform extends XFAObject {
 
     if (this.keep && this.keep.intact !== "none") {
       this[$extra]._isSplittable = false;
+      return false;
+    }
+
+    if (
+      parent.layout &&
+      parent.layout.endsWith("-tb") &&
+      parent[$extra].numberInLine !== 0
+    ) {
+      // If parent can fit in w=100 and there's already an element which takes
+      // 90 then we've 10 for this element. Suppose this element has a tb layout
+      // and 5 elements have a width of 7 and the 6th has a width of 20:
+      // then this element (and all its content) must move on the next line.
+      // If this element is splittable then the first 5 children will stay
+      // at the end of the line: we don't want that.
       return false;
     }
 
@@ -4526,7 +4584,11 @@ class Subform extends XFAObject {
       children,
       attributes,
       attempt: 0,
-      availableSpace,
+      numberInLine: 0,
+      availableSpace: {
+        width: Math.min(this.w || Infinity, availableSpace.width),
+        height: Math.min(this.h || Infinity, availableSpace.height),
+      },
       width: 0,
       height: 0,
       prevHeight: 0,
@@ -4600,6 +4662,12 @@ class Subform extends XFAObject {
         ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
         : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
+      if (this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
+        // If the layout is lr-tb then having attempt equals to
+        // MAX_ATTEMPTS_FOR_LRTB_LAYOUT-1 means that we're trying to layout
+        // on the next line so this on is empty.
+        this[$extra].numberInLine = 0;
+      }
       const result = this[$childrenToHTML]({
         filter,
         include: true,
