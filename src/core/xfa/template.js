@@ -176,7 +176,7 @@ function handleBreak(node) {
     if (!target) {
       return false;
     }
-    target = target ? target[0] : target;
+    target = target[0];
   }
 
   const { currentPageArea, currentContentArea } = root[$extra];
