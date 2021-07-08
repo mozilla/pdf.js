@@ -51,7 +51,6 @@ const $getNextPage = Symbol();
 const $getSubformParent = Symbol();
 const $getParent = Symbol();
 const $getTemplateRoot = Symbol();
-const $global = Symbol();
 const $globalData = Symbol();
 const $hasSettableValue = Symbol();
 const $ids = Symbol();
@@ -1074,7 +1073,6 @@ export {
   $getRealChildrenByNameIt,
   $getSubformParent,
   $getTemplateRoot,
-  $global,
   $globalData,
   $hasSettableValue,
   $ids,
