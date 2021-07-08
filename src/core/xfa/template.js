@@ -3045,20 +3045,21 @@ class Image extends StringObject {
         break;
       case "height":
         style = {
-          width: "auto",
           height: "100%",
+          objectFit: "fill",
         };
         break;
       case "none":
         style = {
           width: "100%",
           height: "100%",
+          objectFit: "fill",
         };
         break;
       case "width":
         style = {
           width: "100%",
-          height: "auto",
+          objectFit: "fill",
         };
         break;
     }
