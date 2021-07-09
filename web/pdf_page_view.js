@@ -496,11 +496,6 @@ class PDFPageView {
         div.appendChild(textLayerDiv);
       }
 
-      if (this.xfaLayer?.div) {
-        // The xfa layer needs to stay on top.
-        div.appendChild(this.xfaLayer.div);
-      }
-
       textLayer = this.textLayerFactory.createTextLayerBuilder(
         textLayerDiv,
         this.id - 1,
@@ -510,6 +505,11 @@ class PDFPageView {
       );
     }
     this.textLayer = textLayer;
+
+    if (this.xfaLayer?.div) {
+      // The xfa layer needs to stay on top.
+      div.appendChild(this.xfaLayer.div);
+    }
 
     let renderContinueCallback = null;
     if (this.renderingQueue) {
