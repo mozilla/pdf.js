@@ -30,7 +30,7 @@ class XFAFactory {
       this.dataHandler = new DataHandler(this.root, binder.getData());
       this.form[$globalData].template = this.form;
     } catch (e) {
-      warn(`XFA - an error occured during parsing and binding: ${e}`);
+      warn(`XFA - an error occurred during parsing and binding: ${e}`);
     }
   }
 
@@ -46,7 +46,7 @@ class XFAFactory {
         return [0, 0, parseInt(width), parseInt(height)];
       });
     } catch (e) {
-      warn(`XFA - an error occured during layout: ${e}`);
+      warn(`XFA - an error occurred during layout: ${e}`);
     }
   }
 
