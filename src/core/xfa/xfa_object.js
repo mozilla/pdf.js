@@ -79,6 +79,7 @@ const $searchNode = Symbol();
 const $setId = Symbol();
 const $setSetAttributes = Symbol();
 const $setValue = Symbol();
+const $tabIndex = Symbol();
 const $text = Symbol();
 const $toHTML = Symbol();
 const $toString = Symbol();
@@ -1100,6 +1101,7 @@ export {
   $setId,
   $setSetAttributes,
   $setValue,
+  $tabIndex,
   $text,
   $toHTML,
   $toString,
