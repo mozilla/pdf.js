@@ -126,7 +126,7 @@ describe("XFAFactory", function () {
         fontStyle: "normal",
         fontWeight: "normal",
         fontSize: "6.93px",
-        margin: "1px 4px 2px 3px",
+        padding: "1px 4px 2px 3px",
         verticalAlign: "2px",
       });
 

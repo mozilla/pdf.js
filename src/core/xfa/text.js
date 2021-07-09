@@ -15,7 +15,7 @@
 
 import { selectFont } from "./fonts.js";
 
-const WIDTH_FACTOR = 1.05;
+const WIDTH_FACTOR = 1.01;
 
 class FontInfo {
   constructor(xfaFont, margin, lineHeight, fontFinder) {
@@ -183,7 +183,7 @@ class TextMeasure {
       const pdfFont = lastFont.pdfFont;
       const lineHeight =
         lastFont.lineHeight ||
-        Math.round(Math.max(1, pdfFont.lineHeight) * fontSize);
+        Math.ceil(Math.max(1.2, pdfFont.lineHeight) * fontSize);
       const scale = fontSize / 1000;
 
       for (const line of str.split(/[\u2029\n]/)) {
