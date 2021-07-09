@@ -50,6 +50,7 @@ import {
   $searchNode,
   $setSetAttributes,
   $setValue,
+  $tabIndex,
   $text,
   $toHTML,
   $toStyle,
@@ -129,6 +130,36 @@ function* getContainedChildren(node) {
       continue;
     }
     yield child;
+  }
+}
+
+function setTabIndex(node) {
+  while (node) {
+    if (!node.traversal || node[$tabIndex]) {
+      return;
+    }
+
+    let next = null;
+    for (const child of node.traversal[$getChildren]()) {
+      if (child.operation === "next") {
+        next = child;
+        break;
+      }
+    }
+
+    if (!next || !next.ref) {
+      return;
+    }
+
+    const root = node[$getTemplateRoot]();
+    node[$tabIndex] = ++root[$tabIndex];
+
+    const ref = root[$searchNode](next.ref, node);
+    if (!ref) {
+      return;
+    }
+
+    node = ref[0];
   }
 }
 
@@ -2467,6 +2498,8 @@ class Field extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    setTabIndex(this);
+
     if (
       !this.ui ||
       this.presence === "hidden" ||
@@ -2599,6 +2632,14 @@ class Field extends XFAObject {
     if (!ui) {
       Object.assign(style, borderStyle);
       return HTMLResult.success(createWrapper(this, html), bbox);
+    }
+
+    if (this[$tabIndex]) {
+      if (ui.children && ui.children[0]) {
+        ui.children[0].attributes.tabindex = this[$tabIndex];
+      } else {
+        ui.attributes.tabindex = this[$tabIndex];
+      }
     }
 
     if (!ui.attributes.style) {
@@ -4883,6 +4924,7 @@ class Template extends XFAObject {
     if (this.subform.children.length >= 2) {
       warn("XFA - Several subforms in template node: please file a bug.");
     }
+    this[$tabIndex] = 1000;
   }
 
   [$isSplittable]() {
