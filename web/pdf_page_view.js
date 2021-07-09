@@ -496,6 +496,11 @@ class PDFPageView {
         div.appendChild(textLayerDiv);
       }
 
+      if (this.xfaLayer?.div) {
+        // The xfa layer needs to stay on top.
+        div.appendChild(this.xfaLayer.div);
+      }
+
       textLayer = this.textLayerFactory.createTextLayerBuilder(
         textLayerDiv,
         this.id - 1,
