@@ -80,6 +80,7 @@ import {
   setAccess,
   setFontFamily,
   setMinMaxDimensions,
+  setPara,
   toStyle,
 } from "./html_utils.js";
 import {
@@ -134,12 +135,20 @@ function* getContainedChildren(node) {
 
 function valueToHtml(value) {
   return HTMLResult.success({
-    name: "span",
+    name: "div",
     attributes: {
       class: ["xfaRich"],
       style: Object.create(null),
     },
-    value,
+    children: [
+      {
+        name: "span",
+        attributes: {
+          style: Object.create(null),
+        },
+        value,
+      },
+    ],
   });
 }
 
@@ -223,6 +232,15 @@ function handleBreak(node) {
   node[$extra].target = pageArea === currentPageArea ? null : pageArea;
   node[$extra].index = index;
   return true;
+}
+
+function handleOverflow(node, extraNode, space) {
+  const root = node[$getTemplateRoot]();
+  const saved = root[$extra].noLayoutFailure;
+  root[$extra].noLayoutFailure = true;
+  const res = extraNode[$toHTML](space);
+  node[$addHTML](res.html, res.bbox);
+  root[$extra].noLayoutFailure = saved;
 }
 
 class AppearanceFilter extends StringObject {
@@ -973,7 +991,7 @@ class Caption extends XFAObject {
       children.push(value);
     }
 
-    const style = toStyle(this, "font", "margin", "para", "visibility");
+    const style = toStyle(this, "font", "margin", "visibility");
     switch (this.placement) {
       case "left":
       case "right":
@@ -988,6 +1006,8 @@ class Caption extends XFAObject {
         }
         break;
     }
+
+    setPara(this, null, value);
 
     this.reserve = savedReserve;
 
@@ -1654,6 +1674,11 @@ class Draw extends XFAObject {
 
     setMinMaxDimensions(this, style);
 
+    if (style.margin) {
+      style.padding = style.margin;
+      delete style.margin;
+    }
+
     const classNames = ["xfaDraw"];
     if (this.font) {
       classNames.push("xfaFont");
@@ -1688,42 +1713,7 @@ class Draw extends XFAObject {
     }
 
     html.children.push(value);
-    if (value.attributes.class && value.attributes.class.includes("xfaRich")) {
-      if (this.h === "") {
-        style.height = "auto";
-      }
-      if (this.w === "") {
-        style.width = "auto";
-      }
-      if (this.para) {
-        // By definition exData are external data so para
-        // has no effect on it.
-        attributes.style.display = "flex";
-        attributes.style.flexDirection = "column";
-        switch (this.para.vAlign) {
-          case "top":
-            attributes.style.justifyContent = "start";
-            break;
-          case "bottom":
-            attributes.style.justifyContent = "end";
-            break;
-          case "middle":
-            attributes.style.justifyContent = "center";
-            break;
-        }
-
-        const paraStyle = this.para[$toStyle]();
-        if (!value.attributes.style) {
-          value.attributes.style = paraStyle;
-        } else {
-          for (const [key, val] of Object.entries(paraStyle)) {
-            if (!(key in value.attributes.style)) {
-              value.attributes.style[key] = val;
-            }
-          }
-        }
-      }
-    }
+    setPara(this, style, value);
 
     this.w = savedW;
     this.h = savedH;
@@ -2510,20 +2500,21 @@ class Field extends XFAObject {
 
         width = w;
         height = h;
-        if (this.ui instanceof CheckButton) {
+        if (this.ui.checkButton) {
           switch (this.caption.placement) {
             case "left":
             case "right":
             case "inline":
-              width += this.ui.size;
+              width += this.ui.checkButton.size;
               break;
             case "top":
             case "bottom":
-              height += this.ui.size;
+              height += this.ui.checkButton.size;
               break;
           }
         }
       }
+
       if (width && this.w === "") {
         this.w = Math.min(
           this.maxW <= 0 ? Infinity : this.maxW,
@@ -2579,6 +2570,11 @@ class Field extends XFAObject {
       class: classNames,
     };
 
+    if (style.margin) {
+      style.padding = style.margin;
+      delete style.margin;
+    }
+
     setAccess(this, classNames);
 
     if (this.name) {
@@ -2623,7 +2619,7 @@ class Field extends XFAObject {
         } else {
           const htmlValue = this.value[$toHTML]().html;
           if (htmlValue !== null) {
-            value = htmlValue.value;
+            value = htmlValue.children[0].value;
           }
         }
         if (this.ui.textEdit && this.value.text && this.value.text.maxChars) {
@@ -2652,6 +2648,9 @@ class Field extends XFAObject {
     }
 
     if (this.ui.button) {
+      if (style.padding) {
+        delete style.padding;
+      }
       if (caption.name === "div") {
         caption.name = "span";
       }
@@ -2910,11 +2909,7 @@ class Font extends XFAObject {
     // TODO: overlinePeriod
 
     style.fontStyle = this.posture;
-
-    const fontSize = measureToString(0.99 * this.size);
-    if (fontSize !== "10px") {
-      style.fontSize = fontSize;
-    }
+    style.fontSize = measureToString(0.99 * this.size);
 
     setFontFamily(this, this[$globalData].fontFinder, style);
 
@@ -3513,8 +3508,14 @@ class Overflow extends XFAObject {
       const parent = this[$getParent]();
       const root = this[$getTemplateRoot]();
       const target = root[$searchNode](this.target, parent);
+      const leader = root[$searchNode](this.leader, parent);
+      const trailer = root[$searchNode](this.trailer, parent);
       this[$extra] = {
         target: (target && target[0]) || null,
+        leader: (leader && leader[0]) || null,
+        trailer: (trailer && trailer[0]) || null,
+        addLeader: false,
+        addTrailer: false,
       };
     }
     return this[$extra];
@@ -3834,16 +3835,16 @@ class Para extends XFAObject {
   [$toStyle]() {
     const style = toStyle(this, "hAlign");
     if (this.marginLeft !== "") {
-      style.marginLeft = measureToString(this.marginLeft);
+      style.paddingLeft = measureToString(this.marginLeft);
     }
     if (this.marginRight !== "") {
-      style.marginRight = measureToString(this.marginRight);
+      style.paddingight = measureToString(this.marginRight);
     }
     if (this.spaceAbove !== "") {
-      style.marginTop = measureToString(this.spaceAbove);
+      style.paddingTop = measureToString(this.spaceAbove);
     }
     if (this.spaceBelow !== "") {
-      style.marginBottom = measureToString(this.spaceBelow);
+      style.paddingBottom = measureToString(this.spaceBelow);
     }
     if (this.textIndent !== "") {
       style.textIndent = measureToString(this.textIndent);
@@ -4658,6 +4659,14 @@ class Subform extends XFAObject {
       attributes.xfaName = this.name;
     }
 
+    if (this.overflow) {
+      const overflowExtra = this.overflow[$getExtra]();
+      if (overflowExtra.addLeader) {
+        overflowExtra.addLeader = false;
+        handleOverflow(this, overflowExtra.leader, availableSpace);
+      }
+    }
+
     const maxRun =
       this.layout === "lr-tb" || this.layout === "rl-tb"
         ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
@@ -4697,6 +4706,14 @@ class Subform extends XFAObject {
         delete this[$extra];
       }
       return HTMLResult.FAILURE;
+    }
+
+    if (this.overflow) {
+      const overflowExtra = this.overflow[$getExtra]();
+      if (overflowExtra.addTrailer) {
+        overflowExtra.addTrailer = false;
+        handleOverflow(this, overflowExtra.trailer, availableSpace);
+      }
     }
 
     let marginH = 0;
@@ -5095,23 +5112,12 @@ class Template extends XFAObject {
           const node = this[$extra].overflowNode;
           this[$extra].overflowNode = null;
 
+          const overflowExtra = node[$getExtra]();
+          const target = overflowExtra.target;
+          overflowExtra.addLeader = overflowExtra.leader !== null;
+          overflowExtra.addTrailer = overflowExtra.trailer !== null;
+
           flush(i);
-
-          if (node.leader) {
-            leader = this[$searchNode](node.leader, node[$getParent]());
-            leader = leader ? leader[0] : null;
-          }
-
-          if (node.trailer) {
-            trailer = this[$searchNode](node.trailer, node[$getParent]());
-            trailer = trailer ? trailer[0] : null;
-          }
-
-          let target = null;
-          if (node.target) {
-            target = this[$searchNode](node.target, node[$getParent]());
-            target = target ? target[0] : target;
-          }
 
           i = Infinity;
           if (target instanceof PageArea) {
