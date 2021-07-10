@@ -993,7 +993,22 @@ class PDFDocument {
     promises.length = 0;
     pdfFonts.length = 0;
 
+    const reallyMissingFonts = new Set();
     for (const missing of missingFonts) {
+      if (!getXfaFontWidths(`${missing}-Regular`)) {
+        // No substitution available: we'll fallback on Myriad.
+        reallyMissingFonts.add(missing);
+      }
+    }
+
+    if (reallyMissingFonts.size) {
+      missingFonts.push("PdfJS-Fallback");
+    }
+
+    for (const missing of missingFonts) {
+      if (reallyMissingFonts.has(missing)) {
+        continue;
+      }
       for (const fontInfo of [
         { name: "Regular", fontWeight: 400, italicAngle: 0 },
         { name: "Bold", fontWeight: 700, italicAngle: 0 },
@@ -1002,10 +1017,6 @@ class PDFDocument {
       ]) {
         const name = `${missing}-${fontInfo.name}`;
         const widths = getXfaFontWidths(name);
-        if (!widths) {
-          continue;
-        }
-
         const dict = new Dict(null);
         dict.set("BaseFont", Name.get(name));
         dict.set("Type", Name.get("Font"));
@@ -1040,7 +1051,7 @@ class PDFDocument {
     }
 
     await Promise.all(promises);
-    this.xfaFactory.appendFonts(pdfFonts);
+    this.xfaFactory.appendFonts(pdfFonts, reallyMissingFonts);
   }
 
   async serializeXfaData(annotationStorage) {
