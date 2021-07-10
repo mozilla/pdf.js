@@ -84,7 +84,13 @@ const StyleMapping = new Map([
   ],
   ["xfa-spacerun", ""],
   ["xfa-tab-stops", ""],
-  ["font-size", value => measureToString(getMeasurement(value))],
+  [
+    "font-size",
+    (value, original) => {
+      value = original.fontSize = getMeasurement(value);
+      return measureToString(0.99 * value);
+    },
+  ],
   ["letter-spacing", value => measureToString(getMeasurement(value))],
   ["line-height", value => measureToString(getMeasurement(value))],
   ["margin", value => measureToString(getMeasurement(value))],
@@ -104,6 +110,7 @@ function mapStyle(styleStr, fontFinder) {
   if (!styleStr) {
     return style;
   }
+  const original = Object.create(null);
   for (const [key, value] of styleStr.split(";").map(s => s.split(":", 2))) {
     const mapping = StyleMapping.get(key);
     if (mapping === "") {
@@ -114,7 +121,7 @@ function mapStyle(styleStr, fontFinder) {
       if (typeof mapping === "string") {
         newValue = mapping;
       } else {
-        newValue = mapping(value, fontFinder);
+        newValue = mapping(value, original);
       }
     }
     if (key.endsWith("scale")) {
@@ -135,6 +142,7 @@ function mapStyle(styleStr, fontFinder) {
         typeface: style.fontFamily,
         weight: style.fontWeight || "normal",
         posture: style.fontStyle || "normal",
+        size: original.fontSize || 0,
       },
       fontFinder,
       style

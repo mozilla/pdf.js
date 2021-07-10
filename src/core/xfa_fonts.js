@@ -16,14 +16,22 @@
 import {
   CalibriBoldFactors,
   CalibriBoldItalicFactors,
+  CalibriBoldItalicLineHeight,
+  CalibriBoldLineHeight,
   CalibriItalicFactors,
+  CalibriItalicLineHeight,
   CalibriRegularFactors,
+  CalibriRegularLineHeight,
 } from "./calibri_factors.js";
 import {
   HelveticaBoldFactors,
   HelveticaBoldItalicFactors,
+  HelveticaBoldItalicLineHeight,
+  HelveticaBoldLineHeight,
   HelveticaItalicFactors,
+  HelveticaItalicLineHeight,
   HelveticaRegularFactors,
+  HelveticaRegularLineHeight,
 } from "./helvetica_factors.js";
 import {
   LiberationSansBoldItalicWidths,
@@ -34,14 +42,22 @@ import {
 import {
   MyriadProBoldFactors,
   MyriadProBoldItalicFactors,
+  MyriadProBoldItalicLineHeight,
+  MyriadProBoldLineHeight,
   MyriadProItalicFactors,
+  MyriadProItalicLineHeight,
   MyriadProRegularFactors,
+  MyriadProRegularLineHeight,
 } from "./myriadpro_factors.js";
 import {
   SegoeuiBoldFactors,
   SegoeuiBoldItalicFactors,
+  SegoeuiBoldItalicLineHeight,
+  SegoeuiBoldLineHeight,
   SegoeuiItalicFactors,
+  SegoeuiItalicLineHeight,
   SegoeuiRegularFactors,
+  SegoeuiRegularLineHeight,
 } from "./segoeui_factors.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { normalizeFontName } from "./fonts_utils.js";
@@ -51,21 +67,25 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     name: "LiberationSans-Regular",
     factors: MyriadProRegularFactors,
     baseWidths: LiberationSansRegularWidths,
+    lineHeight: MyriadProRegularLineHeight,
   };
   t["MyriadPro-Bold"] = {
     name: "LiberationSans-Bold",
     factors: MyriadProBoldFactors,
     baseWidths: LiberationSansBoldWidths,
+    lineHeight: MyriadProBoldLineHeight,
   };
   t["MyriadPro-It"] = {
     name: "LiberationSans-Italic",
     factors: MyriadProItalicFactors,
     baseWidths: LiberationSansItalicWidths,
+    lineHeight: MyriadProItalicLineHeight,
   };
   t["MyriadPro-BoldIt"] = {
     name: "LiberationSans-BoldItalic",
     factors: MyriadProBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
+    lineHeight: MyriadProBoldItalicLineHeight,
   };
   t.ArialMT =
     t.Arial =
@@ -90,61 +110,73 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     name: "LiberationSans-Regular",
     factors: CalibriRegularFactors,
     baseWidths: LiberationSansRegularWidths,
+    lineHeight: CalibriRegularLineHeight,
   };
   t["Calibri-Bold"] = {
     name: "LiberationSans-Bold",
     factors: CalibriBoldFactors,
     baseWidths: LiberationSansBoldWidths,
+    lineHeight: CalibriBoldLineHeight,
   };
   t["Calibri-Italic"] = {
     name: "LiberationSans-Italic",
     factors: CalibriItalicFactors,
     baseWidths: LiberationSansItalicWidths,
+    lineHeight: CalibriItalicLineHeight,
   };
   t["Calibri-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     factors: CalibriBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
+    lineHeight: CalibriBoldItalicLineHeight,
   };
   t["Segoeui-Regular"] = {
     name: "LiberationSans-Regular",
     factors: SegoeuiRegularFactors,
     baseWidths: LiberationSansRegularWidths,
+    lineHeight: SegoeuiRegularLineHeight,
   };
   t["Segoeui-Bold"] = {
     name: "LiberationSans-Bold",
     factors: SegoeuiBoldFactors,
     baseWidths: LiberationSansBoldWidths,
+    lineHeight: SegoeuiBoldLineHeight,
   };
   t["Segoeui-Italic"] = {
     name: "LiberationSans-Italic",
     factors: SegoeuiItalicFactors,
     baseWidths: LiberationSansItalicWidths,
+    lineHeight: SegoeuiItalicLineHeight,
   };
   t["Segoeui-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     factors: SegoeuiBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
+    lineHeight: SegoeuiBoldItalicLineHeight,
   };
   t["Helvetica-Regular"] = {
     name: "LiberationSans-Regular",
     factors: HelveticaRegularFactors,
     baseWidths: LiberationSansRegularWidths,
+    lineHeight: HelveticaRegularLineHeight,
   };
   t["Helvetica-Bold"] = {
     name: "LiberationSans-Bold",
     factors: HelveticaBoldFactors,
     baseWidths: LiberationSansBoldWidths,
+    lineHeight: HelveticaBoldLineHeight,
   };
   t["Helvetica-Italic"] = {
     name: "LiberationSans-Italic",
     factors: HelveticaItalicFactors,
     baseWidths: LiberationSansItalicWidths,
+    lineHeight: HelveticaItalicLineHeight,
   };
   t["Helvetica-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     factors: HelveticaBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
+    lineHeight: HelveticaBoldItalicLineHeight,
   };
 });
 

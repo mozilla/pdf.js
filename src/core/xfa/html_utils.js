@@ -396,6 +396,11 @@ function toStyle(node, ...names) {
     if (value === null) {
       continue;
     }
+    if (converters.hasOwnProperty(name)) {
+      converters[name](node, style);
+      continue;
+    }
+
     if (value instanceof XFAObject) {
       const newStyle = value[$toStyle]();
       if (newStyle) {
@@ -403,11 +408,6 @@ function toStyle(node, ...names) {
       } else {
         warn(`(DEBUG) - XFA - style for ${name} not implemented yet`);
       }
-      continue;
-    }
-
-    if (converters.hasOwnProperty(name)) {
-      converters[name](node, style);
     }
   }
   return style;
@@ -560,6 +560,44 @@ function isPrintOnly(node) {
   );
 }
 
+function setPara(node, nodeStyle, value) {
+  if (value.attributes.class && value.attributes.class.includes("xfaRich")) {
+    if (nodeStyle) {
+      if (node.h === "") {
+        nodeStyle.height = "auto";
+      }
+      if (node.w === "") {
+        nodeStyle.width = "auto";
+      }
+    }
+    if (node.para) {
+      // By definition exData are external data so para
+      // has no effect on it.
+      const valueStyle = value.attributes.style;
+      valueStyle.display = "flex";
+      valueStyle.flexDirection = "column";
+      switch (node.para.vAlign) {
+        case "top":
+          valueStyle.justifyContent = "start";
+          break;
+        case "bottom":
+          valueStyle.justifyContent = "end";
+          break;
+        case "middle":
+          valueStyle.justifyContent = "center";
+          break;
+      }
+
+      const paraStyle = node.para[$toStyle]();
+      for (const [key, val] of Object.entries(paraStyle)) {
+        if (!(key in valueStyle)) {
+          valueStyle[key] = val;
+        }
+      }
+    }
+  }
+}
+
 function setFontFamily(xfaFont, fontFinder, style) {
   const name = stripQuotes(xfaFont.typeface);
   const typeface = fontFinder.find(name);
@@ -574,9 +612,12 @@ function setFontFamily(xfaFont, fontFinder, style) {
       // Already something so don't overwrite.
       return;
     }
+
     const pdfFont = selectFont(xfaFont, typeface);
     if (pdfFont && pdfFont.lineHeight > 0) {
-      style.lineHeight = pdfFont.lineHeight;
+      style.lineHeight = Math.max(1.2, pdfFont.lineHeight);
+    } else {
+      style.lineHeight = 1.2;
     }
   }
 }
@@ -593,5 +634,6 @@ export {
   setAccess,
   setFontFamily,
   setMinMaxDimensions,
+  setPara,
   toStyle,
 };

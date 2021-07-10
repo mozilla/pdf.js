@@ -2548,7 +2548,12 @@ class Font {
     this.ascent = metricsOverride.ascent / metricsOverride.unitsPerEm;
     this.descent = metricsOverride.descent / metricsOverride.unitsPerEm;
     this.lineGap = metricsOverride.lineGap / metricsOverride.unitsPerEm;
-    this.lineHeight = this.ascent - this.descent + this.lineGap;
+
+    if (this.cssFontInfo && this.cssFontInfo.lineHeight) {
+      this.lineHeight = this.cssFontInfo.lineHeight;
+    } else {
+      this.lineHeight = this.ascent - this.descent + this.lineGap;
+    }
 
     // The 'post' table has glyphs names.
     if (tables.post) {
