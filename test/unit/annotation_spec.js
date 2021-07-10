@@ -1689,6 +1689,12 @@ describe("annotation", function () {
         OPS.setFillRGBColor,
         OPS.endAnnotation,
       ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "271R",
+        [0, 0, 32, 10],
+        [32, 0, 0, 10, 0, 0],
+        [1, 0, 0, 1, 0, 0],
+      ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
       );
@@ -2324,6 +2330,12 @@ describe("annotation", function () {
         OPS.showText,
         OPS.endAnnotation,
       ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
+      ]);
       expect(operatorList.argsArray[3][0][0].unicode).toEqual("4");
     });
 
@@ -2375,6 +2387,12 @@ describe("annotation", function () {
         OPS.setFillRGBColor,
         OPS.endAnnotation,
       ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
+      ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
       );
@@ -2392,6 +2410,12 @@ describe("annotation", function () {
         OPS.beginAnnotation,
         OPS.setFillRGBColor,
         OPS.endAnnotation,
+      ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -2449,6 +2473,12 @@ describe("annotation", function () {
           OPS.setFillRGBColor,
           OPS.endAnnotation,
         ]);
+        expect(operatorList.argsArray[0]).toEqual([
+          "1249R",
+          [0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0],
+          [1, 0, 0, 1, 0, 0],
+        ]);
         expect(operatorList.argsArray[1]).toEqual(
           new Uint8ClampedArray([26, 51, 76])
         );
@@ -2502,6 +2532,12 @@ describe("annotation", function () {
         OPS.beginAnnotation,
         OPS.setFillRGBColor,
         OPS.endAnnotation,
+      ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2700,6 +2736,12 @@ describe("annotation", function () {
         OPS.setFillRGBColor,
         OPS.endAnnotation,
       ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
+      ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
       );
@@ -2717,6 +2759,12 @@ describe("annotation", function () {
         OPS.beginAnnotation,
         OPS.setFillRGBColor,
         OPS.endAnnotation,
+      ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -2771,6 +2819,12 @@ describe("annotation", function () {
         OPS.beginAnnotation,
         OPS.setFillRGBColor,
         OPS.endAnnotation,
+      ]);
+      expect(operatorList.argsArray[0]).toEqual([
+        "124R",
+        [0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0],
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])

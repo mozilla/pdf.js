@@ -2401,7 +2401,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.restore();
     }
 
-    beginAnnotation(rect, transform, matrix) {
+    beginAnnotation(id, rect, transform, matrix) {
       this.save();
       resetCtxToDefault(this.ctx);
       this.current = new CanvasExtraState();

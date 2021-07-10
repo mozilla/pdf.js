@@ -1622,8 +1622,9 @@ describe("api", function () {
 
     it("gets operator list", async function () {
       const operatorList = await page.getOperatorList();
-      expect(!!operatorList.fnArray).toEqual(true);
-      expect(!!operatorList.argsArray).toEqual(true);
+
+      expect(operatorList.fnArray.length).toBeGreaterThan(100);
+      expect(operatorList.argsArray.length).toBeGreaterThan(100);
       expect(operatorList.lastChunk).toEqual(true);
     });
 
@@ -1686,6 +1687,26 @@ describe("api", function () {
         await Promise.all([result1, result2]);
       }
     );
+
+    it("gets operator list, containing Annotation-operatorLists", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("annotation-line.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const operatorList = await pdfPage.getOperatorList();
+
+      expect(operatorList.fnArray.length).toBeGreaterThan(20);
+      expect(operatorList.argsArray.length).toBeGreaterThan(20);
+      expect(operatorList.lastChunk).toEqual(true);
+
+      // The `getOperatorList` method, similar to the `render` method,
+      // is supposed to include any existing Annotation-operatorLists.
+      expect(operatorList.fnArray.includes(OPS.beginAnnotation)).toEqual(true);
+      expect(operatorList.fnArray.includes(OPS.endAnnotation)).toEqual(true);
+
+      await loadingTask.destroy();
+    });
 
     it("gets document stats after parsing page", async function () {
       const stats = await page.getOperatorList().then(function () {
