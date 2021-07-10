@@ -41,7 +41,7 @@
   font-style: inherit;
   font-weight: inherit;
   font-kerning: inherit;
-  letter-spacing: inherit;
+  letter-spacing: -0.01px;
   text-align: inherit;
   text-decoration: inherit;
   vertical-align: inherit;
@@ -118,13 +118,9 @@
   pointer-events: none;
 }
 
-.xfaWrapper {
-  display: flex;
-  align-items: stretch;
-}
-
 .xfaWrapped {
-  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
 }
 
 .xfaTextfield,
@@ -169,8 +165,8 @@
 
 .xfaRich {
   white-space: pre-wrap;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
 }
 
 .xfaImage {
@@ -186,12 +182,6 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-}
-
-.xfaLr,
-.xfaRl,
-.xfaTb > div {
-  flex: 1 1 auto;
 }
 
 .xfaLr {
@@ -229,18 +219,10 @@
   align-items: stretch;
 }
 
-.xfaTable > div {
-  flex: 1 1 auto;
-}
-
 .xfaTable .xfaRow {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-}
-
-.xfaTable .xfaRow > div {
-  flex: 1 1 auto;
 }
 
 .xfaTable .xfaRlRow {

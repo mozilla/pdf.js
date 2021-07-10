@@ -960,6 +960,14 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1718741",
+       "file": "pdfs/xfa_bug1718741.pdf",
+       "md5": "1b80f8287cdbf9a67e4bff8be20b1bbd",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_bug1718670_1",
        "file": "pdfs/xfa_bug1718670_1.pdf",
        "md5": "06745be56a89acd80e5bdeddabb7cb7b",

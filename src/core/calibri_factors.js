@@ -81,6 +81,7 @@ const CalibriBoldFactors = [
   0.95794, 0.95794, 0.82616, 0.86513, 0.85162, 0.85162, 0.85162, 0.85162,
   0.91133, 0.85162, 0.79492, 0.79492, 0.79492, 0.79492, 0.91133, 0.79109,
 ];
+const CalibriBoldLineHeight = 1.2207;
 
 // Factors to rescale LiberationSans-BoldItalic.ttf to have the same
 // metrics as calibriz.ttf.
@@ -152,6 +153,7 @@ const CalibriBoldItalicFactors = [
   0.84548, 0.84548, 0.91133, 0.84548, 0.79492, 0.79492, 0.79492, 0.79492,
   0.91133, 0.74081,
 ];
+const CalibriBoldItalicLineHeight = 1.2207;
 
 // Factors to rescale LiberationSans-Italic.ttf to have the same
 // metrics as calibrii.ttf.
@@ -221,6 +223,7 @@ const CalibriItalicFactors = [
   0.84153, 0.89453, 0.89453, 0.89453, 0.89453, 0.91133, 0.89453, 0.79004,
   0.79004, 0.79004, 0.79004, 0.91133, 0.75026,
 ];
+const CalibriItalicLineHeight = 1.2207;
 
 // Factors to rescale LiberationSans-Regular.ttf to have the same
 // metrics as calibri.ttf.
@@ -291,10 +294,15 @@ const CalibriRegularFactors = [
   0.83969, 0.90527, 0.90527, 0.90527, 0.90527, 0.91133, 0.90527, 0.79004,
   0.79004, 0.79004, 0.79004, 0.91133, 0.78848,
 ];
+const CalibriRegularLineHeight = 1.2207;
 
 export {
   CalibriBoldFactors,
   CalibriBoldItalicFactors,
+  CalibriBoldItalicLineHeight,
+  CalibriBoldLineHeight,
   CalibriItalicFactors,
+  CalibriItalicLineHeight,
   CalibriRegularFactors,
+  CalibriRegularLineHeight,
 };
