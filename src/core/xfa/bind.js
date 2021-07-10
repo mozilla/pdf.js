@@ -25,7 +25,6 @@ import {
   $getDataValue,
   $getParent,
   $getRealChildrenByNameIt,
-  $global,
   $hasSettableValue,
   $indexOf,
   $insertAt,
@@ -158,19 +157,13 @@ class Binder {
     // (which is the location of global variables).
     generator = this.data[$getRealChildrenByNameIt](
       name,
-      /* allTransparent = */ false,
+      /* allTransparent = */ true,
       /* skipConsumed = */ false
     );
 
-    while (true) {
-      match = generator.next().value;
-      if (!match) {
-        break;
-      }
-
-      if (match[$global]) {
-        return match;
-      }
+    match = generator.next().value;
+    if (match) {
+      return match;
     }
 
     // Thirdly, try to find it in attributes.
@@ -545,6 +538,12 @@ class Binder {
           // to have something to match with the given expression.
           // See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.364.2157&rep=rep1&type=pdf#page=199
           match = createDataNode(this.data, dataNode, ref);
+          if (!match) {
+            // For example if the node contains a .(...) then it isn't
+            // findable.
+            // TODO: remove this when .(...) is implemented.
+            continue;
+          }
           if (this._isConsumeData()) {
             match[$consumed] = true;
           }
@@ -584,6 +583,7 @@ class Binder {
               dataNode,
               global
             );
+
             if (!found) {
               break;
             }

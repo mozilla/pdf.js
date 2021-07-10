@@ -31,7 +31,6 @@
   text-align: initial;
   top: 0;
   left: 0;
-  z-index: 200;
   transform-origin: 0 0;
   line-height: 1.2;
 }
@@ -74,26 +73,6 @@
   letter-spacing: 0;
   text-decoration: none;
   vertical-align: 0;
-}
-
-.xfaDraw {
-  z-index: 100;
-}
-
-.xfaExclgroup {
-  z-index: 200;
-}
-
-.xfaField {
-  z-index: 300;
-}
-
-.xfaRich {
-  z-index: 300;
-}
-
-.xfaSubform {
-  z-index: 200;
 }
 
 .xfaCaption {
@@ -190,6 +169,8 @@
 
 .xfaRich {
   white-space: pre-wrap;
+  width: auto;
+  height: auto;
 }
 
 .xfaImage {
@@ -197,11 +178,6 @@
   object-fit: contain;
   width: 100%;
   height: 100%;
-}
-
-.xfaRich {
-  width: 100%;
-  height: auto;
 }
 
 .xfaLrTb,
@@ -278,6 +254,8 @@
   flex: 1;
 }
 
+.xfaNonInteractive input,
+.xfaNonInteractive textarea,
 .xfaDisabled input,
 .xfaDisabled textarea,
 .xfaReadOnly input,

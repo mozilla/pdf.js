@@ -741,6 +741,18 @@ class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      Object.defineProperty(this, "fingerprint", {
+        get() {
+          deprecated(
+            "`PDFDocumentProxy.fingerprint`, " +
+              "please use `PDFDocumentProxy.fingerprints` instead."
+          );
+          return this.fingerprints[0];
+        },
+      });
+    }
   }
 
   /**
@@ -758,10 +770,13 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @type {string} A (not guaranteed to be) unique ID to identify a PDF.
+   * @type {Array<string, string|null>} A (not guaranteed to be) unique ID to
+   *   identify the PDF document.
+   *   NOTE: The first element will always be defined for all PDF documents,
+   *   whereas the second element is only defined for *modified* PDF documents.
    */
-  get fingerprint() {
-    return this._pdfInfo.fingerprint;
+  get fingerprints() {
+    return this._pdfInfo.fingerprints;
   }
 
   /**
@@ -1829,6 +1844,16 @@ class LoopbackPort {
     function cloneValue(value) {
       // Trying to perform a structured clone close to the spec, including
       // transfers.
+      if (
+        typeof value === "function" ||
+        typeof value === "symbol" ||
+        value instanceof URL
+      ) {
+        throw new Error(
+          `LoopbackPort.postMessage - cannot clone: ${value?.toString()}`
+        );
+      }
+
       if (typeof value !== "object" || value === null) {
         return value;
       }
@@ -1867,9 +1892,6 @@ class LoopbackPort {
         }
         return result;
       }
-      if (value instanceof URL) {
-        throw new Error(`LoopbackPort.postMessage - cannot clone: ${value}`);
-      }
       result = Array.isArray(value) ? [] : Object.create(null);
       cloned.set(value, result); // Adding to cache now for cyclic references.
       // Cloning all value and object properties, however ignoring properties
@@ -1886,12 +1908,9 @@ class LoopbackPort {
         if (typeof desc.value === "function") {
           if (i === 'cMapUrl') {
             result[i] = cloneValue(desc.value());
-          } else if (value.hasOwnProperty?.(i)) {
-            throw new Error(
-              `LoopbackPort.postMessage - cannot clone: ${value[i]}`
-            );
+          } else if (!value.hasOwnProperty?.(i)) {
+            continue;
           }
-          continue;
         }
         result[i] = cloneValue(desc.value);
       }

@@ -20,7 +20,7 @@ class AsciiHexStream extends DecodeStream {
     // Most streams increase in size when decoded, but AsciiHex streams shrink
     // by 50%.
     if (maybeLength) {
-      maybeLength = 0.5 * maybeLength;
+      maybeLength *= 0.5;
     }
     super(maybeLength);
 

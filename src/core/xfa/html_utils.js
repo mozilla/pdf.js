@@ -14,11 +14,15 @@
  */
 
 import {
+  $content,
   $extra,
   $getParent,
   $getSubformParent,
+  $getTemplateRoot,
+  $globalData,
   $nodeName,
   $pushGlyphs,
+  $text,
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
@@ -37,7 +41,7 @@ function measureToString(m) {
 
 const converters = {
   anchorType(node, style) {
-    const parent = node[$getParent]();
+    const parent = node[$getSubformParent]();
     if (!parent || (parent.layout && parent.layout !== "position")) {
       // anchorType is only used in a positioned layout.
       return;
@@ -74,7 +78,7 @@ const converters = {
     }
   },
   dimensions(node, style) {
-    const parent = node[$getParent]();
+    const parent = node[$getSubformParent]();
     let width = node.w;
     const height = node.h;
     if (parent.layout && parent.layout.includes("row")) {
@@ -112,7 +116,7 @@ const converters = {
     }
   },
   position(node, style) {
-    const parent = node[$getParent]();
+    const parent = node[$getSubformParent]();
     if (parent && parent.layout && parent.layout !== "position") {
       // IRL, we've some x/y in tb layout.
       // Specs say x/y is only used in positioned layout.
@@ -178,21 +182,25 @@ const converters = {
 };
 
 function setMinMaxDimensions(node, style) {
-  const parent = node[$getParent]();
+  const parent = node[$getSubformParent]();
   if (parent.layout === "position") {
-    style.minWidth = measureToString(node.minW);
-    if (node.maxW) {
+    if (node.minW > 0) {
+      style.minWidth = measureToString(node.minW);
+    }
+    if (node.maxW > 0) {
       style.maxWidth = measureToString(node.maxW);
     }
-    style.minHeight = measureToString(node.minH);
-    if (node.maxH) {
+    if (node.minH > 0) {
+      style.minHeight = measureToString(node.minH);
+    }
+    if (node.maxH > 0) {
       style.maxHeight = measureToString(node.maxH);
     }
   }
 }
 
-function layoutText(text, xfaFont, fontFinder, width) {
-  const measure = new TextMeasure(xfaFont, fontFinder);
+function layoutText(text, xfaFont, margin, lineHeight, fontFinder, width) {
+  const measure = new TextMeasure(xfaFont, margin, lineHeight, fontFinder);
   if (typeof text === "string") {
     measure.addString(text);
   } else {
@@ -200,6 +208,89 @@ function layoutText(text, xfaFont, fontFinder, width) {
   }
 
   return measure.compute(width);
+}
+
+function layoutNode(node, availableSpace) {
+  let height = null;
+  let width = null;
+  let isBroken = false;
+
+  if ((!node.w || !node.h) && node.value) {
+    let marginH = 0;
+    let marginV = 0;
+    if (node.margin) {
+      marginH = node.margin.leftInset + node.margin.rightInset;
+      marginV = node.margin.topInset + node.margin.bottomInset;
+    }
+
+    let lineHeight = null;
+    let margin = null;
+    if (node.para) {
+      margin = Object.create(null);
+      lineHeight = node.para.lineHeight === "" ? null : node.para.lineHeight;
+      margin.top = node.para.spaceAbove === "" ? 0 : node.para.spaceAbove;
+      margin.bottom = node.para.spaceBelow === "" ? 0 : node.para.spaceBelow;
+      margin.left = node.para.marginLeft === "" ? 0 : node.para.marginLeft;
+      margin.right = node.para.marginRight === "" ? 0 : node.para.marginRight;
+    }
+
+    let font = node.font;
+    if (!font) {
+      const root = node[$getTemplateRoot]();
+      let parent = node[$getParent]();
+      while (parent !== root) {
+        if (parent.font) {
+          font = parent.font;
+          break;
+        }
+        parent = parent[$getParent]();
+      }
+    }
+
+    const maxWidth = !node.w ? availableSpace.width : node.w;
+    const fontFinder = node[$globalData].fontFinder;
+    if (
+      node.value.exData &&
+      node.value.exData[$content] &&
+      node.value.exData.contentType === "text/html"
+    ) {
+      const res = layoutText(
+        node.value.exData[$content],
+        font,
+        margin,
+        lineHeight,
+        fontFinder,
+        maxWidth
+      );
+      width = res.width;
+      height = res.height;
+      isBroken = res.isBroken;
+    } else {
+      const text = node.value[$text]();
+      if (text) {
+        const res = layoutText(
+          text,
+          font,
+          margin,
+          lineHeight,
+          fontFinder,
+          maxWidth
+        );
+        width = res.width;
+        height = res.height;
+        isBroken = res.isBroken;
+      }
+    }
+
+    if (width !== null && !node.w) {
+      width += marginH;
+    }
+
+    if (height !== null && !node.h) {
+      height += marginV;
+    }
+  }
+  return { w: width, h: height, isBroken };
 }
 
 function computeBbox(node, html, availableSpace) {
@@ -213,7 +304,7 @@ function computeBbox(node, html, availableSpace) {
     let width = node.w;
     if (width === "") {
       if (node.maxW === 0) {
-        const parent = node[$getParent]();
+        const parent = node[$getSubformParent]();
         if (parent.layout === "position" && parent.w !== "") {
           width = 0;
         } else {
@@ -228,7 +319,7 @@ function computeBbox(node, html, availableSpace) {
     let height = node.h;
     if (height === "") {
       if (node.maxH === 0) {
-        const parent = node[$getParent]();
+        const parent = node[$getSubformParent]();
         if (parent.layout === "position" && parent.h !== "") {
           height = 0;
         } else {
@@ -265,25 +356,9 @@ function fixDimensions(node) {
     }
   }
 
-  if (parent.w && node.w) {
-    node.w = Math.min(parent.w, node.w);
-  }
-
-  if (parent.h && node.h) {
-    node.h = Math.min(parent.h, node.h);
-  }
-
   if (parent.layout && parent.layout !== "position") {
     // Useless in this context.
     node.x = node.y = 0;
-    if (parent.layout === "tb") {
-      if (
-        parent.w !== "" &&
-        (node.w === "" || node.w === 0 || node.w > parent.w)
-      ) {
-        node.w = parent.w;
-      }
-    }
   }
 
   if (node.layout === "table") {
@@ -348,40 +423,50 @@ function createWrapper(node, html) {
       class: ["xfaWrapper"],
       style: Object.create(null),
     },
-    children: [html],
+    children: [],
   };
 
   attributes.class.push("xfaWrapped");
 
   if (node.border) {
     const { widths, insets } = node.border[$extra];
-    let shiftH = 0;
-    let shiftW = 0;
+    let width, height;
+    let top = insets[0];
+    let left = insets[3];
+    const insetsH = insets[0] + insets[2];
+    const insetsW = insets[1] + insets[3];
     switch (node.border.hand) {
       case "even":
-        shiftW = widths[0] / 2;
-        shiftH = widths[3] / 2;
+        top -= widths[0] / 2;
+        left -= widths[3] / 2;
+        width = `calc(100% + ${(widths[1] + widths[3]) / 2 - insetsW}px)`;
+        height = `calc(100% + ${(widths[0] + widths[2]) / 2 - insetsH}px)`;
         break;
       case "left":
-        shiftW = widths[0];
-        shiftH = widths[3];
+        top -= widths[0];
+        left -= widths[3];
+        width = `calc(100% + ${widths[1] + widths[3] - insetsW}px)`;
+        height = `calc(100% + ${widths[0] + widths[2] - insetsH}px)`;
+        break;
+      case "right":
+        width = insetsW ? `calc(100% - ${insetsW}px)` : "100%";
+        height = insetsH ? `calc(100% - ${insetsH}px)` : "100%";
         break;
     }
-    const insetsW = insets[1] + insets[3];
-    const insetsH = insets[0] + insets[2];
     const classNames = ["xfaBorder"];
     if (isPrintOnly(node.border)) {
       classNames.push("xfaPrintOnly");
     }
+
     const border = {
       name: "div",
       attributes: {
         class: classNames,
         style: {
-          top: `${insets[0] - widths[0] + shiftW}px`,
-          left: `${insets[3] - widths[3] + shiftH}px`,
-          width: insetsW ? `calc(100% - ${insetsW}px)` : "100%",
-          height: insetsH ? `calc(100% - ${insetsH}px)` : "100%",
+          top: `${top}px`,
+          left: `${left}px`,
+          width,
+          height,
         },
       },
       children: [],
@@ -399,7 +484,9 @@ function createWrapper(node, html) {
         delete style[key];
       }
     }
-    wrapper.children.push(border);
+    wrapper.children.push(border, html);
+  } else {
+    wrapper.children.push(html);
   }
 
   for (const key of [
@@ -445,17 +532,17 @@ function fixTextIndent(styles) {
   }
 
   // If indent is negative then it's a hanging indent.
-  const align = styles.textAlign || "left";
-  if (align === "left" || align === "right") {
-    const name = "padding" + (align === "left" ? "Left" : "Right");
-    const padding = getMeasurement(styles[name], "0px");
-    styles[name] = `${padding - indent}px`;
-  }
+  const align = styles.textAlign === "right" ? "right" : "left";
+  const name = "padding" + (align === "left" ? "Left" : "Right");
+  const padding = getMeasurement(styles[name], "0px");
+  styles[name] = `${padding - indent}px`;
 }
 
 function setAccess(node, classNames) {
   switch (node.access) {
     case "nonInteractive":
+      classNames.push("xfaNonInteractive");
+      break;
     case "readOnly":
       classNames.push("xfaReadOnly");
       break;
@@ -481,7 +568,7 @@ function setFontFamily(xfaFont, fontFinder, style) {
   if (typeface) {
     const { fontFamily } = typeface.regular.cssFontInfo;
     if (fontFamily !== name) {
-      style.fontFamily += `,"${fontFamily}"`;
+      style.fontFamily = `"${fontFamily}"`;
     }
     if (style.lineHeight) {
       // Already something so don't overwrite.
@@ -501,7 +588,7 @@ export {
   fixTextIndent,
   isPrintOnly,
   layoutClass,
-  layoutText,
+  layoutNode,
   measureToString,
   setAccess,
   setFontFamily,

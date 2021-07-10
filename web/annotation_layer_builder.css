@@ -140,7 +140,7 @@
    * area, causing horizontal scrolling. We avoid this by extending the width
    * when the element has focus and revert this when it loses focus.
    */
-  width: 115%;
+  width: 103%;
 }
 
 .annotationLayer .buttonWidgetAnnotation.checkBox input,

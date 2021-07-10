@@ -220,7 +220,7 @@ var StepperManager = (function StepperManagerClosure() {
     },
     selectStepper: function selectStepper(pageIndex, selectPanel) {
       let i;
-      pageIndex = pageIndex | 0;
+      pageIndex |= 0;
       if (selectPanel) {
         this.manager.selectPanel(this);
       }

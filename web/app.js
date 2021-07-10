@@ -1278,7 +1278,7 @@ const PDFViewerApplication = {
     pdfThumbnailViewer.setDocument(pdfDocument);
 
     const storedPromise = (this.store = new ViewHistory(
-      pdfDocument.fingerprint
+      pdfDocument.fingerprints[0]
     ))
       .getMultiple({
         page: null,
@@ -1310,7 +1310,7 @@ const PDFViewerApplication = {
           const viewOnLoad = AppOptions.get("viewOnLoad");
 
           this._initializePdfHistory({
-            fingerprint: pdfDocument.fingerprint,
+            fingerprint: pdfDocument.fingerprints[0],
             viewOnLoad,
             initialDest: openAction?.dest,
           });
@@ -1577,7 +1577,7 @@ const PDFViewerApplication = {
             : " developer version (?)")
       );
       console.log(
-        `PDF ${pdfDocument.fingerprint} [${info.PDFFormatVersion} ` +
+        `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
           `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
           `(PDF.js: ${version || "-"}` +
           `${

@@ -51,7 +51,6 @@ const $getNextPage = Symbol();
 const $getSubformParent = Symbol();
 const $getParent = Symbol();
 const $getTemplateRoot = Symbol();
-const $global = Symbol();
 const $globalData = Symbol();
 const $hasSettableValue = Symbol();
 const $ids = Symbol();
@@ -62,6 +61,7 @@ const $isBindable = Symbol();
 const $isDataValue = Symbol();
 const $isDescendent = Symbol();
 const $isSplittable = Symbol();
+const $isThereMoreWidth = Symbol();
 const $isTransparent = Symbol();
 const $isUsable = Symbol();
 const $lastAttribute = Symbol();
@@ -79,6 +79,7 @@ const $searchNode = Symbol();
 const $setId = Symbol();
 const $setSetAttributes = Symbol();
 const $setValue = Symbol();
+const $tabIndex = Symbol();
 const $text = Symbol();
 const $toHTML = Symbol();
 const $toString = Symbol();
@@ -182,6 +183,16 @@ class XFAObject {
   }
 
   [$isSplittable]() {
+    return false;
+  }
+
+  /**
+     Return true if this node (typically a container)
+     can provide more width during layout.
+     The goal is to help to know what a descendant must
+     do in case of horizontal overflow.
+   */
+  [$isThereMoreWidth]() {
     return false;
   }
 
@@ -586,7 +597,7 @@ class XFAObject {
     if (Array.isArray(obj)) {
       return obj.map(x => XFAObject[_cloneAttribute](x));
     }
-    if (obj instanceof Object) {
+    if (typeof obj === "object" && obj !== null) {
       return Object.assign({}, obj);
     }
     return obj;
@@ -1063,7 +1074,6 @@ export {
   $getRealChildrenByNameIt,
   $getSubformParent,
   $getTemplateRoot,
-  $global,
   $globalData,
   $hasSettableValue,
   $ids,
@@ -1074,6 +1084,7 @@ export {
   $isDataValue,
   $isDescendent,
   $isSplittable,
+  $isThereMoreWidth,
   $isTransparent,
   $isUsable,
   $namespaceId,
@@ -1090,6 +1101,7 @@ export {
   $setId,
   $setSetAttributes,
   $setValue,
+  $tabIndex,
   $text,
   $toHTML,
   $toString,

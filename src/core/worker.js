@@ -218,17 +218,20 @@ class WorkerMessageHandler {
       if (isPureXfa) {
         const task = new WorkerTask("loadXfaFonts");
         startWorkerTask(task);
-        await pdfManager
-          .loadXfaFonts(handler, task)
-          .catch(reason => {
-            // Ignore errors, to allow the document to load.
-          })
-          .then(() => finishWorkerTask(task));
+        await Promise.all([
+          pdfManager
+            .loadXfaFonts(handler, task)
+            .catch(reason => {
+              // Ignore errors, to allow the document to load.
+            })
+            .then(() => finishWorkerTask(task)),
+          pdfManager.loadXfaImages(),
+        ]);
       }
 
-      const [numPages, fingerprint] = await Promise.all([
+      const [numPages, fingerprints] = await Promise.all([
         pdfManager.ensureDoc("numPages"),
-        pdfManager.ensureDoc("fingerprint"),
+        pdfManager.ensureDoc("fingerprints"),
       ]);
 
       // Get htmlForXfa after numPages to avoid to create HTML twice.
@@ -236,7 +239,7 @@ class WorkerMessageHandler {
         ? await pdfManager.ensureDoc("htmlForXfa")
         : null;
 
-      return { numPages, fingerprint, htmlForXfa };
+      return { numPages, fingerprints, htmlForXfa };
     }
 
     function getPdfManager(data, evaluatorOptions, enableXfa) {

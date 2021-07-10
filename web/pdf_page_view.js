@@ -508,6 +508,11 @@ class PDFPageView {
     }
     this.textLayer = textLayer;
 
+    if (this.xfaLayer?.div) {
+      // The xfa layer needs to stay on top.
+      div.appendChild(this.xfaLayer.div);
+    }
+
     let renderContinueCallback = null;
     if (this.renderingQueue) {
       renderContinueCallback = cont => {

@@ -216,7 +216,7 @@ class Page {
     if (rotate % 90 !== 0) {
       rotate = 0;
     } else if (rotate >= 360) {
-      rotate = rotate % 360;
+      rotate %= 360;
     } else if (rotate < 0) {
       // The spec doesn't cover negatives. Assume it's counterclockwise
       // rotation. The following is the other implementation of modulo.
@@ -869,6 +869,28 @@ class PDFDocument {
     return null;
   }
 
+  async loadXfaImages() {
+    const xfaImagesDict = await this.pdfManager.ensureCatalog("xfaImages");
+    if (!xfaImagesDict) {
+      return;
+    }
+
+    const keys = xfaImagesDict.getKeys();
+    const objectLoader = new ObjectLoader(xfaImagesDict, keys, this.xref);
+    await objectLoader.load();
+
+    const xfaImages = new Map();
+    for (const key of keys) {
+      const stream = xfaImagesDict.get(key);
+      if (!isStream(stream)) {
+        continue;
+      }
+      xfaImages.set(key, stream.getBytes());
+    }
+
+    this.xfaFactory.setImages(xfaImages);
+  }
+
   async loadXfaFonts(handler, task) {
     const acroForm = await this.pdfManager.ensureCatalog("acroForm");
     if (!acroForm) {
@@ -1153,30 +1175,44 @@ class PDFDocument {
     return shadow(this, "documentInfo", docInfo);
   }
 
-  get fingerprint() {
-    let hash;
+  get fingerprints() {
+    function validate(data) {
+      return (
+        typeof data === "string" &&
+        data.length > 0 &&
+        data !== EMPTY_FINGERPRINT
+      );
+    }
+
+    function hexString(hash) {
+      const buf = [];
+      for (let i = 0, ii = hash.length; i < ii; i++) {
+        const hex = hash[i].toString(16);
+        buf.push(hex.padStart(2, "0"));
+      }
+      return buf.join("");
+    }
+
     const idArray = this.xref.trailer.get("ID");
-    if (
-      Array.isArray(idArray) &&
-      idArray[0] &&
-      isString(idArray[0]) &&
-      idArray[0] !== EMPTY_FINGERPRINT
-    ) {
-      hash = stringToBytes(idArray[0]);
+    let hashOriginal, hashModified;
+    if (Array.isArray(idArray) && validate(idArray[0])) {
+      hashOriginal = stringToBytes(idArray[0]);
+
+      if (idArray[1] !== idArray[0] && validate(idArray[1])) {
+        hashModified = stringToBytes(idArray[1]);
+      }
     } else {
-      hash = calculateMD5(
+      hashOriginal = calculateMD5(
         this.stream.getByteRange(0, FINGERPRINT_FIRST_BYTES),
         0,
         FINGERPRINT_FIRST_BYTES
       );
     }
 
-    const fingerprintBuf = [];
-    for (let i = 0, ii = hash.length; i < ii; i++) {
-      const hex = hash[i].toString(16);
-      fingerprintBuf.push(hex.padStart(2, "0"));
-    }
-    return shadow(this, "fingerprint", fingerprintBuf.join(""));
+    return shadow(this, "fingerprints", [
+      hexString(hashOriginal),
+      hashModified ? hexString(hashModified) : null,
+    ]);
   }
 
   _getLinearizationPage(pageIndex) {
