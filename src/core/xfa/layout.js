@@ -191,8 +191,7 @@ function getAvailableSpace(node) {
 }
 
 function getTransformedBBox(node) {
-  // Take into account rotation and anchor the get the
-  // real bounding box.
+  // Take into account rotation and anchor to get the real bounding box.
   let w = node.w === "" ? NaN : node.w;
   let h = node.h === "" ? NaN : node.h;
   let [centerX, centerY] = [0, 0];
@@ -223,8 +222,7 @@ function getTransformedBBox(node) {
       break;
   }
 
-  let x;
-  let y;
+  let x, y;
   switch (node.rotate || 0) {
     case 0:
       [x, y] = [-centerX, -centerY];
@@ -268,14 +266,11 @@ function checkDimensions(node, space) {
   const ERROR = 2;
   const parent = node[$getSubformParent]();
   const attempt = (parent[$extra] && parent[$extra].attempt) || 0;
-  let y, w, h;
+
+  const [, y, w, h] = getTransformedBBox(node);
   switch (parent.layout) {
     case "lr-tb":
     case "rl-tb":
-      if (node.w !== "" || node.h !== "") {
-        [, , w, h] = getTransformedBBox(node);
-      }
-
       if (attempt === 0) {
         // Try to put an element in the line.
 
@@ -330,11 +325,9 @@ function checkDimensions(node, space) {
         return true;
       }
 
-      // If the node has a height then check
-      // if it's fine with available height. If the node
-      // is breakable then we can return true.
+      // If the node has a height then check if it's fine with available height.
+      // If the node is breakable then we can return true.
       if (node.h !== "" && !node[$isSplittable]()) {
-        [, , , h] = getTransformedBBox(node);
         return Math.round(h - space.height) <= ERROR;
       }
       // Else wait and see: this node will be layed out itself
@@ -354,7 +347,6 @@ function checkDimensions(node, space) {
         return true;
       }
 
-      [, y, , h] = getTransformedBBox(node);
       if (node.h === "" || Math.round(h + y - space.height) <= ERROR) {
         return true;
       }
@@ -368,7 +360,6 @@ function checkDimensions(node, space) {
       }
 
       if (node.h !== "") {
-        [, , , h] = getTransformedBBox(node);
         return Math.round(h - space.height) <= ERROR;
       }
       return true;
