@@ -702,7 +702,13 @@ class Annotation {
 
     return resourcesPromise.then(resources => {
       const opList = new OperatorList();
-      opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+      opList.addOp(OPS.beginAnnotation, [
+        data.id,
+        data.rect,
+        transform,
+        matrix,
+      ]);
+
       return evaluator
         .getOperatorList({
           stream: appearance,
@@ -1307,6 +1313,7 @@ class WidgetAnnotation extends Annotation {
 
         const transform = getTransformMatrix(this.data.rect, bbox, matrix);
         operatorList.addOp(OPS.beginAnnotation, [
+          this.data.id,
           this.data.rect,
           transform,
           matrix,
