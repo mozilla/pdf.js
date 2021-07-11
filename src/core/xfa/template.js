@@ -501,6 +501,12 @@ class Assist extends XFAObject {
     this.speak = null;
     this.toolTip = null;
   }
+
+  [$toHTML]() {
+    return this.toolTip && this.toolTip[$content]
+      ? this.toolTip[$content]
+      : null;
+  }
 }
 
 class Barcode extends XFAObject {
@@ -1734,6 +1740,11 @@ class Draw extends XFAObject {
       children: [],
     };
 
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
+
     const bbox = computeBbox(this, html, availableSpace);
 
     const value = this.value ? this.value[$toHTML](availableSpace).html : null;
@@ -2345,6 +2356,11 @@ class ExclGroup extends XFAObject {
       children,
     };
 
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
+
     delete this[$extra];
 
     return HTMLResult.success(createWrapper(this, html), bbox);
@@ -2620,6 +2636,11 @@ class Field extends XFAObject {
       attributes,
       children,
     };
+
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
 
     const borderStyle = this.border ? this.border[$toStyle]() : null;
 
@@ -4780,6 +4801,11 @@ class Subform extends XFAObject {
       attributes,
       children,
     };
+
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
 
     const result = HTMLResult.success(createWrapper(this, html), bbox);
 
