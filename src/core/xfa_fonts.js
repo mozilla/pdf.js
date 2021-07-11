@@ -63,30 +63,36 @@ import { getLookupTableFactory } from "./core_utils.js";
 import { normalizeFontName } from "./fonts_utils.js";
 
 const getXFAFontMap = getLookupTableFactory(function (t) {
-  t["MyriadPro-Regular"] = {
+  t["MyriadPro-Regular"] = t["PdfJS-Fallback-Regular"] = {
     name: "LiberationSans-Regular",
     factors: MyriadProRegularFactors,
     baseWidths: LiberationSansRegularWidths,
     lineHeight: MyriadProRegularLineHeight,
   };
-  t["MyriadPro-Bold"] = {
+  t["MyriadPro-Bold"] = t["PdfJS-Fallback-Bold"] = {
     name: "LiberationSans-Bold",
     factors: MyriadProBoldFactors,
     baseWidths: LiberationSansBoldWidths,
     lineHeight: MyriadProBoldLineHeight,
   };
-  t["MyriadPro-It"] = {
-    name: "LiberationSans-Italic",
-    factors: MyriadProItalicFactors,
-    baseWidths: LiberationSansItalicWidths,
-    lineHeight: MyriadProItalicLineHeight,
-  };
-  t["MyriadPro-BoldIt"] = {
-    name: "LiberationSans-BoldItalic",
-    factors: MyriadProBoldItalicFactors,
-    baseWidths: LiberationSansBoldItalicWidths,
-    lineHeight: MyriadProBoldItalicLineHeight,
-  };
+  t["MyriadPro-It"] =
+    t["MyriadPro-Italic"] =
+    t["PdfJS-Fallback-Italic"] =
+      {
+        name: "LiberationSans-Italic",
+        factors: MyriadProItalicFactors,
+        baseWidths: LiberationSansItalicWidths,
+        lineHeight: MyriadProItalicLineHeight,
+      };
+  t["MyriadPro-BoldIt"] =
+    t["MyriadPro-BoldItalic"] =
+    t["PdfJS-Fallback-BoldItalic"] =
+      {
+        name: "LiberationSans-BoldItalic",
+        factors: MyriadProBoldItalicFactors,
+        baseWidths: LiberationSansBoldItalicWidths,
+        lineHeight: MyriadProBoldItalicLineHeight,
+      };
   t.ArialMT =
     t.Arial =
     t["Arial-Regular"] =
@@ -154,7 +160,7 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     baseWidths: LiberationSansBoldItalicWidths,
     lineHeight: SegoeuiBoldItalicLineHeight,
   };
-  t["Helvetica-Regular"] = {
+  t["Helvetica-Regular"] = t.Helvetica = {
     name: "LiberationSans-Regular",
     factors: HelveticaRegularFactors,
     baseWidths: LiberationSansRegularWidths,
