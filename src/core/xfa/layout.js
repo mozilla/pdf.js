@@ -52,10 +52,21 @@ import { measureToString } from "./html_utils.js";
  * returning.
  */
 
+function createLine(node, children) {
+  return {
+    name: "div",
+    attributes: {
+      class: [node.layout === "lr-tb" ? "xfaLr" : "xfaRl"],
+    },
+    children,
+  };
+}
+
 function flushHTML(node) {
   if (!node[$extra]) {
     return null;
   }
+
   const attributes = node[$extra].attributes;
   const html = {
     name: "div",
@@ -66,17 +77,17 @@ function flushHTML(node) {
   if (node[$extra].failingNode) {
     const htmlFromFailing = node[$extra].failingNode[$flushHTML]();
     if (htmlFromFailing) {
-      html.children.push(htmlFromFailing);
+      if (node.layout.endsWith("-tb")) {
+        html.children.push(createLine(node, [htmlFromFailing]));
+      } else {
+        html.children.push(htmlFromFailing);
+      }
     }
   }
 
   if (html.children.length === 0) {
     return null;
   }
-
-  node[$extra].children = [];
-  delete node[$extra].line;
-  node[$extra].numberInLine = 0;
 
   return html;
 }
@@ -96,13 +107,7 @@ function addHTML(node, html, bbox) {
     case "lr-tb":
     case "rl-tb":
       if (!extra.line || extra.attempt === 1) {
-        extra.line = {
-          name: "div",
-          attributes: {
-            class: [node.layout === "lr-tb" ? "xfaLr" : "xfaRl"],
-          },
-          children: [],
-        };
+        extra.line = createLine(node, []);
         extra.children.push(extra.line);
         extra.numberInLine = 0;
       }
