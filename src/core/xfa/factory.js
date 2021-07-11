@@ -83,8 +83,8 @@ class XFAFactory {
     return null;
   }
 
-  appendFonts(fonts) {
-    this.form[$globalData].fontFinder.add(fonts);
+  appendFonts(fonts, reallyMissingFonts) {
+    this.form[$globalData].fontFinder.add(fonts, reallyMissingFonts);
   }
 
   getPages() {
