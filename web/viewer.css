@@ -1844,6 +1844,10 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
     align-items: center;
   }
 
+  #printContainer > .xfaPrintedPage .xfaPage {
+    position: initial;
+  }
+
   #printContainer > .xfaPrintedPage {
     page-break-after: always;
     page-break-inside: avoid;
