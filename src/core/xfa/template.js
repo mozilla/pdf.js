@@ -268,10 +268,17 @@ function handleBreak(node) {
 function handleOverflow(node, extraNode, space) {
   const root = node[$getTemplateRoot]();
   const saved = root[$extra].noLayoutFailure;
+  const savedMethod = extraNode[$getSubformParent];
+
+  // Replace $getSubformParent to emulate that extraNode is just
+  // under node.
+  extraNode[$getSubformParent] = () => node;
+
   root[$extra].noLayoutFailure = true;
   const res = extraNode[$toHTML](space);
   node[$addHTML](res.html, res.bbox);
   root[$extra].noLayoutFailure = saved;
+  extraNode[$getSubformParent] = savedMethod;
 }
 
 class AppearanceFilter extends StringObject {
@@ -2236,6 +2243,7 @@ class ExclGroup extends XFAObject {
       children,
       attributes,
       attempt: 0,
+      line: null,
       numberInLine: 0,
       availableSpace: {
         width: Math.min(this.w || Infinity, availableSpace.width),
@@ -2298,12 +2306,10 @@ class ExclGroup extends XFAObject {
       attributes.xfaName = this.name;
     }
 
-    const maxRun =
-      this.layout === "lr-tb" || this.layout === "rl-tb"
-        ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
-        : 1;
+    const isLrTb = this.layout === "lr-tb" || this.layout === "rl-tb";
+    const maxRun = isLrTb ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
-      if (this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
+      if (isLrTb && this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
         // If the layout is lr-tb then having attempt equals to
         // MAX_ATTEMPTS_FOR_LRTB_LAYOUT-1 means that we're trying to layout
         // on the next line so this on is empty.
@@ -2318,6 +2324,15 @@ class ExclGroup extends XFAObject {
       }
       if (result.isBreak()) {
         return result;
+      }
+      if (
+        isLrTb &&
+        this[$extra].attempt === 0 &&
+        this[$extra].numberInLine === 0
+      ) {
+        // See comment in Subform::[$toHTML].
+        this[$extra].attempt = maxRun;
+        break;
       }
     }
 
@@ -4646,6 +4661,7 @@ class Subform extends XFAObject {
 
     Object.assign(this[$extra], {
       children,
+      line: null,
       attributes,
       attempt: 0,
       numberInLine: 0,
@@ -4729,12 +4745,10 @@ class Subform extends XFAObject {
       }
     }
 
-    const maxRun =
-      this.layout === "lr-tb" || this.layout === "rl-tb"
-        ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
-        : 1;
+    const isLrTb = this.layout === "lr-tb" || this.layout === "rl-tb";
+    const maxRun = isLrTb ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
-      if (this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
+      if (isLrTb && this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
         // If the layout is lr-tb then having attempt equals to
         // MAX_ATTEMPTS_FOR_LRTB_LAYOUT-1 means that we're trying to layout
         // on the next line so this on is empty.
@@ -4749,6 +4763,22 @@ class Subform extends XFAObject {
       }
       if (result.isBreak()) {
         return result;
+      }
+      if (
+        isLrTb &&
+        this[$extra].attempt === 0 &&
+        this[$extra].numberInLine === 0
+      ) {
+        // We're failing to put the first element on the line so no
+        // need to test on the next line.
+        // The goal is not only to avoid some useless checks but to avoid
+        // bugs too: if a descendant managed to put a node and failed
+        // on the next one, going to the next step here will imply to
+        // visit the descendant again, clear [$extra].children and restart
+        // on the failing node, consequently the first node just disappears
+        // because it has never been flushed.
+        this[$extra].attempt = maxRun;
+        break;
       }
     }
 
