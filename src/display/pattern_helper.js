@@ -19,22 +19,8 @@ import {
   shadow,
   unreachable,
   Util,
+  warn,
 } from "../shared/util.js";
-import { DOMSVGFactory } from "./display_utils.js";
-
-let svgElement;
-
-// TODO: remove this when Firefox ESR supports DOMMatrix.
-function createMatrix(matrix) {
-  if (typeof DOMMatrix !== "undefined") {
-    return new DOMMatrix(matrix);
-  }
-  if (!svgElement) {
-    const svgFactory = new DOMSVGFactory();
-    svgElement = svgFactory.createElement("svg");
-  }
-  return svgElement.createSVGMatrix(matrix);
-}
 
 function applyBoundingBox(ctx, bbox) {
   if (!bbox || typeof Path2D === "undefined") {
@@ -120,8 +106,16 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     tmpCtx.fillStyle = grad;
     tmpCtx.fill();
 
+    const domMatrix = new DOMMatrix(inverse);
+
     const pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
-    pattern.setTransform(createMatrix(inverse));
+    try {
+      pattern.setTransform(domMatrix);
+    } catch (ex) {
+      // Avoid rendering breaking completely in Firefox 78 ESR,
+      // and in Node.js (see issue 13724).
+      warn(`RadialAxialShadingPattern.getPattern: "${ex?.message}".`);
+    }
     return pattern;
   }
 }
@@ -627,7 +621,7 @@ class TilingPattern {
 
     const temporaryPatternCanvas = this.createPatternCanvas(owner);
 
-    let domMatrix = createMatrix(matrix);
+    let domMatrix = new DOMMatrix(matrix);
     // Rescale and so that the ctx.createPattern call generates a pattern with
     // the desired size.
     domMatrix = domMatrix.translate(
@@ -640,10 +634,15 @@ class TilingPattern {
     );
 
     const pattern = ctx.createPattern(temporaryPatternCanvas.canvas, "repeat");
-    pattern.setTransform(domMatrix);
-
+    try {
+      pattern.setTransform(domMatrix);
+    } catch (ex) {
+      // Avoid rendering breaking completely in Firefox 78 ESR,
+      // and in Node.js (see issue 13724).
+      warn(`TilingPattern.getPattern: "${ex?.message}".`);
+    }
     return pattern;
   }
 }
 
-export { createMatrix, getShadingPattern, TilingPattern };
+export { getShadingPattern, TilingPattern };
