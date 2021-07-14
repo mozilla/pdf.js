@@ -122,14 +122,9 @@
   height: 100%;
 }
 
-.xfaTextfield,
-.xfaSelect {
-  background-color: rgba(0, 54, 255, 0.13);
-}
-
 .xfaTextfield:focus,
 .xfaSelect:focus {
-  background-color: transparent;
+  background-color: white;
   outline: none;
 }
 
@@ -140,6 +135,7 @@
   flex: 1 1 0;
   border: none;
   resize: none;
+  background-color: #dee5ff;
 }
 
 .xfaButton {
@@ -247,7 +243,7 @@
 @media print {
   .xfaTextfield,
   .xfaSelect {
-    background-color: transparent;
+    background-color: white;
   }
 
   .xfaSelect {
