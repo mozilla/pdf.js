@@ -478,10 +478,10 @@ class Binder {
         if (dataChildren.length > 0) {
           this._bindOccurrences(child, [dataChildren[0]], null);
         } else if (this.emptyMerge) {
-          const dataChild = new XmlObject(
+          const dataChild = (child[$data] = new XmlObject(
             dataNode[$namespaceId],
             child.name || "root"
-          );
+          ));
           dataNode[$appendChild](dataChild);
           this._bindElement(child, dataChild);
         }
@@ -602,7 +602,10 @@ class Binder {
           if (!match) {
             // We're in matchTemplate mode so create a node in data to reflect
             // what we've in template.
-            match = new XmlObject(dataNode[$namespaceId], child.name);
+            match = child[$data] = new XmlObject(
+              dataNode[$namespaceId],
+              child.name
+            );
             if (this.emptyMerge) {
               match[$consumed] = true;
             }
