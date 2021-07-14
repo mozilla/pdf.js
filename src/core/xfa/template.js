@@ -115,6 +115,16 @@ const MAX_ATTEMPTS_FOR_LRTB_LAYOUT = 2;
 // the loop after having MAX_EMPTY_PAGES empty pages.
 const MAX_EMPTY_PAGES = 3;
 
+function hasMargin(node) {
+  return (
+    node.margin &&
+    (node.margin.topInset ||
+      node.margin.rightInset ||
+      node.margin.bottomInset ||
+      node.margin.leftInset)
+  );
+}
+
 function _setValue(templateNode, value) {
   if (!templateNode.value) {
     const nodeValue = new Value({});
@@ -327,16 +337,16 @@ class Arc extends XFAObject {
       style.fill = "transparent";
     }
     style.strokeWidth = measureToString(
-      edge.presence === "visible" ? Math.round(edge.thickness) : 0
+      edge.presence === "visible" ? edge.thickness : 0
     );
     style.stroke = edgeStyle.color;
     let arc;
     const attributes = {
       xmlns: SVG_NS,
       style: {
-        position: "absolute",
         width: "100%",
         height: "100%",
+        overflow: "visible",
       },
     };
 
@@ -379,11 +389,29 @@ class Arc extends XFAObject {
       });
     }
 
-    return HTMLResult.success({
+    const svg = {
       name: "svg",
       children: [arc],
       attributes,
-    });
+    };
+
+    const parent = this[$getParent]()[$getParent]();
+    if (hasMargin(parent)) {
+      return HTMLResult.success({
+        name: "div",
+        attributes: {
+          style: {
+            display: "inline",
+            width: "100%",
+            height: "100%",
+          },
+        },
+        children: [svg],
+      });
+    }
+
+    svg.attributes.style.position = "absolute";
+    return HTMLResult.success(svg);
   }
 }
 
@@ -3300,8 +3328,7 @@ class Line extends XFAObject {
     const edge = this.edge ? this.edge : new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
-    const thickness =
-      edge.presence === "visible" ? Math.round(edge.thickness) : 0;
+    const thickness = edge.presence === "visible" ? edge.thickness : 0;
     style.strokeWidth = measureToString(thickness);
     style.stroke = edgeStyle.color;
     let x1, y1, x2, y2;
@@ -3334,7 +3361,7 @@ class Line extends XFAObject {
       },
     };
 
-    return HTMLResult.success({
+    const svg = {
       name: "svg",
       children: [line],
       attributes: {
@@ -3342,10 +3369,27 @@ class Line extends XFAObject {
         width,
         height,
         style: {
-          position: "absolute",
+          overflow: "visible",
         },
       },
-    });
+    };
+
+    if (hasMargin(parent)) {
+      return HTMLResult.success({
+        name: "div",
+        attributes: {
+          style: {
+            display: "inline",
+            width: "100%",
+            height: "100%",
+          },
+        },
+        children: [svg],
+      });
+    }
+
+    svg.attributes.style.position = "absolute";
+    return HTMLResult.success(svg);
   }
 }
 
@@ -4204,7 +4248,7 @@ class Rectangle extends XFAObject {
       style.fill = "transparent";
     }
     style.strokeWidth = measureToString(
-      edge.presence === "visible" ? 2 * edge.thickness : 0
+      edge.presence === "visible" ? edge.thickness : 0
     );
     style.stroke = edgeStyle.color;
 
@@ -4227,18 +4271,36 @@ class Rectangle extends XFAObject {
       },
     };
 
-    return HTMLResult.success({
+    const svg = {
       name: "svg",
       children: [rect],
       attributes: {
         xmlns: SVG_NS,
         style: {
-          position: "absolute",
+          overflow: "visible",
         },
         width: "100%",
         height: "100%",
       },
-    });
+    };
+
+    const parent = this[$getParent]()[$getParent]();
+    if (hasMargin(parent)) {
+      return HTMLResult.success({
+        name: "div",
+        attributes: {
+          style: {
+            display: "inline",
+            width: "100%",
+            height: "100%",
+          },
+        },
+        children: [svg],
+      });
+    }
+
+    svg.attributes.style.position = "absolute";
+    return HTMLResult.success(svg);
   }
 }
 
