@@ -1608,6 +1608,21 @@ gulp.task(
 );
 
 gulp.task(
+  "botbrowsertest",
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    function runBotBrowserTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("browser (no reftest)", true)
+      );
+    }
+  )
+);
+
+gulp.task(
   "unittest",
   gulp.series(setTestEnv, "generic", function runUnitTest() {
     return createTestSource("unit");
