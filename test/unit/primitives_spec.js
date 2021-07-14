@@ -50,6 +50,15 @@ describe("primitives", function () {
       expect(firstSubtype).toBe(secondSubtype);
       expect(firstFont).not.toBe(firstSubtype);
     });
+
+    it("should create only one object for *empty* names and cache it", function () {
+      const firstEmpty = Name.get("");
+      const secondEmpty = Name.get("");
+      const normalName = Name.get("string");
+
+      expect(firstEmpty).toBe(secondEmpty);
+      expect(firstEmpty).not.toBe(normalName);
+    });
   });
 
   describe("Cmd", function () {
@@ -490,6 +499,14 @@ describe("primitives", function () {
       const name = Name.get("Font");
       expect(isName(name, "Font")).toEqual(true);
       expect(isName(name, "Subtype")).toEqual(false);
+    });
+
+    it("handles *empty* names, with name check", function () {
+      const emptyName = Name.get("");
+
+      expect(isName(emptyName)).toEqual(true);
+      expect(isName(emptyName, "")).toEqual(true);
+      expect(isName(emptyName, "string")).toEqual(false);
     });
   });
 
