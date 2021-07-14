@@ -178,18 +178,19 @@ class NetworkPdfManager extends BasePdfManager {
   }
 
   async ensure(obj, prop, args) {
-    try {
-      const value = obj[prop];
-      if (typeof value === "function") {
-        return value.apply(obj, args);
+    while (true) {
+      try {
+        const value = obj[prop];
+        if (typeof value === "function") {
+          return value.apply(obj, args);
+        }
+        return value;
+      } catch (ex) {
+        if (!(ex instanceof MissingDataException)) {
+          throw ex;
+        }
+        await this.requestRange(ex.begin, ex.end);
       }
-      return value;
-    } catch (ex) {
-      if (!(ex instanceof MissingDataException)) {
-        throw ex;
-      }
-      await this.requestRange(ex.begin, ex.end);
-      return this.ensure(obj, prop, args);
     }
   }
 
