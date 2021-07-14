@@ -1540,7 +1540,7 @@ class PartialEvaluator {
       timeSlotManager.reset();
 
       const operation = {};
-      let stop, i, ii, cs, name;
+      let stop, i, ii, cs, name, isValidName;
       while (!(stop = timeSlotManager.check())) {
         // The arguments parsed by read() are used beyond this loop, so we
         // cannot reuse the same array on each iteration. Therefore we pass
@@ -1556,8 +1556,10 @@ class PartialEvaluator {
         switch (fn | 0) {
           case OPS.paintXObject:
             // eagerly compile XForm objects
+            isValidName = args[0] instanceof Name;
             name = args[0].name;
-            if (name) {
+
+            if (isValidName) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
                 operatorList.addOp(localImage.fn, localImage.args);
@@ -1568,7 +1570,7 @@ class PartialEvaluator {
 
             next(
               new Promise(function (resolveXObject, rejectXObject) {
-                if (!name) {
+                if (!isValidName) {
                   throw new FormatError("XObject must be referred to by name.");
                 }
 
@@ -1922,8 +1924,10 @@ class PartialEvaluator {
             fn = OPS.shadingFill;
             break;
           case OPS.setGState:
+            isValidName = args[0] instanceof Name;
             name = args[0].name;
-            if (name) {
+
+            if (isValidName) {
               const localGStateObj = localGStateCache.getByName(name);
               if (localGStateObj) {
                 if (localGStateObj.length > 0) {
@@ -1936,7 +1940,7 @@ class PartialEvaluator {
 
             next(
               new Promise(function (resolveGState, rejectGState) {
-                if (!name) {
+                if (!isValidName) {
                   throw new FormatError("GState must be referred to by name.");
                 }
 
@@ -2823,14 +2827,16 @@ class PartialEvaluator {
               xobjs = resources.get("XObject") || Dict.empty;
             }
 
+            var isValidName = args[0] instanceof Name;
             var name = args[0].name;
-            if (name && emptyXObjectCache.getByName(name)) {
+
+            if (isValidName && emptyXObjectCache.getByName(name)) {
               break;
             }
 
             next(
               new Promise(function (resolveXObject, rejectXObject) {
-                if (!name) {
+                if (!isValidName) {
                   throw new FormatError("XObject must be referred to by name.");
                 }
 
@@ -2935,14 +2941,16 @@ class PartialEvaluator {
             );
             return;
           case OPS.setGState:
+            isValidName = args[0] instanceof Name;
             name = args[0].name;
-            if (name && emptyGStateCache.getByName(name)) {
+
+            if (isValidName && emptyGStateCache.getByName(name)) {
               break;
             }
 
             next(
               new Promise(function (resolveGState, rejectGState) {
-                if (!name) {
+                if (!isValidName) {
                   throw new FormatError("GState must be referred to by name.");
                 }
 
