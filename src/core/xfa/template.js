@@ -1150,11 +1150,11 @@ class CheckButton extends XFAObject {
       groupId = container[$uid];
       type = "radio";
       className = "xfaRadio";
-      dataId = container[$data] && container[$data][$uid];
+      dataId = (container[$data] && container[$data][$uid]) || container[$uid];
     } else {
       type = "checkbox";
       className = "xfaCheckbox";
-      dataId = field[$data] && field[$data][$uid];
+      dataId = (field[$data] && field[$data][$uid]) || field[$uid];
     }
 
     const input = {
@@ -1256,7 +1256,7 @@ class ChoiceList extends XFAObject {
     const selectAttributes = {
       class: ["xfaSelect"],
       fieldId: field[$uid],
-      dataId: field[$data] && field[$data][$uid],
+      dataId: (field[$data] && field[$data][$uid]) || field[$uid],
       style,
     };
 
@@ -1493,7 +1493,7 @@ class DateTimeEdit extends XFAObject {
       attributes: {
         type: "text",
         fieldId: field[$uid],
-        dataId: field[$data] && field[$data][$uid],
+        dataId: (field[$data] && field[$data][$uid]) || field[$uid],
         class: ["xfaTextfield"],
         style,
       },
@@ -3508,7 +3508,7 @@ class NumericEdit extends XFAObject {
       attributes: {
         type: "text",
         fieldId: field[$uid],
-        dataId: field[$data] && field[$data][$uid],
+        dataId: (field[$data] && field[$data][$uid]) || field[$uid],
         class: ["xfaTextfield"],
         style,
       },
@@ -5397,7 +5397,7 @@ class TextEdit extends XFAObject {
       html = {
         name: "textarea",
         attributes: {
-          dataId: field[$data] && field[$data][$uid],
+          dataId: (field[$data] && field[$data][$uid]) || field[$uid],
           fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
@@ -5408,7 +5408,7 @@ class TextEdit extends XFAObject {
         name: "input",
         attributes: {
           type: "text",
-          dataId: field[$data] && field[$data][$uid],
+          dataId: (field[$data] && field[$data][$uid]) || field[$uid],
           fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
