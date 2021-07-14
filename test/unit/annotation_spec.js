@@ -2192,8 +2192,8 @@ describe("annotation", function () {
     });
 
     it("should handle checkboxes with export value", async function () {
-      buttonWidgetDict.set("V", Name.get("1"));
-      buttonWidgetDict.set("DV", Name.get("2"));
+      buttonWidgetDict.set("V", Name.get("Checked"));
+      buttonWidgetDict.set("DV", Name.get("Off"));
 
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
@@ -2216,15 +2216,15 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toEqual(true);
-      expect(data.fieldValue).toEqual("1");
-      expect(data.defaultFieldValue).toEqual("2");
+      expect(data.fieldValue).toEqual("Checked");
+      expect(data.defaultFieldValue).toEqual("Off");
       expect(data.radioButton).toEqual(false);
       expect(data.exportValue).toEqual("Checked");
     });
 
     it("should handle checkboxes without export value", async function () {
-      buttonWidgetDict.set("V", Name.get("1"));
-      buttonWidgetDict.set("DV", Name.get("2"));
+      buttonWidgetDict.set("V", Name.get("Checked"));
+      buttonWidgetDict.set("DV", Name.get("Off"));
 
       const buttonWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([
@@ -2239,14 +2239,14 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toEqual(true);
-      expect(data.fieldValue).toEqual("1");
-      expect(data.defaultFieldValue).toEqual("2");
+      expect(data.fieldValue).toEqual("Checked");
+      expect(data.defaultFieldValue).toEqual("Off");
       expect(data.radioButton).toEqual(false);
     });
 
     it("should handle checkboxes without /Off appearance", async function () {
-      buttonWidgetDict.set("V", Name.get("1"));
-      buttonWidgetDict.set("DV", Name.get("2"));
+      buttonWidgetDict.set("V", Name.get("Checked"));
+      buttonWidgetDict.set("DV", Name.get("Off"));
 
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
@@ -2268,8 +2268,8 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toEqual(true);
-      expect(data.fieldValue).toEqual("1");
-      expect(data.defaultFieldValue).toEqual("2");
+      expect(data.fieldValue).toEqual("Checked");
+      expect(data.defaultFieldValue).toEqual("Off");
       expect(data.radioButton).toEqual(false);
       expect(data.exportValue).toEqual("Checked");
     });
