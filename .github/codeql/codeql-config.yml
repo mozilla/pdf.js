@@ -1,4 +1,1 @@
 name: "CodeQL Configuration"
-
-paths-ignore:
-  - 'test/**'
