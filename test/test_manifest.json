@@ -952,6 +952,26 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1720182",
+       "file": "pdfs/xfa_bug1720182.pdf",
+       "md5": "1351f816f0509fe750ca61ef2bd40872",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "RadioButtonList2707": {
+           "value": "1"
+         },
+         "ComplainantFirstname2710": {
+           "value": "Foo"
+         },
+         "ComplainantLastname2711": {
+           "value": "Bar"
+         }
+       }
+    },
     {  "id": "xfa_bug1718740",
        "file": "pdfs/xfa_bug1718740.pdf",
        "md5": "fab4277f2c70fd1edb35f597f5fe6819",

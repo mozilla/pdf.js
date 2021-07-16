@@ -288,7 +288,14 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function rasterizeXfaLayer(ctx, viewport, xfa, fontRules) {
+  function rasterizeXfaLayer(
+    ctx,
+    viewport,
+    xfa,
+    fontRules,
+    annotationStorage,
+    isPrint
+  ) {
     return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
       const svg = document.createElementNS(SVG_NS, "svg:svg");
@@ -316,6 +323,8 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
             xfa,
             div,
             viewport: viewport.clone({ dontFlip: true }),
+            annotationStorage,
+            intent: isPrint ? "print" : "display",
           });
 
           // Some unsupported type of images (e.g. tiff)
@@ -631,6 +640,14 @@ var Driver = (function DriverClosure() {
                 renderPrint = false,
                 renderXfa = false;
 
+              if (task.annotationStorage) {
+                const entries = Object.entries(task.annotationStorage),
+                  docAnnotationStorage = task.pdfDoc.annotationStorage;
+                for (const [key, value] of entries) {
+                  docAnnotationStorage.setValue(key, value);
+                }
+              }
+
               var textLayerCanvas, annotationLayerCanvas;
               var initPromise;
               if (task.type === "text") {
@@ -713,7 +730,9 @@ var Driver = (function DriverClosure() {
                         annotationLayerContext,
                         viewport,
                         xfa,
-                        task.fontRules
+                        task.fontRules,
+                        task.pdfDoc.annotationStorage,
+                        task.renderPrint
                       );
                     });
                   }
@@ -731,11 +750,6 @@ var Driver = (function DriverClosure() {
               };
               if (renderPrint) {
                 if (task.annotationStorage) {
-                  const entries = Object.entries(task.annotationStorage),
-                    docAnnotationStorage = task.pdfDoc.annotationStorage;
-                  for (const [key, value] of entries) {
-                    docAnnotationStorage.setValue(key, value);
-                  }
                   renderContext.includeAnnotationStorage = true;
                 }
                 renderContext.intent = "print";
