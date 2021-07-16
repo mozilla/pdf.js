@@ -1547,7 +1547,7 @@ const PDFViewerApplication = {
       // Note: `isPureXfa === true` implies that `enableXfa = true` was set.
       !pdfDocument.isPureXfa
     ) {
-      console.warn("Warning: XFA is not enabled");
+      console.warn("Warning: XFA support is not enabled");
       this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
