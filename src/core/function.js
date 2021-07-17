@@ -132,11 +132,6 @@ function toNumberArray(arr) {
 }
 
 const PDFFunction = (function PDFFunctionClosure() {
-  const CONSTRUCT_SAMPLED = 0;
-  const CONSTRUCT_INTERPOLATED = 2;
-  const CONSTRUCT_STICHED = 3;
-  const CONSTRUCT_POSTSCRIPT = 4;
-
   return {
     getSampleArray(size, outputSize, bps, stream) {
       let i, ii;
@@ -167,51 +162,23 @@ const PDFFunction = (function PDFFunctionClosure() {
       return array;
     },
 
-    getIR({ xref, isEvalSupported, fn }) {
-      let dict = fn.dict;
-      if (!dict) {
-        dict = fn;
-      }
-
-      const types = [
-        this.constructSampled,
-        null,
-        this.constructInterpolated,
-        this.constructStiched,
-        this.constructPostScript,
-      ];
-
-      const typeNum = dict.get("FunctionType");
-      const typeFn = types[typeNum];
-      if (!typeFn) {
-        throw new FormatError("Unknown type of function");
-      }
-
-      return typeFn.call(this, { xref, isEvalSupported, fn, dict });
-    },
-
-    fromIR({ xref, isEvalSupported, IR }) {
-      const type = IR[0];
-      switch (type) {
-        case CONSTRUCT_SAMPLED:
-          return this.constructSampledFromIR({ xref, isEvalSupported, IR });
-        case CONSTRUCT_INTERPOLATED:
-          return this.constructInterpolatedFromIR({
-            xref,
-            isEvalSupported,
-            IR,
-          });
-        case CONSTRUCT_STICHED:
-          return this.constructStichedFromIR({ xref, isEvalSupported, IR });
-        // case CONSTRUCT_POSTSCRIPT:
-        default:
-          return this.constructPostScriptFromIR({ xref, isEvalSupported, IR });
-      }
-    },
-
     parse({ xref, isEvalSupported, fn }) {
-      const IR = this.getIR({ xref, isEvalSupported, fn });
-      return this.fromIR({ xref, isEvalSupported, IR });
+      const dict = fn.dict || fn;
+      const typeNum = dict.get("FunctionType");
+
+      switch (typeNum) {
+        case 0:
+          return this.constructSampled({ xref, isEvalSupported, fn, dict });
+        case 1:
+          break;
+        case 2:
+          return this.constructInterpolated({ xref, isEvalSupported, dict });
+        case 3:
+          return this.constructStiched({ xref, isEvalSupported, dict });
+        case 4:
+          return this.constructPostScript({ xref, isEvalSupported, fn, dict });
+      }
+      throw new FormatError("Unknown type of function");
     },
 
     parseArray({ xref, isEvalSupported, fnObj }) {
@@ -239,11 +206,15 @@ const PDFFunction = (function PDFFunctionClosure() {
         const out = [];
         let index = 0;
         for (let i = 0; i < inputLength; i += 2) {
-          out[index] = [arr[i], arr[i + 1]];
-          ++index;
+          out[index++] = [arr[i], arr[i + 1]];
         }
         return out;
       }
+      // See chapter 3, page 109 of the PDF reference
+      function interpolate(x, xmin, xmax, ymin, ymax) {
+        return ymin + (x - xmin) * ((ymax - ymin) / (xmax - xmin));
+      }
+
       let domain = toNumberArray(dict.getArray("Domain"));
       let range = toNumberArray(dict.getArray("Range"));
 
@@ -284,47 +255,14 @@ const PDFFunction = (function PDFFunctionClosure() {
       }
 
       const samples = this.getSampleArray(size, outputSize, bps, fn);
+      // const mask = 2 ** bps - 1;
 
-      return [
-        CONSTRUCT_SAMPLED,
-        inputSize,
-        domain,
-        encode,
-        decode,
-        samples,
-        size,
-        outputSize,
-        2 ** bps - 1,
-        range,
-      ];
-    },
-
-    constructSampledFromIR({ xref, isEvalSupported, IR }) {
-      // See chapter 3, page 109 of the PDF reference
-      function interpolate(x, xmin, xmax, ymin, ymax) {
-        return ymin + (x - xmin) * ((ymax - ymin) / (xmax - xmin));
-      }
-
-      return function constructSampledFromIRResult(
-        src,
-        srcOffset,
-        dest,
-        destOffset
-      ) {
+      return function constructSampledFn(src, srcOffset, dest, destOffset) {
         // See chapter 3, page 110 of the PDF reference.
-        const m = IR[1];
-        const domain = IR[2];
-        const encode = IR[3];
-        const decode = IR[4];
-        const samples = IR[5];
-        const size = IR[6];
-        const n = IR[7];
-        // var mask = IR[8];
-        const range = IR[9];
 
         // Building the cube vertices: its part and sample index
         // http://rjwagner49.com/Mathematics/Interpolation.pdf
-        const cubeVertices = 1 << m;
+        const cubeVertices = 1 << inputSize;
         const cubeN = new Float64Array(cubeVertices);
         const cubeVertex = new Uint32Array(cubeVertices);
         let i, j;
@@ -332,10 +270,10 @@ const PDFFunction = (function PDFFunctionClosure() {
           cubeN[j] = 1;
         }
 
-        let k = n,
+        let k = outputSize,
           pos = 1;
         // Map x_i to y_j for 0 <= i < m using the sampled function.
-        for (i = 0; i < m; ++i) {
+        for (i = 0; i < inputSize; ++i) {
           // x_i' = min(max(x_i, Domain_2i), Domain_2i+1)
           const domain_2i = domain[i][0];
           const domain_2i_1 = domain[i][1];
@@ -378,7 +316,7 @@ const PDFFunction = (function PDFFunctionClosure() {
           pos <<= 1;
         }
 
-        for (j = 0; j < n; ++j) {
+        for (j = 0; j < outputSize; ++j) {
           // Sum all cube vertices' samples portions
           let rj = 0;
           for (i = 0; i < cubeVertices; i++) {
@@ -398,28 +336,18 @@ const PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructInterpolated({ xref, isEvalSupported, fn, dict }) {
+    constructInterpolated({ xref, isEvalSupported, dict }) {
       const c0 = toNumberArray(dict.getArray("C0")) || [0];
       const c1 = toNumberArray(dict.getArray("C1")) || [1];
       const n = dict.get("N");
 
-      const length = c0.length;
       const diff = [];
-      for (let i = 0; i < length; ++i) {
+      for (let i = 0, ii = c0.length; i < ii; ++i) {
         diff.push(c1[i] - c0[i]);
       }
-
-      return [CONSTRUCT_INTERPOLATED, c0, diff, n];
-    },
-
-    constructInterpolatedFromIR({ xref, isEvalSupported, IR }) {
-      const c0 = IR[1];
-      const diff = IR[2];
-      const n = IR[3];
-
       const length = diff.length;
 
-      return function constructInterpolatedFromIRResult(
+      return function constructInterpolatedFn(
         src,
         srcOffset,
         dest,
@@ -433,7 +361,7 @@ const PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructStiched({ xref, isEvalSupported, fn, dict }) {
+    constructStiched({ xref, isEvalSupported, dict }) {
       const domain = toNumberArray(dict.getArray("Domain"));
 
       if (!domain) {
@@ -455,23 +383,9 @@ const PDFFunction = (function PDFFunctionClosure() {
 
       const bounds = toNumberArray(dict.getArray("Bounds"));
       const encode = toNumberArray(dict.getArray("Encode"));
-
-      return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
-    },
-
-    constructStichedFromIR({ xref, isEvalSupported, IR }) {
-      const domain = IR[1];
-      const bounds = IR[2];
-      const encode = IR[3];
-      const fns = IR[4];
       const tmpBuf = new Float32Array(1);
 
-      return function constructStichedFromIRResult(
-        src,
-        srcOffset,
-        dest,
-        destOffset
-      ) {
+      return function constructStichedFn(src, srcOffset, dest, destOffset) {
         const clip = function constructStichedFromIRClip(v, min, max) {
           if (v > max) {
             v = max;
@@ -533,14 +447,6 @@ const PDFFunction = (function PDFFunctionClosure() {
       const parser = new PostScriptParser(lexer);
       const code = parser.parse();
 
-      return [CONSTRUCT_POSTSCRIPT, domain, range, code];
-    },
-
-    constructPostScriptFromIR({ xref, isEvalSupported, IR }) {
-      const domain = IR[1];
-      const range = IR[2];
-      const code = IR[3];
-
       if (isEvalSupported && IsEvalSupportedCached.value) {
         const compiled = new PostScriptCompiler().compile(code, domain, range);
         if (compiled) {
@@ -571,12 +477,7 @@ const PDFFunction = (function PDFFunctionClosure() {
       let cache_available = MAX_CACHE_SIZE;
       const tmpBuf = new Float32Array(numInputs);
 
-      return function constructPostScriptFromIRResult(
-        src,
-        srcOffset,
-        dest,
-        destOffset
-      ) {
+      return function constructPostScriptFn(src, srcOffset, dest, destOffset) {
         let i, value;
         let key = "";
         const input = tmpBuf;
