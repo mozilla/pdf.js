@@ -2082,6 +2082,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       // The /Off appearance is optional.
       exportValues.push("Off");
     }
+    // Don't use a "V" entry pointing to a non-existent appearance state,
+    // see e.g. bug1720411.pdf where it's an *empty* Name-instance.
+    if (!exportValues.includes(this.data.fieldValue)) {
+      this.data.fieldValue = null;
+    }
     if (exportValues.length !== 2) {
       return;
     }
