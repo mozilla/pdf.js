@@ -366,12 +366,16 @@ class Page {
 
         // Collect the operator list promises for the annotations. Each promise
         // is resolved with the complete operator list for a single annotation.
+        const annotationIntent = intent.startsWith("oplist-")
+          ? intent.split("-")[1]
+          : intent;
         const opListPromises = [];
         for (const annotation of annotations) {
           if (
-            (intent === "display" &&
+            (annotationIntent === "display" &&
               annotation.mustBeViewed(annotationStorage)) ||
-            (intent === "print" && annotation.mustBePrinted(annotationStorage))
+            (annotationIntent === "print" &&
+              annotation.mustBePrinted(annotationStorage))
           ) {
             opListPromises.push(
               annotation
