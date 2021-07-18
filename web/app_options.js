@@ -194,7 +194,7 @@ const defaultOptions = {
   },
   enableXfa: {
     /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),
     kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   fontExtraProperties: {
