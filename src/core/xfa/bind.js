@@ -198,34 +198,36 @@ class Binder {
         continue;
       }
 
-      const [node] = searchNode(
+      const nodes = searchNode(
         this.root,
         dataNode,
         ref,
         false /* = dotDotAllowed */,
         false /* = useCache */
       );
-      if (!node) {
+      if (!nodes) {
         warn(`XFA - Invalid reference: ${ref}.`);
         continue;
       }
+      const [node] = nodes;
 
       if (!node[$isDescendent](this.data)) {
         warn(`XFA - Invalid node: must be a data node.`);
         continue;
       }
 
-      const [targetNode] = searchNode(
+      const targetNodes = searchNode(
         this.root,
         formNode,
         target,
         false /* = dotDotAllowed */,
         false /* = useCache */
       );
-      if (!targetNode) {
+      if (!targetNodes) {
         warn(`XFA - Invalid target: ${target}.`);
         continue;
       }
+      const [targetNode] = targetNodes;
 
       if (!targetNode[$isDescendent](formNode)) {
         warn(`XFA - Invalid target: must be a property or subproperty.`);
@@ -337,34 +339,36 @@ class Binder {
           continue;
         }
 
-        const [labelNode] = searchNode(
+        const labelNodes = searchNode(
           this.root,
           node,
           labelRef,
           true /* = dotDotAllowed */,
           false /* = useCache */
         );
-        if (!labelNode) {
+        if (!labelNodes) {
           warn(`XFA - Invalid label: ${labelRef}.`);
           continue;
         }
+        const [labelNode] = labelNodes;
 
         if (!labelNode[$isDescendent](this.datasets)) {
           warn(`XFA - Invalid label: must be a datasets child.`);
           continue;
         }
 
-        const [valueNode] = searchNode(
+        const valueNodes = searchNode(
           this.root,
           node,
           valueRef,
           true /* = dotDotAllowed */,
           false /* = useCache */
         );
-        if (!valueNode) {
+        if (!valueNodes) {
           warn(`XFA - Invalid value: ${valueRef}.`);
           continue;
         }
+        const [valueNode] = valueNodes;
 
         if (!valueNode[$isDescendent](this.datasets)) {
           warn(`XFA - Invalid value: must be a datasets child.`);
