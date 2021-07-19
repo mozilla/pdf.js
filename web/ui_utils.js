@@ -779,7 +779,7 @@ class EventBus {
         this._off(eventName, listener);
       }
       if (external) {
-        (externalListeners ||= []).push(listener);
+        (externalListeners ||= new Set()).add(listener);
         continue;
       }
       listener.apply(null, args);
