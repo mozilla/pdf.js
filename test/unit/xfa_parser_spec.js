@@ -1354,5 +1354,50 @@ describe("XFAParser", function () {
 
       expect(searchNode(data, data, "root")[0][$dump]()).toEqual(expected);
     });
+
+    it("should make a binding with a bindItems", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="A" mergeMode="matchTemplate">
+      <subform name="B">
+        <field name="C">
+          <ui>
+            <choicelist/>
+          </ui>
+          <bindItems ref="xfa.datasets.foo.bar[*]" labelRef="$" valueRef="oof"/>
+        </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <foo>
+      <bar oof="a">1</bar>
+      <bar oof="b">2</bar>
+      <bar oof="c">3</bar>
+      <bar oof="d">4</bar>
+      <bar oof="e">5</bar>
+    </foo>
+    <xfa:data>
+      <A><B></B></A>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "A.B.C.items[0].text[*]").map(
+          x => x[$dump]().$content
+        )
+      ).toEqual(["1", "2", "3", "4", "5"]);
+      expect(
+        searchNode(form, form, "A.B.C.items[1].text[*]").map(
+          x => x[$dump]().$content
+        )
+      ).toEqual(["a", "b", "c", "d", "e"]);
+    });
   });
 });
