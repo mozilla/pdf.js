@@ -745,6 +745,10 @@ class XFAAttribute {
     return true;
   }
 
+  [$getDataValue]() {
+    return this[$content].trim();
+  }
+
   [$setValue](value) {
     value = value.value || "";
     this[$content] = value.toString();
