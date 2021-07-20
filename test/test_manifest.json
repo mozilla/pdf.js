@@ -1347,6 +1347,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue13748",
+       "file": "pdfs/issue13748.pdf",
+       "md5": "de0e4dde2890b9ff145a3184831bae02",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "issue13756",
        "file": "pdfs/issue13756.pdf",
        "md5": "67040c6df3b5039fcbc81bf63b7c7f98",
