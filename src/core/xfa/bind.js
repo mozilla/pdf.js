@@ -616,6 +616,8 @@ class Binder {
             dataNode[$appendChild](match);
 
             // Don't bind the value in newly created node because it's empty.
+            this._setProperties(child, match);
+            this._bindItems(child, match);
             this._bindElement(child, match);
             continue;
           }
