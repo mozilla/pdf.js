@@ -5288,13 +5288,14 @@ class Template extends XFAObject {
           } else if (target instanceof ContentArea) {
             const index = contentAreas.findIndex(e => e === target);
             if (index !== -1) {
+              // In the next loop iteration `i` will be incremented, note the
+              // `continue` just below, hence we need to subtract one here.
               i = index - 1;
             } else {
               targetPageArea = target[$getParent]();
-              startIndex =
-                targetPageArea.contentArea.children.findIndex(
-                  e => e === target
-                ) - 1;
+              startIndex = targetPageArea.contentArea.children.findIndex(
+                e => e === target
+              );
             }
           }
           continue;
