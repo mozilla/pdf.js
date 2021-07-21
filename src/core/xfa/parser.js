@@ -118,12 +118,12 @@ class XFAParser extends XMLParserBase {
     return [namespace, prefixes, attributeObj];
   }
 
-  _getNameAndPrefix(name) {
+  _getNameAndPrefix(name, nsAgnostic) {
     const i = name.indexOf(":");
     if (i === -1) {
       return [name, null];
     }
-    return [name.substring(i + 1), name.substring(0, i)];
+    return [name.substring(i + 1), nsAgnostic ? "" : name.substring(0, i)];
   }
 
   onBeginElement(tagName, attributes, isEmpty) {
@@ -131,7 +131,10 @@ class XFAParser extends XMLParserBase {
       attributes,
       tagName
     );
-    const [name, nsPrefix] = this._getNameAndPrefix(tagName);
+    const [name, nsPrefix] = this._getNameAndPrefix(
+      tagName,
+      this._builder.isNsAgnostic()
+    );
     const node = this._builder.build({
       nsPrefix,
       name,

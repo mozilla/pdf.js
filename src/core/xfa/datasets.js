@@ -15,6 +15,7 @@
 
 import {
   $appendChild,
+  $isNsAgnostic,
   $namespaceId,
   $nodeName,
   $onChild,
@@ -28,6 +29,10 @@ const DATASETS_NS_ID = NamespaceIds.datasets.id;
 class Data extends XmlObject {
   constructor(attributes) {
     super(DATASETS_NS_ID, "data", attributes);
+  }
+
+  [$isNsAgnostic]() {
+    return true;
   }
 }
 
