@@ -5623,6 +5623,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug1721218_reduced",
+       "file": "pdfs/bug1721218_reduced.pdf",
+       "md5": "20ee3e9500d8f5f5e532ec2edfaaaaaa",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "pr8491",
        "file": "pdfs/pr8491.pdf",
        "md5": "36ea2e28cd77e9e70731f574ab27cbe0",
