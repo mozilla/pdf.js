@@ -1314,6 +1314,35 @@ class PartialEvaluator {
     });
   }
 
+  parseShading({
+    keyObj,
+    shading,
+    resources,
+    localColorSpaceCache,
+    localShadingPatternCache,
+    matrix = null,
+  }) {
+    // Shadings and patterns may be referenced by the same name but the resource
+    // dictionary could be different so we can't use the name for the cache key.
+    let id = localShadingPatternCache.get(keyObj);
+    if (!id) {
+      var shadingFill = Pattern.parseShading(
+        shading,
+        matrix,
+        this.xref,
+        resources,
+        this.handler,
+        this._pdfFunctionFactory,
+        localColorSpaceCache
+      );
+      const patternIR = shadingFill.getIR();
+      id = `pattern_${this.idFactory.createObjId()}`;
+      localShadingPatternCache.set(keyObj, id);
+      this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
+    }
+    return id;
+  }
+
   handleColorN(
     operatorList,
     fn,
@@ -1323,7 +1352,8 @@ class PartialEvaluator {
     resources,
     task,
     localColorSpaceCache,
-    localTilingPatternCache
+    localTilingPatternCache,
+    localShadingPatternCache
   ) {
     // compile tiling patterns
     const patternName = args.pop();
@@ -1350,7 +1380,7 @@ class PartialEvaluator {
       //       if and only if there are PDF documents where doing so would
       //       significantly improve performance.
 
-      let pattern = patterns.get(name);
+      const pattern = patterns.get(name);
       if (pattern) {
         const dict = isStream(pattern) ? pattern.dict : pattern;
         const typeNum = dict.get("PatternType");
@@ -1371,16 +1401,15 @@ class PartialEvaluator {
         } else if (typeNum === PatternType.SHADING) {
           const shading = dict.get("Shading");
           const matrix = dict.getArray("Matrix");
-          pattern = Pattern.parseShading(
+          const objId = this.parseShading({
+            keyObj: pattern,
             shading,
             matrix,
-            this.xref,
             resources,
-            this.handler,
-            this._pdfFunctionFactory,
-            localColorSpaceCache
-          );
-          operatorList.addOp(fn, pattern.getIR());
+            localColorSpaceCache,
+            localShadingPatternCache,
+          });
+          operatorList.addOp(fn, ["Shading", objId]);
           return undefined;
         }
         throw new FormatError(`Unknown PatternType: ${typeNum}`);
@@ -1513,6 +1542,7 @@ class PartialEvaluator {
     const localColorSpaceCache = new LocalColorSpaceCache();
     const localGStateCache = new LocalGStateCache();
     const localTilingPatternCache = new LocalTilingPatternCache();
+    const localShadingPatternCache = new Map();
 
     const xobjs = resources.get("XObject") || Dict.empty;
     const patterns = resources.get("Pattern") || Dict.empty;
@@ -1869,7 +1899,8 @@ class PartialEvaluator {
                   resources,
                   task,
                   localColorSpaceCache,
-                  localTilingPatternCache
+                  localTilingPatternCache,
+                  localShadingPatternCache
                 )
               );
               return;
@@ -1890,7 +1921,8 @@ class PartialEvaluator {
                   resources,
                   task,
                   localColorSpaceCache,
-                  localTilingPatternCache
+                  localTilingPatternCache,
+                  localShadingPatternCache
                 )
               );
               return;
@@ -1909,18 +1941,14 @@ class PartialEvaluator {
             if (!shading) {
               throw new FormatError("No shading object found");
             }
-
-            var shadingFill = Pattern.parseShading(
+            const patternId = self.parseShading({
+              keyObj: shading,
               shading,
-              null,
-              xref,
               resources,
-              self.handler,
-              self._pdfFunctionFactory,
-              localColorSpaceCache
-            );
-            var patternIR = shadingFill.getIR();
-            args = [patternIR];
+              localColorSpaceCache,
+              localShadingPatternCache,
+            });
+            args = [patternId];
             fn = OPS.shadingFill;
             break;
           case OPS.setGState:

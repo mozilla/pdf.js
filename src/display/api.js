@@ -2707,6 +2707,9 @@ class WorkerTransport {
             pageProxy.cleanupAfterRender = true;
           }
           break;
+        case "Pattern":
+          pageProxy.objs.resolve(id, imageData);
+          break;
         default:
           throw new Error(`Got unknown object type ${type}`);
       }
