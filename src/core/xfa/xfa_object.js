@@ -60,6 +60,7 @@ const $isCDATAXml = Symbol();
 const $isBindable = Symbol();
 const $isDataValue = Symbol();
 const $isDescendent = Symbol();
+const $isNsAgnostic = Symbol();
 const $isSplittable = Symbol();
 const $isThereMoreWidth = Symbol();
 const $isTransparent = Symbol();
@@ -158,6 +159,10 @@ class XFAObject {
       this.hasOwnProperty(child[$nodeName]) &&
       child[$namespaceId] === this[$namespaceId]
     );
+  }
+
+  [$isNsAgnostic]() {
+    return false;
   }
 
   [$acceptWhitespace]() {
@@ -1087,6 +1092,7 @@ export {
   $isCDATAXml,
   $isDataValue,
   $isDescendent,
+  $isNsAgnostic,
   $isSplittable,
   $isThereMoreWidth,
   $isTransparent,
