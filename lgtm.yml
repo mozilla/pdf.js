@@ -1,3 +1,9 @@
+path_classifiers:
+  test:
+    - exclude: test/font
+    - exclude: test/integration
+    - exclude: test/unit
+
 queries:
   # Already handled by the "no-unused-vars" ESLint rule.
   - exclude: js/unused-local-variable
