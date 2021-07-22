@@ -2548,6 +2548,37 @@ class Field extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    if (!this.ui) {
+      // It's allowed to not have an ui, specs say:
+      //   If the UI element contains no children or is not present,
+      //   the application chooses a default user interface for the
+      //   container, based on the type of the container's content.
+
+      this.ui = new Ui({});
+      this.ui[$globalData] = this[$globalData];
+      this[$appendChild](this.ui);
+      let node;
+
+      // The items element can have 2 element max and
+      // according to the items specs it's likely a good
+      // way to guess the correct ui type.
+      switch (this.items.children.length) {
+        case 0:
+          node = new TextEdit({});
+          this.ui.textEdit = node;
+          break;
+        case 1:
+          node = new CheckButton({});
+          this.ui.checkButton = node;
+          break;
+        case 2:
+          node = new ChoiceList({});
+          this.ui.choiceList = node;
+          break;
+      }
+      this.ui[$appendChild](node);
+    }
+
     setTabIndex(this);
 
     if (
@@ -2689,7 +2720,7 @@ class Field extends XFAObject {
     const borderStyle = this.border ? this.border[$toStyle]() : null;
 
     const bbox = computeBbox(this, html, availableSpace);
-    const ui = this.ui ? this.ui[$toHTML]().html : null;
+    const ui = this.ui[$toHTML]().html;
     if (!ui) {
       Object.assign(style, borderStyle);
       return HTMLResult.success(createWrapper(this, html), bbox);
