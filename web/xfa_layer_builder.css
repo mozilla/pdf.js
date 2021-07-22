@@ -55,6 +55,14 @@
   pointer-events: none;
 }
 
+.xfaLayer svg {
+  pointer-events: none;
+}
+
+.xfaLayer svg * {
+  pointer-events: none;
+}
+
 .xfaLayer a {
   color: blue;
 }
