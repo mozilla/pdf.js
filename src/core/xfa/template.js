@@ -1939,6 +1939,10 @@ class Draw extends XFAObject {
     const classNames = ["xfaDraw"];
     if (this.font) {
       classNames.push("xfaFont");
+      if (this.font.underline !== 0) {
+        classNames.push("xfaUnderline");
+        delete style.textDecoration;
+      }
     }
     if (isPrintOnly(this)) {
       classNames.push("xfaPrintOnly");

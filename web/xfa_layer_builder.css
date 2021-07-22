@@ -87,6 +87,10 @@
   line-height: inherit;
 }
 
+.xfaUnderline p {
+  text-decoration: underline;
+}
+
 .xfaLayer div {
   pointer-events: none;
 }
