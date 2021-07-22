@@ -1,8 +1,7 @@
 path_classifiers:
   test:
-    - exclude: test/font
-    - exclude: test/integration
-    - exclude: test/unit
+    - exclude: test
+    - test/resources
 
 queries:
   # Already handled by the "no-unused-vars" ESLint rule.
