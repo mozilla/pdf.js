@@ -56,41 +56,20 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     this._r0 = IR[6];
     this._r1 = IR[7];
     this._matrix = IR[8];
+    this._patternCache = null;
   }
 
-  getPattern(ctx, owner, inverse, shadingFill = false) {
-    const tmpCanvas = owner.cachedCanvases.getCanvas(
-      "pattern",
-      owner.ctx.canvas.width,
-      owner.ctx.canvas.height,
-      true
-    );
-
-    const tmpCtx = tmpCanvas.context;
-    tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-    tmpCtx.beginPath();
-    tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-
-    if (!shadingFill) {
-      tmpCtx.setTransform.apply(tmpCtx, owner.baseTransform);
-      if (this._matrix) {
-        tmpCtx.transform.apply(tmpCtx, this._matrix);
-      }
-    } else {
-      tmpCtx.setTransform.apply(tmpCtx, ctx.mozCurrentTransform);
-    }
-    applyBoundingBox(tmpCtx, this._bbox);
-
+  _createGradient(ctx) {
     let grad;
     if (this._type === "axial") {
-      grad = tmpCtx.createLinearGradient(
+      grad = ctx.createLinearGradient(
         this._p0[0],
         this._p0[1],
         this._p1[0],
         this._p1[1]
       );
     } else if (this._type === "radial") {
-      grad = tmpCtx.createRadialGradient(
+      grad = ctx.createRadialGradient(
         this._p0[0],
         this._p0[1],
         this._r0,
@@ -103,18 +82,52 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     for (const colorStop of this._colorStops) {
       grad.addColorStop(colorStop[0], colorStop[1]);
     }
-    tmpCtx.fillStyle = grad;
-    tmpCtx.fill();
+    return grad;
+  }
 
-    const domMatrix = new DOMMatrix(inverse);
+  getPattern(ctx, owner, inverse, shadingFill = false) {
+    let pattern;
+    if (this._patternCache) {
+      pattern = this._patternCache;
+    } else {
+      if (!shadingFill) {
+        const tmpCanvas = owner.cachedCanvases.getCanvas(
+          "pattern",
+          owner.ctx.canvas.width,
+          owner.ctx.canvas.height,
+          true
+        );
 
-    const pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
-    try {
-      pattern.setTransform(domMatrix);
-    } catch (ex) {
-      // Avoid rendering breaking completely in Firefox 78 ESR,
-      // and in Node.js (see issue 13724).
-      warn(`RadialAxialShadingPattern.getPattern: "${ex?.message}".`);
+        const tmpCtx = tmpCanvas.context;
+        tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
+        tmpCtx.beginPath();
+        tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
+
+        tmpCtx.setTransform.apply(tmpCtx, owner.baseTransform);
+        if (this._matrix) {
+          tmpCtx.transform.apply(tmpCtx, this._matrix);
+        }
+        applyBoundingBox(tmpCtx, this._bbox);
+
+        tmpCtx.fillStyle = this._createGradient(tmpCtx);
+        tmpCtx.fill();
+
+        pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
+      } else {
+        applyBoundingBox(ctx, this._bbox);
+        pattern = this._createGradient(ctx);
+      }
+      this._patternCache = pattern;
+    }
+    if (!shadingFill) {
+      const domMatrix = new DOMMatrix(inverse);
+      try {
+        pattern.setTransform(domMatrix);
+      } catch (ex) {
+        // Avoid rendering breaking completely in Firefox 78 ESR,
+        // and in Node.js (see issue 13724).
+        warn(`RadialAxialShadingPattern.getPattern: "${ex?.message}".`);
+      }
     }
     return pattern;
   }
