@@ -207,33 +207,36 @@ class PDFPageView {
     this.zoomLayer = null;
   }
 
-  reset(keepZoomLayer = false, keepAnnotations = false) {
-    this.cancelRendering(keepAnnotations);
+  reset({
+    keepZoomLayer = false,
+    keepAnnotationLayer = false,
+    keepXfaLayer = false,
+  } = {}) {
+    this.cancelRendering({ keepAnnotationLayer, keepXfaLayer });
     this.renderingState = RenderingStates.INITIAL;
 
     const div = this.div;
     div.style.width = Math.floor(this.viewport.width) + "px";
     div.style.height = Math.floor(this.viewport.height) + "px";
 
-    const childNodes = div.childNodes;
-    const currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
-    const currentAnnotationNode =
-      (keepAnnotations && this.annotationLayer?.div) || null;
-    const currentXfaLayerNode = this.xfaLayer?.div || null;
+    const childNodes = div.childNodes,
+      zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
+      annotationLayerNode =
+        (keepAnnotationLayer && this.annotationLayer?.div) || null,
+      xfaLayerNode = (keepXfaLayer && this.xfaLayer?.div) || null;
     for (let i = childNodes.length - 1; i >= 0; i--) {
       const node = childNodes[i];
-      if (
-        currentZoomLayerNode === node ||
-        currentAnnotationNode === node ||
-        currentXfaLayerNode === node
-      ) {
-        continue;
+      switch (node) {
+        case zoomLayerNode:
+        case annotationLayerNode:
+        case xfaLayerNode:
+          continue;
       }
       div.removeChild(node);
     }
     div.removeAttribute("data-loaded");
 
-    if (currentAnnotationNode) {
+    if (annotationLayerNode) {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.annotationLayer.hide();
@@ -242,7 +245,16 @@ class PDFPageView {
       this.annotationLayer = null;
     }
 
-    if (!currentZoomLayerNode) {
+    if (xfaLayerNode) {
+      // Hide the XFA layer until all elements are resized
+      // so they are not displayed on the already resized page.
+      this.xfaLayer.hide();
+    } else if (this.xfaLayer) {
+      this.xfaLayer.cancel();
+      this.xfaLayer = null;
+    }
+
+    if (!zoomLayerNode) {
       if (this.canvas) {
         this.paintedViewportMap.delete(this.canvas);
         // Zeroing the width and height causes Firefox to release graphics
@@ -284,7 +296,11 @@ class PDFPageView {
     });
 
     if (this.svg) {
-      this.cssTransform(this.svg, true);
+      this.cssTransform({
+        target: this.svg,
+        redrawAnnotationLayer: true,
+        redrawXfaLayer: true,
+      });
 
       this.eventBus.dispatch("pagerendered", {
         source: this,
@@ -313,7 +329,11 @@ class PDFPageView {
         this.useOnlyCssZoom ||
         (this.hasRestrictedScaling && isScalingRestricted)
       ) {
-        this.cssTransform(this.canvas, true);
+        this.cssTransform({
+          target: this.canvas,
+          redrawAnnotationLayer: true,
+          redrawXfaLayer: true,
+        });
 
         this.eventBus.dispatch("pagerendered", {
           source: this,
@@ -330,16 +350,20 @@ class PDFPageView {
       }
     }
     if (this.zoomLayer) {
-      this.cssTransform(this.zoomLayer.firstChild);
+      this.cssTransform({ target: this.zoomLayer.firstChild });
     }
-    this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
+    this.reset({
+      keepZoomLayer: true,
+      keepAnnotationLayer: true,
+      keepXfaLayer: true,
+    });
   }
 
   /**
    * PLEASE NOTE: Most likely you want to use the `this.reset()` method,
    *              rather than calling this one directly.
    */
-  cancelRendering(keepAnnotations = false) {
+  cancelRendering({ keepAnnotationLayer = false, keepXfaLayer = false } = {}) {
     if (this.paintTask) {
       this.paintTask.cancel();
       this.paintTask = null;
@@ -350,9 +374,13 @@ class PDFPageView {
       this.textLayer.cancel();
       this.textLayer = null;
     }
-    if (!keepAnnotations && this.annotationLayer) {
+    if (!keepAnnotationLayer && this.annotationLayer) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
+    }
+    if (!keepXfaLayer && this.xfaLayer) {
+      this.xfaLayer.cancel();
+      this.xfaLayer = null;
     }
     if (this._onTextLayerRendered) {
       this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
@@ -360,7 +388,11 @@ class PDFPageView {
     }
   }
 
-  cssTransform(target, redrawAnnotations = false) {
+  cssTransform({
+    target,
+    redrawAnnotationLayer = false,
+    redrawXfaLayer = false,
+  }) {
     // Scale target (canvas or svg), its wrapper and page container.
     const width = this.viewport.width;
     const height = this.viewport.height;
@@ -429,11 +461,10 @@ class PDFPageView {
       textLayerDiv.style.transformOrigin = "0% 0%";
     }
 
-    if (redrawAnnotations && this.annotationLayer) {
+    if (redrawAnnotationLayer && this.annotationLayer) {
       this._renderAnnotationLayer();
     }
-
-    if (this.xfaLayer) {
+    if (redrawXfaLayer && this.xfaLayer) {
       this._renderXfaLayer();
     }
   }
