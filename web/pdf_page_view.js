@@ -240,18 +240,11 @@ class PDFPageView {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.annotationLayer.hide();
-    } else if (this.annotationLayer) {
-      this.annotationLayer.cancel();
-      this.annotationLayer = null;
     }
-
     if (xfaLayerNode) {
       // Hide the XFA layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.xfaLayer.hide();
-    } else if (this.xfaLayer) {
-      this.xfaLayer.cancel();
-      this.xfaLayer = null;
     }
 
     if (!zoomLayerNode) {
@@ -374,11 +367,14 @@ class PDFPageView {
       this.textLayer.cancel();
       this.textLayer = null;
     }
-    if (!keepAnnotationLayer && this.annotationLayer) {
+    if (
+      this.annotationLayer &&
+      (!keepAnnotationLayer || !this.annotationLayer.div)
+    ) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
     }
-    if (!keepXfaLayer && this.xfaLayer) {
+    if (this.xfaLayer && (!keepXfaLayer || !this.xfaLayer.div)) {
       this.xfaLayer.cancel();
       this.xfaLayer = null;
     }
