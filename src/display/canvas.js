@@ -872,6 +872,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.markedContentStack = [];
       this.optionalContentConfig = optionalContentConfig;
       this.cachedCanvases = new CachedCanvases(this.canvasFactory);
+      this.cachedPatterns = new Map();
       if (canvasCtx) {
         // NOTE: if mozCurrentTransform is polyfilled, then the current state of
         // the transformation must already be set in canvasCtx._transformMatrix.
@@ -1025,6 +1026,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       this.cachedCanvases.clear();
+      this.cachedPatterns.clear();
 
       if (this.imageLayer) {
         this.imageLayer.endLayout();
@@ -2132,7 +2134,7 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
           baseTransform
         );
       } else {
-        pattern = getShadingPattern(IR);
+        pattern = this._getPattern(IR[1]);
       }
       return pattern;
     }
@@ -2159,14 +2161,23 @@ const CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.patternFill = false;
     }
 
-    shadingFill(patternIR) {
+    _getPattern(objId) {
+      if (this.cachedPatterns.has(objId)) {
+        return this.cachedPatterns.get(objId);
+      }
+      const pattern = getShadingPattern(this.objs.get(objId));
+      this.cachedPatterns.set(objId, pattern);
+      return pattern;
+    }
+
+    shadingFill(objId) {
       if (!this.contentVisible) {
         return;
       }
       const ctx = this.ctx;
 
       this.save();
-      const pattern = getShadingPattern(patternIR);
+      const pattern = this._getPattern(objId);
       ctx.fillStyle = pattern.getPattern(
         ctx,
         this,
