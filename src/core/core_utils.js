@@ -58,6 +58,8 @@ class MissingDataException extends BaseException {
   }
 }
 
+class ParserEOFException extends BaseException {}
+
 class XRefEntryException extends BaseException {}
 
 class XRefParseException extends BaseException {}
@@ -450,6 +452,7 @@ export {
   isWhiteSpace,
   log2,
   MissingDataException,
+  ParserEOFException,
   parseXFAPath,
   readInt8,
   readUint16,
