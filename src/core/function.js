@@ -517,72 +517,69 @@ function isPDFFunction(v) {
   return fnDict.has("FunctionType");
 }
 
-const PostScriptStack = (function PostScriptStackClosure() {
-  const MAX_STACK_SIZE = 100;
+class PostScriptStack {
+  static get MAX_STACK_SIZE() {
+    return shadow(this, "MAX_STACK_SIZE", 100);
+  }
 
-  // eslint-disable-next-line no-shadow
-  class PostScriptStack {
-    constructor(initialStack) {
-      this.stack = !initialStack
-        ? []
-        : Array.prototype.slice.call(initialStack, 0);
+  constructor(initialStack) {
+    this.stack = !initialStack
+      ? []
+      : Array.prototype.slice.call(initialStack, 0);
+  }
+
+  push(value) {
+    if (this.stack.length >= PostScriptStack.MAX_STACK_SIZE) {
+      throw new Error("PostScript function stack overflow.");
     }
+    this.stack.push(value);
+  }
 
-    push(value) {
-      if (this.stack.length >= MAX_STACK_SIZE) {
-        throw new Error("PostScript function stack overflow.");
-      }
-      this.stack.push(value);
+  pop() {
+    if (this.stack.length <= 0) {
+      throw new Error("PostScript function stack underflow.");
     }
+    return this.stack.pop();
+  }
 
-    pop() {
-      if (this.stack.length <= 0) {
-        throw new Error("PostScript function stack underflow.");
-      }
-      return this.stack.pop();
+  copy(n) {
+    if (this.stack.length + n >= PostScriptStack.MAX_STACK_SIZE) {
+      throw new Error("PostScript function stack overflow.");
     }
-
-    copy(n) {
-      if (this.stack.length + n >= MAX_STACK_SIZE) {
-        throw new Error("PostScript function stack overflow.");
-      }
-      const stack = this.stack;
-      for (let i = stack.length - n, j = n - 1; j >= 0; j--, i++) {
-        stack.push(stack[i]);
-      }
-    }
-
-    index(n) {
-      this.push(this.stack[this.stack.length - n - 1]);
-    }
-
-    // rotate the last n stack elements p times
-    roll(n, p) {
-      const stack = this.stack;
-      const l = stack.length - n;
-      const r = stack.length - 1;
-      const c = l + (p - Math.floor(p / n) * n);
-
-      for (let i = l, j = r; i < j; i++, j--) {
-        const t = stack[i];
-        stack[i] = stack[j];
-        stack[j] = t;
-      }
-      for (let i = l, j = c - 1; i < j; i++, j--) {
-        const t = stack[i];
-        stack[i] = stack[j];
-        stack[j] = t;
-      }
-      for (let i = c, j = r; i < j; i++, j--) {
-        const t = stack[i];
-        stack[i] = stack[j];
-        stack[j] = t;
-      }
+    const stack = this.stack;
+    for (let i = stack.length - n, j = n - 1; j >= 0; j--, i++) {
+      stack.push(stack[i]);
     }
   }
 
-  return PostScriptStack;
-})();
+  index(n) {
+    this.push(this.stack[this.stack.length - n - 1]);
+  }
+
+  // rotate the last n stack elements p times
+  roll(n, p) {
+    const stack = this.stack;
+    const l = stack.length - n;
+    const r = stack.length - 1;
+    const c = l + (p - Math.floor(p / n) * n);
+
+    for (let i = l, j = r; i < j; i++, j--) {
+      const t = stack[i];
+      stack[i] = stack[j];
+      stack[j] = t;
+    }
+    for (let i = l, j = c - 1; i < j; i++, j--) {
+      const t = stack[i];
+      stack[i] = stack[j];
+      stack[j] = t;
+    }
+    for (let i = c, j = r; i < j; i++, j--) {
+      const t = stack[i];
+      stack[i] = stack[j];
+      stack[j] = t;
+    }
+  }
+}
 
 class PostScriptEvaluator {
   constructor(operators) {
