@@ -262,11 +262,9 @@ function startRefTest(masterMode, showRefImages) {
     } else if (showRefImages && numEqFailures > 0) {
       console.log();
       console.log(
-        "Starting reftest harness to examine " +
-          numEqFailures +
-          " eq test failures."
+        `Starting reftest harness to examine ${numEqFailures} eq test failures.`
       );
-      examineRefImages(numEqFailures);
+      examineRefImages();
     }
   }
 
