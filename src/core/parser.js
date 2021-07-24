@@ -33,7 +33,11 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
-import { isWhiteSpace, MissingDataException } from "./core_utils.js";
+import {
+  isWhiteSpace,
+  MissingDataException,
+  ParserEOFException,
+} from "./core_utils.js";
 import { Ascii85Stream } from "./ascii_85_stream.js";
 import { AsciiHexStream } from "./ascii_hex_stream.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
@@ -124,10 +128,10 @@ class Parser {
             array.push(this.getObj(cipherTransform));
           }
           if (isEOF(this.buf1)) {
-            if (!this.recoveryMode) {
-              throw new FormatError("End of file inside array");
+            if (this.recoveryMode) {
+              return array;
             }
-            return array;
+            throw new ParserEOFException("End of file inside array.");
           }
           this.shift();
           return array;
@@ -148,10 +152,10 @@ class Parser {
             dict.set(key, this.getObj(cipherTransform));
           }
           if (isEOF(this.buf1)) {
-            if (!this.recoveryMode) {
-              throw new FormatError("End of file inside dictionary");
+            if (this.recoveryMode) {
+              return dict;
             }
-            return dict;
+            throw new ParserEOFException("End of file inside dictionary.");
           }
 
           // Stream objects are not allowed inside content streams or
