@@ -22,7 +22,7 @@ describe("Interaction", () => {
     }
     await action();
     await page.waitForFunction(
-      `document.querySelector("${selector.replace("\\", "\\\\")}").value !== ""`
+      `document.querySelector("${selector.replace("\\", "\\\\")}").value !== ""` // lgtm [js/incomplete-sanitization]
     );
     return page.$eval(selector, el => el.value);
   }
