@@ -192,8 +192,6 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
       let k;
       if (y < y1) {
         k = 0;
-      } else if (y1 === y2) {
-        k = 1;
       } else {
         k = (y1 - y) / (y1 - y2);
       }
