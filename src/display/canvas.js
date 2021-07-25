@@ -2804,7 +2804,9 @@ class CanvasGraphics {
 }
 
 for (const op in OPS) {
-  CanvasGraphics.prototype[OPS[op]] = CanvasGraphics.prototype[op];
+  if (CanvasGraphics.prototype[op] !== undefined) {
+    CanvasGraphics.prototype[OPS[op]] = CanvasGraphics.prototype[op];
+  }
 }
 
 export { CanvasGraphics };
