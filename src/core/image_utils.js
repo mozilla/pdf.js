@@ -47,7 +47,7 @@ class BaseLocalCache {
 
 class LocalImageCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error('LocalImageCache.set - expected "name" argument.');
     }
     if (ref) {
@@ -68,7 +68,7 @@ class LocalImageCache extends BaseLocalCache {
 
 class LocalColorSpaceCache extends BaseLocalCache {
   set(name = null, ref = null, data) {
-    if (!name && !ref) {
+    if (typeof name !== "string" && !ref) {
       throw new Error(
         'LocalColorSpaceCache.set - expected "name" and/or "ref" argument.'
       );
@@ -77,7 +77,7 @@ class LocalColorSpaceCache extends BaseLocalCache {
       if (this._imageCache.has(ref)) {
         return;
       }
-      if (name) {
+      if (name !== null) {
         // Optional when `ref` is defined.
         this._nameRefMap.set(name, ref);
       }
@@ -114,7 +114,7 @@ class LocalFunctionCache extends BaseLocalCache {
 
 class LocalGStateCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error('LocalGStateCache.set - expected "name" argument.');
     }
     if (ref) {
@@ -135,7 +135,7 @@ class LocalGStateCache extends BaseLocalCache {
 
 class LocalTilingPatternCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error(
         'LocalTilingPatternCache.set - expected "name" argument.'
       );

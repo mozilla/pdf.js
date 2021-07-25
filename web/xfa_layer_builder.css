@@ -44,7 +44,6 @@
   letter-spacing: -0.01px;
   text-align: inherit;
   text-decoration: inherit;
-  vertical-align: inherit;
   box-sizing: border-box;
   background: transparent;
   padding: 0;
@@ -53,6 +52,14 @@
 }
 
 .xfaLayer div {
+  pointer-events: none;
+}
+
+.xfaLayer svg {
+  pointer-events: none;
+}
+
+.xfaLayer svg * {
   pointer-events: none;
 }
 

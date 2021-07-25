@@ -33,6 +33,7 @@ import {
 import { Lexer, Parser } from "./parser.js";
 import {
   MissingDataException,
+  ParserEOFException,
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
@@ -453,15 +454,38 @@ class XRef {
       } else if ((m = objRegExp.exec(token))) {
         const num = m[1] | 0,
           gen = m[2] | 0;
-        if (!this.entries[num] || this.entries[num].gen === gen) {
+
+        let contentLength,
+          startPos = position + token.length,
+          updateEntries = false;
+        if (!this.entries[num]) {
+          updateEntries = true;
+        } else if (this.entries[num].gen === gen) {
+          // Before overwriting an existing entry, ensure that the new one won't
+          // cause *immediate* errors when it's accessed (fixes issue13783.pdf).
+          try {
+            const parser = new Parser({
+              lexer: new Lexer(stream.makeSubStream(startPos)),
+            });
+            parser.getObj();
+            updateEntries = true;
+          } catch (ex) {
+            if (ex instanceof ParserEOFException) {
+              warn(`indexObjects -- checking object (${token}): "${ex}".`);
+            } else {
+              // The error may come from the `Parser`-instance being initialized
+              // without an `XRef`-instance (we don't have a usable one yet).
+              updateEntries = true;
+            }
+          }
+        }
+        if (updateEntries) {
           this.entries[num] = {
             offset: position - stream.start,
             gen,
             uncompressed: true,
           };
         }
-        let contentLength,
-          startPos = position + token.length;
 
         // Find the next "obj" string, rather than "endobj", to ensure that
         // we won't skip over a new 'obj' operator in corrupt files where

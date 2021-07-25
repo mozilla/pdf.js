@@ -33,7 +33,7 @@ class XfaLayer {
           element.attributes.type === "radio" ||
           element.attributes.type === "checkbox"
         ) {
-          if (storedData.value === element.attributes.exportedValue) {
+          if (storedData.value === element.attributes.xfaOn) {
             html.setAttribute("checked", true);
           }
           if (intent === "print") {
@@ -82,6 +82,9 @@ class XfaLayer {
       attributes.name = `${attributes.name}-${intent}`;
     }
     for (const [key, value] of Object.entries(attributes)) {
+      // We don't need to add dataId in the html object but it can
+      // be useful to know its value when writing printing tests:
+      // in this case, don't skip dataId to have its value.
       if (value === null || value === undefined || key === "dataId") {
         continue;
       }

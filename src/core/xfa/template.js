@@ -115,6 +115,16 @@ const MAX_ATTEMPTS_FOR_LRTB_LAYOUT = 2;
 // the loop after having MAX_EMPTY_PAGES empty pages.
 const MAX_EMPTY_PAGES = 3;
 
+function hasMargin(node) {
+  return (
+    node.margin &&
+    (node.margin.topInset ||
+      node.margin.rightInset ||
+      node.margin.bottomInset ||
+      node.margin.leftInset)
+  );
+}
+
 function _setValue(templateNode, value) {
   if (!templateNode.value) {
     const nodeValue = new Value({});
@@ -268,10 +278,17 @@ function handleBreak(node) {
 function handleOverflow(node, extraNode, space) {
   const root = node[$getTemplateRoot]();
   const saved = root[$extra].noLayoutFailure;
+  const savedMethod = extraNode[$getSubformParent];
+
+  // Replace $getSubformParent to emulate that extraNode is just
+  // under node.
+  extraNode[$getSubformParent] = () => node;
+
   root[$extra].noLayoutFailure = true;
   const res = extraNode[$toHTML](space);
   node[$addHTML](res.html, res.bbox);
   root[$extra].noLayoutFailure = saved;
+  extraNode[$getSubformParent] = savedMethod;
 }
 
 class AppearanceFilter extends StringObject {
@@ -320,16 +337,16 @@ class Arc extends XFAObject {
       style.fill = "transparent";
     }
     style.strokeWidth = measureToString(
-      edge.presence === "visible" ? Math.round(edge.thickness) : 0
+      edge.presence === "visible" ? edge.thickness : 0
     );
     style.stroke = edgeStyle.color;
     let arc;
     const attributes = {
       xmlns: SVG_NS,
       style: {
-        position: "absolute",
         width: "100%",
         height: "100%",
+        overflow: "visible",
       },
     };
 
@@ -372,11 +389,29 @@ class Arc extends XFAObject {
       });
     }
 
-    return HTMLResult.success({
+    const svg = {
       name: "svg",
       children: [arc],
       attributes,
-    });
+    };
+
+    const parent = this[$getParent]()[$getParent]();
+    if (hasMargin(parent)) {
+      return HTMLResult.success({
+        name: "div",
+        attributes: {
+          style: {
+            display: "inline",
+            width: "100%",
+            height: "100%",
+          },
+        },
+        children: [svg],
+      });
+    }
+
+    svg.attributes.style.position = "absolute";
+    return HTMLResult.success(svg);
   }
 }
 
@@ -500,6 +535,12 @@ class Assist extends XFAObject {
     this.usehref = attributes.usehref || "";
     this.speak = null;
     this.toolTip = null;
+  }
+
+  [$toHTML]() {
+    return this.toolTip && this.toolTip[$content]
+      ? this.toolTip[$content]
+      : null;
   }
 }
 
@@ -1137,11 +1178,11 @@ class CheckButton extends XFAObject {
       groupId = container[$uid];
       type = "radio";
       className = "xfaRadio";
-      dataId = container[$data] && container[$data][$uid];
+      dataId = (container[$data] && container[$data][$uid]) || container[$uid];
     } else {
       type = "checkbox";
       className = "xfaCheckbox";
-      dataId = field[$data] && field[$data][$uid];
+      dataId = (field[$data] && field[$data][$uid]) || field[$uid];
     }
 
     const input = {
@@ -1243,7 +1284,7 @@ class ChoiceList extends XFAObject {
     const selectAttributes = {
       class: ["xfaSelect"],
       fieldId: field[$uid],
-      dataId: field[$data] && field[$data][$uid],
+      dataId: (field[$data] && field[$data][$uid]) || field[$uid],
       style,
     };
 
@@ -1480,7 +1521,7 @@ class DateTimeEdit extends XFAObject {
       attributes: {
         type: "text",
         fieldId: field[$uid],
-        dataId: field[$data] && field[$data][$uid],
+        dataId: (field[$data] && field[$data][$uid]) || field[$uid],
         class: ["xfaTextfield"],
         style,
       },
@@ -1733,6 +1774,11 @@ class Draw extends XFAObject {
       attributes,
       children: [],
     };
+
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
 
     const bbox = computeBbox(this, html, availableSpace);
 
@@ -2225,6 +2271,7 @@ class ExclGroup extends XFAObject {
       children,
       attributes,
       attempt: 0,
+      line: null,
       numberInLine: 0,
       availableSpace: {
         width: Math.min(this.w || Infinity, availableSpace.width),
@@ -2287,12 +2334,10 @@ class ExclGroup extends XFAObject {
       attributes.xfaName = this.name;
     }
 
-    const maxRun =
-      this.layout === "lr-tb" || this.layout === "rl-tb"
-        ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
-        : 1;
+    const isLrTb = this.layout === "lr-tb" || this.layout === "rl-tb";
+    const maxRun = isLrTb ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
-      if (this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
+      if (isLrTb && this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
         // If the layout is lr-tb then having attempt equals to
         // MAX_ATTEMPTS_FOR_LRTB_LAYOUT-1 means that we're trying to layout
         // on the next line so this on is empty.
@@ -2307,6 +2352,16 @@ class ExclGroup extends XFAObject {
       }
       if (result.isBreak()) {
         return result;
+      }
+      if (
+        isLrTb &&
+        this[$extra].attempt === 0 &&
+        this[$extra].numberInLine === 0 &&
+        !this[$getTemplateRoot]()[$extra].noLayoutFailure
+      ) {
+        // See comment in Subform::[$toHTML].
+        this[$extra].attempt = maxRun;
+        break;
       }
     }
 
@@ -2344,6 +2399,11 @@ class ExclGroup extends XFAObject {
       attributes,
       children,
     };
+
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
 
     delete this[$extra];
 
@@ -2488,6 +2548,37 @@ class Field extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    if (!this.ui) {
+      // It's allowed to not have an ui, specs say:
+      //   If the UI element contains no children or is not present,
+      //   the application chooses a default user interface for the
+      //   container, based on the type of the container's content.
+
+      this.ui = new Ui({});
+      this.ui[$globalData] = this[$globalData];
+      this[$appendChild](this.ui);
+      let node;
+
+      // The items element can have 2 element max and
+      // according to the items specs it's likely a good
+      // way to guess the correct ui type.
+      switch (this.items.children.length) {
+        case 0:
+          node = new TextEdit({});
+          this.ui.textEdit = node;
+          break;
+        case 1:
+          node = new CheckButton({});
+          this.ui.checkButton = node;
+          break;
+        case 2:
+          node = new ChoiceList({});
+          this.ui.choiceList = node;
+          break;
+      }
+      this.ui[$appendChild](node);
+    }
+
     setTabIndex(this);
 
     if (
@@ -2621,10 +2712,15 @@ class Field extends XFAObject {
       children,
     };
 
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
+
     const borderStyle = this.border ? this.border[$toStyle]() : null;
 
     const bbox = computeBbox(this, html, availableSpace);
-    const ui = this.ui ? this.ui[$toHTML]().html : null;
+    const ui = this.ui[$toHTML]().html;
     if (!ui) {
       Object.assign(style, borderStyle);
       return HTMLResult.success(createWrapper(this, html), bbox);
@@ -3263,8 +3359,7 @@ class Line extends XFAObject {
     const edge = this.edge ? this.edge : new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
-    const thickness =
-      edge.presence === "visible" ? Math.round(edge.thickness) : 0;
+    const thickness = edge.presence === "visible" ? edge.thickness : 0;
     style.strokeWidth = measureToString(thickness);
     style.stroke = edgeStyle.color;
     let x1, y1, x2, y2;
@@ -3297,7 +3392,7 @@ class Line extends XFAObject {
       },
     };
 
-    return HTMLResult.success({
+    const svg = {
       name: "svg",
       children: [line],
       attributes: {
@@ -3305,10 +3400,27 @@ class Line extends XFAObject {
         width,
         height,
         style: {
-          position: "absolute",
+          overflow: "visible",
         },
       },
-    });
+    };
+
+    if (hasMargin(parent)) {
+      return HTMLResult.success({
+        name: "div",
+        attributes: {
+          style: {
+            display: "inline",
+            width: "100%",
+            height: "100%",
+          },
+        },
+        children: [svg],
+      });
+    }
+
+    svg.attributes.style.position = "absolute";
+    return HTMLResult.success(svg);
   }
 }
 
@@ -3471,7 +3583,7 @@ class NumericEdit extends XFAObject {
       attributes: {
         type: "text",
         fieldId: field[$uid],
-        dataId: field[$data] && field[$data][$uid],
+        dataId: (field[$data] && field[$data][$uid]) || field[$uid],
         class: ["xfaTextfield"],
         style,
       },
@@ -4167,7 +4279,7 @@ class Rectangle extends XFAObject {
       style.fill = "transparent";
     }
     style.strokeWidth = measureToString(
-      edge.presence === "visible" ? 2 * edge.thickness : 0
+      edge.presence === "visible" ? edge.thickness : 0
     );
     style.stroke = edgeStyle.color;
 
@@ -4190,18 +4302,36 @@ class Rectangle extends XFAObject {
       },
     };
 
-    return HTMLResult.success({
+    const svg = {
       name: "svg",
       children: [rect],
       attributes: {
         xmlns: SVG_NS,
         style: {
-          position: "absolute",
+          overflow: "visible",
         },
         width: "100%",
         height: "100%",
       },
-    });
+    };
+
+    const parent = this[$getParent]()[$getParent]();
+    if (hasMargin(parent)) {
+      return HTMLResult.success({
+        name: "div",
+        attributes: {
+          style: {
+            display: "inline",
+            width: "100%",
+            height: "100%",
+          },
+        },
+        children: [svg],
+      });
+    }
+
+    svg.attributes.style.position = "absolute";
+    return HTMLResult.success(svg);
   }
 }
 
@@ -4625,6 +4755,7 @@ class Subform extends XFAObject {
 
     Object.assign(this[$extra], {
       children,
+      line: null,
       attributes,
       attempt: 0,
       numberInLine: 0,
@@ -4708,12 +4839,10 @@ class Subform extends XFAObject {
       }
     }
 
-    const maxRun =
-      this.layout === "lr-tb" || this.layout === "rl-tb"
-        ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT
-        : 1;
+    const isLrTb = this.layout === "lr-tb" || this.layout === "rl-tb";
+    const maxRun = isLrTb ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
-      if (this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
+      if (isLrTb && this[$extra].attempt === MAX_ATTEMPTS_FOR_LRTB_LAYOUT - 1) {
         // If the layout is lr-tb then having attempt equals to
         // MAX_ATTEMPTS_FOR_LRTB_LAYOUT-1 means that we're trying to layout
         // on the next line so this on is empty.
@@ -4728,6 +4857,23 @@ class Subform extends XFAObject {
       }
       if (result.isBreak()) {
         return result;
+      }
+      if (
+        isLrTb &&
+        this[$extra].attempt === 0 &&
+        this[$extra].numberInLine === 0 &&
+        !root[$extra].noLayoutFailure
+      ) {
+        // We're failing to put the first element on the line so no
+        // need to test on the next line.
+        // The goal is not only to avoid some useless checks but to avoid
+        // bugs too: if a descendant managed to put a node and failed
+        // on the next one, going to the next step here will imply to
+        // visit the descendant again, clear [$extra].children and restart
+        // on the failing node, consequently the first node just disappears
+        // because it has never been flushed.
+        this[$extra].attempt = maxRun;
+        break;
       }
     }
 
@@ -4780,6 +4926,11 @@ class Subform extends XFAObject {
       attributes,
       children,
     };
+
+    const assist = this.assist ? this.assist[$toHTML]() : null;
+    if (assist) {
+      html.attributes.title = assist;
+    }
 
     const result = HTMLResult.success(createWrapper(this, html), bbox);
 
@@ -5168,13 +5319,14 @@ class Template extends XFAObject {
           } else if (target instanceof ContentArea) {
             const index = contentAreas.findIndex(e => e === target);
             if (index !== -1) {
+              // In the next loop iteration `i` will be incremented, note the
+              // `continue` just below, hence we need to subtract one here.
               i = index - 1;
             } else {
               targetPageArea = target[$getParent]();
-              startIndex =
-                targetPageArea.contentArea.children.findIndex(
-                  e => e === target
-                ) - 1;
+              startIndex = targetPageArea.contentArea.children.findIndex(
+                e => e === target
+              );
             }
           }
           continue;
@@ -5339,7 +5491,7 @@ class TextEdit extends XFAObject {
       html = {
         name: "textarea",
         attributes: {
-          dataId: field[$data] && field[$data][$uid],
+          dataId: (field[$data] && field[$data][$uid]) || field[$uid],
           fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
@@ -5350,7 +5502,7 @@ class TextEdit extends XFAObject {
         name: "input",
         attributes: {
           type: "text",
-          dataId: field[$data] && field[$data][$uid],
+          dataId: (field[$data] && field[$data][$uid]) || field[$uid],
           fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,

@@ -1701,6 +1701,30 @@ gulp.task(
   })
 );
 
+function setTestEnv(done) {
+  process.env.TESTING = "true";
+  // TODO: Re-write the relevant unit-tests, which are using `new Date(...)`,
+  //       to not required the following time-zone hack since it doesn't work
+  //       when the unit-tests are run directly in the browser.
+  process.env.TZ = "UTC";
+  done();
+}
+
+gulp.task(
+  "botbrowsertest",
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    function runBotBrowserTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("browser (no reftest)", true)
+      );
+    }
+  )
+);
+
 gulp.task(
   "unittest",
   gulp.series("testing-pre", "generic", function () {

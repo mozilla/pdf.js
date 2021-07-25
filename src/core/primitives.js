@@ -33,12 +33,6 @@ const Name = (function NameClosure() {
       return nameValue ? nameValue : (nameCache[name] = new Name(name));
     }
 
-    static get empty() {
-      // eslint-disable-next-line no-restricted-syntax
-      const emptyName = new Name({ empty: true });
-      return shadow(this, "empty", emptyName);
-    }
-
     static _clearCache() {
       nameCache = Object.create(null);
     }
@@ -191,22 +185,8 @@ class Dict {
   }
 
   static merge({ xref, dictArray, mergeSubDicts = false }) {
-    const mergedDict = new Dict(xref);
-
-    if (!mergeSubDicts) {
-      for (const dict of dictArray) {
-        if (!(dict instanceof Dict)) {
-          continue;
-        }
-        for (const [key, value] of Object.entries(dict._map)) {
-          if (mergedDict._map[key] === undefined) {
-            mergedDict._map[key] = value;
-          }
-        }
-      }
-      return mergedDict.size > 0 ? mergedDict : Dict.empty;
-    }
-    const properties = new Map();
+    const mergedDict = new Dict(xref),
+      properties = new Map();
 
     for (const dict of dictArray) {
       if (!(dict instanceof Dict)) {
@@ -217,6 +197,8 @@ class Dict {
         if (property === undefined) {
           property = [];
           properties.set(key, property);
+        } else if (!mergeSubDicts) {
+          continue; // Ignore additional entries for a "shallow" merge.
         }
         property.push(value);
       }

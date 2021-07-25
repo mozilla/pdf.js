@@ -1168,7 +1168,7 @@ class PDFDocumentProxy {
  * Page annotation parameters.
  *
  * @typedef {Object} GetAnnotationsParameters
- * @property {string} intent - Determines the annotations that will be fetched,
+ * @property {string} [intent] - Determines the annotations that are fetched,
  *   can be either 'display' (viewable annotations) or 'print' (printable
  *   annotations). If the parameter is omitted, all annotations are fetched.
  */
@@ -1204,6 +1204,14 @@ class PDFDocumentProxy {
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
  *   the configuration will be fetched automatically with the default visibility
  *   states set.
+ */
+
+/**
+ * Page getOperatorList parameters.
+ *
+ * @typedef {Object} GetOperatorListParameters
+ * @property {string} [intent] - Rendering intent, can be 'display' or 'print'.
+ *   The default value is 'display'.
  */
 
 /**
@@ -1318,12 +1326,18 @@ class PDFPageProxy {
    *   {Array} of the annotation objects.
    */
   getAnnotations({ intent = null } = {}) {
-    if (!this._annotationsPromise || this._annotationsIntent !== intent) {
+    const renderingIntent =
+      intent === "display" || intent === "print" ? intent : null;
+
+    if (
+      !this._annotationsPromise ||
+      this._annotationsIntent !== renderingIntent
+    ) {
       this._annotationsPromise = this._transport.getAnnotations(
         this._pageIndex,
-        intent
+        renderingIntent
       );
-      this._annotationsIntent = intent;
+      this._annotationsIntent = renderingIntent;
     }
     return this._annotationsPromise;
   }
@@ -1351,7 +1365,7 @@ class PDFPageProxy {
   /**
    * Begins the process of rendering a page to the desired context.
    *
-   * @param {RenderParameters} params Page render parameters.
+   * @param {RenderParameters} params - Page render parameters.
    * @returns {RenderTask} An object that contains a promise that is
    *   resolved when the page finishes rendering.
    */
@@ -1492,10 +1506,12 @@ class PDFPageProxy {
   }
 
   /**
+   * @param {GetOperatorListParameters} params - Page getOperatorList
+   *   parameters.
    * @returns {Promise<PDFOperatorList>} A promise resolved with an
-   *   {@link PDFOperatorList} object that represents page's operator list.
+   *   {@link PDFOperatorList} object that represents the page's operator list.
    */
-  getOperatorList() {
+  getOperatorList({ intent = "display" } = {}) {
     function operatorListChanged() {
       if (intentState.operatorList.lastChunk) {
         intentState.opListReadCapability.resolve(intentState.operatorList);
@@ -1504,7 +1520,9 @@ class PDFPageProxy {
       }
     }
 
-    const renderingIntent = "oplist";
+    const renderingIntent = `oplist-${
+      intent === "print" ? "print" : "display"
+    }`;
     let intentState = this._intentStates.get(renderingIntent);
     if (!intentState) {
       intentState = Object.create(null);
@@ -1619,7 +1637,7 @@ class PDFPageProxy {
         force: true,
       });
 
-      if (intent === "oplist") {
+      if (intent.startsWith("oplist-")) {
         // Avoid errors below, since the renderTasks are just stubs.
         continue;
       }
@@ -2726,6 +2744,9 @@ class WorkerTransport {
           if (imageData?.data?.length > MAX_IMAGE_SIZE_TO_STORE) {
             pageProxy.cleanupAfterRender = true;
           }
+          break;
+        case "Pattern":
+          pageProxy.objs.resolve(id, imageData);
           break;
         default:
           throw new Error(`Got unknown object type ${type}`);

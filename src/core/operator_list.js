@@ -594,14 +594,14 @@ class OperatorList {
 
   // Close to chunk size.
   static get CHUNK_SIZE_ABOUT() {
-    return shadow(this, "CHUNK_SIZE_ABOUT", OperatorList.CHUNK_SIZE - 5);
+    return shadow(this, "CHUNK_SIZE_ABOUT", this.CHUNK_SIZE - 5);
   }
 
   constructor(intent, streamSink) {
     this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
-    if (streamSink && intent !== "oplist") {
+    if (streamSink && !(intent && intent.startsWith("oplist-"))) {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);

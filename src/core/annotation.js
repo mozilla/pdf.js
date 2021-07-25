@@ -709,7 +709,13 @@ class Annotation {
 
     return resourcesPromise.then(resources => {
       const opList = new OperatorList();
-      opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+      opList.addOp(OPS.beginAnnotation, [
+        data.id,
+        data.rect,
+        transform,
+        matrix,
+      ]);
+
       return evaluator
         .getOperatorList({
           stream: appearance,
@@ -1329,6 +1335,7 @@ class WidgetAnnotation extends Annotation {
 
         const transform = getTransformMatrix(this.data.rect, bbox, matrix);
         operatorList.addOp(OPS.beginAnnotation, [
+          this.data.id,
           this.data.rect,
           transform,
           matrix,
@@ -2096,6 +2103,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (!exportValues.includes("Off")) {
       // The /Off appearance is optional.
       exportValues.push("Off");
+    }
+    // Don't use a "V" entry pointing to a non-existent appearance state,
+    // see e.g. bug1720411.pdf where it's an *empty* Name-instance.
+    if (!exportValues.includes(this.data.fieldValue)) {
+      this.data.fieldValue = null;
     }
     if (exportValues.length !== 2) {
       return;
