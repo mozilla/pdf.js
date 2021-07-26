@@ -37,6 +37,7 @@ import {
   $setValue,
   $text,
   XFAAttribute,
+  XFAObjectArray,
   XmlObject,
 } from "./xfa_object.js";
 import { BindItems, Field, Items, SetProperty, Text } from "./template.js";
@@ -395,6 +396,8 @@ class Binder {
     if (matches.length > 1) {
       // Clone before binding to avoid bad state.
       baseClone = formNode[$clone]();
+      baseClone[$removeChild](baseClone.occur);
+      baseClone.occur = null;
     }
 
     this._bindValue(formNode, matches[0], picture);
@@ -412,9 +415,6 @@ class Binder {
     for (let i = 1, ii = matches.length; i < ii; i++) {
       const match = matches[i];
       const clone = baseClone[$clone]();
-      clone.occur.min = 1;
-      clone.occur.max = 1;
-      clone.occur.initial = 1;
       parent[name].push(clone);
       parent[$insertAt](pos + i, clone);
 
@@ -437,20 +437,39 @@ class Binder {
     const parent = formNode[$getParent]();
     const name = formNode[$nodeName];
 
-    for (let i = 0, ii = occur.initial; i < ii; i++) {
-      const clone = formNode[$clone]();
-      clone.occur.min = 1;
-      clone.occur.max = 1;
-      clone.occur.initial = 1;
-      parent[name].push(clone);
-      parent[$appendChild](clone);
+    if (!(parent[name] instanceof XFAObjectArray)) {
+      return;
+    }
+
+    let currentNumber;
+    if (formNode.name) {
+      currentNumber = parent[name].children.filter(
+        e => e.name === formNode.name
+      ).length;
+    } else {
+      currentNumber = parent[name].children.length;
+    }
+
+    const pos = parent[$indexOf](formNode) + 1;
+    const ii = occur.initial - currentNumber;
+    if (ii) {
+      const nodeClone = formNode[$clone]();
+      nodeClone[$removeChild](nodeClone.occur);
+      nodeClone.occur = null;
+      parent[name].push(nodeClone);
+      parent[$insertAt](pos, nodeClone);
+
+      for (let i = 1; i < ii; i++) {
+        const clone = nodeClone[$clone]();
+        parent[name].push(clone);
+        parent[$insertAt](pos + i, clone);
+      }
     }
   }
 
   _getOccurInfo(formNode) {
-    const { occur } = formNode;
-    const dataName = formNode.name;
-    if (!occur || !dataName) {
+    const { name, occur } = formNode;
+    if (!occur || !name) {
       return [1, 1];
     }
     const max = occur.max === -1 ? Infinity : occur.max;
@@ -629,12 +648,6 @@ class Binder {
       }
 
       if (match) {
-        if (match.length < min) {
-          warn(
-            `XFA - Must have at least ${min} occurrences: ${formNode[$nodeName]}.`
-          );
-          continue;
-        }
         this._bindOccurrences(child, match, picture);
       } else if (min > 0) {
         this._setProperties(child, dataNode);
