@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { $globalData } from "./xfa_object.js";
+import { stripQuotes } from "./utils.js";
 import { warn } from "../../shared/util.js";
 
 class FontFinder {
@@ -178,4 +180,32 @@ function selectFont(xfaFont, typeface) {
   return typeface.regular;
 }
 
-export { FontFinder, selectFont };
+function getMetrics(xfaFont, real = false) {
+  let pdfFont = null;
+  if (xfaFont) {
+    const name = stripQuotes(xfaFont.typeface);
+    const typeface = xfaFont[$globalData].fontFinder.find(name);
+    pdfFont = selectFont(xfaFont, typeface);
+  }
+
+  if (!pdfFont) {
+    return {
+      lineHeight: 12,
+      lineGap: 2,
+      lineNoGap: 10,
+    };
+  }
+
+  const size = xfaFont.size || 10;
+  const lineHeight = pdfFont.lineHeight
+    ? Math.max(real ? 0 : 1.2, pdfFont.lineHeight)
+    : 1.2;
+  const lineGap = pdfFont.lineGap === undefined ? 0.2 : pdfFont.lineGap;
+  return {
+    lineHeight: lineHeight * size,
+    lineGap: lineGap * size,
+    lineNoGap: Math.max(1, lineHeight - lineGap) * size,
+  };
+}
+
+export { FontFinder, getMetrics, selectFont };
