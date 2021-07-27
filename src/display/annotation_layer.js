@@ -24,6 +24,7 @@ import {
   AnnotationBorderStyleType,
   AnnotationType,
   assert,
+  shadow,
   stringToPDFString,
   unreachable,
   Util,
@@ -359,6 +360,15 @@ class AnnotationElement {
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
   }
+
+  static get platform() {
+    const platform = typeof navigator !== "undefined" ? navigator.platform : "";
+
+    return shadow(this, "platform", {
+      isWin: platform.includes("Win"),
+      isMac: platform.includes("Mac"),
+    });
+  }
 }
 
 class LinkAnnotationElement extends AnnotationElement {
@@ -539,10 +549,8 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   _getKeyModifier(event) {
-    return (
-      (navigator.platform.includes("Win") && event.ctrlKey) ||
-      (navigator.platform.includes("Mac") && event.metaKey)
-    );
+    const { isWin, isMac } = AnnotationElement.platform;
+    return (isWin && event.ctrlKey) || (isMac && event.metaKey);
   }
 
   _setEventListener(element, baseName, eventName, valueGetter) {
