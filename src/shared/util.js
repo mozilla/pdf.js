@@ -335,6 +335,7 @@ const UNSUPPORTED_FEATURES = {
   errorFontBuildPath: "errorFontBuildPath",
   errorFontGetPath: "errorFontGetPath",
   errorMarkedContent: "errorMarkedContent",
+  errorContentSubStream: "errorContentSubStream",
 };
 
 const PasswordResponses = {
