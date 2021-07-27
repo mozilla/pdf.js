@@ -30,6 +30,7 @@ import {
   stringToPDFString,
   stringToUTF8String,
   unreachable,
+  UNSUPPORTED_FEATURES,
   Util,
   warn,
 } from "../shared/util.js";
@@ -226,15 +227,34 @@ class Page {
   }
 
   /**
+   * @private
+   */
+  _onSubStreamError(handler, reason, objId) {
+    if (this.evaluatorOptions.ignoreErrors) {
+      // Error(s) when reading one of the /Contents sub-streams -- sending
+      // unsupported feature notification and allow parsing to continue.
+      handler.send("UnsupportedFeature", {
+        featureId: UNSUPPORTED_FEATURES.errorContentSubStream,
+      });
+      warn(`getContentStream - ignoring sub-stream (${objId}): "${reason}".`);
+      return;
+    }
+    throw reason;
+  }
+
+  /**
    * @returns {Promise<BaseStream>}
    */
-  getContentStream() {
+  getContentStream(handler) {
     return this.pdfManager.ensure(this, "content").then(content => {
       if (content instanceof BaseStream) {
         return content;
       }
       if (Array.isArray(content)) {
-        return new StreamsSequenceStream(content);
+        return new StreamsSequenceStream(
+          content,
+          this._onSubStreamError.bind(this, handler)
+        );
       }
       // Replace non-existent page content with empty content.
       return new NullStream();
@@ -307,7 +327,7 @@ class Page {
     renderInteractiveForms,
     annotationStorage,
   }) {
-    const contentStreamPromise = this.getContentStream();
+    const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ColorSpace",
       "ExtGState",
@@ -417,7 +437,7 @@ class Page {
     sink,
     combineTextItems,
   }) {
-    const contentStreamPromise = this.getContentStream();
+    const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ExtGState",
       "Font",
