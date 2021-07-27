@@ -684,7 +684,7 @@ function buildDefaultPreferences(defines, dir) {
   });
 
   const inputStream = merge([
-    gulp.src(["web/{app_options,viewer_compatibility}.js"], {
+    gulp.src(["web/app_options.js"], {
       base: ".",
     }),
   ]);
