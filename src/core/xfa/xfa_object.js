@@ -204,6 +204,9 @@ class XFAObject {
   [$appendChild](child) {
     child[_parent] = this;
     this[_children].push(child);
+    if (!child[$globalData] && this[$globalData]) {
+      child[$globalData] = this[$globalData];
+    }
   }
 
   [$removeChild](child) {
@@ -236,6 +239,9 @@ class XFAObject {
   [$insertAt](i, child) {
     child[_parent] = this;
     this[_children].splice(i, 0, child);
+    if (!child[$globalData] && this[$globalData]) {
+      child[$globalData] = this[$globalData];
+    }
   }
 
   /**
