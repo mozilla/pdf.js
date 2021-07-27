@@ -27,9 +27,9 @@ import {
   RenderingCancelledException,
   SVGGraphics,
 } from "pdfjs-lib";
+import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
 import { RenderingStates } from "./pdf_rendering_queue.js";
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -63,7 +63,7 @@ import { viewerCompatibilityParams } from "./viewer_compatibility.js";
  * @property {IL10n} l10n - Localization service.
  */
 
-const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
+const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
 
 /**
  * @implements {IRenderableView}
@@ -819,7 +819,7 @@ class PDFPageView {
       const svgGfx = new SVGGraphics(
         pdfPage.commonObjs,
         pdfPage.objs,
-        /* forceDataSchema = */ viewerCompatibilityParams.disableCreateObjectURL
+        /* forceDataSchema = */ compatibilityParams.disableCreateObjectURL
       );
       return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
         ensureNotCancelled();

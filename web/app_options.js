@@ -13,7 +13,39 @@
  * limitations under the License.
  */
 
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
+const compatibilityParams = Object.create(null);
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+  const userAgent =
+    (typeof navigator !== "undefined" && navigator.userAgent) || "";
+  const platform =
+    (typeof navigator !== "undefined" && navigator.platform) || "";
+  const maxTouchPoints =
+    (typeof navigator !== "undefined" && navigator.maxTouchPoints) || 1;
+
+  const isAndroid = /Android/.test(userAgent);
+  const isIOS =
+    /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
+    (platform === "MacIntel" && maxTouchPoints > 1);
+  const isIOSChrome = /CriOS/.test(userAgent);
+
+  // Disables URL.createObjectURL() usage in some environments.
+  // Support: Chrome on iOS
+  (function checkOnBlobSupport() {
+    // Sometimes Chrome on iOS loses data created with createObjectURL(),
+    // see issue 8081.
+    if (isIOSChrome) {
+      compatibilityParams.disableCreateObjectURL = true;
+    }
+  })();
+
+  // Limit canvas size to 5 mega-pixels on mobile.
+  // Support: Android, iOS
+  (function checkCanvasSizeLimitation() {
+    if (isIOS || isAndroid) {
+      compatibilityParams.maxCanvasPixels = 5242880;
+    }
+  })();
+}
 
 const OptionKind = {
   VIEWER: 0x02,
@@ -95,7 +127,7 @@ const defaultOptions = {
   maxCanvasPixels: {
     /** @type {number} */
     value: 16777216,
-    compatibility: viewerCompatibilityParams.maxCanvasPixels,
+    compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
   },
   pdfBugEnabled: {
@@ -348,4 +380,4 @@ class AppOptions {
   }
 }
 
-export { AppOptions, OptionKind };
+export { AppOptions, compatibilityParams, OptionKind };
