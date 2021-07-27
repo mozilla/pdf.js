@@ -3603,24 +3603,59 @@ class Occur extends XFAObject {
   constructor(attributes) {
     super(TEMPLATE_NS_ID, "occur", /* hasChildren = */ true);
     this.id = attributes.id || "";
-    this.initial = getInteger({
-      data: attributes.initial,
-      defaultValue: 1,
-      validate: x => true,
-    });
-    this.max = getInteger({
-      data: attributes.max,
-      defaultValue: 1,
-      validate: x => true,
-    });
-    this.min = getInteger({
-      data: attributes.min,
-      defaultValue: 1,
-      validate: x => true,
-    });
+    this.initial =
+      attributes.initial !== ""
+        ? getInteger({
+            data: attributes.initial,
+            defaultValue: "",
+            validate: x => true,
+          })
+        : "";
+    this.max =
+      attributes.max !== ""
+        ? getInteger({
+            data: attributes.max,
+            defaultValue: 1,
+            validate: x => true,
+          })
+        : "";
+    this.min =
+      attributes.min !== ""
+        ? getInteger({
+            data: attributes.min,
+            defaultValue: 1,
+            validate: x => true,
+          })
+        : "";
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.extras = null;
+  }
+
+  [$clean]() {
+    const parent = this[$getParent]();
+    const originalMin = this.min;
+
+    if (this.min === "") {
+      this.min =
+        parent instanceof PageArea || parent instanceof PageSet ? 0 : 1;
+    }
+    if (this.max === "") {
+      if (originalMin === "") {
+        this.max =
+          parent instanceof PageArea || parent instanceof PageSet ? -1 : 1;
+      } else {
+        this.max = this.min;
+      }
+    }
+
+    if (this.max !== -1 && this.max < this.min) {
+      this.max = this.min;
+    }
+
+    if (this.initial === "") {
+      this.initial = parent instanceof Template ? 1 : this.min;
+    }
   }
 }
 
@@ -5705,6 +5740,7 @@ class Value extends XFAObject {
       if (parent.ui && parent.ui.imageEdit) {
         if (!this.image) {
           this.image = new Image({});
+          this[$appendChild](this.image);
         }
         this.image[$content] = value[$content];
         return;
