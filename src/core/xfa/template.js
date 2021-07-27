@@ -97,6 +97,7 @@ import {
   HTMLResult,
 } from "./utils.js";
 import { stringToBytes, Util, warn } from "../../shared/util.js";
+import { getMetrics } from "./fonts.js";
 import { searchNode } from "./som.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
@@ -114,6 +115,30 @@ const MAX_ATTEMPTS_FOR_LRTB_LAYOUT = 2;
 // so in order to avoid that (and avoid a OOM crash) we break
 // the loop after having MAX_EMPTY_PAGES empty pages.
 const MAX_EMPTY_PAGES = 3;
+
+function getBorderDims(node) {
+  if (!node || !node.border) {
+    return { w: 0, h: 0 };
+  }
+
+  const borderExtra = node.border[$getExtra]();
+  if (!borderExtra) {
+    return { w: 0, h: 0 };
+  }
+
+  return {
+    w:
+      borderExtra.widths[0] +
+      borderExtra.widths[2] +
+      borderExtra.insets[0] +
+      borderExtra.insets[2],
+    h:
+      borderExtra.widths[1] +
+      borderExtra.widths[3] +
+      borderExtra.insets[1] +
+      borderExtra.insets[3],
+  };
+}
 
 function hasMargin(node) {
   return (
@@ -773,32 +798,37 @@ class Border extends XFAObject {
     this.margin = null;
   }
 
-  [$toStyle]() {
-    // TODO: incomplete.
-    const edges = this.edge.children.slice();
-    if (edges.length < 4) {
-      const defaultEdge = edges[edges.length - 1] || new Edge({});
-      for (let i = edges.length; i < 4; i++) {
-        edges.push(defaultEdge);
+  [$getExtra]() {
+    if (!this[$extra]) {
+      const edges = this.edge.children.slice();
+      if (edges.length < 4) {
+        const defaultEdge = edges[edges.length - 1] || new Edge({});
+        for (let i = edges.length; i < 4; i++) {
+          edges.push(defaultEdge);
+        }
       }
-    }
 
+      const widths = edges.map(edge => edge.thickness);
+      const insets = [0, 0, 0, 0];
+      if (this.margin) {
+        insets[0] = this.margin.topInset;
+        insets[1] = this.margin.rightInset;
+        insets[2] = this.margin.bottomInset;
+        insets[3] = this.margin.leftInset;
+      }
+      this[$extra] = { widths, insets, edges };
+    }
+    return this[$extra];
+  }
+
+  [$toStyle]() {
+    // TODO: incomplete (hand).
+    const { edges } = this[$getExtra]();
     const edgeStyles = edges.map(node => {
       const style = node[$toStyle]();
       style.color = style.color || "#000000";
       return style;
     });
-
-    const widths = edges.map(edge => edge.thickness);
-    const insets = [0, 0, 0, 0];
-    if (this.margin) {
-      insets[0] = this.margin.topInset;
-      insets[1] = this.margin.rightInset;
-      insets[2] = this.margin.bottomInset;
-      insets[3] = this.margin.leftInset;
-    }
-    this[$extra] = { widths, insets };
-    // TODO: hand.
 
     const style = Object.create(null);
     if (this.margin) {
@@ -2580,7 +2610,6 @@ class Field extends XFAObject {
     }
 
     setTabIndex(this);
-
     if (
       !this.ui ||
       this.presence === "hidden" ||
@@ -2603,16 +2632,35 @@ class Field extends XFAObject {
       : null;
     const savedW = this.w;
     const savedH = this.h;
-    if (this.w === "" || this.h === "") {
-      let marginH = 0;
-      let marginV = 0;
-      if (this.margin) {
-        marginH = this.margin.leftInset + this.margin.rightInset;
-        marginV = this.margin.topInset + this.margin.bottomInset;
-      }
+    let marginH = 0;
+    let marginV = 0;
+    if (this.margin) {
+      marginH = this.margin.leftInset + this.margin.rightInset;
+      marginV = this.margin.topInset + this.margin.bottomInset;
+    }
 
+    let borderDims = null;
+    if (this.w === "" || this.h === "") {
       let width = null;
       let height = null;
+
+      let uiW = 0;
+      let uiH = 0;
+      if (this.ui.checkButton) {
+        uiW = uiH = this.ui.checkButton.size;
+      } else {
+        const { w, h } = layoutNode(this, availableSpace);
+        if (w !== null) {
+          uiW = w;
+          uiH = h;
+        } else {
+          uiH = getMetrics(this.font, /* real = */ true).lineNoGap;
+        }
+      }
+
+      borderDims = getBorderDims(this.ui[$getExtra]());
+      uiW += borderDims.w;
+      uiH += borderDims.h;
 
       if (this.caption) {
         const { w, h, isBroken } = this.caption[$getExtra](availableSpace);
@@ -2624,32 +2672,36 @@ class Field extends XFAObject {
 
         width = w;
         height = h;
-        if (this.ui.checkButton) {
-          switch (this.caption.placement) {
-            case "left":
-            case "right":
-            case "inline":
-              width += this.ui.checkButton.size;
-              break;
-            case "top":
-            case "bottom":
-              height += this.ui.checkButton.size;
-              break;
-          }
+
+        switch (this.caption.placement) {
+          case "left":
+          case "right":
+          case "inline":
+            width += uiW;
+            break;
+          case "top":
+          case "bottom":
+            height += uiH;
+            break;
         }
+      } else {
+        width = uiW;
+        height = uiH;
       }
 
       if (width && this.w === "") {
+        width += marginH;
         this.w = Math.min(
           this.maxW <= 0 ? Infinity : this.maxW,
-          Math.max(this.minW, width + marginH)
+          this.minW + 1 < width ? width : this.minW
         );
       }
 
       if (height && this.h === "") {
+        height += marginV;
         this.h = Math.min(
           this.maxH <= 0 ? Infinity : this.maxH,
-          Math.max(this.minH, height + marginV)
+          this.minH + 1 < height ? height : this.minH
         );
       }
     }
@@ -2718,7 +2770,6 @@ class Field extends XFAObject {
     }
 
     const borderStyle = this.border ? this.border[$toStyle]() : null;
-
     const bbox = computeBbox(this, html, availableSpace);
     const ui = this.ui[$toHTML]().html;
     if (!ui) {
@@ -2775,6 +2826,22 @@ class Field extends XFAObject {
       }
     }
 
+    if (!this.ui.imageEdit && ui.children && ui.children[0] && this.h) {
+      borderDims = borderDims || getBorderDims(this.ui[$getExtra]());
+
+      let captionHeight = 0;
+      if (this.caption && ["top", "bottom"].includes(this.caption.placement)) {
+        captionHeight = this.caption.reserve;
+        if (captionHeight <= 0) {
+          captionHeight = this.caption[$getExtra](availableSpace).h;
+        }
+        const inputHeight = this.h - captionHeight - marginV - borderDims.h;
+        ui.children[0].attributes.style.height = measureToString(inputHeight);
+      } else {
+        ui.children[0].attributes.style.height = "100%";
+      }
+    }
+
     if (!caption) {
       if (ui.attributes.class) {
         // Even if no caption this class will help to center the ui.
@@ -2803,22 +2870,20 @@ class Field extends XFAObject {
       ui.attributes.class = [];
     }
 
+    ui.children.splice(0, 0, caption);
+
     switch (this.caption.placement) {
       case "left":
-        ui.children.splice(0, 0, caption);
         ui.attributes.class.push("xfaLeft");
         break;
       case "right":
-        ui.children.push(caption);
-        ui.attributes.class.push("xfaLeft");
+        ui.attributes.class.push("xfaRight");
         break;
       case "top":
-        ui.children.splice(0, 0, caption);
         ui.attributes.class.push("xfaTop");
         break;
       case "bottom":
-        ui.children.push(caption);
-        ui.attributes.class.push("xfaTop");
+        ui.attributes.class.push("xfaBottom");
         break;
       case "inline":
         // TODO;
@@ -2857,11 +2922,17 @@ class Fill extends XFAObject {
 
   [$toStyle]() {
     const parent = this[$getParent]();
+    const grandpa = parent[$getParent]();
+    const ggrandpa = grandpa[$getParent]();
     const style = Object.create(null);
 
     let propName = "color";
     if (parent instanceof Border) {
       propName = "background";
+      if (ggrandpa instanceof Ui) {
+        // The default fill color is white.
+        style.background = "white";
+      }
     }
     if (parent instanceof Rectangle || parent instanceof Arc) {
       propName = "fill";
@@ -5515,7 +5586,11 @@ class TextEdit extends XFAObject {
       "on",
     ]);
     this.id = attributes.id || "";
-    this.multiLine = attributes.multiLine || "";
+    this.multiLine = getInteger({
+      data: attributes.multiLine,
+      defaultValue: "",
+      validate: x => x === 0 || x === 1,
+    });
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
     this.vScrollPolicy = getStringOption(attributes.vScrollPolicy, [
@@ -5529,22 +5604,14 @@ class TextEdit extends XFAObject {
     this.margin = null;
   }
 
-  [$clean](builder) {
-    super[$clean](builder);
-    const parent = this[$getParent]();
-    const defaultValue = parent instanceof Draw ? 1 : 0;
-    this.multiLine = getInteger({
-      data: this.multiLine,
-      defaultValue,
-      validate: x => x === 0 || x === 1,
-    });
-  }
-
   [$toHTML](availableSpace) {
     // TODO: incomplete.
     const style = toStyle(this, "border", "font", "margin");
     let html;
     const field = this[$getParent]()[$getParent]();
+    if (this.multiLine === "") {
+      this.multiLine = field instanceof Draw ? 1 : 0;
+    }
     if (this.multiLine === 1) {
       html = {
         name: "textarea",
@@ -5683,17 +5750,29 @@ class Ui extends XFAObject {
     this.textEdit = null;
   }
 
+  [$getExtra]() {
+    if (this[$extra] === undefined) {
+      for (const name of Object.getOwnPropertyNames(this)) {
+        if (name === "extras" || name === "picture") {
+          continue;
+        }
+        const obj = this[name];
+        if (!(obj instanceof XFAObject)) {
+          continue;
+        }
+
+        this[$extra] = obj;
+        return obj;
+      }
+      this[$extra] = null;
+    }
+    return this[$extra];
+  }
+
   [$toHTML](availableSpace) {
     // TODO: picture.
-    for (const name of Object.getOwnPropertyNames(this)) {
-      if (name === "extras" || name === "picture") {
-        continue;
-      }
-      const obj = this[name];
-      if (!(obj instanceof XFAObject)) {
-        continue;
-      }
-
+    const obj = this[$getExtra]();
+    if (obj) {
       return obj[$toHTML](availableSpace);
     }
     return HTMLResult.EMPTY;

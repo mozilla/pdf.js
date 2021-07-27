@@ -2550,7 +2550,8 @@ class Font {
     this.lineGap = metricsOverride.lineGap / metricsOverride.unitsPerEm;
 
     if (this.cssFontInfo && this.cssFontInfo.lineHeight) {
-      this.lineHeight = this.cssFontInfo.lineHeight;
+      this.lineHeight = this.cssFontInfo.metrics.lineHeight;
+      this.lineGap = this.cssFontInfo.metrics.lineGap;
     } else {
       this.lineHeight = this.ascent - this.descent + this.lineGap;
     }
