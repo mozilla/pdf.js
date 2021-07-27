@@ -2753,6 +2753,8 @@ class Field extends XFAObject {
         let value = "";
         if (this.value.exData) {
           value = this.value.exData[$text]();
+        } else if (this.value.text) {
+          value = this.value.text[$getExtra]();
         } else {
           const htmlValue = this.value[$toHTML]().html;
           if (htmlValue !== null) {
@@ -5416,6 +5418,27 @@ class Text extends ContentObject {
       return;
     }
     super[$onText](str);
+  }
+
+  [$finalize]() {
+    if (typeof this[$content] === "string") {
+      this[$content] = this[$content].replace(/\r\n/g, "\n");
+    }
+  }
+
+  [$getExtra]() {
+    if (typeof this[$content] === "string") {
+      return this[$content]
+        .split(/[\u2029\u2028\n]/)
+        .reduce((acc, line) => {
+          if (line) {
+            acc.push(line);
+          }
+          return acc;
+        }, [])
+        .join("\n");
+    }
+    return this[$content][$text]();
   }
 
   [$toHTML](availableSpace) {
