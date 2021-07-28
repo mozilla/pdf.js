@@ -1,3 +1,4 @@
+/* eslint-disable import/extensions */
 /*
  * Copyright 2014 Mozilla Foundation
  *
@@ -20,6 +21,7 @@
 var http = require("http");
 var path = require("path");
 var fs = require("fs");
+var proxy = require("./proxy");
 
 var mimeTypes = {
   ".css": "text/css",
@@ -119,6 +121,12 @@ WebServer.prototype = {
         path.join(this.root, "test/resources/favicon.ico"),
         checkFile
       );
+      return;
+    }
+
+    // proxy
+    if (/^\/api/.test(urlParts[1])) {
+      proxy(req, res);
       return;
     }
 
