@@ -70,6 +70,7 @@ import {
   reverseIfRtl,
 } from "./unicode.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
+import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
@@ -86,7 +87,6 @@ import { DecodeStream } from "./decode_stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
-import { getXfaFontName } from "./xfa_fonts.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -3928,7 +3928,13 @@ class PartialEvaluator {
         glyphScaleFactors = standardFontName.factors || null;
         fontFile = await this.fetchStandardFontData(standardFontName.name);
         isInternalFont = !!fontFile;
-        type = "TrueType";
+
+        // We're using a substitution font but for example widths (if any)
+        // are related to the glyph positions in the font.
+        // So we overwrite everything here to be sure that widths are
+        // correct.
+        baseDict = dict = getXfaFontDict(fontName.name);
+        composite = true;
       }
     } else if (!isType3Font) {
       const standardFontName = getStandardFontName(fontName.name);

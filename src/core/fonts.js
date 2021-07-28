@@ -3200,6 +3200,11 @@ class Font {
     // and currentBuf contains non-encoded chars.
     const hasCurrentBufErrors = () => buffers.length % 2 === 1;
 
+    const getCharCode =
+      this.toUnicode instanceof IdentityToUnicodeMap
+        ? unicode => this.toUnicode.charCodeOf(unicode)
+        : unicode => this.toUnicode.charCodeOf(String.fromCodePoint(unicode));
+
     for (let i = 0, ii = str.length; i < ii; i++) {
       const unicode = str.codePointAt(i);
       if (unicode > 0xd7ff && (unicode < 0xe000 || unicode > 0xfffd)) {
@@ -3207,8 +3212,7 @@ class Font {
         i++;
       }
       if (this.toUnicode) {
-        const char = String.fromCodePoint(unicode);
-        const charCode = this.toUnicode.charCodeOf(char);
+        const charCode = getCharCode(unicode);
         if (charCode !== -1) {
           if (hasCurrentBufErrors()) {
             buffers.push(currentBuf.join(""));

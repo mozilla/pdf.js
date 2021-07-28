@@ -105,7 +105,7 @@ const StyleMapping = new Map([
 const spacesRegExp = /\s+/g;
 const crlfRegExp = /[\r\n]+/g;
 
-function mapStyle(styleStr, fontFinder) {
+function mapStyle(styleStr, node) {
   const style = Object.create(null);
   if (!styleStr) {
     return style;
@@ -144,7 +144,8 @@ function mapStyle(styleStr, fontFinder) {
         posture: style.fontStyle || "normal",
         size: original.fontSize || 0,
       },
-      fontFinder,
+      node,
+      node[$globalData].fontFinder,
       style
     );
   }
@@ -309,7 +310,7 @@ class XhtmlObject extends XmlObject {
       name: this[$nodeName],
       attributes: {
         href: this.href,
-        style: mapStyle(this.style, this[$globalData].fontFinder),
+        style: mapStyle(this.style, this),
       },
       children,
       value: this[$content] || "",

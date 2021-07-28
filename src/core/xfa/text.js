@@ -15,7 +15,7 @@
 
 import { selectFont } from "./fonts.js";
 
-const WIDTH_FACTOR = 1.01;
+const WIDTH_FACTOR = 1.02;
 
 class FontInfo {
   constructor(xfaFont, margin, lineHeight, fontFinder) {
@@ -188,22 +188,25 @@ class TextMeasure {
       const noGap = fontLineHeight - lineGap;
       const firstLineHeight = Math.max(1, noGap) * fontSize;
       const scale = fontSize / 1000;
+      const fallbackWidth =
+        pdfFont.defaultWidth || pdfFont.charsToGlyphs(" ")[0].width;
 
       for (const line of str.split(/[\u2029\n]/)) {
         const encodedLine = pdfFont.encodeString(line).join("");
         const glyphs = pdfFont.charsToGlyphs(encodedLine);
 
         for (const glyph of glyphs) {
+          const width = glyph.width || fallbackWidth;
           this.glyphs.push([
-            glyph.width * scale + letterSpacing,
+            width * scale + letterSpacing,
             lineHeight,
             firstLineHeight,
-            glyph.unicode === " ",
+            glyph.unicode,
             false,
           ]);
         }
 
-        this.glyphs.push([0, 0, 0, false, true]);
+        this.glyphs.push([0, 0, 0, "\n", true]);
       }
       this.glyphs.pop();
       return;
@@ -212,16 +215,10 @@ class TextMeasure {
     // When we have no font in the pdf, just use the font size as default width.
     for (const line of str.split(/[\u2029\n]/)) {
       for (const char of line.split("")) {
-        this.glyphs.push([
-          fontSize,
-          1.2 * fontSize,
-          fontSize,
-          char === " ",
-          false,
-        ]);
+        this.glyphs.push([fontSize, 1.2 * fontSize, fontSize, char, false]);
       }
 
-      this.glyphs.push([0, 0, 0, false, true]);
+      this.glyphs.push([0, 0, 0, "\n", true]);
     }
     this.glyphs.pop();
   }
@@ -237,8 +234,9 @@ class TextMeasure {
     let isFirstLine = true;
 
     for (let i = 0, ii = this.glyphs.length; i < ii; i++) {
-      const [glyphWidth, lineHeight, firstLineHeight, isSpace, isEOL] =
+      const [glyphWidth, lineHeight, firstLineHeight, char, isEOL] =
         this.glyphs[i];
+      const isSpace = char === " ";
       const glyphHeight = isFirstLine ? firstLineHeight : lineHeight;
       if (isEOL) {
         width = Math.max(width, currentLineWidth);
