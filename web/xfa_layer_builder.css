@@ -53,6 +53,7 @@
   padding: 0;
   margin: 0;
   pointer-events: auto;
+  line-height: inherit;
 }
 
 .xfaLayer div {

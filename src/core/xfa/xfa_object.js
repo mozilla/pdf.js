@@ -73,6 +73,8 @@ const $onChild = Symbol();
 const $onChildCheck = Symbol();
 const $onText = Symbol();
 const $pushGlyphs = Symbol();
+const $popPara = Symbol();
+const $pushPara = Symbol();
 const $removeChild = Symbol();
 const $root = Symbol("root");
 const $resolvePrototypes = Symbol();
@@ -175,6 +177,16 @@ class XFAObject {
 
   [$isBindable]() {
     return false;
+  }
+
+  [$popPara]() {
+    if (this.para) {
+      this[$getTemplateRoot]()[$extra].paraStack.pop();
+    }
+  }
+
+  [$pushPara]() {
+    this[$getTemplateRoot]()[$extra].paraStack.push(this.para);
   }
 
   [$setId](ids) {
@@ -1109,7 +1121,9 @@ export {
   $onChild,
   $onChildCheck,
   $onText,
+  $popPara,
   $pushGlyphs,
+  $pushPara,
   $removeChild,
   $resolvePrototypes,
   $root,

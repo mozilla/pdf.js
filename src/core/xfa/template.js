@@ -46,6 +46,8 @@ import {
   $nodeName,
   $onChild,
   $onText,
+  $popPara,
+  $pushPara,
   $removeChild,
   $searchNode,
   $setSetAttributes,
@@ -1062,8 +1064,11 @@ class Caption extends XFAObject {
       return HTMLResult.EMPTY;
     }
 
+    this[$pushPara]();
     const value = this.value[$toHTML](availableSpace).html;
+
     if (!value) {
+      this[$popPara]();
       return HTMLResult.EMPTY;
     }
 
@@ -1110,6 +1115,7 @@ class Caption extends XFAObject {
     }
 
     setPara(this, null, value);
+    this[$popPara]();
 
     this.reserve = savedReserve;
 
@@ -1730,6 +1736,7 @@ class Draw extends XFAObject {
     }
 
     fixDimensions(this);
+    this[$pushPara]();
 
     // If at least one dimension is missing and we've a text
     // then we can guess it in laying out the text.
@@ -1744,6 +1751,7 @@ class Draw extends XFAObject {
       // So if we've potentially more width to provide in some parent containers
       // let's increase it to give a chance to have a better rendering.
       if (isBroken && this[$getSubformParent]()[$isThereMoreWidth]()) {
+        this[$popPara]();
         return HTMLResult.FAILURE;
       }
 
@@ -1757,6 +1765,7 @@ class Draw extends XFAObject {
     if (!checkDimensions(this, availableSpace)) {
       this.w = savedW;
       this.h = savedH;
+      this[$popPara]();
       return HTMLResult.FAILURE;
     }
     unsetFirstUnsplittable(this);
@@ -1816,6 +1825,7 @@ class Draw extends XFAObject {
     if (value === null) {
       this.w = savedW;
       this.h = savedH;
+      this[$popPara]();
       return HTMLResult.success(createWrapper(this, html), bbox);
     }
 
@@ -1825,6 +1835,7 @@ class Draw extends XFAObject {
     this.w = savedW;
     this.h = savedH;
 
+    this[$popPara]();
     return HTMLResult.success(createWrapper(this, html), bbox);
   }
 }
@@ -2364,6 +2375,7 @@ class ExclGroup extends XFAObject {
       attributes.xfaName = this.name;
     }
 
+    this[$pushPara]();
     const isLrTb = this.layout === "lr-tb" || this.layout === "rl-tb";
     const maxRun = isLrTb ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
@@ -2381,6 +2393,7 @@ class ExclGroup extends XFAObject {
         break;
       }
       if (result.isBreak()) {
+        this[$popPara]();
         return result;
       }
       if (
@@ -2394,6 +2407,8 @@ class ExclGroup extends XFAObject {
         break;
       }
     }
+
+    this[$popPara]();
 
     if (!isSplittable) {
       unsetFirstUnsplittable(this);
@@ -2627,6 +2642,8 @@ class Field extends XFAObject {
       delete this.caption[$extra];
     }
 
+    this[$pushPara]();
+
     const caption = this.caption
       ? this.caption[$toHTML](availableSpace).html
       : null;
@@ -2667,6 +2684,7 @@ class Field extends XFAObject {
         // See comment in Draw::[$toHTML] to have an explanation
         // about this line.
         if (isBroken && this[$getSubformParent]()[$isThereMoreWidth]()) {
+          this[$popPara]();
           return HTMLResult.FAILURE;
         }
 
@@ -2706,12 +2724,15 @@ class Field extends XFAObject {
       }
     }
 
+    this[$popPara]();
+
     fixDimensions(this);
 
     setFirstUnsplittable(this);
     if (!checkDimensions(this, availableSpace)) {
       this.w = savedW;
       this.h = savedH;
+      this[$popPara]();
       return HTMLResult.FAILURE;
     }
     unsetFirstUnsplittable(this);
@@ -3131,7 +3152,7 @@ class Font extends XFAObject {
     style.fontStyle = this.posture;
     style.fontSize = measureToString(0.99 * this.size);
 
-    setFontFamily(this, this[$globalData].fontFinder, style);
+    setFontFamily(this, this, this[$globalData].fontFinder, style);
 
     if (this.underline !== 0) {
       style.textDecoration = "underline";
@@ -4957,6 +4978,7 @@ class Subform extends XFAObject {
       }
     }
 
+    this[$pushPara]();
     const isLrTb = this.layout === "lr-tb" || this.layout === "rl-tb";
     const maxRun = isLrTb ? MAX_ATTEMPTS_FOR_LRTB_LAYOUT : 1;
     for (; this[$extra].attempt < maxRun; this[$extra].attempt++) {
@@ -4974,6 +4996,7 @@ class Subform extends XFAObject {
         break;
       }
       if (result.isBreak()) {
+        this[$popPara]();
         return result;
       }
       if (
@@ -4995,6 +5018,7 @@ class Subform extends XFAObject {
       }
     }
 
+    this[$popPara]();
     if (!isSplittable) {
       unsetFirstUnsplittable(this);
     }
@@ -5242,6 +5266,7 @@ class Template extends XFAObject {
       pagePosition: "first",
       oddOrEven: "odd",
       blankOrNotBlank: "nonBlank",
+      paraStack: [],
     };
 
     const root = this.subform.children[0];
