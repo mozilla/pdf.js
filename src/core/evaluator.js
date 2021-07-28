@@ -3924,7 +3924,7 @@ class PartialEvaluator {
       const standardFontName = getXfaFontName(fontName.name);
       if (standardFontName) {
         cssFontInfo.fontFamily = `${cssFontInfo.fontFamily}-PdfJS-XFA`;
-        cssFontInfo.lineHeight = standardFontName.lineHeight || null;
+        cssFontInfo.metrics = standardFontName.metrics || null;
         glyphScaleFactors = standardFontName.factors || null;
         fontFile = await this.fetchStandardFontData(standardFontName.name);
         isInternalFont = !!fontFile;

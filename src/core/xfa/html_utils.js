@@ -247,7 +247,7 @@ function layoutNode(node, availableSpace) {
       }
     }
 
-    const maxWidth = !node.w ? availableSpace.width : node.w;
+    const maxWidth = (!node.w ? availableSpace.width : node.w) - marginH;
     const fontFinder = node[$globalData].fontFinder;
     if (
       node.value.exData &&
@@ -614,10 +614,8 @@ function setFontFamily(xfaFont, fontFinder, style) {
     }
 
     const pdfFont = selectFont(xfaFont, typeface);
-    if (pdfFont && pdfFont.lineHeight > 0) {
+    if (pdfFont) {
       style.lineHeight = Math.max(1.2, pdfFont.lineHeight);
-    } else {
-      style.lineHeight = 1.2;
     }
   }
 }
