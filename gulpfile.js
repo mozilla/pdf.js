@@ -341,12 +341,18 @@ function createMainBundle(defines) {
   const mainAMDName = "pdfjs-dist/build/pdf";
   const mainOutputName = "pdf.js";
 
-  const mainFileConfig = createWebpackConfig(defines, {
-    filename: mainOutputName,
-    library: mainAMDName,
-    libraryTarget: "umd",
-    umdNamedDefine: true,
-  });
+  const mainFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: mainOutputName,
+      library: mainAMDName,
+      libraryTarget: "umd",
+      umdNamedDefine: true,
+    },
+    {
+      disableSourceMaps: true,
+    }
+  );
   return gulp
     .src("./src/pdf.js")
     .pipe(webpack2Stream(mainFileConfig))
@@ -437,12 +443,18 @@ function createWorkerBundle(defines) {
   const workerAMDName = "pdfjs-dist/build/pdf.worker";
   const workerOutputName = "pdf.worker.js";
 
-  const workerFileConfig = createWebpackConfig(defines, {
-    filename: workerOutputName,
-    library: workerAMDName,
-    libraryTarget: "umd",
-    umdNamedDefine: true,
-  });
+  const workerFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: workerOutputName,
+      library: workerAMDName,
+      libraryTarget: "umd",
+      umdNamedDefine: true,
+    },
+    {
+      disableSourceMaps: true,
+    }
+  );
   return gulp
     .src("./src/pdf.worker.js")
     .pipe(webpack2Stream(workerFileConfig))
@@ -460,6 +472,7 @@ function createWebBundle(defines, options) {
     },
     {
       defaultPreferencesDir: options.defaultPreferencesDir,
+      disableSourceMaps: true,
     }
   );
   return gulp.src("./web/viewer.js").pipe(webpack2Stream(viewerFileConfig));
@@ -814,7 +827,7 @@ function buildGeneric(defines, dir) {
   return merge([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
-    createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
+    // createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines, {
       defaultPreferencesDir: defines.SKIP_BABEL
         ? "generic/"
@@ -827,7 +840,7 @@ function buildGeneric(defines, dir) {
         base: "web/",
       })
       .pipe(gulp.dest(dir + "web")),
-    createCMapBundle().pipe(gulp.dest(dir + "web/cmaps")),
+    // createCMapBundle().pipe(gulp.dest(dir + "web/cmaps")),
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
@@ -835,9 +848,9 @@ function buildGeneric(defines, dir) {
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
-    gulp
-      .src("web/compressed.tracemonkey-pldi-09.pdf")
-      .pipe(gulp.dest(dir + "web")),
+    // gulp
+    //   .src("web/compressed.tracemonkey-pldi-09.pdf")
+    //   .pipe(gulp.dest(dir + "web")),
   ]);
 }
 
