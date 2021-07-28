@@ -61,15 +61,17 @@
     "webpack": "^5.40.0",
     "webpack-stream": "^6.1.2",
     "wintersmith": "^2.5.0",
-    "yargs": "^17.0.1"
+    "yargs": "^17.0.1",
+    "vercel": "^23.0.1"
   },
   "scripts": {
     "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js",
-    "test": "gulp npm-test"
+    "test": "gulp npm-test",
+    "build": "gulp clean && gulp generic-legacy"
   },
   "repository": {
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0" 
 }
