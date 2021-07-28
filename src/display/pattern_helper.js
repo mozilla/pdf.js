@@ -46,7 +46,7 @@ class BaseShadingPattern {
 }
 
 class RadialAxialShadingPattern extends BaseShadingPattern {
-  constructor(IR) {
+  constructor(IR, cachedCanvasPatterns) {
     super();
     this._type = IR[1];
     this._bbox = IR[2];
@@ -55,8 +55,8 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     this._p1 = IR[5];
     this._r0 = IR[6];
     this._r1 = IR[7];
-    this._matrix = IR[8];
-    this._patternCache = null;
+    this.matrix = null;
+    this.cachedCanvasPatterns = cachedCanvasPatterns;
   }
 
   _createGradient(ctx) {
@@ -87,10 +87,10 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
 
   getPattern(ctx, owner, inverse, shadingFill = false) {
     let pattern;
-    if (this._patternCache) {
-      pattern = this._patternCache;
-    } else {
-      if (!shadingFill) {
+    if (!shadingFill) {
+      if (this.cachedCanvasPatterns.has(this)) {
+        pattern = this.cachedCanvasPatterns.get(this);
+      } else {
         const tmpCanvas = owner.cachedCanvases.getCanvas(
           "pattern",
           owner.ctx.canvas.width,
@@ -104,8 +104,8 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
 
         tmpCtx.setTransform.apply(tmpCtx, owner.baseTransform);
-        if (this._matrix) {
-          tmpCtx.transform.apply(tmpCtx, this._matrix);
+        if (this.matrix) {
+          tmpCtx.transform.apply(tmpCtx, this.matrix);
         }
         applyBoundingBox(tmpCtx, this._bbox);
 
@@ -113,11 +113,12 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         tmpCtx.fill();
 
         pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
-      } else {
-        applyBoundingBox(ctx, this._bbox);
-        pattern = this._createGradient(ctx);
+        this.cachedCanvasPatterns.set(this, pattern);
       }
-      this._patternCache = pattern;
+    } else {
+      // Don't bother caching gradients, they are quick to rebuild.
+      applyBoundingBox(ctx, this._bbox);
+      pattern = this._createGradient(ctx);
     }
     if (!shadingFill) {
       const domMatrix = new DOMMatrix(inverse);
@@ -305,9 +306,9 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._colors = IR[3];
     this._figures = IR[4];
     this._bounds = IR[5];
-    this._matrix = IR[6];
     this._bbox = IR[7];
     this._background = IR[8];
+    this.matrix = null;
   }
 
   _createMeshCanvas(combinedScale, backgroundColor, cachedCanvases) {
@@ -389,8 +390,8 @@ class MeshShadingPattern extends BaseShadingPattern {
     } else {
       // Obtain scale from matrix and current transformation matrix.
       scale = Util.singularValueDecompose2dScale(owner.baseTransform);
-      if (this._matrix) {
-        const matrixScale = Util.singularValueDecompose2dScale(this._matrix);
+      if (this.matrix) {
+        const matrixScale = Util.singularValueDecompose2dScale(this.matrix);
         scale = [scale[0] * matrixScale[0], scale[1] * matrixScale[1]];
       }
     }
@@ -405,8 +406,8 @@ class MeshShadingPattern extends BaseShadingPattern {
 
     if (!shadingFill) {
       ctx.setTransform.apply(ctx, owner.baseTransform);
-      if (this._matrix) {
-        ctx.transform.apply(ctx, this._matrix);
+      if (this.matrix) {
+        ctx.transform.apply(ctx, this.matrix);
       }
     }
 
@@ -426,10 +427,10 @@ class DummyShadingPattern extends BaseShadingPattern {
   }
 }
 
-function getShadingPattern(IR) {
+function getShadingPattern(IR, cachedCanvasPatterns) {
   switch (IR[0]) {
     case "RadialAxial":
-      return new RadialAxialShadingPattern(IR);
+      return new RadialAxialShadingPattern(IR, cachedCanvasPatterns);
     case "Mesh":
       return new MeshShadingPattern(IR);
     case "Dummy":
