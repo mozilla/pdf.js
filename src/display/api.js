@@ -1905,8 +1905,8 @@ class LoopbackPort {
  * @typedef {Object} PDFWorkerParameters
  * @property {string} [name] - The name of the worker.
  * @property {Object} [port] - The `workerPort` object.
- * @property {number} [verbosity] - Controls the logging level; the
- *   constants from {@link VerbosityLevel} should be used.
+ * @property {number} [verbosity] - Controls the logging level;
+ *   the constants from {@link VerbosityLevel} should be used.
  */
 
 /** @type {any} */
@@ -1923,13 +1923,11 @@ const PDFWorker = (function PDFWorkerClosure() {
       // Workers aren't supported in Node.js, force-disabling them there.
       isWorkerDisabled = true;
 
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("LIB")) {
-        fallbackWorkerSrc = "../pdf.worker.js";
-      } else {
-        fallbackWorkerSrc = "./pdf.worker.js";
-      }
-    } else if (typeof document === "object" && "currentScript" in document) {
-      const pdfjsFilePath = document.currentScript?.src;
+      fallbackWorkerSrc = PDFJSDev.test("LIB")
+        ? "../pdf.worker.js"
+        : "./pdf.worker.js";
+    } else if (typeof document === "object") {
+      const pdfjsFilePath = document?.currentScript?.src;
       if (pdfjsFilePath) {
         fallbackWorkerSrc = pdfjsFilePath.replace(
           /(\.(?:min\.)?js)(\?.*)?$/i,
@@ -1953,16 +1951,14 @@ const PDFWorker = (function PDFWorkerClosure() {
   }
 
   function getMainThreadWorkerMessageHandler() {
-    let mainWorkerMessageHandler;
     try {
-      mainWorkerMessageHandler = globalThis.pdfjsWorker?.WorkerMessageHandler;
+      return globalThis.pdfjsWorker?.WorkerMessageHandler || null;
     } catch (ex) {
-      /* Ignore errors. */
+      return null;
     }
-    return mainWorkerMessageHandler || null;
   }
 
-  // Loads worker code into main thread.
+  // Loads worker code into main-thread.
   function setupFakeWorkerGlobal() {
     if (fakeWorkerCapability) {
       return fakeWorkerCapability.promise;
