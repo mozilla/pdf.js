@@ -53,12 +53,12 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
+import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
-import { getXfaFontWidths } from "./xfa_fonts.js";
 import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
@@ -1019,7 +1019,7 @@ class PDFDocument {
 
     const reallyMissingFonts = new Set();
     for (const missing of missingFonts) {
-      if (!getXfaFontWidths(`${missing}-Regular`)) {
+      if (!getXfaFontName(`${missing}-Regular`)) {
         // No substitution available: we'll fallback on Myriad.
         reallyMissingFonts.add(missing);
       }
@@ -1040,15 +1040,7 @@ class PDFDocument {
         { name: "BoldItalic", fontWeight: 700, italicAngle: 12 },
       ]) {
         const name = `${missing}-${fontInfo.name}`;
-        const widths = getXfaFontWidths(name);
-        const dict = new Dict(null);
-        dict.set("BaseFont", Name.get(name));
-        dict.set("Type", Name.get("Font"));
-        dict.set("Subtype", Name.get("TrueType"));
-        dict.set("Encoding", Name.get("WinAnsiEncoding"));
-        const descriptor = new Dict(null);
-        descriptor.set("Widths", widths);
-        dict.set("FontDescriptor", descriptor);
+        const dict = getXfaFontDict(name);
 
         promises.push(
           partialEvaluator
