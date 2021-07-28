@@ -385,6 +385,26 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("checks that `docId`s are unique and increasing", async function () {
+      const loadingTask1 = getDocument(basicApiGetDocumentParams);
+      await loadingTask1.promise;
+      const docId1 = loadingTask1.docId;
+
+      const loadingTask2 = getDocument(basicApiGetDocumentParams);
+      await loadingTask2.promise;
+      const docId2 = loadingTask2.docId;
+
+      expect(docId1).not.toEqual(docId2);
+
+      const docIdRegExp = /^d(\d)+$/,
+        docNum1 = docIdRegExp.exec(docId1)?.[1],
+        docNum2 = docIdRegExp.exec(docId2)?.[1];
+
+      expect(+docNum1).toBeLessThan(+docNum2);
+
+      await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
+    });
   });
 
   describe("PDFWorker", function () {

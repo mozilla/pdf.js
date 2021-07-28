@@ -524,111 +524,81 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  * The loading task controls the operations required to load a PDF document
  * (such as network requests) and provides a way to listen for completion,
  * after which individual pages can be rendered.
- *
- * @typedef {Object} PDFDocumentLoadingTask
- * @property {string} docId - Unique identifier for the document loading task.
- * @property {boolean} destroyed - Whether the loading task is destroyed or not.
- * @property {function} [onPassword] - Callback to request a password if a wrong
- *   or no password was provided. The callback receives two parameters: a
- *   function that should be called with the new password, and a reason (see
- *   {@link PasswordResponses}).
- * @property {function} [onProgress] - Callback to be able to monitor the
- *   loading progress of the PDF file (necessary to implement e.g. a loading
- *   bar). The callback receives an {@link OnProgressParameters} argument.
- * @property {function} [onUnsupportedFeature] - Callback for when an
- *   unsupported feature is used in the PDF document. The callback receives an
- *   {@link UNSUPPORTED_FEATURES} argument.
- * @property {Promise<PDFDocumentProxy>} promise - Promise for document loading
- *   task completion.
- * @property {function} destroy - Abort all network requests and destroy
- *   the worker. Returns a promise that is resolved when destruction is
- *   completed.
  */
+class PDFDocumentLoadingTask {
+  static get idCounters() {
+    return shadow(this, "idCounters", { doc: 0 });
+  }
 
-/**
- * @type {any}
- * @ignore
- */
-const PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
-  let nextDocumentId = 0;
+  constructor() {
+    this._capability = createPromiseCapability();
+    this._transport = null;
+    this._worker = null;
+
+    /**
+     * Unique identifier for the document loading task.
+     * @type {string}
+     */
+    this.docId = `d${PDFDocumentLoadingTask.idCounters.doc++}`;
+
+    /**
+     * Whether the loading task is destroyed or not.
+     * @type {boolean}
+     */
+    this.destroyed = false;
+
+    /**
+     * Callback to request a password if a wrong or no password was provided.
+     * The callback receives two parameters: a function that should be called
+     * with the new password, and a reason (see {@link PasswordResponses}).
+     * @type {function}
+     */
+    this.onPassword = null;
+
+    /**
+     * Callback to be able to monitor the loading progress of the PDF file
+     * (necessary to implement e.g. a loading bar).
+     * The callback receives an {@link OnProgressParameters} argument.
+     * @type {function}
+     */
+    this.onProgress = null;
+
+    /**
+     * Callback for when an unsupported feature is used in the PDF document.
+     * The callback receives an {@link UNSUPPORTED_FEATURES} argument.
+     * @type {function}
+     */
+    this.onUnsupportedFeature = null;
+  }
 
   /**
-   * The loading task controls the operations required to load a PDF document
-   * (such as network requests) and provides a way to listen for completion,
-   * after which individual pages can be rendered.
+   * Promise for document loading task completion.
+   * @type {Promise<PDFDocumentProxy>}
    */
-  // eslint-disable-next-line no-shadow
-  class PDFDocumentLoadingTask {
-    constructor() {
-      this._capability = createPromiseCapability();
-      this._transport = null;
-      this._worker = null;
-
-      /**
-       * Unique identifier for the document loading task.
-       * @type {string}
-       */
-      this.docId = "d" + nextDocumentId++;
-
-      /**
-       * Whether the loading task is destroyed or not.
-       * @type {boolean}
-       */
-      this.destroyed = false;
-
-      /**
-       * Callback to request a password if a wrong or no password was provided.
-       * The callback receives two parameters: a function that should be called
-       * with the new password, and a reason (see {@link PasswordResponses}).
-       * @type {function}
-       */
-      this.onPassword = null;
-
-      /**
-       * Callback to be able to monitor the loading progress of the PDF file
-       * (necessary to implement e.g. a loading bar).
-       * The callback receives an {@link OnProgressParameters} argument.
-       * @type {function}
-       */
-      this.onProgress = null;
-
-      /**
-       * Callback for when an unsupported feature is used in the PDF document.
-       * The callback receives an {@link UNSUPPORTED_FEATURES} argument.
-       * @type {function}
-       */
-      this.onUnsupportedFeature = null;
-    }
-
-    /**
-     * Promise for document loading task completion.
-     * @type {Promise<PDFDocumentProxy>}
-     */
-    get promise() {
-      return this._capability.promise;
-    }
-
-    /**
-     * @returns {Promise<void>} A promise that is resolved when destruction is
-     *   completed.
-     */
-    destroy() {
-      this.destroyed = true;
-
-      const transportDestroyed = !this._transport
-        ? Promise.resolve()
-        : this._transport.destroy();
-      return transportDestroyed.then(() => {
-        this._transport = null;
-        if (this._worker) {
-          this._worker.destroy();
-          this._worker = null;
-        }
-      });
-    }
+  get promise() {
+    return this._capability.promise;
   }
-  return PDFDocumentLoadingTask;
-})();
+
+  /**
+   * Abort all network requests and destroy the worker.
+   * @returns {Promise<void>} A promise that is resolved when destruction is
+   *   completed.
+   */
+  destroy() {
+    this.destroyed = true;
+
+    const transportDestroyed = !this._transport
+      ? Promise.resolve()
+      : this._transport.destroy();
+    return transportDestroyed.then(() => {
+      this._transport = null;
+      if (this._worker) {
+        this._worker.destroy();
+        this._worker = null;
+      }
+    });
+  }
+}
 
 /**
  * Abstract class to support range requests file loading.
