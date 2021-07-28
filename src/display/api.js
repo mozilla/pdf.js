@@ -3063,181 +3063,179 @@ class RenderTask {
  * For internal use only.
  * @ignore
  */
-const InternalRenderTask = (function InternalRenderTaskClosure() {
-  const canvasInRendering = new WeakSet();
+class InternalRenderTask {
+  static get canvasInUse() {
+    return shadow(this, "canvasInUse", new WeakSet());
+  }
 
-  // eslint-disable-next-line no-shadow
-  class InternalRenderTask {
-    constructor({
-      callback,
-      params,
-      objs,
-      commonObjs,
-      operatorList,
-      pageIndex,
-      canvasFactory,
-      useRequestAnimationFrame = false,
-      pdfBug = false,
-    }) {
-      this.callback = callback;
-      this.params = params;
-      this.objs = objs;
-      this.commonObjs = commonObjs;
-      this.operatorListIdx = null;
-      this.operatorList = operatorList;
-      this._pageIndex = pageIndex;
-      this.canvasFactory = canvasFactory;
-      this._pdfBug = pdfBug;
+  constructor({
+    callback,
+    params,
+    objs,
+    commonObjs,
+    operatorList,
+    pageIndex,
+    canvasFactory,
+    useRequestAnimationFrame = false,
+    pdfBug = false,
+  }) {
+    this.callback = callback;
+    this.params = params;
+    this.objs = objs;
+    this.commonObjs = commonObjs;
+    this.operatorListIdx = null;
+    this.operatorList = operatorList;
+    this._pageIndex = pageIndex;
+    this.canvasFactory = canvasFactory;
+    this._pdfBug = pdfBug;
 
-      this.running = false;
-      this.graphicsReadyCallback = null;
-      this.graphicsReady = false;
-      this._useRequestAnimationFrame =
-        useRequestAnimationFrame === true && typeof window !== "undefined";
-      this.cancelled = false;
-      this.capability = createPromiseCapability();
-      this.task = new RenderTask(this);
-      // caching this-bound methods
-      this._cancelBound = this.cancel.bind(this);
-      this._continueBound = this._continue.bind(this);
-      this._scheduleNextBound = this._scheduleNext.bind(this);
-      this._nextBound = this._next.bind(this);
-      this._canvas = params.canvasContext.canvas;
+    this.running = false;
+    this.graphicsReadyCallback = null;
+    this.graphicsReady = false;
+    this._useRequestAnimationFrame =
+      useRequestAnimationFrame === true && typeof window !== "undefined";
+    this.cancelled = false;
+    this.capability = createPromiseCapability();
+    this.task = new RenderTask(this);
+    // caching this-bound methods
+    this._cancelBound = this.cancel.bind(this);
+    this._continueBound = this._continue.bind(this);
+    this._scheduleNextBound = this._scheduleNext.bind(this);
+    this._nextBound = this._next.bind(this);
+    this._canvas = params.canvasContext.canvas;
+  }
+
+  get completed() {
+    return this.capability.promise.catch(function () {
+      // Ignoring errors, since we only want to know when rendering is
+      // no longer pending.
+    });
+  }
+
+  initializeGraphics({ transparency = false, optionalContentConfig }) {
+    if (this.cancelled) {
+      return;
+    }
+    if (this._canvas) {
+      if (InternalRenderTask.canvasInUse.has(this._canvas)) {
+        throw new Error(
+          "Cannot use the same canvas during multiple render() operations. " +
+            "Use different canvas or ensure previous operations were " +
+            "cancelled or completed."
+        );
+      }
+      InternalRenderTask.canvasInUse.add(this._canvas);
     }
 
-    get completed() {
-      return this.capability.promise.catch(function () {
-        // Ignoring errors, since we only want to know when rendering is
-        // no longer pending.
+    if (this._pdfBug && globalThis.StepperManager?.enabled) {
+      this.stepper = globalThis.StepperManager.create(this._pageIndex);
+      this.stepper.init(this.operatorList);
+      this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
+    }
+    const { canvasContext, viewport, transform, imageLayer, background } =
+      this.params;
+
+    this.gfx = new CanvasGraphics(
+      canvasContext,
+      this.commonObjs,
+      this.objs,
+      this.canvasFactory,
+      imageLayer,
+      optionalContentConfig
+    );
+    this.gfx.beginDrawing({
+      transform,
+      viewport,
+      transparency,
+      background,
+    });
+    this.operatorListIdx = 0;
+    this.graphicsReady = true;
+    if (this.graphicsReadyCallback) {
+      this.graphicsReadyCallback();
+    }
+  }
+
+  cancel(error = null) {
+    this.running = false;
+    this.cancelled = true;
+    if (this.gfx) {
+      this.gfx.endDrawing();
+    }
+    if (this._canvas) {
+      InternalRenderTask.canvasInUse.delete(this._canvas);
+    }
+    this.callback(
+      error ||
+        new RenderingCancelledException(
+          `Rendering cancelled, page ${this._pageIndex + 1}`,
+          "canvas"
+        )
+    );
+  }
+
+  operatorListChanged() {
+    if (!this.graphicsReady) {
+      if (!this.graphicsReadyCallback) {
+        this.graphicsReadyCallback = this._continueBound;
+      }
+      return;
+    }
+
+    if (this.stepper) {
+      this.stepper.updateOperatorList(this.operatorList);
+    }
+
+    if (this.running) {
+      return;
+    }
+    this._continue();
+  }
+
+  _continue() {
+    this.running = true;
+    if (this.cancelled) {
+      return;
+    }
+    if (this.task.onContinue) {
+      this.task.onContinue(this._scheduleNextBound);
+    } else {
+      this._scheduleNext();
+    }
+  }
+
+  _scheduleNext() {
+    if (this._useRequestAnimationFrame) {
+      window.requestAnimationFrame(() => {
+        this._nextBound().catch(this._cancelBound);
       });
+    } else {
+      Promise.resolve().then(this._nextBound).catch(this._cancelBound);
     }
+  }
 
-    initializeGraphics({ transparency = false, optionalContentConfig }) {
-      if (this.cancelled) {
-        return;
-      }
-      if (this._canvas) {
-        if (canvasInRendering.has(this._canvas)) {
-          throw new Error(
-            "Cannot use the same canvas during multiple render() operations. " +
-              "Use different canvas or ensure previous operations were " +
-              "cancelled or completed."
-          );
-        }
-        canvasInRendering.add(this._canvas);
-      }
-
-      if (this._pdfBug && globalThis.StepperManager?.enabled) {
-        this.stepper = globalThis.StepperManager.create(this._pageIndex);
-        this.stepper.init(this.operatorList);
-        this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
-      }
-      const { canvasContext, viewport, transform, imageLayer, background } =
-        this.params;
-
-      this.gfx = new CanvasGraphics(
-        canvasContext,
-        this.commonObjs,
-        this.objs,
-        this.canvasFactory,
-        imageLayer,
-        optionalContentConfig
-      );
-      this.gfx.beginDrawing({
-        transform,
-        viewport,
-        transparency,
-        background,
-      });
-      this.operatorListIdx = 0;
-      this.graphicsReady = true;
-      if (this.graphicsReadyCallback) {
-        this.graphicsReadyCallback();
-      }
+  async _next() {
+    if (this.cancelled) {
+      return;
     }
-
-    cancel(error = null) {
+    this.operatorListIdx = this.gfx.executeOperatorList(
+      this.operatorList,
+      this.operatorListIdx,
+      this._continueBound,
+      this.stepper
+    );
+    if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
-      this.cancelled = true;
-      if (this.gfx) {
+      if (this.operatorList.lastChunk) {
         this.gfx.endDrawing();
-      }
-      if (this._canvas) {
-        canvasInRendering.delete(this._canvas);
-      }
-      this.callback(
-        error ||
-          new RenderingCancelledException(
-            `Rendering cancelled, page ${this._pageIndex + 1}`,
-            "canvas"
-          )
-      );
-    }
-
-    operatorListChanged() {
-      if (!this.graphicsReady) {
-        if (!this.graphicsReadyCallback) {
-          this.graphicsReadyCallback = this._continueBound;
+        if (this._canvas) {
+          InternalRenderTask.canvasInUse.delete(this._canvas);
         }
-        return;
-      }
-
-      if (this.stepper) {
-        this.stepper.updateOperatorList(this.operatorList);
-      }
-
-      if (this.running) {
-        return;
-      }
-      this._continue();
-    }
-
-    _continue() {
-      this.running = true;
-      if (this.cancelled) {
-        return;
-      }
-      if (this.task.onContinue) {
-        this.task.onContinue(this._scheduleNextBound);
-      } else {
-        this._scheduleNext();
-      }
-    }
-
-    _scheduleNext() {
-      if (this._useRequestAnimationFrame) {
-        window.requestAnimationFrame(() => {
-          this._nextBound().catch(this._cancelBound);
-        });
-      } else {
-        Promise.resolve().then(this._nextBound).catch(this._cancelBound);
-      }
-    }
-
-    async _next() {
-      if (this.cancelled) {
-        return;
-      }
-      this.operatorListIdx = this.gfx.executeOperatorList(
-        this.operatorList,
-        this.operatorListIdx,
-        this._continueBound,
-        this.stepper
-      );
-      if (this.operatorListIdx === this.operatorList.argsArray.length) {
-        this.running = false;
-        if (this.operatorList.lastChunk) {
-          this.gfx.endDrawing();
-          if (this._canvas) {
-            canvasInRendering.delete(this._canvas);
-          }
-          this.callback();
-        }
+        this.callback();
       }
     }
   }
-  return InternalRenderTask;
-})();
+}
 
 /** @type {string} */
 const version =
