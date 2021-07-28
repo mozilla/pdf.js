@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+:root {
+  --unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+}
+
 .xfaPage {
   overflow: hidden;
   position: relative;
@@ -45,7 +49,7 @@
   text-align: inherit;
   text-decoration: inherit;
   box-sizing: border-box;
-  background: transparent;
+  background-color: transparent;
   padding: 0;
   margin: 0;
   pointer-events: auto;
@@ -84,7 +88,7 @@
 
 .xfaCaption {
   overflow: hidden;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
 }
 
 .xfaCaptionForCheckButton {
@@ -103,8 +107,16 @@
   align-items: center;
 }
 
+.xfaRight {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+
 .xfaLeft > .xfaCaption,
-.xfaLeft > .xfaCaptionForCheckButton {
+.xfaLeft > .xfaCaptionForCheckButton,
+.xfaRight > .xfaCaption,
+.xfaRight > .xfaCaptionForCheckButton {
   max-height: 100%;
 }
 
@@ -114,13 +126,21 @@
   align-items: flex-start;
 }
 
+.xfaBottom {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+}
+
 .xfaTop > .xfaCaption,
-.xfaTop > .xfaCaptionForCheckButton {
+.xfaTop > .xfaCaptionForCheckButton,
+.xfaBottom > .xfaCaption,
+.xfaBottom > .xfaCaptionForCheckButton {
   width: 100%;
 }
 
 .xfaBorder {
-  background: transparent;
+  background-color: transparent;
   position: absolute;
   pointer-events: none;
 }
@@ -130,24 +150,28 @@
   height: 100%;
 }
 
-.xfaTextfield,
-.xfaSelect {
-  background-color: rgba(0, 54, 255, 0.13);
-}
-
 .xfaTextfield:focus,
 .xfaSelect:focus {
+  background-image: none;
   background-color: transparent;
   outline: none;
 }
 
 .xfaTextfield,
 .xfaSelect {
-  width: 100%;
   height: 100%;
-  flex: 1 1 0;
+  width: 100%;
+  flex: 1 1 auto;
   border: none;
   resize: none;
+  background-image: var(--unfocused-field-background);
+}
+
+.xfaTop > .xfaTextfield,
+.xfaTop > .xfaSelect,
+.xfaBottom > .xfaTextfield,
+.xfaBottom > .xfaSelect {
+  flex: 0 1 auto;
 }
 
 .xfaButton {
@@ -156,10 +180,6 @@
   height: 100%;
   border: none;
   text-align: center;
-}
-
-.xfaButton:hover {
-  background: Highlight;
 }
 
 .xfaCheckbox,
@@ -255,7 +275,7 @@
 @media print {
   .xfaTextfield,
   .xfaSelect {
-    background-color: transparent;
+    background: transparent;
   }
 
   .xfaSelect {
