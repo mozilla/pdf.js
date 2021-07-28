@@ -2926,16 +2926,22 @@ class Fill extends XFAObject {
     const ggrandpa = grandpa[$getParent]();
     const style = Object.create(null);
 
+    // Use for color, i.e. #...
     let propName = "color";
+
+    // Use for non-color, i.e. gradient, radial-gradient...
+    let altPropName = propName;
+
     if (parent instanceof Border) {
-      propName = "background";
+      propName = "background-color";
+      altPropName = "background";
       if (ggrandpa instanceof Ui) {
         // The default fill color is white.
-        style.background = "white";
+        style.backgroundColor = "white";
       }
     }
     if (parent instanceof Rectangle || parent instanceof Arc) {
-      propName = "fill";
+      propName = altPropName = "fill";
       style.fill = "white";
     }
 
@@ -2948,12 +2954,16 @@ class Fill extends XFAObject {
         continue;
       }
 
-      style[propName] = obj[$toStyle](this.color);
+      const color = obj[$toStyle](this.color);
+      if (color) {
+        style[color.startsWith("#") ? propName : altPropName] = color;
+      }
       return style;
     }
 
-    if (this.color) {
-      style[propName] = this.color[$toStyle]();
+    if (this.color && this.color.value) {
+      const color = this.color[$toStyle]();
+      style[color.startsWith("#") ? propName : altPropName] = color;
     }
 
     return style;
