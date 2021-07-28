@@ -1315,20 +1315,17 @@ class PartialEvaluator {
   }
 
   parseShading({
-    keyObj,
     shading,
     resources,
     localColorSpaceCache,
     localShadingPatternCache,
-    matrix = null,
   }) {
     // Shadings and patterns may be referenced by the same name but the resource
     // dictionary could be different so we can't use the name for the cache key.
-    let id = localShadingPatternCache.get(keyObj);
+    let id = localShadingPatternCache.get(shading);
     if (!id) {
       var shadingFill = Pattern.parseShading(
         shading,
-        matrix,
         this.xref,
         resources,
         this.handler,
@@ -1337,7 +1334,7 @@ class PartialEvaluator {
       );
       const patternIR = shadingFill.getIR();
       id = `pattern_${this.idFactory.createObjId()}`;
-      localShadingPatternCache.set(keyObj, id);
+      localShadingPatternCache.set(shading, id);
       this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
     }
     return id;
@@ -1402,14 +1399,12 @@ class PartialEvaluator {
           const shading = dict.get("Shading");
           const matrix = dict.getArray("Matrix");
           const objId = this.parseShading({
-            keyObj: pattern,
             shading,
-            matrix,
             resources,
             localColorSpaceCache,
             localShadingPatternCache,
           });
-          operatorList.addOp(fn, ["Shading", objId]);
+          operatorList.addOp(fn, ["Shading", objId, matrix]);
           return undefined;
         }
         throw new FormatError(`Unknown PatternType: ${typeNum}`);
@@ -1942,7 +1937,6 @@ class PartialEvaluator {
               throw new FormatError("No shading object found");
             }
             const patternId = self.parseShading({
-              keyObj: shading,
               shading,
               resources,
               localColorSpaceCache,
