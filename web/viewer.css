@@ -14,6 +14,7 @@
  */
 
 @import url(pdf_viewer.css);
+@import url(extra.css);
 
 :root {
   --sidebar-width: 200px;

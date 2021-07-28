@@ -1,0 +1,21 @@
+.toolbarButton.user::before,
+.secondaryToolbarButton.user::before {
+  -webkit-mask-image: var(--toolbarButton-user-icon);
+  mask-image: var(--toolbarButton-user-icon);
+}
+
+:root {
+  --toolbarButton-user-icon: url(images/toolbarButton-user-icon.svg);
+  --toolbarButton-annotation-icon: url(images/toolbarButton-annotation-icon.svg);
+}
+
+.secondaryToolbar2 {
+  padding: 6px 0 10px;
+  height: auto;
+  z-index: 30000;
+  background-color: var(--doorhanger-bg-color);
+}
+
+/* html[dir="ltr"] .secondaryToolbar2 {
+  right: 4px;
+} */
