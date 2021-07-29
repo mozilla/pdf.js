@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { Font } from "../core/fonts.js";
 import {
   assert,
   bytesToString,
@@ -392,10 +391,6 @@ class FontFaceObject {
     this.ignoreErrors = ignoreErrors === true;
     this._onUnsupportedFeature = onUnsupportedFeature;
     this.fontRegistry = fontRegistry;
-  }
-
-  getFont() {
-    return new Font(this.name, undefined, this);
   }
 
   createNativeFontFace() {
