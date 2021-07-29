@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-/*
+ /*
  * This file has been altered by PDFTron
  */
 
@@ -121,53 +121,20 @@ var WorkerMessageHandler = {
       );
     }
 
-    const docId = docParams.docId;
-    const docBaseUrl = docParams.docBaseUrl;
-    const workerHandlerName = `${docParams.docId}_worker`;
+    var docId = docParams.docId;
+    var docBaseUrl = docParams.docBaseUrl;
+    var workerHandlerName = docParams.docId + "_worker";
     var disableFlattenedAnnotations = docParams.disableFlattenedAnnotations;
-
-    if (typeof self !== "undefined") {
-      self.disableFlattenedAnnotations = disableFlattenedAnnotations;
+    
+    if (typeof self !== 'undefined') {
+      self.disableFlattenedAnnotations = disableFlattenedAnnotations
     }
 
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       window.disableFlattenedAnnotations = disableFlattenedAnnotations;
     }
 
-    let handler = new MessageHandler(workerHandlerName, docId, port);
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      // Fail early, and predictably, rather than having (some) fonts fail to
-      // load/render with slightly cryptic error messages in environments where
-      // the `Array.prototype` has been *incorrectly* extended.
-      //
-      // PLEASE NOTE: We do *not* want to slow down font parsing by adding
-      //              `hasOwnProperty` checks all over the code-base.
-      const enumerableProperties = [];
-      for (const property in []) {
-        enumerableProperties.push(property);
-      }
-      if (enumerableProperties.length) {
-        throw new Error(
-          `The \`Array.prototype\` contains unexpected enumerable properties: ${enumerableProperties.join(
-            ", "
-          )}; thus breaking e.g. \`for...in\` iteration of \`Array\`s.`
-        );
-      }
-
-      // Ensure that (primarily) Node.js users won't accidentally attempt to use
-      // a non-translated/non-polyfilled build of the library, since that would
-      // quickly fail anyway because of missing functionality.
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
-        typeof ReadableStream === "undefined"
-      ) {
-        throw new Error(
-          "The browser/environment lacks native support for critical " +
-            "functionality used by the PDF.js library (e.g. `ReadableStream`); " +
-            "please use a `legacy`-build instead."
-        );
-      }
-    }
+    var handler = new MessageHandler(workerHandlerName, docId, port);
 
     // Ensure that postMessage transfers are always correctly enabled/disabled,
     // to prevent "DataCloneError" in browsers without transfers support.
@@ -590,7 +557,7 @@ var WorkerMessageHandler = {
       sink.onCancel = function(reason) {};
 
       pdfManager.getPage(pageIndex).then(function(page) {
-        var task = new WorkerTask(`GetTextContent: page ${pageIndex}`);
+        var task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
 
         // NOTE: Keep this condition in sync with the `info` helper function.
