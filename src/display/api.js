@@ -375,6 +375,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.initialData = pdfDataRangeTransport.initialData;
     source.progressiveDone = pdfDataRangeTransport.progressiveDone;
   }
+
   return worker.messageHandler
     .sendWithPromise("GetDocRequest", {
       docId,

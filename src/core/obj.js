@@ -1684,6 +1684,8 @@ var XRef = (function XRefClosure() {
       if (trailerDict) {
         return trailerDict;
       }
+
+      // HERE
       // nothing helps
       throw new InvalidPDFException("Invalid PDF structure.");
     },
