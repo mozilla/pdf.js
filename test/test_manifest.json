@@ -952,6 +952,14 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1722038",
+       "file": "pdfs/xfa_bug1722038.pdf",
+       "md5": "95170baaade2ab6e1d0372f35db01747",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_bug1720888",
        "file": "pdfs/xfa_bug1720888.pdf",
        "md5": "3a9486b851b7d069c3cb31b0be2bc2ff",
