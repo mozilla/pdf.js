@@ -505,7 +505,8 @@ const PDFViewerApplication = {
       linkService: pdfLinkService,
       downloadManager,
       findController,
-      scriptingManager: pdfScriptingManager,
+      scriptingManager:
+        AppOptions.get("enableScripting") && pdfScriptingManager,
       renderer: AppOptions.get("renderer"),
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
@@ -514,7 +515,6 @@ const PDFViewerApplication = {
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
-      enableScripting: AppOptions.get("enableScripting"),
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
