@@ -27,10 +27,26 @@ const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+function getTimeoutPromise(promise, message, duration = 60) {
+  return Promise.race([
+    promise,
+    new Promise((resolve, reject) => {
+      setTimeout(
+        reject,
+        duration * 1000,
+        new Error(`TIMEOUT issue (${duration} secs): ${message}`)
+      );
+    }),
+  ]);
+}
+
 function loadStyles(styles) {
   styles = Object.values(styles);
   if (styles.every(style => style.promise)) {
-    return Promise.all(styles.map(style => style.promise));
+    return getTimeoutPromise(
+      Promise.all(styles.map(style => style.promise)),
+      "loadStyles with promise for all styles is too slow"
+    );
   }
 
   for (const style of styles) {
@@ -47,7 +63,10 @@ function loadStyles(styles) {
     });
   }
 
-  return Promise.all(styles.map(style => style.promise));
+  return getTimeoutPromise(
+    Promise.all(styles.map(style => style.promise)),
+    "loadStyles is too slow"
+  );
 }
 
 function writeSVG(svgElement, ctx, resolve, reject) {
@@ -58,11 +77,15 @@ function writeSVG(svgElement, ctx, resolve, reject) {
   const img = new Image();
   img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
   img.onload = function () {
-    ctx.drawImage(img, 0, 0);
-    resolve();
+    try {
+      ctx.drawImage(img, 0, 0);
+      resolve();
+    } catch (e) {
+      reject(new Error("Error rasterizing text layer (in onload) " + e));
+    }
   };
   img.onerror = function (e) {
-    reject(new Error("Error rasterizing text layer " + e));
+    reject(new Error("Error rasterizing text layer (in onerror) " + e));
   };
 }
 
@@ -74,21 +97,28 @@ function inlineImages(images) {
         const xhr = new XMLHttpRequest();
         xhr.responseType = "blob";
         xhr.onload = function () {
-          const reader = new FileReader();
-          reader.onloadend = function () {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(xhr.response);
+          try {
+            const reader = new FileReader();
+            reader.onloadend = function () {
+              resolve(reader.result);
+            };
+            reader.readAsDataURL(xhr.response);
+          } catch (e) {
+            reject(new Error("Error fetching inline image (in onload) " + e));
+          }
         };
         xhr.onerror = function (e) {
-          reject(new Error("Error fetching inline image " + e));
+          reject(new Error("Error fetching inline image (in onerror) " + e));
         };
         xhr.open("GET", images[i].src);
         xhr.send();
       })
     );
   }
-  return Promise.all(imagePromises);
+  return getTimeoutPromise(
+    Promise.all(imagePromises),
+    "inlineImages is too slow"
+  );
 }
 
 async function resolveImages(node, silentErrors = false) {
@@ -111,7 +141,10 @@ async function resolveImages(node, silentErrors = false) {
       })
     );
   }
-  await Promise.all(loadedPromises);
+  await getTimeoutPromise(
+    Promise.all(loadedPromises),
+    "resolveImages is too slow"
+  );
 }
 
 /**
@@ -136,49 +169,55 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     textContent,
     enhanceTextSelection
   ) {
-    return new Promise(function (resolve, reject) {
-      // Building SVG with size of the viewport.
-      var svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
-      // items are transformed to have 1px font size
-      svg.setAttribute("font-size", 1);
+    return getTimeoutPromise(
+      new Promise(function (resolve, reject) {
+        // Building SVG with size of the viewport.
+        var svg = document.createElementNS(SVG_NS, "svg:svg");
+        svg.setAttribute("width", viewport.width + "px");
+        svg.setAttribute("height", viewport.height + "px");
+        // items are transformed to have 1px font size
+        svg.setAttribute("font-size", 1);
 
-      // Adding element to host our HTML (style + text layer div).
-      var foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      var style = document.createElement("style");
-      var stylePromise = getTextLayerStyle();
-      foreignObject.appendChild(style);
-      var div = document.createElement("div");
-      div.className = "textLayer";
-      foreignObject.appendChild(div);
+        // Adding element to host our HTML (style + text layer div).
+        var foreignObject = document.createElementNS(
+          SVG_NS,
+          "svg:foreignObject"
+        );
+        foreignObject.setAttribute("x", "0");
+        foreignObject.setAttribute("y", "0");
+        foreignObject.setAttribute("width", viewport.width + "px");
+        foreignObject.setAttribute("height", viewport.height + "px");
+        var style = document.createElement("style");
+        var stylePromise = getTextLayerStyle();
+        foreignObject.appendChild(style);
+        var div = document.createElement("div");
+        div.className = "textLayer";
+        foreignObject.appendChild(div);
 
-      stylePromise
-        .then(async cssRules => {
-          style.textContent = cssRules;
+        stylePromise
+          .then(async cssRules => {
+            style.textContent = cssRules;
 
-          // Rendering text layer as HTML.
-          var task = pdfjsLib.renderTextLayer({
-            textContent,
-            container: div,
-            viewport,
-            enhanceTextSelection,
+            // Rendering text layer as HTML.
+            var task = pdfjsLib.renderTextLayer({
+              textContent,
+              container: div,
+              viewport,
+              enhanceTextSelection,
+            });
+            await task.promise;
+
+            task.expandTextDivs(true);
+            svg.appendChild(foreignObject);
+
+            writeSVG(svg, ctx, resolve, reject);
+          })
+          .catch(reason => {
+            reject(new Error(`rasterizeTextLayer: "${reason?.message}".`));
           });
-          await task.promise;
-
-          task.expandTextDivs(true);
-          svg.appendChild(foreignObject);
-
-          writeSVG(svg, ctx, resolve, reject);
-        })
-        .catch(reason => {
-          reject(new Error(`rasterizeTextLayer: "${reason?.message}".`));
-        });
-    });
+      }),
+      "rasterizeTextLayer is too slow"
+    );
   }
 
   return rasterizeTextLayer;
@@ -221,52 +260,60 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     imageResourcesPath,
     renderInteractiveForms
   ) {
-    return new Promise(function (resolve, reject) {
-      // Building SVG with size of the viewport.
-      var svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
+    return getTimeoutPromise(
+      new Promise(function (resolve, reject) {
+        // Building SVG with size of the viewport.
+        var svg = document.createElementNS(SVG_NS, "svg:svg");
+        svg.setAttribute("width", viewport.width + "px");
+        svg.setAttribute("height", viewport.height + "px");
 
-      // Adding element to host our HTML (style + annotation layer div).
-      var foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      var style = document.createElement("style");
-      var stylePromise = getAnnotationLayerStyle();
-      foreignObject.appendChild(style);
-      var div = document.createElement("div");
-      div.className = "annotationLayer";
+        // Adding element to host our HTML (style + annotation layer div).
+        var foreignObject = document.createElementNS(
+          SVG_NS,
+          "svg:foreignObject"
+        );
+        foreignObject.setAttribute("x", "0");
+        foreignObject.setAttribute("y", "0");
+        foreignObject.setAttribute("width", viewport.width + "px");
+        foreignObject.setAttribute("height", viewport.height + "px");
+        var style = document.createElement("style");
+        var stylePromise = getAnnotationLayerStyle();
+        foreignObject.appendChild(style);
+        var div = document.createElement("div");
+        div.className = "annotationLayer";
 
-      // Rendering annotation layer as HTML.
-      stylePromise
-        .then(async (common, overrides) => {
-          style.textContent = common + overrides;
+        // Rendering annotation layer as HTML.
+        stylePromise
+          .then(async (common, overrides) => {
+            style.textContent = common + overrides;
 
-          var annotation_viewport = viewport.clone({ dontFlip: true });
-          var parameters = {
-            viewport: annotation_viewport,
-            div,
-            annotations,
-            page,
-            linkService: new pdfjsViewer.SimpleLinkService(),
-            imageResourcesPath,
-            renderInteractiveForms,
-          };
-          pdfjsLib.AnnotationLayer.render(parameters);
+            var annotation_viewport = viewport.clone({ dontFlip: true });
+            var parameters = {
+              viewport: annotation_viewport,
+              div,
+              annotations,
+              page,
+              linkService: new pdfjsViewer.SimpleLinkService(),
+              imageResourcesPath,
+              renderInteractiveForms,
+            };
+            pdfjsLib.AnnotationLayer.render(parameters);
 
-          // Inline SVG images from text annotations.
-          await resolveImages(div);
-          foreignObject.appendChild(div);
-          svg.appendChild(foreignObject);
+            // Inline SVG images from text annotations.
+            await resolveImages(div);
+            foreignObject.appendChild(div);
+            svg.appendChild(foreignObject);
 
-          writeSVG(svg, ctx, resolve, reject);
-        })
-        .catch(reason => {
-          reject(new Error(`rasterizeAnnotationLayer: "${reason?.message}".`));
-        });
-    });
+            writeSVG(svg, ctx, resolve, reject);
+          })
+          .catch(reason => {
+            reject(
+              new Error(`rasterizeAnnotationLayer: "${reason?.message}".`)
+            );
+          });
+      }),
+      "rasterizeAnnotationLayer is too slow"
+    );
   }
 
   return rasterizeAnnotationLayer;
@@ -296,48 +343,51 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
     annotationStorage,
     isPrint
   ) {
-    return new Promise(function (resolve, reject) {
-      // Building SVG with size of the viewport.
-      const svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
-      const foreignObject = document.createElementNS(
-        SVG_NS,
-        "svg:foreignObject"
-      );
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      const style = document.createElement("style");
-      const stylePromise = getXfaLayerStyle();
-      foreignObject.appendChild(style);
-      const div = document.createElement("div");
-      foreignObject.appendChild(div);
+    return getTimeoutPromise(
+      new Promise(function (resolve, reject) {
+        // Building SVG with size of the viewport.
+        const svg = document.createElementNS(SVG_NS, "svg:svg");
+        svg.setAttribute("width", viewport.width + "px");
+        svg.setAttribute("height", viewport.height + "px");
+        const foreignObject = document.createElementNS(
+          SVG_NS,
+          "svg:foreignObject"
+        );
+        foreignObject.setAttribute("x", "0");
+        foreignObject.setAttribute("y", "0");
+        foreignObject.setAttribute("width", viewport.width + "px");
+        foreignObject.setAttribute("height", viewport.height + "px");
+        const style = document.createElement("style");
+        const stylePromise = getXfaLayerStyle();
+        foreignObject.appendChild(style);
+        const div = document.createElement("div");
+        foreignObject.appendChild(div);
 
-      stylePromise
-        .then(async cssRules => {
-          style.textContent = fontRules + "\n" + cssRules;
+        stylePromise
+          .then(async cssRules => {
+            style.textContent = fontRules + "\n" + cssRules;
 
-          pdfjsLib.XfaLayer.render({
-            xfa,
-            div,
-            viewport: viewport.clone({ dontFlip: true }),
-            annotationStorage,
-            intent: isPrint ? "print" : "display",
+            pdfjsLib.XfaLayer.render({
+              xfa,
+              div,
+              viewport: viewport.clone({ dontFlip: true }),
+              annotationStorage,
+              intent: isPrint ? "print" : "display",
+            });
+
+            // Some unsupported type of images (e.g. tiff)
+            // lead to errors.
+            await resolveImages(div, /* silentErrors = */ true);
+            svg.appendChild(foreignObject);
+
+            writeSVG(svg, ctx, resolve, reject);
+          })
+          .catch(reason => {
+            reject(new Error(`rasterizeXfaLayer: "${reason?.message}".`));
           });
-
-          // Some unsupported type of images (e.g. tiff)
-          // lead to errors.
-          await resolveImages(div, /* silentErrors = */ true);
-          svg.appendChild(foreignObject);
-
-          writeSVG(svg, ctx, resolve, reject);
-        })
-        .catch(reason => {
-          reject(new Error(`rasterizeXfaLayer: "${reason?.message}".`));
-        });
-    });
+      }),
+      "rasterizeXfaLayer is too slow"
+    );
   }
 
   return rasterizeXfaLayer;
@@ -447,86 +497,92 @@ var Driver = (function DriverClosure() {
     _nextTask() {
       let failure = "";
 
-      this._cleanup().then(() => {
-        if (this.currentTask === this.manifest.length) {
-          this._done();
-          return;
-        }
-        const task = this.manifest[this.currentTask];
-        task.round = 0;
-        task.pageNum = task.firstPage || 1;
-        task.stats = { times: [] };
-        task.enableXfa = task.enableXfa === true;
-
-        // Support *linked* test-cases for the other suites, e.g. unit- and
-        // integration-tests, without needing to run them as reference-tests.
-        if (task.type === "other") {
-          this._log(`Skipping file "${task.file}"\n`);
-
-          if (!task.link) {
-            this._nextPage(task, 'Expected "other" test-case to be linked.');
+      this._cleanup()
+        .then(() => {
+          if (this.currentTask === this.manifest.length) {
+            this._done();
             return;
           }
-          this.currentTask++;
-          this._nextTask();
-          return;
-        }
+          const task = this.manifest[this.currentTask];
+          task.round = 0;
+          task.pageNum = task.firstPage || 1;
+          task.stats = { times: [] };
+          task.enableXfa = task.enableXfa === true;
 
-        this._log('Loading file "' + task.file + '"\n');
+          // Support *linked* test-cases for the other suites, e.g. unit- and
+          // integration-tests, without needing to run them as reference-tests.
+          if (task.type === "other") {
+            this._log(`Skipping file "${task.file}"\n`);
 
-        const absoluteUrl = new URL(task.file, window.location).href;
-        try {
-          let xfaStyleElement = null;
-          if (task.enableXfa) {
-            // Need to get the font definitions to inject them in the SVG.
-            // So we create this element and those definitions will be
-            // appended in font_loader.js.
-            xfaStyleElement = document.createElement("style");
-            document.documentElement
-              .getElementsByTagName("head")[0]
-              .appendChild(xfaStyleElement);
+            if (!task.link) {
+              this._nextPage(task, 'Expected "other" test-case to be linked.');
+              return;
+            }
+            this.currentTask++;
+            this._nextTask();
+            return;
           }
 
-          const loadingTask = pdfjsLib.getDocument({
-            url: absoluteUrl,
-            password: task.password,
-            cMapUrl: CMAP_URL,
-            cMapPacked: CMAP_PACKED,
-            standardFontDataUrl: STANDARD_FONT_DATA_URL,
-            disableRange: task.disableRange,
-            disableAutoFetch: !task.enableAutoFetch,
-            pdfBug: true,
-            useSystemFonts: task.useSystemFonts,
-            useWorkerFetch: task.useWorkerFetch,
-            enableXfa: task.enableXfa,
-            styleElement: xfaStyleElement,
-          });
-          loadingTask.promise.then(
-            doc => {
-              if (task.enableXfa) {
-                task.fontRules = "";
-                for (const rule of xfaStyleElement.sheet.cssRules) {
-                  task.fontRules += rule.cssText + "\n";
-                }
-              }
+          this._log('Loading file "' + task.file + '"\n');
 
-              task.pdfDoc = doc;
-              task.optionalContentConfigPromise =
-                doc.getOptionalContentConfig();
-
-              this._nextPage(task, failure);
-            },
-            err => {
-              failure = "Loading PDF document: " + err;
-              this._nextPage(task, failure);
+          const absoluteUrl = new URL(task.file, window.location).href;
+          try {
+            let xfaStyleElement = null;
+            if (task.enableXfa) {
+              // Need to get the font definitions to inject them in the SVG.
+              // So we create this element and those definitions will be
+              // appended in font_loader.js.
+              xfaStyleElement = document.createElement("style");
+              document.documentElement
+                .getElementsByTagName("head")[0]
+                .appendChild(xfaStyleElement);
             }
-          );
-          return;
-        } catch (e) {
-          failure = "Loading PDF document: " + this._exceptionToString(e);
-        }
-        this._nextPage(task, failure);
-      });
+
+            const loadingTask = pdfjsLib.getDocument({
+              url: absoluteUrl,
+              password: task.password,
+              cMapUrl: CMAP_URL,
+              cMapPacked: CMAP_PACKED,
+              standardFontDataUrl: STANDARD_FONT_DATA_URL,
+              disableRange: task.disableRange,
+              disableAutoFetch: !task.enableAutoFetch,
+              pdfBug: true,
+              useSystemFonts: task.useSystemFonts,
+              useWorkerFetch: task.useWorkerFetch,
+              enableXfa: task.enableXfa,
+              styleElement: xfaStyleElement,
+            });
+            loadingTask.promise.then(
+              doc => {
+                if (task.enableXfa) {
+                  task.fontRules = "";
+                  for (const rule of xfaStyleElement.sheet.cssRules) {
+                    task.fontRules += rule.cssText + "\n";
+                  }
+                }
+
+                task.pdfDoc = doc;
+                task.optionalContentConfigPromise =
+                  doc.getOptionalContentConfig();
+
+                this._nextPage(task, failure);
+              },
+              err => {
+                failure = "Loading PDF document: " + err;
+                this._nextPage(task, failure);
+              }
+            );
+            return;
+          } catch (e) {
+            failure = "Loading PDF document: " + this._exceptionToString(e);
+          }
+          this._nextPage(task, failure);
+        })
+        .catch(reason => {
+          this._log(`_nextTask error: "${reason?.message}".`);
+          this.currentTask++;
+          this._nextTask();
+        });
     },
 
     _cleanup() {
@@ -551,7 +607,10 @@ var Driver = (function DriverClosure() {
           delete this.manifest[i].pdfDoc;
         }
       }
-      return Promise.all(destroyedPromises);
+      return getTimeoutPromise(
+        Promise.all(destroyedPromises),
+        "_cleanup is too slow"
+      );
     },
 
     _exceptionToString: function Driver_exceptionToString(e) {

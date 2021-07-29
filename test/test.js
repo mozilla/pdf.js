@@ -907,6 +907,54 @@ async function startBrowser(browserName, startUrl = "") {
   if (startUrl) {
     const pages = await browser.pages();
     const page = pages[0];
+    page
+      .on("console", message =>
+        console.log(
+          `CONSOLE (${browserName}): ${message
+            .type()
+            .substr(0, 3)
+            .toUpperCase()} ${message.text()}`
+        )
+      )
+      .on("pageerror", ({ message }) =>
+        console.log(`PAGEERROR (${browserName}): ${message}`)
+      )
+      .on("error", ({ message }) =>
+        console.log(`ERROR (${browserName}): ${message}`)
+      )
+      .on("dialog", async dialog =>
+        console.log(`DIALOG (${browserName}): ${dialog.message()}`)
+      )
+      .on("response", response => {
+        let respUrl = response.url();
+        if (respUrl.length >= 128) {
+          respUrl = respUrl.substring(0, 128) + "...";
+        }
+        console.log(
+          `RESPONSE (${browserName}): ${response.status()} ${respUrl}`
+        );
+      })
+      .on("request", request => {
+        let reqUrl = request.url();
+        if (reqUrl.length >= 128) {
+          reqUrl = reqUrl.substring(0, 128) + "...";
+        }
+        console.log(`REQUEST (${browserName}): ${reqUrl}`);
+      })
+      .on("requestfinished", request => {
+        let reqUrl = request.url();
+        if (reqUrl.length >= 128) {
+          reqUrl = reqUrl.substring(0, 128) + "...";
+        }
+        console.log(`REQUESTFINISHED (${browserName}): ${reqUrl}`);
+      })
+      .on("requestfailed", request =>
+        console.log(
+          `REQUESTFAILED (${browserName}): ${
+            request.failure().errorText
+          } ${request.url()}`
+        )
+      );
     await page.goto(startUrl, { timeout: 0 });
   }
 
