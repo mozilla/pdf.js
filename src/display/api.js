@@ -1772,7 +1772,11 @@ class PDFPageProxy {
         return;
       }
     }
-    intentState.streamReader.cancel(new AbortException(reason?.message));
+    intentState.streamReader
+      .cancel(new AbortException(reason?.message))
+      .catch(() => {
+        // Avoid "Uncaught promise" messages in the console.
+      });
     intentState.streamReader = null;
 
     if (this._transport.destroyed) {
