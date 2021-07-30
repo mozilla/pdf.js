@@ -540,8 +540,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             },
             reason => {
               warn(
-                "Native JPEG decoding failed -- trying to recover: " +
-                  (reason && reason.message)
+                `Native JPEG decoding failed -- trying to recover: ${reason &&
+                  reason.message}`
               );
               // Try to decode the JPEG image with the built-in decoder instead.
               return this.buildPaintImageXObject({
@@ -605,7 +605,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return undefined;
         })
         .catch(reason => {
-          warn("Unable to decode image: " + reason);
+          warn(`Unable to decode image: ${reason}`);
 
           if (this.parsingType3Font) {
             return this.handler.sendWithPromise("commonobj", [
@@ -763,7 +763,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               });
               return new TranslatedFont(
                 "g_font_error",
-                new ErrorFont("Type3 font load error: " + reason),
+                new ErrorFont(`Type3 font load error: ${reason}`),
                 translated.font
               );
             });
@@ -879,10 +879,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           case "AIS":
           case "TK":
             // TODO implement these operators.
-            info("graphic state operator " + key);
+            info(`graphic state operator ${key}`);
             break;
           default:
-            info("Unknown graphic state operator " + key);
+            info(`Unknown graphic state operator ${key}`);
             break;
         }
       }
@@ -898,7 +898,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return Promise.resolve(
           new TranslatedFont(
             "g_font_error",
-            new ErrorFont("Font " + fontName + " is not available"),
+            new ErrorFont(`Font ${fontName} is not available`),
             font
           )
         );
@@ -1586,7 +1586,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   }
                 }
                 if (i < ii) {
-                  warn("getOperatorList - ignoring operator: " + fn);
+                  warn(`getOperatorList - ignoring operator: ${fn}`);
                   continue;
                 }
               }
@@ -1739,7 +1739,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         textContentItem.lastAdvanceHeight = 0;
 
         // var spaceWidth = (font.spaceWidth / 1000) * textState.fontSize;
-        var fontMinWidth = Math.min.apply(null, font.widths.filter(w => !!w));
+        var fontMinWidth = Math.min.apply(
+          null,
+          font.widths.filter(w => !!w)
+        );
         var spaceWidth = (fontMinWidth / 1000) * textState.fontSize;
         if (spaceWidth) {
           textContentItem.spaceWidth = spaceWidth;
@@ -2569,7 +2572,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // c) Construct a second CMap name by concatenating the registry and
         // ordering obtained in step (b) in the format registry–ordering–UCS2
         // (for example, Adobe–Japan1–UCS2).
-        let ucs2CMapName = Name.get(registry + "-" + ordering + "-UCS2");
+        let ucs2CMapName = Name.get(`${registry}-${ordering}-UCS2`);
         // d) Obtain the CMap with the name constructed in step (c) (available
         // from the ASN Web site; see the Bibliography).
         return CMapFactory.create({
@@ -2834,9 +2837,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           widths[charCode] = widthsByGlyphName[differences[charCode]];
           continue;
         }
-        if (charCode in encoding && widthsByGlyphName[encoding[charCode]]) {
-          widths[charCode] = widthsByGlyphName[encoding[charCode]];
-          continue;
+        for (let charCode = 0; charCode < 256; charCode++) {
+          if (
+            charCode in differences &&
+            widthsByGlyphName.indexOf([differences[charCode]]) >= 0
+          ) {
+            widths[charCode] = widthsByGlyphName[differences[charCode]];
+            continue;
+          }
+          if (
+            charCode in encoding &&
+            widthsByGlyphName.indexOf([encoding[charCode]]) >= 0
+          ) {
+            widths[charCode] = widthsByGlyphName[encoding[charCode]];
+            continue;
+          }
         }
       }
       return widths;
