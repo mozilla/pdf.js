@@ -904,6 +904,9 @@ gulp.task(
       });
 
       return buildGeneric(defines, GENERIC_LEGACY_DIR);
+    },
+    async function createBundle() {
+      gulp.src("web/bundle.js").pipe(gulp.dest(GENERIC_LEGACY_DIR + "web"));
     }
   )
 );
