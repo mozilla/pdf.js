@@ -597,7 +597,7 @@ class TextLayerRenderTask {
         }
       })
       .catch(() => {
-        /* Avoid "Uncaught promise" messages in the console. */
+        // Avoid "Uncaught promise" messages in the console.
       });
   }
 
@@ -615,7 +615,11 @@ class TextLayerRenderTask {
   cancel() {
     this._canceled = true;
     if (this._reader) {
-      this._reader.cancel(new AbortException("TextLayer task cancelled."));
+      this._reader
+        .cancel(new AbortException("TextLayer task cancelled."))
+        .catch(() => {
+          // Avoid "Uncaught promise" messages in the console.
+        });
       this._reader = null;
     }
     if (this._renderTimer !== null) {
@@ -741,8 +745,7 @@ class TextLayerRenderTask {
       pump();
     } else {
       throw new Error(
-        'Neither "textContent" nor "textContentStream"' +
-          " parameters specified."
+        'Neither "textContent" nor "textContentStream" parameters specified.'
       );
     }
 
