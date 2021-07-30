@@ -1193,6 +1193,12 @@ class WidgetAnnotation extends Annotation {
     });
     data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
 
+    // When no "V" entry exists, let the fieldValue fallback to the "DV" entry
+    // (fixes issue13823.pdf).
+    if (fieldValue === undefined && data.defaultFieldValue !== null) {
+      data.fieldValue = data.defaultFieldValue;
+    }
+
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
 
     const defaultAppearance =
