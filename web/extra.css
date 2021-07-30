@@ -1,3 +1,22 @@
+#selectionPopUpContainer {
+  position: fixed;
+  z-index: 1;
+}
+
+#selectionPopUpBtn {
+  width: 20px;
+  height: 20px;
+  background-color: red;
+}
+
+#commentContainer.hide {
+  display: none;
+}
+
+#selectionPopUpBtn.hide {
+  display: none;
+}
+
 .toolbarButton.user::before,
 .secondaryToolbarButton.user::before {
   -webkit-mask-image: var(--toolbarButton-user-icon);

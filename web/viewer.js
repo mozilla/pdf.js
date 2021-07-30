@@ -78,6 +78,13 @@ function getViewerConfiguration() {
     mainContainer: document.getElementById("viewerContainer"),
     viewerContainer: document.getElementById("viewer"),
     eventBus: null,
+    selectionPopUp: {
+      container: document.getElementById("selectionPopUpContainer"),
+      popUpBtn: document.getElementById("selectionPopUpBtn"),
+      commentContainer: document.getElementById("commentContainer"),
+      commentSubmitBtn: document.getElementById("selectionCommentSubmit"),
+      commentTextArea: document.getElementById("commentTextArea"),
+    },
     toolbar: {
       container: document.getElementById("toolbarViewer"),
       numPages: document.getElementById("numPages"),

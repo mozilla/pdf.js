@@ -993,6 +993,17 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+function debounce(func, delay = 250) {
+  let timer = null;
+  return (...e) => {
+    const context = this;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      func.apply(context, e);
+    }, delay);
+  };
+}
+
 export {
   animationStarted,
   apiPageLayoutToSpreadMode,
@@ -1002,6 +1013,7 @@ export {
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
   CSS_UNITS,
+  debounce,
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
   EventBus,

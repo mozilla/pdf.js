@@ -679,11 +679,11 @@ class BaseViewer {
     this._updateScrollMode();
   }
 
-  _scrollUpdate() {
+  _scrollUpdate(state) {
     if (this.pagesCount === 0) {
       return;
     }
-    this.update();
+    this.update(state);
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
@@ -1028,7 +1028,7 @@ class BaseViewer {
     throw new Error("Not implemented: _updateHelper");
   }
 
-  update() {
+  update(state) {
     const visible = this._getVisiblePages();
     const visiblePages = visible.views,
       numVisiblePages = visiblePages.length;
@@ -1044,6 +1044,10 @@ class BaseViewer {
     this._updateHelper(visiblePages); // Run any class-specific update code.
 
     this._updateLocation(visible.first);
+    this.eventBus.dispatch("scrollCloseTextArea", {
+      yPos: state ? state.lastY : 0,
+    });
+    this.eventBus.dispatch("hideSelectionPopUp");
     this.eventBus.dispatch("updateviewarea", {
       source: this,
       location: this._location,

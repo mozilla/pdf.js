@@ -36,6 +36,7 @@ import {
   SidebarView,
   SpreadMode,
   TextLayerMode,
+  debounce
 } from "./ui_utils.js";
 import { AppOptions, OptionKind } from "./app_options.js";
 import {
@@ -77,6 +78,7 @@ import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
 import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
 import { SecondaryToolbar } from "./secondary_toolbar.js";
+import { SelectionPopUp } from "./selectionPopup.js";
 import { Toolbar } from "./toolbar.js";
 import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import { ViewHistory } from "./view_history.js";
@@ -239,6 +241,7 @@ const PDFViewerApplication = {
   overlayManager: null,
   /** @type {Preferences} */
   preferences: null,
+  selectionPopUp: null,
   /** @type {Toolbar} */
   toolbar: null,
   /** @type {SecondaryToolbar} */
@@ -554,6 +557,8 @@ const PDFViewerApplication = {
     });
 
     this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
+
+    this.selectionPopUp = new SelectionPopUp(appConfig.selectionPopUp, eventBus);
 
     this.secondaryToolbar = new SecondaryToolbar(
       appConfig.secondaryToolbar,
@@ -1917,6 +1922,8 @@ const PDFViewerApplication = {
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._on("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._on("updatefindcontrolstate", webViewerUpdateFindControlState);
+    eventBus._on("hideSelectionPopUp", webViewerHideSelectionPopUp);
+    eventBus._on("scrollCloseTextArea", webViewerScrollCloseTextArea);
 
     if (AppOptions.get("pdfBug")) {
       _boundEvents.reportPageStatsPDFBug = reportPageStatsPDFBug;
@@ -2013,6 +2020,8 @@ const PDFViewerApplication = {
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
+    eventBus._off("hideSelectionPopUp", webViewerHideSelectionPopUp);
+    eventBus._off("scrollCloseTextArea", webViewerScrollCloseTextArea);
 
     if (_boundEvents.reportPageStatsPDFBug) {
       eventBus._off("pagerendered", _boundEvents.reportPageStatsPDFBug);
@@ -2622,6 +2631,14 @@ function webViewerUpdateFindMatchesCount({ matchesCount }) {
   } else {
     PDFViewerApplication.findBar.updateResultsCount(matchesCount);
   }
+}
+
+function webViewerHideSelectionPopUp() {
+  PDFViewerApplication.selectionPopUp.hidePopBtn();
+}
+
+function webViewerScrollCloseTextArea(evt) {
+  debounce(PDFViewerApplication.selectionPopUp.scrollCloseTextArea(evt.yPos));
 }
 
 function webViewerUpdateFindControlState({
