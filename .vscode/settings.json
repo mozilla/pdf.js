@@ -1,0 +1,22 @@
+{
+  "files.exclude": {
+    "docs": true,
+    "examples": true,
+    "extensions": true,
+    "external": true,
+    "src": true,
+
+    // hide all files in /test exclude webserver.js and proxy.js
+    "test/pdfs": true,
+    "test/{a,d,i,s,t,c,f,r,u,.}*": true,
+
+    ".{e,g,m,p,s,g,v}*": true,
+    "**.config**": true,
+    "*.yml": true,
+    "*.md": true,
+
+    "EXPORT": true,
+    "LICENSE": true,
+    "AUTHORS": true
+  }
+}
