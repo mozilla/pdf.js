@@ -35,8 +35,6 @@ const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 // var DEFAULT_URL = "../../test/pdfs/160F-2019.pdf";
 
 const SEARCH_FOR = ""; // try 'Mozilla';
-
-// For scripting support, note also `enableScripting` below.
 const SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
 
 const container = document.getElementById("viewerContainer");
@@ -66,7 +64,7 @@ const pdfViewer = new pdfjsViewer.PDFViewer({
   linkService: pdfLinkService,
   findController: pdfFindController,
   scriptingManager: pdfScriptingManager,
-  enableScripting: true,
+  enableScripting: true, // Only necessary in PDF.js version 2.10.377 and below.
 });
 pdfLinkService.setViewer(pdfViewer);
 pdfScriptingManager.setViewer(pdfViewer);
