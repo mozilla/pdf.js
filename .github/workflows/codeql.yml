@@ -1,4 +1,4 @@
-name: GitHub Advanced Security
+name: CodeQL
 on: [push, pull_request]
 jobs:
   analyze:
@@ -23,7 +23,7 @@ jobs:
         uses: github/codeql-action/init@v1
         with:
           languages: ${{ matrix.language }}
-          queries: security-extended
+          queries: security-and-quality
 
       - name: Autobuild CodeQL
         uses: github/codeql-action/autobuild@v1
