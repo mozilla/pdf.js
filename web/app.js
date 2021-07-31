@@ -329,35 +329,38 @@ const PDFViewerApplication = {
     if (!hash) {
       return undefined;
     }
-    const hashParams = parseQueryString(hash),
+    const params = parseQueryString(hash),
       waitOn = [];
 
-    if ("disableworker" in hashParams && hashParams.disableworker === "true") {
+    if (params.get("disableworker") === "true") {
       waitOn.push(loadFakeWorker());
     }
-    if ("disablerange" in hashParams) {
-      AppOptions.set("disableRange", hashParams.disablerange === "true");
+    if (params.has("disablerange")) {
+      AppOptions.set("disableRange", params.get("disablerange") === "true");
     }
-    if ("disablestream" in hashParams) {
-      AppOptions.set("disableStream", hashParams.disablestream === "true");
+    if (params.has("disablestream")) {
+      AppOptions.set("disableStream", params.get("disablestream") === "true");
     }
-    if ("disableautofetch" in hashParams) {
+    if (params.has("disableautofetch")) {
       AppOptions.set(
         "disableAutoFetch",
-        hashParams.disableautofetch === "true"
+        params.get("disableautofetch") === "true"
       );
     }
-    if ("disablefontface" in hashParams) {
-      AppOptions.set("disableFontFace", hashParams.disablefontface === "true");
+    if (params.has("disablefontface")) {
+      AppOptions.set(
+        "disableFontFace",
+        params.get("disablefontface") === "true"
+      );
     }
-    if ("disablehistory" in hashParams) {
-      AppOptions.set("disableHistory", hashParams.disablehistory === "true");
+    if (params.has("disablehistory")) {
+      AppOptions.set("disableHistory", params.get("disablehistory") === "true");
     }
-    if ("verbosity" in hashParams) {
-      AppOptions.set("verbosity", hashParams.verbosity | 0);
+    if (params.has("verbosity")) {
+      AppOptions.set("verbosity", params.get("verbosity") | 0);
     }
-    if ("textlayer" in hashParams) {
-      switch (hashParams.textlayer) {
+    if (params.has("textlayer")) {
+      switch (params.get("textlayer")) {
         case "off":
           AppOptions.set("textLayerMode", TextLayerMode.DISABLE);
           break;
@@ -365,24 +368,24 @@ const PDFViewerApplication = {
         case "shadow":
         case "hover":
           const viewer = this.appConfig.viewerContainer;
-          viewer.classList.add("textLayer-" + hashParams.textlayer);
+          viewer.classList.add(`textLayer-${params.get("textlayer")}`);
           break;
       }
     }
-    if ("pdfbug" in hashParams) {
+    if (params.has("pdfbug")) {
       AppOptions.set("pdfBug", true);
       AppOptions.set("fontExtraProperties", true);
 
-      const enabled = hashParams.pdfbug.split(",");
+      const enabled = params.get("pdfbug").split(",");
       waitOn.push(loadAndEnablePDFBug(enabled));
     }
     // It is not possible to change locale for the (various) extension builds.
     if (
       (typeof PDFJSDev === "undefined" ||
         PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      "locale" in hashParams
+      params.has("locale")
     ) {
-      AppOptions.set("locale", hashParams.locale);
+      AppOptions.set("locale", params.get("locale"));
     }
 
     if (waitOn.length === 0) {
@@ -2167,7 +2170,7 @@ function webViewerInitialized() {
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     const queryString = document.location.search.substring(1);
     const params = parseQueryString(queryString);
-    file = "file" in params ? params.file : AppOptions.get("defaultUrl");
+    file = params.get("file") ?? AppOptions.get("defaultUrl");
     validateFileURL(file);
   } else if (PDFJSDev.test("MOZCENTRAL")) {
     file = window.location.href;
