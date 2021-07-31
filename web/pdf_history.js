@@ -544,8 +544,8 @@ class PDFHistory {
     const hash = unescape(getCurrentHash()).substring(1);
     const params = parseQueryString(hash);
 
-    const nameddest = params.nameddest || "";
-    let page = params.page | 0;
+    const nameddest = params.get("nameddest") || "";
+    let page = params.get("page") | 0;
 
     if (!this._isValidPage(page) || (checkNameddest && nameddest.length > 0)) {
       page = null;
@@ -753,7 +753,7 @@ function isDestHashesEqual(destHash, pushHash) {
   if (destHash === pushHash) {
     return true;
   }
-  const { nameddest } = parseQueryString(destHash);
+  const nameddest = parseQueryString(destHash).get("nameddest");
   if (nameddest === pushHash) {
     return true;
   }
