@@ -185,10 +185,9 @@ function watchScroll(viewAreaElement, callback) {
  * @returns {Map}
  */
 function parseQueryString(query) {
-  const parts = query.split("&");
   const params = new Map();
-  for (let i = 0, ii = parts.length; i < ii; ++i) {
-    const param = parts[i].split("="),
+  for (const part of query.split("&")) {
+    const param = part.split("="),
       key = param[0].toLowerCase(),
       value = param.length > 1 ? param[1] : "";
     params.set(decodeURIComponent(key), decodeURIComponent(value));
