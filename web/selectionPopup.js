@@ -14,6 +14,7 @@
  */
 
 import { debounce } from "./ui_utils.js";
+import axios from "./request.js";
 
 /**
  * @typedef {Object} ToolbarOptions
@@ -63,15 +64,15 @@ class SelectionPopUp {
     this.isTextAreaOpen = false;
     this.debouncedSelectionListener = debounce(this._selectionListener.bind(this));
     // Bind the event listeners for click and various other actions.
-    this._bindListeners();
+    // this._bindListeners();
   }
 
   hidePopBtn() {
-    this.popUpBtn.classList.add("hide");
+    // this.popUpBtn.classList.add("hide");
   }
 
   showPopBtn() {
-    this.popUpBtn.classList.remove("hide");
+    // this.popUpBtn.classList.remove("hide");
   }
 
   showCommentContainer() {
@@ -128,6 +129,14 @@ class SelectionPopUp {
         'comment': self.commentTextArea.value,
       })
       self.closeTextArea();
+
+      axios.get('/api/bookmark').then(function (response) {
+        console.log(response, 'res---');
+      })
+
+      .catch(function (error) {
+        console.log(error, 'error');
+      })
     };
 
     self.commentSubmitBtn.addEventListener("click", onSubmitBtnClick);

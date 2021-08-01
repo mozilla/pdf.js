@@ -25,6 +25,7 @@
     "webpack-dev-server": "^3.11.2"
   },
   "dependencies": {
+    "@material-ui/core": "^4.12.3",
     "ahooks": "^2.10.9",
     "antd": "^4.16.9",
     "axios": "^0.21.1",

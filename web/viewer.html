@@ -55,14 +55,14 @@ See https://github.com/adobe-type-tools/cmap-resources
         }
       }
     </script>
-
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="viewer.js" type="module-shim"></script>
 
 
 <!--#endif-->
 
-<script src="bundle.js"></script>
-<script src="request.js"></script>
+<script defer src="bundle.js"></script>
+<!-- <script src="request.js"></script> -->
 <!--#if (GENERIC && !MINIFIED) -->
 <!--#include viewer-snippet.html-->
 <!--#endif-->
@@ -328,13 +328,15 @@ See https://github.com/adobe-type-tools/cmap-resources
         </div>
 
         <div id="viewerContainer" tabindex="0">
-          <div id="selectionPopUpContainer">
+          <div id="reactApp"></div>
+          <!-- <div id="selectionPopUpContainer">
             <button id="selectionPopUpBtn" class="hide"></button>
             <div id="commentContainer" class="hide">
               <textarea id="commentTextArea" rows="10" cols="40"></textarea>
               <button id="selectionCommentSubmit">提交</button>
             </div>
-          </div>
+          </div> -->
+          
           <div id="viewer" class="pdfViewer"></div>
         </div>
 

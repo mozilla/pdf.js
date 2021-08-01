@@ -1044,10 +1044,6 @@ class BaseViewer {
     this._updateHelper(visiblePages); // Run any class-specific update code.
 
     this._updateLocation(visible.first);
-    this.eventBus.dispatch("scrollCloseTextArea", {
-      yPos: state ? state.lastY : 0,
-    });
-    this.eventBus.dispatch("hideSelectionPopUp");
     this.eventBus.dispatch("updateviewarea", {
       source: this,
       location: this._location,

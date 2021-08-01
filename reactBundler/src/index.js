@@ -1,106 +1,86 @@
-import React, { useState } from "react";
-import styles from "./index.less";
+import React, { useState, useEffect } from "react";
 import ReactDom from "react-dom";
-import { Tooltip, Button, Divider, Input, message, List, Loading } from "antd";
-import { useRequest } from "ahooks";
-import axios from "axios";
-import { series } from "async";
+import Button from '@material-ui/core/Button';
+import Drawer from '@material-ui/core/Drawer';
+import TextField from '@material-ui/core/TextField';
+import { makeStyles } from '@material-ui/core/styles';
+import { debounce, throttle } from './util';
 
-const MyToolTip = () => {
-  const [editor, setEditor] = useState(false);
+const viewerContainer = document.getElementById("viewerContainer") 
 
-  const Modal = () => {
-    const person = {
-      name: "Alice",
-    };
+const useStyles = makeStyles({
+  paper: {
+    padding: '20px',
+    paddingTop: '40px'
+  },
+});
 
-    return (
-      <div className={styles.modal}>
-        <Button type="text" size="small" onClick={() => setEditor(true)}>
-          批注
-        </Button>
-        <Divider type="vertical" />
-        <Button
-          type="text"
-          size="small"
-          onClick={() => message.success("复制成功")}
+const MyDrawer = () => {
+  const classes = useStyles();
+  const [show, setShow] = useState(false)
+  const [btnShow, setBtnShow] = useState(false)
+  const [pos, setPos] = useState({x: 0, y : 0})
+
+
+  const onBtnClick = () => {
+    setShow(true) 
+  }
+
+  const selectionListener = debounce((e) => {
+    console.log(e);
+    const rect = document.getSelection().getRangeAt(0).getBoundingClientRect();
+    const mouseX = rect.right;
+    const mouseY = rect.top;
+    setPos({ x: mouseX, y: mouseY })
+    setBtnShow(true)
+  })
+
+  const scrollListener = throttle(() => {
+    setBtnShow(false)
+  })
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", selectionListener);
+    viewerContainer.addEventListener("scroll", scrollListener);
+    return () => {
+      document.removeEventListener("selectionchange", selectionListener);
+      viewerContainer.removeEventListener("scroll", scrollListener);
+    }
+  }, [])
+
+  return (
+    <>
+      <Button
+        id="commentBtn"
+        style={{
+          fontSize: '24px', color: 'red', position: 'fixed', 
+          left: pos.x, top: pos.y, zIndex: 1,
+          display: btnShow ? 'block' : 'none'
+          }} 
+        onClick={onBtnClick}>
+          +
+      </Button>
+        <Drawer 
+          classes={{paper: classes.paper}}
+          anchor="right" 
+          open={show} 
+          onClose={() => setShow(false)}
         >
-          复制
-        </Button>
-      </div>
-    );
-  };
+          <h1>write your comment</h1>
+          <br/>
+          <br/>
+          <br/>
+          <TextField
+            id="outlined-textarea"
+            label="comments"
+            placeholder="Placeholder"
+            multiline
+            minRows={20}
+            variant="outlined"
+          />
+        </Drawer>
+    </>
+  )
+}
 
-  const Editor = () => {
-    return (
-      <div className={styles.editor}>
-        <Input.TextArea placeholder="你的批注" rows={6} />
-        <div style={{ textAlign: "right", marginTop: "10px" }}>
-          <Button type="text" size="small" onClick={() => setEditor(false)}>
-            取消
-          </Button>
-          <Button type="primary" size="small">
-            确定
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className={styles.wrapper}>
-      <Tooltip
-        title={editor ? <Editor /> : <Modal />}
-        color="#80808017"
-        trigger="click"
-        overlayClassName={styles.tooltip}
-      >
-        <Button>click me</Button>
-      </Tooltip>
-    </div>
-  );
-};
-
-const NotationList = () => {
-  const api = () =>
-    axios.get("/api/comment").then(res => {
-      console.log(res);
-      return res.data.data;
-    });
-  const { data, loading, run } = useRequest(api, {
-    initialData: [],
-    manual: true,
-  });
-
-  return (
-    <div className={styles.list}>
-      <Button onClick={run}>fetch</Button>
-      <List
-        itemLayout="horizontal"
-        dataSource={data}
-        loading={loading}
-        renderItem={item => (
-          <List.Item>
-            <List.Item.Meta
-              title={item.content}
-              description={
-                <div className={styles.comments}>
-                  {item.comments}
-                  <Button type="text">跳转</Button>
-                </div>
-              }
-            />
-          </List.Item>
-        )}
-      />
-    </div>
-  );
-};
-
-// ReactDom.render(<NotationList />, document.getElementById("root"));
-
-// const render = () => ReactDom.render(<App />, document.getElementById("root"));
-
-window.renderReact = dom => {
-  ReactDom.render(<NotationList />, dom);
-};
+ReactDom.render(<MyDrawer />, document.getElementById("reactApp"));
