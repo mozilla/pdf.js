@@ -177,7 +177,7 @@ const defaultOptions = {
   },
   viewerCssTheme: {
     /** @type {number} */
-    value: 0,
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   viewOnLoad: {
