@@ -2018,7 +2018,12 @@ function packageBowerJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     peerDependencies: {
-      "worker-loader": "^3.0.7", // Used in `external/dist/webpack.js`.
+      "worker-loader": "^3.0.8", // Used in `external/dist/webpack.js`.
+    },
+    peerDependenciesMeta: {
+      "worker-loader": {
+        optional: true,
+      },
     },
     browser: {
       canvas: false,
