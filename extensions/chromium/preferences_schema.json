@@ -10,7 +10,7 @@
         1,
         2
       ],
-      "default": 0
+      "default": 2
     },
     "showPreviousViewOnLoad": {
       "description": "DEPRECATED. Set viewOnLoad to 1 to disable showing the last page/position on load.",
