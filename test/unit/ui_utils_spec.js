@@ -22,6 +22,7 @@ import {
   isPortraitOrientation,
   isValidRotation,
   moveToEndOfArray,
+  parseQueryString,
   waitOnEventOrTimeout,
   WaitOnType,
 } from "../../web/ui_utils.js";
@@ -250,6 +251,43 @@ describe("ui_utils", function () {
           height: 300,
         })
       ).toEqual(false);
+    });
+  });
+
+  describe("parseQueryString", function () {
+    it("should parse one key/value pair", function () {
+      const parameters = parseQueryString("key1=value1");
+      expect(parameters.size).toEqual(1);
+      expect(parameters.get("key1")).toEqual("value1");
+    });
+
+    it("should parse multiple key/value pairs", function () {
+      const parameters = parseQueryString(
+        "key1=value1&key2=value2&key3=value3"
+      );
+      expect(parameters.size).toEqual(3);
+      expect(parameters.get("key1")).toEqual("value1");
+      expect(parameters.get("key2")).toEqual("value2");
+      expect(parameters.get("key3")).toEqual("value3");
+    });
+
+    it("should parse keys without values", function () {
+      const parameters = parseQueryString("key1");
+      expect(parameters.size).toEqual(1);
+      expect(parameters.get("key1")).toEqual("");
+    });
+
+    it("should decode encoded key/value pairs", function () {
+      const parameters = parseQueryString("k%C3%ABy1=valu%C3%AB1");
+      expect(parameters.size).toEqual(1);
+      expect(parameters.get("këy1")).toEqual("valuë1");
+    });
+
+    it("should convert keys to lowercase", function () {
+      const parameters = parseQueryString("Key1=Value1&KEY2=Value2");
+      expect(parameters.size).toEqual(2);
+      expect(parameters.get("key1")).toEqual("Value1");
+      expect(parameters.get("key2")).toEqual("Value2");
     });
   });
 
