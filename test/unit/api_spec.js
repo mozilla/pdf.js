@@ -397,7 +397,7 @@ describe("api", function () {
 
       expect(docId1).not.toEqual(docId2);
 
-      const docIdRegExp = /^d(\d)+$/,
+      const docIdRegExp = /^d(\d+)$/,
         docNum1 = docIdRegExp.exec(docId1)?.[1],
         docNum2 = docIdRegExp.exec(docId2)?.[1];
 
