@@ -65,6 +65,11 @@
   background: rgba(0, 0, 255, 1);
 }
 
+/* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
+.textLayer br::selection {
+  background: transparent;
+}
+
 .textLayer .endOfContent {
   display: block;
   position: absolute;
