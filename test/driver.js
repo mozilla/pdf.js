@@ -382,6 +382,7 @@ var Driver = (function DriverClosure() {
     this.testFilter = parameters.testFilter
       ? JSON.parse(parameters.testFilter)
       : [];
+    this.xfaOnly = parameters.xfaOnly === "true";
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
@@ -425,9 +426,15 @@ var Driver = (function DriverClosure() {
         if (r.readyState === 4) {
           self._log("done\n");
           self.manifest = JSON.parse(r.responseText);
-          if (self.testFilter && self.testFilter.length) {
+          if (self.testFilter?.length || self.xfaOnly) {
             self.manifest = self.manifest.filter(function (item) {
-              return self.testFilter.includes(item.id);
+              if (self.testFilter.includes(item.id)) {
+                return true;
+              }
+              if (self.xfaOnly && item.enableXfa) {
+                return true;
+              }
+              return false;
             });
           }
           self.currentTask = 0;
