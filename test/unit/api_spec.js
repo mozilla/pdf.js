@@ -1443,6 +1443,12 @@ describe("api", function () {
         expect(data.length).toEqual(4);
       });
 
+      const anyPromise = page
+        .getAnnotations({ intent: "any" })
+        .then(function (data) {
+          expect(data.length).toEqual(4);
+        });
+
       const displayPromise = page
         .getAnnotations({ intent: "display" })
         .then(function (data) {
@@ -1455,7 +1461,12 @@ describe("api", function () {
           expect(data.length).toEqual(4);
         });
 
-      await Promise.all([defaultPromise, displayPromise, printPromise]);
+      await Promise.all([
+        defaultPromise,
+        anyPromise,
+        displayPromise,
+        printPromise,
+      ]);
     });
 
     it("gets annotations containing relative URLs (bug 766086)", async function () {
