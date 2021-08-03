@@ -551,7 +551,7 @@ function getTempFile(prefix, suffix) {
   return filePath;
 }
 
-function createTestSource(testsName, bot) {
+function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
   const source = stream.Readable({ objectMode: true });
   source._read = function () {
     console.log();
@@ -561,9 +561,12 @@ function createTestSource(testsName, bot) {
     const args = ["test.js"];
     switch (testsName) {
       case "browser":
-        args.push("--reftest", "--manifestFile=" + PDF_TEST);
-        break;
-      case "browser (no reftest)":
+        if (!bot) {
+          args.push("--reftest");
+        }
+        if (xfaOnly) {
+          args.push("--xfaOnly");
+        }
         args.push("--manifestFile=" + PDF_TEST);
         break;
       case "unit":
@@ -1592,9 +1595,34 @@ gulp.task(
   gulp.series(setTestEnv, "generic", "components", function runBotTest() {
     return streamqueue(
       { objectMode: true },
-      createTestSource("unit", true),
-      createTestSource("font", true),
-      createTestSource("browser (no reftest)", true),
+      createTestSource("unit", { bot: true }),
+      createTestSource("font", { bot: true }),
+      createTestSource("browser", { bot: true }),
+      createTestSource("integration")
+    );
+  })
+);
+
+gulp.task(
+  "xfatest",
+  gulp.series(setTestEnv, "generic", "components", function runXfaTest() {
+    return streamqueue(
+      { objectMode: true },
+      createTestSource("unit"),
+      createTestSource("browser", { xfaOnly: true }),
+      createTestSource("integration")
+    );
+  })
+);
+
+gulp.task(
+  "botxfatest",
+  gulp.series(setTestEnv, "generic", "components", function runBotXfaTest() {
+    return streamqueue(
+      { objectMode: true },
+      createTestSource("unit", { bot: true }),
+      createTestSource("font", { bot: true }),
+      createTestSource("browser", { bot: true, xfaOnly: true }),
       createTestSource("integration")
     );
   })
@@ -1616,7 +1644,7 @@ gulp.task(
     function runBotBrowserTest() {
       return streamqueue(
         { objectMode: true },
-        createTestSource("browser (no reftest)", true)
+        createTestSource("browser", { bot: true })
       );
     }
   )

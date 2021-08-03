@@ -45,6 +45,11 @@ function parseOptions() {
       describe: "Show this help message.",
       type: "boolean",
     })
+    .option("integration", {
+      default: false,
+      describe: "Run the integration tests.",
+      type: "boolean",
+    })
     .option("manifestFile", {
       default: "test_manifest.json",
       describe: "A path to JSON file in the form of `test_manifest.json`.",
@@ -114,6 +119,11 @@ function parseOptions() {
       describe: "Run the unit tests.",
       type: "boolean",
     })
+    .option("xfaOnly", {
+      default: false,
+      describe: "Only run the XFA reftest(s).",
+      type: "boolean",
+    })
     .check(argv => {
       if (
         +argv.reftest + argv.unitTest + argv.fontTest + argv.masterMode <=
@@ -124,6 +134,23 @@ function parseOptions() {
       throw new Error(
         "--reftest, --unitTest, --fontTest, and --masterMode must not be specified together."
       );
+    })
+    .check(argv => {
+      if (
+        +argv.unitTest + argv.fontTest + argv.integration + argv.xfaOnly <=
+        1
+      ) {
+        return true;
+      }
+      throw new Error(
+        "--unitTest, --fontTest, --integration, and --xfaOnly must not be specified together."
+      );
+    })
+    .check(argv => {
+      if (argv.testfilter && argv.testfilter.length > 0 && argv.xfaOnly) {
+        throw new Error("--testfilter and --xfaOnly cannot be used together.");
+      }
+      return true;
     })
     .check(argv => {
       if (!argv.noDownload || !argv.downloadOnly) {
@@ -361,12 +388,16 @@ function handleSessionTimeout(session) {
 function getTestManifest() {
   var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
 
-  var testFilter = options.testfilter.slice(0);
-  if (testFilter.length) {
+  const testFilter = options.testfilter.slice(0),
+    xfaOnly = options.xfaOnly;
+  if (testFilter.length || xfaOnly) {
     manifest = manifest.filter(function (item) {
       var i = testFilter.indexOf(item.id);
       if (i !== -1) {
         testFilter.splice(i, 1);
+        return true;
+      }
+      if (xfaOnly && item.enableXfa) {
         return true;
       }
       return false;
@@ -732,6 +763,7 @@ function makeTestUrl(startUrl) {
       `?browser=${encodeURIComponent(browserName)}` +
       `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
       `&testFilter=${JSON.stringify(options.testfilter)}` +
+      `&xfaOnly=${options.xfaOnly}` +
       `&delay=${options.statsDelay}` +
       `&masterMode=${options.masterMode}`;
     return startUrl + queryParameters;
