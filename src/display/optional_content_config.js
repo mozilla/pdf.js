@@ -95,6 +95,10 @@ class OptionalContentConfig {
   }
 
   isVisible(group) {
+    if (!group) {
+      warn("Optional content group not defined.");
+      return true;
+    }
     if (group.type === "OCG") {
       if (!this._groups.has(group.id)) {
         warn(`Optional content group not found: ${group.id}`);
