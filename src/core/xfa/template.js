@@ -2332,12 +2332,6 @@ class ExclGroup extends XFAObject {
     if (!checkDimensions(this, availableSpace)) {
       return HTMLResult.FAILURE;
     }
-
-    availableSpace = {
-      width: this.w === "" ? availableSpace.width : this.w,
-      height: this.h === "" ? availableSpace.height : this.h,
-    };
-
     const filter = new Set(["field"]);
 
     if (this.layout.includes("row")) {
