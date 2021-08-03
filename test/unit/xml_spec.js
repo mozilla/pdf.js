@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { SimpleXMLParser, XMLParserBase } from "../../src/core/xml_parser.js";
 import { parseXFAPath } from "../../src/core/core_utils.js";
-import { SimpleXMLParser } from "../../src/shared/xml_parser.js";
 
 describe("XML", function () {
   describe("searchNode", function () {
@@ -47,8 +47,9 @@ describe("XML", function () {
               <g a="121110"/>
           </b>
       </a>`;
-      const root = new SimpleXMLParser(true).parseFromString(xml)
-        .documentElement;
+      const root = new SimpleXMLParser({ hasAttributes: true }).parseFromString(
+        xml
+      ).documentElement;
       function getAttr(path) {
         return root.searchNode(parseXFAPath(path), 0).attributes[0].value;
       }
@@ -96,8 +97,9 @@ describe("XML", function () {
               <g a="121110"/>
           </b>
       </a>`;
-      const root = new SimpleXMLParser(true).parseFromString(xml)
-        .documentElement;
+      const root = new SimpleXMLParser({ hasAttributes: true }).parseFromString(
+        xml
+      ).documentElement;
       const buffer = [];
       root.dump(buffer);
 
@@ -105,5 +107,29 @@ describe("XML", function () {
         xml.replace(/\s+/g, "")
       );
     });
+  });
+
+  it("should parse processing instructions", function () {
+    const xml = `
+      <a>
+          <?foo bar?>
+          <?foo bar oof?>
+          <?foo?>
+      </a>`;
+    const pi = [];
+
+    class MyParser extends XMLParserBase {
+      onPi(name, value) {
+        pi.push([name, value]);
+      }
+    }
+
+    new MyParser().parseXml(xml);
+
+    expect(pi).toEqual([
+      ["foo", "bar"],
+      ["foo", "bar oof"],
+      ["foo", ""],
+    ]);
   });
 });

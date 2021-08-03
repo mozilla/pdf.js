@@ -65,36 +65,64 @@ class EventDispatcher {
   dispatch(baseEvent) {
     const id = baseEvent.id;
     if (!(id in this._objects)) {
+      let event;
+      if (id === "doc" || id === "page") {
+        event = globalThis.event = new Event(baseEvent);
+        event.source = event.target = this._document.wrapped;
+        event.name = baseEvent.name;
+      }
+      if (id === "doc") {
+        this._document.obj._dispatchDocEvent(event.name);
+      } else if (id === "page") {
+        this._document.obj._dispatchPageEvent(
+          event.name,
+          baseEvent.actions,
+          baseEvent.pageNumber
+        );
+      }
       return;
     }
 
-    const name = baseEvent.name.replace(" ", "");
+    const name = baseEvent.name;
     const source = this._objects[id];
-    const event = (this._document.obj._event = new Event(baseEvent));
+    const event = (globalThis.event = new Event(baseEvent));
     let savedChange;
 
     if (source.obj._isButton()) {
       source.obj._id = id;
       event.value = source.obj._getExportValue(event.value);
+      if (name === "Action") {
+        source.obj._value = event.value;
+      }
     }
 
-    if (name === "Keystroke") {
-      savedChange = {
-        value: event.value,
-        change: event.change,
-        selStart: event.selStart,
-        selEnd: event.selEnd,
-      };
-    } else if (name === "Blur" || name === "Focus") {
-      Object.defineProperty(event, "value", {
-        configurable: false,
-        writable: false,
-        enumerable: true,
-        value: event.value,
-      });
-    } else if (name === "Validate") {
-      this.runValidation(source, event);
-      return;
+    switch (name) {
+      case "Keystroke":
+        savedChange = {
+          value: event.value,
+          change: event.change,
+          selStart: event.selStart,
+          selEnd: event.selEnd,
+        };
+        break;
+      case "Blur":
+      case "Focus":
+        Object.defineProperty(event, "value", {
+          configurable: false,
+          writable: false,
+          enumerable: true,
+          value: event.value,
+        });
+        break;
+      case "Validate":
+        this.runValidation(source, event);
+        return;
+      case "Action":
+        this.runActions(source, source, event, name);
+        if (this._document.obj.calculate) {
+          this.runCalculate(source, event);
+        }
+        return;
     }
 
     this.runActions(source, source, event, name);
@@ -125,8 +153,10 @@ class EventDispatcher {
     if (event.rc) {
       if (hasRan) {
         source.wrapped.value = event.value;
+        source.wrapped.valueAsString = event.value;
       } else {
         source.obj.value = event.value;
+        source.obj.valueAsString = event.value;
       }
 
       if (this._document.obj.calculate) {
@@ -150,17 +180,17 @@ class EventDispatcher {
   }
 
   calculateNow() {
-    if (this._calculationOrder.length === 0) {
+    if (!this._calculationOrder) {
       return;
     }
     const first = this._calculationOrder[0];
     const source = this._objects[first];
-    const event = (this._document.obj._event = new Event({}));
-    this.runCalculate(source, event);
+    globalThis.event = new Event({});
+    this.runCalculate(source, globalThis.event);
   }
 
   runCalculate(source, event) {
-    if (this._calculationOrder.length === 0) {
+    if (!this._calculationOrder) {
       return;
     }
 
@@ -169,16 +199,32 @@ class EventDispatcher {
         continue;
       }
 
+      if (!this._document.obj.calculate) {
+        // An action may have changed calculate value.
+        continue;
+      }
+
+      event.value = null;
       const target = this._objects[targetId];
       this.runActions(source, target, event, "Calculate");
+      if (!event.rc) {
+        continue;
+      }
+      if (event.value !== null) {
+        target.wrapped.value = event.value;
+      }
+
+      event.value = target.obj.value;
       this.runActions(target, target, event, "Validate");
       if (!event.rc) {
         continue;
       }
 
-      target.wrapped.value = event.value;
+      event.value = target.obj.value;
       this.runActions(target, target, event, "Format");
-      target.wrapped.valueAsString = event.value;
+      if (event.value !== null) {
+        target.wrapped.valueAsString = event.value;
+      }
     }
   }
 }

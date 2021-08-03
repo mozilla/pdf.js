@@ -14,7 +14,7 @@
  */
 
 import { getVerbosityLevel, setVerbosityLevel } from "./shared/util.js";
-import { Jbig2mage } from "./core/jbig2.js";
+import { Jbig2Image } from "./core/jbig2.js";
 import { JpegImage } from "./core/jpg.js";
 import { JpxImage } from "./core/jpx.js";
 
@@ -37,4 +37,10 @@ const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 // eslint-disable-next-line no-unused-vars
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
-export { Jbig2mage, JpegImage, JpxImage, getVerbosityLevel, setVerbosityLevel };
+export {
+  getVerbosityLevel,
+  Jbig2Image,
+  JpegImage,
+  JpxImage,
+  setVerbosityLevel,
+};

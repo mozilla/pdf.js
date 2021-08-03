@@ -14,7 +14,6 @@
  */
 
 import { FindState } from "./pdf_find_controller.js";
-import { NullL10n } from "./ui_utils.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -25,19 +24,19 @@ const MATCHES_COUNT_LIMIT = 1000;
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.opened = false;
 
-    this.bar = options.bar || null;
-    this.toggleButton = options.toggleButton || null;
-    this.findField = options.findField || null;
-    this.highlightAll = options.highlightAllCheckbox || null;
-    this.caseSensitive = options.caseSensitiveCheckbox || null;
-    this.entireWord = options.entireWordCheckbox || null;
-    this.findMsg = options.findMsg || null;
-    this.findResultsCount = options.findResultsCount || null;
-    this.findPreviousButton = options.findPreviousButton || null;
-    this.findNextButton = options.findNextButton || null;
+    this.bar = options.bar;
+    this.toggleButton = options.toggleButton;
+    this.findField = options.findField;
+    this.highlightAll = options.highlightAllCheckbox;
+    this.caseSensitive = options.caseSensitiveCheckbox;
+    this.entireWord = options.entireWordCheckbox;
+    this.findMsg = options.findMsg;
+    this.findResultsCount = options.findResultsCount;
+    this.findPreviousButton = options.findPreviousButton;
+    this.findNextButton = options.findNextButton;
     this.eventBus = eventBus;
     this.l10n = l10n;
 
@@ -104,44 +103,26 @@ class PDFFindBar {
   }
 
   updateUIState(state, previous, matchesCount) {
-    let notFound = false;
-    let findMsg = "";
+    let findMsg = Promise.resolve("");
     let status = "";
 
     switch (state) {
       case FindState.FOUND:
         break;
-
       case FindState.PENDING:
         status = "pending";
         break;
-
       case FindState.NOT_FOUND:
-        findMsg = this.l10n.get("find_not_found", null, "Phrase not found");
-        notFound = true;
+        findMsg = this.l10n.get("find_not_found");
+        status = "notFound";
         break;
-
       case FindState.WRAPPED:
-        if (previous) {
-          findMsg = this.l10n.get(
-            "find_reached_top",
-            null,
-            "Reached top of document, continued from bottom"
-          );
-        } else {
-          findMsg = this.l10n.get(
-            "find_reached_bottom",
-            null,
-            "Reached end of document, continued from top"
-          );
-        }
+        findMsg = this.l10n.get(`find_reached_${previous ? "top" : "bottom"}`);
         break;
     }
-
-    this.findField.classList.toggle("notFound", notFound);
     this.findField.setAttribute("data-status", status);
 
-    Promise.resolve(findMsg).then(msg => {
+    findMsg.then(msg => {
       this.findMsg.textContent = msg;
       this._adjustWidth();
     });
@@ -150,58 +131,31 @@ class PDFFindBar {
   }
 
   updateResultsCount({ current = 0, total = 0 } = {}) {
-    if (!this.findResultsCount) {
-      return; // No UI control is provided.
-    }
     const limit = MATCHES_COUNT_LIMIT;
-    let matchesCountMsg = "";
+    let matchCountMsg = Promise.resolve("");
 
     if (total > 0) {
       if (total > limit) {
+        let key = "find_match_count_limit";
+
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
           // TODO: Remove this hard-coded `[other]` form once plural support has
           // been implemented in the mozilla-central specific `l10n.js` file.
-          matchesCountMsg = this.l10n.get(
-            "find_match_count_limit[other]",
-            {
-              limit,
-            },
-            "More than {{limit}} matches"
-          );
-        } else {
-          matchesCountMsg = this.l10n.get(
-            "find_match_count_limit",
-            {
-              limit,
-            },
-            "More than {{limit}} match" + (limit !== 1 ? "es" : "")
-          );
+          key += "[other]";
         }
+        matchCountMsg = this.l10n.get(key, { limit });
       } else {
+        let key = "find_match_count";
+
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
           // TODO: Remove this hard-coded `[other]` form once plural support has
           // been implemented in the mozilla-central specific `l10n.js` file.
-          matchesCountMsg = this.l10n.get(
-            "find_match_count[other]",
-            {
-              current,
-              total,
-            },
-            "{{current}} of {{total}} matches"
-          );
-        } else {
-          matchesCountMsg = this.l10n.get(
-            "find_match_count",
-            {
-              current,
-              total,
-            },
-            "{{current}} of {{total}} match" + (total !== 1 ? "es" : "")
-          );
+          key += "[other]";
         }
+        matchCountMsg = this.l10n.get(key, { current, total });
       }
     }
-    Promise.resolve(matchesCountMsg).then(msg => {
+    matchCountMsg.then(msg => {
       this.findResultsCount.textContent = msg;
       this.findResultsCount.classList.toggle("hidden", !total);
       // Since `updateResultsCount` may be called from `PDFFindController`,
@@ -214,6 +168,7 @@ class PDFFindBar {
     if (!this.opened) {
       this.opened = true;
       this.toggleButton.classList.add("toggled");
+      this.toggleButton.setAttribute("aria-expanded", "true");
       this.bar.classList.remove("hidden");
     }
     this.findField.select();
@@ -228,6 +183,7 @@ class PDFFindBar {
     }
     this.opened = false;
     this.toggleButton.classList.remove("toggled");
+    this.toggleButton.setAttribute("aria-expanded", "false");
     this.bar.classList.add("hidden");
 
     this.eventBus.dispatch("findbarclose", { source: this });

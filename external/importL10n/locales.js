@@ -15,16 +15,16 @@
 
 "use strict";
 
-var fs = require("fs");
-var https = require("https");
-var path = require("path");
+const fs = require("fs");
+const https = require("https");
+const path = require("path");
 
 // Fetches all languages that have an *active* translation in mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
 
-var DEFAULT_LOCALE = "en-US";
+const DEFAULT_LOCALE = "en-US";
 
-var EXCLUDE_LANG_CODES = ["ca-valencia", "ja-JP-mac"];
+const EXCLUDE_LANG_CODES = ["ca-valencia", "ja-JP-mac"];
 
 function normalizeText(s) {
   return s.replace(/\r\n?/g, "\n").replace(/\uFEFF/g, "");
@@ -33,23 +33,23 @@ function normalizeText(s) {
 function downloadLanguageCodes() {
   console.log("Downloading language codes...\n");
 
-  var ALL_LOCALES =
+  const ALL_LOCALES =
     "https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales";
 
   return new Promise(function (resolve) {
     https.get(ALL_LOCALES, function (response) {
       if (response.statusCode === 200) {
-        var content = "";
+        let content = "";
         response.setEncoding("utf8");
         response.on("data", function (chunk) {
           content += chunk;
         });
         response.on("end", function () {
           content = content.trim(); // Remove any leading/trailing white-space.
-          var langCodes = normalizeText(content).split("\n");
+          const langCodes = normalizeText(content).split("\n");
           // Remove all locales that we don't want to download below.
-          for (var langCode of [DEFAULT_LOCALE, ...EXCLUDE_LANG_CODES]) {
-            var i = langCodes.indexOf(langCode);
+          for (const langCode of [DEFAULT_LOCALE, ...EXCLUDE_LANG_CODES]) {
+            const i = langCodes.indexOf(langCode);
             if (i > -1) {
               langCodes.splice(i, 1);
             }
@@ -68,14 +68,14 @@ function downloadLanguageFiles(root, langCode) {
 
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
-  var MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
-  var MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
+  const MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
+  const MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
 
   // Defines which files to download for each language.
-  var files = ["viewer.properties"];
-  var downloadsLeft = files.length;
+  const files = ["viewer.properties"];
+  let downloadsLeft = files.length;
 
-  var outputDir = path.join(root, langCode);
+  const outputDir = path.join(root, langCode);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
   }
@@ -83,14 +83,15 @@ function downloadLanguageFiles(root, langCode) {
   return new Promise(function (resolve) {
     // Download the necessary files for this language.
     files.forEach(function (fileName) {
-      var outputPath = path.join(outputDir, fileName);
-      var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
+      const outputPath = path.join(outputDir, fileName);
+      const url =
+        MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
 
       https.get(url, function (response) {
         // Not all files exist for each language. Files without translations
         // have been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
         if (response.statusCode === 200) {
-          var content = "";
+          let content = "";
           response.setEncoding("utf8");
           response.on("data", function (chunk) {
             content += chunk;
@@ -112,18 +113,18 @@ function downloadLanguageFiles(root, langCode) {
 }
 
 async function downloadL10n(root, callback) {
-  var langCodes = await downloadLanguageCodes();
+  const langCodes = await downloadLanguageCodes();
 
-  for (var langCode of langCodes) {
+  for (const langCode of langCodes) {
     if (!langCode) {
       continue;
     }
     await downloadLanguageFiles(root, langCode);
   }
 
-  var removeCodes = [];
-  for (var entry of fs.readdirSync(root)) {
-    var dirPath = path.join(root, entry),
+  const removeCodes = [];
+  for (const entry of fs.readdirSync(root)) {
+    const dirPath = path.join(root, entry),
       stat = fs.lstatSync(dirPath);
 
     if (

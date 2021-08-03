@@ -145,10 +145,10 @@ const AnnotationBorderStyleType = {
 };
 
 const AnnotationActionEventType = {
-  E: "MouseEnter",
-  X: "MouseExit",
-  D: "MouseDown",
-  U: "MouseUp",
+  E: "Mouse Enter",
+  X: "Mouse Exit",
+  D: "Mouse Down",
+  U: "Mouse Up",
   Fo: "Focus",
   Bl: "Blur",
   PO: "PageOpen",
@@ -159,11 +159,19 @@ const AnnotationActionEventType = {
   F: "Format",
   V: "Validate",
   C: "Calculate",
+};
+
+const DocumentActionEventType = {
   WC: "WillClose",
   WS: "WillSave",
   DS: "DidSave",
   WP: "WillPrint",
   DP: "DidPrint",
+};
+
+const PageActionEventType = {
+  O: "PageOpen",
+  C: "PageClose",
 };
 
 const StreamType = {
@@ -182,6 +190,7 @@ const StreamType = {
 const FontType = {
   UNKNOWN: "UNKNOWN",
   TYPE1: "TYPE1",
+  TYPE1STANDARD: "TYPE1STANDARD",
   TYPE1C: "TYPE1C",
   CIDFONTTYPE0: "CIDFONTTYPE0",
   CIDFONTTYPE0C: "CIDFONTTYPE0C",
@@ -307,6 +316,7 @@ const UNSUPPORTED_FEATURES = {
   unknown: "unknown",
   forms: "forms",
   javaScript: "javaScript",
+  signatures: "signatures",
   smask: "smask",
   shadingPattern: "shadingPattern",
   /** @deprecated unused */
@@ -322,8 +332,10 @@ const UNSUPPORTED_FEATURES = {
   errorOperatorList: "errorOperatorList",
   errorFontToUnicode: "errorFontToUnicode",
   errorFontLoadNative: "errorFontLoadNative",
+  errorFontBuildPath: "errorFontBuildPath",
   errorFontGetPath: "errorFontGetPath",
   errorMarkedContent: "errorMarkedContent",
+  errorContentSubStream: "errorContentSubStream",
 };
 
 const PasswordResponses = {
@@ -577,6 +589,15 @@ function arraysToBytes(arr) {
 }
 
 function string32(value) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      typeof value === "number" && Math.abs(value) < 2 ** 32,
+      `string32: Unexpected input "${value}".`
+    );
+  }
   return String.fromCharCode(
     (value >> 24) & 0xff,
     (value >> 16) & 0xff,
@@ -589,9 +610,14 @@ function objectSize(obj) {
   return Object.keys(obj).length;
 }
 
-// Ensures that the returned Object has a `null` prototype.
-function objectFromEntries(iterable) {
-  return Object.assign(Object.create(null), Object.fromEntries(iterable));
+// Ensure that the returned Object has a `null` prototype; hence why
+// `Object.fromEntries(...)` is not used.
+function objectFromMap(map) {
+  const obj = Object.create(null);
+  for (const [key, value] of map) {
+    obj[key] = value;
+  }
+  return obj;
 }
 
 // Checks the endianness of the platform.
@@ -712,7 +738,7 @@ class Util {
 
     // Solve the second degree polynomial to get roots.
     const first = (a + d) / 2;
-    const second = Math.sqrt((a + d) * (a + d) - 4 * (a * d - c * b)) / 2;
+    const second = Math.sqrt((a + d) ** 2 - 4 * (a * d - c * b)) / 2;
     const sx = first + second || 1;
     const sy = first - second || 1;
 
@@ -781,17 +807,16 @@ class Util {
   }
 }
 
-// prettier-ignore
 const PDFStringTranslateTable = [
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0x2D8, 0x2C7, 0x2C6, 0x2D9, 0x2DD, 0x2DB, 0x2DA, 0x2DC, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2d8,
+  0x2c7, 0x2c6, 0x2d9, 0x2dd, 0x2db, 0x2da, 0x2dc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014,
-  0x2013, 0x192, 0x2044, 0x2039, 0x203A, 0x2212, 0x2030, 0x201E, 0x201C,
-  0x201D, 0x2018, 0x2019, 0x201A, 0x2122, 0xFB01, 0xFB02, 0x141, 0x152, 0x160,
-  0x178, 0x17D, 0x131, 0x142, 0x153, 0x161, 0x17E, 0, 0x20AC
+  0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x192,
+  0x2044, 0x2039, 0x203a, 0x2212, 0x2030, 0x201e, 0x201c, 0x201d, 0x2018,
+  0x2019, 0x201a, 0x2122, 0xfb01, 0xfb02, 0x141, 0x152, 0x160, 0x178, 0x17d,
+  0x131, 0x142, 0x153, 0x161, 0x17e, 0, 0x20ac,
 ];
 
 function stringToPDFString(str) {
@@ -834,6 +859,22 @@ function escapeString(str) {
   });
 }
 
+function isAscii(str) {
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
+function stringToUTF16BEString(str) {
+  const buf = ["\xFE\xFF"];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    buf.push(
+      String.fromCharCode((char >> 8) & 0xff),
+      String.fromCharCode(char & 0xff)
+    );
+  }
+  return buf.join("");
+}
+
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -862,9 +903,12 @@ function isArrayEqual(arr1, arr2) {
   if (arr1.length !== arr2.length) {
     return false;
   }
-  return arr1.every(function (element, index) {
-    return element === arr2[index];
-  });
+  for (let i = 0, ii = arr1.length; i < ii; i++) {
+    if (arr1[i] !== arr2[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function getModificationDate(date = new Date()) {
@@ -918,87 +962,30 @@ function createPromiseCapability() {
   return capability;
 }
 
-const createObjectURL = (function createObjectURLClosure() {
+function createObjectURL(data, contentType = "", forceDataSchema = false) {
+  if (URL.createObjectURL && !forceDataSchema) {
+    return URL.createObjectURL(new Blob([data], { type: contentType }));
+  }
   // Blob/createObjectURL is not available, falling back to data schema.
   const digits =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-  // eslint-disable-next-line no-shadow
-  return function createObjectURL(data, contentType, forceDataSchema = false) {
-    if (!forceDataSchema && URL.createObjectURL) {
-      const blob = new Blob([data], { type: contentType });
-      return URL.createObjectURL(blob);
-    }
-
-    let buffer = `data:${contentType};base64,`;
-    for (let i = 0, ii = data.length; i < ii; i += 3) {
-      const b1 = data[i] & 0xff;
-      const b2 = data[i + 1] & 0xff;
-      const b3 = data[i + 2] & 0xff;
-      const d1 = b1 >> 2,
-        d2 = ((b1 & 3) << 4) | (b2 >> 4);
-      const d3 = i + 1 < ii ? ((b2 & 0xf) << 2) | (b3 >> 6) : 64;
-      const d4 = i + 2 < ii ? b3 & 0x3f : 64;
-      buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
-    }
-    return buffer;
-  };
-})();
-
-const XMLEntities = {
-  /* < */ 0x3c: "&lt;",
-  /* > */ 0x3e: "&gt;",
-  /* & */ 0x26: "&amp;",
-  /* " */ 0x22: "&quot;",
-  /* ' */ 0x27: "&apos;",
-};
-
-function encodeToXmlString(str) {
-  const buffer = [];
-  let start = 0;
-  for (let i = 0, ii = str.length; i < ii; i++) {
-    const char = str.codePointAt(i);
-    if (0x20 <= char && char <= 0x7e) {
-      // ascii
-      const entity = XMLEntities[char];
-      if (entity) {
-        if (start < i) {
-          buffer.push(str.substring(start, i));
-        }
-        buffer.push(entity);
-        start = i + 1;
-      }
-    } else {
-      if (start < i) {
-        buffer.push(str.substring(start, i));
-      }
-      buffer.push(`&#x${char.toString(16).toUpperCase()};`);
-      if (char > 0xd7ff && (char < 0xe000 || char > 0xfffd)) {
-        // char is represented by two u16
-        i++;
-      }
-      start = i + 1;
-    }
+  let buffer = `data:${contentType};base64,`;
+  for (let i = 0, ii = data.length; i < ii; i += 3) {
+    const b1 = data[i] & 0xff;
+    const b2 = data[i + 1] & 0xff;
+    const b3 = data[i + 2] & 0xff;
+    const d1 = b1 >> 2,
+      d2 = ((b1 & 3) << 4) | (b2 >> 4);
+    const d3 = i + 1 < ii ? ((b2 & 0xf) << 2) | (b3 >> 6) : 64;
+    const d4 = i + 2 < ii ? b3 & 0x3f : 64;
+    buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
   }
-
-  if (buffer.length === 0) {
-    return str;
-  }
-
-  if (start < str.length) {
-    buffer.push(str.substring(start, str.length));
-  }
-
-  return buffer.join("");
+  return buffer;
 }
 
 export {
-  BaseException,
-  FONT_IDENTITY_MATRIX,
-  IDENTITY_MATRIX,
-  OPS,
-  VerbosityLevel,
-  UNSUPPORTED_FEATURES,
+  AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
   AnnotationFieldFlag,
@@ -1008,51 +995,59 @@ export {
   AnnotationReviewState,
   AnnotationStateModelType,
   AnnotationType,
-  FontType,
-  ImageKind,
-  CMapCompressionType,
-  AbortException,
-  InvalidPDFException,
-  MissingPDFException,
-  PasswordException,
-  PasswordResponses,
-  PermissionFlag,
-  StreamType,
-  TextRenderingMode,
-  UnexpectedResponseException,
-  UnknownErrorException,
-  Util,
-  FormatError,
   arrayByteLength,
   arraysToBytes,
   assert,
+  BaseException,
   bytesToString,
-  createPromiseCapability,
+  CMapCompressionType,
   createObjectURL,
+  createPromiseCapability,
+  createValidAbsoluteUrl,
+  DocumentActionEventType,
   escapeString,
-  encodeToXmlString,
+  FONT_IDENTITY_MATRIX,
+  FontType,
+  FormatError,
   getModificationDate,
   getVerbosityLevel,
+  IDENTITY_MATRIX,
+  ImageKind,
   info,
+  InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
+  isAscii,
   isBool,
-  isNum,
-  isString,
-  isSameOrigin,
-  createValidAbsoluteUrl,
-  objectSize,
-  objectFromEntries,
-  IsLittleEndianCached,
   IsEvalSupportedCached,
+  IsLittleEndianCached,
+  isNum,
+  isSameOrigin,
+  isString,
+  MissingPDFException,
+  objectFromMap,
+  objectSize,
+  OPS,
+  PageActionEventType,
+  PasswordException,
+  PasswordResponses,
+  PermissionFlag,
   removeNullCharacters,
   setVerbosityLevel,
   shadow,
+  StreamType,
   string32,
   stringToBytes,
   stringToPDFString,
+  stringToUTF16BEString,
   stringToUTF8String,
-  utf8StringToString,
-  warn,
+  TextRenderingMode,
+  UnexpectedResponseException,
+  UnknownErrorException,
   unreachable,
+  UNSUPPORTED_FEATURES,
+  utf8StringToString,
+  Util,
+  VerbosityLevel,
+  warn,
 };

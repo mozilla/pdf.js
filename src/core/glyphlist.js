@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 /* no-babel-preset */
-/* eslint-disable no-var */
 
 import { getArrayLookupTableFactory } from "./core_utils.js";
 
-var getGlyphsUnicode = getArrayLookupTableFactory(function () {
+const getGlyphsUnicode = getArrayLookupTableFactory(function () {
   // prettier-ignore
   return [
     "A", 0x0041,
@@ -4347,7 +4346,7 @@ var getGlyphsUnicode = getArrayLookupTableFactory(function () {
   ];
 });
 
-var getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
+const getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
   // prettier-ignore
   return [
     "space", 0x0020,
@@ -4556,4 +4555,4 @@ var getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
   ];
 });
 
-export { getGlyphsUnicode, getDingbatsGlyphsUnicode };
+export { getDingbatsGlyphsUnicode, getGlyphsUnicode };

@@ -20,7 +20,6 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   noContextMenuHandler,
-  NullL10n,
 } from "./ui_utils.js";
 
 const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
@@ -58,7 +57,7 @@ class Toolbar {
    * @param {EventBus} eventBus
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.toolbar = options.container;
     this.eventBus = eventBus;
     this.l10n = l10n;
@@ -156,6 +155,19 @@ class Toolbar {
         value: this.value,
       });
     });
+    // Here we depend on browsers dispatching the "click" event *after* the
+    // "change" event, when the <select>-element changes.
+    scaleSelect.addEventListener("click", function (evt) {
+      const target = evt.target;
+      // Remove focus when an <option>-element was *clicked*, to improve the UX
+      // for mouse users (fixes bug 1300525 and issue 4923).
+      if (
+        this.value === self.pageScaleValue &&
+        target.tagName.toUpperCase() === "OPTION"
+      ) {
+        this.blur();
+      }
+    });
     // Suppress context menus for some controls.
     scaleSelect.oncontextmenu = noContextMenuHandler;
 
@@ -178,26 +190,18 @@ class Toolbar {
         items.pageNumber.type = "text";
       } else {
         items.pageNumber.type = "number";
-        this.l10n
-          .get("of_pages", { pagesCount }, "of {{pagesCount}}")
-          .then(msg => {
-            items.numPages.textContent = msg;
-          });
+        this.l10n.get("of_pages", { pagesCount }).then(msg => {
+          items.numPages.textContent = msg;
+        });
       }
       items.pageNumber.max = pagesCount;
     }
 
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
-      this.l10n
-        .get(
-          "page_of_pages",
-          { pageNumber, pagesCount },
-          "({{pageNumber}} of {{pagesCount}})"
-        )
-        .then(msg => {
-          items.numPages.textContent = msg;
-        });
+      this.l10n.get("page_of_pages", { pageNumber, pagesCount }).then(msg => {
+        items.numPages.textContent = msg;
+      });
     } else {
       items.pageNumber.value = pageNumber;
     }
@@ -208,9 +212,8 @@ class Toolbar {
     items.zoomOut.disabled = pageScale <= MIN_SCALE;
     items.zoomIn.disabled = pageScale >= MAX_SCALE;
 
-    const customScale = Math.round(pageScale * 10000) / 100;
     this.l10n
-      .get("page_scale_percent", { scale: customScale }, "{{scale}}%")
+      .get("page_scale_percent", { scale: Math.round(pageScale * 10000) / 100 })
       .then(msg => {
         let predefinedValueFound = false;
         for (const option of items.scaleSelect.options) {
@@ -243,10 +246,10 @@ class Toolbar {
     const { items, l10n } = this;
 
     const predefinedValuesPromise = Promise.all([
-      l10n.get("page_scale_auto", null, "Automatic Zoom"),
-      l10n.get("page_scale_actual", null, "Actual Size"),
-      l10n.get("page_scale_fit", null, "Page Fit"),
-      l10n.get("page_scale_width", null, "Page Width"),
+      l10n.get("page_scale_auto"),
+      l10n.get("page_scale_actual"),
+      l10n.get("page_scale_fit"),
+      l10n.get("page_scale_width"),
     ]);
 
     // The temporary canvas is used to measure text length in the DOM.

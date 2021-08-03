@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { NullL10n } from "./ui_utils.js";
-
 const SIDEBAR_WIDTH_VAR = "--sidebar-width";
 const SIDEBAR_MIN_WIDTH = 200; // pixels
 const SIDEBAR_RESIZING_CLASS = "sidebarResizing";
@@ -33,7 +31,7 @@ class PDFSidebarResizer {
    * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.isRTL = false;
     this.sidebarOpen = false;
     this.doc = document.documentElement;
@@ -55,10 +53,7 @@ class PDFSidebarResizer {
    * @type {number}
    */
   get outerContainerWidth() {
-    if (!this._outerContainerWidth) {
-      this._outerContainerWidth = this.outerContainer.clientWidth;
-    }
-    return this._outerContainerWidth;
+    return (this._outerContainerWidth ||= this.outerContainer.clientWidth);
   }
 
   /**
@@ -131,13 +126,13 @@ class PDFSidebarResizer {
     });
 
     this.eventBus._on("sidebarviewchanged", evt => {
-      this.sidebarOpen = !!(evt && evt.view);
+      this.sidebarOpen = !!evt?.view;
     });
 
     this.eventBus._on("resize", evt => {
       // When the *entire* viewer is resized, such that it becomes narrower,
       // ensure that the sidebar doesn't end up being too wide.
-      if (!evt || evt.source !== window) {
+      if (evt?.source !== window) {
         return;
       }
       // Always reset the cached width when the viewer is resized.

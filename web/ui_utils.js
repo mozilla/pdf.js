@@ -32,6 +32,15 @@ const PresentationModeState = {
   FULLSCREEN: 3,
 };
 
+const SidebarView = {
+  UNKNOWN: -1,
+  NONE: 0,
+  THUMBS: 1, // Default value.
+  OUTLINE: 2,
+  ATTACHMENTS: 3,
+  LAYERS: 4,
+};
+
 const RendererType = {
   CANVAS: "canvas",
   SVG: "svg",
@@ -60,36 +69,6 @@ const SpreadMode = {
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
-// Replaces {{arguments}} with their values.
-function formatL10nValue(text, args) {
-  if (!args) {
-    return text;
-  }
-  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
-    return name in args ? args[name] : "{{" + name + "}}";
-  });
-}
-
-/**
- * No-op implementation of the localization service.
- * @implements {IL10n}
- */
-const NullL10n = {
-  async getLanguage() {
-    return "en-us";
-  },
-
-  async getDirection() {
-    return "ltr";
-  },
-
-  async get(property, args, fallback) {
-    return formatL10nValue(fallback, args);
-  },
-
-  async translate(element) {},
-};
-
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
  * @returns {Object} The object with horizontal (sx) and vertical (sy)
@@ -116,10 +95,11 @@ function getOutputScale(ctx) {
  * @param {Object} element - The element to be visible.
  * @param {Object} spot - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
- * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
- *   the CSS rule `overflow: hidden;` set. The default is false.
+ * @param {boolean} [scrollMatches] - When scrolling search results into view,
+ *   ignore elements that either: Contains marked content identifiers,
+ *   or have the CSS-rule `overflow: hidden;` set. The default value is `false`.
  */
-function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
+function scrollIntoView(element, spot, scrollMatches = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
@@ -133,15 +113,13 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
   while (
     (parent.clientHeight === parent.scrollHeight &&
       parent.clientWidth === parent.scrollWidth) ||
-    (skipOverflowHiddenElements &&
-      getComputedStyle(parent).overflow === "hidden")
+    (scrollMatches &&
+      (parent.classList.contains("markedContent") ||
+        getComputedStyle(parent).overflow === "hidden"))
   ) {
-    if (parent.dataset._scaleY) {
-      offsetY /= parent.dataset._scaleY;
-      offsetX /= parent.dataset._scaleX;
-    }
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
+
     parent = parent.offsetParent;
     if (!parent) {
       return; // no need to scroll
@@ -202,16 +180,17 @@ function watchScroll(viewAreaElement, callback) {
 }
 
 /**
- * Helper function to parse query string (e.g. ?param1=value&parm2=...).
+ * Helper function to parse query string (e.g. ?param1=value&param2=...).
+ * @param {string}
+ * @returns {Map}
  */
 function parseQueryString(query) {
-  const parts = query.split("&");
-  const params = Object.create(null);
-  for (let i = 0, ii = parts.length; i < ii; ++i) {
-    const param = parts[i].split("=");
-    const key = param[0].toLowerCase();
-    const value = param.length > 1 ? param[1] : null;
-    params[decodeURIComponent(key)] = decodeURIComponent(value);
+  const params = new Map();
+  for (const part of query.split("&")) {
+    const param = part.split("="),
+      key = param[0].toLowerCase(),
+      value = param.length > 1 ? param[1] : "";
+    params.set(decodeURIComponent(key), decodeURIComponent(value));
   }
   return params;
 }
@@ -554,17 +533,18 @@ function getVisibleElements({
       Math.max(0, top - currentHeight) + Math.max(0, viewBottom - bottom);
     const hiddenWidth =
       Math.max(0, left - currentWidth) + Math.max(0, viewRight - right);
-    const percent =
-      (((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) * 100) /
-        viewHeight /
-        viewWidth) |
-      0;
+
+    const fractionHeight = (viewHeight - hiddenHeight) / viewHeight,
+      fractionWidth = (viewWidth - hiddenWidth) / viewWidth;
+    const percent = (fractionHeight * fractionWidth * 100) | 0;
+
     visible.push({
       id: view.id,
       x: currentWidth,
       y: currentHeight,
       view,
       percent,
+      widthPercent: (fractionWidth * 100) | 0,
     });
   }
 
@@ -590,62 +570,8 @@ function noContextMenuHandler(evt) {
   evt.preventDefault();
 }
 
-function isDataSchema(url) {
-  let i = 0;
-  const ii = url.length;
-  while (i < ii && url[i].trim() === "") {
-    i++;
-  }
-  return url.substring(i, i + 5).toLowerCase() === "data:";
-}
-
-/**
- * Returns the filename or guessed filename from the url (see issue 3455).
- * @param {string} url - The original PDF location.
- * @param {string} defaultFilename - The value returned if the filename is
- *   unknown, or the protocol is unsupported.
- * @returns {string} Guessed PDF filename.
- */
-function getPDFFileNameFromURL(url, defaultFilename = "document.pdf") {
-  if (typeof url !== "string") {
-    return defaultFilename;
-  }
-  if (isDataSchema(url)) {
-    console.warn(
-      "getPDFFileNameFromURL: " +
-        'ignoring "data:" URL for performance reasons.'
-    );
-    return defaultFilename;
-  }
-  const reURI = /^(?:(?:[^:]+:)?\/\/[^/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
-  //              SCHEME        HOST        1.PATH  2.QUERY   3.REF
-  // Pattern to get last matching NAME.pdf
-  const reFilename = /[^/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
-  const splitURI = reURI.exec(url);
-  let suggestedFilename =
-    reFilename.exec(splitURI[1]) ||
-    reFilename.exec(splitURI[2]) ||
-    reFilename.exec(splitURI[3]);
-  if (suggestedFilename) {
-    suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.includes("%")) {
-      // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
-      try {
-        suggestedFilename = reFilename.exec(
-          decodeURIComponent(suggestedFilename)
-        )[0];
-      } catch (ex) {
-        // Possible (extremely rare) errors:
-        // URIError "Malformed URI", e.g. for "%AA.pdf"
-        // TypeError "null has no properties", e.g. for "%2F.pdf"
-      }
-    }
-  }
-  return suggestedFilename || defaultFilename;
-}
-
 function normalizeWheelEventDirection(evt) {
-  let delta = Math.sqrt(evt.deltaX * evt.deltaX + evt.deltaY * evt.deltaY);
+  let delta = Math.hypot(evt.deltaX, evt.deltaY);
   const angle = Math.atan2(evt.deltaY, evt.deltaX);
   if (-0.25 * Math.PI < angle && angle < 0.75 * Math.PI) {
     // All that is left-up oriented has to change the sign.
@@ -758,11 +684,11 @@ function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 const animationStarted = new Promise(function (resolve) {
   if (
     typeof PDFJSDev !== "undefined" &&
-    PDFJSDev.test("LIB && TESTING") &&
+    PDFJSDev.test("LIB") &&
     typeof window === "undefined"
   ) {
     // Prevent "ReferenceError: window is not defined" errors when running the
-    // unit-tests in Node.js/Travis.
+    // unit-tests in Node.js environments.
     setTimeout(resolve, 20);
     return;
   }
@@ -777,7 +703,7 @@ function dispatchDOMEvent(eventName, args = null) {
     throw new Error("Not implemented: dispatchDOMEvent");
   }
   const details = Object.create(null);
-  if (args && args.length > 0) {
+  if (args?.length > 0) {
     const obj = args[0];
     for (const key in obj) {
       const value = obj[key];
@@ -804,24 +730,32 @@ class EventBus {
     this._listeners = Object.create(null);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
-      this._isInAutomation = (options && options.isInAutomation) === true;
+      this._isInAutomation = options?.isInAutomation === true;
     }
   }
 
   /**
    * @param {string} eventName
    * @param {function} listener
+   * @param {Object} [options]
    */
-  on(eventName, listener) {
-    this._on(eventName, listener, { external: true });
+  on(eventName, listener, options = null) {
+    this._on(eventName, listener, {
+      external: true,
+      once: options?.once,
+    });
   }
 
   /**
    * @param {string} eventName
    * @param {function} listener
+   * @param {Object} [options]
    */
-  off(eventName, listener) {
-    this._off(eventName, listener, { external: true });
+  off(eventName, listener, options = null) {
+    this._off(eventName, listener, {
+      external: true,
+      once: options?.once,
+    });
   }
 
   dispatch(eventName) {
@@ -841,22 +775,22 @@ class EventBus {
     let externalListeners;
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
-    eventListeners.slice(0).forEach(function ({ listener, external }) {
+    for (const { listener, external, once } of eventListeners.slice(0)) {
+      if (once) {
+        this._off(eventName, listener);
+      }
       if (external) {
-        if (!externalListeners) {
-          externalListeners = [];
-        }
-        externalListeners.push(listener);
-        return;
+        (externalListeners ||= []).push(listener);
+        continue;
       }
       listener.apply(null, args);
-    });
+    }
     // Dispatch any "external" listeners *after* the internal ones, to give the
     // viewer components time to handle events and update their state first.
     if (externalListeners) {
-      externalListeners.forEach(function (listener) {
+      for (const listener of externalListeners) {
         listener.apply(null, args);
-      });
+      }
       externalListeners = null;
     }
     if (
@@ -871,13 +805,11 @@ class EventBus {
    * @ignore
    */
   _on(eventName, listener, options = null) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners) {
-      this._listeners[eventName] = eventListeners = [];
-    }
+    const eventListeners = (this._listeners[eventName] ||= []);
     eventListeners.push({
       listener,
-      external: (options && options.external) === true,
+      external: options?.external === true,
+      once: options?.once === true,
     });
   }
 
@@ -1006,7 +938,7 @@ function getActiveOrFocusedElement() {
   let curActiveOrFocused =
     curRoot.activeElement || curRoot.querySelector(":focus");
 
-  while (curActiveOrFocused && curActiveOrFocused.shadowRoot) {
+  while (curActiveOrFocused?.shadowRoot) {
     curRoot = curActiveOrFocused.shadowRoot;
     curActiveOrFocused =
       curRoot.activeElement || curRoot.querySelector(":focus");
@@ -1016,82 +948,93 @@ function getActiveOrFocusedElement() {
 }
 
 /**
- * Generate a random string which is not define somewhere in actions.
- *
- * @param {Object} objects - The value returned by `getFieldObjects` in the API.
- * @returns {string} A unique string.
+ * Converts API PageLayout values to the format used by `BaseViewer`.
+ * NOTE: This is supported to the extent that the viewer implements the
+ *       necessary Scroll/Spread modes (since SinglePage, TwoPageLeft,
+ *       and TwoPageRight all suggests using non-continuous scrolling).
+ * @param {string} mode - The API PageLayout value.
+ * @returns {number} A value from {SpreadMode}.
  */
-function generateRandomStringForSandbox(objects) {
-  const allObjects = Object.values(objects).flat(2);
-  const actions = allObjects
-    .filter(obj => !!obj.actions)
-    .map(obj => Object.values(obj.actions))
-    .flat(2);
-
-  while (true) {
-    const name = new Uint8Array(64);
-    if (typeof crypto !== "undefined") {
-      crypto.getRandomValues(name);
-    } else {
-      for (let i = 0, ii = name.length; i < ii; i++) {
-        name[i] = Math.floor(256 * Math.random());
-      }
-    }
-
-    const nameString =
-      "_" +
-      btoa(
-        Array.from(name)
-          .map(x => String.fromCharCode(x))
-          .join("")
-      );
-    if (actions.every(action => !action.includes(nameString))) {
-      return nameString;
-    }
+function apiPageLayoutToSpreadMode(layout) {
+  switch (layout) {
+    case "SinglePage":
+    case "OneColumn":
+      return SpreadMode.NONE;
+    case "TwoColumnLeft":
+    case "TwoPageLeft":
+      return SpreadMode.ODD;
+    case "TwoColumnRight":
+    case "TwoPageRight":
+      return SpreadMode.EVEN;
   }
+  return SpreadMode.NONE; // Default value.
+}
+
+/**
+ * Converts API PageMode values to the format used by `PDFSidebar`.
+ * NOTE: There's also a "FullScreen" parameter which is not possible to support,
+ *       since the Fullscreen API used in browsers requires that entering
+ *       fullscreen mode only occurs as a result of a user-initiated event.
+ * @param {string} mode - The API PageMode value.
+ * @returns {number} A value from {SidebarView}.
+ */
+function apiPageModeToSidebarView(mode) {
+  switch (mode) {
+    case "UseNone":
+      return SidebarView.NONE;
+    case "UseThumbs":
+      return SidebarView.THUMBS;
+    case "UseOutlines":
+      return SidebarView.OUTLINE;
+    case "UseAttachments":
+      return SidebarView.ATTACHMENTS;
+    case "UseOC":
+      return SidebarView.LAYERS;
+  }
+  return SidebarView.NONE; // Default value.
 }
 
 export {
+  animationStarted,
+  apiPageLayoutToSpreadMode,
+  apiPageModeToSidebarView,
+  approximateFraction,
   AutoPrintRegExp,
+  backtrackBeforeAllVisibleElements, // only exported for testing
+  binarySearchFirstItem,
   CSS_UNITS,
-  DEFAULT_SCALE_VALUE,
   DEFAULT_SCALE,
-  MIN_SCALE,
-  MAX_SCALE,
-  UNKNOWN_SCALE,
-  MAX_AUTO_SCALE,
-  SCROLLBAR_PADDING,
-  VERTICAL_PADDING,
+  DEFAULT_SCALE_VALUE,
+  EventBus,
+  getActiveOrFocusedElement,
+  getOutputScale,
+  getPageSizeInches,
+  getVisibleElements,
+  isPortraitOrientation,
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
-  isPortraitOrientation,
-  PresentationModeState,
-  RendererType,
-  TextLayerMode,
-  ScrollMode,
-  SpreadMode,
-  NullL10n,
-  EventBus,
-  ProgressBar,
-  generateRandomStringForSandbox,
-  getPDFFileNameFromURL,
-  noContextMenuHandler,
-  parseQueryString,
-  backtrackBeforeAllVisibleElements, // only exported for testing
-  getVisibleElements,
-  roundToDivide,
-  getPageSizeInches,
-  approximateFraction,
-  getOutputScale,
-  scrollIntoView,
-  watchScroll,
-  binarySearchFirstItem,
-  normalizeWheelEventDirection,
-  normalizeWheelEventDelta,
-  animationStarted,
-  WaitOnType,
-  waitOnEventOrTimeout,
+  MAX_AUTO_SCALE,
+  MAX_SCALE,
+  MIN_SCALE,
   moveToEndOfArray,
-  getActiveOrFocusedElement,
+  noContextMenuHandler,
+  normalizeWheelEventDelta,
+  normalizeWheelEventDirection,
+  parseQueryString,
+  PresentationModeState,
+  ProgressBar,
+  RendererType,
+  roundToDivide,
+  SCROLLBAR_PADDING,
+  scrollIntoView,
+  ScrollMode,
+  SidebarView,
+  SpreadMode,
+  TextLayerMode,
+  UNKNOWN_SCALE,
+  VERTICAL_PADDING,
+  waitOnEventOrTimeout,
+  WaitOnType,
+  watchScroll,
 };

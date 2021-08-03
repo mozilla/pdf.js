@@ -18,15 +18,21 @@ Refer to the `main.js` and `webpack.config.js` files for the source code.
 Note that PDF.js packaging requires packaging of the main application and
 the worker code, and the `workerSrc` path shall be set to the latter file.
 
+### Minification
+
+If you are configuring Webpack to output a minified build, please note that you
+*must* configure the minifier to keep original class/function names intact;
+otherwise the build is not guaranteed to work correctly.
+
 ## Worker loading
 
 If you are getting the `Setting up fake worker` warning, make sure you are
 importing `pdfjs-dist/webpack` which is the zero-configuration method for
 Webpack users. You will need to install
-[worker-loader](https://github.com/webpack-contrib/worker-loader) as a
+[worker-loader](https://github.com/webpack-contrib/worker-loader) (version 3.0.0 or higher is required), as a
 dependency in your project in order to use `pdfjs-dist/webpack` (configuring
 `worker-loader` is not necessary; just installing it is sufficient).
 
-    import pdfjsLib from 'pdfjs-dist/webpack';
+    import * as pdfjsLib from 'pdfjs-dist/webpack';
 
 For a full working example refer to [this repository](https://github.com/yurydelendik/pdfjs-react).

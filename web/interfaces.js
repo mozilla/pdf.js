@@ -188,6 +188,7 @@ class IPDFAnnotationLayerFactory {
    * @param {IL10n} l10n
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
+   * @param {Object} [mouseState]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -198,8 +199,32 @@ class IPDFAnnotationLayerFactory {
     renderInteractiveForms = true,
     l10n = undefined,
     enableScripting = false,
-    hasJSActionsPromise = null
+    hasJSActionsPromise = null,
+    mouseState = null
   ) {}
+}
+
+/**
+ * @interface
+ */
+class IPDFXfaLayerFactory {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPage} pdfPage
+   * @returns {XfaLayerBuilder}
+   */
+  createXfaLayerBuilder(pageDiv, pdfPage) {}
+}
+
+/**
+ * @interface
+ */
+class IPDFStructTreeLayerFactory {
+  /**
+   * @param {PDFPage} pdfPage
+   * @returns {StructTreeLayerBuilder}
+   */
+  createStructTreeLayerBuilder(pdfPage) {}
 }
 
 /**
@@ -236,10 +261,12 @@ class IL10n {
 }
 
 export {
-  IPDFLinkService,
-  IPDFHistory,
-  IRenderableView,
-  IPDFTextLayerFactory,
-  IPDFAnnotationLayerFactory,
   IL10n,
+  IPDFAnnotationLayerFactory,
+  IPDFHistory,
+  IPDFLinkService,
+  IPDFStructTreeLayerFactory,
+  IPDFTextLayerFactory,
+  IPDFXfaLayerFactory,
+  IRenderableView,
 };

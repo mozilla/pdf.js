@@ -16,7 +16,6 @@
 import {
   getVisibleElements,
   isValidRotation,
-  NullL10n,
   scrollIntoView,
   watchScroll,
 } from "./ui_utils.js";
@@ -45,13 +44,7 @@ class PDFThumbnailViewer {
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
-  constructor({
-    container,
-    eventBus,
-    linkService,
-    renderingQueue,
-    l10n = NullL10n,
-  }) {
+  constructor({ container, eventBus, linkService, renderingQueue, l10n }) {
     this.container = container;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -216,7 +209,6 @@ class PDFThumbnailViewer {
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
             checkSetImageDisabled,
-            disableCanvasToImageConversion: false,
             l10n: this.l10n,
           });
           this._thumbnails.push(thumbnail);
@@ -268,8 +260,7 @@ class PDFThumbnailViewer {
     }
     // Update all the `PDFThumbnailView` instances.
     for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
-      const label = this._pageLabels && this._pageLabels[i];
-      this._thumbnails[i].setPageLabel(label);
+      this._thumbnails[i].setPageLabel(this._pageLabels?.[i] ?? null);
     }
   }
 

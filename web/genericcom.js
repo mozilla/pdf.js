@@ -14,11 +14,10 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { loadScript, shadow } from "pdfjs-lib";
-import { AppOptions } from "./app_options.js";
 import { BasePreferences } from "./preferences.js";
 import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
+import { GenericScripting } from "./generic_scripting.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(
@@ -52,23 +51,8 @@ class GenericExternalServices extends DefaultExternalServices {
     return new GenericL10n(locale);
   }
 
-  static get scripting() {
-    const promise = loadScript(AppOptions.get("scriptingSrc")).then(() => {
-      return window.pdfjsSandbox.QuickJSSandbox();
-    });
-    const sandbox = {
-      createSandbox(data) {
-        promise.then(sbx => sbx.create(data));
-      },
-      dispatchEventInSandbox(event) {
-        promise.then(sbx => sbx.dispatchEvent(event));
-      },
-      destroySandbox() {
-        promise.then(sbx => sbx.nukeSandbox());
-      },
-    };
-
-    return shadow(this, "scripting", sandbox);
+  static createScripting({ sandboxBundleSrc }) {
+    return new GenericScripting(sandboxBundleSrc);
   }
 }
 PDFViewerApplication.externalServices = GenericExternalServices;

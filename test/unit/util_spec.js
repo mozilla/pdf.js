@@ -17,10 +17,10 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
-  encodeToXmlString,
   escapeString,
   getModificationDate,
   isArrayBuffer,
+  isAscii,
   isBool,
   isNum,
   isSameOrigin,
@@ -29,6 +29,7 @@ import {
   string32,
   stringToBytes,
   stringToPDFString,
+  stringToUTF16BEString,
 } from "../../src/shared/util.js";
 
 describe("util", function () {
@@ -288,33 +289,33 @@ describe("util", function () {
   });
 
   describe("createPromiseCapability", function () {
-    it("should resolve with correct data", function (done) {
+    it("should resolve with correct data", async function () {
       const promiseCapability = createPromiseCapability();
       expect(promiseCapability.settled).toEqual(false);
 
       promiseCapability.resolve({ test: "abc" });
 
-      promiseCapability.promise.then(function (data) {
-        expect(promiseCapability.settled).toEqual(true);
-
-        expect(data).toEqual({ test: "abc" });
-        done();
-      }, done.fail);
+      const data = await promiseCapability.promise;
+      expect(promiseCapability.settled).toEqual(true);
+      expect(data).toEqual({ test: "abc" });
     });
 
-    it("should reject with correct reason", function (done) {
+    it("should reject with correct reason", async function () {
       const promiseCapability = createPromiseCapability();
       expect(promiseCapability.settled).toEqual(false);
 
       promiseCapability.reject(new Error("reason"));
 
-      promiseCapability.promise.then(done.fail, function (reason) {
-        expect(promiseCapability.settled).toEqual(true);
+      try {
+        await promiseCapability.promise;
 
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(promiseCapability.settled).toEqual(true);
         expect(reason instanceof Error).toEqual(true);
         expect(reason.message).toEqual("reason");
-        done();
-      });
+      }
     });
   });
 
@@ -333,17 +334,25 @@ describe("util", function () {
     });
   });
 
-  describe("encodeToXmlString", function () {
-    it("should get a correctly encoded string with some entities", function () {
-      const str = "\"\u0397ell😂' & <W😂rld>";
-      expect(encodeToXmlString(str)).toEqual(
-        "&quot;&#x397;ell&#x1F602;&apos; &amp; &lt;W&#x1F602;rld&gt;"
+  describe("isAscii", function () {
+    it("handles ascii/non-ascii strings", function () {
+      expect(isAscii("hello world")).toEqual(true);
+      expect(isAscii("こんにちは世界の")).toEqual(false);
+      expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
+        false
       );
     });
+  });
 
-    it("should get a correctly encoded basic ascii string", function () {
-      const str = "hello world";
-      expect(encodeToXmlString(str)).toEqual(str);
+  describe("stringToUTF16BEString", function () {
+    it("should encode a string in UTF16BE with a BOM", function () {
+      expect(stringToUTF16BEString("hello world")).toEqual(
+        "\xfe\xff\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d"
+      );
+      expect(stringToUTF16BEString("こんにちは世界の")).toEqual(
+        "\xfe\xff\x30\x53\x30\x93\x30\x6b\x30\x61" +
+          "\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
+      );
     });
   });
 });

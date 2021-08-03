@@ -12,38 +12,121 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 /* globals pdfjsLib, pdfjsViewer */
 
 "use strict";
 
 const WAITING_TIME = 100; // ms
 const PDF_TO_CSS_UNITS = 96.0 / 72.0;
-const CMAP_URL = "../external/bcmaps/";
+const CMAP_URL = "/build/generic/web/cmaps/";
 const CMAP_PACKED = true;
+const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+function loadStyles(styles) {
+  styles = Object.values(styles);
+  if (styles.every(style => style.promise)) {
+    return Promise.all(styles.map(style => style.promise));
+  }
+
+  for (const style of styles) {
+    style.promise = new Promise(function (resolve, reject) {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", style.file);
+      xhr.onload = function () {
+        resolve(xhr.responseText);
+      };
+      xhr.onerror = function (e) {
+        reject(new Error(`Error fetching style (${style.file}): ${e}`));
+      };
+      xhr.send(null);
+    });
+  }
+
+  return Promise.all(styles.map(style => style.promise));
+}
+
+function writeSVG(svgElement, ctx, resolve, reject) {
+  // We need to have UTF-8 encoded XML.
+  const svg_xml = unescape(
+    encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
+  );
+  const img = new Image();
+  img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
+  img.onload = function () {
+    ctx.drawImage(img, 0, 0);
+    resolve();
+  };
+  img.onerror = function (e) {
+    reject(new Error("Error rasterizing text layer " + e));
+  };
+}
+
+function inlineImages(images) {
+  const imagePromises = [];
+  for (let i = 0, ii = images.length; i < ii; i++) {
+    imagePromises.push(
+      new Promise(function (resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.responseType = "blob";
+        xhr.onload = function () {
+          const reader = new FileReader();
+          reader.onloadend = function () {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(xhr.response);
+        };
+        xhr.onerror = function (e) {
+          reject(new Error("Error fetching inline image " + e));
+        };
+        xhr.open("GET", images[i].src);
+        xhr.send();
+      })
+    );
+  }
+  return Promise.all(imagePromises);
+}
+
+async function resolveImages(node, silentErrors = false) {
+  const images = node.getElementsByTagName("img");
+  const data = await inlineImages(images);
+
+  const loadedPromises = [];
+  for (let i = 0, ii = data.length; i < ii; i++) {
+    loadedPromises.push(
+      new Promise(function (resolveImage, rejectImage) {
+        images[i].onload = resolveImage;
+        images[i].onerror = function (e) {
+          if (silentErrors) {
+            resolveImage();
+          } else {
+            rejectImage(new Error("Error loading image " + e));
+          }
+        };
+        images[i].src = data[i];
+      })
+    );
+  }
+  await Promise.all(loadedPromises);
+}
 
 /**
  * @class
  */
 var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
-  var SVG_NS = "http://www.w3.org/2000/svg";
+  const styles = {
+    common: {
+      file: "./text_layer_test.css",
+      promise: null,
+    },
+  };
 
-  var textLayerStylePromise = null;
   function getTextLayerStyle() {
-    if (textLayerStylePromise) {
-      return textLayerStylePromise;
-    }
-    textLayerStylePromise = new Promise(function (resolve) {
-      var xhr = new XMLHttpRequest();
-      xhr.open("GET", "./text_layer_test.css");
-      xhr.onload = function () {
-        resolve(xhr.responseText);
-      };
-      xhr.send(null);
-    });
-    return textLayerStylePromise;
+    return loadStyles(styles);
   }
 
   // eslint-disable-next-line no-shadow
@@ -74,32 +157,27 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       div.className = "textLayer";
       foreignObject.appendChild(div);
 
-      // Rendering text layer as HTML.
-      var task = pdfjsLib.renderTextLayer({
-        textContent,
-        container: div,
-        viewport,
-        enhanceTextSelection,
-      });
-      Promise.all([stylePromise, task.promise]).then(function (results) {
-        task.expandTextDivs(true);
-        style.textContent = results[0];
-        svg.appendChild(foreignObject);
+      stylePromise
+        .then(async cssRules => {
+          style.textContent = cssRules;
 
-        // We need to have UTF-8 encoded XML.
-        var svg_xml = unescape(
-          encodeURIComponent(new XMLSerializer().serializeToString(svg))
-        );
-        var img = new Image();
-        img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-        img.onload = function () {
-          ctx.drawImage(img, 0, 0);
-          resolve();
-        };
-        img.onerror = function (e) {
-          reject(new Error("Error rasterizing text layer " + e));
-        };
-      });
+          // Rendering text layer as HTML.
+          var task = pdfjsLib.renderTextLayer({
+            textContent,
+            container: div,
+            viewport,
+            enhanceTextSelection,
+          });
+          await task.promise;
+
+          task.expandTextDivs(true);
+          svg.appendChild(foreignObject);
+
+          writeSVG(svg, ctx, resolve, reject);
+        })
+        .catch(reason => {
+          reject(new Error(`rasterizeTextLayer: "${reason?.message}".`));
+        });
     });
   }
 
@@ -110,8 +188,6 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
  * @class
  */
 var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
-  const SVG_NS = "http://www.w3.org/2000/svg";
-
   /**
    * For the reference tests, the entire annotation layer must be visible. To
    * achieve this, we load the common styles as used by the viewer and extend
@@ -133,51 +209,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   };
 
   function getAnnotationLayerStyle() {
-    // Use the cached promises if they are available.
-    if (styles.common.promise && styles.overrides.promise) {
-      return Promise.all([styles.common.promise, styles.overrides.promise]);
-    }
-
-    // Load the style files and cache the results.
-    for (const key in styles) {
-      styles[key].promise = new Promise(function (resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", styles[key].file);
-        xhr.onload = function () {
-          resolve(xhr.responseText);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error("Error fetching annotation style " + e));
-        };
-        xhr.send(null);
-      });
-    }
-
-    return Promise.all([styles.common.promise, styles.overrides.promise]);
-  }
-
-  function inlineAnnotationImages(images) {
-    var imagePromises = [];
-    for (var i = 0, ii = images.length; i < ii; i++) {
-      var imagePromise = new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.responseType = "blob";
-        xhr.onload = function () {
-          var reader = new FileReader();
-          reader.onloadend = function () {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error("Error fetching inline annotation image " + e));
-        };
-        xhr.open("GET", images[i].src);
-        xhr.send();
-      });
-      imagePromises.push(imagePromise);
-    }
-    return imagePromises;
+    return loadStyles(styles);
   }
 
   // eslint-disable-next-line no-shadow
@@ -208,63 +240,107 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
-      stylePromise.then(function (common, overrides) {
-        style.textContent = common + overrides;
+      stylePromise
+        .then(async (common, overrides) => {
+          style.textContent = common + overrides;
 
-        var annotation_viewport = viewport.clone({ dontFlip: true });
-        var parameters = {
-          viewport: annotation_viewport,
-          div,
-          annotations,
-          page,
-          linkService: new pdfjsViewer.SimpleLinkService(),
-          imageResourcesPath,
-          renderInteractiveForms,
-        };
-        pdfjsLib.AnnotationLayer.render(parameters);
-
-        // Inline SVG images from text annotations.
-        var images = div.getElementsByTagName("img");
-        var imagePromises = inlineAnnotationImages(images);
-        var converted = Promise.all(imagePromises).then(function (data) {
-          var loadedPromises = [];
-          for (var i = 0, ii = data.length; i < ii; i++) {
-            images[i].src = data[i];
-            loadedPromises.push(
-              new Promise(function (resolveImage, rejectImage) {
-                images[i].onload = resolveImage;
-                images[i].onerror = function (e) {
-                  rejectImage(new Error("Error loading image " + e));
-                };
-              })
-            );
-          }
-          return loadedPromises;
-        });
-
-        foreignObject.appendChild(div);
-        svg.appendChild(foreignObject);
-
-        // We need to have UTF-8 encoded XML.
-        converted.then(function () {
-          var svg_xml = unescape(
-            encodeURIComponent(new XMLSerializer().serializeToString(svg))
-          );
-          var img = new Image();
-          img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-          img.onload = function () {
-            ctx.drawImage(img, 0, 0);
-            resolve();
+          var annotation_viewport = viewport.clone({ dontFlip: true });
+          var parameters = {
+            viewport: annotation_viewport,
+            div,
+            annotations,
+            page,
+            linkService: new pdfjsViewer.SimpleLinkService(),
+            imageResourcesPath,
+            renderInteractiveForms,
           };
-          img.onerror = function (e) {
-            reject(new Error("Error rasterizing annotation layer " + e));
-          };
+          pdfjsLib.AnnotationLayer.render(parameters);
+
+          // Inline SVG images from text annotations.
+          await resolveImages(div);
+          foreignObject.appendChild(div);
+          svg.appendChild(foreignObject);
+
+          writeSVG(svg, ctx, resolve, reject);
+        })
+        .catch(reason => {
+          reject(new Error(`rasterizeAnnotationLayer: "${reason?.message}".`));
         });
-      });
     });
   }
 
   return rasterizeAnnotationLayer;
+})();
+
+/**
+ * @class
+ */
+var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
+  const styles = {
+    common: {
+      file: "../web/xfa_layer_builder.css",
+      promise: null,
+    },
+  };
+
+  function getXfaLayerStyle() {
+    return loadStyles(styles);
+  }
+
+  // eslint-disable-next-line no-shadow
+  function rasterizeXfaLayer(
+    ctx,
+    viewport,
+    xfa,
+    fontRules,
+    annotationStorage,
+    isPrint
+  ) {
+    return new Promise(function (resolve, reject) {
+      // Building SVG with size of the viewport.
+      const svg = document.createElementNS(SVG_NS, "svg:svg");
+      svg.setAttribute("width", viewport.width + "px");
+      svg.setAttribute("height", viewport.height + "px");
+      const foreignObject = document.createElementNS(
+        SVG_NS,
+        "svg:foreignObject"
+      );
+      foreignObject.setAttribute("x", "0");
+      foreignObject.setAttribute("y", "0");
+      foreignObject.setAttribute("width", viewport.width + "px");
+      foreignObject.setAttribute("height", viewport.height + "px");
+      const style = document.createElement("style");
+      const stylePromise = getXfaLayerStyle();
+      foreignObject.appendChild(style);
+      const div = document.createElement("div");
+      foreignObject.appendChild(div);
+
+      stylePromise
+        .then(async cssRules => {
+          style.textContent = fontRules + "\n" + cssRules;
+
+          pdfjsLib.XfaLayer.render({
+            xfa,
+            div,
+            viewport: viewport.clone({ dontFlip: true }),
+            annotationStorage,
+            intent: isPrint ? "print" : "display",
+          });
+
+          // Some unsupported type of images (e.g. tiff)
+          // lead to errors.
+          await resolveImages(div, /* silentErrors = */ true);
+          svg.appendChild(foreignObject);
+
+          writeSVG(svg, ctx, resolve, reject);
+        })
+        .catch(reason => {
+          reject(new Error(`rasterizeXfaLayer: "${reason?.message}".`));
+        });
+    });
+  }
+
+  return rasterizeXfaLayer;
 })();
 
 /**
@@ -380,24 +456,63 @@ var Driver = (function DriverClosure() {
         task.round = 0;
         task.pageNum = task.firstPage || 1;
         task.stats = { times: [] };
+        task.enableXfa = task.enableXfa === true;
+
+        // Support *linked* test-cases for the other suites, e.g. unit- and
+        // integration-tests, without needing to run them as reference-tests.
+        if (task.type === "other") {
+          this._log(`Skipping file "${task.file}"\n`);
+
+          if (!task.link) {
+            this._nextPage(task, 'Expected "other" test-case to be linked.');
+            return;
+          }
+          this.currentTask++;
+          this._nextTask();
+          return;
+        }
 
         this._log('Loading file "' + task.file + '"\n');
 
         const absoluteUrl = new URL(task.file, window.location).href;
         try {
+          let xfaStyleElement = null;
+          if (task.enableXfa) {
+            // Need to get the font definitions to inject them in the SVG.
+            // So we create this element and those definitions will be
+            // appended in font_loader.js.
+            xfaStyleElement = document.createElement("style");
+            document.documentElement
+              .getElementsByTagName("head")[0]
+              .appendChild(xfaStyleElement);
+          }
+
           const loadingTask = pdfjsLib.getDocument({
             url: absoluteUrl,
             password: task.password,
             cMapUrl: CMAP_URL,
             cMapPacked: CMAP_PACKED,
+            standardFontDataUrl: STANDARD_FONT_DATA_URL,
             disableRange: task.disableRange,
             disableAutoFetch: !task.enableAutoFetch,
             pdfBug: true,
+            useSystemFonts: task.useSystemFonts,
+            useWorkerFetch: task.useWorkerFetch,
+            enableXfa: task.enableXfa,
+            styleElement: xfaStyleElement,
           });
           loadingTask.promise.then(
             doc => {
+              if (task.enableXfa) {
+                task.fontRules = "";
+                for (const rule of xfaStyleElement.sheet.cssRules) {
+                  task.fontRules += rule.cssText + "\n";
+                }
+              }
+
               task.pdfDoc = doc;
-              task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+              task.optionalContentConfigPromise =
+                doc.getOptionalContentConfig();
 
               this._nextPage(task, failure);
             },
@@ -522,7 +637,16 @@ var Driver = (function DriverClosure() {
               // Initialize various `eq` test subtypes, see comment below.
               var renderAnnotations = false,
                 renderForms = false,
-                renderPrint = false;
+                renderPrint = false,
+                renderXfa = false;
+
+              if (task.annotationStorage) {
+                const entries = Object.entries(task.annotationStorage),
+                  docAnnotationStorage = task.pdfDoc.annotationStorage;
+                for (const [key, value] of entries) {
+                  docAnnotationStorage.setValue(key, value);
+                }
+              }
 
               var textLayerCanvas, annotationLayerCanvas;
               var initPromise;
@@ -547,6 +671,7 @@ var Driver = (function DriverClosure() {
                 initPromise = page
                   .getTextContent({
                     normalizeWhitespace: true,
+                    includeMarkedContent: true,
                   })
                   .then(function (textContent) {
                     return rasterizeTextLayer(
@@ -563,9 +688,10 @@ var Driver = (function DriverClosure() {
                 renderAnnotations = !!task.annotations;
                 renderForms = !!task.forms;
                 renderPrint = !!task.print;
+                renderXfa = !!task.enableXfa;
 
                 // Render the annotation layer if necessary.
-                if (renderAnnotations || renderForms) {
+                if (renderAnnotations || renderForms || renderXfa) {
                   // Create a dummy canvas for the drawing operations.
                   annotationLayerCanvas = self.annotationLayerCanvas;
                   if (!annotationLayerCanvas) {
@@ -574,9 +700,8 @@ var Driver = (function DriverClosure() {
                   }
                   annotationLayerCanvas.width = viewport.width;
                   annotationLayerCanvas.height = viewport.height;
-                  var annotationLayerContext = annotationLayerCanvas.getContext(
-                    "2d"
-                  );
+                  var annotationLayerContext =
+                    annotationLayerCanvas.getContext("2d");
                   annotationLayerContext.clearRect(
                     0,
                     0,
@@ -584,19 +709,33 @@ var Driver = (function DriverClosure() {
                     annotationLayerCanvas.height
                   );
 
-                  // The annotation builder will draw its content on the canvas.
-                  initPromise = page
-                    .getAnnotations({ intent: "display" })
-                    .then(function (annotations) {
-                      return rasterizeAnnotationLayer(
+                  if (!renderXfa) {
+                    // The annotation builder will draw its content
+                    // on the canvas.
+                    initPromise = page
+                      .getAnnotations({ intent: "display" })
+                      .then(function (annotations) {
+                        return rasterizeAnnotationLayer(
+                          annotationLayerContext,
+                          viewport,
+                          annotations,
+                          page,
+                          IMAGE_RESOURCES_PATH,
+                          renderForms
+                        );
+                      });
+                  } else {
+                    initPromise = page.getXfa().then(function (xfa) {
+                      return rasterizeXfaLayer(
                         annotationLayerContext,
                         viewport,
-                        annotations,
-                        page,
-                        IMAGE_RESOURCES_PATH,
-                        renderForms
+                        xfa,
+                        task.fontRules,
+                        task.pdfDoc.annotationStorage,
+                        task.renderPrint
                       );
                     });
+                  }
                 } else {
                   annotationLayerCanvas = null;
                   initPromise = Promise.resolve();
@@ -610,14 +749,8 @@ var Driver = (function DriverClosure() {
                 optionalContentConfigPromise: task.optionalContentConfigPromise,
               };
               if (renderPrint) {
-                const annotationStorage = task.annotationStorage;
-                if (annotationStorage) {
-                  const docAnnotationStorage = task.pdfDoc.annotationStorage;
-                  const entries = Object.entries(annotationStorage);
-                  for (const [key, value] of entries) {
-                    docAnnotationStorage.setValue(key, value);
-                  }
-                  renderContext.annotationStorage = docAnnotationStorage;
+                if (task.annotationStorage) {
+                  renderContext.includeAnnotationStorage = true;
                 }
                 renderContext.intent = "print";
               }

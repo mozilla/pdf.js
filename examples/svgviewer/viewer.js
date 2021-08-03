@@ -16,6 +16,7 @@
 "use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
+  // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
@@ -26,23 +27,23 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
-var CMAP_PACKED = true;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
-var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 
-var container = document.getElementById("viewerContainer");
+const container = document.getElementById("viewerContainer");
 
-var eventBus = new pdfjsViewer.EventBus();
+const eventBus = new pdfjsViewer.EventBus();
 
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new pdfjsViewer.PDFLinkService({
-  eventBus: eventBus,
+const pdfLinkService = new pdfjsViewer.PDFLinkService({
+  eventBus,
 });
 
-var pdfViewer = new pdfjsViewer.PDFViewer({
-  container: container,
-  eventBus: eventBus,
+const pdfViewer = new pdfjsViewer.PDFViewer({
+  container,
+  eventBus,
   linkService: pdfLinkService,
   renderer: "svg",
   textLayerMode: 0,
@@ -55,7 +56,7 @@ eventBus.on("pagesinit", function () {
 });
 
 // Loading document.
-var loadingTask = pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,

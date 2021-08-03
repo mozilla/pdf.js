@@ -15,6 +15,7 @@
 
 .textLayer {
   position: absolute;
+  text-align: initial;
   left: 0;
   top: 0;
   right: 0;
@@ -24,7 +25,8 @@
   line-height: 1;
 }
 
-.textLayer > span {
+.textLayer span,
+.textLayer br {
   color: transparent;
   position: absolute;
   white-space: pre;
@@ -39,16 +41,20 @@
   border-radius: 4px;
 }
 
+.textLayer .highlight.appended {
+  position: initial;
+}
+
 .textLayer .highlight.begin {
-  border-radius: 4px 0px 0px 4px;
+  border-radius: 4px 0 0 4px;
 }
 
 .textLayer .highlight.end {
-  border-radius: 0px 4px 4px 0px;
+  border-radius: 0 4px 4px 0;
 }
 
 .textLayer .highlight.middle {
-  border-radius: 0px;
+  border-radius: 0;
 }
 
 .textLayer .highlight.selected {
@@ -59,18 +65,23 @@
   background: rgba(0, 0, 255, 1);
 }
 
+/* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
+.textLayer br::selection {
+  background: transparent;
+}
+
 .textLayer .endOfContent {
   display: block;
   position: absolute;
-  left: 0px;
+  left: 0;
   top: 100%;
-  right: 0px;
-  bottom: 0px;
+  right: 0;
+  bottom: 0;
   z-index: -1;
   cursor: default;
   user-select: none;
 }
 
 .textLayer .endOfContent.active {
-  top: 0px;
+  top: 0;
 }

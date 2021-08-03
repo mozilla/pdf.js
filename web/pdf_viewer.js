@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { ScrollMode, SpreadMode } from "./ui_utils.js";
 import { BaseViewer } from "./base_viewer.js";
 import { shadow } from "pdfjs-lib";
 
@@ -57,7 +58,11 @@ class PDFViewer extends BaseViewer {
       if (page.percent < 100) {
         break;
       }
-      if (page.id === currentId) {
+      if (
+        page.id === currentId &&
+        this._scrollMode === ScrollMode.VERTICAL &&
+        this._spreadMode === SpreadMode.NONE
+      ) {
         stillFullyVisible = true;
         break;
       }

@@ -13,7 +13,14 @@
  * limitations under the License.
  */
 
-import { assert, BaseException, warn } from "../shared/util.js";
+import {
+  assert,
+  BaseException,
+  objectSize,
+  stringToPDFString,
+  warn,
+} from "../shared/util.js";
+import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -51,6 +58,8 @@ class MissingDataException extends BaseException {
   }
 }
 
+class ParserEOFException extends BaseException {}
+
 class XRefEntryException extends BaseException {}
 
 class XRefParseException extends BaseException {}
@@ -64,8 +73,7 @@ class XRefParseException extends BaseException {}
  *
  * If the key is not found in the tree, `undefined` is returned. Otherwise,
  * the value for the key is returned or, if `stopWhenFound` is `false`, a list
- * of values is returned. To avoid infinite loops, the traversal is stopped when
- * the loop limit is reached.
+ * of values is returned.
  *
  * @param {Dict} dict - Dictionary from where to start the traversal.
  * @param {string} key - The key of the property to find the value for.
@@ -82,11 +90,13 @@ function getInheritableProperty({
   getArray = false,
   stopWhenFound = true,
 }) {
-  const LOOP_LIMIT = 100;
-  let loopCount = 0;
   let values;
+  const visited = new RefSet();
 
-  while (dict) {
+  while (dict instanceof Dict && !(dict.objId && visited.has(dict.objId))) {
+    if (dict.objId) {
+      visited.put(dict.objId);
+    }
     const value = getArray ? dict.getArray(key) : dict.get(key);
     if (value !== undefined) {
       if (stopWhenFound) {
@@ -96,10 +106,6 @@ function getInheritableProperty({
         values = [];
       }
       values.push(value);
-    }
-    if (++loopCount > LOOP_LIMIT) {
-      warn(`getInheritableProperty: maximum loop count exceeded for "${key}"`);
-      break;
     }
     dict = dict.get("Parent");
   }
@@ -141,7 +147,7 @@ function toRomanNumerals(number, lowerCase = false) {
   number %= 10;
   romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
   // Ones
-  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
+  romanBuf.push(ROMAN_NUMBER_MAP[20 + number]); // eslint-disable-line unicorn/no-array-push-push
 
   const romanStr = romanBuf.join("");
   return lowerCase ? romanStr.toLowerCase() : romanStr;
@@ -240,19 +246,219 @@ function escapePDFName(str) {
   return buffer.join("");
 }
 
+function _collectJS(entry, xref, list, parents) {
+  if (!entry) {
+    return;
+  }
+
+  let parent = null;
+  if (isRef(entry)) {
+    if (parents.has(entry)) {
+      // If we've already found entry then we've a cycle.
+      return;
+    }
+    parent = entry;
+    parents.put(parent);
+    entry = xref.fetch(entry);
+  }
+  if (Array.isArray(entry)) {
+    for (const element of entry) {
+      _collectJS(element, xref, list, parents);
+    }
+  } else if (entry instanceof Dict) {
+    if (isName(entry.get("S"), "JavaScript") && entry.has("JS")) {
+      const js = entry.get("JS");
+      let code;
+      if (isStream(js)) {
+        code = js.getString();
+      } else {
+        code = js;
+      }
+      code = stringToPDFString(code);
+      if (code) {
+        list.push(code);
+      }
+    }
+    _collectJS(entry.getRaw("Next"), xref, list, parents);
+  }
+
+  if (parent) {
+    parents.remove(parent);
+  }
+}
+
+function collectActions(xref, dict, eventType) {
+  const actions = Object.create(null);
+  const additionalActionsDicts = getInheritableProperty({
+    dict,
+    key: "AA",
+    stopWhenFound: false,
+  });
+  if (additionalActionsDicts) {
+    // additionalActionsDicts contains dicts from ancestors
+    // as they're found in the tree from bottom to top.
+    // So the dicts are visited in reverse order to guarantee
+    // that actions from elder ancestors will be overwritten
+    // by ones from younger ancestors.
+    for (let i = additionalActionsDicts.length - 1; i >= 0; i--) {
+      const additionalActions = additionalActionsDicts[i];
+      if (!(additionalActions instanceof Dict)) {
+        continue;
+      }
+      for (const key of additionalActions.getKeys()) {
+        const action = eventType[key];
+        if (!action) {
+          continue;
+        }
+        const actionDict = additionalActions.getRaw(key);
+        const parents = new RefSet();
+        const list = [];
+        _collectJS(actionDict, xref, list, parents);
+        if (list.length > 0) {
+          actions[action] = list;
+        }
+      }
+    }
+  }
+  // Collect the Action if any (we may have one on pushbutton).
+  if (dict.has("A")) {
+    const actionDict = dict.get("A");
+    const parents = new RefSet();
+    const list = [];
+    _collectJS(actionDict, xref, list, parents);
+    if (list.length > 0) {
+      actions.Action = list;
+    }
+  }
+  return objectSize(actions) > 0 ? actions : null;
+}
+
+const XMLEntities = {
+  /* < */ 0x3c: "&lt;",
+  /* > */ 0x3e: "&gt;",
+  /* & */ 0x26: "&amp;",
+  /* " */ 0x22: "&quot;",
+  /* ' */ 0x27: "&apos;",
+};
+
+function encodeToXmlString(str) {
+  const buffer = [];
+  let start = 0;
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.codePointAt(i);
+    if (0x20 <= char && char <= 0x7e) {
+      // ascii
+      const entity = XMLEntities[char];
+      if (entity) {
+        if (start < i) {
+          buffer.push(str.substring(start, i));
+        }
+        buffer.push(entity);
+        start = i + 1;
+      }
+    } else {
+      if (start < i) {
+        buffer.push(str.substring(start, i));
+      }
+      buffer.push(`&#x${char.toString(16).toUpperCase()};`);
+      if (char > 0xd7ff && (char < 0xe000 || char > 0xfffd)) {
+        // char is represented by two u16
+        i++;
+      }
+      start = i + 1;
+    }
+  }
+
+  if (buffer.length === 0) {
+    return str;
+  }
+  if (start < str.length) {
+    buffer.push(str.substring(start, str.length));
+  }
+  return buffer.join("");
+}
+
+function validateCSSFont(cssFontInfo) {
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-style.
+  const DEFAULT_CSS_FONT_OBLIQUE = "14";
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-weight.
+  const DEFAULT_CSS_FONT_WEIGHT = "400";
+  const CSS_FONT_WEIGHT_VALUES = new Set([
+    "100",
+    "200",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+    "1000",
+    "normal",
+    "bold",
+    "bolder",
+    "lighter",
+  ]);
+
+  const { fontFamily, fontWeight, italicAngle } = cssFontInfo;
+
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
+  if (/^".*"$/.test(fontFamily)) {
+    if (/[^\\]"/.test(fontFamily.slice(1, fontFamily.length - 1))) {
+      warn(`XFA - FontFamily contains some unescaped ": ${fontFamily}.`);
+      return false;
+    }
+  } else if (/^'.*'$/.test(fontFamily)) {
+    if (/[^\\]'/.test(fontFamily.slice(1, fontFamily.length - 1))) {
+      warn(`XFA - FontFamily contains some unescaped ': ${fontFamily}.`);
+      return false;
+    }
+  } else {
+    // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
+    for (const ident of fontFamily.split(/[ \t]+/)) {
+      if (
+        /^([0-9]|(-([0-9]|-)))/.test(ident) ||
+        !/^[a-zA-Z0-9\-_\\]+$/.test(ident)
+      ) {
+        warn(
+          `XFA - FontFamily contains some invalid <custom-ident>: ${fontFamily}.`
+        );
+        return false;
+      }
+    }
+  }
+
+  const weight = fontWeight ? fontWeight.toString() : "";
+  cssFontInfo.fontWeight = CSS_FONT_WEIGHT_VALUES.has(weight)
+    ? weight
+    : DEFAULT_CSS_FONT_WEIGHT;
+
+  const angle = parseFloat(italicAngle);
+  cssFontInfo.italicAngle =
+    isNaN(angle) || angle < -90 || angle > 90
+      ? DEFAULT_CSS_FONT_OBLIQUE
+      : italicAngle.toString();
+
+  return true;
+}
+
 export {
+  collectActions,
+  encodeToXmlString,
   escapePDFName,
-  getLookupTableFactory,
   getArrayLookupTableFactory,
-  MissingDataException,
-  XRefEntryException,
-  XRefParseException,
   getInheritableProperty,
-  toRomanNumerals,
+  getLookupTableFactory,
+  isWhiteSpace,
   log2,
+  MissingDataException,
+  ParserEOFException,
   parseXFAPath,
   readInt8,
   readUint16,
   readUint32,
-  isWhiteSpace,
+  toRomanNumerals,
+  validateCSSFont,
+  XRefEntryException,
+  XRefParseException,
 };

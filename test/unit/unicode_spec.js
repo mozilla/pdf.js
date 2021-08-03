@@ -45,10 +45,9 @@ describe("unicode", function () {
   describe("getUnicodeForGlyph", function () {
     let standardMap, dingbatsMap;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       standardMap = getGlyphsUnicode();
       dingbatsMap = getDingbatsGlyphsUnicode();
-      done();
     });
 
     afterAll(function () {
@@ -90,9 +89,8 @@ describe("unicode", function () {
   describe("getNormalizedUnicodes", function () {
     let NormalizedUnicodes;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       NormalizedUnicodes = getNormalizedUnicodes();
-      done();
     });
 
     afterAll(function () {
@@ -121,9 +119,8 @@ describe("unicode", function () {
       return char;
     }
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       NormalizedUnicodes = getNormalizedUnicodes();
-      done();
     });
 
     afterAll(function () {

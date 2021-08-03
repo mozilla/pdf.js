@@ -12,24 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
 import {
   DOMCanvasFactory,
   DOMSVGFactory,
   getFilenameFromUrl,
+  getPdfFilenameFromUrl,
   isValidFetchUrl,
   PDFDateString,
 } from "../../src/display/display_utils.js";
+import { createObjectURL } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 
 describe("display_utils", function () {
   describe("DOMCanvasFactory", function () {
     let canvasFactory;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       canvasFactory = new DOMCanvasFactory();
-      done();
     });
 
     afterAll(function () {
@@ -120,9 +120,8 @@ describe("display_utils", function () {
   describe("DOMSVGFactory", function () {
     let svgFactory;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       svgFactory = new DOMSVGFactory();
-      done();
     });
 
     afterAll(function () {
@@ -190,6 +189,162 @@ describe("display_utils", function () {
     it("should get the filename from a URL with query parameters", function () {
       const url = "https://server.org/filename.pdf?foo=bar";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
+    });
+  });
+
+  describe("getPdfFilenameFromUrl", function () {
+    it("gets PDF filename", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.pdf")).toEqual("file1.pdf");
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/file2.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets fallback filename", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.txt")).toEqual("document.pdf");
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/file2.txt")
+      ).toEqual("document.pdf");
+    });
+
+    it("gets custom fallback filename", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.txt", "qwerty1.pdf")).toEqual(
+        "qwerty1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl(
+          "http://www.example.com/pdfs/file2.txt",
+          "qwerty2.pdf"
+        )
+      ).toEqual("qwerty2.pdf");
+
+      // An empty string should be a valid custom fallback filename.
+      expect(getPdfFilenameFromUrl("/pdfs/file3.txt", "")).toEqual("");
+    });
+
+    it("gets fallback filename when url is not a string", function () {
+      expect(getPdfFilenameFromUrl(null)).toEqual("document.pdf");
+
+      expect(getPdfFilenameFromUrl(null, "file.pdf")).toEqual("file.pdf");
+    });
+
+    it("gets PDF filename from URL containing leading/trailing whitespace", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("   /pdfs/file1.pdf   ")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("   http://www.example.com/pdfs/file2.pdf   ")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from query string", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html?name=file1.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/pdf.html?file2.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from hash string", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#name=file1.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/pdf.html#file2.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets correct PDF filename when multiple ones are present", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.pdf?name=file.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/file2.pdf#file.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from URI-encoded data", function () {
+      const encodedUrl = encodeURIComponent(
+        "http://www.example.com/pdfs/file1.pdf"
+      );
+      expect(getPdfFilenameFromUrl(encodedUrl)).toEqual("file1.pdf");
+
+      const encodedUrlWithQuery = encodeURIComponent(
+        "http://www.example.com/pdfs/file.txt?file2.pdf"
+      );
+      expect(getPdfFilenameFromUrl(encodedUrlWithQuery)).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from data mistaken for URI-encoded", function () {
+      expect(getPdfFilenameFromUrl("/pdfs/%AA.pdf")).toEqual("%AA.pdf");
+
+      expect(getPdfFilenameFromUrl("/pdfs/%2F.pdf")).toEqual("%2F.pdf");
+    });
+
+    it("gets PDF filename from (some) standard protocols", function () {
+      // HTTP
+      expect(getPdfFilenameFromUrl("http://www.example.com/file1.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // HTTPS
+      expect(
+        getPdfFilenameFromUrl("https://www.example.com/file2.pdf")
+      ).toEqual("file2.pdf");
+      // File
+      expect(getPdfFilenameFromUrl("file:///path/to/files/file3.pdf")).toEqual(
+        "file3.pdf"
+      );
+      // FTP
+      expect(getPdfFilenameFromUrl("ftp://www.example.com/file4.pdf")).toEqual(
+        "file4.pdf"
+      );
+    });
+
+    it('gets PDF filename from query string appended to "blob:" URL', function () {
+      if (isNodeJS) {
+        pending("Blob in not supported in Node.js.");
+      }
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const blobUrl = createObjectURL(typedArray, "application/pdf");
+      // Sanity check to ensure that a "blob:" URL was returned.
+      expect(blobUrl.startsWith("blob:")).toEqual(true);
+
+      expect(getPdfFilenameFromUrl(blobUrl + "?file.pdf")).toEqual("file.pdf");
+    });
+
+    it('gets fallback filename from query string appended to "data:" URL', function () {
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const dataUrl = createObjectURL(
+        typedArray,
+        "application/pdf",
+        /* forceDataSchema = */ true
+      );
+      // Sanity check to ensure that a "data:" URL was returned.
+      expect(dataUrl.startsWith("data:")).toEqual(true);
+
+      expect(getPdfFilenameFromUrl(dataUrl + "?file1.pdf")).toEqual(
+        "document.pdf"
+      );
+
+      // Should correctly detect a "data:" URL with leading whitespace.
+      expect(getPdfFilenameFromUrl("     " + dataUrl + "?file2.pdf")).toEqual(
+        "document.pdf"
+      );
     });
   });
 

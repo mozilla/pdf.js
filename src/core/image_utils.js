@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, info, shadow, unreachable } from "../shared/util.js";
+import { assert, shadow, unreachable, warn } from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
@@ -47,7 +47,7 @@ class BaseLocalCache {
 
 class LocalImageCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error('LocalImageCache.set - expected "name" argument.');
     }
     if (ref) {
@@ -68,7 +68,7 @@ class LocalImageCache extends BaseLocalCache {
 
 class LocalColorSpaceCache extends BaseLocalCache {
   set(name = null, ref = null, data) {
-    if (!name && !ref) {
+    if (typeof name !== "string" && !ref) {
       throw new Error(
         'LocalColorSpaceCache.set - expected "name" and/or "ref" argument.'
       );
@@ -77,7 +77,7 @@ class LocalColorSpaceCache extends BaseLocalCache {
       if (this._imageCache.has(ref)) {
         return;
       }
-      if (name) {
+      if (name !== null) {
         // Optional when `ref` is defined.
         this._nameRefMap.set(name, ref);
       }
@@ -114,7 +114,7 @@ class LocalFunctionCache extends BaseLocalCache {
 
 class LocalGStateCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error('LocalGStateCache.set - expected "name" argument.');
     }
     if (ref) {
@@ -135,7 +135,7 @@ class LocalGStateCache extends BaseLocalCache {
 
 class LocalTilingPatternCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error(
         'LocalTilingPatternCache.set - expected "name" argument.'
       );
@@ -161,8 +161,12 @@ class GlobalImageCache {
     return shadow(this, "NUM_PAGES_THRESHOLD", 2);
   }
 
-  static get MAX_IMAGES_TO_CACHE() {
-    return shadow(this, "MAX_IMAGES_TO_CACHE", 10);
+  static get MIN_IMAGES_TO_CACHE() {
+    return shadow(this, "MIN_IMAGES_TO_CACHE", 10);
+  }
+
+  static get MAX_BYTE_SIZE() {
+    return shadow(this, "MAX_BYTE_SIZE", /* Forty megabytes = */ 40e6);
   }
 
   constructor() {
@@ -179,6 +183,24 @@ class GlobalImageCache {
     this._imageCache = new RefSetCache();
   }
 
+  get _byteSize() {
+    let byteSize = 0;
+    this._imageCache.forEach(imageData => {
+      byteSize += imageData.byteSize;
+    });
+    return byteSize;
+  }
+
+  get _cacheLimitReached() {
+    if (this._imageCache.size < GlobalImageCache.MIN_IMAGES_TO_CACHE) {
+      return false;
+    }
+    if (this._byteSize < GlobalImageCache.MAX_BYTE_SIZE) {
+      return false;
+    }
+    return true;
+  }
+
   shouldCache(ref, pageIndex) {
     const pageIndexSet = this._refCache.get(ref);
     const numPages = pageIndexSet
@@ -188,10 +210,7 @@ class GlobalImageCache {
     if (numPages < GlobalImageCache.NUM_PAGES_THRESHOLD) {
       return false;
     }
-    if (
-      !this._imageCache.has(ref) &&
-      this._imageCache.size >= GlobalImageCache.MAX_IMAGES_TO_CACHE
-    ) {
+    if (!this._imageCache.has(ref) && this._cacheLimitReached) {
       return false;
     }
     return true;
@@ -206,6 +225,20 @@ class GlobalImageCache {
     pageIndexSet.add(pageIndex);
   }
 
+  /**
+   * PLEASE NOTE: Must be called *after* the `setData` method.
+   */
+  addByteSize(ref, byteSize) {
+    const imageData = this._imageCache.get(ref);
+    if (!imageData) {
+      return; // The image data isn't cached (the limit was reached).
+    }
+    if (imageData.byteSize) {
+      return; // The byte-size has already been set.
+    }
+    imageData.byteSize = byteSize;
+  }
+
   getData(ref, pageIndex) {
     const pageIndexSet = this._refCache.get(ref);
     if (!pageIndexSet) {
@@ -214,13 +247,14 @@ class GlobalImageCache {
     if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
       return null;
     }
-    if (!this._imageCache.has(ref)) {
+    const imageData = this._imageCache.get(ref);
+    if (!imageData) {
       return null;
     }
     // Ensure that we keep track of all pages containing the image reference.
     pageIndexSet.add(pageIndex);
 
-    return this._imageCache.get(ref);
+    return imageData;
   }
 
   setData(ref, data) {
@@ -232,10 +266,8 @@ class GlobalImageCache {
     if (this._imageCache.has(ref)) {
       return;
     }
-    if (this._imageCache.size >= GlobalImageCache.MAX_IMAGES_TO_CACHE) {
-      info(
-        "GlobalImageCache.setData - ignoring image above MAX_IMAGES_TO_CACHE."
-      );
+    if (this._cacheLimitReached) {
+      warn("GlobalImageCache.setData - cache limit reached.");
       return;
     }
     this._imageCache.put(ref, data);
@@ -250,10 +282,10 @@ class GlobalImageCache {
 }
 
 export {
-  LocalImageCache,
+  GlobalImageCache,
   LocalColorSpaceCache,
   LocalFunctionCache,
   LocalGStateCache,
+  LocalImageCache,
   LocalTilingPatternCache,
-  GlobalImageCache,
 };

@@ -10,5 +10,9 @@
 
   "rules": {
     "block-no-empty": true,
+    "length-zero-no-unit": [true, {
+      ignore: ["custom-properties"]
+    }],
+    "shorthand-property-no-redundant-values": true,
   },
 }
