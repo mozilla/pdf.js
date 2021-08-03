@@ -153,7 +153,7 @@ WebServer.prototype = {
       fileSize = stats.size;
       var isDir = stats.isDirectory();
       if (isDir && !/\/$/.test(pathPart)) {
-        res.setHeader("Location", pathPart + "/" + urlParts[2]); // lgtm [js/server-side-unvalidated-url-redirection]
+        res.setHeader("Location", pathPart + "/" + urlParts[2]);
         res.writeHead(301);
         res.end("Redirected", "utf8");
         return;
