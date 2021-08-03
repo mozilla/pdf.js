@@ -1845,7 +1845,7 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
   }
 
   #printContainer > .xfaPrintedPage .xfaPage {
-    position: initial;
+    position: absolute;
   }
 
   #printContainer > .xfaPrintedPage {
