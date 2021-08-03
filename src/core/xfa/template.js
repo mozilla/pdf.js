@@ -3312,12 +3312,14 @@ class Image extends StringObject {
         };
         break;
     }
+    const parent = this[$getParent]();
     return HTMLResult.success({
       name: "img",
       attributes: {
         class: ["xfaImage"],
         style,
         src: URL.createObjectURL(blob),
+        alt: parent ? ariaLabel(parent[$getParent]()) : null,
       },
     });
   }
