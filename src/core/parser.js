@@ -28,7 +28,6 @@ import {
   EOF,
   isCmd,
   isDict,
-  isEOF,
   isName,
   Name,
   Ref,
@@ -124,10 +123,10 @@ class Parser {
           return this.makeInlineImage(cipherTransform);
         case "[": // array
           const array = [];
-          while (!isCmd(this.buf1, "]") && !isEOF(this.buf1)) {
+          while (!isCmd(this.buf1, "]") && this.buf1 !== EOF) {
             array.push(this.getObj(cipherTransform));
           }
-          if (isEOF(this.buf1)) {
+          if (this.buf1 === EOF) {
             if (this.recoveryMode) {
               return array;
             }
@@ -137,7 +136,7 @@ class Parser {
           return array;
         case "<<": // dictionary or stream
           const dict = new Dict(this.xref);
-          while (!isCmd(this.buf1, ">>") && !isEOF(this.buf1)) {
+          while (!isCmd(this.buf1, ">>") && this.buf1 !== EOF) {
             if (!isName(this.buf1)) {
               info("Malformed dictionary: key must be a name object");
               this.shift();
@@ -146,12 +145,12 @@ class Parser {
 
             const key = this.buf1.name;
             this.shift();
-            if (isEOF(this.buf1)) {
+            if (this.buf1 === EOF) {
               break;
             }
             dict.set(key, this.getObj(cipherTransform));
           }
-          if (isEOF(this.buf1)) {
+          if (this.buf1 === EOF) {
             if (this.recoveryMode) {
               return dict;
             }
@@ -498,13 +497,13 @@ class Parser {
     // Parse dictionary.
     const dict = new Dict(this.xref);
     let dictLength;
-    while (!isCmd(this.buf1, "ID") && !isEOF(this.buf1)) {
+    while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
       if (!isName(this.buf1)) {
         throw new FormatError("Dictionary key must be a name object");
       }
       const key = this.buf1.name;
       this.shift();
-      if (isEOF(this.buf1)) {
+      if (this.buf1 === EOF) {
         break;
       }
       dict.set(key, this.getObj(cipherTransform));
