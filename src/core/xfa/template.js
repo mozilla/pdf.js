@@ -201,6 +201,22 @@ function setTabIndex(node) {
   }
 }
 
+function ariaLabel(obj) {
+  if (!obj.assist) {
+    return null;
+  }
+  const assist = obj.assist;
+  if (assist.speak && assist.speak[$content] !== "") {
+    return assist.speak[$content];
+  }
+  if (assist.toolTip) {
+    return assist.toolTip[$content];
+  }
+  // TODO: support finding the related caption element. See xfa_bug1718037.pdf
+  // for an example.
+  return null;
+}
+
 function valueToHtml(value) {
   return HTMLResult.success({
     name: "div",
@@ -1231,6 +1247,7 @@ class CheckButton extends XFAObject {
         type,
         checked,
         xfaOn: exportedValue.on,
+        "aria-label": ariaLabel(field),
       },
     };
 
@@ -1322,6 +1339,7 @@ class ChoiceList extends XFAObject {
       fieldId: field[$uid],
       dataId: (field[$data] && field[$data][$uid]) || field[$uid],
       style,
+      "aria-label": ariaLabel(field),
     };
 
     if (this.open === "multiSelect") {
@@ -1560,6 +1578,7 @@ class DateTimeEdit extends XFAObject {
         dataId: (field[$data] && field[$data][$uid]) || field[$uid],
         class: ["xfaTextfield"],
         style,
+        "aria-label": ariaLabel(field),
       },
     };
 
@@ -3684,6 +3703,7 @@ class NumericEdit extends XFAObject {
         dataId: (field[$data] && field[$data][$uid]) || field[$uid],
         class: ["xfaTextfield"],
         style,
+        "aria-label": ariaLabel(field),
       },
     };
 
@@ -5649,6 +5669,7 @@ class TextEdit extends XFAObject {
           fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
+          "aria-label": ariaLabel(field),
         },
       };
     } else {
@@ -5660,6 +5681,7 @@ class TextEdit extends XFAObject {
           fieldId: field[$uid],
           class: ["xfaTextfield"],
           style,
+          "aria-label": ariaLabel(field),
         },
       };
     }
