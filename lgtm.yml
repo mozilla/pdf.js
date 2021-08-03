@@ -1,9 +1,0 @@
-path_classifiers:
-  test:
-    - exclude: test
-    - test/resources
-
-queries:
-  # Already handled by the "no-unused-vars" ESLint rule.
-  - exclude: js/unused-local-variable
-  - exclude: js/useless-assignment-to-local
