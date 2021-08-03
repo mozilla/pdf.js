@@ -20,7 +20,7 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isCmd, isEOF, isName, isStream } from "./primitives.js";
+import { EOF, isCmd, isName, isStream } from "./primitives.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
@@ -773,7 +773,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   function parseBfChar(cMap, lexer) {
     while (true) {
       let obj = lexer.getObj();
-      if (isEOF(obj)) {
+      if (obj === EOF) {
         break;
       }
       if (isCmd(obj, "endbfchar")) {
@@ -792,7 +792,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   function parseBfRange(cMap, lexer) {
     while (true) {
       let obj = lexer.getObj();
-      if (isEOF(obj)) {
+      if (obj === EOF) {
         break;
       }
       if (isCmd(obj, "endbfrange")) {
@@ -810,7 +810,7 @@ const CMapFactory = (function CMapFactoryClosure() {
       } else if (isCmd(obj, "[")) {
         obj = lexer.getObj();
         const array = [];
-        while (!isCmd(obj, "]") && !isEOF(obj)) {
+        while (!isCmd(obj, "]") && obj !== EOF) {
           array.push(obj);
           obj = lexer.getObj();
         }
@@ -825,7 +825,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   function parseCidChar(cMap, lexer) {
     while (true) {
       let obj = lexer.getObj();
-      if (isEOF(obj)) {
+      if (obj === EOF) {
         break;
       }
       if (isCmd(obj, "endcidchar")) {
@@ -843,7 +843,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   function parseCidRange(cMap, lexer) {
     while (true) {
       let obj = lexer.getObj();
-      if (isEOF(obj)) {
+      if (obj === EOF) {
         break;
       }
       if (isCmd(obj, "endcidrange")) {
@@ -864,7 +864,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   function parseCodespaceRange(cMap, lexer) {
     while (true) {
       let obj = lexer.getObj();
-      if (isEOF(obj)) {
+      if (obj === EOF) {
         break;
       }
       if (isCmd(obj, "endcodespacerange")) {
@@ -903,7 +903,7 @@ const CMapFactory = (function CMapFactoryClosure() {
     objLoop: while (true) {
       try {
         const obj = lexer.getObj();
-        if (isEOF(obj)) {
+        if (obj === EOF) {
           break;
         } else if (isName(obj)) {
           if (obj.name === "WMode") {
