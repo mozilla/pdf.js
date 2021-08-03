@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { NullL10n } from "./ui_utils.js";
 import { PasswordResponses } from "pdfjs-lib";
 
 /**
@@ -34,8 +33,10 @@ class PasswordPrompt {
    * @param {PasswordPromptOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {IL10n} l10n - Localization service.
+   * @param {boolean} [isViewerEmbedded] - If the viewer is embedded, in e.g.
+   *   an <iframe> or an <object>. The default value is `false`.
    */
-  constructor(options, overlayManager, l10n = NullL10n) {
+  constructor(options, overlayManager, l10n, isViewerEmbedded = false) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
@@ -44,6 +45,7 @@ class PasswordPrompt {
     this.cancelButton = options.cancelButton;
     this.overlayManager = overlayManager;
     this.l10n = l10n;
+    this._isViewerEmbedded = isViewerEmbedded;
 
     this.updateCallback = null;
     this.reason = null;
@@ -65,29 +67,18 @@ class PasswordPrompt {
     );
   }
 
-  open() {
-    this.overlayManager.open(this.overlayName).then(() => {
+  async open() {
+    await this.overlayManager.open(this.overlayName);
+
+    const passwordIncorrect =
+      this.reason === PasswordResponses.INCORRECT_PASSWORD;
+
+    if (!this._isViewerEmbedded || passwordIncorrect) {
       this.input.focus();
-
-      let promptString;
-      if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
-        promptString = this.l10n.get(
-          "password_invalid",
-          null,
-          "Invalid password. Please try again."
-        );
-      } else {
-        promptString = this.l10n.get(
-          "password_label",
-          null,
-          "Enter the password to open this PDF file."
-        );
-      }
-
-      promptString.then(msg => {
-        this.label.textContent = msg;
-      });
-    });
+    }
+    this.label.textContent = await this.l10n.get(
+      `password_${passwordIncorrect ? "invalid" : "label"}`
+    );
   }
 
   close() {
@@ -98,7 +89,7 @@ class PasswordPrompt {
 
   verify() {
     const password = this.input.value;
-    if (password && password.length > 0) {
+    if (password?.length > 0) {
       this.close();
       this.updateCallback(password);
     }

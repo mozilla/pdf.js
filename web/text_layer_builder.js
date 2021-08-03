@@ -161,12 +161,11 @@ class TextLayerBuilder {
     if (!matches) {
       return [];
     }
-    const { findController, textContentItemsStr } = this;
+    const { textContentItemsStr } = this;
 
     let i = 0,
       iIndex = 0;
     const end = textContentItemsStr.length - 1;
-    const queryLen = findController.state.query.length;
     const result = [];
 
     for (let m = 0, mm = matches.length; m < mm; m++) {
@@ -191,13 +190,7 @@ class TextLayerBuilder {
       };
 
       // Calculate the end position.
-      if (matchesLength) {
-        // Multiterm search.
-        matchIdx += matchesLength[m];
-      } else {
-        // Phrase search.
-        matchIdx += queryLen;
-      }
+      matchIdx += matchesLength[m];
 
       // Somewhat the same array as above, but use > instead of >= to get
       // the end position right.
@@ -234,7 +227,7 @@ class TextLayerBuilder {
     function beginText(begin, className) {
       const divIdx = begin.divIdx;
       textDivs[divIdx].textContent = "";
-      appendTextToDiv(divIdx, 0, begin.offset, className);
+      return appendTextToDiv(divIdx, 0, begin.offset, className);
     }
 
     function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
@@ -246,12 +239,13 @@ class TextLayerBuilder {
       const node = document.createTextNode(content);
       if (className) {
         const span = document.createElement("span");
-        span.className = className;
+        span.className = `${className} appended`;
         span.appendChild(node);
         div.appendChild(span);
-        return;
+        return className.includes("selected") ? span.offsetLeft : 0;
       }
       div.appendChild(node);
+      return 0;
     }
 
     let i0 = selectedMatchIdx,
@@ -270,15 +264,7 @@ class TextLayerBuilder {
       const end = match.end;
       const isSelected = isSelectedPage && i === selectedMatchIdx;
       const highlightSuffix = isSelected ? " selected" : "";
-
-      if (isSelected) {
-        // Attempt to scroll the selected match into view.
-        findController.scrollMatchIntoView({
-          element: textDivs[begin.divIdx],
-          pageIndex: pageIdx,
-          matchIndex: selectedMatchIdx,
-        });
-      }
+      let selectedLeft = 0;
 
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
@@ -293,14 +279,14 @@ class TextLayerBuilder {
       }
 
       if (begin.divIdx === end.divIdx) {
-        appendTextToDiv(
+        selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           end.offset,
           "highlight" + highlightSuffix
         );
       } else {
-        appendTextToDiv(
+        selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           infinity.offset,
@@ -312,6 +298,16 @@ class TextLayerBuilder {
         beginText(end, "highlight end" + highlightSuffix);
       }
       prevEnd = end;
+
+      if (isSelected) {
+        // Attempt to scroll the selected match into view.
+        findController.scrollMatchIntoView({
+          element: textDivs[begin.divIdx],
+          selectedLeft,
+          pageIndex: pageIdx,
+          matchIndex: selectedMatchIdx,
+        });
+      }
     }
 
     if (prevEnd) {
@@ -324,13 +320,8 @@ class TextLayerBuilder {
     if (!this.renderingDone) {
       return;
     }
-    const {
-      findController,
-      matches,
-      pageIdx,
-      textContentItemsStr,
-      textDivs,
-    } = this;
+    const { findController, matches, pageIdx, textContentItemsStr, textDivs } =
+      this;
     let clearedUntilDivIdx = -1;
 
     // Clear all current matches.
@@ -345,7 +336,7 @@ class TextLayerBuilder {
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
-    if (!findController || !findController.highlightMatches) {
+    if (!findController?.highlightMatches) {
       return;
     }
     // Convert the matches on the `findController` into the match format
@@ -463,4 +454,4 @@ class DefaultTextLayerFactory {
   }
 }
 
-export { TextLayerBuilder, DefaultTextLayerFactory };
+export { DefaultTextLayerFactory, TextLayerBuilder };

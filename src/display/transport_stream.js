@@ -14,6 +14,7 @@
  */
 
 import { assert, createPromiseCapability } from "../shared/util.js";
+import { isPdfFile } from "./display_utils.js";
 
 /** @implements {IPDFStream} */
 class PDFDataTransportStream {
@@ -25,6 +26,8 @@ class PDFDataTransportStream {
 
     this._queuedChunks = [];
     this._progressiveDone = params.progressiveDone || false;
+    this._contentDispositionFilename =
+      params.contentDispositionFilename || null;
 
     const initialData = params.initialData;
     if (initialData?.length > 0) {
@@ -83,7 +86,7 @@ class PDFDataTransportStream {
   }
 
   get _progressiveDataLength() {
-    return this._fullRequestReader ? this._fullRequestReader._loaded : 0;
+    return this._fullRequestReader?._loaded ?? 0;
   }
 
   _onProgress(evt) {
@@ -125,7 +128,8 @@ class PDFDataTransportStream {
     return new PDFDataTransportStreamReader(
       this,
       queuedChunks,
-      this._progressiveDone
+      this._progressiveDone,
+      this._contentDispositionFilename
     );
   }
 
@@ -143,20 +147,26 @@ class PDFDataTransportStream {
     if (this._fullRequestReader) {
       this._fullRequestReader.cancel(reason);
     }
-    const readers = this._rangeReaders.slice(0);
-    readers.forEach(function (rangeReader) {
-      rangeReader.cancel(reason);
-    });
+    for (const reader of this._rangeReaders.slice(0)) {
+      reader.cancel(reason);
+    }
     this._pdfDataRangeTransport.abort();
   }
 }
 
 /** @implements {IPDFStreamReader} */
 class PDFDataTransportStreamReader {
-  constructor(stream, queuedChunks, progressiveDone = false) {
+  constructor(
+    stream,
+    queuedChunks,
+    progressiveDone = false,
+    contentDispositionFilename = null
+  ) {
     this._stream = stream;
     this._done = progressiveDone || false;
-    this._filename = null;
+    this._filename = isPdfFile(contentDispositionFilename)
+      ? contentDispositionFilename
+      : null;
     this._queuedChunks = queuedChunks || [];
     this._loaded = 0;
     for (const chunk of this._queuedChunks) {
@@ -217,10 +227,10 @@ class PDFDataTransportStreamReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function (requestCapability) {
+    for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
-    });
-    this._requests = [];
+    }
+    this._requests.length = 0;
   }
 
   progressiveDone() {
@@ -253,10 +263,10 @@ class PDFDataTransportStreamRangeReader {
     } else {
       const requestsCapability = this._requests.shift();
       requestsCapability.resolve({ value: chunk, done: false });
-      this._requests.forEach(function (requestCapability) {
+      for (const requestCapability of this._requests) {
         requestCapability.resolve({ value: undefined, done: true });
-      });
-      this._requests = [];
+      }
+      this._requests.length = 0;
     }
     this._done = true;
     this._stream._removeRangeReader(this);
@@ -282,10 +292,10 @@ class PDFDataTransportStreamRangeReader {
 
   cancel(reason) {
     this._done = true;
-    this._requests.forEach(function (requestCapability) {
+    for (const requestCapability of this._requests) {
       requestCapability.resolve({ value: undefined, done: true });
-    });
-    this._requests = [];
+    }
+    this._requests.length = 0;
     this._stream._removeRangeReader(this);
   }
 }

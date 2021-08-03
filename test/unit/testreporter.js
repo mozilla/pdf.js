@@ -40,7 +40,7 @@ const TestReporter = function (browser) {
   }
 
   this.now = function () {
-    return new Date().getTime();
+    return Date.now();
   };
 
   this.jasmineStarted = function (suiteInfo) {

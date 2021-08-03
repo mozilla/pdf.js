@@ -16,18 +16,19 @@
 "use strict";
 
 if (!pdfjsImageDecoders.JpegImage) {
+  // eslint-disable-next-line no-alert
   alert("Please build the pdfjs-dist library using `gulp dist-install`");
 }
 
-var JPEG_IMAGE = "fish.jpg";
+const JPEG_IMAGE = "fish.jpg";
 
-var jpegCanvas = document.getElementById("jpegCanvas");
-var jpegCtx = jpegCanvas.getContext("2d");
+const jpegCanvas = document.getElementById("jpegCanvas");
+const jpegCtx = jpegCanvas.getContext("2d");
 
 // Load the image data, and convert it to a Uint8Array.
 //
-var nonBinaryRequest = false;
-var request = new XMLHttpRequest();
+let nonBinaryRequest = false;
+const request = new XMLHttpRequest();
 request.open("GET", JPEG_IMAGE, false);
 try {
   request.responseType = "arraybuffer";
@@ -40,12 +41,12 @@ if (nonBinaryRequest && request.overrideMimeType) {
 }
 request.send(null);
 
-var typedArrayImage;
+let typedArrayImage;
 if (nonBinaryRequest) {
-  var str = request.responseText,
+  const str = request.responseText,
     length = str.length;
-  var bytes = new Uint8Array(length);
-  for (var i = 0; i < length; ++i) {
+  const bytes = new Uint8Array(length);
+  for (let i = 0; i < length; ++i) {
     bytes[i] = str.charCodeAt(i) & 0xff;
   }
   typedArrayImage = bytes;
@@ -55,22 +56,22 @@ if (nonBinaryRequest) {
 
 // Parse the image data using `JpegImage`.
 //
-var jpegImage = new pdfjsImageDecoders.JpegImage();
+const jpegImage = new pdfjsImageDecoders.JpegImage();
 jpegImage.parse(typedArrayImage);
 
-var width = jpegImage.width,
+const width = jpegImage.width,
   height = jpegImage.height;
-var jpegData = jpegImage.getData({
-  width: width,
-  height: height,
+const jpegData = jpegImage.getData({
+  width,
+  height,
   forceRGB: true,
 });
 
 // Render the JPEG image on a <canvas>.
 //
-var imageData = jpegCtx.createImageData(width, height);
-var imageBytes = imageData.data;
-for (var j = 0, k = 0, jj = width * height * 4; j < jj; ) {
+const imageData = jpegCtx.createImageData(width, height);
+const imageBytes = imageData.data;
+for (let j = 0, k = 0, jj = width * height * 4; j < jj; ) {
   imageBytes[j++] = jpegData[k++];
   imageBytes[j++] = jpegData[k++];
   imageBytes[j++] = jpegData[k++];

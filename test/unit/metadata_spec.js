@@ -15,6 +15,12 @@
 
 import { isEmptyObj } from "./test_utils.js";
 import { Metadata } from "../../src/display/metadata.js";
+import { MetadataParser } from "../../src/core/metadata_parser.js";
+
+function createMetadata(data) {
+  const metadataParser = new MetadataParser(data);
+  return new Metadata(metadataParser.serializable);
+}
 
 describe("metadata", function () {
   it("should handle valid metadata", function () {
@@ -24,7 +30,7 @@ describe("metadata", function () {
       "<rdf:Description xmlns:dc='http://purl.org/dc/elements/1.1/'>" +
       '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">Foo bar baz</rdf:li>' +
       "</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>";
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(metadata.has("dc:title")).toBeTruthy();
     expect(metadata.has("dc:qux")).toBeFalsy();
@@ -42,7 +48,7 @@ describe("metadata", function () {
       "<rdf:Description xmlns:dc='http://purl.org/dc/elements/1.1/'>" +
       "<dc:title>\\376\\377\\000P\\000D\\000F\\000&</dc:title>" +
       "</rdf:Description></rdf:RDF></x:xmpmeta>";
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(metadata.has("dc:title")).toBeTruthy();
     expect(metadata.has("dc:qux")).toBeFalsy();
@@ -85,7 +91,7 @@ describe("metadata", function () {
       "<dc:creator><rdf:Seq><rdf:li>\\376\\377\\000O\\000D\\000I\\000S" +
       "</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF>" +
       "</x:xmpmeta>";
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(metadata.has("dc:title")).toBeTruthy();
     expect(metadata.has("dc:qux")).toBeFalsy();
@@ -96,7 +102,7 @@ describe("metadata", function () {
     expect(metadata.get("dc:qux")).toEqual(null);
 
     expect(metadata.getAll()).toEqual({
-      "dc:creator": "ODIS",
+      "dc:creator": ["ODIS"],
       "dc:title": "L'Odissee thématique logo Odisséé - décembre 2008.pub",
       "xap:creatortool": "PDFCreator Version 0.9.6",
     });
@@ -128,7 +134,7 @@ describe("metadata", function () {
       "</rdf:RDF>" +
       "</x:xmpmeta>" +
       '<?xpacket end="w"?>';
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
@@ -159,7 +165,7 @@ describe("metadata", function () {
       '<dc:title><rdf:Alt><rdf:li xml:lang="x-default"></rdf:li>' +
       "</rdf:Alt></dc:title><dc:format>application/pdf</dc:format>" +
       '</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(metadata.has("dc:title")).toBeTruthy();
     expect(metadata.has("dc:qux")).toBeFalsy();
@@ -168,10 +174,10 @@ describe("metadata", function () {
     expect(metadata.get("dc:qux")).toEqual(null);
 
     expect(metadata.getAll()).toEqual({
-      "dc:creator": "",
+      "dc:creator": [""],
       "dc:description": "",
       "dc:format": "application/pdf",
-      "dc:subject": "",
+      "dc:subject": [],
       "dc:title": "",
       "pdf:keywords": "",
       "pdf:pdfversion": "1.7",
@@ -191,7 +197,7 @@ describe("metadata", function () {
       "<dc:title><rdf:Alt>" +
       '<rdf:li xml:lang="x-default">&apos;Foo bar baz&apos;</rdf:li>' +
       "</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>";
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(metadata.has("dc:title")).toBeTruthy();
     expect(metadata.has("dc:qux")).toBeFalsy();
@@ -220,7 +226,7 @@ describe("metadata", function () {
       "<xmpMM:DocumentID>uuid:00000000-1c84-3cf9-89ba-bef0e729c831" +
       "</xmpMM:DocumentID></rdf:Description>" +
       '</rdf:RDF></x:xmpmeta><?xpacket end="w"?>';
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(isEmptyObj(metadata.getAll())).toEqual(true);
   });
@@ -249,7 +255,7 @@ describe("metadata", function () {
       "    </dc:title>" +
       "  </rdf:Description>" +
       "</rdf:RDF>";
-    const metadata = new Metadata(data);
+    const metadata = createMetadata(data);
 
     expect(metadata.has("dc:title")).toBeTruthy();
     expect(metadata.has("dc:qux")).toBeFalsy();

@@ -21,8 +21,10 @@
   top: 0;
   right: 0;
   bottom: 0;
+  line-height: 1;
 }
-.textLayer > span {
+.textLayer span,
+.textLayer br {
   position: absolute;
   white-space: pre;
   -webkit-transform-origin: 0% 0%;
@@ -35,4 +37,9 @@
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+}
+
+.textLayer .markedContent {
+  border: none;
+  background-color: transparent;
 }

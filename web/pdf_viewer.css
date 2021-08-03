@@ -14,6 +14,27 @@
  */
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
+@import url(xfa_layer_builder.css);
+
+:root {
+  --pdfViewer-padding-bottom: none;
+  --page-margin: 1px auto -8px;
+  --page-border: 9px solid transparent;
+  --spreadHorizontalWrapped-margin-LR: -3.5px;
+}
+
+@media screen and (forced-colors: active) {
+  :root {
+    --pdfViewer-padding-bottom: 9px;
+    --page-margin: 9px auto 0;
+    --page-border: none;
+    --spreadHorizontalWrapped-margin-LR: 4.5px;
+  }
+}
+
+.pdfViewer {
+  padding-bottom: var(--pdfViewer-padding-bottom);
+}
 
 .pdfViewer .canvasWrapper {
   overflow: hidden;
@@ -23,17 +44,17 @@
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: 1px auto -8px auto;
+  margin: var(--page-margin);
   position: relative;
   overflow: visible;
-  border: 9px solid transparent;
+  border: var(--page-border);
   background-clip: content-box;
   border-image: url(images/shadow.png) 9 9 repeat;
   background-color: rgba(255, 255, 255, 1);
 }
 
 .pdfViewer.removePageBorders .page {
-  margin: 0px auto 10px auto;
+  margin: 0 auto 10px;
   border: none;
 }
 
@@ -78,8 +99,8 @@
 .spread .page,
 .pdfViewer.scrollHorizontal .page,
 .pdfViewer.scrollWrapped .page {
-  margin-left: -3.5px;
-  margin-right: -3.5px;
+  margin-left: var(--spreadHorizontalWrapped-margin-LR);
+  margin-right: var(--spreadHorizontalWrapped-margin-LR);
 }
 
 .pdfViewer.removePageBorders .spread .page,

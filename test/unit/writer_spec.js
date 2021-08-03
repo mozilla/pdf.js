@@ -20,7 +20,7 @@ import { StringStream } from "../../src/core/stream.js";
 
 describe("Writer", function () {
   describe("Incremental update", function () {
-    it("should update a file with new objects", function (done) {
+    it("should update a file with new objects", function () {
       const originalData = new Uint8Array();
       const newRefs = [
         { ref: Ref.get(123, 0x2d), data: "abc\n" },
@@ -32,7 +32,7 @@ describe("Writer", function () {
         fileIds: ["id", ""],
         rootRef: null,
         infoRef: null,
-        encrypt: null,
+        encryptRef: null,
         filename: "foo.pdf",
         info: {},
       };
@@ -58,12 +58,45 @@ describe("Writer", function () {
         "%%EOF\n";
 
       expect(data).toEqual(expected);
-      done();
+    });
+
+    it("should update a file, missing the /ID-entry, with new objects", function () {
+      const originalData = new Uint8Array();
+      const newRefs = [{ ref: Ref.get(123, 0x2d), data: "abc\n" }];
+      const xrefInfo = {
+        newRef: Ref.get(789, 0),
+        startXRef: 314,
+        fileIds: null,
+        rootRef: null,
+        infoRef: null,
+        encryptRef: null,
+        filename: "foo.pdf",
+        info: {},
+      };
+
+      let data = incrementalUpdate({ originalData, xrefInfo, newRefs });
+      data = bytesToString(data);
+
+      const expected =
+        "\nabc\n" +
+        "789 0 obj\n" +
+        "<< /Size 790 /Prev 314 /Type /XRef /Index [0 1 123 1 789 1] " +
+        "/W [1 1 2] /Length 12>> stream\n" +
+        "\x00\x01\xff\xff" +
+        "\x01\x01\x00\x2d" +
+        "\x01\x05\x00\x00\n" +
+        "endstream\n" +
+        "endobj\n" +
+        "startxref\n" +
+        "5\n" +
+        "%%EOF\n";
+
+      expect(data).toEqual(expected);
     });
   });
 
   describe("writeDict", function () {
-    it("should write a Dict", function (done) {
+    it("should write a Dict", function () {
       const dict = new Dict(null);
       dict.set("A", Name.get("B"));
       dict.set("B", Ref.get(123, 456));
@@ -93,10 +126,9 @@ describe("Writer", function () {
         "endstream\n>>>>";
 
       expect(buffer.join("")).toEqual(expected);
-      done();
     });
 
-    it("should write a Dict in escaping PDF names", function (done) {
+    it("should write a Dict in escaping PDF names", function () {
       const dict = new Dict(null);
       dict.set("\xfeA#", Name.get("hello"));
       dict.set("B", Name.get("#hello"));
@@ -108,7 +140,6 @@ describe("Writer", function () {
       const expected = "<< /#feA#23 /hello /B /#23hello /C /he#fello#ff>>";
 
       expect(buffer.join("")).toEqual(expected);
-      done();
     });
   });
 });

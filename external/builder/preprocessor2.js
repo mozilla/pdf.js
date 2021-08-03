@@ -1,13 +1,13 @@
 "use strict";
 
-var acorn = require("acorn");
-var escodegen = require("escodegen");
-var vm = require("vm");
-var fs = require("fs");
-var path = require("path");
+const acorn = require("acorn");
+const escodegen = require("escodegen");
+const vm = require("vm");
+const fs = require("fs");
+const path = require("path");
 
-var PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
-var ROOT_PREFIX = "$ROOT/";
+const PDFJS_PREPROCESSOR_NAME = "PDFJSDev";
+const ROOT_PREFIX = "$ROOT/";
 const ACORN_ECMA_VERSION = 2021;
 
 function isLiteral(obj, value) {
@@ -27,27 +27,27 @@ function evalWithDefines(code, defines, loc) {
 
 function handlePreprocessorAction(ctx, actionName, args, loc) {
   try {
-    var arg;
+    let arg;
     switch (actionName) {
       case "test":
         arg = args[0];
         if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
           throw new Error("No code for testing is given");
         }
-        var isTrue = !!evalWithDefines(arg.value, ctx.defines);
-        return { type: "Literal", value: isTrue, loc: loc };
+        const isTrue = !!evalWithDefines(arg.value, ctx.defines);
+        return { type: "Literal", value: isTrue, loc };
       case "eval":
         arg = args[0];
         if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
           throw new Error("No code for eval is given");
         }
-        var result = evalWithDefines(arg.value, ctx.defines);
+        const result = evalWithDefines(arg.value, ctx.defines);
         if (
           typeof result === "boolean" ||
           typeof result === "string" ||
           typeof result === "number"
         ) {
-          return { type: "Literal", value: result, loc: loc };
+          return { type: "Literal", value: result, loc };
         }
         if (typeof result === "object") {
           const parsedObj = acorn.parse("(" + JSON.stringify(result) + ")", {
@@ -62,14 +62,14 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
         if (!arg || arg.type !== "Literal" || typeof arg.value !== "string") {
           throw new Error("Path to JSON is not provided");
         }
-        var jsonPath = arg.value;
+        let jsonPath = arg.value;
         if (jsonPath.indexOf(ROOT_PREFIX) === 0) {
           jsonPath = path.join(
             ctx.rootPath,
             jsonPath.substring(ROOT_PREFIX.length)
           );
         }
-        var jsonContent = fs.readFileSync(jsonPath).toString();
+        const jsonContent = fs.readFileSync(jsonPath).toString();
         const parsedJSON = acorn.parse("(" + jsonContent + ")", {
           ecmaVersion: ACORN_ECMA_VERSION,
         });
@@ -103,7 +103,7 @@ function postprocessNode(ctx, node) {
         ctx.map &&
         ctx.map[node.source.value]
       ) {
-        var newValue = ctx.map[node.source.value];
+        const newValue = ctx.map[node.source.value];
         node.source.value = node.source.raw = newValue;
       }
       break;
@@ -175,7 +175,7 @@ function postprocessNode(ctx, node) {
               case "string":
               case "boolean":
               case "number":
-                var equal = node.left.value === node.right.value;
+                const equal = node.left.value === node.right.value;
                 return {
                   type: "Literal",
                   value: (node.operator[0] === "=") === equal,
@@ -193,7 +193,7 @@ function postprocessNode(ctx, node) {
         node.callee.property.type === "Identifier"
       ) {
         // PDFJSDev.xxxx(arg1, arg2, ...) => transform
-        var action = node.callee.property.name;
+        const action = node.callee.property.name;
         return handlePreprocessorAction(ctx, action, node.arguments, node.loc);
       }
       // require('string')
@@ -205,12 +205,12 @@ function postprocessNode(ctx, node) {
         ctx.map &&
         ctx.map[node.arguments[0].value]
       ) {
-        var requireName = node.arguments[0];
+        const requireName = node.arguments[0];
         requireName.value = requireName.raw = ctx.map[requireName.value];
       }
       break;
     case "BlockStatement":
-      var subExpressionIndex = 0;
+      let subExpressionIndex = 0;
       while (subExpressionIndex < node.body.length) {
         switch (node.body[subExpressionIndex].type) {
           case "EmptyStatement":
@@ -219,7 +219,7 @@ function postprocessNode(ctx, node) {
             continue;
           case "BlockStatement":
             // Block statements inside a block are moved to the parent one.
-            var subChildren = node.body[subExpressionIndex].body;
+            const subChildren = node.body[subExpressionIndex].body;
             Array.prototype.splice.apply(
               node.body,
               [subExpressionIndex, 1].concat(subChildren)
@@ -240,7 +240,7 @@ function postprocessNode(ctx, node) {
       break;
     case "FunctionDeclaration":
     case "FunctionExpression":
-      var block = node.body;
+      const block = node.body;
       if (
         block.body.length > 0 &&
         block.body[block.body.length - 1].type === "ReturnStatement" &&
@@ -262,14 +262,14 @@ function fixComments(ctx, node) {
   delete node.trailingComments;
   // Removes ESLint and other service comments.
   if (node.leadingComments) {
-    var CopyrightRegExp = /\bcopyright\b/i;
-    var BlockCommentRegExp = /^\s*(globals|eslint|falls through)\b/;
-    var LineCommentRegExp = /^\s*eslint\b/;
+    const CopyrightRegExp = /\bcopyright\b/i;
+    const BlockCommentRegExp = /^\s*(globals|eslint|falls through)\b/;
+    const LineCommentRegExp = /^\s*eslint\b/;
 
-    var i = 0;
+    let i = 0;
     while (i < node.leadingComments.length) {
-      var type = node.leadingComments[i].type;
-      var value = node.leadingComments[i].value;
+      const type = node.leadingComments[i].type;
+      const value = node.leadingComments[i].value;
 
       if (ctx.saveComments === "copyright") {
         // Remove all comments, except Copyright notices and License headers.
@@ -291,8 +291,8 @@ function fixComments(ctx, node) {
 
 function traverseTree(ctx, node) {
   // generic node processing
-  for (var i in node) {
-    var child = node[i];
+  for (const i in node) {
+    const child = node[i];
     if (typeof child === "object" && child !== null && child.type) {
       const result = traverseTree(ctx, child);
       if (result !== child) {
@@ -321,26 +321,26 @@ function traverseTree(ctx, node) {
 }
 
 function preprocessPDFJSCode(ctx, code) {
-  var format = ctx.format || {
+  const format = ctx.format || {
     indent: {
       style: " ",
     },
   };
-  var parseOptions = {
+  const parseOptions = {
     ecmaVersion: ACORN_ECMA_VERSION,
     locations: true,
     sourceFile: ctx.sourceFile,
     sourceType: "module",
   };
-  var codegenOptions = {
-    format: format,
-    parse: function (input) {
+  const codegenOptions = {
+    format,
+    parse(input) {
       return acorn.parse(input, { ecmaVersion: ACORN_ECMA_VERSION });
     },
     sourceMap: ctx.sourceMap,
     sourceMapWithCode: ctx.sourceMap,
   };
-  var syntax = acorn.parse(code, parseOptions);
+  const syntax = acorn.parse(code, parseOptions);
   traverseTree(ctx, syntax);
   return escodegen.generate(syntax, codegenOptions);
 }

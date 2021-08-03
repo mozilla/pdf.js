@@ -1364,7 +1364,7 @@ const LabCS = (function LabCSClosure() {
   function fn_g(x) {
     let result;
     if (x >= 6 / 29) {
-      result = x * x * x;
+      result = x ** 3;
     } else {
       result = (108 / 841) * (x - 4 / 29);
     }

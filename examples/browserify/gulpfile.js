@@ -1,12 +1,12 @@
-var gulp = require("gulp");
-var browserify = require("browserify");
-var streamify = require("gulp-streamify");
-var rename = require("gulp-rename");
-var uglify = require("gulp-uglify");
-var source = require("vinyl-source-stream");
+const gulp = require("gulp");
+const browserify = require("browserify");
+const streamify = require("gulp-streamify");
+const rename = require("gulp-rename");
+const uglify = require("gulp-uglify");
+const source = require("vinyl-source-stream");
 
-var OUTPUT_PATH = "../../build/browserify";
-var TMP_FILE_PREFIX = "../../build/browserify_";
+const OUTPUT_PATH = "../../build/browserify";
+const TMP_FILE_PREFIX = "../../build/browserify_";
 
 gulp.task("build-bundle", function () {
   return browserify("main.js", { output: TMP_FILE_PREFIX + "main.tmp" })
@@ -20,7 +20,7 @@ gulp.task("build-bundle", function () {
 
 gulp.task("build-worker", function () {
   // We can create our own viewer (see worker.js) or use already defined one.
-  var workerSrc = require.resolve("pdfjs-dist/build/pdf.worker.entry");
+  const workerSrc = require.resolve("pdfjs-dist/build/pdf.worker.entry");
   return browserify(workerSrc, { output: TMP_FILE_PREFIX + "worker.tmp" })
     .bundle()
     .pipe(source(TMP_FILE_PREFIX + "worker.tmp"))

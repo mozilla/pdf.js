@@ -2,7 +2,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 function xmlEncode(s) {
-  var i = 0,
+  let i = 0,
     ch;
   s = String(s);
   while (
@@ -19,7 +19,7 @@ function xmlEncode(s) {
   if (i >= s.length) {
     return s;
   }
-  var buf = s.substring(0, i);
+  let buf = s.substring(0, i);
   while (i < s.length) {
     ch = s[i++];
     switch (ch) {
@@ -58,7 +58,7 @@ function DOMElement(name) {
   if (name === "style") {
     this.sheet = {
       cssRules: [],
-      insertRule: function (rule) {
+      insertRule(rule) {
         this.cssRules.push(rule);
       },
     };
@@ -82,8 +82,8 @@ DOMElement.prototype = {
     // Assuming that there is only one matching attribute for a given name,
     // across all namespaces.
     if (NS) {
-      var suffix = ":" + name;
-      for (var fullName in this.attributes) {
+      const suffix = ":" + name;
+      for (const fullName in this.attributes) {
         if (fullName.slice(-suffix.length) === suffix) {
           return this.attributes[fullName];
         }
@@ -93,9 +93,7 @@ DOMElement.prototype = {
   },
 
   setAttribute: function DOMElement_setAttribute(name, value) {
-    value = value || "";
-    value = xmlEncode(value);
-    this.attributes[name] = value;
+    this.attributes[name] = value || "";
   },
 
   setAttributeNS: function DOMElement_setAttributeNS(NS, name, value) {
@@ -103,7 +101,7 @@ DOMElement.prototype = {
   },
 
   appendChild: function DOMElement_appendChild(element) {
-    var childNodes = this.childNodes;
+    const childNodes = this.childNodes;
     if (!childNodes.includes(element)) {
       childNodes.push(element);
     }
@@ -114,7 +112,7 @@ DOMElement.prototype = {
   },
 
   cloneNode: function DOMElement_cloneNode() {
-    var newNode = new DOMElement(this.nodeName);
+    const newNode = new DOMElement(this.nodeName);
     newNode.childNodes = this.childNodes;
     newNode.attributes = this.attributes;
     newNode.textContent = this.textContent;
@@ -125,9 +123,9 @@ DOMElement.prototype = {
   // getSerializer because that allows you to process the chunks as they come
   // instead of requiring the whole image to fit in memory.
   toString: function DOMElement_toString() {
-    var buf = [];
-    var serializer = this.getSerializer();
-    var chunk;
+    const buf = [];
+    const serializer = this.getSerializer();
+    let chunk;
     while ((chunk = serializer.getNext()) !== null) {
       buf.push(chunk);
     }
@@ -153,7 +151,7 @@ DOMElementSerializer.prototype = {
    * @returns {string|null} null if the element has fully been serialized.
    */
   getNext: function DOMElementSerializer_getNext() {
-    var node = this._node;
+    const node = this._node;
     switch (this._state) {
       case 0: // Start opening tag.
         ++this._state;
@@ -174,7 +172,7 @@ DOMElementSerializer.prototype = {
       /* falls through */
       case 3: // Serialize any attributes and end opening tag.
         if (this._loopIndex < this._attributeKeys.length) {
-          var name = this._attributeKeys[this._loopIndex++];
+          const name = this._attributeKeys[this._loopIndex++];
           return " " + name + '="' + xmlEncode(node.attributes[name]) + '"';
         }
         ++this._state;
@@ -188,13 +186,13 @@ DOMElementSerializer.prototype = {
         this._loopIndex = 0;
       /* falls through */
       case 5: // Serialize child nodes (only for non-tspan/style elements).
-        var value;
         while (true) {
-          value = this._childSerializer && this._childSerializer.getNext();
+          const value =
+            this._childSerializer && this._childSerializer.getNext();
           if (value !== null) {
             return value;
           }
-          var nextChild = node.childNodes[this._loopIndex++];
+          const nextChild = node.childNodes[this._loopIndex++];
           if (nextChild) {
             this._childSerializer = new DOMElementSerializer(nextChild);
           } else {
@@ -226,16 +224,16 @@ const document = {
     return this;
   },
 
-  createElementNS: function (NS, element) {
-    var elObject = new DOMElement(element);
+  createElementNS(NS, element) {
+    const elObject = new DOMElement(element);
     return elObject;
   },
 
-  createElement: function (element) {
+  createElement(element) {
     return this.createElementNS("", element);
   },
 
-  getElementsByTagName: function (element) {
+  getElementsByTagName(element) {
     if (element === "head") {
       return [this.head || (this.head = new DOMElement("head"))];
     }
@@ -262,7 +260,7 @@ Image.prototype = {
 exports.document = document;
 exports.Image = Image;
 
-var exported_symbols = Object.keys(exports);
+const exported_symbols = Object.keys(exports);
 
 exports.setStubs = function (namespace) {
   exported_symbols.forEach(function (key) {

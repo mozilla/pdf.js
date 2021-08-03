@@ -18,15 +18,14 @@ import {
   binarySearchFirstItem,
   EventBus,
   getPageSizeInches,
-  getPDFFileNameFromURL,
   getVisibleElements,
   isPortraitOrientation,
   isValidRotation,
   moveToEndOfArray,
+  parseQueryString,
   waitOnEventOrTimeout,
   WaitOnType,
 } from "../../web/ui_utils.js";
-import { createObjectURL } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 
 describe("ui_utils", function () {
@@ -55,162 +54,6 @@ describe("ui_utils", function () {
       expect(binarySearchFirstItem([0, 1, 2], isGreater3)).toEqual(3);
       expect(binarySearchFirstItem([2, 3, 4], isGreater3)).toEqual(2);
       expect(binarySearchFirstItem([4, 5, 6], isGreater3)).toEqual(0);
-    });
-  });
-
-  describe("getPDFFileNameFromURL", function () {
-    it("gets PDF filename", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("/pdfs/file1.pdf")).toEqual("file1.pdf");
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL("http://www.example.com/pdfs/file2.pdf")
-      ).toEqual("file2.pdf");
-    });
-
-    it("gets fallback filename", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("/pdfs/file1.txt")).toEqual("document.pdf");
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL("http://www.example.com/pdfs/file2.txt")
-      ).toEqual("document.pdf");
-    });
-
-    it("gets custom fallback filename", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("/pdfs/file1.txt", "qwerty1.pdf")).toEqual(
-        "qwerty1.pdf"
-      );
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL(
-          "http://www.example.com/pdfs/file2.txt",
-          "qwerty2.pdf"
-        )
-      ).toEqual("qwerty2.pdf");
-
-      // An empty string should be a valid custom fallback filename.
-      expect(getPDFFileNameFromURL("/pdfs/file3.txt", "")).toEqual("");
-    });
-
-    it("gets fallback filename when url is not a string", function () {
-      expect(getPDFFileNameFromURL(null)).toEqual("document.pdf");
-
-      expect(getPDFFileNameFromURL(null, "file.pdf")).toEqual("file.pdf");
-    });
-
-    it("gets PDF filename from URL containing leading/trailing whitespace", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("   /pdfs/file1.pdf   ")).toEqual(
-        "file1.pdf"
-      );
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL("   http://www.example.com/pdfs/file2.pdf   ")
-      ).toEqual("file2.pdf");
-    });
-
-    it("gets PDF filename from query string", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("/pdfs/pdfs.html?name=file1.pdf")).toEqual(
-        "file1.pdf"
-      );
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL("http://www.example.com/pdfs/pdf.html?file2.pdf")
-      ).toEqual("file2.pdf");
-    });
-
-    it("gets PDF filename from hash string", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("/pdfs/pdfs.html#name=file1.pdf")).toEqual(
-        "file1.pdf"
-      );
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL("http://www.example.com/pdfs/pdf.html#file2.pdf")
-      ).toEqual("file2.pdf");
-    });
-
-    it("gets correct PDF filename when multiple ones are present", function () {
-      // Relative URL
-      expect(getPDFFileNameFromURL("/pdfs/file1.pdf?name=file.pdf")).toEqual(
-        "file1.pdf"
-      );
-      // Absolute URL
-      expect(
-        getPDFFileNameFromURL("http://www.example.com/pdfs/file2.pdf#file.pdf")
-      ).toEqual("file2.pdf");
-    });
-
-    it("gets PDF filename from URI-encoded data", function () {
-      const encodedUrl = encodeURIComponent(
-        "http://www.example.com/pdfs/file1.pdf"
-      );
-      expect(getPDFFileNameFromURL(encodedUrl)).toEqual("file1.pdf");
-
-      const encodedUrlWithQuery = encodeURIComponent(
-        "http://www.example.com/pdfs/file.txt?file2.pdf"
-      );
-      expect(getPDFFileNameFromURL(encodedUrlWithQuery)).toEqual("file2.pdf");
-    });
-
-    it("gets PDF filename from data mistaken for URI-encoded", function () {
-      expect(getPDFFileNameFromURL("/pdfs/%AA.pdf")).toEqual("%AA.pdf");
-
-      expect(getPDFFileNameFromURL("/pdfs/%2F.pdf")).toEqual("%2F.pdf");
-    });
-
-    it("gets PDF filename from (some) standard protocols", function () {
-      // HTTP
-      expect(getPDFFileNameFromURL("http://www.example.com/file1.pdf")).toEqual(
-        "file1.pdf"
-      );
-      // HTTPS
-      expect(
-        getPDFFileNameFromURL("https://www.example.com/file2.pdf")
-      ).toEqual("file2.pdf");
-      // File
-      expect(getPDFFileNameFromURL("file:///path/to/files/file3.pdf")).toEqual(
-        "file3.pdf"
-      );
-      // FTP
-      expect(getPDFFileNameFromURL("ftp://www.example.com/file4.pdf")).toEqual(
-        "file4.pdf"
-      );
-    });
-
-    it('gets PDF filename from query string appended to "blob:" URL', function () {
-      if (isNodeJS) {
-        pending("Blob in not supported in Node.js.");
-      }
-      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      const blobUrl = createObjectURL(typedArray, "application/pdf");
-      // Sanity check to ensure that a "blob:" URL was returned.
-      expect(blobUrl.startsWith("blob:")).toEqual(true);
-
-      expect(getPDFFileNameFromURL(blobUrl + "?file.pdf")).toEqual("file.pdf");
-    });
-
-    it('gets fallback filename from query string appended to "data:" URL', function () {
-      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      const dataUrl = createObjectURL(
-        typedArray,
-        "application/pdf",
-        /* forceDataSchema = */ true
-      );
-      // Sanity check to ensure that a "data:" URL was returned.
-      expect(dataUrl.startsWith("data:")).toEqual(true);
-
-      expect(getPDFFileNameFromURL(dataUrl + "?file1.pdf")).toEqual(
-        "document.pdf"
-      );
-
-      // Should correctly detect a "data:" URL with leading whitespace.
-      expect(getPDFFileNameFromURL("     " + dataUrl + "?file2.pdf")).toEqual(
-        "document.pdf"
-      );
     });
   });
 
@@ -312,9 +155,33 @@ describe("ui_utils", function () {
       expect(count).toEqual(2);
     });
 
-    it("should not re-dispatch to DOM", function (done) {
+    it("dispatch event to handlers with/without 'once' option", function () {
+      const eventBus = new EventBus();
+      let multipleCount = 0,
+        onceCount = 0;
+
+      eventBus.on("test", function () {
+        multipleCount++;
+      });
+      eventBus.on(
+        "test",
+        function () {
+          onceCount++;
+        },
+        { once: true }
+      );
+
+      eventBus.dispatch("test");
+      eventBus.dispatch("test");
+      eventBus.dispatch("test");
+
+      expect(multipleCount).toEqual(3);
+      expect(onceCount).toEqual(1);
+    });
+
+    it("should not re-dispatch to DOM", async function () {
       if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
+        pending("Document is not supported in Node.js.");
       }
       const eventBus = new EventBus();
       let count = 0;
@@ -323,18 +190,17 @@ describe("ui_utils", function () {
         count++;
       });
       function domEventListener() {
-        done.fail("shall not dispatch DOM event.");
+        // Shouldn't get here.
+        expect(false).toEqual(true);
       }
       document.addEventListener("test", domEventListener);
 
       eventBus.dispatch("test");
 
-      Promise.resolve().then(() => {
-        expect(count).toEqual(1);
+      await Promise.resolve();
+      expect(count).toEqual(1);
 
-        document.removeEventListener("test", domEventListener);
-        done();
-      });
+      document.removeEventListener("test", domEventListener);
     });
   });
 
@@ -388,25 +254,62 @@ describe("ui_utils", function () {
     });
   });
 
+  describe("parseQueryString", function () {
+    it("should parse one key/value pair", function () {
+      const parameters = parseQueryString("key1=value1");
+      expect(parameters.size).toEqual(1);
+      expect(parameters.get("key1")).toEqual("value1");
+    });
+
+    it("should parse multiple key/value pairs", function () {
+      const parameters = parseQueryString(
+        "key1=value1&key2=value2&key3=value3"
+      );
+      expect(parameters.size).toEqual(3);
+      expect(parameters.get("key1")).toEqual("value1");
+      expect(parameters.get("key2")).toEqual("value2");
+      expect(parameters.get("key3")).toEqual("value3");
+    });
+
+    it("should parse keys without values", function () {
+      const parameters = parseQueryString("key1");
+      expect(parameters.size).toEqual(1);
+      expect(parameters.get("key1")).toEqual("");
+    });
+
+    it("should decode encoded key/value pairs", function () {
+      const parameters = parseQueryString("k%C3%ABy1=valu%C3%AB1");
+      expect(parameters.size).toEqual(1);
+      expect(parameters.get("këy1")).toEqual("valuë1");
+    });
+
+    it("should convert keys to lowercase", function () {
+      const parameters = parseQueryString("Key1=Value1&KEY2=Value2");
+      expect(parameters.size).toEqual(2);
+      expect(parameters.get("key1")).toEqual("Value1");
+      expect(parameters.get("key2")).toEqual("Value2");
+    });
+  });
+
   describe("waitOnEventOrTimeout", function () {
     let eventBus;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       eventBus = new EventBus();
-      done();
     });
 
     afterAll(function () {
       eventBus = null;
     });
 
-    it("should reject invalid parameters", function (done) {
+    it("should reject invalid parameters", async function () {
       const invalidTarget = waitOnEventOrTimeout({
         target: "window",
         name: "DOMContentLoaded",
       }).then(
         function () {
-          throw new Error("Should reject invalid parameters.");
+          // Shouldn't get here.
+          expect(false).toEqual(true);
         },
         function (reason) {
           expect(reason instanceof Error).toEqual(true);
@@ -418,7 +321,8 @@ describe("ui_utils", function () {
         name: "",
       }).then(
         function () {
-          throw new Error("Should reject invalid parameters.");
+          // Shouldn't get here.
+          expect(false).toEqual(true);
         },
         function (reason) {
           expect(reason instanceof Error).toEqual(true);
@@ -431,22 +335,20 @@ describe("ui_utils", function () {
         delay: -1000,
       }).then(
         function () {
-          throw new Error("Should reject invalid parameters.");
+          // Shouldn't get here.
+          expect(false).toEqual(true);
         },
         function (reason) {
           expect(reason instanceof Error).toEqual(true);
         }
       );
 
-      Promise.all([invalidTarget, invalidName, invalidDelay]).then(
-        done,
-        done.fail
-      );
+      await Promise.all([invalidTarget, invalidName, invalidDelay]);
     });
 
-    it("should resolve on event, using the DOM", function (done) {
+    it("should resolve on event, using the DOM", async function () {
       if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
+        pending("Document is not supported in Node.js.");
       }
       const button = document.createElement("button");
 
@@ -458,15 +360,13 @@ describe("ui_utils", function () {
       // Immediately dispatch the expected event.
       button.click();
 
-      buttonClicked.then(function (type) {
-        expect(type).toEqual(WaitOnType.EVENT);
-        done();
-      }, done.fail);
+      const type = await buttonClicked;
+      expect(type).toEqual(WaitOnType.EVENT);
     });
 
-    it("should resolve on timeout, using the DOM", function (done) {
+    it("should resolve on timeout, using the DOM", async function () {
       if (isNodeJS) {
-        pending("Document in not supported in Node.js.");
+        pending("Document is not supported in Node.js.");
       }
       const button = document.createElement("button");
 
@@ -477,13 +377,11 @@ describe("ui_utils", function () {
       });
       // Do *not* dispatch the event, and wait for the timeout.
 
-      buttonClicked.then(function (type) {
-        expect(type).toEqual(WaitOnType.TIMEOUT);
-        done();
-      }, done.fail);
+      const type = await buttonClicked;
+      expect(type).toEqual(WaitOnType.TIMEOUT);
     });
 
-    it("should resolve on event, using the EventBus", function (done) {
+    it("should resolve on event, using the EventBus", async function () {
       const pageRendered = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
@@ -492,13 +390,11 @@ describe("ui_utils", function () {
       // Immediately dispatch the expected event.
       eventBus.dispatch("pagerendered");
 
-      pageRendered.then(function (type) {
-        expect(type).toEqual(WaitOnType.EVENT);
-        done();
-      }, done.fail);
+      const type = await pageRendered;
+      expect(type).toEqual(WaitOnType.EVENT);
     });
 
-    it("should resolve on timeout, using the EventBus", function (done) {
+    it("should resolve on timeout, using the EventBus", async function () {
       const pageRendered = waitOnEventOrTimeout({
         target: eventBus,
         name: "pagerendered",
@@ -506,10 +402,8 @@ describe("ui_utils", function () {
       });
       // Do *not* dispatch the event, and wait for the timeout.
 
-      pageRendered.then(function (type) {
-        expect(type).toEqual(WaitOnType.TIMEOUT);
-        done();
-      }, done.fail);
+      const type = await pageRendered;
+      expect(type).toEqual(WaitOnType.TIMEOUT);
     });
   });
 
@@ -626,11 +520,21 @@ describe("ui_utils", function () {
           const hiddenWidth =
             Math.max(0, scrollLeft - viewLeft) +
             Math.max(0, viewRight - scrollRight);
-          const visibleArea =
-            (div.clientHeight - hiddenHeight) * (div.clientWidth - hiddenWidth);
-          const percent =
-            ((visibleArea * 100) / div.clientHeight / div.clientWidth) | 0;
-          views.push({ id: view.id, x: viewLeft, y: viewTop, view, percent });
+
+          const fractionHeight =
+            (div.clientHeight - hiddenHeight) / div.clientHeight;
+          const fractionWidth =
+            (div.clientWidth - hiddenWidth) / div.clientWidth;
+          const percent = (fractionHeight * fractionWidth * 100) | 0;
+
+          views.push({
+            id: view.id,
+            x: viewLeft,
+            y: viewTop,
+            view,
+            percent,
+            widthPercent: (fractionWidth * 100) | 0,
+          });
         }
       }
       return { first: views[0], last: views[views.length - 1], views };

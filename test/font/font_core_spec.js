@@ -7,13 +7,12 @@ describe("font1", function () {
   );
 
   describe("test harness testing", function () {
-    it("returns output", function (done) {
-      ttx(font1_1, function (output) {
-        verifyTtxOutput(output);
-        expect(/<ttFont /.test(output)).toEqual(true);
-        expect(/<\/ttFont>/.test(output)).toEqual(true);
-        done();
-      });
+    it("returns output", async function () {
+      const output = await ttx(font1_1);
+
+      verifyTtxOutput(output);
+      expect(/<ttFont /.test(output)).toEqual(true);
+      expect(/<\/ttFont>/.test(output)).toEqual(true);
     });
   });
 });

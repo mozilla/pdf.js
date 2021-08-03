@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* no-babel-preset */
-/* eslint-disable no-var */
 
 import {
   getArrayLookupTableFactory,
@@ -23,7 +22,7 @@ import {
 // Some characters, e.g. copyrightserif, are mapped to the private use area
 // and might not be displayed using standard fonts. Mapping/hacking well-known
 // chars to the similar equivalents in the normal characters range.
-var getSpecialPUASymbols = getLookupTableFactory(function (t) {
+const getSpecialPUASymbols = getLookupTableFactory(function (t) {
   t[63721] = 0x00a9; // copyrightsans (0xF8E9) => copyright
   t[63193] = 0x00a9; // copyrightserif (0xF6D9) => copyright
   t[63720] = 0x00ae; // registersans (0xF8E8) => registered
@@ -63,7 +62,7 @@ function mapSpecialUnicodeValues(code) {
 }
 
 function getUnicodeForGlyph(name, glyphsUnicodeMap) {
-  var unicode = glyphsUnicodeMap[name];
+  let unicode = glyphsUnicodeMap[name];
   if (unicode !== undefined) {
     return unicode;
   }
@@ -72,8 +71,8 @@ function getUnicodeForGlyph(name, glyphsUnicodeMap) {
   }
   // Try to recover valid Unicode values from 'uniXXXX'/'uXXXX{XX}' glyphs.
   if (name[0] === "u") {
-    var nameLen = name.length,
-      hexStr;
+    const nameLen = name.length;
+    let hexStr;
 
     if (nameLen === 7 && name[1] === "n" && name[2] === "i") {
       // 'uniXXXX'
@@ -95,7 +94,7 @@ function getUnicodeForGlyph(name, glyphsUnicodeMap) {
   return -1;
 }
 
-var UnicodeRanges = [
+const UnicodeRanges = [
   { begin: 0x0000, end: 0x007f }, // Basic Latin
   { begin: 0x0080, end: 0x00ff }, // Latin-1 Supplement
   { begin: 0x0100, end: 0x017f }, // Latin Extended-A
@@ -222,8 +221,8 @@ var UnicodeRanges = [
 ];
 
 function getUnicodeRangeFor(value) {
-  for (var i = 0, ii = UnicodeRanges.length; i < ii; i++) {
-    var range = UnicodeRanges[i];
+  for (let i = 0, ii = UnicodeRanges.length; i < ii; i++) {
+    const range = UnicodeRanges[i];
     if (value >= range.begin && value < range.end) {
       return i;
     }
@@ -232,7 +231,7 @@ function getUnicodeRangeFor(value) {
 }
 
 function isRTLRangeFor(value) {
-  var range = UnicodeRanges[13];
+  let range = UnicodeRanges[13];
   if (value >= range.begin && value < range.end) {
     return true;
   }
@@ -245,7 +244,7 @@ function isRTLRangeFor(value) {
 
 // The normalization table is obtained by filtering the Unicode characters
 // database with <compat> entries.
-var getNormalizedUnicodes = getArrayLookupTableFactory(function () {
+const getNormalizedUnicodes = getArrayLookupTableFactory(function () {
   // prettier-ignore
   return [
     "\u00A8", "\u0020\u0308",
@@ -1629,22 +1628,22 @@ var getNormalizedUnicodes = getArrayLookupTableFactory(function () {
 });
 
 function reverseIfRtl(chars) {
-  var charsLength = chars.length;
+  const charsLength = chars.length;
   // Reverse an arabic ligature.
   if (charsLength <= 1 || !isRTLRangeFor(chars.charCodeAt(0))) {
     return chars;
   }
-  var s = "";
-  for (var ii = charsLength - 1; ii >= 0; ii--) {
-    s += chars[ii];
+  const buf = [];
+  for (let ii = charsLength - 1; ii >= 0; ii--) {
+    buf.push(chars[ii]);
   }
-  return s;
+  return buf.join("");
 }
 
 export {
-  mapSpecialUnicodeValues,
-  reverseIfRtl,
-  getUnicodeRangeFor,
   getNormalizedUnicodes,
   getUnicodeForGlyph,
+  getUnicodeRangeFor,
+  mapSpecialUnicodeValues,
+  reverseIfRtl,
 };

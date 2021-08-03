@@ -14,15 +14,6 @@
  */
 
 import {
-  Ascii85Stream,
-  AsciiHexStream,
-  FlateStream,
-  LZWStream,
-  NullStream,
-  PredictorStream,
-  RunLengthStream,
-} from "./stream.js";
-import {
   assert,
   bytesToString,
   FormatError,
@@ -42,11 +33,22 @@ import {
   Name,
   Ref,
 } from "./primitives.js";
-import { isWhiteSpace, MissingDataException } from "./core_utils.js";
+import {
+  isWhiteSpace,
+  MissingDataException,
+  ParserEOFException,
+} from "./core_utils.js";
+import { Ascii85Stream } from "./ascii_85_stream.js";
+import { AsciiHexStream } from "./ascii_hex_stream.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
+import { FlateStream } from "./flate_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
+import { LZWStream } from "./lzw_stream.js";
+import { NullStream } from "./stream.js";
+import { PredictorStream } from "./predictor_stream.js";
+import { RunLengthStream } from "./run_length_stream.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;
@@ -126,10 +128,10 @@ class Parser {
             array.push(this.getObj(cipherTransform));
           }
           if (isEOF(this.buf1)) {
-            if (!this.recoveryMode) {
-              throw new FormatError("End of file inside array");
+            if (this.recoveryMode) {
+              return array;
             }
-            return array;
+            throw new ParserEOFException("End of file inside array.");
           }
           this.shift();
           return array;
@@ -150,10 +152,10 @@ class Parser {
             dict.set(key, this.getObj(cipherTransform));
           }
           if (isEOF(this.buf1)) {
-            if (!this.recoveryMode) {
-              throw new FormatError("End of file inside dictionary");
+            if (this.recoveryMode) {
+              return dict;
             }
-            return dict;
+            throw new ParserEOFException("End of file inside dictionary.");
           }
 
           // Stream objects are not allowed inside content streams or
@@ -637,9 +639,9 @@ class Parser {
       this.shift(); // 'stream'
     } else {
       // Bad stream length, scanning for endstream command.
-      // prettier-ignore
       const ENDSTREAM_SIGNATURE = new Uint8Array([
-        0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D]);
+        0x65, 0x6e, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d,
+      ]);
       let actualLength = this._findStreamLength(startPos, ENDSTREAM_SIGNATURE);
       if (actualLength < 0) {
         // Only allow limited truncation of the endstream signature,
@@ -767,11 +769,11 @@ class Parser {
       }
       if (name === "DCTDecode" || name === "DCT") {
         xrefStreamStats[StreamType.DCT] = true;
-        return new JpegStream(stream, maybeLength, stream.dict, params);
+        return new JpegStream(stream, maybeLength, params);
       }
       if (name === "JPXDecode" || name === "JPX") {
         xrefStreamStats[StreamType.JPX] = true;
-        return new JpxStream(stream, maybeLength, stream.dict, params);
+        return new JpxStream(stream, maybeLength, params);
       }
       if (name === "ASCII85Decode" || name === "A85") {
         xrefStreamStats[StreamType.A85] = true;
@@ -791,7 +793,7 @@ class Parser {
       }
       if (name === "JBIG2Decode") {
         xrefStreamStats[StreamType.JBIG] = true;
-        return new Jbig2Stream(stream, maybeLength, stream.dict, params);
+        return new Jbig2Stream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);
       return stream;
@@ -1115,6 +1117,8 @@ class Lexer {
     }
     if (strBuf.length > 127) {
       warn(`Name token is longer than allowed by the spec: ${strBuf.length}`);
+    } else if (strBuf.length === 0) {
+      warn("Name token is empty.");
     }
     return Name.get(strBuf.join(""));
   }

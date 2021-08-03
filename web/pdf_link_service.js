@@ -41,13 +41,12 @@ class PDFLinkService {
     eventBus,
     externalLinkTarget = null,
     externalLinkRel = null,
-    externalLinkEnabled = true,
     ignoreDestinationZoom = false,
   } = {}) {
     this.eventBus = eventBus;
     this.externalLinkTarget = externalLinkTarget;
     this.externalLinkRel = externalLinkRel;
-    this.externalLinkEnabled = externalLinkEnabled;
+    this.externalLinkEnabled = true;
     this._ignoreDestinationZoom = ignoreDestinationZoom;
 
     this.baseUrl = null;
@@ -108,16 +107,6 @@ class PDFLinkService {
   }
 
   /**
-   * @deprecated
-   */
-  navigateTo(dest) {
-    console.error(
-      "Deprecated method: `navigateTo`, use `goToDestination` instead."
-    );
-    this.goToDestination(dest);
-  }
-
-  /**
    * @private
    */
   _goToDestinationHelper(rawDest, namedDest = null, explicitDest) {
@@ -125,7 +114,7 @@ class PDFLinkService {
     const destRef = explicitDest[0];
     let pageNumber;
 
-    if (destRef instanceof Object) {
+    if (typeof destRef === "object" && destRef !== null) {
       pageNumber = this._cachedPageNumber(destRef);
 
       if (pageNumber === null) {
@@ -274,20 +263,20 @@ class PDFLinkService {
     let pageNumber, dest;
     if (hash.includes("=")) {
       const params = parseQueryString(hash);
-      if ("search" in params) {
+      if (params.has("search")) {
         this.eventBus.dispatch("findfromurlhash", {
           source: this,
-          query: params.search.replace(/"/g, ""),
-          phraseSearch: params.phrase === "true",
+          query: params.get("search").replace(/"/g, ""),
+          phraseSearch: params.get("phrase") === "true",
         });
       }
       // borrowing syntax from "Parameters for Opening PDF Files"
-      if ("page" in params) {
-        pageNumber = params.page | 0 || 1;
+      if (params.has("page")) {
+        pageNumber = params.get("page") | 0 || 1;
       }
-      if ("zoom" in params) {
+      if (params.has("zoom")) {
         // Build the destination array.
-        const zoomArgs = params.zoom.split(","); // scale,left,top
+        const zoomArgs = params.get("zoom").split(","); // scale,left,top
         const zoomArg = zoomArgs[0];
         const zoomArgNumber = parseFloat(zoomArg);
 
@@ -347,16 +336,16 @@ class PDFLinkService {
       } else if (pageNumber) {
         this.page = pageNumber; // simple page
       }
-      if ("pagemode" in params) {
+      if (params.has("pagemode")) {
         this.eventBus.dispatch("pagemode", {
           source: this,
-          mode: params.pagemode,
+          mode: params.get("pagemode"),
         });
       }
       // Ensure that this parameter is *always* handled last, in order to
       // guarantee that it won't be overridden (e.g. by the "page" parameter).
-      if ("nameddest" in params) {
-        this.goToDestination(params.nameddest);
+      if (params.has("nameddest")) {
+        this.goToDestination(params.get("nameddest"));
       }
     } else {
       // Named (or explicit) destination.
@@ -401,15 +390,11 @@ class PDFLinkService {
         break;
 
       case "NextPage":
-        if (this.page < this.pagesCount) {
-          this.page++;
-        }
+        this.pdfViewer.nextPage();
         break;
 
       case "PrevPage":
-        if (this.page > 1) {
-          this.page--;
-        }
+        this.pdfViewer.previousPage();
         break;
 
       case "LastPage":
@@ -449,7 +434,7 @@ class PDFLinkService {
   _cachedPageNumber(pageRef) {
     const refStr =
       pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
-    return (this._pagesRefCache && this._pagesRefCache[refStr]) || null;
+    return this._pagesRefCache?.[refStr] || null;
   }
 
   /**

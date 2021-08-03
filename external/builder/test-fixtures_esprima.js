@@ -1,13 +1,13 @@
 "use strict";
 
-var p2 = require("./preprocessor2.js");
-var fs = require("fs");
-var path = require("path");
+const p2 = require("./preprocessor2.js");
+const fs = require("fs");
+const path = require("path");
 
-var errors = 0;
+let errors = 0;
 
-var baseDir = path.join(__dirname, "fixtures_esprima");
-var files = fs
+const baseDir = path.join(__dirname, "fixtures_esprima");
+const files = fs
   .readdirSync(baseDir)
   .filter(function (name) {
     return /-expected\./.test(name);
@@ -16,29 +16,29 @@ var files = fs
     return path.join(baseDir, name);
   });
 files.forEach(function (expectationFilename) {
-  var inFilename = expectationFilename.replace("-expected", "");
-  var expectation = fs
+  const inFilename = expectationFilename.replace("-expected", "");
+  const expectation = fs
     .readFileSync(expectationFilename)
     .toString()
     .trim()
     .replace(/__filename/g, fs.realpathSync(inFilename));
-  var input = fs.readFileSync(inFilename).toString();
+  const input = fs.readFileSync(inFilename).toString();
 
-  var defines = {
+  const defines = {
     TRUE: true,
     FALSE: false,
     OBJ: { obj: { i: 1 }, j: 2 },
     TEXT: "text",
   };
-  var map = {
+  const map = {
     "import-alias": "import-name",
   };
-  var ctx = {
-    defines: defines,
-    map: map,
+  const ctx = {
+    defines,
+    map,
     rootPath: __dirname + "/../..",
   };
-  var out;
+  let out;
   try {
     out = p2.preprocessPDFJSCode(ctx, input);
   } catch (e) {

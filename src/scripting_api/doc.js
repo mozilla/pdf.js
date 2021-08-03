@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { createActionsMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
@@ -30,19 +31,22 @@ class InfoProxyHandler {
 class Doc extends PDFObject {
   constructor(data) {
     super(data);
-    this.calculate = true;
 
-    this.baseURL = data.baseURL || "";
-    this.calculate = true;
-    this.delay = false;
-    this.dirty = false;
-    this.disclosed = false;
-    this.media = undefined;
-    this.metadata = data.metadata;
-    this.noautocomplete = undefined;
-    this.nocache = undefined;
-    this.spellDictionaryOrder = [];
-    this.spellLanguageOrder = [];
+    // In a script doc === this.
+    // So adding a property to the doc means adding it to this
+    this._expandos = globalThis;
+
+    this._baseURL = data.baseURL || "";
+    this._calculate = true;
+    this._delay = false;
+    this._dirty = false;
+    this._disclosed = false;
+    this._media = undefined;
+    this._metadata = data.metadata || "";
+    this._noautocomplete = undefined;
+    this._nocache = undefined;
+    this._spellDictionaryOrder = [];
+    this._spellLanguageOrder = [];
 
     this._printParams = null;
     this._fields = new Map();
@@ -70,12 +74,13 @@ class Doc extends PDFObject {
     // and they're are read-only.
     this._info = new Proxy(
       {
-        title: this.title,
-        author: this.author,
-        subject: this.subject,
-        keywords: this.keywords,
-        creator: this.creator,
-        producer: this.producer,
+        title: this._title,
+        author: this._author,
+        authors: data.authors || [this._author],
+        subject: this._subject,
+        keywords: this._keywords,
+        creator: this._creator,
+        producer: this._producer,
         creationdate: this._creationDate,
         moddate: this._modDate,
         trapped: data.Trapped || "Unknown",
@@ -85,6 +90,55 @@ class Doc extends PDFObject {
 
     this._zoomType = ZoomType.none;
     this._zoom = data.zoom || 100;
+    this._actions = createActionsMap(data.actions);
+    this._globalEval = data.globalEval;
+    this._pageActions = new Map();
+  }
+
+  _dispatchDocEvent(name) {
+    if (name === "Open") {
+      const dontRun = new Set([
+        "WillClose",
+        "WillSave",
+        "DidSave",
+        "WillPrint",
+        "DidPrint",
+        "OpenAction",
+      ]);
+      for (const actionName of this._actions.keys()) {
+        if (!dontRun.has(actionName)) {
+          this._runActions(actionName);
+        }
+      }
+      this._runActions("OpenAction");
+    } else {
+      this._runActions(name);
+    }
+  }
+
+  _dispatchPageEvent(name, actions, pageNumber) {
+    if (name === "PageOpen") {
+      if (!this._pageActions.has(pageNumber)) {
+        this._pageActions.set(pageNumber, createActionsMap(actions));
+      }
+      this._pageNum = pageNumber - 1;
+    }
+
+    actions = this._pageActions.get(pageNumber)?.get(name);
+    if (actions) {
+      for (const action of actions) {
+        this._globalEval(action);
+      }
+    }
+  }
+
+  _runActions(name) {
+    const actions = this._actions.get(name);
+    if (actions) {
+      for (const action of actions) {
+        this._globalEval(action);
+      }
+    }
   }
 
   _addField(name, field) {
@@ -128,12 +182,28 @@ class Doc extends PDFObject {
     throw new Error("doc.author is read-only");
   }
 
+  get baseURL() {
+    return this._baseURL;
+  }
+
+  set baseURL(baseURL) {
+    this._baseURL = baseURL;
+  }
+
   get bookmarkRoot() {
     return undefined;
   }
 
   set bookmarkRoot(_) {
     throw new Error("doc.bookmarkRoot is read-only");
+  }
+
+  get calculate() {
+    return this._calculate;
+  }
+
+  set calculate(calculate) {
+    this._calculate = calculate;
   }
 
   get creator() {
@@ -150,6 +220,30 @@ class Doc extends PDFObject {
 
   set dataObjects(_) {
     throw new Error("doc.dataObjects is read-only");
+  }
+
+  get delay() {
+    return this._delay;
+  }
+
+  set delay(delay) {
+    this._delay = delay;
+  }
+
+  get dirty() {
+    return this._dirty;
+  }
+
+  set dirty(dirty) {
+    this._dirty = dirty;
+  }
+
+  get disclosed() {
+    return this._disclosed;
+  }
+
+  set disclosed(disclosed) {
+    this._disclosed = disclosed;
   }
 
   get docID() {
@@ -279,6 +373,22 @@ class Doc extends PDFObject {
     this._layout = value;
   }
 
+  get media() {
+    return this._media;
+  }
+
+  set media(media) {
+    this._media = media;
+  }
+
+  get metadata() {
+    return this._metadata;
+  }
+
+  set metadata(metadata) {
+    this._metadata = metadata;
+  }
+
   get modDate() {
     return this._modDate;
   }
@@ -301,6 +411,22 @@ class Doc extends PDFObject {
 
   set mouseY(_) {
     throw new Error("doc.mouseY is read-only");
+  }
+
+  get noautocomplete() {
+    return this._noautocomplete;
+  }
+
+  set noautocomplete(noautocomplete) {
+    this._noautocomplete = noautocomplete;
+  }
+
+  get nocache() {
+    return this._nocache;
+  }
+
+  set nocache(nocache) {
+    this._nocache = nocache;
   }
 
   get numFields() {
@@ -417,6 +543,22 @@ class Doc extends PDFObject {
 
   set sounds(_) {
     throw new Error("doc.sounds is read-only");
+  }
+
+  get spellDictionaryOrder() {
+    return this._spellDictionaryOrder;
+  }
+
+  set spellDictionaryOrder(spellDictionaryOrder) {
+    this._spellDictionaryOrder = spellDictionaryOrder;
+  }
+
+  get spellLanguageOrder() {
+    return this._spellLanguageOrder;
+  }
+
+  set spellLanguageOrder(spellLanguageOrder) {
+    this._spellLanguageOrder = spellLanguageOrder;
   }
 
   get subject() {
@@ -678,6 +820,9 @@ class Doc extends PDFObject {
   }
 
   getField(cName) {
+    if (typeof cName === "object") {
+      cName = cName.cName;
+    }
     if (typeof cName !== "string") {
       throw new TypeError("Invalid field name: must be a string");
     }
@@ -686,13 +831,48 @@ class Doc extends PDFObject {
       return searchedField;
     }
 
+    const parts = cName.split("#");
+    let childIndex = NaN;
+    if (parts.length === 2) {
+      childIndex = Math.floor(parseFloat(parts[1]));
+      cName = parts[0];
+    }
+
     for (const [name, field] of this._fields.entries()) {
-      if (name.includes(cName)) {
+      if (name.endsWith(cName)) {
+        if (!isNaN(childIndex)) {
+          const children = this._getChildren(name);
+          if (childIndex < 0 || childIndex >= children.length) {
+            childIndex = 0;
+          }
+          if (childIndex < children.length) {
+            this._fields.set(cName, children[childIndex]);
+            return children[childIndex];
+          }
+        }
+        this._fields.set(cName, field);
         return field;
       }
     }
 
-    return undefined;
+    return null;
+  }
+
+  _getChildren(fieldName) {
+    // Children of foo.bar are foo.bar.oof, foo.bar.rab
+    // but not foo.bar.oof.FOO.
+    const len = fieldName.length;
+    const children = [];
+    const pattern = /^\.[^.]+$/;
+    for (const [name, field] of this._fields.entries()) {
+      if (name.startsWith(fieldName)) {
+        const finalPart = name.slice(len);
+        if (finalPart.match(pattern)) {
+          children.push(field);
+        }
+      }
+    }
+    return children;
   }
 
   getIcon() {
@@ -708,6 +888,9 @@ class Doc extends PDFObject {
   }
 
   getNthFieldName(nIndex) {
+    if (typeof nIndex === "object") {
+      nIndex = nIndex.nIndex;
+    }
     if (typeof nIndex !== "number") {
       throw new TypeError("Invalid field index: must be a number");
     }
@@ -843,6 +1026,18 @@ class Doc extends PDFObject {
     bAnnotations = true,
     printParams = null
   ) {
+    if (typeof bUI === "object") {
+      nStart = bUI.nStart;
+      nEnd = bUI.nEnd;
+      bSilent = bUI.bSilent;
+      bShrinkToFit = bUI.bShrinkToFit;
+      bPrintAsImage = bUI.bPrintAsImage;
+      bReverse = bUI.bReverse;
+      bAnnotations = bUI.bAnnotations;
+      printParams = bUI.printParams;
+      bUI = bUI.bUI;
+    }
+
     // TODO: for now just use nStart and nEnd
     // so need to see how to deal with the other params
     // (if possible)
@@ -863,7 +1058,7 @@ class Doc extends PDFObject {
       nEnd = -1;
     }
 
-    this._send({ id: "print", start: nStart, end: nEnd });
+    this._send({ command: "print", start: nStart, end: nEnd });
   }
 
   removeDataObject() {
@@ -907,19 +1102,28 @@ class Doc extends PDFObject {
   }
 
   resetForm(aFields = null) {
+    if (aFields && !Array.isArray(aFields) && typeof aFields === "object") {
+      aFields = aFields.aFields;
+    }
     let mustCalculate = false;
     if (aFields) {
       for (const fieldName of aFields) {
-        const field = this.getField(fieldName);
-        if (field) {
-          field.value = field.defaultValue;
-          mustCalculate = true;
+        if (!fieldName) {
+          continue;
         }
+        const field = this.getField(fieldName);
+        if (!field) {
+          continue;
+        }
+        field.value = field.defaultValue;
+        field.valueAsString = field.value;
+        mustCalculate = true;
       }
     } else {
       mustCalculate = this._fields.size !== 0;
       for (const field of this._fields.values()) {
         field.value = field.defaultValue;
+        field.valueAsString = field.value;
       }
     }
     if (mustCalculate) {

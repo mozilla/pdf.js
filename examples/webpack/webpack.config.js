@@ -1,5 +1,5 @@
-var webpack = require("webpack"); // eslint-disable-line no-unused-vars
-var path = require("path");
+const webpack = require("webpack"); // eslint-disable-line no-unused-vars
+const path = require("path");
 
 module.exports = {
   context: __dirname,

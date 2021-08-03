@@ -1,5 +1,5 @@
 {
-  "spec_dir": "build/lib-es5/test/unit",
+  "spec_dir": "build/lib-legacy/test/unit",
 
   "helpers": [
     "clitests_helper.js"
@@ -16,6 +16,7 @@
     "core_utils_spec.js",
     "crypto_spec.js",
     "custom_spec.js",
+    "default_appearance_spec.js",
     "display_svg_spec.js",
     "display_utils_spec.js",
     "document_spec.js",
@@ -33,11 +34,16 @@
     "pdf_history_spec.js",
     "primitives_spec.js",
     "stream_spec.js",
+    "struct_tree_spec.js",
     "type1_parser_spec.js",
     "ui_utils_spec.js",
     "unicode_spec.js",
     "util_spec.js",
     "writer_spec.js",
+    "xfa_formcalc_spec.js",
+    "xfa_parser_spec.js",
+    "xfa_serialize_data_spec.js",
+    "xfa_tohtml_spec.js",
     "xml_spec.js"
   ]
 }

@@ -53,18 +53,18 @@ describe("document", function () {
         get docId() {
           return "d0";
         },
+        ensureDoc(prop, args) {
+          return pdfManager.ensure(pdfDocument, prop, args);
+        },
         ensureCatalog(prop, args) {
           return pdfManager.ensure(catalog, prop, args);
         },
-        ensure(obj, prop, args) {
-          return new Promise(function (resolve) {
-            const value = obj[prop];
-            if (typeof value === "function") {
-              resolve(value.apply(obj, args));
-            } else {
-              resolve(value);
-            }
-          });
+        async ensure(obj, prop, args) {
+          const value = obj[prop];
+          if (typeof value === "function") {
+            return value.apply(obj, args);
+          }
+          return value;
         },
       };
       const pdfDocument = new PDFDocument(pdfManager, stream);
@@ -77,6 +77,7 @@ describe("document", function () {
       const pdfDocument = getDocument(null);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -90,6 +91,7 @@ describe("document", function () {
       let pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -98,6 +100,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: true,
         hasFields: false,
       });
@@ -106,6 +109,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -114,6 +118,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: true,
         hasFields: false,
       });
@@ -127,6 +132,7 @@ describe("document", function () {
       let pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: false,
       });
@@ -135,6 +141,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: true,
       });
@@ -146,6 +153,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: true,
+        hasSignatures: false,
         hasXfa: false,
         hasFields: true,
       });
@@ -169,6 +177,7 @@ describe("document", function () {
       pdfDocument = getDocument(acroForm, xref);
       expect(pdfDocument.formInfo).toEqual({
         hasAcroForm: false,
+        hasSignatures: true,
         hasXfa: false,
         hasFields: true,
       });
@@ -187,6 +196,14 @@ describe("document", function () {
       acroForm.set("CO", []);
       pdfDocument = getDocument(acroForm);
       expect(pdfDocument.calculationOrderIds).toEqual(null);
+
+      acroForm.set("CO", ["1", "2"]);
+      pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(null);
+
+      acroForm.set("CO", ["1", Ref.get(1, 0), "2"]);
+      pdfDocument = getDocument(acroForm);
+      expect(pdfDocument.calculationOrderIds).toEqual(["1R"]);
     });
 
     it("should get field objects array or null", async function () {
@@ -204,6 +221,7 @@ describe("document", function () {
       const kid1Ref = Ref.get(314, 0);
       const kid11Ref = Ref.get(159, 0);
       const kid2Ref = Ref.get(265, 0);
+      const kid2BisRef = Ref.get(266, 0);
       const parentRef = Ref.get(358, 0);
 
       const allFields = Object.create(null);
@@ -217,13 +235,14 @@ describe("document", function () {
       }
 
       allFields.kid1.set("Kids", [kid11Ref]);
-      allFields.parent.set("Kids", [kid1Ref, kid2Ref]);
+      allFields.parent.set("Kids", [kid1Ref, kid2Ref, kid2BisRef]);
 
       const xref = new XRefMock([
         { ref: parentRef, data: allFields.parent },
         { ref: kid1Ref, data: allFields.kid1 },
         { ref: kid11Ref, data: allFields.kid11 },
         { ref: kid2Ref, data: allFields.kid2 },
+        { ref: kid2BisRef, data: allFields.kid2 },
       ]);
 
       acroForm.set("Fields", [parentRef]);
@@ -236,7 +255,7 @@ describe("document", function () {
 
       expect(fields["parent.kid1"]).toEqual(["314R"]);
       expect(fields["parent.kid1.kid11"]).toEqual(["159R"]);
-      expect(fields["parent.kid2"]).toEqual(["265R"]);
+      expect(fields["parent.kid2"]).toEqual(["265R", "266R"]);
       expect(fields.parent).toEqual(["358R"]);
     });
 

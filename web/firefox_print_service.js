@@ -14,7 +14,7 @@
  */
 
 import { RenderingCancelledException, shadow } from "pdfjs-lib";
-import { CSS_UNITS } from "./ui_utils.js";
+import { getXfaHtmlForPrinting } from "./print_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 
 // Creates a placeholder with div and canvas with right size for the page.
@@ -33,11 +33,8 @@ function composePage(
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
-  // The physical size of the canvas as specified by the PDF document.
-  canvas.style.width = Math.floor(size.width * CSS_UNITS) + "px";
-  canvas.style.height = Math.floor(size.height * CSS_UNITS) + "px";
-
   const canvasWrapper = document.createElement("div");
+  canvasWrapper.className = "printedPage";
   canvasWrapper.appendChild(canvas);
   printContainer.appendChild(canvasWrapper);
 
@@ -71,7 +68,7 @@ function composePage(
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",
-          annotationStorage: pdfDocument.annotationStorage,
+          includeAnnotationStorage: true,
           optionalContentConfigPromise,
         };
         currentRenderTask = thisRenderTask = pdfPage.render(renderContext);
@@ -134,6 +131,11 @@ FirefoxPrintService.prototype = {
 
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
+
+    if (pdfDocument.isPureXfa) {
+      getXfaHtmlForPrinting(printContainer, pdfDocument);
+      return;
+    }
 
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
       composePage(
