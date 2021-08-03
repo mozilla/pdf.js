@@ -179,6 +179,90 @@ describe("XFAFactory", function () {
       expect(field.attributes.maxLength).toEqual(123);
     });
 
+    it("should have an aria-label property from speak", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <field y="1pt" w="11pt" h="22pt" x="2pt">
+            <assist><speak>Screen Reader</speak></assist>
+            <ui>
+              <textEdit multiLine="0"/>
+            </ui>
+            <value>
+              <text maxChars="123"/>
+            </value>
+          </field>
+        </pageArea>
+      </pageSet>
+      <subform name="first">
+        <draw w="1pt" h="1pt"><value><text>foo</text></value></draw>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory({ "xdp:xdp": xml });
+
+      expect(factory.numberPages).toEqual(1);
+
+      const pages = factory.getPages();
+      const field = searchHtmlNode(pages, "name", "input");
+
+      expect(field.attributes["aria-label"]).toEqual("Screen Reader");
+    });
+
+    it("should have an aria-label property from toolTip", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <field y="1pt" w="11pt" h="22pt" x="2pt">
+            <assist><toolTip>Screen Reader</toolTip></assist>
+            <ui>
+              <textEdit multiLine="0"/>
+            </ui>
+            <value>
+              <text maxChars="123"/>
+            </value>
+          </field>
+        </pageArea>
+      </pageSet>
+      <subform name="first">
+        <draw w="1pt" h="1pt"><value><text>foo</text></value></draw>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory({ "xdp:xdp": xml });
+
+      expect(factory.numberPages).toEqual(1);
+
+      const pages = factory.getPages();
+      const field = searchHtmlNode(pages, "name", "input");
+
+      expect(field.attributes["aria-label"]).toEqual("Screen Reader");
+    });
+
     it("should have an input or textarea", function () {
       const xml = `
 <?xml version="1.0"?>
