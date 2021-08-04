@@ -11,5 +11,4 @@ src/shared/cffStandardStrings.js
 src/shared/fonts_utils.js
 test/tmp/
 test/pdfs/
-test/resources/
 *~/
