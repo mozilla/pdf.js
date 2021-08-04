@@ -28,6 +28,7 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 Original author: L. David Baron <dbaron@dbaron.org>
 */
+/* eslint-disable no-undef */
 
 // Global variables
 window.gPhases = null;
@@ -37,8 +38,8 @@ window.gMagPixPaths = []; // 2D array of array-of-two <path> objects used in the
 window.gMagWidth = 5; // number of zoomed in pixels to show horizontally
 window.gMagHeight = 5; // number of zoomed in pixels to show vertically
 window.gMagZoom = 16; // size of the zoomed in pixels
-window.gImage1Data; // ImageData object for the test output image
-window.gImage2Data; // ImageData object for the reference image
+window.gImage1Data = null; // ImageData object for the test output image
+window.gImage2Data = null; // ImageData object for the reference image
 window.gFlashingPixels = []; // array of <path> objects that should be flashed due to pixel color mismatch
 window.gPath = ""; // path taken from #web= and prepended to ref/snp urls
 window.gSelected = null; // currently selected comparison
@@ -141,9 +142,9 @@ window.onload = function () {
   function showPhase(phaseId) {
     for (const i in gPhases) {
       const phase = gPhases[i];
-      phase.style.display = phase.id == phaseId ? "block" : "none";
+      phase.style.display = phase.id === phaseId ? "block" : "none";
     }
-    if (phaseId == "viewer") {
+    if (phaseId === "viewer") {
       ID("images").style.display = "none";
     }
   }
@@ -157,7 +158,7 @@ window.onload = function () {
     const r = new XMLHttpRequest();
     r.open("GET", url);
     r.onreadystatechange = function () {
-      if (r.readyState == 4) {
+      if (r.readyState === 4) {
         processLog(r.response);
       }
     };
@@ -211,7 +212,7 @@ window.onload = function () {
       }
       line = match[1];
       match = line.match(
-        /^(TEST-PASS|TEST-UNEXPECTED-PASS|TEST-KNOWN-FAIL|TEST-UNEXPECTED-FAIL)(\(EXPECTED RANDOM\)|) \| ([^\|]+) \|(.*)/
+        /^(TEST-PASS|TEST-UNEXPECTED-PASS|TEST-KNOWN-FAIL|TEST-UNEXPECTED-FAIL)(\(EXPECTED RANDOM\)|) \| ([^|]+) \|(.*)/
       );
       if (match) {
         const state = match[1];
@@ -223,8 +224,8 @@ window.onload = function () {
           pass: !state.match(/FAIL$/),
           // only one of the following three should ever be true
           unexpected: !!state.match(/^TEST-UNEXPECTED/),
-          random: random == "(EXPECTED RANDOM)",
-          skip: extra == " (SKIP)",
+          random: random === "(EXPECTED RANDOM)",
+          skip: extra === " (SKIP)",
           url,
           images: [],
         });
@@ -240,12 +241,12 @@ window.onload = function () {
   }
 
   function buildViewer() {
-    if (gTestItems.length == 0) {
+    if (gTestItems.length === 0) {
       showPhase("entry");
       return;
     }
 
-    const cell = ID("itemlist");
+    // const cell = ID("itemlist");
     const table = document.getElementById("itemtable");
     while (table.childNodes.length > 0) {
       table.removeChild(table.childNodes[table.childNodes.length - 1]);
@@ -253,7 +254,7 @@ window.onload = function () {
     const tbody = document.createElement("tbody");
     table.appendChild(tbody);
 
-    for (var i in gTestItems) {
+    for (const i in gTestItems) {
       const item = gTestItems[i];
       if (item.pass && !item.unexpected) {
         continue;
@@ -302,7 +303,7 @@ window.onload = function () {
 
     // Bind an event handler to each image link
     const images = document.getElementsByClassName("image");
-    for (var i = 0; i < images.length; i++) {
+    for (let i = 0; i < images.length; i++) {
       images[i].addEventListener(
         "click",
         function (e) {
@@ -350,7 +351,7 @@ window.onload = function () {
       "xlink:href",
       gPath + item.images[0]
     );
-    if (item.images.length == 1) {
+    if (item.images.length === 1) {
       ID("imgcontrols").style.display = "none";
     } else {
       ID("imgcontrols").style.display = "";
@@ -382,7 +383,7 @@ window.onload = function () {
   }
 
   function showImage(i) {
-    if (i == 1) {
+    if (i === 1) {
       ID("image1").style.display = "";
       ID("image2").style.display = "none";
     } else {
@@ -469,12 +470,12 @@ window.onload = function () {
           const color2 = canvasPixelAsHex(gImage2Data, x + i, y + j);
           p1.setAttribute("fill", color1);
           p2.setAttribute("fill", color2);
-          if (color1 != color2) {
+          if (color1 !== color2) {
             gFlashingPixels.push(p1, p2);
             p1.parentNode.appendChild(p1);
             p2.parentNode.appendChild(p2);
           }
-          if (i == 0 && j == 0) {
+          if (i === 0 && j === 0) {
             centerPixelColor1 = color1;
             centerPixelColor2 = color2;
           }
@@ -493,7 +494,7 @@ window.onload = function () {
   }
 
   function showPixelInfo(x, y, pix1rgb, pix1hex, pix2rgb, pix2hex) {
-    const pixelinfo = ID("pixelinfo");
+    // const pixelinfo = ID("pixelinfo");
     ID("coords").textContent = [x, y];
     ID("pix1hex").textContent = pix1hex;
     ID("pix1rgb").textContent = pix1rgb;
@@ -567,7 +568,11 @@ window.onload = function () {
         select--;
       }
       const length = gTestItems.length;
-      select = select < 0 ? length - 1 : select >= length ? 0 : select;
+      if (select < 0) {
+        select = length - 1;
+      } else if (select >= length) {
+        select = 0;
+      }
       showImages(select);
     }
   });
