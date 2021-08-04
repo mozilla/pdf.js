@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { isNodeJS } from "../../src/shared/is_node.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
 describe("XFAFactory", function () {
@@ -136,6 +137,44 @@ describe("XFAFactory", function () {
       expect(draw.attributes.style).toEqual(
         pages.children[1].children[0].children[0].attributes.style
       );
+    });
+
+    it("should have an alt attribute from toolTip", function () {
+      if (isNodeJS) {
+        pending("Image is not supported in Node.js.");
+      }
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <draw name="BA-Logo" y="5.928mm" x="128.388mm" w="71.237mm" h="9.528mm">
+            <value>
+              <image contentType="image/png">iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=</image>
+            </value>
+            <assist><toolTip>alt text</toolTip></assist>
+          </draw>
+        </pageArea>
+      </pageSet>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory({ "xdp:xdp": xml });
+
+      expect(factory.numberPages).toEqual(1);
+
+      const pages = factory.getPages();
+      const field = searchHtmlNode(pages, "name", "img");
+
+      expect(field.attributes.alt).toEqual("alt text");
     });
 
     it("should have a maxLength property", function () {
