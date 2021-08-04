@@ -71,6 +71,58 @@ import { XRef } from "./xref.js";
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
+function isAnnotationRenderable(
+  annotation,
+  annotationStorage,
+  annotationIntent
+) {
+  return (
+    (annotationIntent === "display" &&
+      annotation.mustBeViewed(annotationStorage)) ||
+    (annotationIntent === "print" &&
+      annotation.mustBePrinted(annotationStorage))
+  );
+}
+
+function isAnnotationNotRendered(annotation, annotationsNotRendered) {
+  if (
+    !annotation ||
+    !annotation.data ||
+    !annotation.data.annotationType ||
+    !Array.isArray(annotationsNotRendered) ||
+    annotationsNotRendered.length === 0
+  ) {
+    return false;
+  }
+  const data = annotation.data;
+  return annotationsNotRendered.some(itm => {
+    if (typeof itm === "object") {
+      if (Object.keys(itm).length === 0) {
+        return false;
+      }
+      let remove = true;
+      for (const k in itm) {
+        if (!remove) {
+          continue;
+        } else if (
+          !data.hasOwnProperty(k) ||
+          typeof data[k] === "function" ||
+          typeof itm[k] === "function"
+        ) {
+          remove = false;
+        } else if (remove) {
+          remove = data[k] === itm[k];
+        }
+      }
+      return remove;
+    } else if (typeof itm === "number") {
+      return itm === data.annotationType;
+    }
+
+    return false;
+  });
+}
+
 class Page {
   constructor({
     pdfManager,
@@ -326,6 +378,7 @@ class Page {
     intent,
     renderInteractiveForms,
     annotationStorage,
+    annotationsNotRendered,
   }) {
     const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
@@ -392,10 +445,12 @@ class Page {
         const opListPromises = [];
         for (const annotation of annotations) {
           if (
-            (annotationIntent === "display" &&
-              annotation.mustBeViewed(annotationStorage)) ||
-            (annotationIntent === "print" &&
-              annotation.mustBePrinted(annotationStorage))
+            isAnnotationRenderable(
+              annotation,
+              annotationStorage,
+              annotationIntent
+            ) &&
+            !isAnnotationNotRendered(annotation, annotationsNotRendered)
           ) {
             opListPromises.push(
               annotation

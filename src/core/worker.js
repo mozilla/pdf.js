@@ -690,6 +690,7 @@ class WorkerMessageHandler {
             intent: data.intent,
             renderInteractiveForms: data.renderInteractiveForms,
             annotationStorage: data.annotationStorage,
+            annotationsNotRendered: data.annotationsNotRendered,
           })
           .then(
             function (operatorListInfo) {
