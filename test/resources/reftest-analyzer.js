@@ -52,24 +52,26 @@ window.onload = function () {
   }
 
   function hashParameters() {
-    const result = {};
-    const params = window.location.hash.substring(1).split(/[&;]/);
-    for (let i = 0; i < params.length; i++) {
-      const parts = params[i].split("=");
-      result[parts[0]] = unescape(unescape(parts[1]));
+    const query = window.location.hash.substring(1);
+    const params = new Map();
+    for (const part of query.split(/[&;]/)) {
+      const param = part.split("="),
+        key = param[0].toLowerCase(),
+        value = param.length > 1 ? param[1] : "";
+      params.set(decodeURIComponent(key), decodeURIComponent(value));
     }
-    return result;
+    return params;
   }
 
   function load() {
     gPhases = [ID("entry"), ID("loading"), ID("viewer")];
     buildMag();
     const params = hashParameters();
-    if (params.log) {
-      ID("logEntry").value = params.log;
+    if (params.has("log")) {
+      ID("logEntry").value = params.get("log");
       logPasted();
-    } else if (params.web) {
-      loadFromWeb(params.web);
+    } else if (params.has("web")) {
+      loadFromWeb(params.get("web"));
     }
     ID("logEntry").focus();
   }
