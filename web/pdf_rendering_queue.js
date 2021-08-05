@@ -61,6 +61,13 @@ class PDFRenderingQueue {
   }
 
   /**
+   * @returns {boolean}
+   */
+  hasViewer() {
+    return !!this.pdfViewer;
+  }
+
+  /**
    * @param {Object} currentlyVisiblePages
    */
   renderHighestPriority(currentlyVisiblePages) {
