@@ -121,6 +121,8 @@ const MAX_EMPTY_PAGES = 3;
 // Default value to start with for the tabIndex property.
 const DEFAULT_TAB_INDEX = 5000;
 
+const HEADING_PATTERN = /^H(\d+)$/;
+
 function getBorderDims(node) {
   if (!node || !node.border) {
     return { w: 0, h: 0 };
@@ -207,6 +209,40 @@ function setTabIndex(node) {
     }
 
     node = ref[0];
+  }
+}
+
+function applyAssist(obj, attributes) {
+  const assist = obj.assist;
+  if (assist) {
+    const assistTitle = assist[$toHTML]();
+    if (assistTitle) {
+      attributes.title = assistTitle;
+    }
+    const role = assist.role;
+    const match = role.match(HEADING_PATTERN);
+    if (match) {
+      const ariaRole = "heading";
+      const ariaLevel = match[1];
+      attributes.role = ariaRole;
+      attributes["aria-level"] = ariaLevel;
+    }
+  }
+  // XXX: We could end up in a situation where the obj has a heading role and
+  // is also a table. For now prioritize the table role.
+  if (obj.layout === "table") {
+    attributes.role = "table";
+  } else if (obj.layout === "row") {
+    attributes.role = "row";
+  } else {
+    const parent = obj[$getParent]();
+    if (parent.layout === "row") {
+      if (parent.assist && parent.assist.role === "TH") {
+        attributes.role = "columnheader";
+      } else {
+        attributes.role = "cell";
+      }
+    }
   }
 }
 
@@ -1849,10 +1885,7 @@ class Draw extends XFAObject {
       children: [],
     };
 
-    const assist = this.assist ? this.assist[$toHTML]() : null;
-    if (assist) {
-      html.attributes.title = assist;
-    }
+    applyAssist(this, attributes);
 
     const bbox = computeBbox(this, html, availableSpace);
 
@@ -2475,10 +2508,7 @@ class ExclGroup extends XFAObject {
       children,
     };
 
-    const assist = this.assist ? this.assist[$toHTML]() : null;
-    if (assist) {
-      html.attributes.title = assist;
-    }
+    applyAssist(this, attributes);
 
     delete this[$extra];
 
@@ -2816,10 +2846,7 @@ class Field extends XFAObject {
       children,
     };
 
-    const assist = this.assist ? this.assist[$toHTML]() : null;
-    if (assist) {
-      html.attributes.title = assist;
-    }
+    applyAssist(this, attributes);
 
     const borderStyle = this.border ? this.border[$toStyle]() : null;
     const bbox = computeBbox(this, html, availableSpace);
@@ -5105,10 +5132,7 @@ class Subform extends XFAObject {
       children,
     };
 
-    const assist = this.assist ? this.assist[$toHTML]() : null;
-    if (assist) {
-      html.attributes.title = assist;
-    }
+    applyAssist(this, attributes);
 
     const result = HTMLResult.success(createWrapper(this, html), bbox);
 
