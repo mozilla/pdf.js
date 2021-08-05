@@ -320,14 +320,7 @@ class Page {
     });
   }
 
-  getOperatorList({
-    handler,
-    sink,
-    task,
-    intent,
-    renderInteractiveForms,
-    annotationStorage,
-  }) {
+  getOperatorList({ handler, sink, task, intent, annotationStorage }) {
     const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ColorSpace",
@@ -384,7 +377,8 @@ class Page {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
         }
-        const intentAny = !!(intent & RenderingIntentFlag.ANY),
+        const renderForms = !!(intent & RenderingIntentFlag.ANNOTATION_FORMS),
+          intentAny = !!(intent & RenderingIntentFlag.ANY),
           intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
           intentPrint = !!(intent & RenderingIntentFlag.PRINT);
 
@@ -402,7 +396,7 @@ class Page {
                 .getOperatorList(
                   partialEvaluator,
                   task,
-                  renderInteractiveForms,
+                  renderForms,
                   annotationStorage
                 )
                 .catch(function (reason) {
