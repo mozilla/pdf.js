@@ -1138,10 +1138,18 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
     });
 
+    let { fontSize } = this.data.defaultAppearanceData;
+    if (!fontSize) {
+      fontSize = 9;
+    }
+    const fontSizeStyle = `calc(${fontSize}px * var(--zoom-factor))`;
+
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
     selectElement.setAttribute("id", id);
+
+    selectElement.style.fontSize = `${fontSize}px`;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
@@ -1156,6 +1164,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
+      if (this.data.combo) {
+        optionElement.style.fontSize = fontSizeStyle;
+      }
       if (this.data.fieldValue.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
       }

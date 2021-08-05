@@ -203,6 +203,8 @@ class BaseViewer {
       this.renderingQueue = options.renderingQueue;
     }
 
+    this._doc = document.documentElement;
+
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.presentationModeState = PresentationModeState.UNKNOWN;
     this._onBeforeDraw = this._onAfterDraw = null;
@@ -706,6 +708,8 @@ class BaseViewer {
       }
       return;
     }
+
+    this._doc.style.setProperty("--zoom-factor", newScale);
 
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
       this._pages[i].update(newScale);

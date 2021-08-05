@@ -1293,6 +1293,10 @@ class ChoiceList extends XFAObject {
     const style = toStyle(this, "border", "margin");
     const ui = this[$getParent]();
     const field = ui[$getParent]();
+    const fontSize = (field.font && field.font.size) || 10;
+    const optionStyle = {
+      fontSize: `calc(${fontSize}px * var(--zoom-factor))`,
+    };
     const children = [];
 
     if (field.items.children.length > 0) {
@@ -1313,6 +1317,7 @@ class ChoiceList extends XFAObject {
           name: "option",
           attributes: {
             value: values[i] || displayed[i],
+            style: optionStyle,
           },
           value: displayed[i],
         };
