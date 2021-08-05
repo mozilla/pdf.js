@@ -110,6 +110,7 @@ class PDFPageView {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
     this._renderError = null;
+    this._isStandalone = !this.renderingQueue?.hasViewer();
 
     this.annotationLayer = null;
     this.textLayer = null;
@@ -280,6 +281,10 @@ class PDFPageView {
     }
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
+    }
+    if (this._isStandalone) {
+      const doc = document.documentElement;
+      doc.style.setProperty("--zoom-factor", this.scale);
     }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
