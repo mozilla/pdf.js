@@ -515,7 +515,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     });
 }
 
-function getRenderingIntent(intent, { isOpList = false }) {
+function getRenderingIntent(intent, { renderForms = false, isOpList = false }) {
   let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
   switch (intent) {
     case "any":
@@ -528,6 +528,9 @@ function getRenderingIntent(intent, { isOpList = false }) {
       break;
     default:
       warn(`getRenderingIntent - invalid intent: ${intent}`);
+  }
+  if (renderForms) {
+    renderingIntent += RenderingIntentFlag.ANNOTATION_FORMS;
   }
   if (isOpList) {
     renderingIntent += RenderingIntentFlag.OPLIST;
@@ -1356,7 +1359,9 @@ class PDFPageProxy {
       this._stats.time("Overall");
     }
 
-    const renderingIntent = getRenderingIntent(intent, {});
+    const renderingIntent = getRenderingIntent(intent, {
+      renderForms: renderInteractiveForms === true,
+    });
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
@@ -1400,7 +1405,6 @@ class PDFPageProxy {
       this._pumpOperatorList({
         pageIndex: this._pageIndex,
         intent: renderingIntent,
-        renderInteractiveForms: renderInteractiveForms === true,
         annotationStorage,
       });
     }

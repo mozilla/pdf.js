@@ -22,6 +22,7 @@ const RenderingIntentFlag = {
   ANY: 0x01,
   DISPLAY: 0x02,
   PRINT: 0x04,
+  ANNOTATION_FORMS: 0x20,
   OPLIST: 0x100,
 };
 
