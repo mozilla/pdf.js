@@ -118,6 +118,9 @@ const MAX_ATTEMPTS_FOR_LRTB_LAYOUT = 2;
 // the loop after having MAX_EMPTY_PAGES empty pages.
 const MAX_EMPTY_PAGES = 3;
 
+// Default value to start with for the tabIndex property.
+const DEFAULT_TAB_INDEX = 5000;
+
 function getBorderDims(node) {
   if (!node || !node.border) {
     return { w: 0, h: 0 };
@@ -173,7 +176,12 @@ function* getContainedChildren(node) {
 
 function setTabIndex(node) {
   while (node) {
-    if (!node.traversal || node[$tabIndex]) {
+    if (!node.traversal) {
+      node[$tabIndex] = node[$getParent]()[$tabIndex];
+      return;
+    }
+
+    if (node[$tabIndex]) {
       return;
     }
 
@@ -186,6 +194,7 @@ function setTabIndex(node) {
     }
 
     if (!next || !next.ref) {
+      node[$tabIndex] = node[$getParent]()[$tabIndex];
       return;
     }
 
@@ -1755,6 +1764,8 @@ class Draw extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    setTabIndex(this);
+
     if (this.presence === "hidden" || this.presence === "inactive") {
       return HTMLResult.EMPTY;
     }
@@ -2309,6 +2320,7 @@ class ExclGroup extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    setTabIndex(this);
     if (
       this.presence === "hidden" ||
       this.presence === "inactive" ||
@@ -2611,6 +2623,8 @@ class Field extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    setTabIndex(this);
+
     if (!this.ui) {
       // It's allowed to not have an ui, specs say:
       //   If the UI element contains no children or is not present,
@@ -2642,7 +2656,6 @@ class Field extends XFAObject {
       this.ui[$appendChild](node);
     }
 
-    setTabIndex(this);
     if (
       !this.ui ||
       this.presence === "hidden" ||
@@ -4833,6 +4846,8 @@ class Subform extends XFAObject {
   }
 
   [$toHTML](availableSpace) {
+    setTabIndex(this);
+
     if (this.break) {
       // break element is deprecated so plug it on one of its replacement
       // breakBefore or breakAfter.
@@ -5255,7 +5270,7 @@ class Template extends XFAObject {
     if (this.subform.children.length >= 2) {
       warn("XFA - Several subforms in template node: please file a bug.");
     }
-    this[$tabIndex] = 1000;
+    this[$tabIndex] = DEFAULT_TAB_INDEX;
   }
 
   [$isSplittable]() {
