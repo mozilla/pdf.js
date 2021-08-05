@@ -33,6 +33,8 @@ import {
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 
+const DEFAULT_TAB_INDEX = 1000;
+
 /**
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
@@ -722,6 +724,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.type = "text";
         element.setAttribute("value", textContent);
       }
+      element.tabIndex = DEFAULT_TAB_INDEX;
 
       elementData.userValue = textContent;
       element.setAttribute("id", id);
@@ -978,6 +981,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("checked", true);
     }
     element.setAttribute("id", id);
+    element.tabIndex = DEFAULT_TAB_INDEX;
 
     element.addEventListener("change", function (event) {
       const name = event.target.name;
@@ -1052,6 +1056,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("checked", true);
     }
     element.setAttribute("id", id);
+    element.tabIndex = DEFAULT_TAB_INDEX;
 
     element.addEventListener("change", function (event) {
       const { target } = event;
@@ -1148,6 +1153,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
     selectElement.setAttribute("id", id);
+    selectElement.tabIndex = DEFAULT_TAB_INDEX;
 
     selectElement.style.fontSize = `${fontSize}px`;
 

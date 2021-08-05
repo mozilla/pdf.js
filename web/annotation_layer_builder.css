@@ -95,6 +95,14 @@
   border: 1px solid transparent;
 }
 
+.annotationLayer .textWidgetAnnotation input :focus,
+.annotationLayer .textWidgetAnnotation textarea :focus,
+.annotationLayer .choiceWidgetAnnotation select :focus,
+.annotationLayer .buttonWidgetAnnotation.checkBox :focus,
+.annotationLayer .buttonWidgetAnnotation.radioButton :focus {
+  outline: auto;
+}
+
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {

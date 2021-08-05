@@ -155,7 +155,13 @@
 .xfaSelect:focus {
   background-image: none;
   background-color: transparent;
-  outline: none;
+  outline: auto;
+  outline-offset: -1px;
+}
+
+.xfaCheckbox:focus,
+.xfaRadio:focus {
+  outline: auto;
 }
 
 .xfaTextfield,
