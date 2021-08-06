@@ -1913,48 +1913,319 @@ class LoopbackPort {
  *   the constants from {@link VerbosityLevel} should be used.
  */
 
-/** @type {any} */
-const PDFWorker = (function PDFWorkerClosure() {
-  const pdfWorkerPorts = new WeakMap();
-  let isWorkerDisabled = false;
-  let fallbackWorkerSrc;
-  let nextFakeWorkerId = 0;
-  let fakeWorkerCapability;
+const PDFWorkerUtil = {
+  isWorkerDisabled: false,
+  fallbackWorkerSrc: null,
+  fakeWorkerId: 0,
+};
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+  // eslint-disable-next-line no-undef
+  if (isNodeJS && typeof __non_webpack_require__ === "function") {
+    // Workers aren't supported in Node.js, force-disabling them there.
+    PDFWorkerUtil.isWorkerDisabled = true;
 
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-    // eslint-disable-next-line no-undef
-    if (isNodeJS && typeof __non_webpack_require__ === "function") {
-      // Workers aren't supported in Node.js, force-disabling them there.
-      isWorkerDisabled = true;
-
-      fallbackWorkerSrc = PDFJSDev.test("LIB")
-        ? "../pdf.worker.js"
-        : "./pdf.worker.js";
-    } else if (typeof document === "object") {
-      const pdfjsFilePath = document?.currentScript?.src;
-      if (pdfjsFilePath) {
-        fallbackWorkerSrc = pdfjsFilePath.replace(
-          /(\.(?:min\.)?js)(\?.*)?$/i,
-          ".worker$1$2"
-        );
-      }
+    PDFWorkerUtil.fallbackWorkerSrc = PDFJSDev.test("LIB")
+      ? "../pdf.worker.js"
+      : "./pdf.worker.js";
+  } else if (typeof document === "object") {
+    const pdfjsFilePath = document?.currentScript?.src;
+    if (pdfjsFilePath) {
+      PDFWorkerUtil.fallbackWorkerSrc = pdfjsFilePath.replace(
+        /(\.(?:min\.)?js)(\?.*)?$/i,
+        ".worker$1$2"
+      );
     }
   }
 
-  function getWorkerSrc() {
+  PDFWorkerUtil.createCDNWrapper = function (url) {
+    // We will rely on blob URL's property to specify origin.
+    // We want this function to fail in case if createObjectURL or Blob do not
+    // exist or fail for some reason -- our Worker creation will fail anyway.
+    const wrapper = `importScripts("${url}");`;
+    return URL.createObjectURL(new Blob([wrapper]));
+  };
+}
+
+/**
+ * PDF.js web worker abstraction that controls the instantiation of PDF
+ * documents. Message handlers are used to pass information from the main
+ * thread to the worker thread and vice versa. If the creation of a web
+ * worker is not possible, a "fake" worker will be used instead.
+ *
+ * @param {PDFWorkerParameters} params - The worker initialization parameters.
+ */
+class PDFWorker {
+  static get _workerPorts() {
+    return shadow(this, "_workerPorts", new WeakMap());
+  }
+
+  constructor({
+    name = null,
+    port = null,
+    verbosity = getVerbosityLevel(),
+  } = {}) {
+    if (port && PDFWorker._workerPorts.has(port)) {
+      throw new Error("Cannot use more than one PDFWorker per port.");
+    }
+
+    this.name = name;
+    this.destroyed = false;
+    this.postMessageTransfers = true;
+    this.verbosity = verbosity;
+
+    this._readyCapability = createPromiseCapability();
+    this._port = null;
+    this._webWorker = null;
+    this._messageHandler = null;
+
+    if (port) {
+      PDFWorker._workerPorts.set(port, this);
+      this._initializeFromPort(port);
+      return;
+    }
+    this._initialize();
+  }
+
+  /**
+   * Promise for worker initialization completion.
+   * @type {Promise<void>}
+   */
+  get promise() {
+    return this._readyCapability.promise;
+  }
+
+  /**
+   * The current `workerPort`, when it exists.
+   * @type {Worker}
+   */
+  get port() {
+    return this._port;
+  }
+
+  /**
+   * The current MessageHandler-instance.
+   * @type {MessageHandler}
+   */
+  get messageHandler() {
+    return this._messageHandler;
+  }
+
+  _initializeFromPort(port) {
+    this._port = port;
+    this._messageHandler = new MessageHandler("main", "worker", port);
+    this._messageHandler.on("ready", function () {
+      // Ignoring "ready" event -- MessageHandler should already be initialized
+      // and ready to accept messages.
+    });
+    this._readyCapability.resolve();
+  }
+
+  _initialize() {
+    // If worker support isn't disabled explicit and the browser has worker
+    // support, create a new web worker and test if it/the browser fulfills
+    // all requirements to run parts of pdf.js in a web worker.
+    // Right now, the requirement is, that an Uint8Array is still an
+    // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
+    if (
+      typeof Worker !== "undefined" &&
+      !PDFWorkerUtil.isWorkerDisabled &&
+      !PDFWorker._mainThreadWorkerMessageHandler
+    ) {
+      let workerSrc = PDFWorker.workerSrc;
+
+      try {
+        // Wraps workerSrc path into blob URL, if the former does not belong
+        // to the same origin.
+        if (
+          typeof PDFJSDev !== "undefined" &&
+          PDFJSDev.test("GENERIC") &&
+          !isSameOrigin(window.location.href, workerSrc)
+        ) {
+          workerSrc = PDFWorkerUtil.createCDNWrapper(
+            new URL(workerSrc, window.location).href
+          );
+        }
+
+        // Some versions of FF can't create a worker on localhost, see:
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+        const worker = new Worker(workerSrc);
+        const messageHandler = new MessageHandler("main", "worker", worker);
+        const terminateEarly = () => {
+          worker.removeEventListener("error", onWorkerError);
+          messageHandler.destroy();
+          worker.terminate();
+          if (this.destroyed) {
+            this._readyCapability.reject(new Error("Worker was destroyed"));
+          } else {
+            // Fall back to fake worker if the termination is caused by an
+            // error (e.g. NetworkError / SecurityError).
+            this._setupFakeWorker();
+          }
+        };
+
+        const onWorkerError = () => {
+          if (!this._webWorker) {
+            // Worker failed to initialize due to an error. Clean up and fall
+            // back to the fake worker.
+            terminateEarly();
+          }
+        };
+        worker.addEventListener("error", onWorkerError);
+
+        messageHandler.on("test", data => {
+          worker.removeEventListener("error", onWorkerError);
+          if (this.destroyed) {
+            terminateEarly();
+            return; // worker was destroyed
+          }
+          if (data) {
+            // supportTypedArray
+            this._messageHandler = messageHandler;
+            this._port = worker;
+            this._webWorker = worker;
+            if (!data.supportTransfers) {
+              this.postMessageTransfers = false;
+            }
+            this._readyCapability.resolve();
+            // Send global setting, e.g. verbosity level.
+            messageHandler.send("configure", {
+              verbosity: this.verbosity,
+            });
+          } else {
+            this._setupFakeWorker();
+            messageHandler.destroy();
+            worker.terminate();
+          }
+        });
+
+        messageHandler.on("ready", data => {
+          worker.removeEventListener("error", onWorkerError);
+          if (this.destroyed) {
+            terminateEarly();
+            return; // worker was destroyed
+          }
+          try {
+            sendTest();
+          } catch (e) {
+            // We need fallback to a faked worker.
+            this._setupFakeWorker();
+          }
+        });
+
+        const sendTest = () => {
+          const testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
+          // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
+          // typed array. Also, checking if we can use transfers.
+          try {
+            messageHandler.send("test", testObj, [testObj.buffer]);
+          } catch (ex) {
+            warn("Cannot use postMessage transfers.");
+            testObj[0] = 0;
+            messageHandler.send("test", testObj);
+          }
+        };
+
+        // It might take time for the worker to initialize. We will try to send
+        // the "test" message immediately, and once the "ready" message arrives.
+        // The worker shall process only the first received "test" message.
+        sendTest();
+        return;
+      } catch (e) {
+        info("The worker has been disabled.");
+      }
+    }
+    // Either workers are disabled, not supported or have thrown an exception.
+    // Thus, we fallback to a faked worker.
+    this._setupFakeWorker();
+  }
+
+  _setupFakeWorker() {
+    if (!PDFWorkerUtil.isWorkerDisabled) {
+      warn("Setting up fake worker.");
+      PDFWorkerUtil.isWorkerDisabled = true;
+    }
+
+    PDFWorker._setupFakeWorkerGlobal
+      .then(WorkerMessageHandler => {
+        if (this.destroyed) {
+          this._readyCapability.reject(new Error("Worker was destroyed"));
+          return;
+        }
+        const port = new LoopbackPort();
+        this._port = port;
+
+        // All fake workers use the same port, making id unique.
+        const id = `fake${PDFWorkerUtil.fakeWorkerId++}`;
+
+        // If the main thread is our worker, setup the handling for the
+        // messages -- the main thread sends to it self.
+        const workerHandler = new MessageHandler(id + "_worker", id, port);
+        WorkerMessageHandler.setup(workerHandler, port);
+
+        const messageHandler = new MessageHandler(id, id + "_worker", port);
+        this._messageHandler = messageHandler;
+        this._readyCapability.resolve();
+        // Send global setting, e.g. verbosity level.
+        messageHandler.send("configure", {
+          verbosity: this.verbosity,
+        });
+      })
+      .catch(reason => {
+        this._readyCapability.reject(
+          new Error(`Setting up fake worker failed: "${reason.message}".`)
+        );
+      });
+  }
+
+  /**
+   * Destroys the worker instance.
+   */
+  destroy() {
+    this.destroyed = true;
+    if (this._webWorker) {
+      // We need to terminate only web worker created resource.
+      this._webWorker.terminate();
+      this._webWorker = null;
+    }
+    PDFWorker._workerPorts.delete(this._port);
+    this._port = null;
+    if (this._messageHandler) {
+      this._messageHandler.destroy();
+      this._messageHandler = null;
+    }
+  }
+
+  /**
+   * @param {PDFWorkerParameters} params - The worker initialization parameters.
+   */
+  static fromPort(params) {
+    if (!params?.port) {
+      throw new Error("PDFWorker.fromPort - invalid method signature.");
+    }
+    if (this._workerPorts.has(params.port)) {
+      return this._workerPorts.get(params.port);
+    }
+    return new PDFWorker(params);
+  }
+
+  /**
+   * The current `workerSrc`, when it exists.
+   * @type {string}
+   */
+  static get workerSrc() {
     if (GlobalWorkerOptions.workerSrc) {
       return GlobalWorkerOptions.workerSrc;
     }
-    if (typeof fallbackWorkerSrc !== "undefined") {
+    if (PDFWorkerUtil.fallbackWorkerSrc !== null) {
       if (!isNodeJS) {
         deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
       }
-      return fallbackWorkerSrc;
+      return PDFWorkerUtil.fallbackWorkerSrc;
     }
     throw new Error('No "GlobalWorkerOptions.workerSrc" specified.');
   }
 
-  function getMainThreadWorkerMessageHandler() {
+  static get _mainThreadWorkerMessageHandler() {
     try {
       return globalThis.pdfjsWorker?.WorkerMessageHandler || null;
     } catch (ex) {
@@ -1962,15 +2233,10 @@ const PDFWorker = (function PDFWorkerClosure() {
     }
   }
 
-  // Loads worker code into main-thread.
-  function setupFakeWorkerGlobal() {
-    if (fakeWorkerCapability) {
-      return fakeWorkerCapability.promise;
-    }
-    fakeWorkerCapability = createPromiseCapability();
-
-    const loader = async function () {
-      const mainWorkerMessageHandler = getMainThreadWorkerMessageHandler();
+  // Loads worker code into the main-thread.
+  static get _setupFakeWorkerGlobal() {
+    const loader = async () => {
+      const mainWorkerMessageHandler = this._mainThreadWorkerMessageHandler;
 
       if (mainWorkerMessageHandler) {
         // The worker was already loaded using e.g. a `<script>` tag.
@@ -1999,283 +2265,24 @@ const PDFWorker = (function PDFWorkerClosure() {
         // the Webpack warnings instead (telling users to ignore them).
         //
         // eslint-disable-next-line no-eval
-        const worker = eval("require")(getWorkerSrc());
+        const worker = eval("require")(this.workerSrc);
         return worker.WorkerMessageHandler;
       }
-      await loadScript(getWorkerSrc());
+      await loadScript(this.workerSrc);
       return window.pdfjsWorker.WorkerMessageHandler;
     };
-    loader().then(fakeWorkerCapability.resolve, fakeWorkerCapability.reject);
 
-    return fakeWorkerCapability.promise;
+    return shadow(this, "_setupFakeWorkerGlobal", loader());
   }
-
-  function createCDNWrapper(url) {
-    // We will rely on blob URL's property to specify origin.
-    // We want this function to fail in case if createObjectURL or Blob do not
-    // exist or fail for some reason -- our Worker creation will fail anyway.
-    const wrapper = "importScripts('" + url + "');";
-    return URL.createObjectURL(new Blob([wrapper]));
-  }
-
-  /**
-   * PDF.js web worker abstraction that controls the instantiation of PDF
-   * documents. Message handlers are used to pass information from the main
-   * thread to the worker thread and vice versa. If the creation of a web
-   * worker is not possible, a "fake" worker will be used instead.
-   */
-  // eslint-disable-next-line no-shadow
-  class PDFWorker {
-    /**
-     * @param {PDFWorkerParameters} params - Worker initialization parameters.
-     */
-    constructor({
-      name = null,
-      port = null,
-      verbosity = getVerbosityLevel(),
-    } = {}) {
-      if (port && pdfWorkerPorts.has(port)) {
-        throw new Error("Cannot use more than one PDFWorker per port");
-      }
-
-      this.name = name;
-      this.destroyed = false;
-      this.postMessageTransfers = true;
-      this.verbosity = verbosity;
-
-      this._readyCapability = createPromiseCapability();
-      this._port = null;
-      this._webWorker = null;
-      this._messageHandler = null;
-
-      if (port) {
-        pdfWorkerPorts.set(port, this);
-        this._initializeFromPort(port);
-        return;
-      }
-      this._initialize();
-    }
-
-    get promise() {
-      return this._readyCapability.promise;
-    }
-
-    get port() {
-      return this._port;
-    }
-
-    get messageHandler() {
-      return this._messageHandler;
-    }
-
-    _initializeFromPort(port) {
-      this._port = port;
-      this._messageHandler = new MessageHandler("main", "worker", port);
-      this._messageHandler.on("ready", function () {
-        // Ignoring 'ready' event -- MessageHandler shall be already initialized
-        // and ready to accept the messages.
-      });
-      this._readyCapability.resolve();
-    }
-
-    _initialize() {
-      // If worker support isn't disabled explicit and the browser has worker
-      // support, create a new web worker and test if it/the browser fulfills
-      // all requirements to run parts of pdf.js in a web worker.
-      // Right now, the requirement is, that an Uint8Array is still an
-      // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
-      if (
-        typeof Worker !== "undefined" &&
-        !isWorkerDisabled &&
-        !getMainThreadWorkerMessageHandler()
-      ) {
-        let workerSrc = getWorkerSrc();
-
-        try {
-          // Wraps workerSrc path into blob URL, if the former does not belong
-          // to the same origin.
-          if (
-            typeof PDFJSDev !== "undefined" &&
-            PDFJSDev.test("GENERIC") &&
-            !isSameOrigin(window.location.href, workerSrc)
-          ) {
-            workerSrc = createCDNWrapper(
-              new URL(workerSrc, window.location).href
-            );
-          }
-
-          // Some versions of FF can't create a worker on localhost, see:
-          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-          const worker = new Worker(workerSrc);
-          const messageHandler = new MessageHandler("main", "worker", worker);
-          const terminateEarly = () => {
-            worker.removeEventListener("error", onWorkerError);
-            messageHandler.destroy();
-            worker.terminate();
-            if (this.destroyed) {
-              this._readyCapability.reject(new Error("Worker was destroyed"));
-            } else {
-              // Fall back to fake worker if the termination is caused by an
-              // error (e.g. NetworkError / SecurityError).
-              this._setupFakeWorker();
-            }
-          };
-
-          const onWorkerError = () => {
-            if (!this._webWorker) {
-              // Worker failed to initialize due to an error. Clean up and fall
-              // back to the fake worker.
-              terminateEarly();
-            }
-          };
-          worker.addEventListener("error", onWorkerError);
-
-          messageHandler.on("test", data => {
-            worker.removeEventListener("error", onWorkerError);
-            if (this.destroyed) {
-              terminateEarly();
-              return; // worker was destroyed
-            }
-            if (data) {
-              // supportTypedArray
-              this._messageHandler = messageHandler;
-              this._port = worker;
-              this._webWorker = worker;
-              if (!data.supportTransfers) {
-                this.postMessageTransfers = false;
-              }
-              this._readyCapability.resolve();
-              // Send global setting, e.g. verbosity level.
-              messageHandler.send("configure", {
-                verbosity: this.verbosity,
-              });
-            } else {
-              this._setupFakeWorker();
-              messageHandler.destroy();
-              worker.terminate();
-            }
-          });
-
-          messageHandler.on("ready", data => {
-            worker.removeEventListener("error", onWorkerError);
-            if (this.destroyed) {
-              terminateEarly();
-              return; // worker was destroyed
-            }
-            try {
-              sendTest();
-            } catch (e) {
-              // We need fallback to a faked worker.
-              this._setupFakeWorker();
-            }
-          });
-
-          const sendTest = () => {
-            const testObj = new Uint8Array([
-              this.postMessageTransfers ? 255 : 0,
-            ]);
-            // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
-            // typed array. Also, checking if we can use transfers.
-            try {
-              messageHandler.send("test", testObj, [testObj.buffer]);
-            } catch (ex) {
-              warn("Cannot use postMessage transfers.");
-              testObj[0] = 0;
-              messageHandler.send("test", testObj);
-            }
-          };
-
-          // It might take time for worker to initialize (especially when AMD
-          // loader is used). We will try to send test immediately, and then
-          // when 'ready' message will arrive. The worker shall process only
-          // first received 'test'.
-          sendTest();
-          return;
-        } catch (e) {
-          info("The worker has been disabled.");
-        }
-      }
-      // Either workers are disabled, not supported or have thrown an exception.
-      // Thus, we fallback to a faked worker.
-      this._setupFakeWorker();
-    }
-
-    _setupFakeWorker() {
-      if (!isWorkerDisabled) {
-        warn("Setting up fake worker.");
-        isWorkerDisabled = true;
-      }
-
-      setupFakeWorkerGlobal()
-        .then(WorkerMessageHandler => {
-          if (this.destroyed) {
-            this._readyCapability.reject(new Error("Worker was destroyed"));
-            return;
-          }
-          const port = new LoopbackPort();
-          this._port = port;
-
-          // All fake workers use the same port, making id unique.
-          const id = "fake" + nextFakeWorkerId++;
-
-          // If the main thread is our worker, setup the handling for the
-          // messages -- the main thread sends to it self.
-          const workerHandler = new MessageHandler(id + "_worker", id, port);
-          WorkerMessageHandler.setup(workerHandler, port);
-
-          const messageHandler = new MessageHandler(id, id + "_worker", port);
-          this._messageHandler = messageHandler;
-          this._readyCapability.resolve();
-          // Send global setting, e.g. verbosity level.
-          messageHandler.send("configure", {
-            verbosity: this.verbosity,
-          });
-        })
-        .catch(reason => {
-          this._readyCapability.reject(
-            new Error(`Setting up fake worker failed: "${reason.message}".`)
-          );
-        });
-    }
-
-    /**
-     * Destroys the worker instance.
-     */
-    destroy() {
-      this.destroyed = true;
-      if (this._webWorker) {
-        // We need to terminate only web worker created resource.
-        this._webWorker.terminate();
-        this._webWorker = null;
-      }
-      pdfWorkerPorts.delete(this._port);
-      this._port = null;
-      if (this._messageHandler) {
-        this._messageHandler.destroy();
-        this._messageHandler = null;
-      }
-    }
-
-    /**
-     * @param {PDFWorkerParameters} params - The worker initialization
-     *   parameters.
-     */
-    static fromPort(params) {
-      if (!params || !params.port) {
-        throw new Error("PDFWorker.fromPort - invalid method signature.");
-      }
-      if (pdfWorkerPorts.has(params.port)) {
-        return pdfWorkerPorts.get(params.port);
-      }
-      return new PDFWorker(params);
-    }
-
-    static getWorkerSrc() {
-      return getWorkerSrc();
-    }
-  }
-  return PDFWorker;
-})();
+}
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+  PDFWorker.getWorkerSrc = function () {
+    deprecated(
+      "`PDFWorker.getWorkerSrc()`, please use `PDFWorker.workerSrc` instead."
+    );
+    return this.workerSrc;
+  };
+}
 
 /**
  * For internal use only.
