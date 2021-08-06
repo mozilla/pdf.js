@@ -494,6 +494,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "geoMissingGCS",
+       "file": "pdfs/geoMissingGCS.pdf",
+       "md5": "c3f6b2ad1505d18b2a70574d065e4f07",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "i9-pdf",
        "file": "pdfs/i9.pdf",
        "md5": "ba7cd54fdff083bb389295bc0415f6c5",
@@ -2972,6 +2978,12 @@
        "md5": "08926ac7a46e27a4abbb31256b3a7b29",
        "rounds": 1,
        "link": false,
+       "type": "eq"
+    },
+    {  "id": "small-geo",
+       "file": "pdfs/small-geo.pdf",
+       "md5": "59eb7577e635033a5c2880a911504235",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue1685",
@@ -5565,6 +5577,12 @@
        "rounds": 1,
        "type": "eq",
        "forms": true
+    },
+    {  "id": "AutoCad_Simple",
+       "file": "pdfs/AutoCad_Simple.pdf",
+       "md5": "bbce3e608f1782b391abbf765ce52264",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "annotation-button-widget-print",
        "file": "pdfs/annotation-button-widget.pdf",

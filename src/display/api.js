@@ -1304,6 +1304,14 @@ class PDFPageProxy {
   }
 
   /**
+   * @type {Object} The geospatial measure dictionary.
+   * @returns Object. Returns an empty Object when not found
+   */
+  getVP() {
+    return this._transport.getVP(this._pageIndex);
+  }
+
+  /**
    * @returns {Promise<Object | null>} A promise that is resolved with
    *   an {Object} with a fake DOM object (a tree structure where elements
    *   are {Object} with a name, attributes (class, style, ...), value and
@@ -2873,6 +2881,12 @@ class WorkerTransport {
 
   getPageJSActions(pageIndex) {
     return this.messageHandler.sendWithPromise("GetPageJSActions", {
+      pageIndex,
+    });
+  }
+
+  getVP(pageIndex) {
+    return this.messageHandler.sendWithPromise("GetVP", {
       pageIndex,
     });
   }

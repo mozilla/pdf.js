@@ -553,6 +553,12 @@ class WorkerMessageHandler {
       });
     });
 
+    handler.on("GetVP", function ({ pageIndex }) {
+      return pdfManager.getPage(pageIndex).then(function (page) {
+        return page.vp;
+      });
+    });
+
     handler.on("GetFieldObjects", function (data) {
       return pdfManager.ensureDoc("fieldObjects");
     });

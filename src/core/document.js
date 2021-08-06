@@ -63,6 +63,7 @@ import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
+import { serializeGeoVP } from "./vp.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
 import { StructTreePage } from "./struct_tree.js";
 import { XFAFactory } from "./xfa/factory.js";
@@ -162,6 +163,22 @@ class Page {
       warn(`Empty /${name} entry.`);
     }
     return null;
+  }
+
+  get vp() {
+    const vp = this._getInheritableProperty("VP", /* getArray = */ true);
+    if (vp && Array.isArray(vp)) {
+      const result = vp
+        .map(x => {
+          return serializeGeoVP(x);
+        })
+        .filter(x => x); // remove undefined members
+      if (result.length === 0) {
+        return undefined;
+      }
+      return shadow(this, "vp", result);
+    }
+    return undefined;
   }
 
   get mediaBox() {
