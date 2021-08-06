@@ -539,6 +539,10 @@ class Area extends XFAObject {
     return true;
   }
 
+  [$isBindable]() {
+    return true;
+  }
+
   [$addHTML](html, bbox) {
     const [x, y, w, h] = bbox;
     this[$extra].width = Math.max(this[$extra].width, x + w);
@@ -2896,6 +2900,11 @@ class Field extends XFAObject {
         }
 
         if (value) {
+          if (this.ui.numericEdit) {
+            value = parseFloat(value);
+            value = isNaN(value) ? "" : value.toString();
+          }
+
           if (ui.children[0].name === "textarea") {
             ui.children[0].attributes.textContent = value;
           } else {
@@ -5189,6 +5198,10 @@ class SubformSet extends XFAObject {
       parent = parent[$getParent]();
     }
     return parent;
+  }
+
+  [$isBindable]() {
+    return true;
   }
 }
 
