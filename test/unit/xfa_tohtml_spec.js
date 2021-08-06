@@ -17,15 +17,18 @@ import { isNodeJS } from "../../src/shared/is_node.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
 describe("XFAFactory", function () {
-  function searchHtmlNode(root, name, value) {
-    if (root[name] === value) {
+  function searchHtmlNode(root, name, value, byAttributes = false) {
+    if (
+      (!byAttributes && root[name] === value) ||
+      (byAttributes && root.attributes && root.attributes[name] === value)
+    ) {
       return root;
     }
     if (!root.children) {
       return null;
     }
     for (const child of root.children) {
-      const node = searchHtmlNode(child, name, value);
+      const node = searchHtmlNode(child, name, value, byAttributes);
       if (node) {
         return node;
       }
@@ -175,6 +178,127 @@ describe("XFAFactory", function () {
       const field = searchHtmlNode(pages, "name", "img");
 
       expect(field.attributes.alt).toEqual("alt text");
+    });
+
+    it("should have a aria heading role and level", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <draw name="BA-Logo" y="5.928mm" x="128.388mm" w="71.237mm" h="9.528mm">
+            <value><text>foo</text></value>
+            <assist role="H2"></assist>
+          </draw>
+        </pageArea>
+      </pageSet>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory({ "xdp:xdp": xml });
+
+      expect(factory.numberPages).toEqual(1);
+
+      const pages = factory.getPages();
+      const page1 = pages.children[0];
+      const wrapper = page1.children[0];
+      const draw = wrapper.children[0];
+
+      expect(draw.attributes.role).toEqual("heading");
+      expect(draw.attributes["aria-level"]).toEqual("2");
+    });
+
+    it("should have aria table role", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <font size="7pt" typeface="FooBar" baselineShift="2pt">
+          </font>
+        </pageArea>
+      </pageSet>
+      <subform name="table" mergeMode="matchTemplate" layout="table">
+        <subform layout="row" name="row1">
+          <assist role="TH"></assist>
+          <draw name="header1" y="5.928mm" x="128.388mm" w="71.237mm" h="9.528mm">
+            <value><text>Header Col 1</text></value>
+          </draw>
+          <draw name="header2" y="5.928mm" x="128.388mm" w="71.237mm" h="9.528mm">
+            <value><text>Header Col 2</text></value>
+          </draw>
+        </subform>
+        <subform layout="row" name="row2">
+          <draw name="cell1" y="5.928mm" x="128.388mm" w="71.237mm" h="9.528mm">
+            <value><text>Cell 1</text></value>
+          </draw>
+          <draw name="cell2" y="5.928mm" x="128.388mm" w="71.237mm" h="9.528mm">
+            <value><text>Cell 2</text></value>
+          </draw>
+        </subform>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory({ "xdp:xdp": xml });
+      factory.setFonts([]);
+
+      expect(factory.numberPages).toEqual(1);
+
+      const pages = factory.getPages();
+      const table = searchHtmlNode(
+        pages,
+        "xfaName",
+        "table",
+        /* byAttributes */ true
+      );
+      expect(table.attributes.role).toEqual("table");
+      const headerRow = searchHtmlNode(
+        pages,
+        "xfaName",
+        "row1",
+        /* byAttributes */ true
+      );
+      expect(headerRow.attributes.role).toEqual("row");
+      const headerCell = searchHtmlNode(
+        pages,
+        "xfaName",
+        "header2",
+        /* byAttributes */ true
+      );
+      expect(headerCell.attributes.role).toEqual("columnheader");
+      const row = searchHtmlNode(
+        pages,
+        "xfaName",
+        "row2",
+        /* byAttributes */ true
+      );
+      expect(row.attributes.role).toEqual("row");
+      const cell = searchHtmlNode(
+        pages,
+        "xfaName",
+        "cell2",
+        /* byAttributes */ true
+      );
+      expect(cell.attributes.role).toEqual("cell");
     });
 
     it("should have a maxLength property", function () {
