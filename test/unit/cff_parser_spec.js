@@ -163,7 +163,7 @@ describe("CFFParser", function () {
       privateDict: privateDictStub,
     }).charStrings;
     expect(charStrings.count).toEqual(1);
-    // shoudn't be sanitized
+    // shouldn't be sanitized
     expect(charStrings.get(0).length).toEqual(38);
   });
 
