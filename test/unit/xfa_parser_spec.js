@@ -1400,4 +1400,30 @@ describe("XFAParser", function () {
       ).toEqual(["a", "b", "c", "d", "e"]);
     });
   });
+
+  it("should make a binding with a element in an area", function () {
+    const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="A" mergeMode="matchTemplate">
+      <area>
+        <field name="B"/>
+      </area>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <A><B>foobar</B></A>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+    `;
+    const root = new XFAParser().parse(xml);
+    const form = new Binder(root).bind();
+
+    expect(searchNode(form, form, "A..B..text")[0][$dump]().$content).toBe(
+      "foobar"
+    );
+  });
 });
