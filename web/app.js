@@ -2139,7 +2139,7 @@ async function loadFakeWorker() {
     window.pdfjsWorker = await import("pdfjs/core/worker.js");
     return undefined;
   }
-  return loadScript(PDFWorker.getWorkerSrc());
+  return loadScript(PDFWorker.workerSrc);
 }
 
 function loadAndEnablePDFBug(enabledTabs) {
