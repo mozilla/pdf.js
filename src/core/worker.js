@@ -688,7 +688,6 @@ class WorkerMessageHandler {
             sink,
             task,
             intent: data.intent,
-            renderInteractiveForms: data.renderInteractiveForms,
             annotationStorage: data.annotationStorage,
           })
           .then(

@@ -25,6 +25,7 @@ import {
   isString,
   OPS,
   PageActionEventType,
+  RenderingIntentFlag,
   shadow,
   stringToBytes,
   stringToPDFString,
@@ -319,14 +320,7 @@ class Page {
     });
   }
 
-  getOperatorList({
-    handler,
-    sink,
-    task,
-    intent,
-    renderInteractiveForms,
-    annotationStorage,
-  }) {
+  getOperatorList({ handler, sink, task, intent, annotationStorage }) {
     const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ColorSpace",
@@ -383,26 +377,26 @@ class Page {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
         }
+        const renderForms = !!(intent & RenderingIntentFlag.ANNOTATION_FORMS),
+          intentAny = !!(intent & RenderingIntentFlag.ANY),
+          intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+          intentPrint = !!(intent & RenderingIntentFlag.PRINT);
 
         // Collect the operator list promises for the annotations. Each promise
         // is resolved with the complete operator list for a single annotation.
-        const annotationIntent = intent.startsWith("oplist-")
-          ? intent.split("-")[1]
-          : intent;
         const opListPromises = [];
         for (const annotation of annotations) {
           if (
-            (annotationIntent === "display" &&
-              annotation.mustBeViewed(annotationStorage)) ||
-            (annotationIntent === "print" &&
-              annotation.mustBePrinted(annotationStorage))
+            intentAny ||
+            (intentDisplay && annotation.mustBeViewed(annotationStorage)) ||
+            (intentPrint && annotation.mustBePrinted(annotationStorage))
           ) {
             opListPromises.push(
               annotation
                 .getOperatorList(
                   partialEvaluator,
                   task,
-                  renderInteractiveForms,
+                  renderForms,
                   annotationStorage
                 )
                 .catch(function (reason) {
@@ -496,15 +490,23 @@ class Page {
   getAnnotationsData(intent) {
     return this._parsedAnnotations.then(function (annotations) {
       const annotationsData = [];
-      for (let i = 0, ii = annotations.length; i < ii; i++) {
+
+      if (annotations.length === 0) {
+        return annotationsData;
+      }
+      const intentAny = !!(intent & RenderingIntentFlag.ANY),
+        intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+        intentPrint = !!(intent & RenderingIntentFlag.PRINT);
+
+      for (const annotation of annotations) {
         // Get the annotation even if it's hidden because
         // JS can change its display.
         if (
-          !intent ||
-          (intent === "display" && annotations[i].viewable) ||
-          (intent === "print" && annotations[i].printable)
+          intentAny ||
+          (intentDisplay && annotation.viewable) ||
+          (intentPrint && annotation.printable)
         ) {
-          annotationsData.push(annotations[i].data);
+          annotationsData.push(annotation.data);
         }
       }
       return annotationsData;

@@ -28,6 +28,7 @@ import {
   isSameOrigin,
   MissingPDFException,
   PasswordException,
+  RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
   stringToBytes,
@@ -512,6 +513,29 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       }
       return workerId;
     });
+}
+
+function getRenderingIntent(intent, { renderForms = false, isOpList = false }) {
+  let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
+  switch (intent) {
+    case "any":
+      renderingIntent = RenderingIntentFlag.ANY;
+      break;
+    case "display":
+      break;
+    case "print":
+      renderingIntent = RenderingIntentFlag.PRINT;
+      break;
+    default:
+      warn(`getRenderingIntent - invalid intent: ${intent}`);
+  }
+  if (renderForms) {
+    renderingIntent += RenderingIntentFlag.ANNOTATION_FORMS;
+  }
+  if (isOpList) {
+    renderingIntent += RenderingIntentFlag.OPLIST;
+  }
+  return renderingIntent;
 }
 
 /**
@@ -1120,8 +1144,8 @@ class PDFDocumentProxy {
  *
  * @typedef {Object} GetAnnotationsParameters
  * @property {string} [intent] - Determines the annotations that are fetched,
- *   can be either 'display' (viewable annotations) or 'print' (printable
- *   annotations). If the parameter is omitted, all annotations are fetched.
+ *   can be 'display' (viewable annotations), 'print' (printable annotations),
+ *   or 'any' (all annotations). The default value is 'display'.
  */
 
 /**
@@ -1131,8 +1155,8 @@ class PDFDocumentProxy {
  * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
  * @property {PageViewport} viewport - Rendering viewport obtained by calling
  *   the `PDFPageProxy.getViewport` method.
- * @property {string} [intent] - Rendering intent, can be 'display' or 'print'.
- *   The default value is 'display'.
+ * @property {string} [intent] - Rendering intent, can be 'display', 'print',
+ *   or 'any'. The default value is 'display'.
  * @property {boolean} [renderInteractiveForms] - Whether or not interactive
  *   form elements are rendered in the display layer. If so, we do not render
  *   them on the canvas as well. The default value is `false`.
@@ -1161,8 +1185,8 @@ class PDFDocumentProxy {
  * Page getOperatorList parameters.
  *
  * @typedef {Object} GetOperatorListParameters
- * @property {string} [intent] - Rendering intent, can be 'display' or 'print'.
- *   The default value is 'display'.
+ * @property {string} [intent] - Rendering intent, can be 'display', 'print',
+ *   or 'any'. The default value is 'display'.
  */
 
 /**
@@ -1276,9 +1300,8 @@ class PDFPageProxy {
    * @returns {Promise<Array<any>>} A promise that is resolved with an
    *   {Array} of the annotation objects.
    */
-  getAnnotations({ intent = null } = {}) {
-    const renderingIntent =
-      intent === "display" || intent === "print" ? intent : null;
+  getAnnotations({ intent = "display" } = {}) {
+    const renderingIntent = getRenderingIntent(intent, {});
 
     if (
       !this._annotationsPromise ||
@@ -1336,7 +1359,9 @@ class PDFPageProxy {
       this._stats.time("Overall");
     }
 
-    const renderingIntent = intent === "print" ? "print" : "display";
+    const renderingIntent = getRenderingIntent(intent, {
+      renderForms: renderInteractiveForms === true,
+    });
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
@@ -1380,7 +1405,6 @@ class PDFPageProxy {
       this._pumpOperatorList({
         pageIndex: this._pageIndex,
         intent: renderingIntent,
-        renderInteractiveForms: renderInteractiveForms === true,
         annotationStorage,
       });
     }
@@ -1390,7 +1414,10 @@ class PDFPageProxy {
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup once rendering has finished (regardless of cleanupAfterRender).
-      if (this.cleanupAfterRender || renderingIntent === "print") {
+      if (
+        this.cleanupAfterRender ||
+        renderingIntent & RenderingIntentFlag.PRINT
+      ) {
         this.pendingCleanup = true;
       }
       this._tryCleanup();
@@ -1426,7 +1453,7 @@ class PDFPageProxy {
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
-      useRequestAnimationFrame: renderingIntent !== "print",
+      useRequestAnimationFrame: !(renderingIntent & RenderingIntentFlag.PRINT),
       pdfBug: this._pdfBug,
     });
 
@@ -1471,9 +1498,7 @@ class PDFPageProxy {
       }
     }
 
-    const renderingIntent = `oplist-${
-      intent === "print" ? "print" : "display"
-    }`;
+    const renderingIntent = getRenderingIntent(intent, { isOpList: true });
     let intentState = this._intentStates.get(renderingIntent);
     if (!intentState) {
       intentState = Object.create(null);
@@ -1588,7 +1613,7 @@ class PDFPageProxy {
         force: true,
       });
 
-      if (intent.startsWith("oplist-")) {
+      if (intent & RenderingIntentFlag.OPLIST) {
         // Avoid errors below, since the renderTasks are just stubs.
         continue;
       }
