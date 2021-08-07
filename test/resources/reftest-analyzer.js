@@ -28,21 +28,20 @@ the terms of any one of the MPL, the GPL or the LGPL.
 
 Original author: L. David Baron <dbaron@dbaron.org>
 */
-/* eslint-disable no-undef */
 
 // Global variables
-window.gPhases = null;
-window.XLINK_NS = "http://www.w3.org/1999/xlink";
-window.SVG_NS = "http://www.w3.org/2000/svg";
-window.gMagPixPaths = []; // 2D array of array-of-two <path> objects used in the pixel magnifier
-window.gMagWidth = 5; // number of zoomed in pixels to show horizontally
-window.gMagHeight = 5; // number of zoomed in pixels to show vertically
-window.gMagZoom = 16; // size of the zoomed in pixels
-window.gImage1Data = null; // ImageData object for the test output image
-window.gImage2Data = null; // ImageData object for the reference image
-window.gFlashingPixels = []; // array of <path> objects that should be flashed due to pixel color mismatch
-window.gPath = ""; // path taken from #web= and prepended to ref/snp urls
-window.gSelected = null; // currently selected comparison
+const XLINK_NS = "http://www.w3.org/1999/xlink";
+const SVG_NS = "http://www.w3.org/2000/svg";
+let gPhases = null;
+const gMagPixPaths = []; // 2D array of array-of-two <path> objects used in the pixel magnifier
+const gMagWidth = 5; // number of zoomed in pixels to show horizontally
+const gMagHeight = 5; // number of zoomed in pixels to show vertically
+const gMagZoom = 16; // size of the zoomed in pixels
+let gImage1Data = null; // ImageData object for the test output image
+let gImage2Data = null; // ImageData object for the reference image
+const gFlashingPixels = []; // array of <path> objects that should be flashed due to pixel color mismatch
+let gPath = ""; // path taken from #web= and prepended to ref/snp urls
+let gSelected = null; // currently selected comparison
 
 window.onload = function () {
   load();
@@ -201,11 +200,10 @@ window.onload = function () {
     processLog(log);
   }
 
-  let gTestItems;
+  const gTestItems = [];
 
   function processLog(contents) {
     const lines = contents.split(/[\r\n]+/);
-    gTestItems = [];
     for (const j in lines) {
       let line = lines[j];
       let match = line.match(/^(?:NEXT ERROR )?REFTEST (.*)$/);
@@ -452,7 +450,7 @@ window.onload = function () {
     const dy_hi = Math.floor(gMagHeight / 2);
 
     flashPixels(false);
-    gFlashingPixels = [];
+    gFlashingPixels.length = 0;
     for (let j = dy_lo; j <= dy_hi; j++) {
       for (let i = dx_lo; i <= dx_hi; i++) {
         const px = x + i;
