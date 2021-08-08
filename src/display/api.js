@@ -1234,6 +1234,7 @@ class PDFPageProxy {
     this.cleanupAfterRender = false;
     this.pendingCleanup = false;
     this._intentStates = new Map();
+    this._annotationPromises = new Map();
     this.destroyed = false;
   }
 
@@ -1303,17 +1304,15 @@ class PDFPageProxy {
   getAnnotations({ intent = "display" } = {}) {
     const renderingIntent = getRenderingIntent(intent, {});
 
-    if (
-      !this._annotationsPromise ||
-      this._annotationsIntent !== renderingIntent
-    ) {
-      this._annotationsPromise = this._transport.getAnnotations(
+    let promise = this._annotationPromises.get(renderingIntent);
+    if (!promise) {
+      promise = this._transport.getAnnotations(
         this._pageIndex,
         renderingIntent
       );
-      this._annotationsIntent = renderingIntent;
+      this._annotationPromises.set(renderingIntent, promise);
     }
-    return this._annotationsPromise;
+    return promise;
   }
 
   /**
@@ -1623,7 +1622,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    this._annotationsPromise = null;
+    this._annotationPromises.clear();
     this._jsActionsPromise = null;
     this._structTreePromise = null;
     this.pendingCleanup = false;
@@ -1658,7 +1657,7 @@ class PDFPageProxy {
 
     this._intentStates.clear();
     this.objs.clear();
-    this._annotationsPromise = null;
+    this._annotationPromises.clear();
     this._jsActionsPromise = null;
     this._structTreePromise = null;
     if (resetStats && this._stats) {
