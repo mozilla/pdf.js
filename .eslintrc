@@ -47,6 +47,7 @@
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-push-push": "error",
     "unicorn/no-instanceof-array": "error",
+    "unicorn/no-useless-spread": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
