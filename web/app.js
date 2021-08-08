@@ -515,8 +515,8 @@ const PDFViewerApplication = {
       renderer: AppOptions.get("renderer"),
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
+      annotationMode: AppOptions.get("annotationMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
-      renderInteractiveForms: AppOptions.get("renderInteractiveForms"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
@@ -1555,7 +1555,7 @@ const PDFViewerApplication = {
       this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
-      !this.pdfViewer.renderInteractiveForms
+      !this.pdfViewer.renderForms
     ) {
       console.warn("Warning: Interactive form support is not enabled");
       this.fallback(UNSUPPORTED_FEATURES.forms);

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, version } from "pdfjs-lib";
+import { AnnotationMode, createPromiseCapability, version } from "pdfjs-lib";
 import {
   CSS_UNITS,
   DEFAULT_SCALE,
@@ -67,10 +67,13 @@ const DEFAULT_CACHE_SIZE = 10;
  *   selection and searching is created, and if the improved text selection
  *   behaviour is enabled. The constants from {TextLayerMode} should be used.
  *   The default value is `TextLayerMode.ENABLE`.
+ * @property {number} [annotationMode] - Controls if the annotation layer is
+ *   created, and if interactive form elements or `AnnotationStorage`-data are
+ *   being rendered. The constants from {@link AnnotationMode} should be used;
+ *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
+ *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
- * @property {boolean} [renderInteractiveForms] - Enables rendering of
- *   interactive form elements. The default value is `true`.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
  *   landscape pages upon printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
@@ -182,11 +185,10 @@ class BaseViewer {
     this.findController = options.findController || null;
     this._scriptingManager = options.scriptingManager || null;
     this.removePageBorders = options.removePageBorders || false;
-    this.textLayerMode = Number.isInteger(options.textLayerMode)
-      ? options.textLayerMode
-      : TextLayerMode.ENABLE;
+    this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
+    this._annotationMode =
+      options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
-    this.renderInteractiveForms = options.renderInteractiveForms !== false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
@@ -238,6 +240,13 @@ class BaseViewer {
     return this._pages.every(function (pageView) {
       return pageView?.pdfPage;
     });
+  }
+
+  /**
+   * @type {boolean}
+   */
+  get renderForms() {
+    return this._annotationMode === AnnotationMode.ENABLE_FORMS;
   }
 
   /**
@@ -529,6 +538,8 @@ class BaseViewer {
           this.textLayerMode !== TextLayerMode.DISABLE && !isPureXfa
             ? this
             : null;
+        const annotationLayerFactory =
+          this._annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -542,12 +553,12 @@ class BaseViewer {
             renderingQueue: this.renderingQueue,
             textLayerFactory,
             textLayerMode: this.textLayerMode,
-            annotationLayerFactory: this,
+            annotationLayerFactory,
+            annotationMode: this._annotationMode,
             xfaLayerFactory,
             textHighlighterFactory: this,
             structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
-            renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
@@ -1289,7 +1300,7 @@ class BaseViewer {
    *   data in forms.
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
-   * @param {boolean} renderInteractiveForms
+   * @param {boolean} renderForms
    * @param {IL10n} l10n
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
@@ -1301,7 +1312,7 @@ class BaseViewer {
     pdfPage,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = false,
+    renderForms = true,
     l10n = NullL10n,
     enableScripting = null,
     hasJSActionsPromise = null,
@@ -1313,7 +1324,7 @@ class BaseViewer {
       annotationStorage:
         annotationStorage || this.pdfDocument?.annotationStorage,
       imageResourcesPath,
-      renderInteractiveForms,
+      renderForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
