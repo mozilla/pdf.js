@@ -27,15 +27,7 @@ import {
   RenderingCancelledException,
 } from "./display/display_utils.js";
 import {
-  build,
-  getDocument,
-  LoopbackPort,
-  PDFDataRangeTransport,
-  PDFWorker,
-  setPDFNetworkStreamFactory,
-  version,
-} from "./display/api.js";
-import {
+  AnnotationMode,
   CMapCompressionType,
   createObjectURL,
   createPromiseCapability,
@@ -52,6 +44,15 @@ import {
   Util,
   VerbosityLevel,
 } from "./shared/util.js";
+import {
+  build,
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFWorker,
+  setPDFNetworkStreamFactory,
+  version,
+} from "./display/api.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { isNodeJS } from "./shared/is_node.js";
@@ -110,14 +111,8 @@ export {
   PDFDateString,
   RenderingCancelledException,
   getXfaPageViewport,
-  // From "./display/api.js":
-  build,
-  getDocument,
-  LoopbackPort,
-  PDFDataRangeTransport,
-  PDFWorker,
-  version,
   // From "./shared/util.js":
+  AnnotationMode,
   CMapCompressionType,
   createObjectURL,
   createPromiseCapability,
@@ -133,6 +128,13 @@ export {
   UNSUPPORTED_FEATURES,
   Util,
   VerbosityLevel,
+  // From "./display/api.js":
+  build,
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFWorker,
+  version,
   // From "./display/annotation_layer.js":
   AnnotationLayer,
   // From "./display/worker_options.js":

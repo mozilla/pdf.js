@@ -380,7 +380,10 @@ class Page {
     // page's operator list to render them.
     return Promise.all([pageListPromise, this._parsedAnnotations]).then(
       function ([pageOpList, annotations]) {
-        if (annotations.length === 0) {
+        if (
+          annotations.length === 0 ||
+          intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
+        ) {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
         }
