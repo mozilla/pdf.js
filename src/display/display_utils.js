@@ -300,7 +300,7 @@ class PageViewport {
 
 class RenderingCancelledException extends BaseException {
   constructor(msg, type) {
-    super(msg);
+    super(msg, "RenderingCancelledException");
     this.type = type;
   }
 }
