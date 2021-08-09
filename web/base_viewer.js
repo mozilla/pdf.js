@@ -152,8 +152,6 @@ class BaseViewer {
         `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
       );
     }
-    this._name = this.constructor.name;
-
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
 
@@ -267,9 +265,7 @@ class BaseViewer {
     }
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
-      console.error(
-        `${this._name}.currentPageNumber: "${val}" is not a valid page.`
-      );
+      console.error(`currentPageNumber: "${val}" is not a valid page.`);
     }
   }
 
@@ -328,9 +324,7 @@ class BaseViewer {
     }
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(page, /* resetCurrentPageView = */ true)) {
-      console.error(
-        `${this._name}.currentPageLabel: "${val}" is not a valid page.`
-      );
+      console.error(`currentPageLabel: "${val}" is not a valid page.`);
     }
   }
 
@@ -642,7 +636,7 @@ class BaseViewer {
       !(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)
     ) {
       this._pageLabels = null;
-      console.error(`${this._name}.setPageLabels: Invalid page labels.`);
+      console.error(`setPageLabels: Invalid page labels.`);
     } else {
       this._pageLabels = labels;
     }
@@ -808,9 +802,7 @@ class BaseViewer {
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:
-          console.error(
-            `${this._name}._setScale: "${value}" is an unknown zoom value.`
-          );
+          console.error(`_setScale: "${value}" is an unknown zoom value.`);
           return;
       }
       this._setScaleUpdatePages(scale, value, noScroll, /* preset = */ true);
@@ -875,8 +867,7 @@ class BaseViewer {
       Number.isInteger(pageNumber) && this._pages[pageNumber - 1];
     if (!pageView) {
       console.error(
-        `${this._name}.scrollPageIntoView: ` +
-          `"${pageNumber}" is not a valid pageNumber parameter.`
+        `scrollPageIntoView: "${pageNumber}" is not a valid pageNumber parameter.`
       );
       return;
     }
@@ -955,8 +946,7 @@ class BaseViewer {
         break;
       default:
         console.error(
-          `${this._name}.scrollPageIntoView: ` +
-            `"${destArray[1].name}" is not a valid destination type.`
+          `scrollPageIntoView: "${destArray[1].name}" is not a valid destination type.`
         );
         return;
     }
@@ -1143,9 +1133,7 @@ class BaseViewer {
         pageNumber <= this.pagesCount
       )
     ) {
-      console.error(
-        `${this._name}.isPageVisible: "${pageNumber}" is not a valid page.`
-      );
+      console.error(`isPageVisible: "${pageNumber}" is not a valid page.`);
       return false;
     }
     return this._getVisiblePages().views.some(function (view) {
@@ -1167,9 +1155,7 @@ class BaseViewer {
         pageNumber <= this.pagesCount
       )
     ) {
-      console.error(
-        `${this._name}.isPageCached: "${pageNumber}" is not a valid page.`
-      );
+      console.error(`isPageCached: "${pageNumber}" is not a valid page.`);
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
