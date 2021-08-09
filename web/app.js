@@ -323,11 +323,11 @@ const PDFViewerApplication = {
    */
   async _parseHashParameters() {
     if (!AppOptions.get("pdfBugEnabled")) {
-      return undefined;
+      return;
     }
     const hash = document.location.hash.substring(1);
     if (!hash) {
-      return undefined;
+      return;
     }
     const params = parseQueryString(hash),
       waitOn = [];
@@ -389,11 +389,13 @@ const PDFViewerApplication = {
     }
 
     if (waitOn.length === 0) {
-      return undefined;
+      return;
     }
-    return Promise.all(waitOn).catch(reason => {
+    try {
+      await Promise.all(waitOn);
+    } catch (reason) {
       console.error(`_parseHashParameters: "${reason.message}".`);
-    });
+    }
   },
 
   /**
