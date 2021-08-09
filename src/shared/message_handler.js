@@ -20,6 +20,7 @@ import {
   MissingPDFException,
   UnexpectedResponseException,
   UnknownErrorException,
+  warn,
 } from "./util.js";
 
 const CallbackKind = {
@@ -42,18 +43,21 @@ const StreamKind = {
 
 function wrapReason(reason) {
   if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
-    assert(
+    !(
       reason instanceof Error ||
-        (typeof reason === "object" && reason !== null),
-      'wrapReason: Expected "reason" to be a (possibly cloned) Error.'
-    );
-  } else {
-    if (typeof reason !== "object" || reason === null) {
-      return reason;
+      (typeof reason === "object" && reason !== null)
+    )
+  ) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      throw new Error(
+        'wrapReason: Expected "reason" to be a (possibly cloned) Error.'
+      );
     }
+    warn('wrapReason: Expected "reason" to be a (possibly cloned) Error.');
+    return reason;
   }
   switch (reason.name) {
     case "AbortException":

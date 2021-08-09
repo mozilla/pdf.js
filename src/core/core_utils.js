@@ -52,17 +52,29 @@ function getArrayLookupTableFactory(initializer) {
 
 class MissingDataException extends BaseException {
   constructor(begin, end) {
-    super(`Missing data [${begin}, ${end})`);
+    super(`Missing data [${begin}, ${end})`, "MissingDataException");
     this.begin = begin;
     this.end = end;
   }
 }
 
-class ParserEOFException extends BaseException {}
+class ParserEOFException extends BaseException {
+  constructor(msg) {
+    super(msg, "ParserEOFException");
+  }
+}
 
-class XRefEntryException extends BaseException {}
+class XRefEntryException extends BaseException {
+  constructor(msg) {
+    super(msg, "XRefEntryException");
+  }
+}
 
-class XRefParseException extends BaseException {}
+class XRefParseException extends BaseException {
+  constructor(msg) {
+    super(msg, "XRefParseException");
+  }
+}
 
 /**
  * Get the value of an inheritable property.

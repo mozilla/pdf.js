@@ -2565,17 +2565,8 @@ class WorkerTransport {
         case "UnknownErrorException":
           reason = new UnknownErrorException(ex.message, ex.details);
           break;
-      }
-      if (!(reason instanceof Error)) {
-        const msg = "DocException - expected a valid Error.";
-        if (
-          typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")
-        ) {
-          unreachable(msg);
-        } else {
-          warn(msg);
-        }
+        default:
+          unreachable("DocException - expected a valid Error.");
       }
       loadingTask._capability.reject(reason);
     });

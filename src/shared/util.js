@@ -459,12 +459,12 @@ function shadow(obj, prop, value) {
  */
 const BaseException = (function BaseExceptionClosure() {
   // eslint-disable-next-line no-shadow
-  function BaseException(message) {
+  function BaseException(message, name) {
     if (this.constructor === BaseException) {
       unreachable("Cannot initialize BaseException.");
     }
     this.message = message;
-    this.name = this.constructor.name;
+    this.name = name;
   }
   BaseException.prototype = new Error();
   BaseException.constructor = BaseException;
@@ -474,25 +474,33 @@ const BaseException = (function BaseExceptionClosure() {
 
 class PasswordException extends BaseException {
   constructor(msg, code) {
-    super(msg);
+    super(msg, "PasswordException");
     this.code = code;
   }
 }
 
 class UnknownErrorException extends BaseException {
   constructor(msg, details) {
-    super(msg);
+    super(msg, "UnknownErrorException");
     this.details = details;
   }
 }
 
-class InvalidPDFException extends BaseException {}
+class InvalidPDFException extends BaseException {
+  constructor(msg) {
+    super(msg, "InvalidPDFException");
+  }
+}
 
-class MissingPDFException extends BaseException {}
+class MissingPDFException extends BaseException {
+  constructor(msg) {
+    super(msg, "MissingPDFException");
+  }
+}
 
 class UnexpectedResponseException extends BaseException {
   constructor(msg, status) {
-    super(msg);
+    super(msg, "UnexpectedResponseException");
     this.status = status;
   }
 }
@@ -500,12 +508,20 @@ class UnexpectedResponseException extends BaseException {
 /**
  * Error caused during parsing PDF data.
  */
-class FormatError extends BaseException {}
+class FormatError extends BaseException {
+  constructor(msg) {
+    super(msg, "FormatError");
+  }
+}
 
 /**
  * Error used to indicate task cancellation.
  */
-class AbortException extends BaseException {}
+class AbortException extends BaseException {
+  constructor(msg) {
+    super(msg, "AbortException");
+  }
+}
 
 const NullCharactersRegExp = /\x00/g;
 
