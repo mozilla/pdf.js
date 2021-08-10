@@ -416,7 +416,7 @@ function _isValidProtocol(url) {
     case "ftp:":
     case "mailto:":
     case "tel:":
-    case "capacitor":
+    case "capacitor": // modified by ngx-extended-pdf-viewer #864
       return true;
     default:
       return false;
