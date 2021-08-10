@@ -59,7 +59,7 @@ class PDFNodeStream {
     this.source = source;
     this.url = parseUrl(source.url);
     this.isHttp =
-      this.url.protocol === "http:" || this.url.protocol === "https:";
+      this.url.protocol === "http:" || this.url.protocol === "https:" || this.url.protocol === "ftp:" || this.url.protocol === "capacitor:";
     // Check if url refers to filesystem.
     this.isFsUrl = this.url.protocol === "file:";
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};

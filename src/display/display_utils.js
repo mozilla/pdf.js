@@ -493,7 +493,7 @@ function isValidFetchUrl(url, baseUrl) {
   try {
     const { protocol } = baseUrl ? new URL(url, baseUrl) : new URL(url);
     // The Fetch API only supports the http/https protocols, and not file/ftp.
-    return protocol === "http:" || protocol === "https:";
+    return protocol === "http:" || protocol === "https:" || protocol === "ftp:" || protocol === "capacitor:";
   } catch (ex) {
     return false; // `new URL()` will throw on incorrect data.
   }
