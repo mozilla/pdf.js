@@ -324,7 +324,7 @@ class PDFScriptingManager {
         element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
       } else {
         // The element hasn't been rendered yet, use the AnnotationStorage.
-        this._pdfDocument?.annotationStorage.setValue(elementId, detail);
+        this._pdfDocument?.annotationStorage.setValue(elementId, undefined, detail); // #868 modified by ngx-extended-pdf-viewer
       }
     }
   }
