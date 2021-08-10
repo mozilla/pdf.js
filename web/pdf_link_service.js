@@ -263,20 +263,20 @@ class PDFLinkService {
     let pageNumber, dest;
     if (hash.includes("=")) {
       const params = parseQueryString(hash);
-      if ("search" in params) {
+      if (params.has("search")) {
         this.eventBus.dispatch("findfromurlhash", {
           source: this,
-          query: params.search.replace(/"/g, ""),
-          phraseSearch: params.phrase === "true",
+          query: params.get("search").replace(/"/g, ""),
+          phraseSearch: params.get("phrase") === "true",
         });
       }
       // borrowing syntax from "Parameters for Opening PDF Files"
-      if ("page" in params) {
-        pageNumber = params.page | 0 || 1;
+      if (params.has("page")) {
+        pageNumber = params.get("page") | 0 || 1;
       }
-      if ("zoom" in params) {
+      if (params.has("zoom")) {
         // Build the destination array.
-        const zoomArgs = params.zoom.split(","); // scale,left,top
+        const zoomArgs = params.get("zoom").split(","); // scale,left,top
         const zoomArg = zoomArgs[0];
         const zoomArgNumber = parseFloat(zoomArg);
 
@@ -336,16 +336,16 @@ class PDFLinkService {
       } else if (pageNumber) {
         this.page = pageNumber; // simple page
       }
-      if ("pagemode" in params) {
+      if (params.has("pagemode")) {
         this.eventBus.dispatch("pagemode", {
           source: this,
-          mode: params.pagemode,
+          mode: params.get("pagemode"),
         });
       }
       // Ensure that this parameter is *always* handled last, in order to
       // guarantee that it won't be overridden (e.g. by the "page" parameter).
-      if ("nameddest" in params) {
-        this.goToDestination(params.nameddest);
+      if (params.has("nameddest")) {
+        this.goToDestination(params.get("nameddest"));
       }
     } else {
       // Named (or explicit) destination.

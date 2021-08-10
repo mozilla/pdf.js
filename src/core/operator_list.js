@@ -13,7 +13,14 @@
  * limitations under the License.
  */
 
-import { assert, ImageKind, OPS, shadow, warn } from "../shared/util.js";
+import {
+  assert,
+  ImageKind,
+  OPS,
+  RenderingIntentFlag,
+  shadow,
+  warn,
+} from "../shared/util.js";
 
 function addState(parentState, pattern, checkFn, iterateFn, processFn) {
   let state = parentState;
@@ -597,11 +604,11 @@ class OperatorList {
     return shadow(this, "CHUNK_SIZE_ABOUT", this.CHUNK_SIZE - 5);
   }
 
-  constructor(intent, streamSink) {
+  constructor(intent = 0, streamSink) {
     this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
-    if (streamSink && !(intent && intent.startsWith("oplist-"))) {
+    if (streamSink && !(intent & RenderingIntentFlag.OPLIST)) {
       this.optimizer = new QueueOptimizer(this);
     } else {
       this.optimizer = new NullOptimizer(this);

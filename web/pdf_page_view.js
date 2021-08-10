@@ -27,9 +27,9 @@ import {
   RenderingCancelledException,
   SVGGraphics,
 } from "pdfjs-lib";
+import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
 import { RenderingStates } from "./pdf_rendering_queue.js";
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 import canvasSize from "canvas-size";
 import { warn } from "../src/shared/util.js";
 
@@ -65,7 +65,7 @@ import { warn } from "../src/shared/util.js";
  * @property {IL10n} l10n - Localization service.
  */
 
-const MAX_CANVAS_PIXELS = viewerCompatibilityParams.maxCanvasPixels || 16777216;
+const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
 
 /**
  * @implements {IRenderableView}
@@ -112,6 +112,7 @@ class PDFPageView {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
     this._renderError = null;
+    this._isStandalone = !this.renderingQueue?.hasViewer();
 
     this.annotationLayer = null;
     this.textLayer = null;
@@ -282,6 +283,10 @@ class PDFPageView {
     }
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
+    }
+    if (this._isStandalone) {
+      const doc = document.documentElement;
+      doc.style.setProperty("--zoom-factor", this.scale);
     }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
@@ -843,7 +848,7 @@ class PDFPageView {
       const svgGfx = new SVGGraphics(
         pdfPage.commonObjs,
         pdfPage.objs,
-        /* forceDataSchema = */ viewerCompatibilityParams.disableCreateObjectURL
+        /* forceDataSchema = */ compatibilityParams.disableCreateObjectURL
       );
       return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
         ensureNotCancelled();

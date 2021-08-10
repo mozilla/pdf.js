@@ -16,48 +16,53 @@
 import {
   CalibriBoldFactors,
   CalibriBoldItalicFactors,
-  CalibriBoldItalicLineHeight,
-  CalibriBoldLineHeight,
+  CalibriBoldItalicMetrics,
+  CalibriBoldMetrics,
   CalibriItalicFactors,
-  CalibriItalicLineHeight,
+  CalibriItalicMetrics,
   CalibriRegularFactors,
-  CalibriRegularLineHeight,
+  CalibriRegularMetrics,
 } from "./calibri_factors.js";
+import { Dict, Name } from "./primitives.js";
 import {
   HelveticaBoldFactors,
   HelveticaBoldItalicFactors,
-  HelveticaBoldItalicLineHeight,
-  HelveticaBoldLineHeight,
+  HelveticaBoldItalicMetrics,
+  HelveticaBoldMetrics,
   HelveticaItalicFactors,
-  HelveticaItalicLineHeight,
+  HelveticaItalicMetrics,
   HelveticaRegularFactors,
-  HelveticaRegularLineHeight,
+  HelveticaRegularMetrics,
 } from "./helvetica_factors.js";
 import {
+  LiberationSansBoldItalicMapping,
   LiberationSansBoldItalicWidths,
+  LiberationSansBoldMapping,
   LiberationSansBoldWidths,
+  LiberationSansItalicMapping,
   LiberationSansItalicWidths,
+  LiberationSansRegularMapping,
   LiberationSansRegularWidths,
 } from "./liberationsans_widths.js";
 import {
   MyriadProBoldFactors,
   MyriadProBoldItalicFactors,
-  MyriadProBoldItalicLineHeight,
-  MyriadProBoldLineHeight,
+  MyriadProBoldItalicMetrics,
+  MyriadProBoldMetrics,
   MyriadProItalicFactors,
-  MyriadProItalicLineHeight,
+  MyriadProItalicMetrics,
   MyriadProRegularFactors,
-  MyriadProRegularLineHeight,
+  MyriadProRegularMetrics,
 } from "./myriadpro_factors.js";
 import {
   SegoeuiBoldFactors,
   SegoeuiBoldItalicFactors,
-  SegoeuiBoldItalicLineHeight,
-  SegoeuiBoldLineHeight,
+  SegoeuiBoldItalicMetrics,
+  SegoeuiBoldMetrics,
   SegoeuiItalicFactors,
-  SegoeuiItalicLineHeight,
+  SegoeuiItalicMetrics,
   SegoeuiRegularFactors,
-  SegoeuiRegularLineHeight,
+  SegoeuiRegularMetrics,
 } from "./segoeui_factors.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { normalizeFontName } from "./fonts_utils.js";
@@ -67,13 +72,15 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     name: "LiberationSans-Regular",
     factors: MyriadProRegularFactors,
     baseWidths: LiberationSansRegularWidths,
-    lineHeight: MyriadProRegularLineHeight,
+    baseMapping: LiberationSansRegularMapping,
+    metrics: MyriadProRegularMetrics,
   };
   t["MyriadPro-Bold"] = t["PdfJS-Fallback-Bold"] = {
     name: "LiberationSans-Bold",
     factors: MyriadProBoldFactors,
     baseWidths: LiberationSansBoldWidths,
-    lineHeight: MyriadProBoldLineHeight,
+    baseMapping: LiberationSansBoldMapping,
+    metrics: MyriadProBoldMetrics,
   };
   t["MyriadPro-It"] =
     t["MyriadPro-Italic"] =
@@ -82,7 +89,8 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
         name: "LiberationSans-Italic",
         factors: MyriadProItalicFactors,
         baseWidths: LiberationSansItalicWidths,
-        lineHeight: MyriadProItalicLineHeight,
+        baseMapping: LiberationSansItalicMapping,
+        metrics: MyriadProItalicMetrics,
       };
   t["MyriadPro-BoldIt"] =
     t["MyriadPro-BoldItalic"] =
@@ -91,7 +99,8 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
         name: "LiberationSans-BoldItalic",
         factors: MyriadProBoldItalicFactors,
         baseWidths: LiberationSansBoldItalicWidths,
-        lineHeight: MyriadProBoldItalicLineHeight,
+        baseMapping: LiberationSansBoldItalicMapping,
+        metrics: MyriadProBoldItalicMetrics,
       };
   t.ArialMT =
     t.Arial =
@@ -99,90 +108,106 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
       {
         name: "LiberationSans-Regular",
         baseWidths: LiberationSansRegularWidths,
+        baseMapping: LiberationSansRegularMapping,
       };
   t["Arial-BoldMT"] = t["Arial-Bold"] = {
     name: "LiberationSans-Bold",
     baseWidths: LiberationSansBoldWidths,
+    baseMapping: LiberationSansBoldMapping,
   };
   t["Arial-ItalicMT"] = t["Arial-Italic"] = {
     name: "LiberationSans-Italic",
     baseWidths: LiberationSansItalicWidths,
+    baseMapping: LiberationSansItalicMapping,
   };
   t["Arial-BoldItalicMT"] = t["Arial-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     baseWidths: LiberationSansBoldItalicWidths,
+    baseMapping: LiberationSansBoldItalicMapping,
   };
   t["Calibri-Regular"] = {
     name: "LiberationSans-Regular",
     factors: CalibriRegularFactors,
     baseWidths: LiberationSansRegularWidths,
-    lineHeight: CalibriRegularLineHeight,
+    baseMapping: LiberationSansRegularMapping,
+    metrics: CalibriRegularMetrics,
   };
   t["Calibri-Bold"] = {
     name: "LiberationSans-Bold",
     factors: CalibriBoldFactors,
     baseWidths: LiberationSansBoldWidths,
-    lineHeight: CalibriBoldLineHeight,
+    baseMapping: LiberationSansBoldMapping,
+    metrics: CalibriBoldMetrics,
   };
   t["Calibri-Italic"] = {
     name: "LiberationSans-Italic",
     factors: CalibriItalicFactors,
     baseWidths: LiberationSansItalicWidths,
-    lineHeight: CalibriItalicLineHeight,
+    baseMapping: LiberationSansItalicMapping,
+    metrics: CalibriItalicMetrics,
   };
   t["Calibri-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     factors: CalibriBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
-    lineHeight: CalibriBoldItalicLineHeight,
+    baseMapping: LiberationSansBoldItalicMapping,
+    metrics: CalibriBoldItalicMetrics,
   };
   t["Segoeui-Regular"] = {
     name: "LiberationSans-Regular",
     factors: SegoeuiRegularFactors,
     baseWidths: LiberationSansRegularWidths,
-    lineHeight: SegoeuiRegularLineHeight,
+    baseMapping: LiberationSansRegularMapping,
+    metrics: SegoeuiRegularMetrics,
   };
   t["Segoeui-Bold"] = {
     name: "LiberationSans-Bold",
     factors: SegoeuiBoldFactors,
     baseWidths: LiberationSansBoldWidths,
-    lineHeight: SegoeuiBoldLineHeight,
+    baseMapping: LiberationSansBoldMapping,
+    metrics: SegoeuiBoldMetrics,
   };
   t["Segoeui-Italic"] = {
     name: "LiberationSans-Italic",
     factors: SegoeuiItalicFactors,
     baseWidths: LiberationSansItalicWidths,
-    lineHeight: SegoeuiItalicLineHeight,
+    baseMapping: LiberationSansItalicMapping,
+    metrics: SegoeuiItalicMetrics,
   };
   t["Segoeui-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     factors: SegoeuiBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
-    lineHeight: SegoeuiBoldItalicLineHeight,
+    baseMapping: LiberationSansBoldItalicMapping,
+    metrics: SegoeuiBoldItalicMetrics,
   };
   t["Helvetica-Regular"] = t.Helvetica = {
     name: "LiberationSans-Regular",
     factors: HelveticaRegularFactors,
     baseWidths: LiberationSansRegularWidths,
-    lineHeight: HelveticaRegularLineHeight,
+    baseMapping: LiberationSansRegularMapping,
+    metrics: HelveticaRegularMetrics,
   };
   t["Helvetica-Bold"] = {
     name: "LiberationSans-Bold",
     factors: HelveticaBoldFactors,
     baseWidths: LiberationSansBoldWidths,
-    lineHeight: HelveticaBoldLineHeight,
+    baseMapping: LiberationSansBoldMapping,
+    metrics: HelveticaBoldMetrics,
   };
   t["Helvetica-Italic"] = {
     name: "LiberationSans-Italic",
     factors: HelveticaItalicFactors,
     baseWidths: LiberationSansItalicWidths,
-    lineHeight: HelveticaItalicLineHeight,
+    baseMapping: LiberationSansItalicMapping,
+    metrics: HelveticaItalicMetrics,
   };
   t["Helvetica-BoldItalic"] = {
     name: "LiberationSans-BoldItalic",
     factors: HelveticaBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
-    lineHeight: HelveticaBoldItalicLineHeight,
+    baseMapping: LiberationSansBoldItalicMapping,
+    metrics: HelveticaBoldItalicMetrics,
   };
 });
 
@@ -198,11 +223,80 @@ function getXfaFontWidths(name) {
     return null;
   }
 
-  const { baseWidths, factors } = info;
+  const { baseWidths, baseMapping, factors } = info;
+  let rescaledBaseWidths;
   if (!factors) {
-    return baseWidths;
+    rescaledBaseWidths = baseWidths;
+  } else {
+    rescaledBaseWidths = baseWidths.map((w, i) => w * factors[i]);
   }
-  return baseWidths.map((w, i) => w * factors[i]);
+
+  let currentCode = -2;
+  let currentArray;
+
+  // Widths array for composite font is:
+  // CharCode1 [10, 20, 30] ...
+  // which means:
+  //   - CharCode1 has a width equal to 10
+  //   - CharCode1+1 has a width equal to 20
+  //   - CharCode1+2 has a width equal to 30
+  //
+  // The baseMapping array contains a map for glyph index to unicode.
+  // So from baseMapping we'll get sorted unicodes and their positions
+  // (i.e. glyph indices) and then we put widths in an array for the
+  // the consecutive unicodes.
+  const newWidths = [];
+  for (const [unicode, glyphIndex] of baseMapping
+    .map(
+      (charUnicode, index) => [
+        charUnicode,
+        index,
+      ] /* collect unicode and glyph index */
+    )
+    .sort(
+      ([unicode1], [unicode2]) =>
+        unicode1 - unicode2 /* order by unicode only */
+    )) {
+    if (unicode === -1) {
+      continue;
+    }
+
+    if (unicode === currentCode + 1) {
+      currentArray.push(rescaledBaseWidths[glyphIndex]);
+      currentCode += 1;
+    } else {
+      currentCode = unicode;
+      currentArray = [rescaledBaseWidths[glyphIndex]];
+      newWidths.push(unicode, currentArray);
+    }
+  }
+
+  return newWidths;
 }
 
-export { getXfaFontName, getXfaFontWidths };
+function getXfaFontDict(name) {
+  const widths = getXfaFontWidths(name);
+  const dict = new Dict(null);
+  dict.set("BaseFont", Name.get(name));
+  dict.set("Type", Name.get("Font"));
+  dict.set("Subtype", Name.get("CIDFontType2"));
+  dict.set("Encoding", Name.get("Identity-H"));
+  dict.set("CIDToGIDMap", Name.get("Identity"));
+  dict.set("W", widths);
+  dict.set("FirstChar", widths[0]);
+  dict.set(
+    "LastChar",
+    widths[widths.length - 2] + widths[widths.length - 1].length - 1
+  );
+  const descriptor = new Dict(null);
+  dict.set("FontDescriptor", descriptor);
+  const systemInfo = new Dict(null);
+  systemInfo.set("Ordering", "Identity");
+  systemInfo.set("Registry", "Adobe");
+  systemInfo.set("Supplement", 0);
+  dict.set("CIDSystemInfo", systemInfo);
+
+  return dict;
+}
+
+export { getXfaFontDict, getXfaFontName };

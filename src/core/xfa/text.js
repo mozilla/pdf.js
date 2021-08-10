@@ -15,7 +15,7 @@
 
 import { selectFont } from "./fonts.js";
 
-const WIDTH_FACTOR = 1.01;
+const WIDTH_FACTOR = 1.02;
 
 class FontInfo {
   constructor(xfaFont, margin, lineHeight, fontFinder) {
@@ -181,25 +181,32 @@ class TextMeasure {
     if (lastFont.pdfFont) {
       const letterSpacing = lastFont.xfaFont.letterSpacing;
       const pdfFont = lastFont.pdfFont;
+      const fontLineHeight = pdfFont.lineHeight || 1.2;
       const lineHeight =
-        lastFont.lineHeight ||
-        Math.ceil(Math.max(1.2, pdfFont.lineHeight) * fontSize);
+        lastFont.lineHeight || Math.max(1.2, fontLineHeight) * fontSize;
+      const lineGap = pdfFont.lineGap === undefined ? 0.2 : pdfFont.lineGap;
+      const noGap = fontLineHeight - lineGap;
+      const firstLineHeight = Math.max(1, noGap) * fontSize;
       const scale = fontSize / 1000;
+      const fallbackWidth =
+        pdfFont.defaultWidth || pdfFont.charsToGlyphs(" ")[0].width;
 
       for (const line of str.split(/[\u2029\n]/)) {
         const encodedLine = pdfFont.encodeString(line).join("");
         const glyphs = pdfFont.charsToGlyphs(encodedLine);
 
         for (const glyph of glyphs) {
+          const width = glyph.width || fallbackWidth;
           this.glyphs.push([
-            glyph.width * scale + letterSpacing,
+            width * scale + letterSpacing,
             lineHeight,
-            glyph.unicode === " ",
+            firstLineHeight,
+            glyph.unicode,
             false,
           ]);
         }
 
-        this.glyphs.push([0, 0, false, true]);
+        this.glyphs.push([0, 0, 0, "\n", true]);
       }
       this.glyphs.pop();
       return;
@@ -208,10 +215,10 @@ class TextMeasure {
     // When we have no font in the pdf, just use the font size as default width.
     for (const line of str.split(/[\u2029\n]/)) {
       for (const char of line.split("")) {
-        this.glyphs.push([fontSize, fontSize, char === " ", false]);
+        this.glyphs.push([fontSize, 1.2 * fontSize, fontSize, char, false]);
       }
 
-      this.glyphs.push([0, 0, false, true]);
+      this.glyphs.push([0, 0, 0, "\n", true]);
     }
     this.glyphs.pop();
   }
@@ -224,9 +231,13 @@ class TextMeasure {
       currentLineWidth = 0,
       currentLineHeight = 0;
     let isBroken = false;
+    let isFirstLine = true;
 
     for (let i = 0, ii = this.glyphs.length; i < ii; i++) {
-      const [glyphWidth, glyphHeight, isSpace, isEOL] = this.glyphs[i];
+      const [glyphWidth, lineHeight, firstLineHeight, char, isEOL] =
+        this.glyphs[i];
+      const isSpace = char === " ";
+      const glyphHeight = isFirstLine ? firstLineHeight : lineHeight;
       if (isEOL) {
         width = Math.max(width, currentLineWidth);
         currentLineWidth = 0;
@@ -234,6 +245,7 @@ class TextMeasure {
         currentLineHeight = glyphHeight;
         lastSpacePos = -1;
         lastSpaceWidth = 0;
+        isFirstLine = false;
         continue;
       }
 
@@ -247,6 +259,7 @@ class TextMeasure {
           lastSpacePos = -1;
           lastSpaceWidth = 0;
           isBroken = true;
+          isFirstLine = false;
         } else {
           currentLineHeight = Math.max(glyphHeight, currentLineHeight);
           lastSpaceWidth = currentLineWidth;
@@ -272,6 +285,7 @@ class TextMeasure {
           currentLineWidth = glyphWidth;
         }
         isBroken = true;
+        isFirstLine = false;
 
         continue;
       }

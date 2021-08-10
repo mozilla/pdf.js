@@ -37,6 +37,10 @@ const MIN_FONT_SIZE = 16;
 const MAX_FONT_SIZE = 100;
 const MAX_GROUP_SIZE = 4096;
 
+// This value comes from sampling a few PDFs that re-use patterns, there doesn't
+// seem to be any that benefit from caching more than 2 patterns.
+const MAX_CACHED_CANVAS_PATTERNS = 2;
+
 // Defines the time the `executeOperatorList`-method is going to be executing
 // before it stops and shedules a continue of execution.
 const EXECUTION_TIME = 15; // ms
@@ -228,6 +232,46 @@ class CachedCanvases {
       this.canvasFactory.destroy(canvasEntry);
       delete this.cache[id];
     }
+  }
+}
+
+/**
+ * Least recently used cache implemented with a JS Map. JS Map keys are ordered
+ * by last insertion.
+ */
+class LRUCache {
+  constructor(maxSize = 0) {
+    this._cache = new Map();
+    this._maxSize = maxSize;
+  }
+
+  has(key) {
+    return this._cache.has(key);
+  }
+
+  get(key) {
+    if (this._cache.has(key)) {
+      // Delete and set the value so it's moved to the end of the map iteration.
+      const value = this._cache.get(key);
+      this._cache.delete(key);
+      this._cache.set(key, value);
+    }
+    return this._cache.get(key);
+  }
+
+  set(key, value) {
+    if (this._maxSize <= 0) {
+      return;
+    }
+    if (this._cache.size + 1 > this._maxSize) {
+      // Delete the least recently used.
+      this._cache.delete(this._cache.keys().next().value);
+    }
+    this._cache.set(key, value);
+  }
+
+  clear() {
+    this._cache.clear();
   }
 }
 
@@ -866,6 +910,7 @@ class CanvasGraphics {
     this.markedContentStack = [];
     this.optionalContentConfig = optionalContentConfig;
     this.cachedCanvases = new CachedCanvases(this.canvasFactory);
+    this.cachedCanvasPatterns = new LRUCache(MAX_CACHED_CANVAS_PATTERNS);
     this.cachedPatterns = new Map();
     if (canvasCtx) {
       // NOTE: if mozCurrentTransform is polyfilled, then the current state of
@@ -1017,6 +1062,7 @@ class CanvasGraphics {
     }
 
     this.cachedCanvases.clear();
+    this.cachedCanvasPatterns.clear();
     this.cachedPatterns.clear();
 
     if (this.imageLayer) {
@@ -2125,7 +2171,7 @@ class CanvasGraphics {
         baseTransform
       );
     } else {
-      pattern = this._getPattern(IR[1]);
+      pattern = this._getPattern(IR[1], IR[2]);
     }
     return pattern;
   }
@@ -2152,12 +2198,20 @@ class CanvasGraphics {
     this.current.patternFill = false;
   }
 
-  _getPattern(objId) {
+  _getPattern(objId, matrix = null) {
+    let pattern;
     if (this.cachedPatterns.has(objId)) {
-      return this.cachedPatterns.get(objId);
+      pattern = this.cachedPatterns.get(objId);
+    } else {
+      pattern = getShadingPattern(
+        this.objs.get(objId),
+        this.cachedCanvasPatterns
+      );
+      this.cachedPatterns.set(objId, pattern);
     }
-    const pattern = getShadingPattern(this.objs.get(objId));
-    this.cachedPatterns.set(objId, pattern);
+    if (matrix) {
+      pattern.matrix = matrix;
+    }
     return pattern;
   }
 

@@ -70,6 +70,7 @@ import {
   reverseIfRtl,
 } from "./unicode.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
+import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
@@ -86,7 +87,6 @@ import { DecodeStream } from "./decode_stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
-import { getXfaFontName } from "./xfa_fonts.js";
 import { MurmurHash3_64 } from "./murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -1321,20 +1321,17 @@ class PartialEvaluator {
   }
 
   parseShading({
-    keyObj,
     shading,
     resources,
     localColorSpaceCache,
     localShadingPatternCache,
-    matrix = null,
   }) {
     // Shadings and patterns may be referenced by the same name but the resource
     // dictionary could be different so we can't use the name for the cache key.
-    let id = localShadingPatternCache.get(keyObj);
+    let id = localShadingPatternCache.get(shading);
     if (!id) {
       var shadingFill = Pattern.parseShading(
         shading,
-        matrix,
         this.xref,
         resources,
         this.handler,
@@ -1343,7 +1340,7 @@ class PartialEvaluator {
       );
       const patternIR = shadingFill.getIR();
       id = `pattern_${this.idFactory.createObjId()}`;
-      localShadingPatternCache.set(keyObj, id);
+      localShadingPatternCache.set(shading, id);
       this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
     }
     return id;
@@ -1408,14 +1405,12 @@ class PartialEvaluator {
           const shading = dict.get("Shading");
           const matrix = dict.getArray("Matrix");
           const objId = this.parseShading({
-            keyObj: pattern,
             shading,
-            matrix,
             resources,
             localColorSpaceCache,
             localShadingPatternCache,
           });
-          operatorList.addOp(fn, ["Shading", objId]);
+          operatorList.addOp(fn, ["Shading", objId, matrix]);
           return undefined;
         }
         throw new FormatError(`Unknown PatternType: ${typeNum}`);
@@ -1948,7 +1943,6 @@ class PartialEvaluator {
               throw new FormatError("No shading object found");
             }
             const patternId = self.parseShading({
-              keyObj: shading,
               shading,
               resources,
               localColorSpaceCache,
@@ -3930,11 +3924,17 @@ class PartialEvaluator {
       const standardFontName = getXfaFontName(fontName.name);
       if (standardFontName) {
         cssFontInfo.fontFamily = `${cssFontInfo.fontFamily}-PdfJS-XFA`;
-        cssFontInfo.lineHeight = standardFontName.lineHeight || null;
+        cssFontInfo.metrics = standardFontName.metrics || null;
         glyphScaleFactors = standardFontName.factors || null;
         fontFile = await this.fetchStandardFontData(standardFontName.name);
         isInternalFont = !!fontFile;
-        type = "TrueType";
+
+        // We're using a substitution font but for example widths (if any)
+        // are related to the glyph positions in the font.
+        // So we overwrite everything here to be sure that widths are
+        // correct.
+        baseDict = dict = getXfaFontDict(fontName.name);
+        composite = true;
       }
     } else if (!isType3Font) {
       const standardFontName = getStandardFontName(fontName.name);

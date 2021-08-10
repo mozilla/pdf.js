@@ -25,11 +25,13 @@ import {
   isString,
   OPS,
   PageActionEventType,
+  RenderingIntentFlag,
   shadow,
   stringToBytes,
   stringToPDFString,
   stringToUTF8String,
   unreachable,
+  UNSUPPORTED_FEATURES,
   Util,
   warn,
 } from "../shared/util.js";
@@ -52,12 +54,12 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
+import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
-import { getXfaFontWidths } from "./xfa_fonts.js";
 import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
@@ -226,15 +228,34 @@ class Page {
   }
 
   /**
+   * @private
+   */
+  _onSubStreamError(handler, reason, objId) {
+    if (this.evaluatorOptions.ignoreErrors) {
+      // Error(s) when reading one of the /Contents sub-streams -- sending
+      // unsupported feature notification and allow parsing to continue.
+      handler.send("UnsupportedFeature", {
+        featureId: UNSUPPORTED_FEATURES.errorContentSubStream,
+      });
+      warn(`getContentStream - ignoring sub-stream (${objId}): "${reason}".`);
+      return;
+    }
+    throw reason;
+  }
+
+  /**
    * @returns {Promise<BaseStream>}
    */
-  getContentStream() {
+  getContentStream(handler) {
     return this.pdfManager.ensure(this, "content").then(content => {
       if (content instanceof BaseStream) {
         return content;
       }
       if (Array.isArray(content)) {
-        return new StreamsSequenceStream(content);
+        return new StreamsSequenceStream(
+          content,
+          this._onSubStreamError.bind(this, handler)
+        );
       }
       // Replace non-existent page content with empty content.
       return new NullStream();
@@ -299,15 +320,8 @@ class Page {
     });
   }
 
-  getOperatorList({
-    handler,
-    sink,
-    task,
-    intent,
-    renderInteractiveForms,
-    annotationStorage,
-  }) {
-    const contentStreamPromise = this.getContentStream();
+  getOperatorList({ handler, sink, task, intent, annotationStorage }) {
+    const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ColorSpace",
       "ExtGState",
@@ -363,26 +377,26 @@ class Page {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
         }
+        const renderForms = !!(intent & RenderingIntentFlag.ANNOTATION_FORMS),
+          intentAny = !!(intent & RenderingIntentFlag.ANY),
+          intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+          intentPrint = !!(intent & RenderingIntentFlag.PRINT);
 
         // Collect the operator list promises for the annotations. Each promise
         // is resolved with the complete operator list for a single annotation.
-        const annotationIntent = intent.startsWith("oplist-")
-          ? intent.split("-")[1]
-          : intent;
         const opListPromises = [];
         for (const annotation of annotations) {
           if (
-            (annotationIntent === "display" &&
-              annotation.mustBeViewed(annotationStorage)) ||
-            (annotationIntent === "print" &&
-              annotation.mustBePrinted(annotationStorage))
+            intentAny ||
+            (intentDisplay && annotation.mustBeViewed(annotationStorage)) ||
+            (intentPrint && annotation.mustBePrinted(annotationStorage))
           ) {
             opListPromises.push(
               annotation
                 .getOperatorList(
                   partialEvaluator,
                   task,
-                  renderInteractiveForms,
+                  renderForms,
                   annotationStorage
                 )
                 .catch(function (reason) {
@@ -417,7 +431,7 @@ class Page {
     sink,
     combineTextItems,
   }) {
-    const contentStreamPromise = this.getContentStream();
+    const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ExtGState",
       "Font",
@@ -476,15 +490,23 @@ class Page {
   getAnnotationsData(intent) {
     return this._parsedAnnotations.then(function (annotations) {
       const annotationsData = [];
-      for (let i = 0, ii = annotations.length; i < ii; i++) {
+
+      if (annotations.length === 0) {
+        return annotationsData;
+      }
+      const intentAny = !!(intent & RenderingIntentFlag.ANY),
+        intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+        intentPrint = !!(intent & RenderingIntentFlag.PRINT);
+
+      for (const annotation of annotations) {
         // Get the annotation even if it's hidden because
         // JS can change its display.
         if (
-          !intent ||
-          (intent === "display" && annotations[i].viewable) ||
-          (intent === "print" && annotations[i].printable)
+          intentAny ||
+          (intentDisplay && annotation.viewable) ||
+          (intentPrint && annotation.printable)
         ) {
-          annotationsData.push(annotations[i].data);
+          annotationsData.push(annotation.data);
         }
       }
       return annotationsData;
@@ -999,7 +1021,7 @@ class PDFDocument {
 
     const reallyMissingFonts = new Set();
     for (const missing of missingFonts) {
-      if (!getXfaFontWidths(`${missing}-Regular`)) {
+      if (!getXfaFontName(`${missing}-Regular`)) {
         // No substitution available: we'll fallback on Myriad.
         reallyMissingFonts.add(missing);
       }
@@ -1020,15 +1042,7 @@ class PDFDocument {
         { name: "BoldItalic", fontWeight: 700, italicAngle: 12 },
       ]) {
         const name = `${missing}-${fontInfo.name}`;
-        const widths = getXfaFontWidths(name);
-        const dict = new Dict(null);
-        dict.set("BaseFont", Name.get(name));
-        dict.set("Type", Name.get("Font"));
-        dict.set("Subtype", Name.get("TrueType"));
-        dict.set("Encoding", Name.get("WinAnsiEncoding"));
-        const descriptor = new Dict(null);
-        descriptor.set("Widths", widths);
-        dict.set("FontDescriptor", descriptor);
+        const dict = getXfaFontDict(name);
 
         promises.push(
           partialEvaluator

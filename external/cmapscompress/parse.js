@@ -28,9 +28,9 @@ exports.parseAdobeCMap = function (content) {
     usecmap: null,
     body: [],
   };
-  m = /\/CMapType\s+(\d+)+\s+def\b/.exec(body);
+  m = /\/CMapType\s+(\d+)\s+def\b/.exec(body);
   result.type = +m[1];
-  m = /\/WMode\s+(\d+)+\s+def\b/.exec(body);
+  m = /\/WMode\s+(\d+)\s+def\b/.exec(body);
   result.wmode = +m[1];
   m = /\/([\w-]+)\s+usecmap\b/.exec(body);
   if (m) {

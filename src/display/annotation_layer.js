@@ -24,6 +24,7 @@ import {
   AnnotationBorderStyleType,
   AnnotationType,
   assert,
+  shadow,
   stringToPDFString,
   unreachable,
   Util,
@@ -31,6 +32,8 @@ import {
 } from "../shared/util.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
+
+const DEFAULT_TAB_INDEX = 1000;
 
 /**
  * @typedef {Object} AnnotationElementParameters
@@ -359,6 +362,15 @@ class AnnotationElement {
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
   }
+
+  static get platform() {
+    const platform = typeof navigator !== "undefined" ? navigator.platform : "";
+
+    return shadow(this, "platform", {
+      isWin: platform.includes("Win"),
+      isMac: platform.includes("Mac"),
+    });
+  }
 }
 
 class LinkAnnotationElement extends AnnotationElement {
@@ -539,10 +551,8 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   _getKeyModifier(event) {
-    return (
-      (navigator.platform.includes("Win") && event.ctrlKey) ||
-      (navigator.platform.includes("Mac") && event.metaKey)
-    );
+    const { isWin, isMac } = AnnotationElement.platform;
+    return (isWin && event.ctrlKey) || (isMac && event.metaKey);
   }
 
   _setEventListener(element, baseName, eventName, valueGetter) {
@@ -714,6 +724,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.type = "text";
         element.setAttribute("value", textContent);
       }
+      element.tabIndex = DEFAULT_TAB_INDEX;
 
       elementData.userValue = textContent;
       element.setAttribute("id", id);
@@ -974,6 +985,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("checked", true);
     }
     element.setAttribute("id", id);
+    element.tabIndex = DEFAULT_TAB_INDEX;
 
     element.addEventListener("change", event => { // #718 modified by ngx-extended-pdf-viewer
       const name = event.target.name;
@@ -1059,6 +1071,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
       element.setAttribute("checked", true);
     }
     element.setAttribute("id", id);
+    element.tabIndex = DEFAULT_TAB_INDEX;
 
     element.addEventListener("change", event => { // #718 modified by ngx-extended-pdf-viewer
       const { target } = event;
@@ -1158,10 +1171,19 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.data.fieldValue = value; // #718 modified by ngx-extended-pdf-viewer
 
+    let { fontSize } = this.data.defaultAppearanceData;
+    if (!fontSize) {
+      fontSize = 9;
+    }
+    const fontSizeStyle = `calc(${fontSize}px * var(--zoom-factor))`;
+
     const selectElement = document.createElement("select");
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
     selectElement.setAttribute("id", id);
+    selectElement.tabIndex = DEFAULT_TAB_INDEX;
+
+    selectElement.style.fontSize = `${fontSize}px`;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
@@ -1176,6 +1198,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
+      if (this.data.combo) {
+        optionElement.style.fontSize = fontSizeStyle;
+      }
       if (this.data.fieldValue.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
       }

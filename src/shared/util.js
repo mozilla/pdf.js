@@ -18,6 +18,14 @@ import "./compatibility.js";
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+const RenderingIntentFlag = {
+  ANY: 0x01,
+  DISPLAY: 0x02,
+  PRINT: 0x04,
+  ANNOTATION_FORMS: 0x20,
+  OPLIST: 0x100,
+};
+
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
 const PermissionFlag = {
   PRINT: 0x04,
@@ -335,6 +343,7 @@ const UNSUPPORTED_FEATURES = {
   errorFontBuildPath: "errorFontBuildPath",
   errorFontGetPath: "errorFontGetPath",
   errorMarkedContent: "errorMarkedContent",
+  errorContentSubStream: "errorContentSubStream",
 };
 
 const PasswordResponses = {
@@ -1033,6 +1042,7 @@ export {
   PasswordResponses,
   PermissionFlag,
   removeNullCharacters,
+  RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
   StreamType,

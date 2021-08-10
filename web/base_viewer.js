@@ -79,8 +79,6 @@ const DEFAULT_CACHE_SIZE = 10;
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
- * @property {boolean} [enableScripting] - Enable embedded script execution
- *   (also requires {scriptingManager} being set). The default value is `false`.
  */
 
 function PDFPageViewBuffer(size) {
@@ -199,8 +197,6 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
-    this.enableScripting =
-      options.enableScripting === true && !!this._scriptingManager;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -210,6 +206,7 @@ class BaseViewer {
     } else {
       this.renderingQueue = options.renderingQueue;
     }
+    this._doc = document.documentElement;
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.presentationModeState = PresentationModeState.UNKNOWN;
@@ -246,6 +243,13 @@ class BaseViewer {
     return this._pages.every(function (pageView) {
       return pageView?.pdfPage;
     });
+  }
+
+  /**
+   * @type {boolean}
+   */
+  get enableScripting() {
+    return !!this._scriptingManager;
   }
 
   /**
@@ -602,8 +606,8 @@ class BaseViewer {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
           }
-          if (this.enableScripting) {
-            this._scriptingManager.setDocument(pdfDocument);
+          if (this._scriptingManager) {
+            this._scriptingManager.setDocument(pdfDocument); // Enable scripting.
           }
 
           // In addition to 'disableAutoFetch' being set, also attempt to reduce
@@ -745,6 +749,7 @@ class BaseViewer {
       }
       return;
     }
+    this._doc.style.setProperty("--zoom-factor", newScale);
 
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
       this._pages[i].update(newScale);

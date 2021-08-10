@@ -16,7 +16,7 @@
 import { assert, shadow, unreachable } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 
-const EOF = {};
+const EOF = Symbol("EOF");
 
 const Name = (function NameClosure() {
   let nameCache = Object.create(null);
@@ -338,10 +338,6 @@ class RefSetCache {
   }
 }
 
-function isEOF(v) {
-  return v === EOF;
-}
-
 function isName(v, name) {
   return v instanceof Name && (name === undefined || v.name === name);
 }
@@ -390,7 +386,6 @@ export {
   EOF,
   isCmd,
   isDict,
-  isEOF,
   isName,
   isRef,
   isRefsEqual,

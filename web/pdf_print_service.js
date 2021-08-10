@@ -15,8 +15,8 @@
 
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import canvasSize from "canvas-size";
+import { compatibilityParams } from "./app_options.js";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
 
 let activeService = null;
 let overlayManager = null;
@@ -242,7 +242,7 @@ PDFPrintService.prototype = {
     const scratchCanvas = this.scratchCanvas;
     if (
       "toBlob" in scratchCanvas &&
-      !viewerCompatibilityParams.disableCreateObjectURL
+      !compatibilityParams.disableCreateObjectURL
     ) {
       scratchCanvas.toBlob(function (blob) {
         img.src = URL.createObjectURL(blob);
