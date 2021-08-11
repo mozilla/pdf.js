@@ -46,6 +46,7 @@
     }],
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-push-push": "error",
+    "unicorn/no-new-buffer": "error",
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
@@ -136,7 +137,6 @@
     "strict": ["off", "global"],
 
     // Variables
-    "no-catch-shadow": "error",
     "no-delete-var": "error",
     "no-label-var": "error",
     "no-shadow": "error",
@@ -152,9 +152,6 @@
       "classes": false,
       "variables": false,
     }],
-
-    // Node.js and CommonJS
-    "no-buffer-constructor": "error",
 
     // Stylistic Issues
     "lines-between-class-members": ["error", "always"],
