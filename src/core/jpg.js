@@ -18,18 +18,22 @@ import { readUint16 } from "./core_utils.js";
 
 class JpegError extends BaseException {
   constructor(msg) {
-    super(`JPEG error: ${msg}`);
+    super(`JPEG error: ${msg}`, "JpegError");
   }
 }
 
 class DNLMarkerError extends BaseException {
   constructor(message, scanLines) {
-    super(message);
+    super(message, "DNLMarkerError");
     this.scanLines = scanLines;
   }
 }
 
-class EOIMarkerError extends BaseException {}
+class EOIMarkerError extends BaseException {
+  constructor(msg) {
+    super(msg, "EOIMarkerError");
+  }
+}
 
 /**
  * This code was forked from https://github.com/notmasteryet/jpgjs.

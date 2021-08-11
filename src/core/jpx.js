@@ -19,7 +19,7 @@ import { ArithmeticDecoder } from "./arithmetic_decoder.js";
 
 class JpxError extends BaseException {
   constructor(msg) {
-    super(`JPX error: ${msg}`);
+    super(`JPX error: ${msg}`, "JpxError");
   }
 }
 
