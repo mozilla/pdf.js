@@ -115,9 +115,10 @@ function getAscent(fontFamily, ctx) {
   return DEFAULT_FONT_ASCENT;
 }
 
-function appendText(task, geom, styles, ctx) {
+function appendText(task, geom, styles, ctx, i) {
   // Initialize all used properties to keep the caches monomorphic.
   const textDiv = document.createElement("span");
+  textDiv.setAttribute("id", `item-${i}`);
   const textDivProperties = {
     angle: 0,
     canvasWidth: 0,
@@ -160,7 +161,14 @@ function appendText(task, geom, styles, ctx) {
   // Keeps screen readers from pausing on every new text span.
   textDiv.setAttribute("role", "presentation");
 
-  textDiv.textContent = geom.str;
+  // textDiv.textContent = geom.str;
+  for (let count = 0; count < geom.str.length; count++) {
+    const sub = document.createElement("span");
+    sub.setAttribute("id", `letter-${i}-${count}`);
+    sub.textContent = geom.str[count];
+    textDiv.appendChild(sub);
+  }
+
   // geom.dir may be 'ttb' for vertical texts.
   textDiv.dir = geom.dir;
 
@@ -648,7 +656,7 @@ class TextLayerRenderTask {
         continue;
       }
       this._textContentItemsStr.push(items[i].str);
-      appendText(this, items[i], styleCache, this._layoutTextCtx);
+      appendText(this, items[i], styleCache, this._layoutTextCtx, i);
     }
   }
 
