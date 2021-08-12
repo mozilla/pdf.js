@@ -69,7 +69,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/mozilla/pdf.js.git"
+    "url": "git://github.com/Orbiseed/pdf.js.git"
   },
   "license": "Apache-2.0",
   "dependencies": {

@@ -66,8 +66,8 @@ const TYPESTEST_DIR = BUILD_DIR + "typestest/";
 const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
-const REPO = "git@github.com:mozilla/pdf.js.git";
-const DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
+const REPO = "git@github.com:Orbiseed/pdf.js.git";
+const DIST_REPO_URL = "https://github.com/Orbiseed/pdfjs-dist";
 
 const builder = require("./external/builder/builder.js");
 
