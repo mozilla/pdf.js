@@ -1739,7 +1739,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         textContentItem.lastAdvanceHeight = 0;
 
         if (!Array.isArray(font.widths)) {
-          font.widths = [];
+          font.widths = Object.keys(font.widths).reduce((acc, index) => {
+            acc[index] = font.widths[index];
+            return acc;
+          }, []);
         }
 
         // var spaceWidth = (font.spaceWidth / 1000) * textState.fontSize;
@@ -2795,7 +2798,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     getBaseFontMetrics: function PartialEvaluator_getBaseFontMetrics(name) {
       var defaultWidth = 0;
-      var widths = Object.create(null);;
+      var widths = Object.create(null);
       var monospace = false;
       var stdFontMap = getStdFontMap();
       var lookupName = stdFontMap[name] || name;
@@ -2834,7 +2837,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       const differences = properties.differences;
       const encoding = properties.defaultEncoding;
       for (let charCode = 0; charCode < 256; charCode++) {
-        if (charCode in differences && widthsByGlyphName[differences[charCode]]) {
+        if (
+          charCode in differences &&
+          widthsByGlyphName[differences[charCode]]
+        ) {
           widths[charCode] = widthsByGlyphName[differences[charCode]];
           continue;
         }
