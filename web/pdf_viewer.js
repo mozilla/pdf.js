@@ -68,7 +68,12 @@ class PDFViewer extends BaseViewer {
       }
     }
     if (!stillFullyVisible) {
-      currentId = visiblePages[0].id;
+      // #859 modified by ngx-extended-pdf-viewer
+      const currentPageIsVisible = visiblePages.some(p => currentId === p.id);
+      if (!currentPageIsVisible) {
+        currentId = visiblePages[0].id;
+      }
+      // #859 end of modification by ngx-extended-pdf-viewer
     }
     this._setCurrentPageNumber(currentId);
   }

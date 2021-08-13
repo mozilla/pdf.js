@@ -293,13 +293,16 @@ class BaseViewer {
               if (index === 0) {
                 width = div.offsetWidth;
                 height = div.offsetHeight;
+                if (div.parentElement.parentElement.classList.contains("removePageBorders")) {
+                  height += 10;
+                }
               } else {
                 // put the second page to the left-hand side of the first page
                 div.style.left = width + "px";
                 div.style.marginTop = -height + "px";
               }
             });
-            if (page.div.parentElement.childNodes.length === 1)  {
+            if (page.div.parentElement.childNodes.length === 1) {
               // center the page
               page.div.style.left = (page.div.offsetWidth / 2) + "px";
             }
