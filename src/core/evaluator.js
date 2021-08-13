@@ -1738,6 +1738,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         textContentItem.lastAdvanceWidth = 0;
         textContentItem.lastAdvanceHeight = 0;
 
+        if (!Array.isArray(font.widths)) {
+          font.widths = [];
+        }
+
         // var spaceWidth = (font.spaceWidth / 1000) * textState.fontSize;
         var fontMinWidth = Math.min.apply(
           null,
@@ -2791,7 +2795,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     getBaseFontMetrics: function PartialEvaluator_getBaseFontMetrics(name) {
       var defaultWidth = 0;
-      var widths = [];
+      var widths = Object.create(null);;
       var monospace = false;
       var stdFontMap = getStdFontMap();
       var lookupName = stdFontMap[name] || name;
@@ -2826,32 +2830,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       widthsByGlyphName,
       properties
     ) {
-      var widths = Object.create(null);
-      var differences = properties.differences;
-      var encoding = properties.defaultEncoding;
-      for (var charCode = 0; charCode < 256; charCode++) {
-        if (
-          charCode in differences &&
-          widthsByGlyphName[differences[charCode]]
-        ) {
+      const widths = Object.create(null);
+      const differences = properties.differences;
+      const encoding = properties.defaultEncoding;
+      for (let charCode = 0; charCode < 256; charCode++) {
+        if (charCode in differences && widthsByGlyphName[differences[charCode]]) {
           widths[charCode] = widthsByGlyphName[differences[charCode]];
           continue;
         }
-        for (let charCode = 0; charCode < 256; charCode++) {
-          if (
-            charCode in differences &&
-            widthsByGlyphName.indexOf([differences[charCode]]) >= 0
-          ) {
-            widths[charCode] = widthsByGlyphName[differences[charCode]];
-            continue;
-          }
-          if (
-            charCode in encoding &&
-            widthsByGlyphName.indexOf([encoding[charCode]]) >= 0
-          ) {
-            widths[charCode] = widthsByGlyphName[encoding[charCode]];
-            continue;
-          }
+        if (charCode in encoding && widthsByGlyphName[encoding[charCode]]) {
+          widths[charCode] = widthsByGlyphName[encoding[charCode]];
+          continue;
         }
       }
       return widths;
