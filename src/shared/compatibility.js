@@ -20,8 +20,8 @@ if (
   (typeof PDFJSDev === "undefined" || !PDFJSDev.test("SKIP_BABEL")) &&
   (typeof globalThis === "undefined" || !globalThis._pdfjsCompatibilityChecked)
 ) {
-  // Provides support for globalThis in legacy browsers.
-  // Support: Firefox<65, Chrome<71, Safari<12.1
+  // Provides support for `globalThis` in legacy browsers.
+  // Support: Firefox<65, Chrome<71, Safari<12.1, Node.js<12.0.0
   if (typeof globalThis === "undefined" || globalThis.Math !== Math) {
     // eslint-disable-next-line no-global-assign
     globalThis = require("core-js/es/global-this");
@@ -89,23 +89,12 @@ if (
       // shouldn't need to be polyfilled for the IMAGE_DECODERS build target.
       return;
     }
-    let isReadableStreamSupported = false;
-
-    if (typeof ReadableStream !== "undefined") {
-      // MS Edge may say it has ReadableStream but they are not up to spec yet.
-      try {
-        // eslint-disable-next-line no-new
-        new ReadableStream({
-          start(controller) {
-            controller.close();
-          },
-        });
-        isReadableStreamSupported = true;
-      } catch (e) {
-        // The ReadableStream constructor cannot be used.
-      }
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+      // Slightly reduce the size of the Chromium-extension, given
+      // that `ReadableStream` has been supported since Chrome 43.
+      return;
     }
-    if (isReadableStreamSupported) {
+    if (globalThis.ReadableStream || !isNodeJS) {
       return;
     }
     globalThis.ReadableStream =
