@@ -1218,6 +1218,9 @@ class BaseViewer {
   _getVisiblePages() {
     /** #495 modified by ngx-extended-pdf-viewer */
     if (this.pageViewMode === "single") {
+      if (!this.pagesCount) {
+        return { views: [] };
+      }
       const pageView = this._pages[this._currentPageNumber - 1];
       if (pageView.div.parentElement.classList.contains("spread")) {
         const pageViews = [];
