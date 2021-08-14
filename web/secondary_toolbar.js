@@ -319,7 +319,7 @@ class SecondaryToolbar {
       return;
     }
     this.opened = true;
-    this._setMaxHeight();
+    // this._setMaxHeight();  modified by ngx-extended-pdf-viewer
 
     this.toggleButton.classList.add("toggled");
     this.toggleButton.setAttribute("aria-expanded", "true");
