@@ -105,6 +105,14 @@ function scrollIntoView(element, spot, scrollMatches = false, infiniteScroll=fal
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
+
+  // #716 modified by ngx-extended-pdf-viewer
+  if (element.classList.contains("stf__item")) {
+    console.log("don't scroll in book mode");
+    return;
+  }
+  // #716 end of modification
+  
   let parent = element.offsetParent;
   if (!parent) {
     console.error("offsetParent is not set -- cannot scroll");

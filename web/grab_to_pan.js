@@ -95,6 +95,12 @@ GrabToPan.prototype = {
    * @returns {boolean} Whether to not react to the click event.
    */
   ignoreTarget: function GrabToPan_ignoreTarget(node) {
+    // #716 modified by ngx-extended-pdf-viewer
+    if (document.querySelector(".stf__item")) {
+      return true;
+    }
+	// #716 end of modification
+    
     // Check whether the clicked element is, a child of, an input element/link.
     return node.matches(
       "a[href], a[href] *, input, textarea, button, button *, select, option"

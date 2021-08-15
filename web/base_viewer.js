@@ -45,6 +45,8 @@ import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
+import { PageFlip } from "./page-flip.module"; // #716 modified by ngx-extended-pdf-viewer
+
 const DEFAULT_CACHE_SIZE = 10;
 
 /**
@@ -267,10 +269,26 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
+
+    // #716 modified by ngx-extended-pdf-viewer
+    const flip = Math.abs(this._currentPageNumber - val) < 2;
+    // #716 end of modification
+
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
       console.error(`currentPageNumber: "${val}" is not a valid page.`);
     }
+	// #716 modified by ngx-extended-pdf-viewer
+    if (this.pageFlip) {
+      if (flip) {
+        console.log("Flip");
+        this.pageFlip.flip(val - 1);
+      } else {
+        console.log("turn to page");
+        this.pageFlip.turnToPage(val - 1);
+      }
+    }
+    // #716 end of modification
   }
 
   /** #495 modified by ngx-extended-pdf-viewer */
@@ -309,6 +327,36 @@ class BaseViewer {
           }
         }
       });
+    // #716 modified by ngx-extended-pdf-viewer
+    } else if (this.pageViewMode === "book") {
+      if (!this.pageFlip) {
+        setTimeout(() => {
+          if (!this.pageFlip) {
+            const page1 = this._pages[0].div;
+            const viewerContainer = page1.parentElement.parentElement;
+            const requiredWidth = page1.clientWidth * 2;
+            const requiredHeight = page1.clientHeight;
+            const factorX = (viewerContainer.clientWidth / requiredWidth) * 0.95;
+            const factorY = (viewerContainer.clientHeight / requiredHeight) * 0.95;
+            const factor = Math.min(1, factorX, factorY);
+            const htmlParentElement = page1.parentElement;
+            this.pageFlip = new PageFlip(htmlParentElement, {
+              width: page1.clientWidth * factor, // required parameter - base page width
+              height: page1.clientHeight * factor, // required parameter - base page height
+              showCover: true,
+              size: "fixed",
+            });
+            this.pageFlip.loadFromHTML(document.querySelectorAll(".page"));
+            // triggered by page turning
+            this.pageFlip.on("flip", e => {
+              if (this._currentPageNumber !== e.data + 1) {
+                this._currentPageNumber = e.data + 1;
+              }
+            });
+          }
+        }, 100);
+      }
+      // #716 end of modification
     }
   }
   /** end of modification */
@@ -333,7 +381,8 @@ class BaseViewer {
 
     /** #495 modified by ngx-extended-pdf-viewer */
     this.hidePagesDependingOnpageViewMode();
-    if (this.pageViewMode === "single" || this.pageViewMode === "infinite-scroll") {
+    // #716 modified by ngx-extended-pdf-viewer
+    if (this.pageViewMode === "single" || this.pageViewMode === "book" || this.pageViewMode === "infinite-scroll") {
       const pageView = this._pages[this.currentPageNumber - 1];
       if (pageView.div.parentElement.classList.contains("spread")) {
         pageView.div.parentElement.childNodes.forEach(div => {
@@ -348,6 +397,22 @@ class BaseViewer {
         this._ensurePdfPageLoaded(pageView).then(() => {
           this.renderingQueue.renderView(pageView);
         });
+        // #716 modified by ngx-extended-pdf-viewer
+        if (this.pageViewMode === "book") {
+          if (this.currentPageNumber > 2) {
+            const previousPage = this._pages[this.currentPageNumber - 2];
+            this._ensurePdfPageLoaded(previousPage).then(() => {
+              this.renderingQueue.renderView(previousPage);
+            });
+          }
+          if (this.currentPageNumber < this._pages.length) {
+            const nextPage = this._pages[this.currentPageNumber];
+            this._ensurePdfPageLoaded(nextPage).then(() => {
+              this.renderingQueue.renderView(nextPage);
+            });
+          }
+        }
+        // #716 modified by ngx-extended-pdf-viewer
       }
     }
     /** end of modification */
@@ -767,7 +832,7 @@ class BaseViewer {
     }
     /** #492 end of modification */
 
-    scrollIntoView(pageDiv, pageSpot, false, this.pageViewMode === 'infinite-scroll');
+    scrollIntoView(pageDiv, pageSpot, false, this.pageViewMode === "infinite-scroll");
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {

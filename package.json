@@ -73,6 +73,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "canvas-size": "^1.2.4"
+    "canvas-size": "^1.2.4",
+    "page-flip": "^2.0.7"
   }
 }
