@@ -1279,15 +1279,15 @@ class PDFPageProxy {
    *   {Array} of the annotation objects.
    */
   getAnnotations({ intent = "display" } = {}) {
-    const renderingIntent = this._transport.getRenderingIntent(intent, {});
+    const intentArgs = this._transport.getRenderingIntent(intent, {});
 
-    let promise = this._annotationPromises.get(renderingIntent);
+    let promise = this._annotationPromises.get(intentArgs.cacheKey);
     if (!promise) {
       promise = this._transport.getAnnotations(
         this._pageIndex,
-        renderingIntent
+        intentArgs.renderingIntent
       );
-      this._annotationPromises.set(renderingIntent, promise);
+      this._annotationPromises.set(intentArgs.cacheKey, promise);
     }
     return promise;
   }
@@ -1335,8 +1335,9 @@ class PDFPageProxy {
       this._stats.time("Overall");
     }
 
-    const renderingIntent = this._transport.getRenderingIntent(intent, {
+    const intentArgs = this._transport.getRenderingIntent(intent, {
       renderForms: renderInteractiveForms === true,
+      includeAnnotationStorage: includeAnnotationStorage === true,
     });
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
@@ -1346,10 +1347,10 @@ class PDFPageProxy {
       optionalContentConfigPromise = this._transport.getOptionalContentConfig();
     }
 
-    let intentState = this._intentStates.get(renderingIntent);
+    let intentState = this._intentStates.get(intentArgs.cacheKey);
     if (!intentState) {
       intentState = Object.create(null);
-      this._intentStates.set(renderingIntent, intentState);
+      this._intentStates.set(intentArgs.cacheKey, intentState);
     }
 
     // Ensure that a pending `streamReader` cancel timeout is always aborted.
@@ -1361,9 +1362,9 @@ class PDFPageProxy {
     const canvasFactoryInstance =
       canvasFactory ||
       new DefaultCanvasFactory({ ownerDocument: this._ownerDocument });
-    const annotationStorage = includeAnnotationStorage
-      ? this._transport.annotationStorage.serializable
-      : null;
+    const intentPrint = !!(
+      intentArgs.renderingIntent & RenderingIntentFlag.PRINT
+    );
 
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
@@ -1378,11 +1379,7 @@ class PDFPageProxy {
       if (this._stats) {
         this._stats.time("Page Request");
       }
-      this._pumpOperatorList({
-        pageIndex: this._pageIndex,
-        intent: renderingIntent,
-        annotationStorage,
-      });
+      this._pumpOperatorList(intentArgs);
     }
 
     const complete = error => {
@@ -1390,10 +1387,7 @@ class PDFPageProxy {
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup once rendering has finished (regardless of cleanupAfterRender).
-      if (
-        this.cleanupAfterRender ||
-        renderingIntent & RenderingIntentFlag.PRINT
-      ) {
+      if (this.cleanupAfterRender || intentPrint) {
         this.pendingCleanup = true;
       }
       this._tryCleanup();
@@ -1403,7 +1397,7 @@ class PDFPageProxy {
 
         this._abortOperatorList({
           intentState,
-          reason: error,
+          reason: error instanceof Error ? error : new Error(error),
         });
       } else {
         internalRenderTask.capability.resolve();
@@ -1429,7 +1423,7 @@ class PDFPageProxy {
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
-      useRequestAnimationFrame: !(renderingIntent & RenderingIntentFlag.PRINT),
+      useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
     });
 
@@ -1474,13 +1468,13 @@ class PDFPageProxy {
       }
     }
 
-    const renderingIntent = this._transport.getRenderingIntent(intent, {
+    const intentArgs = this._transport.getRenderingIntent(intent, {
       isOpList: true,
     });
-    let intentState = this._intentStates.get(renderingIntent);
+    let intentState = this._intentStates.get(intentArgs.cacheKey);
     if (!intentState) {
       intentState = Object.create(null);
-      this._intentStates.set(renderingIntent, intentState);
+      this._intentStates.set(intentArgs.cacheKey, intentState);
     }
     let opListTask;
 
@@ -1498,10 +1492,7 @@ class PDFPageProxy {
       if (this._stats) {
         this._stats.time("Page Request");
       }
-      this._pumpOperatorList({
-        pageIndex: this._pageIndex,
-        intent: renderingIntent,
-      });
+      this._pumpOperatorList(intentArgs);
     }
     return intentState.opListReadCapability.promise;
   }
@@ -1584,14 +1575,14 @@ class PDFPageProxy {
     this._transport.pageCache[this._pageIndex] = null;
 
     const waitOn = [];
-    for (const [intent, intentState] of this._intentStates) {
+    for (const intentState of this._intentStates.values()) {
       this._abortOperatorList({
         intentState,
         reason: new Error("Page was destroyed."),
         force: true,
       });
 
-      if (intent & RenderingIntentFlag.OPLIST) {
+      if (intentState.opListReadCapability) {
         // Avoid errors below, since the renderTasks are just stubs.
         continue;
       }
@@ -1649,8 +1640,8 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, intent) {
-    const intentState = this._intentStates.get(intent);
+  _startRenderPage(transparency, cacheKey) {
+    const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
     }
@@ -1688,19 +1679,32 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _pumpOperatorList(args) {
-    assert(
-      args.intent,
-      'PDFPageProxy._pumpOperatorList: Expected "intent" argument.'
-    );
+  _pumpOperatorList({ renderingIntent, cacheKey }) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        Number.isInteger(renderingIntent) && renderingIntent > 0,
+        '_pumpOperatorList: Expected valid "renderingIntent" argument.'
+      );
+    }
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
-      args
+      {
+        pageIndex: this._pageIndex,
+        intent: renderingIntent,
+        cacheKey,
+        annotationStorage:
+          renderingIntent & RenderingIntentFlag.ANNOTATIONS_STORAGE
+            ? this._transport.annotationStorage.serializable
+            : null,
+      }
     );
     const reader = readableStream.getReader();
 
-    const intentState = this._intentStates.get(args.intent);
+    const intentState = this._intentStates.get(cacheKey);
     intentState.streamReader = reader;
 
     const pump = () => {
@@ -1749,11 +1753,15 @@ class PDFPageProxy {
    * @private
    */
   _abortOperatorList({ intentState, reason, force = false }) {
-    assert(
-      reason instanceof Error ||
-        (typeof reason === "object" && reason !== null),
-      'PDFPageProxy._abortOperatorList: Expected "reason" argument.'
-    );
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        reason instanceof Error,
+        '_abortOperatorList: Expected valid "reason" argument.'
+      );
+    }
 
     if (!intentState.streamReader) {
       return;
@@ -1787,9 +1795,9 @@ class PDFPageProxy {
     }
     // Remove the current `intentState`, since a cancelled `getOperatorList`
     // call on the worker-thread cannot be re-started...
-    for (const [intent, curIntentState] of this._intentStates) {
+    for (const [curCacheKey, curIntentState] of this._intentStates) {
       if (curIntentState === intentState) {
-        this._intentStates.delete(intent);
+        this._intentStates.delete(curCacheKey);
         break;
       }
     }
@@ -2333,8 +2341,12 @@ class WorkerTransport {
     return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
-  getRenderingIntent(intent, { renderForms = false, isOpList = false }) {
+  getRenderingIntent(
+    intent,
+    { renderForms = false, includeAnnotationStorage = false, isOpList = false }
+  ) {
     let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
+    let lastModified = "";
 
     switch (intent) {
       case "any":
@@ -2350,14 +2362,22 @@ class WorkerTransport {
     }
 
     if (renderForms) {
-      renderingIntent += RenderingIntentFlag.ANNOTATION_FORMS;
+      renderingIntent += RenderingIntentFlag.ANNOTATIONS_FORMS;
+    }
+    if (includeAnnotationStorage) {
+      renderingIntent += RenderingIntentFlag.ANNOTATIONS_STORAGE;
+
+      lastModified = this.annotationStorage.lastModified;
     }
 
     if (isOpList) {
       renderingIntent += RenderingIntentFlag.OPLIST;
     }
 
-    return renderingIntent;
+    return {
+      renderingIntent,
+      cacheKey: `${renderingIntent}_${lastModified}`,
+    };
   }
 
   destroy() {
@@ -2617,7 +2637,7 @@ class WorkerTransport {
       }
 
       const page = this.pageCache[data.pageIndex];
-      page._startRenderPage(data.transparency, data.intent);
+      page._startRenderPage(data.transparency, data.cacheKey);
     });
 
     messageHandler.on("commonobj", data => {
