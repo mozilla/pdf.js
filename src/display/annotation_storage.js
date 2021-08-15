@@ -21,6 +21,7 @@ import { objectFromMap } from "../shared/util.js";
 class AnnotationStorage {
   constructor() {
     this._storage = new Map();
+    this._timeStamp = Date.now();
     this._modified = false;
 
     // Callbacks to signal when the modification state is set or reset.
@@ -41,8 +42,7 @@ class AnnotationStorage {
    * @returns {Object}
    */
   getValue(key, defaultValue) {
-    const obj = this._storage.get(key);
-    return obj !== undefined ? obj : defaultValue;
+    return this._storage.get(key) ?? defaultValue;
   }
 
   /**
@@ -64,10 +64,11 @@ class AnnotationStorage {
         }
       }
     } else {
-      this._storage.set(key, value);
       modified = true;
+      this._storage.set(key, value);
     }
     if (modified) {
+      this._timeStamp = Date.now();
       this._setModified();
     }
   }
@@ -107,6 +108,14 @@ class AnnotationStorage {
    */
   get serializable() {
     return this._storage.size > 0 ? this._storage : null;
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get lastModified() {
+    return this._timeStamp.toString();
   }
 }
 
