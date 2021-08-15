@@ -515,29 +515,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     });
 }
 
-function getRenderingIntent(intent, { renderForms = false, isOpList = false }) {
-  let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
-  switch (intent) {
-    case "any":
-      renderingIntent = RenderingIntentFlag.ANY;
-      break;
-    case "display":
-      break;
-    case "print":
-      renderingIntent = RenderingIntentFlag.PRINT;
-      break;
-    default:
-      warn(`getRenderingIntent - invalid intent: ${intent}`);
-  }
-  if (renderForms) {
-    renderingIntent += RenderingIntentFlag.ANNOTATION_FORMS;
-  }
-  if (isOpList) {
-    renderingIntent += RenderingIntentFlag.OPLIST;
-  }
-  return renderingIntent;
-}
-
 /**
  * @typedef {Object} OnProgressParameters
  * @property {number} loaded - Currently loaded number of bytes.
@@ -1302,7 +1279,7 @@ class PDFPageProxy {
    *   {Array} of the annotation objects.
    */
   getAnnotations({ intent = "display" } = {}) {
-    const renderingIntent = getRenderingIntent(intent, {});
+    const renderingIntent = this._transport.getRenderingIntent(intent, {});
 
     let promise = this._annotationPromises.get(renderingIntent);
     if (!promise) {
@@ -1358,7 +1335,7 @@ class PDFPageProxy {
       this._stats.time("Overall");
     }
 
-    const renderingIntent = getRenderingIntent(intent, {
+    const renderingIntent = this._transport.getRenderingIntent(intent, {
       renderForms: renderInteractiveForms === true,
     });
     // If there was a pending destroy, cancel it so no cleanup happens during
@@ -1497,7 +1474,9 @@ class PDFPageProxy {
       }
     }
 
-    const renderingIntent = getRenderingIntent(intent, { isOpList: true });
+    const renderingIntent = this._transport.getRenderingIntent(intent, {
+      isOpList: true,
+    });
     let intentState = this._intentStates.get(renderingIntent);
     if (!intentState) {
       intentState = Object.create(null);
@@ -2352,6 +2331,33 @@ class WorkerTransport {
 
   get annotationStorage() {
     return shadow(this, "annotationStorage", new AnnotationStorage());
+  }
+
+  getRenderingIntent(intent, { renderForms = false, isOpList = false }) {
+    let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
+
+    switch (intent) {
+      case "any":
+        renderingIntent = RenderingIntentFlag.ANY;
+        break;
+      case "display":
+        break;
+      case "print":
+        renderingIntent = RenderingIntentFlag.PRINT;
+        break;
+      default:
+        warn(`getRenderingIntent - invalid intent: ${intent}`);
+    }
+
+    if (renderForms) {
+      renderingIntent += RenderingIntentFlag.ANNOTATION_FORMS;
+    }
+
+    if (isOpList) {
+      renderingIntent += RenderingIntentFlag.OPLIST;
+    }
+
+    return renderingIntent;
   }
 
   destroy() {
