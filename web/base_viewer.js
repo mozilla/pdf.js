@@ -296,29 +296,15 @@ class BaseViewer {
     if (this.pageViewMode === "single") {
       this._pages.forEach(page => {
         page.div.style.display = "none";
-        page.div.style.left = 0;
-        page.div.style.marginTop = 0;
       });
       this._pages.forEach(page => {
         const showIt = page.id === this.currentPageNumber;
         if (showIt) {
           page.div.style.display = "block";
           if (page.div.parentElement.classList.contains("spread")) {
-            let width = 0;
-            let height = 0;
             page.div.parentElement.childNodes.forEach((div, index) => {
-              div.style.display = "block";
-              if (index === 0) {
-                width = div.offsetWidth;
-                height = div.offsetHeight;
-                if (div.parentElement.parentElement.classList.contains("removePageBorders")) {
-                  height += 10;
-                }
-              } else {
-                // put the second page to the left-hand side of the first page
-                div.style.left = width + "px";
-                div.style.marginTop = -height + "px";
-              }
+              div.style.display = "inline-block";
+
             });
             if (page.div.parentElement.childNodes.length === 1) {
               // center the page
@@ -391,7 +377,7 @@ class BaseViewer {
           this._ensurePdfPageLoaded(pv).then(() => {
             this.renderingQueue.renderView(pv);
           });
-          div.style.display = "block";
+          div.style.display = "inline-block";
         });
       } else {
         this._ensurePdfPageLoaded(pageView).then(() => {
