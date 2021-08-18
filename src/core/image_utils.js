@@ -135,25 +135,18 @@ class LocalGStateCache extends BaseLocalCache {
 }
 
 class LocalTilingPatternCache extends BaseLocalCache {
-  set(name, ref = null, data) {
-    if (typeof name !== "string") {
-      throw new Error(
-        'LocalTilingPatternCache.set - expected "name" argument.'
-      );
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('LocalTilingPatternCache.set - expected "ref" argument.');
     }
-    if (ref) {
-      if (this._imageCache.has(ref)) {
-        return;
-      }
-      this._nameRefMap.set(name, ref);
-      this._imageCache.put(ref, data);
+    if (this._imageCache.has(ref)) {
       return;
     }
-    // name
-    if (this._imageMap.has(name)) {
-      return;
-    }
-    this._imageMap.set(name, data);
+    this._imageCache.put(ref, data);
   }
 }
 
