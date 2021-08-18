@@ -21,7 +21,9 @@ class BaseLocalCache {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    if (!options || !options.onlyRefs) {
+    this._onlyRefs = (options && options.onlyRefs) === true;
+
+    if (!this._onlyRefs) {
       this._nameRefMap = new Map();
       this._imageMap = new Map();
     }
@@ -29,6 +31,9 @@ class BaseLocalCache {
   }
 
   getByName(name) {
+    if (this._onlyRefs) {
+      unreachable("Should not call `getByName` method.");
+    }
     const ref = this._nameRefMap.get(name);
     if (ref) {
       return this.getByRef(ref);
@@ -95,10 +100,6 @@ class LocalColorSpaceCache extends BaseLocalCache {
 class LocalFunctionCache extends BaseLocalCache {
   constructor(options) {
     super({ onlyRefs: true });
-  }
-
-  getByName(name) {
-    unreachable("Should not call `getByName` method.");
   }
 
   set(name = null, ref, data) {
