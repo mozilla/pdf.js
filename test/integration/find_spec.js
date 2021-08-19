@@ -72,4 +72,37 @@ describe("find bar", () => {
       );
     });
   });
+  describe("highlight all", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("xfa_imm5257e.pdf#zoom=100", ".xfaLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must search xfa correctly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#viewFind");
+          await page.waitForSelector("#viewFind", { hidden: false });
+          await page.type("#findInput", "city");
+          await page.waitForSelector("#findInput[data-status='']");
+          await page.waitForSelector(".xfaLayer .highlight");
+          const resultElement = await page.waitForSelector("#findResultsCount");
+          const resultText = await resultElement.evaluate(el => el.textContent);
+          expect(resultText).toEqual("1 of 7 matches");
+          const selectedElement = await page.waitForSelector(
+            ".highlight.selected"
+          );
+          const selectedText = await selectedElement.evaluate(
+            el => el.textContent
+          );
+          expect(selectedText).toEqual("City");
+        })
+      );
+    });
+  });
 });

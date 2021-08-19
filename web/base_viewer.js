@@ -42,6 +42,7 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
+import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
@@ -525,7 +526,9 @@ class BaseViewer {
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
         const textLayerFactory =
-          this.textLayerMode !== TextLayerMode.DISABLE ? this : null;
+          this.textLayerMode !== TextLayerMode.DISABLE && !isPureXfa
+            ? this
+            : null;
         const xfaLayerFactory = isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -541,6 +544,7 @@ class BaseViewer {
             textLayerMode: this.textLayerMode,
             annotationLayerFactory: this,
             xfaLayerFactory,
+            textHighlighterFactory: this,
             structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             renderInteractiveForms: this.renderInteractiveForms,
@@ -1242,6 +1246,7 @@ class BaseViewer {
    * @param {PageViewport} viewport
    * @param {boolean} enhanceTextSelection
    * @param {EventBus} eventBus
+   * @param {TextHighlighter} highlighter
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder(
@@ -1249,17 +1254,31 @@ class BaseViewer {
     pageIndex,
     viewport,
     enhanceTextSelection = false,
-    eventBus
+    eventBus,
+    highlighter
   ) {
     return new TextLayerBuilder({
       textLayerDiv,
       eventBus,
       pageIndex,
       viewport,
-      findController: this.isInPresentationMode ? null : this.findController,
       enhanceTextSelection: this.isInPresentationMode
         ? false
         : enhanceTextSelection,
+      highlighter,
+    });
+  }
+
+  /**
+   * @param {number} pageIndex
+   * @param {EventBus} eventBus
+   * @returns {TextHighlighter}
+   */
+  createTextHighlighter(pageIndex, eventBus) {
+    return new TextHighlighter({
+      eventBus,
+      pageIndex,
+      findController: this.isInPresentationMode ? null : this.findController,
     });
   }
 
