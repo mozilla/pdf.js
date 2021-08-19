@@ -226,7 +226,9 @@ const defaultOptions = {
   },
   enableXfa: {
     /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),
+    value:
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING"),
     kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   fontExtraProperties: {
