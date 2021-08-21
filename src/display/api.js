@@ -1350,6 +1350,33 @@ class PDFPageProxy {
     background = null,
     optionalContentConfigPromise = null,
   }) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+      if (arguments[0]?.renderInteractiveForms !== undefined) {
+        deprecated(
+          "render no longer accepts the `renderInteractiveForms`-option, " +
+            "please use the `annotationMode`-option instead."
+        );
+        if (
+          arguments[0].renderInteractiveForms === true &&
+          annotationMode === AnnotationMode.ENABLE
+        ) {
+          annotationMode = AnnotationMode.ENABLE_FORMS;
+        }
+      }
+      if (arguments[0]?.includeAnnotationStorage !== undefined) {
+        deprecated(
+          "render no longer accepts the `includeAnnotationStorage`-option, " +
+            "please use the `annotationMode`-option instead."
+        );
+        if (
+          arguments[0].includeAnnotationStorage === true &&
+          annotationMode === AnnotationMode.ENABLE
+        ) {
+          annotationMode = AnnotationMode.ENABLE_STORAGE;
+        }
+      }
+    }
+
     if (this._stats) {
       this._stats.time("Overall");
     }
