@@ -4955,6 +4955,12 @@
       "type": "eq",
       "about": "JPX packets"
     },
+    {  "id": "issue13916",
+       "file": "pdfs/issue13916.pdf",
+       "md5": "5cfaff104b17f325610936875363541f",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug766138",
       "file": "pdfs/bug766138.pdf",
       "md5": "b171f5cf8d9834348112fba60ee54f8c",
