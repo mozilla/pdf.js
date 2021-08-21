@@ -18,11 +18,23 @@ import "./compatibility.js";
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+/**
+ * Refer to the `WorkerTransport.getRenderingIntent`-method in the API, to see
+ * how these flags are being used:
+ *  - ANY, DISPLAY, and PRINT are the normal rendering intents, note the
+ *    `PDFPageProxy.{render, getOperatorList, getAnnotations}`-methods.
+ *  - ANNOTATIONS_FORMS, and ANNOTATIONS_STORAGE controls which annotations are
+ *    rendered onto the canvas, note the `renderInteractiveForms`- respectively
+ *    `includeAnnotationStorage`-options in the `PDFPageProxy.render`-method.
+ *  - OPLIST is used with the `PDFPageProxy.getOperatorList`-method, note the
+ *    `OperatorList`-constructor (on the worker-thread).
+ */
 const RenderingIntentFlag = {
   ANY: 0x01,
   DISPLAY: 0x02,
   PRINT: 0x04,
-  ANNOTATION_FORMS: 0x20,
+  ANNOTATIONS_FORMS: 0x10,
+  ANNOTATIONS_STORAGE: 0x20,
   OPLIST: 0x100,
 };
 
