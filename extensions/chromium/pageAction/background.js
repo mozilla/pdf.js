@@ -28,7 +28,7 @@ limitations under the License.
     if (url) {
       url = url[1];
       chrome.pageAction.setPopup({
-        tabId: tabId,
+        tabId,
         popup: "/pageAction/popup.html?file=" + encodeURIComponent(url),
       });
       chrome.pageAction.show(tabId);
