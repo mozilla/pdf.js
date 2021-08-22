@@ -123,7 +123,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
         {
           urls: [data.requestUrl],
           types: ["xmlhttprequest"],
-          tabId: tabId,
+          tabId,
         },
         ["blocking", ...extraInfoSpecWithHeaders]
       );
@@ -148,7 +148,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
     {
       urls: ["https://*/*"],
       types: ["xmlhttprequest"],
-      tabId: tabId,
+      tabId,
     },
     ["blocking", "responseHeaders"]
   );

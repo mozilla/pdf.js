@@ -18,6 +18,5 @@
   "rules": {
     "mozilla/import-globals": "error",
     "no-var": "off",
-    "object-shorthand": "off",
   },
 }
