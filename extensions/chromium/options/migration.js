@@ -119,7 +119,7 @@ limitations under the License.
             // Overwrite if computed textLayerMode is not the default value (1).
             storageSync.set(
               {
-                textLayerMode: textLayerMode,
+                textLayerMode,
               },
               function () {
                 if (!chrome.runtime.lastError) {
