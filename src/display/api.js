@@ -62,6 +62,7 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
+import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
@@ -1531,6 +1532,13 @@ class PDFPageProxy {
    *   {@link TextContent} object that represents the page's text content.
    */
   getTextContent(params = {}) {
+    if (this._transport._htmlForXfa) {
+      // TODO: We need to revisit this once the XFA foreground patch lands and
+      // only do this for non-foreground XFA.
+      return this.getXfa().then(xfa => {
+        return XfaText.textContent(xfa);
+      });
+    }
     const readableStream = this.streamTextContent(params);
 
     return new Promise(function (resolve, reject) {

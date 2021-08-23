@@ -162,6 +162,7 @@ class IPDFTextLayerFactory {
    * @param {PageViewport} viewport
    * @param {boolean} enhanceTextSelection
    * @param {EventBus} eventBus
+   * @param {TextHighlighter} highlighter
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder(
@@ -169,7 +170,8 @@ class IPDFTextLayerFactory {
     pageIndex,
     viewport,
     enhanceTextSelection = false,
-    eventBus
+    eventBus,
+    highlighter
   ) {}
 }
 

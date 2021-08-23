@@ -101,6 +101,11 @@ class PDFPageView {
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
+    this.textHighlighter =
+      options.textHighlighterFactory?.createTextHighlighter(
+        this.id - 1,
+        this.eventBus
+      );
     this.structTreeLayerFactory = options.structTreeLayerFactory;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.l10n = options.l10n || NullL10n;
@@ -175,7 +180,10 @@ class PDFPageView {
   async _renderXfaLayer() {
     let error = null;
     try {
-      await this.xfaLayer.render(this.viewport, "display");
+      const result = await this.xfaLayer.render(this.viewport, "display");
+      if (this.textHighlighter) {
+        this._buildXfaTextContentItems(result.textDivs);
+      }
     } catch (ex) {
       error = ex;
     } finally {
@@ -185,6 +193,16 @@ class PDFPageView {
         error,
       });
     }
+  }
+
+  async _buildXfaTextContentItems(textDivs) {
+    const text = await this.pdfPage.getTextContent();
+    const items = [];
+    for (const item of text.items) {
+      items.push(item.str);
+    }
+    this.textHighlighter.setTextMapping(textDivs, items);
+    this.textHighlighter.enable();
   }
 
   /**
@@ -382,6 +400,7 @@ class PDFPageView {
     if (this.xfaLayer && (!keepXfaLayer || !this.xfaLayer.div)) {
       this.xfaLayer.cancel();
       this.xfaLayer = null;
+      this.textHighlighter?.disable();
     }
     if (this._onTextLayerRendered) {
       this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
@@ -533,7 +552,8 @@ class PDFPageView {
         this.id - 1,
         this.viewport,
         this.textLayerMode === TextLayerMode.ENABLE_ENHANCE,
-        this.eventBus
+        this.eventBus,
+        this.textHighlighter
       );
     }
     this.textLayer = textLayer;
