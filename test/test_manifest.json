@@ -5025,6 +5025,15 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue13931-hidden",
+       "file": "pdfs/issue13931.pdf",
+       "md5": "799d5025787115d22863ae23a3042491",
+       "rounds": 1,
+       "type": "eq",
+       "optionalContent": {
+         "7R": false
+       }
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",

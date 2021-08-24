@@ -519,7 +519,7 @@ var Driver = (function DriverClosure() {
             styleElement: xfaStyleElement,
           });
           loadingTask.promise.then(
-            doc => {
+            async doc => {
               if (task.enableXfa) {
                 task.fontRules = "";
                 for (const rule of xfaStyleElement.sheet.cssRules) {
@@ -530,6 +530,15 @@ var Driver = (function DriverClosure() {
               task.pdfDoc = doc;
               task.optionalContentConfigPromise =
                 doc.getOptionalContentConfig();
+
+              if (task.optionalContent) {
+                const entries = Object.entries(task.optionalContent),
+                  optionalContentConfig =
+                    await task.optionalContentConfigPromise;
+                for (const [id, visible] of entries) {
+                  optionalContentConfig.setVisibility(id, visible);
+                }
+              }
 
               this._nextPage(task, failure);
             },
