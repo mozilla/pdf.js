@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+
 import { parseQueryString } from "./ui_utils.js";
 
 /**

@@ -285,11 +285,22 @@ function roundToDivide(x, div) {
 }
 
 /**
+ * @typedef {Object} GetPageSizeInchesParameters
+ * @property {number[]} view
+ * @property {number} userUnit
+ * @property {number} rotate
+ */
+
+/**
+ * @typedef {Object} PageSize
+ * @property {number} width - In inches.
+ * @property {number} height - In inches.
+ */
+
+/**
  * Gets the size of the specified page, converted from PDF units to inches.
- * @param {Object} An Object containing the properties: {Array} `view`,
- *   {number} `userUnit`, and {number} `rotate`.
- * @returns {Object} An Object containing the properties: {number} `width`
- *   and {number} `height`, given in inches.
+ * @param {GetPageSizeInchesParameters} params
+ * @returns {PageSize}
  */
 function getPageSizeInches({ view, userUnit, rotate }) {
   const [x1, y1, x2, y2] = view;

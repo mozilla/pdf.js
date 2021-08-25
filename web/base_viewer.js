@@ -139,7 +139,6 @@ function isSameScale(oldScale, newScale) {
 
 /**
  * Simple viewer control to display PDF content/pages.
- * @implements {IRenderableView}
  */
 class BaseViewer {
   /**

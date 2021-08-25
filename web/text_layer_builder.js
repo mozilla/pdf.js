@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+
 import { renderTextLayer } from "pdfjs-lib";
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
