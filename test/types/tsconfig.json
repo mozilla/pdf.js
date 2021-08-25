@@ -17,7 +17,7 @@
     ],
     "paths": {
       "pdfjs-dist": ["../../build/typestest"],
-      "pdfjs-dist/*": ["../../build/typestest/build/*"]
+      "pdfjs-dist/*": ["../../build/typestest/types/*"]
     }
   },
   "files": [

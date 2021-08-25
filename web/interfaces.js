@@ -106,6 +106,11 @@ class IPDFLinkService {
  * @interface
  */
 class IRenderableView {
+  constructor() {
+    /** @type {function | null} */
+    this.resume = null;
+  }
+
   /**
    * @type {string} - Unique ID for rendering queue.
    */
@@ -120,8 +125,6 @@ class IRenderableView {
    * @returns {Promise} Resolved on draw completion.
    */
   draw() {}
-
-  resume() {}
 }
 
 /**

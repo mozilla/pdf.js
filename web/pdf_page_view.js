@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+
 import {
   AnnotationMode,
   createPromiseCapability,
