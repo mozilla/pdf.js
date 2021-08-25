@@ -23,9 +23,10 @@ const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
  * how these flags are being used:
  *  - ANY, DISPLAY, and PRINT are the normal rendering intents, note the
  *    `PDFPageProxy.{render, getOperatorList, getAnnotations}`-methods.
- *  - ANNOTATIONS_FORMS, and ANNOTATIONS_STORAGE controls which annotations are
- *    rendered onto the canvas, note the `renderInteractiveForms`- respectively
- *    `includeAnnotationStorage`-options in the `PDFPageProxy.render`-method.
+ *  - ANNOTATIONS_FORMS, ANNOTATIONS_STORAGE, ANNOTATIONS_DISABLE control which
+ *    annotations are rendered onto the canvas (i.e. by being included in the
+ *    operatorList), note the `PDFPageProxy.{render, getOperatorList}`-methods
+ *    and their `annotationMode`-option.
  *  - OPLIST is used with the `PDFPageProxy.getOperatorList`-method, note the
  *    `OperatorList`-constructor (on the worker-thread).
  */
@@ -35,7 +36,15 @@ const RenderingIntentFlag = {
   PRINT: 0x04,
   ANNOTATIONS_FORMS: 0x10,
   ANNOTATIONS_STORAGE: 0x20,
+  ANNOTATIONS_DISABLE: 0x40,
   OPLIST: 0x100,
+};
+
+const AnnotationMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_FORMS: 2,
+  ENABLE_STORAGE: 3,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
@@ -1027,6 +1036,7 @@ export {
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationMarkedState,
+  AnnotationMode,
   AnnotationReplyType,
   AnnotationReviewState,
   AnnotationStateModelType,

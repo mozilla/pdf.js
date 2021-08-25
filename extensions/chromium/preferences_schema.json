@@ -144,9 +144,15 @@
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
       "default": false
     },
-    "renderInteractiveForms": {
-      "type": "boolean",
-      "default": true
+    "annotationMode": {
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": 2
     },
     "enableScripting": {
       "type": "boolean",

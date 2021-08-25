@@ -17,6 +17,16 @@
 
 "use strict";
 
+const {
+  AnnotationLayer,
+  AnnotationMode,
+  getDocument,
+  GlobalWorkerOptions,
+  renderTextLayer,
+  XfaLayer,
+} = pdfjsLib;
+const { SimpleLinkService } = pdfjsViewer;
+
 const WAITING_TIME = 100; // ms
 const PDF_TO_CSS_UNITS = 96.0 / 72.0;
 const CMAP_URL = "/build/generic/web/cmaps/";
@@ -162,7 +172,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
           style.textContent = cssRules;
 
           // Rendering text layer as HTML.
-          var task = pdfjsLib.renderTextLayer({
+          var task = renderTextLayer({
             textContent,
             container: div,
             viewport,
@@ -219,7 +229,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     annotations,
     page,
     imageResourcesPath,
-    renderInteractiveForms
+    renderForms = false
   ) {
     return new Promise(function (resolve, reject) {
       // Building SVG with size of the viewport.
@@ -250,11 +260,11 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
             div,
             annotations,
             page,
-            linkService: new pdfjsViewer.SimpleLinkService(),
+            linkService: new SimpleLinkService(),
             imageResourcesPath,
-            renderInteractiveForms,
+            renderForms,
           };
-          pdfjsLib.AnnotationLayer.render(parameters);
+          AnnotationLayer.render(parameters);
 
           // Inline SVG images from text annotations.
           await resolveImages(div);
@@ -319,7 +329,7 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
         .then(async cssRules => {
           style.textContent = fontRules + "\n" + cssRules;
 
-          pdfjsLib.XfaLayer.render({
+          XfaLayer.render({
             xfa,
             div,
             viewport: viewport.clone({ dontFlip: true }),
@@ -365,7 +375,7 @@ var Driver = (function DriverClosure() {
   // eslint-disable-next-line no-shadow
   function Driver(options) {
     // Configure the global worker options.
-    pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
+    GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -494,7 +504,7 @@ var Driver = (function DriverClosure() {
               .appendChild(xfaStyleElement);
           }
 
-          const loadingTask = pdfjsLib.getDocument({
+          const loadingTask = getDocument({
             url: absoluteUrl,
             password: task.password,
             cMapUrl: CMAP_URL,
@@ -752,12 +762,13 @@ var Driver = (function DriverClosure() {
               var renderContext = {
                 canvasContext: ctx,
                 viewport,
-                renderInteractiveForms: renderForms,
                 optionalContentConfigPromise: task.optionalContentConfigPromise,
               };
-              if (renderPrint) {
+              if (renderForms) {
+                renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
+              } else if (renderPrint) {
                 if (task.annotationStorage) {
-                  renderContext.includeAnnotationStorage = true;
+                  renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
                 }
                 renderContext.intent = "print";
               }
