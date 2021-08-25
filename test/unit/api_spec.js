@@ -14,11 +14,7 @@
  */
 
 import {
-  buildGetDocumentParams,
-  DefaultFileReaderFactory,
-  TEST_PDFS_PATH,
-} from "./test_utils.js";
-import {
+  AnnotationMode,
   createPromiseCapability,
   FontType,
   ImageKind,
@@ -30,6 +26,11 @@ import {
   PermissionFlag,
   StreamType,
 } from "../../src/shared/util.js";
+import {
+  buildGetDocumentParams,
+  DefaultFileReaderFactory,
+  TEST_PDFS_PATH,
+} from "./test_utils.js";
 import {
   DefaultCanvasFactory,
   getDocument,
@@ -1735,6 +1736,56 @@ describe("api", function () {
       // is supposed to include any existing Annotation-operatorLists.
       expect(operatorList.fnArray.includes(OPS.beginAnnotation)).toEqual(true);
       expect(operatorList.fnArray.includes(OPS.endAnnotation)).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets operator list, with `annotationMode`-option", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(2);
+
+      pdfDoc.annotationStorage.setValue("30R", { value: "test" });
+      pdfDoc.annotationStorage.setValue("31R", { value: true });
+
+      const opListAnnotDisable = await pdfPage.getOperatorList({
+        annotationMode: AnnotationMode.DISABLE,
+      });
+      expect(opListAnnotDisable.fnArray.length).toEqual(0);
+      expect(opListAnnotDisable.argsArray.length).toEqual(0);
+      expect(opListAnnotDisable.lastChunk).toEqual(true);
+
+      const opListAnnotEnable = await pdfPage.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE,
+      });
+      expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(150);
+      expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(150);
+      expect(opListAnnotEnable.lastChunk).toEqual(true);
+
+      const opListAnnotEnableForms = await pdfPage.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE_FORMS,
+      });
+      expect(opListAnnotEnableForms.fnArray.length).toBeGreaterThan(40);
+      expect(opListAnnotEnableForms.argsArray.length).toBeGreaterThan(40);
+      expect(opListAnnotEnableForms.lastChunk).toEqual(true);
+
+      const opListAnnotEnableStorage = await pdfPage.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE_STORAGE,
+      });
+      expect(opListAnnotEnableStorage.fnArray.length).toBeGreaterThan(170);
+      expect(opListAnnotEnableStorage.argsArray.length).toBeGreaterThan(170);
+      expect(opListAnnotEnableStorage.lastChunk).toEqual(true);
+
+      // Sanity check to ensure that the `annotationMode` is correctly applied.
+      expect(opListAnnotDisable.fnArray.length).toBeLessThan(
+        opListAnnotEnableForms.fnArray.length
+      );
+      expect(opListAnnotEnableForms.fnArray.length).toBeLessThan(
+        opListAnnotEnable.fnArray.length
+      );
+      expect(opListAnnotEnable.fnArray.length).toBeLessThan(
+        opListAnnotEnableStorage.fnArray.length
+      );
 
       await loadingTask.destroy();
     });

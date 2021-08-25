@@ -14,6 +14,7 @@
  */
 
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
+import { AnnotationMode } from "pdfjs-lib";
 import { compatibilityParams } from "./app_options.js";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
@@ -49,7 +50,7 @@ function renderPage(
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
       viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
       intent: "print",
-      includeAnnotationStorage: true,
+      annotationMode: AnnotationMode.ENABLE_STORAGE,
       optionalContentConfigPromise,
     };
     return pdfPage.render(renderContext).promise;

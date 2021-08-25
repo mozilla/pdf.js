@@ -59,6 +59,11 @@ const OptionKind = {
  *              values below *explicitly* rather than relying on imported types.
  */
 const defaultOptions = {
+  annotationMode: {
+    /** @type {number} */
+    value: 2,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   cursorToolOnLoad: {
     /** @type {number} */
     value: 0,
@@ -144,11 +149,6 @@ const defaultOptions = {
     /** @type {string} */
     value: "canvas",
     kind: OptionKind.VIEWER,
-  },
-  renderInteractiveForms: {
-    /** @type {boolean} */
-    value: true,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   sidebarViewOnLoad: {
     /** @type {number} */

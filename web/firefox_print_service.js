@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { RenderingCancelledException, shadow } from "pdfjs-lib";
+import { AnnotationMode, RenderingCancelledException, shadow } from "pdfjs-lib";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 
@@ -68,7 +68,7 @@ function composePage(
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",
-          includeAnnotationStorage: true,
+          annotationMode: AnnotationMode.ENABLE_STORAGE,
           optionalContentConfigPromise,
         };
         currentRenderTask = thisRenderTask = pdfPage.render(renderContext);
