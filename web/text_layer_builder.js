@@ -49,9 +49,7 @@ class TextLayerBuilder {
     this.textContentItemsStr = [];
     this.textContentStream = null;
     this.renderingDone = false;
-    this.pageIdx = pageIndex;
-    this.pageNumber = this.pageIdx + 1;
-    this.matches = [];
+    this.pageNumber = pageIndex + 1;
     this.viewport = viewport;
     this.textDivs = [];
     this.textLayerRenderTask = null;
