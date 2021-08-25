@@ -105,34 +105,6 @@ class IPDFLinkService {
 /**
  * @interface
  */
-class IPDFHistory {
-  /**
-   * @param {Object} params
-   */
-  initialize({ fingerprint, resetHistory = false, updateUrl = false }) {}
-
-  reset() {}
-
-  /**
-   * @param {Object} params
-   */
-  push({ namedDest = null, explicitDest, pageNumber }) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  pushPage(pageNumber) {}
-
-  pushCurrentPosition() {}
-
-  back() {}
-
-  forward() {}
-}
-
-/**
- * @interface
- */
 class IRenderableView {
   /**
    * @type {string} - Unique ID for rendering queue.
@@ -265,7 +237,6 @@ class IL10n {
 export {
   IL10n,
   IPDFAnnotationLayerFactory,
-  IPDFHistory,
   IPDFLinkService,
   IPDFStructTreeLayerFactory,
   IPDFTextLayerFactory,
