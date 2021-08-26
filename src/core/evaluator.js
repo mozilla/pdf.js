@@ -461,13 +461,15 @@ class PartialEvaluator {
     } else {
       bbox = null;
     }
-    let optionalContent = null,
-      groupOptions;
+
+    let optionalContent, groupOptions;
     if (dict.has("OC")) {
       optionalContent = await this.parseMarkedContentProps(
         dict.get("OC"),
         resources
       );
+    }
+    if (optionalContent !== undefined) {
       operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
     const group = dict.get("Group");
@@ -528,7 +530,7 @@ class PartialEvaluator {
         operatorList.addOp(OPS.endGroup, [groupOptions]);
       }
 
-      if (optionalContent) {
+      if (optionalContent !== undefined) {
         operatorList.addOp(OPS.endMarkedContent, []);
       }
     });
@@ -575,12 +577,14 @@ class PartialEvaluator {
       return;
     }
 
-    let optionalContent = null;
+    let optionalContent;
     if (dict.has("OC")) {
       optionalContent = await this.parseMarkedContentProps(
         dict.get("OC"),
         resources
       );
+    }
+    if (optionalContent !== undefined) {
       operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
 
@@ -620,7 +624,7 @@ class PartialEvaluator {
         });
       }
 
-      if (optionalContent) {
+      if (optionalContent !== undefined) {
         operatorList.addOp(OPS.endMarkedContent, []);
       }
       return;
@@ -645,7 +649,7 @@ class PartialEvaluator {
       imgData = imageObj.createImageData(/* forceRGBA = */ true);
       operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
 
-      if (optionalContent) {
+      if (optionalContent !== undefined) {
         operatorList.addOp(OPS.endMarkedContent, []);
       }
       return;
@@ -717,7 +721,7 @@ class PartialEvaluator {
       }
     }
 
-    if (optionalContent) {
+    if (optionalContent !== undefined) {
       operatorList.addOp(OPS.endMarkedContent, []);
     }
   }
