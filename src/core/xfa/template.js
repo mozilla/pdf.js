@@ -1265,8 +1265,8 @@ class CheckButton extends XFAObject {
         field.items.children[0][$toHTML]().html) ||
       [];
     const exportedValue = {
-      on: (items[0] || "on").toString(),
-      off: (items[1] || "off").toString(),
+      on: (items[0] !== undefined ? items[0] : "on").toString(),
+      off: (items[1] !== undefined ? items[1] : "off").toString(),
     };
 
     const value = (field.value && field.value[$text]()) || "off";
@@ -1296,6 +1296,7 @@ class CheckButton extends XFAObject {
         type,
         checked,
         xfaOn: exportedValue.on,
+        xfaOff: exportedValue.off,
         "aria-label": ariaLabel(field),
       },
     };

@@ -42,7 +42,11 @@ class XfaLayer {
             break;
           }
           html.addEventListener("change", event => {
-            storage.setValue(id, { value: event.target.getAttribute("xfaOn") });
+            storage.setValue(id, {
+              value: event.target.checked
+                ? event.target.getAttribute("xfaOn")
+                : event.target.getAttribute("xfaOff"),
+            });
           });
         } else {
           if (storedData.value !== null) {
