@@ -679,21 +679,13 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
     }
-    const doc = document.documentElement;
-    let support = !!(
-      doc.requestFullscreen ||
-      doc.mozRequestFullScreen ||
-      doc.webkitRequestFullScreen
+    return shadow(
+      this,
+      "supportsFullscreen",
+      document.fullscreenEnabled ||
+        document.mozFullScreenEnabled ||
+        document.webkitFullscreenEnabled
     );
-
-    if (
-      document.fullscreenEnabled === false ||
-      document.mozFullScreenEnabled === false ||
-      document.webkitFullscreenEnabled === false
-    ) {
-      support = false;
-    }
-    return shadow(this, "supportsFullscreen", support);
   },
 
   get supportsIntegratedFind() {
@@ -853,12 +845,8 @@ const PDFViewerApplication = {
     this.pdfAttachmentViewer.reset();
     this.pdfLayerViewer.reset();
 
-    if (this.pdfHistory) {
-      this.pdfHistory.reset();
-    }
-    if (this.findBar) {
-      this.findBar.reset();
-    }
+    this.pdfHistory?.reset();
+    this.findBar?.reset();
     this.toolbar.reset();
     this.secondaryToolbar.reset();
 
@@ -1850,9 +1838,7 @@ const PDFViewerApplication = {
       this.printService.destroy();
       this.printService = null;
 
-      if (this.pdfDocument) {
-        this.pdfDocument.annotationStorage.resetModified();
-      }
+      this.pdfDocument?.annotationStorage.resetModified();
     }
     this.forceRendering();
   },
@@ -1864,10 +1850,7 @@ const PDFViewerApplication = {
   },
 
   requestPresentationMode() {
-    if (!this.pdfPresentationMode) {
-      return;
-    }
-    this.pdfPresentationMode.request();
+    this.pdfPresentationMode?.request();
   },
 
   triggerPrinting() {
