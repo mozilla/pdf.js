@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+
 const PDF_ROLE_TO_HTML_ROLE = {
   // Document level structure types
   Document: null, // There's a "document" role, but it doesn't make sense here.
