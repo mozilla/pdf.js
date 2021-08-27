@@ -679,21 +679,13 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
     }
-    const doc = document.documentElement;
-    let support = !!(
-      doc.requestFullscreen ||
-      doc.mozRequestFullScreen ||
-      doc.webkitRequestFullScreen
+    return shadow(
+      this,
+      "supportsFullscreen",
+      document.fullscreenEnabled ||
+        document.mozFullScreenEnabled ||
+        document.webkitFullscreenEnabled
     );
-
-    if (
-      document.fullscreenEnabled === false ||
-      document.mozFullScreenEnabled === false ||
-      document.webkitFullscreenEnabled === false
-    ) {
-      support = false;
-    }
-    return shadow(this, "supportsFullscreen", support);
   },
 
   get supportsIntegratedFind() {
