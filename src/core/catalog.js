@@ -86,6 +86,18 @@ class Catalog {
     return shadow(this, "version", version.name);
   }
 
+  /**
+   * @type {boolean} `true` for pure XFA documents,
+   *   `false` for XFA Foreground documents.
+   */
+  get needsRendering() {
+    const needsRendering = this._catDict.get("NeedsRendering");
+    if (!isBool(needsRendering)) {
+      return shadow(this, "needsRendering", false);
+    }
+    return shadow(this, "needsRendering", needsRendering);
+  }
+
   get collection() {
     let collection = null;
     try {

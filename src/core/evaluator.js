@@ -801,7 +801,6 @@ class PartialEvaluator {
     patternDict,
     operatorList,
     task,
-    cacheKey,
     localTilingPatternCache
   ) {
     // Create an IR of the pattern code.
@@ -831,8 +830,8 @@ class PartialEvaluator {
         operatorList.addDependencies(tilingOpList.dependencies);
         operatorList.addOp(fn, tilingPatternIR);
 
-        if (cacheKey) {
-          localTilingPatternCache.set(cacheKey, patternDict.objId, {
+        if (patternDict.objId) {
+          localTilingPatternCache.set(/* name = */ null, patternDict.objId, {
             operatorListIR,
             dict: patternDict,
           });
@@ -1362,9 +1361,11 @@ class PartialEvaluator {
     const patternName = args.pop();
     // SCN/scn applies patterns along with normal colors
     if (patternName instanceof Name) {
-      const name = patternName.name;
+      const rawPattern = patterns.getRaw(patternName.name);
 
-      const localTilingPattern = localTilingPatternCache.getByName(name);
+      const localTilingPattern =
+        rawPattern instanceof Ref &&
+        localTilingPatternCache.getByRef(rawPattern);
       if (localTilingPattern) {
         try {
           const color = cs.base ? cs.base.getRgb(args, 0) : null;
@@ -1379,11 +1380,8 @@ class PartialEvaluator {
           // Handle any errors during normal TilingPattern parsing.
         }
       }
-      // TODO: Attempt to lookup cached TilingPatterns by reference as well,
-      //       if and only if there are PDF documents where doing so would
-      //       significantly improve performance.
 
-      const pattern = patterns.get(name);
+      const pattern = this.xref.fetchIfRef(rawPattern);
       if (pattern) {
         const dict = isStream(pattern) ? pattern.dict : pattern;
         const typeNum = dict.get("PatternType");
@@ -1398,7 +1396,6 @@ class PartialEvaluator {
             dict,
             operatorList,
             task,
-            /* cacheKey = */ name,
             localTilingPatternCache
           );
         } else if (typeNum === PatternType.SHADING) {

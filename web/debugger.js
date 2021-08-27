@@ -540,7 +540,8 @@ window.PDFBug = (function PDFBugClosure() {
         });
       }
     },
-    init(pdfjsLib, container) {
+    init(pdfjsLib, container, ids) {
+      this.enable(ids);
       /*
        * Basic Layout:
        * PDFBug
@@ -589,12 +590,8 @@ window.PDFBug = (function PDFBugClosure() {
           tool.init(pdfjsLib);
         } else {
           panel.textContent =
-            tool.name +
-            " is disabled. To enable add " +
-            ' "' +
-            tool.id +
-            '" to the pdfBug parameter ' +
-            "and refresh (separate multiple by commas).";
+            `${tool.name} is disabled. To enable add "${tool.id}" to ` +
+            "the pdfBug parameter and refresh (separate multiple by commas).";
         }
         buttons.push(panelButton);
       }

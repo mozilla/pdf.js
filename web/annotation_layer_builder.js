@@ -24,7 +24,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
- * @property {boolean} renderInteractiveForms
+ * @property {boolean} renderForms
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
  * @property {IL10n} l10n - Localization service.
@@ -44,7 +44,7 @@ class AnnotationLayerBuilder {
     downloadManager,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = true,
+    renderForms = true,
     l10n = NullL10n,
     enableScripting = false,
     hasJSActionsPromise = null,
@@ -55,7 +55,7 @@ class AnnotationLayerBuilder {
     this.linkService = linkService;
     this.downloadManager = downloadManager;
     this.imageResourcesPath = imageResourcesPath;
-    this.renderInteractiveForms = renderInteractiveForms;
+    this.renderForms = renderForms;
     this.l10n = l10n;
     this.annotationStorage = annotationStorage;
     this.enableScripting = enableScripting;
@@ -91,7 +91,7 @@ class AnnotationLayerBuilder {
         page: this.pdfPage,
         imageResourcesPath: this.imageResourcesPath,
         removePageBorders: this.removePageBorders, // #194
-        renderInteractiveForms: this.renderInteractiveForms,
+        renderForms: this.renderForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager,
         annotationStorage: this.annotationStorage,
@@ -140,7 +140,7 @@ class DefaultAnnotationLayerFactory {
    * @param {AnnotationStorage} [annotationStorage]
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
-   * @param {boolean} renderInteractiveForms
+   * @param {boolean} renderForms
    * @param {IL10n} l10n
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
@@ -152,7 +152,7 @@ class DefaultAnnotationLayerFactory {
     pdfPage,
     annotationStorage = null,
     imageResourcesPath = "",
-    renderInteractiveForms = true,
+    renderForms = true,
     l10n = NullL10n,
     enableScripting = false,
     hasJSActionsPromise = null,
@@ -162,7 +162,7 @@ class DefaultAnnotationLayerFactory {
       pageDiv,
       pdfPage,
       imageResourcesPath,
-      renderInteractiveForms,
+      renderForms,
       linkService: new SimpleLinkService(),
       l10n,
       annotationStorage,

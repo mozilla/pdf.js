@@ -21,7 +21,9 @@ class BaseLocalCache {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    if (!options || !options.onlyRefs) {
+    this._onlyRefs = (options && options.onlyRefs) === true;
+
+    if (!this._onlyRefs) {
       this._nameRefMap = new Map();
       this._imageMap = new Map();
     }
@@ -29,6 +31,9 @@ class BaseLocalCache {
   }
 
   getByName(name) {
+    if (this._onlyRefs) {
+      unreachable("Should not call `getByName` method.");
+    }
     const ref = this._nameRefMap.get(name);
     if (ref) {
       return this.getByRef(ref);
@@ -97,10 +102,6 @@ class LocalFunctionCache extends BaseLocalCache {
     super({ onlyRefs: true });
   }
 
-  getByName(name) {
-    unreachable("Should not call `getByName` method.");
-  }
-
   set(name = null, ref, data) {
     if (!ref) {
       throw new Error('LocalFunctionCache.set - expected "ref" argument.');
@@ -134,25 +135,18 @@ class LocalGStateCache extends BaseLocalCache {
 }
 
 class LocalTilingPatternCache extends BaseLocalCache {
-  set(name, ref = null, data) {
-    if (typeof name !== "string") {
-      throw new Error(
-        'LocalTilingPatternCache.set - expected "name" argument.'
-      );
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('LocalTilingPatternCache.set - expected "ref" argument.');
     }
-    if (ref) {
-      if (this._imageCache.has(ref)) {
-        return;
-      }
-      this._nameRefMap.set(name, ref);
-      this._imageCache.put(ref, data);
+    if (this._imageCache.has(ref)) {
       return;
     }
-    // name
-    if (this._imageMap.has(name)) {
-      return;
-    }
-    this._imageMap.set(name, data);
+    this._imageCache.put(ref, data);
   }
 }
 

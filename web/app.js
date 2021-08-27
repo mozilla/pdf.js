@@ -383,7 +383,7 @@ const PDFViewerApplication = {
       AppOptions.set("fontExtraProperties", true);
 
       const enabled = params.get("pdfbug").split(",");
-      waitOn.push(loadAndEnablePDFBug(enabled));
+      waitOn.push(initPDFBug(enabled));
     }
     // It is not possible to change locale for the (various) extension builds.
     if (
@@ -524,6 +524,7 @@ const PDFViewerApplication = {
       renderer: AppOptions.get("renderer"),
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
+      annotationMode: AppOptions.get("annotationMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       removePageBorders: AppOptions.get("removePageBorders"), // #194
       renderInteractiveForms: AppOptions.get("renderInteractiveForms"),
@@ -1623,7 +1624,7 @@ const PDFViewerApplication = {
       this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
-      !this.pdfViewer.renderInteractiveForms
+      !this.pdfViewer.renderForms
     ) {
       console.warn("Warning: Interactive form support is not enabled");
       this.fallback(UNSUPPORTED_FEATURES.forms);
@@ -2215,17 +2216,15 @@ async function loadFakeWorker() {
   }
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     window.pdfjsWorker = await import("pdfjs/core/worker.js");
-    return undefined;
+    return;
   }
-  return loadScript(PDFWorker.workerSrc);
+  await loadScript(PDFWorker.workerSrc);
 }
 
-function loadAndEnablePDFBug(enabledTabs) {
-  const appConfig = PDFViewerApplication.appConfig;
-  return loadScript(appConfig.debuggerScriptPath).then(function () {
-    PDFBug.enable(enabledTabs);
-    PDFBug.init({ OPS }, appConfig.mainContainer);
-  });
+async function initPDFBug(enabledTabs) {
+  const { debuggerScriptPath, mainContainer } = PDFViewerApplication.appConfig;
+  await loadScript(debuggerScriptPath);
+  PDFBug.init({ OPS }, mainContainer, enabledTabs);
 }
 
 function reportPageStatsPDFBug({ pageNumber }) {

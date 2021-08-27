@@ -18,12 +18,33 @@ import "./compatibility.js";
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+/**
+ * Refer to the `WorkerTransport.getRenderingIntent`-method in the API, to see
+ * how these flags are being used:
+ *  - ANY, DISPLAY, and PRINT are the normal rendering intents, note the
+ *    `PDFPageProxy.{render, getOperatorList, getAnnotations}`-methods.
+ *  - ANNOTATIONS_FORMS, ANNOTATIONS_STORAGE, ANNOTATIONS_DISABLE control which
+ *    annotations are rendered onto the canvas (i.e. by being included in the
+ *    operatorList), note the `PDFPageProxy.{render, getOperatorList}`-methods
+ *    and their `annotationMode`-option.
+ *  - OPLIST is used with the `PDFPageProxy.getOperatorList`-method, note the
+ *    `OperatorList`-constructor (on the worker-thread).
+ */
 const RenderingIntentFlag = {
   ANY: 0x01,
   DISPLAY: 0x02,
   PRINT: 0x04,
-  ANNOTATION_FORMS: 0x20,
+  ANNOTATIONS_FORMS: 0x10,
+  ANNOTATIONS_STORAGE: 0x20,
+  ANNOTATIONS_DISABLE: 0x40,
   OPLIST: 0x100,
+};
+
+const AnnotationMode = {
+  DISABLE: 0,
+  ENABLE: 1,
+  ENABLE_FORMS: 2,
+  ENABLE_STORAGE: 3,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
@@ -1016,6 +1037,7 @@ export {
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationMarkedState,
+  AnnotationMode,
   AnnotationReplyType,
   AnnotationReviewState,
   AnnotationStateModelType,

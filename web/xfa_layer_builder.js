@@ -39,8 +39,9 @@ class XfaLayerBuilder {
   /**
    * @param {PageViewport} viewport
    * @param {string} intent (default value is 'display')
-   * @returns {Promise<void>} A promise that is resolved when rendering of the
-   *   annotations is complete.
+   * @returns {Promise<Object | void>} A promise that is resolved when rendering
+   *   of the XFA layer is complete. The first rendering will return an object
+   *   with a `textDivs` property that  can be used with the TextHighlighter.
    */
   render(viewport, intent = "display") {
     if (intent === "print") {
@@ -67,7 +68,7 @@ class XfaLayerBuilder {
       .getXfa()
       .then(xfa => {
         if (this._cancelled) {
-          return;
+          return Promise.resolve();
         }
         const parameters = {
           viewport: viewport.clone({ dontFlip: true }),
@@ -79,15 +80,13 @@ class XfaLayerBuilder {
         };
 
         if (this.div) {
-          XfaLayer.update(parameters);
-        } else {
-          // Create an xfa layer div and render the form
-          this.div = document.createElement("div");
-          this.pageDiv.appendChild(this.div);
-          parameters.div = this.div;
-
-          XfaLayer.render(parameters);
+          return XfaLayer.update(parameters);
         }
+        // Create an xfa layer div and render the form
+        this.div = document.createElement("div");
+        this.pageDiv.appendChild(this.div);
+        parameters.div = this.div;
+        return XfaLayer.render(parameters);
       })
       .catch(error => {
         console.error(error);

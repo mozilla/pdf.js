@@ -320,7 +320,14 @@ class Page {
     });
   }
 
-  getOperatorList({ handler, sink, task, intent, annotationStorage }) {
+  getOperatorList({
+    handler,
+    sink,
+    task,
+    intent,
+    cacheKey,
+    annotationStorage = null,
+  }) {
     const contentStreamPromise = this.getContentStream(handler);
     const resourcesPromise = this.loadResources([
       "ColorSpace",
@@ -354,7 +361,7 @@ class Page {
           this.nonBlendModesSet
         ),
         pageIndex: this.pageIndex,
-        intent,
+        cacheKey,
       });
 
       return partialEvaluator
@@ -373,11 +380,14 @@ class Page {
     // page's operator list to render them.
     return Promise.all([pageListPromise, this._parsedAnnotations]).then(
       function ([pageOpList, annotations]) {
-        if (annotations.length === 0) {
+        if (
+          annotations.length === 0 ||
+          intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
+        ) {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
         }
-        const renderForms = !!(intent & RenderingIntentFlag.ANNOTATION_FORMS),
+        const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
           intentAny = !!(intent & RenderingIntentFlag.ANY),
           intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
           intentPrint = !!(intent & RenderingIntentFlag.PRINT);
@@ -875,6 +885,7 @@ class PDFDocument {
   get xfaFactory() {
     if (
       this.pdfManager.enableXfa &&
+      this.catalog.needsRendering &&
       this.formInfo.hasXfa &&
       !this.formInfo.hasAcroForm
     ) {

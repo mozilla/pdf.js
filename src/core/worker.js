@@ -722,6 +722,7 @@ class WorkerMessageHandler {
             sink,
             task,
             intent: data.intent,
+            cacheKey: data.cacheKey,
             annotationStorage: data.annotationStorage,
           })
           .then(

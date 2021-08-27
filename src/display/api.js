@@ -19,6 +19,7 @@
 
 import {
   AbortException,
+  AnnotationMode,
   assert,
   createPromiseCapability,
   getVerbosityLevel,
@@ -62,6 +63,7 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
+import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
@@ -532,29 +534,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       }
       return workerId;
     });
-}
-
-function getRenderingIntent(intent, { renderForms = false, isOpList = false }) {
-  let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
-  switch (intent) {
-    case "any":
-      renderingIntent = RenderingIntentFlag.ANY;
-      break;
-    case "display":
-      break;
-    case "print":
-      renderingIntent = RenderingIntentFlag.PRINT;
-      break;
-    default:
-      warn(`getRenderingIntent - invalid intent: ${intent}`);
-  }
-  if (renderForms) {
-    renderingIntent += RenderingIntentFlag.ANNOTATION_FORMS;
-  }
-  if (isOpList) {
-    renderingIntent += RenderingIntentFlag.OPLIST;
-  }
-  return renderingIntent;
 }
 
 /**
@@ -1176,9 +1155,18 @@ class PDFDocumentProxy {
  *   the `PDFPageProxy.getViewport` method.
  * @property {string} [intent] - Rendering intent, can be 'display', 'print',
  *   or 'any'. The default value is 'display'.
- * @property {boolean} [renderInteractiveForms] - Whether or not interactive
- *   form elements are rendered in the display layer. If so, we do not render
- *   them on the canvas as well. The default value is `false`.
+ * @property {number} [annotationMode] Controls which annotations are rendered
+ *   onto the canvas, for annotations with appearance-data; the values from
+ *   {@link AnnotationMode} should be used. The following values are supported:
+ *    - `AnnotationMode.DISABLE`, which disables all annotations.
+ *    - `AnnotationMode.ENABLE`, which includes all possible annotations (thus
+ *      it also depends on the `intent`-option, see above).
+ *    - `AnnotationMode.ENABLE_FORMS`, which excludes annotations that contain
+ *      interactive form elements (those will be rendered in the display layer).
+ *    - `AnnotationMode.ENABLE_STORAGE`, which includes all possible annotations
+ *      (as above) but where interactive form elements are updated with data
+ *      from the {@link AnnotationStorage}-instance; useful e.g. for printing.
+ *   The default value is `AnnotationMode.ENABLE`.
  * @property {Array<any>} [transform] - Additional transform, applied just
  *   before viewport transform.
  * @property {Object} [imageLayer] - An object that has `beginLayout`,
@@ -1190,9 +1178,6 @@ class PDFDocumentProxy {
  *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
  *   a `CanvasPattern` object (a repetitive image). The default value is
  *   'rgb(255,255,255)'.
- * @property {boolean} [includeAnnotationStorage] - Render stored interactive
- *   form element data, from the {@link AnnotationStorage}-instance, onto the
- *   canvas itself; useful e.g. for printing. The default value is `false`.
  * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
  *   A promise that should resolve with an {@link OptionalContentConfig}
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
@@ -1206,6 +1191,18 @@ class PDFDocumentProxy {
  * @typedef {Object} GetOperatorListParameters
  * @property {string} [intent] - Rendering intent, can be 'display', 'print',
  *   or 'any'. The default value is 'display'.
+ * @property {number} [annotationMode] Controls which annotations are included
+ *   in the operatorList, for annotations with appearance-data; the values from
+ *   {@link AnnotationMode} should be used. The following values are supported:
+ *    - `AnnotationMode.DISABLE`, which disables all annotations.
+ *    - `AnnotationMode.ENABLE`, which includes all possible annotations (thus
+ *      it also depends on the `intent`-option, see above).
+ *    - `AnnotationMode.ENABLE_FORMS`, which excludes annotations that contain
+ *      interactive form elements (those will be rendered in the display layer).
+ *    - `AnnotationMode.ENABLE_STORAGE`, which includes all possible annotations
+ *      (as above) but where interactive form elements are updated with data
+ *      from the {@link AnnotationStorage}-instance; useful e.g. for printing.
+ *   The default value is `AnnotationMode.ENABLE`.
  */
 
 /**
@@ -1321,15 +1318,15 @@ class PDFPageProxy {
    *   {Array} of the annotation objects.
    */
   getAnnotations({ intent = "display" } = {}) {
-    const renderingIntent = getRenderingIntent(intent, {});
+    const intentArgs = this._transport.getRenderingIntent(intent);
 
-    let promise = this._annotationPromises.get(renderingIntent);
+    let promise = this._annotationPromises.get(intentArgs.cacheKey);
     if (!promise) {
       promise = this._transport.getAnnotations(
         this._pageIndex,
-        renderingIntent
+        intentArgs.renderingIntent
       );
-      this._annotationPromises.set(renderingIntent, promise);
+      this._annotationPromises.set(intentArgs.cacheKey, promise);
     }
     return promise;
   }
@@ -1365,21 +1362,48 @@ class PDFPageProxy {
     canvasContext,
     viewport,
     intent = "display",
-    renderInteractiveForms = false,
+    annotationMode = AnnotationMode.ENABLE,
     transform = null,
     imageLayer = null,
     canvasFactory = null,
     background = null,
-    includeAnnotationStorage = false,
     optionalContentConfigPromise = null,
   }) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+      if (arguments[0]?.renderInteractiveForms !== undefined) {
+        deprecated(
+          "render no longer accepts the `renderInteractiveForms`-option, " +
+            "please use the `annotationMode`-option instead."
+        );
+        if (
+          arguments[0].renderInteractiveForms === true &&
+          annotationMode === AnnotationMode.ENABLE
+        ) {
+          annotationMode = AnnotationMode.ENABLE_FORMS;
+        }
+      }
+      if (arguments[0]?.includeAnnotationStorage !== undefined) {
+        deprecated(
+          "render no longer accepts the `includeAnnotationStorage`-option, " +
+            "please use the `annotationMode`-option instead."
+        );
+        if (
+          arguments[0].includeAnnotationStorage === true &&
+          annotationMode === AnnotationMode.ENABLE
+        ) {
+          annotationMode = AnnotationMode.ENABLE_STORAGE;
+        }
+      }
+    }
+
     if (this._stats) {
       this._stats.time("Overall");
     }
 
-    const renderingIntent = getRenderingIntent(intent, {
-      renderForms: renderInteractiveForms === true,
-    });
+    const intentArgs = this._transport.getRenderingIntent(
+      intent,
+      annotationMode
+    );
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
     this.pendingCleanup = false;
@@ -1388,10 +1412,10 @@ class PDFPageProxy {
       optionalContentConfigPromise = this._transport.getOptionalContentConfig();
     }
 
-    let intentState = this._intentStates.get(renderingIntent);
+    let intentState = this._intentStates.get(intentArgs.cacheKey);
     if (!intentState) {
       intentState = Object.create(null);
-      this._intentStates.set(renderingIntent, intentState);
+      this._intentStates.set(intentArgs.cacheKey, intentState);
     }
 
     // Ensure that a pending `streamReader` cancel timeout is always aborted.
@@ -1403,9 +1427,9 @@ class PDFPageProxy {
     const canvasFactoryInstance =
       canvasFactory ||
       new DefaultCanvasFactory({ ownerDocument: this._ownerDocument });
-    const annotationStorage = includeAnnotationStorage
-      ? this._transport.annotationStorage.serializable
-      : null;
+    const intentPrint = !!(
+      intentArgs.renderingIntent & RenderingIntentFlag.PRINT
+    );
 
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
@@ -1420,11 +1444,7 @@ class PDFPageProxy {
       if (this._stats) {
         this._stats.time("Page Request");
       }
-      this._pumpOperatorList({
-        pageIndex: this._pageIndex,
-        intent: renderingIntent,
-        annotationStorage,
-      });
+      this._pumpOperatorList(intentArgs);
     }
 
     const complete = error => {
@@ -1432,10 +1452,7 @@ class PDFPageProxy {
 
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup once rendering has finished (regardless of cleanupAfterRender).
-      if (
-        this.cleanupAfterRender ||
-        renderingIntent & RenderingIntentFlag.PRINT
-      ) {
+      if (this.cleanupAfterRender || intentPrint) {
         this.pendingCleanup = true;
       }
       this._tryCleanup();
@@ -1445,7 +1462,7 @@ class PDFPageProxy {
 
         this._abortOperatorList({
           intentState,
-          reason: error,
+          reason: error instanceof Error ? error : new Error(error),
         });
       } else {
         internalRenderTask.capability.resolve();
@@ -1471,7 +1488,7 @@ class PDFPageProxy {
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
-      useRequestAnimationFrame: !(renderingIntent & RenderingIntentFlag.PRINT),
+      useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
     });
 
@@ -1507,7 +1524,10 @@ class PDFPageProxy {
    * @returns {Promise<PDFOperatorList>} A promise resolved with an
    *   {@link PDFOperatorList} object that represents the page's operator list.
    */
-  getOperatorList({ intent = "display" } = {}) {
+  getOperatorList({
+    intent = "display",
+    annotationMode = AnnotationMode.ENABLE,
+  } = {}) {
     function operatorListChanged() {
       if (intentState.operatorList.lastChunk) {
         intentState.opListReadCapability.resolve(intentState.operatorList);
@@ -1516,11 +1536,15 @@ class PDFPageProxy {
       }
     }
 
-    const renderingIntent = getRenderingIntent(intent, { isOpList: true });
-    let intentState = this._intentStates.get(renderingIntent);
+    const intentArgs = this._transport.getRenderingIntent(
+      intent,
+      annotationMode,
+      /* isOpList = */ true
+    );
+    let intentState = this._intentStates.get(intentArgs.cacheKey);
     if (!intentState) {
       intentState = Object.create(null);
-      this._intentStates.set(renderingIntent, intentState);
+      this._intentStates.set(intentArgs.cacheKey, intentState);
     }
     let opListTask;
 
@@ -1538,10 +1562,7 @@ class PDFPageProxy {
       if (this._stats) {
         this._stats.time("Page Request");
       }
-      this._pumpOperatorList({
-        pageIndex: this._pageIndex,
-        intent: renderingIntent,
-      });
+      this._pumpOperatorList(intentArgs);
     }
     return intentState.opListReadCapability.promise;
   }
@@ -1580,6 +1601,13 @@ class PDFPageProxy {
    *   {@link TextContent} object that represents the page's text content.
    */
   getTextContent(params = {}) {
+    if (this._transport._htmlForXfa) {
+      // TODO: We need to revisit this once the XFA foreground patch lands and
+      // only do this for non-foreground XFA.
+      return this.getXfa().then(xfa => {
+        return XfaText.textContent(xfa);
+      });
+    }
     const readableStream = this.streamTextContent(params);
 
     return new Promise(function (resolve, reject) {
@@ -1624,14 +1652,14 @@ class PDFPageProxy {
     this._transport.pageCache[this._pageIndex] = null;
 
     const waitOn = [];
-    for (const [intent, intentState] of this._intentStates) {
+    for (const intentState of this._intentStates.values()) {
       this._abortOperatorList({
         intentState,
         reason: new Error("Page was destroyed."),
         force: true,
       });
 
-      if (intent & RenderingIntentFlag.OPLIST) {
+      if (intentState.opListReadCapability) {
         // Avoid errors below, since the renderTasks are just stubs.
         continue;
       }
@@ -1694,8 +1722,8 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, intent) {
-    const intentState = this._intentStates.get(intent);
+  _startRenderPage(transparency, cacheKey) {
+    const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
     }
@@ -1733,19 +1761,32 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _pumpOperatorList(args) {
-    assert(
-      args.intent,
-      'PDFPageProxy._pumpOperatorList: Expected "intent" argument.'
-    );
+  _pumpOperatorList({ renderingIntent, cacheKey }) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        Number.isInteger(renderingIntent) && renderingIntent > 0,
+        '_pumpOperatorList: Expected valid "renderingIntent" argument.'
+      );
+    }
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
-      args
+      {
+        pageIndex: this._pageIndex,
+        intent: renderingIntent,
+        cacheKey,
+        annotationStorage:
+          renderingIntent & RenderingIntentFlag.ANNOTATIONS_STORAGE
+            ? this._transport.annotationStorage.serializable
+            : null,
+      }
     );
     const reader = readableStream.getReader();
 
-    const intentState = this._intentStates.get(args.intent);
+    const intentState = this._intentStates.get(cacheKey);
     intentState.streamReader = reader;
 
     const pump = () => {
@@ -1794,11 +1835,15 @@ class PDFPageProxy {
    * @private
    */
   _abortOperatorList({ intentState, reason, force = false }) {
-    assert(
-      reason instanceof Error ||
-        (typeof reason === "object" && reason !== null),
-      'PDFPageProxy._abortOperatorList: Expected "reason" argument.'
-    );
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        reason instanceof Error,
+        '_abortOperatorList: Expected valid "reason" argument.'
+      );
+    }
 
     if (!intentState.streamReader) {
       return;
@@ -1821,7 +1866,7 @@ class PDFPageProxy {
       }
     }
     intentState.streamReader
-      .cancel(new AbortException(reason?.message))
+      .cancel(new AbortException(reason.message))
       .catch(() => {
         // Avoid "Uncaught promise" messages in the console.
       });
@@ -1832,9 +1877,9 @@ class PDFPageProxy {
     }
     // Remove the current `intentState`, since a cancelled `getOperatorList`
     // call on the worker-thread cannot be re-started...
-    for (const [intent, curIntentState] of this._intentStates) {
+    for (const [curCacheKey, curIntentState] of this._intentStates) {
       if (curIntentState === intentState) {
-        this._intentStates.delete(intent);
+        this._intentStates.delete(curCacheKey);
         break;
       }
     }
@@ -2392,6 +2437,55 @@ class WorkerTransport {
     return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
+  getRenderingIntent(
+    intent,
+    annotationMode = AnnotationMode.ENABLE,
+    isOpList = false
+  ) {
+    let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
+    let lastModified = "";
+
+    switch (intent) {
+      case "any":
+        renderingIntent = RenderingIntentFlag.ANY;
+        break;
+      case "display":
+        break;
+      case "print":
+        renderingIntent = RenderingIntentFlag.PRINT;
+        break;
+      default:
+        warn(`getRenderingIntent - invalid intent: ${intent}`);
+    }
+
+    switch (annotationMode) {
+      case AnnotationMode.DISABLE:
+        renderingIntent += RenderingIntentFlag.ANNOTATIONS_DISABLE;
+        break;
+      case AnnotationMode.ENABLE:
+        break;
+      case AnnotationMode.ENABLE_FORMS:
+        renderingIntent += RenderingIntentFlag.ANNOTATIONS_FORMS;
+        break;
+      case AnnotationMode.ENABLE_STORAGE:
+        renderingIntent += RenderingIntentFlag.ANNOTATIONS_STORAGE;
+
+        lastModified = this.annotationStorage.lastModified;
+        break;
+      default:
+        warn(`getRenderingIntent - invalid annotationMode: ${annotationMode}`);
+    }
+
+    if (isOpList) {
+      renderingIntent += RenderingIntentFlag.OPLIST;
+    }
+
+    return {
+      renderingIntent,
+      cacheKey: `${renderingIntent}_${lastModified}`,
+    };
+  }
+
   destroy() {
     if (this.destroyCapability) {
       return this.destroyCapability.promise;
@@ -2649,7 +2743,7 @@ class WorkerTransport {
       }
 
       const page = this.pageCache[data.pageIndex];
-      page._startRenderPage(data.transparency, data.intent);
+      page._startRenderPage(data.transparency, data.cacheKey);
     });
 
     messageHandler.on("commonobj", data => {

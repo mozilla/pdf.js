@@ -21,6 +21,7 @@ import { objectFromMap } from "../shared/util.js";
 class AnnotationStorage {
   constructor() {
     this._storage = new Map();
+    this._timeStamp = Date.now();
     this._modified = false;
 
     // Callbacks to signal when the modification state is set or reset.
@@ -100,10 +101,11 @@ class AnnotationStorage {
         }
       }
     } else {
-      this._storage.set(key, value);
       modified = true;
+      this._storage.set(key, value);
     }
     if (modified) {
+      this._timeStamp = Date.now();
       this._setModified();
       // #718 modified by ngx-extended-pdf-viewer
       if (fieldname || radioButtonField) {
@@ -160,6 +162,14 @@ class AnnotationStorage {
    */
   get serializable() {
     return this._storage.size > 0 ? this._storage : null;
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get lastModified() {
+    return this._timeStamp.toString();
   }
 }
 
