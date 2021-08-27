@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
+
 import { XfaLayer } from "pdfjs-lib";
 
 /**
  * @typedef {Object} XfaLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
+ * @property {Object} [xfaHtml]
  * @property {AnnotationStorage} [annotationStorage]
  */
 
