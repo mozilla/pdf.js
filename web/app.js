@@ -853,12 +853,8 @@ const PDFViewerApplication = {
     this.pdfAttachmentViewer.reset();
     this.pdfLayerViewer.reset();
 
-    if (this.pdfHistory) {
-      this.pdfHistory.reset();
-    }
-    if (this.findBar) {
-      this.findBar.reset();
-    }
+    this.pdfHistory?.reset();
+    this.findBar?.reset();
     this.toolbar.reset();
     this.secondaryToolbar.reset();
 
@@ -1850,9 +1846,7 @@ const PDFViewerApplication = {
       this.printService.destroy();
       this.printService = null;
 
-      if (this.pdfDocument) {
-        this.pdfDocument.annotationStorage.resetModified();
-      }
+      this.pdfDocument?.annotationStorage.resetModified();
     }
     this.forceRendering();
   },
@@ -1864,10 +1858,7 @@ const PDFViewerApplication = {
   },
 
   requestPresentationMode() {
-    if (!this.pdfPresentationMode) {
-      return;
-    }
-    this.pdfPresentationMode.request();
+    this.pdfPresentationMode?.request();
   },
 
   triggerPrinting() {
