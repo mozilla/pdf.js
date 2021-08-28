@@ -18,6 +18,7 @@ import {
   assert,
   createPromiseCapability,
   MissingPDFException,
+  PasswordException,
   UnexpectedResponseException,
   UnknownErrorException,
   warn,
@@ -64,6 +65,8 @@ function wrapReason(reason) {
       return new AbortException(reason.message);
     case "MissingPDFException":
       return new MissingPDFException(reason.message);
+    case "PasswordException":
+      return new PasswordException(reason.message, reason.code);
     case "UnexpectedResponseException":
       return new UnexpectedResponseException(reason.message, reason.status);
     case "UnknownErrorException":
