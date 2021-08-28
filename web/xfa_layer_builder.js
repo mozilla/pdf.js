@@ -21,19 +21,19 @@ import { XfaLayer } from "pdfjs-lib";
  * @typedef {Object} XfaLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
- * @property {Object} [xfaHtml]
  * @property {AnnotationStorage} [annotationStorage]
+ * @property {Object} [xfaHtml]
  */
 
 class XfaLayerBuilder {
   /**
    * @param {XfaLayerBuilderOptions} options
    */
-  constructor({ pageDiv, pdfPage, xfaHtml, annotationStorage }) {
+  constructor({ pageDiv, pdfPage, annotationStorage, xfaHtml }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
-    this.xfaHtml = xfaHtml;
     this.annotationStorage = annotationStorage;
+    this.xfaHtml = xfaHtml;
 
     this.div = null;
     this._cancelled = false;
@@ -62,17 +62,18 @@ class XfaLayerBuilder {
       this.pageDiv.appendChild(div);
       parameters.div = div;
 
-      XfaLayer.render(parameters);
-      return Promise.resolve();
+      const result = XfaLayer.render(parameters);
+      return Promise.resolve(result);
     }
 
     // intent === "display"
     return this.pdfPage
       .getXfa()
       .then(xfa => {
-        if (this._cancelled) {
-          return Promise.resolve();
+        if (this._cancelled || !xfa) {
+          return { textDivs: [] };
         }
+
         const parameters = {
           viewport: viewport.clone({ dontFlip: true }),
           div: this.div,

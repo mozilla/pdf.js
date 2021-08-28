@@ -93,10 +93,9 @@ class TextLayerBuilder {
     }
     this.cancel();
 
-    this.textDivs = [];
-    if (this.highlighter) {
-      this.highlighter.setTextMapping(this.textDivs, this.textContentItemsStr);
-    }
+    this.textDivs.length = 0;
+    this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
+
     const textLayerFrag = document.createDocumentFragment();
     this.textLayerRenderTask = renderTextLayer({
       textContent: this.textContent,

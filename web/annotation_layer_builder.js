@@ -80,10 +80,7 @@ class AnnotationLayerBuilder {
       this.pdfPage.getAnnotations({ intent }),
       this._hasJSActionsPromise,
     ]).then(([annotations, hasJSActions = false]) => {
-      if (this._cancelled) {
-        return;
-      }
-      if (annotations.length === 0) {
+      if (this._cancelled || annotations.length === 0) {
         return;
       }
 
