@@ -18,9 +18,17 @@ import {
   DefaultAnnotationLayerFactory,
 } from "./annotation_layer_builder.js";
 import {
+  DefaultStructTreeLayerFactory,
+  StructTreeLayerBuilder,
+} from "./struct_tree_layer_builder.js";
+import {
   DefaultTextLayerFactory,
   TextLayerBuilder,
 } from "./text_layer_builder.js";
+import {
+  DefaultXfaLayerFactory,
+  XfaLayerBuilder,
+} from "./xfa_layer_builder.js";
 import { EventBus, ProgressBar } from "./ui_utils.js";
 import { PDFLinkService, SimpleLinkService } from "./pdf_link_service.js";
 import { DownloadManager } from "./download_manager.js";
@@ -41,7 +49,9 @@ const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 export {
   AnnotationLayerBuilder,
   DefaultAnnotationLayerFactory,
+  DefaultStructTreeLayerFactory,
   DefaultTextLayerFactory,
+  DefaultXfaLayerFactory,
   DownloadManager,
   EventBus,
   GenericL10n,
@@ -55,5 +65,7 @@ export {
   PDFViewer,
   ProgressBar,
   SimpleLinkService,
+  StructTreeLayerBuilder,
   TextLayerBuilder,
+  XfaLayerBuilder,
 };

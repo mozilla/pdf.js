@@ -54,11 +54,13 @@ loadingTask.promise.then(function (pdfDocument) {
       scale: SCALE,
       defaultViewport: pdfPage.getViewport({ scale: SCALE }),
       eventBus,
-      // We can enable text/annotations layers, if needed
+      // We can enable text/annotation/xfa/struct-layers, as needed.
       textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
       annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
+      xfaLayerFactory: new pdfjsViewer.DefaultXfaLayerFactory(),
+      structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
     });
-    // Associates the actual page with the view, and drawing it
+    // Associate the actual page with the view, and draw it.
     pdfPageView.setPdfPage(pdfPage);
     return pdfPageView.draw();
   });
