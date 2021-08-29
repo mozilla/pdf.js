@@ -463,13 +463,13 @@ function getDocument(src) {
  * @param {Object} source
  * @param {PDFDataRangeTransport} pdfDataRangeTransport
  * @param {string} docId - Unique document ID, used in `MessageHandler`.
- * @returns {Promise} A promise that is resolved when the worker ID of the
- *   `MessageHandler` is known.
+ * @returns {Promise<string>} A promise that is resolved when the worker ID of
+ *   the `MessageHandler` is known.
  * @private
  */
-function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
+async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   if (worker.destroyed) {
-    return Promise.reject(new Error("Worker was destroyed"));
+    throw new Error("Worker was destroyed");
   }
 
   if (pdfDataRangeTransport) {
@@ -479,8 +479,9 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.contentDispositionFilename =
       pdfDataRangeTransport.contentDispositionFilename;
   }
-  return worker.messageHandler
-    .sendWithPromise("GetDocRequest", {
+  const workerId = await worker.messageHandler.sendWithPromise(
+    "GetDocRequest",
+    {
       docId,
       apiVersion:
         typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
@@ -508,13 +509,13 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       standardFontDataUrl: source.useWorkerFetch
         ? source.standardFontDataUrl
         : null,
-    })
-    .then(function (workerId) {
-      if (worker.destroyed) {
-        throw new Error("Worker was destroyed");
-      }
-      return workerId;
-    });
+    }
+  );
+
+  if (worker.destroyed) {
+    throw new Error("Worker was destroyed");
+  }
+  return workerId;
 }
 
 /**
@@ -587,19 +588,15 @@ class PDFDocumentLoadingTask {
    * @returns {Promise<void>} A promise that is resolved when destruction is
    *   completed.
    */
-  destroy() {
+  async destroy() {
     this.destroyed = true;
+    await this._transport?.destroy();
 
-    const transportDestroyed = !this._transport
-      ? Promise.resolve()
-      : this._transport.destroy();
-    return transportDestroyed.then(() => {
-      this._transport = null;
-      if (this._worker) {
-        this._worker.destroy();
-        this._worker = null;
-      }
-    });
+    this._transport = null;
+    if (this._worker) {
+      this._worker.destroy();
+      this._worker = null;
+    }
   }
 }
 
@@ -2898,13 +2895,9 @@ class WorkerTransport {
   }
 
   getPageIndex(ref) {
-    return this.messageHandler
-      .sendWithPromise("GetPageIndex", {
-        ref,
-      })
-      .catch(function (reason) {
-        return Promise.reject(new Error(reason));
-      });
+    return this.messageHandler.sendWithPromise("GetPageIndex", {
+      ref,
+    });
   }
 
   getAnnotations(pageIndex, intent) {
