@@ -42,6 +42,7 @@
 
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
 import { isNodeJS } from "pdfjs/shared/is_node.js";
+import { isValidFetchUrl } from "pdfjs/display/display_utils.js";
 import { PDFFetchStream } from "pdfjs/display/fetch_stream.js";
 import { PDFNetworkStream } from "pdfjs/display/network.js";
 import { setPDFNetworkStreamFactory } from "pdfjs/display/api.js";
@@ -102,20 +103,13 @@ async function initializePDFJS(callback) {
       "The `gulp unittest` command cannot be used in Node.js environments."
     );
   }
-  // Set the network stream factory for unit-tests.
-  if (
-    typeof Response !== "undefined" &&
-    "body" in Response.prototype &&
-    typeof ReadableStream !== "undefined"
-  ) {
-    setPDFNetworkStreamFactory(function (params) {
+  // Set the network stream factory for the unit-tests.
+  setPDFNetworkStreamFactory(params => {
+    if (isValidFetchUrl(params.url)) {
       return new PDFFetchStream(params);
-    });
-  } else {
-    setPDFNetworkStreamFactory(function (params) {
-      return new PDFNetworkStream(params);
-    });
-  }
+    }
+    return new PDFNetworkStream(params);
+  });
 
   // Configure the worker.
   GlobalWorkerOptions.workerSrc = "../../build/generic/build/pdf.worker.js";
