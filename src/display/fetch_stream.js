@@ -247,12 +247,7 @@ class PDFFetchStreamRangeReader {
         this._readCapability.resolve();
         this._reader = response.body.getReader();
       })
-      .catch(reason => {
-        if (reason?.name === "AbortError") {
-          return;
-        }
-        throw reason;
-      });
+      .catch(this._readCapability.reject);
 
     this.onProgress = null;
   }
