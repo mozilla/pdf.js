@@ -242,6 +242,12 @@
       "lastPage": 4,
       "type": "eq"
     },
+    {  "id": "bug1727053",
+       "file": "pdfs/bug1727053.pdf",
+       "md5": "8ed1e52da64000f9fdcb8b732f5a58f8",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3999",
        "file": "pdfs/issue3999.pdf",
        "md5": "0a59cd612e93758aa9f104470f45574b",
