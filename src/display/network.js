@@ -409,14 +409,18 @@ class PDFNetworkStreamFullRequestReader {
 class PDFNetworkStreamRangeRequestReader {
   constructor(manager, begin, end) {
     this._manager = manager;
+
     const args = {
       onDone: this._onDone.bind(this),
+      onError: this._onError.bind(this),
       onProgress: this._onProgress.bind(this),
     };
+    this._url = manager.url;
     this._requestId = manager.requestRange(begin, end, args);
     this._requests = [];
     this._queuedChunk = null;
     this._done = false;
+    this._storedError = undefined;
 
     this.onProgress = null;
     this.onClosed = null;
@@ -442,6 +446,15 @@ class PDFNetworkStreamRangeRequestReader {
     this._close();
   }
 
+  _onError(status) {
+    this._storedError = createResponseStatusError(status, this._url);
+    for (const requestCapability of this._requests) {
+      requestCapability.reject(this._storedError);
+    }
+    this._requests.length = 0;
+    this._queuedChunk = null;
+  }
+
   _onProgress(evt) {
     if (!this.isStreamingSupported) {
       this.onProgress?.({ loaded: evt.loaded });
@@ -453,6 +466,9 @@ class PDFNetworkStreamRangeRequestReader {
   }
 
   async read() {
+    if (this._storedError) {
+      throw this._storedError;
+    }
     if (this._queuedChunk !== null) {
       const chunk = this._queuedChunk;
       this._queuedChunk = null;
