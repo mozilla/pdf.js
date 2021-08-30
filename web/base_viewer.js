@@ -39,6 +39,7 @@ import {
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
+import { PageFlip } from "./page-flip.module.js"; // #716 modified by ngx-extended-pdf-viewer
 import { PDFPageView } from "./pdf_page_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
@@ -46,7 +47,6 @@ import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
-import { PageFlip } from "./page-flip.module"; // #716 modified by ngx-extended-pdf-viewer
 
 const DEFAULT_CACHE_SIZE = 10;
 
@@ -329,16 +329,15 @@ class BaseViewer {
         setTimeout(() => {
           if (!this.pageFlip) {
             const page1 = this._pages[0].div;
-            const viewerContainer = page1.parentElement.parentElement;
-            const requiredWidth = page1.clientWidth * 2;
-            const requiredHeight = page1.clientHeight;
-            const factorX = (viewerContainer.clientWidth / requiredWidth) * 0.95;
-            const factorY = (viewerContainer.clientHeight / requiredHeight) * 0.95;
-            const factor = Math.min(1, factorX, factorY);
             const htmlParentElement = page1.parentElement;
+            const viewer = htmlParentElement.parentElement;
+            viewer.style.width = 2 * page1.clientWidth + "px";
+            viewer.style.overflow = "hidden";
+            viewer.style.marginLeft = "auto";
+            viewer.style.marginRight = "auto";
             this.pageFlip = new PageFlip(htmlParentElement, {
-              width: page1.clientWidth * factor, // required parameter - base page width
-              height: page1.clientHeight * factor, // required parameter - base page height
+              width: page1.clientWidth,
+              height: page1.clientHeight,
               showCover: true,
               size: "fixed",
             });
@@ -346,7 +345,7 @@ class BaseViewer {
             // triggered by page turning
             this.pageFlip.on("flip", e => {
               if (this._currentPageNumber !== e.data + 1) {
-                this._currentPageNumber = e.data + 1;
+                this._setCurrentPageNumber(e.data + 1, false);
               }
             });
           }
@@ -394,20 +393,9 @@ class BaseViewer {
           this.renderingQueue.renderView(pageView);
         });
         // #716 modified by ngx-extended-pdf-viewer
-        if (this.pageViewMode === "book") {
-          if (this.currentPageNumber > 2) {
-            const previousPage = this._pages[this.currentPageNumber - 2];
-            this._ensurePdfPageLoaded(previousPage).then(() => {
-              this.renderingQueue.renderView(previousPage);
-            });
-          }
-          if (this.currentPageNumber < this._pages.length) {
-            const nextPage = this._pages[this.currentPageNumber];
-            this._ensurePdfPageLoaded(nextPage).then(() => {
-              this.renderingQueue.renderView(nextPage);
-            });
-          }
-        }
+//        if (this.pageViewMode === "book") {
+//          this.ensureAdjecentPagesAreLoaded();
+//        }
         // #716 modified by ngx-extended-pdf-viewer
       }
     }
@@ -425,6 +413,31 @@ class BaseViewer {
     }
     return true;
   }
+
+  // #716 modified by ngx-extended-pdf-viewer
+  ensureAdjecentPagesAreLoaded() {
+    if (this.currentPageNumber + 2 < this._pages.length) {
+      const nextPage = this._pages[this.currentPageNumber + 1];
+      if (nextPage.renderingState === RenderingStates.INITIAL) {
+        this._ensurePdfPageLoaded(nextPage).then(() => {
+          this.renderingQueue.renderView(nextPage);
+          console.log("rendered page " + (this.currentPageNumber + 1));
+        });
+      }
+    }
+    setTimeout(() => {
+      if (this.currentPageNumber + 3 < this._pages.length) {
+        const nextPage = this._pages[this.currentPageNumber + 2];
+        if (nextPage.renderingState === RenderingStates.INITIAL) {
+          this._ensurePdfPageLoaded(nextPage).then(() => {
+            this.renderingQueue.renderView(nextPage);
+            console.log("rendered page " + (this.currentPageNumber + 2));
+          });
+        }
+      }
+    }, 100);
+  }
+  // #716 modified by ngx-extended-pdf-viewer
 
   /**
    * @type {string|null} Returns the current page label, or `null` if no page

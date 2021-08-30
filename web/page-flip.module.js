@@ -671,7 +671,9 @@ class HTMLPage extends Page {
         const pageWidth = this.render.getRect().pageWidth;
         const pageHeight = this.render.getRect().height;
         this.element.classList.remove('--simple');
+        // modified by ngx-extended-pdf-viewer (added position: absolute)
         const commonStyle = `
+            position: absolute;
             display: block;
             z-index: ${this.element.style.zIndex};
             left: 0;
@@ -679,6 +681,7 @@ class HTMLPage extends Page {
             width: ${pageWidth}px;
             height: ${pageHeight}px;
         `;
+        // end of modification by ngx-extended-pdf-viewer
         density === "hard" /* HARD */
             ? this.drawHard(commonStyle)
             : this.drawSoft(pagePos, commonStyle);
@@ -694,9 +697,9 @@ class HTMLPage extends Page {
                 -webkit-clip-path: none;
             ` +
             (this.orientation === 0 /* LEFT */
-                ? `transform-origin: ${this.render.getRect().pageWidth}px 0; 
+                ? `transform-origin: ${this.render.getRect().pageWidth}px 0;
                    transform: translate3d(0, 0, 0) rotateY(${angle}deg);`
-                : `transform-origin: 0 0; 
+                : `transform-origin: 0 0;
                    transform: translate3d(${pos}px, 0, 0) rotateY(${angle}deg);`);
         this.element.style.cssText = newStyle;
     }
@@ -734,12 +737,12 @@ class HTMLPage extends Page {
         const y = rect.top;
         this.element.classList.add('--simple');
         this.element.style.cssText = `
-            position: absolute; 
-            display: block; 
-            height: ${pageHeight}px; 
-            left: ${x}px; 
-            top: ${y}px; 
-            width: ${pageWidth}px; 
+            position: absolute;
+            display: block;
+            height: ${pageHeight}px;
+            left: ${x}px;
+            top: ${y}px;
+            width: ${pageWidth}px;
             z-index: ${this.render.getSettings().startZIndex + 1};`;
     }
     getElement() {
@@ -1472,9 +1475,9 @@ class Render {
                 this.animation.onAnimateEnd();
                 this.animation = null;
             }
-        }
-        this.timer = timer;
-        this.drawFrame();
+          }
+        this.timer = timer; // modified by ngx-extended-pdf-viewer
+        this.drawFrame(); // modified by ngx-extended-pdf-viewer
     }
     /**
      * Running requestAnimationFrame, and rendering process
