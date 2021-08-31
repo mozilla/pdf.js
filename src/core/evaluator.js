@@ -467,13 +467,15 @@ class PartialEvaluator {
     } else {
       bbox = null;
     }
-    let optionalContent = null,
-      groupOptions;
+
+    let optionalContent, groupOptions;
     if (dict.has("OC")) {
       optionalContent = await this.parseMarkedContentProps(
         dict.get("OC"),
         resources
       );
+    }
+    if (optionalContent !== undefined) {
       operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
     const group = dict.get("Group");
@@ -534,7 +536,7 @@ class PartialEvaluator {
         operatorList.addOp(OPS.endGroup, [groupOptions]);
       }
 
-      if (optionalContent) {
+      if (optionalContent !== undefined) {
         operatorList.addOp(OPS.endMarkedContent, []);
       }
     });
@@ -573,12 +575,23 @@ class PartialEvaluator {
 
     if (!(w && isNum(w)) || !(h && isNum(h))) {
       warn("Image dimensions are missing, or not numbers.");
-      return undefined;
+      return;
     }
     const maxImageSize = this.options.maxImageSize;
     if (maxImageSize !== -1 && w * h > maxImageSize) {
       warn("Image exceeded maximum allowed size and was removed.");
-      return undefined;
+      return;
+    }
+
+    let optionalContent;
+    if (dict.has("OC")) {
+      optionalContent = await this.parseMarkedContentProps(
+        dict.get("OC"),
+        resources
+      );
+    }
+    if (optionalContent !== undefined) {
+      operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
 
     const imageMask = dict.get("ImageMask", "IM") || false;
@@ -616,7 +629,11 @@ class PartialEvaluator {
           args,
         });
       }
-      return undefined;
+
+      if (optionalContent !== undefined) {
+        operatorList.addOp(OPS.endMarkedContent, []);
+      }
+      return;
     }
 
     const softMask = dict.get("SMask", "SM") || false;
@@ -637,7 +654,11 @@ class PartialEvaluator {
       // any other kind.
       imgData = imageObj.createImageData(/* forceRGBA = */ true);
       operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-      return undefined;
+
+      if (optionalContent !== undefined) {
+        operatorList.addOp(OPS.endMarkedContent, []);
+      }
+      return;
     }
 
     // If there is no imageMask, create the PDFImage and a lot
@@ -705,7 +726,10 @@ class PartialEvaluator {
         }
       }
     }
-    return undefined;
+
+    if (optionalContent !== undefined) {
+      operatorList.addOp(OPS.endMarkedContent, []);
+    }
   }
 
   handleSMask(

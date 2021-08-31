@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+
 import { renderTextLayer } from "pdfjs-lib";
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
@@ -90,10 +93,9 @@ class TextLayerBuilder {
     }
     this.cancel();
 
-    this.textDivs = [];
-    if (this.highlighter) {
-      this.highlighter.setTextMapping(this.textDivs, this.textContentItemsStr);
-    }
+    this.textDivs.length = 0;
+    this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
+
     const textLayerFrag = document.createDocumentFragment();
     this.textLayerRenderTask = renderTextLayer({
       textContent: this.textContent,

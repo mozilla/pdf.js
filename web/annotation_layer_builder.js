@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+
 import { AnnotationLayer } from "pdfjs-lib";
 import { NullL10n } from "./l10n_utils.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -77,10 +80,7 @@ class AnnotationLayerBuilder {
       this.pdfPage.getAnnotations({ intent }),
       this._hasJSActionsPromise,
     ]).then(([annotations, hasJSActions = false]) => {
-      if (this._cancelled) {
-        return;
-      }
-      if (annotations.length === 0) {
+      if (this._cancelled || annotations.length === 0) {
         return;
       }
 

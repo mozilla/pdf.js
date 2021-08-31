@@ -14,7 +14,7 @@
  */
 
 /**
- * @typedef {Object} TextHighlighter
+ * @typedef {Object} TextHighlighterOptions
  * @property {PDFFindController} findController
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} pageIndex - The page index.
@@ -25,6 +25,9 @@
  * either the text layer or XFA layer depending on the type of document.
  */
 class TextHighlighter {
+  /**
+   * @param {TextHighlighterOptions} options
+   */
   constructor({ findController, eventBus, pageIndex }) {
     this.findController = findController;
     this.matches = [];

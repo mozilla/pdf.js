@@ -2629,7 +2629,7 @@ class Font {
           let glyphName;
           if (this.differences[charCode] !== undefined) {
             glyphName = this.differences[charCode];
-          } else if (baseEncoding[charCode] !== "") {
+          } else if (baseEncoding.length && baseEncoding[charCode] !== "") {
             glyphName = baseEncoding[charCode];
           } else {
             glyphName = StandardEncoding[charCode];

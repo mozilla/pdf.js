@@ -2443,7 +2443,7 @@ gulp.task("externaltest", function (done) {
 });
 
 gulp.task(
-  "npm-test",
+  "ci-test",
   gulp.series(
     gulp.parallel("lint", "externaltest", "unittestcli"),
     "lint-chromium",

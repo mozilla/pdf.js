@@ -33,6 +33,7 @@ class PDFRenderingQueue {
     this.pdfThumbnailViewer = null;
     this.onIdle = null;
     this.highestPriorityPage = null;
+    /** @type {number} */
     this.idleTimeout = null;
     this.printing = false;
     this.isThumbnailViewEnabled = false;

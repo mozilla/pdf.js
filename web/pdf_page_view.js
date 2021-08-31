@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+
 import {
   AnnotationMode,
   createPromiseCapability,
@@ -58,6 +60,7 @@ import { warn } from "../src/shared/util.js";
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  * @property {IPDFXfaLayerFactory} xfaLayerFactory
  * @property {IPDFStructTreeLayerFactory} structTreeLayerFactory
+ * @property {Object} [textHighlighterFactory]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
