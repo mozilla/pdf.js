@@ -195,9 +195,9 @@ class PDFThumbnailView {
     }
   }
 
-  update(rotation) {
-    if (typeof rotation !== "undefined") {
-      this.rotation = rotation;
+  update({ rotation = null }) {
+    if (typeof rotation === "number") {
+      this.rotation = rotation; // The rotation may be zero.
     }
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = this.viewport.clone({

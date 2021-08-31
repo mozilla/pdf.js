@@ -297,11 +297,10 @@ class PDFPageView {
     div.appendChild(this.loadingIconDiv);
   }
 
-  update(scale, rotation, optionalContentConfigPromise = null) {
+  update({ scale = 0, rotation = null, optionalContentConfigPromise = null }) {
     this.scale = scale || this.scale;
-    // The rotation may be zero.
-    if (typeof rotation !== "undefined") {
-      this.rotation = rotation;
+    if (typeof rotation === "number") {
+      this.rotation = rotation; // The rotation may be zero.
     }
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
