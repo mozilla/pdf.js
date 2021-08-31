@@ -405,9 +405,9 @@ class BaseViewer {
 
     const pageNumber = this._currentPageNumber;
 
-    for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      const pageView = this._pages[i];
-      pageView.update(pageView.scale, rotation);
+    const updateArgs = { rotation };
+    for (const pageView of this._pages) {
+      pageView.update(updateArgs);
     }
     // Prevent errors in case the rotation changes *before* the scale has been
     // set to a non-default value.
@@ -717,8 +717,9 @@ class BaseViewer {
     }
     this._doc.style.setProperty("--zoom-factor", newScale);
 
-    for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      this._pages[i].update(newScale);
+    const updateArgs = { scale: newScale };
+    for (const pageView of this._pages) {
+      pageView.update(updateArgs);
     }
     this._currentScale = newScale;
 
@@ -1435,8 +1436,9 @@ class BaseViewer {
     }
     this._optionalContentConfigPromise = promise;
 
+    const updateArgs = { optionalContentConfigPromise: promise };
     for (const pageView of this._pages) {
-      pageView.update(pageView.scale, pageView.rotation, promise);
+      pageView.update(updateArgs);
     }
     this.update();
 
