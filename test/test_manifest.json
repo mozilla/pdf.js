@@ -76,6 +76,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue11532",
+       "file": "pdfs/issue11532.pdf",
+       "md5": "9216481d259ae2b8d747236e745cbc80",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq"
+    },
     {  "id": "issue11549",
        "file": "pdfs/issue11549_reduced.pdf",
        "md5": "a1ea636f413e02e10dbdf379ab4a99ae",
