@@ -2606,7 +2606,8 @@ class Font {
       const cmapEncodingId = cmapTable.encodingId;
       const cmapMappings = cmapTable.mappings;
       const cmapMappingsLength = cmapMappings.length;
-      let baseEncoding = [];
+      let baseEncoding = [],
+        forcePostTable = false;
       if (
         properties.hasEncoding &&
         (properties.baseEncodingName === "MacRomanEncoding" ||
@@ -2615,9 +2616,8 @@ class Font {
         baseEncoding = getEncoding(properties.baseEncodingName);
       }
 
-      // If the font has an encoding and is not symbolic then follow the
-      // rules in section 9.6.6.4 of the spec on how to map 3,1 and 1,0
-      // cmaps.
+      // If the font has an encoding and is not symbolic then follow the rules
+      // in section 9.6.6.4 of the spec on how to map 3,1 and 1,0 cmaps.
       if (
         properties.hasEncoding &&
         !this.isSymbolicFont &&
@@ -2664,6 +2664,9 @@ class Font {
         for (let i = 0; i < cmapMappingsLength; ++i) {
           charCodeToGlyphId[cmapMappings[i].charCode] = cmapMappings[i].glyphId;
         }
+        // Always prefer the BaseEncoding/Differences arrays, when they exist
+        // (fixes issue13433.pdf).
+        forcePostTable = true;
       } else {
         // When there is only a (1, 0) cmap table, the char code is a single
         // byte and it is used directly as the char code.
@@ -2695,7 +2698,7 @@ class Font {
         (baseEncoding.length || this.differences.length)
       ) {
         for (let i = 0; i < 256; ++i) {
-          if (charCodeToGlyphId[i] !== undefined) {
+          if (!forcePostTable && charCodeToGlyphId[i] !== undefined) {
             continue;
           }
           const glyphName = this.differences[i] || baseEncoding[i];
