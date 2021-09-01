@@ -313,12 +313,7 @@ class BaseViewer {
           if (page.div.parentElement.classList.contains("spread")) {
             page.div.parentElement.childNodes.forEach((div, index) => {
               div.style.display = "inline-block";
-
             });
-            if (page.div.parentElement.childNodes.length === 1) {
-              // center the page
-              page.div.style.left = (page.div.offsetWidth / 2) + "px";
-            }
           }
         }
       });
