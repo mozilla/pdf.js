@@ -1407,11 +1407,12 @@ class CipherTransform {
       // Append some chars equal to "16 - (M mod 16)"
       // where M is the string length (see section 7.6.2 in PDF specification)
       // to have a final string where the length is a multiple of 16.
+      // Special note:
+      //   "Note that the pad is present when M is evenly divisible by 16;
+      //   it contains 16 bytes of 0x10."
       const strLen = s.length;
       const pad = 16 - (strLen % 16);
-      if (pad !== 16) {
-        s = s.padEnd(16 * Math.ceil(strLen / 16), String.fromCharCode(pad));
-      }
+      s += String.fromCharCode(pad).repeat(pad);
 
       // Generate an initialization vector
       const iv = new Uint8Array(16);
