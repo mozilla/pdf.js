@@ -581,6 +581,30 @@ describe("CipherTransformFactory", function () {
     }
   }
 
+  function ensureAESEncryptedStringHasCorrectLength(
+    dict,
+    fileId,
+    password,
+    string
+  ) {
+    const factory = new CipherTransformFactory(dict, fileId, password);
+    const cipher = factory.createCipherTransform(123, 0);
+    const encrypted = cipher.encryptString(string);
+
+    // The final length is a multiple of 16.
+    // If the initial string has a length which is a multiple of 16
+    // then 16 chars of padding are added.
+    // So we've the mapping:
+    //   - length: [0-15] => new length: 16
+    //   - length: [16-31] => new length: 32
+    //   - length: [32-47] => new length: 48
+    // ...
+    expect(encrypted.length).toEqual(
+      16 /* initialization vector length */ +
+        16 * Math.ceil((string.length + 1) / 16)
+    );
+  }
+
   function ensureEncryptDecryptIsIdentity(dict, fileId, password, string) {
     const factory = new CipherTransformFactory(dict, fileId, password);
     const cipher = factory.createCipherTransform(123, 0);
@@ -807,6 +831,8 @@ describe("CipherTransformFactory", function () {
         }),
       });
       const dict = buildDict(dict3);
+      // 0 char
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "");
       // 1 char
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "a");
       // 2 chars
@@ -828,6 +854,8 @@ describe("CipherTransformFactory", function () {
         }),
       });
       const dict = buildDict(dict3);
+      // 0 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "");
       // 4 chars
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaa");
       // 5 chars
@@ -836,6 +864,62 @@ describe("CipherTransformFactory", function () {
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaaaaaaaaaaaaaa");
       // 22 chars
       ensureEncryptDecryptIsIdentity(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaaaaaaaa"
+      );
+    });
+    it("should encrypt and have the correct length using AES128", function () {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV2"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      // 0 char
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "");
+      // 1 char
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "a");
+      // 2 chars
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "aa");
+      // 16 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaa"
+      );
+      // 19 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaaaaa"
+      );
+    });
+    it("should encrypt and have the correct length using AES256", function () {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV3"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      // 0 char
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "");
+      // 4 chars
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "aaaa");
+      // 5 chars
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "aaaaa");
+      // 16 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaa"
+      );
+      // 22 chars
+      ensureAESEncryptedStringHasCorrectLength(
         dict,
         fileId1,
         "user",
