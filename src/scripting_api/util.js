@@ -59,7 +59,7 @@ class Util extends PDFObject {
       throw new TypeError("First argument of printf must be a string");
     }
 
-    const pattern = /%(,[0-4])?([+ 0#]+)?([0-9]+)?(\.[0-9]+)?(.)/g;
+    const pattern = /%(,[0-4])?([+ 0#]+)?(\d+)?(\.\d+)?(.)/g;
     const PLUS = 1;
     const SPACE = 2;
     const ZERO = 4;
@@ -406,13 +406,13 @@ class Util extends PDFObject {
           },
         },
         mm: {
-          pattern: `([0-9]{2})`,
+          pattern: `(\\d{2})`,
           action: (value, data) => {
             data.month = parseInt(value) - 1;
           },
         },
         m: {
-          pattern: `([0-9]{1,2})`,
+          pattern: `(\\d{1,2})`,
           action: (value, data) => {
             data.month = parseInt(value) - 1;
           },
@@ -430,73 +430,73 @@ class Util extends PDFObject {
           },
         },
         dd: {
-          pattern: "([0-9]{2})",
+          pattern: "(\\d{2})",
           action: (value, data) => {
             data.day = parseInt(value);
           },
         },
         d: {
-          pattern: "([0-9]{1,2})",
+          pattern: "(\\d{1,2})",
           action: (value, data) => {
             data.day = parseInt(value);
           },
         },
         yyyy: {
-          pattern: "([0-9]{4})",
+          pattern: "(\\d{4})",
           action: (value, data) => {
             data.year = parseInt(value);
           },
         },
         yy: {
-          pattern: "([0-9]{2})",
+          pattern: "(\\d{2})",
           action: (value, data) => {
             data.year = 2000 + parseInt(value);
           },
         },
         HH: {
-          pattern: "([0-9]{2})",
+          pattern: "(\\d{2})",
           action: (value, data) => {
             data.hours = parseInt(value);
           },
         },
         H: {
-          pattern: "([0-9]{1,2})",
+          pattern: "(\\d{1,2})",
           action: (value, data) => {
             data.hours = parseInt(value);
           },
         },
         hh: {
-          pattern: "([0-9]{2})",
+          pattern: "(\\d{2})",
           action: (value, data) => {
             data.hours = parseInt(value);
           },
         },
         h: {
-          pattern: "([0-9]{1,2})",
+          pattern: "(\\d{1,2})",
           action: (value, data) => {
             data.hours = parseInt(value);
           },
         },
         MM: {
-          pattern: "([0-9]{2})",
+          pattern: "(\\d{2})",
           action: (value, data) => {
             data.minutes = parseInt(value);
           },
         },
         M: {
-          pattern: "([0-9]{1,2})",
+          pattern: "(\\d{1,2})",
           action: (value, data) => {
             data.minutes = parseInt(value);
           },
         },
         ss: {
-          pattern: "([0-9]{2})",
+          pattern: "(\\d{2})",
           action: (value, data) => {
             data.seconds = parseInt(value);
           },
         },
         s: {
-          pattern: "([0-9]{1,2})",
+          pattern: "(\\d{1,2})",
           action: (value, data) => {
             data.seconds = parseInt(value);
           },
