@@ -22,7 +22,7 @@ const dimConverters = {
   in: x => x * 72,
   px: x => x,
 };
-const measurementPattern = /([+-]?[0-9]+\.?[0-9]*)(.*)/;
+const measurementPattern = /([+-]?\d+\.?\d*)(.*)/;
 
 function stripQuotes(str) {
   if (str.startsWith("'") || str.startsWith('"')) {

@@ -90,7 +90,7 @@ class AForm {
       str = `0${str}`;
     }
 
-    const numbers = str.match(/([0-9]+)/g);
+    const numbers = str.match(/(\d+)/g);
     if (numbers.length === 0) {
       return null;
     }
@@ -202,13 +202,13 @@ class AForm {
     if (sepStyle > 1) {
       // comma sep
       pattern = event.willCommit
-        ? /^[+-]?([0-9]+(,[0-9]*)?|,[0-9]+)$/
-        : /^[+-]?[0-9]*,?[0-9]*$/;
+        ? /^[+-]?(\d+(,\d*)?|,\d+)$/
+        : /^[+-]?\d*,?\d*$/;
     } else {
       // dot sep
       pattern = event.willCommit
-        ? /^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)$/
-        : /^[+-]?[0-9]*\.?[0-9]*$/;
+        ? /^[+-]?(\d+(\.\d*)?|\.\d+)$/
+        : /^[+-]?\d*\.?\d*$/;
     }
 
     if (!pattern.test(value)) {

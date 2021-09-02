@@ -2036,7 +2036,7 @@ describe("annotation", function () {
       expect(oldData.ref).toEqual(Ref.get(123, 0));
       expect(newData.ref).toEqual(Ref.get(2, 0));
 
-      oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
       expect(oldData.data).toEqual(
         "123 0 obj\n" +
           "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
@@ -2167,7 +2167,7 @@ describe("annotation", function () {
       expect(oldData.ref).toEqual(Ref.get(123, 0));
       expect(newData.ref).toEqual(Ref.get(2, 0));
 
-      oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
       expect(oldData.data).toEqual(
         "123 0 obj\n" +
           "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Goth 5 Tf) /DR " +
@@ -2576,7 +2576,7 @@ describe("annotation", function () {
         task,
         annotationStorage
       );
-      oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
       expect(oldData.ref).toEqual(Ref.get(123, 0));
       expect(oldData.data).toEqual(
         "123 0 obj\n" +
@@ -2876,7 +2876,7 @@ describe("annotation", function () {
       );
       expect(data.length).toEqual(2);
       const [radioData, parentData] = data;
-      radioData.data = radioData.data.replace(/\(D:[0-9]+\)/, "(date)");
+      radioData.data = radioData.data.replace(/\(D:\d+\)/, "(date)");
       expect(radioData.ref).toEqual(Ref.get(123, 0));
       expect(radioData.data).toEqual(
         "123 0 obj\n" +
@@ -2939,7 +2939,7 @@ describe("annotation", function () {
       );
       expect(data.length).toEqual(2);
       const [radioData, parentData] = data;
-      radioData.data = radioData.data.replace(/\(D:[0-9]+\)/, "(date)");
+      radioData.data = radioData.data.replace(/\(D:\d+\)/, "(date)");
       expect(radioData.ref).toEqual(Ref.get(123, 0));
       expect(radioData.data).toEqual(
         "123 0 obj\n" +
@@ -3389,7 +3389,7 @@ describe("annotation", function () {
       expect(oldData.ref).toEqual(Ref.get(123, 0));
       expect(newData.ref).toEqual(Ref.get(1, 0));
 
-      oldData.data = oldData.data.replace(/\(D:[0-9]+\)/, "(date)");
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
       expect(oldData.data).toEqual(
         "123 0 obj\n" +
           "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
