@@ -45,6 +45,8 @@ import { createDataNode, searchNode } from "./som.js";
 import { NamespaceIds } from "./namespaces.js";
 import { warn } from "../../shared/util.js";
 
+const NS_DATASETS = NamespaceIds.datasets.id;
+
 function createText(content) {
   const node = new Text({});
   node[$content] = content;
@@ -501,8 +503,12 @@ class Binder {
         if (dataChildren.length > 0) {
           this._bindOccurrences(child, [dataChildren[0]], null);
         } else if (this.emptyMerge) {
+          const nsId =
+            dataNode[$namespaceId] === NS_DATASETS
+              ? -1
+              : dataNode[$namespaceId];
           const dataChild = (child[$data] = new XmlObject(
-            dataNode[$namespaceId],
+            nsId,
             child.name || "root"
           ));
           dataNode[$appendChild](dataChild);
@@ -625,10 +631,11 @@ class Binder {
           if (!match) {
             // We're in matchTemplate mode so create a node in data to reflect
             // what we've in template.
-            match = child[$data] = new XmlObject(
-              dataNode[$namespaceId],
-              child.name
-            );
+            const nsId =
+              dataNode[$namespaceId] === NS_DATASETS
+                ? -1
+                : dataNode[$namespaceId];
+            match = child[$data] = new XmlObject(nsId, child.name);
             if (this.emptyMerge) {
               match[$consumed] = true;
             }
