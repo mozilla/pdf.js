@@ -4321,6 +4321,12 @@
       "lastPage": 4,
       "type": "load"
     },
+    {  "id": "issue13316",
+       "file": "pdfs/issue13316_reduced.pdf",
+       "md5": "f5821891cee29d8de8b65e1efd6f4ceb",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue10519",
        "file": "pdfs/issue10519_reduced.pdf",
        "md5": "8a2dae43c0ef47b0734bedaaa24f8c09",
