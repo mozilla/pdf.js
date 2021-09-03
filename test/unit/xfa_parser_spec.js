@@ -841,6 +841,67 @@ describe("XFAParser", function () {
       expect(searchNode(data, data, "A")[0][$dump]()).toEqual(expected);
     });
 
+    it("should make a basic binding and create a non-existing node with namespaceId equal to -1", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="A">
+      <subform name="B">
+        <field name="C">
+        </field>
+        <field name="D">
+          <value>
+            <text>foobar</text>
+          </value>
+        </field>
+      </subform>
+    </subform>
+  </template>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      const form = binder.bind();
+      const data = binder.getData();
+
+      expect(
+        searchNode(form, form, "A.B.D.value.text")[0][$dump]().$content
+      ).toBe("foobar");
+
+      // Created nodes mustn't belong to xfa:datasets namespace.
+      const expected = {
+        $name: "A",
+        $ns: -1,
+        attributes: {},
+        children: [
+          {
+            $name: "B",
+            $ns: -1,
+            attributes: {},
+            children: [
+              {
+                $name: "C",
+                $ns: -1,
+                attributes: {},
+                children: [],
+              },
+              {
+                $name: "D",
+                $ns: -1,
+                attributes: {},
+                children: [],
+              },
+            ],
+          },
+        ],
+      };
+
+      expect(searchNode(data, data, "A")[0][$dump](/* hasNS */ true)).toEqual(
+        expected
+      );
+    });
+
     it("should make another basic binding", function () {
       const xml = `
 <?xml version="1.0"?>
