@@ -146,10 +146,54 @@ function writeXFADataForAcroform(str, newRefs) {
   return buffer.join("");
 }
 
-function updateXFA(xfaData, datasetsRef, newRefs, xref) {
-  if (datasetsRef === null || xref === null) {
+function updateXFA({
+  xfaData,
+  datasetsRef,
+  hasDatasets,
+  acroFormRef,
+  acroForm,
+  newRefs,
+  xref,
+  xrefInfo,
+}) {
+  if (xref === null) {
     return;
   }
+
+  if (!hasDatasets) {
+    if (!acroFormRef) {
+      warn("XFA - Cannot save it");
+      return;
+    }
+
+    // We've a XFA array which doesn't contain a datasets entry.
+    // So we'll update the AcroForm dictionary to have an XFA containing
+    // the datasets.
+    const oldXfa = acroForm.get("XFA");
+    const newXfa = oldXfa.slice();
+    newXfa.splice(2, 0, "datasets");
+    newXfa.splice(3, 0, datasetsRef);
+
+    acroForm.set("XFA", newXfa);
+
+    const encrypt = xref.encrypt;
+    let transform = null;
+    if (encrypt) {
+      transform = encrypt.createCipherTransform(
+        acroFormRef.num,
+        acroFormRef.gen
+      );
+    }
+
+    const buffer = [`${acroFormRef.num} ${acroFormRef.gen} obj\n`];
+    writeDict(acroForm, buffer, transform);
+    buffer.push("\n");
+
+    acroForm.set("XFA", oldXfa);
+
+    newRefs.push({ ref: acroFormRef, data: buffer.join("") });
+  }
+
   if (xfaData === null) {
     const datasets = xref.fetchIfRef(datasetsRef);
     xfaData = writeXFADataForAcroform(datasets.getString(), newRefs);
@@ -178,9 +222,21 @@ function incrementalUpdate({
   newRefs,
   xref = null,
   datasetsRef = null,
+  hasDatasets = false,
+  acroFormRef = null,
+  acroForm = null,
   xfaData = null,
 }) {
-  updateXFA(xfaData, datasetsRef, newRefs, xref);
+  updateXFA({
+    xfaData,
+    datasetsRef,
+    hasDatasets,
+    acroFormRef,
+    acroForm,
+    newRefs,
+    xref,
+    xrefInfo,
+  });
 
   const newXref = new Dict(null);
   const refForXrefTable = xrefInfo.newRef;

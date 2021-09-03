@@ -130,6 +130,11 @@ class Catalog {
     return shadow(this, "acroForm", acroForm);
   }
 
+  get acroFormRef() {
+    const value = this._catDict.getRaw("AcroForm");
+    return shadow(this, "acroFormRef", isRef(value) ? value : null);
+  }
+
   get metadata() {
     const streamRef = this._catDict.getRaw("Metadata");
     if (!isRef(streamRef)) {
