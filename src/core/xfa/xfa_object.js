@@ -976,8 +976,11 @@ class XmlObject extends XFAObject {
     this[$content] = value.toString();
   }
 
-  [$dump]() {
+  [$dump](hasNS = false) {
     const dumped = Object.create(null);
+    if (hasNS) {
+      dumped.$ns = this[$namespaceId];
+    }
     if (this[$content]) {
       dumped.$content = this[$content];
     }
@@ -985,7 +988,7 @@ class XmlObject extends XFAObject {
 
     dumped.children = [];
     for (const child of this[_children]) {
-      dumped.children.push(child[$dump]());
+      dumped.children.push(child[$dump](hasNS));
     }
 
     dumped.attributes = Object.create(null);
