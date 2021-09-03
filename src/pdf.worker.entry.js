@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-(typeof window !== "undefined"
-  ? window
-  : {}
-).pdfjsWorker = require("./pdf.worker.js");
+(typeof window !== "undefined" ? window : {}).pdfjsWorker =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
+    ? require("./pdf.worker.js")
+    : require("./pdf.worker.min.js");
