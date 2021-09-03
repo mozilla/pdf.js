@@ -142,4 +142,67 @@ describe("Writer", function () {
       expect(buffer.join("")).toEqual(expected);
     });
   });
+
+  describe("XFA", function () {
+    it("should update AcroForm when no datasets in XFA array", function () {
+      const originalData = new Uint8Array();
+      const newRefs = [];
+
+      const acroForm = new Dict(null);
+      acroForm.set("XFA", [
+        "preamble",
+        Ref.get(123, 0),
+        "postamble",
+        Ref.get(456, 0),
+      ]);
+      const acroFormRef = Ref.get(789, 0);
+      const datasetsRef = Ref.get(101112, 0);
+      const xfaData = "<hello>world</hello>";
+
+      const xrefInfo = {
+        newRef: Ref.get(131415, 0),
+        startXRef: 314,
+        fileIds: null,
+        rootRef: null,
+        infoRef: null,
+        encryptRef: null,
+        filename: "foo.pdf",
+        info: {},
+      };
+
+      let data = incrementalUpdate({
+        originalData,
+        xrefInfo,
+        newRefs,
+        datasetsRef,
+        hasDatasets: false,
+        acroFormRef,
+        acroForm,
+        xfaData,
+        xref: {},
+      });
+      data = bytesToString(data);
+
+      const expected =
+        "\n" +
+        "789 0 obj\n" +
+        "<< /XFA [(preamble) 123 0 R (datasets) 101112 0 R (postamble) 456 0 R]>>\n" +
+        "101112 0 obj\n" +
+        "<< /Type /EmbeddedFile /Length 20>>\n" +
+        "stream\n" +
+        "<hello>world</hello>\n" +
+        "endstream\n" +
+        "endobj\n" +
+        "131415 0 obj\n" +
+        "<< /Size 131416 /Prev 314 /Type /XRef /Index [0 1 789 1 101112 1 131415 1] /W [1 1 2] /Length 16>> stream\n" +
+        "\u0000\u0001ÿÿ\u0001\u0001\u0000\u0000\u0001T\u0000\u0000\u0001²\u0000\u0000\n" +
+        "endstream\n" +
+        "endobj\n" +
+        "startxref\n" +
+        "178\n" +
+        "%%EOF\n";
+
+      expect(data).toEqual(expected);
+    });
+  });
 });
