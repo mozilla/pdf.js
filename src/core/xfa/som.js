@@ -23,6 +23,7 @@ import {
   XFAObjectArray,
   XmlObject,
 } from "./xfa_object.js";
+import { NamespaceIds } from "./namespaces.js";
 import { warn } from "../../shared/util.js";
 
 const namePattern = /^[^.[]+/;
@@ -51,6 +52,7 @@ const shortcuts = new Map([
 ]);
 
 const somCache = new WeakMap();
+const NS_DATASETS = NamespaceIds.datasets.id;
 
 function parseIndex(index) {
   index = index.trim();
@@ -261,7 +263,8 @@ function createNodes(root, path) {
   let node = null;
   for (const { name, index } of path) {
     for (let i = 0, ii = !isFinite(index) ? 0 : index; i <= ii; i++) {
-      node = new XmlObject(root[$namespaceId], name);
+      const nsId = root[$namespaceId] === NS_DATASETS ? -1 : root[$namespaceId];
+      node = new XmlObject(nsId, name);
       root[$appendChild](node);
     }
 
