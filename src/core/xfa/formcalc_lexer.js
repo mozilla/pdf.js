@@ -117,8 +117,8 @@ const TOKEN = {
 };
 
 const hexPattern = /^[uU]([0-9a-fA-F]{4,8})/;
-const numberPattern = /^[0-9]*(?:\.[0-9]*)?(?:[Ee][+-]?[0-9]+)?/;
-const dotNumberPattern = /^[0-9]*(?:[Ee][+-]?[0-9]+)?/;
+const numberPattern = /^\d*(?:\.\d*)?(?:[Ee][+-]?\d+)?/;
+const dotNumberPattern = /^\d*(?:[Ee][+-]?\d+)?/;
 const eolPattern = /[\r\n]+/;
 const identifierPattern = new RegExp("^[\\p{L}_$!][\\p{L}\\p{N}_$]*", "u");
 
