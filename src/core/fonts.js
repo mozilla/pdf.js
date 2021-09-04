@@ -2651,6 +2651,25 @@ class Font {
             unicodeOrCharCode = MacRomanEncoding.indexOf(standardGlyphName);
           }
 
+          if (unicodeOrCharCode === undefined) {
+            // Not a valid glyph name, fallback to using the /ToUnicode map
+            // when no post-table exists (fixes issue13316_reduced.pdf).
+            if (
+              !properties.glyphNames &&
+              properties.hasIncludedToUnicodeMap &&
+              !(this.toUnicode instanceof IdentityToUnicodeMap)
+            ) {
+              const unicode = this.toUnicode.get(charCode);
+              if (unicode) {
+                unicodeOrCharCode = unicode.codePointAt(0);
+              }
+            }
+
+            if (unicodeOrCharCode === undefined) {
+              continue; // No valid glyph mapping found.
+            }
+          }
+
           for (let i = 0; i < cmapMappingsLength; ++i) {
             if (cmapMappings[i].charCode !== unicodeOrCharCode) {
               continue;
