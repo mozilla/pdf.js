@@ -657,7 +657,7 @@ class Barcode extends XFAObject {
           "shift-jis",
           "ucs-2",
           "utf-16",
-        ].includes(k) || k.match(/iso-8859-[0-9]{2}/),
+        ].includes(k) || k.match(/iso-8859-\d{2}/),
     });
     this.checksum = getStringOption(attributes.checksum, [
       "none",
@@ -5274,7 +5274,7 @@ class Submit extends XFAObject {
           "shift-jis",
           "ucs-2",
           "utf-16",
-        ].includes(k) || k.match(/iso-8859-[0-9]{2}/),
+        ].includes(k) || k.match(/iso-8859-\d{2}/),
     });
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
