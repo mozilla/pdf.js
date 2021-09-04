@@ -95,6 +95,9 @@ class OptionalContentConfig {
   }
 
   isVisible(group) {
+    if (this._groups.size === 0) {
+      return true;
+    }
     if (!group) {
       warn("Optional content group not defined.");
       return true;
