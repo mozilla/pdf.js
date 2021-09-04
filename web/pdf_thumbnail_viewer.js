@@ -144,8 +144,9 @@ class PDFThumbnailViewer {
     }
     this._pagesRotation = rotation;
 
-    for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
-      this._thumbnails[i].update(rotation);
+    const updateArgs = { rotation };
+    for (const thumbnail of this._thumbnails) {
+      thumbnail.update(updateArgs);
     }
   }
 
