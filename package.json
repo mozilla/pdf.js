@@ -37,7 +37,7 @@
     "jstransformer-markdown-it": "^2.1.0",
     "merge-stream": "^2.0.0",
     "mkdirp": "^1.0.4",
-    "needle": "^2.9.1",
+    "needle": "^3.0.0",
     "postcss": "^8.3.6",
     "postcss-calc": "^8.0.0",
     "prettier": "^2.3.2",
