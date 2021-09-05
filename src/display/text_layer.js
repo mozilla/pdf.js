@@ -118,18 +118,25 @@ function getAscent(fontFamily, ctx) {
 function appendText(task, geom, styles, ctx) {
   // Initialize all used properties to keep the caches monomorphic.
   const textDiv = document.createElement("span");
-  const textDivProperties = {
-    angle: 0,
-    canvasWidth: 0,
-    hasText: geom.str !== "",
-    hasEOL: geom.hasEOL,
-    originalTransform: null,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    paddingRight: 0,
-    paddingTop: 0,
-    scale: 1,
-  };
+  const textDivProperties = task._enhanceTextSelection
+    ? {
+        angle: 0,
+        canvasWidth: 0,
+        hasText: geom.str !== "",
+        hasEOL: geom.hasEOL,
+        originalTransform: null,
+        paddingBottom: 0,
+        paddingLeft: 0,
+        paddingRight: 0,
+        paddingTop: 0,
+        scale: 1,
+      }
+    : {
+        angle: 0,
+        canvasWidth: 0,
+        hasText: geom.str !== "",
+        hasEOL: geom.hasEOL,
+      };
 
   task._textDivs.push(textDiv);
 
@@ -588,6 +595,11 @@ class TextLayerRenderTask {
     // Always clean-up the temporary canvas once rendering is no longer pending.
     this._capability.promise
       .finally(() => {
+        if (!this._enhanceTextSelection) {
+          // The `textDiv` properties are no longer needed.
+          this._textDivProperties = null;
+        }
+
         if (this._layoutTextCtx) {
           // Zeroing the width and height cause Firefox to release graphics
           // resources immediately, which can greatly reduce memory consumption.
@@ -679,8 +691,11 @@ class TextLayerRenderTask {
       const { width } = this._layoutTextCtx.measureText(textDiv.textContent);
 
       if (width > 0) {
-        textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = `scaleX(${textDivProperties.scale})`;
+        const scale = textDivProperties.canvasWidth / width;
+        if (this._enhanceTextSelection) {
+          textDivProperties.scale = scale;
+        }
+        transform = `scaleX(${scale})`;
       }
     }
     if (textDivProperties.angle !== 0) {
