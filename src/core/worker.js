@@ -737,8 +737,6 @@ class WorkerMessageHandler {
 
     handler.on("GetTextContent", function wphExtractText(data, sink) {
       const pageIndex = data.pageIndex;
-      sink.onPull = function (desiredSize) {};
-      sink.onCancel = function (reason) {};
 
       pdfManager.getPage(pageIndex).then(function (page) {
         const task = new WorkerTask("GetTextContent: page " + pageIndex);
