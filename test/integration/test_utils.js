@@ -17,6 +17,22 @@ exports.loadAndWait = (filename, selector) =>
   Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
+
+      // In order to avoid errors because of checks which depend on
+      // a locale.
+      await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, "language", {
+          get() {
+            return "en-US";
+          },
+        });
+        Object.defineProperty(navigator, "languages", {
+          get() {
+            return ["en-US", "en"];
+          },
+        });
+      });
+
       await page.goto(
         `${global.integrationBaseUrl}?file=/test/pdfs/${filename}`
       );
