@@ -1084,8 +1084,7 @@ class Font {
         }
       }
 
-      const isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
-      if (!isIdentityUnicode) {
+      if (!(this.toUnicode instanceof IdentityToUnicodeMap)) {
         this.toUnicode.forEach(function (charCode, unicodeCharCode) {
           map[+charCode] = unicodeCharCode;
         });
@@ -1108,11 +1107,22 @@ class Font {
         this.differences
       );
     } else if (isStandardFont) {
-      this.toFontChar = buildToFontChar(
+      const map = buildToFontChar(
         this.defaultEncoding,
         getGlyphsUnicode(),
         this.differences
       );
+
+      if (
+        type === "CIDFontType2" &&
+        !this.cidEncoding.startsWith("Identity-") &&
+        !(this.toUnicode instanceof IdentityToUnicodeMap)
+      ) {
+        this.toUnicode.forEach(function (charCode, unicodeCharCode) {
+          map[+charCode] = unicodeCharCode;
+        });
+      }
+      this.toFontChar = map;
     } else {
       const glyphsUnicodeMap = getGlyphsUnicode();
       const map = [];

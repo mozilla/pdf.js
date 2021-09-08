@@ -4003,6 +4003,14 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue11088",
+       "file": "pdfs/issue11088.pdf",
+       "md5": "c46e7d81197fae61a52e00efb30dd7ce",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue11287",
        "file": "pdfs/issue11287.pdf",
        "md5": "d7d6a7c124fad7b00f79112b71ee09d6",
