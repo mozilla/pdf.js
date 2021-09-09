@@ -37,6 +37,10 @@ class XfaLayer {
         ) {
           if (storedData.value === element.attributes.xfaOn) {
             html.setAttribute("checked", true);
+          } else if (storedData.value === element.attributes.xfaOff) {
+            // The checked attribute may have been set when opening the file,
+            // unset through the UI and we're here because of printing.
+            html.removeAttribute("checked");
           }
           if (intent === "print") {
             break;
