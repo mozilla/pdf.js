@@ -16,6 +16,7 @@
 
 import {
   addLinkAttributes,
+  CSS_PIXELS_PER_INCH,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -23,6 +24,7 @@ import {
   isValidFetchUrl,
   LinkTarget,
   loadScript,
+  PDF_PIXELS_PER_INCH,
   PDFDateString,
   RenderingCancelledException,
 } from "./display/display_utils.js";
@@ -103,11 +105,13 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
 export {
   // From "./display/display_utils.js":
   addLinkAttributes,
+  CSS_PIXELS_PER_INCH,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   isPdfFile,
   LinkTarget,
   loadScript,
+  PDF_PIXELS_PER_INCH,
   PDFDateString,
   RenderingCancelledException,
   getXfaPageViewport,

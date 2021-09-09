@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+import { CSS_PIXELS_PER_INCH, PDF_PIXELS_PER_INCH } from "./display_utils.js";
 import {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -871,6 +871,27 @@ function composeSMask(ctx, smask, layerCtx) {
   ctx.drawImage(mask, 0, 0);
 }
 
+function getImageSmoothingEnabled(transform, interpolate) {
+  const scale = Util.singularValueDecompose2dScale(transform);
+  // Round to a 32bit float so that `<=` check below will pass for numbers that
+  // are very close, but not exactly the same 64bit floats.
+  scale[0] = Math.fround(scale[0]);
+  scale[1] = Math.fround(scale[1]);
+  const actualScale = Math.fround(
+    ((globalThis.devicePixelRatio || 1) * CSS_PIXELS_PER_INCH) /
+      PDF_PIXELS_PER_INCH
+  );
+  if (interpolate !== undefined) {
+    // If the value is explicitly set use it.
+    return interpolate;
+  } else if (scale[0] <= actualScale || scale[1] <= actualScale) {
+    // Smooth when downscaling.
+    return true;
+  }
+  // Don't smooth when upscaling.
+  return false;
+}
+
 const LINE_CAP_STYLES = ["butt", "round", "square"];
 const LINE_JOIN_STYLES = ["miter", "round", "bevel"];
 const NORMAL_CLIP = {};
@@ -1182,6 +1203,10 @@ class CanvasGraphics {
     const scaled = this._scaleImage(
       maskCanvas.canvas,
       fillCtx.mozCurrentTransformInverse
+    );
+    fillCtx.imageSmoothingEnabled = getImageSmoothingEnabled(
+      fillCtx.mozCurrentTransform,
+      img.interpolate
     );
     fillCtx.drawImage(
       scaled.img,
@@ -2663,6 +2688,10 @@ class CanvasGraphics {
     }
 
     const scaled = this._scaleImage(imgToPaint, ctx.mozCurrentTransformInverse);
+    ctx.imageSmoothingEnabled = getImageSmoothingEnabled(
+      ctx.mozCurrentTransform,
+      imgData.interpolate
+    );
     ctx.drawImage(
       scaled.img,
       0,
