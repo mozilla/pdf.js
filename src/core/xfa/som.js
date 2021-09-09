@@ -15,6 +15,7 @@
 
 import {
   $appendChild,
+  $getChildren,
   $getChildrenByClass,
   $getChildrenByName,
   $getParent,
@@ -37,7 +38,12 @@ const operators = {
 };
 
 const shortcuts = new Map([
-  ["$data", (root, current) => root.datasets.data],
+  ["$data", (root, current) => (root.datasets ? root.datasets.data : root)],
+  [
+    "$record",
+    (root, current) =>
+      (root.datasets ? root.datasets.data : root)[$getChildren]()[0],
+  ],
   ["$template", (root, current) => root.template],
   ["$connectionSet", (root, current) => root.connectionSet],
   ["$form", (root, current) => root.form],
