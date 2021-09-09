@@ -967,6 +967,21 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "xfa_bug1729877",
+       "file": "pdfs/xfa_bug1729877.pdf",
+       "md5": "1bf5429ea13a090f52edcd49cb0c4a47",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq",
+       "lastPage": 1,
+       "print": true,
+       "annotationStorage": {
+         "jobReq13847": {
+           "value": "0"
+         }
+       }
+    },
     {  "id": "xfa_bug1722038",
        "file": "pdfs/xfa_bug1722038.pdf",
        "md5": "95170baaade2ab6e1d0372f35db01747",
