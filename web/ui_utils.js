@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-const CSS_UNITS = 96.0 / 72.0;
+import { CSS_PIXELS_PER_INCH, PDF_PIXELS_PER_INCH } from "pdfjs-lib";
+
+const CSS_UNITS = CSS_PIXELS_PER_INCH / PDF_PIXELS_PER_INCH;
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const MIN_SCALE = 0.1;
