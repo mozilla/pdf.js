@@ -3497,7 +3497,7 @@ class PartialEvaluator {
         var length2 = fontFile.dict.get("Length2");
         var length3 = fontFile.dict.get("Length3");
       }
-    } else if (type === "Type1") {
+    } else {
       const standardFontName = getStandardFontName(fontName.name);
       if (standardFontName) {
         fontFile = await this.fetchStandardFontData(standardFontName);
