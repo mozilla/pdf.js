@@ -142,6 +142,15 @@ function verifyManifestFiles(manifest, callback) {
       verifyNext();
       return;
     }
+    if (item.link && !fs.existsSync(item.file + ".link")) {
+      console.error(
+        `WARNING: Unneeded \`"link": true\`-entry for the "${item.id}" test.`
+      );
+      error = true;
+      i++;
+      verifyNext();
+      return;
+    }
     calculateMD5(item.file, function (err, md5) {
       if (err) {
         console.log('WARNING: Unable to open file for reading "' + err + '".');

@@ -3490,7 +3490,6 @@
       "md5": "8039aba56790d3597d2bc8c794a51301",
       "rounds": 1,
       "lastPage": 5,
-      "link": true,
       "type": "eq"
     },
     { "id": "text_clip_cff_cid",
@@ -3564,7 +3563,6 @@
       "file": "pdfs/issue925.pdf",
       "md5": "f58fe943090aff89dcc8e771bc0db4c2",
       "rounds": 1,
-      "link": true,
       "type": "eq"
     },
     {  "id": "issue9291",
