@@ -59,18 +59,21 @@ var pdfPath =
   process.argv[2] || "../../../web/compressed.tracemonkey-pldi-09.pdf";
 var data = new Uint8Array(fs.readFileSync(pdfPath));
 
+var pageNumber = Number(process.argv[3] || 1);
+
 // Load the PDF file.
 var loadingTask = pdfjsLib.getDocument({
   data,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
+  standardFontDataUrl: "../../../node_modules/pdfjs-dist/standard_fonts/",
 });
 loadingTask.promise
   .then(function (pdfDocument) {
     console.log("# PDF document loaded.");
 
     // Get the first page.
-    pdfDocument.getPage(1).then(function (page) {
+    pdfDocument.getPage(pageNumber).then(function (page) {
       // Render the page on a Node canvas with 100% scale.
       var viewport = page.getViewport({ scale: 1.0 });
       var canvasFactory = new NodeCanvasFactory();
