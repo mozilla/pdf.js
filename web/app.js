@@ -534,11 +534,15 @@ const PDFViewerApplication = {
     });
     pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
-    this.pdfHistory = new PDFHistory({
-      linkService: pdfLinkService,
-      eventBus,
-    });
-    pdfLinkService.setHistory(this.pdfHistory);
+    // The browsing history is only enabled when the viewer is standalone,
+    // i.e. not when it is embedded in a web page.
+    if (!this.isViewerEmbedded && !AppOptions.get("disableHistory")) {
+      this.pdfHistory = new PDFHistory({
+        linkService: pdfLinkService,
+        eventBus,
+      });
+      pdfLinkService.setHistory(this.pdfHistory);
+    }
 
     if (!this.supportsIntegratedFind) {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
@@ -1631,9 +1635,7 @@ const PDFViewerApplication = {
    * @private
    */
   _initializePdfHistory({ fingerprint, viewOnLoad, initialDest = null }) {
-    if (this.isViewerEmbedded || AppOptions.get("disableHistory")) {
-      // The browsing history is only enabled when the viewer is standalone,
-      // i.e. not when it is embedded in a web page.
+    if (!this.pdfHistory) {
       return;
     }
     this.pdfHistory.initialize({
@@ -2456,7 +2458,7 @@ function webViewerHashchange(evt) {
   }
   if (!PDFViewerApplication.isInitialViewSet) {
     PDFViewerApplication.initialBookmark = hash;
-  } else if (!PDFViewerApplication.pdfHistory.popStateInProgress) {
+  } else if (!PDFViewerApplication.pdfHistory?.popStateInProgress) {
     PDFViewerApplication.pdfLinkService.setHash(hash);
   }
 }
