@@ -53,12 +53,22 @@
     // Using promise to fetch the page
     pdfDoc.getPage(num).then(function(page) {
       var viewport = page.getViewport({ scale: scale, });
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      // Support HiDPI-screens.
+      var outputScale = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = Math.floor(viewport.width) + "px";
+      canvas.style.height =  Math.floor(viewport.height) + "px";
+
+      var transform = outputScale !== 1
+        ? [outputScale, 0, 0, outputScale, 0, 0]
+        : null;
 
       // Render PDF page into canvas context
       var renderContext = {
         canvasContext: ctx,
+        transform: transform,
         viewport: viewport,
       };
       var renderTask = page.render(renderContext);
