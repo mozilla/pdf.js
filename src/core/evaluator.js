@@ -589,6 +589,7 @@ class PartialEvaluator {
     }
 
     const imageMask = dict.get("ImageMask", "IM") || false;
+    const interpolate = dict.get("Interpolate", "I");
     let imgData, args;
     if (imageMask) {
       // This depends on a tmpCanvas being filled with the
@@ -612,6 +613,7 @@ class PartialEvaluator {
         height,
         imageIsFromDecodeStream: image instanceof DecodeStream,
         inverseDecode: !!decode && decode[0] > 0,
+        interpolate,
       });
       imgData.cached = !!cacheKey;
       args = [imgData];

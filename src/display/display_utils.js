@@ -32,6 +32,9 @@ import {
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+const CSS_PIXELS_PER_INCH = 96.0;
+const PDF_PIXELS_PER_INCH = 72.0;
+
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {
     super();
@@ -622,6 +625,7 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
 
 export {
   addLinkAttributes,
+  CSS_PIXELS_PER_INCH,
   DEFAULT_LINK_REL,
   deprecated,
   DOMCanvasFactory,
@@ -637,6 +641,7 @@ export {
   LinkTarget,
   loadScript,
   PageViewport,
+  PDF_PIXELS_PER_INCH,
   PDFDateString,
   RenderingCancelledException,
   StatTimer,
