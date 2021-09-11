@@ -20,15 +20,17 @@
 const {
   AnnotationLayer,
   AnnotationMode,
+  CSS_PIXELS_PER_INCH,
   getDocument,
   GlobalWorkerOptions,
+  PDF_PIXELS_PER_INCH,
   renderTextLayer,
   XfaLayer,
 } = pdfjsLib;
 const { SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
-const PDF_TO_CSS_UNITS = 96.0 / 72.0;
+const PDF_TO_CSS_UNITS = CSS_PIXELS_PER_INCH / PDF_PIXELS_PER_INCH;
 const CMAP_URL = "/build/generic/web/cmaps/";
 const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";

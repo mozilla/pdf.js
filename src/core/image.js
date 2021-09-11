@@ -139,7 +139,7 @@ class PDFImage {
     this.width = width;
     this.height = height;
 
-    this.interpolate = dict.get("Interpolate", "I") || false;
+    this.interpolate = dict.get("Interpolate", "I");
     this.imageMask = dict.get("ImageMask", "IM") || false;
     this.matte = dict.get("Matte") || false;
 
@@ -294,6 +294,7 @@ class PDFImage {
     height,
     imageIsFromDecodeStream,
     inverseDecode,
+    interpolate,
   }) {
     if (
       typeof PDFJSDev === "undefined" ||
@@ -339,7 +340,7 @@ class PDFImage {
       }
     }
 
-    return { data, width, height };
+    return { data, width, height, interpolate };
   }
 
   get drawWidth() {
@@ -593,6 +594,7 @@ class PDFImage {
     const imgData = {
       width: drawWidth,
       height: drawHeight,
+      interpolate: this.interpolate,
       kind: 0,
       data: null,
       // Other fields are filled in below.
