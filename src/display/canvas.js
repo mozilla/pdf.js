@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CSS_PIXELS_PER_INCH, PDF_PIXELS_PER_INCH } from "./display_utils.js";
+
 import {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -28,6 +28,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { getShadingPattern, TilingPattern } from "./pattern_helper.js";
+import { PixelsPerInch } from "./display_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -878,8 +879,7 @@ function getImageSmoothingEnabled(transform, interpolate) {
   scale[0] = Math.fround(scale[0]);
   scale[1] = Math.fround(scale[1]);
   const actualScale = Math.fround(
-    ((globalThis.devicePixelRatio || 1) * CSS_PIXELS_PER_INCH) /
-      PDF_PIXELS_PER_INCH
+    ((globalThis.devicePixelRatio || 1) * PixelsPerInch.CSS) / PixelsPerInch.PDF
   );
   if (interpolate !== undefined) {
     // If the value is explicitly set use it.
@@ -2458,11 +2458,8 @@ class CanvasGraphics {
     this.ctx = this.groupStack.pop();
     // Turn off image smoothing to avoid sub pixel interpolation which can
     // look kind of blurry for some pdfs.
-    if (this.ctx.imageSmoothingEnabled !== undefined) {
-      this.ctx.imageSmoothingEnabled = false;
-    } else {
-      this.ctx.mozImageSmoothingEnabled = false;
-    }
+    this.ctx.imageSmoothingEnabled = false;
+
     if (group.smask) {
       this.tempSMask = this.smaskStack.pop();
     } else {

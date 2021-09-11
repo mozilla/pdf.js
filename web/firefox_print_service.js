@@ -15,7 +15,7 @@
 
 import {
   AnnotationMode,
-  PDF_PIXELS_PER_INCH,
+  PixelsPerInch,
   RenderingCancelledException,
   shadow,
 } from "pdfjs-lib";
@@ -34,7 +34,7 @@ function composePage(
   const canvas = document.createElement("canvas");
 
   // The size of the canvas in pixels for printing.
-  const PRINT_UNITS = printResolution / PDF_PIXELS_PER_INCH;
+  const PRINT_UNITS = printResolution / PixelsPerInch.PDF;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
