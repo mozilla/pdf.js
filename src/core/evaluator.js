@@ -107,6 +107,17 @@ const PatternType = {
   SHADING: 2,
 };
 
+// Optionally avoid sending individual, or very few, text chunks to reduce
+// `postMessage` overhead with ReadableStream (see issue 13962).
+//
+// PLEASE NOTE: This value should *not* be too large (it's used as a lower limit
+// in `enqueueChunk`), since that would cause streaming of textContent to become
+// essentially useless in practice by sending all (or most) chunks at once.
+// Also, a too large value would (indirectly) affect the main-thread `textLayer`
+// building negatively by forcing all textContent to be handled at once, which
+// could easily end up hurting *overall* performance (e.g. rendering as well).
+const TEXT_CHUNK_BATCH_SIZE = 10;
+
 const deferred = Promise.resolve();
 
 // Convert PDF blend mode names to HTML5 blend mode names.
@@ -2575,8 +2586,6 @@ class PartialEvaluator {
       if (textContentItem.initialized) {
         textContentItem.hasEOL = true;
         flushTextContentItem();
-      } else if (textContent.items.length > 0) {
-        textContent.items[textContent.items.length - 1].hasEOL = true;
       } else {
         textContent.items.push({
           str: "",
@@ -2658,20 +2667,24 @@ class PartialEvaluator {
       textContentItem.str.length = 0;
     }
 
-    function enqueueChunk() {
+    function enqueueChunk(batch = false) {
       const length = textContent.items.length;
-      if (length > 0) {
-        sink.enqueue(textContent, length);
-        textContent.items = [];
-        textContent.styles = Object.create(null);
+      if (length === 0) {
+        return;
       }
+      if (batch && length < TEXT_CHUNK_BATCH_SIZE) {
+        return;
+      }
+      sink.enqueue(textContent, length);
+      textContent.items = [];
+      textContent.styles = Object.create(null);
     }
 
     const timeSlotManager = new TimeSlotManager();
 
     return new Promise(function promiseBody(resolve, reject) {
       const next = function (promise) {
-        enqueueChunk();
+        enqueueChunk(/* batch = */ true);
         Promise.all([promise, sink.ready]).then(function () {
           try {
             promiseBody(resolve, reject);
