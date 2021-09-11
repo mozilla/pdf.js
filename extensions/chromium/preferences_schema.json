@@ -69,6 +69,12 @@
       "type": "boolean",
       "default": false
     },
+    "enableScripting": {
+      "title": "Enable active content (JavaScript) in PDFs",
+      "type": "boolean",
+      "description": "Whether to allow execution of active content (JavaScript) by PDF files.",
+      "default": false
+    },
     "disableRange": {
       "title": "Disable range requests",
       "description": "Whether to disable range requests (not recommended).",
@@ -153,10 +159,6 @@
         3
       ],
       "default": 2
-    },
-    "enableScripting": {
-      "type": "boolean",
-      "default": true
     },
     "enablePermissions": {
       "type": "boolean",
