@@ -5885,5 +5885,13 @@
        "rounds": 1,
        "enableXfa": true,
        "type": "eq"
+    },
+    {  "id": "issue13999",
+       "file": "pdfs/issue13999.pdf",
+       "md5": "8829c76887e7827390e9a5f73cab23f2",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq"
     }
 ]
