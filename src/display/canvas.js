@@ -2458,11 +2458,8 @@ class CanvasGraphics {
     this.ctx = this.groupStack.pop();
     // Turn off image smoothing to avoid sub pixel interpolation which can
     // look kind of blurry for some pdfs.
-    if (this.ctx.imageSmoothingEnabled !== undefined) {
-      this.ctx.imageSmoothingEnabled = false;
-    } else {
-      this.ctx.mozImageSmoothingEnabled = false;
-    }
+    this.ctx.imageSmoothingEnabled = false;
+
     if (group.smask) {
       this.tempSMask = this.smaskStack.pop();
     } else {
