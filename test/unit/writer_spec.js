@@ -114,6 +114,8 @@ describe("Writer", function () {
       gdict.set("I", stream);
 
       dict.set("G", gdict);
+      dict.set("J", true);
+      dict.set("K", false);
 
       const buffer = [];
       writeDict(dict, buffer, null);
@@ -123,7 +125,7 @@ describe("Writer", function () {
         "/E (\\(hello\\\\world\\)) /F [1.23 4.5 6] " +
         "/G << /H 123 /I << /Length 8>> stream\n" +
         "a stream\n" +
-        "endstream\n>>>>";
+        "endstream\n>> /J true /K false>>";
 
       expect(buffer.join("")).toEqual(expected);
     });
