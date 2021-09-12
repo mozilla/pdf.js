@@ -251,6 +251,7 @@ const PDFViewerApplication = {
   isViewerEmbedded: window.parent !== window,
   url: "",
   baseUrl: "",
+  _downloadUrl: "",
   externalServices: DefaultExternalServices,
   _boundEvents: Object.create(null),
   documentInfo: null,
@@ -743,9 +744,13 @@ const PDFViewerApplication = {
     });
   },
 
-  setTitleUsingUrl(url = "") {
+  setTitleUsingUrl(url = "", downloadUrl = null) {
     this.url = url;
     this.baseUrl = url.split("#")[0];
+    if (downloadUrl) {
+      this._downloadUrl =
+        downloadUrl === url ? this.baseUrl : downloadUrl.split("#")[0];
+    }
     let title = getPdfFilenameFromUrl(url, "");
     if (!title) {
       try {
@@ -776,6 +781,16 @@ const PDFViewerApplication = {
   /**
    * @private
    */
+  _hideViewBookmark() {
+    // URL does not reflect proper document location - hiding some buttons.
+    const { toolbar, secondaryToolbar } = this.appConfig;
+    toolbar.viewBookmark.hidden = true;
+    secondaryToolbar.viewBookmarkButton.hidden = true;
+  },
+
+  /**
+   * @private
+   */
   _cancelIdleCallbacks() {
     if (!this._idleCallbacks.size) {
       return;
@@ -793,6 +808,7 @@ const PDFViewerApplication = {
    */
   async close() {
     this._unblockDocumentLoadEvent();
+    this._hideViewBookmark();
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       const { container } = this.appConfig.errorWrapper;
@@ -835,6 +851,7 @@ const PDFViewerApplication = {
     this.downloadComplete = false;
     this.url = "";
     this.baseUrl = "";
+    this._downloadUrl = "";
     this.documentInfo = null;
     this.metadata = null;
     this._contentDispositionFilename = null;
@@ -883,13 +900,13 @@ const PDFViewerApplication = {
     const parameters = Object.create(null);
     if (typeof file === "string") {
       // URL
-      this.setTitleUsingUrl(file);
+      this.setTitleUsingUrl(file, /* downloadUrl = */ file);
       parameters.url = file;
     } else if (file && "byteLength" in file) {
       // ArrayBuffer
       parameters.data = file;
     } else if (file.url && file.originalUrl) {
-      this.setTitleUsingUrl(file.originalUrl);
+      this.setTitleUsingUrl(file.originalUrl, /* downloadUrl = */ file.url);
       parameters.url = file.url;
     }
     // Set the necessary API parameters, using the available options.
@@ -965,7 +982,7 @@ const PDFViewerApplication = {
   },
 
   async download({ sourceEventType = "download" } = {}) {
-    const url = this.baseUrl,
+    const url = this._downloadUrl,
       filename = this._docFilename;
     try {
       this._ensureDownloadComplete();
@@ -988,7 +1005,7 @@ const PDFViewerApplication = {
     this._saveInProgress = true;
     await this.pdfScriptingManager.dispatchWillSave();
 
-    const url = this.baseUrl,
+    const url = this._downloadUrl,
       filename = this._docFilename;
     try {
       this._ensureDownloadComplete();
@@ -2261,13 +2278,17 @@ function webViewerOpenFileViaURL(file) {
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     if (file) {
       PDFViewerApplication.open(file);
+    } else {
+      PDFViewerApplication._hideViewBookmark();
     }
   } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-    PDFViewerApplication.setTitleUsingUrl(file);
+    PDFViewerApplication.setTitleUsingUrl(file, /* downloadUrl = */ file);
     PDFViewerApplication.initPassiveLoading();
   } else {
     if (file) {
       throw new Error("Not implemented: webViewerOpenFileViaURL");
+    } else {
+      PDFViewerApplication._hideViewBookmark();
     }
   }
 }
@@ -2487,13 +2508,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       };
       fileReader.readAsArrayBuffer(file);
     }
-
-    // URL does not reflect proper document location - hiding some icons.
-    const appConfig = PDFViewerApplication.appConfig;
-    appConfig.toolbar.viewBookmark.hidden = true;
-    appConfig.secondaryToolbar.viewBookmarkButton.hidden = true;
-    appConfig.toolbar.download.hidden = true;
-    appConfig.secondaryToolbar.downloadButton.hidden = true;
   };
 
   webViewerOpenFile = function (evt) {
