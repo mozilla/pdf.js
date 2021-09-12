@@ -117,6 +117,9 @@ describe("Writer", function () {
       dict.set("J", true);
       dict.set("K", false);
 
+      dict.set("NullArr", [null, 10]);
+      dict.set("NullVal", null);
+
       const buffer = [];
       writeDict(dict, buffer, null);
 
@@ -125,7 +128,8 @@ describe("Writer", function () {
         "/E (\\(hello\\\\world\\)) /F [1.23 4.5 6] " +
         "/G << /H 123 /I << /Length 8>> stream\n" +
         "a stream\n" +
-        "endstream\n>> /J true /K false>>";
+        "endstream\n>> /J true /K false " +
+        "/NullArr [null 10] /NullVal null>>";
 
       expect(buffer.join("")).toEqual(expected);
     });

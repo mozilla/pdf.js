@@ -89,6 +89,8 @@ function writeValue(value, buffer, transform) {
     writeDict(value, buffer, transform);
   } else if (isStream(value)) {
     writeStream(value, buffer, transform);
+  } else if (value === null) {
+    buffer.push("null");
   } else {
     warn(`Unhandled value in writer: ${typeof value}, please file a bug.`);
   }
