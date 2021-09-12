@@ -83,10 +83,14 @@ function writeValue(value, buffer, transform) {
     buffer.push(`(${escapeString(value)})`);
   } else if (typeof value === "number") {
     buffer.push(numberToString(value));
+  } else if (typeof value === "boolean") {
+    buffer.push(`${value.toString()}`);
   } else if (isDict(value)) {
     writeDict(value, buffer, transform);
   } else if (isStream(value)) {
     writeStream(value, buffer, transform);
+  } else {
+    warn(`Unhandled value in writer: ${typeof value}, please file a bug.`);
   }
 }
 
