@@ -160,6 +160,10 @@ class AnnotationElement {
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
     this._mouseState = parameters.mouseState;
+    this._annotationsWithSameName = parameters.annotationsWithSameName;
+    this._htmlElement = null;
+
+    this._annotationsWithSameName.push(this);
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -681,18 +685,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable });
   }
 
-  setPropertyOnSiblings(base, key, value, keyInStorage) {
-    const storage = this.annotationStorage;
-    for (const element of document.getElementsByName(base.name)) {
-      if (element !== base) {
-        element[key] = value;
-        const data = Object.create(null);
-        data[keyInStorage] = value;
-        storage.setValue(element.getAttribute("id"), data);
-      }
-    }
-  }
-
   render() {
     const storage = this.annotationStorage;
     const id = this.data.id;
@@ -724,19 +716,23 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.type = "text";
         element.setAttribute("value", textContent);
       }
+      this._htmlElement = element;
       element.tabIndex = DEFAULT_TAB_INDEX;
 
       elementData.userValue = textContent;
       element.setAttribute("id", id);
 
       element.addEventListener("input", event => {
-        storage.setValue(id, { value: event.target.value });
-        this.setPropertyOnSiblings(
-          element,
-          "value",
-          event.target.value,
-          "value"
-        );
+        const value = event.target.value;
+        storage.setValue(id, { value });
+        for (const other of this._annotationsWithSameName) {
+          const htmlElement = other._htmlElement;
+          if (htmlElement && htmlElement !== element) {
+            const data = Object.create(null);
+            htmlElement.value = data.value = value;
+            storage.setValue(htmlElement.getAttribute("id"), data);
+          }
+        }
       });
 
       let blurListener = event => {
@@ -973,7 +969,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.container.className = "buttonWidgetAnnotation checkBox";
 
-    const element = document.createElement("input");
+    const element = (this._htmlElement = document.createElement("input"));
     element.disabled = data.readOnly;
     element.type = "checkbox";
     element.name = this.data.fieldName;
@@ -983,13 +979,13 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     element.setAttribute("id", id);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
-    element.addEventListener("change", function (event) {
-      const name = event.target.name;
-      for (const checkbox of document.getElementsByName(name)) {
-        if (checkbox !== event.target) {
-          checkbox.checked = false;
+    element.addEventListener("change", event => {
+      for (const other of this._annotationsWithSameName) {
+        const htmlElement = other._htmlElement;
+        if (htmlElement && htmlElement !== element) {
+          htmlElement.checked = false;
           storage.setValue(
-            checkbox.parentNode.getAttribute("data-annotation-id"),
+            htmlElement.parentNode.getAttribute("data-annotation-id"),
             { value: false }
           );
         }
@@ -1048,7 +1044,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
       storage.setValue(id, { value });
     }
 
-    const element = document.createElement("input");
+    const element = (this._htmlElement = document.createElement("input"));
     element.disabled = data.readOnly;
     element.type = "radio";
     element.name = data.fieldName;
@@ -1058,26 +1054,30 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     element.setAttribute("id", id);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
-    element.addEventListener("change", function (event) {
-      const { target } = event;
-      for (const radio of document.getElementsByName(target.name)) {
-        if (radio !== target) {
-          storage.setValue(radio.getAttribute("id"), { value: false });
+    element.addEventListener("change", event => {
+      for (const other of this._annotationsWithSameName) {
+        const htmlElement = other._htmlElement;
+        if (htmlElement && htmlElement !== element) {
+          storage.setValue(htmlElement.getAttribute("id"), { value: false });
         }
       }
-      storage.setValue(id, { value: target.checked });
+      storage.setValue(id, { value: element.checked });
     });
 
     if (this.enableScripting && this.hasJSActions) {
       const pdfButtonValue = data.buttonValue;
       element.addEventListener("updatefromsandbox", jsEvent => {
+        const annotationsWithSameName = this._annotationsWithSameName;
         const actions = {
           value(event) {
             const checked = pdfButtonValue === event.detail.value;
-            for (const radio of document.getElementsByName(event.target.name)) {
-              const radioId = radio.getAttribute("id");
-              radio.checked = radioId === id && checked;
-              storage.setValue(radioId, { value: radio.checked });
+            for (const other of annotationsWithSameName) {
+              const htmlElement = other._htmlElement;
+              if (htmlElement) {
+                const radioId = htmlElement.getAttribute("id");
+                htmlElement.checked = radioId === id && checked;
+                storage.setValue(radioId, { value: htmlElement.checked });
+              }
             }
           },
         };
@@ -2049,7 +2049,8 @@ class AnnotationLayer {
    */
   static render(parameters) {
     const sortedAnnotations = [],
-      popupAnnotations = [];
+      popupAnnotations = [],
+      sameName = new Map();
     // Ensure that Popup annotations are handled last, since they're dependant
     // upon the parent annotation having already been rendered (please refer to
     // the `PopupAnnotationElement.render` method); fixes issue 11362.
@@ -2068,6 +2069,11 @@ class AnnotationLayer {
     }
 
     for (const data of sortedAnnotations) {
+      let annotationsWithSameName = sameName.get(data.fieldName);
+      if (!annotationsWithSameName) {
+        annotationsWithSameName = [];
+        sameName.set(data.fieldName, annotationsWithSameName);
+      }
       const element = AnnotationElementFactory.create({
         data,
         layer: parameters.div,
@@ -2083,7 +2089,9 @@ class AnnotationLayer {
         enableScripting: parameters.enableScripting,
         hasJSActions: parameters.hasJSActions,
         mouseState: parameters.mouseState || { isDown: false },
+        annotationsWithSameName,
       });
+
       if (element.isRenderable) {
         const rendered = element.render();
         if (data.hidden) {
