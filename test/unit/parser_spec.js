@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { Cmd, EOF, Name } from "../../src/core/primitives.js";
 import { Lexer, Linearization, Parser } from "../../src/core/parser.js";
 import { FormatError } from "../../src/shared/util.js";
-import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
 describe("parser", function () {
@@ -216,6 +216,32 @@ describe("parser", function () {
           expect(lexer.getName()).toEqual(Name.get(expectedNames[i]));
         }
       });
+    });
+
+    describe("getObj", function () {
+      it(
+        "should stop immediately when the start of a command is " +
+          "a non-visible ASCII character (issue 13999)",
+        function () {
+          const input = new StringStream("\x14q\nQ");
+          const lexer = new Lexer(input);
+
+          let obj = lexer.getObj();
+          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj.cmd).toEqual("\x14");
+
+          obj = lexer.getObj();
+          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj.cmd).toEqual("q");
+
+          obj = lexer.getObj();
+          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj.cmd).toEqual("Q");
+
+          obj = lexer.getObj();
+          expect(obj).toEqual(EOF);
+        }
+      );
     });
   });
 
