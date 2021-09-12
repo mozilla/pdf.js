@@ -84,7 +84,7 @@ function writeValue(value, buffer, transform) {
   } else if (typeof value === "number") {
     buffer.push(numberToString(value));
   } else if (typeof value === "boolean") {
-    buffer.push(`${value.toString()}`);
+    buffer.push(value.toString());
   } else if (isDict(value)) {
     writeDict(value, buffer, transform);
   } else if (isStream(value)) {
