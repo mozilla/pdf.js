@@ -39,6 +39,7 @@ import {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  RenderTask,
 } from "../../src/display/api.js";
 import {
   RenderingCancelledException,
@@ -1874,11 +1875,14 @@ describe("api", function () {
         viewport.width,
         viewport.height
       );
+
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
         viewport,
       });
+      expect(renderTask instanceof RenderTask).toEqual(true);
+
       await renderTask.promise;
       const stats = pdfPage.stats;
 
@@ -1911,6 +1915,8 @@ describe("api", function () {
         canvasFactory: CanvasFactory,
         viewport,
       });
+      expect(renderTask instanceof RenderTask).toEqual(true);
+
       renderTask.cancel();
 
       try {
@@ -1939,6 +1945,8 @@ describe("api", function () {
         canvasFactory: CanvasFactory,
         viewport,
       });
+      expect(renderTask instanceof RenderTask).toEqual(true);
+
       renderTask.cancel();
 
       try {
@@ -1955,6 +1963,8 @@ describe("api", function () {
         canvasFactory: CanvasFactory,
         viewport,
       });
+      expect(reRenderTask instanceof RenderTask).toEqual(true);
+
       await reRenderTask.promise;
 
       CanvasFactory.destroy(canvasAndCtx);
@@ -1976,12 +1986,15 @@ describe("api", function () {
         viewport,
         optionalContentConfigPromise,
       });
+      expect(renderTask1 instanceof RenderTask).toEqual(true);
+
       const renderTask2 = page.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
         viewport,
         optionalContentConfigPromise,
       });
+      expect(renderTask2 instanceof RenderTask).toEqual(true);
 
       await Promise.all([
         renderTask1.promise,
@@ -2014,8 +2027,9 @@ describe("api", function () {
         canvasFactory: CanvasFactory,
         viewport,
       });
-      await renderTask.promise;
+      expect(renderTask instanceof RenderTask).toEqual(true);
 
+      await renderTask.promise;
       await pdfDoc.cleanup();
 
       expect(true).toEqual(true);
@@ -2042,6 +2056,8 @@ describe("api", function () {
         canvasFactory: CanvasFactory,
         viewport,
       });
+      expect(renderTask instanceof RenderTask).toEqual(true);
+
       // Ensure that clean-up runs during rendering.
       renderTask.onContinue = function (cont) {
         waitSome(cont);
