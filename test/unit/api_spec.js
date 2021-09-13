@@ -35,6 +35,7 @@ import {
   DefaultCanvasFactory,
   getDocument,
   PDFDataRangeTransport,
+  PDFDocumentLoadingTask,
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
@@ -75,6 +76,7 @@ describe("api", function () {
     it("creates pdf doc from URL-string", async function () {
       const urlStr = TEST_PDFS_PATH + basicApiFileName;
       const loadingTask = getDocument(urlStr);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       const pdfDocument = await loadingTask.promise;
 
       expect(typeof urlStr).toEqual("string");
@@ -93,6 +95,7 @@ describe("api", function () {
         window.location
       );
       const loadingTask = getDocument(urlObj);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       const pdfDocument = await loadingTask.promise;
 
       expect(urlObj instanceof URL).toEqual(true);
@@ -104,6 +107,7 @@ describe("api", function () {
 
     it("creates pdf doc from URL", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       const progressReportedCapability = createPromiseCapability();
       // Attach the callback that is used to report loading progress;
@@ -128,6 +132,7 @@ describe("api", function () {
 
     it("creates pdf doc from URL and aborts before worker initialized", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       const destroyed = loadingTask.destroy();
 
       try {
@@ -143,6 +148,7 @@ describe("api", function () {
 
     it("creates pdf doc from URL and aborts loading after worker initialized", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       // This can be somewhat random -- we cannot guarantee perfect
       // 'Terminate' message to the worker before/after setting up pdfManager.
       const destroyed = loadingTask._worker.promise.then(function () {
@@ -162,6 +168,7 @@ describe("api", function () {
       expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
       const loadingTask = getDocument(typedArrayPdf);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       const progressReportedCapability = createPromiseCapability();
       loadingTask.onProgress = function (data) {
@@ -181,6 +188,7 @@ describe("api", function () {
     it("creates pdf doc from invalid PDF file", async function () {
       // A severely corrupt PDF file (even Adobe Reader fails to open it).
       const loadingTask = getDocument(buildGetDocumentParams("bug1020226.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       try {
         await loadingTask.promise;
@@ -203,6 +211,7 @@ describe("api", function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("non-existent.pdf")
       );
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       try {
         await loadingTask.promise;
@@ -218,6 +227,7 @@ describe("api", function () {
 
     it("creates pdf doc from PDF file protected with user and owner password", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("pr6531_1.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       const passwordNeededCapability = createPromiseCapability();
       const passwordIncorrectCapability = createPromiseCapability();
@@ -264,6 +274,10 @@ describe("api", function () {
           password: "",
         })
       );
+      expect(
+        passwordNeededLoadingTask instanceof PDFDocumentLoadingTask
+      ).toEqual(true);
+
       const result1 = passwordNeededLoadingTask.promise.then(
         function () {
           // Shouldn't get here.
@@ -282,6 +296,10 @@ describe("api", function () {
           password: "qwerty",
         })
       );
+      expect(
+        passwordIncorrectLoadingTask instanceof PDFDocumentLoadingTask
+      ).toEqual(true);
+
       const result2 = passwordIncorrectLoadingTask.promise.then(
         function () {
           // Shouldn't get here.
@@ -300,6 +318,10 @@ describe("api", function () {
           password: "asdfasdf",
         })
       );
+      expect(
+        passwordAcceptedLoadingTask instanceof PDFDocumentLoadingTask
+      ).toEqual(true);
+
       const result3 = passwordAcceptedLoadingTask.promise.then(function (data) {
         expect(data instanceof PDFDocumentProxy).toEqual(true);
         return passwordAcceptedLoadingTask.destroy();
@@ -317,11 +339,18 @@ describe("api", function () {
         const passwordNeededLoadingTask = getDocument(
           buildGetDocumentParams(filename)
         );
+        expect(
+          passwordNeededLoadingTask instanceof PDFDocumentLoadingTask
+        ).toEqual(true);
+
         const passwordIncorrectLoadingTask = getDocument(
           buildGetDocumentParams(filename, {
             password: "qwerty",
           })
         );
+        expect(
+          passwordIncorrectLoadingTask instanceof PDFDocumentLoadingTask
+        ).toEqual(true);
 
         let passwordNeededDestroyed;
         passwordNeededLoadingTask.onPassword = function (callback, reason) {
@@ -371,6 +400,7 @@ describe("api", function () {
 
     it("creates pdf doc from empty typed array", async function () {
       const loadingTask = getDocument(new Uint8Array(0));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       try {
         await loadingTask.promise;
@@ -389,10 +419,12 @@ describe("api", function () {
 
     it("checks that `docId`s are unique and increasing", async function () {
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
+      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
       await loadingTask1.promise;
       const docId1 = loadingTask1.docId;
 
       const loadingTask2 = getDocument(basicApiGetDocumentParams);
+      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
       await loadingTask2.promise;
       const docId2 = loadingTask2.docId;
 
