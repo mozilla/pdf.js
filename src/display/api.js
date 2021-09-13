@@ -3365,6 +3365,7 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  RenderTask,
   setPDFNetworkStreamFactory,
   version,
 };
