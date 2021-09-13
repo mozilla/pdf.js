@@ -261,6 +261,7 @@ function getDocument(src) {
     }
     source = src;
   }
+  const baseHref = src.baseHref;
   const params = Object.create(null);
   let rangeTransport = null,
     worker = null;
@@ -273,7 +274,7 @@ function getDocument(src) {
         if (typeof window !== "undefined") {
           try {
             // The full path is required in the 'url' field.
-            params[key] = new URL(value, window.location).href;
+            params[key] = new URL(value, window.location.origin + baseHref).href;
             continue;
           } catch (ex) {
             warn(`Cannot create valid URL: "${ex}".`);
