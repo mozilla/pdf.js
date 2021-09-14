@@ -123,6 +123,30 @@ const DEFAULT_TAB_INDEX = 5000;
 
 const HEADING_PATTERN = /^H(\d+)$/;
 
+// Allowed mime types for images
+const MIMES = new Set([
+  "image/gif",
+  "image/jpeg",
+  "image/jpg",
+  "image/pjpeg",
+  "image/png",
+  "image/apng",
+  "image/x-png",
+  "image/bmp",
+  "image/x-ms-bmp",
+  "image/tiff",
+  "image/tif",
+]);
+
+const IMAGES_HEADERS = [
+  [[0x42, 0x4d], "image/bmp"],
+  [[0xff, 0xd8, 0xff], "image/jpeg"],
+  [[0x49, 0x49, 0x2a, 0x00], "image/tiff"],
+  [[0x4d, 0x4d, 0x00, 0x2a], "image/tiff"],
+  [[0x47, 0x49, 0x46, 0x38, 0x39, 0x61], "image/gif"],
+  [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], "image/png"],
+];
+
 function getBorderDims(node) {
   if (!node || !node.border) {
     return { w: 0, h: 0 };
@@ -3321,6 +3345,10 @@ class Image extends StringObject {
   }
 
   [$toHTML]() {
+    if (this.contentType && !MIMES.has(this.contentType.toLowerCase())) {
+      return HTMLResult.EMPTY;
+    }
+
     let buffer =
       this[$globalData].images && this[$globalData].images.get(this.href);
     if (!buffer && (this.href || !this[$content])) {
@@ -3335,6 +3363,21 @@ class Image extends StringObject {
 
     if (!buffer) {
       return HTMLResult.EMPTY;
+    }
+
+    if (!this.contentType) {
+      for (const [header, type] of IMAGES_HEADERS) {
+        if (
+          buffer.length > header.length &&
+          header.every((x, i) => x === buffer[i])
+        ) {
+          this.contentType = type;
+          break;
+        }
+      }
+      if (!this.contentType) {
+        return HTMLResult.EMPTY;
+      }
     }
 
     // TODO: Firefox doesn't support natively tiff (and tif) format.
