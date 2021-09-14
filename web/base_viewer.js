@@ -1318,6 +1318,8 @@ class BaseViewer {
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
    * @param {Object} [mouseState]
+   * @param {Promise<Object<string, Array<Object>> | null>}
+   *   [fieldObjectsPromise]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1329,7 +1331,8 @@ class BaseViewer {
     l10n = NullL10n,
     enableScripting = null,
     hasJSActionsPromise = null,
-    mouseState = null
+    mouseState = null,
+    fieldObjectsPromise = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -1344,6 +1347,8 @@ class BaseViewer {
       enableScripting: enableScripting ?? this.enableScripting,
       hasJSActionsPromise:
         hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
+      fieldObjectsPromise:
+        fieldObjectsPromise || this.pdfDocument?.getFieldObjects(),
       mouseState: mouseState || this._scriptingManager?.mouseState,
     });
   }
