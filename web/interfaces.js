@@ -166,6 +166,8 @@ class IPDFAnnotationLayerFactory {
    * @param {boolean} [enableScripting]
    * @param {Promise<boolean>} [hasJSActionsPromise]
    * @param {Object} [mouseState]
+   * @param {Promise<Object<string, Array<Object>> | null>}
+   *   [fieldObjectsPromise]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -177,7 +179,8 @@ class IPDFAnnotationLayerFactory {
     l10n = undefined,
     enableScripting = false,
     hasJSActionsPromise = null,
-    mouseState = null
+    mouseState = null,
+    fieldObjectsPromise = null
   ) {}
 }
 
