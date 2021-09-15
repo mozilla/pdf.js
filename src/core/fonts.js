@@ -1073,6 +1073,7 @@ class Font {
           map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
         }
       }
+
       // Always update the glyph mapping with the `cidToGidMap` when it exists
       // (fixes issue12418_reduced.pdf).
       if (cidToGidMap) {
@@ -1081,6 +1082,20 @@ class Font {
           if (cidToGidMap[cid] !== undefined) {
             map[+charCode] = cidToGidMap[cid];
           }
+        }
+        // When the /CIDToGIDMap is "incomplete", fallback to the included
+        // /ToUnicode-map regardless of its encoding (fixes issue11915.pdf).
+        if (
+          cidToGidMap.length !== this.toUnicode.length &&
+          properties.hasIncludedToUnicodeMap &&
+          this.toUnicode instanceof IdentityToUnicodeMap
+        ) {
+          this.toUnicode.forEach(function (charCode, unicodeCharCode) {
+            const cid = map[charCode];
+            if (cidToGidMap[cid] === undefined) {
+              map[+charCode] = unicodeCharCode;
+            }
+          });
         }
       }
 
