@@ -309,7 +309,7 @@ class BaseViewer {
       this._pages.forEach(page => {
         const showIt = page.id === this.currentPageNumber;
         if (showIt) {
-          page.div.style.display = "block";
+          page.div.style.display = "inline-block";
           if (page.div.parentElement.classList.contains("spread")) {
             page.div.parentElement.childNodes.forEach((div, index) => {
               div.style.display = "inline-block";
@@ -835,7 +835,7 @@ class BaseViewer {
     /** #492 modified by ngx-extended-pdf-viewer */
     if (this.pageViewMode === "single") {
       this._pages.forEach(() => {
-        pageDiv.style.display = "block";
+        pageDiv.style.display = "inline-block";
       });
     }
     /** #492 end of modification */
