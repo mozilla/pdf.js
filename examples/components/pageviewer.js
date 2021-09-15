@@ -34,6 +34,8 @@ const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
 const PAGE_TO_VIEW = 1;
 const SCALE = 1.0;
 
+const ENABLE_XFA = true;
+
 const container = document.getElementById("pageContainer");
 
 const eventBus = new pdfjsViewer.EventBus();
@@ -43,6 +45,7 @@ const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
+  enableXfa: ENABLE_XFA,
 });
 loadingTask.promise.then(function (pdfDocument) {
   // Document loaded, retrieving the page.
@@ -55,9 +58,13 @@ loadingTask.promise.then(function (pdfDocument) {
       defaultViewport: pdfPage.getViewport({ scale: SCALE }),
       eventBus,
       // We can enable text/annotation/xfa/struct-layers, as needed.
-      textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
+      textLayerFactory: !pdfDocument.isPureXfa
+        ? new pdfjsViewer.DefaultTextLayerFactory()
+        : null,
       annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
-      xfaLayerFactory: new pdfjsViewer.DefaultXfaLayerFactory(),
+      xfaLayerFactory: pdfDocument.isPureXfa
+        ? new pdfjsViewer.DefaultXfaLayerFactory()
+        : null,
       structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
     });
     // Associate the actual page with the view, and draw it.
