@@ -19,6 +19,8 @@
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
+  --scale-select-container-width: 140px;
+  --scale-select-overflow: 22px;
   --loadingBar-end-offset: 0;
 
   --toolbar-icon-opacity: 0.7;
@@ -887,7 +889,7 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 }
 
 .dropdownToolbarButton {
-  width: 140px;
+  width: var(--scale-select-container-width);
   padding: 0;
   overflow: hidden;
   background-color: var(--dropdown-btn-bg-color);
@@ -908,7 +910,9 @@ html[dir="rtl"] .dropdownToolbarButton::after {
 }
 
 .dropdownToolbarButton > select {
-  width: 162px;
+  width: calc(
+    var(--scale-select-container-width) + var(--scale-select-overflow)
+  );
   height: 28px;
   font-size: 12px;
   color: var(--main-color);
