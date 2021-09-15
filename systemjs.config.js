@@ -18,15 +18,17 @@
 
 (function () {
   var baseLocation;
-  if (typeof document !== "undefined") {
+  if ( typeof document !== "undefined" ) {
     baseLocation = new URL("./", document.currentScript.src);
-  } else if (typeof location !== "undefined") {
+  } 
+  else if (typeof location !== "undefined") {
     // Probably worker -- walking subfolders until we will reach root.
     baseLocation = location;
     while (baseLocation.href.includes("/src/")) {
       baseLocation = new URL("..", baseLocation);
     }
-  } else {
+  }
+  else {
     throw new Error("Cannot configure SystemJS");
   }
 
@@ -46,6 +48,7 @@
   // __non_webpack_require__ has to be used.
   // In this target, we don't create a bundle, so we have to replace the
   // occurrences of __non_webpack_require__ ourselves.
+  
   function babelPluginReplaceNonWebPackRequire(babel) {
     return {
       visitor: {
