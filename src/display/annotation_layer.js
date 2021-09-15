@@ -981,18 +981,22 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const element = document.createElement("input");
     element.disabled = data.readOnly;
     element.type = "checkbox";
-    element.name = this.data.fieldName;
+    element.name = data.fieldName;
     if (value) {
       element.setAttribute("checked", true);
     }
     element.setAttribute("id", id);
+    element.setAttribute("exportValue", data.exportValue);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
     element.addEventListener("change", event => { // #718 modified by ngx-extended-pdf-viewer
       const name = event.target.name;
+      const checked = event.target.checked;
       for (const checkbox of document.getElementsByName(name)) {
         if (checkbox !== event.target) {
-          checkbox.checked = false;
+          checkbox.checked =
+            checked &&
+            checkbox.getAttribute("exportValue") === data.exportValue;
           storage.setValue(
             checkbox.parentNode.getAttribute("data-annotation-id"),
             this.data.fieldName, // #718 modified by ngx-extended-pdf-viewer
@@ -1001,7 +1005,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
         }
       }
       storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
-        value: event.target.checked,
+        value: checked
       });
     });
 

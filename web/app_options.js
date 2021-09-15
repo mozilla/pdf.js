@@ -101,7 +101,7 @@ const defaultOptions = {
   },
   enableScripting: {
     /** @type {boolean} */
-    value: true,
+    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   externalLinkRel: {

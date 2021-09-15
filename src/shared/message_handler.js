@@ -449,7 +449,7 @@ class MessageHandler {
         }
         // Reset desiredSize property of sink on every pull.
         this.streamSinks[streamId].desiredSize = data.desiredSize;
-        const { onPull } = this.streamSinks[data.streamId];
+        const { onPull } = this.streamSinks[streamId];
         new Promise(function (resolve) {
           resolve(onPull && onPull());
         }).then(
@@ -519,7 +519,7 @@ class MessageHandler {
         if (!this.streamSinks[streamId]) {
           break;
         }
-        const { onCancel } = this.streamSinks[data.streamId];
+        const { onCancel } = this.streamSinks[streamId];
         new Promise(function (resolve) {
           resolve(onCancel && onCancel(wrapReason(data.reason)));
         }).then(

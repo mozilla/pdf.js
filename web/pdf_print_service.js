@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { AnnotationMode, PixelsPerInch } from "pdfjs-lib";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import canvasSize from "canvas-size";
-import { AnnotationMode } from "pdfjs-lib";
 import { compatibilityParams } from "./app_options.js";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
@@ -35,7 +35,7 @@ function renderPage(
   const scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  let PRINT_UNITS = printResolution / 72.0;
+  let PRINT_UNITS = printResolution / PixelsPerInch.PDF;
 
   // modified by ngx-extended-pdf-viewer #530
   let scale = 1;
@@ -51,7 +51,6 @@ function renderPage(
   }
 
   PRINT_UNITS *= scale;
-
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 

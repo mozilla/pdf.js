@@ -380,15 +380,11 @@ class PDFLinkService {
     // See PDF reference, table 8.45 - Named action
     switch (action) {
       case "GoBack":
-        if (this.pdfHistory) {
-          this.pdfHistory.back();
-        }
+        this.pdfHistory?.back();
         break;
 
       case "GoForward":
-        if (this.pdfHistory) {
-          this.pdfHistory.forward();
-        }
+        this.pdfHistory?.forward();
         break;
 
       case "NextPage":

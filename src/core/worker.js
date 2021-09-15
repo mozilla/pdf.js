@@ -607,6 +607,7 @@ class WorkerMessageHandler {
         const promises = [
           pdfManager.onLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
+          pdfManager.ensureCatalog("acroFormRef"),
           pdfManager.ensureDoc("xref"),
           pdfManager.ensureDoc("startXRef"),
         ];
@@ -631,6 +632,7 @@ class WorkerMessageHandler {
         return Promise.all(promises).then(function ([
           stream,
           acroForm,
+          acroFormRef,
           xref,
           startXRef,
           ...refs
@@ -655,15 +657,22 @@ class WorkerMessageHandler {
             }
           }
 
-          const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || [];
+          const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || null;
           let xfaDatasets = null;
+          let hasDatasets = false;
           if (Array.isArray(xfa)) {
             for (let i = 0, ii = xfa.length; i < ii; i += 2) {
               if (xfa[i] === "datasets") {
                 xfaDatasets = xfa[i + 1];
+                acroFormRef = null;
+                hasDatasets = true;
               }
             }
+            if (xfaDatasets === null) {
+              xfaDatasets = xref.getNewRef();
+            }
           } else {
+            acroFormRef = null;
             // TODO: Support XFA streams.
             warn("Unsupported XFA type.");
           }
@@ -700,6 +709,9 @@ class WorkerMessageHandler {
             newRefs,
             xref,
             datasetsRef: xfaDatasets,
+            hasDatasets,
+            acroFormRef,
+            acroForm,
             xfaData,
           });
         });
@@ -759,8 +771,6 @@ class WorkerMessageHandler {
 
     handler.on("GetTextContent", function wphExtractText(data, sink) {
       const pageIndex = data.pageIndex;
-      sink.onPull = function (desiredSize) {};
-      sink.onCancel = function (reason) {};
 
       pdfManager.getPage(pageIndex).then(function (page) {
         const task = new WorkerTask("GetTextContent: page " + pageIndex);

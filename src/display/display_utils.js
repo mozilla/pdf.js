@@ -32,6 +32,11 @@ import {
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+const PixelsPerInch = {
+  CSS: 96.0,
+  PDF: 72.0,
+};
+
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {
     super();
@@ -652,6 +657,7 @@ export {
   loadScript,
   PageViewport,
   PDFDateString,
+  PixelsPerInch,
   RenderingCancelledException,
   StatTimer,
 };

@@ -24,6 +24,7 @@ import {
   LinkTarget,
   loadScript,
   PDFDateString,
+  PixelsPerInch,
   RenderingCancelledException,
 } from "./display/display_utils.js";
 import {
@@ -109,6 +110,7 @@ export {
   LinkTarget,
   loadScript,
   PDFDateString,
+  PixelsPerInch,
   RenderingCancelledException,
   getXfaPageViewport,
   // From "./shared/util.js":
