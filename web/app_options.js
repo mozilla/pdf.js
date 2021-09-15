@@ -55,8 +55,9 @@ const OptionKind = {
 };
 
 /**
- * PLEASE NOTE: To avoid introducing unnecessary dependencies, we specify the
- *              values below *explicitly* rather than relying on imported types.
+ * NOTE: These options are used to generate the `default_preferences.json` file,
+ *       see `OptionKind.PREFERENCE`, hence the values below must use only
+ *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
   annotationMode: {
@@ -226,9 +227,7 @@ const defaultOptions = {
   },
   enableXfa: {
     /** @type {boolean} */
-    value:
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING"),
+    value: true,
     kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   fontExtraProperties: {
