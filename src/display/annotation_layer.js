@@ -1013,10 +1013,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const data = this.data;
     const id = data.id;
     let value = storage.getValue(id, {
-      value:
-        data.fieldValue &&
-        ((data.exportValue && data.exportValue === data.fieldValue) ||
-          (!data.exportValue && data.fieldValue !== "Off")),
+      value: data.exportValue === data.fieldValue,
     }).value;
     if (typeof value === "string") {
       // The value has been changed through js and set in annotationStorage.
