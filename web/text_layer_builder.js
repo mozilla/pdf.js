@@ -244,6 +244,7 @@ class DefaultTextLayerFactory {
       viewport,
       enhanceTextSelection,
       eventBus,
+      highlighter,
     });
   }
 }
