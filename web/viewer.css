@@ -150,7 +150,6 @@
 
 @media screen and (forced-colors: active) {
   :root {
-    --main-color: ButtonText;
     --button-hover-color: Highlight;
     --doorhanger-hover-bg-color: Highlight;
     --toolbar-icon-opacity: 1;
