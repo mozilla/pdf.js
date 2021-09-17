@@ -2083,6 +2083,13 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return;
     }
 
+    // See https://bugzilla.mozilla.org/show_bug.cgi?id=1722036.
+    // If we've an AS and a V then take AS.
+    const asValue = this._decodeFormValue(params.dict.get("AS"));
+    if (typeof asValue === "string") {
+      this.data.fieldValue = asValue;
+    }
+
     const exportValues = normalAppearance.getKeys();
     if (!exportValues.includes("Off")) {
       // The /Off appearance is optional.
