@@ -393,10 +393,7 @@ function assert(cond, msg) {
 
 // Checks if URLs use one of the allowed protocols, e.g. to avoid XSS.
 function _isValidProtocol(url) {
-  if (!url) {
-    return false;
-  }
-  switch (url.protocol) {
+  switch (url?.protocol) {
     case "http:":
     case "https:":
     case "ftp:":
@@ -427,7 +424,7 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
         const dots = url.match(/\./g);
         // Avoid accidentally matching a *relative* URL pointing to a file named
         // e.g. "www.pdf" or similar.
-        if (dots && dots.length >= 2) {
+        if (dots?.length >= 2) {
           url = `http://${url}`;
         }
       }
@@ -537,11 +534,7 @@ class AbortException extends BaseException {
 }
 
 function bytesToString(bytes) {
-  if (
-    typeof bytes !== "object" ||
-    bytes === null ||
-    bytes.length === undefined
-  ) {
+  if (typeof bytes !== "object" || bytes?.length === undefined) {
     unreachable("Invalid argument for bytesToString");
   }
   const length = bytes.length;
@@ -954,7 +947,7 @@ function utf8StringToString(str) {
 }
 
 function isArrayBuffer(v) {
-  return typeof v === "object" && v !== null && v.byteLength !== undefined;
+  return typeof v === "object" && v?.byteLength !== undefined;
 }
 
 function isArrayEqual(arr1, arr2) {
