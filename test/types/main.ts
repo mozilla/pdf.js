@@ -6,7 +6,7 @@ class MainTest {
   task: ReturnType<typeof getDocument> | undefined;
 
   constructor(public file: string) {
-    this.eventBus = new EventBus({});
+    this.eventBus = new EventBus();
   }
 
   loadPdf() {
