@@ -126,3 +126,98 @@ describe("Text widget", () => {
     });
   });
 });
+
+describe("Annotation and storage", () => {
+  describe("issue14023.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14023.pdf", "[data-annotation-id='64R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must let checkboxes with the same name behave like radio buttons", async () => {
+      const text1 = "hello world!";
+      const text2 = "!dlrow olleh";
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Text field.
+          await page.type("#\\36 4R", text1);
+          // Checkbox.
+          await page.click("[data-annotation-id='65R']");
+          // Radio.
+          await page.click("[data-annotation-id='67R']");
+
+          for (const [pageNumber, textId, checkId, radio1Id, radio2Id] of [
+            [2, "#\\31 8R", "#\\31 9R", "#\\32 1R", "#\\32 0R"],
+            [5, "#\\32 3R", "#\\32 4R", "#\\32 2R", "#\\32 5R"],
+          ]) {
+            await page.evaluate(n => {
+              window.document
+                .querySelectorAll(`[data-page-number="${n}"][class="page"]`)[0]
+                .scrollIntoView();
+            }, pageNumber);
+
+            // Need to wait to have a displayed text input.
+            await page.waitForSelector(textId, {
+              timeout: 0,
+            });
+
+            const text = await page.$eval(textId, el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(text1);
+
+            let checked = await page.$eval(checkId, el => el.checked);
+            expect(checked).toEqual(true);
+
+            checked = await page.$eval(radio1Id, el => el.checked);
+            expect(checked).toEqual(false);
+
+            checked = await page.$eval(radio2Id, el => el.checked);
+            expect(checked).toEqual(false);
+          }
+
+          // Change data on page 5 and check that other pages changed.
+          // Text field.
+          await page.type("#\\32 3R", text2);
+          // Checkbox.
+          await page.click("[data-annotation-id='24R']");
+          // Radio.
+          await page.click("[data-annotation-id='25R']");
+
+          for (const [pageNumber, textId, checkId, radio1Id, radio2Id] of [
+            [1, "#\\36 4R", "#\\36 5R", "#\\36 7R", "#\\36 8R"],
+            [2, "#\\31 8R", "#\\31 9R", "#\\32 1R", "#\\32 0R"],
+          ]) {
+            await page.evaluate(n => {
+              window.document
+                .querySelectorAll(`[data-page-number="${n}"][class="page"]`)[0]
+                .scrollIntoView();
+            }, pageNumber);
+
+            // Need to wait to have a displayed text input.
+            await page.waitForSelector(textId, {
+              timeout: 0,
+            });
+
+            const text = await page.$eval(textId, el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual(text2 + text1);
+
+            let checked = await page.$eval(checkId, el => el.checked);
+            expect(checked).toEqual(false);
+
+            checked = await page.$eval(radio1Id, el => el.checked);
+            expect(checked).toEqual(false);
+
+            checked = await page.$eval(radio2Id, el => el.checked);
+            expect(checked).toEqual(false);
+          }
+        })
+      );
+    });
+  });
+});
