@@ -5899,5 +5899,13 @@
        "rounds": 1,
        "lastPage": 1,
        "type": "eq"
+    },
+    {  "id": "bug1722036",
+       "file": "pdfs/bug1722036.pdf",
+       "md5": "bbc7f62ca85609c97069bd3ce2658288",
+       "rounds": 1,
+       "link": true,
+       "forms": true,
+       "type": "eq"
     }
 ]
