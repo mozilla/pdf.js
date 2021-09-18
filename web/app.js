@@ -18,6 +18,7 @@ import {
   animationStarted,
   apiPageLayoutToSpreadMode,
   apiPageModeToSidebarView,
+  AutomationEventBus,
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
   EventBus,
@@ -458,11 +459,16 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeViewerComponents() {
-    const appConfig = this.appConfig;
+    const { appConfig, externalServices } = this;
 
-    const eventBus =
-      appConfig.eventBus ||
-      new EventBus({ isInAutomation: this.externalServices.isInAutomation });
+    let eventBus;
+    if (appConfig.eventBus) {
+      eventBus = appConfig.eventBus;
+    } else if (externalServices.isInAutomation) {
+      eventBus = new AutomationEventBus();
+    } else {
+      eventBus = new EventBus();
+    }
     this.eventBus = eventBus;
 
     this.overlayManager = new OverlayManager();
@@ -479,7 +485,7 @@ const PDFViewerApplication = {
     });
     this.pdfLinkService = pdfLinkService;
 
-    const downloadManager = this.externalServices.createDownloadManager();
+    const downloadManager = externalServices.createDownloadManager();
     this.downloadManager = downloadManager;
 
     const findController = new PDFFindController({
@@ -495,7 +501,7 @@ const PDFViewerApplication = {
         PDFJSDev.test("!PRODUCTION || GENERIC || CHROME")
           ? AppOptions.get("sandboxBundleSrc")
           : null,
-      scriptingFactory: this.externalServices,
+      scriptingFactory: externalServices,
       docPropertiesLookup: this._scriptingDocProperties.bind(this),
     });
     this.pdfScriptingManager = pdfScriptingManager;
