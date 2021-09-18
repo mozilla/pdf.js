@@ -35,6 +35,24 @@ describe("AnnotationStorage", function () {
       }).value;
       expect(value).toEqual("hello world");
     });
+
+    it("should get set values and default ones in the annotation storage", function () {
+      const annotationStorage = new AnnotationStorage();
+      annotationStorage.setValue("123A", {
+        value: "hello world",
+        hello: "world",
+      });
+
+      const result = annotationStorage.getValue("123A", {
+        value: "an other string",
+        world: "hello",
+      });
+      expect(result).toEqual({
+        value: "hello world",
+        hello: "world",
+        world: "hello",
+      });
+    });
   });
 
   describe("SetValue", function () {
