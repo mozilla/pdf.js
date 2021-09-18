@@ -5975,5 +5975,12 @@
            "value": true
          }
        }
+    },
+    {  "id": "issue13003",
+       "file": "pdfs/issue13003.pdf",
+       "md5": "a4c00bd6456d3c16b9bd44957caa4ab6",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
     }
 ]
