@@ -148,9 +148,9 @@ function adjustToUnicode(properties, builtInEncoding) {
       if (properties.toUnicode.has(charCode)) {
         continue; // The font dictionary has a `ToUnicode` entry.
       }
-    } else {
+    } else if (properties.hasEncoding) {
       if (
-        properties.hasEncoding &&
+        properties.differences.length === 0 ||
         properties.differences[charCode] !== undefined
       ) {
         continue; // The font dictionary has an `Encoding`/`Differences` entry.
