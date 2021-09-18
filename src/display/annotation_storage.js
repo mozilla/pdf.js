@@ -42,7 +42,12 @@ class AnnotationStorage {
    * @returns {Object}
    */
   getValue(key, defaultValue) {
-    return this._storage.get(key) ?? defaultValue;
+    const value = this._storage.get(key);
+    if (value === undefined) {
+      return defaultValue;
+    }
+
+    return Object.assign(defaultValue, value);
   }
 
   /**
