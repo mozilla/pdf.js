@@ -709,42 +709,12 @@ const animationStarted = new Promise(function (resolve) {
 });
 
 /**
- * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
- */
-function dispatchDOMEvent(eventName, args = null) {
-  if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL")) {
-    throw new Error("Not implemented: dispatchDOMEvent");
-  }
-  const details = Object.create(null);
-  if (args?.length > 0) {
-    const obj = args[0];
-    for (const key in obj) {
-      const value = obj[key];
-      if (key === "source") {
-        if (value === window || value === document) {
-          return; // No need to re-dispatch (already) global events.
-        }
-        continue; // Ignore the `source` property.
-      }
-      details[key] = value;
-    }
-  }
-  const event = document.createEvent("CustomEvent");
-  event.initCustomEvent(eventName, true, true, details);
-  document.dispatchEvent(event);
-}
-
-/**
  * Simple event bus for an application. Listeners are attached using the `on`
  * and `off` methods. To raise an event, the `dispatch` method shall be used.
  */
 class EventBus {
-  constructor(options) {
+  constructor() {
     this._listeners = Object.create(null);
-
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) {
-      this._isInAutomation = options?.isInAutomation === true;
-    }
   }
 
   /**
@@ -774,13 +744,6 @@ class EventBus {
   dispatch(eventName) {
     const eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) &&
-        this._isInAutomation
-      ) {
-        const args = Array.prototype.slice.call(arguments, 1);
-        dispatchDOMEvent(eventName, args);
-      }
       return;
     }
     // Passing all arguments after the eventName to the listeners.
@@ -805,12 +768,6 @@ class EventBus {
         listener.apply(null, args);
       }
       externalListeners = null;
-    }
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL")) &&
-      this._isInAutomation
-    ) {
-      dispatchDOMEvent(eventName, args);
     }
   }
 
@@ -840,6 +797,36 @@ class EventBus {
         return;
       }
     }
+  }
+}
+
+/**
+ * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
+ */
+class AutomationEventBus extends EventBus {
+  dispatch(eventName) {
+    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: AutomationEventBus.dispatch");
+    }
+    super.dispatch(...arguments);
+
+    const details = Object.create(null);
+    if (arguments.length > 1) {
+      const obj = arguments[1];
+      for (const key in obj) {
+        const value = obj[key];
+        if (key === "source") {
+          if (value === window || value === document) {
+            return; // No need to re-dispatch (already) global events.
+          }
+          continue; // Ignore the `source` property.
+        }
+        details[key] = value;
+      }
+    }
+    const event = document.createEvent("CustomEvent");
+    event.initCustomEvent(eventName, true, true, details);
+    document.dispatchEvent(event);
   }
 }
 
@@ -1012,6 +999,7 @@ export {
   apiPageLayoutToSpreadMode,
   apiPageModeToSidebarView,
   approximateFraction,
+  AutomationEventBus,
   AutoPrintRegExp,
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
