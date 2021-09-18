@@ -479,8 +479,24 @@ class App extends PDFObject {
     /* Not implemented */
   }
 
-  execMenuItem() {
-    /* Not implemented */
+  execMenuItem(item) {
+    switch (item) {
+      case "SaveAs":
+      case "FirstPage":
+      case "LastPage":
+      case "NextPage":
+      case "PrevPage":
+      case "ZoomViewIn":
+      case "ZoomViewOut":
+        this._send({ command: item });
+        break;
+      case "FitPage":
+        this._send({ command: "zoom", value: "page-fit" });
+        break;
+      case "Print":
+        this._send({ command: "print" });
+        break;
+    }
   }
 
   getNthPlugInName() {
