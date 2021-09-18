@@ -14,6 +14,12 @@
  */
 /* eslint-disable sort-exports/sort-exports */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./display/api").PDFDocumentLoadingTask} PDFDocumentLoadingTask */
+/** @typedef {import("./display/api").PDFDocumentProxy} PDFDocumentProxy */
+/** @typedef {import("./display/api").PDFPageProxy} PDFPageProxy */
+/** @typedef {import("./display/api").RenderTask} RenderTask */
+
 import {
   addLinkAttributes,
   getFilenameFromUrl,
