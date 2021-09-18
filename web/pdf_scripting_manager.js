@@ -305,6 +305,33 @@ class PDFScriptingManager {
           }
           this._pdfViewer.currentScaleValue = value;
           break;
+        case "SaveAs":
+          this._eventBus.dispatch("save", { source: this });
+          break;
+        case "FirstPage":
+          this._pdfViewer.currentPageNumber = 1;
+          break;
+        case "LastPage":
+          this._pdfViewer.currentPageNumber = this._pdfViewer.pagesCount;
+          break;
+        case "NextPage":
+          this._pdfViewer.nextPage();
+          break;
+        case "PrevPage":
+          this._pdfViewer.previousPage();
+          break;
+        case "ZoomViewIn":
+          if (isInPresentationMode) {
+            return;
+          }
+          this._eventBus.dispatch("zoomin", { source: this });
+          break;
+        case "ZoomViewOut":
+          if (isInPresentationMode) {
+            return;
+          }
+          this._eventBus.dispatch("zoomout", { source: this });
+          break;
       }
       return;
     }

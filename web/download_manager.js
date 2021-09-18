@@ -49,6 +49,7 @@ class DownloadManager {
 
   downloadUrl(url, filename) {
     if (!createValidAbsoluteUrl(url, "http://example.com")) {
+      console.error(`downloadUrl - not a valid URL: ${url}`);
       return; // restricted/invalid URL
     }
     download(url + "#pdfjs.action=download", filename);

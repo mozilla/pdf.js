@@ -72,7 +72,10 @@ class AnnotationStorage {
       }
     }
     // #718 end of modification by ngx-extended-pdf-viewer
-    return obj !== undefined ? obj : defaultValue;
+    if (obj === undefined) {
+      return defaultValue;
+    }
+    return Object.assign(defaultValue, obj);
   }
 
   /**

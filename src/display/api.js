@@ -3407,9 +3407,11 @@ export {
   getDocument,
   LoopbackPort,
   PDFDataRangeTransport,
+  PDFDocumentLoadingTask,
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  RenderTask,
   setPDFNetworkStreamFactory,
   version,
 };
