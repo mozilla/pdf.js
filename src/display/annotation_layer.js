@@ -502,6 +502,10 @@ class LinkAnnotationElement extends AnnotationElement {
         return false;
       };
     }
+
+    if (!link.onclick) {
+      link.onclick = () => false;
+    }
     link.className = "internalLink";
   }
 }
