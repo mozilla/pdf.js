@@ -3455,6 +3455,11 @@ class PartialEvaluator {
           // NOTE: cmap can be a sparse array, so use forEach instead of
           // `for(;;)` to iterate over all keys.
           cmap.forEach(function (charCode, token) {
+            // Some cmaps contain *only* CID characters (fixes issue9367.pdf).
+            if (typeof token === "number") {
+              map[charCode] = String.fromCodePoint(token);
+              return;
+            }
             const str = [];
             for (let k = 0; k < token.length; k += 2) {
               const w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);

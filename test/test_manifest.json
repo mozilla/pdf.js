@@ -2358,6 +2358,14 @@
        "lastPage": 2,
        "type": "eq"
     },
+    {  "id": "issue9367",
+       "file": "pdfs/issue9367.pdf",
+       "md5": "81a2c6f1fe5d1bb00ff0479aa6547155",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue10529",
        "file": "pdfs/issue10529.pdf",
        "md5": "1a4d404a137c610ff0c747cbea3b8666",
