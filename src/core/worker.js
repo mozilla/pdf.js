@@ -637,7 +637,7 @@ class WorkerMessageHandler {
             if (xfaDatasets === null) {
               xfaDatasets = xref.getNewRef();
             }
-          } else {
+          } else if (xfa) {
             acroFormRef = null;
             // TODO: Support XFA streams.
             warn("Unsupported XFA type.");
