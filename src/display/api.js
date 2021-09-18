@@ -274,7 +274,14 @@ function getDocument(src) {
         if (typeof window !== "undefined") {
           try {
             // The full path is required in the 'url' field.
-            params[key] = new URL(value, window.location.origin + baseHref).href;
+            // #929/#813 modified by ngx-extended-pdf-viewer
+            // to restore the drag'n'drop functionality
+            if (baseHref) {
+              params[key] = new URL(value, window.location.origin + baseHref).href;
+            } else {
+              params[key] = new URL(value, window.location).href;
+            }
+            // #929/#813 end of modification
             continue;
           } catch (ex) {
             warn(`Cannot create valid URL: "${ex}".`);
