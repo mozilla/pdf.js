@@ -376,6 +376,12 @@ function getFontFileType(file, { type, subtype, composite }) {
   return [fileType, fileSubtype];
 }
 
+function applyStandardFontGlyphMap(map, glyphMap) {
+  for (const charCode in glyphMap) {
+    map[+charCode] = glyphMap[charCode];
+  }
+}
+
 function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
   const toFontChar = [];
   let unicode;
@@ -1052,26 +1058,16 @@ class Font {
       type === "CIDFontType2" &&
       this.cidEncoding.startsWith("Identity-")
     ) {
-      const GlyphMapForStandardFonts = getGlyphMapForStandardFonts(),
-        cidToGidMap = properties.cidToGidMap;
+      const cidToGidMap = properties.cidToGidMap;
       // Standard fonts might be embedded as CID font without glyph mapping.
       // Building one based on GlyphMapForStandardFonts.
       const map = [];
-      for (const charCode in GlyphMapForStandardFonts) {
-        map[+charCode] = GlyphMapForStandardFonts[charCode];
-      }
+      applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
+
       if (/Arial-?Black/i.test(name)) {
-        const SupplementalGlyphMapForArialBlack =
-          getSupplementalGlyphMapForArialBlack();
-        for (const charCode in SupplementalGlyphMapForArialBlack) {
-          map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
-        }
+        applyStandardFontGlyphMap(map, getSupplementalGlyphMapForArialBlack());
       } else if (/Calibri/i.test(name)) {
-        const SupplementalGlyphMapForCalibri =
-          getSupplementalGlyphMapForCalibri();
-        for (const charCode in SupplementalGlyphMapForCalibri) {
-          map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
-        }
+        applyStandardFontGlyphMap(map, getSupplementalGlyphMapForCalibri());
       }
 
       // Always update the glyph mapping with the `cidToGidMap` when it exists
@@ -1158,10 +1154,7 @@ class Font {
       if (this.composite && this.toUnicode instanceof IdentityToUnicodeMap) {
         if (/Verdana/i.test(name)) {
           // Fixes issue11242_reduced.pdf
-          const GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
-          for (const charCode in GlyphMapForStandardFonts) {
-            map[+charCode] = GlyphMapForStandardFonts[charCode];
-          }
+          applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
         }
       }
       this.toFontChar = map;
