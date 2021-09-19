@@ -4301,6 +4301,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue14048",
+       "file": "pdfs/issue14048.pdf",
+       "md5": "770026875a93dc44a187905f4dcd3de2",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "blendmode",
       "file": "pdfs/blendmode.pdf",
       "md5": "5a86e7e9333e93c58abc3f382e1e6ea2",
