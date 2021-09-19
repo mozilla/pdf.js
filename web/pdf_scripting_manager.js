@@ -324,13 +324,13 @@ class PDFScriptingManager {
           if (isInPresentationMode) {
             return;
           }
-          this._eventBus.dispatch("zoomin", { source: this });
+          this._pdfViewer.increaseScale();
           break;
         case "ZoomViewOut":
           if (isInPresentationMode) {
             return;
           }
-          this._eventBus.dispatch("zoomout", { source: this });
+          this._pdfViewer.decreaseScale();
           break;
       }
       return;

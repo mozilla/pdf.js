@@ -17,6 +17,7 @@ import { AnnotationMode, createPromiseCapability, version } from "pdfjs-lib";
 import {
   CSS_UNITS,
   DEFAULT_SCALE,
+  DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
   getVisibleElements,
   isPortraitOrientation,
@@ -24,6 +25,8 @@ import {
   isValidScrollMode,
   isValidSpreadMode,
   MAX_AUTO_SCALE,
+  MAX_SCALE,
+  MIN_SCALE,
   moveToEndOfArray,
   PresentationModeState,
   RendererType,
@@ -1692,6 +1695,34 @@ class BaseViewer {
 
     this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
     return true;
+  }
+
+  /**
+   * Increase the current zoom level one, or more, times.
+   * @param {number} [steps] - Defaults to zooming once.
+   */
+  increaseScale(steps = 1) {
+    let newScale = this._currentScale;
+    do {
+      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
+      newScale = Math.ceil(newScale * 10) / 10;
+      newScale = Math.min(MAX_SCALE, newScale);
+    } while (--steps > 0 && newScale < MAX_SCALE);
+    this.currentScaleValue = newScale;
+  }
+
+  /**
+   * Decrease the current zoom level one, or more, times.
+   * @param {number} [steps] - Defaults to zooming once.
+   */
+  decreaseScale(steps = 1) {
+    let newScale = this._currentScale;
+    do {
+      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
+      newScale = Math.floor(newScale * 10) / 10;
+      newScale = Math.max(MIN_SCALE, newScale);
+    } while (--steps > 0 && newScale > MIN_SCALE);
+    this.currentScaleValue = newScale;
   }
 }
 
