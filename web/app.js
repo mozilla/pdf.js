@@ -84,7 +84,7 @@ import { ViewHistory } from "./view_history.js";
 const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
-const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
+const WHEEL_ZOOM_DISABLED_TIMEOUT = 0; // ms
 const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const ViewOnLoad = {
