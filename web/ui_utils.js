@@ -18,6 +18,7 @@ import { PixelsPerInch } from "pdfjs-lib";
 const CSS_UNITS = PixelsPerInch.CSS / PixelsPerInch.PDF;
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
+const DEFAULT_SCALE_DELTA = 1.1;
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 10.0;
 const UNKNOWN_SCALE = 0;
@@ -1005,6 +1006,7 @@ export {
   binarySearchFirstItem,
   CSS_UNITS,
   DEFAULT_SCALE,
+  DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
   EventBus,
   getActiveOrFocusedElement,
