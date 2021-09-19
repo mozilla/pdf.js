@@ -17,6 +17,7 @@ import { AnnotationMode, createPromiseCapability, version } from "pdfjs-lib";
 import {
   CSS_UNITS,
   DEFAULT_SCALE,
+  DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
   getVisibleElements,
   isPortraitOrientation,
@@ -24,6 +25,8 @@ import {
   isValidScrollMode,
   isValidSpreadMode,
   MAX_AUTO_SCALE,
+  MAX_SCALE,
+  MIN_SCALE,
   moveToEndOfArray,
   PresentationModeState,
   RendererType,
@@ -1893,6 +1896,46 @@ class BaseViewer {
 
     this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
     return true;
+  }
+
+  /**
+   * Increase the current zoom level one, or more, times.
+   * @param {number} [steps] - Defaults to zooming once.
+   */
+  increaseScale(steps = 1) {
+    let newScale = this._currentScale;
+    // modified by ngx-extended-pdf-viewer #367
+    let maxScale = Number(PDFViewerApplicationOptions.get("maxZoom"));
+    if (!maxScale) {
+      maxScale = MAX_SCALE;
+    }
+    do {
+      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
+      newScale = Math.ceil(newScale * 10) / 10;
+      newScale = Math.min(maxScale, newScale);
+    } while (--steps > 0 && newScale < maxScale);
+    // end of modification
+    this.currentScaleValue = newScale;
+  }
+
+  /**
+   * Decrease the current zoom level one, or more, times.
+   * @param {number} [steps] - Defaults to zooming once.
+   */
+  decreaseScale(steps = 1) {
+    let newScale = this._currentScale;
+    // modified by ngx-extended-pdf-viewer #367
+    let minScale = Number(PDFViewerApplicationOptions.get("minZoom"));
+    if (!minScale) {
+      minScale = MIN_SCALE;
+    }
+    do {
+      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
+      newScale = Math.floor(newScale * 10) / 10;
+      newScale = Math.max(minScale, newScale);
+    } while (--steps > 0 && newScale > minScale);
+    // end of modification
+    this.currentScaleValue = newScale;
   }
 }
 

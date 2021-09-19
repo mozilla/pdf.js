@@ -27,8 +27,6 @@ import {
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
-  MAX_SCALE,
-  MIN_SCALE,
   noContextMenuHandler,
   normalizeWheelEventDirection,
   parseQueryString,
@@ -82,7 +80,6 @@ import { SecondaryToolbar } from "./secondary_toolbar.js";
 import { Toolbar } from "./toolbar.js";
 import { ViewHistory } from "./view_history.js";
 
-const DEFAULT_SCALE_DELTA = 1.1;
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
@@ -651,43 +648,18 @@ const PDFViewerApplication = {
     return this._initializedCapability.promise;
   },
 
-  zoomIn(ticks) {
+  zoomIn(steps) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-
-    let newScale = this.pdfViewer.currentScale;
-    // modified by ngx-extended-pdf-viewer #367
-    let maxScale = Number(AppOptions.get("maxZoom"));
-    if (!maxScale) {
-      maxScale = MAX_SCALE;
-    }
-    do {
-      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.ceil(newScale * 10) / 10;
-      newScale = Math.min(maxScale, newScale);
-    } while (--ticks > 0 && newScale < maxScale);
-    // end of modification
-    this.pdfViewer.currentScaleValue = newScale;
+    this.pdfViewer.increaseScale(steps);
   },
 
-  zoomOut(ticks) {
+  zoomOut(steps) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    let newScale = this.pdfViewer.currentScale;
-    // modified by ngx-extended-pdf-viewer #367
-    let minScale = Number(AppOptions.get("minZoom"));
-    if (!minScale) {
-      minScale = MIN_SCALE;
-    }
-    do {
-      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.floor(newScale * 10) / 10;
-      newScale = Math.max(minScale, newScale);
-    } while (--ticks > 0 && newScale > minScale);
-    // end of modification
-    this.pdfViewer.currentScaleValue = newScale;
+    this.pdfViewer.decreaseScale(steps);
   },
 
   zoomReset() {
