@@ -14,6 +14,13 @@
  */
 
 import {
+  addDefaultProtocolToUrl,
+  collectActions,
+  MissingDataException,
+  toRomanNumerals,
+  tryConvertUrlEncoding,
+} from "./core_utils.js";
+import {
   clearPrimitiveCaches,
   Dict,
   isDict,
@@ -24,11 +31,6 @@ import {
   RefSet,
   RefSetCache,
 } from "./primitives.js";
-import {
-  collectActions,
-  MissingDataException,
-  toRomanNumerals,
-} from "./core_utils.js";
 import {
   createPromiseCapability,
   createValidAbsoluteUrl,
@@ -1283,21 +1285,6 @@ class Catalog {
    * @param {ParseDestDictionaryParameters} params
    */
   static parseDestDictionary(params) {
-    // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
-    function addDefaultProtocolToUrl(url) {
-      return url.startsWith("www.") ? `http://${url}` : url;
-    }
-
-    // According to ISO 32000-1:2008, section 12.6.4.7, URIs should be encoded
-    // in 7-bit ASCII. Some bad PDFs use UTF-8 encoding; see Bugzilla 1122280.
-    function tryConvertUrlEncoding(url) {
-      try {
-        return stringToUTF8String(url);
-      } catch (e) {
-        return url;
-      }
-    }
-
     const destDict = params.destDict;
     if (!isDict(destDict)) {
       warn("parseDestDictionary: `destDict` must be a dictionary.");

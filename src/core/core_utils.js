@@ -18,6 +18,7 @@ import {
   BaseException,
   objectSize,
   stringToPDFString,
+  stringToUTF8String,
   warn,
 } from "../shared/util.js";
 import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
@@ -451,7 +452,23 @@ function validateCSSFont(cssFontInfo) {
   return true;
 }
 
+// Let URLs beginning with 'www.' default to using the 'http://' protocol.
+function addDefaultProtocolToUrl(url) {
+  return url.startsWith("www.") ? `http://${url}` : url;
+}
+
+// According to ISO 32000-1:2008, section 12.6.4.7, URIs should be encoded
+// in 7-bit ASCII. Some bad PDFs use UTF-8 encoding; see Bugzilla 1122280.
+function tryConvertUrlEncoding(url) {
+  try {
+    return stringToUTF8String(url);
+  } catch (e) {
+    return url;
+  }
+}
+
 export {
+  addDefaultProtocolToUrl,
   collectActions,
   encodeToXmlString,
   escapePDFName,
@@ -467,6 +484,7 @@ export {
   readUint16,
   readUint32,
   toRomanNumerals,
+  tryConvertUrlEncoding,
   validateCSSFont,
   XRefEntryException,
   XRefParseException,
