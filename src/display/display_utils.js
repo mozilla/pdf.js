@@ -18,6 +18,7 @@ import {
   BaseException,
   isString,
   removeNullCharacters,
+  shadow,
   stringToBytes,
   Util,
   warn,
@@ -35,6 +36,11 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const PixelsPerInch = {
   CSS: 96.0,
   PDF: 72.0,
+
+  /** @type {number} */
+  get PDF_TO_CSS_UNITS() {
+    return shadow(this, "PDF_TO_CSS_UNITS", this.CSS / this.PDF);
+  },
 };
 
 class DOMCanvasFactory extends BaseCanvasFactory {

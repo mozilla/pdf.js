@@ -879,7 +879,7 @@ function getImageSmoothingEnabled(transform, interpolate) {
   scale[0] = Math.fround(scale[0]);
   scale[1] = Math.fround(scale[1]);
   const actualScale = Math.fround(
-    ((globalThis.devicePixelRatio || 1) * PixelsPerInch.CSS) / PixelsPerInch.PDF
+    (globalThis.devicePixelRatio || 1) * PixelsPerInch.PDF_TO_CSS_UNITS
   );
   if (interpolate !== undefined) {
     // If the value is explicitly set use it.
