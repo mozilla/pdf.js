@@ -29,8 +29,13 @@ import {
   XmlObject,
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
+import {
+  addDefaultProtocolToUrl,
+  tryConvertUrlEncoding,
+} from "../core_utils.js";
 import { fixTextIndent, measureToString, setFontFamily } from "./html_utils.js";
 import { getMeasurement, HTMLResult, stripQuotes } from "./utils.js";
+import { createValidAbsoluteUrl } from "../../shared/util.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
 
@@ -321,7 +326,16 @@ class XhtmlObject extends XmlObject {
 class A extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "a");
-    this.href = attributes.href || "";
+    let href = "";
+    if (typeof attributes.href === "string") {
+      let url = addDefaultProtocolToUrl(attributes.href);
+      url = tryConvertUrlEncoding(url);
+      const absoluteUrl = createValidAbsoluteUrl(url);
+      if (absoluteUrl) {
+        href = absoluteUrl.href;
+      }
+    }
+    this.href = href;
   }
 }
 
