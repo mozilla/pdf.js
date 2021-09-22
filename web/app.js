@@ -301,13 +301,20 @@ const PDFViewerApplication = {
    */
   async _readPreferences() {
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      AppOptions.get("disablePreferences")
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
-      // Give custom implementations of the default viewer a simpler way to
-      // opt-out of having the `Preferences` override existing `AppOptions`.
-      return;
+      if (AppOptions.get("disablePreferences")) {
+        // Give custom implementations of the default viewer a simpler way to
+        // opt-out of having the `Preferences` override existing `AppOptions`.
+        return;
+      }
+      if (AppOptions._hasUserOptions()) {
+        console.warn(
+          "_readPreferences: The Preferences may override manually set AppOptions; " +
+            'please use the "disablePreferences"-option in order to prevent that.'
+        );
+      }
     }
     try {
       AppOptions.setAll(await this.preferences.getAll());
