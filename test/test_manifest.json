@@ -1084,6 +1084,14 @@
        "type": "eq",
        "forms": true
     },
+    {  "id": "issue13845",
+       "file": "pdfs/issue13845.pdf",
+       "md5": "7c6b675f61ae68a2e416f4aa26da567c",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "text"
+    },
     {  "id": "xfa_bug1718521_1",
        "file": "pdfs/xfa_bug1718521_1.pdf",
        "md5": "9b89dd9e6a4c6c3258ca24debd806863",
