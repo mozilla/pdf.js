@@ -13,14 +13,13 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS } from "./ui_utils.js";
+import { getXfaPageViewport, PixelsPerInch } from "pdfjs-lib";
 import { DefaultXfaLayerFactory } from "./xfa_layer_builder.js";
-import { getXfaPageViewport } from "pdfjs-lib";
 
 function getXfaHtmlForPrinting(printContainer, pdfDocument) {
   const xfaHtml = pdfDocument.allXfaHtml;
   const factory = new DefaultXfaLayerFactory();
-  const scale = Math.round(CSS_UNITS * 100) / 100;
+  const scale = Math.round(PixelsPerInch.PDF_TO_CSS_UNITS * 100) / 100;
 
   for (const xfaPage of xfaHtml.children) {
     const page = document.createElement("div");

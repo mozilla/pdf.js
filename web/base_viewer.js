@@ -13,9 +13,13 @@
  * limitations under the License.
  */
 
-import { AnnotationMode, createPromiseCapability, version } from "pdfjs-lib";
 import {
-  CSS_UNITS,
+  AnnotationMode,
+  createPromiseCapability,
+  PixelsPerInch,
+  version,
+} from "pdfjs-lib";
+import {
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
@@ -535,7 +539,9 @@ class BaseViewer {
         this._optionalContentConfigPromise = optionalContentConfigPromise;
 
         const scale = this.currentScale;
-        const viewport = firstPdfPage.getViewport({ scale: scale * CSS_UNITS });
+        const viewport = firstPdfPage.getViewport({
+          scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
+        });
         const textLayerFactory =
           this.textLayerMode !== TextLayerMode.DISABLE && !isPureXfa
             ? this
@@ -904,11 +910,11 @@ class BaseViewer {
     const pageWidth =
       (changeOrientation ? pageView.height : pageView.width) /
       pageView.scale /
-      CSS_UNITS;
+      PixelsPerInch.PDF_TO_CSS_UNITS;
     const pageHeight =
       (changeOrientation ? pageView.width : pageView.height) /
       pageView.scale /
-      CSS_UNITS;
+      PixelsPerInch.PDF_TO_CSS_UNITS;
     let scale = 0;
     switch (destArray[1].name) {
       case "XYZ":
@@ -957,9 +963,13 @@ class BaseViewer {
         const vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
         widthScale =
-          (this.container.clientWidth - hPadding) / width / CSS_UNITS;
+          (this.container.clientWidth - hPadding) /
+          width /
+          PixelsPerInch.PDF_TO_CSS_UNITS;
         heightScale =
-          (this.container.clientHeight - vPadding) / height / CSS_UNITS;
+          (this.container.clientHeight - vPadding) /
+          height /
+          PixelsPerInch.PDF_TO_CSS_UNITS;
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
