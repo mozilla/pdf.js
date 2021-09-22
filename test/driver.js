@@ -29,7 +29,6 @@ const {
 const { SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
-const PDF_TO_CSS_UNITS = PixelsPerInch.CSS / PixelsPerInch.PDF;
 const CMAP_URL = "/build/generic/web/cmaps/";
 const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
@@ -656,7 +655,9 @@ var Driver = (function DriverClosure() {
           ctx = this.canvas.getContext("2d", { alpha: false });
           task.pdfDoc.getPage(task.pageNum).then(
             function (page) {
-              var viewport = page.getViewport({ scale: PDF_TO_CSS_UNITS });
+              var viewport = page.getViewport({
+                scale: PixelsPerInch.PDF_TO_CSS_UNITS,
+              });
               self.canvas.width = viewport.width;
               self.canvas.height = viewport.height;
               self._clearCanvas();
