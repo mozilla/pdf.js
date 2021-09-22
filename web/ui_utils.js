@@ -742,13 +742,15 @@ class EventBus {
     });
   }
 
-  dispatch(eventName) {
+  /**
+   * @param {string} eventName
+   * @param {Object} data
+   */
+  dispatch(eventName, data) {
     const eventListeners = this._listeners[eventName];
     if (!eventListeners || eventListeners.length === 0) {
       return;
     }
-    // Passing all arguments after the eventName to the listeners.
-    const args = Array.prototype.slice.call(arguments, 1);
     let externalListeners;
     // Making copy of the listeners array in case if it will be modified
     // during dispatch.
@@ -760,13 +762,13 @@ class EventBus {
         (externalListeners ||= []).push(listener);
         continue;
       }
-      listener.apply(null, args);
+      listener(data);
     }
     // Dispatch any "external" listeners *after* the internal ones, to give the
     // viewer components time to handle events and update their state first.
     if (externalListeners) {
       for (const listener of externalListeners) {
-        listener.apply(null, args);
+        listener(data);
       }
       externalListeners = null;
     }
@@ -805,17 +807,16 @@ class EventBus {
  * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
  */
 class AutomationEventBus extends EventBus {
-  dispatch(eventName) {
+  dispatch(eventName, data) {
     if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Not implemented: AutomationEventBus.dispatch");
     }
-    super.dispatch(...arguments);
+    super.dispatch(eventName, data);
 
     const details = Object.create(null);
-    if (arguments.length > 1) {
-      const obj = arguments[1];
-      for (const key in obj) {
-        const value = obj[key];
+    if (data) {
+      for (const key in data) {
+        const value = data[key];
         if (key === "source") {
           if (value === window || value === document) {
             return; // No need to re-dispatch (already) global events.
