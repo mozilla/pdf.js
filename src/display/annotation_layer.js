@@ -34,6 +34,7 @@ import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 
 const DEFAULT_TAB_INDEX = 1000;
+const GetElementsByNameSet = new WeakSet();
 
 /**
  * @typedef {Object} AnnotationElementParameters
@@ -50,6 +51,7 @@ const DEFAULT_TAB_INDEX = 1000;
  * @property {Object} svgFactory
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
+ * @property {Object} [fieldObjects]
  * @property {Object} [mouseState]
  */
 
@@ -159,6 +161,7 @@ class AnnotationElement {
     this.annotationStorage = parameters.annotationStorage;
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
+    this._fieldObjects = parameters.fieldObjects;
     this._mouseState = parameters.mouseState;
 
     if (isRenderable) {
@@ -361,6 +364,51 @@ class AnnotationElement {
    */
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
+  }
+
+  /**
+   * @private
+   * @returns {Array}
+   */
+  _getElementsByName(name, skipId = null) {
+    const fields = [];
+
+    if (this._fieldObjects) {
+      const fieldObj = this._fieldObjects[name];
+      if (fieldObj) {
+        for (const { page, id, exportValues } of fieldObj) {
+          if (page === -1) {
+            continue;
+          }
+          if (id === skipId) {
+            continue;
+          }
+          const exportValue =
+            typeof exportValues === "string" ? exportValues : null;
+
+          const domElement = document.getElementById(id);
+          if (domElement && !GetElementsByNameSet.has(domElement)) {
+            warn(`_getElementsByName - element not allowed: ${id}`);
+            continue;
+          }
+          fields.push({ id, exportValue, domElement });
+        }
+      }
+      return fields;
+    }
+    // Fallback to a regular DOM lookup, to ensure that the standalone
+    // viewer components won't break.
+    for (const domElement of document.getElementsByName(name)) {
+      const { id, exportValue } = domElement;
+      if (id === skipId) {
+        continue;
+      }
+      if (!GetElementsByNameSet.has(domElement)) {
+        continue;
+      }
+      fields.push({ id, exportValue, domElement });
+    }
+    return fields;
   }
 
   static get platform() {
@@ -687,13 +735,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
   setPropertyOnSiblings(base, key, value, keyInStorage) {
     const storage = this.annotationStorage;
-    for (const element of document.getElementsByName(base.name)) {
-      if (element !== base) {
-        element[key] = value;
-        const data = Object.create(null);
-        data[keyInStorage] = value;
-        storage.setValue(element.getAttribute("id"), data);
+    for (const element of this._getElementsByName(
+      base.name,
+      /* skipId = */ base.id
+    )) {
+      if (element.domElement) {
+        element.domElement[key] = value;
       }
+      storage.setValue(element.id, { [keyInStorage]: value });
     }
   }
 
@@ -728,6 +777,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.type = "text";
         element.setAttribute("value", textContent);
       }
+      GetElementsByNameSet.add(element);
+      element.disabled = this.data.readOnly;
+      element.name = this.data.fieldName;
       element.tabIndex = DEFAULT_TAB_INDEX;
 
       elementData.userValue = textContent;
@@ -900,9 +952,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         element.addEventListener("blur", blurListener);
       }
 
-      element.disabled = this.data.readOnly;
-      element.name = this.data.fieldName;
-
       if (this.data.maxLen !== null) {
         element.maxLength = this.data.maxLen;
       }
@@ -978,6 +1027,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     this.container.className = "buttonWidgetAnnotation checkBox";
 
     const element = document.createElement("input");
+    GetElementsByNameSet.add(element);
     element.disabled = data.readOnly;
     element.type = "checkbox";
     element.name = data.fieldName;
@@ -988,19 +1038,14 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     element.setAttribute("exportValue", data.exportValue);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
-    element.addEventListener("change", function (event) {
-      const name = event.target.name;
-      const checked = event.target.checked;
-      for (const checkbox of document.getElementsByName(name)) {
-        if (checkbox !== event.target) {
-          checkbox.checked =
-            checked &&
-            checkbox.getAttribute("exportValue") === data.exportValue;
-          storage.setValue(
-            checkbox.parentNode.getAttribute("data-annotation-id"),
-            { value: false }
-          );
+    element.addEventListener("change", event => {
+      const { name, checked } = event.target;
+      for (const checkbox of this._getElementsByName(name, /* skipId = */ id)) {
+        const curChecked = checked && checkbox.exportValue === data.exportValue;
+        if (checkbox.domElement) {
+          checkbox.domElement.checked = curChecked;
         }
+        storage.setValue(checkbox.id, { value: curChecked });
       }
       storage.setValue(id, { value: checked });
     });
@@ -1057,6 +1102,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     const element = document.createElement("input");
+    GetElementsByNameSet.add(element);
     element.disabled = data.readOnly;
     element.type = "radio";
     element.name = data.fieldName;
@@ -1066,26 +1112,26 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     element.setAttribute("id", id);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
-    element.addEventListener("change", function (event) {
-      const { target } = event;
-      for (const radio of document.getElementsByName(target.name)) {
-        if (radio !== target) {
-          storage.setValue(radio.getAttribute("id"), { value: false });
-        }
+    element.addEventListener("change", event => {
+      const { name, checked } = event.target;
+      for (const radio of this._getElementsByName(name, /* skipId = */ id)) {
+        storage.setValue(radio.id, { value: false });
       }
-      storage.setValue(id, { value: target.checked });
+      storage.setValue(id, { value: checked });
     });
 
     if (this.enableScripting && this.hasJSActions) {
       const pdfButtonValue = data.buttonValue;
       element.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
-          value(event) {
+          value: event => {
             const checked = pdfButtonValue === event.detail.value;
-            for (const radio of document.getElementsByName(event.target.name)) {
-              const radioId = radio.getAttribute("id");
-              radio.checked = radioId === id && checked;
-              storage.setValue(radioId, { value: radio.checked });
+            for (const radio of this._getElementsByName(event.target.name)) {
+              const curChecked = checked && radio.id === id;
+              if (radio.domElement) {
+                radio.domElement.checked = curChecked;
+              }
+              storage.setValue(radio.id, { value: curChecked });
             }
           },
         };
@@ -1158,6 +1204,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const fontSizeStyle = `calc(${fontSize}px * var(--zoom-factor))`;
 
     const selectElement = document.createElement("select");
+    GetElementsByNameSet.add(selectElement);
     selectElement.disabled = this.data.readOnly;
     selectElement.name = this.data.fieldName;
     selectElement.setAttribute("id", id);
@@ -2090,6 +2137,7 @@ class AnnotationLayer {
           parameters.annotationStorage || new AnnotationStorage(),
         enableScripting: parameters.enableScripting,
         hasJSActions: parameters.hasJSActions,
+        fieldObjects: parameters.fieldObjects,
         mouseState: parameters.mouseState || { isDown: false },
       });
       if (element.isRenderable) {
