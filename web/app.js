@@ -1555,10 +1555,13 @@ const PDFViewerApplication = {
     if (
       info.IsXFAPresent &&
       !info.IsAcroFormPresent &&
-      // Note: `isPureXfa === true` implies that `enableXfa = true` was set.
       !pdfDocument.isPureXfa
     ) {
-      console.warn("Warning: XFA support is not enabled");
+      if (pdfDocument.loadingParams.enableXfa) {
+        console.warn("Warning: XFA Foreground documents are not supported");
+      } else {
+        console.warn("Warning: XFA support is not enabled");
+      }
       this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
