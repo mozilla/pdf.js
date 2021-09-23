@@ -3060,6 +3060,7 @@ class WorkerTransport {
     const params = this._params;
     return shadow(this, "loadingParams", {
       disableAutoFetch: params.disableAutoFetch,
+      enableXfa: params.enableXfa,
     });
   }
 }
