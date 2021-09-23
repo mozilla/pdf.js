@@ -871,7 +871,7 @@ class PDFPageView {
     });
     const promise = pdfPage
       .getOperatorList({
-        annotationMode: this._annotatationMode,
+        annotationMode: this._annotationMode,
       })
       .then(opList => {
         ensureNotCancelled();
