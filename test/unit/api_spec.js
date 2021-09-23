@@ -1283,6 +1283,28 @@ describe("api", function () {
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
 
+    it("write a value in an annotation, save the pdf and load it", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const value = "Hello World";
+
+      pdfDoc.annotationStorage.setValue("55R", { value });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const annotations = await pdfPage.getAnnotations();
+
+      const field = annotations.find(annotation => annotation.id === "55R");
+      expect(!!field).toEqual(true);
+      expect(field.fieldValue).toEqual(value);
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {

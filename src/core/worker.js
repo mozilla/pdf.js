@@ -624,18 +624,18 @@ class WorkerMessageHandler {
           }
 
           const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || null;
-          let xfaDatasets = null;
-          let hasDatasets = false;
+          let xfaDatasetsRef = null;
+          let hasXfaDatasetsEntry = false;
           if (Array.isArray(xfa)) {
             for (let i = 0, ii = xfa.length; i < ii; i += 2) {
               if (xfa[i] === "datasets") {
-                xfaDatasets = xfa[i + 1];
+                xfaDatasetsRef = xfa[i + 1];
                 acroFormRef = null;
-                hasDatasets = true;
+                hasXfaDatasetsEntry = true;
               }
             }
-            if (xfaDatasets === null) {
-              xfaDatasets = xref.getNewRef();
+            if (xfaDatasetsRef === null) {
+              xfaDatasetsRef = xref.getNewRef();
             }
           } else if (xfa) {
             acroFormRef = null;
@@ -674,8 +674,9 @@ class WorkerMessageHandler {
             xrefInfo: newXrefInfo,
             newRefs,
             xref,
-            datasetsRef: xfaDatasets,
-            hasDatasets,
+            hasXfa: !!xfa,
+            xfaDatasetsRef,
+            hasXfaDatasetsEntry,
             acroFormRef,
             acroForm,
             xfaData,
