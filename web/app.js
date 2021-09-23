@@ -1015,6 +1015,7 @@ const PDFViewerApplication = {
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
+      console.error(`Error when saving the document: ${reason.message}`);
       await this.download({ sourceEventType });
     } finally {
       await this.pdfScriptingManager.dispatchDidSave();

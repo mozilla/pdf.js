@@ -162,7 +162,7 @@ describe("Writer", function () {
         Ref.get(456, 0),
       ]);
       const acroFormRef = Ref.get(789, 0);
-      const datasetsRef = Ref.get(101112, 0);
+      const xfaDatasetsRef = Ref.get(101112, 0);
       const xfaData = "<hello>world</hello>";
 
       const xrefInfo = {
@@ -180,8 +180,9 @@ describe("Writer", function () {
         originalData,
         xrefInfo,
         newRefs,
-        datasetsRef,
-        hasDatasets: false,
+        hasXfa: true,
+        xfaDatasetsRef,
+        hasXfaDatasetsEntry: false,
         acroFormRef,
         acroForm,
         xfaData,
