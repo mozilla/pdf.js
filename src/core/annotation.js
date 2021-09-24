@@ -47,6 +47,7 @@ import {
   Name,
   RefSet,
 } from "./primitives.js";
+import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
@@ -356,6 +357,7 @@ class Annotation {
   constructor(params) {
     const dict = params.dict;
 
+    this.setTitle(dict.get("T"));
     this.setContents(dict.get("Contents"));
     this.setModificationDate(dict.get("M"));
     this.setFlags(dict.get("F"));
@@ -374,7 +376,7 @@ class Annotation {
       annotationFlags: this.flags,
       borderStyle: this.borderStyle,
       color: this.color,
-      contents: this.contents,
+      contentsObj: this._contents,
       hasAppearance: !!this.appearance,
       id: params.id,
       modificationDate: this.modificationDate,
@@ -501,16 +503,34 @@ class Annotation {
   }
 
   /**
+   * @private
+   */
+  _parseStringHelper(data) {
+    const str = typeof data === "string" ? stringToPDFString(data) : "";
+    const dir = str && bidi(str).dir === "rtl" ? "rtl" : "ltr";
+
+    return { str, dir };
+  }
+
+  /**
+   * Set the title.
+   *
+   * @param {string} title - The title of the annotation, used e.g. with
+   *   PopupAnnotations.
+   */
+  setTitle(title) {
+    this._title = this._parseStringHelper(title);
+  }
+
+  /**
    * Set the contents.
    *
-   * @public
-   * @memberof Annotation
    * @param {string} contents - Text to display for the annotation or, if the
    *                            type of annotation does not display text, a
    *                            description of the annotation's contents
    */
   setContents(contents) {
-    this.contents = stringToPDFString(contents || "");
+    this._contents = this._parseStringHelper(contents);
   }
 
   /**
@@ -1014,10 +1034,11 @@ class MarkupAnnotation extends Annotation {
       // the group attributes from the primary annotation.
       const parent = dict.get("IRT");
 
-      this.data.title = stringToPDFString(parent.get("T") || "");
+      this.setTitle(parent.get("T"));
+      this.data.titleObj = this._title;
 
       this.setContents(parent.get("Contents"));
-      this.data.contents = this.contents;
+      this.data.contentsObj = this._contents;
 
       if (!parent.has("CreationDate")) {
         this.data.creationDate = null;
@@ -1043,7 +1064,7 @@ class MarkupAnnotation extends Annotation {
         this.data.color = this.color;
       }
     } else {
-      this.data.title = stringToPDFString(dict.get("T") || "");
+      this.data.titleObj = this._title;
 
       this.setCreationDate(dict.get("CreationDate"));
       this.data.creationDate = this.creationDate;
@@ -2405,8 +2426,11 @@ class PopupAnnotation extends Annotation {
       }
     }
 
-    this.data.title = stringToPDFString(parentItem.get("T") || "");
-    this.data.contents = stringToPDFString(parentItem.get("Contents") || "");
+    this.setTitle(parentItem.get("T"));
+    this.data.titleObj = this._title;
+
+    this.setContents(parentItem.get("Contents"));
+    this.data.contentsObj = this._contents;
   }
 }
 

@@ -1305,6 +1305,34 @@ class PDFPageProxy {
         intentArgs.renderingIntent
       );
       this._annotationPromises.set(intentArgs.cacheKey, promise);
+
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        promise = promise.then(annotations => {
+          for (const annotation of annotations) {
+            if (annotation.titleObj !== undefined) {
+              Object.defineProperty(annotation, "title", {
+                get() {
+                  deprecated(
+                    "`title`-property on annotation, please use `titleObj` instead."
+                  );
+                  return annotation.titleObj.str;
+                },
+              });
+            }
+            if (annotation.contentsObj !== undefined) {
+              Object.defineProperty(annotation, "contents", {
+                get() {
+                  deprecated(
+                    "`contents`-property on annotation, please use `contentsObj` instead."
+                  );
+                  return annotation.contentsObj.str;
+                },
+              });
+            }
+          }
+          return annotations;
+        });
+      }
     }
     return promise;
   }

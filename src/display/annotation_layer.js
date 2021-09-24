@@ -320,9 +320,9 @@ class AnnotationElement {
       container,
       trigger,
       color: data.color,
-      title: data.title,
+      titleObj: data.titleObj,
       modificationDate: data.modificationDate,
-      contents: data.contents,
+      contentsObj: data.contentsObj,
       hideWrapper: true,
     });
     const popup = popupElement.render();
@@ -562,8 +562,8 @@ class TextAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable });
   }
@@ -1392,7 +1392,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
 class PopupAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    const isRenderable = !!(parameters.data.title || parameters.data.contents);
+    const isRenderable = !!(
+      parameters.data.titleObj?.str || parameters.data.contentsObj?.str
+    );
     super(parameters, { isRenderable });
   }
 
@@ -1424,9 +1426,9 @@ class PopupAnnotationElement extends AnnotationElement {
       container: this.container,
       trigger: Array.from(parentElements),
       color: this.data.color,
-      title: this.data.title,
+      titleObj: this.data.titleObj,
       modificationDate: this.data.modificationDate,
-      contents: this.data.contents,
+      contentsObj: this.data.contentsObj,
     });
 
     // Position the popup next to the parent annotation's container.
@@ -1456,9 +1458,9 @@ class PopupElement {
     this.container = parameters.container;
     this.trigger = parameters.trigger;
     this.color = parameters.color;
-    this.title = parameters.title;
+    this.titleObj = parameters.titleObj;
     this.modificationDate = parameters.modificationDate;
-    this.contents = parameters.contents;
+    this.contentsObj = parameters.contentsObj;
     this.hideWrapper = parameters.hideWrapper || false;
 
     this.pinned = false;
@@ -1490,7 +1492,8 @@ class PopupElement {
     }
 
     const title = document.createElement("h1");
-    title.textContent = this.title;
+    title.dir = this.titleObj.dir;
+    title.textContent = this.titleObj.str;
     popup.appendChild(title);
 
     // The modification date is shown in the popup instead of the creation
@@ -1508,7 +1511,7 @@ class PopupElement {
       popup.appendChild(modificationDate);
     }
 
-    const contents = this._formatContents(this.contents);
+    const contents = this._formatContents(this.contentsObj);
     popup.appendChild(contents);
 
     if (!Array.isArray(this.trigger)) {
@@ -1531,13 +1534,14 @@ class PopupElement {
    * Format the contents of the popup by adding newlines where necessary.
    *
    * @private
-   * @param {string} contents
+   * @param {Object<string, string>} contentsObj
    * @memberof PopupElement
    * @returns {HTMLParagraphElement}
    */
-  _formatContents(contents) {
+  _formatContents({ str, dir }) {
     const p = document.createElement("p");
-    const lines = contents.split(/(?:\r\n?|\n)/);
+    p.dir = dir;
+    const lines = str.split(/(?:\r\n?|\n)/);
     for (let i = 0, ii = lines.length; i < ii; ++i) {
       const line = lines[i];
       p.appendChild(document.createTextNode(line));
@@ -1601,8 +1605,8 @@ class FreeTextAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1621,8 +1625,8 @@ class LineAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1665,8 +1669,8 @@ class SquareAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1712,8 +1716,8 @@ class CircleAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1759,8 +1763,8 @@ class PolylineAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
 
@@ -1824,8 +1828,8 @@ class CaretAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1844,8 +1848,8 @@ class InkAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
 
@@ -1903,8 +1907,8 @@ class HighlightAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, {
       isRenderable,
@@ -1931,8 +1935,8 @@ class UnderlineAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, {
       isRenderable,
@@ -1959,8 +1963,8 @@ class SquigglyAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, {
       isRenderable,
@@ -1987,8 +1991,8 @@ class StrikeOutAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, {
       isRenderable,
@@ -2015,8 +2019,8 @@ class StampAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
       parameters.data.hasPopup ||
-      parameters.data.title ||
-      parameters.data.contents
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -2055,7 +2059,10 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     trigger.style.width = this.container.style.width;
     trigger.addEventListener("dblclick", this._download.bind(this));
 
-    if (!this.data.hasPopup && (this.data.title || this.data.contents)) {
+    if (
+      !this.data.hasPopup &&
+      (this.data.titleObj?.str || this.data.contentsObj?.str)
+    ) {
       this._createPopup(trigger, this.data);
     }
 
