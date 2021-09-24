@@ -4886,12 +4886,6 @@ class Subform extends XFAObject {
       return false;
     }
 
-    const contentArea = this[$getTemplateRoot]()[$extra].currentContentArea;
-
-    if (this.overflow && this.overflow[$getExtra]().target === contentArea) {
-      return false;
-    }
-
     if (this[$extra]._isSplittable !== undefined) {
       return this[$extra]._isSplittable;
     }
@@ -5025,17 +5019,7 @@ class Subform extends XFAObject {
     });
 
     const root = this[$getTemplateRoot]();
-    const currentContentArea = root[$extra].currentContentArea;
     const savedNoLayoutFailure = root[$extra].noLayoutFailure;
-
-    if (this.overflow) {
-      // In case of overflow in the current content area,
-      // elements must be kept in this subform so it implies
-      // to have no errors on layout failures.
-      root[$extra].noLayoutFailure =
-        root[$extra].noLayoutFailure ||
-        this.overflow[$getExtra]().target === currentContentArea;
-    }
 
     const isSplittable = this[$isSplittable]();
     if (!isSplittable) {
@@ -5572,6 +5556,8 @@ class Template extends XFAObject {
 
           flush(i);
 
+          const currentIndex = i;
+
           i = Infinity;
           if (target instanceof PageArea) {
             // We must stop the contentAreas filling and go to the next page.
@@ -5579,9 +5565,15 @@ class Template extends XFAObject {
           } else if (target instanceof ContentArea) {
             const index = contentAreas.findIndex(e => e === target);
             if (index !== -1) {
-              // In the next loop iteration `i` will be incremented, note the
-              // `continue` just below, hence we need to subtract one here.
-              i = index - 1;
+              if (index > currentIndex) {
+                // In the next loop iteration `i` will be incremented, note the
+                // `continue` just below, hence we need to subtract one here.
+                i = index - 1;
+              } else {
+                // The targetted contentArea has already been filled
+                // so create a new page.
+                startIndex = index;
+              }
             } else {
               targetPageArea = target[$getParent]();
               startIndex = targetPageArea.contentArea.children.findIndex(
