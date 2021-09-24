@@ -328,6 +328,7 @@ const OPS = {
   endAnnotations: 79,
   beginAnnotation: 80,
   endAnnotation: 81,
+  /** @deprecated unused */
   paintJpegXObject: 82,
   paintImageMaskXObject: 83,
   paintImageMaskXObjectGroup: 84,
