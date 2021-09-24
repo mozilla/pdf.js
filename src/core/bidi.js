@@ -120,7 +120,7 @@ function createBidiText(str, isLTR, vertical = false) {
 const chars = [];
 const types = [];
 
-function bidi(str, startLevel, vertical) {
+function bidi(str, startLevel = -1, vertical = false) {
   let isLTR = true;
   const strLength = str.length;
   if (strLength === 0 || vertical) {
