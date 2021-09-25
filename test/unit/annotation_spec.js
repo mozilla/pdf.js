@@ -1108,7 +1108,7 @@ describe("annotation", function () {
           jsEntry: "window.open('http://www.example.com/test.pdf')",
           expectedUrl: new URL("http://www.example.com/test.pdf").href,
           expectedUnsafeUrl: "http://www.example.com/test.pdf",
-          expectedNewWindow: undefined,
+          expectedNewWindow: false,
         });
 
         // Check that we accept a white-listed {Stream} 'JS' entry.
