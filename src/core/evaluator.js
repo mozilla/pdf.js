@@ -3855,6 +3855,7 @@ class PartialEvaluator {
           loadedName: baseDict.loadedName,
           widths: metrics.widths,
           defaultWidth: metrics.defaultWidth,
+          isSimulatedFlags: true,
           flags,
           firstChar,
           lastChar,
