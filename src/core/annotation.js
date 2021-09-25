@@ -1906,7 +1906,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
   }
 
-  getOperatorList(evaluator, task, renderForms, annotationStorage) {
+  async getOperatorList(evaluator, task, renderForms, annotationStorage) {
     if (this.data.pushButton) {
       return super.getOperatorList(
         evaluator,
@@ -1916,10 +1916,16 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       );
     }
 
+    let value = null;
     if (annotationStorage) {
       const storageEntry = annotationStorage.get(this.data.id);
-      const value = storageEntry && storageEntry.value;
-      if (value === undefined) {
+      value = storageEntry ? storageEntry.value : null;
+    }
+
+    if (value === null) {
+      // Nothing in the annotationStorage.
+      if (this.appearance) {
+        // But we've a default appearance so use it.
         return super.getOperatorList(
           evaluator,
           task,
@@ -1928,35 +1934,33 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         );
       }
 
-      let appearance;
-      if (value) {
-        appearance = this.checkedAppearance;
+      // There is no default appearance so use the one derived
+      // from the field value.
+      if (this.data.checkBox) {
+        value = this.data.fieldValue === this.data.exportValue;
       } else {
-        appearance = this.uncheckedAppearance;
+        value = this.data.fieldValue === this.data.buttonValue;
       }
-
-      if (appearance) {
-        const savedAppearance = this.appearance;
-        this.appearance = appearance;
-        const operatorList = super.getOperatorList(
-          evaluator,
-          task,
-          renderForms,
-          annotationStorage
-        );
-        this.appearance = savedAppearance;
-        return operatorList;
-      }
-
-      // No appearance
-      return Promise.resolve(new OperatorList());
     }
-    return super.getOperatorList(
-      evaluator,
-      task,
-      renderForms,
-      annotationStorage
-    );
+
+    const appearance = value
+      ? this.checkedAppearance
+      : this.uncheckedAppearance;
+    if (appearance) {
+      const savedAppearance = this.appearance;
+      this.appearance = appearance;
+      const operatorList = super.getOperatorList(
+        evaluator,
+        task,
+        renderForms,
+        annotationStorage
+      );
+      this.appearance = savedAppearance;
+      return operatorList;
+    }
+
+    // No appearance
+    return new OperatorList();
   }
 
   async save(evaluator, task, annotationStorage) {
@@ -1982,7 +1986,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
 
-    const defaultValue = this.data.fieldValue && this.data.fieldValue !== "Off";
+    const defaultValue = this.data.fieldValue === this.data.exportValue;
     if (defaultValue === value) {
       return null;
     }
@@ -2093,6 +2097,64 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     return newRefs;
   }
 
+  _getDefaultCheckedAppearance(params, type) {
+    const width = this.data.rect[2] - this.data.rect[0];
+    const height = this.data.rect[3] - this.data.rect[1];
+    const bbox = [0, 0, width, height];
+
+    // Ratio used to have a mark slightly smaller than the bbox.
+    const FONT_RATIO = 0.8;
+    const fontSize = Math.min(width, height) * FONT_RATIO;
+
+    // Char Metrics
+    // Widths came from widths for ZapfDingbats.
+    // Heights are guessed with Fontforge and FoxitDingbats.pfb.
+    let metrics, char;
+    if (type === "check") {
+      // Char 33 (2713 in unicode)
+      metrics = {
+        width: 0.755 * fontSize,
+        height: 0.705 * fontSize,
+      };
+      char = "\x33";
+    } else if (type === "disc") {
+      // Char 6C (25CF in unicode)
+      metrics = {
+        width: 0.791 * fontSize,
+        height: 0.705 * fontSize,
+      };
+      char = "\x6C";
+    } else {
+      unreachable(`_getDefaultCheckedAppearance - unsupported type: ${type}`);
+    }
+
+    // Values to center the glyph in the bbox.
+    const xShift = (width - metrics.width) / 2;
+    const yShift = (height - metrics.height) / 2;
+
+    const appearance = `q BT /PdfJsZaDb ${fontSize} Tf 0 g ${xShift} ${yShift} Td (${char}) Tj ET Q`;
+
+    const appearanceStreamDict = new Dict(params.xref);
+    appearanceStreamDict.set("FormType", 1);
+    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.set("BBox", bbox);
+    appearanceStreamDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+    appearanceStreamDict.set("Length", appearance.length);
+
+    const resources = new Dict(params.xref);
+    const font = new Dict(params.xref);
+    font.set("PdfJsZaDb", this.fallbackFontDict);
+    resources.set("Font", font);
+
+    appearanceStreamDict.set("Resources", resources);
+
+    this.checkedAppearance = new StringStream(appearance);
+    this.checkedAppearance.dict = appearanceStreamDict;
+
+    this._streams.push(this.checkedAppearance);
+  }
+
   _processCheckBox(params) {
     const customAppearance = params.dict.get("AP");
     if (!isDict(customAppearance)) {
@@ -2111,27 +2173,46 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       this.data.fieldValue = asValue;
     }
 
+    const yes =
+      this.data.fieldValue !== null && this.data.fieldValue !== "Off"
+        ? this.data.fieldValue
+        : "Yes";
+
     const exportValues = normalAppearance.getKeys();
-    if (!exportValues.includes("Off")) {
-      // The /Off appearance is optional.
-      exportValues.push("Off");
+    if (exportValues.length === 0) {
+      exportValues.push("Off", yes);
+    } else if (exportValues.length === 1) {
+      if (exportValues[0] === "Off") {
+        exportValues.push(yes);
+      } else {
+        exportValues.unshift("Off");
+      }
+    } else if (exportValues.includes(yes)) {
+      exportValues.length = 0;
+      exportValues.push("Off", yes);
+    } else {
+      const otherYes = exportValues.find(v => v !== "Off");
+      exportValues.length = 0;
+      exportValues.push("Off", otherYes);
     }
+
     // Don't use a "V" entry pointing to a non-existent appearance state,
     // see e.g. bug1720411.pdf where it's an *empty* Name-instance.
     if (!exportValues.includes(this.data.fieldValue)) {
-      this.data.fieldValue = null;
-    }
-    if (exportValues.length !== 2) {
-      return;
+      this.data.fieldValue = "Off";
     }
 
-    this.data.exportValue =
-      exportValues[0] === "Off" ? exportValues[1] : exportValues[0];
+    this.data.exportValue = exportValues[1];
 
-    this.checkedAppearance = normalAppearance.get(this.data.exportValue);
+    this.checkedAppearance =
+      normalAppearance.get(this.data.exportValue) || null;
     this.uncheckedAppearance = normalAppearance.get("Off") || null;
 
-    this._streams.push(this.checkedAppearance);
+    if (this.checkedAppearance) {
+      this._streams.push(this.checkedAppearance);
+    } else {
+      this._getDefaultCheckedAppearance(params, "check");
+    }
     if (this.uncheckedAppearance) {
       this._streams.push(this.uncheckedAppearance);
     }
@@ -2168,10 +2249,15 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
-    this.checkedAppearance = normalAppearance.get(this.data.buttonValue);
+    this.checkedAppearance =
+      normalAppearance.get(this.data.buttonValue) || null;
     this.uncheckedAppearance = normalAppearance.get("Off") || null;
 
-    this._streams.push(this.checkedAppearance);
+    if (this.checkedAppearance) {
+      this._streams.push(this.checkedAppearance);
+    } else {
+      this._getDefaultCheckedAppearance(params, "disc");
+    }
     if (this.uncheckedAppearance) {
       this._streams.push(this.uncheckedAppearance);
     }
