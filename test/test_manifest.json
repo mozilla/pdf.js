@@ -5944,5 +5944,36 @@
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    {  "id": "issue14021",
+       "file": "pdfs/issue14021.pdf",
+       "md5": "d18aa84135ce985c70a8f56306ecb95f",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq",
+       "forms": true
+    },
+    {  "id": "issue14021-storage",
+       "file": "pdfs/issue14021.pdf",
+       "md5": "d18aa84135ce985c70a8f56306ecb95f",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 2,
+       "lastPage": 3,
+       "type": "eq",
+       "print": true,
+       "annotationStorage": {
+         "148R": {
+           "value": true
+         },
+         "138R": {
+           "value": true
+         },
+         "139R": {
+           "value": true
+         }
+       }
     }
 ]
