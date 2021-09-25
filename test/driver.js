@@ -168,7 +168,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       foreignObject.appendChild(div);
 
       stylePromise
-        .then(async cssRules => {
+        .then(async ([cssRules]) => {
           style.textContent = cssRules;
 
           // Rendering text layer as HTML.
@@ -251,8 +251,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 
       // Rendering annotation layer as HTML.
       stylePromise
-        .then(async (common, overrides) => {
-          style.textContent = common + overrides;
+        .then(async ([common, overrides]) => {
+          style.textContent = common + "\n" + overrides;
 
           var annotation_viewport = viewport.clone({ dontFlip: true });
           var parameters = {
@@ -326,7 +326,7 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
       foreignObject.appendChild(div);
 
       stylePromise
-        .then(async cssRules => {
+        .then(async ([cssRules]) => {
           style.textContent = fontRules + "\n" + cssRules;
 
           XfaLayer.render({
