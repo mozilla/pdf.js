@@ -448,14 +448,35 @@ function _isValidProtocol(url) {
  * Attempts to create a valid absolute URL.
  *
  * @param {URL|string} url - An absolute, or relative, URL.
- * @param {URL|string} baseUrl - An absolute URL.
+ * @param {URL|string} [baseUrl] - An absolute URL.
+ * @param {Object} [options]
  * @returns Either a valid {URL}, or `null` otherwise.
  */
-function createValidAbsoluteUrl(url, baseUrl) {
+function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
   if (!url) {
     return null;
   }
   try {
+    if (options && typeof url === "string") {
+      // Let URLs beginning with "www." default to using the "http://" protocol.
+      if (options.addDefaultProtocol && url.startsWith("www.")) {
+        const dots = url.match(/\./g);
+        // Avoid accidentally matching a *relative* URL pointing to a file named
+        // e.g. "www.pdf" or similar.
+        if (dots && dots.length >= 2) {
+          url = `http://${url}`;
+        }
+      }
+
+      // According to ISO 32000-1:2008, section 12.6.4.7, URIs should be encoded
+      // in 7-bit ASCII. Some bad PDFs use UTF-8 encoding; see bug 1122280.
+      if (options.tryConvertEncoding) {
+        try {
+          url = stringToUTF8String(url);
+        } catch (ex) {}
+      }
+    }
+
     const absoluteUrl = baseUrl ? new URL(url, baseUrl) : new URL(url);
     if (_isValidProtocol(absoluteUrl)) {
       return absoluteUrl;

@@ -14,14 +14,6 @@
  */
 
 import {
-  addDefaultProtocolToUrl,
-  collectActions,
-  MissingDataException,
-  recoverJsURL,
-  toRomanNumerals,
-  tryConvertUrlEncoding,
-} from "./core_utils.js";
-import {
   clearPrimitiveCaches,
   Dict,
   isDict,
@@ -29,9 +21,16 @@ import {
   isRef,
   isRefsEqual,
   isStream,
+  Name,
   RefSet,
   RefSetCache,
 } from "./primitives.js";
+import {
+  collectActions,
+  MissingDataException,
+  recoverJsURL,
+  toRomanNumerals,
+} from "./core_utils.js";
 import {
   createPromiseCapability,
   createValidAbsoluteUrl,
@@ -1331,11 +1330,9 @@ class Catalog {
       switch (actionName) {
         case "URI":
           url = action.get("URI");
-          if (isName(url)) {
+          if (url instanceof Name) {
             // Some bad PDFs do not put parentheses around relative URLs.
             url = "/" + url.name;
-          } else if (isString(url)) {
-            url = addDefaultProtocolToUrl(url);
           }
           // TODO: pdf spec mentions urls can be relative to a Base
           // entry in the dictionary.
@@ -1426,8 +1423,10 @@ class Catalog {
     }
 
     if (isString(url)) {
-      url = tryConvertUrlEncoding(url);
-      const absoluteUrl = createValidAbsoluteUrl(url, docBaseUrl);
+      const absoluteUrl = createValidAbsoluteUrl(url, docBaseUrl, {
+        addDefaultProtocol: true,
+        tryConvertEncoding: true,
+      });
       if (absoluteUrl) {
         resultObj.url = absoluteUrl.href;
       }
