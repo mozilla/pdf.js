@@ -17,6 +17,7 @@ import {
   addDefaultProtocolToUrl,
   collectActions,
   MissingDataException,
+  recoverJsURL,
   toRomanNumerals,
   tryConvertUrlEncoding,
 } from "./core_utils.js";
@@ -1399,28 +1400,11 @@ class Catalog {
             js = jsAction;
           }
 
-          if (js) {
-            // Attempt to recover valid URLs from `JS` entries with certain
-            // white-listed formats:
-            //  - window.open('http://example.com')
-            //  - app.launchURL('http://example.com', true)
-            const URL_OPEN_METHODS = ["app.launchURL", "window.open"];
-            const regex = new RegExp(
-              "^\\s*(" +
-                URL_OPEN_METHODS.join("|").split(".").join("\\.") +
-                ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
-              "i"
-            );
-
-            const jsUrl = regex.exec(stringToPDFString(js));
-            if (jsUrl && jsUrl[2]) {
-              url = jsUrl[2];
-
-              if (jsUrl[3] === "true" && jsUrl[1] === "app.launchURL") {
-                resultObj.newWindow = true;
-              }
-              break;
-            }
+          const jsURL = js && recoverJsURL(stringToPDFString(js));
+          if (jsURL) {
+            url = jsURL.url;
+            resultObj.newWindow = jsURL.newWindow;
+            break;
           }
         /* falls through */
         default:

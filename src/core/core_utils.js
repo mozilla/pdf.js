@@ -467,6 +467,34 @@ function tryConvertUrlEncoding(url) {
   }
 }
 
+function recoverJsURL(str) {
+  // Attempt to recover valid URLs from `JS` entries with certain
+  // white-listed formats:
+  //  - window.open('http://example.com')
+  //  - app.launchURL('http://example.com', true)
+  //  - xfa.host.gotoURL('http://example.com')
+  const URL_OPEN_METHODS = ["app.launchURL", "window.open", "xfa.host.gotoURL"];
+  const regex = new RegExp(
+    "^\\s*(" +
+      URL_OPEN_METHODS.join("|").split(".").join("\\.") +
+      ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
+    "i"
+  );
+
+  const jsUrl = regex.exec(str);
+  if (jsUrl && jsUrl[2]) {
+    const url = jsUrl[2];
+    let newWindow = false;
+
+    if (jsUrl[3] === "true" && jsUrl[1] === "app.launchURL") {
+      newWindow = true;
+    }
+    return { url, newWindow };
+  }
+
+  return null;
+}
+
 export {
   addDefaultProtocolToUrl,
   collectActions,
@@ -483,6 +511,7 @@ export {
   readInt8,
   readUint16,
   readUint32,
+  recoverJsURL,
   toRomanNumerals,
   tryConvertUrlEncoding,
   validateCSSFont,
