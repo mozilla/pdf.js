@@ -26,10 +26,6 @@ import {
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
-import {
-  addDefaultProtocolToUrl,
-  tryConvertUrlEncoding,
-} from "../core_utils.js";
 import { createValidAbsoluteUrl, warn } from "../../shared/util.js";
 import { getMeasurement, stripQuotes } from "./utils.js";
 import { selectFont } from "./fonts.js";
@@ -638,15 +634,11 @@ function setFontFamily(xfaFont, node, fontFinder, style) {
 }
 
 function fixURL(str) {
-  if (typeof str === "string") {
-    let url = addDefaultProtocolToUrl(str);
-    url = tryConvertUrlEncoding(url);
-    const absoluteUrl = createValidAbsoluteUrl(url);
-    if (absoluteUrl) {
-      return absoluteUrl.href;
-    }
-  }
-  return null;
+  const absoluteUrl = createValidAbsoluteUrl(str, /* baseUrl = */ null, {
+    addDefaultProtocol: true,
+    tryConvertEncoding: true,
+  });
+  return absoluteUrl ? absoluteUrl.href : null;
 }
 
 export {
