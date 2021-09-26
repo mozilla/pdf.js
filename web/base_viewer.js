@@ -339,6 +339,7 @@ class BaseViewer {
               size: "fixed",
             });
             this.pageFlip.loadFromHTML(document.querySelectorAll(".page"));
+            this.ensureAdjecentPagesAreLoaded();
             // triggered by page turning
             this.pageFlip.on("flip", e => {
               if (this._currentPageNumber !== e.data + 1) {
@@ -390,9 +391,9 @@ class BaseViewer {
           this.renderingQueue.renderView(pageView);
         });
         // #716 modified by ngx-extended-pdf-viewer
-//        if (this.pageViewMode === "book") {
-//          this.ensureAdjecentPagesAreLoaded();
-//        }
+        if (this.pageViewMode === "book") {
+          this.ensureAdjecentPagesAreLoaded();
+        }
         // #716 modified by ngx-extended-pdf-viewer
       }
     }
@@ -413,26 +414,68 @@ class BaseViewer {
 
   // #716 modified by ngx-extended-pdf-viewer
   ensureAdjecentPagesAreLoaded() {
-    if (this.currentPageNumber + 2 < this._pages.length) {
-      const nextPage = this._pages[this.currentPageNumber + 1];
-      if (nextPage.renderingState === RenderingStates.INITIAL) {
-        this._ensurePdfPageLoaded(nextPage).then(() => {
-          this.renderingQueue.renderView(nextPage);
-          console.log("rendered page " + (this.currentPageNumber + 1));
-        });
-      }
-    }
-    setTimeout(() => {
-      if (this.currentPageNumber + 3 < this._pages.length) {
-        const nextPage = this._pages[this.currentPageNumber + 2];
-        if (nextPage.renderingState === RenderingStates.INITIAL) {
-          this._ensurePdfPageLoaded(nextPage).then(() => {
-            this.renderingQueue.renderView(nextPage);
-            console.log("rendered page " + (this.currentPageNumber + 2));
+    if (!window.adjacentPagesLoader) {
+      window.adjacentPagesLoader = evt => {
+        console.log("rendered", evt);
+        let pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber)];
+        let isLoading = pageView.div.querySelector(".loadingIcon");
+        if (isLoading) {
+          console.log("asking for the next page");
+          this._ensurePdfPageLoaded(pageView).then(() => {
+            this.renderingQueue.renderView(pageView);
           });
+        } else {
+          pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 1)];
+          isLoading = pageView.div.querySelector(".loadingIcon");
+          if (isLoading) {
+            console.log("asking for the next + 1 page");
+            this._ensurePdfPageLoaded(pageView).then(() => {
+              this.renderingQueue.renderView(pageView);
+            });
+          } else {
+            pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 2)];
+            isLoading = pageView.div.querySelector(".loadingIcon");
+            if (isLoading) {
+              console.log("asking for the next + 2 page");
+              this._ensurePdfPageLoaded(pageView).then(() => {
+                this.renderingQueue.renderView(pageView);
+              });
+            } else {
+              pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 3)];
+              isLoading = pageView.div.querySelector(".loadingIcon");
+              if (isLoading) {
+                console.log("asking for the next + 3 page");
+                this._ensurePdfPageLoaded(pageView).then(() => {
+                  this.renderingQueue.renderView(pageView);
+                });
+              } else {
+                pageView = this._pages[Math.max(0, this.currentPageNumber - 1)];
+                isLoading = pageView.div.querySelector(".loadingIcon");
+                if (isLoading) {
+                  console.log("asking for the current page");
+                  this._ensurePdfPageLoaded(pageView).then(() => {
+                    this.renderingQueue.renderView(pageView);
+                  });
+                } else {
+                  pageView = this._pages[Math.max(0, this.currentPageNumber - 2)];
+                  isLoading = pageView.div.querySelector(".loadingIcon");
+                  if (isLoading) {
+                    console.log("asking for the previous page");
+                    this._ensurePdfPageLoaded(pageView).then(() => {
+                      this.renderingQueue.renderView(pageView);
+                    });
+                  } else {
+                    console.log("Finished preloading the pages");
+                  }
+                }
+              }
+            }
+          }
         }
-      }
-    }, 100);
+      };
+      this.eventBus._on("pagerendered", window.adjacentPagesLoader);
+    }
+    window.adjacentPagesLoader();
   }
   // #716 modified by ngx-extended-pdf-viewer
 
