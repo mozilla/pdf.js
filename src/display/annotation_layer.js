@@ -429,6 +429,7 @@ class LinkAnnotationElement extends AnnotationElement {
       parameters.data.dest ||
       parameters.data.action ||
       parameters.data.isTooltipOnly ||
+      parameters.data.resetForm ||
       (parameters.data.actions &&
         (parameters.data.actions.Action ||
           parameters.data.actions["Mouse Up"] ||
@@ -454,17 +455,25 @@ class LinkAnnotationElement extends AnnotationElement {
       this._bindNamedAction(link, data.action);
     } else if (data.dest) {
       this._bindLink(link, data.dest);
-    } else if (
-      data.actions &&
-      (data.actions.Action ||
-        data.actions["Mouse Up"] ||
-        data.actions["Mouse Down"]) &&
-      this.enableScripting &&
-      this.hasJSActions
-    ) {
-      this._bindJSAction(link, data);
     } else {
-      this._bindLink(link, "");
+      let hasClickAction = false;
+      if (
+        data.actions &&
+        (data.actions.Action ||
+          data.actions["Mouse Up"] ||
+          data.actions["Mouse Down"]) &&
+        this.enableScripting &&
+        this.hasJSActions
+      ) {
+        hasClickAction = true;
+        this._bindJSAction(link, data);
+      }
+
+      if (data.resetForm) {
+        this._bindResetFormAction(link, data.resetForm);
+      } else if (!hasClickAction) {
+        this._bindLink(link, "");
+      }
     }
 
     if (this.quadrilaterals) {
@@ -556,6 +565,106 @@ class LinkAnnotationElement extends AnnotationElement {
       link.onclick = () => false;
     }
     link.className = "internalLink";
+  }
+
+  _bindResetFormAction(link, resetForm) {
+    const otherClickAction = link.onclick;
+    if (!otherClickAction) {
+      link.href = this.linkService.getAnchorUrl("");
+    }
+    link.className = "internalLink";
+
+    if (!this._fieldObjects) {
+      warn(
+        `_bindResetFormAction - "resetForm" action not supported, ` +
+          "ensure that the `fieldObjects` parameter is provided."
+      );
+      if (!otherClickAction) {
+        link.onclick = () => false;
+      }
+      return;
+    }
+
+    link.onclick = () => {
+      if (otherClickAction) {
+        otherClickAction();
+      }
+
+      const {
+        fields: resetFormFields,
+        refs: resetFormRefs,
+        include,
+      } = resetForm;
+
+      const allFields = [];
+      if (resetFormFields.length !== 0 || resetFormRefs.length !== 0) {
+        const fieldIds = new Set(resetFormRefs);
+        for (const fieldName of resetFormFields) {
+          const fields = this._fieldObjects[fieldName] || [];
+          for (const { id } of fields) {
+            fieldIds.add(id);
+          }
+        }
+        for (const fields of Object.values(this._fieldObjects)) {
+          for (const field of fields) {
+            if (fieldIds.has(field.id) === include) {
+              allFields.push(field);
+            }
+          }
+        }
+      } else {
+        for (const fields of Object.values(this._fieldObjects)) {
+          allFields.push(...fields);
+        }
+      }
+
+      const storage = this.annotationStorage;
+      const allIds = [];
+      for (const field of allFields) {
+        const { id } = field;
+        allIds.push(id);
+        switch (field.type) {
+          case "text": {
+            const value = field.defaultValue || "";
+            storage.setValue(id, { value, valueAsString: value });
+            break;
+          }
+          case "checkbox":
+          case "radiobutton": {
+            const value = field.defaultValue === field.exportValues;
+            storage.setValue(id, { value });
+            break;
+          }
+          case "combobox":
+          case "listbox": {
+            const value = field.defaultValue || "";
+            storage.setValue(id, { value });
+            break;
+          }
+          default:
+            continue;
+        }
+        const domElement = document.getElementById(id);
+        if (!domElement || !GetElementsByNameSet.has(domElement)) {
+          continue;
+        }
+        domElement.dispatchEvent(new Event("resetform"));
+      }
+
+      if (this.enableScripting) {
+        // Update the values in the sandbox.
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: "app",
+            ids: allIds,
+            name: "ResetForm",
+          },
+        });
+      }
+
+      return false;
+    };
   }
 }
 
@@ -802,6 +911,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           event.target.value,
           "value"
         );
+      });
+
+      element.addEventListener("resetform", event => {
+        const defaultValue = this.data.defaultFieldValue || "";
+        element.value = elementData.userValue = defaultValue;
+        delete elementData.formattedValue;
       });
 
       let blurListener = event => {
@@ -1057,6 +1172,11 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       storage.setValue(id, { value: checked });
     });
 
+    element.addEventListener("resetform", event => {
+      const defaultValue = data.defaultFieldValue || "Off";
+      event.target.checked = defaultValue === data.exportValue;
+    });
+
     if (this.enableScripting && this.hasJSActions) {
       element.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
@@ -1127,6 +1247,14 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
         storage.setValue(radio.id, { value: false });
       }
       storage.setValue(id, { value: checked });
+    });
+
+    element.addEventListener("resetform", event => {
+      const defaultValue = data.defaultFieldValue;
+      event.target.checked =
+        defaultValue !== null &&
+        defaultValue !== undefined &&
+        defaultValue === data.buttonValue;
     });
 
     if (this.enableScripting && this.hasJSActions) {
@@ -1230,6 +1358,13 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         selectElement.multiple = true;
       }
     }
+
+    selectElement.addEventListener("resetform", event => {
+      const defaultValue = this.data.defaultFieldValue;
+      for (const option of selectElement.options) {
+        option.selected = option.value === defaultValue;
+      }
+    });
 
     // Insert the options into the choice field.
     for (const option of this.data.options) {
