@@ -796,7 +796,7 @@ describe("annotation", function () {
         );
         expect(data.annotationType).toEqual(AnnotationType.LINK);
         expect(data.url).toEqual("http://www.hmrc.gov.uk/");
-        expect(data.unsafeUrl).toEqual("http://www.hmrc.gov.uk");
+        expect(data.unsafeUrl).toEqual("www.hmrc.gov.uk");
         expect(data.dest).toBeUndefined();
       }
     );
@@ -843,7 +843,7 @@ describe("annotation", function () {
           ).href
         );
         expect(data.unsafeUrl).toEqual(
-          stringToUTF8String("http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4")
+          "http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4"
         );
         expect(data.dest).toBeUndefined();
       }
