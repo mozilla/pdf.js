@@ -79,6 +79,13 @@ class EventDispatcher {
           baseEvent.actions,
           baseEvent.pageNumber
         );
+      } else if (id === "app" && baseEvent.name === "ResetForm") {
+        for (const fieldId of baseEvent.ids) {
+          const obj = this._objects[fieldId];
+          if (obj) {
+            obj.obj._reset();
+          }
+        }
       }
       return;
     }
