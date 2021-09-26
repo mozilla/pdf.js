@@ -68,6 +68,7 @@ function renderPage(
       intent: "print",
       annotationMode: AnnotationMode.ENABLE_STORAGE,
       optionalContentConfigPromise,
+      background: PDFViewerApplicationOptions.get("pdfBackgroundColor"),
     };
     return pdfPage.render(renderContext).promise;
   });

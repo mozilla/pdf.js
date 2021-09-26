@@ -838,6 +838,7 @@ class PDFPageView {
       viewport: this.viewport,
       annotationMode: this._annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
+      background: PDFViewerApplicationOptions.get("pdfBackgroundColor"),
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
