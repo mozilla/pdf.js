@@ -17,18 +17,20 @@ import { isNodeJS } from "../../src/shared/is_node.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
 describe("XFAFactory", function () {
-  function searchHtmlNode(root, name, value, byAttributes = false) {
+  function searchHtmlNode(root, name, value, byAttributes = false, nth = [0]) {
     if (
       (!byAttributes && root[name] === value) ||
       (byAttributes && root.attributes && root.attributes[name] === value)
     ) {
-      return root;
+      if (nth[0]-- === 0) {
+        return root;
+      }
     }
     if (!root.children) {
       return null;
     }
     for (const child of root.children) {
-      const node = searchHtmlNode(child, name, value, byAttributes);
+      const node = searchHtmlNode(child, name, value, byAttributes, nth);
       if (node) {
         return node;
       }
@@ -587,5 +589,61 @@ describe("XFAFactory", function () {
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("qwerty/");
     expect(a.attributes.href).toEqual("");
+  });
+
+  it("should replace button with an URL by a link", function () {
+    const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="123pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+        </pageArea>
+      </pageSet>
+      <subform name="first">
+        <field y="1pt" w="11pt" h="22pt" x="2pt">
+          <ui>
+            <button/>
+          </ui>
+          <event activity="click" name="event__click">
+            <script contentType="application/x-javascript">
+              app.launchURL("https://github.com/mozilla/pdf.js", true);
+            </script>
+          </event>
+        </field>
+        <field y="1pt" w="11pt" h="22pt" x="2pt">
+          <ui>
+            <button/>
+          </ui>
+          <event activity="click" name="event__click">
+            <script contentType="application/x-javascript">
+              xfa.host.gotoURL("https://github.com/allizom/pdf.js");
+            </script>
+          </event>
+        </field>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+    `;
+    const factory = new XFAFactory({ "xdp:xdp": xml });
+
+    expect(factory.numberPages).toEqual(1);
+
+    const pages = factory.getPages();
+    let a = searchHtmlNode(pages, "name", "a");
+    expect(a.attributes.href).toEqual("https://github.com/mozilla/pdf.js");
+    expect(a.attributes.target).toEqual("_blank");
+
+    a = searchHtmlNode(pages, "name", "a", false, [1]);
+    expect(a.attributes.href).toEqual("https://github.com/allizom/pdf.js");
+    expect(a.attributes.target).toBe(undefined);
   });
 });
