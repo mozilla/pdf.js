@@ -231,12 +231,12 @@ class AnnotationFactory {
   }
 }
 
-function getRgbColor(color) {
-  const rgbColor = new Uint8ClampedArray(3);
+function getRgbColor(color, defaultColor = new Uint8ClampedArray(3)) {
   if (!Array.isArray(color)) {
-    return rgbColor;
+    return defaultColor;
   }
 
+  const rgbColor = defaultColor || new Uint8ClampedArray(3);
   switch (color.length) {
     case 0: // Transparent, which we indicate with a null value
       return null;
@@ -254,7 +254,7 @@ function getRgbColor(color) {
       return rgbColor;
 
     default:
-      return rgbColor;
+      return defaultColor;
   }
 }
 
@@ -365,6 +365,7 @@ class Annotation {
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
+    this.setBorderAndBackgroundColors(dict.get("MK"));
 
     this._streams = [];
     if (this.appearance) {
@@ -376,6 +377,8 @@ class Annotation {
       annotationFlags: this.flags,
       borderStyle: this.borderStyle,
       color: this.color,
+      backgroundColor: this.backgroundColor,
+      borderColor: this.borderColor,
       contentsObj: this._contents,
       hasAppearance: !!this.appearance,
       id: params.id,
@@ -604,6 +607,23 @@ class Annotation {
   }
 
   /**
+   * Set the color for background and border if any.
+   * The default values are transparent.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {Dict} mk - The MK dictionary
+   */
+  setBorderAndBackgroundColors(mk) {
+    if (mk instanceof Dict) {
+      this.borderColor = getRgbColor(mk.getArray("BC"), null);
+      this.backgroundColor = getRgbColor(mk.getArray("BG"), null);
+    } else {
+      this.borderColor = this.backgroundColor = null;
+    }
+  }
+
+  /**
    * Set the border style (as AnnotationBorderStyle object).
    *
    * @public
@@ -765,6 +785,8 @@ class Annotation {
         id: this.data.id,
         actions: this.data.actions,
         name: this.data.fieldName,
+        strokeColor: this.data.borderColor,
+        fillColor: this.data.backgroundColor,
         type: "",
         kidIds: this.data.kidIds,
         page: this.data.pageIndex,
@@ -1874,6 +1896,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       rect: this.data.rect,
       actions: this.data.actions,
       page: this.data.pageIndex,
+      strokeColor: this.data.borderColor,
+      fillColor: this.data.backgroundColor,
       type: "text",
     };
   }
@@ -2304,6 +2328,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       hidden: this.data.hidden,
       actions: this.data.actions,
       page: this.data.pageIndex,
+      strokeColor: this.data.borderColor,
+      fillColor: this.data.backgroundColor,
       type,
     };
   }
@@ -2385,6 +2411,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       actions: this.data.actions,
       items: this.data.options,
       page: this.data.pageIndex,
+      strokeColor: this.data.borderColor,
+      fillColor: this.data.backgroundColor,
       type,
     };
   }
@@ -2549,7 +2577,7 @@ class LineAnnotation extends MarkupAnnotation {
       let fillColor = null,
         interiorColor = parameters.dict.getArray("IC");
       if (interiorColor) {
-        interiorColor = getRgbColor(interiorColor);
+        interiorColor = getRgbColor(interiorColor, null);
         fillColor = interiorColor
           ? Array.from(interiorColor).map(c => c / 255)
           : null;
@@ -2613,7 +2641,7 @@ class SquareAnnotation extends MarkupAnnotation {
       let fillColor = null,
         interiorColor = parameters.dict.getArray("IC");
       if (interiorColor) {
-        interiorColor = getRgbColor(interiorColor);
+        interiorColor = getRgbColor(interiorColor, null);
         fillColor = interiorColor
           ? Array.from(interiorColor).map(c => c / 255)
           : null;
@@ -2662,7 +2690,7 @@ class CircleAnnotation extends MarkupAnnotation {
       let fillColor = null;
       let interiorColor = parameters.dict.getArray("IC");
       if (interiorColor) {
-        interiorColor = getRgbColor(interiorColor);
+        interiorColor = getRgbColor(interiorColor, null);
         fillColor = interiorColor
           ? Array.from(interiorColor).map(c => c / 255)
           : null;
