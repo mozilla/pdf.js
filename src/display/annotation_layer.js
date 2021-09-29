@@ -244,7 +244,8 @@ class AnnotationElement {
           break;
       }
 
-      if (data.color) {
+      const borderColor = data.borderColor || data.color || null;
+      if (borderColor) {
         container.style.borderColor = Util.makeHexColor(
           data.color[0] | 0,
           data.color[1] | 0,
@@ -645,6 +646,14 @@ class WidgetAnnotationElement extends AnnotationElement {
     }
   }
 
+  _setBackgroundColor(element) {
+    const color = this.data.backgroundColor || null;
+    element.style.backgroundColor =
+      color === null
+        ? "transparent"
+        : Util.makeHexColor(color[0], color[1], color[2]);
+  }
+
   _dispatchEventFromSandbox(actions, jsEvent) {
     const setColor = (jsName, styleName, event) => {
       const color = event.detail[jsName];
@@ -971,6 +980,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     this._setTextStyle(element);
+    this._setBackgroundColor(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -1074,6 +1084,8 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       );
     }
 
+    this._setBackgroundColor(element);
+
     this.container.appendChild(element);
     return this.container;
   }
@@ -1150,6 +1162,8 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
         event => event.target.checked
       );
     }
+
+    this._setBackgroundColor(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -1381,6 +1395,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         storage.setValue(id, { value: getValue(event) });
       });
     }
+
+    this._setBackgroundColor(selectElement);
 
     this.container.appendChild(selectElement);
     return this.container;

@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+:root {
+  --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+}
+
 .annotationLayer section {
   position: absolute;
   text-align: initial;
@@ -45,7 +49,7 @@
 .annotationLayer .choiceWidgetAnnotation select,
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
-  background-color: rgba(0, 54, 255, 0.13);
+  background-image: var(--annotation-unfocused-field-background);
   border: 1px solid transparent;
   box-sizing: border-box;
   font-size: 9px;
@@ -100,6 +104,8 @@
 .annotationLayer .choiceWidgetAnnotation select :focus,
 .annotationLayer .buttonWidgetAnnotation.checkBox :focus,
 .annotationLayer .buttonWidgetAnnotation.radioButton :focus {
+  background-image: none;
+  background-color: transparent;
   outline: auto;
 }
 
@@ -139,16 +145,6 @@
   font-family: monospace;
   padding-left: 2px;
   padding-right: 0;
-}
-
-.annotationLayer .textWidgetAnnotation input.comb:focus {
-  /*
-   * Letter spacing is placed on the right side of each character. Hence, the
-   * letter spacing of the last character may be placed outside the visible
-   * area, causing horizontal scrolling. We avoid this by extending the width
-   * when the element has focus and revert this when it loses focus.
-   */
-  width: 103%;
 }
 
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
