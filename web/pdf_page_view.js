@@ -18,12 +18,12 @@
 import {
   AnnotationMode,
   createPromiseCapability,
+  PixelsPerInch,
   RenderingCancelledException,
   SVGGraphics,
 } from "pdfjs-lib";
 import {
   approximateFraction,
-  CSS_UNITS,
   DEFAULT_SCALE,
   getOutputScale,
   RendererType,
@@ -151,7 +151,7 @@ class PDFPageView {
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = pdfPage.getViewport({
-      scale: this.scale * CSS_UNITS,
+      scale: this.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: totalRotation,
     });
     this.reset();
@@ -331,7 +331,7 @@ class PDFPageView {
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = this.viewport.clone({
-      scale: this.scale * CSS_UNITS,
+      scale: this.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: totalRotation,
     });
 
@@ -677,7 +677,8 @@ class PDFPageView {
             this.l10n,
             /* enableScripting = */ null,
             /* hasJSActionsPromise = */ null,
-            /* mouseState = */ null
+            /* mouseState = */ null,
+            /* fieldObjectsPromise = */ null
           );
       }
       this._renderAnnotationLayer();
@@ -776,7 +777,9 @@ class PDFPageView {
     this.outputScale = outputScale;
 
     if (this.useOnlyCssZoom) {
-      const actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+      const actualSizeViewport = viewport.clone({
+        scale: PixelsPerInch.PDF_TO_CSS_UNITS,
+      });
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
       outputScale.sx *= actualSizeViewport.width / viewport.width;
@@ -888,10 +891,12 @@ class PDFPageView {
     };
 
     const pdfPage = this.pdfPage;
-    const actualSizeViewport = this.viewport.clone({ scale: CSS_UNITS });
+    const actualSizeViewport = this.viewport.clone({
+      scale: PixelsPerInch.PDF_TO_CSS_UNITS,
+    });
     const promise = pdfPage
       .getOperatorList({
-        annotationMode: this._annotatationMode,
+        annotationMode: this._annotationMode,
       })
       .then(opList => {
         ensureNotCancelled();

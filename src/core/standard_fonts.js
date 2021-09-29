@@ -243,6 +243,7 @@ const getSerifFonts = getLookupTableFactory(function (t) {
   t.Joanna = true;
   t.Korinna = true;
   t.Lexicon = true;
+  t.LiberationSerif = true;
   t["Liberation Serif"] = true;
   t["Linux Libertine"] = true;
   t.Literaturnaya = true;

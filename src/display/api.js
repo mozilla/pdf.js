@@ -1044,9 +1044,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Array<Object> | null>} A promise that is resolved with an
-   *   {Array<Object>} containing /AcroForm field data for the JS sandbox,
-   *   or `null` when no field data is present in the PDF file.
+   * @returns {Promise<Object<string, Array<Object>> | null>} A promise that is
+   *   resolved with an {Object} containing /AcroForm field data for the JS
+   *   sandbox, or `null` when no field data is present in the PDF file.
    */
   getFieldObjects() {
     return this._transport.getFieldObjects();
@@ -1332,6 +1332,34 @@ class PDFPageProxy {
         intentArgs.renderingIntent
       );
       this._annotationPromises.set(intentArgs.cacheKey, promise);
+
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        promise = promise.then(annotations => {
+          for (const annotation of annotations) {
+            if (annotation.titleObj !== undefined) {
+              Object.defineProperty(annotation, "title", {
+                get() {
+                  deprecated(
+                    "`title`-property on annotation, please use `titleObj` instead."
+                  );
+                  return annotation.titleObj.str;
+                },
+              });
+            }
+            if (annotation.contentsObj !== undefined) {
+              Object.defineProperty(annotation, "contents", {
+                get() {
+                  deprecated(
+                    "`contents`-property on annotation, please use `contentsObj` instead."
+                  );
+                  return annotation.contentsObj.str;
+                },
+              });
+            }
+          }
+          return annotations;
+        });
+      }
     }
     return promise;
   }
@@ -2526,6 +2554,7 @@ class WorkerTransport {
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();
+      this._getFieldObjectsPromise = null;
       this._hasJSActionsPromise = null;
 
       if (this._networkStream) {
@@ -2967,7 +2996,8 @@ class WorkerTransport {
   }
 
   getFieldObjects() {
-    return this.messageHandler.sendWithPromise("GetFieldObjects", null);
+    return (this._getFieldObjectsPromise ||=
+      this.messageHandler.sendWithPromise("GetFieldObjects", null));
   }
 
   hasJSActions() {
@@ -3096,6 +3126,7 @@ class WorkerTransport {
     if (!keepLoadedFonts) {
       this.fontLoader.clear();
     }
+    this._getFieldObjectsPromise = null;
     this._hasJSActionsPromise = null;
   }
 
@@ -3103,6 +3134,7 @@ class WorkerTransport {
     const params = this._params;
     return shadow(this, "loadingParams", {
       disableAutoFetch: params.disableAutoFetch,
+      enableXfa: params.enableXfa,
     });
   }
 }

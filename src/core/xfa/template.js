@@ -76,6 +76,7 @@ import {
   createWrapper,
   fixDimensions,
   fixTextIndent,
+  fixURL,
   isPrintOnly,
   layoutClass,
   layoutNode,
@@ -100,6 +101,7 @@ import {
 } from "./utils.js";
 import { stringToBytes, Util, warn } from "../../shared/util.js";
 import { getMetrics } from "./fonts.js";
+import { recoverJsURL } from "../core_utils.js";
 import { searchNode } from "./som.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
@@ -1066,7 +1068,10 @@ class Button extends XFAObject {
 
   [$toHTML](availableSpace) {
     // TODO: highlight.
-    return HTMLResult.success({
+
+    const parent = this[$getParent]();
+    const grandpa = parent[$getParent]();
+    const htmlButton = {
       name: "button",
       attributes: {
         id: this[$uid],
@@ -1074,7 +1079,38 @@ class Button extends XFAObject {
         style: {},
       },
       children: [],
-    });
+    };
+
+    for (const event of grandpa.event.children) {
+      // if (true) break;
+      if (event.activity !== "click" || !event.script) {
+        continue;
+      }
+      const jsURL = recoverJsURL(event.script[$content]);
+      if (!jsURL) {
+        continue;
+      }
+      const href = fixURL(jsURL.url);
+      if (!href) {
+        continue;
+      }
+      const target = jsURL.newWindow ? "_blank" : undefined;
+
+      // we've an url so generate a <a>
+      htmlButton.children.push({
+        name: "a",
+        attributes: {
+          id: "link" + this[$uid],
+          href,
+          target,
+          class: ["xfaLink"],
+          style: {},
+        },
+        children: [],
+      });
+    }
+
+    return HTMLResult.success(htmlButton);
   }
 }
 
@@ -2897,7 +2933,12 @@ class Field extends XFAObject {
       ui.attributes.style = Object.create(null);
     }
 
+    let aElement = null;
+
     if (this.ui.button) {
+      if (ui.children.length === 1) {
+        [aElement] = ui.children.splice(0, 1);
+      }
       Object.assign(ui.attributes.style, borderStyle);
     } else {
       Object.assign(style, borderStyle);
@@ -2953,6 +2994,10 @@ class Field extends XFAObject {
       } else {
         ui.children[0].attributes.style.height = "100%";
       }
+    }
+
+    if (aElement) {
+      ui.children.push(aElement);
     }
 
     if (!caption) {
@@ -4886,12 +4931,6 @@ class Subform extends XFAObject {
       return false;
     }
 
-    const contentArea = this[$getTemplateRoot]()[$extra].currentContentArea;
-
-    if (this.overflow && this.overflow[$getExtra]().target === contentArea) {
-      return false;
-    }
-
     if (this[$extra]._isSplittable !== undefined) {
       return this[$extra]._isSplittable;
     }
@@ -5025,17 +5064,7 @@ class Subform extends XFAObject {
     });
 
     const root = this[$getTemplateRoot]();
-    const currentContentArea = root[$extra].currentContentArea;
     const savedNoLayoutFailure = root[$extra].noLayoutFailure;
-
-    if (this.overflow) {
-      // In case of overflow in the current content area,
-      // elements must be kept in this subform so it implies
-      // to have no errors on layout failures.
-      root[$extra].noLayoutFailure =
-        root[$extra].noLayoutFailure ||
-        this.overflow[$getExtra]().target === currentContentArea;
-    }
 
     const isSplittable = this[$isSplittable]();
     if (!isSplittable) {
@@ -5572,6 +5601,8 @@ class Template extends XFAObject {
 
           flush(i);
 
+          const currentIndex = i;
+
           i = Infinity;
           if (target instanceof PageArea) {
             // We must stop the contentAreas filling and go to the next page.
@@ -5579,9 +5610,15 @@ class Template extends XFAObject {
           } else if (target instanceof ContentArea) {
             const index = contentAreas.findIndex(e => e === target);
             if (index !== -1) {
-              // In the next loop iteration `i` will be incremented, note the
-              // `continue` just below, hence we need to subtract one here.
-              i = index - 1;
+              if (index > currentIndex) {
+                // In the next loop iteration `i` will be incremented, note the
+                // `continue` just below, hence we need to subtract one here.
+                i = index - 1;
+              } else {
+                // The targetted contentArea has already been filled
+                // so create a new page.
+                startIndex = index;
+              }
             } else {
               targetPageArea = target[$getParent]();
               startIndex = targetPageArea.contentArea.children.findIndex(

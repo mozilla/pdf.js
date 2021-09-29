@@ -45,6 +45,7 @@ import {
 import {
   getGlyphMapForStandardFonts,
   getNonStdFontMap,
+  getSerifFonts,
   getStdFontMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
@@ -89,8 +90,6 @@ const EXPORT_DATA_PROPERTIES = [
   "fallbackName",
   "fontMatrix",
   "fontType",
-  "isMonospace",
-  "isSerifFont",
   "isType3Font",
   "italic",
   "loadedName",
@@ -107,6 +106,8 @@ const EXPORT_DATA_EXTRA_PROPERTIES = [
   "cMap",
   "defaultEncoding",
   "differences",
+  "isMonospace",
+  "isSerifFont",
   "isSymbolicFont",
   "seacMap",
   "toFontChar",
@@ -872,7 +873,21 @@ class Font {
     this._charsCache = Object.create(null);
     this._glyphCache = Object.create(null);
 
-    this.isSerifFont = !!(properties.flags & FontFlags.Serif);
+    let isSerifFont = !!(properties.flags & FontFlags.Serif);
+    // Fallback to checking the font name, in order to improve text-selection,
+    // since the /Flags-entry is often wrong (fixes issue13845.pdf).
+    if (!isSerifFont && !properties.isSimulatedFlags) {
+      const baseName = name.replace(/[,_]/g, "-").split("-")[0],
+        serifFonts = getSerifFonts();
+      for (const namePart of baseName.split("+")) {
+        if (serifFonts[namePart]) {
+          isSerifFont = true;
+          break;
+        }
+      }
+    }
+    this.isSerifFont = isSerifFont;
+
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
     this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
 

@@ -26,10 +26,10 @@ import {
   $toStyle,
   XFAObject,
 } from "./xfa_object.js";
+import { createValidAbsoluteUrl, warn } from "../../shared/util.js";
 import { getMeasurement, stripQuotes } from "./utils.js";
 import { selectFont } from "./fonts.js";
 import { TextMeasure } from "./text.js";
-import { warn } from "../../shared/util.js";
 
 function measureToString(m) {
   if (typeof m === "string") {
@@ -633,11 +633,20 @@ function setFontFamily(xfaFont, node, fontFinder, style) {
   }
 }
 
+function fixURL(str) {
+  const absoluteUrl = createValidAbsoluteUrl(str, /* baseUrl = */ null, {
+    addDefaultProtocol: true,
+    tryConvertEncoding: true,
+  });
+  return absoluteUrl ? absoluteUrl.href : null;
+}
+
 export {
   computeBbox,
   createWrapper,
   fixDimensions,
   fixTextIndent,
+  fixURL,
   isPrintOnly,
   layoutClass,
   layoutNode,

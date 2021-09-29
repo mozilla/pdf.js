@@ -29,7 +29,12 @@ import {
   XmlObject,
 } from "./xfa_object.js";
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
-import { fixTextIndent, measureToString, setFontFamily } from "./html_utils.js";
+import {
+  fixTextIndent,
+  fixURL,
+  measureToString,
+  setFontFamily,
+} from "./html_utils.js";
 import { getMeasurement, HTMLResult, stripQuotes } from "./utils.js";
 
 const XHTML_NS_ID = NamespaceIds.xhtml.id;
@@ -321,7 +326,7 @@ class XhtmlObject extends XmlObject {
 class A extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "a");
-    this.href = attributes.href || "";
+    this.href = fixURL(attributes.href) || "";
   }
 }
 

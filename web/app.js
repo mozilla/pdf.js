@@ -307,13 +307,20 @@ const PDFViewerApplication = {
    */
   async _readPreferences() {
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      AppOptions.get("disablePreferences")
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
-      // Give custom implementations of the default viewer a simpler way to
-      // opt-out of having the `Preferences` override existing `AppOptions`.
-      return;
+      if (AppOptions.get("disablePreferences")) {
+        // Give custom implementations of the default viewer a simpler way to
+        // opt-out of having the `Preferences` override existing `AppOptions`.
+        return;
+      }
+      if (AppOptions._hasUserOptions()) {
+        console.warn(
+          "_readPreferences: The Preferences may override manually set AppOptions; " +
+            'please use the "disablePreferences"-option in order to prevent that.'
+        );
+      }
     }
     try {
       AppOptions.setAll(await this.preferences.getAll());
@@ -1052,6 +1059,7 @@ const PDFViewerApplication = {
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
+      console.error(`Error when saving the document: ${reason.message}`);
       await this.download({ sourceEventType });
     } finally {
       await this.pdfScriptingManager.dispatchDidSave();
@@ -1604,10 +1612,13 @@ const PDFViewerApplication = {
     if (
       info.IsXFAPresent &&
       !info.IsAcroFormPresent &&
-      // Note: `isPureXfa === true` implies that `enableXfa = true` was set.
       !pdfDocument.isPureXfa
     ) {
-      console.warn("Warning: XFA support is not enabled");
+      if (pdfDocument.loadingParams.enableXfa) {
+        console.warn("Warning: XFA Foreground documents are not supported");
+      } else {
+        console.warn("Warning: XFA support is not enabled");
+      }
       this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
