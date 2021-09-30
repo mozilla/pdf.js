@@ -221,3 +221,133 @@ describe("Annotation and storage", () => {
     });
   });
 });
+
+describe("ResetForm action", () => {
+  describe("resetform.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("resetform.pdf", "[data-annotation-id='63R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must reset all fields", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const base = "hello world";
+          for (let i = 3; i <= 7; i++) {
+            await page.type(`#\\36 ${i}R`, base);
+          }
+
+          const selectors = [69, 71, 75].map(
+            n => `[data-annotation-id='${n}R']`
+          );
+          for (const selector of selectors) {
+            await page.click(selector);
+          }
+
+          await page.select("#\\37 8R", "b");
+          await page.select("#\\38 1R", "f");
+
+          await page.click("[data-annotation-id='82R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\36 3R").value === ""`
+          );
+
+          for (let i = 3; i <= 8; i++) {
+            const text = await page.$eval(`#\\36 ${i}R`, el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual("");
+          }
+
+          const ids = [69, 71, 72, 73, 74, 75, 76, 77];
+          for (const id of ids) {
+            const checked = await page.$eval(
+              `#\\3${Math.floor(id / 10)} ${id % 10}R`,
+              el => el.checked
+            );
+            expect(checked).withContext(`In ${browserName}`).toEqual(false);
+          }
+
+          let selected = await page.$eval(
+            `#\\37 8R [value="a"]`,
+            el => el.selected
+          );
+          expect(selected).withContext(`In ${browserName}`).toEqual(true);
+
+          selected = await page.$eval(
+            `#\\38 1R [value="d"]`,
+            el => el.selected
+          );
+          expect(selected).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+
+    it("must reset some fields", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const base = "hello world";
+          for (let i = 3; i <= 8; i++) {
+            await page.type(`#\\36 ${i}R`, base);
+          }
+
+          const selectors = [69, 71, 72, 73, 75].map(
+            n => `[data-annotation-id='${n}R']`
+          );
+          for (const selector of selectors) {
+            await page.click(selector);
+          }
+
+          await page.select("#\\37 8R", "b");
+          await page.select("#\\38 1R", "f");
+
+          await page.click("[data-annotation-id='84R']");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\36 3R").value === ""`
+          );
+
+          for (let i = 3; i <= 8; i++) {
+            const expected = (i - 3) % 2 === 0 ? "" : base;
+            const text = await page.$eval(`#\\36 ${i}R`, el => el.value);
+            expect(text).withContext(`In ${browserName}`).toEqual(expected);
+          }
+
+          let ids = [69, 72, 73, 74, 76, 77];
+          for (const id of ids) {
+            const checked = await page.$eval(
+              `#\\3${Math.floor(id / 10)} ${id % 10}R`,
+              el => el.checked
+            );
+            expect(checked)
+              .withContext(`In ${browserName + id}`)
+              .toEqual(false);
+          }
+
+          ids = [71, 75];
+          for (const id of ids) {
+            const checked = await page.$eval(
+              `#\\3${Math.floor(id / 10)} ${id % 10}R`,
+              el => el.checked
+            );
+            expect(checked).withContext(`In ${browserName}`).toEqual(true);
+          }
+
+          let selected = await page.$eval(
+            `#\\37 8R [value="a"]`,
+            el => el.selected
+          );
+          expect(selected).withContext(`In ${browserName}`).toEqual(true);
+
+          selected = await page.$eval(
+            `#\\38 1R [value="f"]`,
+            el => el.selected
+          );
+          expect(selected).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+  });
+});
