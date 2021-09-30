@@ -64,6 +64,13 @@ class IPDFLinkService {
   goToPage(val) {}
 
   /**
+   * @param {HTMLAnchorElement} link
+   * @param {string} url
+   * @param {boolean} [newWindow]
+   */
+  addLinkAttributes(link, url, newWindow = false) {}
+
+  /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
    */
