@@ -476,6 +476,10 @@ class Field extends PDFObject {
     return false;
   }
 
+  _reset() {
+    this.value = this.valueAsString = this.defaultValue;
+  }
+
   _runActions(event) {
     const eventName = event.name;
     if (!this._actions.has(eventName)) {
