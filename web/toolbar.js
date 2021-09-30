@@ -43,8 +43,8 @@ const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
  * @property {HTMLButtonElement} presentationModeButton - Button to switch to
  *   presentation mode.
  * @property {HTMLButtonElement} download - Button to download the document.
- * @property {HTMLAElement} viewBookmark - Element to link current url of
- *   the page view.
+ * @property {HTMLAnchorElement} viewBookmark - Button to obtain a bookmark link
+ *   to the current location in the document.
  */
 
 class Toolbar {

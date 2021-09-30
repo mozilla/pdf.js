@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { addLinkAttributes, LinkTarget } from "./display_utils.js";
+import { warn } from "../shared/util.js";
 import { XfaText } from "./xfa_text.js";
 
 class XfaLayer {
@@ -119,14 +119,19 @@ class XfaLayer {
     }
 
     if (isHTMLAnchorElement) {
-      addLinkAttributes(html, {
-        url: attributes.href,
-        target: attributes.newWindow
-          ? LinkTarget.BLANK
-          : linkService.externalLinkTarget,
-        rel: linkService.externalLinkRel,
-        enabled: linkService.externalLinkEnabled,
-      });
+      if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+        !linkService.addLinkAttributes
+      ) {
+        warn(
+          "XfaLayer.setAttribute - missing `addLinkAttributes`-method on the `linkService`-instance."
+        );
+      }
+      linkService.addLinkAttributes?.(
+        html,
+        attributes.href,
+        attributes.newWindow
+      );
     }
 
     // Set the value after the others to be sure overwrite

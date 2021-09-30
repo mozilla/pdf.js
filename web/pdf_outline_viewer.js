@@ -13,12 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  addLinkAttributes,
-  createPromiseCapability,
-  LinkTarget,
-} from "pdfjs-lib";
 import { BaseTreeViewer } from "./base_tree_viewer.js";
+import { createPromiseCapability } from "pdfjs-lib";
 import { SidebarView } from "./ui_utils.js";
 
 /**
@@ -115,12 +111,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
     const { linkService } = this;
 
     if (url) {
-      addLinkAttributes(element, {
-        url,
-        target: newWindow ? LinkTarget.BLANK : linkService.externalLinkTarget,
-        rel: linkService.externalLinkRel,
-        enabled: linkService.externalLinkEnabled,
-      });
+      linkService.addLinkAttributes(element, url, newWindow);
       return;
     }
 
