@@ -191,9 +191,16 @@ class IPDFXfaLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {AnnotationStorage} [annotationStorage]
+   * @param {Object} [xfaHtml]
    * @returns {XfaLayerBuilder}
    */
-  createXfaLayerBuilder(pageDiv, pdfPage) {}
+  createXfaLayerBuilder(
+    pageDiv,
+    pdfPage,
+    annotationStorage = null,
+    xfaHtml = null
+  ) {}
 }
 
 /**
