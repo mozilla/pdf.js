@@ -1094,7 +1094,6 @@ class Button extends XFAObject {
       if (!href) {
         continue;
       }
-      const target = jsURL.newWindow ? "_blank" : undefined;
 
       // we've an url so generate a <a>
       htmlButton.children.push({
@@ -1102,7 +1101,7 @@ class Button extends XFAObject {
         attributes: {
           id: "link" + this[$uid],
           href,
-          target,
+          newWindow: jsURL.newWindow,
           class: ["xfaLink"],
           style: {},
         },

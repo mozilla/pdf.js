@@ -334,6 +334,7 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
             div,
             viewport: viewport.clone({ dontFlip: true }),
             annotationStorage,
+            linkService: new SimpleLinkService(),
             intent: isPrint ? "print" : "display",
           });
 

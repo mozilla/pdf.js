@@ -1358,6 +1358,7 @@ class BaseViewer {
    * @param {PDFPage} pdfPage
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
+   * @property {IPDFLinkService} linkService
    * @returns {XfaLayerBuilder}
    */
   createXfaLayerBuilder(pageDiv, pdfPage, annotationStorage = null) {
@@ -1366,6 +1367,7 @@ class BaseViewer {
       pdfPage,
       annotationStorage:
         annotationStorage || this.pdfDocument?.annotationStorage,
+      linkService: this.linkService,
     });
   }
 
