@@ -401,6 +401,21 @@ function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
   return toFontChar;
 }
 
+function convertCidString(charCode, cid, shouldThrow = false) {
+  switch (cid.length) {
+    case 1:
+      return cid.charCodeAt(0);
+    case 2:
+      return (cid.charCodeAt(0) << 8) | cid.charCodeAt(1);
+  }
+  const msg = `Unsupported CID string (charCode ${charCode}): "${cid}".`;
+  if (shouldThrow) {
+    throw new FormatError(msg);
+  }
+  warn(msg);
+  return cid;
+}
+
 /**
  * Rebuilds the char code to glyph ID map by moving all char codes to the
  * private use area. This is done to avoid issues with various problematic
@@ -929,7 +944,7 @@ class Font {
       return;
     }
 
-    this.cidEncoding = properties.cidEncoding;
+    this.cidEncoding = properties.cidEncoding || "";
     this.vertical = !!properties.vertical;
     if (this.vertical) {
       this.vmetrics = properties.vmetrics;
@@ -2612,6 +2627,9 @@ class Font {
       const isCidToGidMapEmpty = cidToGidMap.length === 0;
 
       properties.cMap.forEach(function (charCode, cid) {
+        if (typeof cid === "string") {
+          cid = convertCidString(charCode, cid, /* shouldThrow = */ true);
+        }
         if (cid > 0xffff) {
           throw new FormatError("Max size of CID is 65,535");
         }
@@ -3057,6 +3075,10 @@ class Font {
       let charcode = 0;
       if (this.composite && this.cMap.contains(glyphUnicode)) {
         charcode = this.cMap.lookup(glyphUnicode);
+
+        if (typeof charcode === "string") {
+          charcode = convertCidString(glyphUnicode, charcode);
+        }
       }
       // ... via toUnicode map
       if (!charcode && this.toUnicode) {
@@ -3085,6 +3107,10 @@ class Font {
     let widthCode = charcode;
     if (this.cMap && this.cMap.contains(charcode)) {
       widthCode = this.cMap.lookup(charcode);
+
+      if (typeof widthCode === "string") {
+        widthCode = convertCidString(charcode, widthCode);
+      }
     }
     width = this.widths[widthCode];
     width = isNum(width) ? width : this.defaultWidth;
