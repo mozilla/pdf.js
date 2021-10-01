@@ -1404,12 +1404,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
           value(event) {
-            const options = selectElement.options;
             const value = event.detail.value;
             const values = new Set(Array.isArray(value) ? value : [value]);
-            Array.prototype.forEach.call(options, option => {
+            for (const option of selectElement.options) {
               option.selected = values.has(option.value);
-            });
+            }
             storage.setValue(id, {
               value: getValue(event, /* isExport */ true),
             });
@@ -1478,10 +1477,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           },
           indices(event) {
             const indices = new Set(event.detail.indices);
-            const options = event.target.options;
-            Array.prototype.forEach.call(options, (option, i) => {
-              option.selected = indices.has(i);
-            });
+            for (const option of event.target.options) {
+              option.selected = indices.has(option.index);
+            }
             storage.setValue(id, {
               value: getValue(event, /* isExport */ true),
             });
