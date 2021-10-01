@@ -154,6 +154,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug920426",
+       "file": "pdfs/bug920426.pdf",
+       "md5": "2fd118b44513afb22509c3584388cc29",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue13343",
        "file": "pdfs/issue13343.pdf",
        "md5": "f8bf1888839e15254555092c504e1900",
