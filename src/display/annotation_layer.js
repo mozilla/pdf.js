@@ -1142,9 +1142,13 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     element.addEventListener("change", event => {
       const { name, checked } = event.target;
       for (const radio of this._getElementsByName(name, /* skipId = */ id)) {
-        storage.setValue(radio.id, { value: false });
+        storage.setValue(radio.id, this.data.fieldName, {
+          value: false,
+          emitMessage: false, // #718 modified by ngx-extended-pdf-viewer
+        });
       }
-      storage.setValue(id, this.data.fieldName, { value: checked,
+      storage.setValue(id, this.data.fieldName, {
+        value: checked,
         radioValue: this.data.buttonValue, // #718 modified by ngx-extended-pdf-viewer
       });
     });
