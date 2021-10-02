@@ -1328,6 +1328,20 @@ class Catalog {
       const actionName = actionType.name;
 
       switch (actionName) {
+        case "ResetForm":
+          const flags = action.get("Flags");
+          const include = ((isNum(flags) ? flags : 0) & 1) === 0;
+          const fields = [];
+          const refs = [];
+          for (const obj of action.get("Fields") || []) {
+            if (isRef(obj)) {
+              refs.push(obj.toString());
+            } else if (isString(obj)) {
+              fields.push(stringToPDFString(obj));
+            }
+          }
+          resultObj.resetForm = { fields, refs, include };
+          break;
         case "URI":
           url = action.get("URI");
           if (url instanceof Name) {
@@ -1405,11 +1419,7 @@ class Catalog {
           }
         /* falls through */
         default:
-          if (
-            actionName === "JavaScript" ||
-            actionName === "ResetForm" ||
-            actionName === "SubmitForm"
-          ) {
+          if (actionName === "JavaScript" || actionName === "SubmitForm") {
             // Don't bother the user with a warning for actions that require
             // scripting support, since those will be handled separately.
             break;

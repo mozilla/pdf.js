@@ -14,13 +14,6 @@
  */
 
 import {
-  addLinkAttributes,
-  DOMSVGFactory,
-  getFilenameFromUrl,
-  LinkTarget,
-  PDFDateString,
-} from "./display_utils.js";
-import {
   AnnotationBorderStyleType,
   AnnotationType,
   assert,
@@ -30,6 +23,11 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import {
+  DOMSVGFactory,
+  getFilenameFromUrl,
+  PDFDateString,
+} from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 
@@ -429,6 +427,7 @@ class LinkAnnotationElement extends AnnotationElement {
       parameters.data.dest ||
       parameters.data.action ||
       parameters.data.isTooltipOnly ||
+      parameters.data.resetForm ||
       (parameters.data.actions &&
         (parameters.data.actions.Action ||
           parameters.data.actions["Mouse Up"] ||
@@ -442,29 +441,38 @@ class LinkAnnotationElement extends AnnotationElement {
     const link = document.createElement("a");
 
     if (data.url) {
-      addLinkAttributes(link, {
-        url: data.url,
-        target: data.newWindow
-          ? LinkTarget.BLANK
-          : linkService.externalLinkTarget,
-        rel: linkService.externalLinkRel,
-        enabled: linkService.externalLinkEnabled,
-      });
+      if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+        !linkService.addLinkAttributes
+      ) {
+        warn(
+          "LinkAnnotationElement.render - missing `addLinkAttributes`-method on the `linkService`-instance."
+        );
+      }
+      linkService.addLinkAttributes?.(link, data.url, data.newWindow);
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
     } else if (data.dest) {
       this._bindLink(link, data.dest);
-    } else if (
-      data.actions &&
-      (data.actions.Action ||
-        data.actions["Mouse Up"] ||
-        data.actions["Mouse Down"]) &&
-      this.enableScripting &&
-      this.hasJSActions
-    ) {
-      this._bindJSAction(link, data);
     } else {
-      this._bindLink(link, "");
+      let hasClickAction = false;
+      if (
+        data.actions &&
+        (data.actions.Action ||
+          data.actions["Mouse Up"] ||
+          data.actions["Mouse Down"]) &&
+        this.enableScripting &&
+        this.hasJSActions
+      ) {
+        hasClickAction = true;
+        this._bindJSAction(link, data);
+      }
+
+      if (data.resetForm) {
+        this._bindResetFormAction(link, data.resetForm);
+      } else if (!hasClickAction) {
+        this._bindLink(link, "");
+      }
     }
 
     if (this.quadrilaterals) {
@@ -556,6 +564,106 @@ class LinkAnnotationElement extends AnnotationElement {
       link.onclick = () => false;
     }
     link.className = "internalLink";
+  }
+
+  _bindResetFormAction(link, resetForm) {
+    const otherClickAction = link.onclick;
+    if (!otherClickAction) {
+      link.href = this.linkService.getAnchorUrl("");
+    }
+    link.className = "internalLink";
+
+    if (!this._fieldObjects) {
+      warn(
+        `_bindResetFormAction - "resetForm" action not supported, ` +
+          "ensure that the `fieldObjects` parameter is provided."
+      );
+      if (!otherClickAction) {
+        link.onclick = () => false;
+      }
+      return;
+    }
+
+    link.onclick = () => {
+      if (otherClickAction) {
+        otherClickAction();
+      }
+
+      const {
+        fields: resetFormFields,
+        refs: resetFormRefs,
+        include,
+      } = resetForm;
+
+      const allFields = [];
+      if (resetFormFields.length !== 0 || resetFormRefs.length !== 0) {
+        const fieldIds = new Set(resetFormRefs);
+        for (const fieldName of resetFormFields) {
+          const fields = this._fieldObjects[fieldName] || [];
+          for (const { id } of fields) {
+            fieldIds.add(id);
+          }
+        }
+        for (const fields of Object.values(this._fieldObjects)) {
+          for (const field of fields) {
+            if (fieldIds.has(field.id) === include) {
+              allFields.push(field);
+            }
+          }
+        }
+      } else {
+        for (const fields of Object.values(this._fieldObjects)) {
+          allFields.push(...fields);
+        }
+      }
+
+      const storage = this.annotationStorage;
+      const allIds = [];
+      for (const field of allFields) {
+        const { id } = field;
+        allIds.push(id);
+        switch (field.type) {
+          case "text": {
+            const value = field.defaultValue || "";
+            storage.setValue(id, { value, valueAsString: value });
+            break;
+          }
+          case "checkbox":
+          case "radiobutton": {
+            const value = field.defaultValue === field.exportValues;
+            storage.setValue(id, { value });
+            break;
+          }
+          case "combobox":
+          case "listbox": {
+            const value = field.defaultValue || "";
+            storage.setValue(id, { value });
+            break;
+          }
+          default:
+            continue;
+        }
+        const domElement = document.getElementById(id);
+        if (!domElement || !GetElementsByNameSet.has(domElement)) {
+          continue;
+        }
+        domElement.dispatchEvent(new Event("resetform"));
+      }
+
+      if (this.enableScripting) {
+        // Update the values in the sandbox.
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: "app",
+            ids: allIds,
+            name: "ResetForm",
+          },
+        });
+      }
+
+      return false;
+    };
   }
 }
 
@@ -804,6 +912,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           event.target.value,
           "value"
         );
+      });
+
+      element.addEventListener("resetform", event => {
+        const defaultValue = this.data.defaultFieldValue || "";
+        element.value = elementData.userValue = defaultValue;
+        delete elementData.formattedValue;
       });
 
       let blurListener = event => {
@@ -1066,6 +1180,11 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
       });
     });
 
+    element.addEventListener("resetform", event => {
+      const defaultValue = data.defaultFieldValue || "Off";
+      event.target.checked = defaultValue === data.exportValue;
+    });
+
     if (this.enableScripting && this.hasJSActions) {
       const fieldName = this.data.fieldName; // #868 modified by ngx-extended-pdf-viewer
       element.addEventListener("updatefromsandbox", jsEvent => {
@@ -1151,6 +1270,14 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
         value: checked,
         radioValue: this.data.buttonValue, // #718 modified by ngx-extended-pdf-viewer
       });
+    });
+
+    element.addEventListener("resetform", event => {
+      const defaultValue = data.defaultFieldValue;
+      event.target.checked =
+        defaultValue !== null &&
+        defaultValue !== undefined &&
+        defaultValue === data.buttonValue;
     });
 
     if (this.enableScripting && this.hasJSActions) {
@@ -1261,6 +1388,13 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
     }
 
+    selectElement.addEventListener("resetform", event => {
+      const defaultValue = this.data.defaultFieldValue;
+      for (const option of selectElement.options) {
+        option.selected = option.value === defaultValue;
+      }
+    });
+
     // Insert the options into the choice field.
     for (const option of this.data.options) {
       const optionElement = document.createElement("option");
@@ -1300,10 +1434,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         const fieldName = this.data.fieldName; // #868 modified by ngx-extended-pdf-viewer
         const actions = {
           value(event) {
-            const options = selectElement.options;
             const value = event.detail.value;
             const values = new Set(Array.isArray(value) ? value : [value]);
-            Array.prototype.forEach.call(options, option => {
+            for (const option of selectElement.options) {
               option.selected = values.has(option.value);
             });
             storage.setValue(id, fieldName, { // #718 / #868 modified by ngx-extended-pdf-viewer
@@ -1377,10 +1510,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           },
           indices(event) {
             const indices = new Set(event.detail.indices);
-            const options = event.target.options;
-            Array.prototype.forEach.call(options, (option, i) => {
-              option.selected = indices.has(i);
-            });
+            for (const option of event.target.options) {
+              option.selected = indices.has(option.index);
+            }
             storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
               value: getValue(event, /* isExport */ true),
             });
