@@ -102,8 +102,9 @@ class PDFRenderingQueue {
    * @param {Object} visible
    * @param {Array} views
    * @param {boolean} scrolledDown
+   * @param {boolean} [preRenderExtra]
    */
-  getHighestPriority(visible, views, scrolledDown) {
+  getHighestPriority(visible, views, scrolledDown, preRenderExtra = false) {
     /**
      * The state has changed. Figure out which page has the highest priority to
      * render next (if any).
@@ -128,13 +129,19 @@ class PDFRenderingQueue {
 
     // All the visible views have rendered; try to render next/previous page.
     // (IDs start at 1, so no need to add 1 when `scrolledDown === true`.)
-    const preRenderIndex = scrolledDown
-      ? visible.last.id
-      : visible.first.id - 2;
-    const preRenderView = views[preRenderIndex];
+    let preRenderIndex = scrolledDown ? visible.last.id : visible.first.id - 2;
+    let preRenderView = views[preRenderIndex];
 
     if (preRenderView && !this.isViewFinished(preRenderView)) {
       return preRenderView;
+    }
+    if (preRenderExtra) {
+      preRenderIndex += scrolledDown ? 1 : -1;
+      preRenderView = views[preRenderIndex];
+
+      if (preRenderView && !this.isViewFinished(preRenderView)) {
+        return preRenderView;
+      }
     }
     // Everything that needs to be rendered has been.
     return null;
