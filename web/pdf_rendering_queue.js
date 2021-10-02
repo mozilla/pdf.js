@@ -126,21 +126,15 @@ class PDFRenderingQueue {
       }
     }
 
-    // All the visible views have rendered; try to render next/previous pages.
-    if (scrolledDown) {
-      const nextPageIndex = visible.last.id;
-      // IDs start at 1, so no need to add 1.
-      if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex])) {
-        return views[nextPageIndex];
-      }
-    } else {
-      const previousPageIndex = visible.first.id - 2;
-      if (
-        views[previousPageIndex] &&
-        !this.isViewFinished(views[previousPageIndex])
-      ) {
-        return views[previousPageIndex];
-      }
+    // All the visible views have rendered; try to render next/previous page.
+    // (IDs start at 1, so no need to add 1 when `scrolledDown === true`.)
+    const preRenderIndex = scrolledDown
+      ? visible.last.id
+      : visible.first.id - 2;
+    const preRenderView = views[preRenderIndex];
+
+    if (preRenderView && !this.isViewFinished(preRenderView)) {
+      return preRenderView;
     }
     // Everything that needs to be rendered has been.
     return null;
