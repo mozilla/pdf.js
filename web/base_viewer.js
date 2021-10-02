@@ -1250,10 +1250,16 @@ class BaseViewer {
     const scrollAhead = this._isScrollModeHorizontal
       ? this.scroll.right
       : this.scroll.down;
+    const preRenderExtra =
+      this._scrollMode === ScrollMode.VERTICAL &&
+      this._spreadMode !== SpreadMode.NONE &&
+      !this.isInPresentationMode;
+
     const pageView = this.renderingQueue.getHighestPriority(
       visiblePages,
       this._pages,
-      scrollAhead
+      scrollAhead,
+      preRenderExtra
     );
     if (pageView) {
       this._ensurePdfPageLoaded(pageView).then(() => {
