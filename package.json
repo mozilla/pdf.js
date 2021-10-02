@@ -18,10 +18,10 @@
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-fetch-options": "^0.0.5",
-    "eslint-plugin-html": "^6.1.2",
+    "eslint-plugin-html": "^6.2.0",
     "eslint-plugin-import": "^2.24.2",
     "eslint-plugin-json": "^3.1.0",
-    "eslint-plugin-mozilla": "^2.10.0",
+    "eslint-plugin-mozilla": "^2.11.1",
     "eslint-plugin-no-unsanitized": "^3.1.5",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-sort-exports": "^0.4.1",
@@ -38,10 +38,10 @@
     "merge-stream": "^2.0.0",
     "mkdirp": "^1.0.4",
     "needle": "^3.0.0",
-    "postcss": "^8.3.6",
+    "postcss": "^8.3.8",
     "postcss-calc": "^8.0.0",
     "prettier": "^2.4.1",
-    "puppeteer": "^10.2.0",
+    "puppeteer": "^10.4.0",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^13.13.1",
@@ -60,7 +60,7 @@
     "webpack": "^5.53.0",
     "webpack-stream": "^7.0.0",
     "wintersmith": "^2.5.0",
-    "yargs": "^17.1.1"
+    "yargs": "^17.2.1"
   },
   "scripts": {
     "postinstall": "cross-env PUPPETEER_PRODUCT=firefox node node_modules/puppeteer/install.js"
@@ -71,7 +71,6 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "canvas-size": "^1.2.4",
-    "page-flip": "^2.0.7"
+    "canvas-size": "^1.2.5"
   }
 }
