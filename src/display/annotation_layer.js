@@ -14,13 +14,6 @@
  */
 
 import {
-  addLinkAttributes,
-  DOMSVGFactory,
-  getFilenameFromUrl,
-  LinkTarget,
-  PDFDateString,
-} from "./display_utils.js";
-import {
   AnnotationBorderStyleType,
   AnnotationType,
   assert,
@@ -30,6 +23,11 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import {
+  DOMSVGFactory,
+  getFilenameFromUrl,
+  PDFDateString,
+} from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 
@@ -443,14 +441,15 @@ class LinkAnnotationElement extends AnnotationElement {
     const link = document.createElement("a");
 
     if (data.url) {
-      addLinkAttributes(link, {
-        url: data.url,
-        target: data.newWindow
-          ? LinkTarget.BLANK
-          : linkService.externalLinkTarget,
-        rel: linkService.externalLinkRel,
-        enabled: linkService.externalLinkEnabled,
-      });
+      if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+        !linkService.addLinkAttributes
+      ) {
+        warn(
+          "LinkAnnotationElement.render - missing `addLinkAttributes`-method on the `linkService`-instance."
+        );
+      }
+      linkService.addLinkAttributes?.(link, data.url, data.newWindow);
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
     } else if (data.dest) {

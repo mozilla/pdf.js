@@ -338,7 +338,7 @@ const LinkTarget = {
 
 /**
  * Adds various attributes (href, title, target, rel) to hyperlinks.
- * @param {HTMLLinkElement} link - The link element.
+ * @param {HTMLAnchorElement} link - The link element.
  * @param {ExternalLinkParameters} params
  */
 function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
@@ -633,7 +633,6 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
 
 export {
   addLinkAttributes,
-  DEFAULT_LINK_REL,
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,

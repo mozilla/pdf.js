@@ -1366,6 +1366,7 @@ class BaseViewer {
       pdfPage,
       annotationStorage:
         annotationStorage || this.pdfDocument?.annotationStorage,
+      linkService: this.linkService,
     });
   }
 

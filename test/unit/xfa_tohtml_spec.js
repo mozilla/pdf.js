@@ -640,10 +640,10 @@ describe("XFAFactory", function () {
     const pages = factory.getPages();
     let a = searchHtmlNode(pages, "name", "a");
     expect(a.attributes.href).toEqual("https://github.com/mozilla/pdf.js");
-    expect(a.attributes.target).toEqual("_blank");
+    expect(a.attributes.newWindow).toEqual(true);
 
     a = searchHtmlNode(pages, "name", "a", false, [1]);
     expect(a.attributes.href).toEqual("https://github.com/allizom/pdf.js");
-    expect(a.attributes.target).toBe(undefined);
+    expect(a.attributes.newWindow).toEqual(false);
   });
 });
