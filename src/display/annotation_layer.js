@@ -1141,7 +1141,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const storage = this.annotationStorage;
     const data = this.data;
     const id = data.id;
-    let value = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
+    let value = storage.getValue(id, `${this.data.fieldName}/${this.data.exportValue}`, { // #718 modified by ngx-extended-pdf-viewer
       value: data.exportValue === data.fieldValue,
     }).value;
     if (typeof value === "string") {
@@ -2310,6 +2310,12 @@ class AnnotationLayer {
     if (popupAnnotations.length) {
       sortedAnnotations.push(...popupAnnotations);
     }
+
+    // #958 modified by ngx-extended-pdf-viewer
+    if (window.registerAcroformAnnotations) {
+      window.registerAcroformAnnotations(sortedAnnotations);
+    }
+    // #958 end of modification by ngx-extended-pdf-viewer
 
     for (const data of sortedAnnotations) {
       const element = AnnotationElementFactory.create({
