@@ -1929,7 +1929,6 @@ const PDFViewerApplication = {
     eventBus._on("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._on("spreadmodechanged", webViewerSpreadModeChanged);
     eventBus._on("documentproperties", webViewerDocumentProperties);
-    eventBus._on("find", webViewerFind);
     eventBus._on("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._on("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._on("updatefindcontrolstate", webViewerUpdateFindControlState);
@@ -2025,7 +2024,6 @@ const PDFViewerApplication = {
     eventBus._off("switchspreadmode", webViewerSwitchSpreadMode);
     eventBus._off("spreadmodechanged", webViewerSpreadModeChanged);
     eventBus._off("documentproperties", webViewerDocumentProperties);
-    eventBus._off("find", webViewerFind);
     eventBus._off("findfromurlhash", webViewerFindFromUrlHash);
     eventBus._off("updatefindmatchescount", webViewerUpdateFindMatchesCount);
     eventBus._off("updatefindcontrolstate", webViewerUpdateFindControlState);
@@ -2605,19 +2603,10 @@ function webViewerDocumentProperties() {
   PDFViewerApplication.pdfDocumentProperties.open();
 }
 
-function webViewerFind(evt) {
-  PDFViewerApplication.findController.executeCommand("find" + evt.type, {
-    query: evt.query,
-    phraseSearch: evt.phraseSearch,
-    caseSensitive: evt.caseSensitive,
-    entireWord: evt.entireWord,
-    highlightAll: evt.highlightAll,
-    findPrevious: evt.findPrevious,
-  });
-}
-
 function webViewerFindFromUrlHash(evt) {
-  PDFViewerApplication.findController.executeCommand("find", {
+  PDFViewerApplication.eventBus.dispatch("find", {
+    source: evt.source,
+    type: "",
     query: evt.query,
     phraseSearch: evt.phraseSearch,
     caseSensitive: false,
@@ -2794,6 +2783,8 @@ function webViewerKeyDown(evt) {
   if (PDFViewerApplication.overlayManager.active) {
     return;
   }
+  const { eventBus, pdfViewer } = PDFViewerApplication;
+  const isViewerInPresentationMode = pdfViewer.isInPresentationMode;
 
   let handled = false,
     ensureViewerFocused = false;
@@ -2802,9 +2793,6 @@ function webViewerKeyDown(evt) {
     (evt.altKey ? 2 : 0) |
     (evt.shiftKey ? 4 : 0) |
     (evt.metaKey ? 8 : 0);
-
-  const pdfViewer = PDFViewerApplication.pdfViewer;
-  const isViewerInPresentationMode = pdfViewer?.isInPresentationMode;
 
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
@@ -2819,16 +2807,14 @@ function webViewerKeyDown(evt) {
         break;
       case 71: // g
         if (!PDFViewerApplication.supportsIntegratedFind) {
-          const findState = PDFViewerApplication.findController.state;
-          if (findState) {
-            PDFViewerApplication.findController.executeCommand("findagain", {
-              query: findState.query,
-              phraseSearch: findState.phraseSearch,
-              caseSensitive: findState.caseSensitive,
-              entireWord: findState.entireWord,
-              highlightAll: findState.highlightAll,
+          const { state } = PDFViewerApplication.findController;
+          if (state) {
+            const eventState = Object.assign(Object.create(null), state, {
+              source: window,
+              type: "again",
               findPrevious: cmd === 5 || cmd === 12,
             });
+            eventBus.dispatch("find", eventState);
           }
           handled = true;
         }
@@ -2883,8 +2869,6 @@ function webViewerKeyDown(evt) {
   }
 
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")) {
-    const { eventBus } = PDFViewerApplication;
-
     // CTRL or META without shift
     if (cmd === 1 || cmd === 8) {
       switch (evt.keyCode) {
