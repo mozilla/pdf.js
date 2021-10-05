@@ -2187,7 +2187,7 @@ gulp.task(
     safeSpawnSync("git", ["tag", "-a", "v" + VERSION + "-dist", "-m", message], {
       cwd: DIST_DIR,
     });
-    safeSpawnSync("git", ["push", "--tags", DIST_REPO_URL, "dist"], {
+    safeSpawnSync("git", ["push", "--tags", "origin", "dist"], {
       cwd: DIST_DIR,
     });
     done();
