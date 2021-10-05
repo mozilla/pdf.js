@@ -66,8 +66,8 @@ const TYPESTEST_DIR = BUILD_DIR + "typestest/";
 const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
-const REPO = "git@github.com:mozilla/pdf.js.git";
-const DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
+const REPO = "git@github.com:coparse-inc/pdf.js.git";
+const DIST_REPO_URL = REPO;
 
 const builder = require("./external/builder/builder.js");
 
@@ -2089,14 +2089,10 @@ gulp.task(
   "dist-pre",
   gulp.series(
     "generic",
-    "generic-legacy",
     "components",
-    "components-legacy",
     "image_decoders",
-    "image_decoders-legacy",
     "lib",
     "minified",
-    "minified-legacy",
     "types",
     function createDist() {
       console.log();
@@ -2104,7 +2100,7 @@ gulp.task(
 
       rimraf.sync(DIST_DIR);
       mkdirp.sync(DIST_DIR);
-      safeSpawnSync("git", ["clone", "--depth", "1", DIST_REPO_URL, DIST_DIR]);
+      safeSpawnSync("git", ["clone", "--depth", "2", "--single-branch", "--branch=dist", DIST_REPO_URL, DIST_DIR]);
 
       console.log();
       console.log("### Overwriting all files");
@@ -2159,35 +2155,11 @@ gulp.task(
           .pipe(rename("pdf.image_decoders.min.js"))
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
-          .src(MINIFIED_LEGACY_DIR + "build/pdf.js")
-          .pipe(rename("pdf.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(MINIFIED_LEGACY_DIR + "build/pdf.worker.js")
-          .pipe(rename("pdf.worker.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(MINIFIED_LEGACY_DIR + "build/pdf.sandbox.js")
-          .pipe(rename("pdf.sandbox.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.js")
-          .pipe(rename("pdf.image_decoders.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
-        gulp
           .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
           .pipe(gulp.dest(DIST_DIR + "web/")),
         gulp
-          .src(COMPONENTS_LEGACY_DIR + "**/*", { base: COMPONENTS_LEGACY_DIR })
-          .pipe(gulp.dest(DIST_DIR + "legacy/web/")),
-        gulp
           .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
-        gulp
-          .src(IMAGE_DECODERS_LEGACY_DIR + "**/*", {
-            base: IMAGE_DECODERS_LEGACY_DIR,
-          })
-          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(LIB_DIR + "**/*", { base: LIB_DIR })
           .pipe(gulp.dest(DIST_DIR + "lib/")),
@@ -2222,35 +2194,16 @@ gulp.task(
     console.log();
     console.log("### Committing changes");
 
-    let reason = process.env.PDFJS_UPDATE_REASON;
-    // Attempt to work-around the broken link, see https://github.com/mozilla/pdf.js/issues/10391
-    if (typeof reason === "string") {
-      const reasonParts =
-        /^(See )(mozilla\/pdf\.js)@tags\/(v\d+\.\d+\.\d+)\s*$/.exec(reason);
-
-      if (reasonParts) {
-        reason =
-          reasonParts[1] +
-          "https://github.com/" +
-          reasonParts[2] +
-          "/releases/tag/" +
-          reasonParts[3];
-      }
-    }
     const message =
-      "PDF.js version " + VERSION + (reason ? " - " + reason : "");
+      "PDF.js version " + VERSION;
     safeSpawnSync("git", ["add", "*"], { cwd: DIST_DIR });
     safeSpawnSync("git", ["commit", "-am", message], { cwd: DIST_DIR });
-    safeSpawnSync("git", ["tag", "-a", "v" + VERSION, "-m", message], {
+    safeSpawnSync("git", ["tag", "-a", "v" + VERSION + "-dist", "-m", message], {
       cwd: DIST_DIR,
     });
-
-    console.log();
-    console.log("Done. Push with");
-    console.log(
-      "  cd " + DIST_DIR + "; git push --tags " + DIST_REPO_URL + " master"
-    );
-    console.log();
+    safeSpawnSync("git", ["push", "--tags", DIST_REPO_URL, "dist"], {
+      cwd: DIST_DIR,
+    });
     done();
   })
 );
