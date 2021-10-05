@@ -2093,81 +2093,7 @@ gulp.task(
     "image_decoders",
     "lib",
     "minified",
-    "types",
-    function createDist() {
-      console.log();
-      console.log("### Cloning baseline distribution");
-
-      rimraf.sync(DIST_DIR);
-      mkdirp.sync(DIST_DIR);
-      safeSpawnSync("git", ["clone", "--depth", "2", "--single-branch", "--branch=dist", DIST_REPO_URL, DIST_DIR]);
-
-      console.log();
-      console.log("### Overwriting all files");
-      rimraf.sync(path.join(DIST_DIR, "*"));
-
-      // Rebuilding manifests
-      const [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
-
-      return merge([
-        packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
-        bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),
-        vfs
-          .src("external/dist/**/*", { base: "external/dist", stripBOM: false })
-          .pipe(gulp.dest(DIST_DIR)),
-        gulp.src(GENERIC_DIR + "LICENSE").pipe(gulp.dest(DIST_DIR)),
-        gulp
-          .src(GENERIC_DIR + "web/cmaps/**/*", { base: GENERIC_DIR + "web" })
-          .pipe(gulp.dest(DIST_DIR)),
-        gulp
-          .src(GENERIC_DIR + "web/standard_fonts/**/*", {
-            base: GENERIC_DIR + "web",
-          })
-          .pipe(gulp.dest(DIST_DIR)),
-        gulp
-          .src([
-            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
-            GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
-            SRC_DIR + "pdf.worker.entry.js",
-          ])
-          .pipe(gulp.dest(DIST_DIR + "build/")),
-        gulp
-          .src([
-            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
-            GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
-            SRC_DIR + "pdf.worker.entry.js",
-          ])
-          .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(MINIFIED_DIR + "build/pdf.js")
-          .pipe(rename("pdf.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "build/")),
-        gulp
-          .src(MINIFIED_DIR + "build/pdf.worker.js")
-          .pipe(rename("pdf.worker.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "build/")),
-        gulp
-          .src(MINIFIED_DIR + "build/pdf.sandbox.js")
-          .pipe(rename("pdf.sandbox.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "build/")),
-        gulp
-          .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.js")
-          .pipe(rename("pdf.image_decoders.min.js"))
-          .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
-        gulp
-          .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
-          .pipe(gulp.dest(DIST_DIR + "web/")),
-        gulp
-          .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
-          .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
-        gulp
-          .src(LIB_DIR + "**/*", { base: LIB_DIR })
-          .pipe(gulp.dest(DIST_DIR + "lib/")),
-        gulp
-          .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
-          .pipe(gulp.dest(DIST_DIR + "types/")),
-      ]);
-    }
+    "types"
   )
 );
 
@@ -2188,7 +2114,67 @@ gulp.task(
 
 gulp.task(
   "dist",
-  gulp.series("dist-pre", function createDist(done) {
+  gulp.series(function createDist() {
+    console.log();
+    console.log("### Overwriting all files");
+    rimraf.sync(path.join(DIST_DIR, "*"));
+
+    // Rebuilding manifests
+    const [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
+
+    return merge([
+      packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
+      bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),
+      vfs
+        .src("external/dist/**/*", { base: "external/dist", stripBOM: false })
+        .pipe(gulp.dest(DIST_DIR)),
+      gulp.src(GENERIC_DIR + "LICENSE").pipe(gulp.dest(DIST_DIR)),
+      gulp
+        .src(GENERIC_DIR + "web/cmaps/**/*", { base: GENERIC_DIR + "web" })
+        .pipe(gulp.dest(DIST_DIR)),
+      gulp
+        .src(GENERIC_DIR + "web/standard_fonts/**/*", {
+          base: GENERIC_DIR + "web",
+        })
+        .pipe(gulp.dest(DIST_DIR)),
+      gulp
+        .src([
+          GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js",
+          GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.js.map",
+          SRC_DIR + "pdf.worker.entry.js",
+        ])
+        .pipe(gulp.dest(DIST_DIR + "build/")),
+      gulp
+        .src(MINIFIED_DIR + "build/pdf.js")
+        .pipe(rename("pdf.min.js"))
+        .pipe(gulp.dest(DIST_DIR + "build/")),
+      gulp
+        .src(MINIFIED_DIR + "build/pdf.worker.js")
+        .pipe(rename("pdf.worker.min.js"))
+        .pipe(gulp.dest(DIST_DIR + "build/")),
+      gulp
+        .src(MINIFIED_DIR + "build/pdf.sandbox.js")
+        .pipe(rename("pdf.sandbox.min.js"))
+        .pipe(gulp.dest(DIST_DIR + "build/")),
+      gulp
+        .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.js")
+        .pipe(rename("pdf.image_decoders.min.js"))
+        .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
+      gulp
+        .src(COMPONENTS_DIR + "**/*", { base: COMPONENTS_DIR })
+        .pipe(gulp.dest(DIST_DIR + "web/")),
+      gulp
+        .src(IMAGE_DECODERS_DIR + "**/*", { base: IMAGE_DECODERS_DIR })
+        .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
+      gulp
+        .src(LIB_DIR + "**/*", { base: LIB_DIR })
+        .pipe(gulp.dest(DIST_DIR + "lib/")),
+      gulp
+        .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
+        .pipe(gulp.dest(DIST_DIR + "types/")),
+    ]);
+  },
+  function deploy(done) {
     const VERSION = getVersionJSON().version;
 
     console.log();

@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - master
+permissions:
+  contents: write
 
 jobs:
   build-dist:
@@ -44,4 +46,11 @@ jobs:
         run: npm install
 
       - name: Build dist
+        run: |
+          gulp dist-pre
+          rm -rf build/dist
+          mkdir -p build/dist
+          git clone --depth 2 --single-branch --branch=dist https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git build/dist/
+
+      - name: Deploy dist
         run: gulp dist
