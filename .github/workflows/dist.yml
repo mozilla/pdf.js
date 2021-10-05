@@ -56,4 +56,5 @@ jobs:
         run: |
           gulp dist
           cd build/dist
-          git push --tags https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git dist
+          git remote set-url origin https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git 
+          git push --tags origin dist
