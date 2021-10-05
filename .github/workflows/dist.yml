@@ -56,4 +56,4 @@ jobs:
         run: |
           gulp dist
           cd build/dist
-          git push --tags
+          git push --tags https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git dist
