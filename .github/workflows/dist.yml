@@ -53,4 +53,7 @@ jobs:
           git clone --depth 2 --single-branch --branch=dist https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git build/dist/
 
       - name: Deploy dist
-        run: gulp dist
+        run: |
+          gulp dist
+          cd build/dist
+          git push --tags
