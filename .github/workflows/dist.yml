@@ -50,11 +50,11 @@ jobs:
           gulp dist-pre
           rm -rf build/dist
           mkdir -p build/dist
-          git clone --depth 2 --single-branch --branch=dist https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git build/dist/
+          git clone --depth 2 --single-branch --branch=dist https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git build/dist/
 
       - name: Deploy dist
         run: |
           gulp dist
           cd build/dist
-          git remote set-url origin https://${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git 
+          git remote set-url origin https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/coparse-inc/pdf.js.git 
           git push --tags origin dist
