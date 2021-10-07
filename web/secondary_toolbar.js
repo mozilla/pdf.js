@@ -94,6 +94,12 @@ class SecondaryToolbar {
         close: true,
       },
       {
+        element: options.scrollPageButton,
+        eventName: "switchscrollmode",
+        eventDetails: { mode: ScrollMode.PAGE },
+        close: true,
+      },
+      {
         element: options.scrollVerticalButton,
         eventName: "switchscrollmode",
         eventDetails: { mode: ScrollMode.VERTICAL },
@@ -247,6 +253,10 @@ class SecondaryToolbar {
 
   _bindScrollModeListener(buttons) {
     function scrollModeChanged({ mode }) {
+      buttons.scrollPageButton.classList.toggle(
+        "toggled",
+        mode === ScrollMode.PAGE
+      );
       buttons.scrollVerticalButton.classList.toggle(
         "toggled",
         mode === ScrollMode.VERTICAL
