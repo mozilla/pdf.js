@@ -15,7 +15,7 @@
 
 import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
-import { PDFSinglePageViewer } from "./pdf_single_page_viewer.js";
+import { PDFSinglePageViewer } from "./pdf_viewer.js";
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
