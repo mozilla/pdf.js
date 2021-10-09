@@ -81,6 +81,7 @@ import {
   LocalTilingPatternCache,
 } from "./image_utils.js";
 import { NullStream, Stream } from "./stream.js";
+import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
@@ -3139,7 +3140,7 @@ class PartialEvaluator {
       }
 
       const cidToGidMap = dict.get("CIDToGIDMap");
-      if (isStream(cidToGidMap)) {
+      if (cidToGidMap instanceof BaseStream) {
         cidToGidBytes = cidToGidMap.getBytes();
       }
     }
@@ -3789,6 +3790,16 @@ class PartialEvaluator {
             }
           }
           hash.update(widthsBuf.join());
+        }
+
+        const cidToGidMap =
+          dict.getRaw("CIDToGIDMap") || baseDict.getRaw("CIDToGIDMap");
+        if (cidToGidMap instanceof Name) {
+          hash.update(cidToGidMap.name);
+        } else if (cidToGidMap instanceof Ref) {
+          hash.update(cidToGidMap.toString());
+        } else if (cidToGidMap instanceof BaseStream) {
+          hash.update(cidToGidMap.peekBytes());
         }
       }
     }
