@@ -89,6 +89,15 @@ class Catalog {
     );
   }
 
+  get lang() {
+    const lang = this._catDict.get("Lang");
+    return shadow(
+      this,
+      "lang",
+      typeof lang === "string" ? stringToPDFString(lang) : null
+    );
+  }
+
   /**
    * @type {boolean} `true` for pure XFA documents,
    *   `false` for XFA Foreground documents.
