@@ -5589,6 +5589,12 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue14117",
+       "file": "pdfs/issue14117.pdf",
+       "md5": "9b1c33ad2f59f4e723c258e863149abf",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "annotation-text-widget-annotations",
        "file": "pdfs/annotation-text-widget.pdf",
        "md5": "b7b8923a12998fca8603fae53f73f19b",
