@@ -519,8 +519,9 @@ class Annotation {
     }
 
     const isButton = this.data.pushButton;
+    const forceRender = global.renderFormFields;
 
-    if (!isButton && (this.data.subtype === 'Widget' || this.data.subtype === 'Link')) {
+    if (!forceRender && !isButton && (this.data.subtype === 'Widget' || this.data.subtype === 'Link')) {
       return Promise.resolve(new OperatorList());
     }
 

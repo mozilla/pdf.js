@@ -400,7 +400,8 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       nativeImageDecoderSupport: source.nativeImageDecoderSupport,
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
-      disableFlattenedAnnotations: source.disableFlattenedAnnotations
+      disableFlattenedAnnotations: source.disableFlattenedAnnotations,
+      renderFormFields: source.renderFormFields,
     })
     .then(function(workerId) {
       if (worker.destroyed) {

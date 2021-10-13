@@ -125,13 +125,16 @@ var WorkerMessageHandler = {
     var docBaseUrl = docParams.docBaseUrl;
     var workerHandlerName = docParams.docId + "_worker";
     var disableFlattenedAnnotations = docParams.disableFlattenedAnnotations;
+    var renderFormFields = docParams.renderFormFields;
     
     if (typeof self !== 'undefined') {
-      self.disableFlattenedAnnotations = disableFlattenedAnnotations
+      self.disableFlattenedAnnotations = disableFlattenedAnnotations;
+      self.renderFormFields = renderFormFields;
     }
 
     if (typeof window !== 'undefined') {
       window.disableFlattenedAnnotations = disableFlattenedAnnotations;
+      window.renderFormFields = renderFormFields;
     }
 
     var handler = new MessageHandler(workerHandlerName, docId, port);
