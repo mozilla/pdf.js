@@ -2303,6 +2303,7 @@ function webViewerInitialized() {
         PDFViewerApplication.eventBus.dispatch("fileinputchange",  {
           source: this,
           fileInput: evt.dataTransfer,
+          dropEvent: evt // #972 allowing users to read the drop coordinate
         });
       } // #686 end of modification
     });
