@@ -2488,8 +2488,12 @@ class HTMLRender extends Render {
                 page !== this.rightPage &&
                 page !== this.flippingPage &&
                 page !== this.bottomPage) {
-                page.getElement().style.cssText = 'display: none';
+              const style = page.getElement().style;
+              if (style.display !== 'none') {
+                style.cssText = 'display: none';
+              }
             }
+
             if (page.getTemporaryCopy() !== this.flippingPage) {
                 page.hideTemporaryCopy();
             }
