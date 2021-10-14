@@ -81,7 +81,7 @@ var scaledViewport = page.getViewport({ scale: scale, });
 ### Hello World with document load error handling
 
 The example demonstrates how promises can be used to handle errors during loading.
-It also demonstrates how to wait until page loaded and rendered.
+It also demonstrates how to wait until a page is loaded and rendered.
 
 <script async src="//jsfiddle.net/pdfjs/9engc9mw/embed/js,html,css,result/"></script>
 
