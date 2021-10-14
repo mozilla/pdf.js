@@ -48,19 +48,16 @@ function buildSVG(viewport, textContent) {
   return svg;
 }
 
-function pageLoaded() {
+async function pageLoaded() {
   // Loading document and page text content
   const loadingTask = pdfjsLib.getDocument({ url: PDF_PATH });
-  loadingTask.promise.then(function (pdfDocument) {
-    pdfDocument.getPage(PAGE_NUMBER).then(function (page) {
-      const viewport = page.getViewport({ scale: PAGE_SCALE });
-      page.getTextContent().then(function (textContent) {
-        // building SVG and adding that to the DOM
-        const svg = buildSVG(viewport, textContent);
-        document.getElementById("pageContainer").appendChild(svg);
-      });
-    });
-  });
+  const pdfDocument = await loadingTask.promise;
+  const page = await pdfDocument.getPage(PAGE_NUMBER);
+  const viewport = page.getViewport({ scale: PAGE_SCALE });
+  const textContent = await page.getTextContent();
+  // building SVG and adding that to the DOM
+  const svg = buildSVG(viewport, textContent);
+  document.getElementById("pageContainer").appendChild(svg);
 }
 
 document.addEventListener("DOMContentLoaded", function () {
