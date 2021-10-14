@@ -70,41 +70,40 @@ const loadingTask = pdfjsLib.getDocument({
   cMapPacked: CMAP_PACKED,
   standardFontDataUrl: STANDARD_FONT_DATA_URL,
 });
-loadingTask.promise
-  .then(function (pdfDocument) {
+
+(async function () {
+  try {
+    const pdfDocument = await loadingTask.promise;
     console.log("# PDF document loaded.");
-
     // Get the first page.
-    pdfDocument.getPage(1).then(function (page) {
-      // Render the page on a Node canvas with 100% scale.
-      const viewport = page.getViewport({ scale: 1.0 });
-      const canvasFactory = new NodeCanvasFactory();
-      const canvasAndContext = canvasFactory.create(
-        viewport.width,
-        viewport.height
-      );
-      const renderContext = {
-        canvasContext: canvasAndContext.context,
-        viewport,
-        canvasFactory,
-      };
+    const page = await pdfDocument.getPage(1);
+    // Render the page on a Node canvas with 100% scale.
+    const viewport = page.getViewport({ scale: 1.0 });
+    const canvasFactory = new NodeCanvasFactory();
+    const canvasAndContext = canvasFactory.create(
+      viewport.width,
+      viewport.height
+    );
+    const renderContext = {
+      canvasContext: canvasAndContext.context,
+      viewport,
+      canvasFactory,
+    };
 
-      const renderTask = page.render(renderContext);
-      renderTask.promise.then(function () {
-        // Convert the canvas to an image buffer.
-        const image = canvasAndContext.canvas.toBuffer();
-        fs.writeFile("output.png", image, function (error) {
-          if (error) {
-            console.error("Error: " + error);
-          } else {
-            console.log(
-              "Finished converting first page of PDF file to a PNG image."
-            );
-          }
-        });
-      });
+    const renderTask = page.render(renderContext);
+    await renderTask.promise;
+    // Convert the canvas to an image buffer.
+    const image = canvasAndContext.canvas.toBuffer();
+    fs.writeFile("output.png", image, function (error) {
+      if (error) {
+        console.error("Error: " + error);
+      } else {
+        console.log(
+          "Finished converting first page of PDF file to a PNG image."
+        );
+      }
     });
-  })
-  .catch(function (reason) {
+  } catch (reason) {
     console.log(reason);
-  });
+  }
+})();
