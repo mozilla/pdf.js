@@ -15,7 +15,7 @@
 
 import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
-import { PDFSinglePageViewer } from "./pdf_single_page_viewer.js";
+import { PDFSinglePageViewer } from "./pdf_viewer.js";
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
@@ -91,6 +91,12 @@ class SecondaryToolbar {
         element: options.cursorHandToolButton,
         eventName: "switchcursortool",
         eventDetails: { tool: CursorTool.HAND },
+        close: true,
+      },
+      {
+        element: options.scrollPageButton,
+        eventName: "switchscrollmode",
+        eventDetails: { mode: ScrollMode.PAGE },
         close: true,
       },
       {
@@ -247,6 +253,10 @@ class SecondaryToolbar {
 
   _bindScrollModeListener(buttons) {
     function scrollModeChanged({ mode }) {
+      buttons.scrollPageButton.classList.toggle(
+        "toggled",
+        mode === ScrollMode.PAGE
+      );
       buttons.scrollVerticalButton.classList.toggle(
         "toggled",
         mode === ScrollMode.VERTICAL

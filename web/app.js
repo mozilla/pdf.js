@@ -16,7 +16,7 @@
 
 import {
   animationStarted,
-  apiPageLayoutToSpreadMode,
+  apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
   AutomationEventBus,
   AutoPrintRegExp,
@@ -1300,8 +1300,16 @@ const PDFViewerApplication = {
           if (pageMode && sidebarView === SidebarView.UNKNOWN) {
             sidebarView = apiPageModeToSidebarView(pageMode);
           }
-          if (pageLayout && spreadMode === SpreadMode.UNKNOWN) {
-            spreadMode = apiPageLayoutToSpreadMode(pageLayout);
+          if (
+            pageLayout &&
+            scrollMode === ScrollMode.UNKNOWN &&
+            spreadMode === SpreadMode.UNKNOWN
+          ) {
+            const modes = apiPageLayoutToViewerModes(pageLayout);
+            // TODO: Try to improve page-switching when using the mouse-wheel
+            // and/or arrow-keys before allowing the document to control this.
+            // scrollMode = modes.scrollMode;
+            spreadMode = modes.spreadMode;
           }
 
           this.setInitialView(hash, {

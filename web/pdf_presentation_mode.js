@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { normalizeWheelEventDelta, PresentationModeState } from "./ui_utils.js";
+import {
+  normalizeWheelEventDelta,
+  PresentationModeState,
+  ScrollMode,
+  SpreadMode,
+} from "./ui_utils.js";
 
 const DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 const DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
@@ -84,8 +89,10 @@ class PDFPresentationMode {
     }
 
     this.args = {
-      page: this.pdfViewer.currentPageNumber,
-      previousScale: this.pdfViewer.currentScaleValue,
+      pageNumber: this.pdfViewer.currentPageNumber,
+      scaleValue: this.pdfViewer.currentScaleValue,
+      scrollMode: this.pdfViewer.scrollMode,
+      spreadMode: this.pdfViewer.spreadMode,
     };
 
     return true;
@@ -203,7 +210,9 @@ class PDFPresentationMode {
     // Ensure that the correct page is scrolled into view when entering
     // Presentation Mode, by waiting until fullscreen mode in enabled.
     setTimeout(() => {
-      this.pdfViewer.currentPageNumber = this.args.page;
+      this.pdfViewer.scrollMode = ScrollMode.PAGE;
+      this.pdfViewer.spreadMode = SpreadMode.NONE;
+      this.pdfViewer.currentPageNumber = this.args.pageNumber;
       this.pdfViewer.currentScaleValue = "page-fit";
     }, 0);
 
@@ -221,7 +230,7 @@ class PDFPresentationMode {
    * @private
    */
   _exit() {
-    const page = this.pdfViewer.currentPageNumber;
+    const pageNumber = this.pdfViewer.currentPageNumber;
     this.container.classList.remove(ACTIVE_SELECTOR);
 
     // Ensure that the correct page is scrolled into view when exiting
@@ -231,8 +240,10 @@ class PDFPresentationMode {
       this._removeFullscreenChangeListeners();
       this._notifyStateChange();
 
-      this.pdfViewer.currentScaleValue = this.args.previousScale;
-      this.pdfViewer.currentPageNumber = page;
+      this.pdfViewer.scrollMode = this.args.scrollMode;
+      this.pdfViewer.spreadMode = this.args.spreadMode;
+      this.pdfViewer.currentScaleValue = this.args.scaleValue;
+      this.pdfViewer.currentPageNumber = pageNumber;
       this.args = null;
     }, 0);
 
