@@ -6002,5 +6002,14 @@
        "rounds": 1,
        "type": "eq",
        "annotations": true
+    },
+    { "id": "xfa_issue14144",
+      "file": "pdfs/xfa_issue14144.pdf",
+      "md5": "6a0e99edcf31e815dd0e1395e8dc15f2",
+      "link": true,
+      "rounds": 1,
+      "enableXfa": true,
+      "type": "eq",
+      "lastPage": 1
     }
 ]
