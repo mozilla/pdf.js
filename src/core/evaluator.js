@@ -2366,7 +2366,7 @@ class PartialEvaluator {
         : bidiResult.str;
       const rawStr = normalizeWhitespace
         ? textChunk.rawStr.map((tup) => [replaceWhitespace(tup[0]), tup[1]])
-        : textChunk.rawStr;
+        : textChunk.rawStr.slice();
       return {
         str,
         rawStr,
@@ -2708,6 +2708,7 @@ class PartialEvaluator {
       textContent.items.push(runBidiTransform(textContentItem));
       textContentItem.initialized = false;
       textContentItem.str.length = 0;
+      textContentItem.rawStr.length = 0;
     }
 
     function enqueueChunk(batch = false) {
