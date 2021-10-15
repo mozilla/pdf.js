@@ -2624,7 +2624,7 @@ class PartialEvaluator {
         glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
         glyphUnicode = reverseIfRtl(glyphUnicode);
         textChunk.str.push(glyphUnicode);
-        textChunk.rawStr.push([glyphUnicode, size]);
+        textChunk.rawStr.push([glyphUnicode, textChunk.width]);
 
         if (charSpacing) {
           if (!font.vertical) {
