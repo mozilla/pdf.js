@@ -2624,7 +2624,7 @@ class PartialEvaluator {
         glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
         glyphUnicode = reverseIfRtl(glyphUnicode);
         textChunk.str.push(glyphUnicode);
-        textChunk.rawStr.push([glyphUnicode, textChunk.width]);
+        textChunk.rawStr.push([glyphUnicode, !font.vertical ? textChunk.width : textChunk.height]);
 
         if (charSpacing) {
           if (!font.vertical) {
@@ -2700,9 +2700,11 @@ class PartialEvaluator {
       if (!textContentItem.vertical) {
         textContentItem.totalWidth +=
           textContentItem.width * textContentItem.textAdvanceScale;
+        textContentItem.rawStr = textContentItem.rawStr.map(tup => [tup[0], tup[1] * textContentItem.textAdvanceScale]);
       } else {
         textContentItem.totalHeight +=
           textContentItem.height * textContentItem.textAdvanceScale;
+        textContentItem.rawStr = textContentItem.rawStr.map(tup => [tup[0], tup[1] * textContentItem.textAdvanceScale]);
       }
 
       textContent.items.push(runBidiTransform(textContentItem));
