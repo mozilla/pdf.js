@@ -57,6 +57,7 @@ const ScrollMode = {
   VERTICAL: 0, // Default value.
   HORIZONTAL: 1,
   WRAPPED: 2,
+  PAGE: 3,
 };
 
 const SpreadMode = {
@@ -952,21 +953,32 @@ function getActiveOrFocusedElement() {
  *       necessary Scroll/Spread modes (since SinglePage, TwoPageLeft,
  *       and TwoPageRight all suggests using non-continuous scrolling).
  * @param {string} mode - The API PageLayout value.
- * @returns {number} A value from {SpreadMode}.
+ * @returns {Object}
  */
-function apiPageLayoutToSpreadMode(layout) {
+function apiPageLayoutToViewerModes(layout) {
+  let scrollMode = ScrollMode.VERTICAL,
+    spreadMode = SpreadMode.NONE;
+
   switch (layout) {
     case "SinglePage":
+      scrollMode = ScrollMode.PAGE;
+      break;
     case "OneColumn":
-      return SpreadMode.NONE;
-    case "TwoColumnLeft":
+      break;
     case "TwoPageLeft":
-      return SpreadMode.ODD;
-    case "TwoColumnRight":
+      scrollMode = ScrollMode.PAGE;
+    /* falls through */
+    case "TwoColumnLeft":
+      spreadMode = SpreadMode.ODD;
+      break;
     case "TwoPageRight":
-      return SpreadMode.EVEN;
+      scrollMode = ScrollMode.PAGE;
+    /* falls through */
+    case "TwoColumnRight":
+      spreadMode = SpreadMode.EVEN;
+      break;
   }
-  return SpreadMode.NONE; // Default value.
+  return { scrollMode, spreadMode };
 }
 
 /**
@@ -995,7 +1007,7 @@ function apiPageModeToSidebarView(mode) {
 
 export {
   animationStarted,
-  apiPageLayoutToSpreadMode,
+  apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
   approximateFraction,
   AutomationEventBus,
