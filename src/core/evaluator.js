@@ -2180,6 +2180,7 @@ class PartialEvaluator {
     const textContentItem = {
       initialized: false,
       str: [],
+      rawStr: [],
       totalWidth: 0,
       totalHeight: 0,
       width: 0,
@@ -2363,8 +2364,12 @@ class PartialEvaluator {
       const str = normalizeWhitespace
         ? replaceWhitespace(bidiResult.str)
         : bidiResult.str;
+      const rawStr = normalizeWhitespace
+        ? textChunk.rawStr.map((tup) => [replaceWhitespace(tup[0]), tup[1]])
+        : textChunk.rawStr;
       return {
         str,
+        rawStr,
         dir: bidiResult.dir,
         width: textChunk.totalWidth,
         height: textChunk.totalHeight,
@@ -2619,6 +2624,7 @@ class PartialEvaluator {
         glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
         glyphUnicode = reverseIfRtl(glyphUnicode);
         textChunk.str.push(glyphUnicode);
+        textChunk.rawStr.push([glyphUnicode, size]);
 
         if (charSpacing) {
           if (!font.vertical) {
