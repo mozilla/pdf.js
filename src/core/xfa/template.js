@@ -138,6 +138,7 @@ const MIMES = new Set([
   "image/x-ms-bmp",
   "image/tiff",
   "image/tif",
+  "application/octet-stream",
 ]);
 
 const IMAGES_HEADERS = [
