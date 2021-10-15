@@ -126,10 +126,24 @@ class PDFRenderingQueue {
         return view;
       }
     }
+    const firstId = visible.first.id,
+      lastId = visible.last.id;
+
+    // All the visible views have rendered; try to handle any "holes" in the
+    // page layout (can happen e.g. with spreadModes at higher zoom levels).
+    if (lastId - firstId > 1) {
+      for (let i = 0, ii = lastId - firstId; i <= ii; i++) {
+        const holeId = scrolledDown ? firstId + i : lastId - i,
+          holeView = views[holeId - 1];
+        if (!this.isViewFinished(holeView)) {
+          return holeView;
+        }
+      }
+    }
 
     // All the visible views have rendered; try to render next/previous page.
     // (IDs start at 1, so no need to add 1 when `scrolledDown === true`.)
-    let preRenderIndex = scrolledDown ? visible.last.id : visible.first.id - 2;
+    let preRenderIndex = scrolledDown ? lastId : firstId - 2;
     let preRenderView = views[preRenderIndex];
 
     if (preRenderView && !this.isViewFinished(preRenderView)) {
