@@ -831,7 +831,7 @@ class PDFPageView {
     renderTask.promise.then(
       function () {
         showCanvas();
-        renderCapability.resolve(undefined);
+        renderCapability.resolve();
       },
       function (error) {
         showCanvas();

@@ -219,6 +219,8 @@ class MozL10n {
     "findentirewordchange",
     "findbarclose",
   ];
+  const findLen = "find".length;
+
   const handleEvent = function ({ type, detail }) {
     if (!PDFViewerApplication.initialized) {
       return;
@@ -229,7 +231,7 @@ class MozL10n {
     }
     PDFViewerApplication.eventBus.dispatch("find", {
       source: window,
-      type: type.substring("find".length),
+      type: type.substring(findLen),
       query: detail.query,
       phraseSearch: true,
       caseSensitive: !!detail.caseSensitive,
