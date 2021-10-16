@@ -787,7 +787,7 @@ class PDFDocument {
   get numPages() {
     let num = 0;
     if (this.xfaFactory) {
-      num = this.xfaFactory.numberPages;
+      num = this.xfaFactory.numPages;
     } else if (this.linearization) {
       num = this.linearization.numPages;
     } else {
