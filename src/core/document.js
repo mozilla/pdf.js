@@ -900,14 +900,11 @@ class PDFDocument {
   }
 
   get isPureXfa() {
-    return this.xfaFactory && this.xfaFactory.isValid();
+    return this.xfaFactory ? this.xfaFactory.isValid() : false;
   }
 
   get htmlForXfa() {
-    if (this.xfaFactory) {
-      return this.xfaFactory.getPages();
-    }
-    return null;
+    return this.xfaFactory ? this.xfaFactory.getPages() : null;
   }
 
   async loadXfaImages() {
@@ -1088,10 +1085,9 @@ class PDFDocument {
   }
 
   async serializeXfaData(annotationStorage) {
-    if (this.xfaFactory) {
-      return this.xfaFactory.serializeData(annotationStorage);
-    }
-    return null;
+    return this.xfaFactory
+      ? this.xfaFactory.serializeData(annotationStorage)
+      : null;
   }
 
   get formInfo() {
