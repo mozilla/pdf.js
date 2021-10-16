@@ -54,7 +54,7 @@ class XFAFactory {
     return this.dims[pageIndex];
   }
 
-  get numberPages() {
+  get numPages() {
     if (!this.pages) {
       this._createPages();
     }

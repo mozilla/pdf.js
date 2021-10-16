@@ -86,7 +86,7 @@ describe("XFAFactory", function () {
       const factory = new XFAFactory({ "xdp:xdp": xml });
       factory.setFonts([]);
 
-      expect(factory.numberPages).toEqual(2);
+      expect(factory.numPages).toEqual(2);
 
       const pages = factory.getPages();
       const page1 = pages.children[0];
@@ -174,7 +174,7 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const field = searchHtmlNode(pages, "name", "img");
@@ -208,7 +208,7 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const page1 = pages.children[0];
@@ -263,7 +263,7 @@ describe("XFAFactory", function () {
       const factory = new XFAFactory({ "xdp:xdp": xml });
       factory.setFonts([]);
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const table = searchHtmlNode(
@@ -336,7 +336,7 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const field = searchHtmlNode(pages, "name", "input");
@@ -378,7 +378,7 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const field = searchHtmlNode(pages, "name", "input");
@@ -420,7 +420,7 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const field = searchHtmlNode(pages, "name", "input");
@@ -463,7 +463,7 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numberPages).toEqual(1);
+      expect(factory.numPages).toEqual(1);
 
       const pages = factory.getPages();
       const field1 = searchHtmlNode(pages, "name", "input");
@@ -517,7 +517,7 @@ describe("XFAFactory", function () {
     `;
     const factory = new XFAFactory({ "xdp:xdp": xml });
 
-    expect(factory.numberPages).toEqual(1);
+    expect(factory.numPages).toEqual(1);
 
     const pages = factory.getPages();
     const field1 = searchHtmlNode(pages, "name", "input");
@@ -560,7 +560,7 @@ describe("XFAFactory", function () {
 
     // A valid, and complete, URL.
     factory = new XFAFactory({ "xdp:xdp": getXml("https://www.example.com/") });
-    expect(factory.numberPages).toEqual(1);
+    expect(factory.numPages).toEqual(1);
     pages = factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("https://www.example.com/");
@@ -568,7 +568,7 @@ describe("XFAFactory", function () {
 
     // A valid, but incomplete, URL.
     factory = new XFAFactory({ "xdp:xdp": getXml("www.example.com/") });
-    expect(factory.numberPages).toEqual(1);
+    expect(factory.numPages).toEqual(1);
     pages = factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("www.example.com/");
@@ -576,7 +576,7 @@ describe("XFAFactory", function () {
 
     // A valid email-address.
     factory = new XFAFactory({ "xdp:xdp": getXml("mailto:test@example.com") });
-    expect(factory.numberPages).toEqual(1);
+    expect(factory.numPages).toEqual(1);
     pages = factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("mailto:test@example.com");
@@ -584,7 +584,7 @@ describe("XFAFactory", function () {
 
     // Not a valid URL.
     factory = new XFAFactory({ "xdp:xdp": getXml("qwerty/") });
-    expect(factory.numberPages).toEqual(1);
+    expect(factory.numPages).toEqual(1);
     pages = factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("qwerty/");
@@ -635,7 +635,7 @@ describe("XFAFactory", function () {
     `;
     const factory = new XFAFactory({ "xdp:xdp": xml });
 
-    expect(factory.numberPages).toEqual(1);
+    expect(factory.numPages).toEqual(1);
 
     const pages = factory.getPages();
     let a = searchHtmlNode(pages, "name", "a");
