@@ -263,12 +263,13 @@ class Page {
   }
 
   get xfaData() {
-    if (this.xfaFactory) {
-      return shadow(this, "xfaData", {
-        bbox: this.xfaFactory.getBoundingBox(this.pageIndex),
-      });
-    }
-    return shadow(this, "xfaData", null);
+    return shadow(
+      this,
+      "xfaData",
+      this.xfaFactory
+        ? { bbox: this.xfaFactory.getBoundingBox(this.pageIndex) }
+        : null
+    );
   }
 
   save(handler, task, annotationStorage) {
@@ -784,11 +785,14 @@ class PDFDocument {
   }
 
   get numPages() {
+    let num = 0;
     if (this.xfaFactory) {
-      return shadow(this, "numPages", this.xfaFactory.numberPages);
+      num = this.xfaFactory.numberPages;
+    } else if (this.linearization) {
+      num = this.linearization.numPages;
+    } else {
+      num = this.catalog.numPages;
     }
-    const linearization = this.linearization;
-    const num = linearization ? linearization.numPages : this.catalog.numPages;
     return shadow(this, "numPages", num);
   }
 
@@ -883,16 +887,16 @@ class PDFDocument {
   }
 
   get xfaFactory() {
+    let data;
     if (
       this.pdfManager.enableXfa &&
       this.catalog.needsRendering &&
       this.formInfo.hasXfa &&
       !this.formInfo.hasAcroForm
     ) {
-      const data = this.xfaData;
-      return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
+      data = this.xfaData;
     }
-    return shadow(this, "xfaFactory", null);
+    return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
   }
 
   get isPureXfa() {
