@@ -892,7 +892,7 @@ class PDFDocument {
       const data = this.xfaData;
       return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
     }
-    return shadow(this, "xfaFaxtory", null);
+    return shadow(this, "xfaFactory", null);
   }
 
   get isPureXfa() {
