@@ -45,7 +45,7 @@
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^13.13.1",
-    "stylelint-config-prettier": "^8.0.2",
+    "stylelint-config-prettier": "^9.0.3",
     "stylelint-prettier": "^1.2.0",
     "systemjs": "^0.21.6",
     "systemjs-plugin-babel": "^0.0.25",
