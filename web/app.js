@@ -431,23 +431,21 @@ const PDFViewerApplication = {
     try {
       const styleSheet = document.styleSheets[0];
       const cssRules = styleSheet?.cssRules || [];
-      const mediaMatcher =
-        typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
-          ? "-moz-toolbar-prefers-color-scheme"
-          : "prefers-color-scheme";
-      const mediaRule = `(${mediaMatcher}: dark)`;
-      const mediaRegex = new RegExp(
-        `^@media \\(${mediaMatcher}: dark\\) {\\n\\s*([\\w\\s-.,:;/\\\\{}()]+)\\n}$`
-      );
       for (let i = 0, ii = cssRules.length; i < ii; i++) {
         const rule = cssRules[i];
-        if (rule instanceof CSSMediaRule && rule.media?.[0] === mediaRule) {
+        if (
+          rule instanceof CSSMediaRule &&
+          rule.media?.[0] === "(prefers-color-scheme: dark)"
+        ) {
           if (cssTheme === ViewerCssTheme.LIGHT) {
             styleSheet.deleteRule(i);
             return;
           }
           // cssTheme === ViewerCssTheme.DARK
-          const darkRules = mediaRegex.exec(rule.cssText);
+          const darkRules =
+            /^@media \(prefers-color-scheme: dark\) {\n\s*([\w\s-.,:;/\\{}()]+)\n}$/.exec(
+              rule.cssText
+            );
           if (darkRules?.[1]) {
             styleSheet.deleteRule(i);
             styleSheet.insertRule(darkRules[1], i);
