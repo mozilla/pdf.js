@@ -295,12 +295,22 @@ class PDFThumbnailViewer {
     return promise;
   }
 
+  #getScrollAhead(views) {
+    if (views.first.id === 1) {
+      return true;
+    } else if (views.last.id === this._thumbnails.length) {
+      return false;
+    }
+    return this.scroll.down;
+  }
+
   forceRendering() {
     const visibleThumbs = this._getVisibleThumbs();
+    const scrollAhead = this.#getScrollAhead(visibleThumbs);
     const thumbView = this.renderingQueue.getHighestPriority(
       visibleThumbs,
       this._thumbnails,
-      this.scroll.down
+      scrollAhead
     );
     if (thumbView) {
       this._ensurePdfPageLoaded(thumbView).then(() => {
