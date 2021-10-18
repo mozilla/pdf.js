@@ -1160,6 +1160,9 @@ if (
      * @private
      */
     _makeShadingPattern(args) {
+      if (typeof args === "string") {
+        args = this.objs.get(args);
+      }
       switch (args[0]) {
         case "RadialAxial":
           const shadingId = `shading${shadingCount++}`;
