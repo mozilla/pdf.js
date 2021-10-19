@@ -2648,6 +2648,11 @@ class SquareAnnotation extends MarkupAnnotation {
       }
       const fillAlpha = fillColor ? strokeAlpha : null;
 
+      if (this.borderStyle.width === 0 && !fillColor) {
+        // Prevent rendering a "hairline" border (fixes issue14164.pdf).
+        return;
+      }
+
       this._setDefaultAppearance({
         xref: parameters.xref,
         extra: `${this.borderStyle.width} w`,
@@ -2696,6 +2701,11 @@ class CircleAnnotation extends MarkupAnnotation {
           : null;
       }
       const fillAlpha = fillColor ? strokeAlpha : null;
+
+      if (this.borderStyle.width === 0 && !fillColor) {
+        // Prevent rendering a "hairline" border (fixes issue14164.pdf).
+        return;
+      }
 
       // Circles are approximated by Bézier curves with four segments since
       // there is no circle primitive in the PDF specification. For the control
