@@ -1160,6 +1160,7 @@ class PDFDocument {
 
     const docInfo = {
       PDFFormatVersion: version,
+      Language: this.catalog.lang,
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: this.formInfo.hasAcroForm,
       IsXFAPresent: this.formInfo.hasXfa,
