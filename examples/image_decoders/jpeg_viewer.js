@@ -25,58 +25,39 @@ const JPEG_IMAGE = "fish.jpg";
 const jpegCanvas = document.getElementById("jpegCanvas");
 const jpegCtx = jpegCanvas.getContext("2d");
 
-// Load the image data, and convert it to a Uint8Array.
-//
-let nonBinaryRequest = false;
-const request = new XMLHttpRequest();
-request.open("GET", JPEG_IMAGE, false);
-try {
-  request.responseType = "arraybuffer";
-  nonBinaryRequest = request.responseType !== "arraybuffer";
-} catch (e) {
-  nonBinaryRequest = true;
-}
-if (nonBinaryRequest && request.overrideMimeType) {
-  request.overrideMimeType("text/plain; charset=x-user-defined");
-}
-request.send(null);
-
-let typedArrayImage;
-if (nonBinaryRequest) {
-  const str = request.responseText,
-    length = str.length;
-  const bytes = new Uint8Array(length);
-  for (let i = 0; i < length; ++i) {
-    bytes[i] = str.charCodeAt(i) & 0xff;
+(async function () {
+  // Load the image data, and convert it to a Uint8Array.
+  //
+  const response = await fetch(JPEG_IMAGE);
+  if (!response.ok) {
+    throw new Error(response.statusText);
   }
-  typedArrayImage = bytes;
-} else {
-  typedArrayImage = new Uint8Array(request.response);
-}
+  const typedArrayImage = new Uint8Array(await response.arrayBuffer());
 
-// Parse the image data using `JpegImage`.
-//
-const jpegImage = new pdfjsImageDecoders.JpegImage();
-jpegImage.parse(typedArrayImage);
+  // Parse the image data using `JpegImage`.
+  //
+  const jpegImage = new pdfjsImageDecoders.JpegImage();
+  jpegImage.parse(typedArrayImage);
 
-const width = jpegImage.width,
-  height = jpegImage.height;
-const jpegData = jpegImage.getData({
-  width,
-  height,
-  forceRGB: true,
-});
+  const width = jpegImage.width,
+    height = jpegImage.height;
+  const jpegData = jpegImage.getData({
+    width,
+    height,
+    forceRGB: true,
+  });
 
-// Render the JPEG image on a <canvas>.
-//
-const imageData = jpegCtx.createImageData(width, height);
-const imageBytes = imageData.data;
-for (let j = 0, k = 0, jj = width * height * 4; j < jj; ) {
-  imageBytes[j++] = jpegData[k++];
-  imageBytes[j++] = jpegData[k++];
-  imageBytes[j++] = jpegData[k++];
-  imageBytes[j++] = 255;
-}
-jpegCanvas.width = width;
-jpegCanvas.height = height;
-jpegCtx.putImageData(imageData, 0, 0);
+  // Render the JPEG image on a <canvas>.
+  //
+  const imageData = jpegCtx.createImageData(width, height);
+  const imageBytes = imageData.data;
+  for (let j = 0, k = 0, jj = width * height * 4; j < jj; ) {
+    imageBytes[j++] = jpegData[k++];
+    imageBytes[j++] = jpegData[k++];
+    imageBytes[j++] = jpegData[k++];
+    imageBytes[j++] = 255;
+  }
+  jpegCanvas.width = width;
+  jpegCanvas.height = height;
+  jpegCtx.putImageData(imageData, 0, 0);
+})();
