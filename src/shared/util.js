@@ -1030,7 +1030,7 @@ function createPromiseCapability() {
 }
 
 function createObjectURL(data, contentType = "", forceDataSchema = false) {
-  if (URL.createObjectURL && !forceDataSchema) {
+  if (URL.createObjectURL && typeof Blob !== "undefined" && !forceDataSchema) {
     return URL.createObjectURL(new Blob([data], { type: contentType }));
   }
   // Blob/createObjectURL is not available, falling back to data schema.
