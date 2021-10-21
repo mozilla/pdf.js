@@ -421,7 +421,7 @@ class AnnotationElement {
 }
 
 class LinkAnnotationElement extends AnnotationElement {
-  constructor(parameters) {
+  constructor(parameters, options = null) {
     const isRenderable = !!(
       parameters.data.url ||
       parameters.data.dest ||
@@ -433,7 +433,11 @@ class LinkAnnotationElement extends AnnotationElement {
           parameters.data.actions["Mouse Up"] ||
           parameters.data.actions["Mouse Down"]))
     );
-    super(parameters, { isRenderable, createQuadrilaterals: true });
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: !!options?.ignoreBorder,
+      createQuadrilaterals: true,
+    });
   }
 
   render() {
@@ -1298,6 +1302,10 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
 }
 
 class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
+  constructor(parameters) {
+    super(parameters, { ignoreBorder: parameters.data.hasAppearance });
+  }
+
   render() {
     // The rendering and functionality of a push button widget annotation is
     // equal to that of a link annotation, but may have more functionality, such
