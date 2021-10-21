@@ -40,7 +40,7 @@ try {
 // Dumps svg outputs to a folder called svgdump
 function getFilePathForPage(pageNum) {
   const name = path.basename(pdfPath, path.extname(pdfPath));
-  return path.join(outputDirectory, name + "-" + pageNum + ".svg");
+  return path.join(outputDirectory, `${name}-${pageNum}.svg`);
 }
 
 /**
@@ -87,56 +87,36 @@ function writeSvgToFile(svgElement, filePath) {
   });
 }
 
-// Will be using promises to load document, pages and misc data instead of
-// callback.
+// Will be using async/await to load document, pages and misc data.
 const loadingTask = pdfjsLib.getDocument({
   data,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
   fontExtraProperties: true,
 });
-loadingTask.promise
-  .then(function (doc) {
-    const numPages = doc.numPages;
-    console.log("# Document Loaded");
-    console.log("Number of Pages: " + numPages);
-    console.log();
+(async function () {
+  const doc = await loadingTask.promise;
+  const numPages = doc.numPages;
+  console.log("# Document Loaded");
+  console.log(`Number of Pages: ${numPages}`);
+  console.log();
 
-    let lastPromise = Promise.resolve(); // will be used to chain promises
-    const loadPage = function (pageNum) {
-      return doc.getPage(pageNum).then(function (page) {
-        console.log("# Page " + pageNum);
-        const viewport = page.getViewport({ scale: 1.0 });
-        console.log("Size: " + viewport.width + "x" + viewport.height);
-        console.log();
+  for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+    try {
+      const page = await doc.getPage(pageNum);
+      console.log(`# Page ${pageNum}`);
+      const viewport = page.getViewport({ scale: 1.0 });
+      console.log(`Size: ${viewport.width}x${viewport.height}`);
+      console.log();
 
-        return page.getOperatorList().then(function (opList) {
-          const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
-          svgGfx.embedFonts = true;
-          return svgGfx.getSVG(opList, viewport).then(function (svg) {
-            return writeSvgToFile(svg, getFilePathForPage(pageNum)).then(
-              function () {
-                console.log("Page: " + pageNum);
-              },
-              function (err) {
-                console.log("Error: " + err);
-              }
-            );
-          });
-        });
-      });
-    };
-
-    for (let i = 1; i <= numPages; i++) {
-      lastPromise = lastPromise.then(loadPage.bind(null, i));
+      const opList = await page.getOperatorList();
+      const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
+      svgGfx.embedFonts = true;
+      const svg = await svgGfx.getSVG(opList, viewport);
+      await writeSvgToFile(svg, getFilePathForPage(pageNum));
+    } catch (err) {
+      console.log(`Error: ${err}`);
     }
-    return lastPromise;
-  })
-  .then(
-    function () {
-      console.log("# End of Document");
-    },
-    function (err) {
-      console.error("Error: " + err);
-    }
-  );
+  }
+  console.log("# End of Document");
+})();
