@@ -579,7 +579,7 @@ function compileType3Glyph(imgData) {
 }
 
 class CanvasExtraState {
-  constructor() {
+  constructor(width, height) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -610,15 +610,54 @@ class CanvasExtraState {
     this.lineWidth = 1;
     this.activeSMask = null;
     this.transferMaps = null;
+
+    this.startNewPathAndClipBox([0, 0, width, height]);
   }
 
   clone() {
-    return Object.create(this);
+    const clone = Object.create(this);
+    clone.clipBox = this.clipBox.slice();
+    return clone;
   }
 
   setCurrentPoint(x, y) {
     this.x = x;
     this.y = y;
+  }
+
+  updatePathMinMax(transform, x, y) {
+    [x, y] = Util.applyTransform([x, y], transform);
+    this.minX = Math.min(this.minX, x);
+    this.minY = Math.min(this.minY, y);
+    this.maxX = Math.max(this.maxX, x);
+    this.maxY = Math.max(this.maxY, y);
+  }
+
+  updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3) {
+    const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3);
+    this.updatePathMinMax(transform, box[0], box[1]);
+    this.updatePathMinMax(transform, box[2], box[3]);
+  }
+
+  getPathBoundingBox() {
+    return [this.minX, this.minY, this.maxX, this.maxY];
+  }
+
+  updateClipFromPath() {
+    const intersect = Util.intersect(this.clipBox, this.getPathBoundingBox());
+    this.startNewPathAndClipBox(intersect || [0, 0, 0, 0]);
+  }
+
+  startNewPathAndClipBox(box) {
+    this.clipBox = box;
+    this.minX = Infinity;
+    this.minY = Infinity;
+    this.maxX = 0;
+    this.maxY = 0;
+  }
+
+  getClippedPathBoundingBox() {
+    return Util.intersect(this.clipBox, this.getPathBoundingBox());
   }
 }
 
@@ -995,6 +1034,9 @@ function composeSMask(ctx, smask, layerCtx, layerBox) {
   const layerOffsetY = layerBox[1];
   const layerWidth = layerBox[2] - layerOffsetX;
   const layerHeight = layerBox[3] - layerOffsetY;
+  if (layerWidth === 0 || layerHeight === 0) {
+    return;
+  }
   genericComposeSMask(
     smask.context,
     layerCtx,
@@ -1051,7 +1093,10 @@ class CanvasGraphics {
     optionalContentConfig
   ) {
     this.ctx = canvasCtx;
-    this.current = new CanvasExtraState();
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
     this.stateStack = [];
     this.pendingClip = null;
     this.pendingEOFill = false;
@@ -1538,8 +1583,14 @@ class CanvasGraphics {
     if (!this.current.activeSMask) {
       return;
     }
+
     if (!dirtyBox) {
       dirtyBox = [0, 0, this.ctx.canvas.width, this.ctx.canvas.height];
+    } else {
+      dirtyBox[0] = Math.floor(dirtyBox[0]);
+      dirtyBox[1] = Math.floor(dirtyBox[1]);
+      dirtyBox[2] = Math.ceil(dirtyBox[2]);
+      dirtyBox[3] = Math.ceil(dirtyBox[3]);
     }
     const smask = this.current.activeSMask;
     const suspendedCtx = this.suspendedCtx;
@@ -1589,6 +1640,7 @@ class CanvasGraphics {
     const current = this.current;
     let x = current.x,
       y = current.y;
+    let startX, startY;
     for (let i = 0, j = 0, ii = ops.length; i < ii; i++) {
       switch (ops[i] | 0) {
         case OPS.rectangle:
@@ -1607,20 +1659,25 @@ class CanvasGraphics {
             ctx.lineTo(xw, yh);
             ctx.lineTo(x, yh);
           }
-
+          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
+          current.updatePathMinMax(ctx.mozCurrentTransform, xw, yh);
           ctx.closePath();
           break;
         case OPS.moveTo:
           x = args[j++];
           y = args[j++];
           ctx.moveTo(x, y);
+          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
           break;
         case OPS.lineTo:
           x = args[j++];
           y = args[j++];
           ctx.lineTo(x, y);
+          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
           break;
         case OPS.curveTo:
+          startX = x;
+          startY = y;
           x = args[j + 4];
           y = args[j + 5];
           ctx.bezierCurveTo(
@@ -1631,10 +1688,34 @@ class CanvasGraphics {
             x,
             y
           );
+          current.updateCurvePathMinMax(
+            ctx.mozCurrentTransform,
+            startX,
+            startY,
+            args[j],
+            args[j + 1],
+            args[j + 2],
+            args[j + 3],
+            x,
+            y
+          );
           j += 6;
           break;
         case OPS.curveTo2:
+          startX = x;
+          startY = y;
           ctx.bezierCurveTo(
+            x,
+            y,
+            args[j],
+            args[j + 1],
+            args[j + 2],
+            args[j + 3]
+          );
+          current.updateCurvePathMinMax(
+            ctx.mozCurrentTransform,
+            startX,
+            startY,
             x,
             y,
             args[j],
@@ -1647,9 +1728,22 @@ class CanvasGraphics {
           j += 4;
           break;
         case OPS.curveTo3:
+          startX = x;
+          startY = y;
           x = args[j + 2];
           y = args[j + 3];
           ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
+          current.updateCurvePathMinMax(
+            ctx.mozCurrentTransform,
+            startX,
+            startY,
+            args[j],
+            args[j + 1],
+            x,
+            y,
+            x,
+            y
+          );
           j += 4;
           break;
         case OPS.closePath:
@@ -1702,7 +1796,7 @@ class CanvasGraphics {
       }
     }
     if (consumePath) {
-      this.consumePath();
+      this.consumePath(this.current.getClippedPathBoundingBox());
     }
     // Restore the global alpha to the fill alpha
     ctx.globalAlpha = this.current.fillAlpha;
@@ -1730,7 +1824,8 @@ class CanvasGraphics {
       needRestore = true;
     }
 
-    if (this.contentVisible) {
+    const intersect = this.current.getClippedPathBoundingBox();
+    if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
         ctx.fill("evenodd");
         this.pendingEOFill = false;
@@ -1743,7 +1838,7 @@ class CanvasGraphics {
       ctx.restore();
     }
     if (consumePath) {
-      this.consumePath();
+      this.consumePath(intersect);
     }
   }
 
@@ -2360,7 +2455,6 @@ class CanvasGraphics {
     );
 
     const inv = ctx.mozCurrentTransformInverse;
-    let dirtyBox = [0, 0, ctx.canvas.width, ctx.canvas.height];
     if (inv) {
       const canvas = ctx.canvas;
       const width = canvas.width;
@@ -2375,10 +2469,6 @@ class CanvasGraphics {
       const y0 = Math.min(bl[1], br[1], ul[1], ur[1]);
       const x1 = Math.max(bl[0], br[0], ul[0], ur[0]);
       const y1 = Math.max(bl[1], br[1], ul[1], ur[1]);
-      dirtyBox = Util.getAxialAlignedBoundingBox(
-        [x0, y0, x1, y1],
-        ctx.mozCurrentTransform
-      );
 
       this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
     } else {
@@ -2391,7 +2481,7 @@ class CanvasGraphics {
       this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
     }
 
-    this.compose(dirtyBox);
+    this.compose(this.current.getClippedPathBoundingBox());
     this.restore();
   }
 
@@ -2421,6 +2511,16 @@ class CanvasGraphics {
       const width = bbox[2] - bbox[0];
       const height = bbox[3] - bbox[1];
       this.ctx.rect(bbox[0], bbox[1], width, height);
+      this.current.updatePathMinMax(
+        this.ctx.mozCurrentTransform,
+        bbox[0],
+        bbox[1]
+      );
+      this.current.updatePathMinMax(
+        this.ctx.mozCurrentTransform,
+        bbox[2],
+        bbox[3]
+      );
       this.clip();
       this.endPath();
     }
@@ -2510,6 +2610,8 @@ class CanvasGraphics {
       scaleY = drawnHeight / MAX_GROUP_SIZE;
       drawnHeight = MAX_GROUP_SIZE;
     }
+
+    this.current.startNewPathAndClipBox([0, 0, drawnWidth, drawnHeight]);
 
     let cacheId = "groupAt" + this.groupLevel;
     if (group.smask) {
@@ -2617,7 +2719,10 @@ class CanvasGraphics {
   beginAnnotation(id, rect, transform, matrix) {
     this.save();
     resetCtxToDefault(this.ctx);
-    this.current = new CanvasExtraState();
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
 
     if (Array.isArray(rect) && rect.length === 4) {
       const width = rect[2] - rect[0];
@@ -2950,9 +3055,12 @@ class CanvasGraphics {
 
   // Helper functions
 
-  consumePath() {
+  consumePath(clipBox) {
+    if (this.pendingClip) {
+      this.current.updateClipFromPath();
+    }
     if (!this.pendingClip) {
-      this.compose();
+      this.compose(clipBox);
     }
     const ctx = this.ctx;
     if (this.pendingClip) {
