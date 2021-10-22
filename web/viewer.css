@@ -1707,6 +1707,7 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
 }
 #PDFBug table {
   font-size: 10px;
+  white-space: pre;
 }
 #PDFBug table.showText {
   border-collapse: collapse;
