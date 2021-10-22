@@ -110,7 +110,11 @@ const loadingTask = pdfjsLib.getDocument({
       console.log();
 
       const opList = await page.getOperatorList();
-      const svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
+      const svgGfx = new pdfjsLib.SVGGraphics(
+        page.commonObjs,
+        page.objs,
+        /* forceDataSchema = */ true
+      );
       svgGfx.embedFonts = true;
       const svg = await svgGfx.getSVG(opList, viewport);
       await writeSvgToFile(svg, getFilePathForPage(pageNum));
