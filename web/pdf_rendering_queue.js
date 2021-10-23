@@ -82,10 +82,11 @@ class PDFRenderingQueue {
       return;
     }
     // No pages needed rendering, so check thumbnails.
-    if (this.pdfThumbnailViewer && this.isThumbnailViewEnabled) {
-      if (this.pdfThumbnailViewer.forceRendering()) {
-        return;
-      }
+    if (
+      this.isThumbnailViewEnabled &&
+      this.pdfThumbnailViewer?.forceRendering()
+    ) {
+      return;
     }
 
     if (this.printing) {
