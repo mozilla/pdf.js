@@ -6,14 +6,14 @@
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es5",
-    "module": "es2015",
+    "target": "ESNext",
+    "module": "ESNext",
     "baseUrl": "./",
     "strict": true,
     "types": [],
     "lib": [
-      "es2017",
-      "dom"
+      "ESNext",
+      "DOM"
     ],
     "paths": {
       "pdfjs-dist": ["../../build/typestest"],
