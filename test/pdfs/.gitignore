@@ -17,6 +17,7 @@
 !issue2391-1.pdf
 !issue2391-2.pdf
 !issue14046.pdf
+!issue7891_bc1.pdf
 !issue3214.pdf
 !issue4665.pdf
 !issue4684.pdf
@@ -106,6 +107,7 @@
 !bug1057544.pdf
 !issue11150_reduced.pdf
 !issue6127.pdf
+!issue7891_bc0.pdf
 !issue11242_reduced.pdf
 !issue11279.pdf
 !issue11362.pdf
@@ -246,6 +248,7 @@
 !issue2931.pdf
 !issue3323.pdf
 !issue4304.pdf
+!issue9017_reduced.pdf
 !issue4379.pdf
 !issue4550.pdf
 !issue13316_reduced.pdf
@@ -381,6 +384,7 @@
 !issue5044.pdf
 !issue1512r.pdf
 !issue2128r.pdf
+!bug1703683_page2_reduced.pdf
 !issue5540.pdf
 !issue5549.pdf
 !visibility_expressions.pdf
@@ -435,6 +439,7 @@
 !annotation-freetext.pdf
 !annotation-line.pdf
 !evaljs.pdf
+!issue12798_page1_reduced.pdf
 !annotation-line-without-appearance.pdf
 !bug1669099.pdf
 !annotation-square-circle.pdf
