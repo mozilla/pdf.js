@@ -60,6 +60,136 @@ const FULL_CHUNK_HEIGHT = 16;
 // Once the bug is fixed upstream, we can remove this constant and its use.
 const LINEWIDTH_SCALE_FACTOR = 1.000001;
 
+/**
+ * Overrides certain methods on a 2d ctx so that when they are called they
+ * will also call the same method on the destCtx. The methods that are
+ * overridden are all the transformation state modifiers, path creation, and
+ * save/restore. We only forward these specific methods because they are the
+ * only state modifiers that we cannot copy over when we switch contexts.
+ *
+ * To remove mirroring call `ctx._removeMirroring()`.
+ *
+ * @param {Object} ctx - The 2d canvas context that will duplicate its calls on
+ *   the destCtx.
+ * @param {Object} destCtx - The 2d canvas context that will receive the
+ *   forwarded calls.
+ */
+function mirrorContextOperations(ctx, destCtx) {
+  if (ctx._removeMirroring) {
+    throw new Error("Context is already forwarding operations.");
+  }
+  ctx.__originalSave = ctx.save;
+  ctx.__originalRestore = ctx.restore;
+  ctx.__originalRotate = ctx.rotate;
+  ctx.__originalScale = ctx.scale;
+  ctx.__originalTranslate = ctx.translate;
+  ctx.__originalTransform = ctx.transform;
+  ctx.__originalSetTransform = ctx.setTransform;
+  ctx.__originalResetTransform = ctx.resetTransform;
+  ctx.__originalClip = ctx.clip;
+  ctx.__originalMoveTo = ctx.moveTo;
+  ctx.__originalLineTo = ctx.lineTo;
+  ctx.__originalBezierCurveTo = ctx.bezierCurveTo;
+  ctx.__originalRect = ctx.rect;
+  ctx.__originalClosePath = ctx.closePath;
+  ctx.__originalBeginPath = ctx.beginPath;
+
+  ctx._removeMirroring = () => {
+    ctx.save = ctx.__originalSave;
+    ctx.restore = ctx.__originalRestore;
+    ctx.rotate = ctx.__originalRotate;
+    ctx.scale = ctx.__originalScale;
+    ctx.translate = ctx.__originalTranslate;
+    ctx.transform = ctx.__originalTransform;
+    ctx.setTransform = ctx.__originalSetTransform;
+    ctx.resetTransform = ctx.__originalResetTransform;
+
+    ctx.clip = ctx.__originalClip;
+    ctx.moveTo = ctx.__originalMoveTo;
+    ctx.lineTo = ctx.__originalLineTo;
+    ctx.bezierCurveTo = ctx.__originalBezierCurveTo;
+    ctx.rect = ctx.__originalRect;
+    ctx.closePath = ctx.__originalClosePath;
+    ctx.beginPath = ctx.__originalBeginPath;
+    delete ctx._removeMirroring;
+  };
+
+  ctx.save = function ctxSave() {
+    destCtx.save();
+    this.__originalSave();
+  };
+
+  ctx.restore = function ctxRestore() {
+    destCtx.restore();
+    this.__originalRestore();
+  };
+
+  ctx.translate = function ctxTranslate(x, y) {
+    destCtx.translate(x, y);
+    this.__originalTranslate(x, y);
+  };
+
+  ctx.scale = function ctxScale(x, y) {
+    destCtx.scale(x, y);
+    this.__originalScale(x, y);
+  };
+
+  ctx.transform = function ctxTransform(a, b, c, d, e, f) {
+    destCtx.transform(a, b, c, d, e, f);
+    this.__originalTransform(a, b, c, d, e, f);
+  };
+
+  ctx.setTransform = function ctxSetTransform(a, b, c, d, e, f) {
+    destCtx.setTransform(a, b, c, d, e, f);
+    this.__originalSetTransform(a, b, c, d, e, f);
+  };
+
+  ctx.resetTransform = function ctxResetTransform() {
+    destCtx.resetTransform();
+    this.__originalResetTransform();
+  };
+
+  ctx.rotate = function ctxRotate(angle) {
+    destCtx.rotate(angle);
+    this.__originalRotate(angle);
+  };
+
+  ctx.clip = function ctxRotate(rule) {
+    destCtx.clip(rule);
+    this.__originalClip(rule);
+  };
+
+  ctx.moveTo = function (x, y) {
+    destCtx.moveTo(x, y);
+    this.__originalMoveTo(x, y);
+  };
+
+  ctx.lineTo = function (x, y) {
+    destCtx.lineTo(x, y);
+    this.__originalLineTo(x, y);
+  };
+
+  ctx.bezierCurveTo = function (cp1x, cp1y, cp2x, cp2y, x, y) {
+    destCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+    this.__originalBezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+  };
+
+  ctx.rect = function (x, y, width, height) {
+    destCtx.rect(x, y, width, height);
+    this.__originalRect(x, y, width, height);
+  };
+
+  ctx.closePath = function () {
+    destCtx.closePath();
+    this.__originalClosePath();
+  };
+
+  ctx.beginPath = function () {
+    destCtx.beginPath();
+    this.__originalBeginPath();
+  };
+}
+
 function addContextCurrentTransform(ctx) {
   // If the context doesn't expose a `mozCurrentTransform`, add a JS based one.
   if (ctx.mozCurrentTransform) {
@@ -449,7 +579,7 @@ function compileType3Glyph(imgData) {
 }
 
 class CanvasExtraState {
-  constructor() {
+  constructor(width, height) {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -479,17 +609,55 @@ class CanvasExtraState {
     this.strokeAlpha = 1;
     this.lineWidth = 1;
     this.activeSMask = null;
-    this.resumeSMaskCtx = null; // nonclonable field (see the save method below)
     this.transferMaps = null;
+
+    this.startNewPathAndClipBox([0, 0, width, height]);
   }
 
   clone() {
-    return Object.create(this);
+    const clone = Object.create(this);
+    clone.clipBox = this.clipBox.slice();
+    return clone;
   }
 
   setCurrentPoint(x, y) {
     this.x = x;
     this.y = y;
+  }
+
+  updatePathMinMax(transform, x, y) {
+    [x, y] = Util.applyTransform([x, y], transform);
+    this.minX = Math.min(this.minX, x);
+    this.minY = Math.min(this.minY, y);
+    this.maxX = Math.max(this.maxX, x);
+    this.maxY = Math.max(this.maxY, y);
+  }
+
+  updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3) {
+    const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3);
+    this.updatePathMinMax(transform, box[0], box[1]);
+    this.updatePathMinMax(transform, box[2], box[3]);
+  }
+
+  getPathBoundingBox() {
+    return [this.minX, this.minY, this.maxX, this.maxY];
+  }
+
+  updateClipFromPath() {
+    const intersect = Util.intersect(this.clipBox, this.getPathBoundingBox());
+    this.startNewPathAndClipBox(intersect || [0, 0, 0, 0]);
+  }
+
+  startNewPathAndClipBox(box) {
+    this.clipBox = box;
+    this.minX = Infinity;
+    this.minY = Infinity;
+    this.maxX = 0;
+    this.maxY = 0;
+  }
+
+  getClippedPathBoundingBox() {
+    return Util.intersect(this.clipBox, this.getPathBoundingBox());
   }
 }
 
@@ -816,7 +984,11 @@ function genericComposeSMask(
   height,
   subtype,
   backdrop,
-  transferMap
+  transferMap,
+  layerOffsetX,
+  layerOffsetY,
+  maskOffsetX,
+  maskOffsetY
 ) {
   const hasBackdrop = !!backdrop;
   const r0 = hasBackdrop ? backdrop[0] : 0;
@@ -835,41 +1007,55 @@ function genericComposeSMask(
   const chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
   for (let row = 0; row < height; row += chunkSize) {
     const chunkHeight = Math.min(chunkSize, height - row);
-    const maskData = maskCtx.getImageData(0, row, width, chunkHeight);
-    const layerData = layerCtx.getImageData(0, row, width, chunkHeight);
+    const maskData = maskCtx.getImageData(
+      layerOffsetX - maskOffsetX,
+      row + (layerOffsetY - maskOffsetY),
+      width,
+      chunkHeight
+    );
+    const layerData = layerCtx.getImageData(
+      layerOffsetX,
+      row + layerOffsetY,
+      width,
+      chunkHeight
+    );
 
     if (hasBackdrop) {
       composeSMaskBackdrop(maskData.data, r0, g0, b0);
     }
     composeFn(maskData.data, layerData.data, transferMap);
 
-    maskCtx.putImageData(layerData, 0, row);
+    layerCtx.putImageData(layerData, layerOffsetX, row + layerOffsetY);
   }
 }
 
-function composeSMask(ctx, smask, layerCtx) {
-  const mask = smask.canvas;
-  const maskCtx = smask.context;
-
-  ctx.setTransform(
-    smask.scaleX,
-    0,
-    0,
-    smask.scaleY,
+function composeSMask(ctx, smask, layerCtx, layerBox) {
+  const layerOffsetX = layerBox[0];
+  const layerOffsetY = layerBox[1];
+  const layerWidth = layerBox[2] - layerOffsetX;
+  const layerHeight = layerBox[3] - layerOffsetY;
+  if (layerWidth === 0 || layerHeight === 0) {
+    return;
+  }
+  genericComposeSMask(
+    smask.context,
+    layerCtx,
+    layerWidth,
+    layerHeight,
+    smask.subtype,
+    smask.backdrop,
+    smask.transferMap,
+    layerOffsetX,
+    layerOffsetY,
     smask.offsetX,
     smask.offsetY
   );
-
-  genericComposeSMask(
-    maskCtx,
-    layerCtx,
-    mask.width,
-    mask.height,
-    smask.subtype,
-    smask.backdrop,
-    smask.transferMap
-  );
-  ctx.drawImage(mask, 0, 0);
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(layerCtx.canvas, 0, 0);
+  ctx.restore();
 }
 
 function getImageSmoothingEnabled(transform, interpolate) {
@@ -907,7 +1093,10 @@ class CanvasGraphics {
     optionalContentConfig
   ) {
     this.ctx = canvasCtx;
-    this.current = new CanvasExtraState();
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
     this.stateStack = [];
     this.pendingClip = null;
     this.pendingEOFill = false;
@@ -927,6 +1116,7 @@ class CanvasGraphics {
     this.smaskStack = [];
     this.smaskCounter = 0;
     this.tempSMask = null;
+    this.suspendedCtx = null;
     this.contentVisible = true;
     this.markedContentStack = [];
     this.optionalContentConfig = optionalContentConfig;
@@ -1319,25 +1509,9 @@ class CanvasGraphics {
           this.ctx.globalCompositeOperation = value;
           break;
         case "SMask":
-          if (this.current.activeSMask) {
-            // If SMask is currrenly used, it needs to be suspended or
-            // finished. Suspend only makes sense when at least one save()
-            // was performed and state needs to be reverted on restore().
-            if (
-              this.stateStack.length > 0 &&
-              this.stateStack[this.stateStack.length - 1].activeSMask ===
-                this.current.activeSMask
-            ) {
-              this.suspendSMaskGroup();
-            } else {
-              this.endSMaskGroup();
-            }
-          }
           this.current.activeSMask = value ? this.tempSMask : null;
-          if (this.current.activeSMask) {
-            this.beginSMaskGroup();
-          }
           this.tempSMask = null;
+          this.checkSMaskState();
           break;
         case "TR":
           this.current.transferMaps = value;
@@ -1345,10 +1519,31 @@ class CanvasGraphics {
     }
   }
 
-  beginSMaskGroup() {
-    const activeSMask = this.current.activeSMask;
-    const drawnWidth = activeSMask.canvas.width;
-    const drawnHeight = activeSMask.canvas.height;
+  checkSMaskState() {
+    const inSMaskMode = !!this.suspendedCtx;
+    if (this.current.activeSMask && !inSMaskMode) {
+      this.beginSMaskMode();
+    } else if (!this.current.activeSMask && inSMaskMode) {
+      this.endSMaskMode();
+    }
+    // Else, the state is okay and nothing needs to be done.
+  }
+
+  /**
+   * Soft mask mode takes the current main drawing canvas and replaces it with
+   * a temporary canvas. Any drawing operations that happen on the temporary
+   * canvas need to be composed with the main canvas that was suspended (see
+   * `compose()`). The temporary canvas also duplicates many of its operations
+   * on the suspended canvas to keep them in sync, so that when the soft mask
+   * mode ends any clipping paths or transformations will still be active and in
+   * the right order on the canvas' graphics state stack.
+   */
+  beginSMaskMode() {
+    if (this.suspendedCtx) {
+      throw new Error("beginSMaskMode called while already in smask mode");
+    }
+    const drawnWidth = this.ctx.canvas.width;
+    const drawnHeight = this.ctx.canvas.height;
     const cacheId = "smaskGroupAt" + this.groupLevel;
     const scratchCanvas = this.cachedCanvases.getCanvas(
       cacheId,
@@ -1356,84 +1551,57 @@ class CanvasGraphics {
       drawnHeight,
       true
     );
+    this.suspendedCtx = this.ctx;
+    this.ctx = scratchCanvas.context;
+    const ctx = this.ctx;
+    ctx.setTransform.apply(ctx, this.suspendedCtx.mozCurrentTransform);
+    copyCtxState(this.suspendedCtx, ctx);
+    mirrorContextOperations(ctx, this.suspendedCtx);
 
-    const currentCtx = this.ctx;
-    const currentTransform = currentCtx.mozCurrentTransform;
-    this.ctx.save();
-
-    const groupCtx = scratchCanvas.context;
-    groupCtx.scale(1 / activeSMask.scaleX, 1 / activeSMask.scaleY);
-    groupCtx.translate(-activeSMask.offsetX, -activeSMask.offsetY);
-    groupCtx.transform.apply(groupCtx, currentTransform);
-
-    activeSMask.startTransformInverse = groupCtx.mozCurrentTransformInverse;
-
-    copyCtxState(currentCtx, groupCtx);
-    this.ctx = groupCtx;
     this.setGState([
       ["BM", "source-over"],
       ["ca", 1],
       ["CA", 1],
     ]);
-    this.groupStack.push(currentCtx);
-    this.groupLevel++;
   }
 
-  suspendSMaskGroup() {
-    // Similar to endSMaskGroup, the intermediate canvas has to be composed
-    // and future ctx state restored.
-    const groupCtx = this.ctx;
-    this.groupLevel--;
-    this.ctx = this.groupStack.pop();
+  endSMaskMode() {
+    if (!this.suspendedCtx) {
+      throw new Error("endSMaskMode called while not in smask mode");
+    }
+    // The soft mask is done, now restore the suspended canvas as the main
+    // drawing canvas.
+    this.ctx._removeMirroring();
+    copyCtxState(this.ctx, this.suspendedCtx);
+    this.ctx = this.suspendedCtx;
 
-    composeSMask(this.ctx, this.current.activeSMask, groupCtx);
+    this.current.activeSMask = null;
+    this.suspendedCtx = null;
+  }
+
+  compose(dirtyBox) {
+    if (!this.current.activeSMask) {
+      return;
+    }
+
+    if (!dirtyBox) {
+      dirtyBox = [0, 0, this.ctx.canvas.width, this.ctx.canvas.height];
+    } else {
+      dirtyBox[0] = Math.floor(dirtyBox[0]);
+      dirtyBox[1] = Math.floor(dirtyBox[1]);
+      dirtyBox[2] = Math.ceil(dirtyBox[2]);
+      dirtyBox[3] = Math.ceil(dirtyBox[3]);
+    }
+    const smask = this.current.activeSMask;
+    const suspendedCtx = this.suspendedCtx;
+
+    composeSMask(suspendedCtx, smask, this.ctx, dirtyBox);
+    // Whatever was drawn has been moved to the suspended canvas, now clear it
+    // out of the current canvas.
+    this.ctx.save();
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.ctx.restore();
-    this.ctx.save(); // save is needed since SMask will be resumed.
-    copyCtxState(groupCtx, this.ctx);
-
-    // Saving state for resuming.
-    this.current.resumeSMaskCtx = groupCtx;
-    // Transform was changed in the SMask canvas, reflecting this change on
-    // this.ctx.
-    const deltaTransform = Util.transform(
-      this.current.activeSMask.startTransformInverse,
-      groupCtx.mozCurrentTransform
-    );
-    this.ctx.transform.apply(this.ctx, deltaTransform);
-
-    // SMask was composed, the results at the groupCtx can be cleared.
-    groupCtx.save();
-    groupCtx.setTransform(1, 0, 0, 1, 0, 0);
-    groupCtx.clearRect(0, 0, groupCtx.canvas.width, groupCtx.canvas.height);
-    groupCtx.restore();
-  }
-
-  resumeSMaskGroup() {
-    // Resuming state saved by suspendSMaskGroup. We don't need to restore
-    // any groupCtx state since restore() command (the only caller) will do
-    // that for us. See also beginSMaskGroup.
-    const groupCtx = this.current.resumeSMaskCtx;
-    const currentCtx = this.ctx;
-    this.ctx = groupCtx;
-    this.groupStack.push(currentCtx);
-    this.groupLevel++;
-  }
-
-  endSMaskGroup() {
-    const groupCtx = this.ctx;
-    this.groupLevel--;
-    this.ctx = this.groupStack.pop();
-
-    composeSMask(this.ctx, this.current.activeSMask, groupCtx);
-    this.ctx.restore();
-    copyCtxState(groupCtx, this.ctx);
-    // Transform was changed in the SMask canvas, reflecting this change on
-    // this.ctx.
-    const deltaTransform = Util.transform(
-      this.current.activeSMask.startTransformInverse,
-      groupCtx.mozCurrentTransform
-    );
-    this.ctx.transform.apply(this.ctx, deltaTransform);
   }
 
   save() {
@@ -1441,36 +1609,22 @@ class CanvasGraphics {
     const old = this.current;
     this.stateStack.push(old);
     this.current = old.clone();
-    this.current.resumeSMaskCtx = null;
   }
 
   restore() {
-    // SMask was suspended, we just need to resume it.
-    if (this.current.resumeSMaskCtx) {
-      this.resumeSMaskGroup();
-    }
-    // SMask has to be finished once there is no states that are using the
-    // same SMask.
-    if (
-      this.current.activeSMask !== null &&
-      (this.stateStack.length === 0 ||
-        this.stateStack[this.stateStack.length - 1].activeSMask !==
-          this.current.activeSMask)
-    ) {
-      this.endSMaskGroup();
+    if (this.stateStack.length === 0 && this.current.activeSMask) {
+      this.endSMaskMode();
     }
 
     if (this.stateStack.length !== 0) {
       this.current = this.stateStack.pop();
       this.ctx.restore();
+      this.checkSMaskState();
 
       // Ensure that the clipping path is reset (fixes issue6413.pdf).
       this.pendingClip = null;
 
       this._cachedGetSinglePixelWidth = null;
-    } else {
-      // We've finished all the SMask groups, reflect that in our state.
-      this.current.activeSMask = null;
     }
   }
 
@@ -1486,6 +1640,7 @@ class CanvasGraphics {
     const current = this.current;
     let x = current.x,
       y = current.y;
+    let startX, startY;
     for (let i = 0, j = 0, ii = ops.length; i < ii; i++) {
       switch (ops[i] | 0) {
         case OPS.rectangle:
@@ -1504,20 +1659,25 @@ class CanvasGraphics {
             ctx.lineTo(xw, yh);
             ctx.lineTo(x, yh);
           }
-
+          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
+          current.updatePathMinMax(ctx.mozCurrentTransform, xw, yh);
           ctx.closePath();
           break;
         case OPS.moveTo:
           x = args[j++];
           y = args[j++];
           ctx.moveTo(x, y);
+          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
           break;
         case OPS.lineTo:
           x = args[j++];
           y = args[j++];
           ctx.lineTo(x, y);
+          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
           break;
         case OPS.curveTo:
+          startX = x;
+          startY = y;
           x = args[j + 4];
           y = args[j + 5];
           ctx.bezierCurveTo(
@@ -1528,10 +1688,34 @@ class CanvasGraphics {
             x,
             y
           );
+          current.updateCurvePathMinMax(
+            ctx.mozCurrentTransform,
+            startX,
+            startY,
+            args[j],
+            args[j + 1],
+            args[j + 2],
+            args[j + 3],
+            x,
+            y
+          );
           j += 6;
           break;
         case OPS.curveTo2:
+          startX = x;
+          startY = y;
           ctx.bezierCurveTo(
+            x,
+            y,
+            args[j],
+            args[j + 1],
+            args[j + 2],
+            args[j + 3]
+          );
+          current.updateCurvePathMinMax(
+            ctx.mozCurrentTransform,
+            startX,
+            startY,
             x,
             y,
             args[j],
@@ -1544,9 +1728,22 @@ class CanvasGraphics {
           j += 4;
           break;
         case OPS.curveTo3:
+          startX = x;
+          startY = y;
           x = args[j + 2];
           y = args[j + 3];
           ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
+          current.updateCurvePathMinMax(
+            ctx.mozCurrentTransform,
+            startX,
+            startY,
+            args[j],
+            args[j + 1],
+            x,
+            y,
+            x,
+            y
+          );
           j += 4;
           break;
         case OPS.closePath:
@@ -1599,7 +1796,7 @@ class CanvasGraphics {
       }
     }
     if (consumePath) {
-      this.consumePath();
+      this.consumePath(this.current.getClippedPathBoundingBox());
     }
     // Restore the global alpha to the fill alpha
     ctx.globalAlpha = this.current.fillAlpha;
@@ -1627,7 +1824,8 @@ class CanvasGraphics {
       needRestore = true;
     }
 
-    if (this.contentVisible) {
+    const intersect = this.current.getClippedPathBoundingBox();
+    if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
         ctx.fill("evenodd");
         this.pendingEOFill = false;
@@ -1640,7 +1838,7 @@ class CanvasGraphics {
       ctx.restore();
     }
     if (consumePath) {
-      this.consumePath();
+      this.consumePath(intersect);
     }
   }
 
@@ -2092,6 +2290,7 @@ class CanvasGraphics {
       current.x += x * textHScale;
     }
     ctx.restore();
+    this.compose();
     return undefined;
   }
 
@@ -2282,6 +2481,7 @@ class CanvasGraphics {
       this.ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
     }
 
+    this.compose(this.current.getClippedPathBoundingBox());
     this.restore();
   }
 
@@ -2311,6 +2511,16 @@ class CanvasGraphics {
       const width = bbox[2] - bbox[0];
       const height = bbox[3] - bbox[1];
       this.ctx.rect(bbox[0], bbox[1], width, height);
+      this.current.updatePathMinMax(
+        this.ctx.mozCurrentTransform,
+        bbox[0],
+        bbox[1]
+      );
+      this.current.updatePathMinMax(
+        this.ctx.mozCurrentTransform,
+        bbox[2],
+        bbox[3]
+      );
       this.clip();
       this.endPath();
     }
@@ -2330,6 +2540,14 @@ class CanvasGraphics {
     }
 
     this.save();
+    // If there's an active soft mask we don't want it enabled for the group, so
+    // clear it out. The mask and suspended canvas will be restored in endGroup.
+    const suspendedCtx = this.suspendedCtx;
+    if (this.current.activeSMask) {
+      this.suspendedCtx = null;
+      this.current.activeSMask = null;
+    }
+
     const currentCtx = this.ctx;
     // TODO non-isolated groups - according to Rik at adobe non-isolated
     // group results aren't usually that different and they even have tools
@@ -2393,6 +2611,8 @@ class CanvasGraphics {
       drawnHeight = MAX_GROUP_SIZE;
     }
 
+    this.current.startNewPathAndClipBox([0, 0, drawnWidth, drawnHeight]);
+
     let cacheId = "groupAt" + this.groupLevel;
     if (group.smask) {
       // Using two cache entries is case if masks are used one after another.
@@ -2432,6 +2652,7 @@ class CanvasGraphics {
       currentCtx.setTransform(1, 0, 0, 1, 0, 0);
       currentCtx.translate(offsetX, offsetY);
       currentCtx.scale(scaleX, scaleY);
+      currentCtx.save();
     }
     // The transparency group inherits all off the current graphics state
     // except the blend mode, soft mask, and alpha constants.
@@ -2442,11 +2663,11 @@ class CanvasGraphics {
       ["ca", 1],
       ["CA", 1],
     ]);
-    this.groupStack.push(currentCtx);
+    this.groupStack.push({
+      ctx: currentCtx,
+      suspendedCtx,
+    });
     this.groupLevel++;
-
-    // Resetting mask state, masks will be applied on restore of the group.
-    this.current.activeSMask = null;
   }
 
   endGroup(group) {
@@ -2455,17 +2676,33 @@ class CanvasGraphics {
     }
     this.groupLevel--;
     const groupCtx = this.ctx;
-    this.ctx = this.groupStack.pop();
+    const { ctx, suspendedCtx } = this.groupStack.pop();
+    this.ctx = ctx;
     // Turn off image smoothing to avoid sub pixel interpolation which can
     // look kind of blurry for some pdfs.
     this.ctx.imageSmoothingEnabled = false;
 
+    if (suspendedCtx) {
+      this.suspendedCtx = suspendedCtx;
+    }
+
     if (group.smask) {
       this.tempSMask = this.smaskStack.pop();
+      this.restore();
     } else {
+      this.ctx.restore();
+      const currentMtx = this.ctx.mozCurrentTransform;
+      this.restore();
+      this.ctx.save();
+      this.ctx.setTransform.apply(this.ctx, currentMtx);
+      const dirtyBox = Util.getAxialAlignedBoundingBox(
+        [0, 0, groupCtx.canvas.width, groupCtx.canvas.height],
+        currentMtx
+      );
       this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      this.ctx.restore();
+      this.compose(dirtyBox);
     }
-    this.restore();
   }
 
   beginAnnotations() {
@@ -2482,7 +2719,10 @@ class CanvasGraphics {
   beginAnnotation(id, rect, transform, matrix) {
     this.save();
     resetCtxToDefault(this.ctx);
-    this.current = new CanvasExtraState();
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
 
     if (Array.isArray(rect) && rect.length === 4) {
       const width = rect[2] - rect[0];
@@ -2531,6 +2771,7 @@ class CanvasGraphics {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.drawImage(maskCanvas, mask.offsetX, mask.offsetY);
     ctx.restore();
+    this.compose();
   }
 
   paintImageMaskXObjectRepeat(
@@ -2565,6 +2806,7 @@ class CanvasGraphics {
       ctx.drawImage(mask.canvas, x, y);
     }
     ctx.restore();
+    this.compose();
   }
 
   paintImageMaskXObjectGroup(images) {
@@ -2610,6 +2852,7 @@ class CanvasGraphics {
       ctx.drawImage(maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
       ctx.restore();
     }
+    this.compose();
   }
 
   paintImageXObject(objId) {
@@ -2711,6 +2954,7 @@ class CanvasGraphics {
         height: height / ctx.mozCurrentTransformInverse[3],
       });
     }
+    this.compose();
     this.restore();
   }
 
@@ -2754,6 +2998,7 @@ class CanvasGraphics {
       }
       ctx.restore();
     }
+    this.compose();
   }
 
   paintSolidColorImageMask() {
@@ -2761,6 +3006,7 @@ class CanvasGraphics {
       return;
     }
     this.ctx.fillRect(0, 0, 1, 1);
+    this.compose();
   }
 
   // Marked content
@@ -2809,7 +3055,13 @@ class CanvasGraphics {
 
   // Helper functions
 
-  consumePath() {
+  consumePath(clipBox) {
+    if (this.pendingClip) {
+      this.current.updateClipFromPath();
+    }
+    if (!this.pendingClip) {
+      this.compose(clipBox);
+    }
     const ctx = this.ctx;
     if (this.pendingClip) {
       if (this.pendingClip === EO_CLIP) {
