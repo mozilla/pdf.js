@@ -1361,10 +1361,12 @@ class BaseViewer {
     return promise;
   }
 
-  /**
-   * @private
-   */
-  get _scrollAhead() {
+  #getScrollAhead(views) {
+    if (views.first.id === 1) {
+      return true;
+    } else if (views.last.id === this.pagesCount) {
+      return false;
+    }
     switch (this._scrollMode) {
       case ScrollMode.PAGE:
         return this._scrollModePageState.scrollDown;
@@ -1376,7 +1378,7 @@ class BaseViewer {
 
   forceRendering(currentlyVisiblePages) {
     const visiblePages = currentlyVisiblePages || this._getVisiblePages();
-    const scrollAhead = this._scrollAhead;
+    const scrollAhead = this.#getScrollAhead(visiblePages);
     const preRenderExtra =
       this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL;
