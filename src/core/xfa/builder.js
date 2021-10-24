@@ -66,7 +66,7 @@ class Empty extends XFAObject {
 }
 
 class Builder {
-  constructor() {
+  constructor(rootNameSpace = null) {
     this._namespaceStack = [];
     this._nsAgnosticLevel = 0;
 
@@ -76,7 +76,8 @@ class Builder {
     this._nextNsId = Math.max(
       ...Object.values(NamespaceIds).map(({ id }) => id)
     );
-    this._currentNamespace = new UnknownNamespace(++this._nextNsId);
+    this._currentNamespace =
+      rootNameSpace || new UnknownNamespace(++this._nextNsId);
   }
 
   buildRoot(ids) {

@@ -46,7 +46,7 @@ describe("XFAParser", function () {
           forbidden
         </dynamicRender>
       </acrobat7>
-      <autoSave>enabled</autoSave>      
+      <autoSave>enabled</autoSave>
       <submitUrl>
                  http://d.e.f
       </submitUrl>
@@ -414,7 +414,7 @@ describe("XFAParser", function () {
         [
           " The first line of this paragraph is indented a half-inch.\n",
           " Successive lines are not indented.\n",
-          " This is the last line of the paragraph.\n \n",
+          " This is the last line of the paragraph.\n ",
         ].join("")
       );
     });
