@@ -55,6 +55,7 @@ import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
+import { XFAFactory } from "./xfa/factory.js";
 
 class AnnotationFactory {
   /**
@@ -1097,6 +1098,10 @@ class MarkupAnnotation extends Annotation {
         // Fall back to the default background color.
         this.data.color = null;
       }
+    }
+
+    if (dict.has("RC")) {
+      this.data.richText = XFAFactory.getRichTextAsHtml(dict.get("RC"));
     }
   }
 
@@ -2545,6 +2550,10 @@ class PopupAnnotation extends Annotation {
 
     this.setContents(parentItem.get("Contents"));
     this.data.contentsObj = this._contents;
+
+    if (parentItem.has("RC")) {
+      this.data.richText = XFAFactory.getRichTextAsHtml(parentItem.get("RC"));
+    }
   }
 }
 

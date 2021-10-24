@@ -192,15 +192,19 @@
   display: inline-block;
 }
 
-.annotationLayer .popup span {
+.annotationLayer .popupDate {
   display: inline-block;
   margin-left: 5px;
 }
 
-.annotationLayer .popup p {
+.annotationLayer .popupContent {
   border-top: 1px solid rgba(51, 51, 51, 1);
   margin-top: 2px;
   padding-top: 2px;
+}
+
+.annotationLayer .richText > * {
+  white-space: pre-wrap;
 }
 
 .annotationLayer .highlightAnnotation,

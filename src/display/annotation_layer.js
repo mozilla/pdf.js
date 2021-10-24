@@ -30,6 +30,7 @@ import {
 } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
+import { XfaLayer } from "./xfa_layer.js";
 
 const DEFAULT_TAB_INDEX = 1000;
 const GetElementsByNameSet = new WeakSet();
@@ -322,6 +323,7 @@ class AnnotationElement {
       titleObj: data.titleObj,
       modificationDate: data.modificationDate,
       contentsObj: data.contentsObj,
+      richText: data.richText,
       hideWrapper: true,
     });
     const popup = popupElement.render();
@@ -676,7 +678,8 @@ class TextAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable });
   }
@@ -1546,7 +1549,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 class PopupAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     const isRenderable = !!(
-      parameters.data.titleObj?.str || parameters.data.contentsObj?.str
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable });
   }
@@ -1582,6 +1587,7 @@ class PopupAnnotationElement extends AnnotationElement {
       titleObj: this.data.titleObj,
       modificationDate: this.data.modificationDate,
       contentsObj: this.data.contentsObj,
+      richText: this.data.richText,
     });
 
     // Position the popup next to the parent annotation's container.
@@ -1614,6 +1620,7 @@ class PopupElement {
     this.titleObj = parameters.titleObj;
     this.modificationDate = parameters.modificationDate;
     this.contentsObj = parameters.contentsObj;
+    this.richText = parameters.richText;
     this.hideWrapper = parameters.hideWrapper || false;
 
     this.pinned = false;
@@ -1655,6 +1662,7 @@ class PopupElement {
     const dateObject = PDFDateString.toDateObject(this.modificationDate);
     if (dateObject) {
       const modificationDate = document.createElement("span");
+      modificationDate.className = "popupDate";
       modificationDate.textContent = "{{date}}, {{time}}";
       modificationDate.dataset.l10nId = "annotation_date_string";
       modificationDate.dataset.l10nArgs = JSON.stringify({
@@ -1664,8 +1672,20 @@ class PopupElement {
       popup.appendChild(modificationDate);
     }
 
-    const contents = this._formatContents(this.contentsObj);
-    popup.appendChild(contents);
+    if (
+      this.richText?.str &&
+      (!this.contentsObj?.str || this.contentsObj.str === this.richText.str)
+    ) {
+      XfaLayer.render({
+        xfa: this.richText.html,
+        intent: "richText",
+        div: popup,
+      });
+      popup.lastChild.className = "richText popupContent";
+    } else {
+      const contents = this._formatContents(this.contentsObj);
+      popup.appendChild(contents);
+    }
 
     if (!Array.isArray(this.trigger)) {
       this.trigger = [this.trigger];
@@ -1693,6 +1713,7 @@ class PopupElement {
    */
   _formatContents({ str, dir }) {
     const p = document.createElement("p");
+    p.className = "popupContent";
     p.dir = dir;
     const lines = str.split(/(?:\r\n?|\n)/);
     for (let i = 0, ii = lines.length; i < ii; ++i) {
@@ -1759,7 +1780,8 @@ class FreeTextAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1779,7 +1801,8 @@ class LineAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1824,7 +1847,8 @@ class SquareAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1871,7 +1895,8 @@ class CircleAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -1918,7 +1943,8 @@ class PolylineAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
 
@@ -1983,7 +2009,8 @@ class CaretAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -2003,7 +2030,8 @@ class InkAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
 
@@ -2062,7 +2090,8 @@ class HighlightAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, {
       isRenderable,
@@ -2090,7 +2119,8 @@ class UnderlineAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, {
       isRenderable,
@@ -2118,7 +2148,8 @@ class SquigglyAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, {
       isRenderable,
@@ -2146,7 +2177,8 @@ class StrikeOutAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, {
       isRenderable,
@@ -2174,7 +2206,8 @@ class StampAnnotationElement extends AnnotationElement {
     const isRenderable = !!(
       parameters.data.hasPopup ||
       parameters.data.titleObj?.str ||
-      parameters.data.contentsObj?.str
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
     );
     super(parameters, { isRenderable, ignoreBorder: true });
   }
@@ -2215,7 +2248,9 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
 
     if (
       !this.data.hasPopup &&
-      (this.data.titleObj?.str || this.data.contentsObj?.str)
+      (this.data.titleObj?.str ||
+        this.data.contentsObj?.str ||
+        this.data.richText)
     ) {
       this._createPopup(trigger, this.data);
     }
