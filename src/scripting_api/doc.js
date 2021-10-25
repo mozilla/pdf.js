@@ -69,6 +69,7 @@ class Doc extends PDFObject {
     this._subject = data.Subject || "";
     this._title = data.Title || "";
     this._URL = data.URL || "";
+    this._securityHandler = data.securityHandler || "";
 
     // info has case insensitive properties
     // and they're are read-only.
@@ -522,11 +523,11 @@ class Doc extends PDFObject {
   }
 
   get securityHandler() {
-    return null;
+    return this._securityHandler;
   }
 
-  set securityHandler(_) {
-    throw new Error("doc.securityHandler is read-only");
+  set securityHandler(securityHandler) {
+    this._securityHandler = securityHandler;
   }
 
   get selectedAnnots() {

@@ -3049,6 +3049,7 @@ class WorkerTransport {
           metadata: results[1] ? new Metadata(results[1]) : null,
           contentDispositionFilename: this._fullReader?.filename ?? null,
           contentLength: this._fullReader?.contentLength ?? null,
+          securityHandler: "Standard",
         };
       });
   }

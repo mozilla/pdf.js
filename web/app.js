@@ -259,6 +259,7 @@ const PDFViewerApplication = {
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
+  securityHandler: "",
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -854,6 +855,7 @@ const PDFViewerApplication = {
     this._contentDispositionFilename = null;
     this._contentLength = null;
     this._saveInProgress = false;
+    this.securityHandler = "";
 
     this._cancelIdleCallbacks();
     promises.push(this.pdfScriptingManager.destroyPromise);
@@ -1449,6 +1451,7 @@ const PDFViewerApplication = {
       authors: this.metadata?.get("dc:creator"),
       numPages: this.pagesCount,
       URL: this.url,
+      securityHandler: this.securityHandler,
     };
   },
 
@@ -1517,7 +1520,7 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializeMetadata(pdfDocument) {
-    const { info, metadata, contentDispositionFilename, contentLength } =
+    const { info, metadata, contentDispositionFilename, contentLength, securityHandler } =
       await pdfDocument.getMetadata();
 
     if (pdfDocument !== this.pdfDocument) {
@@ -1527,6 +1530,7 @@ const PDFViewerApplication = {
     this.metadata = metadata;
     this._contentDispositionFilename ??= contentDispositionFilename;
     this._contentLength ??= contentLength; // See `getDownloadInfo`-call above.
+    this.securityHandler = securityHandler;
 
     // Provides some basic debug information
     console.log(

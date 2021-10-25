@@ -19,7 +19,7 @@ async function docPropertiesLookup(pdfDocument) {
   const url = "",
     baseUrl = url.split("#")[0];
   // eslint-disable-next-line prefer-const
-  let { info, metadata, contentDispositionFilename, contentLength } =
+  let { info, metadata, contentDispositionFilename, contentLength, securityHandler } =
     await pdfDocument.getMetadata();
 
   if (!contentLength) {
@@ -36,6 +36,7 @@ async function docPropertiesLookup(pdfDocument) {
     authors: metadata?.get("dc:creator"),
     numPages: pdfDocument.numPages,
     URL: url,
+    securityHandler,
   };
 }
 
