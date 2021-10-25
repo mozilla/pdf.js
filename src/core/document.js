@@ -71,6 +71,7 @@ import { XRef } from "./xref.js";
 
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
+const UNRENDERED_ANNOTATIONS = ["Text", "Highlight"];
 
 class Page {
   constructor({
@@ -397,6 +398,7 @@ class Page {
         // is resolved with the complete operator list for a single annotation.
         const opListPromises = [];
         for (const annotation of annotations) {
+          if (UNRENDERED_ANNOTATIONS.includes(annotation.data.subtype)) continue;
           if (
             intentAny ||
             (intentDisplay && annotation.mustBeViewed(annotationStorage)) ||
