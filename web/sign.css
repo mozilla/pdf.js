@@ -1,0 +1,14 @@
+< !DOCTYPE html >
+    <html>
+        <body>
+
+            <h2>Please Sign Date And Blue.</h2>
+
+            <form action="/action_page.php">
+                <label for="signature">Signature:</label><br>
+                    <input type="text" id="signature" name="Signature"><br>
+                    </form>
+
+                    </body>
+                </html>
+
