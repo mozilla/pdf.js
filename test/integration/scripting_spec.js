@@ -896,4 +896,26 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in secHandler.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("secHandler.pdf", "#\\32 5R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+    it("must print securityHandler value in a text field", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const text = await actAndWaitForInput(page, "#\\32 5R", async () => {
+            await page.click("[data-annotation-id='26R']");
+          });
+          expect(text).withContext(`In ${browserName}`).toEqual("Standard");
+        })
+      );
+    });
+  });
 });

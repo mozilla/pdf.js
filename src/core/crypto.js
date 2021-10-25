@@ -1689,6 +1689,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
       if (!isName(filter, "Standard")) {
         throw new FormatError("unknown encryption method");
       }
+      this.filterName = filter.name;
       this.dict = dict;
       const algorithm = dict.get("V");
       if (
