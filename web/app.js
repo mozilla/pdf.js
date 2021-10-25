@@ -1632,12 +1632,6 @@ const PDFViewerApplication = {
       return;
     }
     const numLabels = labels.length;
-    if (numLabels !== this.pagesCount) {
-      console.error(
-        "The number of Page Labels does not match the number of pages in the document."
-      );
-      return;
-    }
     let i = 0;
     // Ignore page labels that correspond to standard page numbering.
     while (i < numLabels && labels[i] === (i + 1).toString()) {
