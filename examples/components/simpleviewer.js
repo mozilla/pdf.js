@@ -92,10 +92,11 @@ const loadingTask = pdfjsLib.getDocument({
   cMapPacked: CMAP_PACKED,
   enableXfa: ENABLE_XFA,
 });
-loadingTask.promise.then(function (pdfDocument) {
+(async function () {
+  const pdfDocument = await loadingTask.promise;
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfViewer.setDocument(pdfDocument);
 
   pdfLinkService.setDocument(pdfDocument, null);
-});
+})();
