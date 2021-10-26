@@ -30,9 +30,9 @@ import {
 } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
-import { UNRENDERED_ANNOTATIONS } from "../core/document";
 
 const DEFAULT_TAB_INDEX = 1000;
+const UNRENDERED_ANNOTATIONS = [AnnotationType.TEXT, AnnotationType.HIGHLIGHT];
 const GetElementsByNameSet = new WeakSet();
 
 /**
@@ -2271,7 +2271,7 @@ class AnnotationLayer {
     // upon the parent annotation having already been rendered (please refer to
     // the `PopupAnnotationElement.render` method); fixes issue 11362.
     for (const data of parameters.annotations) {
-      if (!data || UNRENDERED_ANNOTATIONS.includes(data.subtype)) {
+      if (!data || UNRENDERED_ANNOTATIONS.includes(data.annotationType)) {
         continue;
       }
       if (data.annotationType === AnnotationType.POPUP) {
