@@ -230,7 +230,8 @@ function webViewerLoad() {
         document.dispatchEvent(event);
       }
     }
-
+    AppOptions.set('defaultUrl', `../../../PDFPipe.aspx${ window.decodeURIComponent(location.search) }`);
+    
     PDFViewerApplication.run(config);
   }
 }

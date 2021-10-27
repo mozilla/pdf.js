@@ -1,0 +1,2763 @@
+/* Copyright 2014 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.textLayer {
+  position: absolute;
+  text-align: initial;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2;
+  line-height: 1;
+}
+
+.textLayer span,
+.textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer .highlight {
+  margin: -1px;
+  padding: 1px;
+  background-color: rgba(180, 0, 170, 1);
+  border-radius: 4px;
+}
+
+.textLayer .highlight.appended {
+  position: initial;
+}
+
+.textLayer .highlight.begin {
+  border-radius: 4px 0 0 4px;
+}
+
+.textLayer .highlight.end {
+  border-radius: 0 4px 4px 0;
+}
+
+.textLayer .highlight.middle {
+  border-radius: 0;
+}
+
+.textLayer .highlight.selected {
+  background-color: rgba(0, 100, 0, 1);
+}
+
+.textLayer ::-moz-selection {
+  background: rgba(0, 0, 255, 1);
+}
+
+.textLayer ::selection {
+  background: rgba(0, 0, 255, 1);
+}
+
+/* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
+.textLayer br::-moz-selection {
+  background: transparent;
+}
+.textLayer br::selection {
+  background: transparent;
+}
+
+.textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  cursor: default;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.textLayer .endOfContent.active {
+  top: 0;
+}
+
+
+:root {
+  --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+}
+
+.annotationLayer section {
+  position: absolute;
+  text-align: initial;
+}
+
+.annotationLayer .linkAnnotation > a,
+.annotationLayer .buttonWidgetAnnotation.pushButton > a {
+  position: absolute;
+  font-size: 1em;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.annotationLayer .linkAnnotation > a:hover,
+.annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
+  opacity: 0.2;
+  background: rgba(255, 255, 0, 1);
+  box-shadow: 0 2px 10px rgba(255, 255, 0, 1);
+}
+
+.annotationLayer .textAnnotation img {
+  position: absolute;
+  cursor: pointer;
+}
+
+.annotationLayer .textWidgetAnnotation input,
+.annotationLayer .textWidgetAnnotation textarea,
+.annotationLayer .choiceWidgetAnnotation select,
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  background-image: var(--annotation-unfocused-field-background);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  font-size: 9px;
+  height: 100%;
+  margin: 0;
+  padding: 0 3px;
+  vertical-align: top;
+  width: 100%;
+}
+
+.annotationLayer .choiceWidgetAnnotation select option {
+  padding: 0;
+}
+
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  border-radius: 50%;
+}
+
+.annotationLayer .textWidgetAnnotation textarea {
+  font: message-box;
+  font-size: 9px;
+  resize: none;
+}
+
+.annotationLayer .textWidgetAnnotation input[disabled],
+.annotationLayer .textWidgetAnnotation textarea[disabled],
+.annotationLayer .choiceWidgetAnnotation select[disabled],
+.annotationLayer .buttonWidgetAnnotation.checkBox input[disabled],
+.annotationLayer .buttonWidgetAnnotation.radioButton input[disabled] {
+  background: none;
+  border: 1px solid transparent;
+  cursor: not-allowed;
+}
+
+.annotationLayer .textWidgetAnnotation input:hover,
+.annotationLayer .textWidgetAnnotation textarea:hover,
+.annotationLayer .choiceWidgetAnnotation select:hover,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:hover,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:hover {
+  border: 1px solid rgba(0, 0, 0, 1);
+}
+
+.annotationLayer .textWidgetAnnotation input:focus,
+.annotationLayer .textWidgetAnnotation textarea:focus,
+.annotationLayer .choiceWidgetAnnotation select:focus {
+  background: none;
+  border: 1px solid transparent;
+}
+
+.annotationLayer .textWidgetAnnotation input :focus,
+.annotationLayer .textWidgetAnnotation textarea :focus,
+.annotationLayer .choiceWidgetAnnotation select :focus,
+.annotationLayer .buttonWidgetAnnotation.checkBox :focus,
+.annotationLayer .buttonWidgetAnnotation.radioButton :focus {
+  background-image: none;
+  background-color: transparent;
+  outline: auto;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
+  background-color: rgba(0, 0, 0, 1);
+  content: "";
+  display: block;
+  position: absolute;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
+  height: 80%;
+  left: 45%;
+  width: 1px;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before {
+  transform: rotate(45deg);
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
+  transform: rotate(-45deg);
+}
+
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
+  border-radius: 50%;
+  height: 50%;
+  left: 30%;
+  top: 20%;
+  width: 50%;
+}
+
+.annotationLayer .textWidgetAnnotation input.comb {
+  font-family: monospace;
+  padding-left: 2px;
+  padding-right: 0;
+}
+
+.annotationLayer .textWidgetAnnotation input.comb:focus {
+  /*
+   * Letter spacing is placed on the right side of each character. Hence, the
+   * letter spacing of the last character may be placed outside the visible
+   * area, causing horizontal scrolling. We avoid this by extending the width
+   * when the element has focus and revert this when it loses focus.
+   */
+  width: 103%;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  padding: 0;
+}
+
+.annotationLayer .popupWrapper {
+  position: absolute;
+  width: 20em;
+}
+
+.annotationLayer .popup {
+  position: absolute;
+  z-index: 200;
+  max-width: 20em;
+  background-color: rgba(255, 255, 153, 1);
+  box-shadow: 0 2px 5px rgba(136, 136, 136, 1);
+  border-radius: 2px;
+  padding: 6px;
+  margin-left: 5px;
+  cursor: pointer;
+  font: message-box;
+  font-size: 9px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.annotationLayer .popup > * {
+  font-size: 9px;
+}
+
+.annotationLayer .popup h1 {
+  display: inline-block;
+}
+
+.annotationLayer .popup span {
+  display: inline-block;
+  margin-left: 5px;
+}
+
+.annotationLayer .popup p {
+  border-top: 1px solid rgba(51, 51, 51, 1);
+  margin-top: 2px;
+  padding-top: 2px;
+}
+
+.annotationLayer .highlightAnnotation,
+.annotationLayer .underlineAnnotation,
+.annotationLayer .squigglyAnnotation,
+.annotationLayer .strikeoutAnnotation,
+.annotationLayer .freeTextAnnotation,
+.annotationLayer .lineAnnotation svg line,
+.annotationLayer .squareAnnotation svg rect,
+.annotationLayer .circleAnnotation svg ellipse,
+.annotationLayer .polylineAnnotation svg polyline,
+.annotationLayer .polygonAnnotation svg polygon,
+.annotationLayer .caretAnnotation,
+.annotationLayer .inkAnnotation svg polyline,
+.annotationLayer .stampAnnotation,
+.annotationLayer .fileAttachmentAnnotation {
+  cursor: pointer;
+}
+
+
+:root {
+  --xfa-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+}
+
+.xfaLayer .highlight {
+  margin: -1px;
+  padding: 1px;
+  background-color: rgba(239, 203, 237, 1);
+  border-radius: 4px;
+}
+
+.xfaLayer .highlight.appended {
+  position: initial;
+}
+
+.xfaLayer .highlight.begin {
+  border-radius: 4px 0 0 4px;
+}
+
+.xfaLayer .highlight.end {
+  border-radius: 0 4px 4px 0;
+}
+
+.xfaLayer .highlight.middle {
+  border-radius: 0;
+}
+
+.xfaLayer .highlight.selected {
+  background-color: rgba(203, 223, 203, 1);
+}
+
+.xfaLayer ::-moz-selection {
+  background: rgba(0, 0, 255, 1);
+}
+
+.xfaLayer ::selection {
+  background: rgba(0, 0, 255, 1);
+}
+
+.xfaPage {
+  overflow: hidden;
+  position: relative;
+}
+
+.xfaContentarea {
+  position: absolute;
+}
+
+.xfaPrintOnly {
+  display: none;
+}
+
+.xfaLayer {
+  position: absolute;
+  text-align: initial;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  line-height: 1.2;
+}
+
+.xfaLayer * {
+  color: inherit;
+  font: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+  font-kerning: inherit;
+  letter-spacing: -0.01px;
+  text-align: inherit;
+  text-decoration: inherit;
+  box-sizing: border-box;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  pointer-events: auto;
+  line-height: inherit;
+}
+
+.xfaLayer div {
+  pointer-events: none;
+}
+
+.xfaLayer svg {
+  pointer-events: none;
+}
+
+.xfaLayer svg * {
+  pointer-events: none;
+}
+
+.xfaLayer a {
+  color: blue;
+}
+
+.xfaRich li {
+  margin-left: 3em;
+}
+
+.xfaFont {
+  color: black;
+  font-weight: normal;
+  font-kerning: none;
+  font-size: 10px;
+  font-style: normal;
+  letter-spacing: 0;
+  text-decoration: none;
+  vertical-align: 0;
+}
+
+.xfaCaption {
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.xfaCaptionForCheckButton {
+  overflow: hidden;
+  flex: 1 1 auto;
+}
+
+.xfaLabel {
+  height: 100%;
+  width: 100%;
+}
+
+.xfaLeft {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.xfaRight {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+}
+
+.xfaLeft > .xfaCaption,
+.xfaLeft > .xfaCaptionForCheckButton,
+.xfaRight > .xfaCaption,
+.xfaRight > .xfaCaptionForCheckButton {
+  max-height: 100%;
+}
+
+.xfaTop {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.xfaBottom {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+}
+
+.xfaTop > .xfaCaption,
+.xfaTop > .xfaCaptionForCheckButton,
+.xfaBottom > .xfaCaption,
+.xfaBottom > .xfaCaptionForCheckButton {
+  width: 100%;
+}
+
+.xfaBorder {
+  background-color: transparent;
+  position: absolute;
+  pointer-events: none;
+}
+
+.xfaWrapped {
+  width: 100%;
+  height: 100%;
+}
+
+.xfaTextfield:focus,
+.xfaSelect:focus {
+  background-image: none;
+  background-color: transparent;
+  outline: auto;
+  outline-offset: -1px;
+}
+
+.xfaCheckbox:focus,
+.xfaRadio:focus {
+  outline: auto;
+}
+
+.xfaTextfield,
+.xfaSelect {
+  height: 100%;
+  width: 100%;
+  flex: 1 1 auto;
+  border: none;
+  resize: none;
+  background-image: var(--xfa-unfocused-field-background);
+}
+
+.xfaTop > .xfaTextfield,
+.xfaTop > .xfaSelect,
+.xfaBottom > .xfaTextfield,
+.xfaBottom > .xfaSelect {
+  flex: 0 1 auto;
+}
+
+.xfaButton {
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border: none;
+  text-align: center;
+}
+
+.xfaLink {
+  width: 100%;
+  height: 100%;
+}
+
+.xfaCheckbox,
+.xfaRadio {
+  width: 100%;
+  height: 100%;
+  flex: 0 0 auto;
+  border: none;
+}
+
+.xfaRich {
+  white-space: pre-wrap;
+  width: 100%;
+  height: 100%;
+}
+
+.xfaImage {
+  -o-object-position: left top;
+     object-position: left top;
+  -o-object-fit: contain;
+     object-fit: contain;
+  width: 100%;
+  height: 100%;
+}
+
+.xfaLrTb,
+.xfaRlTb,
+.xfaTb {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.xfaLr {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.xfaRl {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: stretch;
+}
+
+.xfaTb > div {
+  justify-content: left;
+}
+
+.xfaPosition {
+  position: relative;
+}
+
+.xfaArea {
+  position: relative;
+}
+
+.xfaValignMiddle {
+  display: flex;
+  align-items: center;
+}
+
+.xfaTable {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.xfaTable .xfaRow {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.xfaTable .xfaRlRow {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: stretch;
+  flex: 1;
+}
+
+.xfaTable .xfaRlRow > div {
+  flex: 1;
+}
+
+.xfaNonInteractive input,
+.xfaNonInteractive textarea,
+.xfaDisabled input,
+.xfaDisabled textarea,
+.xfaReadOnly input,
+.xfaReadOnly textarea {
+  background: initial;
+}
+
+@media print {
+  .xfaTextfield,
+  .xfaSelect {
+    background: transparent;
+  }
+
+  .xfaSelect {
+    -webkit-appearance: none;
+       -moz-appearance: none;
+            appearance: none;
+    text-indent: 1px;
+    text-overflow: "";
+  }
+}
+
+:root {
+  --pdfViewer-padding-bottom: none;
+  --page-margin: 1px auto -8px;
+  --page-border: 9px solid transparent;
+  --spreadHorizontalWrapped-margin-LR: -3.5px;
+  --zoom-factor: 1;
+}
+
+@media screen and (forced-colors: active) {
+  :root {
+    --pdfViewer-padding-bottom: 9px;
+    --page-margin: 9px auto 0;
+    --page-border: none;
+    --spreadHorizontalWrapped-margin-LR: 4.5px;
+  }
+}
+
+.pdfViewer {
+  padding-bottom: var(--pdfViewer-padding-bottom);
+}
+
+.pdfViewer .canvasWrapper {
+  overflow: hidden;
+}
+
+.pdfViewer .page {
+  direction: ltr;
+  width: 816px;
+  height: 1056px;
+  margin: var(--page-margin);
+  position: relative;
+  overflow: visible;
+  border: var(--page-border);
+  background-clip: content-box;
+  -o-border-image: url(images/shadow.png) 9 9 repeat;
+     border-image: url(images/shadow.png) 9 9 repeat;
+  background-color: rgba(255, 255, 255, 1);
+}
+
+.pdfViewer.removePageBorders .page {
+  margin: 0 auto 10px;
+  border: none;
+}
+
+.pdfViewer.singlePageView {
+  display: inline-block;
+}
+
+.pdfViewer.singlePageView .page {
+  margin: 0;
+  border: none;
+}
+
+.pdfViewer.scrollHorizontal,
+.pdfViewer.scrollWrapped,
+.spread {
+  margin-left: 3.5px;
+  margin-right: 3.5px;
+  text-align: center;
+}
+
+.pdfViewer.scrollHorizontal,
+.spread {
+  white-space: nowrap;
+}
+
+.pdfViewer.removePageBorders,
+.pdfViewer.scrollHorizontal .spread,
+.pdfViewer.scrollWrapped .spread {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.spread .page,
+.pdfViewer.scrollHorizontal .page,
+.pdfViewer.scrollWrapped .page,
+.pdfViewer.scrollHorizontal .spread,
+.pdfViewer.scrollWrapped .spread {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.spread .page,
+.pdfViewer.scrollHorizontal .page,
+.pdfViewer.scrollWrapped .page {
+  margin-left: var(--spreadHorizontalWrapped-margin-LR);
+  margin-right: var(--spreadHorizontalWrapped-margin-LR);
+}
+
+.pdfViewer.removePageBorders .spread .page,
+.pdfViewer.removePageBorders.scrollHorizontal .page,
+.pdfViewer.removePageBorders.scrollWrapped .page {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.pdfViewer .page canvas {
+  margin: 0;
+  display: block;
+}
+
+.pdfViewer .page canvas[hidden] {
+  display: none;
+}
+
+.pdfViewer .page .loadingIcon {
+  position: absolute;
+  display: block;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: url("images/loading-icon.gif") center no-repeat;
+}
+
+.pdfPresentationMode .pdfViewer {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.pdfPresentationMode .pdfViewer .page,
+.pdfPresentationMode .pdfViewer .spread {
+  display: block;
+}
+
+.pdfPresentationMode .pdfViewer .page,
+.pdfPresentationMode .pdfViewer.removePageBorders .page {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pdfPresentationMode:-webkit-full-screen .pdfViewer .page {
+  margin-bottom: 100%;
+  border: 0;
+}
+
+.pdfPresentationMode:fullscreen .pdfViewer .page {
+  margin-bottom: 100%;
+  border: 0;
+}
+
+:root {
+  --sidebar-width: 200px;
+  --sidebar-transition-duration: 200ms;
+  --sidebar-transition-timing-function: ease;
+  --scale-select-container-width: 140px;
+  --scale-select-overflow: 22px;
+  --loadingBar-end-offset: 0;
+
+  --toolbar-icon-opacity: 0.7;
+  --doorhanger-icon-opacity: 0.9;
+
+  --main-color: rgba(12, 12, 13, 1);
+  --body-bg-color: rgba(237, 237, 240, 1);
+  --errorWrapper-bg-color: rgba(255, 110, 110, 1);
+  --progressBar-color: rgba(10, 132, 255, 1);
+  --progressBar-indeterminate-bg-color: rgba(221, 221, 222, 1);
+  --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
+  --scrollbar-color: auto;
+  --scrollbar-bg-color: auto;
+  --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
+  --toolbar-icon-hover-bg-color: rgba(0, 0, 0, 1);
+
+  --sidebar-narrow-bg-color: rgba(237, 237, 240, 0.9);
+  --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
+  --toolbar-bg-color: rgba(249, 249, 250, 1);
+  --toolbar-border-color: rgba(204, 204, 204, 1);
+  --button-hover-color: rgba(221, 222, 223, 1);
+  --toggled-btn-color: rgba(0, 0, 0, 1);
+  --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+  --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
+  --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
+  --separator-color: rgba(0, 0, 0, 0.3);
+  --field-color: rgba(6, 6, 6, 1);
+  --field-bg-color: rgba(255, 255, 255, 1);
+  --field-border-color: rgba(187, 187, 188, 1);
+  --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
+  --treeitem-color: rgba(0, 0, 0, 0.8);
+  --treeitem-hover-color: rgba(0, 0, 0, 0.9);
+  --treeitem-selected-color: rgba(0, 0, 0, 0.9);
+  --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
+  --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
+  --doorhanger-bg-color: rgba(255, 255, 255, 1);
+  --doorhanger-border-color: rgba(12, 12, 13, 0.2);
+  --doorhanger-hover-color: rgba(12, 12, 13, 1);
+  --doorhanger-hover-bg-color: rgba(237, 237, 237, 1);
+  --doorhanger-separator-color: rgba(222, 222, 222, 1);
+  --overlay-button-border: 0 none;
+  --overlay-button-bg-color: rgba(12, 12, 13, 0.1);
+  --overlay-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+
+  --loading-icon: url(images/loading.svg);
+  --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
+  --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
+  --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
+  --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
+  --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
+  --toolbarButton-pageUp-icon: url(images/toolbarButton-pageUp.svg);
+  --toolbarButton-pageDown-icon: url(images/toolbarButton-pageDown.svg);
+  --toolbarButton-zoomOut-icon: url(images/toolbarButton-zoomOut.svg);
+  --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
+  --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
+  --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
+  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
+  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
+  --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
+  --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
+  --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
+  --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
+  --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
+  --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
+  --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
+  --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
+  --findbarButton-next-icon: url(images/findbarButton-next.svg);
+  --secondaryToolbarButton-firstPage-icon: url(images/secondaryToolbarButton-firstPage.svg);
+  --secondaryToolbarButton-lastPage-icon: url(images/secondaryToolbarButton-lastPage.svg);
+  --secondaryToolbarButton-rotateCcw-icon: url(images/secondaryToolbarButton-rotateCcw.svg);
+  --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
+  --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
+  --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
+  --secondaryToolbarButton-scrollPage-icon: url(images/secondaryToolbarButton-scrollPage.svg);
+  --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
+  --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
+  --secondaryToolbarButton-scrollWrapped-icon: url(images/secondaryToolbarButton-scrollWrapped.svg);
+  --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
+  --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
+  --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
+  --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --main-color: rgba(249, 249, 250, 1);
+    --body-bg-color: rgba(42, 42, 46, 1);
+    --errorWrapper-bg-color: rgba(169, 14, 14, 1);
+    --progressBar-color: rgba(0, 96, 223, 1);
+    --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
+    --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
+    --scrollbar-color: rgba(121, 121, 123, 1);
+    --scrollbar-bg-color: rgba(35, 35, 39, 1);
+    --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
+    --toolbar-icon-hover-bg-color: rgba(255, 255, 255, 1);
+
+    --sidebar-narrow-bg-color: rgba(42, 42, 46, 0.9);
+    --sidebar-toolbar-bg-color: rgba(50, 50, 52, 1);
+    --toolbar-bg-color: rgba(56, 56, 61, 1);
+    --toolbar-border-color: rgba(12, 12, 13, 1);
+    --button-hover-color: rgba(102, 102, 103, 1);
+    --toggled-btn-color: rgba(255, 255, 255, 1);
+    --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
+    --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
+    --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
+    --separator-color: rgba(0, 0, 0, 0.3);
+    --field-color: rgba(250, 250, 250, 1);
+    --field-bg-color: rgba(64, 64, 68, 1);
+    --field-border-color: rgba(115, 115, 115, 1);
+    --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
+    --treeitem-color: rgba(255, 255, 255, 0.8);
+    --treeitem-hover-color: rgba(255, 255, 255, 0.9);
+    --treeitem-selected-color: rgba(255, 255, 255, 0.9);
+    --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
+    --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
+    --doorhanger-bg-color: rgba(74, 74, 79, 1);
+    --doorhanger-border-color: rgba(39, 39, 43, 1);
+    --doorhanger-hover-color: rgba(249, 249, 250, 1);
+    --doorhanger-hover-bg-color: rgba(93, 94, 98, 1);
+    --doorhanger-separator-color: rgba(92, 92, 97, 1);
+    --overlay-button-bg-color: rgba(92, 92, 97, 1);
+    --overlay-button-hover-bg-color: rgba(115, 115, 115, 1);
+
+    /* This image is used in <input> elements, which unfortunately means that
+     * the `mask-image` approach used with all of the other images doesn't work
+     * here; hence why we still have two versions of this particular image. */
+    --loading-icon: url(images/loading-dark.svg);
+  }
+}
+
+@media screen and (forced-colors: active) {
+  :root {
+    --button-hover-color: Highlight;
+    --doorhanger-hover-bg-color: Highlight;
+    --toolbar-icon-opacity: 1;
+    --toolbar-icon-bg-color: ButtonText;
+    --toolbar-icon-hover-bg-color: ButtonFace;
+    --toggled-btn-color: HighlightText;
+    --toggled-btn-bg-color: LinkText;
+    --doorhanger-hover-color: ButtonFace;
+    --doorhanger-border-color-whcm: 1px solid ButtonText;
+    --doorhanger-triangle-opacity-whcm: 0;
+    --overlay-button-border: 1px solid Highlight;
+    --overlay-button-hover-bg-color: Highlight;
+    --overlay-button-hover-color: ButtonFace;
+    --field-border-color: ButtonText;
+  }
+}
+
+* {
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  height: 100%;
+  width: 100%;
+  /* Font size is needed to make the activity bar the correct size. */
+  font-size: 10px;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--body-bg-color);
+}
+
+body,
+input,
+button,
+select {
+  font: message-box;
+  outline: none;
+  scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
+}
+
+.hidden {
+  display: none !important;
+}
+[hidden] {
+  display: none !important;
+}
+
+.pdfViewer.enablePermissions .textLayer span {
+  -webkit-user-select: none !important;
+     -moz-user-select: none !important;
+          user-select: none !important;
+  cursor: not-allowed;
+}
+
+#viewerContainer.pdfPresentationMode:-webkit-full-screen {
+  top: 0;
+  border-top: 2px solid rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 1);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: none;
+  -webkit-user-select: none;
+          user-select: none;
+}
+
+#viewerContainer.pdfPresentationMode:fullscreen {
+  top: 0;
+  border-top: 2px solid rgba(0, 0, 0, 0);
+  background-color: rgba(0, 0, 0, 1);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.pdfPresentationMode:-webkit-full-screen a:not(.internalLink) {
+  display: none;
+}
+
+.pdfPresentationMode:fullscreen a:not(.internalLink) {
+  display: none;
+}
+
+.pdfPresentationMode:-webkit-full-screen .textLayer span {
+  cursor: none;
+}
+
+.pdfPresentationMode:fullscreen .textLayer span {
+  cursor: none;
+}
+
+.pdfPresentationMode.pdfPresentationModeControls > *,
+.pdfPresentationMode.pdfPresentationModeControls .textLayer span {
+  cursor: default;
+}
+
+#outerContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+#sidebarContainer {
+  position: absolute;
+  top: 32px;
+  bottom: 0;
+  width: var(--sidebar-width);
+  visibility: hidden;
+  z-index: 100;
+  border-top: 1px solid rgba(51, 51, 51, 1);
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+html[dir="ltr"] #sidebarContainer {
+  transition-property: left;
+  left: calc(0px - var(--sidebar-width));
+  border-right: var(--doorhanger-border-color-whcm);
+}
+html[dir="rtl"] #sidebarContainer {
+  transition-property: right;
+  right: calc(0px - var(--sidebar-width));
+  border-left: var(--doorhanger-border-color-whcm);
+}
+
+#outerContainer.sidebarResizing #sidebarContainer {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
+  /* Prevent e.g. the thumbnails being selected when the sidebar is resized. */
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+#outerContainer.sidebarMoving #sidebarContainer,
+#outerContainer.sidebarOpen #sidebarContainer {
+  visibility: visible;
+}
+html[dir="ltr"] #outerContainer.sidebarOpen #sidebarContainer {
+  left: 0;
+}
+html[dir="rtl"] #outerContainer.sidebarOpen #sidebarContainer {
+  right: 0;
+}
+
+#mainContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 320px;
+}
+
+#sidebarContent {
+  top: 32px;
+  bottom: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  position: absolute;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+html[dir="ltr"] #sidebarContent {
+  left: 0;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
+}
+html[dir="rtl"] #sidebarContent {
+  right: 0;
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25);
+}
+
+#viewerContainer {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  position: absolute;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  outline: none;
+}
+#viewerContainer:not(.pdfPresentationMode) {
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+
+#outerContainer.sidebarResizing #viewerContainer {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
+}
+
+html[dir="ltr"]
+  #outerContainer.sidebarOpen
+  #viewerContainer:not(.pdfPresentationMode) {
+  transition-property: left;
+  left: var(--sidebar-width);
+}
+html[dir="rtl"]
+  #outerContainer.sidebarOpen
+  #viewerContainer:not(.pdfPresentationMode) {
+  transition-property: right;
+  right: var(--sidebar-width);
+}
+
+.toolbar {
+  position: relative;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  cursor: default;
+}
+
+#toolbarContainer {
+  width: 100%;
+}
+
+#toolbarSidebar {
+  width: 100%;
+  height: 32px;
+  background-color: var(--sidebar-toolbar-bg-color);
+}
+html[dir="ltr"] #toolbarSidebar {
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
+    0 0 1px rgba(0, 0, 0, 0.1);
+}
+html[dir="rtl"] #toolbarSidebar {
+  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
+    0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+html[dir="ltr"] #toolbarSidebar .toolbarButton {
+  margin-right: 2px !important;
+}
+html[dir="rtl"] #toolbarSidebar .toolbarButton {
+  margin-left: 2px !important;
+}
+
+html[dir="ltr"] #toolbarSidebarRight .toolbarButton {
+  margin-right: 3px !important;
+}
+html[dir="rtl"] #toolbarSidebarRight .toolbarButton {
+  margin-left: 3px !important;
+}
+
+#sidebarResizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  z-index: 200;
+  cursor: ew-resize;
+}
+html[dir="ltr"] #sidebarResizer {
+  right: -6px;
+}
+html[dir="rtl"] #sidebarResizer {
+  left: -6px;
+}
+
+#toolbarContainer,
+.findbar,
+.secondaryToolbar {
+  position: relative;
+  height: 32px;
+  background-color: var(--toolbar-bg-color);
+  box-shadow: 0 1px 0 var(--toolbar-border-color);
+}
+
+#toolbarViewer {
+  height: 32px;
+}
+
+#loadingBar {
+  position: absolute;
+  height: 4px;
+  background-color: var(--body-bg-color);
+  border-bottom: 1px solid var(--toolbar-border-color);
+
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+html[dir="ltr"] #loadingBar {
+  transition-property: left;
+  left: 0;
+  right: var(--loadingBar-end-offset);
+}
+html[dir="rtl"] #loadingBar {
+  transition-property: right;
+  left: var(--loadingBar-end-offset);
+  right: 0;
+}
+
+html[dir="ltr"] #outerContainer.sidebarOpen #loadingBar {
+  left: var(--sidebar-width);
+}
+html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
+  right: var(--sidebar-width);
+}
+
+#outerContainer.sidebarResizing #loadingBar {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
+}
+
+#loadingBar .progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background-color: var(--progressBar-color);
+  overflow: hidden;
+  transition: width 200ms;
+}
+
+@-webkit-keyframes progressIndeterminate {
+  0% {
+    left: -142px;
+  }
+  100% {
+    left: 0;
+  }
+}
+
+@keyframes progressIndeterminate {
+  0% {
+    left: -142px;
+  }
+  100% {
+    left: 0;
+  }
+}
+
+#loadingBar .progress.indeterminate {
+  background-color: var(--progressBar-indeterminate-bg-color);
+  transition: none;
+}
+
+#loadingBar .progress.indeterminate .glimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: calc(100% + 150px);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--progressBar-indeterminate-blend-color) 0,
+    var(--progressBar-indeterminate-bg-color) 5px,
+    var(--progressBar-indeterminate-bg-color) 45px,
+    var(--progressBar-color) 55px,
+    var(--progressBar-color) 95px,
+    var(--progressBar-indeterminate-blend-color) 100px
+  );
+  -webkit-animation: progressIndeterminate 1s linear infinite;
+          animation: progressIndeterminate 1s linear infinite;
+}
+
+.findbar,
+.secondaryToolbar {
+  top: 32px;
+  position: absolute;
+  z-index: 10000;
+  height: auto;
+  min-width: 16px;
+  padding: 0 4px;
+  margin: 4px 2px;
+  color: rgba(217, 217, 217, 1);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: left;
+  cursor: default;
+}
+
+.findbar {
+  min-width: 300px;
+  background-color: var(--toolbar-bg-color);
+}
+.findbar > div {
+  height: 32px;
+}
+.findbar.wrapContainers > div {
+  clear: both;
+}
+.findbar.wrapContainers > div#findbarMessageContainer {
+  height: auto;
+}
+html[dir="ltr"] .findbar {
+  left: 64px;
+}
+html[dir="rtl"] .findbar {
+  right: 64px;
+}
+
+.findbar .splitToolbarButton {
+  margin-top: 3px;
+}
+html[dir="ltr"] .findbar .splitToolbarButton {
+  margin-left: 0;
+  margin-right: 5px;
+}
+html[dir="rtl"] .findbar .splitToolbarButton {
+  margin-left: 5px;
+  margin-right: 0;
+}
+
+.findbar .splitToolbarButton > .toolbarButton {
+  background-color: var(--findbar-nextprevious-btn-bg-color);
+  border-radius: 0;
+  height: 26px;
+  border-top: 1px solid var(--field-border-color);
+  border-bottom: 1px solid var(--field-border-color);
+}
+
+.findbar .splitToolbarButton > .toolbarButton::before {
+  top: 5px;
+}
+
+.findbar .splitToolbarButton > .findNext {
+  width: 29px;
+}
+html[dir="ltr"] .findbar .splitToolbarButton > .findNext {
+  border-bottom-right-radius: 2px;
+  border-top-right-radius: 2px;
+  border-right: 1px solid var(--field-border-color);
+}
+html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
+  border-bottom-left-radius: 2px;
+  border-top-left-radius: 2px;
+  border-left: 1px solid var(--field-border-color);
+}
+
+.findbar input[type="checkbox"] {
+  pointer-events: none;
+}
+
+.findbar label {
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+.findbar label:hover,
+.findbar input:focus + label {
+  color: var(--toggled-btn-color);
+  background-color: var(--button-hover-color);
+}
+
+html[dir="ltr"] #findInput {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+html[dir="rtl"] #findInput {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.findbar .toolbarField[type="checkbox"]:checked + .toolbarLabel {
+  background-color: var(--toggled-btn-bg-color) !important;
+  color: var(--toggled-btn-color);
+}
+
+#findInput {
+  width: 200px;
+}
+#findInput::-moz-placeholder {
+  font-style: normal;
+}
+#findInput::placeholder {
+  font-style: normal;
+}
+#findInput[data-status="pending"] {
+  background-image: var(--loading-icon);
+  background-repeat: no-repeat;
+  background-position: 98%;
+}
+html[dir="rtl"] #findInput[data-status="pending"] {
+  background-position: 3px;
+}
+#findInput[data-status="notFound"] {
+  background-color: rgba(255, 102, 102, 1);
+}
+
+.secondaryToolbar {
+  padding: 6px 0 10px;
+  height: auto;
+  z-index: 30000;
+  background-color: var(--doorhanger-bg-color);
+}
+html[dir="ltr"] .secondaryToolbar {
+  right: 4px;
+}
+html[dir="rtl"] .secondaryToolbar {
+  left: 4px;
+}
+
+#secondaryToolbarButtonContainer {
+  max-width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: -4px;
+}
+
+#secondaryToolbarButtonContainer.hiddenScrollModeButtons > .scrollModeButtons,
+#secondaryToolbarButtonContainer.hiddenSpreadModeButtons > .spreadModeButtons {
+  display: none !important;
+}
+
+.doorHanger,
+.doorHangerRight {
+  border-radius: 2px;
+  box-shadow: 0 1px 5px var(--doorhanger-border-color),
+    0 0 0 1px var(--doorhanger-border-color);
+  border: var(--doorhanger-border-color-whcm);
+}
+.doorHanger:after,
+.doorHanger:before,
+.doorHangerRight:after,
+.doorHangerRight:before {
+  bottom: 100%;
+  border: solid rgba(0, 0, 0, 0);
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+  opacity: var(--doorhanger-triangle-opacity-whcm);
+}
+.doorHanger:after,
+.doorHangerRight:after {
+  border-width: 8px;
+}
+.doorHanger:after {
+  border-bottom-color: var(--toolbar-bg-color);
+}
+.doorHangerRight:after {
+  border-bottom-color: var(--doorhanger-bg-color);
+}
+.doorHanger:before,
+.doorHangerRight:before {
+  border-bottom-color: var(--doorhanger-border-color);
+  border-width: 9px;
+}
+
+html[dir="ltr"] .doorHanger:after,
+html[dir="rtl"] .doorHangerRight:after {
+  left: 10px;
+  margin-left: -8px;
+}
+
+html[dir="ltr"] .doorHanger:before,
+html[dir="rtl"] .doorHangerRight:before {
+  left: 10px;
+  margin-left: -9px;
+}
+
+html[dir="rtl"] .doorHanger:after,
+html[dir="ltr"] .doorHangerRight:after {
+  right: 10px;
+  margin-right: -8px;
+}
+
+html[dir="rtl"] .doorHanger:before,
+html[dir="ltr"] .doorHangerRight:before {
+  right: 10px;
+  margin-right: -9px;
+}
+
+#findResultsCount {
+  background-color: rgba(217, 217, 217, 1);
+  color: rgba(82, 82, 82, 1);
+  text-align: center;
+  padding: 4px 5px;
+  margin: 5px;
+}
+
+#findMsg {
+  color: rgba(251, 0, 0, 1);
+}
+#findMsg:empty {
+  display: none;
+}
+
+#toolbarViewerMiddle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+html[dir="ltr"] #toolbarViewerLeft,
+html[dir="rtl"] #toolbarViewerRight,
+html[dir="ltr"] #toolbarSidebarLeft,
+html[dir="rtl"] #toolbarSidebarRight {
+  float: left;
+}
+html[dir="ltr"] #toolbarViewerRight,
+html[dir="rtl"] #toolbarViewerLeft,
+html[dir="ltr"] #toolbarSidebarRight,
+html[dir="rtl"] #toolbarSidebarLeft {
+  float: right;
+}
+html[dir="ltr"] #toolbarViewerLeft > *,
+html[dir="ltr"] #toolbarViewerMiddle > *,
+html[dir="ltr"] #toolbarViewerRight > *,
+html[dir="ltr"] #toolbarSidebarLeft *,
+html[dir="ltr"] #toolbarSidebarRight *,
+html[dir="ltr"] .findbar * {
+  position: relative;
+  float: left;
+}
+html[dir="rtl"] #toolbarViewerLeft > *,
+html[dir="rtl"] #toolbarViewerMiddle > *,
+html[dir="rtl"] #toolbarViewerRight > *,
+html[dir="rtl"] #toolbarSidebarLeft *,
+html[dir="rtl"] #toolbarSidebarRight *,
+html[dir="rtl"] .findbar * {
+  position: relative;
+  float: right;
+}
+
+.splitToolbarButton {
+  margin: 2px 2px 0;
+  display: inline-block;
+}
+html[dir="ltr"] .splitToolbarButton > .toolbarButton {
+  float: left;
+}
+html[dir="rtl"] .splitToolbarButton > .toolbarButton {
+  float: right;
+}
+
+.toolbarButton,
+.secondaryToolbarButton,
+.overlayButton {
+  border: 0 none;
+  background: none;
+  width: 28px;
+  height: 28px;
+}
+
+.overlayButton:hover,
+.overlayButton:focus {
+  background-color: var(--overlay-button-hover-bg-color);
+}
+
+.overlayButton:hover > span,
+.overlayButton:focus > span {
+  color: var(--overlay-button-hover-color);
+}
+
+.toolbarButton > span {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.toolbarButton[disabled],
+.secondaryToolbarButton[disabled],
+.overlayButton[disabled] {
+  opacity: 0.5;
+}
+
+.splitToolbarButton.toggled .toolbarButton {
+  margin: 0;
+}
+
+.splitToolbarButton > .toolbarButton:hover,
+.splitToolbarButton > .toolbarButton:focus,
+.dropdownToolbarButton:hover,
+.toolbarButton.textButton:hover,
+.toolbarButton.textButton:focus {
+  background-color: var(--button-hover-color);
+  z-index: 199;
+}
+.splitToolbarButton > .toolbarButton {
+  position: relative;
+}
+html[dir="ltr"] .splitToolbarButton > .toolbarButton:first-child,
+html[dir="rtl"] .splitToolbarButton > .toolbarButton:last-child {
+  margin: 0;
+}
+html[dir="ltr"] .splitToolbarButton > .toolbarButton:last-child,
+html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
+  margin: 0;
+}
+.splitToolbarButtonSeparator {
+  padding: 10px 0;
+  width: 1px;
+  background-color: var(--separator-color);
+  z-index: 99;
+  display: inline-block;
+  margin: 4px 0;
+}
+
+.findbar .splitToolbarButtonSeparator {
+  background-color: var(--field-border-color);
+  margin: 0;
+  padding: 13px 0;
+}
+
+html[dir="ltr"] .splitToolbarButtonSeparator {
+  float: left;
+}
+html[dir="rtl"] .splitToolbarButtonSeparator {
+  float: right;
+}
+
+.toolbarButton,
+.dropdownToolbarButton,
+.secondaryToolbarButton,
+.overlayButton {
+  min-width: 16px;
+  margin: 2px 1px;
+  padding: 2px 6px 0;
+  border: none;
+  border-radius: 2px;
+  color: var(--main-color);
+  font-size: 12px;
+  line-height: 14px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+html[dir="ltr"] #toolbarViewerLeft > .toolbarButton:first-child,
+html[dir="rtl"] #toolbarViewerRight > .toolbarButton:last-child {
+  margin-left: 2px;
+}
+
+html[dir="ltr"] #toolbarViewerRight > .toolbarButton:last-child,
+html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
+  margin-right: 2px;
+}
+.toolbarButton:hover,
+.toolbarButton:focus {
+  background-color: var(--button-hover-color);
+}
+.secondaryToolbarButton:hover,
+.secondaryToolbarButton:focus {
+  background-color: var(--doorhanger-hover-bg-color);
+  color: var(--doorhanger-hover-color);
+}
+
+.toolbarButton.toggled,
+.splitToolbarButton.toggled > .toolbarButton.toggled,
+.secondaryToolbarButton.toggled {
+  background-color: var(--toggled-btn-bg-color);
+  color: var(--toggled-btn-color);
+}
+
+.secondaryToolbarButton.toggled::before {
+  background-color: var(--toggled-btn-color);
+}
+
+.toolbarButton.toggled::before {
+  background-color: var(--toggled-btn-color);
+}
+
+.toolbarButton.toggled:hover:active,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
+.secondaryToolbarButton.toggled:hover:active {
+  background-color: var(--toggled-hover-active-btn-color);
+}
+
+.dropdownToolbarButton {
+  width: var(--scale-select-container-width);
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--dropdown-btn-bg-color);
+  margin-top: 2px !important;
+}
+.dropdownToolbarButton::after {
+  top: 6px;
+  pointer-events: none;
+
+  -webkit-mask-image: var(--toolbarButton-menuArrow-icon);
+  mask-image: var(--toolbarButton-menuArrow-icon);
+}
+html[dir="ltr"] .dropdownToolbarButton::after {
+  right: 7px;
+}
+html[dir="rtl"] .dropdownToolbarButton::after {
+  left: 7px;
+}
+
+.dropdownToolbarButton > select {
+  width: calc(var(--scale-select-container-width) + var(--scale-select-overflow));
+  height: 28px;
+  font-size: 12px;
+  color: var(--main-color);
+  margin: 0;
+  padding: 1px 0 2px;
+  border: none;
+  background-color: var(--dropdown-btn-bg-color);
+}
+html[dir="ltr"] .dropdownToolbarButton > select {
+  padding-left: 4px;
+}
+html[dir="rtl"] .dropdownToolbarButton > select {
+  padding-right: 4px;
+}
+.dropdownToolbarButton > select:hover,
+.dropdownToolbarButton > select:focus {
+  background-color: var(--button-hover-color);
+  color: var(--toggled-btn-color);
+}
+
+.dropdownToolbarButton > select > option {
+  background: var(--doorhanger-bg-color);
+  color: var(--main-color);
+}
+
+#customScaleOption {
+  display: none;
+}
+
+#pageWidthOption {
+  border-bottom: 1px rgba(255, 255, 255, 0.5) solid;
+}
+
+.toolbarButtonSpacer {
+  width: 30px;
+  display: inline-block;
+  height: 1px;
+}
+
+.toolbarButton::before,
+.secondaryToolbarButton::before,
+.dropdownToolbarButton::after,
+.treeItemToggler::before {
+  /* All matching images have a size of 16x16
+   * All relevant containers have a size of 28x28 */
+  position: absolute;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+
+  content: "";
+  background-color: var(--toolbar-icon-bg-color);
+  -webkit-mask-size: cover;
+  mask-size: cover;
+}
+
+.dropdownToolbarButton:hover::after,
+.dropdownToolbarButton:focus::after,
+.dropdownToolbarButton:active::after {
+  background-color: var(--toolbar-icon-hover-bg-color);
+}
+
+.toolbarButton::before {
+  opacity: var(--toolbar-icon-opacity);
+  top: 6px;
+  left: 6px;
+}
+
+.toolbarButton:hover::before,
+.toolbarButton:focus::before,
+.secondaryToolbarButton:hover::before,
+.secondaryToolbarButton:focus::before {
+  background-color: var(--toolbar-icon-hover-bg-color);
+}
+
+.secondaryToolbarButton::before {
+  opacity: var(--doorhanger-icon-opacity);
+  top: 5px;
+}
+html[dir="ltr"] .secondaryToolbarButton::before {
+  left: 12px;
+}
+html[dir="rtl"] .secondaryToolbarButton::before {
+  right: 12px;
+}
+
+.toolbarButton#sidebarToggle::before {
+  -webkit-mask-image: var(--toolbarButton-sidebarToggle-icon);
+  mask-image: var(--toolbarButton-sidebarToggle-icon);
+}
+html[dir="rtl"] .toolbarButton#sidebarToggle::before {
+  transform: scaleX(-1);
+}
+
+.toolbarButton#secondaryToolbarToggle::before {
+  -webkit-mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
+  mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
+}
+html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
+  transform: scaleX(-1);
+}
+
+.toolbarButton.findPrevious::before {
+  -webkit-mask-image: var(--findbarButton-previous-icon);
+  mask-image: var(--findbarButton-previous-icon);
+}
+
+.toolbarButton.findNext::before {
+  -webkit-mask-image: var(--findbarButton-next-icon);
+  mask-image: var(--findbarButton-next-icon);
+}
+
+.toolbarButton.pageUp::before {
+  -webkit-mask-image: var(--toolbarButton-pageUp-icon);
+  mask-image: var(--toolbarButton-pageUp-icon);
+}
+
+.toolbarButton.pageDown::before {
+  -webkit-mask-image: var(--toolbarButton-pageDown-icon);
+  mask-image: var(--toolbarButton-pageDown-icon);
+}
+
+.toolbarButton.zoomOut::before {
+  -webkit-mask-image: var(--toolbarButton-zoomOut-icon);
+  mask-image: var(--toolbarButton-zoomOut-icon);
+}
+
+.toolbarButton.zoomIn::before {
+  -webkit-mask-image: var(--toolbarButton-zoomIn-icon);
+  mask-image: var(--toolbarButton-zoomIn-icon);
+}
+
+.toolbarButton.presentationMode::before,
+.secondaryToolbarButton.presentationMode::before {
+  -webkit-mask-image: var(--toolbarButton-presentationMode-icon);
+  mask-image: var(--toolbarButton-presentationMode-icon);
+}
+
+.toolbarButton.print::before,
+.secondaryToolbarButton.print::before {
+  -webkit-mask-image: var(--toolbarButton-print-icon);
+  mask-image: var(--toolbarButton-print-icon);
+}
+
+.toolbarButton.openFile::before,
+.secondaryToolbarButton.openFile::before {
+  -webkit-mask-image: var(--toolbarButton-openFile-icon);
+  mask-image: var(--toolbarButton-openFile-icon);
+}
+
+.toolbarButton.download::before,
+.secondaryToolbarButton.download::before {
+  -webkit-mask-image: var(--toolbarButton-download-icon);
+  mask-image: var(--toolbarButton-download-icon);
+}
+
+.secondaryToolbarButton.bookmark {
+  padding-top: 6px;
+  text-decoration: none;
+}
+
+.bookmark[href="#"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.toolbarButton.bookmark::before,
+.secondaryToolbarButton.bookmark::before {
+  -webkit-mask-image: var(--toolbarButton-bookmark-icon);
+  mask-image: var(--toolbarButton-bookmark-icon);
+}
+
+#viewThumbnail.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-viewThumbnail-icon);
+  mask-image: var(--toolbarButton-viewThumbnail-icon);
+}
+
+#viewOutline.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-viewOutline-icon);
+  mask-image: var(--toolbarButton-viewOutline-icon);
+}
+html[dir="rtl"] #viewOutline.toolbarButton::before {
+  transform: scaleX(-1);
+}
+
+#viewAttachments.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-viewAttachments-icon);
+  mask-image: var(--toolbarButton-viewAttachments-icon);
+}
+
+#viewLayers.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-viewLayers-icon);
+  mask-image: var(--toolbarButton-viewLayers-icon);
+}
+
+#currentOutlineItem.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-currentOutlineItem-icon);
+  mask-image: var(--toolbarButton-currentOutlineItem-icon);
+}
+html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
+  transform: scaleX(-1);
+}
+
+#viewFind.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-search-icon);
+  mask-image: var(--toolbarButton-search-icon);
+}
+
+.toolbarButton.pdfSidebarNotification::after {
+  position: absolute;
+  display: inline-block;
+  top: 1px;
+  /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
+  content: "";
+  background-color: rgba(112, 219, 85, 1);
+  height: 9px;
+  width: 9px;
+  border-radius: 50%;
+}
+html[dir="ltr"] .toolbarButton.pdfSidebarNotification::after {
+  left: 17px;
+}
+html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
+  right: 17px;
+}
+
+.secondaryToolbarButton {
+  position: relative;
+  margin: 0;
+  padding: 0 0 1px;
+  height: auto;
+  min-height: 26px;
+  width: auto;
+  min-width: 100%;
+  white-space: normal;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+html[dir="ltr"] .secondaryToolbarButton {
+  padding-left: 36px;
+  text-align: left;
+}
+html[dir="rtl"] .secondaryToolbarButton {
+  padding-right: 36px;
+  text-align: right;
+}
+
+html[dir="ltr"] .secondaryToolbarButton > span {
+  padding-right: 4px;
+}
+html[dir="rtl"] .secondaryToolbarButton > span {
+  padding-left: 4px;
+}
+
+.secondaryToolbarButton.firstPage::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-firstPage-icon);
+  mask-image: var(--secondaryToolbarButton-firstPage-icon);
+}
+
+.secondaryToolbarButton.lastPage::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-lastPage-icon);
+  mask-image: var(--secondaryToolbarButton-lastPage-icon);
+}
+
+.secondaryToolbarButton.rotateCcw::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
+  mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
+}
+
+.secondaryToolbarButton.rotateCw::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+  mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+}
+
+.secondaryToolbarButton.selectTool::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-selectTool-icon);
+  mask-image: var(--secondaryToolbarButton-selectTool-icon);
+}
+
+.secondaryToolbarButton.handTool::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-handTool-icon);
+  mask-image: var(--secondaryToolbarButton-handTool-icon);
+}
+
+.secondaryToolbarButton.scrollPage::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-scrollPage-icon);
+  mask-image: var(--secondaryToolbarButton-scrollPage-icon);
+}
+
+.secondaryToolbarButton.scrollVertical::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
+  mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
+}
+
+.secondaryToolbarButton.scrollHorizontal::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
+  mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
+}
+
+.secondaryToolbarButton.scrollWrapped::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
+  mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
+}
+
+.secondaryToolbarButton.spreadNone::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-spreadNone-icon);
+  mask-image: var(--secondaryToolbarButton-spreadNone-icon);
+}
+
+.secondaryToolbarButton.spreadOdd::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
+  mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
+}
+
+.secondaryToolbarButton.spreadEven::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-spreadEven-icon);
+  mask-image: var(--secondaryToolbarButton-spreadEven-icon);
+}
+
+.secondaryToolbarButton.documentProperties::before {
+  -webkit-mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+  mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+}
+
+.verticalToolbarSeparator {
+  display: block;
+  padding: 11px 0;
+  margin: 5px 2px;
+  width: 1px;
+  background-color: var(--separator-color);
+}
+html[dir="ltr"] .verticalToolbarSeparator {
+  margin-left: 2px;
+}
+html[dir="rtl"] .verticalToolbarSeparator {
+  margin-right: 2px;
+}
+
+.horizontalToolbarSeparator {
+  display: block;
+  margin: 6px 0 5px;
+  height: 1px;
+  width: 100%;
+  border-top: 1px solid var(--doorhanger-separator-color);
+}
+
+.toolbarField {
+  padding: 4px 7px;
+  margin: 3px 0;
+  border-radius: 2px;
+  background-color: var(--field-bg-color);
+  background-clip: padding-box;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--field-border-color);
+  box-shadow: none;
+  color: var(--field-color);
+  font-size: 12px;
+  line-height: 16px;
+  outline-style: none;
+}
+
+.toolbarField[type="checkbox"] {
+  opacity: 0;
+  position: absolute !important;
+  left: 0;
+}
+
+html[dir="ltr"] .toolbarField[type="checkbox"] {
+  margin: 10px 0 3px 7px;
+}
+
+html[dir="rtl"] .toolbarField[type="checkbox"] {
+  margin: 10px 7px 3px 0;
+}
+
+.toolbarField.pageNumber {
+  -moz-appearance: textfield; /* hides the spinner in moz */
+  min-width: 16px;
+  text-align: right;
+  width: 40px;
+}
+
+.toolbarField.pageNumber.visiblePageIsLoading {
+  background-image: var(--loading-icon);
+  background-repeat: no-repeat;
+  background-position: 3px;
+}
+
+.toolbarField.pageNumber::-webkit-inner-spin-button,
+.toolbarField.pageNumber::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.toolbarField:focus {
+  border-color: #0a84ff;
+}
+
+.toolbarLabel {
+  min-width: 16px;
+  padding: 7px;
+  margin: 2px;
+  border-radius: 2px;
+  color: var(--main-color);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: left;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  cursor: default;
+}
+
+html[dir="ltr"] #numPages.toolbarLabel {
+  padding-left: 3px;
+}
+html[dir="rtl"] #numPages.toolbarLabel {
+  padding-right: 3px;
+}
+
+#thumbnailView {
+  position: absolute;
+  width: calc(100% - 60px);
+  top: 0;
+  bottom: 0;
+  padding: 10px 30px 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#thumbnailView > a:active,
+#thumbnailView > a:focus {
+  outline: 0;
+}
+
+.thumbnail {
+  margin: 0 10px 5px;
+}
+html[dir="ltr"] .thumbnail {
+  float: left;
+}
+html[dir="rtl"] .thumbnail {
+  float: right;
+}
+
+#thumbnailView > a:last-of-type > .thumbnail {
+  margin-bottom: 10px;
+}
+
+#thumbnailView > a:last-of-type > .thumbnail:not([data-loaded]) {
+  margin-bottom: 9px;
+}
+
+.thumbnail:not([data-loaded]) {
+  border: 1px dashed rgba(132, 132, 132, 1);
+  margin: -1px 9px 4px;
+}
+
+.thumbnailImage {
+  border: 1px solid rgba(0, 0, 0, 0);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0.8;
+  z-index: 99;
+  background-color: rgba(255, 255, 255, 1);
+  background-clip: content-box;
+}
+
+.thumbnailSelectionRing {
+  border-radius: 2px;
+  padding: 7px;
+}
+
+a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
+.thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
+  opacity: 0.9;
+}
+
+a:focus > .thumbnail > .thumbnailSelectionRing,
+.thumbnail:hover > .thumbnailSelectionRing {
+  background-color: var(--sidebaritem-bg-color);
+  background-clip: padding-box;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.thumbnail.selected > .thumbnailSelectionRing > .thumbnailImage {
+  opacity: 1;
+}
+
+.thumbnail.selected > .thumbnailSelectionRing {
+  background-color: var(--sidebaritem-bg-color);
+  background-clip: padding-box;
+  color: rgba(255, 255, 255, 1);
+}
+
+#outlineView,
+#attachmentsView,
+#layersView {
+  position: absolute;
+  width: calc(100% - 8px);
+  top: 0;
+  bottom: 0;
+  padding: 4px 4px 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+html[dir="ltr"] .treeWithDeepNesting > .treeItem,
+html[dir="ltr"] .treeItem > .treeItems {
+  margin-left: 20px;
+}
+
+html[dir="rtl"] .treeWithDeepNesting > .treeItem,
+html[dir="rtl"] .treeItem > .treeItems {
+  margin-right: 20px;
+}
+
+.treeItem > a {
+  text-decoration: none;
+  display: inline-block;
+  min-width: 95%;
+  /* Subtract the right padding (left, in RTL mode) of the container: */
+  min-width: calc(100% - 4px);
+  height: auto;
+  margin-bottom: 1px;
+  border-radius: 2px;
+  color: var(--treeitem-color);
+  font-size: 13px;
+  line-height: 15px;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  white-space: normal;
+  cursor: pointer;
+}
+html[dir="ltr"] .treeItem > a {
+  padding: 2px 0 5px 4px;
+}
+html[dir="rtl"] .treeItem > a {
+  padding: 2px 4px 5px 0;
+}
+
+#layersView .treeItem > a > * {
+  cursor: pointer;
+}
+html[dir="ltr"] #layersView .treeItem > a > label {
+  padding-left: 4px;
+}
+html[dir="rtl"] #layersView .treesItem > a > label {
+  padding-right: 4px;
+}
+
+.treeItemToggler {
+  position: relative;
+  height: 0;
+  width: 0;
+  color: rgba(255, 255, 255, 0.5);
+}
+.treeItemToggler::before {
+  -webkit-mask-image: var(--treeitem-expanded-icon);
+  mask-image: var(--treeitem-expanded-icon);
+}
+.treeItemToggler.treeItemsHidden::before {
+  -webkit-mask-image: var(--treeitem-collapsed-icon);
+  mask-image: var(--treeitem-collapsed-icon);
+}
+html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
+  transform: scaleX(-1);
+}
+.treeItemToggler.treeItemsHidden ~ .treeItems {
+  display: none;
+}
+html[dir="ltr"] .treeItemToggler {
+  float: left;
+}
+html[dir="rtl"] .treeItemToggler {
+  float: right;
+}
+html[dir="ltr"] .treeItemToggler::before {
+  right: 4px;
+}
+html[dir="rtl"] .treeItemToggler::before {
+  left: 4px;
+}
+
+.treeItem.selected > a {
+  background-color: var(--treeitem-selected-bg-color);
+  color: var(--treeitem-selected-color);
+}
+
+.treeItemToggler:hover,
+.treeItemToggler:hover + a,
+.treeItemToggler:hover ~ .treeItems,
+.treeItem > a:hover {
+  background-color: var(--sidebaritem-bg-color);
+  background-clip: padding-box;
+  border-radius: 2px;
+  color: var(--treeitem-hover-color);
+}
+
+/* TODO: file FF bug to support ::-moz-selection:window-inactive
+   so we can override the opaque grey background when the window is inactive;
+   see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
+::-moz-selection {
+  background: rgba(0, 0, 255, 0.3);
+}
+::selection {
+  background: rgba(0, 0, 255, 0.3);
+}
+
+#errorWrapper {
+  background: none repeat scroll 0 0 var(--errorWrapper-bg-color);
+  color: var(--main-color);
+  left: 0;
+  position: absolute;
+  right: 0;
+  z-index: 1000;
+  padding: 3px 6px;
+}
+
+#errorMessageLeft {
+  float: left;
+}
+
+#errorMessageRight {
+  float: right;
+}
+
+#errorMoreInfo {
+  background-color: var(--field-bg-color);
+  color: var(--field-color);
+  border: 1px solid var(--field-border-color);
+  padding: 3px;
+  margin: 3px;
+  width: 98%;
+}
+
+.overlayButton {
+  width: auto;
+  margin: 3px 4px 2px !important;
+  padding: 2px 11px;
+  color: var(--main-color);
+  background-color: var(--overlay-button-bg-color);
+  border: var(--overlay-button-border) !important;
+}
+
+#overlayContainer {
+  display: table;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 40000;
+}
+#overlayContainer > * {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#overlayContainer > .container {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+
+#overlayContainer > .container > .dialog {
+  display: inline-block;
+  padding: 15px;
+  border-spacing: 4px;
+  color: var(--main-color);
+  font-size: 12px;
+  line-height: 14px;
+  background-color: var(--doorhanger-bg-color);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dialog > .row {
+  display: table-row;
+}
+
+.dialog > .row > * {
+  display: table-cell;
+}
+
+.dialog .toolbarField {
+  margin: 5px 0;
+}
+
+.dialog .separator {
+  display: block;
+  margin: 4px 0;
+  height: 1px;
+  width: 100%;
+  background-color: var(--separator-color);
+}
+
+.dialog .buttonRow {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.dialog :link {
+  color: rgba(255, 255, 255, 1);
+}
+
+#passwordOverlay > .dialog {
+  text-align: center;
+}
+#passwordOverlay .toolbarField {
+  width: 200px;
+}
+
+#documentPropertiesOverlay > .dialog {
+  text-align: left;
+}
+#documentPropertiesOverlay .row > * {
+  min-width: 100px;
+}
+html[dir="ltr"] #documentPropertiesOverlay .row > * {
+  text-align: left;
+}
+html[dir="rtl"] #documentPropertiesOverlay .row > * {
+  text-align: right;
+}
+#documentPropertiesOverlay .row > span {
+  width: 125px;
+  word-wrap: break-word;
+}
+#documentPropertiesOverlay .row > p {
+  max-width: 225px;
+  word-wrap: break-word;
+}
+#documentPropertiesOverlay .buttonRow {
+  margin-top: 10px;
+}
+
+.clearBoth {
+  clear: both;
+}
+
+.fileInput {
+  background: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
+  margin-top: 5px;
+  visibility: hidden;
+  position: fixed;
+  right: 0;
+  top: 0;
+}
+
+#PDFBug {
+  background: none repeat scroll 0 0 rgba(255, 255, 255, 1);
+  border: 1px solid rgba(102, 102, 102, 1);
+  position: fixed;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  font-size: 10px;
+  padding: 0;
+  width: 300px;
+}
+#PDFBug .controls {
+  background: rgba(238, 238, 238, 1);
+  border-bottom: 1px solid rgba(102, 102, 102, 1);
+  padding: 3px;
+}
+#PDFBug .panels {
+  bottom: 0;
+  left: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  position: absolute;
+  right: 0;
+  top: 27px;
+}
+#PDFBug .panels > div {
+  padding: 5px;
+}
+#PDFBug button.active {
+  font-weight: bold;
+}
+.debuggerShowText {
+  background: none repeat scroll 0 0 rgba(255, 255, 0, 1);
+  color: rgba(0, 0, 255, 1);
+}
+.debuggerHideText:hover {
+  background: none repeat scroll 0 0 rgba(255, 255, 0, 1);
+}
+#PDFBug .stats {
+  font-family: courier;
+  font-size: 10px;
+  white-space: pre;
+}
+#PDFBug .stats .title {
+  font-weight: bold;
+}
+#PDFBug table {
+  font-size: 10px;
+  white-space: pre;
+}
+#PDFBug table.showText {
+  border-collapse: collapse;
+  text-align: center;
+}
+#PDFBug table.showText,
+#PDFBug table.showText tr,
+#PDFBug table.showText td {
+  border: 1px solid black;
+  padding: 1px;
+}
+#PDFBug table.showText td.advance {
+  color: grey;
+}
+
+#viewer.textLayer-visible .textLayer {
+  opacity: 1;
+}
+
+#viewer.textLayer-visible .canvasWrapper {
+  background-color: rgba(128, 255, 128, 1);
+}
+
+#viewer.textLayer-visible .canvasWrapper canvas {
+  mix-blend-mode: screen;
+}
+
+#viewer.textLayer-visible .textLayer span {
+  background-color: rgba(255, 255, 0, 0.1);
+  color: rgba(0, 0, 0, 1);
+  border: solid 1px rgba(255, 0, 0, 0.5);
+  box-sizing: border-box;
+}
+
+#viewer.textLayer-hover .textLayer span:hover {
+  background-color: rgba(255, 255, 255, 1);
+  color: rgba(0, 0, 0, 1);
+}
+
+#viewer.textLayer-shadow .textLayer span {
+  background-color: rgba(255, 255, 255, 0.6);
+  color: rgba(0, 0, 0, 1);
+}
+
+.grab-to-pan-grab {
+  cursor: url("images/grab.cur"), move !important;
+  cursor: -webkit-grab !important;
+  cursor: grab !important;
+}
+.grab-to-pan-grab
+  *:not(input):not(textarea):not(button):not(select):not(:link) {
+  cursor: inherit !important;
+}
+.grab-to-pan-grab:active,
+.grab-to-pan-grabbing {
+  cursor: url("images/grabbing.cur"), move !important;
+  cursor: -webkit-grabbing !important;
+  cursor: grabbing !important;
+  position: fixed;
+  background: rgba(0, 0, 0, 0);
+  display: block;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 50000; /* should be higher than anything else in PDF.js! */
+}
+
+@page {
+  margin: 0;
+}
+
+#printContainer {
+  display: none;
+}
+
+@media print {
+  /* General rules for printing. */
+  body {
+    background: rgba(0, 0, 0, 0) none;
+  }
+
+  /* Rules for browsers that don't support mozPrintCallback. */
+  #sidebarContainer,
+  #secondaryToolbar,
+  .toolbar,
+  #loadingBox,
+  #errorWrapper,
+  .textLayer,
+  .canvasWrapper {
+    display: none;
+  }
+  #viewerContainer {
+    overflow: visible;
+  }
+
+  #mainContainer,
+  #viewerContainer,
+  .page,
+  .page canvas {
+    position: static;
+    padding: 0;
+    margin: 0;
+  }
+
+  .page {
+    float: left;
+    display: none;
+    border: none;
+    box-shadow: none;
+    background-clip: content-box;
+    background-color: rgba(255, 255, 255, 1);
+  }
+
+  .page[data-loaded] {
+    display: block;
+  }
+
+  .fileInput {
+    display: none;
+  }
+
+  /* Rules for browsers that support PDF.js printing */
+  body[data-pdfjsprinting] #outerContainer {
+    display: none;
+  }
+  body[data-pdfjsprinting] #printContainer {
+    display: block;
+  }
+  #printContainer {
+    height: 100%;
+  }
+  /* wrapper around (scaled) print canvas elements */
+  #printContainer > .printedPage {
+    page-break-after: always;
+    page-break-inside: avoid;
+
+    /* The wrapper always cover the whole page. */
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #printContainer > .xfaPrintedPage .xfaPage {
+    position: absolute;
+  }
+
+  #printContainer > .xfaPrintedPage {
+    page-break-after: always;
+    page-break-inside: avoid;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  #printContainer > .printedPage canvas,
+  #printContainer > .printedPage img {
+    /* The intrinsic canvas / image size will make sure that we fit the page. */
+    max-width: 100%;
+    max-height: 100%;
+
+    direction: ltr;
+    display: block;
+  }
+}
+
+.visibleLargeView,
+.visibleMediumView,
+.visibleSmallView {
+  display: none;
+}
+
+@media all and (max-width: 900px) {
+  #toolbarViewerMiddle {
+    display: table;
+    margin: auto;
+    left: auto;
+    position: inherit;
+    transform: none;
+  }
+}
+
+@media all and (max-width: 840px) {
+  #sidebarContainer {
+    background-color: var(--sidebar-narrow-bg-color);
+  }
+
+  html[dir="ltr"] #outerContainer.sidebarOpen #viewerContainer {
+    left: 0 !important;
+  }
+  html[dir="rtl"] #outerContainer.sidebarOpen #viewerContainer {
+    right: 0 !important;
+  }
+
+  #outerContainer .hiddenLargeView,
+  #outerContainer .hiddenMediumView {
+    display: inherit;
+  }
+  #outerContainer .visibleLargeView,
+  #outerContainer .visibleMediumView {
+    display: none;
+  }
+}
+
+@media all and (max-width: 770px) {
+  #outerContainer .hiddenLargeView {
+    display: none;
+  }
+  #outerContainer .visibleLargeView {
+    display: inherit;
+  }
+}
+
+@media all and (max-width: 700px) {
+  #outerContainer .hiddenMediumView {
+    display: none;
+  }
+  #outerContainer .visibleMediumView {
+    display: inherit;
+  }
+}
+
+@media all and (max-width: 640px) {
+  .hiddenSmallView,
+  .hiddenSmallView * {
+    display: none;
+  }
+  .visibleSmallView {
+    display: inherit;
+  }
+  .toolbarButtonSpacer {
+    width: 0;
+  }
+  html[dir="ltr"] .findbar {
+    left: 34px;
+  }
+  html[dir="rtl"] .findbar {
+    right: 34px;
+  }
+}
+
+@media all and (max-width: 535px) {
+  #scaleSelectContainer {
+    display: none;
+  }
+}
