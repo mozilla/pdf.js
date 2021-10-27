@@ -1361,10 +1361,10 @@ class BaseViewer {
     return promise;
   }
 
-  #getScrollAhead(views) {
-    if (views.first.id === 1) {
+  #getScrollAhead(visible) {
+    if (visible.first?.id === 1) {
       return true;
-    } else if (views.last.id === this.pagesCount) {
+    } else if (visible.last?.id === this.pagesCount) {
       return false;
     }
     switch (this._scrollMode) {
