@@ -1166,6 +1166,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.7");
       expect(info.Language).toEqual("en");
+      expect(info.EncryptFilterName).toEqual(null);
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
@@ -1201,6 +1202,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.4");
       expect(info.Language).toEqual(null);
+      expect(info.EncryptFilterName).toEqual(null);
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
@@ -1223,6 +1225,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual(null);
       expect(info.Language).toEqual(null);
+      expect(info.EncryptFilterName).toEqual(null);
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
