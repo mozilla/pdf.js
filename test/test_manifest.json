@@ -1822,6 +1822,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1219400",
+       "file": "pdfs/bug1219400.pdf",
+       "md5": "a1554914cc9653d5ee0b9220657b334f",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "bug1245391",
        "file": "pdfs/bug1245391_reduced.pdf",
        "md5": "6c946045ee0f2f663f269717c0f1614a",
