@@ -1,5 +1,6 @@
 {
   "name": "pdf.js",
+  "version": "1.0.0",
   "devDependencies": {
     "@babel/core": "^7.15.8",
     "@babel/plugin-transform-modules-commonjs": "^7.15.4",
