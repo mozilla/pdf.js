@@ -242,10 +242,17 @@ class CMap {
     const lastByte = dstLow.length - 1;
     while (low <= high) {
       this._map[low++] = dstLow;
-      // Only the last byte has to be incremented.
+      // Only the last byte has to be incremented (in the normal case).
+      const nextCharCode = dstLow.charCodeAt(lastByte) + 1;
+      if (nextCharCode > 0xff) {
+        dstLow =
+          dstLow.substring(0, lastByte - 1) +
+          String.fromCharCode(dstLow.charCodeAt(lastByte - 1) + 1) +
+          "\x00";
+        continue;
+      }
       dstLow =
-        dstLow.substring(0, lastByte) +
-        String.fromCharCode(dstLow.charCodeAt(lastByte) + 1);
+        dstLow.substring(0, lastByte) + String.fromCharCode(nextCharCode);
     }
   }
 

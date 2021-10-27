@@ -3022,6 +3022,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug1627427",
+       "file": "pdfs/bug1627427_reduced.pdf",
+       "md5": "3ff75fcf455af49803f0f04eb071bdc3",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "issue8586",
        "file": "pdfs/issue8586.pdf",
        "md5": "16b5230364017d3b0d2d65978eb35816",
