@@ -660,7 +660,7 @@ class Annotation {
 
         if (array.length === 4) {
           // Dash array available
-          this.borderStyle.setDashArray(array[3]);
+          this.borderStyle.setDashArray(array[3], /* forceStyle = */ true);
         }
       }
     } else {
@@ -981,8 +981,9 @@ class AnnotationBorderStyle {
    * @public
    * @memberof AnnotationBorderStyle
    * @param {Array} dashArray - The dash array with at least one element
+   * @param {boolean} [forceStyle]
    */
-  setDashArray(dashArray) {
+  setDashArray(dashArray, forceStyle = false) {
     // We validate the dash array, but we do not use it because CSS does not
     // allow us to change spacing of dashes. For more information, visit
     // http://www.w3.org/TR/css3-background/#the-border-style.
@@ -1002,6 +1003,12 @@ class AnnotationBorderStyle {
       }
       if (isValid && !allZeros) {
         this.dashArray = dashArray;
+
+        if (forceStyle) {
+          // Even though we cannot use the dash array in the display layer,
+          // at least ensure that we use the correct border-style.
+          this.setStyle(Name.get("D"));
+        }
       } else {
         this.width = 0; // Adobe behavior when the array is invalid.
       }
