@@ -1760,6 +1760,22 @@ sources, for full support with Dvips.`)
       await loadingTask.destroy();
     });
 
+    it("gets text content, with beginbfrange operator handled correctly (bug 1627427)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("bug1627427_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(text).toEqual(
+        "침하게 흐린 품이 눈이 올 듯하더니 눈은 아니 오고 얼다가 만 비가 추"
+      );
+
+      await loadingTask.destroy();
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 
