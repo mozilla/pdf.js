@@ -295,10 +295,10 @@ class PDFThumbnailViewer {
     return promise;
   }
 
-  #getScrollAhead(views) {
-    if (views.first.id === 1) {
+  #getScrollAhead(visible) {
+    if (visible.first?.id === 1) {
       return true;
-    } else if (views.last.id === this._thumbnails.length) {
+    } else if (visible.last?.id === this._thumbnails.length) {
       return false;
     }
     return this.scroll.down;
