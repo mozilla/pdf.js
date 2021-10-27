@@ -18,6 +18,9 @@ import {
   DefaultAnnotationLayerFactory,
 } from "./annotation_layer_builder.js";
 import {
+  TextHighlighter
+} from "./text_highlighter.js";
+import {
   DefaultStructTreeLayerFactory,
   StructTreeLayerBuilder,
 } from "./struct_tree_layer_builder.js";
@@ -66,5 +69,6 @@ export {
   SimpleLinkService,
   StructTreeLayerBuilder,
   TextLayerBuilder,
+  TextHighlighter,
   XfaLayerBuilder,
 };
