@@ -148,6 +148,8 @@ function isSameScale(oldScale, newScale) {
  * Simple viewer control to display PDF content/pages.
  */
 class BaseViewer {
+  #scrollModePageState = null;
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -531,9 +533,7 @@ class BaseViewer {
         this._optionalContentConfigPromise = optionalContentConfigPromise;
 
         const viewerElement =
-          this._scrollMode === ScrollMode.PAGE
-            ? this._scrollModePageState.shadowViewer
-            : this.viewer;
+          this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
@@ -688,8 +688,7 @@ class BaseViewer {
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
 
-    this._scrollModePageState = {
-      shadowViewer: document.createDocumentFragment(),
+    this.#scrollModePageState = {
       previousPageNumber: 1,
       scrollDown: true,
       pages: [],
@@ -714,18 +713,12 @@ class BaseViewer {
       throw new Error("_ensurePageViewVisible: Invalid scrollMode value.");
     }
     const pageNumber = this._currentPageNumber,
-      state = this._scrollModePageState,
+      state = this.#scrollModePageState,
       viewer = this.viewer;
 
-    // Remove the currently active pages, if any, from the viewer.
-    if (viewer.hasChildNodes()) {
-      // Temporarily remove all the pages from the DOM.
-      viewer.textContent = "";
-
-      for (const pageView of this._pages) {
-        state.shadowViewer.appendChild(pageView.div);
-      }
-    }
+    // Temporarily remove all the pages from the DOM...
+    viewer.textContent = "";
+    // ... and clear out the active ones.
     state.pages.length = 0;
 
     if (this._spreadMode === SpreadMode.NONE) {
@@ -1249,7 +1242,7 @@ class BaseViewer {
     }
     const views =
         this._scrollMode === ScrollMode.PAGE
-          ? this._scrollModePageState.pages
+          ? this.#scrollModePageState.pages
           : this._pages,
       horizontal = this._scrollMode === ScrollMode.HORIZONTAL,
       rtl = horizontal && this._isContainerRtl;
@@ -1369,7 +1362,7 @@ class BaseViewer {
     }
     switch (this._scrollMode) {
       case ScrollMode.PAGE:
-        return this._scrollModePageState.scrollDown;
+        return this.#scrollModePageState.scrollDown;
       case ScrollMode.HORIZONTAL:
         return this.scroll.right;
     }
