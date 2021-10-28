@@ -38,7 +38,7 @@ import { PDFSinglePageViewer, PDFViewer } from "./pdf_viewer.js";
 import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
 import { NullL10n } from "./l10n_utils.js";
-import { PDFFindController } from "./pdf_find_controller.js";
+import { PDFFindController, FindState } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
@@ -58,6 +58,7 @@ export {
   EventBus,
   GenericL10n,
   NullL10n,
+  FindState,
   PDFFindController,
   PDFHistory,
   PDFLinkService,
