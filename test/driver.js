@@ -291,6 +291,10 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
       file: "../web/xfa_layer_builder.css",
       promise: null,
     },
+    overrides: {
+      file: "./xfa_layer_builder_overrides.css",
+      promise: null,
+    },
   };
 
   function getXfaLayerStyle() {
@@ -326,8 +330,8 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
       foreignObject.appendChild(div);
 
       stylePromise
-        .then(async ([cssRules]) => {
-          style.textContent = fontRules + "\n" + cssRules;
+        .then(async ([common, overrides]) => {
+          style.textContent = fontRules + "\n" + common + "\n" + overrides;
 
           XfaLayer.render({
             xfa,
