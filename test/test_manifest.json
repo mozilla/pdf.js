@@ -6056,5 +6056,13 @@
       "enableXfa": true,
       "type": "eq",
       "lastPage": 1
+    },
+    { "id": "xfa_bug1735738",
+      "file": "pdfs/xfa_bug1735738.pdf",
+      "md5": "7aa91f6681798c48e0c9d9836ed30742",
+      "enableXfa": true,
+      "link": true,
+      "rounds": 1,
+      "type": "eq"
     }
 ]
