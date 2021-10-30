@@ -890,6 +890,7 @@ function buildComponents(defines, dir) {
   return merge([
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
+    gulp.src(['web/*_builder.css']).pipe(gulp.dest(dir)),
     preprocessCSS("web/pdf_viewer.css", "components", defines, true)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir)),
