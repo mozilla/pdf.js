@@ -106,7 +106,9 @@ class XfaLayer {
         if (key === "textContent") {
           html.textContent = value;
         } else if (key === "class") {
-          html.setAttribute(key, value.join(" "));
+          if (value.length) {
+            html.setAttribute(key, value.join(" "));
+          }
         } else {
           if (isHTMLAnchorElement && (key === "href" || key === "newWindow")) {
             continue; // Handled below.
@@ -159,11 +161,16 @@ class XfaLayer {
 
     const rootDiv = parameters.div;
     rootDiv.appendChild(rootHtml);
-    const transform = `matrix(${parameters.viewport.transform.join(",")})`;
-    rootDiv.style.transform = transform;
+
+    if (parameters.viewport) {
+      const transform = `matrix(${parameters.viewport.transform.join(",")})`;
+      rootDiv.style.transform = transform;
+    }
 
     // Set defaults.
-    rootDiv.setAttribute("class", "xfaLayer xfaFont");
+    if (intent !== "richText") {
+      rootDiv.setAttribute("class", "xfaLayer xfaFont");
+    }
 
     // Text nodes used for the text highlighter.
     const textDivs = [];

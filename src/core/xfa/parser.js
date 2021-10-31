@@ -30,9 +30,9 @@ import { Builder } from "./builder.js";
 import { warn } from "../../shared/util.js";
 
 class XFAParser extends XMLParserBase {
-  constructor() {
+  constructor(rootNameSpace = null, richText = false) {
     super();
-    this._builder = new Builder();
+    this._builder = new Builder(rootNameSpace);
     this._stack = [];
     this._globalData = {
       usedTypefaces: new Set(),
@@ -42,6 +42,7 @@ class XFAParser extends XMLParserBase {
     this._errorCode = XMLParserErrorCode.NoError;
     this._whiteRegex = /^\s+$/;
     this._nbsps = /\xa0+/g;
+    this._richText = richText;
   }
 
   parse(data) {
@@ -60,8 +61,8 @@ class XFAParser extends XMLParserBase {
     // Normally by definition a &nbsp is unbreakable
     // but in real life Acrobat can break strings on &nbsp.
     text = text.replace(this._nbsps, match => match.slice(1) + " ");
-    if (this._current[$acceptWhitespace]()) {
-      this._current[$onText](text);
+    if (this._richText || this._current[$acceptWhitespace]()) {
+      this._current[$onText](text, this._richText);
       return;
     }
 
