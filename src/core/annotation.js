@@ -884,7 +884,7 @@ class Annotation {
  */
 class AnnotationBorderStyle {
   constructor() {
-    this.width = 1;
+    this.width = 3;
     this.style = AnnotationBorderStyleType.SOLID;
     this.dashArray = [3];
     this.horizontalCornerRadius = 0;
