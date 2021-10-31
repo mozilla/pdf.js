@@ -16,6 +16,28 @@
 import { bidi } from "../../src/core/bidi.js";
 
 describe("bidi", function () {
+  it(
+    "should mark text as LTR if there's only LTR-characters, " +
+      "when the string is very short",
+    function () {
+      const str = "foo";
+      const bidiText = bidi(str, -1, false);
+
+      expect(bidiText.str).toEqual("foo");
+      expect(bidiText.dir).toEqual("ltr");
+    }
+  );
+
+  it("should mark text as LTR if there's only LTR-characters", function () {
+    const str = "Lorem ipsum dolor sit amet, consectetur adipisicing elit.";
+    const bidiText = bidi(str, -1, false);
+
+    expect(bidiText.str).toEqual(
+      "Lorem ipsum dolor sit amet, consectetur adipisicing elit."
+    );
+    expect(bidiText.dir).toEqual("ltr");
+  });
+
   it("should mark text as RTL if more than 30% of text is RTL", function () {
     // 33% of test text are RTL characters
     const test = "\u0645\u0635\u0631 Egypt";
@@ -34,4 +56,16 @@ describe("bidi", function () {
     expect(bidiText.str).toEqual(result);
     expect(bidiText.dir).toEqual("ltr");
   });
+
+  it(
+    "should mark text as RTL if less than 30% of text is RTL, " +
+      "when the string is very short (issue 11656)",
+    function () {
+      const str = "()\u05d1("; // 25% of the string is RTL characters.
+      const bidiText = bidi(str, -1, false);
+
+      expect(bidiText.str).toEqual("(\u05d1)(");
+      expect(bidiText.dir).toEqual("rtl");
+    }
+  );
 });
