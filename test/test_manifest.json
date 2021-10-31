@@ -2292,6 +2292,12 @@
        "lastPage": 100,
        "type": "eq"
     },
+    {  "id": "issue10301",
+       "file": "pdfs/issue10301.pdf",
+       "md5": "c7ee7ba727969ab3bba12a4d13739303",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "issue7544",
        "file": "pdfs/issue7544.pdf",
        "md5": "87e3a9fc7d6a6c1bd5b53af6926ce48e",
