@@ -497,7 +497,8 @@ describe("ui_utils", function () {
     // This is a reimplementation of getVisibleElements without the
     // optimizations.
     function slowGetVisibleElements(scroll, pages) {
-      const views = [];
+      const views = [],
+        ids = new Set();
       const { scrollLeft, scrollTop } = scroll;
       const scrollRight = scrollLeft + scroll.clientWidth;
       const scrollBottom = scrollTop + scroll.clientHeight;
@@ -535,9 +536,10 @@ describe("ui_utils", function () {
             percent,
             widthPercent: (fractionWidth * 100) | 0,
           });
+          ids.add(view.id);
         }
       }
-      return { first: views[0], last: views[views.length - 1], views };
+      return { first: views[0], last: views[views.length - 1], views, ids };
     }
 
     // This function takes a fixed layout of pages and compares the system under
@@ -699,6 +701,7 @@ describe("ui_utils", function () {
         first: undefined,
         last: undefined,
         views: [],
+        ids: new Set(),
       });
     });
 
@@ -715,6 +718,7 @@ describe("ui_utils", function () {
         first: undefined,
         last: undefined,
         views: [],
+        ids: new Set(),
       });
     });
 
