@@ -104,22 +104,19 @@ function PDFPageViewBuffer(size) {
       data.shift().destroy();
     }
   };
+
   /**
-   * After calling resize, the size of the buffer will be newSize. The optional
-   * parameter pagesToKeep is, if present, an array of pages to push to the back
-   * of the buffer, delaying their destruction. The size of pagesToKeep has no
-   * impact on the final size of the buffer; if pagesToKeep has length larger
-   * than newSize, some of those pages will be destroyed anyway.
+   * After calling resize, the size of the buffer will be `newSize`.
+   * The optional parameter `idsToKeep` is, if present, a Set of page-ids to
+   * push to the back of the buffer, delaying their destruction. The size of
+   * `idsToKeep` has no impact on the final size of the buffer; if `idsToKeep`
+   * is larger than `newSize`, some of those pages will be destroyed anyway.
    */
-  this.resize = function (newSize, pagesToKeep) {
+  this.resize = function (newSize, idsToKeep = null) {
     size = newSize;
-    if (pagesToKeep) {
-      const pageIdsToKeep = new Set();
-      for (let i = 0, iMax = pagesToKeep.length; i < iMax; ++i) {
-        pageIdsToKeep.add(pagesToKeep[i].id);
-      }
+    if (idsToKeep) {
       moveToEndOfArray(data, function (page) {
-        return pageIdsToKeep.has(page.id);
+        return idsToKeep.has(page.id);
       });
     }
     while (data.length > size) {
@@ -1145,7 +1142,7 @@ class BaseViewer {
       return;
     }
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
-    this._buffer.resize(newCacheSize, visiblePages);
+    this._buffer.resize(newCacheSize, visible.ids);
 
     this.renderingQueue.renderHighestPriority(visible);
 
@@ -1231,7 +1228,9 @@ class BaseViewer {
       y: element.offsetTop + element.clientTop,
       view: pageView,
     };
-    return { first: view, last: view, views: [view] };
+    const ids = new Set([pageView.id]);
+
+    return { first: view, last: view, views: [view], ids };
   }
 
   _getVisiblePages() {
@@ -1273,16 +1272,14 @@ class BaseViewer {
       console.error(`isPageVisible: "${pageNumber}" is not a valid page.`);
       return false;
     }
-    return this._getVisiblePages().views.some(function (view) {
-      return view.id === pageNumber;
-    });
+    return this._getVisiblePages().ids.has(pageNumber);
   }
 
   /**
    * @param {number} pageNumber
    */
   isPageCached(pageNumber) {
-    if (!this.pdfDocument || !this._buffer) {
+    if (!this.pdfDocument) {
       return false;
     }
     if (
@@ -1296,9 +1293,6 @@ class BaseViewer {
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
-    if (!pageView) {
-      return false;
-    }
     return this._buffer.has(pageView);
   }
 

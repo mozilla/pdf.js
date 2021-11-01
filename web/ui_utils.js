@@ -473,6 +473,7 @@ function getVisibleElements({
   }
 
   const visible = [],
+    ids = new Set(),
     numViews = views.length;
   let firstVisibleElementInd = binarySearchFirstItem(
     views,
@@ -558,6 +559,7 @@ function getVisibleElements({
       percent,
       widthPercent: (fractionWidth * 100) | 0,
     });
+    ids.add(view.id);
   }
 
   const first = visible[0],
@@ -572,7 +574,7 @@ function getVisibleElements({
       return a.id - b.id; // ensure stability
     });
   }
-  return { first, last, views: visible };
+  return { first, last, views: visible, ids };
 }
 
 /**
