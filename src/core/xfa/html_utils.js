@@ -565,6 +565,27 @@ function getCurrentPara(node) {
   return stack.length ? stack[stack.length - 1] : null;
 }
 
+function setParaStyle(node, nodeStyle) {
+  const para = getCurrentPara(node);
+  if (!para) {
+    return;
+  }
+
+  const paraStyle = para[$toStyle]();
+  for (const key of [
+    "paddingLeft",
+    "paddingRight",
+    "paddingTop",
+    "paddingBottom",
+    "textIndent",
+    "tabSize",
+  ]) {
+    if (!(key in nodeStyle) && key in paraStyle) {
+      nodeStyle[key] = paraStyle[key];
+    }
+  }
+}
+
 function setPara(node, nodeStyle, value) {
   if (value.attributes.class && value.attributes.class.includes("xfaRich")) {
     if (nodeStyle) {
@@ -596,9 +617,9 @@ function setPara(node, nodeStyle, value) {
       }
 
       const paraStyle = para[$toStyle]();
-      for (const [key, val] of Object.entries(paraStyle)) {
-        if (!(key in valueStyle)) {
-          valueStyle[key] = val;
+      for (const key of ["lineHeight", "textAlign"]) {
+        if (!(key in valueStyle) && key in paraStyle) {
+          valueStyle[key] = paraStyle[key];
         }
       }
     }
@@ -661,5 +682,6 @@ export {
   setFontFamily,
   setMinMaxDimensions,
   setPara,
+  setParaStyle,
   toStyle,
 };
