@@ -635,6 +635,13 @@ class Binder {
             /* skipConsumed = */ this.emptyMerge
           ).next().value;
           if (!match) {
+            // If there is no match (no data) and `min === 0` then
+            // the container is entirely excluded.
+            // https://www.pdfa.org/norm-refs/XFA-3_3.pdf#G12.1428332
+            if (min === 0) {
+              uselessNodes.push(child);
+              continue;
+            }
             // We're in matchTemplate mode so create a node in data to reflect
             // what we've in template.
             const nsId =
