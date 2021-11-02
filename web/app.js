@@ -3057,9 +3057,8 @@ function webViewerKeyDown(evt) {
         ) {
           break;
         }
-        if (PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page--;
-        }
+        pdfViewer.previousPage();
+
         handled = true;
         break;
 
