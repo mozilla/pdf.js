@@ -332,6 +332,10 @@ class FirefoxExternalServices extends DefaultExternalServices {
       }
       switch (args.pdfjsLoadAction) {
         case "supportsRangedLoading":
+          if (args.done && !args.data) {
+            callbacks.onError();
+            break;
+          }
           pdfDataRangeTransport = new FirefoxComDataRangeTransport(
             args.length,
             args.data,
@@ -359,9 +363,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
           pdfDataRangeTransport.onDataProgress(args.loaded, args.total);
           break;
         case "progressiveDone":
-          if (pdfDataRangeTransport) {
-            pdfDataRangeTransport.onDataProgressiveDone();
-          }
+          pdfDataRangeTransport?.onDataProgressiveDone();
           break;
         case "progress":
           callbacks.onProgress(args.loaded, args.total);
