@@ -5080,6 +5080,12 @@
       "lastPage": 1,
       "type": "eq"
     },
+    {  "id": "issue11656",
+       "file": "pdfs/issue11656.pdf",
+       "md5": "82d5d4f5978a4974707deb1ea98e62f2",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "vertical",
       "file": "pdfs/vertical.pdf",
       "md5": "8a74d33504701edcefeef2afd022765e",
