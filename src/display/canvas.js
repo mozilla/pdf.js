@@ -3071,6 +3071,7 @@ class CanvasGraphics {
       }
       this.pendingClip = null;
     }
+    this.current.startNewPathAndClipBox(this.current.clipBox);
     ctx.beginPath();
   }
 
