@@ -133,9 +133,13 @@ class PDFRenderingQueue {
     // All the visible views have rendered; try to handle any "holes" in the
     // page layout (can happen e.g. with spreadModes at higher zoom levels).
     if (lastId - firstId + 1 > numVisible) {
+      const visibleIds = visible.ids;
       for (let i = 1, ii = lastId - firstId; i < ii; i++) {
-        const holeId = scrolledDown ? firstId + i : lastId - i,
-          holeView = views[holeId - 1];
+        const holeId = scrolledDown ? firstId + i : lastId - i;
+        if (visibleIds.has(holeId)) {
+          continue;
+        }
+        const holeView = views[holeId - 1];
         if (!this.isViewFinished(holeView)) {
           return holeView;
         }
