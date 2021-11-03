@@ -466,6 +466,24 @@ var Driver = (function DriverClosure() {
       }, this.delay);
     },
 
+    /**
+     * A debugging tool to log to the terminal while tests are running.
+     * XXX: This isn't currently referenced, but it's useful for debugging so
+     * do not remove it.
+     *
+     * @param {string} msg - The message to log, it will be prepended with the
+     *    current PDF ID if there is one.
+     */
+    log(msg) {
+      let id = this.browser;
+      const task = this.manifest[this.currentTask];
+      if (task) {
+        id += `-${task.id}`;
+      }
+
+      this._info(`${id}: ${msg}`);
+    },
+
     _nextTask() {
       let failure = "";
 
