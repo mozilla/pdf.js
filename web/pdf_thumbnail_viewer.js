@@ -99,26 +99,21 @@ class PDFThumbnailViewer {
       // ... and add the highlight to the new thumbnail.
       thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
     }
-    const visibleThumbs = this._getVisibleThumbs();
-    const numVisibleThumbs = visibleThumbs.views.length;
+    const { first, last, views } = this._getVisibleThumbs();
 
     // If the thumbnail isn't currently visible, scroll it into view.
-    if (numVisibleThumbs > 0) {
-      const first = visibleThumbs.first.id;
-      // Account for only one thumbnail being visible.
-      const last = numVisibleThumbs > 1 ? visibleThumbs.last.id : first;
-
+    if (views.length > 0) {
       let shouldScroll = false;
-      if (pageNumber <= first || pageNumber >= last) {
+      if (pageNumber <= first.id || pageNumber >= last.id) {
         shouldScroll = true;
       } else {
-        visibleThumbs.views.some(function (view) {
-          if (view.id !== pageNumber) {
-            return false;
+        for (const { id, percent } of views) {
+          if (id !== pageNumber) {
+            continue;
           }
-          shouldScroll = view.percent < 100;
-          return true;
-        });
+          shouldScroll = percent < 100;
+          break;
+        }
       }
       if (shouldScroll) {
         scrollIntoView(thumbnailView.div, { top: THUMBNAIL_SCROLL_MARGIN });
