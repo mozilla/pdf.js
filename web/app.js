@@ -2413,28 +2413,29 @@ function webViewerSidebarViewChanged(evt) {
   PDFViewerApplication.pdfRenderingQueue.isThumbnailViewEnabled =
     PDFViewerApplication.pdfSidebar.isThumbnailViewVisible;
 
-  const store = PDFViewerApplication.store;
-  if (store && PDFViewerApplication.isInitialViewSet) {
+  if (PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    store.set("sidebarView", evt.view).catch(function () {});
+    PDFViewerApplication.store?.set("sidebarView", evt.view).catch(() => {
+      // Unable to write to storage.
+    });
   }
 }
 
 function webViewerUpdateViewarea(evt) {
-  const location = evt.location,
-    store = PDFViewerApplication.store;
+  const location = evt.location;
 
-  if (store && PDFViewerApplication.isInitialViewSet) {
-    store
-      .setMultiple({
+  if (PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    PDFViewerApplication.store
+      ?.setMultiple({
         page: location.pageNumber,
         zoom: location.scale,
         scrollLeft: location.left,
         scrollTop: location.top,
         rotation: location.rotation,
       })
-      .catch(function () {
-        /* unable to write to storage */
+      .catch(() => {
+        // Unable to write to storage.
       });
   }
   const href = PDFViewerApplication.pdfLinkService.getAnchorUrl(
@@ -2453,18 +2454,20 @@ function webViewerUpdateViewarea(evt) {
 }
 
 function webViewerScrollModeChanged(evt) {
-  const store = PDFViewerApplication.store;
-  if (store && PDFViewerApplication.isInitialViewSet) {
+  if (PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    store.set("scrollMode", evt.mode).catch(function () {});
+    PDFViewerApplication.store?.set("scrollMode", evt.mode).catch(() => {
+      // Unable to write to storage.
+    });
   }
 }
 
 function webViewerSpreadModeChanged(evt) {
-  const store = PDFViewerApplication.store;
-  if (store && PDFViewerApplication.isInitialViewSet) {
+  if (PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    store.set("spreadMode", evt.mode).catch(function () {});
+    PDFViewerApplication.store?.set("spreadMode", evt.mode).catch(() => {
+      // Unable to write to storage.
+    });
   }
 }
 
@@ -3057,9 +3060,8 @@ function webViewerKeyDown(evt) {
         ) {
           break;
         }
-        if (PDFViewerApplication.page > 1) {
-          PDFViewerApplication.page--;
-        }
+        pdfViewer.previousPage();
+
         handled = true;
         break;
 
