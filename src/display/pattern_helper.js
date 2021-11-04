@@ -112,7 +112,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         tmpCtx.fillStyle = this._createGradient(tmpCtx);
         tmpCtx.fill();
 
-        pattern = ctx.createPattern(tmpCanvas.canvas, "repeat");
+        pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
         this.cachedCanvasPatterns.set(this, pattern);
       }
     } else {
