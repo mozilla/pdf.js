@@ -127,6 +127,17 @@ function PDFPageViewBuffer(size) {
   this.has = function (view) {
     return data.includes(view);
   };
+
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    Object.defineProperty(this, "_buffer", {
+      get() {
+        return data.slice();
+      },
+    });
+  }
 }
 
 function isSameScale(oldScale, newScale) {
@@ -1879,4 +1890,4 @@ class BaseViewer {
   }
 }
 
-export { BaseViewer };
+export { BaseViewer, PDFPageViewBuffer };
