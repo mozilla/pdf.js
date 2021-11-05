@@ -178,6 +178,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue8111",
+       "file": "pdfs/issue8111.pdf",
+       "md5": "14a2b3c19ed3d6cd7e138cdc141aa4a8",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue13343",
        "file": "pdfs/issue13343.pdf",
        "md5": "f8bf1888839e15254555092c504e1900",
@@ -2578,6 +2584,12 @@
        "md5": "2782af6a4d0540fcea3897560f842094",
        "rounds": 1,
        "link": true,
+       "type": "eq"
+    },
+    {  "id": "issue9243",
+       "file": "pdfs/issue9243.pdf",
+       "md5": "f6b8c5c62b8875f7d9dfcd2b25d3aab8",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue8424",

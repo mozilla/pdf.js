@@ -2146,10 +2146,17 @@ class CanvasGraphics {
       !current.patternFill;
 
     ctx.save();
+    ctx.transform.apply(ctx, current.textMatrix);
+    ctx.translate(current.x, current.y + current.textRise);
+
+    if (fontDirection > 0) {
+      ctx.scale(textHScale, -1);
+    } else {
+      ctx.scale(textHScale, 1);
+    }
+
     let patternTransform;
     if (current.patternFill) {
-      // TODO: Patterns are not applied correctly to text if a non-embedded
-      // font is used. E.g. issue 8111 and ShowText-ShadingPattern.pdf.
       ctx.save();
       const pattern = current.fillColor.getPattern(
         ctx,
@@ -2159,14 +2166,6 @@ class CanvasGraphics {
       patternTransform = ctx.mozCurrentTransform;
       ctx.restore();
       ctx.fillStyle = pattern;
-    }
-    ctx.transform.apply(ctx, current.textMatrix);
-    ctx.translate(current.x, current.y + current.textRise);
-
-    if (fontDirection > 0) {
-      ctx.scale(textHScale, -1);
-    } else {
-      ctx.scale(textHScale, 1);
     }
 
     let lineWidth = current.lineWidth;
