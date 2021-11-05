@@ -4402,6 +4402,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue14130",
+       "file": "pdfs/issue14130.pdf",
+       "md5": "82e7efb0a10122e793fc64348d93dc4e",
+       "enableXfa": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue6151",
        "file": "pdfs/issue6151.pdf",
        "md5": "926f8c6b25e6f0978759f7947d70e079",
