@@ -84,6 +84,7 @@ const $setSetAttributes = Symbol();
 const $setValue = Symbol();
 const $tabIndex = Symbol();
 const $text = Symbol();
+const $toPages = Symbol();
 const $toHTML = Symbol();
 const $toString = Symbol();
 const $toStyle = Symbol();
@@ -1137,6 +1138,7 @@ export {
   $tabIndex,
   $text,
   $toHTML,
+  $toPages,
   $toString,
   $toStyle,
   $uid,

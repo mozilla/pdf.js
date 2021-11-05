@@ -55,6 +55,7 @@ import {
   $tabIndex,
   $text,
   $toHTML,
+  $toPages,
   $toStyle,
   $uid,
   ContentObject,
@@ -5395,7 +5396,12 @@ class Template extends XFAObject {
     return searchNode(this, container, expr, true, true);
   }
 
-  [$toHTML]() {
+  /**
+   * This function is a generator because the conversion into
+   * pages is done asynchronously and we want to save the state
+   * of the function where we were in the previous iteration.
+   */
+  *[$toPages]() {
     if (!this.subform.children.length) {
       return HTMLResult.success({
         name: "div",
@@ -5641,6 +5647,7 @@ class Template extends XFAObject {
         }
       }
       pageArea = targetPageArea || pageArea[$getNextPage]();
+      yield null;
     }
   }
 }
