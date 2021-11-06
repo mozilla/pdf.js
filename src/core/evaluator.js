@@ -527,7 +527,11 @@ class PartialEvaluator {
       operatorList.addOp(OPS.beginGroup, [groupOptions]);
     }
 
-    operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
+    // If it's a group, a new canvas will be created that is the size of the
+    // bounding box and translated to the correct position so we don't need to
+    // apply the bounding box to it.
+    const args = group ? [matrix, null] : [matrix, bbox];
+    operatorList.addOp(OPS.paintFormXObjectBegin, args);
 
     return this.getOperatorList({
       stream: xobj,
