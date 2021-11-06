@@ -22,6 +22,7 @@
   --page-border: 9px solid transparent;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --zoom-factor: 1;
+  --viewport-scale-factor: 1;
 }
 
 @media screen and (forced-colors: active) {

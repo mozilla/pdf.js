@@ -175,6 +175,8 @@ class IPDFAnnotationLayerFactory {
    * @param {Object} [mouseState]
    * @param {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
+   * @property {Map<string, Canvas> | null} [annotationCanvasMap] - Map some
+   *  annotation ids with canvases used to render them.
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -187,7 +189,8 @@ class IPDFAnnotationLayerFactory {
     enableScripting = false,
     hasJSActionsPromise = null,
     mouseState = null,
-    fieldObjectsPromise = null
+    fieldObjectsPromise = null,
+    annotationCanvasMap = null
   ) {}
 }
 
