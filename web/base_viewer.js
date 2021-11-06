@@ -31,7 +31,6 @@ import {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
-  moveToEndOfArray,
   PresentationModeState,
   RendererType,
   SCROLLBAR_PADDING,
@@ -93,7 +92,8 @@ const DEFAULT_CACHE_SIZE = 10;
  */
 
 class PDFPageViewBuffer {
-  #data = [];
+  // Here we rely on the fact that `Set`s preserve the insertion order.
+  #buf = new Set();
 
   #size = 0;
 
@@ -106,21 +106,21 @@ class PDFPageViewBuffer {
     ) {
       Object.defineProperty(this, "_buffer", {
         get() {
-          return this.#data.slice();
+          return [...this.#buf];
         },
       });
     }
   }
 
   push(view) {
-    const data = this.#data,
-      i = data.indexOf(view);
-    if (i >= 0) {
-      data.splice(i, 1);
+    const buf = this.#buf;
+    if (buf.has(view)) {
+      buf.delete(view); // Move the view to the "end" of the buffer.
     }
-    data.push(view);
-    if (data.length > this.#size) {
-      data.shift().destroy();
+    buf.add(view);
+
+    if (buf.size > this.#size) {
+      this.#destroyFirstView();
     }
   }
 
@@ -134,19 +134,35 @@ class PDFPageViewBuffer {
   resize(newSize, idsToKeep = null) {
     this.#size = newSize;
 
-    const data = this.#data;
+    const buf = this.#buf;
     if (idsToKeep) {
-      moveToEndOfArray(data, function (page) {
-        return idsToKeep.has(page.id);
-      });
+      const ii = buf.size;
+      let i = 1;
+      for (const view of buf) {
+        if (idsToKeep.has(view.id)) {
+          buf.delete(view); // Move the view to the "end" of the buffer.
+          buf.add(view);
+        }
+        if (++i > ii) {
+          break;
+        }
+      }
     }
-    while (data.length > this.#size) {
-      data.shift().destroy();
+
+    while (buf.size > this.#size) {
+      this.#destroyFirstView();
     }
   }
 
   has(view) {
-    return this.#data.includes(view);
+    return this.#buf.has(view);
+  }
+
+  #destroyFirstView() {
+    const firstView = this.#buf.keys().next().value;
+
+    firstView?.destroy();
+    this.#buf.delete(firstView);
   }
 }
 
