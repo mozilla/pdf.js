@@ -5922,7 +5922,7 @@
        "link": false,
        "rounds": 1,
        "lastPage": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "zero_descent",
        "file": "pdfs/zero_descent.pdf",
