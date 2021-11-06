@@ -850,7 +850,12 @@ class BaseViewer {
       }
       return;
     }
+
     this._doc.style.setProperty("--zoom-factor", newScale);
+    this._doc.style.setProperty(
+      "--viewport-scale-factor",
+      newScale * PixelsPerInch.PDF_TO_CSS_UNITS
+    );
 
     const updateArgs = { scale: newScale };
     for (const pageView of this._pages) {
@@ -1480,6 +1485,7 @@ class BaseViewer {
    * @param {Object} [mouseState]
    * @param {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
+   * @param {Map<string, Canvas>} [annotationCanvasMap]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1492,7 +1498,8 @@ class BaseViewer {
     enableScripting = null,
     hasJSActionsPromise = null,
     mouseState = null,
-    fieldObjectsPromise = null
+    fieldObjectsPromise = null,
+    annotationCanvasMap = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -1510,6 +1517,7 @@ class BaseViewer {
       fieldObjectsPromise:
         fieldObjectsPromise || this.pdfDocument?.getFieldObjects(),
       mouseState: mouseState || this._scriptingManager?.mouseState,
+      annotationCanvasMap,
     });
   }
 
