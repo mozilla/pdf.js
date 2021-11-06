@@ -92,18 +92,37 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {IL10n} l10n - Localization service.
  */
 
-function PDFPageViewBuffer(size) {
-  const data = [];
-  this.push = function (view) {
-    const i = data.indexOf(view);
+class PDFPageViewBuffer {
+  #data = [];
+
+  #size = 0;
+
+  constructor(size) {
+    this.#size = size;
+
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      Object.defineProperty(this, "_buffer", {
+        get() {
+          return this.#data.slice();
+        },
+      });
+    }
+  }
+
+  push(view) {
+    const data = this.#data,
+      i = data.indexOf(view);
     if (i >= 0) {
       data.splice(i, 1);
     }
     data.push(view);
-    if (data.length > size) {
+    if (data.length > this.#size) {
       data.shift().destroy();
     }
-  };
+  }
 
   /**
    * After calling resize, the size of the buffer will be `newSize`.
@@ -112,31 +131,22 @@ function PDFPageViewBuffer(size) {
    * `idsToKeep` has no impact on the final size of the buffer; if `idsToKeep`
    * is larger than `newSize`, some of those pages will be destroyed anyway.
    */
-  this.resize = function (newSize, idsToKeep = null) {
-    size = newSize;
+  resize(newSize, idsToKeep = null) {
+    this.#size = newSize;
+
+    const data = this.#data;
     if (idsToKeep) {
       moveToEndOfArray(data, function (page) {
         return idsToKeep.has(page.id);
       });
     }
-    while (data.length > size) {
+    while (data.length > this.#size) {
       data.shift().destroy();
     }
-  };
+  }
 
-  this.has = function (view) {
-    return data.includes(view);
-  };
-
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
-    Object.defineProperty(this, "_buffer", {
-      get() {
-        return data.slice();
-      },
-    });
+  has(view) {
+    return this.#data.includes(view);
   }
 }
 
@@ -156,6 +166,8 @@ function isSameScale(oldScale, newScale) {
  * Simple viewer control to display PDF content/pages.
  */
 class BaseViewer {
+  #buffer = null;
+
   #scrollModePageState = null;
 
   /**
@@ -518,7 +530,7 @@ class BaseViewer {
       }
       // Add the page to the buffer at the start of drawing. That way it can be
       // evicted from the buffer and destroyed even if we pause its rendering.
-      this._buffer.push(pageView);
+      this.#buffer.push(pageView);
     };
     this.eventBus._on("pagerender", this._onBeforeDraw);
 
@@ -684,7 +696,7 @@ class BaseViewer {
     this._currentScale = UNKNOWN_SCALE;
     this._currentScaleValue = null;
     this._pageLabels = null;
-    this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
+    this.#buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._location = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
@@ -1153,7 +1165,7 @@ class BaseViewer {
       return;
     }
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
-    this._buffer.resize(newCacheSize, visible.ids);
+    this.#buffer.resize(newCacheSize, visible.ids);
 
     this.renderingQueue.renderHighestPriority(visible);
 
@@ -1304,7 +1316,7 @@ class BaseViewer {
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
-    return this._buffer.has(pageView);
+    return this.#buffer.has(pageView);
   }
 
   cleanup() {
