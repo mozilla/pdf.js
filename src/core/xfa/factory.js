@@ -19,6 +19,7 @@ import {
   $nodeName,
   $text,
   $toHTML,
+  $toPages,
 } from "./xfa_object.js";
 import { Binder } from "./bind.js";
 import { DataHandler } from "./data.js";
@@ -45,9 +46,32 @@ class XFAFactory {
     return this.root && this.form;
   }
 
-  _createPages() {
+  /**
+   * In order to avoid to block the event loop, the conversion
+   * into pages is made asynchronously.
+   */
+  _createPagesHelper() {
+    const iterator = this.form[$toPages]();
+    return new Promise((resolve, reject) => {
+      const nextIteration = () => {
+        try {
+          const value = iterator.next();
+          if (value.done) {
+            resolve(value.value);
+          } else {
+            setTimeout(nextIteration, 0);
+          }
+        } catch (e) {
+          reject(e);
+        }
+      };
+      setTimeout(nextIteration, 0);
+    });
+  }
+
+  async _createPages() {
     try {
-      this.pages = this.form[$toHTML]();
+      this.pages = await this._createPagesHelper();
       this.dims = this.pages.children.map(c => {
         const { width, height } = c.attributes.style;
         return [0, 0, parseInt(width), parseInt(height)];
@@ -61,9 +85,9 @@ class XFAFactory {
     return this.dims[pageIndex];
   }
 
-  get numPages() {
+  async getNumPages() {
     if (!this.pages) {
-      this._createPages();
+      await this._createPages();
     }
     return this.dims.length;
   }
@@ -94,9 +118,9 @@ class XFAFactory {
     this.form[$globalData].fontFinder.add(fonts, reallyMissingFonts);
   }
 
-  getPages() {
+  async getPages() {
     if (!this.pages) {
-      this._createPages();
+      await this._createPages();
     }
     const pages = this.pages;
     this.pages = null;
