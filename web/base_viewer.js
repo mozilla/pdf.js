@@ -641,14 +641,6 @@ class BaseViewer {
   /**
    * @private
    */
-  get _viewerElement() {
-    // In most viewers, e.g. `PDFViewer`, this should return `this.viewer`.
-    throw new Error("Not implemented: _viewerElement");
-  }
-
-  /**
-   * @private
-   */
   _onePageRenderedOrForceFetch() {
     // Unless the viewer *and* its pages are visible, rendering won't start and
     // `this._onePageRenderedCapability` thus won't be resolved.
@@ -731,6 +723,10 @@ class BaseViewer {
         this._firstPageCapability.resolve(firstPdfPage);
         this._optionalContentConfigPromise = optionalContentConfigPromise;
 
+        const viewerElement =
+          this._scrollMode === ScrollMode.PAGE
+            ? this._scrollModePageState.shadowViewer
+            : this.viewer;
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
@@ -745,7 +741,7 @@ class BaseViewer {
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
-            container: this._viewerElement,
+            container: viewerElement,
             eventBus: this.eventBus,
             id: pageNum,
             scale,
@@ -776,7 +772,12 @@ class BaseViewer {
           firstPageView.setPdfPage(firstPdfPage);
           this.linkService.cachePageRef(1, firstPdfPage.ref);
         }
-        if (this._spreadMode !== SpreadMode.NONE) {
+
+        if (this._scrollMode === ScrollMode.PAGE) {
+          // Since the pages are placed in a `DocumentFragment`, ensure that
+          // the current page becomes visible upon loading of the document.
+          this._ensurePageViewVisible();
+        } else if (this._spreadMode !== SpreadMode.NONE) {
           this._updateSpreadMode();
         }
 
@@ -885,7 +886,15 @@ class BaseViewer {
     this._onePageRenderedCapability = createPromiseCapability();
     this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
+    this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
+
+    this._scrollModePageState = {
+      shadowViewer: document.createDocumentFragment(),
+      previousPageNumber: 1,
+      scrollDown: true,
+      pages: [],
+    };
 
     if (this._onBeforeDraw) {
       this.eventBus._off("pagerender", this._onBeforeDraw);
@@ -899,6 +908,71 @@ class BaseViewer {
     this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
     this._updateScrollMode();
+  }
+
+  _ensurePageViewVisible() {
+    if (this._scrollMode !== ScrollMode.PAGE) {
+      throw new Error("_ensurePageViewVisible: Invalid scrollMode value.");
+    }
+    const pageNumber = this._currentPageNumber,
+      state = this._scrollModePageState,
+      viewer = this.viewer;
+
+    // Remove the currently active pages, if any, from the viewer.
+    if (viewer.hasChildNodes()) {
+      // Temporarily remove all the pages from the DOM.
+      viewer.textContent = "";
+
+      for (const pageView of this._pages) {
+        state.shadowViewer.appendChild(pageView.div);
+      }
+    }
+    state.pages.length = 0;
+
+    if (this._spreadMode === SpreadMode.NONE) {
+      // Finally, append the new page to the viewer.
+      const pageView = this._pages[pageNumber - 1];
+      viewer.appendChild(pageView.div);
+
+      state.pages.push(pageView);
+    } else {
+      const pageIndexSet = new Set(),
+        parity = this._spreadMode - 1;
+
+      // Determine the pageIndices in the new spread.
+      if (pageNumber % 2 !== parity) {
+        // Left-hand side page.
+        pageIndexSet.add(pageNumber - 1);
+        pageIndexSet.add(pageNumber);
+      } else {
+        // Right-hand side page.
+        pageIndexSet.add(pageNumber - 2);
+        pageIndexSet.add(pageNumber - 1);
+      }
+
+      // Finally, append the new pages to the viewer and apply the spreadMode.
+      let spread = null;
+      for (let i = 0, ii = this._pages.length; i < ii; ++i) {
+        if (!pageIndexSet.has(i)) {
+          continue;
+        }
+        if (spread === null) {
+          spread = document.createElement("div");
+          spread.className = "spread";
+          viewer.appendChild(spread);
+        } else if (i % 2 === parity) {
+          spread = spread.cloneNode(false);
+          viewer.appendChild(spread);
+        }
+        const pageView = this._pages[i];
+        spread.appendChild(pageView.div);
+
+        state.pages.push(pageView);
+      }
+    }
+
+    state.scrollDown = pageNumber >= state.previousPageNumber;
+    state.previousPageNumber = pageNumber;
   }
 
   _scrollUpdate() {
@@ -917,6 +991,29 @@ class BaseViewer {
     }
     /** #492 end of modification */
 
+    if (this._scrollMode === ScrollMode.PAGE) {
+      if (pageNumber) {
+        // Ensure that `this._currentPageNumber` is correct.
+        this._setCurrentPageNumber(pageNumber);
+      }
+      this._ensurePageViewVisible();
+      // Ensure that rendering always occurs, to avoid showing a blank page,
+      // even if the current position doesn't change when the page is scrolled.
+      this.update();
+    }
+
+    if (!pageSpot && !this.isInPresentationMode) {
+      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
+      const right = left + pageDiv.clientWidth;
+      const { scrollLeft, clientWidth } = this.container;
+      if (
+        this._scrollMode === ScrollMode.HORIZONTAL ||
+        left < scrollLeft ||
+        right > scrollLeft + clientWidth
+      ) {
+        pageSpot = { left: 0, top: 0 };
+      }
+    }
     scrollIntoView(pageDiv, pageSpot, false, this.pageViewMode === "infinite-scroll");
   }
 
@@ -981,8 +1078,7 @@ class BaseViewer {
   get _pageWidthScaleFactor() {
     if (
       this._spreadMode !== SpreadMode.NONE &&
-      this._scrollMode !== ScrollMode.HORIZONTAL &&
-      !this.isInPresentationMode
+      this._scrollMode !== ScrollMode.HORIZONTAL
     ) {
       return 2;
     }
@@ -1014,7 +1110,7 @@ class BaseViewer {
       let vPadding = noPadding ? (this.pageViewMode === 'single'? 10: 0) : verticalPadding;
       // #589 end of modification
 
-      if (!noPadding && this._isScrollModeHorizontal) {
+      if (!noPadding && this._scrollMode === ScrollMode.HORIZONTAL) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       const pageWidthScale =
@@ -1277,10 +1373,6 @@ class BaseViewer {
     };
   }
 
-  _updateHelper(visiblePages) {
-    throw new Error("Not implemented: _updateHelper");
-  }
-
   update() {
     const visible = this._getVisiblePages();
     const visiblePages = visible.views,
@@ -1297,7 +1389,28 @@ class BaseViewer {
 
     this.renderingQueue.renderHighestPriority(visible);
 
-    this._updateHelper(visiblePages); // Run any class-specific update code.
+    if (!this.isInPresentationMode) {
+      const isSimpleLayout =
+        this._spreadMode === SpreadMode.NONE &&
+        (this._scrollMode === ScrollMode.PAGE ||
+          this._scrollMode === ScrollMode.VERTICAL);
+      let currentId = this._currentPageNumber;
+      let stillFullyVisible = false;
+
+      for (const page of visiblePages) {
+        if (page.percent < 100) {
+          break;
+        }
+        if (page.id === currentId && isSimpleLayout) {
+          stillFullyVisible = true;
+          break;
+        }
+      }
+      if (!stillFullyVisible) {
+        currentId = visiblePages[0].id;
+      }
+      this._setCurrentPageNumber(currentId);
+    }
 
     this._updateLocation(visible.first);
     this.eventBus.dispatch("updateviewarea", {
@@ -1315,14 +1428,6 @@ class BaseViewer {
 
   focus() {
     this.container.focus();
-  }
-
-  get _isScrollModeHorizontal() {
-    // Used to ensure that pre-rendering of the next/previous page works
-    // correctly, since Scroll/Spread modes are ignored in Presentation Mode.
-    return this.isInPresentationMode
-      ? false
-      : this._scrollMode === ScrollMode.HORIZONTAL;
   }
 
   get _isContainerRtl() {
@@ -1351,9 +1456,8 @@ class BaseViewer {
 
   /**
    * Helper method for `this._getVisiblePages`. Should only ever be used when
-   * the viewer can only display a single page at a time, for example in:
-   *  - `PDFSinglePageViewer`.
-   *  - `PDFViewer` with Presentation Mode active.
+   * the viewer can only display a single page at a time, for example:
+   *  - When PresentationMode is active.
    */
   _getCurrentVisiblePage() {
     if (!this.pagesCount) {
@@ -1400,12 +1504,24 @@ class BaseViewer {
       return this._getCurrentVisiblePage();
     }
     /** end of modification */
+    if (this.isInPresentationMode) {
+      // The algorithm in `getVisibleElements` doesn't work in all browsers and
+      // configurations (e.g. Chrome) when PresentationMode is active.
+      return this._getCurrentVisiblePage();
+    }
+    const views =
+        this._scrollMode === ScrollMode.PAGE
+          ? this._scrollModePageState.pages
+          : this._pages,
+      horizontal = this._scrollMode === ScrollMode.HORIZONTAL,
+      rtl = horizontal && this._isContainerRtl;
+
     return getVisibleElements({
       scrollEl: this.container,
-      views: this._pages,
+      views,
       sortByVisibility: true,
-      horizontal: this._isScrollModeHorizontal,
-      rtl: this._isScrollModeHorizontal && this._isContainerRtl,
+      horizontal,
+      rtl,
     });
   }
 
@@ -1507,15 +1623,25 @@ class BaseViewer {
     return promise;
   }
 
+  /**
+   * @private
+   */
+  get _scrollAhead() {
+    switch (this._scrollMode) {
+      case ScrollMode.PAGE:
+        return this._scrollModePageState.scrollDown;
+      case ScrollMode.HORIZONTAL:
+        return this.scroll.right;
+    }
+    return this.scroll.down;
+  }
+
   forceRendering(currentlyVisiblePages) {
     const visiblePages = currentlyVisiblePages || this._getVisiblePages();
-    const scrollAhead = this._isScrollModeHorizontal
-      ? this.scroll.right
-      : this.scroll.down;
+    const scrollAhead = this._scrollAhead;
     const preRenderExtra =
-      this._scrollMode === ScrollMode.VERTICAL &&
       this._spreadMode !== SpreadMode.NONE &&
-      !this.isInPresentationMode;
+      this._scrollMode !== ScrollMode.HORIZONTAL;
 
     const pageView = this.renderingQueue.getHighestPriority(
       visiblePages,
@@ -1754,6 +1880,8 @@ class BaseViewer {
     if (!isValidScrollMode(mode)) {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
+    this._previousScrollMode = this._scrollMode;
+
     this._scrollMode = mode;
     this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
 
@@ -1772,6 +1900,14 @@ class BaseViewer {
 
     if (!this.pdfDocument || !pageNumber) {
       return;
+    }
+
+    if (scrollMode === ScrollMode.PAGE) {
+      this._ensurePageViewVisible();
+    } else if (this._previousScrollMode === ScrollMode.PAGE) {
+      // Ensure that the current spreadMode is still applied correctly when
+      // the *previous* scrollMode was `ScrollMode.PAGE`.
+      this._updateSpreadMode();
     }
     // Non-numeric scale values can be sensitive to the scroll orientation.
     // Call this before re-scrolling to the current page, to ensure that any
@@ -1815,27 +1951,30 @@ class BaseViewer {
     const viewer = this.viewer,
       pages = this._pages;
 
-    // Temporarily remove all the pages from the DOM.
-    viewer.textContent = "";
-
-
-    if (this._spreadMode === SpreadMode.NONE) {
-      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
-        viewer.appendChild(pages[i].div);
-      }
+    if (this._scrollMode === ScrollMode.PAGE) {
+      this._ensurePageViewVisible();
     } else {
-      const parity = this._spreadMode - 1;
-      let spread = null;
-      for (let i = 0, iMax = pages.length; i < iMax; ++i) {
-        if (spread === null) {
-          spread = document.createElement("div");
-          spread.className = "spread";
-          viewer.appendChild(spread);
-        } else if (i % 2 === parity) {
-          spread = spread.cloneNode(false);
-          viewer.appendChild(spread);
+      // Temporarily remove all the pages from the DOM.
+      viewer.textContent = "";
+
+      if (this._spreadMode === SpreadMode.NONE) {
+        for (let i = 0, ii = pages.length; i < ii; ++i) {
+          viewer.appendChild(pages[i].div);
         }
-        spread.appendChild(pages[i].div);
+      } else {
+        const parity = this._spreadMode - 1;
+        let spread = null;
+        for (let i = 0, ii = pages.length; i < ii; ++i) {
+          if (spread === null) {
+            spread = document.createElement("div");
+            spread.className = "spread";
+            viewer.appendChild(spread);
+          } else if (i % 2 === parity) {
+            spread = spread.cloneNode(false);
+            viewer.appendChild(spread);
+          }
+          spread.appendChild(pages[i].div);
+        }
       }
     }
 
@@ -1846,6 +1985,9 @@ class BaseViewer {
     if (!pageNumber) {
       return;
     }
+    // Non-numeric scale values can be sensitive to the scroll orientation.
+    // Call this before re-scrolling to the current page, to ensure that any
+    // changes in scale don't move the current page.
     if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
       this._setScale(this._currentScaleValue, true);
     }
@@ -1857,9 +1999,6 @@ class BaseViewer {
    * @private
    */
   _getPageAdvance(currentPageNumber, previous = false) {
-    if (this.isInPresentationMode) {
-      return 1;
-    }
     switch (this._scrollMode) {
       case ScrollMode.WRAPPED: {
         const { views } = this._getVisiblePages(),
@@ -1923,6 +2062,7 @@ class BaseViewer {
       case ScrollMode.HORIZONTAL: {
         break;
       }
+      case ScrollMode.PAGE:
       case ScrollMode.VERTICAL: {
         if (this._spreadMode === SpreadMode.NONE) {
           break; // Normal vertical scrolling.
