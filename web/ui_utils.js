@@ -943,27 +943,6 @@ class ProgressBar {
 }
 
 /**
- * Moves all elements of an array that satisfy condition to the end of the
- * array, preserving the order of the rest.
- */
-function moveToEndOfArray(arr, condition) {
-  const moved = [],
-    len = arr.length;
-  let write = 0;
-  for (let read = 0; read < len; ++read) {
-    if (condition(arr[read])) {
-      moved.push(arr[read]);
-    } else {
-      arr[write] = arr[read];
-      ++write;
-    }
-  }
-  for (let read = 0; write < len; ++read, ++write) {
-    arr[write] = moved[read];
-  }
-}
-
-/**
  * Get the active or focused element in current DOM.
  *
  * Recursively search for the truly active or focused element in case there are
@@ -1067,7 +1046,6 @@ export {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
-  moveToEndOfArray,
   noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
