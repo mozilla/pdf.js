@@ -1004,7 +1004,7 @@ class BaseViewer {
     }
 
     if (!pageSpot && !this.isInPresentationMode) {
-      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
+      const left = pageDiv.offsetLeft + pageDiv.clientLeft; // performance measuring: 789 ms
       const right = left + pageDiv.clientWidth;
       const { scrollLeft, clientWidth } = this.container;
       if (

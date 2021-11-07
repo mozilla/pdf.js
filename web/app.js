@@ -917,99 +917,101 @@ const PDFViewerApplication = {
    *                      is opened.
    */
   async open(file, args) {
-    if (this.pdfLoadingTask) {
-      // We need to destroy already opened document.
-      await this.close();
-    }
-    // Set the necessary global worker parameters, using the available options.
-    const workerParameters = AppOptions.getAll(OptionKind.WORKER);
-    for (const key in workerParameters) {
-      GlobalWorkerOptions[key] = workerParameters[key];
-    }
+    window.ngxZone.runOutsideAngular(async () => {
+      if (this.pdfLoadingTask) {
+        // We need to destroy already opened document.
+        await this.close();
+      }
+      // Set the necessary global worker parameters, using the available options.
+      const workerParameters = AppOptions.getAll(OptionKind.WORKER);
+      for (const key in workerParameters) {
+        GlobalWorkerOptions[key] = workerParameters[key];
+      }
 
-    const parameters = Object.create(null);
-    if (typeof file === "string") {
-      // URL
-      this.setTitleUsingUrl(file, /* downloadUrl = */ file);
-      parameters.url = file;
-    } else if (file && "byteLength" in file) {
-      // ArrayBuffer
-      parameters.data = file;
-    } else if (file.url && file.originalUrl) {
-      this.setTitleUsingUrl(file.originalUrl, /* downloadUrl = */ file.url);
-      parameters.url = file.url;
-    }
-    // Set the necessary API parameters, using the available options.
-    const apiParameters = AppOptions.getAll(OptionKind.API);
-    for (const key in apiParameters) {
-      let value = apiParameters[key];
+      const parameters = Object.create(null);
+      if (typeof file === "string") {
+        // URL
+        this.setTitleUsingUrl(file, /* downloadUrl = */ file);
+        parameters.url = file;
+      } else if (file && "byteLength" in file) {
+        // ArrayBuffer
+        parameters.data = file;
+      } else if (file.url && file.originalUrl) {
+        this.setTitleUsingUrl(file.originalUrl, /* downloadUrl = */ file.url);
+        parameters.url = file.url;
+      }
+      // Set the necessary API parameters, using the available options.
+      const apiParameters = AppOptions.getAll(OptionKind.API);
+      for (const key in apiParameters) {
+        let value = apiParameters[key];
 
-      if (key === "docBaseUrl" && !value) {
-        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-          value = document.URL.split("#")[0];
-        } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-          value = this.baseUrl;
+        if (key === "docBaseUrl" && !value) {
+          if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+            value = document.URL.split("#")[0];
+          } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
+            value = this.baseUrl;
+          }
+        }
+        parameters[key] = value;
+      }
+      // Finally, update the API parameters with the arguments (if they exist).
+      if (args) {
+        for (const key in args) {
+          parameters[key] = args[key];
         }
       }
-      parameters[key] = value;
-    }
-    // Finally, update the API parameters with the arguments (if they exist).
-    if (args) {
-      for (const key in args) {
-        parameters[key] = args[key];
-      }
-    }
 
-    const loadingTask = getDocument(parameters);
-    this.pdfLoadingTask = loadingTask;
+      const loadingTask = getDocument(parameters);
+      this.pdfLoadingTask = loadingTask;
 
-    loadingTask.onPassword = (updateCallback, reason) => {
-      this.pdfLinkService.externalLinkEnabled = false;
-      this.passwordPrompt.setUpdateCallback(updateCallback, reason);
-      this.passwordPrompt.open();
-    };
+      loadingTask.onPassword = (updateCallback, reason) => {
+        this.pdfLinkService.externalLinkEnabled = false;
+        this.passwordPrompt.setUpdateCallback(updateCallback, reason);
+        this.passwordPrompt.open();
+      };
 
-    loadingTask.onProgress = ({ loaded, total }) => {
-      this.progress(loaded / total);
-      // #588 modified by ngx-extended-pdf-viewer
-      this.eventBus.dispatch("progress", {
-        source: this,
-        type: "load",
-        total,
-        loaded,
-        percent: (100 * loaded) / total,
-      });
-      // #588 end of modification
-    };
-
-    // Listen for unsupported features to trigger the fallback UI.
-    loadingTask.onUnsupportedFeature = this.fallback.bind(this);
-
-    this.loadingBar.show(); // #707 added by ngx-extended-pdf-viewer
-    return loadingTask.promise.then(
-      pdfDocument => {
-        this.load(pdfDocument);
-      },
-      exception => {
-        if (loadingTask !== this.pdfLoadingTask) {
-          return undefined; // Ignore errors for previously opened PDF files.
-        }
-
-        let key = "loading_error";
-        if (exception instanceof InvalidPDFException) {
-          key = "invalid_file_error";
-        } else if (exception instanceof MissingPDFException) {
-          key = "missing_file_error";
-        } else if (exception instanceof UnexpectedResponseException) {
-          key = "unexpected_response_error";
-        }
-        return this.l10n.get(key).then(msg => {
-          this._documentError(msg, { message: exception?.message });
-          this.onError(exception);
-          throw exception;
+      loadingTask.onProgress = ({ loaded, total }) => {
+        this.progress(loaded / total);
+        // #588 modified by ngx-extended-pdf-viewer
+        this.eventBus.dispatch("progress", {
+          source: this,
+          type: "load",
+          total,
+          loaded,
+          percent: (100 * loaded) / total,
         });
-      }
-    );
+        // #588 end of modification
+      };
+
+      // Listen for unsupported features to trigger the fallback UI.
+      loadingTask.onUnsupportedFeature = this.fallback.bind(this);
+
+      this.loadingBar.show(); // #707 added by ngx-extended-pdf-viewer
+      return loadingTask.promise.then(
+        pdfDocument => {
+          this.load(pdfDocument);
+        },
+        exception => {
+          if (loadingTask !== this.pdfLoadingTask) {
+            return undefined; // Ignore errors for previously opened PDF files.
+          }
+
+          let key = "loading_error";
+          if (exception instanceof InvalidPDFException) {
+            key = "invalid_file_error";
+          } else if (exception instanceof MissingPDFException) {
+            key = "missing_file_error";
+          } else if (exception instanceof UnexpectedResponseException) {
+            key = "unexpected_response_error";
+          }
+          return this.l10n.get(key).then(msg => {
+            this._documentError(msg, { message: exception?.message });
+            this.onError(exception);
+            throw exception;
+          });
+        }
+      );
+      });
   },
 
   /**

@@ -1485,10 +1485,14 @@ class Render {
     start() {
         this.update();
         const loop = (timer) => {
+          window.ngxZone.runOutsideAngular(() => {
             this.render(timer);
             requestAnimationFrame(loop);
+          });
         };
-        requestAnimationFrame(loop);
+        window.ngxZone.runOutsideAngular(() => {
+          requestAnimationFrame(loop);
+        });
     }
     /**
      * Start a new animation process
