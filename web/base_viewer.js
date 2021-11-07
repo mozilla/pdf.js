@@ -31,7 +31,6 @@ import {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
-  moveToEndOfArray,
   PresentationModeState,
   RendererType,
   SCROLLBAR_PADDING,
@@ -92,18 +91,38 @@ const DEFAULT_CACHE_SIZE = 10;
  * @property {IL10n} l10n - Localization service.
  */
 
-function PDFPageViewBuffer(size) {
-  const data = [];
-  this.push = function (view) {
-    const i = data.indexOf(view);
-    if (i >= 0) {
-      data.splice(i, 1);
+class PDFPageViewBuffer {
+  // Here we rely on the fact that `Set`s preserve the insertion order.
+  #buf = new Set();
+
+  #size = 0;
+
+  constructor(size) {
+    this.#size = size;
+
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      Object.defineProperty(this, "_buffer", {
+        get() {
+          return [...this.#buf];
+        },
+      });
     }
-    data.push(view);
-    if (data.length > size) {
-      data.shift().destroy();
+  }
+
+  push(view) {
+    const buf = this.#buf;
+    if (buf.has(view)) {
+      buf.delete(view); // Move the view to the "end" of the buffer.
     }
-  };
+    buf.add(view);
+
+    if (buf.size > this.#size) {
+      this.#destroyFirstView();
+    }
+  }
 
   /**
    * After calling resize, the size of the buffer will be `newSize`.
@@ -112,31 +131,38 @@ function PDFPageViewBuffer(size) {
    * `idsToKeep` has no impact on the final size of the buffer; if `idsToKeep`
    * is larger than `newSize`, some of those pages will be destroyed anyway.
    */
-  this.resize = function (newSize, idsToKeep = null) {
-    size = newSize;
+  resize(newSize, idsToKeep = null) {
+    this.#size = newSize;
+
+    const buf = this.#buf;
     if (idsToKeep) {
-      moveToEndOfArray(data, function (page) {
-        return idsToKeep.has(page.id);
-      });
+      const ii = buf.size;
+      let i = 1;
+      for (const view of buf) {
+        if (idsToKeep.has(view.id)) {
+          buf.delete(view); // Move the view to the "end" of the buffer.
+          buf.add(view);
+        }
+        if (++i > ii) {
+          break;
+        }
+      }
     }
-    while (data.length > size) {
-      data.shift().destroy();
+
+    while (buf.size > this.#size) {
+      this.#destroyFirstView();
     }
-  };
+  }
 
-  this.has = function (view) {
-    return data.includes(view);
-  };
+  has(view) {
+    return this.#buf.has(view);
+  }
 
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
-    Object.defineProperty(this, "_buffer", {
-      get() {
-        return data.slice();
-      },
-    });
+  #destroyFirstView() {
+    const firstView = this.#buf.keys().next().value;
+
+    firstView?.destroy();
+    this.#buf.delete(firstView);
   }
 }
 
@@ -156,6 +182,8 @@ function isSameScale(oldScale, newScale) {
  * Simple viewer control to display PDF content/pages.
  */
 class BaseViewer {
+  #buffer = null;
+
   #scrollModePageState = null;
 
   /**
@@ -518,7 +546,7 @@ class BaseViewer {
       }
       // Add the page to the buffer at the start of drawing. That way it can be
       // evicted from the buffer and destroyed even if we pause its rendering.
-      this._buffer.push(pageView);
+      this.#buffer.push(pageView);
     };
     this.eventBus._on("pagerender", this._onBeforeDraw);
 
@@ -684,7 +712,7 @@ class BaseViewer {
     this._currentScale = UNKNOWN_SCALE;
     this._currentScaleValue = null;
     this._pageLabels = null;
-    this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
+    this.#buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
     this._location = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
@@ -1153,7 +1181,7 @@ class BaseViewer {
       return;
     }
     const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
-    this._buffer.resize(newCacheSize, visible.ids);
+    this.#buffer.resize(newCacheSize, visible.ids);
 
     this.renderingQueue.renderHighestPriority(visible);
 
@@ -1304,7 +1332,7 @@ class BaseViewer {
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
-    return this._buffer.has(pageView);
+    return this.#buffer.has(pageView);
   }
 
   cleanup() {

@@ -136,12 +136,12 @@ describe("BaseViewer", function () {
 
       // Ensure that decreasing the size will evict the correct views,
       // while re-ordering the remaining ones correctly.
-      buffer.resize(3, new Set([1, 2, 3]));
+      buffer.resize(3, new Set([1, 2, 5]));
 
       expect(buffer._buffer).toEqual([
         viewsMap.get(1),
         viewsMap.get(2),
-        viewsMap.get(3),
+        viewsMap.get(5),
       ]);
     });
 
