@@ -33,6 +33,7 @@ describe("Data serializer", function () {
           <Units>1</Units>
           <Unit_Price>250.00</Unit_Price>
           <Total_Price>250.00</Total_Price>
+          <àé></àé>
         </Detail>
         <Page>2</Page>
         <Detail PartNo="RRB-LB">
@@ -59,6 +60,7 @@ describe("Data serializer", function () {
       ["Receipt.Detail[0].Units", "12&3"],
       ["Receipt.Detail[0].Unit_Price", "456>"],
       ["Receipt.Detail[0].Total_Price", "789"],
+      ["Receipt.Detail[0].àé", "1011"],
       ["Receipt.Detail[1].PartNo", "foo-bar😀"],
       ["Receipt.Detail[1].Description", "hello world"],
     ]) {
@@ -66,7 +68,7 @@ describe("Data serializer", function () {
     }
 
     const serialized = dataHandler.serialize(storage);
-    const expected = `<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><foo>bar</foo><bar>foo</bar><xfa:data><Receipt><Page>1</Page><Detail PartNo="GS001"><Description>Giant Slingshot</Description><Units>12&amp;3</Units><Unit_Price>456&gt;</Unit_Price><Total_Price>789</Total_Price></Detail><Page>2</Page><Detail PartNo="foo-bar&#x1F600;"><Description>hello world</Description><Units>5</Units><Unit_Price>12.00</Unit_Price><Total_Price>60.00</Total_Price></Detail><Sub_Total>310.00</Sub_Total><Tax>24.80</Tax><Total_Price>334.80</Total_Price></Receipt></xfa:data></xfa:datasets>`;
+    const expected = `<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><foo>bar</foo><bar>foo</bar><xfa:data><Receipt><Page>1</Page><Detail PartNo="GS001"><Description>Giant Slingshot</Description><Units>12&amp;3</Units><Unit_Price>456&gt;</Unit_Price><Total_Price>789</Total_Price><\xC3\xA0\xC3\xA9>1011</\xC3\xA0\xC3\xA9></Detail><Page>2</Page><Detail PartNo="foo-bar&#x1F600;"><Description>hello world</Description><Units>5</Units><Unit_Price>12.00</Unit_Price><Total_Price>60.00</Total_Price></Detail><Sub_Total>310.00</Sub_Total><Tax>24.80</Tax><Total_Price>334.80</Total_Price></Receipt></xfa:data></xfa:datasets>`;
 
     expect(serialized).toEqual(expected);
   });
