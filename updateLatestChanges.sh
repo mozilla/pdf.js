@@ -16,5 +16,5 @@ git checkout bleeding-edge
 # aren't already in upstream/master are replayed on top of that
 # other branch:
 
-# git rebase upstream/master
-git merge upstream/v2.11.338
+git rebase upstream/master
+# git merge upstream/v2.11.338
