@@ -2637,16 +2637,14 @@ class WorkerTransport {
         // If stream or range are disabled, it's our only way to report
         // loading progress.
         if (!fullReader.isStreamingSupported || !fullReader.isRangeSupported) {
-          if (this._lastProgress && loadingTask.onProgress) {
-            loadingTask.onProgress(this._lastProgress);
+          if (this._lastProgress) {
+            loadingTask.onProgress?.(this._lastProgress);
           }
           fullReader.onProgress = evt => {
-            if (loadingTask.onProgress) {
-              loadingTask.onProgress({
-                loaded: evt.loaded,
-                total: evt.total,
-              });
-            }
+            loadingTask.onProgress?.({
+              loaded: evt.loaded,
+              total: evt.total,
+            });
           };
         }
 
@@ -2772,12 +2770,11 @@ class WorkerTransport {
     messageHandler.on("DataLoaded", data => {
       // For consistency: Ensure that progress is always reported when the
       // entire PDF file has been loaded, regardless of how it was fetched.
-      if (loadingTask.onProgress) {
-        loadingTask.onProgress({
-          loaded: data.length,
-          total: data.length,
-        });
-      }
+      loadingTask.onProgress?.({
+        loaded: data.length,
+        total: data.length,
+      });
+
       this.downloadInfoCapability.resolve(data);
     });
 
@@ -2856,13 +2853,13 @@ class WorkerTransport {
     messageHandler.on("obj", data => {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
-        return undefined;
+        return;
       }
 
       const [id, pageIndex, type, imageData] = data;
       const pageProxy = this.pageCache[pageIndex];
       if (pageProxy.objs.has(id)) {
-        return undefined;
+        return;
       }
 
       switch (type) {
@@ -2881,20 +2878,16 @@ class WorkerTransport {
         default:
           throw new Error(`Got unknown object type ${type}`);
       }
-      return undefined;
     });
 
     messageHandler.on("DocProgress", data => {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
-
-      if (loadingTask.onProgress) {
-        loadingTask.onProgress({
-          loaded: data.loaded,
-          total: data.total,
-        });
-      }
+      loadingTask.onProgress?.({
+        loaded: data.loaded,
+        total: data.total,
+      });
     });
 
     messageHandler.on(
@@ -2935,9 +2928,7 @@ class WorkerTransport {
     if (this.destroyed) {
       return; // Ignore any pending requests if the worker was terminated.
     }
-    if (this.loadingTask.onUnsupportedFeature) {
-      this.loadingTask.onUnsupportedFeature(featureId);
-    }
+    this.loadingTask.onUnsupportedFeature?.(featureId);
   }
 
   getData() {

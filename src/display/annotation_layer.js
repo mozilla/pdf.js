@@ -1835,6 +1835,7 @@ class LineAnnotationElement extends AnnotationElement {
     // won't be possible to open/close the popup (note e.g. issue 11122).
     line.setAttribute("stroke-width", data.borderStyle.width || 1);
     line.setAttribute("stroke", "transparent");
+    line.setAttribute("fill", "transparent");
 
     svg.appendChild(line);
     this.container.append(svg);
@@ -1881,7 +1882,7 @@ class SquareAnnotationElement extends AnnotationElement {
     // won't be possible to open/close the popup (note e.g. issue 11122).
     square.setAttribute("stroke-width", borderWidth || 1);
     square.setAttribute("stroke", "transparent");
-    square.setAttribute("fill", "none");
+    square.setAttribute("fill", "transparent");
 
     svg.appendChild(square);
     this.container.append(svg);
@@ -1928,7 +1929,7 @@ class CircleAnnotationElement extends AnnotationElement {
     // won't be possible to open/close the popup (note e.g. issue 11122).
     circle.setAttribute("stroke-width", borderWidth || 1);
     circle.setAttribute("stroke", "transparent");
-    circle.setAttribute("fill", "none");
+    circle.setAttribute("fill", "transparent");
 
     svg.appendChild(circle);
     this.container.append(svg);
@@ -1983,7 +1984,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     // won't be possible to open/close the popup (note e.g. issue 11122).
     polyline.setAttribute("stroke-width", data.borderStyle.width || 1);
     polyline.setAttribute("stroke", "transparent");
-    polyline.setAttribute("fill", "none");
+    polyline.setAttribute("fill", "transparent");
 
     svg.appendChild(polyline);
     this.container.append(svg);
@@ -2071,7 +2072,7 @@ class InkAnnotationElement extends AnnotationElement {
       // won't be possible to open/close the popup (note e.g. issue 11122).
       polyline.setAttribute("stroke-width", data.borderStyle.width || 1);
       polyline.setAttribute("stroke", "transparent");
-      polyline.setAttribute("fill", "none");
+      polyline.setAttribute("fill", "transparent");
 
       // Create the popup ourselves so that we can bind it to the polyline
       // instead of to the entire container (which is the default).

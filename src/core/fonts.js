@@ -1497,6 +1497,55 @@ class Font {
           });
         }
         hasShortCmap = true;
+      } else if (format === 2) {
+        const subHeaderKeys = [];
+        let maxSubHeaderKey = 0;
+        // Read subHeaderKeys. If subHeaderKeys[i] === 0, then i is a
+        // single-byte character. Otherwise, i is the first byte of a
+        // multi-byte character, and the value is 8*index into
+        // subHeaders.
+        for (let i = 0; i < 256; i++) {
+          const subHeaderKey = file.getUint16() >> 3;
+          subHeaderKeys.push(subHeaderKey);
+          maxSubHeaderKey = Math.max(subHeaderKey, maxSubHeaderKey);
+        }
+        // Read subHeaders. The number of entries is determined
+        // dynamically based on the subHeaderKeys found above.
+        const subHeaders = [];
+        for (let i = 0; i <= maxSubHeaderKey; i++) {
+          subHeaders.push({
+            firstCode: file.getUint16(),
+            entryCount: file.getUint16(),
+            idDelta: signedInt16(file.getByte(), file.getByte()),
+            idRangePos: file.pos + file.getUint16(),
+          });
+        }
+        for (let i = 0; i < 256; i++) {
+          if (subHeaderKeys[i] === 0) {
+            // i is a single-byte code.
+            file.pos = subHeaders[0].idRangePos + 2 * i;
+            glyphId = file.getUint16();
+            mappings.push({
+              charCode: i,
+              glyphId,
+            });
+          } else {
+            // i is the first byte of a two-byte code.
+            const s = subHeaders[subHeaderKeys[i]];
+            for (j = 0; j < s.entryCount; j++) {
+              const charCode = (i << 8) + j + s.firstCode;
+              file.pos = s.idRangePos + 2 * j;
+              glyphId = file.getUint16();
+              if (glyphId !== 0) {
+                glyphId = (glyphId + s.idDelta) % 65536;
+              }
+              mappings.push({
+                charCode,
+                glyphId,
+              });
+            }
+          }
+        }
       } else if (format === 4) {
         // re-creating the table in format 4 since the encoding
         // might be changed
