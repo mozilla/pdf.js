@@ -188,7 +188,7 @@ function appendText(task, geom, styles, ctx) {
     (task._enhanceTextSelection && AllWhitespaceRegexp.test(geom.str))
   ) {
     shouldScaleText = true;
-  } else if (geom.transform[0] !== geom.transform[3]) {
+  } else if (geom.str !== " " && geom.transform[0] !== geom.transform[3]) {
     const absScaleX = Math.abs(geom.transform[0]),
       absScaleY = Math.abs(geom.transform[3]);
     // When the horizontal/vertical scaling differs significantly, also scale

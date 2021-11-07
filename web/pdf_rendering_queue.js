@@ -82,10 +82,11 @@ class PDFRenderingQueue {
       return;
     }
     // No pages needed rendering, so check thumbnails.
-    if (this.pdfThumbnailViewer && this.isThumbnailViewEnabled) {
-      if (this.pdfThumbnailViewer.forceRendering()) {
-        return;
-      }
+    if (
+      this.isThumbnailViewEnabled &&
+      this.pdfThumbnailViewer?.forceRendering()
+    ) {
+      return;
     }
 
     if (this.printing) {
@@ -114,13 +115,13 @@ class PDFRenderingQueue {
      * 2. if last scrolled down, the page after the visible pages, or
      *    if last scrolled up, the page before the visible pages
      */
-    const visibleViews = visible.views;
+    const visibleViews = visible.views,
+      numVisible = visibleViews.length;
 
-    const numVisible = visibleViews.length;
     if (numVisible === 0) {
       return null;
     }
-    for (let i = 0; i < numVisible; ++i) {
+    for (let i = 0; i < numVisible; i++) {
       const view = visibleViews[i].view;
       if (!this.isViewFinished(view)) {
         return view;
@@ -131,10 +132,14 @@ class PDFRenderingQueue {
 
     // All the visible views have rendered; try to handle any "holes" in the
     // page layout (can happen e.g. with spreadModes at higher zoom levels).
-    if (lastId - firstId > 1) {
-      for (let i = 0, ii = lastId - firstId; i <= ii; i++) {
-        const holeId = scrolledDown ? firstId + i : lastId - i,
-          holeView = views[holeId - 1];
+    if (lastId - firstId + 1 > numVisible) {
+      const visibleIds = visible.ids;
+      for (let i = 1, ii = lastId - firstId; i < ii; i++) {
+        const holeId = scrolledDown ? firstId + i : lastId - i;
+        if (visibleIds.has(holeId)) {
+          continue;
+        }
+        const holeView = views[holeId - 1];
         if (!this.isViewFinished(holeView)) {
           return holeView;
         }

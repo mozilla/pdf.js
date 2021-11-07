@@ -606,10 +606,16 @@ function setPara(node, nodeStyle, value) {
 }
 
 function setFontFamily(xfaFont, node, fontFinder, style) {
-  const name = stripQuotes(xfaFont.typeface);
-  const typeface = fontFinder.find(name);
+  if (!fontFinder) {
+    // The font cannot be found in the pdf so use the default one.
+    delete style.fontFamily;
+    return;
+  }
 
+  const name = stripQuotes(xfaFont.typeface);
   style.fontFamily = `"${name}"`;
+
+  const typeface = fontFinder.find(name);
   if (typeface) {
     const { fontFamily } = typeface.regular.cssFontInfo;
     if (fontFamily !== name) {

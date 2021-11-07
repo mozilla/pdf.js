@@ -82,10 +82,20 @@ class Catalog {
 
   get version() {
     const version = this._catDict.get("Version");
-    if (!isName(version)) {
-      return shadow(this, "version", null);
-    }
-    return shadow(this, "version", version.name);
+    return shadow(
+      this,
+      "version",
+      version instanceof Name ? version.name : null
+    );
+  }
+
+  get lang() {
+    const lang = this._catDict.get("Lang");
+    return shadow(
+      this,
+      "lang",
+      typeof lang === "string" ? stringToPDFString(lang) : null
+    );
   }
 
   /**
@@ -94,10 +104,11 @@ class Catalog {
    */
   get needsRendering() {
     const needsRendering = this._catDict.get("NeedsRendering");
-    if (!isBool(needsRendering)) {
-      return shadow(this, "needsRendering", false);
-    }
-    return shadow(this, "needsRendering", needsRendering);
+    return shadow(
+      this,
+      "needsRendering",
+      typeof needsRendering === "boolean" ? needsRendering : false
+    );
   }
 
   get collection() {

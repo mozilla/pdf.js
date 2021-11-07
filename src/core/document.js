@@ -263,12 +263,13 @@ class Page {
   }
 
   get xfaData() {
-    if (this.xfaFactory) {
-      return shadow(this, "xfaData", {
-        bbox: this.xfaFactory.getBoundingBox(this.pageIndex),
-      });
-    }
-    return shadow(this, "xfaData", null);
+    return shadow(
+      this,
+      "xfaData",
+      this.xfaFactory
+        ? { bbox: this.xfaFactory.getBoundingBox(this.pageIndex) }
+        : null
+    );
   }
 
   save(handler, task, annotationStorage) {
@@ -784,11 +785,15 @@ class PDFDocument {
   }
 
   get numPages() {
+    let num = 0;
     if (this.xfaFactory) {
-      return shadow(this, "numPages", this.xfaFactory.numberPages);
+      // num is a Promise.
+      num = this.xfaFactory.getNumPages();
+    } else if (this.linearization) {
+      num = this.linearization.numPages;
+    } else {
+      num = this.catalog.numPages;
     }
-    const linearization = this.linearization;
-    const num = linearization ? linearization.numPages : this.catalog.numPages;
     return shadow(this, "numPages", num);
   }
 
@@ -883,27 +888,24 @@ class PDFDocument {
   }
 
   get xfaFactory() {
+    let data;
     if (
       this.pdfManager.enableXfa &&
       this.catalog.needsRendering &&
       this.formInfo.hasXfa &&
       !this.formInfo.hasAcroForm
     ) {
-      const data = this.xfaData;
-      return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
+      data = this.xfaData;
     }
-    return shadow(this, "xfaFaxtory", null);
+    return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
   }
 
   get isPureXfa() {
-    return this.xfaFactory && this.xfaFactory.isValid();
+    return this.xfaFactory ? this.xfaFactory.isValid() : false;
   }
 
   get htmlForXfa() {
-    if (this.xfaFactory) {
-      return this.xfaFactory.getPages();
-    }
-    return null;
+    return this.xfaFactory ? this.xfaFactory.getPages() : null;
   }
 
   async loadXfaImages() {
@@ -1084,10 +1086,9 @@ class PDFDocument {
   }
 
   async serializeXfaData(annotationStorage) {
-    if (this.xfaFactory) {
-      return this.xfaFactory.serializeData(annotationStorage);
-    }
-    return null;
+    return this.xfaFactory
+      ? this.xfaFactory.serializeData(annotationStorage)
+      : null;
   }
 
   get formInfo() {
@@ -1160,6 +1161,10 @@ class PDFDocument {
 
     const docInfo = {
       PDFFormatVersion: version,
+      Language: this.catalog.lang,
+      EncryptFilterName: this.xref.encrypt
+        ? this.xref.encrypt.filterName
+        : null,
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: this.formInfo.hasAcroForm,
       IsXFAPresent: this.formInfo.hasXfa,

@@ -106,22 +106,19 @@ function PDFPageViewBuffer(size) {
       data.shift().destroy();
     }
   };
+
   /**
-   * After calling resize, the size of the buffer will be newSize. The optional
-   * parameter pagesToKeep is, if present, an array of pages to push to the back
-   * of the buffer, delaying their destruction. The size of pagesToKeep has no
-   * impact on the final size of the buffer; if pagesToKeep has length larger
-   * than newSize, some of those pages will be destroyed anyway.
+   * After calling resize, the size of the buffer will be `newSize`.
+   * The optional parameter `idsToKeep` is, if present, a Set of page-ids to
+   * push to the back of the buffer, delaying their destruction. The size of
+   * `idsToKeep` has no impact on the final size of the buffer; if `idsToKeep`
+   * is larger than `newSize`, some of those pages will be destroyed anyway.
    */
-  this.resize = function (newSize, pagesToKeep) {
+  this.resize = function (newSize, idsToKeep = null) {
     size = newSize;
-    if (pagesToKeep) {
-      const pageIdsToKeep = new Set();
-      for (let i = 0, iMax = pagesToKeep.length; i < iMax; ++i) {
-        pageIdsToKeep.add(pagesToKeep[i].id);
-      }
+    if (idsToKeep) {
       moveToEndOfArray(data, function (page) {
-        return pageIdsToKeep.has(page.id);
+        return idsToKeep.has(page.id);
       });
     }
     while (data.length > size) {
@@ -132,6 +129,17 @@ function PDFPageViewBuffer(size) {
   this.has = function (view) {
     return data.includes(view);
   };
+
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    Object.defineProperty(this, "_buffer", {
+      get() {
+        return data.slice();
+      },
+    });
+  }
 }
 
 function isSameScale(oldScale, newScale) {
@@ -150,6 +158,8 @@ function isSameScale(oldScale, newScale) {
  * Simple viewer control to display PDF content/pages.
  */
 class BaseViewer {
+  #scrollModePageState = null;
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -724,9 +734,7 @@ class BaseViewer {
         this._optionalContentConfigPromise = optionalContentConfigPromise;
 
         const viewerElement =
-          this._scrollMode === ScrollMode.PAGE
-            ? this._scrollModePageState.shadowViewer
-            : this.viewer;
+          this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
@@ -889,8 +897,7 @@ class BaseViewer {
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
 
-    this._scrollModePageState = {
-      shadowViewer: document.createDocumentFragment(),
+    this.#scrollModePageState = {
       previousPageNumber: 1,
       scrollDown: true,
       pages: [],
@@ -915,18 +922,12 @@ class BaseViewer {
       throw new Error("_ensurePageViewVisible: Invalid scrollMode value.");
     }
     const pageNumber = this._currentPageNumber,
-      state = this._scrollModePageState,
+      state = this.#scrollModePageState,
       viewer = this.viewer;
 
-    // Remove the currently active pages, if any, from the viewer.
-    if (viewer.hasChildNodes()) {
-      // Temporarily remove all the pages from the DOM.
-      viewer.textContent = "";
-
-      for (const pageView of this._pages) {
-        state.shadowViewer.appendChild(pageView.div);
-      }
-    }
+    // Temporarily remove all the pages from the DOM...
+    viewer.textContent = "";
+    // ... and clear out the active ones.
     state.pages.length = 0;
 
     if (this._spreadMode === SpreadMode.NONE) {
@@ -1385,7 +1386,7 @@ class BaseViewer {
     const bufferSize = Number(PDFViewerApplicationOptions.get("defaultCacheSize")) || DEFAULT_CACHE_SIZE;
     const newCacheSize = Math.max(bufferSize, 2 * numVisiblePages + 1);
     // #950 end of modification
-    this._buffer.resize(newCacheSize, visiblePages);
+    this._buffer.resize(newCacheSize, visible.ids);
 
     this.renderingQueue.renderHighestPriority(visible);
 
@@ -1474,7 +1475,9 @@ class BaseViewer {
       y: element.offsetTop + element.clientTop,
       view: pageView,
     };
-    return { first: view, last: view, views: [view] };
+    const ids = new Set([pageView.id]);
+
+    return { first: view, last: view, views: [view], ids };
   }
 
   _getVisiblePages() {
@@ -1511,7 +1514,7 @@ class BaseViewer {
     }
     const views =
         this._scrollMode === ScrollMode.PAGE
-          ? this._scrollModePageState.pages
+          ? this.#scrollModePageState.pages
           : this._pages,
       horizontal = this._scrollMode === ScrollMode.HORIZONTAL,
       rtl = horizontal && this._isContainerRtl;
@@ -1542,16 +1545,14 @@ class BaseViewer {
       console.error(`isPageVisible: "${pageNumber}" is not a valid page.`);
       return false;
     }
-    return this._getVisiblePages().views.some(function (view) {
-      return view.id === pageNumber;
-    });
+    return this._getVisiblePages().ids.has(pageNumber);
   }
 
   /**
    * @param {number} pageNumber
    */
   isPageCached(pageNumber) {
-    if (!this.pdfDocument || !this._buffer) {
+    if (!this.pdfDocument) {
       return false;
     }
     if (
@@ -1565,9 +1566,6 @@ class BaseViewer {
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
-    if (!pageView) {
-      return false;
-    }
     return this._buffer.has(pageView);
   }
 
@@ -1623,13 +1621,15 @@ class BaseViewer {
     return promise;
   }
 
-  /**
-   * @private
-   */
-  get _scrollAhead() {
+  #getScrollAhead(visible) {
+    if (visible.first?.id === 1) {
+      return true;
+    } else if (visible.last?.id === this.pagesCount) {
+      return false;
+    }
     switch (this._scrollMode) {
       case ScrollMode.PAGE:
-        return this._scrollModePageState.scrollDown;
+        return this.#scrollModePageState.scrollDown;
       case ScrollMode.HORIZONTAL:
         return this.scroll.right;
     }
@@ -1638,7 +1638,7 @@ class BaseViewer {
 
   forceRendering(currentlyVisiblePages) {
     const visiblePages = currentlyVisiblePages || this._getVisiblePages();
-    const scrollAhead = this._scrollAhead;
+    const scrollAhead = this.#getScrollAhead(visiblePages);
     const preRenderExtra =
       this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL;
@@ -2172,4 +2172,4 @@ class BaseViewer {
   }
 }
 
-export { BaseViewer };
+export { BaseViewer, PDFPageViewBuffer };
