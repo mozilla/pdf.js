@@ -14,7 +14,7 @@
  */
 
 import { getInteger, getKeyword, HTMLResult } from "./utils.js";
-import { shadow, warn } from "../../shared/util.js";
+import { shadow, utf8StringToString, warn } from "../../shared/util.js";
 import { encodeToXmlString } from "../core_utils.js";
 import { NamespaceIds } from "./namespaces.js";
 import { searchNode } from "./som.js";
@@ -819,10 +819,12 @@ class XmlObject extends XFAObject {
       buf.push(encodeToXmlString(this[$content]));
       return;
     }
+    const utf8TagName = utf8StringToString(tagName);
     const prefix = this[$namespaceId] === NS_DATASETS ? "xfa:" : "";
-    buf.push(`<${prefix}${tagName}`);
+    buf.push(`<${prefix}${utf8TagName}`);
     for (const [name, value] of this[_attributes].entries()) {
-      buf.push(` ${name}="${encodeToXmlString(value[$content])}"`);
+      const utf8Name = utf8StringToString(name);
+      buf.push(` ${utf8Name}="${encodeToXmlString(value[$content])}"`);
     }
     if (this[_dataValue] !== null) {
       if (this[_dataValue]) {
@@ -848,7 +850,7 @@ class XmlObject extends XFAObject {
         child[$toString](buf);
       }
     }
-    buf.push(`</${prefix}${tagName}>`);
+    buf.push(`</${prefix}${utf8TagName}>`);
   }
 
   [$onChild](child) {
