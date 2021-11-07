@@ -2007,11 +2007,12 @@ class LoopbackPort {
           if (typeof desc.value === "undefined") {
             continue;
           }
-        if (typeof desc.value === "function") {
-          if (i === 'cMapUrl') {
-            result[i] = cloneValue(desc.value());
-          } else if (!value.hasOwnProperty?.(i)) {
-            continue;
+          if (typeof desc.value === "function") {
+            if (i === 'cMapUrl') {
+              result[i] = cloneValue(desc.value());
+            } else if (!value.hasOwnProperty?.(i)) {
+              continue;
+            }
           }
           result[i] = fallbackCloneValue(desc.value);
         }
