@@ -370,23 +370,32 @@ function handleBreak(node) {
   const pageArea = target && target[$getParent]();
 
   let index;
+  let nextPageArea = pageArea;
   if (node.startNew) {
+    // startNew === 1 so we must create a new container (pageArea or
+    // contentArea).
     if (target) {
       const contentAreas = pageArea.contentArea.children;
-      index = contentAreas.findIndex(e => e === target) - 1;
+      const indexForCurrent = contentAreas.indexOf(currentContentArea);
+      const indexForTarget = contentAreas.indexOf(target);
+      if (indexForCurrent !== -1 && indexForCurrent < indexForTarget) {
+        // The next container is after the current container so
+        // we can stay on the same page.
+        nextPageArea = null;
+      }
+      index = indexForTarget - 1;
     } else {
-      index = currentPageArea.contentArea.children.findIndex(
-        e => e === currentContentArea
-      );
+      index = currentPageArea.contentArea.children.indexOf(currentContentArea);
     }
   } else if (target && target !== currentContentArea) {
     const contentAreas = pageArea.contentArea.children;
-    index = contentAreas.findIndex(e => e === target) - 1;
+    index = contentAreas.indexOf(target) - 1;
+    nextPageArea = pageArea === currentPageArea ? null : pageArea;
   } else {
     return false;
   }
 
-  node[$extra].target = pageArea === currentPageArea ? null : pageArea;
+  node[$extra].target = nextPageArea;
   node[$extra].index = index;
   return true;
 }
@@ -5209,6 +5218,13 @@ class Subform extends XFAObject {
       style.height = measureToString(height);
     }
 
+    if (
+      (style.width === "0px" || style.height === "0px") &&
+      children.length === 0
+    ) {
+      return HTMLResult.EMPTY;
+    }
+
     const html = {
       name: "div",
       attributes,
@@ -5557,7 +5573,7 @@ class Template extends XFAObject {
               hasSomething ||
               (html.html.children && html.html.children.length !== 0);
             htmlContentAreas[i].children.push(html.html);
-          } else if (!hasSomething) {
+          } else if (!hasSomething && mainHtml.children.length > 1) {
             mainHtml.children.pop();
           }
           return mainHtml;
