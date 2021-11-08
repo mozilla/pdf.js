@@ -1804,8 +1804,8 @@ class LineAnnotationElement extends AnnotationElement {
     line.setAttribute("y2", data.rect[3] - data.lineCoordinates[3]);
     // Ensure that the 'stroke-width' is always non-zero, since otherwise it
     // won't be possible to open/close the popup (note e.g. issue 11122).
-    line.setAttribute("stroke-width", data.borderStyle.width || 1);
-    line.setAttribute("stroke", "transparent");
+    line.setAttribute("stroke-width", (data.borderStyle.width += 3 || 1));
+    line.setAttribute("stroke", `rgb(${data.color})`);
     line.setAttribute("fill", "transparent");
 
     svg.appendChild(line);
