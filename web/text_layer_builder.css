@@ -35,6 +35,13 @@
   transform-origin: 0% 0%;
 }
 
+/* Only necessary in Google Chrome, see issue 14205, and most unfortunately
+ * the problem doesn't show up in "text" reference tests. */
+.textLayer span.markedContent {
+  top: 0;
+  height: 0;
+}
+
 .textLayer .highlight {
   margin: -1px;
   padding: 1px;
