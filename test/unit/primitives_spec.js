@@ -87,7 +87,7 @@ describe("primitives", function () {
     const checkInvalidKeyValues = function (dict) {
       expect(dict.get()).toBeUndefined();
       expect(dict.get("Prev")).toBeUndefined();
-      expect(dict.get("Decode", "D")).toBeUndefined();
+      expect(dict.get("D", "Decode")).toBeUndefined();
       expect(dict.get("FontFile", "FontFile2", "FontFile3")).toBeUndefined();
     };
 

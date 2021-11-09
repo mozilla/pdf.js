@@ -379,14 +379,14 @@ class ColorSpace {
     cs = xref.fetchIfRef(cs);
     if (isName(cs)) {
       switch (cs.name) {
-        case "DeviceGray":
         case "G":
+        case "DeviceGray":
           return this.singletons.gray;
-        case "DeviceRGB":
         case "RGB":
+        case "DeviceRGB":
           return this.singletons.rgb;
-        case "DeviceCMYK":
         case "CMYK":
+        case "DeviceCMYK":
           return this.singletons.cmyk;
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
@@ -417,14 +417,14 @@ class ColorSpace {
       let params, numComps, baseCS, whitePoint, blackPoint, gamma;
 
       switch (mode) {
-        case "DeviceGray":
         case "G":
+        case "DeviceGray":
           return this.singletons.gray;
-        case "DeviceRGB":
         case "RGB":
+        case "DeviceRGB":
           return this.singletons.rgb;
-        case "DeviceCMYK":
         case "CMYK":
+        case "DeviceCMYK":
           return this.singletons.cmyk;
         case "CalGray":
           params = xref.fetchIfRef(cs[1]);
@@ -467,8 +467,8 @@ class ColorSpace {
             baseCS = this._parse(baseCS, xref, resources, pdfFunctionFactory);
           }
           return new PatternCS(baseCS);
-        case "Indexed":
         case "I":
+        case "Indexed":
           baseCS = this._parse(cs[1], xref, resources, pdfFunctionFactory);
           const hiVal = xref.fetchIfRef(cs[2]) + 1;
           const lookup = xref.fetchIfRef(cs[3]);
