@@ -52,6 +52,18 @@ import { RunLengthStream } from "./run_length_stream.js";
 const MAX_LENGTH_TO_CACHE = 1000;
 const MAX_ADLER32_LENGTH = 5552;
 
+const INLINE_IMAGE_KEYS = {
+  BitsPerComponent: "BPC",
+  ColorSpace: "CS",
+  Decode: "D",
+  DecodeParms: "DP",
+  Filter: "F",
+  Height: "H",
+  ImageMask: "IM",
+  Interpolate: "I",
+  Width: "W",
+};
+
 function computeAdler32(bytes) {
   const bytesLength = bytes.length;
   if (
@@ -495,6 +507,7 @@ class Parser {
     const stream = lexer.stream;
 
     // Parse dictionary.
+    const map = new Map();
     const dict = new Dict(this.xref);
     let dictLength;
     while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
@@ -506,11 +519,22 @@ class Parser {
       if (this.buf1 === EOF) {
         break;
       }
-      dict.set(key, this.getObj(cipherTransform));
+      map.set(key, this.getObj(cipherTransform));
     }
     if (lexer.beginInlineImagePos !== -1) {
       dictLength = stream.pos - lexer.beginInlineImagePos;
     }
+    // Populate the dictionary.
+    for (const [key, value] of map) {
+      // Ensure that abbreviated keys always take precedence
+      // (fixes issue14256.pdf).
+      const abbreviatedKey = INLINE_IMAGE_KEYS[key];
+      if (abbreviatedKey && map.has(abbreviatedKey)) {
+        continue;
+      }
+      dict.set(key, value);
+    }
+    map.clear();
 
     // Extract the name of the first (i.e. the current) image filter.
     const filter = dict.get("Filter", "F");
