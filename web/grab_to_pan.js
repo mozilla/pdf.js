@@ -142,7 +142,8 @@ GrabToPan.prototype = {
    */
   _onmousemove: function GrabToPan__onmousemove(event) {
     this.element.removeEventListener("scroll", this._endPan, true);
-    if (isLeftMouseReleased(event)) {
+    if (!(event.buttons & 1)) {
+      // The left mouse button is released.
       this._endPan();
       return;
     }
@@ -176,39 +177,5 @@ GrabToPan.prototype = {
     this.overlay.remove();
   },
 };
-
-/**
- * Whether the left mouse is not pressed.
- * @param event {MouseEvent}
- * @returns {boolean} True if the left mouse button is not pressed,
- *                    False if unsure or if the left mouse button is pressed.
- */
-function isLeftMouseReleased(event) {
-  if ("buttons" in event) {
-    // http://www.w3.org/TR/DOM-Level-3-Events/#events-MouseEvent-buttons
-    // Firefox 15+
-    // Chrome 43+
-    // Safari 11.1+
-    return !(event.buttons & 1);
-  }
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-    // Browser sniffing because it's impossible to feature-detect
-    // whether event.which for onmousemove is reliable.
-    const chrome = window.chrome;
-    const isChrome15OrOpera15plus = chrome && (chrome.webstore || chrome.app);
-    //                                         ^ Chrome 15+       ^ Opera 15+
-    const isSafari6plus =
-      /Apple/.test(navigator.vendor) &&
-      /Version\/([6-9]\d*|[1-5]\d+)/.test(navigator.userAgent);
-
-    if (isChrome15OrOpera15plus || isSafari6plus) {
-      // Chrome 14+
-      // Opera 15+
-      // Safari 6.0+
-      return event.which === 0;
-    }
-  }
-  return false;
-}
 
 export { GrabToPan };
