@@ -534,7 +534,8 @@ function loadScript(src, removeScriptElement = false) {
       }
       resolve(evt);
     };
-    script.onerror = function () {
+    script.onerror = function (error) {
+      console.log(error);
       reject(new Error(`Cannot load script at: ${script.src}`));
     };
     (document.head || document.documentElement).appendChild(script);
