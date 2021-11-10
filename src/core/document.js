@@ -789,7 +789,8 @@ class PDFDocument {
   get numPages() {
     let num = 0;
     if (this.xfaFactory) {
-      num = this.xfaFactory.numPages;
+      // num is a Promise.
+      num = this.xfaFactory.getNumPages();
     } else if (this.linearization) {
       num = this.linearization.numPages;
     } else {
@@ -1163,6 +1164,9 @@ class PDFDocument {
     const docInfo = {
       PDFFormatVersion: version,
       Language: this.catalog.lang,
+      EncryptFilterName: this.xref.encrypt
+        ? this.xref.encrypt.filterName
+        : null,
       IsLinearized: !!this.linearization,
       IsAcroFormPresent: this.formInfo.hasAcroForm,
       IsXFAPresent: this.formInfo.hasXfa,

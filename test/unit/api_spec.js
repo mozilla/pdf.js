@@ -1166,6 +1166,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.7");
       expect(info.Language).toEqual("en");
+      expect(info.EncryptFilterName).toEqual(null);
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
@@ -1201,6 +1202,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.4");
       expect(info.Language).toEqual(null);
+      expect(info.EncryptFilterName).toEqual(null);
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
@@ -1223,6 +1225,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual(null);
       expect(info.Language).toEqual(null);
+      expect(info.EncryptFilterName).toEqual(null);
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
@@ -1753,6 +1756,22 @@ This package provides support for this font in LATEX. It includes Type \x81
 versions of the fonts, converted for this package using FontForge from its
 sources, for full support with Dvips.`)
       ).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with beginbfrange operator handled correctly (bug 1627427)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("bug1627427_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(text).toEqual(
+        "침하게 흐린 품이 눈이 올 듯하더니 눈은 아니 오고 얼다가 만 비가 추"
+      );
 
       await loadingTask.destroy();
     });

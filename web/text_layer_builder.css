@@ -23,6 +23,7 @@
   overflow: hidden;
   opacity: 0.2;
   line-height: 1;
+  text-size-adjust: none;
 }
 
 .textLayer span,
@@ -32,6 +33,13 @@
   white-space: pre;
   cursor: text;
   transform-origin: 0% 0%;
+}
+
+/* Only necessary in Google Chrome, see issue 14205, and most unfortunately
+ * the problem doesn't show up in "text" reference tests. */
+.textLayer span.markedContent {
+  top: 0;
+  height: 0;
 }
 
 .textLayer .highlight {

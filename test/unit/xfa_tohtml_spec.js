@@ -39,7 +39,7 @@ describe("XFAFactory", function () {
   }
 
   describe("toHTML", function () {
-    it("should convert some basic properties to CSS", function () {
+    it("should convert some basic properties to CSS", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -86,9 +86,9 @@ describe("XFAFactory", function () {
       const factory = new XFAFactory({ "xdp:xdp": xml });
       factory.setFonts([]);
 
-      expect(factory.numPages).toEqual(2);
+      expect(await factory.getNumPages()).toEqual(2);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const page1 = pages.children[0];
       expect(page1.attributes.style).toEqual({
         height: "789px",
@@ -144,7 +144,7 @@ describe("XFAFactory", function () {
       );
     });
 
-    it("should have an alt attribute from toolTip", function () {
+    it("should have an alt attribute from toolTip", async () => {
       if (isNodeJS) {
         pending("Image is not supported in Node.js.");
       }
@@ -174,15 +174,15 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const field = searchHtmlNode(pages, "name", "img");
 
       expect(field.attributes.alt).toEqual("alt text");
     });
 
-    it("should have a aria heading role and level", function () {
+    it("should have a aria heading role and level", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -208,9 +208,9 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const page1 = pages.children[0];
       const wrapper = page1.children[0];
       const draw = wrapper.children[0];
@@ -219,7 +219,7 @@ describe("XFAFactory", function () {
       expect(draw.attributes["aria-level"]).toEqual("2");
     });
 
-    it("should have aria table role", function () {
+    it("should have aria table role", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -263,9 +263,9 @@ describe("XFAFactory", function () {
       const factory = new XFAFactory({ "xdp:xdp": xml });
       factory.setFonts([]);
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const table = searchHtmlNode(
         pages,
         "xfaName",
@@ -303,7 +303,7 @@ describe("XFAFactory", function () {
       expect(cell.attributes.role).toEqual("cell");
     });
 
-    it("should have a maxLength property", function () {
+    it("should have a maxLength property", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -336,15 +336,15 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const field = searchHtmlNode(pages, "name", "input");
 
       expect(field.attributes.maxLength).toEqual(123);
     });
 
-    it("should have an aria-label property from speak", function () {
+    it("should have an aria-label property from speak", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -378,15 +378,15 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const field = searchHtmlNode(pages, "name", "input");
 
       expect(field.attributes["aria-label"]).toEqual("Screen Reader");
     });
 
-    it("should have an aria-label property from toolTip", function () {
+    it("should have an aria-label property from toolTip", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -420,15 +420,15 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const field = searchHtmlNode(pages, "name", "input");
 
       expect(field.attributes["aria-label"]).toEqual("Screen Reader");
     });
 
-    it("should have an input or textarea", function () {
+    it("should have an input or textarea", async () => {
       const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -463,9 +463,9 @@ describe("XFAFactory", function () {
       `;
       const factory = new XFAFactory({ "xdp:xdp": xml });
 
-      expect(factory.numPages).toEqual(1);
+      expect(await factory.getNumPages()).toEqual(1);
 
-      const pages = factory.getPages();
+      const pages = await factory.getPages();
       const field1 = searchHtmlNode(pages, "name", "input");
       expect(field1).not.toEqual(null);
 
@@ -474,7 +474,7 @@ describe("XFAFactory", function () {
     });
   });
 
-  it("should have an input or textarea", function () {
+  it("should have an input or textarea", async () => {
     const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -517,15 +517,15 @@ describe("XFAFactory", function () {
     `;
     const factory = new XFAFactory({ "xdp:xdp": xml });
 
-    expect(factory.numPages).toEqual(1);
+    expect(await factory.getNumPages()).toEqual(1);
 
-    const pages = factory.getPages();
+    const pages = await factory.getPages();
     const field1 = searchHtmlNode(pages, "name", "input");
     expect(field1).not.toEqual(null);
     expect(field1.attributes.value).toEqual("123");
   });
 
-  it("should parse URLs correctly", function () {
+  it("should parse URLs correctly", async () => {
     function getXml(href) {
       return `
 <?xml version="1.0"?>
@@ -560,38 +560,38 @@ describe("XFAFactory", function () {
 
     // A valid, and complete, URL.
     factory = new XFAFactory({ "xdp:xdp": getXml("https://www.example.com/") });
-    expect(factory.numPages).toEqual(1);
-    pages = factory.getPages();
+    expect(await factory.getNumPages()).toEqual(1);
+    pages = await factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("https://www.example.com/");
     expect(a.attributes.href).toEqual("https://www.example.com/");
 
     // A valid, but incomplete, URL.
     factory = new XFAFactory({ "xdp:xdp": getXml("www.example.com/") });
-    expect(factory.numPages).toEqual(1);
-    pages = factory.getPages();
+    expect(await factory.getNumPages()).toEqual(1);
+    pages = await factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("www.example.com/");
     expect(a.attributes.href).toEqual("http://www.example.com/");
 
     // A valid email-address.
     factory = new XFAFactory({ "xdp:xdp": getXml("mailto:test@example.com") });
-    expect(factory.numPages).toEqual(1);
-    pages = factory.getPages();
+    expect(await factory.getNumPages()).toEqual(1);
+    pages = await factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("mailto:test@example.com");
     expect(a.attributes.href).toEqual("mailto:test@example.com");
 
     // Not a valid URL.
     factory = new XFAFactory({ "xdp:xdp": getXml("qwerty/") });
-    expect(factory.numPages).toEqual(1);
-    pages = factory.getPages();
+    expect(await factory.getNumPages()).toEqual(1);
+    pages = await factory.getPages();
     a = searchHtmlNode(pages, "name", "a");
     expect(a.value).toEqual("qwerty/");
     expect(a.attributes.href).toEqual("");
   });
 
-  it("should replace button with an URL by a link", function () {
+  it("should replace button with an URL by a link", async () => {
     const xml = `
 <?xml version="1.0"?>
 <xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
@@ -635,9 +635,9 @@ describe("XFAFactory", function () {
     `;
     const factory = new XFAFactory({ "xdp:xdp": xml });
 
-    expect(factory.numPages).toEqual(1);
+    expect(await factory.getNumPages()).toEqual(1);
 
-    const pages = factory.getPages();
+    const pages = await factory.getPages();
     let a = searchHtmlNode(pages, "name", "a");
     expect(a.attributes.href).toEqual("https://github.com/mozilla/pdf.js");
     expect(a.attributes.newWindow).toEqual(true);
