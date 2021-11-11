@@ -701,6 +701,16 @@ class PDFDocumentProxy {
           return this.fingerprints[0];
         },
       });
+
+      Object.defineProperty(this, "getStats", {
+        value: async () => {
+          deprecated(
+            "`PDFDocumentProxy.getStats`, " +
+              "please use the `PDFDocumentProxy.stats`-getter instead."
+          );
+          return this.stats || { streamTypes: {}, fontTypes: {} };
+        },
+      });
     }
   }
 
@@ -726,6 +736,24 @@ class PDFDocumentProxy {
    */
   get fingerprints() {
     return this._pdfInfo.fingerprints;
+  }
+
+  /**
+   * @typedef {Object} PDFDocumentStats
+   * @property {Object<string, boolean>} streamTypes - Used stream types in the
+   *   document (an item is set to true if specific stream ID was used in the
+   *   document).
+   * @property {Object<string, boolean>} fontTypes - Used font types in the
+   *   document (an item is set to true if specific font ID was used in the
+   *   document).
+   */
+
+  /**
+   * @type {PDFDocumentStats | null} The current statistics about document
+   *   structures, or `null` when no statistics exists.
+   */
+  get stats() {
+    return this._transport.stats;
   }
 
   /**
@@ -938,25 +966,6 @@ class PDFDocumentProxy {
    */
   getDownloadInfo() {
     return this._transport.downloadInfoCapability.promise;
-  }
-
-  /**
-   * @typedef {Object} PDFDocumentStats
-   * @property {Object<string, boolean>} streamTypes - Used stream types in the
-   *   document (an item is set to true if specific stream ID was used in the
-   *   document).
-   * @property {Object<string, boolean>} fontTypes - Used font types in the
-   *   document (an item is set to true if specific font ID was used in the
-   *   document).
-   */
-
-  /**
-   * @returns {Promise<PDFDocumentStats>} A promise this is resolved with
-   *   current statistics about document structures (see
-   *   {@link PDFDocumentStats}).
-   */
-  getStats() {
-    return this._transport.getStats();
   }
 
   /**
@@ -2392,6 +2401,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
  * @ignore
  */
 class WorkerTransport {
+  #docStats = null;
+
   constructor(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -2431,6 +2442,10 @@ class WorkerTransport {
 
   get annotationStorage() {
     return shadow(this, "annotationStorage", new AnnotationStorage());
+  }
+
+  get stats() {
+    return this.#docStats;
   }
 
   getRenderingIntent(
@@ -2843,6 +2858,18 @@ class WorkerTransport {
       });
     });
 
+    messageHandler.on("DocStats", data => {
+      if (this.destroyed) {
+        return; // Ignore any pending requests if the worker was terminated.
+      }
+      // Ensure that a `PDFDocumentProxy.stats` call-site cannot accidentally
+      // modify this internal data.
+      this.#docStats = Object.freeze({
+        streamTypes: Object.freeze(data.streamTypes),
+        fontTypes: Object.freeze(data.fontTypes),
+      });
+    });
+
     messageHandler.on(
       "UnsupportedFeature",
       this._onUnsupportedFeature.bind(this)
@@ -3053,10 +3080,6 @@ class WorkerTransport {
 
   getMarkInfo() {
     return this.messageHandler.sendWithPromise("GetMarkInfo", null);
-  }
-
-  getStats() {
-    return this.messageHandler.sendWithPromise("GetStats", null);
   }
 
   async startCleanup(keepLoadedFonts = false) {
