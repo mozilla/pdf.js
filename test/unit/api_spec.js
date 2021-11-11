@@ -1275,8 +1275,8 @@ describe("api", function () {
     });
 
     it("gets document stats", async function () {
-      const stats = await pdfDocument.getStats();
-      expect(stats).toEqual({ streamTypes: {}, fontTypes: {} });
+      const stats = pdfDocument.stats;
+      expect(stats).toEqual(null);
     });
 
     it("cleans up document resources", async function () {
@@ -2021,15 +2021,16 @@ sozialökonomische Gerechtigkeit.`)
     });
 
     it("gets document stats after parsing page", async function () {
-      const stats = await page.getOperatorList().then(function () {
-        return pdfDocument.getStats();
-      });
+      await page.getOperatorList();
+      const stats = pdfDocument.stats;
 
-      const expectedStreamTypes = {};
-      expectedStreamTypes[StreamType.FLATE] = true;
-      const expectedFontTypes = {};
-      expectedFontTypes[FontType.TYPE1STANDARD] = true;
-      expectedFontTypes[FontType.CIDFONTTYPE2] = true;
+      const expectedStreamTypes = {
+        [StreamType.FLATE]: true,
+      };
+      const expectedFontTypes = {
+        [FontType.TYPE1STANDARD]: true,
+        [FontType.CIDFONTTYPE2]: true,
+      };
 
       expect(stats).toEqual({
         streamTypes: expectedStreamTypes,
