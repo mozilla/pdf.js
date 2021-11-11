@@ -43,7 +43,7 @@ class PredictorStream extends DecodeStream {
     this.dict = str.dict;
 
     const colors = (this.colors = params.get("Colors") || 1);
-    const bits = (this.bits = params.get("BitsPerComponent") || 8);
+    const bits = (this.bits = params.get("BPC", "BitsPerComponent") || 8);
     const columns = (this.columns = params.get("Columns") || 1);
 
     this.pixBytes = (colors * bits + 7) >> 3;
