@@ -117,7 +117,7 @@ class RadialAxialShading extends BaseShading {
     this.coordsArr = dict.getArray("Coords");
     this.shadingType = dict.get("ShadingType");
     const cs = ColorSpace.parse({
-      cs: dict.getRaw("ColorSpace") || dict.getRaw("CS"),
+      cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
       resources,
       pdfFunctionFactory,
@@ -415,7 +415,7 @@ class MeshShading extends BaseShading {
       this.bbox = null;
     }
     const cs = ColorSpace.parse({
-      cs: dict.getRaw("ColorSpace") || dict.getRaw("CS"),
+      cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
       xref,
       resources,
       pdfFunctionFactory,
