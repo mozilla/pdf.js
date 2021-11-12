@@ -1760,6 +1760,34 @@ sources, for full support with Dvips.`)
       await loadingTask.destroy();
     });
 
+    it("gets text content, with negative spaces (bug 931481)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("bug931481.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(`Kathrin Nachbaur
+Die promovierte Juristin ist 1979 in Graz geboren und aufgewachsen. Nach
+erfolgreichem Studienabschluss mit Fokus auf Europarecht absolvierte sie ein
+Praktikum bei Magna International in Kanada in der Human Resources Abteilung.
+Anschliessend wurde sie geschult in Human Resources, Arbeitsrecht und
+Kommunikation, währenddessen sie auch an ihrem Doktorat im Wirtschaftsrecht
+arbeitete. Seither arbeitete sie bei Magna International als Projekt Manager in der
+Innovationsabteilung. Seit 2009 ist sie Frank Stronachs Büroleiterin in Österreich und
+Kanada. Zusätzlich ist sie seit 2012 Vice President, Business Development der
+Stronach Group und Vizepräsidentin und Institutsleiterin des Stronach Institut für
+sozialökonomische Gerechtigkeit.`)
+      ).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with beginbfrange operator handled correctly (bug 1627427)", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("bug1627427_reduced.pdf")
