@@ -59,7 +59,12 @@ class BaseTreeViewer {
    * @private
    */
   _normalizeTextContent(str) {
-    return removeNullCharacters(str) || /* en dash = */ "\u2013";
+    // Chars in range [0x01-0x1F] will be replaced with a white space
+    // and 0x00 by "".
+    return (
+      removeNullCharacters(str, /* replaceInvisible */ true) ||
+      /* en dash = */ "\u2013"
+    );
   }
 
   /**
