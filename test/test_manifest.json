@@ -1013,6 +1013,15 @@
        "link": true,
        "type": "load"
     },
+    {  "id": "xfa_issue14150",
+       "file": "pdfs/xfa_issue14150.pdf",
+       "md5": "295b3e513b62945fbba73bce6908344c",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "xfa_issue14071",
        "file": "pdfs/xfa_issue14071.pdf",
        "md5": "7ef09705091602668ce22086c83a90f3",
