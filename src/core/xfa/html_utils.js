@@ -238,7 +238,7 @@ function layoutNode(node, availableSpace) {
     if (!font) {
       const root = node[$getTemplateRoot]();
       let parent = node[$getParent]();
-      while (parent !== root) {
+      while (parent && parent !== root) {
         if (parent.font) {
           font = parent.font;
           break;
