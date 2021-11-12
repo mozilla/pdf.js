@@ -2573,7 +2573,8 @@ class PartialEvaluator {
           (i === 0 ||
             i + 1 === ii ||
             glyphs[i - 1].unicode === " " ||
-            glyphs[i + 1].unicode === " ")
+            glyphs[i + 1].unicode === " " ||
+            extraSpacing)
         ) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
