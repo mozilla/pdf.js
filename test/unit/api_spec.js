@@ -1102,6 +1102,19 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets outline with non-displayable chars", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue14267.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const outline = await pdfDoc.getOutline();
+      expect(Array.isArray(outline)).toEqual(true);
+      expect(outline.length).toEqual(1);
+
+      const outlineItem = outline[0];
+      expect(outlineItem.title).toEqual("hello\x11world");
+
+      await loadingTask.destroy();
+    });
+
     it("gets non-existent permissions", async function () {
       const permissions = await pdfDocument.getPermissions();
       expect(permissions).toEqual(null);
