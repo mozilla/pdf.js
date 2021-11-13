@@ -405,14 +405,8 @@ var Driver = (function DriverClosure() {
 
   Driver.prototype = {
     _getQueryStringParameters: function Driver_getQueryStringParameters() {
-      var queryString = window.location.search.substring(1);
-      var values = queryString.split("&");
-      var parameters = {};
-      for (var i = 0, ii = values.length; i < ii; i++) {
-        var value = values[i].split("=");
-        parameters[unescape(value[0])] = unescape(value[1]);
-      }
-      return parameters;
+      const queryString = window.location.search.substring(1);
+      return Object.fromEntries(new URLSearchParams(queryString).entries());
     },
 
     run: function Driver_run() {
