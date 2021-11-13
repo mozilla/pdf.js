@@ -566,15 +566,19 @@ class AbortException extends BaseException {
   }
 }
 
-const NullCharactersRegExp = /\x00/g;
+const NullCharactersRegExp = /\x00+/g;
+const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
 
 /**
  * @param {string} str
  */
-function removeNullCharacters(str) {
+function removeNullCharacters(str, replaceInvisible = false) {
   if (typeof str !== "string") {
     warn("The argument for removeNullCharacters must be a string.");
     return str;
+  }
+  if (replaceInvisible) {
+    str = str.replace(InvisibleCharactersRegExp, " ");
   }
   return str.replace(NullCharactersRegExp, "");
 }
