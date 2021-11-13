@@ -554,7 +554,7 @@ class BaseViewer {
       if (evt.cssTransform || this._onePageRenderedCapability.settled) {
         return;
       }
-      this._onePageRenderedCapability.resolve();
+      this._onePageRenderedCapability.resolve({ timestamp: evt.timestamp });
 
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
