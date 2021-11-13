@@ -206,7 +206,7 @@ class BaseViewer {
     this.viewer = options.viewer || options.container.firstElementChild;
 
     /** #495 modified by ngx-extended-pdf-viewer */
-    this.pageViewMode = options.pageViewMode || "single";
+    this.pageViewMode = options.pageViewMode || "multiple";
     /** end of modification */
 
     if (
@@ -347,23 +347,7 @@ class BaseViewer {
 
   /** #495 modified by ngx-extended-pdf-viewer */
   hidePagesDependingOnpageViewMode() {
-    if (this.pageViewMode === "single") {
-      this._pages.forEach(page => {
-        page.div.style.display = "none";
-      });
-      this._pages.forEach(page => {
-        const showIt = page.id === this.currentPageNumber;
-        if (showIt) {
-          page.div.style.display = "inline-block";
-          if (page.div.parentElement.classList.contains("spread")) {
-            page.div.parentElement.childNodes.forEach((div, index) => {
-              div.style.display = "inline-block";
-            });
-          }
-        }
-      });
-    // #716 modified by ngx-extended-pdf-viewer
-    } else if (this.pageViewMode === "book") {
+    if (this.pageViewMode === "book") {
       if (!this.pageFlip) {
         setTimeout(() => {
           if (!this.pageFlip) {
@@ -417,7 +401,7 @@ class BaseViewer {
     /** #495 modified by ngx-extended-pdf-viewer */
     this.hidePagesDependingOnpageViewMode();
     // #716 modified by ngx-extended-pdf-viewer
-    if (this.pageViewMode === "single" || this.pageViewMode === "book" || this.pageViewMode === "infinite-scroll") {
+    if (this.pageViewMode === "book" || this.pageViewMode === "infinite-scroll") {
       const pageView = this._pages[this.currentPageNumber - 1];
       if (pageView.div.parentElement.classList.contains("spread")) {
         pageView.div.parentElement.childNodes.forEach(div => {
@@ -590,9 +574,7 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
-    // #562 modified by ngx-extended-pdf-viewer
-    this._setScale(val, this.pageViewMode === "single");
-    // #562 end of modification
+    this._setScale(val, false);
   }
 
   /**
@@ -609,9 +591,7 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return;
     }
-    // #562 modified by ngx-extended-pdf-viewer
-    this._setScale(val, this.pageViewMode === "single");
-    // #562 end of modification
+    this._setScale(val, false);
   }
 
   /**
@@ -1012,14 +992,6 @@ class BaseViewer {
   }
 
   _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
-    /** #492 modified by ngx-extended-pdf-viewer */
-    if (this.pageViewMode === "single") {
-      this._pages.forEach(() => {
-        pageDiv.style.display = "inline-block";
-      });
-    }
-    /** #492 end of modification */
-
     if (this._scrollMode === ScrollMode.PAGE) {
       if (pageNumber) {
         // Ensure that `this._currentPageNumber` is correct.
@@ -1131,12 +1103,9 @@ class BaseViewer {
       }
       const noPadding = this.isInPresentationMode || this.removePageBorders;
       // #589 modified by ngx-extended-pdf-viewer
-      let verticalPadding = VERTICAL_PADDING;
-      if (this.pageViewMode === 'single') {
-        verticalPadding += 15;
-      }
+      const verticalPadding = VERTICAL_PADDING;
       let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
-      let vPadding = noPadding ? (this.pageViewMode === 'single'? 10: 0) : verticalPadding;
+      let vPadding = noPadding ? 0 : verticalPadding;
       // #589 end of modification
 
       if (!noPadding && this._scrollMode === ScrollMode.HORIZONTAL) {
@@ -1509,32 +1478,6 @@ class BaseViewer {
   }
 
   _getVisiblePages() {
-    /** #495 modified by ngx-extended-pdf-viewer */
-    if (this.pageViewMode === "single") {
-      if (!this.pagesCount) {
-        return { views: [] };
-      }
-      const pageView = this._pages[this._currentPageNumber - 1];
-      if (pageView.div.parentElement.classList.contains("spread")) {
-        const pageViews = [];
-        pageView.div.parentElement.childNodes.forEach(div => {
-          const pageNumber = Number(div.getAttribute("data-page-number"));
-          const pv = this._pages[pageNumber - 1];
-          const element = pv.div;
-
-          const view = {
-            id: pv.id,
-            x: element.offsetLeft + element.clientLeft,
-            y: element.offsetTop + element.clientTop,
-            view: pv,
-          };
-          pageViews.push(view);
-        });
-        return { first: pageViews[0], last: pageViews[pageViews.length - 1], views: pageViews };
-      }
-      return this._getCurrentVisiblePage();
-    }
-    /** end of modification */
     if (this.isInPresentationMode) {
       // The algorithm in `getVisibleElements` doesn't work in all browsers and
       // configurations (e.g. Chrome) when PresentationMode is active.
@@ -2095,10 +2038,6 @@ class BaseViewer {
         if (this._spreadMode === SpreadMode.NONE) {
           break; // Normal vertical scrolling.
         }
-        if (this.pageViewMode === "single") {
-          return 2;
-        }
-
         const parity = this._spreadMode - 1;
 
         if (previous && currentPageNumber % 2 !== parity) {

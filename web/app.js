@@ -2640,24 +2640,10 @@ function webViewerFirstPage() {
 function webViewerLastPage() {
   if (PDFViewerApplication.pdfDocument) {
     PDFViewerApplication.page = PDFViewerApplication.pagesCount;
-    // #542 prevent IE11 and Edge from scrolling to the end of the page
-    if (PDFViewerApplication.pageViewMode === "single") {
-      if (PDFViewerApplication.pdfViewer && PDFViewerApplication.pdfViewer.container) {
-        PDFViewerApplication.pdfViewer.container.scrollTop = 0;
-      }
-    }
-    // #542 end of modification
   }
 }
 function webViewerNextPage() {
   PDFViewerApplication.pdfViewer.nextPage();
-  // #542 prevent IE11 and Edge from scrolling to the end of the page
-  if (PDFViewerApplication.pageViewMode === "single") {
-    if (PDFViewerApplication.pdfViewer && PDFViewerApplication.pdfViewer.container) {
-     PDFViewerApplication.pdfViewer.container.scrollTop = 0;
-    }
-  }
-  // #542 end of modification
 }
 function webViewerPreviousPage() {
   PDFViewerApplication.pdfViewer.previousPage();
