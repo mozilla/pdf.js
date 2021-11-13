@@ -586,8 +586,8 @@ class PartialEvaluator {
   }) {
     const dict = image.dict;
     const imageRef = dict.objId;
-    const w = dict.get("Width", "W");
-    const h = dict.get("Height", "H");
+    const w = dict.get("W", "Width");
+    const h = dict.get("H", "Height");
 
     if (!(w && isNum(w)) || !(h && isNum(h))) {
       warn("Image dimensions are missing, or not numbers.");
@@ -610,8 +610,8 @@ class PartialEvaluator {
       operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
 
-    const imageMask = dict.get("ImageMask", "IM") || false;
-    const interpolate = dict.get("Interpolate", "I");
+    const imageMask = dict.get("IM", "ImageMask") || false;
+    const interpolate = dict.get("I", "Interpolate");
     let imgData, args;
     if (imageMask) {
       // This depends on a tmpCanvas being filled with the
@@ -619,20 +619,17 @@ class PartialEvaluator {
       // data can't be done here. Instead of creating a
       // complete PDFImage, only read the information needed
       // for later.
-
-      const width = dict.get("Width", "W");
-      const height = dict.get("Height", "H");
-      const bitStrideLength = (width + 7) >> 3;
+      const bitStrideLength = (w + 7) >> 3;
       const imgArray = image.getBytes(
-        bitStrideLength * height,
+        bitStrideLength * h,
         /* forceClamped = */ true
       );
-      const decode = dict.getArray("Decode", "D");
+      const decode = dict.getArray("D", "Decode");
 
       imgData = PDFImage.createMask({
         imgArray,
-        width,
-        height,
+        width: w,
+        height: h,
         imageIsFromDecodeStream: image instanceof DecodeStream,
         inverseDecode: !!decode && decode[0] > 0,
         interpolate,
@@ -654,7 +651,7 @@ class PartialEvaluator {
       return;
     }
 
-    const softMask = dict.get("SMask", "SM") || false;
+    const softMask = dict.get("SM", "SMask") || false;
     const mask = dict.get("Mask") || false;
 
     const SMALL_IMAGE_DIMENSIONS = 200;
@@ -2582,7 +2579,8 @@ class PartialEvaluator {
           (i === 0 ||
             i + 1 === ii ||
             glyphs[i - 1].unicode === " " ||
-            glyphs[i + 1].unicode === " ")
+            glyphs[i + 1].unicode === " " ||
+            extraSpacing)
         ) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
