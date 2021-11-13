@@ -91,6 +91,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue14269",
+       "file": "pdfs/issue14269.pdf",
+       "md5": "f34abf77a418f54e13fbcd03b063432e",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue11549",
        "file": "pdfs/issue11549_reduced.pdf",
        "md5": "a1ea636f413e02e10dbdf379ab4a99ae",

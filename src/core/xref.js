@@ -590,6 +590,10 @@ class XRef {
     if (trailerDict) {
       return trailerDict;
     }
+    // No trailer dictionary found, taking the "top"-dictionary (if exists).
+    if (this.topDict) {
+      return this.topDict;
+    }
     // nothing helps
     throw new InvalidPDFException("Invalid PDF structure.");
   }
@@ -680,6 +684,8 @@ class XRef {
         throw e;
       }
       info("(while reading XRef): " + e);
+
+      this.startXRefQueue.shift();
     }
 
     if (recoveryMode) {
