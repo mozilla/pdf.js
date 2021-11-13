@@ -1372,7 +1372,12 @@ const PDFViewerApplication = {
       this._initializeAutoPrint(pdfDocument, openActionPromise);
     });
 
-    onePageRendered.then(() => {
+    onePageRendered.then(data => {
+      this.externalServices.reportTelemetry({
+        type: "pageInfo",
+        timestamp: data.timestamp,
+      });
+
       pdfDocument.getOutline().then(outline => {
         if (pdfDocument !== this.pdfDocument) {
           return; // The document was closed while the outline resolved.
@@ -2315,7 +2320,7 @@ function webViewerResetPermissions() {
   appConfig.viewerContainer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 }
 
-function webViewerPageRendered({ pageNumber, timestamp, error }) {
+function webViewerPageRendered({ pageNumber, error }) {
   // If the page is still visible when it has finished rendering,
   // ensure that the page number input loading indicator is hidden.
   if (pageNumber === PDFViewerApplication.page) {
@@ -2341,10 +2346,6 @@ function webViewerPageRendered({ pageNumber, timestamp, error }) {
     });
   }
 
-  PDFViewerApplication.externalServices.reportTelemetry({
-    type: "pageInfo",
-    timestamp,
-  });
   // It is a good time to report stream and font types.
   PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
     PDFViewerApplication.externalServices.reportTelemetry({
