@@ -74,11 +74,11 @@ const arabicTypes = [
 ];
 
 function isOdd(i) {
-  return (i & 1) !== 0;
+  return i % 2 !== 0;
 }
 
 function isEven(i) {
-  return (i & 1) === 0;
+  return i % 2 === 0;
 }
 
 function findUnequal(arr, start, value) {
