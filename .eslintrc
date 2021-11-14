@@ -71,6 +71,7 @@
     "no-inner-declarations": ["error", "functions"],
     "no-invalid-regexp": "error",
     "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
     "no-obj-calls": "error",
     "no-promise-executor-return": "error",
     "no-regex-spaces": "error",

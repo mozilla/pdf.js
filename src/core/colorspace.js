@@ -947,7 +947,7 @@ const CalGrayCS = (function CalGrayCSClosure() {
     const L = cs.YW * AG;
     // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
     // Convert values to rgb range [0, 255].
-    const val = Math.max(295.8 * L ** 0.333333333333333333 - 40.8, 0);
+    const val = Math.max(295.8 * L ** 0.3333333333333333 - 40.8, 0);
     dest[destOffset] = val;
     dest[destOffset + 1] = val;
     dest[destOffset + 2] = val;
