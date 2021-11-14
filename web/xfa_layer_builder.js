@@ -98,7 +98,7 @@ class XfaLayerBuilder {
         return XfaLayer.render(parameters);
       })
       .catch(error => {
-        console.error(error);
+        Window['ngxConsole'].error(error);
       });
   }
 

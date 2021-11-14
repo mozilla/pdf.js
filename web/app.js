@@ -316,7 +316,7 @@ const PDFViewerApplication = {
         return;
       }
       if (AppOptions._hasUserOptions()) {
-        console.warn(
+        Window['ngxConsole'].warn(
           "_readPreferences: The Preferences may override manually set AppOptions; " +
             'please use the "disablePreferences"-option in order to prevent that.'
         );
@@ -325,7 +325,7 @@ const PDFViewerApplication = {
     try {
       AppOptions.setAll(await this.preferences.getAll());
     } catch (reason) {
-      console.error(`_readPreferences: "${reason?.message}".`);
+      Window['ngxConsole'].error(`_readPreferences: "${reason?.message}".`);
     }
   },
 
@@ -406,7 +406,7 @@ const PDFViewerApplication = {
     try {
       await Promise.all(waitOn);
     } catch (reason) {
-      console.error(`_parseHashParameters: "${reason.message}".`);
+      Window['ngxConsole'].error(`_parseHashParameters: "${reason.message}".`);
     }
   },
 
@@ -460,7 +460,7 @@ const PDFViewerApplication = {
         }
       }
     } catch (reason) {
-      console.error(`_forceCssTheme: "${reason?.message}".`);
+      Window['ngxConsole'].error(`_forceCssTheme: "${reason?.message}".`);
     }
   },
 
@@ -1060,7 +1060,7 @@ const PDFViewerApplication = {
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
-      console.error(`Error when saving the document: ${reason.message}`);
+      Window['ngxConsole'].error(`Error when saving the document: ${reason.message}`);
       await this.download({ sourceEventType });
     } finally {
       await this.pdfScriptingManager.dispatchDidSave();
@@ -1186,7 +1186,7 @@ const PDFViewerApplication = {
       });
     } else {
       Promise.all(moreInfoText).then(parts => {
-        console.error(message + "\n" + parts.join("\n"));
+        Window['ngxConsole'].error(message + "\n" + parts.join("\n"));
       });
       this.fallback();
     }
@@ -1543,7 +1543,7 @@ const PDFViewerApplication = {
           // Don't warn/fallback for empty JavaScript actions.
           return false;
         }
-        console.warn("Warning: JavaScript support is not enabled");
+        Window['ngxConsole'].warn("Warning: JavaScript support is not enabled");
         this.fallback(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
@@ -1582,13 +1582,13 @@ const PDFViewerApplication = {
     // Provides some basic debug information
     const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
     if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-      console.log(
+      Window['ngxConsole'].log(
         "PDF viewer: ngx-extended-pdf-viewer running on pdf.js " +
           (window["pdfjs-dist/build/pdf"]
             ? window["pdfjs-dist/build/pdf"].version
             : " developer version (?)")
       );
-      console.log(
+      Window['ngxConsole'].log(
         `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
           `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
           `(PDF.js: ${version || "-"}` +
@@ -1632,21 +1632,21 @@ const PDFViewerApplication = {
       !pdfDocument.isPureXfa
     ) {
       if (pdfDocument.loadingParams.enableXfa) {
-        console.warn("Warning: XFA Foreground documents are not supported");
+        Window['ngxConsole'].warn("Warning: XFA Foreground documents are not supported");
       } else {
-        console.warn("Warning: XFA support is not enabled");
+        Window['ngxConsole'].warn("Warning: XFA support is not enabled");
       }
       this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
       !this.pdfViewer.renderForms
     ) {
-      console.warn("Warning: Interactive form support is not enabled");
+      Window['ngxConsole'].warn("Warning: Interactive form support is not enabled");
       this.fallback(UNSUPPORTED_FEATURES.forms);
     }
 
     if (info.IsSignaturesPresent) {
-      console.warn("Warning: Digital signatures validation is not supported");
+      Window['ngxConsole'].warn("Warning: Digital signatures validation is not supported");
       this.fallback(UNSUPPORTED_FEATURES.signatures);
     }
 
@@ -2333,7 +2333,7 @@ function webViewerInitialized() {
   if (!PDFViewerApplication.supportsDocumentFonts) {
     AppOptions.set("disableFontFace", true);
     PDFViewerApplication.l10n.get("web_fonts_disabled").then(msg => {
-      console.warn(msg);
+      Window['ngxConsole'].warn(msg);
     });
   }
 
@@ -2454,7 +2454,7 @@ function webViewerPageMode({ mode }) {
       view = SidebarView.NONE;
       break;
     default:
-      console.error('Invalid "pagemode" hash parameter: ' + mode);
+      Window['ngxConsole'].error('Invalid "pagemode" hash parameter: ' + mode);
       return;
   }
   PDFViewerApplication.pdfSidebar.switchView(view, /* forceOpen = */ true);

@@ -89,7 +89,7 @@ function composePage(
         },
         function (reason) {
           if (!(reason instanceof RenderingCancelledException)) {
-            console.error(reason);
+            Window['ngxConsole'].error(reason);
           }
 
           if (currentRenderTask === thisRenderTask) {

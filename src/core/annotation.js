@@ -145,7 +145,7 @@ class AnnotationFactory {
           // #639 modified by ngx-extended-pdf- viewer
           case "Sig":
             if (self.showUnverifiedSignatures) {
-              console.log(
+              Window['ngxConsole'].log(
                 "The PDF file contains a signature. Please take into account that it can't be verified yet. ngx-extended-pdf-viewer also displays forged signatures, so use this feature only if you're sure what you're doing."
               );
               return new SignatureWidgetAnnotation(parameters);
@@ -1307,7 +1307,7 @@ class WidgetAnnotation extends Annotation {
       // #171 modification start
       if (!self.showUnverifiedSignatures) {
         this.setFlags(AnnotationFlag.HIDDEN);
-        console.log(
+        Window['ngxConsole'].log(
           "The PDF file contains a signature. Please take into account that it can't be verified yet. By default, ngx-extended-pdf-viewer hides signatures until you configure it otherwise."
         );
       }

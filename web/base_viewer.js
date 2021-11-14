@@ -330,15 +330,15 @@ class BaseViewer {
 
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
-      console.error(`currentPageNumber: "${val}" is not a valid page.`);
+      Window['ngxConsole'].error(`currentPageNumber: "${val}" is not a valid page.`);
     }
 	// #716 modified by ngx-extended-pdf-viewer
     if (this.pageFlip) {
       if (flip) {
-        console.log("Flip");
+        Window['ngxConsole'].log("Flip");
         this.pageFlip.flip(val - 1);
       } else {
-        console.log("turn to page");
+        Window['ngxConsole'].log("turn to page");
         this.pageFlip.turnToPage(val - 1);
       }
     }
@@ -464,11 +464,11 @@ class BaseViewer {
   ensureAdjecentPagesAreLoaded() {
     if (!window.adjacentPagesLoader) {
       window.adjacentPagesLoader = evt => {
-        console.log("rendered", evt);
+        Window['ngxConsole'].log("rendered", evt);
         let pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber)];
         let isLoading = pageView.div.querySelector(".loadingIcon");
         if (isLoading) {
-          console.log("asking for the next page");
+          Window['ngxConsole'].log("asking for the next page");
           this._ensurePdfPageLoaded(pageView).then(() => {
             this.renderingQueue.renderView(pageView);
           });
@@ -476,7 +476,7 @@ class BaseViewer {
           pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 1)];
           isLoading = pageView.div.querySelector(".loadingIcon");
           if (isLoading) {
-            console.log("asking for the next + 1 page");
+            Window['ngxConsole'].log("asking for the next + 1 page");
             this._ensurePdfPageLoaded(pageView).then(() => {
               this.renderingQueue.renderView(pageView);
             });
@@ -484,7 +484,7 @@ class BaseViewer {
             pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 2)];
             isLoading = pageView.div.querySelector(".loadingIcon");
             if (isLoading) {
-              console.log("asking for the next + 2 page");
+              Window['ngxConsole'].log("asking for the next + 2 page");
               this._ensurePdfPageLoaded(pageView).then(() => {
                 this.renderingQueue.renderView(pageView);
               });
@@ -492,7 +492,7 @@ class BaseViewer {
               pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 3)];
               isLoading = pageView.div.querySelector(".loadingIcon");
               if (isLoading) {
-                console.log("asking for the next + 3 page");
+                Window['ngxConsole'].log("asking for the next + 3 page");
                 this._ensurePdfPageLoaded(pageView).then(() => {
                   this.renderingQueue.renderView(pageView);
                 });
@@ -500,7 +500,7 @@ class BaseViewer {
                 pageView = this._pages[Math.max(0, this.currentPageNumber - 1)];
                 isLoading = pageView.div.querySelector(".loadingIcon");
                 if (isLoading) {
-                  console.log("asking for the current page");
+                  Window['ngxConsole'].log("asking for the current page");
                   this._ensurePdfPageLoaded(pageView).then(() => {
                     this.renderingQueue.renderView(pageView);
                   });
@@ -508,12 +508,12 @@ class BaseViewer {
                   pageView = this._pages[Math.max(0, this.currentPageNumber - 2)];
                   isLoading = pageView.div.querySelector(".loadingIcon");
                   if (isLoading) {
-                    console.log("asking for the previous page");
+                    Window['ngxConsole'].log("asking for the previous page");
                     this._ensurePdfPageLoaded(pageView).then(() => {
                       this.renderingQueue.renderView(pageView);
                     });
                   } else {
-                    console.log("Finished preloading the pages");
+                    Window['ngxConsole'].log("Finished preloading the pages");
                   }
                 }
               }
@@ -551,7 +551,7 @@ class BaseViewer {
     }
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(page, /* resetCurrentPageView = */ true)) {
-      console.error(`currentPageLabel: "${val}" is not a valid page.`);
+      Window['ngxConsole'].error(`currentPageLabel: "${val}" is not a valid page.`);
     }
   }
 
@@ -834,7 +834,7 @@ class BaseViewer {
                 }
               },
               reason => {
-                console.error(
+                Window['ngxConsole'].error(
                   `Unable to get page ${pageNum} to initialize viewer`,
                   reason
                 );
@@ -857,7 +857,7 @@ class BaseViewer {
         }
       })
       .catch(reason => {
-        console.error("Unable to initialize viewer", reason);
+        Window['ngxConsole'].error("Unable to initialize viewer", reason);
       });
   }
 
@@ -874,7 +874,7 @@ class BaseViewer {
       !(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)
     ) {
       this._pageLabels = null;
-      console.error(`setPageLabels: Invalid page labels.`);
+      Window['ngxConsole'].error(`setPageLabels: Invalid page labels.`);
     } else {
       this._pageLabels = labels;
     }
@@ -1140,7 +1140,7 @@ class BaseViewer {
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:
-          console.error(`_setScale: "${value}" is an unknown zoom value.`);
+          Window['ngxConsole'].error(`_setScale: "${value}" is an unknown zoom value.`);
           return;
       }
       this._setScaleUpdatePages(scale, value, noScroll, /* preset = */ true);
@@ -1204,7 +1204,7 @@ class BaseViewer {
     const pageView =
       Number.isInteger(pageNumber) && this._pages[pageNumber - 1];
     if (!pageView) {
-      console.error(
+      Window['ngxConsole'].error(
         `scrollPageIntoView: "${pageNumber}" is not a valid pageNumber parameter.`
       );
       return;
@@ -1287,7 +1287,7 @@ class BaseViewer {
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
-        console.error(
+        Window['ngxConsole'].error(
           `scrollPageIntoView: "${destArray[1].name}" is not a valid destination type.`
         );
         return;
@@ -1513,7 +1513,7 @@ class BaseViewer {
         pageNumber <= this.pagesCount
       )
     ) {
-      console.error(`isPageVisible: "${pageNumber}" is not a valid page.`);
+      Window['ngxConsole'].error(`isPageVisible: "${pageNumber}" is not a valid page.`);
       return false;
     }
     return this._getVisiblePages().ids.has(pageNumber);
@@ -1533,7 +1533,7 @@ class BaseViewer {
         pageNumber <= this.pagesCount
       )
     ) {
-      console.error(`isPageCached: "${pageNumber}" is not a valid page.`);
+      Window['ngxConsole'].error(`isPageCached: "${pageNumber}" is not a valid page.`);
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
@@ -1584,7 +1584,7 @@ class BaseViewer {
         return pdfPage;
       })
       .catch(reason => {
-        console.error("Unable to get page for page view", reason);
+        Window['ngxConsole'].error("Unable to get page for page view", reason);
         // Page error -- there is nothing that can be done.
         this._pagesRequests.delete(pageView);
       });

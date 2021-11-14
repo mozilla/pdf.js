@@ -23,7 +23,7 @@
   Additional modifications for PDF.js project:
     - Disables language initialization on page loading.
     - Disables document translation on page loading.
-    - Removes consoleWarn and consoleLog and use console.log/warn directly.
+    - Removes consoleWarn and consoleLog and use Window['ngxConsole'].log/warn directly.
     - Removes window._ assignment.
     - Remove compatibility code for OldIE.
     - Replaces `String.prototype.substr()` with `String.prototype.substring()`.
@@ -88,7 +88,7 @@ document.webL10n = (function (window, document, undefined) {
       } catch (e) {
         const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
         if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-          console.warn("could not parse arguments for #" + l10nId);
+          Window['ngxConsole'].warn("could not parse arguments for #" + l10nId);
         }
       }
     }
@@ -272,7 +272,7 @@ document.webL10n = (function (window, document, undefined) {
           function () {
             const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
             if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-              console.warn(url + " not found.");
+              Window['ngxConsole'].warn(url + " not found.");
             }
             callback();
           }
@@ -345,7 +345,7 @@ document.webL10n = (function (window, document, undefined) {
       // we might have a pre-compiled dictionary instead
       var dict = getL10nDictionary();
       if (dict && dict.locales && dict.default_locale) {
-        console.log(
+        Window['ngxConsole'].log(
           "The PDF viewer uses the pre-compiled language bundle stored in the HTML page."
         );
         gL10nData = dict.locales[originalCaseLang]; // modified line
@@ -365,7 +365,7 @@ document.webL10n = (function (window, document, undefined) {
         }
         callback();
       } else {
-        console.log(
+        Window['ngxConsole'].log(
           "Could not load the translation files for the PDF viewer. Check the flag useBrowserLocale, check the locales subfolder of the assets folder, or add the locale definition to the index.html"
         );
       }
@@ -396,9 +396,9 @@ document.webL10n = (function (window, document, undefined) {
         parseResource(href, lang, callback, function () {
           const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
           if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-            console.warn(href + " not found.");
+            Window['ngxConsole'].warn(href + " not found.");
             // lang not found, used default resource instead
-            console.warn('"' + lang + '" resource not found');
+            Window['ngxConsole'].warn('"' + lang + '" resource not found');
           }
           gLanguage = "";
           // Resource not loaded, but we still need to call the callback.
@@ -784,7 +784,7 @@ document.webL10n = (function (window, document, undefined) {
     if (!(index in pluralRules)) {
       const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
       if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-        console.warn("plural form unknown for [" + lang + "]");
+        Window['ngxConsole'].warn("plural form unknown for [" + lang + "]");
       }
       return function () {
         return "other";
@@ -833,7 +833,7 @@ document.webL10n = (function (window, document, undefined) {
     if (!data) {
       const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
       if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-        console.warn("Translation for the key #" + key + " is missing.");
+        Window['ngxConsole'].warn("Translation for the key #" + key + " is missing.");
       }
       if (!fallback) {
         return null;
@@ -891,7 +891,7 @@ document.webL10n = (function (window, document, undefined) {
       if (arg in gL10nData) {
         return gL10nData[arg];
       }
-      console.log("argument {{" + arg + "}} for #" + key + " is undefined.");
+      Window['ngxConsole'].log("argument {{" + arg + "}} for #" + key + " is undefined.");
       return matched_text;
     });
   }
@@ -906,7 +906,7 @@ document.webL10n = (function (window, document, undefined) {
     if (!data) {
       const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
       if ((!PDFViewerApplicationOptions) || PDFViewerApplicationOptions.get("verbosity") > 0) {
-        console.warn("#" + l10n.id + " is undefined.");
+        Window['ngxConsole'].warn("#" + l10n.id + " is undefined.");
       }
       return;
     }

@@ -31,7 +31,7 @@ function normalizeText(s) {
 }
 
 function downloadLanguageCodes() {
-  console.log("Downloading language codes...\n");
+  Window['ngxConsole'].log("Downloading language codes...\n");
 
   const ALL_LOCALES =
     "https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales";
@@ -64,7 +64,7 @@ function downloadLanguageCodes() {
 }
 
 function downloadLanguageFiles(root, langCode) {
-  console.log("Downloading " + langCode + "...");
+  Window['ngxConsole'].log("Downloading " + langCode + "...");
 
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
@@ -136,7 +136,7 @@ async function downloadL10n(root, callback) {
     }
   }
   if (removeCodes.length) {
-    console.log(
+    Window['ngxConsole'].log(
       "\nConsider removing the following unmaintained locales:\n" +
         removeCodes.join(", ") +
         "\n"

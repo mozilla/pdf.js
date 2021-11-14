@@ -115,7 +115,7 @@ class PDFFindController {
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.executeCommand = (cmd, state) => {
-        console.error(
+        Window['ngxConsole'].error(
           "Deprecated method `PDFFindController.executeCommand` called, " +
             'please dispatch a "find"-event using the EventBus instead.'
         );
@@ -688,7 +688,7 @@ class PDFFindController {
               extractTextCapability.resolve(i);
             },
             reason => {
-              console.error(
+              Window['ngxConsole'].error(
                 `Unable to get text content for page ${i + 1}`,
                 reason
               );
@@ -822,7 +822,7 @@ class PDFFindController {
 
   _nextPageMatch() {
     if (this._resumePageIdx !== null) {
-      console.error("There can only be one pending page.");
+      Window['ngxConsole'].error("There can only be one pending page.");
     }
 
     let matches = null;

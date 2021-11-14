@@ -390,14 +390,14 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    console.log(`Info: ${msg}`);
+    Window['ngxConsole'].log(`Info: ${msg}`);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    console.log(`Warning: ${msg}`);
+    Window['ngxConsole'].log(`Warning: ${msg}`);
   }
 }
 

@@ -93,7 +93,7 @@ class PDFHistory {
    */
   initialize({ fingerprint, resetHistory = false, updateUrl = false }) {
     if (!fingerprint || typeof fingerprint !== "string") {
-      console.error(
+      Window['ngxConsole'].error(
         'PDFHistory.initialize: The "fingerprint" must be a non-empty string.'
       );
       return;
@@ -194,13 +194,13 @@ class PDFHistory {
       return;
     }
     if (namedDest && typeof namedDest !== "string") {
-      console.error(
+      Window['ngxConsole'].error(
         "PDFHistory.push: " +
           `"${namedDest}" is not a valid namedDest parameter.`
       );
       return;
     } else if (!Array.isArray(explicitDest)) {
-      console.error(
+      Window['ngxConsole'].error(
         "PDFHistory.push: " +
           `"${explicitDest}" is not a valid explicitDest parameter.`
       );
@@ -209,7 +209,7 @@ class PDFHistory {
       // Allow an unset `pageNumber` if and only if the history is still empty;
       // please refer to the `this._destination.page = null;` comment above.
       if (pageNumber !== null || this._destination) {
-        console.error(
+        Window['ngxConsole'].error(
           "PDFHistory.push: " +
             `"${pageNumber}" is not a valid pageNumber parameter.`
         );
@@ -276,7 +276,7 @@ class PDFHistory {
       return;
     }
     if (!this._isValidPage(pageNumber)) {
-      console.error(
+      Window['ngxConsole'].error(
         `PDFHistory.pushPage: "${pageNumber}" is not a valid page number.`
       );
       return;

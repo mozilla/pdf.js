@@ -146,7 +146,7 @@ class DownloadManager {
         window.open(viewerUrl);
         return true;
       } catch (ex) {
-        console.error(`openOrDownloadData: ${ex}`);
+        Window['ngxConsole'].error(`openOrDownloadData: ${ex}`);
         // Release the `blobUrl`, since opening it failed, and fallback to
         // downloading the PDF file.
         URL.revokeObjectURL(blobUrl);
@@ -170,7 +170,7 @@ class DownloadManager {
       if (error) {
         // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
         // that attempting to fallback and re-download would be helpful here.
-        console.error("`ChromeActions.download` failed.");
+        Window['ngxConsole'].error("`ChromeActions.download` failed.");
       }
       URL.revokeObjectURL(blobUrl);
     });
@@ -322,7 +322,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
     window.addEventListener("message", function windowMessage(e) {
       if (e.source !== null) {
         // The message MUST originate from Chrome code.
-        console.warn("Rejected untrusted message from " + e.origin);
+        Window['ngxConsole'].warn("Rejected untrusted message from " + e.origin);
         return;
       }
       const args = e.data;

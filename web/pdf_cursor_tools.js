@@ -99,7 +99,7 @@ class PDFCursorTools {
       case CursorTool.ZOOM:
       /* falls through */
       default:
-        console.error(`switchTool: "${tool}" is an unsupported value.`);
+        Window['ngxConsole'].error(`switchTool: "${tool}" is an unsupported value.`);
         return;
     }
     // Update the active tool *after* it has been validated above,

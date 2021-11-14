@@ -262,7 +262,7 @@ var Type2Parser = function type2Parser(aFilePath) {
 
   function dump(aStr) {
     if (debug) {
-      console.log(aStr);
+      Window['ngxConsole'].log(aStr);
     }
   }
 

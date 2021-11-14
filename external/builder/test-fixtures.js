@@ -41,22 +41,22 @@ files.forEach(function (expectationFilename) {
   if (out !== expectation) {
     errors++;
 
-    console.log("Assertion failed for " + inFilename);
-    console.log("--------------------------------------------------");
-    console.log("EXPECTED:");
-    console.log(expectation);
-    console.log("--------------------------------------------------");
-    console.log("ACTUAL");
-    console.log(out);
-    console.log("--------------------------------------------------");
-    console.log();
+    Window['ngxConsole'].log("Assertion failed for " + inFilename);
+    Window['ngxConsole'].log("--------------------------------------------------");
+    Window['ngxConsole'].log("EXPECTED:");
+    Window['ngxConsole'].log(expectation);
+    Window['ngxConsole'].log("--------------------------------------------------");
+    Window['ngxConsole'].log("ACTUAL");
+    Window['ngxConsole'].log(out);
+    Window['ngxConsole'].log("--------------------------------------------------");
+    Window['ngxConsole'].log();
   }
 });
 
 if (errors) {
-  console.error("Found " + errors + " expectation failures.");
+  Window['ngxConsole'].error("Found " + errors + " expectation failures.");
   process.exit(1);
 } else {
-  console.log("All tests completed without errors.");
+  Window['ngxConsole'].log("All tests completed without errors.");
   process.exit(0);
 }

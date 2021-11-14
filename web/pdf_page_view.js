@@ -305,7 +305,7 @@ class PDFPageView {
       PDFJSDev.test("GENERIC") &&
       typeof arguments[0] !== "object"
     ) {
-      console.error(
+      Window['ngxConsole'].error(
         "PDFPageView.update called with separate parameters, please use an object instead."
       );
 
@@ -494,7 +494,7 @@ class PDFPageView {
           transY = 0;
           break;
         default:
-          console.error("Bad rotation value.");
+          Window['ngxConsole'].error("Bad rotation value.");
           break;
       }
 
@@ -527,7 +527,7 @@ class PDFPageView {
 
   draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
-      console.error("Must be in new state before drawing");
+      Window['ngxConsole'].error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
     }
     const { div, pdfPage } = this;

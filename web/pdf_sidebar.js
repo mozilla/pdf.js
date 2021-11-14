@@ -207,7 +207,7 @@ class PDFSidebar {
         }
         break;
       default:
-        console.error(`PDFSidebar._switchView: "${view}" is not a valid view.`);
+        Window['ngxConsole'].error(`PDFSidebar._switchView: "${view}" is not a valid view.`);
         return false;
     }
     // Update the active view *after* it has been validated above,

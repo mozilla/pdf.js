@@ -609,7 +609,7 @@ class TextLayerRenderTask {
         }
       })
       .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
+        // Avoid "Uncaught promise" messages in the Window['ngxConsole'].
       });
   }
 
@@ -630,7 +630,7 @@ class TextLayerRenderTask {
       this._reader
         .cancel(new AbortException("TextLayer task cancelled."))
         .catch(() => {
-          // Avoid "Uncaught promise" messages in the console.
+          // Avoid "Uncaught promise" messages in the Window['ngxConsole'].
         });
       this._reader = null;
     }

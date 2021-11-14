@@ -868,7 +868,7 @@ class WorkerMessageHandler {
     // #171 receive options from ngx-extended-pdf-viewer
     handler.on("showUnverifiedSignatures", function wphReady(data) {
       if (data) {
-        console.log(
+        Window['ngxConsole'].log(
           "showUnverifiedSignatures=" +
             data +
             ". This is an incompletely implemented feature. Signatures cannot be validated, so use it at own risk."

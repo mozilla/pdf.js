@@ -279,7 +279,7 @@ class PDFThumbnailView {
 
   draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
-      console.error("Must be in new state before drawing");
+      Window['ngxConsole'].error("Must be in new state before drawing");
       return Promise.resolve();
     }
     const { pdfPage } = this;

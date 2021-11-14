@@ -64,7 +64,7 @@ class SandboxSupportBase {
       args = this.exportValueToSandbox(args);
       this.commFun(name, args);
     } catch (e) {
-      this.win.console.error(e);
+      this.win.Window['ngxConsole'].error(e);
     }
   }
 
