@@ -129,6 +129,9 @@
   bottom: 0;
   background: url("images/loading-icon.gif") center no-repeat;
 }
+.pdfViewer .page .loadingIcon.notVisible {
+  background: none;
+}
 
 .pdfPresentationMode .pdfViewer {
   margin-left: 0;

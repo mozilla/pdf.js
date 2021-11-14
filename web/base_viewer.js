@@ -158,6 +158,10 @@ class PDFPageViewBuffer {
     return this.#buf.has(view);
   }
 
+  [Symbol.iterator]() {
+    return this.#buf.keys();
+  }
+
   #destroyFirstView() {
     const firstView = this.#buf.keys().next().value;
 
@@ -1402,6 +1406,23 @@ class BaseViewer {
     return this.scroll.down;
   }
 
+  /**
+   * Only show the `loadingIcon`-spinner on visible pages (see issue 14242).
+   */
+  #toggleLoadingIconSpinner(visibleIds) {
+    for (const id of visibleIds) {
+      const pageView = this._pages[id - 1];
+      pageView?.toggleLoadingIconSpinner(/* viewVisible = */ true);
+    }
+    for (const pageView of this.#buffer) {
+      if (visibleIds.has(pageView.id)) {
+        // Handled above, since the "buffer" may not contain all visible pages.
+        continue;
+      }
+      pageView.toggleLoadingIconSpinner(/* viewVisible = */ false);
+    }
+  }
+
   forceRendering(currentlyVisiblePages) {
     const visiblePages = currentlyVisiblePages || this._getVisiblePages();
     const scrollAhead = this.#getScrollAhead(visiblePages);
@@ -1415,6 +1436,8 @@ class BaseViewer {
       scrollAhead,
       preRenderExtra
     );
+    this.#toggleLoadingIconSpinner(visiblePages.ids);
+
     if (pageView) {
       this._ensurePdfPageLoaded(pageView).then(() => {
         this.renderingQueue.renderView(pageView);
