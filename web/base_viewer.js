@@ -99,17 +99,6 @@ class PDFPageViewBuffer {
 
   constructor(size) {
     this.#size = size;
-
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      Object.defineProperty(this, "_buffer", {
-        get() {
-          return [...this.#buf];
-        },
-      });
-    }
   }
 
   push(view) {
