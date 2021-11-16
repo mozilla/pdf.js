@@ -26,6 +26,7 @@ import {
   isAscii,
   isString,
   OPS,
+  RenderingIntentFlag,
   shadow,
   stringToPDFString,
   stringToUTF16BEString,
@@ -386,6 +387,7 @@ class Annotation {
       modificationDate: this.modificationDate,
       rect: this.rectangle,
       subtype: params.subtype,
+      hasOwnCanvas: false,
     };
 
     if (params.collectFields) {
@@ -708,8 +710,8 @@ class Annotation {
     this.appearance = normalAppearanceState.get(as.name);
   }
 
-  loadResources(keys) {
-    return this.appearance.dict.getAsync("Resources").then(resources => {
+  loadResources(keys, appearance) {
+    return appearance.dict.getAsync("Resources").then(resources => {
       if (!resources) {
         return undefined;
       }
@@ -721,22 +723,24 @@ class Annotation {
     });
   }
 
-  getOperatorList(evaluator, task, renderForms, annotationStorage) {
-    if (!this.appearance) {
-      return Promise.resolve(new OperatorList());
+  getOperatorList(evaluator, task, intent, renderForms, annotationStorage) {
+    const data = this.data;
+    let appearance = this.appearance;
+    const isUsingOwnCanvas =
+      data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
+    if (!appearance) {
+      if (!isUsingOwnCanvas) {
+        return Promise.resolve(new OperatorList());
+      }
+      appearance = new StringStream("");
+      appearance.dict = new Dict();
     }
 
-    const appearance = this.appearance;
-    const data = this.data;
     const appearanceDict = appearance.dict;
-    const resourcesPromise = this.loadResources([
-      "ExtGState",
-      "ColorSpace",
-      "Pattern",
-      "Shading",
-      "XObject",
-      "Font",
-    ]);
+    const resourcesPromise = this.loadResources(
+      ["ExtGState", "ColorSpace", "Pattern", "Shading", "XObject", "Font"],
+      appearance
+    );
     const bbox = appearanceDict.getArray("BBox") || [0, 0, 1, 1];
     const matrix = appearanceDict.getArray("Matrix") || [1, 0, 0, 1, 0, 0];
     const transform = getTransformMatrix(data.rect, bbox, matrix);
@@ -748,6 +752,7 @@ class Annotation {
         data.rect,
         transform,
         matrix,
+        isUsingOwnCanvas,
       ]);
 
       return evaluator
@@ -1329,7 +1334,7 @@ class WidgetAnnotation extends Annotation {
     return !!(this.data.fieldFlags & flag);
   }
 
-  getOperatorList(evaluator, task, renderForms, annotationStorage) {
+  getOperatorList(evaluator, task, intent, renderForms, annotationStorage) {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
     if (renderForms && !(this instanceof SignatureWidgetAnnotation)) {
@@ -1340,6 +1345,7 @@ class WidgetAnnotation extends Annotation {
       return super.getOperatorList(
         evaluator,
         task,
+        intent,
         renderForms,
         annotationStorage
       );
@@ -1351,6 +1357,7 @@ class WidgetAnnotation extends Annotation {
           return super.getOperatorList(
             evaluator,
             task,
+            intent,
             renderForms,
             annotationStorage
           );
@@ -1936,17 +1943,25 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     } else if (this.data.radioButton) {
       this._processRadioButton(params);
     } else if (this.data.pushButton) {
+      this.data.hasOwnCanvas = true;
       this._processPushButton(params);
     } else {
       warn("Invalid field flags for button widget annotation");
     }
   }
 
-  async getOperatorList(evaluator, task, renderForms, annotationStorage) {
+  async getOperatorList(
+    evaluator,
+    task,
+    intent,
+    renderForms,
+    annotationStorage
+  ) {
     if (this.data.pushButton) {
       return super.getOperatorList(
         evaluator,
         task,
+        intent,
         false, // we use normalAppearance to render the button
         annotationStorage
       );
@@ -1965,6 +1980,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         return super.getOperatorList(
           evaluator,
           task,
+          intent,
           renderForms,
           annotationStorage
         );
@@ -1988,6 +2004,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       const operatorList = super.getOperatorList(
         evaluator,
         task,
+        intent,
         renderForms,
         annotationStorage
       );

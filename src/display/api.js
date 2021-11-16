@@ -1161,6 +1161,8 @@ class PDFDocumentProxy {
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
  *   the configuration will be fetched automatically with the default visibility
  *   states set.
+ * @property {Map<string, Canvas>} [annotationCanvasMap] - Map some annotation
+ *   ids with canvases used to render them.
  */
 
 /**
@@ -1374,6 +1376,7 @@ class PDFPageProxy {
     canvasFactory = null,
     background = null,
     optionalContentConfigPromise = null,
+    annotationCanvasMap = null,
   }) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       if (arguments[0]?.renderInteractiveForms !== undefined) {
@@ -1491,6 +1494,7 @@ class PDFPageProxy {
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
+      annotationCanvasMap,
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactoryInstance,
@@ -3216,6 +3220,7 @@ class InternalRenderTask {
     params,
     objs,
     commonObjs,
+    annotationCanvasMap,
     operatorList,
     pageIndex,
     canvasFactory,
@@ -3226,6 +3231,7 @@ class InternalRenderTask {
     this.params = params;
     this.objs = objs;
     this.commonObjs = commonObjs;
+    this.annotationCanvasMap = annotationCanvasMap;
     this.operatorListIdx = null;
     this.operatorList = operatorList;
     this._pageIndex = pageIndex;
@@ -3284,7 +3290,8 @@ class InternalRenderTask {
       this.objs,
       this.canvasFactory,
       imageLayer,
-      optionalContentConfig
+      optionalContentConfig,
+      this.annotationCanvasMap
     );
     this.gfx.beginDrawing({
       transform,

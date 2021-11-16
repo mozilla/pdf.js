@@ -101,6 +101,25 @@ function inlineImages(images) {
   return Promise.all(imagePromises);
 }
 
+async function convertCanvasesToImages(annotationCanvasMap) {
+  const results = new Map();
+  const promises = [];
+  for (const [key, canvas] of annotationCanvasMap) {
+    promises.push(
+      new Promise(resolve => {
+        canvas.toBlob(blob => {
+          const image = document.createElement("img");
+          image.onload = resolve;
+          results.set(key, image);
+          image.src = URL.createObjectURL(blob);
+        });
+      })
+    );
+  }
+  await Promise.all(promises);
+  return results;
+}
+
 async function resolveImages(node, silentErrors = false) {
   const images = node.getElementsByTagName("img");
   const data = await inlineImages(images);
@@ -227,6 +246,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     ctx,
     viewport,
     annotations,
+    annotationCanvasMap,
     page,
     imageResourcesPath,
     renderForms = false
@@ -255,6 +275,10 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           style.textContent = common + "\n" + overrides;
 
           var annotation_viewport = viewport.clone({ dontFlip: true });
+          const annotationImageMap = await convertCanvasesToImages(
+            annotationCanvasMap
+          );
+
           var parameters = {
             viewport: annotation_viewport,
             div,
@@ -263,6 +287,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
             linkService: new SimpleLinkService(),
             imageResourcesPath,
             renderForms,
+            annotationCanvasMap: annotationImageMap,
           };
           AnnotationLayer.render(parameters);
 
@@ -665,7 +690,8 @@ var Driver = (function DriverClosure() {
               var renderAnnotations = false,
                 renderForms = false,
                 renderPrint = false,
-                renderXfa = false;
+                renderXfa = false,
+                annotationCanvasMap = null;
 
               if (task.annotationStorage) {
                 const entries = Object.entries(task.annotationStorage),
@@ -739,18 +765,8 @@ var Driver = (function DriverClosure() {
                   if (!renderXfa) {
                     // The annotation builder will draw its content
                     // on the canvas.
-                    initPromise = page
-                      .getAnnotations({ intent: "display" })
-                      .then(function (annotations) {
-                        return rasterizeAnnotationLayer(
-                          annotationLayerContext,
-                          viewport,
-                          annotations,
-                          page,
-                          IMAGE_RESOURCES_PATH,
-                          renderForms
-                        );
-                      });
+                    initPromise = page.getAnnotations({ intent: "display" });
+                    annotationCanvasMap = new Map();
                   } else {
                     initPromise = page.getXfa().then(function (xfa) {
                       return rasterizeXfaLayer(
@@ -768,11 +784,11 @@ var Driver = (function DriverClosure() {
                   initPromise = Promise.resolve();
                 }
               }
-
               var renderContext = {
                 canvasContext: ctx,
                 viewport,
                 optionalContentConfigPromise: task.optionalContentConfigPromise,
+                annotationCanvasMap,
               };
               if (renderForms) {
                 renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
@@ -805,7 +821,7 @@ var Driver = (function DriverClosure() {
                 self._snapshot(task, error);
               };
               initPromise
-                .then(function () {
+                .then(function (data) {
                   const renderTask = page.render(renderContext);
 
                   if (task.renderTaskOnContinue) {
@@ -815,7 +831,21 @@ var Driver = (function DriverClosure() {
                     };
                   }
                   return renderTask.promise.then(function () {
-                    completeRender(false);
+                    if (annotationCanvasMap) {
+                      rasterizeAnnotationLayer(
+                        annotationLayerContext,
+                        viewport,
+                        data,
+                        annotationCanvasMap,
+                        page,
+                        IMAGE_RESOURCES_PATH,
+                        renderForms
+                      ).then(() => {
+                        completeRender(false);
+                      });
+                    } else {
+                      completeRender(false);
+                    }
                   });
                 })
                 .catch(function (error) {

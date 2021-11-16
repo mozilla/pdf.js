@@ -198,7 +198,25 @@ class AnnotationElement {
       page.view[3] - data.rect[3] + page.view[1],
     ]);
 
-    container.style.transform = `matrix(${viewport.transform.join(",")})`;
+    if (data.hasOwnCanvas) {
+      const transform = viewport.transform.slice();
+      const [scaleX, scaleY] = Util.singularValueDecompose2dScale(transform);
+      width = Math.ceil(width * scaleX);
+      height = Math.ceil(height * scaleY);
+      rect[0] *= scaleX;
+      rect[1] *= scaleY;
+      // Reset the scale part of the transform matrix (which must be diagonal
+      // or anti-diagonal) in order to avoid to rescale the canvas.
+      // The canvas for the annotation is correctly scaled when it is drawn
+      // (see `beginAnnotation` in canvas.js).
+      for (let i = 0; i < 4; i++) {
+        transform[i] = Math.sign(transform[i]);
+      }
+      container.style.transform = `matrix(${transform.join(",")})`;
+    } else {
+      container.style.transform = `matrix(${viewport.transform.join(",")})`;
+    }
+
     container.style.transformOrigin = `${-rect[0]}px ${-rect[1]}px`;
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
@@ -258,8 +276,13 @@ class AnnotationElement {
 
     container.style.left = `${rect[0]}px`;
     container.style.top = `${rect[1]}px`;
-    container.style.width = `${width}px`;
-    container.style.height = `${height}px`;
+
+    if (data.hasOwnCanvas) {
+      container.style.width = container.style.height = "auto";
+    } else {
+      container.style.width = `${width}px`;
+      container.style.height = `${height}px`;
+    }
     return container;
   }
 
@@ -2318,10 +2341,12 @@ class AnnotationLayer {
       sortedAnnotations.push(...popupAnnotations);
     }
 
+    const div = parameters.div;
+
     for (const data of sortedAnnotations) {
       const element = AnnotationElementFactory.create({
         data,
-        layer: parameters.div,
+        layer: div,
         page: parameters.page,
         viewport: parameters.viewport,
         linkService: parameters.linkService,
@@ -2343,19 +2368,21 @@ class AnnotationLayer {
         }
         if (Array.isArray(rendered)) {
           for (const renderedElement of rendered) {
-            parameters.div.appendChild(renderedElement);
+            div.appendChild(renderedElement);
           }
         } else {
           if (element instanceof PopupAnnotationElement) {
             // Popup annotation elements should not be on top of other
             // annotation elements to prevent interfering with mouse events.
-            parameters.div.prepend(rendered);
+            div.prepend(rendered);
           } else {
-            parameters.div.appendChild(rendered);
+            div.appendChild(rendered);
           }
         }
       }
     }
+
+    this.#setAnnotationCanvasMap(div, parameters.annotationCanvasMap);
   }
 
   /**
@@ -2366,18 +2393,73 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
-    const transform = `matrix(${parameters.viewport.transform.join(",")})`;
-    for (const data of parameters.annotations) {
-      const elements = parameters.div.querySelectorAll(
+    const { page, viewport, annotations, annotationCanvasMap, div } =
+      parameters;
+    const transform = viewport.transform;
+    const matrix = `matrix(${transform.join(",")})`;
+
+    let scale, ownMatrix;
+    for (const data of annotations) {
+      const elements = div.querySelectorAll(
         `[data-annotation-id="${data.id}"]`
       );
       if (elements) {
         for (const element of elements) {
-          element.style.transform = transform;
+          if (data.hasOwnCanvas) {
+            const rect = Util.normalizeRect([
+              data.rect[0],
+              page.view[3] - data.rect[1] + page.view[1],
+              data.rect[2],
+              page.view[3] - data.rect[3] + page.view[1],
+            ]);
+
+            if (!ownMatrix) {
+              // When an annotation has its own canvas, then
+              // the scale has been already applied to the canvas,
+              // so we musn't scale it twice.
+              scale = Math.abs(transform[0] || transform[1]);
+              const ownTransform = transform.slice();
+              for (let i = 0; i < 4; i++) {
+                ownTransform[i] = Math.sign(ownTransform[i]);
+              }
+              ownMatrix = `matrix(${ownTransform.join(",")})`;
+            }
+
+            const left = rect[0] * scale;
+            const top = rect[1] * scale;
+            element.style.left = `${left}px`;
+            element.style.top = `${top}px`;
+            element.style.transformOrigin = `${-left}px ${-top}px`;
+            element.style.transform = ownMatrix;
+          } else {
+            element.style.transform = matrix;
+          }
         }
       }
     }
-    parameters.div.hidden = false;
+
+    this.#setAnnotationCanvasMap(div, annotationCanvasMap);
+    div.hidden = false;
+  }
+
+  static #setAnnotationCanvasMap(div, annotationCanvasMap) {
+    if (!annotationCanvasMap) {
+      return;
+    }
+    for (const [id, canvas] of annotationCanvasMap) {
+      const element = div.querySelector(`[data-annotation-id="${id}"]`);
+      if (!element) {
+        continue;
+      }
+
+      const { firstChild } = element;
+      if (firstChild.nodeName === "CANVAS") {
+        element.replaceChild(canvas, firstChild);
+      } else {
+        element.insertBefore(canvas, firstChild);
+      }
+    }
+    annotationCanvasMap.clear();
   }
 }
 
