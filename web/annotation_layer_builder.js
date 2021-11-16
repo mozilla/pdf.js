@@ -36,6 +36,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
  * @property {Promise<Object<string, Array<Object>> | null>}
  *   [fieldObjectsPromise]
  * @property {Object} [mouseState]
+ * @property {Map<string, Canvas>} [annotationCanvasMap]
  */
 
 class AnnotationLayerBuilder {
@@ -55,6 +56,7 @@ class AnnotationLayerBuilder {
     hasJSActionsPromise = null,
     fieldObjectsPromise = null,
     mouseState = null,
+    annotationCanvasMap = null,
   }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
@@ -68,6 +70,7 @@ class AnnotationLayerBuilder {
     this._hasJSActionsPromise = hasJSActionsPromise;
     this._fieldObjectsPromise = fieldObjectsPromise;
     this._mouseState = mouseState;
+    this._annotationCanvasMap = annotationCanvasMap;
 
     this.div = null;
     this._cancelled = false;
@@ -105,6 +108,7 @@ class AnnotationLayerBuilder {
       hasJSActions,
       fieldObjects,
       mouseState: this._mouseState,
+      annotationCanvasMap: this._annotationCanvasMap,
     };
 
     if (this.div) {
@@ -153,6 +157,8 @@ class DefaultAnnotationLayerFactory {
    * @param {Object} [mouseState]
    * @param {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
+   * @param {Map<string, Canvas> | null} [annotationCanvasMap] - Map some
+   *  annotation ids with canvases used to render them.
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -165,7 +171,8 @@ class DefaultAnnotationLayerFactory {
     enableScripting = false,
     hasJSActionsPromise = null,
     mouseState = null,
-    fieldObjectsPromise = null
+    fieldObjectsPromise = null,
+    annotationCanvasMap = null
   ) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -179,6 +186,7 @@ class DefaultAnnotationLayerFactory {
       hasJSActionsPromise,
       fieldObjectsPromise,
       mouseState,
+      annotationCanvasMap,
     });
   }
 }

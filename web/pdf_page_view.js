@@ -123,6 +123,8 @@ class PDFPageView {
     this._renderError = null;
     this._isStandalone = !this.renderingQueue?.hasViewer();
 
+    this._annotationCanvasMap = null;
+
     this.annotationLayer = null;
     this.textLayer = null;
     this.zoomLayer = null;
@@ -322,16 +324,19 @@ class PDFPageView {
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
     }
-    if (this._isStandalone) {
-      const doc = document.documentElement;
-      doc.style.setProperty("--zoom-factor", this.scale);
-    }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    const viewportScale = this.scale * PixelsPerInch.PDF_TO_CSS_UNITS;
     this.viewport = this.viewport.clone({
-      scale: this.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
+      scale: viewportScale,
       rotation: totalRotation,
     });
+
+    if (this._isStandalone) {
+      const { style } = document.documentElement;
+      style.setProperty("--zoom-factor", this.scale);
+      style.setProperty("--viewport-scale-factor", viewportScale);
+    }
 
     if (this.svg) {
       this.cssTransform({
@@ -418,6 +423,7 @@ class PDFPageView {
     ) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
+      this._annotationCanvasMap = null;
     }
     if (this.xfaLayer && (!keepXfaLayer || !this.xfaLayer.div)) {
       this.xfaLayer.cancel();
@@ -580,6 +586,27 @@ class PDFPageView {
     }
     this.textLayer = textLayer;
 
+    if (
+      this._annotationMode !== AnnotationMode.DISABLE &&
+      this.annotationLayerFactory
+    ) {
+      this._annotationCanvasMap ||= new Map();
+      this.annotationLayer ||=
+        this.annotationLayerFactory.createAnnotationLayerBuilder(
+          div,
+          pdfPage,
+          /* annotationStorage = */ null,
+          this.imageResourcesPath,
+          this._annotationMode === AnnotationMode.ENABLE_FORMS,
+          this.l10n,
+          /* enableScripting = */ null,
+          /* hasJSActionsPromise = */ null,
+          /* mouseState = */ null,
+          /* fieldObjectsPromise = */ null,
+          /* annotationCanvasMap */ this._annotationCanvasMap
+        );
+    }
+
     if (this.xfaLayer?.div) {
       // The xfa layer needs to stay on top.
       div.appendChild(this.xfaLayer.div);
@@ -653,34 +680,16 @@ class PDFPageView {
             textLayer.setTextContentStream(readableStream);
             textLayer.render();
           }
+
+          if (this.annotationLayer) {
+            this._renderAnnotationLayer();
+          }
         });
       },
       function (reason) {
         return finishPaintTask(reason);
       }
     );
-
-    if (
-      this._annotationMode !== AnnotationMode.DISABLE &&
-      this.annotationLayerFactory
-    ) {
-      if (!this.annotationLayer) {
-        this.annotationLayer =
-          this.annotationLayerFactory.createAnnotationLayerBuilder(
-            div,
-            pdfPage,
-            /* annotationStorage = */ null,
-            this.imageResourcesPath,
-            this._annotationMode === AnnotationMode.ENABLE_FORMS,
-            this.l10n,
-            /* enableScripting = */ null,
-            /* hasJSActionsPromise = */ null,
-            /* mouseState = */ null,
-            /* fieldObjectsPromise = */ null
-          );
-      }
-      this._renderAnnotationLayer();
-    }
 
     if (this.xfaLayerFactory) {
       if (!this.xfaLayer) {
@@ -804,6 +813,7 @@ class PDFPageView {
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
     canvas.style.width = roundToDivide(viewport.width, sfx[1]) + "px";
     canvas.style.height = roundToDivide(viewport.height, sfy[1]) + "px";
+
     // Add the viewport so it's known what it was originally drawn with.
     this.paintedViewportMap.set(canvas, viewport);
 
@@ -817,6 +827,7 @@ class PDFPageView {
       viewport: this.viewport,
       annotationMode: this._annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
+      annotationCanvasMap: this._annotationCanvasMap,
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
