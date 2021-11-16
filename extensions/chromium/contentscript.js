@@ -128,7 +128,7 @@ function updateEmbedElement(elem) {
   var parentNode = elem.parentNode;
   var nextSibling = elem.nextSibling;
   if (parentNode) {
-    parentNode.removeChild(elem);
+    elem.remove();
   }
   elem.type = "text/html";
   elem.src = getEmbeddedViewerURL(elem.src);

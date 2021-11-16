@@ -565,7 +565,7 @@ var Driver = (function DriverClosure() {
       }
       const body = document.body;
       while (body.lastChild !== this.end) {
-        body.removeChild(body.lastChild);
+        body.lastChild.remove();
       }
 
       const destroyedPromises = [];
