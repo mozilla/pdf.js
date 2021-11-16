@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./build
+        working-directory: ./build/generic
     permissions:
       contents: read
       packages: write
@@ -32,6 +32,7 @@ jobs:
         with:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
+          scope: '@CertifyInc'
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
