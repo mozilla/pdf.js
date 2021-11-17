@@ -616,9 +616,8 @@ class BaseViewer {
         }
 
         if (this._scrollMode === ScrollMode.PAGE) {
-          // Since the pages are placed in a `DocumentFragment`, ensure that
-          // the current page becomes visible upon loading of the document.
-          this._ensurePageViewVisible();
+          // Ensure that the current page becomes visible on document load.
+          this.#ensurePageViewVisible();
         } else if (this._spreadMode !== SpreadMode.NONE) {
           this._updateSpreadMode();
         }
@@ -744,9 +743,9 @@ class BaseViewer {
     this._updateScrollMode();
   }
 
-  _ensurePageViewVisible() {
+  #ensurePageViewVisible() {
     if (this._scrollMode !== ScrollMode.PAGE) {
-      throw new Error("_ensurePageViewVisible: Invalid scrollMode value.");
+      throw new Error("#ensurePageViewVisible: Invalid scrollMode value.");
     }
     const pageNumber = this._currentPageNumber,
       state = this.#scrollModePageState,
@@ -780,8 +779,9 @@ class BaseViewer {
 
       // Finally, append the new pages to the viewer and apply the spreadMode.
       let spread = null;
-      for (let i = 0, ii = this._pages.length; i < ii; ++i) {
-        if (!pageIndexSet.has(i)) {
+      for (const i of pageIndexSet) {
+        const pageView = this._pages[i];
+        if (!pageView) {
           continue;
         }
         if (spread === null) {
@@ -792,7 +792,6 @@ class BaseViewer {
           spread = spread.cloneNode(false);
           viewer.appendChild(spread);
         }
-        const pageView = this._pages[i];
         spread.appendChild(pageView.div);
 
         state.pages.push(pageView);
@@ -816,7 +815,7 @@ class BaseViewer {
         // Ensure that `this._currentPageNumber` is correct.
         this._setCurrentPageNumber(pageNumber);
       }
-      this._ensurePageViewVisible();
+      this.#ensurePageViewVisible();
       // Ensure that rendering always occurs, to avoid showing a blank page,
       // even if the current position doesn't change when the page is scrolled.
       this.update();
@@ -1677,7 +1676,7 @@ class BaseViewer {
     }
 
     if (scrollMode === ScrollMode.PAGE) {
-      this._ensurePageViewVisible();
+      this.#ensurePageViewVisible();
     } else if (this._previousScrollMode === ScrollMode.PAGE) {
       // Ensure that the current spreadMode is still applied correctly when
       // the *previous* scrollMode was `ScrollMode.PAGE`.
@@ -1726,7 +1725,7 @@ class BaseViewer {
       pages = this._pages;
 
     if (this._scrollMode === ScrollMode.PAGE) {
-      this._ensurePageViewVisible();
+      this.#ensurePageViewVisible();
     } else {
       // Temporarily remove all the pages from the DOM.
       viewer.textContent = "";
