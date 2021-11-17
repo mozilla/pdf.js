@@ -1068,7 +1068,8 @@ class CanvasGraphics {
     objs,
     canvasFactory,
     imageLayer,
-    optionalContentConfig
+    optionalContentConfig,
+    annotationCanvasMap
   ) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState(
@@ -1100,6 +1101,10 @@ class CanvasGraphics {
     this.optionalContentConfig = optionalContentConfig;
     this.cachedCanvases = new CachedCanvases(this.canvasFactory);
     this.cachedPatterns = new Map();
+    this.annotationCanvasMap = annotationCanvasMap;
+    this.viewportScale = 1;
+    this.outputScaleX = 1;
+    this.outputScaleY = 1;
     if (canvasCtx) {
       // NOTE: if mozCurrentTransform is polyfilled, then the current state of
       // the transformation must already be set in canvasCtx._transformMatrix.
@@ -1147,8 +1152,11 @@ class CanvasGraphics {
     resetCtxToDefault(this.ctx);
     if (transform) {
       this.ctx.transform.apply(this.ctx, transform);
+      this.outputScaleX = transform[0];
+      this.outputScaleY = transform[0];
     }
     this.ctx.transform.apply(this.ctx, viewport.transform);
+    this.viewportScale = viewport.scale;
 
     this.baseTransform = this.ctx.mozCurrentTransform.slice();
     this._combinedScaleFactor = Math.hypot(
@@ -2691,27 +2699,72 @@ class CanvasGraphics {
     this.restore();
   }
 
-  beginAnnotation(id, rect, transform, matrix) {
+  beginAnnotation(id, rect, transform, matrix, hasOwnCanvas) {
     this.save();
-    resetCtxToDefault(this.ctx);
-    this.current = new CanvasExtraState(
-      this.ctx.canvas.width,
-      this.ctx.canvas.height
-    );
 
     if (Array.isArray(rect) && rect.length === 4) {
       const width = rect[2] - rect[0];
       const height = rect[3] - rect[1];
-      this.ctx.rect(rect[0], rect[1], width, height);
-      this.clip();
-      this.endPath();
+
+      if (hasOwnCanvas && this.annotationCanvasMap) {
+        transform = transform.slice();
+        transform[4] -= rect[0];
+        transform[5] -= rect[1];
+
+        rect = rect.slice();
+        rect[0] = rect[1] = 0;
+        rect[2] = width;
+        rect[3] = height;
+
+        const [scaleX, scaleY] = Util.singularValueDecompose2dScale(
+          this.ctx.mozCurrentTransform
+        );
+        const { viewportScale } = this;
+        const canvasWidth = Math.ceil(
+          width * this.outputScaleX * viewportScale
+        );
+        const canvasHeight = Math.ceil(
+          height * this.outputScaleY * viewportScale
+        );
+
+        this.annotationCanvas = this.canvasFactory.create(
+          canvasWidth,
+          canvasHeight
+        );
+        const { canvas, context } = this.annotationCanvas;
+        canvas.style.width = `calc(${width}px * var(--viewport-scale-factor))`;
+        canvas.style.height = `calc(${height}px * var(--viewport-scale-factor))`;
+        this.annotationCanvasMap.set(id, canvas);
+        this.annotationCanvas.savedCtx = this.ctx;
+        this.ctx = context;
+        this.ctx.setTransform(scaleX, 0, 0, -scaleY, 0, height * scaleY);
+        addContextCurrentTransform(this.ctx);
+
+        resetCtxToDefault(this.ctx);
+      } else {
+        resetCtxToDefault(this.ctx);
+
+        this.ctx.rect(rect[0], rect[1], width, height);
+        this.clip();
+        this.endPath();
+      }
     }
+
+    this.current = new CanvasExtraState(
+      this.ctx.canvas.width,
+      this.ctx.canvas.height
+    );
 
     this.transform.apply(this, transform);
     this.transform.apply(this, matrix);
   }
 
   endAnnotation() {
+    if (this.annotationCanvas) {
+      this.ctx = this.annotationCanvas.savedCtx;
+      delete this.annotationCanvas.savedCtx;
+      delete this.annotationCanvas;
+    }
     this.restore();
   }
 

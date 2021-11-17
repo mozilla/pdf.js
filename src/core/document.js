@@ -407,6 +407,7 @@ class Page {
                 .getOperatorList(
                   partialEvaluator,
                   task,
+                  intent,
                   renderForms,
                   annotationStorage
                 )
