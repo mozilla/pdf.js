@@ -390,14 +390,22 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    Window['ngxConsole'].log(`Info: ${msg}`);
+    if (Window && Window['ngxConsole']) {
+      Window['ngxConsole'].log(`Info: ${msg}`);
+    } else {
+      console.log(`Info: ${msg}`);
+    }
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    Window['ngxConsole'].log(`Warning: ${msg}`);
+    if (Window && Window['ngxConsole']) {
+      Window['ngxConsole'].log(`Warning: ${msg}`);
+    } else {
+      console.log(`Warning: ${msg}`);
+    }
   }
 }
 
