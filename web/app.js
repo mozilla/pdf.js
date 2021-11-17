@@ -2226,6 +2226,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 async function loadFakeWorker() {
   if (!GlobalWorkerOptions.workerSrc) {
     GlobalWorkerOptions.workerSrc = AppOptions.get("workerSrc");
+
+    // modified by ngx-extended-pdf-viewer #376
+    if (GlobalWorkerOptions.workerSrc.constructor.name === "Function") {
+      GlobalWorkerOptions.workerSrc = GlobalWorkerOptions.workerSrc();
+    }
+    // end of modification
   }
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     window.pdfjsWorker = await import("pdfjs/core/worker.js");
