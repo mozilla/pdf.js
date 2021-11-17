@@ -350,7 +350,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       this._document.body.appendChild(div);
 
       isFontReady(loadTestFontId, () => {
-        this._document.body.removeChild(div);
+        div.remove();
         request.complete();
       });
       /** Hack end */

@@ -261,7 +261,7 @@ class PDFPageView {
         case xfaLayerNode:
           continue;
       }
-      div.removeChild(node);
+      node.remove();
     }
     div.removeAttribute("data-loaded");
 
@@ -542,7 +542,7 @@ class PDFPageView {
       this.renderingState = RenderingStates.FINISHED;
 
       if (this.loadingIconDiv) {
-        div.removeChild(this.loadingIconDiv);
+        this.loadingIconDiv.remove();
         delete this.loadingIconDiv;
       }
       return Promise.reject(new Error("pdfPage is not loaded"));
@@ -646,7 +646,7 @@ class PDFPageView {
       this.renderingState = RenderingStates.FINISHED;
 
       if (this.loadingIconDiv) {
-        div.removeChild(this.loadingIconDiv);
+        this.loadingIconDiv.remove();
         delete this.loadingIconDiv;
       }
       this._resetZoomLayer(/* removeFromDOM = */ true);
