@@ -50,6 +50,7 @@
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-dom-node-remove": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors

@@ -245,9 +245,7 @@ window.onload = function () {
 
     // const cell = ID("itemlist");
     const table = document.getElementById("itemtable");
-    while (table.childNodes.length > 0) {
-      table.removeChild(table.childNodes[table.childNodes.length - 1]);
-    }
+    table.textContent = ""; // Remove any table contents from the DOM.
     const tbody = document.createElement("tbody");
     table.appendChild(tbody);
 
