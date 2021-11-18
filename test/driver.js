@@ -44,19 +44,15 @@ function loadStyles(styles) {
   }
 
   for (const style of styles) {
-    style.promise = new Promise(function (resolve, reject) {
-      const xhr = new XMLHttpRequest();
-      xhr.open("GET", style.file);
-      xhr.onload = function () {
-        resolve(xhr.responseText);
-      };
-      xhr.onerror = function (e) {
-        reject(new Error(`Error fetching style (${style.file}): ${e}`));
-      };
-      xhr.send(null);
+    style.promise = fetch(style.file).then(response => {
+      if (!response.ok) {
+        throw new Error(
+          `Error fetching style (${style.file}): ${response.statusText}`
+        );
+      }
+      return response.text();
     });
   }
-
   return Promise.all(styles.map(style => style.promise));
 }
 
@@ -78,23 +74,26 @@ function writeSVG(svgElement, ctx, resolve, reject) {
 
 function inlineImages(images) {
   const imagePromises = [];
-  for (let i = 0, ii = images.length; i < ii; i++) {
+  for (const { src } of images) {
     imagePromises.push(
-      new Promise(function (resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.responseType = "blob";
-        xhr.onload = function () {
+      fetch(src).then(async response => {
+        if (!response.ok) {
+          throw new Error(
+            `Error fetching inline image (${src}): ${response.statusText}`
+          );
+        }
+        const blob = await response.blob();
+
+        return new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = function () {
             resolve(reader.result);
           };
-          reader.readAsDataURL(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error("Error fetching inline image " + e));
-        };
-        xhr.open("GET", images[i].src);
-        xhr.send();
+          reader.onerror = function () {
+            reject(reader.error);
+          };
+          reader.readAsDataURL(blob);
+        });
       })
     );
   }
@@ -435,53 +434,42 @@ var Driver = (function DriverClosure() {
     },
 
     run: function Driver_run() {
-      var self = this;
-      window.onerror = function (message, source, line, column, error) {
-        self._info(
-          "Error: " +
-            message +
-            " Script: " +
-            source +
-            " Line: " +
-            line +
-            " Column: " +
-            column +
-            " StackTrace: " +
-            error
+      window.onerror = (message, source, line, column, error) => {
+        this._info(
+          `Error: ${message} Script: ${source} Line: ${line} Column: ${column} StackTrace: ${error}`
         );
       };
       this._info("User agent: " + navigator.userAgent);
       this._log(`Harness thinks this browser is ${this.browser}\n`);
       this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
-      var r = new XMLHttpRequest();
-      r.open("GET", this.manifestFile, false);
-      r.onreadystatechange = function () {
-        if (r.readyState === 4) {
-          self._log("done\n");
-          self.manifest = JSON.parse(r.responseText);
-          if (self.testFilter?.length || self.xfaOnly) {
-            self.manifest = self.manifest.filter(function (item) {
-              if (self.testFilter.includes(item.id)) {
-                return true;
-              }
-              if (self.xfaOnly && item.enableXfa) {
-                return true;
-              }
-              return false;
-            });
-          }
-          self.currentTask = 0;
-          self._nextTask();
-        }
-      };
       if (this.delay > 0) {
         this._log("\nDelaying for " + this.delay + " ms...\n");
       }
       // When gathering the stats the numbers seem to be more reliable
       // if the browser is given more time to start.
-      setTimeout(function () {
-        r.send(null);
+      setTimeout(() => {
+        fetch(this.manifestFile).then(async response => {
+          if (!response.ok) {
+            throw new Error(`Error fetching manifest: ${response.statusText}`);
+          }
+          this._log("done\n");
+          this.manifest = await response.json();
+
+          if (this.testFilter?.length || this.xfaOnly) {
+            this.manifest = this.manifest.filter(item => {
+              if (this.testFilter.includes(item.id)) {
+                return true;
+              }
+              if (this.xfaOnly && item.enableXfa) {
+                return true;
+              }
+              return false;
+            });
+          }
+          this.currentTask = 0;
+          this._nextTask();
+        });
       }, this.delay);
     },
 
@@ -595,10 +583,10 @@ var Driver = (function DriverClosure() {
 
       const destroyedPromises = [];
       // Wipe out the link to the pdfdoc so it can be GC'ed.
-      for (let i = 0; i < this.manifest.length; i++) {
-        if (this.manifest[i].pdfDoc) {
-          destroyedPromises.push(this.manifest[i].pdfDoc.destroy());
-          delete this.manifest[i].pdfDoc;
+      for (const entry of this.manifest) {
+        if (entry.pdfDoc) {
+          destroyedPromises.push(entry.pdfDoc.destroy());
+          delete entry.pdfDoc;
         }
       }
       return Promise.all(destroyedPromises);
@@ -632,12 +620,12 @@ var Driver = (function DriverClosure() {
 
       if (!task.pdfDoc) {
         var dataUrl = this.canvas.toDataURL("image/png");
-        this._sendResult(dataUrl, task, failure, function () {
-          self._log(
+        this._sendResult(dataUrl, task, failure).then(() => {
+          this._log(
             "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
           );
-          self.currentTask++;
-          self._nextTask();
+          this.currentTask++;
+          this._nextTask();
         });
         return;
       }
@@ -655,11 +643,7 @@ var Driver = (function DriverClosure() {
 
       if (task.skipPages && task.skipPages.includes(task.pageNum)) {
         this._log(
-          " Skipping page " +
-            task.pageNum +
-            "/" +
-            task.pdfDoc.numPages +
-            "...\n"
+          ` Skipping page ${task.pageNum}/${task.pdfDoc.numPages}...\n`
         );
         task.pageNum++;
         this._nextPage(task);
@@ -669,11 +653,7 @@ var Driver = (function DriverClosure() {
       if (!failure) {
         try {
           this._log(
-            " Loading page " +
-              task.pageNum +
-              "/" +
-              task.pdfDoc.numPages +
-              "... "
+            ` Loading page ${task.pageNum}/${task.pdfDoc.numPages}... `
           );
           this.canvas.mozOpaque = true;
           ctx = this.canvas.getContext("2d", { alpha: false });
@@ -870,32 +850,31 @@ var Driver = (function DriverClosure() {
     },
 
     _snapshot: function Driver_snapshot(task, failure) {
-      var self = this;
       this._log("Snapshotting... ");
 
       var dataUrl = this.canvas.toDataURL("image/png");
-      this._sendResult(dataUrl, task, failure, function () {
-        self._log(
+      this._sendResult(dataUrl, task, failure).then(() => {
+        this._log(
           "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
         );
         task.pageNum++;
-        self._nextPage(task);
+        this._nextPage(task);
       });
     },
 
-    _quit: function Driver_quit() {
+    async _quit() {
       this._log("Done !");
       this.end.textContent = "Tests finished. Close this window!";
 
       // Send the quit request
-      var r = new XMLHttpRequest();
-      r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
-      r.onreadystatechange = function (e) {
-        if (r.readyState === 4) {
-          window.close();
-        }
-      };
-      r.send(null);
+      const response = await fetch(
+        `/tellMeToQuit?browser=${escape(this.browser)}`,
+        { method: "POST" }
+      );
+      if (!response.ok) {
+        throw new Error(`Error during "_quit": ${response.statusText}`);
+      }
+      window.close();
     },
 
     _info: function Driver_info(message) {
@@ -933,8 +912,8 @@ var Driver = (function DriverClosure() {
       }
     },
 
-    _sendResult: function Driver_sendResult(snapshot, task, failure, callback) {
-      var result = JSON.stringify({
+    _sendResult(snapshot, task, failure) {
+      const result = JSON.stringify({
         browser: this.browser,
         id: task.id,
         numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
@@ -946,31 +925,28 @@ var Driver = (function DriverClosure() {
         snapshot,
         stats: task.stats.times,
       });
-      this._send("/submit_task_results", result, callback);
+      return this._send("/submit_task_results", result);
     },
 
-    _send: function Driver_send(url, message, callback) {
-      var self = this;
-      var r = new XMLHttpRequest();
-      r.open("POST", url, true);
-      r.setRequestHeader("Content-Type", "application/json");
-      r.onreadystatechange = function (e) {
-        if (r.readyState === 4) {
-          self.inFlightRequests--;
-
-          // Retry until successful
-          if (r.status !== 200) {
-            setTimeout(function () {
-              self._send(url, message);
-            });
-          }
-          if (callback) {
-            callback();
-          }
-        }
-      };
+    async _send(url, message) {
       this.inflight.textContent = this.inFlightRequests++;
-      r.send(message);
+
+      const response = await fetch(url, {
+        method: "POST",
+        body: message,
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`Error during "_send": ${response.statusText}`);
+      }
+      this.inFlightRequests--;
+
+      // Retry until successful.
+      if (response.status !== 200) {
+        await Promise.resolve();
+        return this._send(url, message);
+      }
+      return undefined;
     },
   };
 
