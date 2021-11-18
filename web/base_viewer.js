@@ -99,17 +99,6 @@ class PDFPageViewBuffer {
 
   constructor(size) {
     this.#size = size;
-
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      Object.defineProperty(this, "_buffer", {
-        get() {
-          return [...this.#buf];
-        },
-      });
-    }
   }
 
   push(view) {
@@ -156,6 +145,10 @@ class PDFPageViewBuffer {
 
   has(view) {
     return this.#buf.has(view);
+  }
+
+  [Symbol.iterator]() {
+    return this.#buf.keys();
   }
 
   #destroyFirstView() {
@@ -1406,6 +1399,23 @@ class BaseViewer {
     return this.scroll.down;
   }
 
+  /**
+   * Only show the `loadingIcon`-spinner on visible pages (see issue 14242).
+   */
+  #toggleLoadingIconSpinner(visibleIds) {
+    for (const id of visibleIds) {
+      const pageView = this._pages[id - 1];
+      pageView?.toggleLoadingIconSpinner(/* viewVisible = */ true);
+    }
+    for (const pageView of this.#buffer) {
+      if (visibleIds.has(pageView.id)) {
+        // Handled above, since the "buffer" may not contain all visible pages.
+        continue;
+      }
+      pageView.toggleLoadingIconSpinner(/* viewVisible = */ false);
+    }
+  }
+
   forceRendering(currentlyVisiblePages) {
     const visiblePages = currentlyVisiblePages || this._getVisiblePages();
     const scrollAhead = this.#getScrollAhead(visiblePages);
@@ -1419,6 +1429,8 @@ class BaseViewer {
       scrollAhead,
       preRenderExtra
     );
+    this.#toggleLoadingIconSpinner(visiblePages.ids);
+
     if (pageView) {
       this._ensurePdfPageLoaded(pageView).then(() => {
         this.renderingQueue.renderView(pageView);

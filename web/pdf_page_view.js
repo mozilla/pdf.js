@@ -291,7 +291,10 @@ class PDFPageView {
     }
 
     this.loadingIconDiv = document.createElement("div");
-    this.loadingIconDiv.className = "loadingIcon";
+    this.loadingIconDiv.className = "loadingIcon notVisible";
+    if (this._isStandalone) {
+      this.toggleLoadingIconSpinner(/* viewVisible = */ true);
+    }
     this.loadingIconDiv.setAttribute("role", "img");
     this.l10n.get("loading").then(msg => {
       this.loadingIconDiv?.setAttribute("aria-label", msg);
@@ -527,6 +530,13 @@ class PDFPageView {
 
   getPagePoint(x, y) {
     return this.viewport.convertToPdfPoint(x, y);
+  }
+
+  /**
+   * @ignore
+   */
+  toggleLoadingIconSpinner(viewVisible = false) {
+    this.loadingIconDiv?.classList.toggle("notVisible", !viewVisible);
   }
 
   draw() {
