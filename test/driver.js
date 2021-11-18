@@ -56,20 +56,22 @@ function loadStyles(styles) {
   return Promise.all(styles.map(style => style.promise));
 }
 
-function writeSVG(svgElement, ctx, resolve, reject) {
+function writeSVG(svgElement, ctx) {
   // We need to have UTF-8 encoded XML.
   const svg_xml = unescape(
     encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
   );
-  const img = new Image();
-  img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
-  img.onload = function () {
-    ctx.drawImage(img, 0, 0);
-    resolve();
-  };
-  img.onerror = function (e) {
-    reject(new Error("Error rasterizing text layer " + e));
-  };
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = "data:image/svg+xml;base64," + btoa(svg_xml);
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0);
+      resolve();
+    };
+    img.onerror = function (e) {
+      reject(new Error("Error rasterizing SVG:" + e));
+    };
+  });
 }
 
 function inlineImages(images) {
@@ -158,13 +160,13 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function rasterizeTextLayer(
+  async function rasterizeTextLayer(
     ctx,
     viewport,
     textContent,
     enhanceTextSelection
   ) {
-    return new Promise(function (resolve, reject) {
+    try {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
@@ -185,28 +187,25 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       div.className = "textLayer";
       foreignObject.appendChild(div);
 
-      stylePromise
-        .then(async ([cssRules]) => {
-          style.textContent = cssRules;
+      const [cssRules] = await stylePromise;
+      style.textContent = cssRules;
 
-          // Rendering text layer as HTML.
-          var task = renderTextLayer({
-            textContent,
-            container: div,
-            viewport,
-            enhanceTextSelection,
-          });
-          await task.promise;
+      // Rendering text layer as HTML.
+      var task = renderTextLayer({
+        textContent,
+        container: div,
+        viewport,
+        enhanceTextSelection,
+      });
+      await task.promise;
 
-          task.expandTextDivs(true);
-          svg.appendChild(foreignObject);
+      task.expandTextDivs(true);
+      svg.appendChild(foreignObject);
 
-          writeSVG(svg, ctx, resolve, reject);
-        })
-        .catch(reason => {
-          reject(new Error(`rasterizeTextLayer: "${reason?.message}".`));
-        });
-    });
+      await writeSVG(svg, ctx);
+    } catch (reason) {
+      throw new Error(`rasterizeTextLayer: "${reason?.message}".`);
+    }
   }
 
   return rasterizeTextLayer;
@@ -241,7 +240,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function rasterizeAnnotationLayer(
+  async function rasterizeAnnotationLayer(
     ctx,
     viewport,
     annotations,
@@ -250,7 +249,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     imageResourcesPath,
     renderForms = false
   ) {
-    return new Promise(function (resolve, reject) {
+    try {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
@@ -269,38 +268,35 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
-      stylePromise
-        .then(async ([common, overrides]) => {
-          style.textContent = common + "\n" + overrides;
+      const [common, overrides] = await stylePromise;
+      style.textContent = common + "\n" + overrides;
 
-          var annotation_viewport = viewport.clone({ dontFlip: true });
-          const annotationImageMap = await convertCanvasesToImages(
-            annotationCanvasMap
-          );
+      var annotation_viewport = viewport.clone({ dontFlip: true });
+      const annotationImageMap = await convertCanvasesToImages(
+        annotationCanvasMap
+      );
 
-          var parameters = {
-            viewport: annotation_viewport,
-            div,
-            annotations,
-            page,
-            linkService: new SimpleLinkService(),
-            imageResourcesPath,
-            renderForms,
-            annotationCanvasMap: annotationImageMap,
-          };
-          AnnotationLayer.render(parameters);
+      var parameters = {
+        viewport: annotation_viewport,
+        div,
+        annotations,
+        page,
+        linkService: new SimpleLinkService(),
+        imageResourcesPath,
+        renderForms,
+        annotationCanvasMap: annotationImageMap,
+      };
+      AnnotationLayer.render(parameters);
 
-          // Inline SVG images from text annotations.
-          await resolveImages(div);
-          foreignObject.appendChild(div);
-          svg.appendChild(foreignObject);
+      // Inline SVG images from text annotations.
+      await resolveImages(div);
+      foreignObject.appendChild(div);
+      svg.appendChild(foreignObject);
 
-          writeSVG(svg, ctx, resolve, reject);
-        })
-        .catch(reason => {
-          reject(new Error(`rasterizeAnnotationLayer: "${reason?.message}".`));
-        });
-    });
+      await writeSVG(svg, ctx);
+    } catch (reason) {
+      throw new Error(`rasterizeAnnotationLayer: "${reason?.message}".`);
+    }
   }
 
   return rasterizeAnnotationLayer;
@@ -326,7 +322,7 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function rasterizeXfaLayer(
+  async function rasterizeXfaLayer(
     ctx,
     viewport,
     xfa,
@@ -334,7 +330,7 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
     annotationStorage,
     isPrint
   ) {
-    return new Promise(function (resolve, reject) {
+    try {
       // Building SVG with size of the viewport.
       const svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
@@ -353,30 +349,27 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
       const div = document.createElement("div");
       foreignObject.appendChild(div);
 
-      stylePromise
-        .then(async ([common, overrides]) => {
-          style.textContent = fontRules + "\n" + common + "\n" + overrides;
+      const [common, overrides] = await stylePromise;
+      style.textContent = fontRules + "\n" + common + "\n" + overrides;
 
-          XfaLayer.render({
-            xfa,
-            div,
-            viewport: viewport.clone({ dontFlip: true }),
-            annotationStorage,
-            linkService: new SimpleLinkService(),
-            intent: isPrint ? "print" : "display",
-          });
+      XfaLayer.render({
+        xfa,
+        div,
+        viewport: viewport.clone({ dontFlip: true }),
+        annotationStorage,
+        linkService: new SimpleLinkService(),
+        intent: isPrint ? "print" : "display",
+      });
 
-          // Some unsupported type of images (e.g. tiff)
-          // lead to errors.
-          await resolveImages(div, /* silentErrors = */ true);
-          svg.appendChild(foreignObject);
+      // Some unsupported type of images (e.g. tiff)
+      // lead to errors.
+      await resolveImages(div, /* silentErrors = */ true);
+      svg.appendChild(foreignObject);
 
-          writeSVG(svg, ctx, resolve, reject);
-        })
-        .catch(reason => {
-          reject(new Error(`rasterizeXfaLayer: "${reason?.message}".`));
-        });
-    });
+      await writeSVG(svg, ctx);
+    } catch (reason) {
+      throw new Error(`rasterizeXfaLayer: "${reason?.message}".`);
+    }
   }
 
   return rasterizeXfaLayer;
