@@ -75,16 +75,9 @@ class WorkerMessageHandler {
       }
       testMessageProcessed = true;
 
-      // check if Uint8Array can be sent to worker
-      if (!(data instanceof Uint8Array)) {
-        handler.send("test", null);
-        return;
-      }
-      // making sure postMessage transfers are working
-      const supportTransfers = data[0] === 255;
-      handler.postMessageTransfers = supportTransfers;
-
-      handler.send("test", { supportTransfers });
+      // Ensure that `TypedArray`s can be sent to the worker,
+      // and that `postMessage` transfers are supported.
+      handler.send("test", data instanceof Uint8Array && data[0] === 255);
     });
 
     handler.on("configure", function wphConfigure(data) {
@@ -155,10 +148,6 @@ class WorkerMessageHandler {
     const docBaseUrl = docParams.docBaseUrl;
     const workerHandlerName = docParams.docId + "_worker";
     let handler = new MessageHandler(workerHandlerName, docId, port);
-
-    // Ensure that postMessage transfers are always correctly enabled/disabled,
-    // to prevent "DataCloneError" in browsers without transfers support.
-    handler.postMessageTransfers = docParams.postMessageTransfers;
 
     function ensureNotTerminated() {
       if (terminated) {

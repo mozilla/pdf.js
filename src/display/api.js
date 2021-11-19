@@ -439,7 +439,6 @@ function getDocument(src) {
             workerId,
             worker.port
           );
-          messageHandler.postMessageTransfers = worker.postMessageTransfers;
           const transport = new WorkerTransport(
             messageHandler,
             task,
@@ -498,7 +497,6 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       },
       maxImageSize: source.maxImageSize,
       disableFontFace: source.disableFontFace,
-      postMessageTransfers: worker.postMessageTransfers,
       docBaseUrl: source.docBaseUrl,
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
@@ -2079,7 +2077,6 @@ class PDFWorker {
 
     this.name = name;
     this.destroyed = false;
-    this.postMessageTransfers = true;
     this.verbosity = verbosity;
 
     this._readyCapability = createPromiseCapability();
@@ -2188,13 +2185,10 @@ class PDFWorker {
             return; // worker was destroyed
           }
           if (data) {
-            // supportTypedArray
             this._messageHandler = messageHandler;
             this._port = worker;
             this._webWorker = worker;
-            if (!data.supportTransfers) {
-              this.postMessageTransfers = false;
-            }
+
             this._readyCapability.resolve();
             // Send global setting, e.g. verbosity level.
             messageHandler.send("configure", {
@@ -2222,7 +2216,7 @@ class PDFWorker {
         });
 
         const sendTest = () => {
-          const testObj = new Uint8Array([this.postMessageTransfers ? 255 : 0]);
+          const testObj = new Uint8Array([255]);
           // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
           // typed array. Also, checking if we can use transfers.
           try {
