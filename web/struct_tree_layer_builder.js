@@ -98,6 +98,9 @@ class StructTreeLayerBuilder {
     if (structElement.id !== undefined) {
       htmlElement.setAttribute("aria-owns", structElement.id);
     }
+    if (structElement.lang !== undefined) {
+      htmlElement.setAttribute("lang", structElement.lang);
+    }
   }
 
   _walk(node) {
