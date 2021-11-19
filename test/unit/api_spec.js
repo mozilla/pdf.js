@@ -1836,6 +1836,7 @@ sozialökonomische Gerechtigkeit.`)
         children: [
           {
             role: "Document",
+            lang: "en-US",
             children: [
               {
                 role: "H1",
