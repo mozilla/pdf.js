@@ -390,7 +390,9 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    if (Window && Window['ngxConsole']) {
+    if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) {
+      console.log(`Info: ${msg}`);
+    } else if (Window && Window['ngxConsole']) {
       Window['ngxConsole'].log(`Info: ${msg}`);
     } else {
       console.log(`Info: ${msg}`);
@@ -401,8 +403,10 @@ function info(msg) {
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    if (Window && Window['ngxConsole']) {
-      Window['ngxConsole'].log(`Warning: ${msg}`);
+    if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) {
+      console.log(`Warning: ${msg}`);
+    } else if (Window && Window["ngxConsole"]) {
+      Window["ngxConsole"].log(`Warning: ${msg}`);
     } else {
       console.log(`Warning: ${msg}`);
     }
