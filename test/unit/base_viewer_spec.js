@@ -40,7 +40,7 @@ describe("BaseViewer", function () {
         buffer.push(view);
       }
       // Ensure that the correct views are inserted.
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(1),
         viewsMap.get(2),
         viewsMap.get(3),
@@ -51,7 +51,7 @@ describe("BaseViewer", function () {
         buffer.push(view);
       }
       // Ensure that the correct views are evicted.
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(3),
         viewsMap.get(4),
         viewsMap.get(5),
@@ -71,7 +71,7 @@ describe("BaseViewer", function () {
       // Ensure that keeping the size constant won't evict any views.
       buffer.resize(5);
 
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(1),
         viewsMap.get(2),
         viewsMap.get(3),
@@ -82,7 +82,7 @@ describe("BaseViewer", function () {
       // Ensure that increasing the size won't evict any views.
       buffer.resize(10);
 
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(1),
         viewsMap.get(2),
         viewsMap.get(3),
@@ -93,7 +93,7 @@ describe("BaseViewer", function () {
       // Ensure that decreasing the size will evict the correct views.
       buffer.resize(3);
 
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(3),
         viewsMap.get(4),
         viewsMap.get(5),
@@ -114,7 +114,7 @@ describe("BaseViewer", function () {
       // while re-ordering them correctly.
       buffer.resize(5, new Set([1, 2]));
 
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(3),
         viewsMap.get(4),
         viewsMap.get(5),
@@ -126,7 +126,7 @@ describe("BaseViewer", function () {
       // while re-ordering them correctly.
       buffer.resize(10, new Set([3, 4, 5]));
 
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(1),
         viewsMap.get(2),
         viewsMap.get(3),
@@ -138,7 +138,7 @@ describe("BaseViewer", function () {
       // while re-ordering the remaining ones correctly.
       buffer.resize(3, new Set([1, 2, 5]));
 
-      expect(buffer._buffer).toEqual([
+      expect([...buffer]).toEqual([
         viewsMap.get(1),
         viewsMap.get(2),
         viewsMap.get(5),

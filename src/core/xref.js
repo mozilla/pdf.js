@@ -30,13 +30,14 @@ import {
   isStream,
   Ref,
 } from "./primitives.js";
-import { Lexer, Parser } from "./parser.js";
 import {
+  DocStats,
   MissingDataException,
   ParserEOFException,
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
+import { Lexer, Parser } from "./parser.js";
 import { CipherTransformFactory } from "./crypto.js";
 
 class XRef {
@@ -46,10 +47,7 @@ class XRef {
     this.entries = [];
     this.xrefstms = Object.create(null);
     this._cacheMap = new Map(); // Prepare the XRef cache.
-    this.stats = {
-      streamTypes: Object.create(null),
-      fontTypes: Object.create(null),
-    };
+    this.stats = new DocStats(pdfManager.msgHandler);
     this._newRefNum = null;
   }
 

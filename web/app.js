@@ -258,6 +258,7 @@ const PDFViewerApplication = {
   _contentDispositionFilename: null,
   _contentLength: null,
   _saveInProgress: false,
+  _docStats: null,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
 
@@ -887,6 +888,7 @@ const PDFViewerApplication = {
     this._contentDispositionFilename = null;
     this._contentLength = null;
     this._saveInProgress = false;
+    this._docStats = null;
 
     this._cancelIdleCallbacks();
     promises.push(this.pdfScriptingManager.destroyPromise);
@@ -2179,6 +2181,21 @@ const PDFViewerApplication = {
   },
 
   /**
+   * @ignore
+   */
+  _reportDocumentStatsTelemetry() {
+    const { stats } = this.pdfDocument;
+    if (stats !== this._docStats) {
+      this._docStats = stats;
+
+      this.externalServices.reportTelemetry({
+        type: "documentStats",
+        stats,
+      });
+    }
+  },
+
+  /**
    * Used together with the integration-tests, to enable awaiting full
    * initialization of the scripting/sandbox.
    */
@@ -2431,12 +2448,7 @@ function webViewerPageRendered({ pageNumber, error }) {
   }
 
   // It is a good time to report stream and font types.
-  PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
-    PDFViewerApplication.externalServices.reportTelemetry({
-      type: "documentStats",
-      stats,
-    });
-  });
+  PDFViewerApplication._reportDocumentStatsTelemetry();
 }
 
 function webViewerPageMode({ mode }) {
