@@ -741,13 +741,13 @@ class Parser {
       warn(`Empty "${name}" stream.`);
       return new NullStream();
     }
+    const xrefStats = this.xref.stats;
 
     try {
-      const xrefStreamStats = this.xref.stats.streamTypes;
       switch (name) {
         case "Fl":
         case "FlateDecode":
-          xrefStreamStats[StreamType.FLATE] = true;
+          xrefStats.addStreamType(StreamType.FLATE);
           if (params) {
             return new PredictorStream(
               new FlateStream(stream, maybeLength),
@@ -758,7 +758,7 @@ class Parser {
           return new FlateStream(stream, maybeLength);
         case "LZW":
         case "LZWDecode":
-          xrefStreamStats[StreamType.LZW] = true;
+          xrefStats.addStreamType(StreamType.LZW);
           let earlyChange = 1;
           if (params) {
             if (params.has("EarlyChange")) {
@@ -773,30 +773,30 @@ class Parser {
           return new LZWStream(stream, maybeLength, earlyChange);
         case "DCT":
         case "DCTDecode":
-          xrefStreamStats[StreamType.DCT] = true;
+          xrefStats.addStreamType(StreamType.DCT);
           return new JpegStream(stream, maybeLength, params);
         case "JPX":
         case "JPXDecode":
-          xrefStreamStats[StreamType.JPX] = true;
+          xrefStats.addStreamType(StreamType.JPX);
           return new JpxStream(stream, maybeLength, params);
         case "A85":
         case "ASCII85Decode":
-          xrefStreamStats[StreamType.A85] = true;
+          xrefStats.addStreamType(StreamType.A85);
           return new Ascii85Stream(stream, maybeLength);
         case "AHx":
         case "ASCIIHexDecode":
-          xrefStreamStats[StreamType.AHX] = true;
+          xrefStats.addStreamType(StreamType.AHX);
           return new AsciiHexStream(stream, maybeLength);
         case "CCF":
         case "CCITTFaxDecode":
-          xrefStreamStats[StreamType.CCF] = true;
+          xrefStats.addStreamType(StreamType.CCF);
           return new CCITTFaxStream(stream, maybeLength, params);
         case "RL":
         case "RunLengthDecode":
-          xrefStreamStats[StreamType.RLX] = true;
+          xrefStats.addStreamType(StreamType.RLX);
           return new RunLengthStream(stream, maybeLength);
         case "JBIG2Decode":
-          xrefStreamStats[StreamType.JBIG] = true;
+          xrefStats.addStreamType(StreamType.JBIG);
           return new Jbig2Stream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);
