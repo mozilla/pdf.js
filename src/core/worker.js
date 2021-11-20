@@ -215,6 +215,7 @@ class WorkerMessageHandler {
             docId,
             source.data,
             source.password,
+            handler,
             evaluatorOptions,
             enableXfa,
             docBaseUrl
@@ -287,6 +288,7 @@ class WorkerMessageHandler {
             docId,
             pdfFile,
             source.password,
+            handler,
             evaluatorOptions,
             enableXfa,
             docBaseUrl
@@ -530,10 +532,6 @@ class WorkerMessageHandler {
       return pdfManager.onLoadedStream().then(function (stream) {
         return stream.bytes;
       });
-    });
-
-    handler.on("GetStats", function wphSetupGetStats(data) {
-      return pdfManager.ensureXRef("stats");
     });
 
     handler.on("GetAnnotations", function ({ pageIndex, intent }) {
