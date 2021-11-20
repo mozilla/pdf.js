@@ -166,7 +166,6 @@ class PDFThumbnailViewer {
     this._pageLabels = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
-    this._pagesRequests = new WeakMap();
     this._setImageDisabled = false;
 
     // Remove the thumbnails from the DOM.
@@ -211,7 +210,7 @@ class PDFThumbnailViewer {
         }
         // Set the first `pdfPage` immediately, since it's already loaded,
         // rather than having to repeat the `PDFDocumentProxy.getPage` call in
-        // the `this._ensurePdfPageLoaded` method before rendering can start.
+        // the `this.#ensurePdfPageLoaded` method before rendering can start.
         const firstThumbnailView = this._thumbnails[0];
         if (firstThumbnailView) {
           firstThumbnailView.setPdfPage(firstPdfPage);
@@ -262,32 +261,22 @@ class PDFThumbnailViewer {
 
   /**
    * @param {PDFThumbnailView} thumbView
-   * @returns {PDFPage}
-   * @private
+   * @returns {Promise<PDFPageProxy | null>}
    */
-  _ensurePdfPageLoaded(thumbView) {
+  async #ensurePdfPageLoaded(thumbView) {
     if (thumbView.pdfPage) {
-      return Promise.resolve(thumbView.pdfPage);
+      return thumbView.pdfPage;
     }
-    if (this._pagesRequests.has(thumbView)) {
-      return this._pagesRequests.get(thumbView);
+    try {
+      const pdfPage = await this.pdfDocument.getPage(thumbView.id);
+      if (!thumbView.pdfPage) {
+        thumbView.setPdfPage(pdfPage);
+      }
+      return pdfPage;
+    } catch (reason) {
+      console.error("Unable to get page for thumb view", reason);
+      return null; // Page error -- there is nothing that can be done.
     }
-    const promise = this.pdfDocument
-      .getPage(thumbView.id)
-      .then(pdfPage => {
-        if (!thumbView.pdfPage) {
-          thumbView.setPdfPage(pdfPage);
-        }
-        this._pagesRequests.delete(thumbView);
-        return pdfPage;
-      })
-      .catch(reason => {
-        console.error("Unable to get page for thumb view", reason);
-        // Page error -- there is nothing that can be done.
-        this._pagesRequests.delete(thumbView);
-      });
-    this._pagesRequests.set(thumbView, promise);
-    return promise;
   }
 
   #getScrollAhead(visible) {
@@ -308,7 +297,7 @@ class PDFThumbnailViewer {
       scrollAhead
     );
     if (thumbView) {
-      this._ensurePdfPageLoaded(thumbView).then(() => {
+      this.#ensurePdfPageLoaded(thumbView).then(() => {
         this.renderingQueue.renderView(thumbView);
       });
       return true;

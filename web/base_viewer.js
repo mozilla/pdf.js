@@ -601,7 +601,7 @@ class BaseViewer {
         }
         // Set the first `pdfPage` immediately, since it's already loaded,
         // rather than having to repeat the `PDFDocumentProxy.getPage` call in
-        // the `this._ensurePdfPageLoaded` method before rendering can start.
+        // the `this.#ensurePdfPageLoaded` method before rendering can start.
         const firstPageView = this._pages[0];
         if (firstPageView) {
           firstPageView.setPdfPage(firstPdfPage);
@@ -708,7 +708,6 @@ class BaseViewer {
     this._location = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
-    this._pagesRequests = new WeakMap();
     this._firstPageCapability = createPromiseCapability();
     this._onePageRenderedCapability = createPromiseCapability();
     this._pagesCapability = createPromiseCapability();
@@ -1356,32 +1355,22 @@ class BaseViewer {
 
   /**
    * @param {PDFPageView} pageView
-   * @returns {Promise} Returns a promise containing a {PDFPageProxy} object.
-   * @private
+   * @returns {Promise<PDFPageProxy | null>}
    */
-  _ensurePdfPageLoaded(pageView) {
+  async #ensurePdfPageLoaded(pageView) {
     if (pageView.pdfPage) {
-      return Promise.resolve(pageView.pdfPage);
+      return pageView.pdfPage;
     }
-    if (this._pagesRequests.has(pageView)) {
-      return this._pagesRequests.get(pageView);
+    try {
+      const pdfPage = await this.pdfDocument.getPage(pageView.id);
+      if (!pageView.pdfPage) {
+        pageView.setPdfPage(pdfPage);
+      }
+      return pdfPage;
+    } catch (reason) {
+      console.error("Unable to get page for page view", reason);
+      return null; // Page error -- there is nothing that can be done.
     }
-    const promise = this.pdfDocument
-      .getPage(pageView.id)
-      .then(pdfPage => {
-        if (!pageView.pdfPage) {
-          pageView.setPdfPage(pdfPage);
-        }
-        this._pagesRequests.delete(pageView);
-        return pdfPage;
-      })
-      .catch(reason => {
-        console.error("Unable to get page for page view", reason);
-        // Page error -- there is nothing that can be done.
-        this._pagesRequests.delete(pageView);
-      });
-    this._pagesRequests.set(pageView, promise);
-    return promise;
   }
 
   #getScrollAhead(visible) {
@@ -1432,7 +1421,7 @@ class BaseViewer {
     this.#toggleLoadingIconSpinner(visiblePages.ids);
 
     if (pageView) {
-      this._ensurePdfPageLoaded(pageView).then(() => {
+      this.#ensurePdfPageLoaded(pageView).then(() => {
         this.renderingQueue.renderView(pageView);
       });
       return true;
