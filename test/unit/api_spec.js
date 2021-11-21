@@ -660,6 +660,20 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets page multiple time, with working caches", async function () {
+      const promiseA = pdfDocument.getPage(1);
+      const promiseB = pdfDocument.getPage(1);
+
+      expect(promiseA instanceof Promise).toEqual(true);
+      expect(promiseA).toBe(promiseB);
+
+      const pageA = await promiseA;
+      const pageB = await promiseB;
+
+      expect(pageA instanceof PDFPageProxy).toEqual(true);
+      expect(pageA).toBe(pageB);
+    });
+
     it("gets page index", async function () {
       const ref = { num: 17, gen: 0 }; // Reference to second page.
       const pageIndex = await pdfDocument.getPageIndex(ref);
