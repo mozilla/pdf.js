@@ -31,6 +31,7 @@ class PDFFindBar {
     this.toggleButton = options.toggleButton;
     this.findField = options.findField;
     this.highlightAll = options.highlightAllCheckbox;
+    this.currentPage = options.findCurrentPageCheckbox;
     this.caseSensitive = options.caseSensitiveCheckbox;
     this.entireWord = options.entireWordCheckbox;
     this.findMsg = options.findMsg;
@@ -127,6 +128,7 @@ class PDFFindBar {
       ignoreAccents: this.ignoreAccents.checked, // #177
       fuzzySearch: this.fuzzySearch.checked, // #304
       highlightAll: this.highlightAll.checked,
+      currentPage: this.currentPage.checked, // #832
       findPrevious: findPrev,
     });
   }

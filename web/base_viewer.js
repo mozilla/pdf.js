@@ -400,13 +400,13 @@ class BaseViewer {
         pageView.div.parentElement.childNodes.forEach(div => {
           const pageNumber = Number(div.getAttribute("data-page-number"));
           const pv = this._pages[pageNumber - 1];
-          this._ensurePdfPageLoaded(pv).then(() => {
+          this.#ensurePdfPageLoaded(pv).then(() => {
             this.renderingQueue.renderView(pv);
           });
           div.style.display = "inline-block";
         });
       } else {
-        this._ensurePdfPageLoaded(pageView).then(() => {
+        this.#ensurePdfPageLoaded(pageView).then(() => {
           this.renderingQueue.renderView(pageView);
         });
         // #716 modified by ngx-extended-pdf-viewer
@@ -443,7 +443,7 @@ class BaseViewer {
       const pageView = this._pages[pageIndex];
       const isLoading = pageView.div.querySelector(".loadingIcon");
       if (isLoading) {
-        this._ensurePdfPageLoaded(pageView).then(() => {
+        this.#ensurePdfPageLoaded(pageView).then(() => {
           this.renderingQueue.renderView(pageView);
         });
         return true;
@@ -462,7 +462,7 @@ class BaseViewer {
         let isLoading = pageView.div.querySelector(".loadingIcon");
         if (isLoading) {
           Window['ngxConsole'].log("asking for the next page");
-          this._ensurePdfPageLoaded(pageView).then(() => {
+          this.#ensurePdfPageLoaded(pageView).then(() => {
             this.renderingQueue.renderView(pageView);
           });
         } else {
@@ -470,7 +470,7 @@ class BaseViewer {
           isLoading = pageView.div.querySelector(".loadingIcon");
           if (isLoading) {
             Window['ngxConsole'].log("asking for the next + 1 page");
-            this._ensurePdfPageLoaded(pageView).then(() => {
+            this.#ensurePdfPageLoaded(pageView).then(() => {
               this.renderingQueue.renderView(pageView);
             });
           } else {
@@ -478,7 +478,7 @@ class BaseViewer {
             isLoading = pageView.div.querySelector(".loadingIcon");
             if (isLoading) {
               Window['ngxConsole'].log("asking for the next + 2 page");
-              this._ensurePdfPageLoaded(pageView).then(() => {
+              this.#ensurePdfPageLoaded(pageView).then(() => {
                 this.renderingQueue.renderView(pageView);
               });
             } else {
@@ -486,7 +486,7 @@ class BaseViewer {
               isLoading = pageView.div.querySelector(".loadingIcon");
               if (isLoading) {
                 Window['ngxConsole'].log("asking for the next + 3 page");
-                this._ensurePdfPageLoaded(pageView).then(() => {
+                this.#ensurePdfPageLoaded(pageView).then(() => {
                   this.renderingQueue.renderView(pageView);
                 });
               } else {
@@ -494,7 +494,7 @@ class BaseViewer {
                 isLoading = pageView.div.querySelector(".loadingIcon");
                 if (isLoading) {
                   Window['ngxConsole'].log("asking for the current page");
-                  this._ensurePdfPageLoaded(pageView).then(() => {
+                  this.#ensurePdfPageLoaded(pageView).then(() => {
                     this.renderingQueue.renderView(pageView);
                   });
                 } else {
@@ -502,7 +502,7 @@ class BaseViewer {
                   isLoading = pageView.div.querySelector(".loadingIcon");
                   if (isLoading) {
                     Window['ngxConsole'].log("asking for the previous page");
-                    this._ensurePdfPageLoaded(pageView).then(() => {
+                    this.#ensurePdfPageLoaded(pageView).then(() => {
                       this.renderingQueue.renderView(pageView);
                     });
                   } else {
@@ -1298,7 +1298,7 @@ class BaseViewer {
     }
 
     /** #495 modified by ngx-extended-pdf-viewer */
-    this._ensurePdfPageLoaded(pageView).then(() => {
+    this.#ensurePdfPageLoaded(pageView).then(() => {
       this.renderingQueue.renderView(pageView);
       if (this.currentPageNumber !== pageNumber) {
         this.currentPageNumber = pageNumber;

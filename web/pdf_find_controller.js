@@ -590,7 +590,17 @@ class PDFFindController {
       ignoreAccents, // #177
       fuzzySearch, // #304
       phraseSearch,
+      currentPage, // #832
     } = this._state;
+
+    // #832 modification by ngx-extended-pdf-viewer
+    if (currentPage) {
+      if (pageIndex !== this._linkService.page - 1) {
+        // exclude everything but the current page from the search results
+        return;
+      }
+    }
+    // #832 end of modification by ngx-extended-pdf-viewer
 
     if (query.length === 0) {
       // Do nothing: the matches should be wiped out already.
@@ -745,7 +755,18 @@ class PDFFindController {
 
       this._updateAllPages(); // Wipe out any previously highlighted matches.
 
-      for (let i = 0; i < numPages; i++) {
+      // #832 modification by ngx-extended-pdf-viewer:
+      // search the current page only
+      const { currentPage } = this.state;
+      let startPage = 0;
+      let finalPage = numPages - 1;
+      if (currentPage) {
+        startPage = this._linkService.page - 1;
+        finalPage = startPage;
+      }
+
+      for (let i = startPage; i <= finalPage; i++) {
+        // #832 end of modification by ngx-extended-pdf-viewer
         // Start finding the matches as soon as the text is extracted.
         if (this._pendingFindMatches.has(i)) {
           continue;

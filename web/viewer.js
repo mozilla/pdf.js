@@ -179,6 +179,7 @@ function getViewerConfiguration() {
       findField: document.getElementById("findInput"),
       findFieldMultiline: document.getElementById("findInputMultiline"), // #201
       highlightAllCheckbox: document.getElementById("findHighlightAll"),
+      findCurrentPageCheckbox: document.getElementById("findCurrentPage"), // #832
       caseSensitiveCheckbox: document.getElementById("findMatchCase"),
       entireWordCheckbox: document.getElementById("findEntireWord"),
       findMultipleSearchTextsCheckbox: document.getElementById(
