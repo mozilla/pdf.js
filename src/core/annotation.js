@@ -57,7 +57,7 @@ class AnnotationFactory {
       xref,
       ref,
       pdfManager,
-      idFactory,
+      idFactory
     ]);
   }
 
@@ -513,15 +513,21 @@ class Annotation {
 
     const isButton = this.data.pushButton;
     const forceRender = global.renderFormFields;
-    const forceRenderSignature = this.data.forceRenderSignature;
 
+    // EDITED BY LOGAN
     if (
-      !forceRenderSignature &&
+      !this.data.forceRender &&
       !forceRender &&
       !isButton &&
       (this.data.subtype === "Widget" || this.data.subtype === "Link")
     ) {
       return Promise.resolve(new OperatorList());
+    }
+
+    // If we are going to render the annotation in PDF.js,
+    // We need to tell PDFJSDocument not to render it.
+    if (this.data.forceRender) {
+      this.data.blockRender = true;
     }
 
     const data = this.data;
@@ -821,7 +827,6 @@ class WidgetAnnotation extends Annotation {
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
     data.hidden = this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
     data.isRequired = this.hasFieldFlag(AnnotationFieldFlag.REQUIRED);
-    data.forceRenderSignature = !!this.appearance && this.data.fieldType === "Sig";
 
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
@@ -1298,6 +1303,7 @@ class InkAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.INK;
+    this.type = "InkAnnotation";
 
     const xref = parameters.xref;
     const originalInkLists = parameters.dict.getArray("InkList");

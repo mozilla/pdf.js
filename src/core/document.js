@@ -51,14 +51,15 @@ import { PDFFunctionFactory } from "./function";
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
+
+// EDITED BY LOGAN
 function isAnnotationRenderable(annotation, intent) {
   if (self.disableFlattenedAnnotations) {
     return false;
   }
 
-  // EDITED BY LOGAN
-  if (annotation.appearance && annotation.data.fieldType === "Sig") {
-    annotation.data.forceRenderSignature = true;
+  if (annotation.data.annotationFlags !== 4) {
+    annotation.data.forceRender = true;
     return true;
   }
 
@@ -294,7 +295,6 @@ class Page {
     // page's operator list to render them.
     return Promise.all([pageListPromise, this._parsedAnnotations]).then(
       function([pageOpList, annotations]) {
-
         if (annotations.length === 0) {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
@@ -305,6 +305,7 @@ class Page {
         const opListPromises = [];
         for (const annotation of annotations) {
           if (isAnnotationRenderable(annotation, intent)) {
+            // EDITED BY LOGAN
             opListPromises.push(
               annotation.getOperatorList(
                 partialEvaluator,
@@ -370,7 +371,7 @@ class Page {
   }
 
   getAnnotationsData(intent) {
-    return this._parsedAnnotations.then(function (annotations) {
+    return this._parsedAnnotations.then(function(annotations) {
       const annotationsData = [];
       for (let i = 0, ii = annotations.length; i < ii; i++) {
         if (!intent || isAnnotationRenderable(annotations[i], intent)) {
@@ -401,13 +402,49 @@ class Page {
               this.xref,
               annotationRefs[i],
               this.pdfManager,
-              this.idFactory
+              this.idFactory,
+              annotationRefs
             )
           );
         }
-        
+
+        function isInkOverlapping(inkAnnotation, widgetAnnotation) {
+          const widgetRect = widgetAnnotation.rectangle;
+          const annotationRect = inkAnnotation.rectangle;
+          return !(
+            widgetRect[0] > annotationRect[2] ||
+            annotationRect[0] > widgetRect[2] ||
+            widgetRect[1] > annotationRect[3] ||
+            annotationRect[1] > widgetRect[3]
+          );
+        }
+
         return Promise.all(annotationPromises).then(
           function(annotations) {
+            // EDITED BY LOGAN
+            // The code below blocks rendering of signature widgets if an ink annotation is found that overlaps it.
+            const [widgets, inks] = annotations.reduce(
+              (acc, annot) => {
+                if (annot.type === "InkAnnotation") {
+                  acc[1].push(annot);
+                }
+
+                if (annot.data.fieldType === "Sig") {
+                  acc[0].push(annot);
+                }
+                return acc;
+              },
+              [[], []]
+            );
+
+            for (const ink of inks) {
+              for (const widget of widgets) {
+                if (isInkOverlapping(ink, widget)) {
+                  widget.data.blockRender = true;
+                }
+              }
+            }
+
             return annotations.filter(function isDefined(annotation) {
               return !!annotation;
             });
@@ -418,7 +455,7 @@ class Page {
           }
         );
       });
-    
+
     return shadow(this, "_parsedAnnotations", parsedAnnotations);
   }
 }
