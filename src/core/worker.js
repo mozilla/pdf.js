@@ -522,7 +522,6 @@ var WorkerMessageHandler = {
             .then(
               function(operatorListInfo) {
                 finishWorkerTask(task);
-
                 if (start) {
                   info(
                     `page=${pageIndex + 1} - getOperatorList: time=` +

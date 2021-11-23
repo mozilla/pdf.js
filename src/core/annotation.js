@@ -103,14 +103,7 @@ class AnnotationFactory {
           case "Ch":
             return new ChoiceWidgetAnnotation(parameters);
         }
-        warn(
-          'Unimplemented widget field type "' +
-            fieldType +
-            '", ' +
-            "falling back to base field type."
-        );
         return new WidgetAnnotation(parameters);
-
       case "Popup":
         return new PopupAnnotation(parameters);
 
@@ -520,8 +513,11 @@ class Annotation {
 
     const isButton = this.data.pushButton;
     const forceRender = global.renderFormFields;
+    const forceRenderSignature = this.data.forceRenderSignature;
 
-    if (!forceRender && !isButton && (this.data.subtype === 'Widget' || this.data.subtype === 'Link')) {
+    // const renderSignature = this.data
+
+    if (!forceRenderSignature && !forceRender && !isButton && (this.data.subtype === 'Widget' || this.data.subtype === 'Link')) {
       return Promise.resolve(new OperatorList());
     }
 

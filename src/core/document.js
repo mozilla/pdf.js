@@ -54,6 +54,12 @@ const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 function isAnnotationRenderable(annotation, intent) {
   if (self.disableFlattenedAnnotations) return false;
 
+  // EDITED BY LOGAN
+  if(annotation.appearance && annotation.data.fieldType === 'Sig') {
+    annotation.data.forceRenderSignature = true;
+    return true
+  };
+
   return (
     (intent === "display" && annotation.viewable) ||
     (intent === "print" && annotation.printable)
@@ -286,6 +292,7 @@ class Page {
     // page's operator list to render them.
     return Promise.all([pageListPromise, this._parsedAnnotations]).then(
       function([pageOpList, annotations]) {
+
         if (annotations.length === 0) {
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
