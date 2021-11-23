@@ -159,23 +159,13 @@ class PDFPageViewBuffer {
   }
 }
 
-function isSameScale(oldScale, newScale) {
-  if (newScale === oldScale) {
-    return true;
-  }
-  if (Math.abs(newScale - oldScale) < 1e-15) {
-    // Prevent unnecessary re-rendering of all pages when the scale
-    // changes only because of limited numerical precision.
-    return true;
-  }
-  return false;
-}
-
 /**
  * Simple viewer control to display PDF content/pages.
  */
 class BaseViewer {
   #buffer = null;
+
+  #previousContainerHeight = 0;
 
   #scrollModePageState = null;
 
@@ -751,7 +741,20 @@ class BaseViewer {
     if (this._spreadMode === SpreadMode.NONE) {
       // Finally, append the new page to the viewer.
       const pageView = this._pages[pageNumber - 1];
-      viewer.appendChild(pageView.div);
+
+      if (this.isInPresentationMode) {
+        const spread = document.createElement("div");
+        spread.className = "spread";
+        const dummyPage = document.createElement("div");
+        dummyPage.className = "dummyPage";
+        dummyPage.style.height = `${this.container.clientHeight}px`;
+
+        spread.appendChild(dummyPage);
+        spread.appendChild(pageView.div);
+        viewer.appendChild(spread);
+      } else {
+        viewer.appendChild(pageView.div);
+      }
 
       state.pages.push(pageView);
     } else {
@@ -828,10 +831,29 @@ class BaseViewer {
     scrollIntoView(pageDiv, pageSpot);
   }
 
+  /**
+   * Prevent unnecessary re-rendering of all pages when the scale changes
+   * only because of limited numerical precision.
+   */
+  #isSameScale(newScale) {
+    if (
+      this.isInPresentationMode &&
+      this.container.clientHeight !== this.#previousContainerHeight
+    ) {
+      // Ensure that the current page remains centered vertically if/when
+      // the window is resized while PresentationMode is active.
+      return false;
+    }
+    return (
+      newScale === this._currentScale ||
+      Math.abs(newScale - this._currentScale) < 1e-15
+    );
+  }
+
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
     this._currentScaleValue = newValue.toString();
 
-    if (isSameScale(this._currentScale, newScale)) {
+    if (this.#isSameScale(newScale)) {
       if (preset) {
         this.eventBus.dispatch("scalechanging", {
           source: this,
@@ -886,6 +908,8 @@ class BaseViewer {
     if (this.defaultRenderingQueue) {
       this.update();
     }
+
+    this.#previousContainerHeight = this.container.clientHeight;
   }
 
   /**
@@ -911,11 +935,15 @@ class BaseViewer {
       if (!currentPage) {
         return;
       }
-      const noPadding = this.isInPresentationMode || this.removePageBorders;
-      let hPadding = noPadding ? 0 : SCROLLBAR_PADDING;
-      let vPadding = noPadding ? 0 : VERTICAL_PADDING;
+      let hPadding = SCROLLBAR_PADDING,
+        vPadding = VERTICAL_PADDING;
 
-      if (!noPadding && this._scrollMode === ScrollMode.HORIZONTAL) {
+      if (this.isInPresentationMode) {
+        hPadding = vPadding = 4;
+      } else if (this.removePageBorders) {
+        hPadding = vPadding = 0;
+      }
+      if (this._scrollMode === ScrollMode.HORIZONTAL) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       const pageWidthScale =
