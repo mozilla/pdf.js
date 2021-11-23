@@ -515,9 +515,12 @@ class Annotation {
     const forceRender = global.renderFormFields;
     const forceRenderSignature = this.data.forceRenderSignature;
 
-    // const renderSignature = this.data
-
-    if (!forceRenderSignature && !forceRender && !isButton && (this.data.subtype === 'Widget' || this.data.subtype === 'Link')) {
+    if (
+      !forceRenderSignature &&
+      !forceRender &&
+      !isButton &&
+      (this.data.subtype === "Widget" || this.data.subtype === "Link")
+    ) {
       return Promise.resolve(new OperatorList());
     }
 
@@ -813,9 +816,12 @@ class WidgetAnnotation extends Annotation {
       data.fieldFlags = 0;
     }
 
+    // CUSTOM DATA GOES HERE
+    // EDITED BY LOGAN
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
     data.hidden = this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
     data.isRequired = this.hasFieldFlag(AnnotationFieldFlag.REQUIRED);
+    data.forceRenderSignature = !!this.appearance && this.data.fieldType === "Sig";
 
     // Hide signatures because we cannot validate them, and unset the fieldValue
     // since it's (most likely) a `Dict` which is non-serializable and will thus
