@@ -52,13 +52,15 @@ const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
 function isAnnotationRenderable(annotation, intent) {
-  if (self.disableFlattenedAnnotations) return false;
+  if (self.disableFlattenedAnnotations) {
+    return false;
+  }
 
   // EDITED BY LOGAN
-  if(annotation.appearance && annotation.data.fieldType === 'Sig') {
+  if (annotation.appearance && annotation.data.fieldType === "Sig") {
     annotation.data.forceRenderSignature = true;
-    return true
-  };
+    return true;
+  }
 
   return (
     (intent === "display" && annotation.viewable) ||
