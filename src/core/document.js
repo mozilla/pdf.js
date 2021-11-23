@@ -51,14 +51,16 @@ import { PDFFunctionFactory } from "./function";
 const DEFAULT_USER_UNIT = 1.0;
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
-
 // EDITED BY LOGAN
 function isAnnotationRenderable(annotation, intent) {
   if (self.disableFlattenedAnnotations) {
     return false;
   }
 
-  if (annotation.data.annotationFlags !== 4) {
+  if (
+    annotation.data.fieldType === "Sig" &&
+    annotation.data.annotationFlags !== 4
+  ) {
     annotation.data.forceRender = true;
     return true;
   }
