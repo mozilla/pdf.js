@@ -361,8 +361,8 @@ describe("Scripting", function () {
         name: "Keystroke",
         willCommit: false,
         change: "o",
-        selStart: 4,
-        selEnd: 4,
+        selStart: -1,
+        selEnd: -1,
       });
 
       expect(send_queue.has(refId)).toEqual(true);
@@ -398,8 +398,8 @@ describe("Scripting", function () {
         name: "Keystroke",
         willCommit: false,
         change: "o",
-        selStart: 4,
-        selEnd: 4,
+        selStart: -1,
+        selEnd: -1,
       });
 
       expect(send_queue.has(refId)).toEqual(true);
@@ -1119,8 +1119,8 @@ describe("Scripting", function () {
           change: "3",
           name: "Keystroke",
           willCommit: false,
-          selStart: 0,
-          selEnd: 0,
+          selStart: -1,
+          selEnd: -1,
         });
         expect(send_queue.has(refId)).toEqual(false);
 
@@ -1130,8 +1130,8 @@ describe("Scripting", function () {
           change: "F",
           name: "Keystroke",
           willCommit: false,
-          selStart: 1,
-          selEnd: 1,
+          selStart: -1,
+          selEnd: -1,
         });
         expect(send_queue.has(refId)).toEqual(false);
 
@@ -1141,8 +1141,8 @@ describe("Scripting", function () {
           change: "?",
           name: "Keystroke",
           willCommit: false,
-          selStart: 2,
-          selEnd: 2,
+          selStart: -1,
+          selEnd: -1,
         });
         expect(send_queue.has(refId)).toEqual(false);
 
@@ -1152,8 +1152,8 @@ describe("Scripting", function () {
           change: "@",
           name: "Keystroke",
           willCommit: false,
-          selStart: 3,
-          selEnd: 3,
+          selStart: -1,
+          selEnd: -1,
         });
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
@@ -1169,7 +1169,7 @@ describe("Scripting", function () {
           change: "0",
           name: "Keystroke",
           willCommit: true,
-          selStart: 3,
+          selStart: -1,
           selEnd: 3,
         });
         expect(send_queue.has(refId)).toEqual(false);
