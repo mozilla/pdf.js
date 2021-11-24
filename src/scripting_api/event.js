@@ -47,11 +47,28 @@ class EventDispatcher {
     this._document.obj._eventDispatcher = this;
   }
 
+  /*
+   * Take an event object and reconstruct what we think the result will be once
+   * the change is applied, so we can validate against it and cancel the event
+   * if need be
+   *
+   * TODO: Given the event info we currently have, single-character insertions
+   * and deletes are indistinguishable from appends. For now we just assume
+   * it's an append, the most common case, but this leaves some edge cases. See
+   * issue #14307 for details.
+   *
+   */
   mergeChange(event) {
     let value = event.value;
     if (typeof value !== "string") {
       value = value.toString();
     }
+    // If there was no selection, assume this is an append
+    if (event.selStart === -1 && event.selEnd === -1) {
+      return value + event.change;
+    }
+
+    // Otherwise, splice in the change to replace the selection
     const prefix =
       event.selStart >= 0 ? value.substring(0, event.selStart) : "";
     const postfix =
