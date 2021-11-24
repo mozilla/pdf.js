@@ -107,6 +107,9 @@ class ChunkedStream extends Stream {
     }
 
     const chunk = Math.floor(pos / this.chunkSize);
+    if (chunk > this.numChunks) {
+      return;
+    }
     if (chunk === this.lastSuccessfulEnsureByteChunk) {
       return;
     }
@@ -125,9 +128,14 @@ class ChunkedStream extends Stream {
       return;
     }
 
-    const chunkSize = this.chunkSize;
-    const beginChunk = Math.floor(begin / chunkSize);
-    const endChunk = Math.floor((end - 1) / chunkSize) + 1;
+    const beginChunk = Math.floor(begin / this.chunkSize);
+    if (beginChunk > this.numChunks) {
+      return;
+    }
+    const endChunk = Math.min(
+      Math.floor((end - 1) / this.chunkSize) + 1,
+      this.numChunks
+    );
     for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
       if (!this._loadedChunks.has(chunk)) {
         throw new MissingDataException(begin, end);
