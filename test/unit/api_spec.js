@@ -443,6 +443,21 @@ describe("api", function () {
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
+
+    it("creates pdf doc from PDF file with bad XRef table", async function () {
+      // A corrupt PDF file, where the XRef table have (some) bogus entries.
+      const loadingTask = getDocument(
+        buildGetDocumentParams("PDFBOX-4352-0.pdf", {
+          rangeChunkSize: 100,
+        })
+      );
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(1);
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("PDFWorker", function () {
