@@ -564,7 +564,7 @@ class AForm {
           event.change.length +
           event.selStart -
           event.selEnd;
-        if (finalLen >= 8) {
+        if (finalLen > 8 || event.value[0] === "(") {
           formatStr = "(999) 999-9999";
         } else {
           formatStr = "999-9999";
