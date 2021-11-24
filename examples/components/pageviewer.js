@@ -47,28 +47,28 @@ const loadingTask = pdfjsLib.getDocument({
   cMapPacked: CMAP_PACKED,
   enableXfa: ENABLE_XFA,
 });
-loadingTask.promise.then(function (pdfDocument) {
+(async function () {
+  const pdfDocument = await loadingTask.promise;
   // Document loaded, retrieving the page.
-  return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
-    // Creating the page view with default parameters.
-    const pdfPageView = new pdfjsViewer.PDFPageView({
-      container,
-      id: PAGE_TO_VIEW,
-      scale: SCALE,
-      defaultViewport: pdfPage.getViewport({ scale: SCALE }),
-      eventBus,
-      // We can enable text/annotation/xfa/struct-layers, as needed.
-      textLayerFactory: !pdfDocument.isPureXfa
-        ? new pdfjsViewer.DefaultTextLayerFactory()
-        : null,
-      annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
-      xfaLayerFactory: pdfDocument.isPureXfa
-        ? new pdfjsViewer.DefaultXfaLayerFactory()
-        : null,
-      structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
-    });
-    // Associate the actual page with the view, and draw it.
-    pdfPageView.setPdfPage(pdfPage);
-    return pdfPageView.draw();
+  const pdfPage = await pdfDocument.getPage(PAGE_TO_VIEW);
+  // Creating the page view with default parameters.
+  const pdfPageView = new pdfjsViewer.PDFPageView({
+    container,
+    id: PAGE_TO_VIEW,
+    scale: SCALE,
+    defaultViewport: pdfPage.getViewport({ scale: SCALE }),
+    eventBus,
+    // We can enable text/annotation/xfa/struct-layers, as needed.
+    textLayerFactory: !pdfDocument.isPureXfa
+      ? new pdfjsViewer.DefaultTextLayerFactory()
+      : null,
+    annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
+    xfaLayerFactory: pdfDocument.isPureXfa
+      ? new pdfjsViewer.DefaultXfaLayerFactory()
+      : null,
+    structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
   });
-});
+  // Associate the actual page with the view, and draw it.
+  pdfPageView.setPdfPage(pdfPage);
+  return pdfPageView.draw();
+})();
