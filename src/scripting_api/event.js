@@ -52,19 +52,23 @@ class EventDispatcher {
    * the change is applied, so we can validate against it and cancel the event
    * if need be
    *
-   * TODO: Given the event info we currently have, single-character insertions
-   * and deletes are indistinguishable from appends. For now we just assume
-   * it's an append, the most common case, but this leaves some edge cases. See
-   * issue #14307 for details.
-   *
+   * TODO: Given the event info we currently have, we can't determine where in
+   * the value a single-character insertion/deletion happened.  For now we just
+   * assume they happen at the end of the string, which is by far the most
+   * common case, but this leaves some edge cases, see issue #14307.
    */
   mergeChange(event) {
     let value = event.value;
     if (typeof value !== "string") {
       value = value.toString();
     }
-    // If there was no selection, assume this is an append
+    // If there was no selection, it's a single-character change
     if (event.selStart === -1 && event.selEnd === -1) {
+      if (event.change === "") {
+        // Empty change indicates a deletion
+        return value.slice(0, -1);
+      }
+      // Otherwise, assume it's an append
       return value + event.change;
     }
 
