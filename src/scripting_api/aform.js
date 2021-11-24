@@ -486,15 +486,15 @@ class AForm {
     ]);
 
     function _checkValidity(_value, _cMask) {
-      for (let i = 0, ii = value.length; i < ii; i++) {
-        const mask = _cMask.charAt(i);
-        const char = _value.charAt(i);
-        const checker = checkers.get(mask);
+      for (let i = 0, ii = _value.length; i < ii; i++) {
+        const maskChar = _cMask.charAt(i);
+        const valueChar = _value.charAt(i);
+        const checker = checkers.get(maskChar);
         if (checker) {
-          if (!checker(char)) {
+          if (!checker(valueChar)) {
             return false;
           }
-        } else if (mask !== char) {
+        } else if (maskChar !== valueChar) {
           return false;
         }
       }
