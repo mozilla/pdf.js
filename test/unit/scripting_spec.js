@@ -369,7 +369,7 @@ describe("Scripting", function () {
       expect(send_queue.get(refId)).toEqual({
         id: refId,
         value: "hell",
-        selRange: [4, 4],
+        selRange: [-1, -1],
       });
     });
 
@@ -1159,7 +1159,7 @@ describe("Scripting", function () {
         expect(send_queue.get(refId)).toEqual({
           id: refId,
           value: "3F?",
-          selRange: [3, 3],
+          selRange: [-1, -1],
         });
 
         send_queue.delete(refId);
