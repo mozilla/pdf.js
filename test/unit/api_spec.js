@@ -458,6 +458,26 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("creates pdf doc from PDF file with bad XRef byteWidths", async function () {
+      // A corrupt PDF file, where the XRef /W-array have (some) bogus entries.
+      const loadingTask = getDocument(
+        buildGetDocumentParams("REDHAT-1531897-0.pdf")
+      );
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      try {
+        await loadingTask.promise;
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof InvalidPDFException).toEqual(true);
+        expect(reason.message).toEqual("Invalid PDF structure.");
+      }
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("PDFWorker", function () {
