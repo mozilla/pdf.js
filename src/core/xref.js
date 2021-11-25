@@ -323,17 +323,29 @@ class XRef {
           offset = 0,
           generation = 0;
         for (j = 0; j < typeFieldWidth; ++j) {
-          type = (type << 8) | stream.getByte();
+          const typeByte = stream.getByte();
+          if (typeByte === -1) {
+            throw new FormatError("Invalid XRef byteWidths 'type'.");
+          }
+          type = (type << 8) | typeByte;
         }
         // if type field is absent, its default value is 1
         if (typeFieldWidth === 0) {
           type = 1;
         }
         for (j = 0; j < offsetFieldWidth; ++j) {
-          offset = (offset << 8) | stream.getByte();
+          const offsetByte = stream.getByte();
+          if (offsetByte === -1) {
+            throw new FormatError("Invalid XRef byteWidths 'offset'.");
+          }
+          offset = (offset << 8) | offsetByte;
         }
         for (j = 0; j < generationFieldWidth; ++j) {
-          generation = (generation << 8) | stream.getByte();
+          const generationByte = stream.getByte();
+          if (generationByte === -1) {
+            throw new FormatError("Invalid XRef byteWidths 'generation'.");
+          }
+          generation = (generation << 8) | generationByte;
         }
         const entry = {};
         entry.offset = offset;
