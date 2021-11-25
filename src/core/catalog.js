@@ -28,6 +28,7 @@ import {
 import {
   collectActions,
   MissingDataException,
+  PageDictMissingException,
   recoverJsURL,
   toRomanNumerals,
 } from "./core_utils.js";
@@ -70,6 +71,7 @@ class Catalog {
     if (!isDict(this._catDict)) {
       throw new FormatError("Catalog object is not a dictionary.");
     }
+    this._actualNumPages = null;
 
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = new Map();
@@ -534,14 +536,26 @@ class Catalog {
     };
   }
 
-  get numPages() {
+  setActualNumPages(num = null) {
+    this._actualNumPages = num;
+  }
+
+  get hasActualNumPages() {
+    return this._actualNumPages !== null;
+  }
+
+  get _pagesCount() {
     const obj = this.toplevelPagesDict.get("Count");
     if (!Number.isInteger(obj)) {
       throw new FormatError(
         "Page count in top-level pages dictionary is not an integer."
       );
     }
-    return shadow(this, "numPages", obj);
+    return shadow(this, "_pagesCount", obj);
+  }
+
+  get numPages() {
+    return this.hasActualNumPages ? this._actualNumPages : this._pagesCount;
   }
 
   get destinations() {
@@ -1071,7 +1085,7 @@ class Catalog {
     });
   }
 
-  getPageDict(pageIndex) {
+  getPageDict(pageIndex, skipCount = false) {
     const capability = createPromiseCapability();
     const nodesToVisit = [this._catDict.getRaw("Pages")];
     const visitedNodes = new RefSet();
@@ -1133,7 +1147,7 @@ class Catalog {
         }
 
         count = currentNode.get("Count");
-        if (Number.isInteger(count) && count >= 0) {
+        if (Number.isInteger(count) && count >= 0 && !skipCount) {
           // Cache the Kids count, since it can reduce redundant lookups in
           // documents where all nodes are found at *one* level of the tree.
           const objId = currentNode.objId;
@@ -1177,7 +1191,9 @@ class Catalog {
           nodesToVisit.push(kids[last]);
         }
       }
-      capability.reject(new Error(`Page index ${pageIndex} not found.`));
+      capability.reject(
+        new PageDictMissingException(`Page index ${pageIndex} not found.`)
+      );
     }
     next();
     return capability.promise;
