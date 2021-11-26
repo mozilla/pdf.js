@@ -289,19 +289,15 @@ class XRef {
   }
 
   readXRefStream(stream) {
-    let i, j;
     const streamState = this.streamState;
     stream.pos = streamState.streamPos;
 
-    const byteWidths = streamState.byteWidths;
-    const typeFieldWidth = byteWidths[0];
-    const offsetFieldWidth = byteWidths[1];
-    const generationFieldWidth = byteWidths[2];
+    const [typeFieldWidth, offsetFieldWidth, generationFieldWidth] =
+      streamState.byteWidths;
 
     const entryRanges = streamState.entryRanges;
     while (entryRanges.length > 0) {
-      const first = entryRanges[0];
-      const n = entryRanges[1];
+      const [first, n] = entryRanges;
 
       if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(`Invalid XRef range fields: ${first}, ${n}`);
@@ -315,14 +311,14 @@ class XRef {
           `Invalid XRef entry fields length: ${first}, ${n}`
         );
       }
-      for (i = streamState.entryNum; i < n; ++i) {
+      for (let i = streamState.entryNum; i < n; ++i) {
         streamState.entryNum = i;
         streamState.streamPos = stream.pos;
 
         let type = 0,
           offset = 0,
           generation = 0;
-        for (j = 0; j < typeFieldWidth; ++j) {
+        for (let j = 0; j < typeFieldWidth; ++j) {
           const typeByte = stream.getByte();
           if (typeByte === -1) {
             throw new FormatError("Invalid XRef byteWidths 'type'.");
@@ -333,14 +329,14 @@ class XRef {
         if (typeFieldWidth === 0) {
           type = 1;
         }
-        for (j = 0; j < offsetFieldWidth; ++j) {
+        for (let j = 0; j < offsetFieldWidth; ++j) {
           const offsetByte = stream.getByte();
           if (offsetByte === -1) {
             throw new FormatError("Invalid XRef byteWidths 'offset'.");
           }
           offset = (offset << 8) | offsetByte;
         }
-        for (j = 0; j < generationFieldWidth; ++j) {
+        for (let j = 0; j < generationFieldWidth; ++j) {
           const generationByte = stream.getByte();
           if (generationByte === -1) {
             throw new FormatError("Invalid XRef byteWidths 'generation'.");
