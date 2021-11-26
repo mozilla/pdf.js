@@ -655,7 +655,7 @@ class PDFDocument {
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
-    this._pagePromises = [];
+    this._pagePromises = new Map();
     this._version = null;
 
     const idCounters = {
@@ -1299,36 +1299,21 @@ class PDFDocument {
   }
 
   getPage(pageIndex) {
-    if (this._pagePromises[pageIndex] !== undefined) {
-      return this._pagePromises[pageIndex];
+    const cachedPromise = this._pagePromises.get(pageIndex);
+    if (cachedPromise) {
+      return cachedPromise;
     }
-    const { catalog, linearization } = this;
+    const { catalog, linearization, xfaFactory } = this;
 
-    if (this.xfaFactory) {
-      return Promise.resolve(
-        new Page({
-          pdfManager: this.pdfManager,
-          xref: this.xref,
-          pageIndex,
-          pageDict: Dict.empty,
-          ref: null,
-          globalIdFactory: this._globalIdFactory,
-          fontCache: catalog.fontCache,
-          builtInCMapCache: catalog.builtInCMapCache,
-          standardFontDataCache: catalog.standardFontDataCache,
-          globalImageCache: catalog.globalImageCache,
-          nonBlendModesSet: catalog.nonBlendModesSet,
-          xfaFactory: this.xfaFactory,
-        })
-      );
+    let promise;
+    if (xfaFactory) {
+      promise = Promise.resolve([Dict.empty, null]);
+    } else if (linearization && linearization.pageFirst === pageIndex) {
+      promise = this._getLinearizationPage(pageIndex);
+    } else {
+      promise = catalog.getPageDict(pageIndex);
     }
-
-    const promise =
-      linearization && linearization.pageFirst === pageIndex
-        ? this._getLinearizationPage(pageIndex)
-        : catalog.getPageDict(pageIndex);
-
-    return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+    promise = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,
         xref: this.xref,
@@ -1341,9 +1326,12 @@ class PDFDocument {
         standardFontDataCache: catalog.standardFontDataCache,
         globalImageCache: catalog.globalImageCache,
         nonBlendModesSet: catalog.nonBlendModesSet,
-        xfaFactory: null,
+        xfaFactory,
       });
-    }));
+    });
+
+    this._pagePromises.set(pageIndex, promise);
+    return promise;
   }
 
   checkFirstPage() {
@@ -1352,7 +1340,7 @@ class PDFDocument {
         // Clear out the various caches to ensure that we haven't stored any
         // inconsistent and/or incorrect state, since that could easily break
         // subsequent `this.getPage` calls.
-        this._pagePromises.length = 0;
+        this._pagePromises.clear();
         await this.cleanup();
 
         throw new XRefParseException();
