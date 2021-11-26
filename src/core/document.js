@@ -1261,7 +1261,7 @@ class PDFDocument {
     ]);
   }
 
-  _getLinearizationPage(pageIndex) {
+  async _getLinearizationPage(pageIndex) {
     const { catalog, linearization } = this;
     if (
       typeof PDFJSDev === "undefined" ||
@@ -1274,28 +1274,25 @@ class PDFDocument {
     }
 
     const ref = Ref.get(linearization.objectNumberFirst, 0);
-    return this.xref
-      .fetchAsync(ref)
-      .then(obj => {
-        // Ensure that the object that was found is actually a Page dictionary.
-        if (
-          isDict(obj, "Page") ||
-          (isDict(obj) && !obj.has("Type") && obj.has("Contents"))
-        ) {
-          if (ref && !catalog.pageKidsCountCache.has(ref)) {
-            catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
-          }
-          return [obj, ref];
+    try {
+      const obj = await this.xref.fetchAsync(ref);
+      // Ensure that the object that was found is actually a Page dictionary.
+      if (
+        isDict(obj, "Page") ||
+        (isDict(obj) && !obj.has("Type") && obj.has("Contents"))
+      ) {
+        if (ref && !catalog.pageKidsCountCache.has(ref)) {
+          catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
         }
-        throw new FormatError(
-          "The Linearization dictionary doesn't point " +
-            "to a valid Page dictionary."
-        );
-      })
-      .catch(reason => {
-        info(reason);
-        return catalog.getPageDict(pageIndex);
-      });
+        return [obj, ref];
+      }
+      throw new FormatError(
+        "The Linearization dictionary doesn't point to a valid Page dictionary."
+      );
+    } catch (reason) {
+      info(reason);
+      return catalog.getPageDict(pageIndex);
+    }
   }
 
   getPage(pageIndex) {
