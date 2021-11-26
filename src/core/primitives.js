@@ -16,6 +16,7 @@
 import { assert, shadow, unreachable } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 
+const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
 
 const Name = (function NameClosure() {
@@ -422,6 +423,7 @@ function clearPrimitiveCaches() {
 }
 
 export {
+  CIRCULAR_REF,
   clearPrimitiveCaches,
   Cmd,
   Dict,
