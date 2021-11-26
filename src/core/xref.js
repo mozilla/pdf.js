@@ -21,7 +21,7 @@ import {
   InvalidPDFException,
   warn,
 } from "../shared/util.js";
-import { Cmd, Dict, isCmd, Ref } from "./primitives.js";
+import { CIRCULAR_REF, Cmd, Dict, isCmd, Ref, RefSet } from "./primitives.js";
 import {
   DocStats,
   MissingDataException,
@@ -40,6 +40,7 @@ class XRef {
     this.entries = [];
     this.xrefstms = Object.create(null);
     this._cacheMap = new Map(); // Prepare the XRef cache.
+    this._pendingRefs = new RefSet();
     this.stats = new DocStats(pdfManager.msgHandler);
     this._newRefNum = null;
   }
@@ -733,11 +734,26 @@ class XRef {
       this._cacheMap.set(num, xrefEntry);
       return xrefEntry;
     }
+    // Prevent circular references, in corrupt PDF documents, from hanging the
+    // worker-thread. This relies, implicitly, on the parsing being synchronous.
+    if (this._pendingRefs.has(ref)) {
+      this._pendingRefs.remove(ref);
 
-    if (xrefEntry.uncompressed) {
-      xrefEntry = this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
-    } else {
-      xrefEntry = this.fetchCompressed(ref, xrefEntry, suppressEncryption);
+      warn(`Ignoring circular reference: ${ref}.`);
+      return CIRCULAR_REF;
+    }
+    this._pendingRefs.put(ref);
+
+    try {
+      if (xrefEntry.uncompressed) {
+        xrefEntry = this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
+      } else {
+        xrefEntry = this.fetchCompressed(ref, xrefEntry, suppressEncryption);
+      }
+      this._pendingRefs.remove(ref);
+    } catch (ex) {
+      this._pendingRefs.remove(ref);
+      throw ex;
     }
     if (xrefEntry instanceof Dict) {
       xrefEntry.objId = ref.toString();
