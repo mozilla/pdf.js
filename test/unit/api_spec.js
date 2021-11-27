@@ -25,6 +25,7 @@ import {
   PasswordResponses,
   PermissionFlag,
   StreamType,
+  UnknownErrorException,
 } from "../../src/shared/util.js";
 import {
   buildGetDocumentParams,
@@ -478,6 +479,38 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("creates pdf doc from PDF files, with bad /Pages tree /Count", async function () {
+      const loadingTask1 = getDocument(
+        buildGetDocumentParams("poppler-67295-0.pdf")
+      );
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("poppler-85140-0.pdf")
+      );
+      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument1 = await loadingTask1.promise;
+      const pdfDocument2 = await loadingTask2.promise;
+
+      expect(pdfDocument1.numPages).toEqual(1);
+      expect(pdfDocument2.numPages).toEqual(1);
+
+      const pageA = await pdfDocument1.getPage(1);
+      expect(pageA instanceof PDFPageProxy).toEqual(true);
+
+      try {
+        await pdfDocument2.getPage(1);
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual("Bad (uncompressed) XRef entry: 3R");
+      }
+
+      await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
+    });
   });
 
   describe("PDFWorker", function () {
@@ -683,7 +716,7 @@ describe("api", function () {
             throw new Error("shall fail for invalid page");
           },
           function (reason) {
-            expect(reason instanceof Error).toEqual(true);
+            expect(reason instanceof UnknownErrorException).toEqual(true);
             expect(reason.message).toEqual(
               "Pages tree contains circular reference."
             );
@@ -724,7 +757,10 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof Error).toEqual(true);
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual(
+          "The reference does not point to a /Page dictionary."
+        );
       }
     });
 
