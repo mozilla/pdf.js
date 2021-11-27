@@ -170,11 +170,12 @@ class WorkerMessageHandler {
       await pdfManager.ensureDoc("parseStartXRef");
       await pdfManager.ensureDoc("parse", [recoveryMode]);
 
-      if (!recoveryMode) {
-        // Check that at least the first page can be successfully loaded,
-        // since otherwise the XRef table is definitely not valid.
-        await pdfManager.ensureDoc("checkFirstPage");
-      }
+      // Check that at least the first page can be successfully loaded,
+      // since otherwise the XRef table is definitely not valid.
+      await pdfManager.ensureDoc("checkFirstPage", [recoveryMode]);
+      // Check that the last page can be sucessfully loaded, to ensure that
+      // `numPages` is correct, and fallback to walking the entire /Pages-tree.
+      await pdfManager.ensureDoc("checkLastPage", [recoveryMode]);
 
       const isPureXfa = await pdfManager.ensureDoc("isPureXfa");
       if (isPureXfa) {
