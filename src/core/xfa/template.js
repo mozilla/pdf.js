@@ -475,7 +475,7 @@ class Arc extends XFAObject {
       },
     };
 
-    if (this.startAngle === 0 && this.sweepAngle === 360) {
+    if (this.sweepAngle === 360) {
       arc = {
         name: "ellipse",
         attributes: {
@@ -490,12 +490,12 @@ class Arc extends XFAObject {
     } else {
       const startAngle = (this.startAngle * Math.PI) / 180;
       const sweepAngle = (this.sweepAngle * Math.PI) / 180;
-      const largeArc = this.sweepAngle - this.startAngle > 180 ? 1 : 0;
+      const largeArc = this.sweepAngle > 180 ? 1 : 0;
       const [x1, y1, x2, y2] = [
         50 * (1 + Math.cos(startAngle)),
         50 * (1 - Math.sin(startAngle)),
-        50 * (1 + Math.cos(sweepAngle)),
-        50 * (1 - Math.sin(sweepAngle)),
+        50 * (1 + Math.cos(startAngle + sweepAngle)),
+        50 * (1 - Math.sin(startAngle + sweepAngle)),
       ];
 
       arc = {
