@@ -1037,6 +1037,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "xfa_issue14315",
+       "file": "pdfs/xfa_issue14315.pdf",
+       "md5": "e239710875f9dea72fd94c20672a29e1",
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_issue14071",
        "file": "pdfs/xfa_issue14071.pdf",
        "md5": "7ef09705091602668ce22086c83a90f3",
