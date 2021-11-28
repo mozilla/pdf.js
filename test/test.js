@@ -956,7 +956,7 @@ async function startBrowser(browserName, startUrl = "") {
   if (startUrl) {
     const pages = await browser.pages();
     const page = pages[0];
-    await page.goto(startUrl, { timeout: 0 });
+    await page.goto(startUrl, { timeout: 0, waitUntil: "domcontentloaded" });
   }
 
   return browser;
