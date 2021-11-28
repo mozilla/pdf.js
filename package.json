@@ -13,7 +13,7 @@
     "canvas": "^2.8.0",
     "core-js": "^3.19.1",
     "cross-env": "^7.0.3",
-    "dommatrix": "^0.0.8",
+    "dommatrix": "^0.0.19",
     "es-module-shims": "^1.3.2",
     "eslint": "^8.3.0",
     "eslint-config-prettier": "^8.3.0",
