@@ -24,7 +24,23 @@ var os = require("os");
 var puppeteer = require("puppeteer");
 var url = require("url");
 var testUtils = require("./testutils.js");
+const dns = require("dns");
 const yargs = require("yargs");
+
+// Chrome uses host `127.0.0.1` in the browser's websocket endpoint URL while
+// Firefox uses `localhost`, which before Node.js 17 also resolved to the IPv4
+// address `127.0.0.1` by Node.js' DNS resolver. However, this behavior changed
+// in Node.js 17 where the default is to prefer an IPv6 address if one is
+// offered (which varies based on the OS and/or how the `localhost` hostname
+// resolution is configured), so it can now also resolve to `::1`. This causes
+// Firefox to not start anymore since it doesn't bind on the `::1` interface.
+// To avoid this, we switch Node.js' DNS resolver back to preferring IPv4
+// since we connect to a local browser anyway. Only do this for Node.js versions
+// that actually have this API since it got introduced in Node.js 14.18.0 and
+// it's not relevant for older versions anyway.
+if (dns.setDefaultResultOrder !== undefined) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 function parseOptions() {
   yargs
