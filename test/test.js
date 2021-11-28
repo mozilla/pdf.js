@@ -975,7 +975,7 @@ function startBrowsers(initSessionCallback, makeStartUrl = null) {
         }
       })
       .catch(function (ex) {
-        console.log(`Error while starting ${browserName}: ${ex}`);
+        console.log(`Error while starting ${browserName}: ${ex.message}`);
         closeSession(browserName);
       });
   }
