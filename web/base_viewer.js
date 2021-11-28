@@ -54,6 +54,11 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
 
+const PagesCountLimit = {
+  FORCE_SCROLL_MODE_PAGE: 15000,
+  FORCE_LAZY_PAGE_INIT: 7500,
+};
+
 /**
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
@@ -515,6 +520,16 @@ class BaseViewer {
     // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
 
+    // Given that browsers don't handle huge amounts of DOM-elements very well,
+    // enforce usage of PAGE-scrolling when loading *very* long/large documents.
+    if (pagesCount > PagesCountLimit.FORCE_SCROLL_MODE_PAGE) {
+      console.warn(
+        "Forcing PAGE-scrolling for performance reasons, given the length of the document."
+      );
+      const mode = (this._scrollMode = ScrollMode.PAGE);
+      this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
+    }
+
     this._pagesCapability.promise.then(() => {
       this.eventBus.dispatch("pagesloaded", {
         source: this,
@@ -618,7 +633,10 @@ class BaseViewer {
 
           // In addition to 'disableAutoFetch' being set, also attempt to reduce
           // resource usage when loading *very* long/large documents.
-          if (pdfDocument.loadingParams.disableAutoFetch || pagesCount > 7500) {
+          if (
+            pdfDocument.loadingParams.disableAutoFetch ||
+            pagesCount > PagesCountLimit.FORCE_LAZY_PAGE_INIT
+          ) {
             // XXX: Printing is semi-broken with auto fetch disabled.
             this._pagesCapability.resolve();
             return;
@@ -1685,6 +1703,9 @@ class BaseViewer {
     if (!isValidScrollMode(mode)) {
       throw new Error(`Invalid scroll mode: ${mode}`);
     }
+    if (this.pagesCount > PagesCountLimit.FORCE_SCROLL_MODE_PAGE) {
+      return; // Disabled for performance reasons.
+    }
     this._previousScrollMode = this._scrollMode;
 
     this._scrollMode = mode;
@@ -1957,4 +1978,4 @@ class BaseViewer {
   }
 }
 
-export { BaseViewer, PDFPageViewBuffer };
+export { BaseViewer, PagesCountLimit, PDFPageViewBuffer };
