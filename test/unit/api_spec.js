@@ -511,6 +511,40 @@ describe("api", function () {
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
+
+    it("creates pdf doc from PDF files, with circular references", async function () {
+      const loadingTask1 = getDocument(
+        buildGetDocumentParams("poppler-91414-0-53.pdf")
+      );
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("poppler-91414-0-54.pdf")
+      );
+      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument1 = await loadingTask1.promise;
+      const pdfDocument2 = await loadingTask2.promise;
+
+      expect(pdfDocument1.numPages).toEqual(1);
+      expect(pdfDocument2.numPages).toEqual(1);
+
+      const pageA = await pdfDocument1.getPage(1);
+      const pageB = await pdfDocument2.getPage(1);
+
+      expect(pageA instanceof PDFPageProxy).toEqual(true);
+      expect(pageB instanceof PDFPageProxy).toEqual(true);
+
+      for (const opList of [
+        await pageA.getOperatorList(),
+        await pageB.getOperatorList(),
+      ]) {
+        expect(opList.fnArray.length).toBeGreaterThan(5);
+        expect(opList.argsArray.length).toBeGreaterThan(5);
+        expect(opList.lastChunk).toEqual(true);
+      }
+
+      await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
+    });
   });
 
   describe("PDFWorker", function () {

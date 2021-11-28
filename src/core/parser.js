@@ -632,7 +632,7 @@ class Parser {
     // Get the length.
     let length = dict.get("Length");
     if (!Number.isInteger(length)) {
-      info(`Bad length "${length}" in stream`);
+      info(`Bad length "${length && length.toString()}" in stream.`);
       length = 0;
     }
 
