@@ -50,6 +50,7 @@ import {
   getInheritableProperty,
   isWhiteSpace,
   MissingDataException,
+  PageDictMissingException,
   validateCSSFont,
   XRefEntryException,
   XRefParseException,
@@ -655,7 +656,7 @@ class PDFDocument {
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
-    this._pagePromises = [];
+    this._pagePromises = new Map();
     this._version = null;
 
     const idCounters = {
@@ -787,7 +788,9 @@ class PDFDocument {
 
   get numPages() {
     let num = 0;
-    if (this.xfaFactory) {
+    if (this.catalog.hasActualNumPages) {
+      num = this.catalog.numPages;
+    } else if (this.xfaFactory) {
       // num is a Promise.
       num = this.xfaFactory.getNumPages();
     } else if (this.linearization) {
@@ -1261,7 +1264,7 @@ class PDFDocument {
     ]);
   }
 
-  _getLinearizationPage(pageIndex) {
+  async _getLinearizationPage(pageIndex) {
     const { catalog, linearization } = this;
     if (
       typeof PDFJSDev === "undefined" ||
@@ -1274,61 +1277,43 @@ class PDFDocument {
     }
 
     const ref = Ref.get(linearization.objectNumberFirst, 0);
-    return this.xref
-      .fetchAsync(ref)
-      .then(obj => {
-        // Ensure that the object that was found is actually a Page dictionary.
-        if (
-          isDict(obj, "Page") ||
-          (isDict(obj) && !obj.has("Type") && obj.has("Contents"))
-        ) {
-          if (ref && !catalog.pageKidsCountCache.has(ref)) {
-            catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
-          }
-          return [obj, ref];
+    try {
+      const obj = await this.xref.fetchAsync(ref);
+      // Ensure that the object that was found is actually a Page dictionary.
+      if (
+        isDict(obj, "Page") ||
+        (isDict(obj) && !obj.has("Type") && obj.has("Contents"))
+      ) {
+        if (ref && !catalog.pageKidsCountCache.has(ref)) {
+          catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
         }
-        throw new FormatError(
-          "The Linearization dictionary doesn't point " +
-            "to a valid Page dictionary."
-        );
-      })
-      .catch(reason => {
-        info(reason);
-        return catalog.getPageDict(pageIndex);
-      });
+        return [obj, ref];
+      }
+      throw new FormatError(
+        "The Linearization dictionary doesn't point to a valid Page dictionary."
+      );
+    } catch (reason) {
+      info(reason);
+      return catalog.getPageDict(pageIndex);
+    }
   }
 
   getPage(pageIndex) {
-    if (this._pagePromises[pageIndex] !== undefined) {
-      return this._pagePromises[pageIndex];
+    const cachedPromise = this._pagePromises.get(pageIndex);
+    if (cachedPromise) {
+      return cachedPromise;
     }
-    const { catalog, linearization } = this;
+    const { catalog, linearization, xfaFactory } = this;
 
-    if (this.xfaFactory) {
-      return Promise.resolve(
-        new Page({
-          pdfManager: this.pdfManager,
-          xref: this.xref,
-          pageIndex,
-          pageDict: Dict.empty,
-          ref: null,
-          globalIdFactory: this._globalIdFactory,
-          fontCache: catalog.fontCache,
-          builtInCMapCache: catalog.builtInCMapCache,
-          standardFontDataCache: catalog.standardFontDataCache,
-          globalImageCache: catalog.globalImageCache,
-          nonBlendModesSet: catalog.nonBlendModesSet,
-          xfaFactory: this.xfaFactory,
-        })
-      );
+    let promise;
+    if (xfaFactory) {
+      promise = Promise.resolve([Dict.empty, null]);
+    } else if (linearization && linearization.pageFirst === pageIndex) {
+      promise = this._getLinearizationPage(pageIndex);
+    } else {
+      promise = catalog.getPageDict(pageIndex);
     }
-
-    const promise =
-      linearization && linearization.pageFirst === pageIndex
-        ? this._getLinearizationPage(pageIndex)
-        : catalog.getPageDict(pageIndex);
-
-    return (this._pagePromises[pageIndex] = promise.then(([pageDict, ref]) => {
+    promise = promise.then(([pageDict, ref]) => {
       return new Page({
         pdfManager: this.pdfManager,
         xref: this.xref,
@@ -1341,23 +1326,84 @@ class PDFDocument {
         standardFontDataCache: catalog.standardFontDataCache,
         globalImageCache: catalog.globalImageCache,
         nonBlendModesSet: catalog.nonBlendModesSet,
-        xfaFactory: null,
+        xfaFactory,
       });
-    }));
+    });
+
+    this._pagePromises.set(pageIndex, promise);
+    return promise;
   }
 
-  checkFirstPage() {
-    return this.getPage(0).catch(async reason => {
+  async checkFirstPage(recoveryMode = false) {
+    if (recoveryMode) {
+      return;
+    }
+    try {
+      await this.getPage(0);
+    } catch (reason) {
       if (reason instanceof XRefEntryException) {
         // Clear out the various caches to ensure that we haven't stored any
         // inconsistent and/or incorrect state, since that could easily break
         // subsequent `this.getPage` calls.
-        this._pagePromises.length = 0;
+        this._pagePromises.clear();
         await this.cleanup();
 
         throw new XRefParseException();
       }
-    });
+    }
+  }
+
+  async checkLastPage(recoveryMode = false) {
+    this.catalog.setActualNumPages(); // Ensure that it's always reset.
+    let numPages;
+
+    try {
+      await Promise.all([
+        this.pdfManager.ensureDoc("xfaFactory"),
+        this.pdfManager.ensureDoc("linearization"),
+        this.pdfManager.ensureCatalog("numPages"),
+      ]);
+
+      if (this.xfaFactory) {
+        return; // The Page count is always calculated for XFA-documents.
+      } else if (this.linearization) {
+        numPages = this.linearization.numPages;
+      } else {
+        numPages = this.catalog.numPages;
+      }
+
+      if (numPages === 1) {
+        return;
+      } else if (!Number.isInteger(numPages)) {
+        throw new FormatError("Page count is not an integer.");
+      }
+      await this.getPage(numPages - 1);
+    } catch (reason) {
+      warn(`checkLastPage - invalid /Pages tree /Count: ${numPages}.`);
+      // Clear out the various caches to ensure that we haven't stored any
+      // inconsistent and/or incorrect state, since that could easily break
+      // subsequent `this.getPage` calls.
+      await this.cleanup();
+
+      let pageIndex = 1; // The first page was already loaded.
+      while (true) {
+        try {
+          await this.getPage(pageIndex, /* skipCount = */ true);
+        } catch (reasonLoop) {
+          if (reasonLoop instanceof PageDictMissingException) {
+            break;
+          }
+          if (reasonLoop instanceof XRefEntryException) {
+            if (!recoveryMode) {
+              throw new XRefParseException();
+            }
+            break;
+          }
+        }
+        pageIndex++;
+      }
+      this.catalog.setActualNumPages(pageIndex);
+    }
   }
 
   fontFallback(id, handler) {

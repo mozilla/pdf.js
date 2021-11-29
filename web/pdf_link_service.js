@@ -120,7 +120,7 @@ class PDFLinkService {
     if (typeof destRef === "object" && destRef !== null) {
       pageNumber = this._cachedPageNumber(destRef);
 
-      if (pageNumber === null) {
+      if (!pageNumber) {
         // Fetch the page reference if it's not yet available. This could
         // only occur during loading, before all pages have been resolved.
         this.pdfDocument
@@ -446,6 +446,9 @@ class PDFLinkService {
    * @private
    */
   _cachedPageNumber(pageRef) {
+    if (!pageRef) {
+      return null;
+    }
     const refStr =
       pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
     return this._pagesRefCache?.[refStr] || null;
