@@ -1388,7 +1388,7 @@ class PDFDocument {
       let pageIndex = 1; // The first page was already loaded.
       while (true) {
         try {
-          await this.getPage(pageIndex, /* skipCount = */ true);
+          await this.getPage(pageIndex);
         } catch (reasonLoop) {
           if (reasonLoop instanceof PageDictMissingException) {
             break;
