@@ -103,6 +103,8 @@ const loadingTask = pdfjsLib.getDocument({
         );
       }
     });
+    // Release page resources.
+    page.cleanup();
   } catch (reason) {
     console.log(reason);
   }

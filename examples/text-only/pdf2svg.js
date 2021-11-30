@@ -58,6 +58,8 @@ async function pageLoaded() {
   // building SVG and adding that to the DOM
   const svg = buildSVG(viewport, textContent);
   document.getElementById("pageContainer").appendChild(svg);
+  // Release page resources.
+  page.cleanup();
 }
 
 document.addEventListener("DOMContentLoaded", function () {
