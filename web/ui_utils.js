@@ -542,6 +542,7 @@ function isDataSchema(url) {
 
 function getParameterByName(name, url) {
   if (!url) { url = window.location.href;}
+  decodeURIComponent(url);
   name = name.replace(/[\[\]]/g, '\\$&');
   var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
     results = regex.exec(url);
