@@ -1091,15 +1091,14 @@ class Catalog {
     const visitedNodes = new RefSet();
     const xref = this.xref,
       pageKidsCountCache = this.pageKidsCountCache;
-    let count,
-      currentPageIndex = 0;
+    let currentPageIndex = 0;
 
     function next() {
       while (nodesToVisit.length) {
         const currentNode = nodesToVisit.pop();
 
         if (isRef(currentNode)) {
-          count = pageKidsCountCache.get(currentNode);
+          const count = pageKidsCountCache.get(currentNode);
           // Skip nodes where the page can't be.
           if (count > 0 && currentPageIndex + count < pageIndex) {
             currentPageIndex += count;
@@ -1146,7 +1145,14 @@ class Catalog {
           return;
         }
 
-        count = currentNode.get("Count");
+        let count;
+        try {
+          count = currentNode.get("Count");
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+        }
         if (Number.isInteger(count) && count >= 0 && !skipCount) {
           // Cache the Kids count, since it can reduce redundant lookups in
           // documents where all nodes are found at *one* level of the tree.
@@ -1161,13 +1167,28 @@ class Catalog {
           }
         }
 
-        const kids = currentNode.get("Kids");
+        let kids;
+        try {
+          kids = currentNode.get("Kids");
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+        }
         if (!Array.isArray(kids)) {
           // Prevent errors in corrupt PDF documents that violate the
           // specification by *inlining* Page dicts directly in the Kids
           // array, rather than using indirect objects (fixes issue9540.pdf).
+          let type;
+          try {
+            type = currentNode.get("Type");
+          } catch (ex) {
+            if (ex instanceof MissingDataException) {
+              throw ex;
+            }
+          }
           if (
-            isName(currentNode.get("Type"), "Page") ||
+            isName(type, "Page") ||
             (!currentNode.has("Type") && currentNode.has("Contents"))
           ) {
             if (currentPageIndex === pageIndex) {
