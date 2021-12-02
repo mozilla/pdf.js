@@ -53,6 +53,8 @@ loadingTask.promise
             });
             console.log("## Text Content");
             console.log(strings.join(" "));
+            // Release page resources.
+            page.cleanup();
           })
           .then(function () {
             console.log();
