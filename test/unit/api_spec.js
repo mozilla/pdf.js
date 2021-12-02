@@ -457,6 +457,14 @@ describe("api", function () {
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(1);
 
+      const page = await pdfDocument.getPage(1);
+      expect(page instanceof PDFPageProxy).toEqual(true);
+
+      const opList = await page.getOperatorList();
+      expect(opList.fnArray.length).toEqual(0);
+      expect(opList.argsArray.length).toEqual(0);
+      expect(opList.lastChunk).toEqual(true);
+
       await loadingTask.destroy();
     });
 

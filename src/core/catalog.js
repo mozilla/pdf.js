@@ -1085,7 +1085,7 @@ class Catalog {
     });
   }
 
-  getPageDict(pageIndex, skipCount = false) {
+  getPageDict(pageIndex) {
     const capability = createPromiseCapability();
     const nodesToVisit = [this._catDict.getRaw("Pages")];
     const visitedNodes = new RefSet();
@@ -1153,7 +1153,7 @@ class Catalog {
             throw ex;
           }
         }
-        if (Number.isInteger(count) && count >= 0 && !skipCount) {
+        if (Number.isInteger(count) && count >= 0) {
           // Cache the Kids count, since it can reduce redundant lookups in
           // documents where all nodes are found at *one* level of the tree.
           const objId = currentNode.objId;
