@@ -495,14 +495,27 @@ describe("api", function () {
       const loadingTask2 = getDocument(
         buildGetDocumentParams("poppler-85140-0.pdf")
       );
+      const loadingTask3 = getDocument(
+        buildGetDocumentParams("poppler-395-0-fuzzed.pdf")
+      );
+      const loadingTask4 = getDocument(
+        buildGetDocumentParams("GHOSTSCRIPT-698804-1-fuzzed.pdf")
+      );
+
       expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
       expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask3 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask4 instanceof PDFDocumentLoadingTask).toEqual(true);
 
       const pdfDocument1 = await loadingTask1.promise;
       const pdfDocument2 = await loadingTask2.promise;
+      const pdfDocument3 = await loadingTask3.promise;
+      const pdfDocument4 = await loadingTask4.promise;
 
       expect(pdfDocument1.numPages).toEqual(1);
       expect(pdfDocument2.numPages).toEqual(1);
+      expect(pdfDocument3.numPages).toEqual(1);
+      expect(pdfDocument4.numPages).toEqual(1);
 
       const pageA = await pdfDocument1.getPage(1);
       expect(pageA instanceof PDFPageProxy).toEqual(true);
@@ -515,6 +528,28 @@ describe("api", function () {
       } catch (reason) {
         expect(reason instanceof UnknownErrorException).toEqual(true);
         expect(reason.message).toEqual("Bad (uncompressed) XRef entry: 3R");
+      }
+      try {
+        await pdfDocument3.getPage(1);
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual(
+          "Page dictionary kid reference points to wrong type of object."
+        );
+      }
+      try {
+        await pdfDocument4.getPage(1);
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual(
+          "Page dictionary kid reference points to wrong type of object."
+        );
       }
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);

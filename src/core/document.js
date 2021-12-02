@@ -50,7 +50,6 @@ import {
   getInheritableProperty,
   isWhiteSpace,
   MissingDataException,
-  PageDictMissingException,
   validateCSSFont,
   XRefEntryException,
   XRefParseException,
@@ -1354,14 +1353,16 @@ class PDFDocument {
   }
 
   async checkLastPage(recoveryMode = false) {
-    this.catalog.setActualNumPages(); // Ensure that it's always reset.
+    const { catalog, pdfManager } = this;
+
+    catalog.setActualNumPages(); // Ensure that it's always reset.
     let numPages;
 
     try {
       await Promise.all([
-        this.pdfManager.ensureDoc("xfaFactory"),
-        this.pdfManager.ensureDoc("linearization"),
-        this.pdfManager.ensureCatalog("numPages"),
+        pdfManager.ensureDoc("xfaFactory"),
+        pdfManager.ensureDoc("linearization"),
+        pdfManager.ensureCatalog("numPages"),
       ]);
 
       if (this.xfaFactory) {
@@ -1369,13 +1370,13 @@ class PDFDocument {
       } else if (this.linearization) {
         numPages = this.linearization.numPages;
       } else {
-        numPages = this.catalog.numPages;
+        numPages = catalog.numPages;
       }
 
-      if (numPages === 1) {
-        return;
-      } else if (!Number.isInteger(numPages)) {
+      if (!Number.isInteger(numPages)) {
         throw new FormatError("Page count is not an integer.");
+      } else if (numPages <= 1) {
+        return;
       }
       await this.getPage(numPages - 1);
     } catch (reason) {
@@ -1385,24 +1386,48 @@ class PDFDocument {
       // subsequent `this.getPage` calls.
       await this.cleanup();
 
-      let pageIndex = 1; // The first page was already loaded.
-      while (true) {
-        try {
-          await this.getPage(pageIndex);
-        } catch (reasonLoop) {
-          if (reasonLoop instanceof PageDictMissingException) {
-            break;
-          }
-          if (reasonLoop instanceof XRefEntryException) {
-            if (!recoveryMode) {
-              throw new XRefParseException();
-            }
-            break;
+      let pagesTree;
+      try {
+        pagesTree = await pdfManager.ensureCatalog("getAllPageDicts");
+      } catch (reasonAll) {
+        if (reasonAll instanceof XRefEntryException) {
+          if (!recoveryMode) {
+            throw new XRefParseException();
           }
         }
-        pageIndex++;
+        catalog.setActualNumPages(1);
+        return;
       }
-      this.catalog.setActualNumPages(pageIndex);
+
+      for (const [pageIndex, [pageDict, ref]] of pagesTree) {
+        let promise;
+        if (pageDict instanceof Error) {
+          promise = Promise.reject(pageDict);
+
+          // Prevent "uncaught exception: Object"-messages in the console.
+          promise.catch(() => {});
+        } else {
+          promise = Promise.resolve(
+            new Page({
+              pdfManager,
+              xref: this.xref,
+              pageIndex,
+              pageDict,
+              ref,
+              globalIdFactory: this._globalIdFactory,
+              fontCache: catalog.fontCache,
+              builtInCMapCache: catalog.builtInCMapCache,
+              standardFontDataCache: catalog.standardFontDataCache,
+              globalImageCache: catalog.globalImageCache,
+              nonBlendModesSet: catalog.nonBlendModesSet,
+              xfaFactory: null,
+            })
+          );
+        }
+
+        this._pagePromises.set(pageIndex, promise);
+      }
+      catalog.setActualNumPages(pagesTree.size);
     }
   }
 
