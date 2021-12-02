@@ -545,6 +545,48 @@ describe("api", function () {
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
+
+    it("creates pdf doc from PDF files, with bad /Pages tree /Kids entries", async function () {
+      const loadingTask1 = getDocument(
+        buildGetDocumentParams("poppler-742-0-fuzzed.pdf")
+      );
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("poppler-937-0-fuzzed.pdf")
+      );
+      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument1 = await loadingTask1.promise;
+      const pdfDocument2 = await loadingTask2.promise;
+
+      expect(pdfDocument1.numPages).toEqual(1);
+      expect(pdfDocument2.numPages).toEqual(1);
+
+      try {
+        await pdfDocument1.getPage(1);
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual(
+          "Page dictionary kids object is not an array."
+        );
+      }
+      try {
+        await pdfDocument2.getPage(1);
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual(
+          "Page dictionary kids object is not an array."
+        );
+      }
+
+      await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
+    });
   });
 
   describe("PDFWorker", function () {
