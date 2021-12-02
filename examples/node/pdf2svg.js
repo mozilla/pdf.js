@@ -118,6 +118,8 @@ const loadingTask = pdfjsLib.getDocument({
       svgGfx.embedFonts = true;
       const svg = await svgGfx.getSVG(opList, viewport);
       await writeSvgToFile(svg, getFilePathForPage(pageNum));
+      // Release page resources.
+      page.cleanup();
     } catch (err) {
       console.log(`Error: ${err}`);
     }
