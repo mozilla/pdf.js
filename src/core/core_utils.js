@@ -60,12 +60,6 @@ class MissingDataException extends BaseException {
   }
 }
 
-class PageDictMissingException extends BaseException {
-  constructor(msg) {
-    super(msg, "PageDictMissingException");
-  }
-}
-
 class ParserEOFException extends BaseException {
   constructor(msg) {
     super(msg, "ParserEOFException");
@@ -547,7 +541,6 @@ export {
   isWhiteSpace,
   log2,
   MissingDataException,
-  PageDictMissingException,
   ParserEOFException,
   parseXFAPath,
   readInt8,
