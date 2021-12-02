@@ -248,7 +248,11 @@ function webpack2Stream(webpackConfig) {
 }
 
 function getVersionJSON() {
-  return JSON.parse(fs.readFileSync(BUILD_DIR + "version.json").toString());
+  const versionInfo = JSON.parse(fs.readFileSync(BUILD_DIR + "version.json").toString());
+  if(versionInfo.version === '2.5.207') {
+    versionInfo.version = '2.5.0';
+  }
+  return versionInfo
 }
 
 function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
