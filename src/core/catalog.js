@@ -22,15 +22,16 @@ import {
   isRefsEqual,
   isStream,
   Name,
+  Ref,
   RefSet,
   RefSetCache,
 } from "./primitives.js";
 import {
   collectActions,
   MissingDataException,
-  PageDictMissingException,
   recoverJsURL,
   toRomanNumerals,
+  XRefEntryException,
 } from "./core_utils.js";
 import {
   createPromiseCapability,
@@ -1212,12 +1213,94 @@ class Catalog {
           nodesToVisit.push(kids[last]);
         }
       }
-      capability.reject(
-        new PageDictMissingException(`Page index ${pageIndex} not found.`)
-      );
+      capability.reject(new Error(`Page index ${pageIndex} not found.`));
     }
     next();
     return capability.promise;
+  }
+
+  /**
+   * Eagerly fetches the entire /Pages-tree; should ONLY be used as a fallback.
+   * @returns {Map}
+   */
+  getAllPageDicts() {
+    const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
+    const visitedNodes = new RefSet();
+    const map = new Map();
+    let pageIndex = 0;
+
+    function addPageDict(pageDict, pageRef) {
+      map.set(pageIndex++, [pageDict, pageRef]);
+    }
+    function addPageError(msg) {
+      map.set(pageIndex++, [new FormatError(msg), null]);
+    }
+
+    while (queue.length > 0) {
+      const queueItem = queue[queue.length - 1];
+      const { currentNode, posInKids } = queueItem;
+
+      let kids;
+      try {
+        kids = currentNode.get("Kids");
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        if (ex instanceof XRefEntryException) {
+          throw ex;
+        }
+      }
+      if (!Array.isArray(kids)) {
+        addPageError("Page dictionary kids object is not an array.");
+        break;
+      }
+
+      if (posInKids >= kids.length) {
+        queue.pop();
+        continue;
+      }
+
+      const kidObj = kids[posInKids];
+      let obj;
+      if (kidObj instanceof Ref) {
+        try {
+          obj = this.xref.fetch(kidObj);
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+          if (ex instanceof XRefEntryException) {
+            throw ex;
+          }
+        }
+        // Prevent circular references in the /Pages tree.
+        if (visitedNodes.has(kidObj)) {
+          addPageError("Pages tree contains circular reference.");
+          break;
+        }
+        visitedNodes.put(kidObj);
+      } else {
+        // Prevent errors in corrupt PDF documents that violate the
+        // specification by *inlining* Page dicts directly in the Kids
+        // array, rather than using indirect objects (see issue9540.pdf).
+        obj = kidObj;
+      }
+      if (!(obj instanceof Dict)) {
+        addPageError(
+          "Page dictionary kid reference points to wrong type of object."
+        );
+        break;
+      }
+
+      if (isDict(obj, "Page") || !obj.has("Kids")) {
+        addPageDict(obj, kidObj instanceof Ref ? kidObj : null);
+      } else {
+        queue.push({ currentNode: obj, posInKids: 0 });
+      }
+      queueItem.posInKids++;
+    }
+    return map;
   }
 
   getPageIndex(pageRef) {
