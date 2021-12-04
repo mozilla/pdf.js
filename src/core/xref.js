@@ -107,14 +107,26 @@ class XRef {
       }
       warn(`XRef.parse - Invalid "Root" reference: "${ex}".`);
     }
-    if (root instanceof Dict && root.has("Pages")) {
-      this.root = root;
-    } else {
-      if (!recoveryMode) {
-        throw new XRefParseException();
+    if (root instanceof Dict) {
+      try {
+        const pages = root.get("Pages");
+        if (pages instanceof Dict) {
+          this.root = root;
+          return;
+        }
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn(`XRef.parse - Invalid "Pages" reference: "${ex}".`);
       }
-      throw new FormatError("Invalid root reference");
     }
+
+    if (!recoveryMode) {
+      throw new XRefParseException();
+    }
+    // Even recovery failed, there's nothing more we can do here.
+    throw new InvalidPDFException("Invalid Root reference.");
   }
 
   processXRefTable(parser) {
@@ -417,6 +429,7 @@ class XRef {
 
     // Clear out any existing entries, since they may be bogus.
     this.entries.length = 0;
+    this._cacheMap.clear();
 
     const stream = this.stream;
     stream.pos = 0;
