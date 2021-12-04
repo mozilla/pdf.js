@@ -1439,6 +1439,8 @@ describe("api", function () {
       const { info, metadata, contentDispositionFilename, contentLength } =
         await pdfDoc.getMetadata();
 
+      // Custom, non-standard, information dictionary entries.
+      expect(info.Custom).toEqual(undefined);
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual(null);
       expect(info.Language).toEqual(null);
@@ -1452,6 +1454,33 @@ describe("api", function () {
       expect(metadata).toEqual(null);
       expect(contentDispositionFilename).toEqual(null);
       expect(contentLength).toEqual(624);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets metadata, with corrupt /Metadata XRef entry", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("PDFBOX-3148-2-fuzzed.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const { info, metadata, contentDispositionFilename, contentLength } =
+        await pdfDoc.getMetadata();
+
+      // Custom, non-standard, information dictionary entries.
+      expect(info.Custom).toEqual(undefined);
+      // The following are PDF.js specific, non-standard, properties.
+      expect(info.PDFFormatVersion).toEqual("1.6");
+      expect(info.Language).toEqual(null);
+      expect(info.EncryptFilterName).toEqual(null);
+      expect(info.IsLinearized).toEqual(false);
+      expect(info.IsAcroFormPresent).toEqual(true);
+      expect(info.IsXFAPresent).toEqual(false);
+      expect(info.IsCollectionPresent).toEqual(false);
+      expect(info.IsSignaturesPresent).toEqual(false);
+
+      expect(metadata).toEqual(null);
+      expect(contentDispositionFilename).toEqual(null);
+      expect(contentLength).toEqual(244351);
 
       await loadingTask.destroy();
     });

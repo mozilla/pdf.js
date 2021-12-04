@@ -50,6 +50,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
+import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
 import { GlobalImageCache } from "./image_utils.js";
@@ -153,37 +154,37 @@ class Catalog {
 
   get metadata() {
     const streamRef = this._catDict.getRaw("Metadata");
-    if (!isRef(streamRef)) {
+    if (!(streamRef instanceof Ref)) {
       return shadow(this, "metadata", null);
     }
 
-    const suppressEncryption = !(
-      this.xref.encrypt && this.xref.encrypt.encryptMetadata
-    );
-    const stream = this.xref.fetch(streamRef, suppressEncryption);
     let metadata = null;
+    try {
+      const suppressEncryption = !(
+        this.xref.encrypt && this.xref.encrypt.encryptMetadata
+      );
+      const stream = this.xref.fetch(streamRef, suppressEncryption);
 
-    if (isStream(stream) && isDict(stream.dict)) {
-      const type = stream.dict.get("Type");
-      const subtype = stream.dict.get("Subtype");
+      if (stream instanceof BaseStream && stream.dict instanceof Dict) {
+        const type = stream.dict.get("Type");
+        const subtype = stream.dict.get("Subtype");
 
-      if (isName(type, "Metadata") && isName(subtype, "XML")) {
-        // XXX: This should examine the charset the XML document defines,
-        // however since there are currently no real means to decode arbitrary
-        // charsets, let's just hope that the author of the PDF was reasonable
-        // enough to stick with the XML default charset, which is UTF-8.
-        try {
+        if (isName(type, "Metadata") && isName(subtype, "XML")) {
+          // XXX: This should examine the charset the XML document defines,
+          // however since there are currently no real means to decode arbitrary
+          // charsets, let's just hope that the author of the PDF was reasonable
+          // enough to stick with the XML default charset, which is UTF-8.
           const data = stringToUTF8String(stream.getString());
           if (data) {
             metadata = new MetadataParser(data).serializable;
           }
-        } catch (e) {
-          if (e instanceof MissingDataException) {
-            throw e;
-          }
-          info("Skipping invalid metadata.");
         }
       }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info(`Skipping invalid Metadata: "${ex}".`);
     }
     return shadow(this, "metadata", metadata);
   }
