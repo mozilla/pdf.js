@@ -868,6 +868,13 @@
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
     },
+    {  "id": "issue8019",
+       "file": "pdfs/issue8019.pdf",
+       "md5": "5263ea3e295ee004c9fe770146bc34ef",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue8078",
        "file": "pdfs/issue8078.pdf",
        "md5": "8b7d74bc24b4157393e4e88a511c05f1",
