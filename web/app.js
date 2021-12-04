@@ -949,22 +949,22 @@ const PDFViewerApplication = {
       pdfDocument => {
         this.load(pdfDocument);
       },
-      exception => {
+      reason => {
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
         }
 
         let key = "loading_error";
-        if (exception instanceof InvalidPDFException) {
+        if (reason instanceof InvalidPDFException) {
           key = "invalid_file_error";
-        } else if (exception instanceof MissingPDFException) {
+        } else if (reason instanceof MissingPDFException) {
           key = "missing_file_error";
-        } else if (exception instanceof UnexpectedResponseException) {
+        } else if (reason instanceof UnexpectedResponseException) {
           key = "unexpected_response_error";
         }
         return this.l10n.get(key).then(msg => {
-          this._documentError(msg, { message: exception?.message });
-          throw exception;
+          this._documentError(msg, { message: reason?.message });
+          throw reason;
         });
       }
     );
@@ -1368,11 +1368,18 @@ const PDFViewerApplication = {
         });
     });
 
-    pagesPromise.then(() => {
-      this._unblockDocumentLoadEvent();
+    pagesPromise.then(
+      () => {
+        this._unblockDocumentLoadEvent();
 
-      this._initializeAutoPrint(pdfDocument, openActionPromise);
-    });
+        this._initializeAutoPrint(pdfDocument, openActionPromise);
+      },
+      reason => {
+        this.l10n.get("loading_error").then(msg => {
+          this._documentError(msg, { message: reason?.message });
+        });
+      }
+    );
 
     onePageRendered.then(data => {
       this.externalServices.reportTelemetry({
