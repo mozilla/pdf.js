@@ -488,6 +488,15 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
 }
 
 function shadow(obj, prop, value) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      prop in obj,
+      `shadow: Property "${prop && prop.toString()}" not found in object.`
+    );
+  }
   Object.defineProperty(obj, prop, {
     value,
     enumerable: true,
