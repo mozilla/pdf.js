@@ -417,9 +417,8 @@ class Driver {
   }
 
   run() {
-    var self = this;
-    window.onerror = function (message, source, line, column, error) {
-      self._info(
+    window.onerror = (message, source, line, column, error) => {
+      this._info(
         "Error: " +
           message +
           " Script: " +
@@ -438,23 +437,23 @@ class Driver {
 
     var r = new XMLHttpRequest();
     r.open("GET", this.manifestFile, false);
-    r.onreadystatechange = function () {
+    r.onreadystatechange = () => {
       if (r.readyState === 4) {
-        self._log("done\n");
-        self.manifest = JSON.parse(r.responseText);
-        if (self.testFilter?.length || self.xfaOnly) {
-          self.manifest = self.manifest.filter(function (item) {
-            if (self.testFilter.includes(item.id)) {
+        this._log("done\n");
+        this.manifest = JSON.parse(r.responseText);
+        if (this.testFilter?.length || this.xfaOnly) {
+          this.manifest = this.manifest.filter(item => {
+            if (this.testFilter.includes(item.id)) {
               return true;
             }
-            if (self.xfaOnly && item.enableXfa) {
+            if (this.xfaOnly && item.enableXfa) {
               return true;
             }
             return false;
           });
         }
-        self.currentTask = 0;
-        self._nextTask();
+        this.currentTask = 0;
+        this._nextTask();
       }
     };
     if (this.delay > 0) {
@@ -624,18 +623,17 @@ class Driver {
   }
 
   _nextPage(task, loadError) {
-    var self = this;
     var failure = loadError || "";
     var ctx;
 
     if (!task.pdfDoc) {
       var dataUrl = this.canvas.toDataURL("image/png");
-      this._sendResult(dataUrl, task, failure, function () {
-        self._log(
+      this._sendResult(dataUrl, task, failure, () => {
+        this._log(
           "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
         );
-        self.currentTask++;
-        self._nextTask();
+        this.currentTask++;
+        this._nextTask();
       });
       return;
     }
@@ -668,13 +666,13 @@ class Driver {
         this.canvas.mozOpaque = true;
         ctx = this.canvas.getContext("2d", { alpha: false });
         task.pdfDoc.getPage(task.pageNum).then(
-          function (page) {
+          page => {
             var viewport = page.getViewport({
               scale: PixelsPerInch.PDF_TO_CSS_UNITS,
             });
-            self.canvas.width = viewport.width;
-            self.canvas.height = viewport.height;
-            self._clearCanvas();
+            this.canvas.width = viewport.width;
+            this.canvas.height = viewport.height;
+            this._clearCanvas();
 
             // Initialize various `eq` test subtypes, see comment below.
             var renderAnnotations = false,
@@ -695,10 +693,10 @@ class Driver {
             var initPromise;
             if (task.type === "text") {
               // Using a dummy canvas for PDF context drawing operations
-              textLayerCanvas = self.textLayerCanvas;
+              textLayerCanvas = this.textLayerCanvas;
               if (!textLayerCanvas) {
                 textLayerCanvas = document.createElement("canvas");
-                self.textLayerCanvas = textLayerCanvas;
+                this.textLayerCanvas = textLayerCanvas;
               }
               textLayerCanvas.width = viewport.width;
               textLayerCanvas.height = viewport.height;
@@ -736,10 +734,10 @@ class Driver {
               // Render the annotation layer if necessary.
               if (renderAnnotations || renderForms || renderXfa) {
                 // Create a dummy canvas for the drawing operations.
-                annotationLayerCanvas = self.annotationLayerCanvas;
+                annotationLayerCanvas = this.annotationLayerCanvas;
                 if (!annotationLayerCanvas) {
                   annotationLayerCanvas = document.createElement("canvas");
-                  self.annotationLayerCanvas = annotationLayerCanvas;
+                  this.annotationLayerCanvas = annotationLayerCanvas;
                 }
                 annotationLayerCanvas.width = viewport.width;
                 annotationLayerCanvas.height = viewport.height;
@@ -789,7 +787,7 @@ class Driver {
               renderContext.intent = "print";
             }
 
-            var completeRender = function (error) {
+            var completeRender = error => {
               // if text layer is present, compose it on top of the page
               if (textLayerCanvas) {
                 ctx.save();
@@ -808,7 +806,7 @@ class Driver {
                 task.stats = page.stats;
               }
               page.cleanup(/* resetStats = */ true);
-              self._snapshot(task, error);
+              this._snapshot(task, error);
             };
             initPromise
               .then(function (data) {
@@ -842,8 +840,8 @@ class Driver {
                 completeRender("render : " + error);
               });
           },
-          function (error) {
-            self._snapshot(task, "render : " + error);
+          error => {
+            this._snapshot(task, "render : " + error);
           }
         );
       } catch (e) {
@@ -860,16 +858,15 @@ class Driver {
   }
 
   _snapshot(task, failure) {
-    var self = this;
     this._log("Snapshotting... ");
 
     var dataUrl = this.canvas.toDataURL("image/png");
-    this._sendResult(dataUrl, task, failure, function () {
-      self._log(
+    this._sendResult(dataUrl, task, failure, () => {
+      this._log(
         "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
       );
       task.pageNum++;
-      self._nextPage(task);
+      this._nextPage(task);
     });
   }
 
@@ -940,18 +937,17 @@ class Driver {
   }
 
   _send(url, message, callback) {
-    var self = this;
     var r = new XMLHttpRequest();
     r.open("POST", url, true);
     r.setRequestHeader("Content-Type", "application/json");
-    r.onreadystatechange = function (e) {
+    r.onreadystatechange = e => {
       if (r.readyState === 4) {
-        self.inFlightRequests--;
+        this.inFlightRequests--;
 
         // Retry until successful
         if (r.status !== 200) {
-          setTimeout(function () {
-            self._send(url, message);
+          setTimeout(() => {
+            this._send(url, message);
           });
         }
         if (callback) {
