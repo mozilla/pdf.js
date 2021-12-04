@@ -393,17 +393,12 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
  * @property {HTMLDivElement} end - Container for a completion message.
  */
 
-/**
- * @class
- */
 // eslint-disable-next-line no-unused-vars
-var Driver = (function DriverClosure() {
+class Driver {
   /**
-   * @constructs Driver
    * @param {DriverOptions} options
    */
-  // eslint-disable-next-line no-shadow
-  function Driver(options) {
+  constructor(options) {
     // Configure the global worker options.
     GlobalWorkerOptions.workerSrc = WORKER_SRC;
 
@@ -428,569 +423,555 @@ var Driver = (function DriverClosure() {
     this.canvas = document.createElement("canvas");
   }
 
-  Driver.prototype = {
-    _getQueryStringParameters: function Driver_getQueryStringParameters() {
-      const queryString = window.location.search.substring(1);
-      return Object.fromEntries(new URLSearchParams(queryString).entries());
-    },
+  _getQueryStringParameters() {
+    const queryString = window.location.search.substring(1);
+    return Object.fromEntries(new URLSearchParams(queryString).entries());
+  }
 
-    run: function Driver_run() {
-      var self = this;
-      window.onerror = function (message, source, line, column, error) {
-        self._info(
-          "Error: " +
-            message +
-            " Script: " +
-            source +
-            " Line: " +
-            line +
-            " Column: " +
-            column +
-            " StackTrace: " +
-            error
-        );
-      };
-      this._info("User agent: " + navigator.userAgent);
-      this._log(`Harness thinks this browser is ${this.browser}\n`);
-      this._log('Fetching manifest "' + this.manifestFile + '"... ');
+  run() {
+    var self = this;
+    window.onerror = function (message, source, line, column, error) {
+      self._info(
+        "Error: " +
+          message +
+          " Script: " +
+          source +
+          " Line: " +
+          line +
+          " Column: " +
+          column +
+          " StackTrace: " +
+          error
+      );
+    };
+    this._info("User agent: " + navigator.userAgent);
+    this._log(`Harness thinks this browser is ${this.browser}\n`);
+    this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
-      var r = new XMLHttpRequest();
-      r.open("GET", this.manifestFile, false);
-      r.onreadystatechange = function () {
-        if (r.readyState === 4) {
-          self._log("done\n");
-          self.manifest = JSON.parse(r.responseText);
-          if (self.testFilter?.length || self.xfaOnly) {
-            self.manifest = self.manifest.filter(function (item) {
-              if (self.testFilter.includes(item.id)) {
-                return true;
-              }
-              if (self.xfaOnly && item.enableXfa) {
-                return true;
-              }
-              return false;
-            });
-          }
-          self.currentTask = 0;
-          self._nextTask();
-        }
-      };
-      if (this.delay > 0) {
-        this._log("\nDelaying for " + this.delay + " ms...\n");
-      }
-      // When gathering the stats the numbers seem to be more reliable
-      // if the browser is given more time to start.
-      setTimeout(function () {
-        r.send(null);
-      }, this.delay);
-    },
-
-    /**
-     * A debugging tool to log to the terminal while tests are running.
-     * XXX: This isn't currently referenced, but it's useful for debugging so
-     * do not remove it.
-     *
-     * @param {string} msg - The message to log, it will be prepended with the
-     *    current PDF ID if there is one.
-     */
-    log(msg) {
-      let id = this.browser;
-      const task = this.manifest[this.currentTask];
-      if (task) {
-        id += `-${task.id}`;
-      }
-
-      this._info(`${id}: ${msg}`);
-    },
-
-    _nextTask() {
-      let failure = "";
-
-      this._cleanup().then(() => {
-        if (this.currentTask === this.manifest.length) {
-          this._done();
-          return;
-        }
-        const task = this.manifest[this.currentTask];
-        task.round = 0;
-        task.pageNum = task.firstPage || 1;
-        task.stats = { times: [] };
-        task.enableXfa = task.enableXfa === true;
-
-        // Support *linked* test-cases for the other suites, e.g. unit- and
-        // integration-tests, without needing to run them as reference-tests.
-        if (task.type === "other") {
-          this._log(`Skipping file "${task.file}"\n`);
-
-          if (!task.link) {
-            this._nextPage(task, 'Expected "other" test-case to be linked.');
-            return;
-          }
-          this.currentTask++;
-          this._nextTask();
-          return;
-        }
-
-        this._log('Loading file "' + task.file + '"\n');
-
-        const absoluteUrl = new URL(task.file, window.location).href;
-        try {
-          let xfaStyleElement = null;
-          if (task.enableXfa) {
-            // Need to get the font definitions to inject them in the SVG.
-            // So we create this element and those definitions will be
-            // appended in font_loader.js.
-            xfaStyleElement = document.createElement("style");
-            document.documentElement
-              .getElementsByTagName("head")[0]
-              .appendChild(xfaStyleElement);
-          }
-
-          const loadingTask = getDocument({
-            url: absoluteUrl,
-            password: task.password,
-            cMapUrl: CMAP_URL,
-            cMapPacked: CMAP_PACKED,
-            standardFontDataUrl: STANDARD_FONT_DATA_URL,
-            disableRange: task.disableRange,
-            disableAutoFetch: !task.enableAutoFetch,
-            pdfBug: true,
-            useSystemFonts: task.useSystemFonts,
-            useWorkerFetch: task.useWorkerFetch,
-            enableXfa: task.enableXfa,
-            styleElement: xfaStyleElement,
+    var r = new XMLHttpRequest();
+    r.open("GET", this.manifestFile, false);
+    r.onreadystatechange = function () {
+      if (r.readyState === 4) {
+        self._log("done\n");
+        self.manifest = JSON.parse(r.responseText);
+        if (self.testFilter?.length || self.xfaOnly) {
+          self.manifest = self.manifest.filter(function (item) {
+            if (self.testFilter.includes(item.id)) {
+              return true;
+            }
+            if (self.xfaOnly && item.enableXfa) {
+              return true;
+            }
+            return false;
           });
-          loadingTask.promise.then(
-            async doc => {
-              if (task.enableXfa) {
-                task.fontRules = "";
-                for (const rule of xfaStyleElement.sheet.cssRules) {
-                  task.fontRules += rule.cssText + "\n";
-                }
-              }
+        }
+        self.currentTask = 0;
+        self._nextTask();
+      }
+    };
+    if (this.delay > 0) {
+      this._log("\nDelaying for " + this.delay + " ms...\n");
+    }
+    // When gathering the stats the numbers seem to be more reliable
+    // if the browser is given more time to start.
+    setTimeout(function () {
+      r.send(null);
+    }, this.delay);
+  }
 
-              task.pdfDoc = doc;
-              task.optionalContentConfigPromise =
-                doc.getOptionalContentConfig();
+  /**
+   * A debugging tool to log to the terminal while tests are running.
+   * XXX: This isn't currently referenced, but it's useful for debugging so
+   * do not remove it.
+   *
+   * @param {string} msg - The message to log, it will be prepended with the
+   *    current PDF ID if there is one.
+   */
+  log(msg) {
+    let id = this.browser;
+    const task = this.manifest[this.currentTask];
+    if (task) {
+      id += `-${task.id}`;
+    }
 
-              if (task.optionalContent) {
-                const entries = Object.entries(task.optionalContent),
-                  optionalContentConfig =
-                    await task.optionalContentConfigPromise;
-                for (const [id, visible] of entries) {
-                  optionalContentConfig.setVisibility(id, visible);
-                }
-              }
+    this._info(`${id}: ${msg}`);
+  }
 
-              this._nextPage(task, failure);
-            },
-            err => {
-              failure = "Loading PDF document: " + err;
-              this._nextPage(task, failure);
-            }
-          );
+  _nextTask() {
+    let failure = "";
+
+    this._cleanup().then(() => {
+      if (this.currentTask === this.manifest.length) {
+        this._done();
+        return;
+      }
+      const task = this.manifest[this.currentTask];
+      task.round = 0;
+      task.pageNum = task.firstPage || 1;
+      task.stats = { times: [] };
+      task.enableXfa = task.enableXfa === true;
+
+      // Support *linked* test-cases for the other suites, e.g. unit- and
+      // integration-tests, without needing to run them as reference-tests.
+      if (task.type === "other") {
+        this._log(`Skipping file "${task.file}"\n`);
+
+        if (!task.link) {
+          this._nextPage(task, 'Expected "other" test-case to be linked.');
           return;
-        } catch (e) {
-          failure = "Loading PDF document: " + this._exceptionToString(e);
         }
-        this._nextPage(task, failure);
-      });
-    },
+        this.currentTask++;
+        this._nextTask();
+        return;
+      }
 
-    _cleanup() {
-      // Clear out all the stylesheets since a new one is created for each font.
-      while (document.styleSheets.length > 0) {
-        const styleSheet = document.styleSheets[0];
-        while (styleSheet.cssRules.length > 0) {
-          styleSheet.deleteRule(0);
+      this._log('Loading file "' + task.file + '"\n');
+
+      const absoluteUrl = new URL(task.file, window.location).href;
+      try {
+        let xfaStyleElement = null;
+        if (task.enableXfa) {
+          // Need to get the font definitions to inject them in the SVG.
+          // So we create this element and those definitions will be
+          // appended in font_loader.js.
+          xfaStyleElement = document.createElement("style");
+          document.documentElement
+            .getElementsByTagName("head")[0]
+            .appendChild(xfaStyleElement);
         }
-        styleSheet.ownerNode.remove();
-      }
-      const body = document.body;
-      while (body.lastChild !== this.end) {
-        body.lastChild.remove();
-      }
 
-      const destroyedPromises = [];
-      // Wipe out the link to the pdfdoc so it can be GC'ed.
-      for (let i = 0; i < this.manifest.length; i++) {
-        if (this.manifest[i].pdfDoc) {
-          destroyedPromises.push(this.manifest[i].pdfDoc.destroy());
-          delete this.manifest[i].pdfDoc;
-        }
-      }
-      return Promise.all(destroyedPromises);
-    },
-
-    _exceptionToString: function Driver_exceptionToString(e) {
-      if (typeof e !== "object") {
-        return String(e);
-      }
-      if (!("message" in e)) {
-        return JSON.stringify(e);
-      }
-      return e.message + ("stack" in e ? " at " + e.stack.split("\n")[0] : "");
-    },
-
-    _getLastPageNumber: function Driver_getLastPageNumber(task) {
-      if (!task.pdfDoc) {
-        return task.firstPage || 1;
-      }
-      var lastPageNumber = task.lastPage || 0;
-      if (!lastPageNumber || lastPageNumber > task.pdfDoc.numPages) {
-        lastPageNumber = task.pdfDoc.numPages;
-      }
-      return lastPageNumber;
-    },
-
-    _nextPage: function Driver_nextPage(task, loadError) {
-      var self = this;
-      var failure = loadError || "";
-      var ctx;
-
-      if (!task.pdfDoc) {
-        var dataUrl = this.canvas.toDataURL("image/png");
-        this._sendResult(dataUrl, task, failure, function () {
-          self._log(
-            "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
-          );
-          self.currentTask++;
-          self._nextTask();
+        const loadingTask = getDocument({
+          url: absoluteUrl,
+          password: task.password,
+          cMapUrl: CMAP_URL,
+          cMapPacked: CMAP_PACKED,
+          standardFontDataUrl: STANDARD_FONT_DATA_URL,
+          disableRange: task.disableRange,
+          disableAutoFetch: !task.enableAutoFetch,
+          pdfBug: true,
+          useSystemFonts: task.useSystemFonts,
+          useWorkerFetch: task.useWorkerFetch,
+          enableXfa: task.enableXfa,
+          styleElement: xfaStyleElement,
         });
-        return;
-      }
-
-      if (task.pageNum > this._getLastPageNumber(task)) {
-        if (++task.round < task.rounds) {
-          this._log(" Round " + (1 + task.round) + "\n");
-          task.pageNum = task.firstPage || 1;
-        } else {
-          this.currentTask++;
-          this._nextTask();
-          return;
-        }
-      }
-
-      if (task.skipPages && task.skipPages.includes(task.pageNum)) {
-        this._log(
-          " Skipping page " +
-            task.pageNum +
-            "/" +
-            task.pdfDoc.numPages +
-            "...\n"
-        );
-        task.pageNum++;
-        this._nextPage(task);
-        return;
-      }
-
-      if (!failure) {
-        try {
-          this._log(
-            " Loading page " +
-              task.pageNum +
-              "/" +
-              task.pdfDoc.numPages +
-              "... "
-          );
-          this.canvas.mozOpaque = true;
-          ctx = this.canvas.getContext("2d", { alpha: false });
-          task.pdfDoc.getPage(task.pageNum).then(
-            function (page) {
-              var viewport = page.getViewport({
-                scale: PixelsPerInch.PDF_TO_CSS_UNITS,
-              });
-              self.canvas.width = viewport.width;
-              self.canvas.height = viewport.height;
-              self._clearCanvas();
-
-              // Initialize various `eq` test subtypes, see comment below.
-              var renderAnnotations = false,
-                renderForms = false,
-                renderPrint = false,
-                renderXfa = false,
-                annotationCanvasMap = null;
-
-              if (task.annotationStorage) {
-                const entries = Object.entries(task.annotationStorage),
-                  docAnnotationStorage = task.pdfDoc.annotationStorage;
-                for (const [key, value] of entries) {
-                  docAnnotationStorage.setValue(key, value);
-                }
+        loadingTask.promise.then(
+          async doc => {
+            if (task.enableXfa) {
+              task.fontRules = "";
+              for (const rule of xfaStyleElement.sheet.cssRules) {
+                task.fontRules += rule.cssText + "\n";
               }
-
-              var textLayerCanvas, annotationLayerCanvas;
-              var initPromise;
-              if (task.type === "text") {
-                // Using a dummy canvas for PDF context drawing operations
-                textLayerCanvas = self.textLayerCanvas;
-                if (!textLayerCanvas) {
-                  textLayerCanvas = document.createElement("canvas");
-                  self.textLayerCanvas = textLayerCanvas;
-                }
-                textLayerCanvas.width = viewport.width;
-                textLayerCanvas.height = viewport.height;
-                var textLayerContext = textLayerCanvas.getContext("2d");
-                textLayerContext.clearRect(
-                  0,
-                  0,
-                  textLayerCanvas.width,
-                  textLayerCanvas.height
-                );
-                var enhanceText = !!task.enhance;
-                // The text builder will draw its content on the test canvas
-                initPromise = page
-                  .getTextContent({
-                    normalizeWhitespace: true,
-                    includeMarkedContent: true,
-                  })
-                  .then(function (textContent) {
-                    return rasterizeTextLayer(
-                      textLayerContext,
-                      viewport,
-                      textContent,
-                      enhanceText
-                    );
-                  });
-              } else {
-                textLayerCanvas = null;
-                // We fetch the `eq` specific test subtypes here, to avoid
-                // accidentally changing the behaviour for other types of tests.
-                renderAnnotations = !!task.annotations;
-                renderForms = !!task.forms;
-                renderPrint = !!task.print;
-                renderXfa = !!task.enableXfa;
-
-                // Render the annotation layer if necessary.
-                if (renderAnnotations || renderForms || renderXfa) {
-                  // Create a dummy canvas for the drawing operations.
-                  annotationLayerCanvas = self.annotationLayerCanvas;
-                  if (!annotationLayerCanvas) {
-                    annotationLayerCanvas = document.createElement("canvas");
-                    self.annotationLayerCanvas = annotationLayerCanvas;
-                  }
-                  annotationLayerCanvas.width = viewport.width;
-                  annotationLayerCanvas.height = viewport.height;
-                  var annotationLayerContext =
-                    annotationLayerCanvas.getContext("2d");
-                  annotationLayerContext.clearRect(
-                    0,
-                    0,
-                    annotationLayerCanvas.width,
-                    annotationLayerCanvas.height
-                  );
-
-                  if (!renderXfa) {
-                    // The annotation builder will draw its content
-                    // on the canvas.
-                    initPromise = page.getAnnotations({ intent: "display" });
-                    annotationCanvasMap = new Map();
-                  } else {
-                    initPromise = page.getXfa().then(function (xfa) {
-                      return rasterizeXfaLayer(
-                        annotationLayerContext,
-                        viewport,
-                        xfa,
-                        task.fontRules,
-                        task.pdfDoc.annotationStorage,
-                        task.renderPrint
-                      );
-                    });
-                  }
-                } else {
-                  annotationLayerCanvas = null;
-                  initPromise = Promise.resolve();
-                }
-              }
-              var renderContext = {
-                canvasContext: ctx,
-                viewport,
-                optionalContentConfigPromise: task.optionalContentConfigPromise,
-                annotationCanvasMap,
-              };
-              if (renderForms) {
-                renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
-              } else if (renderPrint) {
-                if (task.annotationStorage) {
-                  renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
-                }
-                renderContext.intent = "print";
-              }
-
-              var completeRender = function (error) {
-                // if text layer is present, compose it on top of the page
-                if (textLayerCanvas) {
-                  ctx.save();
-                  ctx.globalCompositeOperation = "screen";
-                  ctx.fillStyle = "rgb(128, 255, 128)"; // making it green
-                  ctx.fillRect(0, 0, viewport.width, viewport.height);
-                  ctx.restore();
-                  ctx.drawImage(textLayerCanvas, 0, 0);
-                }
-                // If we have annotation layer, compose it on top of the page.
-                if (annotationLayerCanvas) {
-                  ctx.drawImage(annotationLayerCanvas, 0, 0);
-                }
-                if (page.stats) {
-                  // Get the page stats *before* running cleanup.
-                  task.stats = page.stats;
-                }
-                page.cleanup(/* resetStats = */ true);
-                self._snapshot(task, error);
-              };
-              initPromise
-                .then(function (data) {
-                  const renderTask = page.render(renderContext);
-
-                  if (task.renderTaskOnContinue) {
-                    renderTask.onContinue = function (cont) {
-                      // Slightly delay the continued rendering.
-                      setTimeout(cont, RENDER_TASK_ON_CONTINUE_DELAY);
-                    };
-                  }
-                  return renderTask.promise.then(function () {
-                    if (annotationCanvasMap) {
-                      rasterizeAnnotationLayer(
-                        annotationLayerContext,
-                        viewport,
-                        data,
-                        annotationCanvasMap,
-                        page,
-                        IMAGE_RESOURCES_PATH,
-                        renderForms
-                      ).then(() => {
-                        completeRender(false);
-                      });
-                    } else {
-                      completeRender(false);
-                    }
-                  });
-                })
-                .catch(function (error) {
-                  completeRender("render : " + error);
-                });
-            },
-            function (error) {
-              self._snapshot(task, "render : " + error);
             }
-          );
-        } catch (e) {
-          failure = "page setup : " + this._exceptionToString(e);
-          this._snapshot(task, failure);
-        }
+
+            task.pdfDoc = doc;
+            task.optionalContentConfigPromise = doc.getOptionalContentConfig();
+
+            if (task.optionalContent) {
+              const entries = Object.entries(task.optionalContent),
+                optionalContentConfig = await task.optionalContentConfigPromise;
+              for (const [id, visible] of entries) {
+                optionalContentConfig.setVisibility(id, visible);
+              }
+            }
+
+            this._nextPage(task, failure);
+          },
+          err => {
+            failure = "Loading PDF document: " + err;
+            this._nextPage(task, failure);
+          }
+        );
+        return;
+      } catch (e) {
+        failure = "Loading PDF document: " + this._exceptionToString(e);
       }
-    },
+      this._nextPage(task, failure);
+    });
+  }
 
-    _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext("2d", { alpha: false });
-      ctx.beginPath();
-      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    },
+  _cleanup() {
+    // Clear out all the stylesheets since a new one is created for each font.
+    while (document.styleSheets.length > 0) {
+      const styleSheet = document.styleSheets[0];
+      while (styleSheet.cssRules.length > 0) {
+        styleSheet.deleteRule(0);
+      }
+      styleSheet.ownerNode.remove();
+    }
+    const body = document.body;
+    while (body.lastChild !== this.end) {
+      body.lastChild.remove();
+    }
 
-    _snapshot: function Driver_snapshot(task, failure) {
-      var self = this;
-      this._log("Snapshotting... ");
+    const destroyedPromises = [];
+    // Wipe out the link to the pdfdoc so it can be GC'ed.
+    for (let i = 0; i < this.manifest.length; i++) {
+      if (this.manifest[i].pdfDoc) {
+        destroyedPromises.push(this.manifest[i].pdfDoc.destroy());
+        delete this.manifest[i].pdfDoc;
+      }
+    }
+    return Promise.all(destroyedPromises);
+  }
 
+  _exceptionToString(e) {
+    if (typeof e !== "object") {
+      return String(e);
+    }
+    if (!("message" in e)) {
+      return JSON.stringify(e);
+    }
+    return e.message + ("stack" in e ? " at " + e.stack.split("\n")[0] : "");
+  }
+
+  _getLastPageNumber(task) {
+    if (!task.pdfDoc) {
+      return task.firstPage || 1;
+    }
+    var lastPageNumber = task.lastPage || 0;
+    if (!lastPageNumber || lastPageNumber > task.pdfDoc.numPages) {
+      lastPageNumber = task.pdfDoc.numPages;
+    }
+    return lastPageNumber;
+  }
+
+  _nextPage(task, loadError) {
+    var self = this;
+    var failure = loadError || "";
+    var ctx;
+
+    if (!task.pdfDoc) {
       var dataUrl = this.canvas.toDataURL("image/png");
       this._sendResult(dataUrl, task, failure, function () {
         self._log(
           "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
         );
-        task.pageNum++;
-        self._nextPage(task);
+        self.currentTask++;
+        self._nextTask();
       });
-    },
+      return;
+    }
 
-    _quit: function Driver_quit() {
-      this._log("Done !");
-      this.end.textContent = "Tests finished. Close this window!";
+    if (task.pageNum > this._getLastPageNumber(task)) {
+      if (++task.round < task.rounds) {
+        this._log(" Round " + (1 + task.round) + "\n");
+        task.pageNum = task.firstPage || 1;
+      } else {
+        this.currentTask++;
+        this._nextTask();
+        return;
+      }
+    }
 
-      // Send the quit request
-      var r = new XMLHttpRequest();
-      r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
-      r.onreadystatechange = function (e) {
-        if (r.readyState === 4) {
-          window.close();
-        }
-      };
-      r.send(null);
-    },
-
-    _info: function Driver_info(message) {
-      this._send(
-        "/info",
-        JSON.stringify({
-          browser: this.browser,
-          message,
-        })
+    if (task.skipPages && task.skipPages.includes(task.pageNum)) {
+      this._log(
+        " Skipping page " + task.pageNum + "/" + task.pdfDoc.numPages + "...\n"
       );
-    },
+      task.pageNum++;
+      this._nextPage(task);
+      return;
+    }
 
-    _log: function Driver_log(message) {
-      // Using insertAdjacentHTML yields a large performance gain and
-      // reduces runtime significantly.
-      if (this.output.insertAdjacentHTML) {
-        // eslint-disable-next-line no-unsanitized/method
-        this.output.insertAdjacentHTML("BeforeEnd", message);
-      } else {
-        this.output.textContent += message;
-      }
-
-      if (message.lastIndexOf("\n") >= 0 && !this.disableScrolling.checked) {
-        // Scroll to the bottom of the page
-        this.output.scrollTop = this.output.scrollHeight;
-      }
-    },
-
-    _done: function Driver_done() {
-      if (this.inFlightRequests > 0) {
-        this.inflight.textContent = this.inFlightRequests;
-        setTimeout(this._done.bind(this), WAITING_TIME);
-      } else {
-        setTimeout(this._quit.bind(this), WAITING_TIME);
-      }
-    },
-
-    _sendResult: function Driver_sendResult(snapshot, task, failure, callback) {
-      var result = JSON.stringify({
-        browser: this.browser,
-        id: task.id,
-        numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
-        lastPageNum: this._getLastPageNumber(task),
-        failure,
-        file: task.file,
-        round: task.round,
-        page: task.pageNum,
-        snapshot,
-        stats: task.stats.times,
-      });
-      this._send("/submit_task_results", result, callback);
-    },
-
-    _send: function Driver_send(url, message, callback) {
-      var self = this;
-      var r = new XMLHttpRequest();
-      r.open("POST", url, true);
-      r.setRequestHeader("Content-Type", "application/json");
-      r.onreadystatechange = function (e) {
-        if (r.readyState === 4) {
-          self.inFlightRequests--;
-
-          // Retry until successful
-          if (r.status !== 200) {
-            setTimeout(function () {
-              self._send(url, message);
+    if (!failure) {
+      try {
+        this._log(
+          " Loading page " + task.pageNum + "/" + task.pdfDoc.numPages + "... "
+        );
+        this.canvas.mozOpaque = true;
+        ctx = this.canvas.getContext("2d", { alpha: false });
+        task.pdfDoc.getPage(task.pageNum).then(
+          function (page) {
+            var viewport = page.getViewport({
+              scale: PixelsPerInch.PDF_TO_CSS_UNITS,
             });
-          }
-          if (callback) {
-            callback();
-          }
-        }
-      };
-      this.inflight.textContent = this.inFlightRequests++;
-      r.send(message);
-    },
-  };
+            self.canvas.width = viewport.width;
+            self.canvas.height = viewport.height;
+            self._clearCanvas();
 
-  return Driver;
-})();
+            // Initialize various `eq` test subtypes, see comment below.
+            var renderAnnotations = false,
+              renderForms = false,
+              renderPrint = false,
+              renderXfa = false,
+              annotationCanvasMap = null;
+
+            if (task.annotationStorage) {
+              const entries = Object.entries(task.annotationStorage),
+                docAnnotationStorage = task.pdfDoc.annotationStorage;
+              for (const [key, value] of entries) {
+                docAnnotationStorage.setValue(key, value);
+              }
+            }
+
+            var textLayerCanvas, annotationLayerCanvas;
+            var initPromise;
+            if (task.type === "text") {
+              // Using a dummy canvas for PDF context drawing operations
+              textLayerCanvas = self.textLayerCanvas;
+              if (!textLayerCanvas) {
+                textLayerCanvas = document.createElement("canvas");
+                self.textLayerCanvas = textLayerCanvas;
+              }
+              textLayerCanvas.width = viewport.width;
+              textLayerCanvas.height = viewport.height;
+              var textLayerContext = textLayerCanvas.getContext("2d");
+              textLayerContext.clearRect(
+                0,
+                0,
+                textLayerCanvas.width,
+                textLayerCanvas.height
+              );
+              var enhanceText = !!task.enhance;
+              // The text builder will draw its content on the test canvas
+              initPromise = page
+                .getTextContent({
+                  normalizeWhitespace: true,
+                  includeMarkedContent: true,
+                })
+                .then(function (textContent) {
+                  return rasterizeTextLayer(
+                    textLayerContext,
+                    viewport,
+                    textContent,
+                    enhanceText
+                  );
+                });
+            } else {
+              textLayerCanvas = null;
+              // We fetch the `eq` specific test subtypes here, to avoid
+              // accidentally changing the behaviour for other types of tests.
+              renderAnnotations = !!task.annotations;
+              renderForms = !!task.forms;
+              renderPrint = !!task.print;
+              renderXfa = !!task.enableXfa;
+
+              // Render the annotation layer if necessary.
+              if (renderAnnotations || renderForms || renderXfa) {
+                // Create a dummy canvas for the drawing operations.
+                annotationLayerCanvas = self.annotationLayerCanvas;
+                if (!annotationLayerCanvas) {
+                  annotationLayerCanvas = document.createElement("canvas");
+                  self.annotationLayerCanvas = annotationLayerCanvas;
+                }
+                annotationLayerCanvas.width = viewport.width;
+                annotationLayerCanvas.height = viewport.height;
+                var annotationLayerContext =
+                  annotationLayerCanvas.getContext("2d");
+                annotationLayerContext.clearRect(
+                  0,
+                  0,
+                  annotationLayerCanvas.width,
+                  annotationLayerCanvas.height
+                );
+
+                if (!renderXfa) {
+                  // The annotation builder will draw its content
+                  // on the canvas.
+                  initPromise = page.getAnnotations({ intent: "display" });
+                  annotationCanvasMap = new Map();
+                } else {
+                  initPromise = page.getXfa().then(function (xfa) {
+                    return rasterizeXfaLayer(
+                      annotationLayerContext,
+                      viewport,
+                      xfa,
+                      task.fontRules,
+                      task.pdfDoc.annotationStorage,
+                      task.renderPrint
+                    );
+                  });
+                }
+              } else {
+                annotationLayerCanvas = null;
+                initPromise = Promise.resolve();
+              }
+            }
+            var renderContext = {
+              canvasContext: ctx,
+              viewport,
+              optionalContentConfigPromise: task.optionalContentConfigPromise,
+              annotationCanvasMap,
+            };
+            if (renderForms) {
+              renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
+            } else if (renderPrint) {
+              if (task.annotationStorage) {
+                renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
+              }
+              renderContext.intent = "print";
+            }
+
+            var completeRender = function (error) {
+              // if text layer is present, compose it on top of the page
+              if (textLayerCanvas) {
+                ctx.save();
+                ctx.globalCompositeOperation = "screen";
+                ctx.fillStyle = "rgb(128, 255, 128)"; // making it green
+                ctx.fillRect(0, 0, viewport.width, viewport.height);
+                ctx.restore();
+                ctx.drawImage(textLayerCanvas, 0, 0);
+              }
+              // If we have annotation layer, compose it on top of the page.
+              if (annotationLayerCanvas) {
+                ctx.drawImage(annotationLayerCanvas, 0, 0);
+              }
+              if (page.stats) {
+                // Get the page stats *before* running cleanup.
+                task.stats = page.stats;
+              }
+              page.cleanup(/* resetStats = */ true);
+              self._snapshot(task, error);
+            };
+            initPromise
+              .then(function (data) {
+                const renderTask = page.render(renderContext);
+
+                if (task.renderTaskOnContinue) {
+                  renderTask.onContinue = function (cont) {
+                    // Slightly delay the continued rendering.
+                    setTimeout(cont, RENDER_TASK_ON_CONTINUE_DELAY);
+                  };
+                }
+                return renderTask.promise.then(function () {
+                  if (annotationCanvasMap) {
+                    rasterizeAnnotationLayer(
+                      annotationLayerContext,
+                      viewport,
+                      data,
+                      annotationCanvasMap,
+                      page,
+                      IMAGE_RESOURCES_PATH,
+                      renderForms
+                    ).then(() => {
+                      completeRender(false);
+                    });
+                  } else {
+                    completeRender(false);
+                  }
+                });
+              })
+              .catch(function (error) {
+                completeRender("render : " + error);
+              });
+          },
+          function (error) {
+            self._snapshot(task, "render : " + error);
+          }
+        );
+      } catch (e) {
+        failure = "page setup : " + this._exceptionToString(e);
+        this._snapshot(task, failure);
+      }
+    }
+  }
+
+  _clearCanvas() {
+    var ctx = this.canvas.getContext("2d", { alpha: false });
+    ctx.beginPath();
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  _snapshot(task, failure) {
+    var self = this;
+    this._log("Snapshotting... ");
+
+    var dataUrl = this.canvas.toDataURL("image/png");
+    this._sendResult(dataUrl, task, failure, function () {
+      self._log(
+        "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
+      );
+      task.pageNum++;
+      self._nextPage(task);
+    });
+  }
+
+  _quit() {
+    this._log("Done !");
+    this.end.textContent = "Tests finished. Close this window!";
+
+    // Send the quit request
+    var r = new XMLHttpRequest();
+    r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
+    r.onreadystatechange = function (e) {
+      if (r.readyState === 4) {
+        window.close();
+      }
+    };
+    r.send(null);
+  }
+
+  _info(message) {
+    this._send(
+      "/info",
+      JSON.stringify({
+        browser: this.browser,
+        message,
+      })
+    );
+  }
+
+  _log(message) {
+    // Using insertAdjacentHTML yields a large performance gain and
+    // reduces runtime significantly.
+    if (this.output.insertAdjacentHTML) {
+      // eslint-disable-next-line no-unsanitized/method
+      this.output.insertAdjacentHTML("BeforeEnd", message);
+    } else {
+      this.output.textContent += message;
+    }
+
+    if (message.lastIndexOf("\n") >= 0 && !this.disableScrolling.checked) {
+      // Scroll to the bottom of the page
+      this.output.scrollTop = this.output.scrollHeight;
+    }
+  }
+
+  _done() {
+    if (this.inFlightRequests > 0) {
+      this.inflight.textContent = this.inFlightRequests;
+      setTimeout(this._done.bind(this), WAITING_TIME);
+    } else {
+      setTimeout(this._quit.bind(this), WAITING_TIME);
+    }
+  }
+
+  _sendResult(snapshot, task, failure, callback) {
+    var result = JSON.stringify({
+      browser: this.browser,
+      id: task.id,
+      numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
+      lastPageNum: this._getLastPageNumber(task),
+      failure,
+      file: task.file,
+      round: task.round,
+      page: task.pageNum,
+      snapshot,
+      stats: task.stats.times,
+    });
+    this._send("/submit_task_results", result, callback);
+  }
+
+  _send(url, message, callback) {
+    var self = this;
+    var r = new XMLHttpRequest();
+    r.open("POST", url, true);
+    r.setRequestHeader("Content-Type", "application/json");
+    r.onreadystatechange = function (e) {
+      if (r.readyState === 4) {
+        self.inFlightRequests--;
+
+        // Retry until successful
+        if (r.status !== 200) {
+          setTimeout(function () {
+            self._send(url, message);
+          });
+        }
+        if (callback) {
+          callback();
+        }
+      }
+    };
+    this.inflight.textContent = this.inFlightRequests++;
+    r.send(message);
+  }
+}
