@@ -32,6 +32,7 @@ class PDFFindBar {
     this.findField = options.findField;
     this.highlightAll = options.highlightAllCheckbox;
     this.currentPage = options.findCurrentPageCheckbox;
+    this.pageRange = options.findPageRangeField;
     this.caseSensitive = options.caseSensitiveCheckbox;
     this.entireWord = options.entireWordCheckbox;
     this.findMsg = options.findMsg;
@@ -103,10 +104,17 @@ class PDFFindBar {
       this.dispatchEvent("ignoreAccentsChange"); // #177
     }); // #177
 
-    this.fuzzySearch.addEventListener("click", () => {
-      // #304
+    this.fuzzySearch.addEventListener("click", () => { // #304
       this.dispatchEvent("fuzzySearchChange"); // #304
     }); // #304
+
+    this.currentPage.addEventListener("click", () => { // #802
+      this.dispatchEvent("currentPageChange"); // #802
+    }); // #802
+
+    this.pageRange.addEventListener("input", () => { // #802
+      this.dispatchEvent("pageRangeChange"); // #802
+    }); // #802
 
     this.eventBus._on("resize", this._adjustWidth.bind(this));
   }
@@ -129,6 +137,7 @@ class PDFFindBar {
       fuzzySearch: this.fuzzySearch.checked, // #304
       highlightAll: this.highlightAll.checked,
       currentPage: this.currentPage.checked, // #832
+      pageRange: this.pageRange.value, // #832
       findPrevious: findPrev,
     });
   }
@@ -258,3 +267,4 @@ class PDFFindBar {
 }
 
 export { PDFFindBar };
+
