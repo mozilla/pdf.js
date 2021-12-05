@@ -154,10 +154,6 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     },
   };
 
-  function getTextLayerStyle() {
-    return loadStyles(styles);
-  }
-
   // eslint-disable-next-line no-shadow
   function rasterizeTextLayer(
     ctx,
@@ -180,7 +176,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
       var style = document.createElement("style");
-      var stylePromise = getTextLayerStyle();
+      var stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
       var div = document.createElement("div");
       div.className = "textLayer";
@@ -237,10 +233,6 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     },
   };
 
-  function getAnnotationLayerStyle() {
-    return loadStyles(styles);
-  }
-
   // eslint-disable-next-line no-shadow
   function rasterizeAnnotationLayer(
     ctx,
@@ -264,7 +256,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
       var style = document.createElement("style");
-      var stylePromise = getAnnotationLayerStyle();
+      var stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
       var div = document.createElement("div");
       div.className = "annotationLayer";
@@ -322,10 +314,6 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
     },
   };
 
-  function getXfaLayerStyle() {
-    return loadStyles(styles);
-  }
-
   // eslint-disable-next-line no-shadow
   function rasterizeXfaLayer(
     ctx,
@@ -349,7 +337,7 @@ var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
       const style = document.createElement("style");
-      const stylePromise = getXfaLayerStyle();
+      const stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
       const div = document.createElement("div");
       foreignObject.appendChild(div);
