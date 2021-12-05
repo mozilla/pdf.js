@@ -530,12 +530,14 @@ class BaseViewer {
       this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
     }
 
-    this._pagesCapability.promise.then(() => {
-      this.eventBus.dispatch("pagesloaded", {
-        source: this,
-        pagesCount,
-      });
-    });
+    this._pagesCapability.promise.then(
+      () => {
+        this.eventBus.dispatch("pagesloaded", { source: this, pagesCount });
+      },
+      () => {
+        /* Prevent "Uncaught (in promise)"-messages in the console. */
+      }
+    );
 
     this._onBeforeDraw = evt => {
       const pageView = this._pages[evt.pageNumber - 1];
@@ -680,6 +682,8 @@ class BaseViewer {
       })
       .catch(reason => {
         console.error("Unable to initialize viewer", reason);
+
+        this._pagesCapability.reject(reason);
       });
   }
 

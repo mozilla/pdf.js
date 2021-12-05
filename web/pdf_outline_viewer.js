@@ -72,7 +72,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
 
     this._pageNumberToDestHashCapability = null;
     this._currentPageNumber = 1;
-    this._isPagesLoaded = false;
+    this._isPagesLoaded = null;
 
     if (
       this._currentOutlineItemCapability &&
@@ -93,8 +93,10 @@ class PDFOutlineViewer extends BaseTreeViewer {
       this._pdfDocument?.loadingParams.disableAutoFetch
     ) {
       this._currentOutlineItemCapability.resolve(/* enabled = */ false);
-    } else if (this._isPagesLoaded) {
-      this._currentOutlineItemCapability.resolve(/* enabled = */ true);
+    } else if (this._isPagesLoaded !== null) {
+      this._currentOutlineItemCapability.resolve(
+        /* enabled = */ this._isPagesLoaded
+      );
     }
 
     this.eventBus.dispatch("outlineloaded", {
