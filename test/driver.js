@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 /* globals pdfjsLib, pdfjsViewer */
 
 "use strict";
@@ -148,7 +147,7 @@ async function resolveImages(node, silentErrors = false) {
 /**
  * @class
  */
-var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
+const rasterizeTextLayer = (function rasterizeTextLayerClosure() {
   const styles = {
     common: {
       file: "./text_layer_test.css",
@@ -165,22 +164,25 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
   ) {
     try {
       // Building SVG with size of the viewport.
-      var svg = document.createElementNS(SVG_NS, "svg:svg");
+      const svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
       svg.setAttribute("height", viewport.height + "px");
       // items are transformed to have 1px font size
       svg.setAttribute("font-size", 1);
 
       // Adding element to host our HTML (style + text layer div).
-      var foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
+      const foreignObject = document.createElementNS(
+        SVG_NS,
+        "svg:foreignObject"
+      );
       foreignObject.setAttribute("x", "0");
       foreignObject.setAttribute("y", "0");
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
-      var style = document.createElement("style");
-      var stylePromise = loadStyles(styles);
+      const style = document.createElement("style");
+      const stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
-      var div = document.createElement("div");
+      const div = document.createElement("div");
       div.className = "textLayer";
       foreignObject.appendChild(div);
 
@@ -188,7 +190,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       style.textContent = cssRules;
 
       // Rendering text layer as HTML.
-      var task = renderTextLayer({
+      const task = renderTextLayer({
         textContent,
         container: div,
         viewport,
@@ -211,7 +213,7 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
 /**
  * @class
  */
-var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
+const rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   /**
    * For the reference tests, the entire annotation layer must be visible. To
    * achieve this, we load the common styles as used by the viewer and extend
@@ -244,32 +246,35 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
   ) {
     try {
       // Building SVG with size of the viewport.
-      var svg = document.createElementNS(SVG_NS, "svg:svg");
+      const svg = document.createElementNS(SVG_NS, "svg:svg");
       svg.setAttribute("width", viewport.width + "px");
       svg.setAttribute("height", viewport.height + "px");
 
       // Adding element to host our HTML (style + annotation layer div).
-      var foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
+      const foreignObject = document.createElementNS(
+        SVG_NS,
+        "svg:foreignObject"
+      );
       foreignObject.setAttribute("x", "0");
       foreignObject.setAttribute("y", "0");
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
-      var style = document.createElement("style");
-      var stylePromise = loadStyles(styles);
+      const style = document.createElement("style");
+      const stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
-      var div = document.createElement("div");
+      const div = document.createElement("div");
       div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
       const [common, overrides] = await stylePromise;
       style.textContent = common + "\n" + overrides;
 
-      var annotation_viewport = viewport.clone({ dontFlip: true });
+      const annotation_viewport = viewport.clone({ dontFlip: true });
       const annotationImageMap = await convertCanvasesToImages(
         annotationCanvasMap
       );
 
-      var parameters = {
+      const parameters = {
         viewport: annotation_viewport,
         div,
         annotations,
@@ -298,7 +303,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 /**
  * @class
  */
-var rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
+const rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
   const styles = {
     common: {
       file: "../web/xfa_layer_builder.css",
@@ -390,7 +395,7 @@ class Driver {
     this.end = options.end;
 
     // Set parameters from the query string
-    var parameters = this._getQueryStringParameters();
+    const parameters = this._getQueryStringParameters();
     this.browser = parameters.browser;
     this.manifestFile = parameters.manifestFile;
     this.delay = parameters.delay | 0 || 0;
@@ -428,7 +433,7 @@ class Driver {
     this._log(`Harness thinks this browser is ${this.browser}\n`);
     this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
-    var r = new XMLHttpRequest();
+    const r = new XMLHttpRequest();
     r.open("GET", this.manifestFile, false);
     r.onreadystatechange = () => {
       if (r.readyState === 4) {
@@ -608,7 +613,7 @@ class Driver {
     if (!task.pdfDoc) {
       return task.firstPage || 1;
     }
-    var lastPageNumber = task.lastPage || 0;
+    let lastPageNumber = task.lastPage || 0;
     if (!lastPageNumber || lastPageNumber > task.pdfDoc.numPages) {
       lastPageNumber = task.pdfDoc.numPages;
     }
@@ -616,11 +621,11 @@ class Driver {
   }
 
   _nextPage(task, loadError) {
-    var failure = loadError || "";
-    var ctx;
+    let failure = loadError || "";
+    let ctx;
 
     if (!task.pdfDoc) {
-      var dataUrl = this.canvas.toDataURL("image/png");
+      const dataUrl = this.canvas.toDataURL("image/png");
       this._sendResult(dataUrl, task, failure, () => {
         this._log(
           "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
@@ -660,7 +665,7 @@ class Driver {
         ctx = this.canvas.getContext("2d", { alpha: false });
         task.pdfDoc.getPage(task.pageNum).then(
           page => {
-            var viewport = page.getViewport({
+            const viewport = page.getViewport({
               scale: PixelsPerInch.PDF_TO_CSS_UNITS,
             });
             this.canvas.width = viewport.width;
@@ -668,7 +673,7 @@ class Driver {
             this._clearCanvas();
 
             // Initialize various `eq` test subtypes, see comment below.
-            var renderAnnotations = false,
+            let renderAnnotations = false,
               renderForms = false,
               renderPrint = false,
               renderXfa = false,
@@ -682,8 +687,8 @@ class Driver {
               }
             }
 
-            var textLayerCanvas, annotationLayerCanvas;
-            var initPromise;
+            let textLayerCanvas, annotationLayerCanvas, annotationLayerContext;
+            let initPromise;
             if (task.type === "text") {
               // Using a dummy canvas for PDF context drawing operations
               textLayerCanvas = this.textLayerCanvas;
@@ -693,14 +698,14 @@ class Driver {
               }
               textLayerCanvas.width = viewport.width;
               textLayerCanvas.height = viewport.height;
-              var textLayerContext = textLayerCanvas.getContext("2d");
+              const textLayerContext = textLayerCanvas.getContext("2d");
               textLayerContext.clearRect(
                 0,
                 0,
                 textLayerCanvas.width,
                 textLayerCanvas.height
               );
-              var enhanceText = !!task.enhance;
+              const enhanceText = !!task.enhance;
               // The text builder will draw its content on the test canvas
               initPromise = page
                 .getTextContent({
@@ -734,8 +739,7 @@ class Driver {
                 }
                 annotationLayerCanvas.width = viewport.width;
                 annotationLayerCanvas.height = viewport.height;
-                var annotationLayerContext =
-                  annotationLayerCanvas.getContext("2d");
+                annotationLayerContext = annotationLayerCanvas.getContext("2d");
                 annotationLayerContext.clearRect(
                   0,
                   0,
@@ -765,7 +769,7 @@ class Driver {
                 initPromise = Promise.resolve();
               }
             }
-            var renderContext = {
+            const renderContext = {
               canvasContext: ctx,
               viewport,
               optionalContentConfigPromise: task.optionalContentConfigPromise,
@@ -780,7 +784,7 @@ class Driver {
               renderContext.intent = "print";
             }
 
-            var completeRender = error => {
+            const completeRender = error => {
               // if text layer is present, compose it on top of the page
               if (textLayerCanvas) {
                 ctx.save();
@@ -845,7 +849,7 @@ class Driver {
   }
 
   _clearCanvas() {
-    var ctx = this.canvas.getContext("2d", { alpha: false });
+    const ctx = this.canvas.getContext("2d", { alpha: false });
     ctx.beginPath();
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
@@ -853,7 +857,7 @@ class Driver {
   _snapshot(task, failure) {
     this._log("Snapshotting... ");
 
-    var dataUrl = this.canvas.toDataURL("image/png");
+    const dataUrl = this.canvas.toDataURL("image/png");
     this._sendResult(dataUrl, task, failure, () => {
       this._log(
         "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
@@ -868,7 +872,7 @@ class Driver {
     this.end.textContent = "Tests finished. Close this window!";
 
     // Send the quit request
-    var r = new XMLHttpRequest();
+    const r = new XMLHttpRequest();
     r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
     r.onreadystatechange = function (e) {
       if (r.readyState === 4) {
@@ -914,7 +918,7 @@ class Driver {
   }
 
   _sendResult(snapshot, task, failure, callback) {
-    var result = JSON.stringify({
+    const result = JSON.stringify({
       browser: this.browser,
       id: task.id,
       numPages: task.pdfDoc ? task.lastPage || task.pdfDoc.numPages : 0,
@@ -930,7 +934,7 @@ class Driver {
   }
 
   _send(url, message, callback) {
-    var r = new XMLHttpRequest();
+    const r = new XMLHttpRequest();
     r.open("POST", url, true);
     r.setRequestHeader("Content-Type", "application/json");
     r.onreadystatechange = e => {
