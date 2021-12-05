@@ -175,6 +175,26 @@ class Rasterize {
     return shadow(this, "xfaStylePromise", loadStyles(styles));
   }
 
+  static createContainer(viewport) {
+    const svg = document.createElementNS(SVG_NS, "svg:svg");
+    svg.setAttribute("width", `${viewport.width}px`);
+    svg.setAttribute("height", `${viewport.height}px`);
+
+    const foreignObject = document.createElementNS(SVG_NS, "svg:foreignObject");
+    foreignObject.setAttribute("x", "0");
+    foreignObject.setAttribute("y", "0");
+    foreignObject.setAttribute("width", `${viewport.width}px`);
+    foreignObject.setAttribute("height", `${viewport.height}px`);
+
+    const style = document.createElement("style");
+    foreignObject.appendChild(style);
+
+    const div = document.createElement("div");
+    foreignObject.appendChild(div);
+
+    return { svg, foreignObject, style, div };
+  }
+
   static async annotationLayer(
     ctx,
     viewport,
@@ -185,36 +205,20 @@ class Rasterize {
     renderForms = false
   ) {
     try {
-      // Building SVG with size of the viewport.
-      const svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
-
-      // Adding element to host our HTML (style + annotation layer div).
-      const foreignObject = document.createElementNS(
-        SVG_NS,
-        "svg:foreignObject"
-      );
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      const style = document.createElement("style");
-      foreignObject.appendChild(style);
-      const div = document.createElement("div");
+      const { svg, foreignObject, style, div } = this.createContainer(viewport);
       div.className = "annotationLayer";
 
-      // Rendering annotation layer as HTML.
       const [common, overrides] = await this.annotationStylePromise;
-      style.textContent = common + "\n" + overrides;
+      style.textContent = `${common}\n${overrides}`;
 
-      const annotation_viewport = viewport.clone({ dontFlip: true });
+      const annotationViewport = viewport.clone({ dontFlip: true });
       const annotationImageMap = await convertCanvasesToImages(
         annotationCanvasMap
       );
 
+      // Rendering annotation layer as HTML.
       const parameters = {
-        viewport: annotation_viewport,
+        viewport: annotationViewport,
         div,
         annotations,
         page,
@@ -238,27 +242,11 @@ class Rasterize {
 
   static async textLayer(ctx, viewport, textContent, enhanceTextSelection) {
     try {
-      // Building SVG with size of the viewport.
-      const svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
-      // items are transformed to have 1px font size
-      svg.setAttribute("font-size", 1);
-
-      // Adding element to host our HTML (style + text layer div).
-      const foreignObject = document.createElementNS(
-        SVG_NS,
-        "svg:foreignObject"
-      );
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      const style = document.createElement("style");
-      foreignObject.appendChild(style);
-      const div = document.createElement("div");
+      const { svg, foreignObject, style, div } = this.createContainer(viewport);
       div.className = "textLayer";
-      foreignObject.appendChild(div);
+
+      // Items are transformed to have 1px font size.
+      svg.setAttribute("font-size", 1);
 
       const [cssRules] = await this.textStylePromise;
       style.textContent = cssRules;
@@ -290,26 +278,12 @@ class Rasterize {
     isPrint
   ) {
     try {
-      // Building SVG with size of the viewport.
-      const svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
-      const foreignObject = document.createElementNS(
-        SVG_NS,
-        "svg:foreignObject"
-      );
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      const style = document.createElement("style");
-      foreignObject.appendChild(style);
-      const div = document.createElement("div");
-      foreignObject.appendChild(div);
+      const { svg, foreignObject, style, div } = this.createContainer(viewport);
 
       const [common, overrides] = await this.xfaStylePromise;
-      style.textContent = fontRules + "\n" + common + "\n" + overrides;
+      style.textContent = `${fontRules}\n${common}\n${overrides}`;
 
+      // Rendering XFA layer as HTML.
       XfaLayer.render({
         xfa,
         div,
@@ -319,8 +293,7 @@ class Rasterize {
         intent: isPrint ? "print" : "display",
       });
 
-      // Some unsupported type of images (e.g. tiff)
-      // lead to errors.
+      // Some unsupported type of images (e.g. tiff) lead to errors.
       await resolveImages(div, /* silentErrors = */ true);
       svg.appendChild(foreignObject);
 
