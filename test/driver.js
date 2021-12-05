@@ -23,6 +23,7 @@ const {
   GlobalWorkerOptions,
   PixelsPerInch,
   renderTextLayer,
+  shadow,
   XfaLayer,
 } = pdfjsLib;
 const { SimpleLinkService } = pdfjsViewer;
@@ -37,26 +38,25 @@ const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 function loadStyles(styles) {
-  styles = Object.values(styles);
-  if (styles.every(style => style.promise)) {
-    return Promise.all(styles.map(style => style.promise));
+  const promises = [];
+
+  for (const file of styles) {
+    promises.push(
+      new Promise(function (resolve, reject) {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", file);
+        xhr.onload = function () {
+          resolve(xhr.responseText);
+        };
+        xhr.onerror = function (e) {
+          reject(new Error(`Error fetching style (${file}): ${e}`));
+        };
+        xhr.send(null);
+      })
+    );
   }
 
-  for (const style of styles) {
-    style.promise = new Promise(function (resolve, reject) {
-      const xhr = new XMLHttpRequest();
-      xhr.open("GET", style.file);
-      xhr.onload = function () {
-        resolve(xhr.responseText);
-      };
-      xhr.onerror = function (e) {
-        reject(new Error(`Error fetching style (${style.file}): ${e}`));
-      };
-      xhr.send(null);
-    });
-  }
-
-  return Promise.all(styles.map(style => style.promise));
+  return Promise.all(promises);
 }
 
 function writeSVG(svgElement, ctx) {
@@ -144,98 +144,38 @@ async function resolveImages(node, silentErrors = false) {
   await Promise.all(loadedPromises);
 }
 
-/**
- * @class
- */
-const rasterizeTextLayer = (function rasterizeTextLayerClosure() {
-  const styles = {
-    common: {
-      file: "./text_layer_test.css",
-      promise: null,
-    },
-  };
-
-  // eslint-disable-next-line no-shadow
-  async function rasterizeTextLayer(
-    ctx,
-    viewport,
-    textContent,
-    enhanceTextSelection
-  ) {
-    try {
-      // Building SVG with size of the viewport.
-      const svg = document.createElementNS(SVG_NS, "svg:svg");
-      svg.setAttribute("width", viewport.width + "px");
-      svg.setAttribute("height", viewport.height + "px");
-      // items are transformed to have 1px font size
-      svg.setAttribute("font-size", 1);
-
-      // Adding element to host our HTML (style + text layer div).
-      const foreignObject = document.createElementNS(
-        SVG_NS,
-        "svg:foreignObject"
-      );
-      foreignObject.setAttribute("x", "0");
-      foreignObject.setAttribute("y", "0");
-      foreignObject.setAttribute("width", viewport.width + "px");
-      foreignObject.setAttribute("height", viewport.height + "px");
-      const style = document.createElement("style");
-      const stylePromise = loadStyles(styles);
-      foreignObject.appendChild(style);
-      const div = document.createElement("div");
-      div.className = "textLayer";
-      foreignObject.appendChild(div);
-
-      const [cssRules] = await stylePromise;
-      style.textContent = cssRules;
-
-      // Rendering text layer as HTML.
-      const task = renderTextLayer({
-        textContent,
-        container: div,
-        viewport,
-        enhanceTextSelection,
-      });
-      await task.promise;
-
-      task.expandTextDivs(true);
-      svg.appendChild(foreignObject);
-
-      await writeSVG(svg, ctx);
-    } catch (reason) {
-      throw new Error(`rasterizeTextLayer: "${reason?.message}".`);
-    }
-  }
-
-  return rasterizeTextLayer;
-})();
-
-/**
- * @class
- */
-const rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
+class Rasterize {
   /**
-   * For the reference tests, the entire annotation layer must be visible. To
-   * achieve this, we load the common styles as used by the viewer and extend
-   * them with a set of overrides to make all elements visible.
+   * For the reference tests, the full content of the various layers must be
+   * visible. To achieve this, we load the common styles as used by the viewer
+   * and extend them with a set of overrides to make all elements visible.
    *
    * Note that we cannot simply use `@import` to import the common styles in
    * the overrides file because the browser does not resolve that when the
    * styles are inserted via XHR. Therefore, we load and combine them here.
    */
-  const styles = {
-    common: {
-      file: "../web/annotation_layer_builder.css",
-      promise: null,
-    },
-    overrides: {
-      file: "./annotation_layer_builder_overrides.css",
-      promise: null,
-    },
-  };
+  static get annotationStylePromise() {
+    const styles = [
+      "../web/annotation_layer_builder.css",
+      "./annotation_layer_builder_overrides.css",
+    ];
+    return shadow(this, "annotationStylePromise", loadStyles(styles));
+  }
 
-  // eslint-disable-next-line no-shadow
-  async function rasterizeAnnotationLayer(
+  static get textStylePromise() {
+    const styles = ["./text_layer_test.css"];
+    return shadow(this, "textStylePromise", loadStyles(styles));
+  }
+
+  static get xfaStylePromise() {
+    const styles = [
+      "../web/xfa_layer_builder.css",
+      "./xfa_layer_builder_overrides.css",
+    ];
+    return shadow(this, "xfaStylePromise", loadStyles(styles));
+  }
+
+  static async annotationLayer(
     ctx,
     viewport,
     annotations,
@@ -260,13 +200,12 @@ const rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
       const style = document.createElement("style");
-      const stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
       const div = document.createElement("div");
       div.className = "annotationLayer";
 
       // Rendering annotation layer as HTML.
-      const [common, overrides] = await stylePromise;
+      const [common, overrides] = await this.annotationStylePromise;
       style.textContent = common + "\n" + overrides;
 
       const annotation_viewport = viewport.clone({ dontFlip: true });
@@ -293,30 +232,56 @@ const rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 
       await writeSVG(svg, ctx);
     } catch (reason) {
-      throw new Error(`rasterizeAnnotationLayer: "${reason?.message}".`);
+      throw new Error(`Rasterize.annotationLayer: "${reason?.message}".`);
     }
   }
 
-  return rasterizeAnnotationLayer;
-})();
+  static async textLayer(ctx, viewport, textContent, enhanceTextSelection) {
+    try {
+      // Building SVG with size of the viewport.
+      const svg = document.createElementNS(SVG_NS, "svg:svg");
+      svg.setAttribute("width", viewport.width + "px");
+      svg.setAttribute("height", viewport.height + "px");
+      // items are transformed to have 1px font size
+      svg.setAttribute("font-size", 1);
 
-/**
- * @class
- */
-const rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
-  const styles = {
-    common: {
-      file: "../web/xfa_layer_builder.css",
-      promise: null,
-    },
-    overrides: {
-      file: "./xfa_layer_builder_overrides.css",
-      promise: null,
-    },
-  };
+      // Adding element to host our HTML (style + text layer div).
+      const foreignObject = document.createElementNS(
+        SVG_NS,
+        "svg:foreignObject"
+      );
+      foreignObject.setAttribute("x", "0");
+      foreignObject.setAttribute("y", "0");
+      foreignObject.setAttribute("width", viewport.width + "px");
+      foreignObject.setAttribute("height", viewport.height + "px");
+      const style = document.createElement("style");
+      foreignObject.appendChild(style);
+      const div = document.createElement("div");
+      div.className = "textLayer";
+      foreignObject.appendChild(div);
 
-  // eslint-disable-next-line no-shadow
-  async function rasterizeXfaLayer(
+      const [cssRules] = await this.textStylePromise;
+      style.textContent = cssRules;
+
+      // Rendering text layer as HTML.
+      const task = renderTextLayer({
+        textContent,
+        container: div,
+        viewport,
+        enhanceTextSelection,
+      });
+      await task.promise;
+
+      task.expandTextDivs(true);
+      svg.appendChild(foreignObject);
+
+      await writeSVG(svg, ctx);
+    } catch (reason) {
+      throw new Error(`Rasterize.textLayer: "${reason?.message}".`);
+    }
+  }
+
+  static async xfaLayer(
     ctx,
     viewport,
     xfa,
@@ -338,12 +303,11 @@ const rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
       foreignObject.setAttribute("width", viewport.width + "px");
       foreignObject.setAttribute("height", viewport.height + "px");
       const style = document.createElement("style");
-      const stylePromise = loadStyles(styles);
       foreignObject.appendChild(style);
       const div = document.createElement("div");
       foreignObject.appendChild(div);
 
-      const [common, overrides] = await stylePromise;
+      const [common, overrides] = await this.xfaStylePromise;
       style.textContent = fontRules + "\n" + common + "\n" + overrides;
 
       XfaLayer.render({
@@ -362,12 +326,10 @@ const rasterizeXfaLayer = (function rasterizeXfaLayerClosure() {
 
       await writeSVG(svg, ctx);
     } catch (reason) {
-      throw new Error(`rasterizeXfaLayer: "${reason?.message}".`);
+      throw new Error(`Rasterize.xfaLayer: "${reason?.message}".`);
     }
   }
-
-  return rasterizeXfaLayer;
-})();
+}
 
 /**
  * @typedef {Object} DriverOptions
@@ -713,7 +675,7 @@ class Driver {
                   includeMarkedContent: true,
                 })
                 .then(function (textContent) {
-                  return rasterizeTextLayer(
+                  return Rasterize.textLayer(
                     textLayerContext,
                     viewport,
                     textContent,
@@ -754,7 +716,7 @@ class Driver {
                   annotationCanvasMap = new Map();
                 } else {
                   initPromise = page.getXfa().then(function (xfa) {
-                    return rasterizeXfaLayer(
+                    return Rasterize.xfaLayer(
                       annotationLayerContext,
                       viewport,
                       xfa,
@@ -817,7 +779,7 @@ class Driver {
                 }
                 return renderTask.promise.then(function () {
                   if (annotationCanvasMap) {
-                    rasterizeAnnotationLayer(
+                    Rasterize.annotationLayer(
                       annotationLayerContext,
                       viewport,
                       data,
