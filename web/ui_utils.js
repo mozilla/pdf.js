@@ -552,8 +552,7 @@ function getParameterByName(name, url) {
 }
 
 function getWatermarkText() {
-  var defaultWatermark = 'REFERENCE ONLY';
-  return getParameterByName('watermark') || defaultWatermark;
+  return getParameterByName('watermark');
 }
 
 function getDocumentTitle() {
