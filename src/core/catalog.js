@@ -1102,7 +1102,7 @@ class Catalog {
         if (isRef(currentNode)) {
           const count = pageKidsCountCache.get(currentNode);
           // Skip nodes where the page can't be.
-          if (count > 0 && currentPageIndex + count < pageIndex) {
+          if (count >= 0 && currentPageIndex + count <= pageIndex) {
             currentPageIndex += count;
             continue;
           }
