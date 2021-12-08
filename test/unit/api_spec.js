@@ -2263,6 +2263,26 @@ sozialökonomische Gerechtigkeit.`)
       await loadingTask.destroy();
     });
 
+    it("gets operatorList, with page resources containing corrupt /CCITTFaxDecode data", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("poppler-90-0-fuzzed.pdf")
+      );
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDoc = await loadingTask.promise;
+      expect(pdfDoc.numPages).toEqual(16);
+
+      const pdfPage = await pdfDoc.getPage(6);
+      expect(pdfPage instanceof PDFPageProxy).toEqual(true);
+
+      const opList = await pdfPage.getOperatorList();
+      expect(opList.fnArray.length).toBeGreaterThan(25);
+      expect(opList.argsArray.length).toBeGreaterThan(25);
+      expect(opList.lastChunk).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets document stats after parsing page", async function () {
       await page.getOperatorList();
       const stats = pdfDocument.stats;
