@@ -552,12 +552,8 @@ function getParameterByName(name, url) {
 }
 
 function getWatermarkText() {
-<<<<<<< HEAD
   var defaultWatermark = '';
   return getParameterByName('watermark') || defaultWatermark;
-=======
-  return getParameterByName('watermark');
->>>>>>> 072f64e3ee5563707405848985c88fd41a18a498
 }
 
 function getDocumentTitle() {
