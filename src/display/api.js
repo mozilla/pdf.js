@@ -2404,6 +2404,8 @@ class WorkerTransport {
 
   #pageCache = new Map();
 
+  #pagePromises = new Map();
+
   constructor(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -2433,8 +2435,6 @@ class WorkerTransport {
     this._networkStream = networkStream;
     this._fullReader = null;
     this._lastProgress = null;
-
-    this.pagePromises = [];
     this.downloadInfoCapability = createPromiseCapability();
 
     this.setupMessageHandler();
@@ -2518,7 +2518,7 @@ class WorkerTransport {
       waitOn.push(page._destroy());
     }
     this.#pageCache.clear();
-    this.pagePromises.length = 0;
+    this.#pagePromises.clear();
     // Allow `AnnotationStorage`-related clean-up when destroying the document.
     if (this.hasOwnProperty("annotationStorage")) {
       this.annotationStorage.resetModified();
@@ -2920,9 +2920,10 @@ class WorkerTransport {
       return Promise.reject(new Error("Invalid page request"));
     }
 
-    const pageIndex = pageNumber - 1;
-    if (pageIndex in this.pagePromises) {
-      return this.pagePromises[pageIndex];
+    const pageIndex = pageNumber - 1,
+      cachedPromise = this.#pagePromises.get(pageIndex);
+    if (cachedPromise) {
+      return cachedPromise;
     }
     const promise = this.messageHandler
       .sendWithPromise("GetPage", {
@@ -2942,7 +2943,7 @@ class WorkerTransport {
         this.#pageCache.set(pageIndex, page);
         return page;
       });
-    this.pagePromises[pageIndex] = promise;
+    this.#pagePromises.set(pageIndex, promise);
     return promise;
   }
 
