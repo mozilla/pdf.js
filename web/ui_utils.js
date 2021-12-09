@@ -552,7 +552,7 @@ function getParameterByName(name, url) {
 }
 
 function getWatermarkText() {
-  var defaultWatermark = 'REFERENCE ONLY';
+  var defaultWatermark = '';
   return getParameterByName('watermark') || defaultWatermark;
 }
 
