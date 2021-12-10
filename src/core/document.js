@@ -1344,7 +1344,7 @@ class PDFDocument {
         // Clear out the various caches to ensure that we haven't stored any
         // inconsistent and/or incorrect state, since that could easily break
         // subsequent `this.getPage` calls.
-        this._pagePromises.clear();
+        this._pagePromises.delete(0);
         await this.cleanup();
 
         throw new XRefParseException();
@@ -1380,20 +1380,23 @@ class PDFDocument {
       }
       await this.getPage(numPages - 1);
     } catch (reason) {
-      warn(`checkLastPage - invalid /Pages tree /Count: ${numPages}.`);
       // Clear out the various caches to ensure that we haven't stored any
       // inconsistent and/or incorrect state, since that could easily break
       // subsequent `this.getPage` calls.
+      this._pagePromises.delete(numPages - 1);
       await this.cleanup();
+
+      if (reason instanceof XRefEntryException && !recoveryMode) {
+        throw new XRefParseException();
+      }
+      warn(`checkLastPage - invalid /Pages tree /Count: ${numPages}.`);
 
       let pagesTree;
       try {
         pagesTree = await pdfManager.ensureCatalog("getAllPageDicts");
       } catch (reasonAll) {
-        if (reasonAll instanceof XRefEntryException) {
-          if (!recoveryMode) {
-            throw new XRefParseException();
-          }
+        if (reasonAll instanceof XRefEntryException && !recoveryMode) {
+          throw new XRefParseException();
         }
         catalog.setActualNumPages(1);
         return;
