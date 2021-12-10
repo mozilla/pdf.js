@@ -1393,7 +1393,9 @@ class PDFDocument {
 
       let pagesTree;
       try {
-        pagesTree = await pdfManager.ensureCatalog("getAllPageDicts");
+        pagesTree = await pdfManager.ensureCatalog("getAllPageDicts", [
+          recoveryMode,
+        ]);
       } catch (reasonAll) {
         if (reasonAll instanceof XRefEntryException && !recoveryMode) {
           throw new XRefParseException();

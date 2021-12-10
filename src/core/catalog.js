@@ -1224,7 +1224,7 @@ class Catalog {
    * Eagerly fetches the entire /Pages-tree; should ONLY be used as a fallback.
    * @returns {Map}
    */
-  getAllPageDicts() {
+  getAllPageDicts(recoveryMode = false) {
     const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
     const visitedNodes = new RefSet();
     const map = new Map();
@@ -1233,8 +1233,8 @@ class Catalog {
     function addPageDict(pageDict, pageRef) {
       map.set(pageIndex++, [pageDict, pageRef]);
     }
-    function addPageError(msg) {
-      map.set(pageIndex++, [new FormatError(msg), null]);
+    function addPageError(error) {
+      map.set(pageIndex++, [error, null]);
     }
 
     while (queue.length > 0) {
@@ -1248,12 +1248,16 @@ class Catalog {
         if (ex instanceof MissingDataException) {
           throw ex;
         }
-        if (ex instanceof XRefEntryException) {
+        if (ex instanceof XRefEntryException && !recoveryMode) {
           throw ex;
         }
+        addPageError(ex);
+        break;
       }
       if (!Array.isArray(kids)) {
-        addPageError("Page dictionary kids object is not an array.");
+        addPageError(
+          new FormatError("Page dictionary kids object is not an array.")
+        );
         break;
       }
 
@@ -1271,13 +1275,17 @@ class Catalog {
           if (ex instanceof MissingDataException) {
             throw ex;
           }
-          if (ex instanceof XRefEntryException) {
+          if (ex instanceof XRefEntryException && !recoveryMode) {
             throw ex;
           }
+          addPageError(ex);
+          break;
         }
         // Prevent circular references in the /Pages tree.
         if (visitedNodes.has(kidObj)) {
-          addPageError("Pages tree contains circular reference.");
+          addPageError(
+            new FormatError("Pages tree contains circular reference.")
+          );
           break;
         }
         visitedNodes.put(kidObj);
@@ -1289,7 +1297,9 @@ class Catalog {
       }
       if (!(obj instanceof Dict)) {
         addPageError(
-          "Page dictionary kid reference points to wrong type of object."
+          new FormatError(
+            "Page dictionary kid reference points to wrong type of object."
+          )
         );
         break;
       }
