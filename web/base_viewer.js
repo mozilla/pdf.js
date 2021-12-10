@@ -57,6 +57,7 @@ const DEFAULT_CACHE_SIZE = 10;
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 15000,
   FORCE_LAZY_PAGE_INIT: 7500,
+  PAUSE_EAGER_PAGE_INIT: 500,
 };
 
 /**
@@ -625,7 +626,7 @@ class BaseViewer {
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
-        this._onePageRenderedOrForceFetch().then(() => {
+        this._onePageRenderedOrForceFetch().then(async () => {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
           }
@@ -650,7 +651,7 @@ class BaseViewer {
             return;
           }
           for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
-            pdfDocument.getPage(pageNum).then(
+            const promise = pdfDocument.getPage(pageNum).then(
               pdfPage => {
                 const pageView = this._pages[pageNum - 1];
                 if (!pageView.pdfPage) {
@@ -671,6 +672,10 @@ class BaseViewer {
                 }
               }
             );
+
+            if (pageNum % PagesCountLimit.PAUSE_EAGER_PAGE_INIT === 0) {
+              await promise;
+            }
           }
         });
 
