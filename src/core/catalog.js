@@ -1117,13 +1117,14 @@ class Catalog {
 
           xref.fetchAsync(currentNode).then(function (obj) {
             if (isDict(obj, "Page") || (isDict(obj) && !obj.has("Kids"))) {
+              // Cache the Page reference, since it can *greatly* improve
+              // performance by reducing redundant lookups in long documents
+              // where all nodes are found at *one* level of the tree.
+              if (currentNode && !pageKidsCountCache.has(currentNode)) {
+                pageKidsCountCache.put(currentNode, 1);
+              }
+
               if (pageIndex === currentPageIndex) {
-                // Cache the Page reference, since it can *greatly* improve
-                // performance by reducing redundant lookups in long documents
-                // where all nodes are found at *one* level of the tree.
-                if (currentNode && !pageKidsCountCache.has(currentNode)) {
-                  pageKidsCountCache.put(currentNode, 1);
-                }
                 capability.resolve([obj, currentNode]);
               } else {
                 currentPageIndex++;
