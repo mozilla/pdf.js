@@ -204,11 +204,6 @@ select {
   display: none !important;
 }
 
-.pdfViewer.enablePermissions .textLayer span {
-  user-select: none !important;
-  cursor: not-allowed;
-}
-
 #viewerContainer.pdfPresentationMode:fullscreen {
   top: 0;
   background-color: rgba(0, 0, 0, 1);

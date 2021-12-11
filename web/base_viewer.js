@@ -16,6 +16,7 @@
 import {
   AnnotationMode,
   createPromiseCapability,
+  PermissionFlag,
   PixelsPerInch,
   version,
 } from "pdfjs-lib";
@@ -53,6 +54,7 @@ import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
+const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 15000,
@@ -95,6 +97,8 @@ const PagesCountLimit = {
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enablePermissions] - Enables PDF document permissions,
+ *   when they exist. The default value is `false`.
  */
 
 class PDFPageViewBuffer {
@@ -171,6 +175,8 @@ class PDFPageViewBuffer {
 class BaseViewer {
   #buffer = null;
 
+  #enablePermissions = false;
+
   #previousContainerHeight = 0;
 
   #scrollModePageState = null;
@@ -227,6 +233,7 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
+    this.#enablePermissions = options.enablePermissions || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -472,10 +479,20 @@ class BaseViewer {
     return this.pdfDocument ? this._pagesCapability.promise : null;
   }
 
-  /**
-   * @private
-   */
-  _onePageRenderedOrForceFetch() {
+  #initializePermissions(permissions, pdfDocument) {
+    if (pdfDocument !== this.pdfDocument) {
+      return; // The document was closed while the permissions resolved.
+    }
+    if (!permissions || !this.#enablePermissions) {
+      return;
+    }
+    // Currently only the "copy"-permission is supported.
+    if (!permissions.includes(PermissionFlag.COPY)) {
+      this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
+    }
+  }
+
+  #onePageRenderedOrForceFetch() {
     // Unless the viewer *and* its pages are visible, rendering won't start and
     // `this._onePageRenderedCapability` thus won't be resolved.
     // To ensure that automatic printing, on document load, still works even in
@@ -520,6 +537,7 @@ class BaseViewer {
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
+    const permissionsPromise = pdfDocument.getPermissions();
 
     // Given that browsers don't handle huge amounts of DOM-elements very well,
     // enforce usage of PAGE-scrolling when loading *very* long/large documents.
@@ -564,10 +582,11 @@ class BaseViewer {
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
-    firstPagePromise
-      .then(firstPdfPage => {
+    Promise.all([firstPagePromise, permissionsPromise])
+      .then(([firstPdfPage, permissions]) => {
         this._firstPageCapability.resolve(firstPdfPage);
         this._optionalContentConfigPromise = optionalContentConfigPromise;
+        this.#initializePermissions(permissions, pdfDocument);
 
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
@@ -626,7 +645,7 @@ class BaseViewer {
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
-        this._onePageRenderedOrForceFetch().then(async () => {
+        this.#onePageRenderedOrForceFetch().then(async () => {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
           }
@@ -750,6 +769,9 @@ class BaseViewer {
     this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
     this._updateScrollMode();
+
+    // Reset all PDF document permissions.
+    this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
   }
 
   #ensurePageViewVisible() {
