@@ -1666,7 +1666,6 @@ class PDFPageProxy {
    */
   _destroy() {
     this.destroyed = true;
-    this._transport.pageCache[this._pageIndex] = null;
 
     const waitOn = [];
     for (const intentState of this._intentStates.values()) {
@@ -2403,6 +2402,10 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
 class WorkerTransport {
   #docStats = null;
 
+  #pageCache = new Map();
+
+  #pagePromises = new Map();
+
   constructor(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -2432,9 +2435,6 @@ class WorkerTransport {
     this._networkStream = networkStream;
     this._fullReader = null;
     this._lastProgress = null;
-
-    this.pageCache = [];
-    this.pagePromises = [];
     this.downloadInfoCapability = createPromiseCapability();
 
     this.setupMessageHandler();
@@ -2514,13 +2514,11 @@ class WorkerTransport {
     const waitOn = [];
     // We need to wait for all renderings to be completed, e.g.
     // timeout/rAF can take a long time.
-    for (const page of this.pageCache) {
-      if (page) {
-        waitOn.push(page._destroy());
-      }
+    for (const page of this.#pageCache.values()) {
+      waitOn.push(page._destroy());
     }
-    this.pageCache.length = 0;
-    this.pagePromises.length = 0;
+    this.#pageCache.clear();
+    this.#pagePromises.clear();
     // Allow `AnnotationStorage`-related clean-up when destroying the document.
     if (this.hasOwnProperty("annotationStorage")) {
       this.annotationStorage.resetModified();
@@ -2751,16 +2749,15 @@ class WorkerTransport {
         return; // Ignore any pending requests if the worker was terminated.
       }
 
-      const page = this.pageCache[data.pageIndex];
+      const page = this.#pageCache.get(data.pageIndex);
       page._startRenderPage(data.transparency, data.cacheKey);
     });
 
-    messageHandler.on("commonobj", data => {
+    messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
 
-      const [id, type, exportedData] = data;
       if (this.commonObjs.has(id)) {
         return;
       }
@@ -2818,14 +2815,13 @@ class WorkerTransport {
       }
     });
 
-    messageHandler.on("obj", data => {
+    messageHandler.on("obj", ([id, pageIndex, type, imageData]) => {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return;
       }
 
-      const [id, pageIndex, type, imageData] = data;
-      const pageProxy = this.pageCache[pageIndex];
+      const pageProxy = this.#pageCache.get(pageIndex);
       if (pageProxy.objs.has(id)) {
         return;
       }
@@ -2924,9 +2920,10 @@ class WorkerTransport {
       return Promise.reject(new Error("Invalid page request"));
     }
 
-    const pageIndex = pageNumber - 1;
-    if (pageIndex in this.pagePromises) {
-      return this.pagePromises[pageIndex];
+    const pageIndex = pageNumber - 1,
+      cachedPromise = this.#pagePromises.get(pageIndex);
+    if (cachedPromise) {
+      return cachedPromise;
     }
     const promise = this.messageHandler
       .sendWithPromise("GetPage", {
@@ -2943,10 +2940,10 @@ class WorkerTransport {
           this._params.ownerDocument,
           this._params.pdfBug
         );
-        this.pageCache[pageIndex] = page;
+        this.#pageCache.set(pageIndex, page);
         return page;
       });
-    this.pagePromises[pageIndex] = promise;
+    this.#pagePromises.set(pageIndex, promise);
     return promise;
   }
 
@@ -3088,15 +3085,13 @@ class WorkerTransport {
     if (this.destroyed) {
       return; // No need to manually clean-up when destruction has started.
     }
-    for (let i = 0, ii = this.pageCache.length; i < ii; i++) {
-      const page = this.pageCache[i];
-      if (!page) {
-        continue;
-      }
+    for (const page of this.#pageCache.values()) {
       const cleanupSuccessful = page.cleanup();
 
       if (!cleanupSuccessful) {
-        throw new Error(`startCleanup: Page ${i + 1} is currently rendering.`);
+        throw new Error(
+          `startCleanup: Page ${page.pageNumber} is currently rendering.`
+        );
       }
     }
     this.commonObjs.clear();
