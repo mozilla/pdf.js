@@ -76,6 +76,8 @@ const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
  * @implements {IRenderableView}
  */
 class PDFPageView {
+  #annotationMode = AnnotationMode.ENABLE_FORMS;
+
   /**
    * @param {PDFPageViewOptions} options
    */
@@ -96,7 +98,7 @@ class PDFPageView {
       options.optionalContentConfigPromise || null;
     this.hasRestrictedScaling = false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
-    this._annotationMode =
+    this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
@@ -597,7 +599,7 @@ class PDFPageView {
     this.textLayer = textLayer;
 
     if (
-      this._annotationMode !== AnnotationMode.DISABLE &&
+      this.#annotationMode !== AnnotationMode.DISABLE &&
       this.annotationLayerFactory
     ) {
       this._annotationCanvasMap ||= new Map();
@@ -607,7 +609,7 @@ class PDFPageView {
           pdfPage,
           /* annotationStorage = */ null,
           this.imageResourcesPath,
-          this._annotationMode === AnnotationMode.ENABLE_FORMS,
+          this.#annotationMode === AnnotationMode.ENABLE_FORMS,
           this.l10n,
           /* enableScripting = */ null,
           /* hasJSActionsPromise = */ null,
@@ -835,7 +837,7 @@ class PDFPageView {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
-      annotationMode: this._annotationMode,
+      annotationMode: this.#annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       annotationCanvasMap: this._annotationCanvasMap,
     };
@@ -892,7 +894,7 @@ class PDFPageView {
     });
     const promise = pdfPage
       .getOperatorList({
-        annotationMode: this._annotationMode,
+        annotationMode: this.#annotationMode,
       })
       .then(opList => {
         ensureNotCancelled();
