@@ -175,6 +175,10 @@ class PDFPageViewBuffer {
 class BaseViewer {
   #buffer = null;
 
+  #annotationMode = AnnotationMode.ENABLE_FORMS;
+
+  #previousAnnotationMode = null;
+
   #enablePermissions = false;
 
   #previousContainerHeight = 0;
@@ -225,7 +229,7 @@ class BaseViewer {
     this._scriptingManager = options.scriptingManager || null;
     this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
-    this._annotationMode =
+    this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
@@ -286,7 +290,7 @@ class BaseViewer {
    * @type {boolean}
    */
   get renderForms() {
-    return this._annotationMode === AnnotationMode.ENABLE_FORMS;
+    return this.#annotationMode === AnnotationMode.ENABLE_FORMS;
   }
 
   /**
@@ -479,6 +483,9 @@ class BaseViewer {
     return this.pdfDocument ? this._pagesCapability.promise : null;
   }
 
+  /**
+   * Currently only *some* permissions are supported.
+   */
   #initializePermissions(permissions, pdfDocument) {
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the permissions resolved.
@@ -486,9 +493,19 @@ class BaseViewer {
     if (!permissions || !this.#enablePermissions) {
       return;
     }
-    // Currently only the "copy"-permission is supported.
+
     if (!permissions.includes(PermissionFlag.COPY)) {
       this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
+    }
+
+    if (
+      !permissions.includes(PermissionFlag.MODIFY_ANNOTATIONS) &&
+      !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS)
+    ) {
+      if (this.#annotationMode === AnnotationMode.ENABLE_FORMS) {
+        this.#previousAnnotationMode = this.#annotationMode; // Allow resetting.
+        this.#annotationMode = AnnotationMode.ENABLE;
+      }
     }
   }
 
@@ -599,7 +616,7 @@ class BaseViewer {
             ? this
             : null;
         const annotationLayerFactory =
-          this._annotationMode !== AnnotationMode.DISABLE ? this : null;
+          this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -614,7 +631,7 @@ class BaseViewer {
             textLayerFactory,
             textLayerMode: this.textLayerMode,
             annotationLayerFactory,
-            annotationMode: this._annotationMode,
+            annotationMode: this.#annotationMode,
             xfaLayerFactory,
             textHighlighterFactory: this,
             structTreeLayerFactory: this,
@@ -772,6 +789,11 @@ class BaseViewer {
 
     // Reset all PDF document permissions.
     this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
+
+    if (this.#previousAnnotationMode !== null) {
+      this.#annotationMode = this.#previousAnnotationMode;
+      this.#previousAnnotationMode = null;
+    }
   }
 
   #ensurePageViewVisible() {
