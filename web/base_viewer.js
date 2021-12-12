@@ -490,7 +490,7 @@ class BaseViewer {
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the permissions resolved.
     }
-    if (!permissions || !this.#enablePermissions) {
+    if (!permissions) {
       return;
     }
 
@@ -554,7 +554,9 @@ class BaseViewer {
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
-    const permissionsPromise = pdfDocument.getPermissions();
+    const permissionsPromise = this.#enablePermissions
+      ? pdfDocument.getPermissions()
+      : Promise.resolve();
 
     // Given that browsers don't handle huge amounts of DOM-elements very well,
     // enforce usage of PAGE-scrolling when loading *very* long/large documents.
