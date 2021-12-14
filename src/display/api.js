@@ -1168,8 +1168,8 @@ class PDFDocumentProxy {
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
  *   the configuration will be fetched automatically with the default visibility
  *   states set.
- * @property {Map<string, Canvas>} [annotationCanvasMap] - Map some annotation
- *   ids with canvases used to render them.
+ * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
+ *   annotation ids with canvases used to render them.
  */
 
 /**

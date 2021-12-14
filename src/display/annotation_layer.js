@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./api").PDFPageProxy} PDFPageProxy */
+/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+/** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
+
 import {
   AnnotationBorderStyleType,
   AnnotationType,
@@ -39,10 +44,10 @@ const GetElementsByNameSet = new WeakSet();
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
  * @property {HTMLDivElement} layer
- * @property {PDFPage} page
+ * @property {PDFPageProxy} page
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
- * @property {DownloadManager} downloadManager
+ * @property {IDownloadManager} downloadManager
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
@@ -1700,7 +1705,7 @@ class PopupElement {
       (!this.contentsObj?.str || this.contentsObj.str === this.richText.str)
     ) {
       XfaLayer.render({
-        xfa: this.richText.html,
+        xfaHtml: this.richText.html,
         intent: "richText",
         div: popup,
       });
@@ -2302,15 +2307,16 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {PageViewport} viewport
  * @property {HTMLDivElement} div
  * @property {Array} annotations
- * @property {PDFPage} page
+ * @property {PDFPageProxy} page
  * @property {IPDFLinkService} linkService
- * @property {DownloadManager} downloadManager
+ * @property {IDownloadManager} downloadManager
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
  * @property {boolean} [enableScripting] - Enable embedded script execution.
  * @property {boolean} [hasJSActions] - Some fields have JS actions.
  *   The default value is `false`.
+ * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  */
 
 class AnnotationLayer {

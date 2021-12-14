@@ -13,6 +13,22 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
+/** @typedef {import("./ui_utils").EventBus} EventBus */
+
 import {
   AnnotationMode,
   createPromiseCapability,
@@ -68,7 +84,7 @@ const PagesCountLimit = {
  * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
- * @property {DownloadManager} [downloadManager] - The download manager
+ * @property {IDownloadManager} [downloadManager] - The download manager
  *   component.
  * @property {PDFFindController} [findController] - The find controller
  *   component.
@@ -171,6 +187,11 @@ class PDFPageViewBuffer {
 
 /**
  * Simple viewer control to display PDF content/pages.
+ *
+ * @implements {IPDFAnnotationLayerFactory}
+ * @implements {IPDFStructTreeLayerFactory}
+ * @implements {IPDFTextLayerFactory}
+ * @implements {IPDFXfaLayerFactory}
  */
 class BaseViewer {
   #buffer = null;
@@ -525,7 +546,7 @@ class BaseViewer {
   }
 
   /**
-   * @param pdfDocument {PDFDocument}
+   * @param {PDFDocumentProxy} pdfDocument
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
@@ -1587,7 +1608,7 @@ class BaseViewer {
 
   /**
    * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
@@ -1599,7 +1620,7 @@ class BaseViewer {
    * @param {Object} [mouseState]
    * @param {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
-   * @param {Map<string, Canvas>} [annotationCanvasMap]
+   * @param {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1637,7 +1658,7 @@ class BaseViewer {
 
   /**
    * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
    * @returns {XfaLayerBuilder}
@@ -1653,7 +1674,7 @@ class BaseViewer {
   }
 
   /**
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @returns {StructTreeLayerBuilder}
    */
   createStructTreeLayerBuilder(pdfPage) {

@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+/** @typedef {import("./pdf_viewer").PDFViewer} PDFViewer */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_thumbnail_viewer").PDFThumbnailViewer} PDFThumbnailViewer */
+
 import { RenderingCancelledException } from "pdfjs-lib";
 
 const CLEANUP_TIMEOUT = 30000;

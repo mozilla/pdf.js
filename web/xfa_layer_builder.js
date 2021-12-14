@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -21,7 +25,7 @@ import { XfaLayer } from "pdfjs-lib";
 /**
  * @typedef {Object} XfaLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
- * @property {PDFPage} pdfPage
+ * @property {PDFPageProxy} pdfPage
  * @property {AnnotationStorage} [annotationStorage]
  * @property {IPDFLinkService} linkService
  * @property {Object} [xfaHtml]
@@ -31,7 +35,13 @@ class XfaLayerBuilder {
   /**
    * @param {XfaLayerBuilderOptions} options
    */
-  constructor({ pageDiv, pdfPage, annotationStorage, linkService, xfaHtml }) {
+  constructor({
+    pageDiv,
+    pdfPage,
+    annotationStorage = null,
+    linkService,
+    xfaHtml = null,
+  }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.annotationStorage = annotationStorage;
@@ -54,8 +64,7 @@ class XfaLayerBuilder {
       const parameters = {
         viewport: viewport.clone({ dontFlip: true }),
         div: this.div,
-        xfa: this.xfaHtml,
-        page: null,
+        xfaHtml: this.xfaHtml,
         annotationStorage: this.annotationStorage,
         linkService: this.linkService,
         intent,
@@ -73,16 +82,15 @@ class XfaLayerBuilder {
     // intent === "display"
     return this.pdfPage
       .getXfa()
-      .then(xfa => {
-        if (this._cancelled || !xfa) {
+      .then(xfaHtml => {
+        if (this._cancelled || !xfaHtml) {
           return { textDivs: [] };
         }
 
         const parameters = {
           viewport: viewport.clone({ dontFlip: true }),
           div: this.div,
-          xfa,
-          page: this.pdfPage,
+          xfaHtml,
           annotationStorage: this.annotationStorage,
           linkService: this.linkService,
           intent,
@@ -120,7 +128,7 @@ class XfaLayerBuilder {
 class DefaultXfaLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage]
    * @param {Object} [xfaHtml]
    */

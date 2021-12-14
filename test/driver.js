@@ -272,7 +272,7 @@ class Rasterize {
   static async xfaLayer(
     ctx,
     viewport,
-    xfa,
+    xfaHtml,
     fontRules,
     annotationStorage,
     isPrint
@@ -285,9 +285,9 @@ class Rasterize {
 
       // Rendering XFA layer as HTML.
       XfaLayer.render({
-        xfa,
-        div,
         viewport: viewport.clone({ dontFlip: true }),
+        div,
+        xfaHtml,
         annotationStorage,
         linkService: new SimpleLinkService(),
         intent: isPrint ? "print" : "display",
@@ -688,11 +688,11 @@ class Driver {
                   initPromise = page.getAnnotations({ intent: "display" });
                   annotationCanvasMap = new Map();
                 } else {
-                  initPromise = page.getXfa().then(function (xfa) {
+                  initPromise = page.getXfa().then(function (xfaHtml) {
                     return Rasterize.xfaLayer(
                       annotationLayerContext,
                       viewport,
-                      xfa,
+                      xfaHtml,
                       task.fontRules,
                       task.pdfDoc.annotationStorage,
                       task.renderPrint
