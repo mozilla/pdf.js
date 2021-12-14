@@ -13,7 +13,22 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./interfaces").IL10n} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
+/** @typedef {import("./ui_utils").EventBus} EventBus */
 
 import {
   AnnotationMode,

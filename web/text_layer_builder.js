@@ -14,7 +14,11 @@
  */
 
 // eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
+/** @typedef {import("./ui_utils").EventBus} EventBus */
 
 import { renderTextLayer } from "pdfjs-lib";
 

@@ -13,8 +13,14 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+/** @typedef {import("./interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
 import { AnnotationLayer } from "pdfjs-lib";
 import { NullL10n } from "./l10n_utils.js";
@@ -23,20 +29,20 @@ import { SimpleLinkService } from "./pdf_link_service.js";
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
- * @property {PDFPage} pdfPage
+ * @property {PDFPageProxy} pdfPage
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
  * @property {IPDFLinkService} linkService
- * @property {DownloadManager} downloadManager
+ * @property {IDownloadManager} downloadManager
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]
  * @property {Promise<Object<string, Array<Object>> | null>}
  *   [fieldObjectsPromise]
  * @property {Object} [mouseState]
- * @property {Map<string, Canvas>} [annotationCanvasMap]
+ * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  */
 
 class AnnotationLayerBuilder {
@@ -146,7 +152,7 @@ class AnnotationLayerBuilder {
 class DefaultAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage]
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
@@ -157,8 +163,8 @@ class DefaultAnnotationLayerFactory {
    * @param {Object} [mouseState]
    * @param {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
-   * @param {Map<string, Canvas> | null} [annotationCanvasMap] - Map some
-   *  annotation ids with canvases used to render them.
+   * @param {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
+   *   annotation ids with canvases used to render them.
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(

@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IL10n} IL10n */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
+
 import { getOutputScale } from "./ui_utils.js";
 import { RenderingCancelledException } from "pdfjs-lib";
 import { RenderingStates } from "./pdf_rendering_queue.js";
