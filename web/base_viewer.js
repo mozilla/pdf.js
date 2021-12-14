@@ -486,10 +486,7 @@ class BaseViewer {
   /**
    * Currently only *some* permissions are supported.
    */
-  #initializePermissions(permissions, pdfDocument) {
-    if (pdfDocument !== this.pdfDocument) {
-      return; // The document was closed while the permissions resolved.
-    }
+  #initializePermissions(permissions) {
     if (!permissions) {
       return;
     }
@@ -603,9 +600,12 @@ class BaseViewer {
     // viewport for all pages
     Promise.all([firstPagePromise, permissionsPromise])
       .then(([firstPdfPage, permissions]) => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the first page resolved.
+        }
         this._firstPageCapability.resolve(firstPdfPage);
         this._optionalContentConfigPromise = optionalContentConfigPromise;
-        this.#initializePermissions(permissions, pdfDocument);
+        this.#initializePermissions(permissions);
 
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
@@ -719,6 +719,15 @@ class BaseViewer {
 
         this.eventBus.dispatch("pagesinit", { source: this });
 
+        pdfDocument.getMetadata().then(({ info }) => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while the metadata resolved.
+          }
+          if (info.Language) {
+            this.viewer.lang = info.Language;
+          }
+        });
+
         if (this.defaultRenderingQueue) {
           this.update();
         }
@@ -789,6 +798,7 @@ class BaseViewer {
     // ... and reset the Scroll mode CSS class(es) afterwards.
     this._updateScrollMode();
 
+    this.viewer.removeAttribute("lang");
     // Reset all PDF document permissions.
     this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 
