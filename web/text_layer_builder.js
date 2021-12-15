@@ -15,10 +15,8 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
-/** @typedef {import("./ui_utils").EventBus} EventBus */
 
 import { renderTextLayer } from "pdfjs-lib";
 
@@ -221,36 +219,4 @@ class TextLayerBuilder {
   }
 }
 
-/**
- * @implements IPDFTextLayerFactory
- */
-class DefaultTextLayerFactory {
-  /**
-   * @param {HTMLDivElement} textLayerDiv
-   * @param {number} pageIndex
-   * @param {PageViewport} viewport
-   * @param {boolean} enhanceTextSelection
-   * @param {EventBus} eventBus
-   * @param {TextHighlighter} highlighter
-   * @returns {TextLayerBuilder}
-   */
-  createTextLayerBuilder(
-    textLayerDiv,
-    pageIndex,
-    viewport,
-    enhanceTextSelection = false,
-    eventBus,
-    highlighter
-  ) {
-    return new TextLayerBuilder({
-      textLayerDiv,
-      pageIndex,
-      viewport,
-      enhanceTextSelection,
-      eventBus,
-      highlighter,
-    });
-  }
-}
-
-export { DefaultTextLayerFactory, TextLayerBuilder };
+export { TextLayerBuilder };

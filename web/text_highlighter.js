@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils").EventBus} EventBus */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_find_controller").PDFFindController} PDFFindController */
-/** @typedef {import("./ui_utils").EventBus} EventBus */
 
 /**
  * @typedef {Object} TextHighlighterOptions

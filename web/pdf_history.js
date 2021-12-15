@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
-/** @typedef {import("./ui_utils").EventBus} EventBus */
 
 import {
   isValidRotation,

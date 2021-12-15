@@ -25,6 +25,13 @@ const VERTICAL_PADDING = 5;
 
 const LOADINGBAR_END_OFFSET_VAR = "--loadingBar-end-offset";
 
+const RenderingStates = {
+  INITIAL: 0,
+  RUNNING: 1,
+  PAUSED: 2,
+  FINISHED: 3,
+};
+
 const PresentationModeState = {
   UNKNOWN: 0,
   NORMAL: 1,
@@ -832,6 +839,7 @@ export {
   PresentationModeState,
   ProgressBar,
   RendererType,
+  RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,
   scrollIntoView,
