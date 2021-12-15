@@ -17,9 +17,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
-/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 
-import { SimpleLinkService } from "./pdf_link_service.js";
 import { XfaLayer } from "pdfjs-lib";
 
 /**
@@ -122,30 +120,4 @@ class XfaLayerBuilder {
   }
 }
 
-/**
- * @implements IPDFXfaLayerFactory
- */
-class DefaultXfaLayerFactory {
-  /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {AnnotationStorage} [annotationStorage]
-   * @param {Object} [xfaHtml]
-   */
-  createXfaLayerBuilder(
-    pageDiv,
-    pdfPage,
-    annotationStorage = null,
-    xfaHtml = null
-  ) {
-    return new XfaLayerBuilder({
-      pageDiv,
-      pdfPage,
-      annotationStorage,
-      linkService: new SimpleLinkService(),
-      xfaHtml,
-    });
-  }
-}
-
-export { DefaultXfaLayerFactory, XfaLayerBuilder };
+export { XfaLayerBuilder };

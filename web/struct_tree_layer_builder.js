@@ -14,8 +14,6 @@
  */
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
 
 const PDF_ROLE_TO_HTML_ROLE = {
   // Document level structure types
@@ -138,19 +136,4 @@ class StructTreeLayerBuilder {
   }
 }
 
-/**
- * @implements IPDFStructTreeLayerFactory
- */
-class DefaultStructTreeLayerFactory {
-  /**
-   * @param {PDFPageProxy} pdfPage
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder(pdfPage) {
-    return new StructTreeLayerBuilder({
-      pdfPage,
-    });
-  }
-}
-
-export { DefaultStructTreeLayerFactory, StructTreeLayerBuilder };
+export { StructTreeLayerBuilder };

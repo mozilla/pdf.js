@@ -19,15 +19,9 @@
 /** @typedef {import("./pdf_thumbnail_viewer").PDFThumbnailViewer} PDFThumbnailViewer */
 
 import { RenderingCancelledException } from "pdfjs-lib";
+import { RenderingStates } from "./ui_utils.js";
 
 const CLEANUP_TIMEOUT = 30000;
-
-const RenderingStates = {
-  INITIAL: 0,
-  RUNNING: 1,
-  PAUSED: 2,
-  FINISHED: 3,
-};
 
 /**
  * Controls rendering of the views for pages and thumbnails.
@@ -216,4 +210,4 @@ class PDFRenderingQueue {
   }
 }
 
-export { PDFRenderingQueue, RenderingStates };
+export { PDFRenderingQueue };

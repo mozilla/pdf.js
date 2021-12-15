@@ -14,20 +14,20 @@
  */
 
 /** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
+/** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
-/** @typedef {import("./ui_utils").EventBus} EventBus */
 
 import {
   getVisibleElements,
   isValidRotation,
+  RenderingStates,
   scrollIntoView,
   watchScroll,
 } from "./ui_utils.js";
 import { PDFThumbnailView, TempImageFactory } from "./pdf_thumbnail_view.js";
-import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const THUMBNAIL_SCROLL_MARGIN = -19;
 const THUMBNAIL_SELECTED_CLASS = "selected";
