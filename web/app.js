@@ -809,7 +809,6 @@ const PDFViewerApplication = {
       const { container } = this.appConfig.errorWrapper;
       container.hidden = true;
     }
-    this.appConfig.viewerContainer.removeAttribute("lang");
 
     if (!this.pdfLoadingTask) {
       return;
@@ -1541,10 +1540,6 @@ const PDFViewerApplication = {
         `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
         `(PDF.js: ${version || "-"})`
     );
-
-    if (info.Language) {
-      this.appConfig.viewerContainer.lang = info.Language;
-    }
     let pdfTitle = info?.Title;
 
     const metadataTitle = metadata?.get("dc:title");
