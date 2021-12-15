@@ -18,10 +18,8 @@ import {
   animationStarted,
   apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
-  AutomationEventBus,
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
-  EventBus,
   getActiveOrFocusedElement,
   isValidRotation,
   isValidScrollMode,
@@ -37,6 +35,7 @@ import {
   TextLayerMode,
 } from "./ui_utils.js";
 import { AppOptions, compatibilityParams, OptionKind } from "./app_options.js";
+import { AutomationEventBus, EventBus } from "./event_utils.js";
 import {
   build,
   createPromiseCapability,
