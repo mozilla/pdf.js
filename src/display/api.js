@@ -2406,6 +2406,8 @@ class WorkerTransport {
 
   #pagePromises = new Map();
 
+  #metadataPromise = null;
+
   constructor(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
@@ -2530,6 +2532,7 @@ class WorkerTransport {
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();
+      this.#metadataPromise = null;
       this._getFieldObjectsPromise = null;
       this._hasJSActionsPromise = null;
 
@@ -3063,7 +3066,7 @@ class WorkerTransport {
   }
 
   getMetadata() {
-    return this.messageHandler
+    return (this.#metadataPromise ||= this.messageHandler
       .sendWithPromise("GetMetadata", null)
       .then(results => {
         return {
@@ -3072,7 +3075,7 @@ class WorkerTransport {
           contentDispositionFilename: this._fullReader?.filename ?? null,
           contentLength: this._fullReader?.contentLength ?? null,
         };
-      });
+      }));
   }
 
   getMarkInfo() {
@@ -3098,6 +3101,7 @@ class WorkerTransport {
     if (!keepLoadedFonts) {
       this.fontLoader.clear();
     }
+    this.#metadataPromise = null;
     this._getFieldObjectsPromise = null;
     this._hasJSActionsPromise = null;
   }
