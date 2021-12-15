@@ -70,9 +70,13 @@ class Catalog {
     this.xref = xref;
 
     this._catDict = xref.getCatalogObj();
-    if (!isDict(this._catDict)) {
+    if (!(this._catDict instanceof Dict)) {
       throw new FormatError("Catalog object is not a dictionary.");
     }
+    // Given that `XRef.parse` will both fetch *and* validate the /Pages-entry,
+    // the following call must always succeed here:
+    this.toplevelPagesDict; // eslint-disable-line no-unused-expressions
+
     this._actualNumPages = null;
 
     this.fontCache = new RefSetCache();
@@ -1089,8 +1093,13 @@ class Catalog {
 
   getPageDict(pageIndex) {
     const capability = createPromiseCapability();
-    const nodesToVisit = [this._catDict.getRaw("Pages")];
+    const nodesToVisit = [this.toplevelPagesDict];
     const visitedNodes = new RefSet();
+
+    const pagesRef = this._catDict.getRaw("Pages");
+    if (pagesRef instanceof Ref) {
+      visitedNodes.put(pagesRef);
+    }
     const xref = this.xref,
       pageKidsCountCache = this.pageKidsCountCache;
     let currentPageIndex = 0;
@@ -1099,7 +1108,7 @@ class Catalog {
       while (nodesToVisit.length) {
         const currentNode = nodesToVisit.pop();
 
-        if (isRef(currentNode)) {
+        if (currentNode instanceof Ref) {
           const count = pageKidsCountCache.get(currentNode);
           // Skip nodes where the page can't be.
           if (count >= 0 && currentPageIndex + count <= pageIndex) {
@@ -1139,7 +1148,7 @@ class Catalog {
         }
 
         // Must be a child page dictionary.
-        if (!isDict(currentNode)) {
+        if (!(currentNode instanceof Dict)) {
           capability.reject(
             new FormatError(
               "Page dictionary kid reference points to wrong type of object."
@@ -1228,6 +1237,11 @@ class Catalog {
   getAllPageDicts(recoveryMode = false) {
     const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
     const visitedNodes = new RefSet();
+
+    const pagesRef = this._catDict.getRaw("Pages");
+    if (pagesRef instanceof Ref) {
+      visitedNodes.put(pagesRef);
+    }
     const map = new Map();
     let pageIndex = 0;
 
