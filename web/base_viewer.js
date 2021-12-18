@@ -207,6 +207,8 @@ class BaseViewer {
 
   #scrollModePageState = null;
 
+  #onVisibilityChange = null;
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -546,7 +548,29 @@ class BaseViewer {
     ) {
       return Promise.resolve();
     }
-    return this._onePageRenderedCapability.promise;
+
+    // Handle the window/tab becoming inactive *after* rendering has started;
+    // fixes (another part of) bug 1746213.
+    const visibilityChangePromise = new Promise(resolve => {
+      this.#onVisibilityChange = () => {
+        if (document.visibilityState !== "hidden") {
+          return;
+        }
+        resolve();
+
+        document.removeEventListener(
+          "visibilitychange",
+          this.#onVisibilityChange
+        );
+        this.#onVisibilityChange = null;
+      };
+      document.addEventListener("visibilitychange", this.#onVisibilityChange);
+    });
+
+    return Promise.race([
+      this._onePageRenderedCapability.promise,
+      visibilityChangePromise,
+    ]);
   }
 
   /**
@@ -618,6 +642,14 @@ class BaseViewer {
 
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
+
+      if (this.#onVisibilityChange) {
+        document.removeEventListener(
+          "visibilitychange",
+          this.#onVisibilityChange
+        );
+        this.#onVisibilityChange = null;
+      }
     };
     this.eventBus._on("pagerendered", this._onAfterDraw);
 
@@ -817,6 +849,13 @@ class BaseViewer {
     if (this._onAfterDraw) {
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
+    }
+    if (this.#onVisibilityChange) {
+      document.removeEventListener(
+        "visibilitychange",
+        this.#onVisibilityChange
+      );
+      this.#onVisibilityChange = null;
     }
     // Remove the pages from the DOM...
     this.viewer.textContent = "";
