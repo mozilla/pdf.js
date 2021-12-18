@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+
 import { createObjectURL, createValidAbsoluteUrl, isPdfFile } from "pdfjs-lib";
 import { compatibilityParams } from "./app_options.js";
 
@@ -42,6 +44,9 @@ function download(blobUrl, filename) {
   a.remove();
 }
 
+/**
+ * @implements {IDownloadManager}
+ */
 class DownloadManager {
   constructor() {
     this._openBlobUrls = new WeakMap();
