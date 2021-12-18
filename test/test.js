@@ -25,6 +25,7 @@ var puppeteer = require("puppeteer");
 var url = require("url");
 var testUtils = require("./testutils.js");
 const dns = require("dns");
+const readline = require("readline");
 const yargs = require("yargs");
 
 // Chrome uses host `127.0.0.1` in the browser's websocket endpoint URL while
@@ -229,14 +230,17 @@ function updateRefImages() {
     sync(false); // don't remove tmp/ for botio
     return;
   }
-  testUtils.confirm(
+
+  const reader = readline.createInterface(process.stdin, process.stdout);
+  reader.question(
     "Would you like to update the master copy in ref/? [yn] ",
-    function (confirmed) {
-      if (confirmed) {
+    function (answer) {
+      if (answer.toLowerCase() === "y") {
         sync(true);
       } else {
         console.log("  OK, not updating.");
       }
+      reader.close();
     }
   );
 }
@@ -358,13 +362,16 @@ function startRefTest(masterMode, showRefImages) {
       }
       console.log("Temporary snapshot dir tmp/ is still around.");
       console.log("tmp/ can be removed if it has nothing you need.");
-      testUtils.confirm(
+
+      const reader = readline.createInterface(process.stdin, process.stdout);
+      reader.question(
         "SHOULD THIS SCRIPT REMOVE tmp/? THINK CAREFULLY [yn] ",
-        function (confirmed) {
-          if (confirmed) {
+        function (answer) {
+          if (answer.toLowerCase() === "y") {
             testUtils.removeDirSync(refsTmpDir);
           }
           setup();
+          reader.close();
         }
       );
     } else {
