@@ -533,11 +533,14 @@ class BaseViewer {
     // `this._onePageRenderedCapability` thus won't be resolved.
     // To ensure that automatic printing, on document load, still works even in
     // those cases we force-allow fetching of all pages when:
+    //  - The current window/tab is inactive, which will prevent rendering since
+    //    `requestAnimationFrame` is being used; fixes bug 1746213.
     //  - The viewer is hidden in the DOM, e.g. in a `display: none` <iframe>
     //    element; fixes bug 1618621.
     //  - The viewer is visible, but none of the pages are (e.g. if the
     //    viewer is very small); fixes bug 1618955.
     if (
+      document.visibilityState === "hidden" ||
       !this.container.offsetParent ||
       this._getVisiblePages().views.length === 0
     ) {
