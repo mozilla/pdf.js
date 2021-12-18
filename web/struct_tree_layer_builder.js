@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 
 const PDF_ROLE_TO_HTML_ROLE = {
   // Document level structure types
@@ -76,7 +75,7 @@ const HEADING_PATTERN = /^H(\d+)$/;
 
 /**
  * @typedef {Object} StructTreeLayerBuilderOptions
- * @property {PDFPage} pdfPage
+ * @property {PDFPageProxy} pdfPage
  */
 
 class StructTreeLayerBuilder {
@@ -137,19 +136,4 @@ class StructTreeLayerBuilder {
   }
 }
 
-/**
- * @implements IPDFStructTreeLayerFactory
- */
-class DefaultStructTreeLayerFactory {
-  /**
-   * @param {PDFPage} pdfPage
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder(pdfPage) {
-    return new StructTreeLayerBuilder({
-      pdfPage,
-    });
-  }
-}
-
-export { DefaultStructTreeLayerFactory, StructTreeLayerBuilder };
+export { StructTreeLayerBuilder };

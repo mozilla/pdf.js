@@ -52,7 +52,7 @@
     "terser": "^5.10.0",
     "through2": "^4.0.2",
     "ttest": "^3.0.0",
-    "typescript": "~4.4.4",
+    "typescript": "^4.5.4",
     "typogr": "^0.6.8",
     "vinyl": "^2.2.1",
     "vinyl-fs": "^3.0.3",
