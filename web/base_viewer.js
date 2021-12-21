@@ -207,6 +207,8 @@ class BaseViewer {
 
   #scrollModePageState = null;
 
+  #onVisibilityChange = null;
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -533,17 +535,42 @@ class BaseViewer {
     // `this._onePageRenderedCapability` thus won't be resolved.
     // To ensure that automatic printing, on document load, still works even in
     // those cases we force-allow fetching of all pages when:
+    //  - The current window/tab is inactive, which will prevent rendering since
+    //    `requestAnimationFrame` is being used; fixes bug 1746213.
     //  - The viewer is hidden in the DOM, e.g. in a `display: none` <iframe>
     //    element; fixes bug 1618621.
     //  - The viewer is visible, but none of the pages are (e.g. if the
     //    viewer is very small); fixes bug 1618955.
     if (
+      document.visibilityState === "hidden" ||
       !this.container.offsetParent ||
       this._getVisiblePages().views.length === 0
     ) {
       return Promise.resolve();
     }
-    return this._onePageRenderedCapability.promise;
+
+    // Handle the window/tab becoming inactive *after* rendering has started;
+    // fixes (another part of) bug 1746213.
+    const visibilityChangePromise = new Promise(resolve => {
+      this.#onVisibilityChange = () => {
+        if (document.visibilityState !== "hidden") {
+          return;
+        }
+        resolve();
+
+        document.removeEventListener(
+          "visibilitychange",
+          this.#onVisibilityChange
+        );
+        this.#onVisibilityChange = null;
+      };
+      document.addEventListener("visibilitychange", this.#onVisibilityChange);
+    });
+
+    return Promise.race([
+      this._onePageRenderedCapability.promise,
+      visibilityChangePromise,
+    ]);
   }
 
   /**
@@ -615,6 +642,14 @@ class BaseViewer {
 
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
+
+      if (this.#onVisibilityChange) {
+        document.removeEventListener(
+          "visibilitychange",
+          this.#onVisibilityChange
+        );
+        this.#onVisibilityChange = null;
+      }
     };
     this.eventBus._on("pagerendered", this._onAfterDraw);
 
@@ -814,6 +849,13 @@ class BaseViewer {
     if (this._onAfterDraw) {
       this.eventBus._off("pagerendered", this._onAfterDraw);
       this._onAfterDraw = null;
+    }
+    if (this.#onVisibilityChange) {
+      document.removeEventListener(
+        "visibilitychange",
+        this.#onVisibilityChange
+      );
+      this.#onVisibilityChange = null;
     }
     // Remove the pages from the DOM...
     this.viewer.textContent = "";
