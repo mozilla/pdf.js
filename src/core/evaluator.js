@@ -2661,12 +2661,14 @@ class PartialEvaluator {
     }
 
     function addFakeSpaces(width, transf) {
+      const font = textState.font;
       if (
         textContentItem.spaceInFlowMin <= width &&
         width <= textContentItem.spaceInFlowMax
       ) {
         if (textContentItem.initialized) {
           textContentItem.str.push(" ");
+          textContentItem.rawStr.push([glyphUnicode, (!font.vertical ? textContentItem.width : textContentItem.height) + width]);
         }
         return false;
       }
@@ -2691,6 +2693,7 @@ class PartialEvaluator {
         fontName,
         hasEOL: false,
       });
+      textContentItem.rawStr.push([glyphUnicode, width]);
 
       return true;
     }
