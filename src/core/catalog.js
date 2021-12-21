@@ -70,9 +70,13 @@ class Catalog {
     this.xref = xref;
 
     this._catDict = xref.getCatalogObj();
-    if (!isDict(this._catDict)) {
+    if (!(this._catDict instanceof Dict)) {
       throw new FormatError("Catalog object is not a dictionary.");
     }
+    // Given that `XRef.parse` will both fetch *and* validate the /Pages-entry,
+    // the following call must always succeed here:
+    this.toplevelPagesDict; // eslint-disable-line no-unused-expressions
+
     this._actualNumPages = null;
 
     this.fontCache = new RefSetCache();
@@ -1089,8 +1093,13 @@ class Catalog {
 
   getPageDict(pageIndex) {
     const capability = createPromiseCapability();
-    const nodesToVisit = [this._catDict.getRaw("Pages")];
+    const nodesToVisit = [this.toplevelPagesDict];
     const visitedNodes = new RefSet();
+
+    const pagesRef = this._catDict.getRaw("Pages");
+    if (pagesRef instanceof Ref) {
+      visitedNodes.put(pagesRef);
+    }
     const xref = this.xref,
       pageKidsCountCache = this.pageKidsCountCache;
     let currentPageIndex = 0;
@@ -1099,10 +1108,10 @@ class Catalog {
       while (nodesToVisit.length) {
         const currentNode = nodesToVisit.pop();
 
-        if (isRef(currentNode)) {
+        if (currentNode instanceof Ref) {
           const count = pageKidsCountCache.get(currentNode);
           // Skip nodes where the page can't be.
-          if (count > 0 && currentPageIndex + count < pageIndex) {
+          if (count >= 0 && currentPageIndex + count <= pageIndex) {
             currentPageIndex += count;
             continue;
           }
@@ -1117,13 +1126,14 @@ class Catalog {
 
           xref.fetchAsync(currentNode).then(function (obj) {
             if (isDict(obj, "Page") || (isDict(obj) && !obj.has("Kids"))) {
+              // Cache the Page reference, since it can *greatly* improve
+              // performance by reducing redundant lookups in long documents
+              // where all nodes are found at *one* level of the tree.
+              if (currentNode && !pageKidsCountCache.has(currentNode)) {
+                pageKidsCountCache.put(currentNode, 1);
+              }
+
               if (pageIndex === currentPageIndex) {
-                // Cache the Page reference, since it can *greatly* improve
-                // performance by reducing redundant lookups in long documents
-                // where all nodes are found at *one* level of the tree.
-                if (currentNode && !pageKidsCountCache.has(currentNode)) {
-                  pageKidsCountCache.put(currentNode, 1);
-                }
                 capability.resolve([obj, currentNode]);
               } else {
                 currentPageIndex++;
@@ -1138,7 +1148,7 @@ class Catalog {
         }
 
         // Must be a child page dictionary.
-        if (!isDict(currentNode)) {
+        if (!(currentNode instanceof Dict)) {
           capability.reject(
             new FormatError(
               "Page dictionary kid reference points to wrong type of object."
@@ -1224,17 +1234,22 @@ class Catalog {
    * Eagerly fetches the entire /Pages-tree; should ONLY be used as a fallback.
    * @returns {Map}
    */
-  getAllPageDicts() {
+  getAllPageDicts(recoveryMode = false) {
     const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
     const visitedNodes = new RefSet();
+
+    const pagesRef = this._catDict.getRaw("Pages");
+    if (pagesRef instanceof Ref) {
+      visitedNodes.put(pagesRef);
+    }
     const map = new Map();
     let pageIndex = 0;
 
     function addPageDict(pageDict, pageRef) {
       map.set(pageIndex++, [pageDict, pageRef]);
     }
-    function addPageError(msg) {
-      map.set(pageIndex++, [new FormatError(msg), null]);
+    function addPageError(error) {
+      map.set(pageIndex++, [error, null]);
     }
 
     while (queue.length > 0) {
@@ -1248,12 +1263,16 @@ class Catalog {
         if (ex instanceof MissingDataException) {
           throw ex;
         }
-        if (ex instanceof XRefEntryException) {
+        if (ex instanceof XRefEntryException && !recoveryMode) {
           throw ex;
         }
+        addPageError(ex);
+        break;
       }
       if (!Array.isArray(kids)) {
-        addPageError("Page dictionary kids object is not an array.");
+        addPageError(
+          new FormatError("Page dictionary kids object is not an array.")
+        );
         break;
       }
 
@@ -1271,13 +1290,17 @@ class Catalog {
           if (ex instanceof MissingDataException) {
             throw ex;
           }
-          if (ex instanceof XRefEntryException) {
+          if (ex instanceof XRefEntryException && !recoveryMode) {
             throw ex;
           }
+          addPageError(ex);
+          break;
         }
         // Prevent circular references in the /Pages tree.
         if (visitedNodes.has(kidObj)) {
-          addPageError("Pages tree contains circular reference.");
+          addPageError(
+            new FormatError("Pages tree contains circular reference.")
+          );
           break;
         }
         visitedNodes.put(kidObj);
@@ -1289,7 +1312,9 @@ class Catalog {
       }
       if (!(obj instanceof Dict)) {
         addPageError(
-          "Page dictionary kid reference points to wrong type of object."
+          new FormatError(
+            "Page dictionary kid reference points to wrong type of object."
+          )
         );
         break;
       }

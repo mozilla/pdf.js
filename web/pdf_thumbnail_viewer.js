@@ -13,14 +13,21 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
+
 import {
   getVisibleElements,
   isValidRotation,
+  RenderingStates,
   scrollIntoView,
   watchScroll,
 } from "./ui_utils.js";
 import { PDFThumbnailView, TempImageFactory } from "./pdf_thumbnail_view.js";
-import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const THUMBNAIL_SCROLL_MARGIN = -19;
 const THUMBNAIL_SELECTED_CLASS = "selected";
@@ -37,8 +44,6 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
 
 /**
  * Viewer control to display thumbnails for pages in a PDF document.
- *
- * @implements {IRenderableView}
  */
 class PDFThumbnailViewer {
   /**
@@ -172,6 +177,9 @@ class PDFThumbnailViewer {
     this.container.textContent = "";
   }
 
+  /**
+   * @param {PDFDocumentProxy} pdfDocument
+   */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
       this._cancelRendering();

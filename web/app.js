@@ -19,10 +19,8 @@ import {
   animationStarted,
   apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
-  AutomationEventBus,
   AutoPrintRegExp,
   DEFAULT_SCALE_VALUE,
-  EventBus,
   getActiveOrFocusedElement,
   isValidRotation,
   isValidScrollMode,
@@ -32,12 +30,14 @@ import {
   parseQueryString,
   ProgressBar,
   RendererType,
+  RenderingStates,
   ScrollMode,
   SidebarView,
   SpreadMode,
   TextLayerMode,
 } from "./ui_utils.js";
 import { AppOptions, compatibilityParams, OptionKind } from "./app_options.js";
+import { AutomationEventBus, EventBus } from "./event_utils.js";
 import {
   build,
   createPromiseCapability,
@@ -52,14 +52,12 @@ import {
   MissingPDFException,
   OPS,
   PDFWorker,
-  PermissionFlag,
   shadow,
   UnexpectedResponseException,
   UNSUPPORTED_FEATURES,
   version,
 } from "pdfjs-lib";
 import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
-import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
@@ -71,6 +69,7 @@ import { PDFLayerViewer } from "./pdf_layer_viewer.js";
 import { PDFLinkService } from "./pdf_link_service.js";
 import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
 import { PDFPresentationMode } from "./pdf_presentation_mode.js";
+import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PDFSidebar } from "./pdf_sidebar.js";
 import { PDFSidebarResizer } from "./pdf_sidebar_resizer.js";
@@ -83,7 +82,6 @@ import { ViewHistory } from "./view_history.js";
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
-const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -544,6 +542,7 @@ const PDFViewerApplication = {
       /** #495 modified by ngx-extended-pdf-viewer */
       pageViewMode: AppOptions.get("pageViewMode"),
       /** end of modification */
+      enablePermissions: AppOptions.get("enablePermissions"),
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -844,7 +843,6 @@ const PDFViewerApplication = {
       const { container } = this.appConfig.errorWrapper;
       container.hidden = true;
     }
-    this.appConfig.viewerContainer.removeAttribute("lang");
 
     if (!this.pdfLoadingTask) {
       return;
@@ -874,7 +872,6 @@ const PDFViewerApplication = {
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties.setDocument(null);
     }
-    webViewerResetPermissions();
     this.pdfLinkService.externalLinkEnabled = true;
     this._fellback = false;
     this.store = null;
@@ -1008,7 +1005,6 @@ const PDFViewerApplication = {
           }
           return this.l10n.get(key).then(msg => {
             this._documentError(msg, { message: exception?.message });
-            this.onError(exception);
             throw exception;
           });
         }
@@ -1372,10 +1368,6 @@ const PDFViewerApplication = {
             pdfViewer.focus();
           }
 
-          // Currently only the "copy"-permission is supported, hence we delay
-          // the `getPermissions` API call until *after* rendering has started.
-          this._initializePermissions(pdfDocument);
-
           // For documents with different page sizes, once all pages are
           // resolved, ensure that the correct location becomes visible on load.
           // (To reduce the risk, in very large and/or slow loading documents,
@@ -1414,11 +1406,18 @@ const PDFViewerApplication = {
         });
     });
 
-    pagesPromise.then(() => {
-      this._unblockDocumentLoadEvent();
+    pagesPromise.then(
+      () => {
+        this._unblockDocumentLoadEvent();
 
-      this._initializeAutoPrint(pdfDocument, openActionPromise);
-    });
+        this._initializeAutoPrint(pdfDocument, openActionPromise);
+      },
+      reason => {
+        this.l10n.get("loading_error").then(msg => {
+          this._documentError(msg, { message: reason?.message });
+        });
+      }
+    );
 
     onePageRendered.then(data => {
       this.externalServices.reportTelemetry({
@@ -1757,24 +1756,6 @@ const PDFViewerApplication = {
       // TODO: Re-factor the `PDFHistory` initialization to remove this hack
       // that's currently necessary to prevent weird initial history state.
       this.pdfHistory.push({ explicitDest: initialDest, pageNumber: null });
-    }
-  },
-
-  /**
-   * @private
-   */
-  async _initializePermissions(pdfDocument) {
-    const permissions = await pdfDocument.getPermissions();
-
-    if (pdfDocument !== this.pdfDocument) {
-      return; // The document was closed while the permissions resolved.
-    }
-    if (!permissions || !AppOptions.get("enablePermissions")) {
-      return;
-    }
-    // Currently only the "copy"-permission is supported.
-    if (!permissions.includes(PermissionFlag.COPY)) {
-      this.appConfig.viewerContainer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
   },
 
@@ -2410,15 +2391,6 @@ function webViewerOpenFileViaURL(file) {
       PDFViewerApplication._hideViewBookmark();
     }
   }
-}
-
-function webViewerResetPermissions() {
-  const { appConfig } = PDFViewerApplication;
-  if (!appConfig) {
-    return;
-  }
-  // Currently only the "copy"-permission is supported.
-  appConfig.viewerContainer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 }
 
 function webViewerPageRendered({ pageNumber, error }) {

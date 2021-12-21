@@ -13,7 +13,22 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./interfaces").IL10n} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
 import {
   AnnotationMode,
@@ -27,12 +42,12 @@ import {
   DEFAULT_SCALE,
   getOutputScale,
   RendererType,
+  RenderingStates,
   roundToDivide,
   TextLayerMode,
 } from "./ui_utils.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
-import { RenderingStates } from "./pdf_rendering_queue.js";
 import canvasSize from "canvas-size";
 import { warn } from "../src/shared/util.js";
 
@@ -78,6 +93,8 @@ const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
  * @implements {IRenderableView}
  */
 class PDFPageView {
+  #annotationMode = AnnotationMode.ENABLE_FORMS;
+
   /**
    * @param {PDFPageViewOptions} options
    */
@@ -98,7 +115,7 @@ class PDFPageView {
       options.optionalContentConfigPromise || null;
     this.hasRestrictedScaling = false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
-    this._annotationMode =
+    this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
@@ -599,7 +616,7 @@ class PDFPageView {
     this.textLayer = textLayer;
 
     if (
-      this._annotationMode !== AnnotationMode.DISABLE &&
+      this.#annotationMode !== AnnotationMode.DISABLE &&
       this.annotationLayerFactory
     ) {
       this._annotationCanvasMap ||= new Map();
@@ -609,7 +626,7 @@ class PDFPageView {
           pdfPage,
           /* annotationStorage = */ null,
           this.imageResourcesPath,
-          this._annotationMode === AnnotationMode.ENABLE_FORMS,
+          this.#annotationMode === AnnotationMode.ENABLE_FORMS,
           this.l10n,
           /* enableScripting = */ null,
           /* hasJSActionsPromise = */ null,
@@ -859,7 +876,7 @@ class PDFPageView {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
-      annotationMode: this._annotationMode,
+      annotationMode: this.#annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       background: PDFViewerApplicationOptions.get("pdfBackgroundColor"),
       annotationCanvasMap: this._annotationCanvasMap,
@@ -917,7 +934,7 @@ class PDFPageView {
     });
     const promise = pdfPage
       .getOperatorList({
-        annotationMode: this._annotationMode,
+        annotationMode: this.#annotationMode,
       })
       .then(opList => {
         ensureNotCancelled();

@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line no-unused-vars
 import { createPromiseCapability } from "pdfjs-lib";
 import { deburr } from "../external/lodash.deburr/index.js"; // #177

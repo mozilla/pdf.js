@@ -13,9 +13,26 @@
  * limitations under the License.
  */
 
+/** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
+
 import {
   AnnotationMode,
   createPromiseCapability,
+  PermissionFlag,
   PixelsPerInch,
   version,
 } from "pdfjs-lib";
@@ -33,6 +50,7 @@ import {
   MIN_SCALE,
   PresentationModeState,
   RendererType,
+  RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
   ScrollMode,
@@ -42,11 +60,11 @@ import {
   VERTICAL_PADDING,
   watchScroll,
 } from "./ui_utils.js";
-import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { PageFlip } from "./page-flip.module.js"; // #716 modified by ngx-extended-pdf-viewer
 import { PDFPageView } from "./pdf_page_view.js";
+import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextHighlighter } from "./text_highlighter.js";
@@ -55,10 +73,12 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 
 const DEFAULT_CACHE_SIZE = 10;
+const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 15000,
   FORCE_LAZY_PAGE_INIT: 7500,
+  PAUSE_EAGER_PAGE_INIT: 500,
 };
 
 /**
@@ -67,7 +87,7 @@ const PagesCountLimit = {
  * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
- * @property {DownloadManager} [downloadManager] - The download manager
+ * @property {IDownloadManager} [downloadManager] - The download manager
  *   component.
  * @property {PDFFindController} [findController] - The find controller
  *   component.
@@ -96,6 +116,8 @@ const PagesCountLimit = {
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enablePermissions] - Enables PDF document permissions,
+ *   when they exist. The default value is `false`.
  */
 
 class PDFPageViewBuffer {
@@ -168,9 +190,20 @@ class PDFPageViewBuffer {
 
 /**
  * Simple viewer control to display PDF content/pages.
+ *
+ * @implements {IPDFAnnotationLayerFactory}
+ * @implements {IPDFStructTreeLayerFactory}
+ * @implements {IPDFTextLayerFactory}
+ * @implements {IPDFXfaLayerFactory}
  */
 class BaseViewer {
   #buffer = null;
+
+  #annotationMode = AnnotationMode.ENABLE_FORMS;
+
+  #previousAnnotationMode = null;
+
+  #enablePermissions = false;
 
   #previousContainerHeight = 0;
 
@@ -224,7 +257,7 @@ class BaseViewer {
     this._scriptingManager = options.scriptingManager || null;
     this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
-    this._annotationMode =
+    this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
@@ -232,6 +265,7 @@ class BaseViewer {
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
+    this.#enablePermissions = options.enablePermissions || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -284,7 +318,7 @@ class BaseViewer {
    * @type {boolean}
    */
   get renderForms() {
-    return this._annotationMode === AnnotationMode.ENABLE_FORMS;
+    return this.#annotationMode === AnnotationMode.ENABLE_FORMS;
   }
 
   /**
@@ -645,9 +679,29 @@ class BaseViewer {
   }
 
   /**
-   * @private
+   * Currently only *some* permissions are supported.
    */
-  _onePageRenderedOrForceFetch() {
+  #initializePermissions(permissions) {
+    if (!permissions) {
+      return;
+    }
+
+    if (!permissions.includes(PermissionFlag.COPY)) {
+      this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
+    }
+
+    if (
+      !permissions.includes(PermissionFlag.MODIFY_ANNOTATIONS) &&
+      !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS)
+    ) {
+      if (this.#annotationMode === AnnotationMode.ENABLE_FORMS) {
+        this.#previousAnnotationMode = this.#annotationMode; // Allow resetting.
+        this.#annotationMode = AnnotationMode.ENABLE;
+      }
+    }
+  }
+
+  #onePageRenderedOrForceFetch() {
     // Unless the viewer *and* its pages are visible, rendering won't start and
     // `this._onePageRenderedCapability` thus won't be resolved.
     // To ensure that automatic printing, on document load, still works even in
@@ -666,7 +720,7 @@ class BaseViewer {
   }
 
   /**
-   * @param pdfDocument {PDFDocument}
+   * @param {PDFDocumentProxy} pdfDocument
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
@@ -692,6 +746,9 @@ class BaseViewer {
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
+    const permissionsPromise = this.#enablePermissions
+      ? pdfDocument.getPermissions()
+      : Promise.resolve();
 
     // Given that browsers don't handle huge amounts of DOM-elements very well,
     // enforce usage of PAGE-scrolling when loading *very* long/large documents.
@@ -703,12 +760,14 @@ class BaseViewer {
       this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
     }
 
-    this._pagesCapability.promise.then(() => {
-      this.eventBus.dispatch("pagesloaded", {
-        source: this,
-        pagesCount,
-      });
-    });
+    this._pagesCapability.promise.then(
+      () => {
+        this.eventBus.dispatch("pagesloaded", { source: this, pagesCount });
+      },
+      () => {
+        /* Prevent "Uncaught (in promise)"-messages in the console. */
+      }
+    );
 
     this._onBeforeDraw = evt => {
       const pageView = this._pages[evt.pageNumber - 1];
@@ -734,10 +793,14 @@ class BaseViewer {
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
-    firstPagePromise
-      .then(firstPdfPage => {
+    Promise.all([firstPagePromise, permissionsPromise])
+      .then(([firstPdfPage, permissions]) => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the first page resolved.
+        }
         this._firstPageCapability.resolve(firstPdfPage);
         this._optionalContentConfigPromise = optionalContentConfigPromise;
+        this.#initializePermissions(permissions);
 
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
@@ -750,7 +813,7 @@ class BaseViewer {
             ? this
             : null;
         const annotationLayerFactory =
-          this._annotationMode !== AnnotationMode.DISABLE ? this : null;
+          this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -765,7 +828,7 @@ class BaseViewer {
             textLayerFactory,
             textLayerMode: this.textLayerMode,
             annotationLayerFactory,
-            annotationMode: this._annotationMode,
+            annotationMode: this.#annotationMode,
             xfaLayerFactory,
             textHighlighterFactory: this,
             structTreeLayerFactory: this,
@@ -797,7 +860,7 @@ class BaseViewer {
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
-        this._onePageRenderedOrForceFetch().then(() => {
+        this.#onePageRenderedOrForceFetch().then(async () => {
           if (this.findController) {
             this.findController.setDocument(pdfDocument); // Enable searching.
           }
@@ -822,7 +885,7 @@ class BaseViewer {
             return;
           }
           for (let pageNum = 2; pageNum <= pagesCount; ++pageNum) {
-            pdfDocument.getPage(pageNum).then(
+            const promise = pdfDocument.getPage(pageNum).then(
               pdfPage => {
                 const pageView = this._pages[pageNum - 1];
                 if (!pageView.pdfPage) {
@@ -843,6 +906,10 @@ class BaseViewer {
                 }
               }
             );
+
+            if (pageNum % PagesCountLimit.PAUSE_EAGER_PAGE_INIT === 0) {
+              await promise;
+            }
           }
         });
 
@@ -852,12 +919,23 @@ class BaseViewer {
 
         this.eventBus.dispatch("pagesinit", { source: this });
 
+        pdfDocument.getMetadata().then(({ info }) => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while the metadata resolved.
+          }
+          if (info.Language) {
+            this.viewer.lang = info.Language;
+          }
+        });
+
         if (this.defaultRenderingQueue) {
           this.update();
         }
       })
       .catch(reason => {
         Window['ngxConsole'].error("Unable to initialize viewer", reason);
+
+        this._pagesCapability.reject(reason);
       });
   }
 
@@ -922,6 +1000,15 @@ class BaseViewer {
     this.viewer.textContent = "";
     // ... and reset the Scroll mode CSS class(es) afterwards.
     this._updateScrollMode();
+
+    this.viewer.removeAttribute("lang");
+    // Reset all PDF document permissions.
+    this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
+
+    if (this.#previousAnnotationMode !== null) {
+      this.#annotationMode = this.#previousAnnotationMode;
+      this.#previousAnnotationMode = null;
+    }
   }
 
   #ensurePageViewVisible() {
@@ -1294,7 +1381,7 @@ class BaseViewer {
         if (y === null && this._location) {
           x = this._location.left;
           y = this._location.top;
-        } else if (typeof y !== "number") {
+        } else if (typeof y !== "number" || y < 0) {
           // The "top" value isn't optional, according to the spec, however some
           // bad PDF generators will pretend that it is (fixes bug 1663390).
           y = pageHeight;
@@ -1724,7 +1811,7 @@ class BaseViewer {
 
   /**
    * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
    * @param {string} [imageResourcesPath] - Path for image resources, mainly
@@ -1736,7 +1823,7 @@ class BaseViewer {
    * @param {Object} [mouseState]
    * @param {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
-   * @param {Map<string, Canvas>} [annotationCanvasMap]
+   * @param {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(
@@ -1774,7 +1861,7 @@ class BaseViewer {
 
   /**
    * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
    * @returns {XfaLayerBuilder}
@@ -1790,7 +1877,7 @@ class BaseViewer {
   }
 
   /**
-   * @param {PDFPage} pdfPage
+   * @param {PDFPageProxy} pdfPage
    * @returns {StructTreeLayerBuilder}
    */
   createStructTreeLayerBuilder(pdfPage) {

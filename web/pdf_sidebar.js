@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 
-import { PresentationModeState, SidebarView } from "./ui_utils.js";
-import { RenderingStates } from "./pdf_rendering_queue.js";
+import {
+  PresentationModeState,
+  RenderingStates,
+  SidebarView,
+} from "./ui_utils.js";
 
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 
