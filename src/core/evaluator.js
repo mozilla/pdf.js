@@ -2668,7 +2668,7 @@ class PartialEvaluator {
       ) {
         if (textContentItem.initialized) {
           textContentItem.str.push(" ");
-          textContentItem.rawStr.push([glyphUnicode, (!font.vertical ? textContentItem.width : textContentItem.height) + width]);
+          textContentItem.rawStr.push([" ", (!font.vertical ? textContentItem.width : textContentItem.height) + width]);
         }
         return false;
       }
@@ -2693,7 +2693,7 @@ class PartialEvaluator {
         fontName,
         hasEOL: false,
       });
-      textContentItem.rawStr.push([glyphUnicode, width]);
+      textContentItem.rawStr.push([" ", width]);
 
       return true;
     }
