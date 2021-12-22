@@ -101,7 +101,7 @@ class PDFSidebar {
     this._addEventListeners();
   }
 
-  reset() {
+  async reset() {
     this.isInitialViewSet = false;
 
     this._hideUINotification(/* reset = */ true);
@@ -170,15 +170,15 @@ class PDFSidebar {
    * @param {boolean} [forceOpen] - Ensure that the sidebar is open.
    *                                The default value is `false`.
    */
-  switchView(view, forceOpen = false) {
-    this._switchView(view, forceOpen);
+  async switchView(view, forceOpen = false) {
+    await this._switchView(view, forceOpen);
   }
 
   /**
    * @returns {boolean} Indicating if `this._dispatchEvent` was called.
    * @private
    */
-  _switchView(view, forceOpen = false) {
+  async _switchView(view, forceOpen = false) {
     const isViewChanged = view !== this.active;
     let shouldForceRendering = false;
 
@@ -247,7 +247,7 @@ class PDFSidebar {
     );
 
     if (forceOpen && !this.isOpen) {
-      this.open();
+      await this.open();
       return true; // Opening will trigger rendering and dispatch the event.
     }
     if (shouldForceRendering) {
@@ -260,10 +260,11 @@ class PDFSidebar {
     return isViewChanged;
   }
 
-  open() {
+  async open() {
     if (this.isOpen) {
       return;
     }
+    await this.pdfThumbnailViewer.renderThumbnails();
     this.isOpen = true;
     this.toggleButton.classList.add("toggled");
     this.toggleButton.setAttribute("aria-expanded", "true");

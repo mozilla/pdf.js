@@ -187,50 +187,56 @@ class PDFThumbnailViewer {
     }
 
     this.pdfDocument = pdfDocument;
-    if (!pdfDocument) {
+  }
+
+  async renderThumbnails() {
+    if (!this.pdfDocument) {
       return;
     }
+    if (this.initialized) {
+      return;
+    }
+    this.initialized = true;
+    const pdfDocument = this.pdfDocument;
     const firstPagePromise = pdfDocument.getPage(1);
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
+    try {
+      const firstPdfPage = await firstPagePromise;
+      this._optionalContentConfigPromise = optionalContentConfigPromise;
 
-    firstPagePromise
-      .then(firstPdfPage => {
-        this._optionalContentConfigPromise = optionalContentConfigPromise;
+      const pagesCount = pdfDocument.numPages;
+      const viewport = firstPdfPage.getViewport({ scale: 1 });
+      const checkSetImageDisabled = () => {
+        return this._setImageDisabled;
+      };
 
-        const pagesCount = pdfDocument.numPages;
-        const viewport = firstPdfPage.getViewport({ scale: 1 });
-        const checkSetImageDisabled = () => {
-          return this._setImageDisabled;
-        };
+      for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+        const thumbnail = new PDFThumbnailView({
+          container: this.container,
+          id: pageNum,
+          defaultViewport: viewport.clone(),
+          optionalContentConfigPromise,
+          linkService: this.linkService,
+          renderingQueue: this.renderingQueue,
+          checkSetImageDisabled,
+          l10n: this.l10n,
+        });
+        this._thumbnails.push(thumbnail);
+      }
+      // Set the first `pdfPage` immediately, since it's already loaded,
+      // rather than having to repeat the `PDFDocumentProxy.getPage` call in
+      // the `this.#ensurePdfPageLoaded` method before rendering can start.
+      const firstThumbnailView = this._thumbnails[0];
+      if (firstThumbnailView) {
+        firstThumbnailView.setPdfPage(firstPdfPage);
+      }
 
-        for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-          const thumbnail = new PDFThumbnailView({
-            container: this.container,
-            id: pageNum,
-            defaultViewport: viewport.clone(),
-            optionalContentConfigPromise,
-            linkService: this.linkService,
-            renderingQueue: this.renderingQueue,
-            checkSetImageDisabled,
-            l10n: this.l10n,
-          });
-          this._thumbnails.push(thumbnail);
-        }
-        // Set the first `pdfPage` immediately, since it's already loaded,
-        // rather than having to repeat the `PDFDocumentProxy.getPage` call in
-        // the `this.#ensurePdfPageLoaded` method before rendering can start.
-        const firstThumbnailView = this._thumbnails[0];
-        if (firstThumbnailView) {
-          firstThumbnailView.setPdfPage(firstPdfPage);
-        }
-
-        // Ensure that the current thumbnail is always highlighted on load.
-        const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
-        thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
-      })
-      .catch(reason => {
-        Window['ngxConsole'].error("Unable to initialize thumbnail viewer", reason);
-      });
+      // Ensure that the current thumbnail is always highlighted on load.
+      const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
+      thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
+    } catch (reason) {
+      Window["ngxConsole"].error("Unable to initialize thumbnail viewer", reason);
+    }
   }
 
   /**
