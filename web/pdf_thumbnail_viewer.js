@@ -181,6 +181,7 @@ class PDFThumbnailViewer {
    * @param {PDFDocumentProxy} pdfDocument
    */
   setDocument(pdfDocument) {
+    this.initialized = false;
     if (this.pdfDocument) {
       this._cancelRendering();
       this._resetView();

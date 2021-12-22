@@ -250,6 +250,7 @@ class PDFSidebar {
       await this.open();
       return true; // Opening will trigger rendering and dispatch the event.
     }
+    await this.pdfThumbnailViewer.renderThumbnails();
     if (shouldForceRendering) {
       this._updateThumbnailViewer();
       this._forceRendering();
