@@ -1255,11 +1255,16 @@ class BaseViewer {
 
   _setScale(value, noScroll = false) {
     // #90 modified by ngx-extended-pdf-viewer
-    if (null === value) {
+    if (!value) {
       value = "auto";
     }
     // #90 end of modification
     let scale = parseFloat(value);
+    // #1095 modified by ngx-extended-pdf-viewer: prevent duplicate rendering
+    if (this._currentScale === scale) {
+      return; // nothing to do
+    }
+    // #1095 end of modification
 
     if (scale > 0) {
       this._setScaleUpdatePages(scale, value, noScroll, /* preset = */ false);

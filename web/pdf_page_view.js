@@ -839,31 +839,40 @@ class PDFPageView {
     const sfx = approximateFraction(outputScale.sx);
     const sfy = approximateFraction(outputScale.sy);
 
-    // modified by ngx-extended-pdf-viewer #387
+    // modified by ngx-extended-pdf-viewer #387, #1095
     const width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
     const height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
+    let divisor = 1;
     if (width >= 4096 || height >= 4096) {
-      if ((!!this.maxWidth) || (!canvasSize.test({ width, height }))) {
+      if (!!this.maxWidth || !canvasSize.test({ width, height })) {
         const max = this.determineMaxDimensions();
-        let divisor = Math.max(width / max, height / max);
-        const newScale = Math.floor(100 * this.scale / divisor) / 100; // round to integer percentages
-        divisor = this.scale / newScale;
-        this.scale = newScale;
+        divisor = Math.max(width / max, height / max);
+        if (divisor > 1) {
+          const newScale = Math.floor((100 * this.scale) / divisor) / 100; // round to integer percentages
+          divisor = this.scale / newScale; // re-calculate the divisor to reflect the rounding to percentages
+          // this.scale = newScale;
 
-        const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
-        PDFViewerApplicationOptions.set('maxZoom', newScale);
+          // const PDFViewerApplicationOptions = window.PDFViewerApplicationOptions;
+          // PDFViewerApplicationOptions.set("maxZoom", newScale);
 
-        PDFViewerApplication.pdfViewer.currentScaleValue = this.scale;
-        viewport.width /= divisor;
-        viewport.height /= divisor;
-        warn("Page " + this.id + ": Reduced the maximum zoom to " + newScale + " because the browser can't render larger canvases.");
+          // PDFViewerApplication.pdfViewer.currentScaleValue = this.scale;
+          // outputScale.sx *= divisor;
+          // outputScale.sy *= divisor;
+          viewport.width /= divisor;
+          viewport.height /= divisor;
+          warn(`Page ${this.id}: Reduced the maximum zoom to ${newScale} because the browser can't render larger canvases.`);
+        } else {
+          divisor = 1;
+        }
       }
     }
     // end of modification
     canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
-    canvas.style.width = roundToDivide(viewport.width, sfx[1]) + "px";
-    canvas.style.height = roundToDivide(viewport.height, sfy[1]) + "px";
+    // #1095 modified by ngx-extended-pdf-viewer: activate CSS zoom on huge scaling factors
+    canvas.style.width = roundToDivide(viewport.width * divisor, sfx[1]) + "px";
+    canvas.style.height = roundToDivide(viewport.height * divisor, sfy[1]) + "px";
+    // #1095 end of modification by ngx-extended-pdf-viewer
 
     // Add the viewport so it's known what it was originally drawn with.
     this.paintedViewportMap.set(canvas, viewport);
@@ -984,15 +993,16 @@ class PDFPageView {
     if (this.maxWidth) {
       return this.maxWidth;
     }
-    const checklist = [4096, // iOS
+    const checklist = [
+      4096, // iOS
       8192, // IE 9-10
       10836, // Android
       11180, // Firefox
       11402, // Android,
       14188,
-      16384
+      16384,
     ];
-    for (let width of checklist) {
+    for (const width of checklist) {
       if (!canvasSize.test({width: width+1, height: width+1})) {
         this.maxWidth = width;
         return this.maxWidth;
