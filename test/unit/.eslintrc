@@ -1,0 +1,10 @@
+{
+  "extends": [
+    "../.eslintrc"
+  ],
+
+  "rules": {
+    // Plugins
+    "import/no-unresolved": ["error", { "ignore": ["pdfjs/"] }],
+  },
+}

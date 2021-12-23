@@ -16,70 +16,97 @@
 import { AnnotationStorage } from "../../src/display/annotation_storage.js";
 
 describe("AnnotationStorage", function () {
-  describe("GetOrCreateValue", function () {
-    it("should get and set a new value in the annotation storage", function (done) {
+  describe("GetOrDefaultValue", function () {
+    it("should get and set a new value in the annotation storage", function () {
       const annotationStorage = new AnnotationStorage();
-      let value = annotationStorage.getOrCreateValue("123A", "hello world");
+      let value = annotationStorage.getValue("123A", {
+        value: "hello world",
+      }).value;
       expect(value).toEqual("hello world");
+
+      annotationStorage.setValue("123A", {
+        value: "hello world",
+      });
 
       // the second argument is the default value to use
       // if the key isn't in the storage
-      value = annotationStorage.getOrCreateValue("123A", "an other string");
+      value = annotationStorage.getValue("123A", {
+        value: "an other string",
+      }).value;
       expect(value).toEqual("hello world");
-      done();
+    });
+
+    it("should get set values and default ones in the annotation storage", function () {
+      const annotationStorage = new AnnotationStorage();
+      annotationStorage.setValue("123A", {
+        value: "hello world",
+        hello: "world",
+      });
+
+      const result = annotationStorage.getValue("123A", {
+        value: "an other string",
+        world: "hello",
+      });
+      expect(result).toEqual({
+        value: "hello world",
+        hello: "world",
+        world: "hello",
+      });
     });
   });
 
   describe("SetValue", function () {
-    it("should set a new value in the annotation storage", function (done) {
+    it("should set a new value in the annotation storage", function () {
       const annotationStorage = new AnnotationStorage();
-      annotationStorage.setValue("123A", "an other string");
-      const value = annotationStorage.getAll()["123A"];
+      annotationStorage.setValue("123A", { value: "an other string" });
+      const value = annotationStorage.getAll()["123A"].value;
       expect(value).toEqual("an other string");
-      done();
     });
 
-    it("should call onSetModified() if value is changed", function (done) {
+    it("should call onSetModified() if value is changed", function () {
       const annotationStorage = new AnnotationStorage();
       let called = false;
       const callback = function () {
         called = true;
       };
       annotationStorage.onSetModified = callback;
-      annotationStorage.getOrCreateValue("asdf", "original");
-      expect(called).toBe(false);
 
-      // not changing value
-      annotationStorage.setValue("asdf", "original");
-      expect(called).toBe(false);
+      annotationStorage.setValue("asdf", { value: "original" });
+      expect(called).toBe(true);
 
       // changing value
-      annotationStorage.setValue("asdf", "modified");
+      annotationStorage.setValue("asdf", { value: "modified" });
       expect(called).toBe(true);
-      done();
+
+      // not changing value
+      called = false;
+      annotationStorage.setValue("asdf", { value: "modified" });
+      expect(called).toBe(false);
     });
   });
 
   describe("ResetModified", function () {
-    it("should call onResetModified() if set", function (done) {
+    it("should call onResetModified() if set", function () {
       const annotationStorage = new AnnotationStorage();
       let called = false;
       const callback = function () {
         called = true;
       };
       annotationStorage.onResetModified = callback;
-      annotationStorage.getOrCreateValue("asdf", "original");
+      annotationStorage.setValue("asdf", { value: "original" });
+      annotationStorage.resetModified();
+      expect(called).toBe(true);
+      called = false;
 
       // not changing value
-      annotationStorage.setValue("asdf", "original");
+      annotationStorage.setValue("asdf", { value: "original" });
       annotationStorage.resetModified();
       expect(called).toBe(false);
 
       // changing value
-      annotationStorage.setValue("asdf", "modified");
+      annotationStorage.setValue("asdf", { value: "modified" });
       annotationStorage.resetModified();
       expect(called).toBe(true);
-      done();
     });
   });
 });

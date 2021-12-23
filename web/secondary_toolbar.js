@@ -15,7 +15,7 @@
 
 import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
-import { PDFSinglePageViewer } from "./pdf_single_page_viewer.js";
+import { PagesCountLimit } from "./base_viewer.js";
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
@@ -31,8 +31,8 @@ import { PDFSinglePageViewer } from "./pdf_single_page_viewer.js";
  * @property {HTMLButtonElement} printButton - Button to print the document.
  * @property {HTMLButtonElement} downloadButton - Button to download the
  *   document.
- * @property {HTMLLinkElement} viewBookmarkButton - Button to obtain a bookmark
- *   link to the current location in the document.
+ * @property {HTMLAnchorElement} viewBookmarkButton - Button to obtain a
+ *   bookmark link to the current location in the document.
  * @property {HTMLButtonElement} firstPageButton - Button to go to the first
  *   page in the document.
  * @property {HTMLButtonElement} lastPageButton - Button to go to the last page
@@ -91,6 +91,12 @@ class SecondaryToolbar {
         element: options.cursorHandToolButton,
         eventName: "switchcursortool",
         eventDetails: { tool: CursorTool.HAND },
+        close: true,
+      },
+      {
+        element: options.scrollPageButton,
+        eventName: "switchscrollmode",
+        eventDetails: { mode: ScrollMode.PAGE },
         close: true,
       },
       {
@@ -160,22 +166,6 @@ class SecondaryToolbar {
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus._on("resize", this._setMaxHeight.bind(this));
-
-    // Hide the Scroll/Spread mode buttons, when they're not applicable to the
-    // current `BaseViewer` instance (in particular `PDFSinglePageViewer`).
-    this.eventBus._on("baseviewerinit", evt => {
-      if (evt.source instanceof PDFSinglePageViewer) {
-        this.toolbarButtonContainer.classList.add(
-          "hiddenScrollModeButtons",
-          "hiddenSpreadModeButtons"
-        );
-      } else {
-        this.toolbarButtonContainer.classList.remove(
-          "hiddenScrollModeButtons",
-          "hiddenSpreadModeButtons"
-        );
-      }
-    });
   }
 
   /**
@@ -246,7 +236,11 @@ class SecondaryToolbar {
   }
 
   _bindScrollModeListener(buttons) {
-    function scrollModeChanged({ mode }) {
+    const scrollModeChanged = ({ mode }) => {
+      buttons.scrollPageButton.classList.toggle(
+        "toggled",
+        mode === ScrollMode.PAGE
+      );
       buttons.scrollVerticalButton.classList.toggle(
         "toggled",
         mode === ScrollMode.VERTICAL
@@ -260,13 +254,22 @@ class SecondaryToolbar {
         mode === ScrollMode.WRAPPED
       );
 
+      // Permanently *disable* the Scroll buttons when PAGE-scrolling is being
+      // enforced for *very* long/large documents; please see the `BaseViewer`.
+      const forceScrollModePage =
+        this.pagesCount > PagesCountLimit.FORCE_SCROLL_MODE_PAGE;
+      buttons.scrollPageButton.disabled = forceScrollModePage;
+      buttons.scrollVerticalButton.disabled = forceScrollModePage;
+      buttons.scrollHorizontalButton.disabled = forceScrollModePage;
+      buttons.scrollWrappedButton.disabled = forceScrollModePage;
+
       // Temporarily *disable* the Spread buttons when horizontal scrolling is
       // enabled, since the non-default Spread modes doesn't affect the layout.
       const isScrollModeHorizontal = mode === ScrollMode.HORIZONTAL;
       buttons.spreadNoneButton.disabled = isScrollModeHorizontal;
       buttons.spreadOddButton.disabled = isScrollModeHorizontal;
       buttons.spreadEvenButton.disabled = isScrollModeHorizontal;
-    }
+    };
     this.eventBus._on("scrollmodechanged", scrollModeChanged);
 
     this.eventBus._on("secondarytoolbarreset", evt => {
@@ -308,6 +311,7 @@ class SecondaryToolbar {
     this._setMaxHeight();
 
     this.toggleButton.classList.add("toggled");
+    this.toggleButton.setAttribute("aria-expanded", "true");
     this.toolbar.classList.remove("hidden");
   }
 
@@ -318,6 +322,7 @@ class SecondaryToolbar {
     this.opened = false;
     this.toolbar.classList.add("hidden");
     this.toggleButton.classList.remove("toggled");
+    this.toggleButton.setAttribute("aria-expanded", "false");
   }
 
   toggle() {

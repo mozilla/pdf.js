@@ -15,6 +15,9 @@
 
 import { removeNullCharacters } from "pdfjs-lib";
 
+const TREEITEM_OFFSET_TOP = -100; // px
+const TREEITEM_SELECTED_CLASS = "selected";
+
 class BaseTreeViewer {
   constructor(options) {
     if (this.constructor === BaseTreeViewer) {
@@ -27,7 +30,9 @@ class BaseTreeViewer {
   }
 
   reset() {
+    this._pdfDocument = null;
     this._lastToggleIsShow = true;
+    this._currentTreeItem = null;
 
     // Remove the tree from the DOM.
     this.container.textContent = "";
@@ -54,7 +59,12 @@ class BaseTreeViewer {
    * @private
    */
   _normalizeTextContent(str) {
-    return removeNullCharacters(str) || /* en dash = */ "\u2013";
+    // Chars in range [0x01-0x1F] will be replaced with a white space
+    // and 0x00 by "".
+    return (
+      removeNullCharacters(str, /* replaceInvisible */ true) ||
+      /* en dash = */ "\u2013"
+    );
   }
 
   /**
@@ -103,8 +113,62 @@ class BaseTreeViewer {
     this._toggleTreeItem(this.container, !this._lastToggleIsShow);
   }
 
+  /**
+   * @private
+   */
+  _finishRendering(fragment, count, hasAnyNesting = false) {
+    if (hasAnyNesting) {
+      this.container.classList.add("treeWithDeepNesting");
+
+      this._lastToggleIsShow = !fragment.querySelector(".treeItemsHidden");
+    }
+    this.container.appendChild(fragment);
+
+    this._dispatchEvent(count);
+  }
+
   render(params) {
     throw new Error("Not implemented: render");
+  }
+
+  /**
+   * @private
+   */
+  _updateCurrentTreeItem(treeItem = null) {
+    if (this._currentTreeItem) {
+      // Ensure that the current treeItem-selection is always removed.
+      this._currentTreeItem.classList.remove(TREEITEM_SELECTED_CLASS);
+      this._currentTreeItem = null;
+    }
+    if (treeItem) {
+      treeItem.classList.add(TREEITEM_SELECTED_CLASS);
+      this._currentTreeItem = treeItem;
+    }
+  }
+
+  /**
+   * @private
+   */
+  _scrollToCurrentTreeItem(treeItem) {
+    if (!treeItem) {
+      return;
+    }
+    // Ensure that the treeItem is *fully* expanded, such that it will first of
+    // all be visible and secondly that scrolling it into view works correctly.
+    let currentNode = treeItem.parentNode;
+    while (currentNode && currentNode !== this.container) {
+      if (currentNode.classList.contains("treeItem")) {
+        const toggler = currentNode.firstElementChild;
+        toggler?.classList.remove("treeItemsHidden");
+      }
+      currentNode = currentNode.parentNode;
+    }
+    this._updateCurrentTreeItem(treeItem);
+
+    this.container.scrollTo(
+      treeItem.offsetLeft,
+      treeItem.offsetTop + TREEITEM_OFFSET_TOP
+    );
   }
 }
 

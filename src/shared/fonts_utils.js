@@ -120,7 +120,7 @@ function readFontDictData(aString, aMap) {
   var fontDictDataTokens = [];
 
   var count = aString.length;
-  for (var i = 0; i < count; i) {
+  for (var i = 0; i < count; ) {
     var value = aString[i++] | 0;
     var token = null;
 

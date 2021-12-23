@@ -61,6 +61,18 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME || GENERIC")) {
 }
 
 function getViewerConfiguration() {
+  let errorWrapper = null;
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    errorWrapper = {
+      container: document.getElementById("errorWrapper"),
+      errorMessage: document.getElementById("errorMessage"),
+      closeButton: document.getElementById("errorClose"),
+      errorMoreInfo: document.getElementById("errorMoreInfo"),
+      moreInfoButton: document.getElementById("errorShowMore"),
+      lessInfoButton: document.getElementById("errorShowLess"),
+    };
+  }
+
   return {
     appContainer: document.body,
     mainContainer: document.getElementById("viewerContainer"),
@@ -70,7 +82,6 @@ function getViewerConfiguration() {
       container: document.getElementById("toolbarViewer"),
       numPages: document.getElementById("numPages"),
       pageNumber: document.getElementById("pageNumber"),
-      scaleSelectContainer: document.getElementById("scaleSelectContainer"),
       scaleSelect: document.getElementById("scaleSelect"),
       customScaleOption: document.getElementById("customScaleOption"),
       previous: document.getElementById("previous"),
@@ -103,6 +114,7 @@ function getViewerConfiguration() {
       pageRotateCcwButton: document.getElementById("pageRotateCcw"),
       cursorSelectToolButton: document.getElementById("cursorSelectTool"),
       cursorHandToolButton: document.getElementById("cursorHandTool"),
+      scrollPageButton: document.getElementById("scrollPage"),
       scrollVerticalButton: document.getElementById("scrollVertical"),
       scrollHorizontalButton: document.getElementById("scrollHorizontal"),
       scrollWrappedButton: document.getElementById("scrollWrapped"),
@@ -110,12 +122,6 @@ function getViewerConfiguration() {
       spreadOddButton: document.getElementById("spreadOdd"),
       spreadEvenButton: document.getElementById("spreadEven"),
       documentPropertiesButton: document.getElementById("documentProperties"),
-    },
-    fullscreen: {
-      contextFirstPage: document.getElementById("contextFirstPage"),
-      contextLastPage: document.getElementById("contextLastPage"),
-      contextPageRotateCw: document.getElementById("contextPageRotateCw"),
-      contextPageRotateCcw: document.getElementById("contextPageRotateCcw"),
     },
     sidebar: {
       // Divs (and sidebar button)
@@ -132,6 +138,11 @@ function getViewerConfiguration() {
       outlineView: document.getElementById("outlineView"),
       attachmentsView: document.getElementById("attachmentsView"),
       layersView: document.getElementById("layersView"),
+      // View-specific options
+      outlineOptionsContainer: document.getElementById(
+        "outlineOptionsContainer"
+      ),
+      currentOutlineItemButton: document.getElementById("currentOutlineItem"),
     },
     sidebarResizer: {
       outerContainer: document.getElementById("outerContainer"),
@@ -178,14 +189,7 @@ function getViewerConfiguration() {
         linearized: document.getElementById("linearizedField"),
       },
     },
-    errorWrapper: {
-      container: document.getElementById("errorWrapper"),
-      errorMessage: document.getElementById("errorMessage"),
-      closeButton: document.getElementById("errorClose"),
-      errorMoreInfo: document.getElementById("errorMoreInfo"),
-      moreInfoButton: document.getElementById("errorShowMore"),
-      lessInfoButton: document.getElementById("errorShowLess"),
-    },
+    errorWrapper,
     printContainer: document.getElementById("printContainer"),
     openFileInputName: "fileInput",
     debuggerScriptPath: "./debugger.js",
@@ -229,6 +233,12 @@ function webViewerLoad() {
 
     PDFViewerApplication.run(config);
   }
+}
+
+// Block the "load" event until all pages are loaded, to ensure that printing
+// works in Firefox; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
+if (document.blockUnblockOnload) {
+  document.blockUnblockOnload(true);
 }
 
 if (

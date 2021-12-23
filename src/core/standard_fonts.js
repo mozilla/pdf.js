@@ -15,12 +15,30 @@
 /* eslint no-var: error */
 
 import { getLookupTableFactory } from "./core_utils.js";
+import { normalizeFontName } from "./fonts_utils.js";
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
  * fonts and their acronyms.
  */
 const getStdFontMap = getLookupTableFactory(function (t) {
+  // The standard 14 fonts:
+  t["Times-Roman"] = "Times-Roman";
+  t.Helvetica = "Helvetica";
+  t.Courier = "Courier";
+  t.Symbol = "Symbol";
+  t["Times-Bold"] = "Times-Bold";
+  t["Helvetica-Bold"] = "Helvetica-Bold";
+  t["Courier-Bold"] = "Courier-Bold";
+  t.ZapfDingbats = "ZapfDingbats";
+  t["Times-Italic"] = "Times-Italic";
+  t["Helvetica-Oblique"] = "Helvetica-Oblique";
+  t["Courier-Oblique"] = "Courier-Oblique";
+  t["Times-BoldItalic"] = "Times-BoldItalic";
+  t["Helvetica-BoldOblique"] = "Helvetica-BoldOblique";
+  t["Courier-BoldOblique"] = "Courier-BoldOblique";
+
+  // Extra mappings
   t.ArialNarrow = "Helvetica";
   t["ArialNarrow-Bold"] = "Helvetica-Bold";
   t["ArialNarrow-BoldItalic"] = "Helvetica-BoldOblique";
@@ -41,7 +59,6 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t["Arial-BoldMT"] = "Helvetica-Bold";
   t["Arial-ItalicMT"] = "Helvetica-Oblique";
   t.ArialMT = "Helvetica";
-  t["Courier-Bold"] = "Courier-Bold";
   t["Courier-BoldItalic"] = "Courier-BoldOblique";
   t["Courier-Italic"] = "Courier-Oblique";
   t.CourierNew = "Courier";
@@ -52,12 +69,8 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t["CourierNewPS-BoldMT"] = "Courier-Bold";
   t["CourierNewPS-ItalicMT"] = "Courier-Oblique";
   t.CourierNewPSMT = "Courier";
-  t.Helvetica = "Helvetica";
-  t["Helvetica-Bold"] = "Helvetica-Bold";
   t["Helvetica-BoldItalic"] = "Helvetica-BoldOblique";
-  t["Helvetica-BoldOblique"] = "Helvetica-BoldOblique";
   t["Helvetica-Italic"] = "Helvetica-Oblique";
-  t["Helvetica-Oblique"] = "Helvetica-Oblique";
   t["Symbol-Bold"] = "Symbol";
   t["Symbol-BoldItalic"] = "Symbol";
   t["Symbol-Italic"] = "Symbol";
@@ -78,6 +91,28 @@ const getStdFontMap = getLookupTableFactory(function (t) {
   t["TimesNewRomanPSMT-Italic"] = "Times-Italic";
 });
 
+// Contains mapping for standard fonts and xfa fonts.
+const getFontNameToFileMap = getLookupTableFactory(function (t) {
+  t.Courier = "FoxitFixed.pfb";
+  t["Courier-Bold"] = "FoxitFixedBold.pfb";
+  t["Courier-BoldOblique"] = "FoxitFixedBoldItalic.pfb";
+  t["Courier-Oblique"] = "FoxitFixedItalic.pfb";
+  t.Helvetica = "FoxitSans.pfb";
+  t["Helvetica-Bold"] = "FoxitSansBold.pfb";
+  t["Helvetica-BoldOblique"] = "FoxitSansBoldItalic.pfb";
+  t["Helvetica-Oblique"] = "FoxitSansItalic.pfb";
+  t["Times-Roman"] = "FoxitSerif.pfb";
+  t["Times-Bold"] = "FoxitSerifBold.pfb";
+  t["Times-BoldItalic"] = "FoxitSerifBoldItalic.pfb";
+  t["Times-Italic"] = "FoxitSerifItalic.pfb";
+  t.Symbol = "FoxitSymbol.pfb";
+  t.ZapfDingbats = "FoxitDingbats.pfb";
+  t["LiberationSans-Regular"] = "LiberationSans-Regular.ttf";
+  t["LiberationSans-Bold"] = "LiberationSans-Bold.ttf";
+  t["LiberationSans-Italic"] = "LiberationSans-Italic.ttf";
+  t["LiberationSans-BoldItalic"] = "LiberationSans-BoldItalic.ttf";
+});
+
 /**
  * Holds the map of the non-standard fonts that might be included as
  * a standard fonts without glyph data.
@@ -95,6 +130,12 @@ const getNonStdFontMap = getLookupTableFactory(function (t) {
   t["ComicSansMS-Bold"] = "Comic Sans MS-Bold";
   t["ComicSansMS-BoldItalic"] = "Comic Sans MS-BoldItalic";
   t["ComicSansMS-Italic"] = "Comic Sans MS-Italic";
+  t["ItcSymbol-Bold"] = "Helvetica-Bold";
+  t["ItcSymbol-BoldItalic"] = "Helvetica-BoldOblique";
+  t["ItcSymbol-Book"] = "Helvetica";
+  t["ItcSymbol-BookItalic"] = "Helvetica-Oblique";
+  t["ItcSymbol-Medium"] = "Helvetica";
+  t["ItcSymbol-MediumItalic"] = "Helvetica-Oblique";
   t.LucidaConsole = "Courier";
   t["LucidaConsole-Bold"] = "Courier-Bold";
   t["LucidaConsole-BoldItalic"] = "Courier-BoldOblique";
@@ -203,6 +244,7 @@ const getSerifFonts = getLookupTableFactory(function (t) {
   t.Joanna = true;
   t.Korinna = true;
   t.Lexicon = true;
+  t.LiberationSerif = true;
   t["Liberation Serif"] = true;
   t["Linux Libertine"] = true;
   t.Literaturnaya = true;
@@ -437,12 +479,17 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[169] = 171;
   t[170] = 187;
   t[171] = 8230;
+  t[200] = 193;
+  t[203] = 205;
   t[210] = 218;
   t[223] = 711;
   t[224] = 321;
   t[225] = 322;
+  t[226] = 352;
   t[227] = 353;
+  t[228] = 381;
   t[229] = 382;
+  t[233] = 221;
   t[234] = 253;
   t[252] = 263;
   t[253] = 268;
@@ -452,11 +499,13 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[261] = 261;
   t[265] = 280;
   t[266] = 281;
+  t[267] = 282;
   t[268] = 283;
   t[269] = 313;
   t[275] = 323;
   t[276] = 324;
   t[278] = 328;
+  t[283] = 344;
   t[284] = 345;
   t[285] = 346;
   t[286] = 347;
@@ -680,14 +729,19 @@ const getSupplementalGlyphMapForArialBlack = getLookupTableFactory(function (
 const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[1] = 32;
   t[4] = 65;
+  t[6] = 193;
   t[17] = 66;
   t[18] = 67;
+  t[21] = 268;
   t[24] = 68;
   t[28] = 69;
+  t[30] = 201;
+  t[32] = 282;
   t[38] = 70;
   t[39] = 71;
   t[44] = 72;
   t[47] = 73;
+  t[49] = 205;
   t[58] = 74;
   t[60] = 75;
   t[62] = 76;
@@ -697,26 +751,35 @@ const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[87] = 80;
   t[89] = 81;
   t[90] = 82;
+  t[92] = 344;
   t[94] = 83;
+  t[97] = 352;
   t[100] = 84;
   t[104] = 85;
   t[115] = 86;
   t[116] = 87;
   t[121] = 88;
   t[122] = 89;
+  t[124] = 221;
   t[127] = 90;
+  t[129] = 381;
   t[258] = 97;
+  t[260] = 225;
   t[268] = 261;
   t[271] = 98;
   t[272] = 99;
   t[273] = 263;
+  t[275] = 269;
   t[282] = 100;
   t[286] = 101;
+  t[288] = 233;
+  t[290] = 283;
   t[295] = 281;
   t[296] = 102;
   t[336] = 103;
   t[346] = 104;
   t[349] = 105;
+  t[351] = 237;
   t[361] = 106;
   t[364] = 107;
   t[367] = 108;
@@ -728,15 +791,19 @@ const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[393] = 112;
   t[395] = 113;
   t[396] = 114;
+  t[398] = 345;
   t[400] = 115;
   t[401] = 347;
+  t[403] = 353;
   t[410] = 116;
   t[437] = 117;
   t[448] = 118;
   t[449] = 119;
   t[454] = 120;
   t[455] = 121;
+  t[457] = 253;
   t[460] = 122;
+  t[462] = 382;
   t[463] = 380;
   t[853] = 44;
   t[855] = 58;
@@ -764,12 +831,20 @@ const getSupplementalGlyphMapForCalibri = getLookupTableFactory(function (t) {
   t[1086] = 45;
 });
 
+function getStandardFontName(name) {
+  const fontName = normalizeFontName(name);
+  const stdFontMap = getStdFontMap();
+  return stdFontMap[fontName];
+}
+
 export {
-  getStdFontMap,
+  getFontNameToFileMap,
+  getGlyphMapForStandardFonts,
   getNonStdFontMap,
   getSerifFonts,
-  getSymbolsFonts,
-  getGlyphMapForStandardFonts,
+  getStandardFontName,
+  getStdFontMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
+  getSymbolsFonts,
 };

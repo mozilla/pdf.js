@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { warn } from "../shared/util.js";
 
 // Character types for symbols from 0000 to 00FF.
 // Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
 // prettier-ignore
-var baseTypes = [
+const baseTypes = [
   "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "S", "B", "S",
   "WS", "B", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN",
   "BN", "BN", "BN", "BN", "B", "B", "B", "S", "WS", "ON", "ON", "ET",
@@ -49,7 +48,7 @@ var baseTypes = [
 // empty string and issue a warning if we encounter this character. The
 // empty string is required to properly index the items after it.
 // prettier-ignore
-var arabicTypes = [
+const arabicTypes = [
   "AN", "AN", "AN", "AN", "AN", "AN", "ON", "ON", "AL", "ET", "ET", "AL",
   "CS", "AL", "ON", "ON", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM",
   "NSM", "NSM", "NSM", "NSM", "AL", "AL", "", "AL", "AL", "AL", "AL", "AL",
@@ -83,7 +82,8 @@ function isEven(i) {
 }
 
 function findUnequal(arr, start, value) {
-  for (var j = start, jj = arr.length; j < jj; ++j) {
+  let j, jj;
+  for (j = start, jj = arr.length; j < jj; ++j) {
     if (arr[j] !== value) {
       return j;
     }
@@ -92,14 +92,14 @@ function findUnequal(arr, start, value) {
 }
 
 function setValues(arr, start, end, value) {
-  for (var j = start; j < end; ++j) {
+  for (let j = start; j < end; ++j) {
     arr[j] = value;
   }
 }
 
 function reverseValues(arr, start, end) {
-  for (var i = start, j = end - 1; i < j; ++i, --j) {
-    var temp = arr[i];
+  for (let i = start, j = end - 1; i < j; ++i, --j) {
+    const temp = arr[i];
     arr[i] = arr[j];
     arr[j] = temp;
   }
@@ -117,12 +117,12 @@ function createBidiText(str, isLTR, vertical = false) {
 
 // These are used in bidi(), which is called frequently. We re-use them on
 // each call to avoid unnecessary allocations.
-var chars = [];
-var types = [];
+const chars = [];
+const types = [];
 
-function bidi(str, startLevel, vertical) {
-  var isLTR = true;
-  var strLength = str.length;
+function bidi(str, startLevel = -1, vertical = false) {
+  let isLTR = true;
+  const strLength = str.length;
   if (strLength === 0 || vertical) {
     return createBidiText(str, isLTR, vertical);
   }
@@ -130,14 +130,14 @@ function bidi(str, startLevel, vertical) {
   // Get types and fill arrays
   chars.length = strLength;
   types.length = strLength;
-  var numBidi = 0;
+  let numBidi = 0;
 
-  var i, ii;
+  let i, ii;
   for (i = 0; i < strLength; ++i) {
     chars[i] = str.charAt(i);
 
-    var charCode = str.charCodeAt(i);
-    var charType = "L";
+    const charCode = str.charCodeAt(i);
+    let charType = "L";
     if (charCode <= 0x00ff) {
       charType = baseTypes[charCode];
     } else if (0x0590 <= charCode && charCode <= 0x05f4) {
@@ -158,7 +158,8 @@ function bidi(str, startLevel, vertical) {
 
   // Detect the bidi method
   // - If there are no rtl characters then no bidi needed
-  // - If less than 30% chars are rtl then string is primarily ltr
+  // - If less than 30% chars are rtl then string is primarily ltr,
+  //   unless the string is very short.
   // - If more than 30% chars are rtl then string is primarily rtl
   if (numBidi === 0) {
     isLTR = true;
@@ -166,7 +167,7 @@ function bidi(str, startLevel, vertical) {
   }
 
   if (startLevel === -1) {
-    if (numBidi / strLength < 0.3) {
+    if (numBidi / strLength < 0.3 && strLength > 4) {
       isLTR = true;
       startLevel = 0;
     } else {
@@ -175,7 +176,7 @@ function bidi(str, startLevel, vertical) {
     }
   }
 
-  var levels = [];
+  const levels = [];
   for (i = 0; i < strLength; ++i) {
     levels[i] = startLevel;
   }
@@ -183,16 +184,16 @@ function bidi(str, startLevel, vertical) {
   /*
    X1-X10: skip most of this, since we are NOT doing the embeddings.
    */
-  var e = isOdd(startLevel) ? "R" : "L";
-  var sor = e;
-  var eor = sor;
+  const e = isOdd(startLevel) ? "R" : "L";
+  const sor = e;
+  const eor = sor;
 
   /*
    W1. Examine each non-spacing mark (NSM) in the level run, and change the
    type of the NSM to the type of the previous character. If the NSM is at the
    start of the level run, it will get the type of sor.
    */
-  var lastType = sor;
+  let lastType = sor;
   for (i = 0; i < strLength; ++i) {
     if (types[i] === "NSM") {
       types[i] = lastType;
@@ -207,7 +208,7 @@ function bidi(str, startLevel, vertical) {
    the type of the European number to Arabic number.
    */
   lastType = sor;
-  var t;
+  let t;
   for (i = 0; i < strLength; ++i) {
     t = types[i];
     if (t === "EN") {
@@ -252,15 +253,14 @@ function bidi(str, startLevel, vertical) {
   for (i = 0; i < strLength; ++i) {
     if (types[i] === "EN") {
       // do before
-      var j;
-      for (j = i - 1; j >= 0; --j) {
+      for (let j = i - 1; j >= 0; --j) {
         if (types[j] !== "ET") {
           break;
         }
         types[j] = "EN";
       }
       // do after
-      for (j = i + 1; j < strLength; ++j) {
+      for (let j = i + 1; j < strLength; ++j) {
         if (types[j] !== "ET") {
           break;
         }
@@ -302,13 +302,13 @@ function bidi(str, startLevel, vertical) {
    */
   for (i = 0; i < strLength; ++i) {
     if (types[i] === "ON") {
-      var end = findUnequal(types, i + 1, "ON");
-      var before = sor;
+      const end = findUnequal(types, i + 1, "ON");
+      let before = sor;
       if (i > 0) {
         before = types[i - 1];
       }
 
-      var after = eor;
+      let after = eor;
       if (end + 1 < strLength) {
         after = types[end + 1];
       }
@@ -377,9 +377,9 @@ function bidi(str, startLevel, vertical) {
    */
 
   // find highest level & lowest odd level
-  var highestLevel = -1;
-  var lowestOddLevel = 99;
-  var level;
+  let highestLevel = -1;
+  let lowestOddLevel = 99;
+  let level;
   for (i = 0, ii = levels.length; i < ii; ++i) {
     level = levels[i];
     if (highestLevel < level) {
@@ -393,7 +393,7 @@ function bidi(str, startLevel, vertical) {
   // now reverse between those limits
   for (level = highestLevel; level >= lowestOddLevel; --level) {
     // find segments to reverse
-    var start = -1;
+    let start = -1;
     for (i = 0, ii = levels.length; i < ii; ++i) {
       if (levels[i] < level) {
         if (start >= 0) {
@@ -428,7 +428,7 @@ function bidi(str, startLevel, vertical) {
 
   // Finally, return string
   for (i = 0, ii = chars.length; i < ii; ++i) {
-    var ch = chars[i];
+    const ch = chars[i];
     if (ch === "<" || ch === ">") {
       chars[i] = "";
     }

@@ -1,18 +1,12 @@
 "use strict";
 
-var fs = require("fs");
+const fs = require("fs");
+const ttest = require("ttest");
 
-try {
-  var ttest = require("ttest");
-} catch (e) {
-  console.log('\nttest is not installed -- to intall, run "npm install ttest"');
-  console.log("Continuing without significance test...\n");
-}
-
-var VALID_GROUP_BYS = ["browser", "pdf", "page", "round", "stat"];
+const VALID_GROUP_BYS = ["browser", "pdf", "page", "round", "stat"];
 
 function parseOptions() {
-  var yargs = require("yargs")
+  const yargs = require("yargs")
     .usage(
       "Compare the results of two stats files.\n" +
         "Usage:\n  $0 <BASELINE> <CURRENT> [options]"
@@ -25,7 +19,7 @@ function parseOptions() {
         VALID_GROUP_BYS.join(" ")
     )
     .default("groupBy", "browser,stat");
-  var result = yargs.argv;
+  const result = yargs.argv;
   result.baseline = result._[0];
   result.current = result._[1];
   if (result.groupBy) {
@@ -35,14 +29,14 @@ function parseOptions() {
 }
 
 function group(stats, groupBy) {
-  var vals = [];
-  for (var i = 0; i < stats.length; i++) {
-    var curStat = stats[i];
-    var keyArr = [];
-    for (var j = 0; j < groupBy.length; j++) {
+  const vals = [];
+  for (let i = 0; i < stats.length; i++) {
+    const curStat = stats[i];
+    const keyArr = [];
+    for (let j = 0; j < groupBy.length; j++) {
       keyArr.push(curStat[groupBy[j]]);
     }
-    var key = keyArr.join(",");
+    const key = keyArr.join(",");
     if (vals[key] === undefined) {
       vals[key] = [];
     }
@@ -56,7 +50,7 @@ function group(stats, groupBy) {
  * Also, if results are not grouped by 'stat', keep only 'Overall' results.
  */
 function flatten(stats) {
-  var rows = [];
+  let rows = [];
   stats.forEach(function (curStat) {
     curStat.stats.forEach(function (s) {
       rows.push({
@@ -80,7 +74,7 @@ function flatten(stats) {
 
 function pad(s, length, dir /* default: 'right' */) {
   s = "" + s;
-  var spaces = new Array(Math.max(0, length - s.length + 1)).join(" ");
+  const spaces = new Array(Math.max(0, length - s.length + 1)).join(" ");
   return dir === "left" ? spaces + s : s + spaces;
 }
 
@@ -95,11 +89,11 @@ function mean(array) {
 function compareRow(a, b) {
   a = a.split(",");
   b = b.split(",");
-  for (var i = 0; i < Math.min(a.length, b.length); i++) {
-    var intA = parseInt(a[i], 10);
-    var intB = parseInt(b[i], 10);
-    var ai = isNaN(intA) ? a[i] : intA;
-    var bi = isNaN(intB) ? b[i] : intB;
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const intA = parseInt(a[i], 10);
+    const intB = parseInt(b[i], 10);
+    const ai = isNaN(intA) ? a[i] : intA;
+    const bi = isNaN(intB) ? b[i] : intB;
     if (ai < bi) {
       return -1;
     }
@@ -123,30 +117,28 @@ function compareRow(a, b) {
  * be implied.
  */
 function stat(baseline, current) {
-  var baselineGroup = group(baseline, options.groupBy);
-  var currentGroup = group(current, options.groupBy);
+  const baselineGroup = group(baseline, options.groupBy);
+  const currentGroup = group(current, options.groupBy);
 
-  var keys = Object.keys(baselineGroup);
+  const keys = Object.keys(baselineGroup);
   keys.sort(compareRow);
 
-  var labels = options.groupBy.slice(0);
+  const labels = options.groupBy.slice(0);
   labels.push("Count", "Baseline(ms)", "Current(ms)", "+/-", "% ");
   if (ttest) {
     labels.push("Result(P<.05)");
   }
-  var i,
-    row,
-    rows = [];
+  const rows = [];
   // collect rows and measure column widths
-  var width = labels.map(function (s) {
+  const width = labels.map(function (s) {
     return s.length;
   });
   rows.push(labels);
-  for (var k = 0; k < keys.length; k++) {
-    var key = keys[k];
-    var baselineMean = mean(baselineGroup[key]);
-    var currentMean = mean(currentGroup[key]);
-    row = key.split(",");
+  for (let k = 0; k < keys.length; k++) {
+    const key = keys[k];
+    const baselineMean = mean(baselineGroup[key]);
+    const currentMean = mean(currentGroup[key]);
+    const row = key.split(",");
     row.push(
       "" + baselineGroup[key].length,
       "" + Math.round(baselineMean),
@@ -155,7 +147,7 @@ function stat(baseline, current) {
       ((100 * (currentMean - baselineMean)) / baselineMean).toFixed(2)
     );
     if (ttest) {
-      var p =
+      const p =
         baselineGroup[key].length < 2
           ? 1
           : ttest(baselineGroup[key], currentGroup[key]).pValue();
@@ -165,24 +157,24 @@ function stat(baseline, current) {
         row.push("");
       }
     }
-    for (i = 0; i < row.length; i++) {
+    for (let i = 0; i < row.length; i++) {
       width[i] = Math.max(width[i], row[i].length);
     }
     rows.push(row);
   }
 
   // add horizontal line
-  var hline = width.map(function (w) {
+  const hline = width.map(function (w) {
     return new Array(w + 1).join("-");
   });
   rows.splice(1, 0, hline);
 
   // print output
   console.log("-- Grouped By " + options.groupBy.join(", ") + " --");
-  var groupCount = options.groupBy.length;
-  for (var r = 0; r < rows.length; r++) {
-    row = rows[r];
-    for (i = 0; i < row.length; i++) {
+  const groupCount = options.groupBy.length;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    for (let i = 0; i < row.length; i++) {
       row[i] = pad(row[i], width[i], i < groupCount ? "right" : "left");
     }
     console.log(row.join(" | "));
@@ -190,16 +182,16 @@ function stat(baseline, current) {
 }
 
 function main() {
-  var baseline, current;
+  let baseline, current;
   try {
-    var baselineFile = fs.readFileSync(options.baseline).toString();
+    const baselineFile = fs.readFileSync(options.baseline).toString();
     baseline = flatten(JSON.parse(baselineFile));
   } catch (e) {
     console.log('Error reading file "' + options.baseline + '": ' + e);
     process.exit(0);
   }
   try {
-    var currentFile = fs.readFileSync(options.current).toString();
+    const currentFile = fs.readFileSync(options.current).toString();
     current = flatten(JSON.parse(currentFile));
   } catch (e) {
     console.log('Error reading file "' + options.current + '": ' + e);
@@ -208,5 +200,5 @@ function main() {
   stat(baseline, current);
 }
 
-var options = parseOptions();
+const options = parseOptions();
 main();

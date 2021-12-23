@@ -1,9 +1,6 @@
-"use strict";
-
-// eslint-disable-next-line no-unused-vars
-var TestReporter = function (browser) {
+const TestReporter = function (browser) {
   function send(action, json, cb) {
-    var r = new XMLHttpRequest();
+    const r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)
     r.open("POST", action, true);
     r.setRequestHeader("Content-Type", "application/json");
@@ -28,7 +25,7 @@ var TestReporter = function (browser) {
   }
 
   function sendResult(status, description, error) {
-    var message = {
+    const message = {
       status,
       description,
     };
@@ -43,7 +40,7 @@ var TestReporter = function (browser) {
   }
 
   this.now = function () {
-    return new Date().getTime();
+    return Date.now();
   };
 
   this.jasmineStarted = function (suiteInfo) {
@@ -91,3 +88,5 @@ var TestReporter = function (browser) {
     setTimeout(sendQuitRequest, 500);
   };
 };
+
+export { TestReporter };

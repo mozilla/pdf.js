@@ -5,20 +5,21 @@
 
   <link rel="stylesheet" type="text/css" href="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.css">
 
-  <script src="../../node_modules/systemjs/dist/system.js"></script>
-  <script src="../../systemjs.config.js"></script>
   <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
   <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
-  <script src="../unit/testreporter.js"></script>
-  <script src="jasmine-boot.js"></script>
 
-  <script src="fontutils.js"></script>
-
-  <!-- include spec files here... -->
-  <script src="font_core_spec.js"></script>
-  <script src="font_os2_spec.js"></script>
-  <script src="font_post_spec.js"></script>
-  <script src="font_fpgm_spec.js"></script>
+  <script defer src="../../node_modules/es-module-shims/dist/es-module-shims.js"></script>
+  <script type="importmap-shim">
+    {
+      "imports": {
+        "pdfjs/": "../../src/",
+        "pdfjs-lib": "../../src/pdf.js",
+        "pdfjs-web/": "../../web/",
+        "pdfjs-test/": "../"
+      }
+    }
+  </script>
+  <script src="jasmine-boot.js" type="module-shim"></script>
 </head>
 <body>
 </body>

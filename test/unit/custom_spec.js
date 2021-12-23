@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
+import { DefaultCanvasFactory, getDocument } from "../../src/display/api.js";
 import { buildGetDocumentParams } from "./test_utils.js";
-import { DOMCanvasFactory } from "../../src/display/display_utils.js";
-import { getDocument } from "../../src/display/api.js";
-import { isNodeJS } from "../../src/shared/is_node.js";
-import { NodeCanvasFactory } from "../../src/display/node_utils.js";
 
 function getTopLeftPixel(canvasContext) {
   const imgData = canvasContext.getImageData(0, 0, 1, 1);
@@ -30,81 +27,65 @@ function getTopLeftPixel(canvasContext) {
 }
 
 describe("custom canvas rendering", function () {
-  const transparentGetDocumentParams = buildGetDocumentParams(
-    "transparent.pdf"
-  );
+  const transparentGetDocumentParams =
+    buildGetDocumentParams("transparent.pdf");
 
   let CanvasFactory;
   let loadingTask;
   let page;
 
-  beforeAll(function (done) {
-    if (isNodeJS) {
-      CanvasFactory = new NodeCanvasFactory();
-    } else {
-      CanvasFactory = new DOMCanvasFactory();
-    }
+  beforeAll(async function () {
+    CanvasFactory = new DefaultCanvasFactory();
+
     loadingTask = getDocument(transparentGetDocumentParams);
-    loadingTask.promise
-      .then(function (doc) {
-        return doc.getPage(1);
-      })
-      .then(function (data) {
-        page = data;
-        done();
-      })
-      .catch(done.fail);
+    const doc = await loadingTask.promise;
+    const data = await doc.getPage(1);
+    page = data;
   });
 
-  afterAll(function (done) {
+  afterAll(async function () {
     CanvasFactory = null;
     page = null;
-    loadingTask.destroy().then(done);
+    await loadingTask.destroy();
   });
 
-  it("renders to canvas with a default white background", function (done) {
-    var viewport = page.getViewport({ scale: 1 });
-    var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+  it("renders to canvas with a default white background", async function () {
+    const viewport = page.getViewport({ scale: 1 });
+    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
     });
-    renderTask.promise
-      .then(function () {
-        expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
-          r: 255,
-          g: 255,
-          b: 255,
-          a: 255,
-        });
-        CanvasFactory.destroy(canvasAndCtx);
-        done();
-      })
-      .catch(done.fail);
+    await renderTask.promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 255,
+      g: 255,
+      b: 255,
+      a: 255,
+    });
+    CanvasFactory.destroy(canvasAndCtx);
   });
 
-  it("renders to canvas with a custom background", function (done) {
-    var viewport = page.getViewport({ scale: 1 });
-    var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+  it("renders to canvas with a custom background", async function () {
+    const viewport = page.getViewport({ scale: 1 });
+    const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
     const renderTask = page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
       background: "rgba(255,0,0,1.0)",
     });
-    renderTask.promise
-      .then(function () {
-        expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
-          r: 255,
-          g: 0,
-          b: 0,
-          a: 255,
-        });
-        CanvasFactory.destroy(canvasAndCtx);
-        done();
-      })
-      .catch(done.fail);
+    await renderTask.promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 255,
+      g: 0,
+      b: 0,
+      a: 255,
+    });
+    CanvasFactory.destroy(canvasAndCtx);
   });
 });
 
@@ -156,10 +137,8 @@ describe("custom ownerDocument", function () {
         getElementsByTagName: () => [{ appendChild: () => {} }],
       },
     };
+    const CanvasFactory = new DefaultCanvasFactory({ ownerDocument });
 
-    const CanvasFactory = isNodeJS
-      ? new NodeCanvasFactory()
-      : new DOMCanvasFactory({ ownerDocument });
     return {
       elements,
       ownerDocument,

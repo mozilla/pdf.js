@@ -19,6 +19,7 @@ import { AppOptions } from "./app_options.js";
 import { BasePreferences } from "./preferences.js";
 import { DownloadManager } from "./download_manager.js";
 import { GenericL10n } from "./genericl10n.js";
+import { GenericScripting } from "./generic_scripting.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   throw new Error(
@@ -85,7 +86,7 @@ const ChromeCom = {
         // Even without this check, the file load in frames is still blocked,
         // but this may change in the future (https://crbug.com/550151).
         if (origin && !/^file:|^chrome-extension:/.test(origin)) {
-          PDFViewerApplication.error(
+          PDFViewerApplication._documentError(
             "Blocked " +
               origin +
               " from loading " +
@@ -131,7 +132,7 @@ function isRuntimeAvailable() {
   try {
     // When the extension is reloaded, the extension runtime is destroyed and
     // the extension APIs become unavailable.
-    if (chrome.runtime && chrome.runtime.getManifest()) {
+    if (chrome.runtime?.getManifest()) {
       return true;
     }
   } catch (e) {}
@@ -180,12 +181,11 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // These strings are from chrome/app/resources/generated_resources_*.xtb.
     const i18nFileAccessLabel = PDFJSDev.json(
       "$ROOT/web/chrome-i18n-allow-access-to-file-urls.json"
-    )[chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
+    )[chrome.i18n.getUILanguage?.()];
 
     if (i18nFileAccessLabel) {
-      document.getElementById(
-        "chrome-file-access-label"
-      ).textContent = i18nFileAccessLabel;
+      document.getElementById("chrome-file-access-label").textContent =
+        i18nFileAccessLabel;
     }
 
     const link = document.getElementById("chrome-link-to-extensions-page");
@@ -278,7 +278,7 @@ function setReferer(url, callback) {
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.
   port.postMessage({
-    referer: window.history.state && window.history.state.chromecomState,
+    referer: window.history.state?.chromecomState,
     requestUrl: url,
   });
 
@@ -418,7 +418,7 @@ class ChromeExternalServices extends DefaultExternalServices {
   }
 
   static createDownloadManager(options) {
-    return new DownloadManager(options);
+    return new DownloadManager();
   }
 
   static createPreferences() {
@@ -427,6 +427,10 @@ class ChromeExternalServices extends DefaultExternalServices {
 
   static createL10n(options) {
     return new GenericL10n(navigator.language);
+  }
+
+  static createScripting({ sandboxBundleSrc }) {
+    return new GenericScripting(sandboxBundleSrc);
   }
 }
 PDFViewerApplication.externalServices = ChromeExternalServices;

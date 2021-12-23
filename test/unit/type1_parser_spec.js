@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { StringStream } from "../../src/core/stream.js";
 import { Type1Parser } from "../../src/core/type1_parser.js";
 
 describe("Type1Parser", function () {
   it("splits tokens", function () {
-    var stream = new StringStream("/BlueValues[-17 0]noaccess def");
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const stream = new StringStream("/BlueValues[-17 0]noaccess def");
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("/");
     expect(parser.getToken()).toEqual("BlueValues");
     expect(parser.getToken()).toEqual("[");
@@ -33,36 +33,36 @@ describe("Type1Parser", function () {
   });
 
   it("handles glued tokens", function () {
-    var stream = new StringStream("dup/CharStrings");
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const stream = new StringStream("dup/CharStrings");
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("dup");
     expect(parser.getToken()).toEqual("/");
     expect(parser.getToken()).toEqual("CharStrings");
   });
 
   it("ignores whitespace", function () {
-    var stream = new StringStream("\nab   c\t");
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const stream = new StringStream("\nab   c\t");
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("ab");
     expect(parser.getToken()).toEqual("c");
   });
 
   it("parses numbers", function () {
-    var stream = new StringStream("123");
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const stream = new StringStream("123");
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.readNumber()).toEqual(123);
   });
 
   it("parses booleans", function () {
-    var stream = new StringStream("true false");
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const stream = new StringStream("true false");
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.readBoolean()).toEqual(1);
     expect(parser.readBoolean()).toEqual(0);
   });
 
   it("parses number arrays", function () {
-    var stream = new StringStream("[1 2]");
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    let stream = new StringStream("[1 2]");
+    let parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.readNumberArray()).toEqual([1, 2]);
     // Variation on spacing.
     stream = new StringStream("[ 1 2 ]");
@@ -71,18 +71,18 @@ describe("Type1Parser", function () {
   });
 
   it("skips comments", function () {
-    var stream = new StringStream(
+    const stream = new StringStream(
       "%!PS-AdobeFont-1.0: CMSY10 003.002\n" +
         "%%Title: CMSY10\n" +
         "%Version: 003.002\n" +
         "FontDirectory"
     );
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     expect(parser.getToken()).toEqual("FontDirectory");
   });
 
   it("parses font program", function () {
-    var stream = new StringStream(
+    const stream = new StringStream(
       "/ExpansionFactor  99\n" +
         "/Subrs 1 array\n" +
         "dup 0 1 RD x noaccess put\n" +
@@ -91,31 +91,31 @@ describe("Type1Parser", function () {
         "/.notdef 1 RD x ND\n" +
         "end"
     );
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-    var program = parser.extractFontProgram({});
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const program = parser.extractFontProgram({});
     expect(program.charstrings.length).toEqual(1);
     expect(program.properties.privateData.ExpansionFactor).toEqual(99);
   });
 
   it("parses font header font matrix", function () {
-    var stream = new StringStream(
+    const stream = new StringStream(
       "/FontMatrix [0.001 0 0 0.001 0 0 ]readonly def\n"
     );
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-    var props = {};
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const props = {};
     parser.extractFontHeader(props);
     expect(props.fontMatrix).toEqual([0.001, 0, 0, 0.001, 0, 0]);
   });
 
   it("parses font header encoding", function () {
-    var stream = new StringStream(
+    const stream = new StringStream(
       "/Encoding 256 array\n" +
         "0 1 255 {1 index exch /.notdef put} for\n" +
         "dup 33 /arrowright put\n" +
         "readonly def\n"
     );
-    var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-    var props = { overridableEncoding: true };
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    const props = { overridableEncoding: true };
     parser.extractFontHeader(props);
     expect(props.builtInEncoding[33]).toEqual("arrowright");
   });

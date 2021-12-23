@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
+/* eslint-disable no-var */
 
 "use strict";
 
@@ -110,17 +110,17 @@ function createExtensionGlobal() {
     };
     var headers = {};
     return {
-      open: function (method, url) {
+      open(method, url) {
         assert.equal(invoked.open, false);
         invoked.open = true;
         assert.equal(method, "POST");
         assert.equal(url, LOG_URL);
       },
-      setRequestHeader: function (k, v) {
+      setRequestHeader(k, v) {
         assert.equal(invoked.open, true);
         headers[k] = String(v);
       },
-      send: function (body) {
+      send(body) {
         assert.equal(invoked.open, true);
         assert.equal(invoked.send, false);
         invoked.send = true;
@@ -138,7 +138,7 @@ function createExtensionGlobal() {
   };
   window.Date = {
     test_now_value: Date.now(),
-    now: function () {
+    now() {
       return window.Date.test_now_value;
     },
   };

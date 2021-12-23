@@ -1,23 +1,26 @@
 {
   "parserOptions": {
-    "ecmaVersion": 2020,
+    "ecmaVersion": 2022,
     "sourceType": "module",
   },
 
   "plugins": [
     "import",
+    "json",
     "mozilla",
     "no-unsanitized",
+    "sort-exports",
     "unicorn",
   ],
 
   "extends": [
+    "plugin:json/recommended",
     "plugin:prettier/recommended"
   ],
 
   "env": {
     "browser": true,
-    "es2020": true,
+    "es2021": true,
     "worker": true,
     "amd": true,
   },
@@ -31,13 +34,24 @@
   "rules": {
     // Plugins
     "import/extensions": ["error", "always", { "ignorePackages": true, }],
-    "import/no-unresolved": "error",
+    "import/no-unresolved": ["error", {
+      "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web"]
+    }],
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
     "no-unsanitized/method": "error",
     "no-unsanitized/property": "error",
-    "unicorn/no-array-instanceof": "error",
-    "unicorn/prefer-starts-ends-with": "error",
+    "sort-exports/sort-exports": ["error", {
+      "ignoreCase": true,
+    }],
+    "unicorn/no-abusive-eslint-disable": "error",
+    "unicorn/no-array-push-push": "error",
+    "unicorn/no-new-buffer": "error",
+    "unicorn/no-instanceof-array": "error",
+    "unicorn/no-useless-spread": "error",
+    "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-dom-node-remove": "error",
+    "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
     "for-direction": "error",
@@ -51,21 +65,26 @@
     "no-dupe-keys": "error",
     "no-duplicate-case": "error",
     "no-empty": ["error", { "allowEmptyCatch": true, }],
+    "no-empty-character-class": "error",
     "no-ex-assign": "error",
     "no-extra-boolean-cast": "error",
     "no-func-assign": "error",
     "no-inner-declarations": ["error", "functions"],
     "no-invalid-regexp": "error",
     "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
     "no-obj-calls": "error",
     "no-promise-executor-return": "error",
     "no-regex-spaces": "error",
     "no-setter-return": "error",
     "no-sparse-arrays": "error",
+    "no-template-curly-in-string": "error",
     "no-unexpected-multiline": "error",
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": ["error", { "disallowArithmeticOperators": true }],
+    "no-unused-private-class-members": "error",
     "use-isnan": ["error", { "enforceForIndexOf": true, }],
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
@@ -110,6 +129,7 @@
     "no-useless-call": "error",
     "no-useless-catch": "error",
     "no-useless-concat": "error",
+    "no-useless-escape": "error",
     "no-useless-return": "error",
     "prefer-promise-reject-errors": "error",
     "wrap-iife": ["error", "any"],
@@ -121,7 +141,6 @@
     "strict": ["off", "global"],
 
     // Variables
-    "no-catch-shadow": "error",
     "no-delete-var": "error",
     "no-label-var": "error",
     "no-shadow": "error",
@@ -132,9 +151,11 @@
       "vars": "local",
       "args": "none",
     }],
-
-    // Node.js and CommonJS
-    "no-buffer-constructor": "error",
+    "no-use-before-define": ["error", {
+      "functions": false,
+      "classes": false,
+      "variables": false,
+    }],
 
     // Stylistic Issues
     "lines-between-class-members": ["error", "always"],
@@ -149,6 +170,10 @@
     "no-nested-ternary": "error",
     "no-new-object": "error",
     "no-restricted-syntax": ["error",
+      {
+        "selector": "BinaryExpression[operator='instanceof'][right.name='Object']",
+        "message": "Use `typeof` rather than `instanceof Object`.",
+      },
       {
         "selector": "CallExpression[callee.name='assert'][arguments.length!=2]",
         "message": "`assert()` must always be invoked with two arguments.",
@@ -167,6 +192,7 @@
       },
     ],
     "no-unneeded-ternary": "error",
+    "operator-assignment": "error",
     "prefer-exponentiation-operator": "error",
     "spaced-comment": ["error", "always", {
       "block": {
@@ -185,7 +211,7 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
-    "no-var": "off",
+    "no-var": "error",
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],

@@ -16,10 +16,8 @@
 import {
   Cmd,
   Dict,
-  EOF,
   isCmd,
   isDict,
-  isEOF,
   isName,
   isRef,
   isRefsEqual,
@@ -49,6 +47,15 @@ describe("primitives", function () {
       expect(firstFont).toBe(secondFont);
       expect(firstSubtype).toBe(secondSubtype);
       expect(firstFont).not.toBe(firstSubtype);
+    });
+
+    it("should create only one object for *empty* names and cache it", function () {
+      const firstEmpty = Name.get("");
+      const secondEmpty = Name.get("");
+      const normalName = Name.get("string");
+
+      expect(firstEmpty).toBe(secondEmpty);
+      expect(firstEmpty).not.toBe(normalName);
     });
   });
 
@@ -80,7 +87,7 @@ describe("primitives", function () {
     const checkInvalidKeyValues = function (dict) {
       expect(dict.get()).toBeUndefined();
       expect(dict.get("Prev")).toBeUndefined();
-      expect(dict.get("Decode", "D")).toBeUndefined();
+      expect(dict.get("D", "Decode")).toBeUndefined();
       expect(dict.get("FontFile", "FontFile2", "FontFile3")).toBeUndefined();
     };
 
@@ -90,7 +97,7 @@ describe("primitives", function () {
     const testFontFile2 = "file2";
     const testFontFile3 = "file3";
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       emptyDict = new Dict();
 
       dictWithSizeKey = new Dict();
@@ -100,8 +107,6 @@ describe("primitives", function () {
       dictWithManyKeys.set("FontFile", testFontFile);
       dictWithManyKeys.set("FontFile2", testFontFile2);
       dictWithManyKeys.set("FontFile3", testFontFile3);
-
-      done();
     });
 
     afterAll(function () {
@@ -171,40 +176,28 @@ describe("primitives", function () {
       ).toEqual(testFontFile);
     });
 
-    it("should asynchronously fetch unknown keys", function (done) {
+    it("should asynchronously fetch unknown keys", async function () {
       const keyPromises = [
         dictWithManyKeys.getAsync("Size"),
         dictWithSizeKey.getAsync("FontFile", "FontFile2", "FontFile3"),
       ];
 
-      Promise.all(keyPromises)
-        .then(function (values) {
-          expect(values[0]).toBeUndefined();
-          expect(values[1]).toBeUndefined();
-          done();
-        })
-        .catch(function (reason) {
-          done.fail(reason);
-        });
+      const values = await Promise.all(keyPromises);
+      expect(values[0]).toBeUndefined();
+      expect(values[1]).toBeUndefined();
     });
 
-    it("should asynchronously fetch correct values for multiple stored keys", function (done) {
+    it("should asynchronously fetch correct values for multiple stored keys", async function () {
       const keyPromises = [
         dictWithManyKeys.getAsync("FontFile3"),
         dictWithManyKeys.getAsync("FontFile2", "FontFile3"),
         dictWithManyKeys.getAsync("FontFile", "FontFile2", "FontFile3"),
       ];
 
-      Promise.all(keyPromises)
-        .then(function (values) {
-          expect(values[0]).toEqual(testFontFile3);
-          expect(values[1]).toEqual(testFontFile2);
-          expect(values[2]).toEqual(testFontFile);
-          done();
-        })
-        .catch(function (reason) {
-          done.fail(reason);
-        });
+      const values = await Promise.all(keyPromises);
+      expect(values[0]).toEqual(testFontFile3);
+      expect(values[1]).toEqual(testFontFile2);
+      expect(values[2]).toEqual(testFontFile);
     });
 
     it("should callback for each stored key", function () {
@@ -220,7 +213,7 @@ describe("primitives", function () {
       expect(callbackSpyCalls.count()).toEqual(3);
     });
 
-    it("should handle keys pointing to indirect objects, both sync and async", function (done) {
+    it("should handle keys pointing to indirect objects, both sync and async", async function () {
       const fontRef = Ref.get(1, 0);
       const xref = new XRefMock([{ ref: fontRef, data: testFontFile }]);
       const fontDict = new Dict(xref);
@@ -231,15 +224,12 @@ describe("primitives", function () {
         testFontFile
       );
 
-      fontDict
-        .getAsync("FontFile", "FontFile2", "FontFile3")
-        .then(function (value) {
-          expect(value).toEqual(testFontFile);
-          done();
-        })
-        .catch(function (reason) {
-          done.fail(reason);
-        });
+      const value = await fontDict.getAsync(
+        "FontFile",
+        "FontFile2",
+        "FontFile3"
+      );
+      expect(value).toEqual(testFontFile);
     });
 
     it("should handle arrays containing indirect objects", function () {
@@ -431,9 +421,8 @@ describe("primitives", function () {
     const obj2 = Name.get("bar");
     let cache;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       cache = new RefSetCache();
-      done();
     });
 
     afterEach(function () {
@@ -482,17 +471,6 @@ describe("primitives", function () {
     });
   });
 
-  describe("isEOF", function () {
-    it("handles non-EOF", function () {
-      const nonEOF = "foo";
-      expect(isEOF(nonEOF)).toEqual(false);
-    });
-
-    it("handles EOF", function () {
-      expect(isEOF(EOF)).toEqual(true);
-    });
-  });
-
   describe("isName", function () {
     it("handles non-names", function () {
       const nonName = {};
@@ -508,6 +486,14 @@ describe("primitives", function () {
       const name = Name.get("Font");
       expect(isName(name, "Font")).toEqual(true);
       expect(isName(name, "Subtype")).toEqual(false);
+    });
+
+    it("handles *empty* names, with name check", function () {
+      const emptyName = Name.get("");
+
+      expect(isName(emptyName)).toEqual(true);
+      expect(isName(emptyName, "")).toEqual(true);
+      expect(isName(emptyName, "string")).toEqual(false);
     });
   });
 

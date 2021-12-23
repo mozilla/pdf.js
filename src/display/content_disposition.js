@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { stringToBytes } from "../shared/util.js";
+
 // This getFilenameFromContentDispositionHeader function is adapted from
 // https://github.com/Rob--W/open-in-browser/blob/7e2e35a38b8b4e981b11da7b2f01df0149049e92/extension/content-disposition.js
 // with the following changes:
@@ -85,10 +87,8 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       }
       try {
         const decoder = new TextDecoder(encoding, { fatal: true });
-        const bytes = Array.from(value, function (ch) {
-          return ch.charCodeAt(0) & 0xff;
-        });
-        value = decoder.decode(new Uint8Array(bytes));
+        const buffer = stringToBytes(value);
+        value = decoder.decode(buffer);
         needsEncodingFixup = false;
       } catch (e) {
         // TextDecoder constructor threw - unrecognized encoding.

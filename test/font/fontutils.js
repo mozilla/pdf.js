@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-"use strict";
-
-var base64alphabet =
+const base64alphabet =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
 
-// eslint-disable-next-line no-unused-vars
 function decodeFontData(base64) {
-  var result = [];
+  const result = [];
 
-  var bits = 0,
+  let bits = 0,
     bitsLength = 0;
-  for (var i = 0, ii = base64.length; i < ii; i++) {
-    var ch = base64[i];
+  for (let i = 0, ii = base64.length; i < ii; i++) {
+    const ch = base64[i];
     if (ch <= " ") {
       continue;
     }
-    var index = base64alphabet.indexOf(ch);
+    const index = base64alphabet.indexOf(ch);
     if (index < 0) {
       throw new Error("Invalid character");
     }
@@ -41,7 +38,7 @@ function decodeFontData(base64) {
     bitsLength += 6;
     if (bitsLength >= 8) {
       bitsLength -= 8;
-      var code = (bits >> bitsLength) & 0xff;
+      const code = (bits >> bitsLength) & 0xff;
       result.push(code);
     }
   }
@@ -49,16 +46,16 @@ function decodeFontData(base64) {
 }
 
 function encodeFontData(data) {
-  var buffer = "";
-  var i, n;
+  let buffer = "";
+  let i, n;
   for (i = 0, n = data.length; i < n; i += 3) {
-    var b1 = data[i] & 0xff;
-    var b2 = data[i + 1] & 0xff;
-    var b3 = data[i + 2] & 0xff;
-    var d1 = b1 >> 2,
+    const b1 = data[i] & 0xff;
+    const b2 = data[i + 1] & 0xff;
+    const b3 = data[i + 2] & 0xff;
+    const d1 = b1 >> 2,
       d2 = ((b1 & 3) << 4) | (b2 >> 4);
-    var d3 = i + 1 < n ? ((b2 & 0xf) << 2) | (b3 >> 6) : 64;
-    var d4 = i + 2 < n ? b3 & 0x3f : 64;
+    const d3 = i + 1 < n ? ((b2 & 0xf) << 2) | (b3 >> 6) : 64;
+    const d4 = i + 2 < n ? b3 & 0x3f : 64;
     buffer +=
       base64alphabet.charAt(d1) +
       base64alphabet.charAt(d2) +
@@ -68,31 +65,23 @@ function encodeFontData(data) {
   return buffer;
 }
 
-// eslint-disable-next-line no-unused-vars
-function ttx(data, callback) {
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/ttx");
+async function ttx(data) {
+  const response = await fetch("/ttx", {
+    method: "POST",
+    body: encodeFontData(data),
+  });
 
-  var encodedData = encodeFontData(data);
-  xhr.setRequestHeader("Content-type", "text/plain");
-  xhr.setRequestHeader("Content-length", encodedData.length);
-
-  xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        callback(xhr.responseText);
-      } else {
-        callback("<error>Transport error: " + xhr.statusText + "</error>");
-      }
-    }
-  };
-  xhr.send(encodedData);
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+  return response.text();
 }
 
-// eslint-disable-next-line no-unused-vars
 function verifyTtxOutput(output) {
-  var m = /^<error>(.*?)<\/error>/.exec(output);
+  const m = /^<error>(.*?)<\/error>/.exec(output);
   if (m) {
     throw m[1];
   }
 }
+
+export { decodeFontData, encodeFontData, ttx, verifyTtxOutput };

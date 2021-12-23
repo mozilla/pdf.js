@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { warn } from "../shared/util.js";
+import { objectFromMap, warn } from "../shared/util.js";
 
 class OptionalContentGroup {
   constructor(name, intent) {
@@ -57,7 +57,51 @@ class OptionalContentConfig {
     }
   }
 
+  _evaluateVisibilityExpression(array) {
+    const length = array.length;
+    if (length < 2) {
+      return true;
+    }
+    const operator = array[0];
+    for (let i = 1; i < length; i++) {
+      const element = array[i];
+      let state;
+      if (Array.isArray(element)) {
+        state = this._evaluateVisibilityExpression(element);
+      } else if (this._groups.has(element)) {
+        state = this._groups.get(element).visible;
+      } else {
+        warn(`Optional content group not found: ${element}`);
+        return true;
+      }
+      switch (operator) {
+        case "And":
+          if (!state) {
+            return false;
+          }
+          break;
+        case "Or":
+          if (state) {
+            return true;
+          }
+          break;
+        case "Not":
+          return !state;
+        default:
+          return true;
+      }
+    }
+    return operator === "And";
+  }
+
   isVisible(group) {
+    if (this._groups.size === 0) {
+      return true;
+    }
+    if (!group) {
+      warn("Optional content group not defined.");
+      return true;
+    }
     if (group.type === "OCG") {
       if (!this._groups.has(group.id)) {
         warn(`Optional content group not found: ${group.id}`);
@@ -65,10 +109,9 @@ class OptionalContentConfig {
       }
       return this._groups.get(group.id).visible;
     } else if (group.type === "OCMD") {
-      // Per the spec, the expression should be preferred if available. Until
-      // we implement this, just fallback to using the group policy for now.
+      // Per the spec, the expression should be preferred if available.
       if (group.expression) {
-        warn("Visibility expression not supported yet.");
+        return this._evaluateVisibilityExpression(group.expression);
       }
       if (!group.policy || group.policy === "AnyOn") {
         // Default
@@ -142,10 +185,7 @@ class OptionalContentConfig {
   }
 
   getGroups() {
-    if (!this._groups.size) {
-      return null;
-    }
-    return Object.fromEntries(this._groups);
+    return this._groups.size > 0 ? objectFromMap(this._groups) : null;
   }
 
   getGroup(id) {

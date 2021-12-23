@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
+
 import { renderTextLayer } from "pdfjs-lib";
 
 const EXPAND_DIVS_TIMEOUT = 300; // ms
@@ -23,7 +28,8 @@ const EXPAND_DIVS_TIMEOUT = 300; // ms
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} pageIndex - The page index.
  * @property {PageViewport} viewport - The viewport of the text layer.
- * @property {PDFFindController} findController
+ * @property {TextHighlighter} highlighter - Optional object that will handle
+ *   highlighting text from the find controller.
  * @property {boolean} enhanceTextSelection - Option to turn on improved
  *   text selection.
  */
@@ -31,8 +37,7 @@ const EXPAND_DIVS_TIMEOUT = 300; // ms
 /**
  * The text layer builder provides text selection functionality for the PDF.
  * It does this by creating overlay divs over the PDF's text. These divs
- * contain text that matches the PDF text they are overlaying. This object
- * also provides a way to highlight text that is being searched for.
+ * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
   constructor({
@@ -40,7 +45,7 @@ class TextLayerBuilder {
     eventBus,
     pageIndex,
     viewport,
-    findController = null,
+    highlighter = null,
     enhanceTextSelection = false,
   }) {
     this.textLayerDiv = textLayerDiv;
@@ -49,16 +54,13 @@ class TextLayerBuilder {
     this.textContentItemsStr = [];
     this.textContentStream = null;
     this.renderingDone = false;
-    this.pageIdx = pageIndex;
-    this.pageNumber = this.pageIdx + 1;
-    this.matches = [];
+    this.pageNumber = pageIndex + 1;
     this.viewport = viewport;
     this.textDivs = [];
-    this.findController = findController;
     this.textLayerRenderTask = null;
+    this.highlighter = highlighter;
     this.enhanceTextSelection = enhanceTextSelection;
 
-    this._onUpdateTextLayerMatches = null;
     this._bindMouse();
   }
 
@@ -93,7 +95,9 @@ class TextLayerBuilder {
     }
     this.cancel();
 
-    this.textDivs = [];
+    this.textDivs.length = 0;
+    this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
+
     const textLayerFrag = document.createDocumentFragment();
     this.textLayerRenderTask = renderTextLayer({
       textContent: this.textContent,
@@ -109,24 +113,12 @@ class TextLayerBuilder {
       () => {
         this.textLayerDiv.appendChild(textLayerFrag);
         this._finishRendering();
-        this._updateMatches();
+        this.highlighter?.enable();
       },
       function (reason) {
         // Cancelled or failed to render text layer; skipping errors.
       }
     );
-
-    if (!this._onUpdateTextLayerMatches) {
-      this._onUpdateTextLayerMatches = evt => {
-        if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
-          this._updateMatches();
-        }
-      };
-      this.eventBus._on(
-        "updatetextlayermatches",
-        this._onUpdateTextLayerMatches
-      );
-    }
   }
 
   /**
@@ -137,13 +129,7 @@ class TextLayerBuilder {
       this.textLayerRenderTask.cancel();
       this.textLayerRenderTask = null;
     }
-    if (this._onUpdateTextLayerMatches) {
-      this.eventBus._off(
-        "updatetextlayermatches",
-        this._onUpdateTextLayerMatches
-      );
-      this._onUpdateTextLayerMatches = null;
-    }
+    this.highlighter?.disable();
   }
 
   setTextContentStream(readableStream) {
@@ -154,207 +140,6 @@ class TextLayerBuilder {
   setTextContent(textContent) {
     this.cancel();
     this.textContent = textContent;
-  }
-
-  _convertMatches(matches, matchesLength) {
-    // Early exit if there is nothing to convert.
-    if (!matches) {
-      return [];
-    }
-    const { findController, textContentItemsStr } = this;
-
-    let i = 0,
-      iIndex = 0;
-    const end = textContentItemsStr.length - 1;
-    const queryLen = findController.state.query.length;
-    const result = [];
-
-    for (let m = 0, mm = matches.length; m < mm; m++) {
-      // Calculate the start position.
-      let matchIdx = matches[m];
-
-      // Loop over the divIdxs.
-      while (i !== end && matchIdx >= iIndex + textContentItemsStr[i].length) {
-        iIndex += textContentItemsStr[i].length;
-        i++;
-      }
-
-      if (i === textContentItemsStr.length) {
-        console.error("Could not find a matching mapping");
-      }
-
-      const match = {
-        begin: {
-          divIdx: i,
-          offset: matchIdx - iIndex,
-        },
-      };
-
-      // Calculate the end position.
-      if (matchesLength) {
-        // Multiterm search.
-        matchIdx += matchesLength[m];
-      } else {
-        // Phrase search.
-        matchIdx += queryLen;
-      }
-
-      // Somewhat the same array as above, but use > instead of >= to get
-      // the end position right.
-      while (i !== end && matchIdx > iIndex + textContentItemsStr[i].length) {
-        iIndex += textContentItemsStr[i].length;
-        i++;
-      }
-
-      match.end = {
-        divIdx: i,
-        offset: matchIdx - iIndex,
-      };
-      result.push(match);
-    }
-    return result;
-  }
-
-  _renderMatches(matches) {
-    // Early exit if there is nothing to render.
-    if (matches.length === 0) {
-      return;
-    }
-    const { findController, pageIdx, textContentItemsStr, textDivs } = this;
-
-    const isSelectedPage = pageIdx === findController.selected.pageIdx;
-    const selectedMatchIdx = findController.selected.matchIdx;
-    const highlightAll = findController.state.highlightAll;
-    let prevEnd = null;
-    const infinity = {
-      divIdx: -1,
-      offset: undefined,
-    };
-
-    function beginText(begin, className) {
-      const divIdx = begin.divIdx;
-      textDivs[divIdx].textContent = "";
-      appendTextToDiv(divIdx, 0, begin.offset, className);
-    }
-
-    function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
-      const div = textDivs[divIdx];
-      const content = textContentItemsStr[divIdx].substring(
-        fromOffset,
-        toOffset
-      );
-      const node = document.createTextNode(content);
-      if (className) {
-        const span = document.createElement("span");
-        span.className = className;
-        span.appendChild(node);
-        div.appendChild(span);
-        return;
-      }
-      div.appendChild(node);
-    }
-
-    let i0 = selectedMatchIdx,
-      i1 = i0 + 1;
-    if (highlightAll) {
-      i0 = 0;
-      i1 = matches.length;
-    } else if (!isSelectedPage) {
-      // Not highlighting all and this isn't the selected page, so do nothing.
-      return;
-    }
-
-    for (let i = i0; i < i1; i++) {
-      const match = matches[i];
-      const begin = match.begin;
-      const end = match.end;
-      const isSelected = isSelectedPage && i === selectedMatchIdx;
-      const highlightSuffix = isSelected ? " selected" : "";
-
-      if (isSelected) {
-        // Attempt to scroll the selected match into view.
-        findController.scrollMatchIntoView({
-          element: textDivs[begin.divIdx],
-          pageIndex: pageIdx,
-          matchIndex: selectedMatchIdx,
-        });
-      }
-
-      // Match inside new div.
-      if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
-        // If there was a previous div, then add the text at the end.
-        if (prevEnd !== null) {
-          appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
-        }
-        // Clear the divs and set the content until the starting point.
-        beginText(begin);
-      } else {
-        appendTextToDiv(prevEnd.divIdx, prevEnd.offset, begin.offset);
-      }
-
-      if (begin.divIdx === end.divIdx) {
-        appendTextToDiv(
-          begin.divIdx,
-          begin.offset,
-          end.offset,
-          "highlight" + highlightSuffix
-        );
-      } else {
-        appendTextToDiv(
-          begin.divIdx,
-          begin.offset,
-          infinity.offset,
-          "highlight begin" + highlightSuffix
-        );
-        for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
-          textDivs[n0].className = "highlight middle" + highlightSuffix;
-        }
-        beginText(end, "highlight end" + highlightSuffix);
-      }
-      prevEnd = end;
-    }
-
-    if (prevEnd) {
-      appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
-    }
-  }
-
-  _updateMatches() {
-    // Only show matches when all rendering is done.
-    if (!this.renderingDone) {
-      return;
-    }
-    const {
-      findController,
-      matches,
-      pageIdx,
-      textContentItemsStr,
-      textDivs,
-    } = this;
-    let clearedUntilDivIdx = -1;
-
-    // Clear all current matches.
-    for (let i = 0, ii = matches.length; i < ii; i++) {
-      const match = matches[i];
-      const begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
-      for (let n = begin, end = match.end.divIdx; n <= end; n++) {
-        const div = textDivs[n];
-        div.textContent = textContentItemsStr[n];
-        div.className = "";
-      }
-      clearedUntilDivIdx = match.end.divIdx + 1;
-    }
-
-    if (!findController || !findController.highlightMatches) {
-      return;
-    }
-    // Convert the matches on the `findController` into the match format
-    // used for the textLayer.
-    const pageMatches = findController.pageMatches[pageIdx] || null;
-    const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
-
-    this.matches = this._convertMatches(pageMatches, pageMatchesLength);
-    this._renderMatches(this.matches);
   }
 
   /**
@@ -434,33 +219,4 @@ class TextLayerBuilder {
   }
 }
 
-/**
- * @implements IPDFTextLayerFactory
- */
-class DefaultTextLayerFactory {
-  /**
-   * @param {HTMLDivElement} textLayerDiv
-   * @param {number} pageIndex
-   * @param {PageViewport} viewport
-   * @param {boolean} enhanceTextSelection
-   * @param {EventBus} eventBus
-   * @returns {TextLayerBuilder}
-   */
-  createTextLayerBuilder(
-    textLayerDiv,
-    pageIndex,
-    viewport,
-    enhanceTextSelection = false,
-    eventBus
-  ) {
-    return new TextLayerBuilder({
-      textLayerDiv,
-      pageIndex,
-      viewport,
-      enhanceTextSelection,
-      eventBus,
-    });
-  }
-}
-
-export { TextLayerBuilder, DefaultTextLayerFactory };
+export { TextLayerBuilder };

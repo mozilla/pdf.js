@@ -46,7 +46,7 @@ class MurmurHash3_64 {
         }
       }
     } else if (isArrayBuffer(input)) {
-      data = input;
+      data = input.slice();
       length = data.byteLength;
     } else {
       throw new Error(

@@ -117,4 +117,4 @@ const ExpertSubsetCharset = [
   "periodinferior", "commainferior"
 ];
 
-export { ISOAdobeCharset, ExpertCharset, ExpertSubsetCharset };
+export { ExpertCharset, ExpertSubsetCharset, ISOAdobeCharset };

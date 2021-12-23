@@ -35,7 +35,7 @@ function createFetchOptions(headers, withCredentials, abortController) {
   return {
     method: "GET",
     headers,
-    signal: abortController && abortController.signal,
+    signal: abortController?.signal,
     mode: "cors",
     credentials: withCredentials ? "include" : "same-origin",
     redirect: "follow",
@@ -66,7 +66,7 @@ class PDFFetchStream {
   }
 
   get _progressiveDataLength() {
-    return this._fullRequestReader ? this._fullRequestReader._loaded : 0;
+    return this._fullRequestReader?._loaded ?? 0;
   }
 
   getFullReader() {
@@ -91,10 +91,9 @@ class PDFFetchStream {
     if (this._fullRequestReader) {
       this._fullRequestReader.cancel(reason);
     }
-    const readers = this._rangeRequestReaders.slice(0);
-    readers.forEach(function (reader) {
+    for (const reader of this._rangeRequestReaders.slice(0)) {
       reader.cancel(reason);
-    });
+    }
   }
 }
 
@@ -142,15 +141,13 @@ class PDFFetchStreamReader {
         const getResponseHeader = name => {
           return response.headers.get(name);
         };
-        const {
-          allowRangeRequests,
-          suggestedLength,
-        } = validateRangeRequestCapabilities({
-          getResponseHeader,
-          isHttp: this._stream.isHttp,
-          rangeChunkSize: this._rangeChunkSize,
-          disableRange: this._disableRange,
-        });
+        const { allowRangeRequests, suggestedLength } =
+          validateRangeRequestCapabilities({
+            getResponseHeader,
+            isHttp: this._stream.isHttp,
+            rangeChunkSize: this._rangeChunkSize,
+            disableRange: this._disableRange,
+          });
 
         this._isRangeSupported = allowRangeRequests;
         // Setting right content length.
@@ -250,12 +247,7 @@ class PDFFetchStreamRangeReader {
         this._readCapability.resolve();
         this._reader = response.body.getReader();
       })
-      .catch(reason => {
-        if (reason && reason.name === "AbortError") {
-          return;
-        }
-        throw reason;
-      });
+      .catch(this._readCapability.reject);
 
     this.onProgress = null;
   }

@@ -22,6 +22,7 @@ import {
   isNum,
   OPS,
   TextRenderingMode,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
@@ -29,11 +30,16 @@ import { DOMSVGFactory } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
 
 /** @type {any} */
-let SVGGraphics = function () {
-  throw new Error("Not implemented: SVGGraphics");
+let SVGGraphics = class {
+  constructor() {
+    unreachable("Not implemented: SVGGraphics");
+  }
 };
 
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+if (
+  typeof PDFJSDev === "undefined" ||
+  PDFJSDev.test("!PRODUCTION || GENERIC")
+) {
   const SVG_DEFAULTS = {
     fontStyle: "normal",
     fontWeight: "normal",
@@ -46,14 +52,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   const convertImgDataToPng = (function () {
     const PNG_HEADER = new Uint8Array([
-      0x89,
-      0x50,
-      0x4e,
-      0x47,
-      0x0d,
-      0x0a,
-      0x1a,
-      0x0a,
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
     ]);
     const CHUNK_WRAPPER_SIZE = 12;
 
@@ -438,8 +437,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   let maskCount = 0;
   let shadingCount = 0;
 
-  // eslint-disable-next-line no-shadow
-  SVGGraphics = class SVGGraphics {
+  SVGGraphics = class {
     constructor(commonObjs, objs, forceDataSchema = false) {
       this.svgFactory = new DOMSVGFactory();
 
@@ -735,7 +733,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     setTextMatrix(a, b, c, d, e, f) {
       const current = this.current;
       current.textMatrix = current.lineMatrix = [a, b, c, d, e, f];
-      current.textMatrixScale = Math.sqrt(a * a + b * b);
+      current.textMatrixScale = Math.hypot(a, b);
 
       current.x = current.lineX = 0;
       current.y = current.lineY = 0;
@@ -981,10 +979,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         this.addFontStyle(fontObj);
         this.embeddedFonts[fontObj.loadedName] = fontObj;
       }
-
-      current.fontMatrix = fontObj.fontMatrix
-        ? fontObj.fontMatrix
-        : FONT_IDENTITY_MATRIX;
+      current.fontMatrix = fontObj.fontMatrix || FONT_IDENTITY_MATRIX;
 
       let bold = "normal";
       if (fontObj.black) {
@@ -1015,8 +1010,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const current = this.current;
       if (
         current.textRenderingMode & TextRenderingMode.ADD_TO_PATH_FLAG &&
-        current.txtElement &&
-        current.txtElement.hasChildNodes()
+        current.txtElement?.hasChildNodes()
       ) {
         // If no glyphs are shown (i.e. no child nodes), no clipping occurs.
         current.element = current.txtElement;
@@ -1049,7 +1043,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     setStrokeRGBColor(r, g, b) {
-      this.current.strokeColor = Util.makeCssRgb(r, g, b);
+      this.current.strokeColor = Util.makeHexColor(r, g, b);
     }
 
     setFillAlpha(fillAlpha) {
@@ -1057,7 +1051,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     setFillRGBColor(r, g, b) {
-      this.current.fillColor = Util.makeCssRgb(r, g, b);
+      this.current.fillColor = Util.makeHexColor(r, g, b);
       this.current.tspan = this.svgFactory.createElement("svg:tspan");
       this.current.xcoords = [];
       this.current.ycoords = [];
@@ -1119,8 +1113,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const paintType = args[7];
 
       const tilingId = `shading${shadingCount++}`;
-      const [tx0, ty0] = Util.applyTransform([x0, y0], matrix);
-      const [tx1, ty1] = Util.applyTransform([x1, y1], matrix);
+      const [tx0, ty0, tx1, ty1] = Util.normalizeRect([
+        ...Util.applyTransform([x0, y0], matrix),
+        ...Util.applyTransform([x1, y1], matrix),
+      ]);
       const [xscale, yscale] = Util.singularValueDecompose2dScale(matrix);
       const txstep = xstep * xscale;
       const tystep = ystep * yscale;
@@ -1143,7 +1139,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.svg = bbox;
       this.transformMatrix = matrix;
       if (paintType === 2) {
-        const cssColor = Util.makeCssRgb(...color);
+        const cssColor = Util.makeHexColor(...color);
         this.current.fillColor = cssColor;
         this.current.strokeColor = cssColor;
       }
@@ -1164,6 +1160,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
      * @private
      */
     _makeShadingPattern(args) {
+      if (typeof args === "string") {
+        args = this.objs.get(args);
+      }
       switch (args[0]) {
         case "RadialAxial":
           const shadingId = `shading${shadingCount++}`;
@@ -1374,9 +1373,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         // The previous clipping group content can go out of order -- resetting
         // cached clipGroups.
         current.clipGroup = null;
-        this.extraStack.forEach(function (prev) {
+        for (const prev of this.extraStack) {
           prev.clipGroup = null;
-        });
+        }
         // Intersect with the previous clipping path.
         clipPath.setAttributeNS(null, "clip-path", current.activeClipUrl);
       }

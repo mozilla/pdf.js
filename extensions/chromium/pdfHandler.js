@@ -242,12 +242,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       chrome.tabs.create({
         windowId: sender.tab.windowId,
         index: sender.tab.index + 1,
-        url: url,
+        url,
         openerTabId: sender.tab.id,
       });
     } else {
       chrome.tabs.update(sender.tab.id, {
-        url: url,
+        url,
       });
     }
   }

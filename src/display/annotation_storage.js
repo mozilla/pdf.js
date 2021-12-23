@@ -13,25 +13,27 @@
  * limitations under the License.
  */
 
+import { objectFromMap } from "../shared/util.js";
+
 /**
  * Key/value storage for annotation data in forms.
  */
 class AnnotationStorage {
   constructor() {
     this._storage = new Map();
+    this._timeStamp = Date.now();
     this._modified = false;
 
     // Callbacks to signal when the modification state is set or reset.
     // This is used by the viewer to only bind on `beforeunload` if forms
     // are actually edited to prevent doing so unconditionally since that
-    // can have undesirable efffects.
+    // can have undesirable effects.
     this.onSetModified = null;
     this.onResetModified = null;
   }
 
   /**
-   * Get the value for a given key if it exists
-   * or store and return the default value
+   * Get the value for a given key if it exists, or return the default value.
    *
    * @public
    * @memberof AnnotationStorage
@@ -39,13 +41,13 @@ class AnnotationStorage {
    * @param {Object} defaultValue
    * @returns {Object}
    */
-  getOrCreateValue(key, defaultValue) {
-    if (this._storage.has(key)) {
-      return this._storage.get(key);
+  getValue(key, defaultValue) {
+    const value = this._storage.get(key);
+    if (value === undefined) {
+      return defaultValue;
     }
 
-    this._storage.set(key, defaultValue);
-    return defaultValue;
+    return Object.assign(defaultValue, value);
   }
 
   /**
@@ -57,17 +59,27 @@ class AnnotationStorage {
    * @param {Object} value
    */
   setValue(key, value) {
-    if (this._storage.get(key) !== value) {
+    const obj = this._storage.get(key);
+    let modified = false;
+    if (obj !== undefined) {
+      for (const [entry, val] of Object.entries(value)) {
+        if (obj[entry] !== val) {
+          modified = true;
+          obj[entry] = val;
+        }
+      }
+    } else {
+      modified = true;
+      this._storage.set(key, value);
+    }
+    if (modified) {
+      this._timeStamp = Date.now();
       this._setModified();
     }
-    this._storage.set(key, value);
   }
 
   getAll() {
-    if (this._storage.size === 0) {
-      return null;
-    }
-    return Object.fromEntries(this._storage);
+    return this._storage.size > 0 ? objectFromMap(this._storage) : null;
   }
 
   get size() {
@@ -93,6 +105,22 @@ class AnnotationStorage {
         this.onResetModified();
       }
     }
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get serializable() {
+    return this._storage.size > 0 ? this._storage : null;
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get lastModified() {
+    return this._timeStamp.toString();
   }
 }
 

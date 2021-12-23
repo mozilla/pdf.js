@@ -1,0 +1,114 @@
+%PDF-1.5
+%‚„œ”
+1 0 obj 
+<<
+/Kids [2 0 R]
+/Type /Pages
+/Count 1
+>>
+endobj 
+2 0 obj 
+<<
+/Resources 3 0 R
+/Type /Page
+/Parent 1 0 R
+/Contents 4 0 R
+/MediaBox [0 0 100 100]
+/Group 
+<<
+/CS /DeviceRGB
+/I true
+/Type /Group
+/S /Transparency
+>>
+>>
+endobj 
+3 0 obj 
+<<
+/ExtGState 
+<<
+/a0 
+<<
+/CA 1
+/ca 1
+>>
+>>
+/Pattern 
+<<
+/p5 5 0 R
+>>
+>>
+endobj 
+5 0 obj 
+<<
+/PatternType 2
+/Type /Pattern
+/Shading 
+<<
+/Coords [0 0 0 0 0 100]
+/Extend [true true]
+/Function 6 0 R
+/ShadingType 3
+/Domain [0 1]
+/ColorSpace /DeviceRGB
+>>
+/Matrix [2  0 0 2  0 0]
+>>
+endobj 
+4 0 obj 
+<<
+/Length 77
+>>
+stream
+q
+/Pattern CS /p5 SCN /a0 gs
+0.3 0 0 0.1 0 0 cm
+50 w
+100 100 m
+300 700 l
+S
+Q
+
+endstream 
+endobj 
+6 0 obj 
+<<
+/FunctionType 2
+/N 1
+/C1 [0 1 0]
+/C0 [0 0 1]
+/Domain [0 1]
+>>
+endobj 
+7 0 obj 
+<<
+/Type /Catalog
+/Pages 1 0 R
+>>
+endobj 
+8 0 obj 
+<<
+/Creator (cairo 1.13.1 \(http://cairographics.org\))
+/Producer (cairo 1.13.1 \(http://cairographics.org\))
+>>
+endobj xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000074 00000 n 
+0000000247 00000 n 
+0000000542 00000 n 
+0000000337 00000 n 
+0000000672 00000 n 
+0000000754 00000 n 
+0000000805 00000 n 
+trailer
+
+<<
+/Info 8 0 R
+/Root 7 0 R
+/Size 9
+>>
+startxref
+934
+%%EOF
