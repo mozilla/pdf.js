@@ -414,10 +414,13 @@ describe("annotation", function () {
 
   describe("AnnotationBorderStyle", function () {
     it("should set and get a valid width", function () {
-      const borderStyle = new AnnotationBorderStyle();
-      borderStyle.setWidth(3);
+      const borderStyleInt = new AnnotationBorderStyle();
+      borderStyleInt.setWidth(3);
+      const borderStyleNum = new AnnotationBorderStyle();
+      borderStyleNum.setWidth(2.5);
 
-      expect(borderStyle.width).toEqual(3);
+      expect(borderStyleInt.width).toEqual(3);
+      expect(borderStyleNum.width).toEqual(2.5);
     });
 
     it("should not set and get an invalid width", function () {
