@@ -385,7 +385,7 @@ class PartialEvaluator {
 	  }
     if (cMapUrl !== null) {
       // Only compressed CMaps are (currently) supported here.
-      const url = `${MapUrl}${name}.bcmap`;
+      const url = `${cMapUrl}${name}.bcmap`;
       // #376 end of modification
       const response = await fetch(url);
       if (!response.ok) {
