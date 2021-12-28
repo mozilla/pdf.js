@@ -57,7 +57,9 @@ class AnnotationStorage {
           } else {
             obj = ngObj;
           }
-          this.setValue(key, undefined, obj); // second parameter is undefined to prevent infinite loops
+          // ngx-extended-pdf-viewer #1054 consider values from
+          // window.getFormValues as default value
+          this.setValue(key, undefined, obj, undefined, true); // second parameter is undefined to prevent infinite loops
         }
         if (obj === undefined && defaultValue !== undefined && defaultValue.value !== undefined && defaultValue.value !== "") {
           // send the pre-filled form value to Angular via (formDataChange)
@@ -87,8 +89,8 @@ class AnnotationStorage {
    * @param {string} fieldName name of the input field
    * @param {Object} value
    */
-  // #718 modified by ngx-extended-pdf-viewer
-  setValue(key, fieldname, value, radioButtonField = undefined) {
+  // #718, #1054 modified by ngx-extended-pdf-viewer
+  setValue(key, fieldname, value, radioButtonField = undefined, isDefaultValue = false) {
     // #718 end of modification by ngx-extended-pdf-viewer
     const obj = this._storage.get(key);
     let modified = false;
@@ -104,7 +106,11 @@ class AnnotationStorage {
         }
       }
     } else {
-      modified = true;
+      // #1054 modified by ngx-extended-pdf-viewer
+      if (!isDefaultValue) {
+        modified = true;
+      }
+      // #1054 end of modification by ngx-extended-pdf-viewer
       this._storage.set(key, value);
     }
     if (modified) {
