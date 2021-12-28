@@ -922,7 +922,7 @@ class AnnotationBorderStyle {
       this.width = 0; // This is consistent with the behaviour in Adobe Reader.
       return;
     }
-    if (Number.isInteger(width)) {
+    if (typeof width === "number") {
       if (width > 0) {
         const maxWidth = (rect[2] - rect[0]) / 2;
         const maxHeight = (rect[3] - rect[1]) / 2;
