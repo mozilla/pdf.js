@@ -622,9 +622,7 @@ describe("api", function () {
         expect(false).toEqual(true);
       } catch (reason) {
         expect(reason instanceof UnknownErrorException).toEqual(true);
-        expect(reason.message).toEqual(
-          "Page dictionary kids object is not an array."
-        );
+        expect(reason.message).toEqual("Illegal character: 41");
       }
       try {
         await pdfDocument2.getPage(1);
@@ -633,9 +631,7 @@ describe("api", function () {
         expect(false).toEqual(true);
       } catch (reason) {
         expect(reason instanceof UnknownErrorException).toEqual(true);
-        expect(reason.message).toEqual(
-          "Page dictionary kids object is not an array."
-        );
+        expect(reason.message).toEqual("End of file inside array.");
       }
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
