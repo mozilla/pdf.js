@@ -1285,9 +1285,14 @@ class PDFDocument {
           type = await xref.fetchAsync(type);
         }
         if (isName(type, "Page") || (!obj.has("Type") && !obj.has("Kids"))) {
-          if (ref && !catalog.pageKidsCountCache.has(ref)) {
+          if (!catalog.pageKidsCountCache.has(ref)) {
             catalog.pageKidsCountCache.put(ref, 1); // Cache the Page reference.
           }
+          // Help improve performance of the `Catalog.getPageIndex` method.
+          if (!catalog.pageIndexCache.has(ref)) {
+            catalog.pageIndexCache.put(ref, 0);
+          }
+
           return [obj, ref];
         }
       }

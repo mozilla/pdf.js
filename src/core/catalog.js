@@ -1099,7 +1099,8 @@ class Catalog {
       visitedNodes.put(pagesRef);
     }
     const xref = this.xref,
-      pageKidsCountCache = this.pageKidsCountCache;
+      pageKidsCountCache = this.pageKidsCountCache,
+      pageIndexCache = this.pageIndexCache;
     let currentPageIndex = 0;
 
     while (nodesToVisit.length) {
@@ -1128,8 +1129,12 @@ class Catalog {
             // Cache the Page reference, since it can *greatly* improve
             // performance by reducing redundant lookups in long documents
             // where all nodes are found at *one* level of the tree.
-            if (currentNode && !pageKidsCountCache.has(currentNode)) {
+            if (!pageKidsCountCache.has(currentNode)) {
               pageKidsCountCache.put(currentNode, 1);
+            }
+            // Help improve performance of the `getPageIndex` method.
+            if (!pageIndexCache.has(currentNode)) {
+              pageIndexCache.put(currentNode, currentPageIndex);
             }
 
             if (currentPageIndex === pageIndex) {
@@ -1215,10 +1220,16 @@ class Catalog {
     if (pagesRef instanceof Ref) {
       visitedNodes.put(pagesRef);
     }
-    const map = new Map();
+    const map = new Map(),
+      pageIndexCache = this.pageIndexCache;
     let pageIndex = 0;
 
     function addPageDict(pageDict, pageRef) {
+      // Help improve performance of the `getPageIndex` method.
+      if (pageRef && !pageIndexCache.has(pageRef)) {
+        pageIndexCache.put(pageRef, pageIndex);
+      }
+
       map.set(pageIndex++, [pageDict, pageRef]);
     }
     function addPageError(error) {
