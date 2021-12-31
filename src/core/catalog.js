@@ -1210,9 +1210,9 @@ class Catalog {
 
   /**
    * Eagerly fetches the entire /Pages-tree; should ONLY be used as a fallback.
-   * @returns {Map}
+   * @returns {Promise<Map>}
    */
-  getAllPageDicts(recoveryMode = false) {
+  async getAllPageDicts(recoveryMode = false) {
     const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
     const visitedNodes = new RefSet();
 
@@ -1221,6 +1221,7 @@ class Catalog {
       visitedNodes.put(pagesRef);
     }
     const map = new Map(),
+      xref = this.xref,
       pageIndexCache = this.pageIndexCache;
     let pageIndex = 0;
 
@@ -1233,6 +1234,10 @@ class Catalog {
       map.set(pageIndex++, [pageDict, pageRef]);
     }
     function addPageError(error) {
+      if (error instanceof XRefEntryException && !recoveryMode) {
+        throw error;
+      }
+
       map.set(pageIndex++, [error, null]);
     }
 
@@ -1240,18 +1245,14 @@ class Catalog {
       const queueItem = queue[queue.length - 1];
       const { currentNode, posInKids } = queueItem;
 
-      let kids;
-      try {
-        kids = currentNode.get("Kids");
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
+      let kids = currentNode.getRaw("Kids");
+      if (kids instanceof Ref) {
+        try {
+          kids = await xref.fetchAsync(kids);
+        } catch (ex) {
+          addPageError(ex);
+          break;
         }
-        if (ex instanceof XRefEntryException && !recoveryMode) {
-          throw ex;
-        }
-        addPageError(ex);
-        break;
       }
       if (!Array.isArray(kids)) {
         addPageError(
@@ -1268,18 +1269,6 @@ class Catalog {
       const kidObj = kids[posInKids];
       let obj;
       if (kidObj instanceof Ref) {
-        try {
-          obj = this.xref.fetch(kidObj);
-        } catch (ex) {
-          if (ex instanceof MissingDataException) {
-            throw ex;
-          }
-          if (ex instanceof XRefEntryException && !recoveryMode) {
-            throw ex;
-          }
-          addPageError(ex);
-          break;
-        }
         // Prevent circular references in the /Pages tree.
         if (visitedNodes.has(kidObj)) {
           addPageError(
@@ -1288,6 +1277,13 @@ class Catalog {
           break;
         }
         visitedNodes.put(kidObj);
+
+        try {
+          obj = await xref.fetchAsync(kidObj);
+        } catch (ex) {
+          addPageError(ex);
+          break;
+        }
       } else {
         // Prevent errors in corrupt PDF documents that violate the
         // specification by *inlining* Page dicts directly in the Kids
@@ -1303,18 +1299,14 @@ class Catalog {
         break;
       }
 
-      let type;
-      try {
-        type = obj.get("Type");
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
+      let type = obj.getRaw("Type");
+      if (type instanceof Ref) {
+        try {
+          type = await xref.fetchAsync(type);
+        } catch (ex) {
+          addPageError(ex);
+          break;
         }
-        if (ex instanceof XRefEntryException && !recoveryMode) {
-          throw ex;
-        }
-        addPageError(ex);
-        break;
       }
       if (isName(type, "Page") || !obj.has("Kids")) {
         addPageDict(obj, kidObj instanceof Ref ? kidObj : null);
