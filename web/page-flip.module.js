@@ -2429,9 +2429,14 @@ class HTMLRender extends Render {
         if (this.direction === 1 /* BACK */ &&
             this.flippingPage !== null &&
             this.flippingPage.getDrawingDensity() === "hard" /* HARD */) {
-            this.leftPage.getElement().style.zIndex = (this.getSettings().startZIndex + 5).toString(10);
-            this.leftPage.setHardDrawingAngle(180 + this.flippingPage.getHardAngle());
-            this.leftPage.draw(this.flippingPage.getDrawingDensity());
+            const angle = this.flippingPage.getHardAngle();
+            if (angle < -90) {
+                this.leftPage.getElement().style.zIndex = (this.getSettings().startZIndex + 5).toString(10);
+                this.leftPage.setHardDrawingAngle(180 + this.flippingPage.getHardAngle());
+                this.leftPage.draw(this.flippingPage.getDrawingDensity());
+            } else {
+                this.leftPage.getElement().style.display="none";
+            }                
         }
         else {
             this.leftPage.simpleDraw(0 /* LEFT */);
@@ -2446,9 +2451,14 @@ class HTMLRender extends Render {
         if (this.direction === 0 /* FORWARD */ &&
             this.flippingPage !== null &&
             this.flippingPage.getDrawingDensity() === "hard" /* HARD */) {
-            this.rightPage.getElement().style.zIndex = (this.getSettings().startZIndex + 5).toString(10);
-            this.rightPage.setHardDrawingAngle(180 + this.flippingPage.getHardAngle());
-            this.rightPage.draw(this.flippingPage.getDrawingDensity());
+            const angle = this.flippingPage.getHardAngle();
+            if (angle > 90) {
+                this.rightPage.getElement().style.zIndex = (this.getSettings().startZIndex + 5).toString(10);
+                this.rightPage.setHardDrawingAngle(180 + this.flippingPage.getHardAngle());
+                this.rightPage.draw(this.flippingPage.getDrawingDensity());
+            } else {
+                this.rightPage.getElement().style.display="none";
+            }                
         }
         else {
             this.rightPage.simpleDraw(1 /* RIGHT */);
@@ -2467,13 +2477,27 @@ class HTMLRender extends Render {
         }
     }
     drawFrame() {
+        if (this.flippingPage !== null) {
+            if (this.flippingPage.getHardAngle() === this.lastAngle) {
+                return;
+            }
+            this.lastAngle = this.flippingPage.getHardAngle();
+        } else {
+            this.lastAngle=-1234; // some non-existing value
+            
+        }
         this.clear();
         this.drawLeftPage();
         this.drawRightPage();
         this.drawBottomPage();
         if (this.flippingPage != null) {
-            this.flippingPage.getElement().style.zIndex = (this.getSettings().startZIndex + 5).toString(10);
-            this.flippingPage.draw();
+            const angle = this.flippingPage.state.hardDrawingAngle;
+            if (angle <= 90) {
+                this.flippingPage.getElement().style.zIndex = (this.getSettings().startZIndex + 5).toString(10);
+                this.flippingPage.draw();
+            } else {
+                this.flippingPage.getElement().style.display="none";
+            }
         }
         if (this.shadow != null && this.flippingPage !== null) {
             if (this.flippingPage.getDrawingDensity() === "soft" /* SOFT */) {

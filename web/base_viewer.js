@@ -490,54 +490,56 @@ class BaseViewer {
       window.adjacentPagesLoader = evt => {
         Window['ngxConsole'].log("rendered", evt);
         let pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber)];
-        let isLoading = pageView.div.querySelector(".loadingIcon");
-        if (isLoading) {
-          Window['ngxConsole'].log("asking for the next page");
-          this.#ensurePdfPageLoaded(pageView).then(() => {
-            this.renderingQueue.renderView(pageView);
-          });
-        } else {
-          pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 1)];
-          isLoading = pageView.div.querySelector(".loadingIcon");
+        if (pageView) {
+          let isLoading = pageView.div.querySelector(".loadingIcon");
           if (isLoading) {
-            Window['ngxConsole'].log("asking for the next + 1 page");
+            Window['ngxConsole'].log("asking for the next page");
             this.#ensurePdfPageLoaded(pageView).then(() => {
               this.renderingQueue.renderView(pageView);
             });
           } else {
-            pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 2)];
+            pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 1)];
             isLoading = pageView.div.querySelector(".loadingIcon");
             if (isLoading) {
-              Window['ngxConsole'].log("asking for the next + 2 page");
+              Window['ngxConsole'].log("asking for the next + 1 page");
               this.#ensurePdfPageLoaded(pageView).then(() => {
                 this.renderingQueue.renderView(pageView);
               });
             } else {
-              pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 3)];
+              pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 2)];
               isLoading = pageView.div.querySelector(".loadingIcon");
               if (isLoading) {
-                Window['ngxConsole'].log("asking for the next + 3 page");
+                Window['ngxConsole'].log("asking for the next + 2 page");
                 this.#ensurePdfPageLoaded(pageView).then(() => {
                   this.renderingQueue.renderView(pageView);
                 });
               } else {
-                pageView = this._pages[Math.max(0, this.currentPageNumber - 1)];
+                pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 3)];
                 isLoading = pageView.div.querySelector(".loadingIcon");
                 if (isLoading) {
-                  Window['ngxConsole'].log("asking for the current page");
+                  Window['ngxConsole'].log("asking for the next + 3 page");
                   this.#ensurePdfPageLoaded(pageView).then(() => {
                     this.renderingQueue.renderView(pageView);
                   });
                 } else {
-                  pageView = this._pages[Math.max(0, this.currentPageNumber - 2)];
+                  pageView = this._pages[Math.max(0, this.currentPageNumber - 1)];
                   isLoading = pageView.div.querySelector(".loadingIcon");
                   if (isLoading) {
-                    Window['ngxConsole'].log("asking for the previous page");
+                    Window['ngxConsole'].log("asking for the current page");
                     this.#ensurePdfPageLoaded(pageView).then(() => {
                       this.renderingQueue.renderView(pageView);
                     });
                   } else {
-                    Window['ngxConsole'].log("Finished preloading the pages");
+                    pageView = this._pages[Math.max(0, this.currentPageNumber - 2)];
+                    isLoading = pageView.div.querySelector(".loadingIcon");
+                    if (isLoading) {
+                      Window['ngxConsole'].log("asking for the previous page");
+                      this.#ensurePdfPageLoaded(pageView).then(() => {
+                        this.renderingQueue.renderView(pageView);
+                      });
+                    } else {
+                      Window['ngxConsole'].log("Finished preloading the pages");
+                    }
                   }
                 }
               }
