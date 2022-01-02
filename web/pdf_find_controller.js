@@ -633,6 +633,9 @@ class PDFFindController {
   // #832 end of modification by ngx-extended-pdf-viewer
 
   _calculateMatch(pageIndex) {
+    if (!this.state) {
+      return;
+    }
     let pageContent = this._pageContents[pageIndex];
     const pageDiffs = this._pageDiffs[pageIndex];
     let query = this._query;
@@ -735,40 +738,44 @@ class PDFFindController {
       this._extractTextPromises[i] = extractTextCapability.promise;
 
       promise = promise.then(() => {
-        return this._pdfDocument
-          .getPage(i + 1)
-          .then(pdfPage => {
-            return pdfPage.getTextContent({
-              normalizeWhitespace: true,
-            });
-          })
-          .then(
-            textContent => {
-              const textItems = textContent.items;
-              const strBuf = [];
+        if (this._pdfDocument && this._extractTextPromises.length > 0) {
+          return this._pdfDocument
+            .getPage(i + 1)
+            .then(pdfPage => {
+              return pdfPage.getTextContent({
+                normalizeWhitespace: true,
+              });
+            })
+            .then(
+              textContent => {
+                const textItems = textContent.items;
+                const strBuf = [];
 
-              for (let j = 0, jj = textItems.length; j < jj; j++) {
-                strBuf.push(textItems[j].str);
+                for (let j = 0, jj = textItems.length; j < jj; j++) {
+                  strBuf.push(textItems[j].str);
+                }
+
+                // Store the normalized page content (text items) as one string.
+                [this._pageContents[i], this._pageDiffs[i]] = normalize(
+                  strBuf.join("")
+                );
+
+                extractTextCapability.resolve(i);
+              },
+              reason => {
+                Window['ngxConsole'].error(
+                  `Unable to get text content for page ${i + 1}`,
+                  reason
+                );
+                // Page error -- assuming no text content.
+                this._pageContents[i] = "";
+                this._pageDiffs[i] = null;
+                extractTextCapability.resolve(i);
               }
-
-              // Store the normalized page content (text items) as one string.
-              [this._pageContents[i], this._pageDiffs[i]] = normalize(
-                strBuf.join("")
-              );
-
-              extractTextCapability.resolve(i);
-            },
-            reason => {
-              Window['ngxConsole'].error(
-                `Unable to get text content for page ${i + 1}`,
-                reason
-              );
-              // Page error -- assuming no text content.
-              this._pageContents[i] = "";
-              this._pageDiffs[i] = null;
-              extractTextCapability.resolve(i);
-            }
           );
+        }
+        // fall-through if the document has been removed from memory
+        return Promise.resolve();
       });
     }
   }
