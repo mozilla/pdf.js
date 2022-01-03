@@ -462,9 +462,7 @@ const Stepper = (function StepperClosure() {
 var Stats = (function Stats() {
   let stats = [];
   function clear(node) {
-    while (node.hasChildNodes()) {
-      node.removeChild(node.lastChild);
-    }
+    node.textContent = ""; // Remove any `node` contents from the DOM.
   }
   function getStatIndex(pageNumber) {
     for (let i = 0, ii = stats.length; i < ii; ++i) {
@@ -490,8 +488,7 @@ var Stats = (function Stats() {
       }
       const statsIndex = getStatIndex(pageNumber);
       if (statsIndex !== false) {
-        const b = stats[statsIndex];
-        this.panel.removeChild(b.div);
+        stats[statsIndex].div.remove();
         stats.splice(statsIndex, 1);
       }
       const wrapper = document.createElement("div");
