@@ -1555,8 +1555,7 @@ gulp.task(
       fs.readFileSync(BUILD_DIR + "version.json").toString()
     ).version;
 
-    config.stableVersion = config.betaVersion;
-    config.betaVersion = version;
+    config.stableVersion = version;
 
     return merge([
       createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2)).pipe(
@@ -1957,31 +1956,11 @@ gulp.task("wintersmith", function (done) {
       done(error);
       return;
     }
-    const { stableVersion, betaVersion } = config;
 
     replaceInFile(
       GH_PAGES_DIR + "/getting_started/index.html",
       /STABLE_VERSION/g,
-      stableVersion
-    );
-    replaceInFile(
-      GH_PAGES_DIR + "/getting_started/index.html",
-      /BETA_VERSION/g,
-      betaVersion
-    );
-
-    // Hide the beta version button if there is only a stable version.
-    const groupClass = betaVersion ? "btn-group-vertical centered" : "";
-    const hiddenClass = betaVersion ? "" : "hidden";
-    replaceInFile(
-      GH_PAGES_DIR + "/getting_started/index.html",
-      /GROUP_CLASS/g,
-      groupClass
-    );
-    replaceInFile(
-      GH_PAGES_DIR + "/getting_started/index.html",
-      /HIDDEN_CLASS/g,
-      hiddenClass
+      config.stableVersion
     );
 
     console.log("Done building with wintersmith.");

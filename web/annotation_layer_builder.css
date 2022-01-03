@@ -32,6 +32,13 @@
   height: 100%;
 }
 
+.annotationLayer .buttonWidgetAnnotation.pushButton > canvas {
+  position: relative;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
 .annotationLayer .linkAnnotation > a:hover,
 .annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
   opacity: 0.2;
@@ -192,15 +199,19 @@
   display: inline-block;
 }
 
-.annotationLayer .popup span {
+.annotationLayer .popupDate {
   display: inline-block;
   margin-left: 5px;
 }
 
-.annotationLayer .popup p {
+.annotationLayer .popupContent {
   border-top: 1px solid rgba(51, 51, 51, 1);
   margin-top: 2px;
   padding-top: 2px;
+}
+
+.annotationLayer .richText > * {
+  white-space: pre-wrap;
 }
 
 .annotationLayer .highlightAnnotation,

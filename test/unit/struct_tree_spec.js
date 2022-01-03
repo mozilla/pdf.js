@@ -19,6 +19,7 @@ import { getDocument } from "../../src/display/api.js";
 function equalTrees(rootA, rootB) {
   function walk(a, b) {
     expect(a.role).toEqual(b.role);
+    expect(a.lang).toEqual(b.lang);
     expect(a.type).toEqual(b.type);
     expect("children" in a).toEqual("children" in b);
     if (!a.children) {
@@ -47,6 +48,7 @@ describe("struct tree", function () {
           children: [
             {
               role: "Document",
+              lang: "en-US",
               children: [
                 {
                   role: "H1",

@@ -75,16 +75,9 @@ class WorkerMessageHandler {
       }
       testMessageProcessed = true;
 
-      // check if Uint8Array can be sent to worker
-      if (!(data instanceof Uint8Array)) {
-        handler.send("test", null);
-        return;
-      }
-      // making sure postMessage transfers are working
-      const supportTransfers = data[0] === 255;
-      handler.postMessageTransfers = supportTransfers;
-
-      handler.send("test", { supportTransfers });
+      // Ensure that `TypedArray`s can be sent to the worker,
+      // and that `postMessage` transfers are supported.
+      handler.send("test", data instanceof Uint8Array && data[0] === 255);
     });
 
     handler.on("configure", function wphConfigure(data) {
@@ -156,10 +149,6 @@ class WorkerMessageHandler {
     const workerHandlerName = docParams.docId + "_worker";
     let handler = new MessageHandler(workerHandlerName, docId, port);
 
-    // Ensure that postMessage transfers are always correctly enabled/disabled,
-    // to prevent "DataCloneError" in browsers without transfers support.
-    handler.postMessageTransfers = docParams.postMessageTransfers;
-
     function ensureNotTerminated() {
       if (terminated) {
         throw new Error("Worker was terminated");
@@ -181,11 +170,12 @@ class WorkerMessageHandler {
       await pdfManager.ensureDoc("parseStartXRef");
       await pdfManager.ensureDoc("parse", [recoveryMode]);
 
-      if (!recoveryMode) {
-        // Check that at least the first page can be successfully loaded,
-        // since otherwise the XRef table is definitely not valid.
-        await pdfManager.ensureDoc("checkFirstPage");
-      }
+      // Check that at least the first page can be successfully loaded,
+      // since otherwise the XRef table is definitely not valid.
+      await pdfManager.ensureDoc("checkFirstPage", [recoveryMode]);
+      // Check that the last page can be sucessfully loaded, to ensure that
+      // `numPages` is correct, and fallback to walking the entire /Pages-tree.
+      await pdfManager.ensureDoc("checkLastPage", [recoveryMode]);
 
       const isPureXfa = await pdfManager.ensureDoc("isPureXfa");
       if (isPureXfa) {
@@ -226,6 +216,7 @@ class WorkerMessageHandler {
             docId,
             source.data,
             source.password,
+            handler,
             evaluatorOptions,
             enableXfa,
             docBaseUrl
@@ -298,6 +289,7 @@ class WorkerMessageHandler {
             docId,
             pdfFile,
             source.password,
+            handler,
             evaluatorOptions,
             enableXfa,
             docBaseUrl
@@ -541,10 +533,6 @@ class WorkerMessageHandler {
       return pdfManager.onLoadedStream().then(function (stream) {
         return stream.bytes;
       });
-    });
-
-    handler.on("GetStats", function wphSetupGetStats(data) {
-      return pdfManager.ensureXRef("stats");
     });
 
     handler.on("GetAnnotations", function ({ pageIndex, intent }) {

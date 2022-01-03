@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+
 import {
   isValidRotation,
   parseQueryString,
   PresentationModeState,
-  waitOnEventOrTimeout,
 } from "./ui_utils.js";
+import { waitOnEventOrTimeout } from "./event_utils.js";
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds

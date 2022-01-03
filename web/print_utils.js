@@ -14,11 +14,12 @@
  */
 
 import { getXfaPageViewport, PixelsPerInch } from "pdfjs-lib";
-import { DefaultXfaLayerFactory } from "./xfa_layer_builder.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
+import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 function getXfaHtmlForPrinting(printContainer, pdfDocument) {
   const xfaHtml = pdfDocument.allXfaHtml;
-  const factory = new DefaultXfaLayerFactory();
+  const linkService = new SimpleLinkService();
   const scale = Math.round(PixelsPerInch.PDF_TO_CSS_UNITS * 100) / 100;
 
   for (const xfaPage of xfaHtml.children) {
@@ -26,12 +27,13 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
     page.className = "xfaPrintedPage";
     printContainer.appendChild(page);
 
-    const builder = factory.createXfaLayerBuilder(
-      /* pageDiv = */ page,
-      /* pdfPage = */ null,
-      /* annotationStorage = */ pdfDocument.annotationStorage,
-      /* xfaHtml = */ xfaPage
-    );
+    const builder = new XfaLayerBuilder({
+      pageDiv: page,
+      pdfPage: null,
+      annotationStorage: pdfDocument.annotationStorage,
+      linkService,
+      xfaHtml: xfaPage,
+    });
     const viewport = getXfaPageViewport(xfaPage, { scale });
 
     builder.render(viewport, "print");

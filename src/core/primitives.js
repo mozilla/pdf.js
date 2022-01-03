@@ -16,6 +16,7 @@
 import { assert, shadow, unreachable } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 
+const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
 
 const Name = (function NameClosure() {
@@ -90,8 +91,22 @@ class Dict {
   get(key1, key2, key3) {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.get: Expected keys to be ordered by length.");
+      }
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.get: Expected keys to be ordered by length.");
+        }
         value = this._map[key3];
       }
     }
@@ -105,8 +120,22 @@ class Dict {
   async getAsync(key1, key2, key3) {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.getAsync: Expected keys to be ordered by length.");
+      }
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.getAsync: Expected keys to be ordered by length.");
+        }
         value = this._map[key3];
       }
     }
@@ -120,8 +149,22 @@ class Dict {
   getArray(key1, key2, key3) {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.getArray: Expected keys to be ordered by length.");
+      }
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.getArray: Expected keys to be ordered by length.");
+        }
         value = this._map[key3];
       }
     }
@@ -380,6 +423,7 @@ function clearPrimitiveCaches() {
 }
 
 export {
+  CIRCULAR_REF,
   clearPrimitiveCaches,
   Cmd,
   Dict,

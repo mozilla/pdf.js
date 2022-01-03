@@ -53,11 +53,8 @@ window.onload = function () {
   function hashParameters() {
     const query = window.location.hash.substring(1);
     const params = new Map();
-    for (const part of query.split(/[&;]/)) {
-      const param = part.split("="),
-        key = param[0].toLowerCase(),
-        value = param.length > 1 ? param[1] : "";
-      params.set(decodeURIComponent(key), decodeURIComponent(value));
+    for (const [key, value] of new URLSearchParams(query)) {
+      params.set(key.toLowerCase(), value);
     }
     return params;
   }
@@ -248,9 +245,7 @@ window.onload = function () {
 
     // const cell = ID("itemlist");
     const table = document.getElementById("itemtable");
-    while (table.childNodes.length > 0) {
-      table.removeChild(table.childNodes[table.childNodes.length - 1]);
-    }
+    table.textContent = ""; // Remove any table contents from the DOM.
     const tbody = document.createElement("tbody");
     table.appendChild(tbody);
 

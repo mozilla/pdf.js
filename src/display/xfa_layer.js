@@ -13,8 +13,21 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
+
 import { warn } from "../shared/util.js";
 import { XfaText } from "./xfa_text.js";
+
+/**
+ * @typedef {Object} XfaLayerParameters
+ * @property {PageViewport} viewport
+ * @property {HTMLDivElement} div
+ * @property {Object} xfaHtml
+ * @property {AnnotationStorage} [annotationStorage]
+ * @property {IPDFLinkService} linkService
+ * @property {string} [intent] - (default value is 'display').
+ */
 
 class XfaLayer {
   static setupStorage(html, id, element, storage, intent) {
@@ -106,7 +119,9 @@ class XfaLayer {
         if (key === "textContent") {
           html.textContent = value;
         } else if (key === "class") {
-          html.setAttribute(key, value.join(" "));
+          if (value.length) {
+            html.setAttribute(key, value.join(" "));
+          }
         } else {
           if (isHTMLAnchorElement && (key === "href" || key === "newWindow")) {
             continue; // Handled below.
@@ -141,10 +156,15 @@ class XfaLayer {
     }
   }
 
+  /**
+   * Render the XFA layer.
+   *
+   * @param {XfaLayerParameters} parameters
+   */
   static render(parameters) {
     const storage = parameters.annotationStorage;
     const linkService = parameters.linkService;
-    const root = parameters.xfa;
+    const root = parameters.xfaHtml;
     const intent = parameters.intent || "display";
     const rootHtml = document.createElement(root.name);
     if (root.attributes) {
@@ -159,11 +179,16 @@ class XfaLayer {
 
     const rootDiv = parameters.div;
     rootDiv.appendChild(rootHtml);
-    const transform = `matrix(${parameters.viewport.transform.join(",")})`;
-    rootDiv.style.transform = transform;
+
+    if (parameters.viewport) {
+      const transform = `matrix(${parameters.viewport.transform.join(",")})`;
+      rootDiv.style.transform = transform;
+    }
 
     // Set defaults.
-    rootDiv.setAttribute("class", "xfaLayer xfaFont");
+    if (intent !== "richText") {
+      rootDiv.setAttribute("class", "xfaLayer xfaFont");
+    }
 
     // Text nodes used for the text highlighter.
     const textDivs = [];
@@ -245,11 +270,9 @@ class XfaLayer {
   }
 
   /**
-   * Update the xfa layer.
+   * Update the XFA layer.
    *
-   * @public
    * @param {XfaLayerParameters} parameters
-   * @memberof XfaLayer
    */
   static update(parameters) {
     const transform = `matrix(${parameters.viewport.transform.join(",")})`;

@@ -19,7 +19,7 @@
  * license.
  */
 
-import { info } from "../shared/util.js";
+import { FormatError, info } from "../shared/util.js";
 
 /**
  * @typedef {Object} CCITTFaxDecoderSource
@@ -811,6 +811,12 @@ class CCITTFaxDecoder {
       bits = 8;
       c = 0;
       do {
+        if (typeof this.outputBits !== "number") {
+          throw new FormatError(
+            'Invalid /CCITTFaxDecode data, "outputBits" must be a number.'
+          );
+        }
+
         if (this.outputBits > bits) {
           c <<= bits;
           if (!(this.codingPos & 1)) {

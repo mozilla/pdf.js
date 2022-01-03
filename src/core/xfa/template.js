@@ -55,6 +55,7 @@ import {
   $tabIndex,
   $text,
   $toHTML,
+  $toPages,
   $toStyle,
   $uid,
   ContentObject,
@@ -369,23 +370,32 @@ function handleBreak(node) {
   const pageArea = target && target[$getParent]();
 
   let index;
+  let nextPageArea = pageArea;
   if (node.startNew) {
+    // startNew === 1 so we must create a new container (pageArea or
+    // contentArea).
     if (target) {
       const contentAreas = pageArea.contentArea.children;
-      index = contentAreas.findIndex(e => e === target) - 1;
+      const indexForCurrent = contentAreas.indexOf(currentContentArea);
+      const indexForTarget = contentAreas.indexOf(target);
+      if (indexForCurrent !== -1 && indexForCurrent < indexForTarget) {
+        // The next container is after the current container so
+        // we can stay on the same page.
+        nextPageArea = null;
+      }
+      index = indexForTarget - 1;
     } else {
-      index = currentPageArea.contentArea.children.findIndex(
-        e => e === currentContentArea
-      );
+      index = currentPageArea.contentArea.children.indexOf(currentContentArea);
     }
   } else if (target && target !== currentContentArea) {
     const contentAreas = pageArea.contentArea.children;
-    index = contentAreas.findIndex(e => e === target) - 1;
+    index = contentAreas.indexOf(target) - 1;
+    nextPageArea = pageArea === currentPageArea ? null : pageArea;
   } else {
     return false;
   }
 
-  node[$extra].target = pageArea === currentPageArea ? null : pageArea;
+  node[$extra].target = nextPageArea;
   node[$extra].index = index;
   return true;
 }
@@ -465,7 +475,7 @@ class Arc extends XFAObject {
       },
     };
 
-    if (this.startAngle === 0 && this.sweepAngle === 360) {
+    if (this.sweepAngle === 360) {
       arc = {
         name: "ellipse",
         attributes: {
@@ -480,12 +490,12 @@ class Arc extends XFAObject {
     } else {
       const startAngle = (this.startAngle * Math.PI) / 180;
       const sweepAngle = (this.sweepAngle * Math.PI) / 180;
-      const largeArc = this.sweepAngle - this.startAngle > 180 ? 1 : 0;
+      const largeArc = this.sweepAngle > 180 ? 1 : 0;
       const [x1, y1, x2, y2] = [
         50 * (1 + Math.cos(startAngle)),
         50 * (1 - Math.sin(startAngle)),
-        50 * (1 + Math.cos(sweepAngle)),
-        50 * (1 - Math.sin(sweepAngle)),
+        50 * (1 + Math.cos(startAngle + sweepAngle)),
+        50 * (1 - Math.sin(startAngle + sweepAngle)),
       ];
 
       arc = {
@@ -5208,6 +5218,13 @@ class Subform extends XFAObject {
       style.height = measureToString(height);
     }
 
+    if (
+      (style.width === "0px" || style.height === "0px") &&
+      children.length === 0
+    ) {
+      return HTMLResult.EMPTY;
+    }
+
     const html = {
       name: "div",
       attributes,
@@ -5395,7 +5412,12 @@ class Template extends XFAObject {
     return searchNode(this, container, expr, true, true);
   }
 
-  [$toHTML]() {
+  /**
+   * This function is a generator because the conversion into
+   * pages is done asynchronously and we want to save the state
+   * of the function where we were in the previous iteration.
+   */
+  *[$toPages]() {
     if (!this.subform.children.length) {
       return HTMLResult.success({
         name: "div",
@@ -5551,7 +5573,7 @@ class Template extends XFAObject {
               hasSomething ||
               (html.html.children && html.html.children.length !== 0);
             htmlContentAreas[i].children.push(html.html);
-          } else if (!hasSomething) {
+          } else if (!hasSomething && mainHtml.children.length > 1) {
             mainHtml.children.pop();
           }
           return mainHtml;
@@ -5641,6 +5663,7 @@ class Template extends XFAObject {
         }
       }
       pageArea = targetPageArea || pageArea[$getNextPage]();
+      yield null;
     }
   }
 }

@@ -17,11 +17,12 @@
 @import url(xfa_layer_builder.css);
 
 :root {
-  --pdfViewer-padding-bottom: none;
+  --pdfViewer-padding-bottom: 0;
   --page-margin: 1px auto -8px;
   --page-border: 9px solid transparent;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --zoom-factor: 1;
+  --viewport-scale-factor: 1;
 }
 
 @media screen and (forced-colors: active) {
@@ -52,6 +53,12 @@
   background-clip: content-box;
   border-image: url(images/shadow.png) 9 9 repeat;
   background-color: rgba(255, 255, 255, 1);
+}
+
+.pdfViewer .dummyPage {
+  position: relative;
+  width: 0;
+  /* The height is set via JS, see `BaseViewer.#ensurePageViewVisible`. */
 }
 
 .pdfViewer.removePageBorders .page {
@@ -89,6 +96,7 @@
 }
 
 .spread .page,
+.spread .dummyPage,
 .pdfViewer.scrollHorizontal .page,
 .pdfViewer.scrollWrapped .page,
 .pdfViewer.scrollHorizontal .spread,
@@ -129,24 +137,24 @@
   bottom: 0;
   background: url("images/loading-icon.gif") center no-repeat;
 }
+.pdfViewer .page .loadingIcon.notVisible {
+  background: none;
+}
+
+.pdfViewer.enablePermissions .textLayer span {
+  user-select: none !important;
+  cursor: not-allowed;
+}
 
 .pdfPresentationMode .pdfViewer {
-  margin-left: 0;
-  margin-right: 0;
+  padding-bottom: 0;
 }
 
-.pdfPresentationMode .pdfViewer .page,
-.pdfPresentationMode .pdfViewer .spread {
-  display: block;
+.pdfPresentationMode .spread {
+  margin: 0;
 }
 
-.pdfPresentationMode .pdfViewer .page,
-.pdfPresentationMode .pdfViewer.removePageBorders .page {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.pdfPresentationMode:fullscreen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
+.pdfPresentationMode .pdfViewer .page {
+  margin: 0 auto;
+  border: 2px solid transparent;
 }

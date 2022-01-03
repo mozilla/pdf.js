@@ -16,7 +16,9 @@
 import {
   assert,
   BaseException,
+  FontType,
   objectSize,
+  StreamType,
   stringToPDFString,
   warn,
 } from "../shared/util.js";
@@ -73,6 +75,55 @@ class XRefEntryException extends BaseException {
 class XRefParseException extends BaseException {
   constructor(msg) {
     super(msg, "XRefParseException");
+  }
+}
+
+class DocStats {
+  constructor(handler) {
+    this._handler = handler;
+
+    this._streamTypes = new Set();
+    this._fontTypes = new Set();
+  }
+
+  _send() {
+    const streamTypes = Object.create(null),
+      fontTypes = Object.create(null);
+    for (const type of this._streamTypes) {
+      streamTypes[type] = true;
+    }
+    for (const type of this._fontTypes) {
+      fontTypes[type] = true;
+    }
+    this._handler.send("DocStats", { streamTypes, fontTypes });
+  }
+
+  addStreamType(type) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(StreamType[type] === type, 'addStreamType: Invalid "type" value.');
+    }
+    if (this._streamTypes.has(type)) {
+      return;
+    }
+    this._streamTypes.add(type);
+    this._send();
+  }
+
+  addFontType(type) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(FontType[type] === type, 'addFontType: Invalid "type" value.');
+    }
+    if (this._fontTypes.has(type)) {
+      return;
+    }
+    this._fontTypes.add(type);
+    this._send();
   }
 }
 
@@ -481,6 +532,7 @@ function recoverJsURL(str) {
 
 export {
   collectActions,
+  DocStats,
   encodeToXmlString,
   escapePDFName,
   getArrayLookupTableFactory,

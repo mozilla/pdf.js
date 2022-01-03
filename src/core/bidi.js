@@ -158,7 +158,8 @@ function bidi(str, startLevel = -1, vertical = false) {
 
   // Detect the bidi method
   // - If there are no rtl characters then no bidi needed
-  // - If less than 30% chars are rtl then string is primarily ltr
+  // - If less than 30% chars are rtl then string is primarily ltr,
+  //   unless the string is very short.
   // - If more than 30% chars are rtl then string is primarily rtl
   if (numBidi === 0) {
     isLTR = true;
@@ -166,7 +167,7 @@ function bidi(str, startLevel = -1, vertical = false) {
   }
 
   if (startLevel === -1) {
-    if (numBidi / strLength < 0.3) {
+    if (numBidi / strLength < 0.3 && strLength > 4) {
       isLTR = true;
       startLevel = 0;
     } else {

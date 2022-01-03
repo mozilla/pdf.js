@@ -85,6 +85,20 @@
        "lastPage": 2,
        "type": "eq"
     },
+    {  "id": "issue14256",
+       "file": "pdfs/issue14256.pdf",
+       "md5": "15938b7562146dbea7ed8aa15b172fe6",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue14269",
+       "file": "pdfs/issue14269.pdf",
+       "md5": "f34abf77a418f54e13fbcd03b063432e",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue11549",
        "file": "pdfs/issue11549_reduced.pdf",
        "md5": "a1ea636f413e02e10dbdf379ab4a99ae",
@@ -137,6 +151,24 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue2966",
+       "file": "pdfs/rc_annotation.pdf",
+       "md5": "7b978a8c2871b8902656adb67f7bd117",
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "issue13915",
+      "file": "pdfs/issue13915.pdf",
+      "md5": "fef3108733bbf80ea8551feedb427b1c",
+      "rounds": 1,
+      "firstPage": 51,
+      "lastPage": 51,
+      "link": true,
+      "type": "eq",
+      "annotations": true
+   },
     {  "id": "bug946506",
        "file": "pdfs/bug946506.pdf",
        "md5": "c28911b5c31bdc337c2ce404c5971cfc",
@@ -146,6 +178,13 @@
        "lastPage": 1,
        "type": "eq",
        "about": "Fonts referenced only by name and not by an object identifier."
+    },
+    {  "id": "bug931481",
+       "file": "pdfs/bug931481.pdf",
+       "md5": "547de872cbb2ecc653ae83d5be7e5be9",
+       "rounds": 1,
+       "link": true,
+       "type": "text"
     },
     {  "id": "bug911034",
        "file": "pdfs/bug911034.pdf",
@@ -157,6 +196,12 @@
     {  "id": "bug920426",
        "file": "pdfs/bug920426.pdf",
        "md5": "2fd118b44513afb22509c3584388cc29",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue8111",
+       "file": "pdfs/issue8111.pdf",
+       "md5": "14a2b3c19ed3d6cd7e138cdc141aa4a8",
        "rounds": 1,
        "type": "eq"
     },
@@ -823,6 +868,21 @@
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
     },
+    {  "id": "issue8019",
+       "file": "pdfs/issue8019.pdf",
+       "md5": "5263ea3e295ee004c9fe770146bc34ef",
+       "link": true,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue8022",
+       "file": "pdfs/issue8022.pdf",
+       "md5": "a1a028a5d44433a965dd1e778f321c14",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue8078",
        "file": "pdfs/issue8078.pdf",
        "md5": "8b7d74bc24b4157393e4e88a511c05f1",
@@ -983,6 +1043,22 @@
        "link": true,
        "type": "load"
     },
+    {  "id": "xfa_issue14150",
+       "file": "pdfs/xfa_issue14150.pdf",
+       "md5": "295b3e513b62945fbba73bce6908344c",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "xfa_issue14315",
+       "file": "pdfs/xfa_issue14315.pdf",
+       "md5": "e239710875f9dea72fd94c20672a29e1",
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
     {  "id": "xfa_issue14071",
        "file": "pdfs/xfa_issue14071.pdf",
        "md5": "7ef09705091602668ce22086c83a90f3",
@@ -1010,6 +1086,14 @@
     {  "id": "xfa_bug1718725",
        "file": "pdfs/xfa_bug1718725.pdf",
        "md5": "09c7a599338ff75491f29a8f1f94454b",
+       "link": true,
+       "rounds": 1,
+       "enableXfa": true,
+       "type": "eq"
+    },
+    {  "id": "xfa_bug1739502",
+       "file": "pdfs/xfa_bug1739502.pdf",
+       "md5": "a760a950cb225c3cbf25a55b5d95e264",
        "link": true,
        "rounds": 1,
        "enableXfa": true,
@@ -1822,6 +1906,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1219400",
+       "file": "pdfs/bug1219400.pdf",
+       "md5": "a1554914cc9653d5ee0b9220657b334f",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "bug1245391",
        "file": "pdfs/bug1245391_reduced.pdf",
        "md5": "6c946045ee0f2f663f269717c0f1614a",
@@ -2265,6 +2358,12 @@
        "lastPage": 100,
        "type": "eq"
     },
+    {  "id": "issue10301",
+       "file": "pdfs/issue10301.pdf",
+       "md5": "c7ee7ba727969ab3bba12a4d13739303",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "issue7544",
        "file": "pdfs/issue7544.pdf",
        "md5": "87e3a9fc7d6a6c1bd5b53af6926ce48e",
@@ -2545,6 +2644,12 @@
        "md5": "2782af6a4d0540fcea3897560f842094",
        "rounds": 1,
        "link": true,
+       "type": "eq"
+    },
+    {  "id": "issue9243",
+       "file": "pdfs/issue9243.pdf",
+       "md5": "f6b8c5c62b8875f7d9dfcd2b25d3aab8",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue8424",
@@ -3021,6 +3126,13 @@
        "link": false,
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "bug1627427",
+       "file": "pdfs/bug1627427_reduced.pdf",
+       "md5": "3ff75fcf455af49803f0f04eb071bdc3",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "issue8586",
        "file": "pdfs/issue8586.pdf",
@@ -4100,6 +4212,15 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue14203",
+       "file": "pdfs/issue14203.pdf",
+       "md5": "26c1c1e7341bc23fb28d805fa516dbbe",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 11,
+       "lastPage": 11,
+       "type": "eq"
+   },
     {  "id": "issue11045",
        "file": "pdfs/issue11045.pdf",
        "md5": "101d4cb649cc006e0f2b14923e8d97d6",
@@ -4348,6 +4469,13 @@
        "md5": "569aac1303c97004aab6a720d9b259b4",
        "rounds": 1,
        "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue14130",
+       "file": "pdfs/issue14130.pdf",
+       "md5": "82e7efb0a10122e793fc64348d93dc4e",
+       "enableXfa": true,
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue6151",
@@ -5039,6 +5167,12 @@
       "firstPage": 1,
       "lastPage": 1,
       "type": "eq"
+    },
+    {  "id": "issue11656",
+       "file": "pdfs/issue11656.pdf",
+       "md5": "82d5d4f5978a4974707deb1ea98e62f2",
+       "rounds": 1,
+       "type": "text"
     },
     {  "id": "vertical",
       "file": "pdfs/vertical.pdf",
@@ -5857,7 +5991,7 @@
        "link": false,
        "rounds": 1,
        "lastPage": 1,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "zero_descent",
        "file": "pdfs/zero_descent.pdf",
@@ -6049,5 +6183,13 @@
       "enableXfa": true,
       "type": "eq",
       "lastPage": 1
+    },
+    { "id": "xfa_bug1735738",
+      "file": "pdfs/xfa_bug1735738.pdf",
+      "md5": "7aa91f6681798c48e0c9d9836ed30742",
+      "enableXfa": true,
+      "link": true,
+      "rounds": 1,
+      "type": "eq"
     }
 ]
