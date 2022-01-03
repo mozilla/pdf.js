@@ -23,6 +23,9 @@
   overflow: hidden;
   opacity: 0.2;
   line-height: 1;
+  -webkit-text-size-adjust: none;
+     -moz-text-size-adjust: none;
+          text-size-adjust: none;
 }
 
 .textLayer span,
@@ -32,6 +35,13 @@
   white-space: pre;
   cursor: text;
   transform-origin: 0% 0%;
+}
+
+/* Only necessary in Google Chrome, see issue 14205, and most unfortunately
+ * the problem doesn't show up in "text" reference tests. */
+.textLayer span.markedContent {
+  top: 0;
+  height: 0;
 }
 
 .textLayer .highlight {
@@ -113,6 +123,13 @@
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.annotationLayer .buttonWidgetAnnotation.pushButton > canvas {
+  position: relative;
+  top: 0;
+  left: 0;
+  z-index: -1;
 }
 
 .annotationLayer .linkAnnotation > a:hover,
@@ -277,15 +294,19 @@
   display: inline-block;
 }
 
-.annotationLayer .popup span {
+.annotationLayer .popupDate {
   display: inline-block;
   margin-left: 5px;
 }
 
-.annotationLayer .popup p {
+.annotationLayer .popupContent {
   border-top: 1px solid rgba(51, 51, 51, 1);
   margin-top: 2px;
   padding-top: 2px;
+}
+
+.annotationLayer .richText > * {
+  white-space: pre-wrap;
 }
 
 .annotationLayer .highlightAnnotation,
@@ -520,6 +541,9 @@
 .xfaLink {
   width: 100%;
   height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .xfaCheckbox,
@@ -630,11 +654,12 @@
 }
 
 :root {
-  --pdfViewer-padding-bottom: none;
+  --pdfViewer-padding-bottom: 0;
   --page-margin: 1px auto -8px;
   --page-border: 9px solid transparent;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --zoom-factor: 1;
+  --viewport-scale-factor: 1;
 }
 
 @media screen and (forced-colors: active) {
@@ -666,6 +691,12 @@
   -o-border-image: url(images/shadow.png) 9 9 repeat;
      border-image: url(images/shadow.png) 9 9 repeat;
   background-color: rgba(255, 255, 255, 1);
+}
+
+.pdfViewer .dummyPage {
+  position: relative;
+  width: 0;
+  /* The height is set via JS, see `BaseViewer.#ensurePageViewVisible`. */
 }
 
 .pdfViewer.removePageBorders .page {
@@ -703,6 +734,7 @@
 }
 
 .spread .page,
+.spread .dummyPage,
 .pdfViewer.scrollHorizontal .page,
 .pdfViewer.scrollWrapped .page,
 .pdfViewer.scrollHorizontal .spread,
@@ -743,31 +775,28 @@
   bottom: 0;
   background: url("images/loading-icon.gif") center no-repeat;
 }
+.pdfViewer .page .loadingIcon.notVisible {
+  background: none;
+}
+
+.pdfViewer.enablePermissions .textLayer span {
+  -webkit-user-select: none !important;
+     -moz-user-select: none !important;
+          user-select: none !important;
+  cursor: not-allowed;
+}
 
 .pdfPresentationMode .pdfViewer {
-  margin-left: 0;
-  margin-right: 0;
+  padding-bottom: 0;
 }
 
-.pdfPresentationMode .pdfViewer .page,
-.pdfPresentationMode .pdfViewer .spread {
-  display: block;
+.pdfPresentationMode .spread {
+  margin: 0;
 }
 
-.pdfPresentationMode .pdfViewer .page,
-.pdfPresentationMode .pdfViewer.removePageBorders .page {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.pdfPresentationMode:-webkit-full-screen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
-}
-
-.pdfPresentationMode:fullscreen .pdfViewer .page {
-  margin-bottom: 100%;
-  border: 0;
+.pdfPresentationMode .pdfViewer .page {
+  margin: 0 auto;
+  border: 2px solid transparent;
 }
 
 :root {
@@ -959,16 +988,8 @@ select {
   display: none !important;
 }
 
-.pdfViewer.enablePermissions .textLayer span {
-  -webkit-user-select: none !important;
-     -moz-user-select: none !important;
-          user-select: none !important;
-  cursor: not-allowed;
-}
-
 #viewerContainer.pdfPresentationMode:-webkit-full-screen {
   top: 0;
-  border-top: 2px solid rgba(0, 0, 0, 0);
   background-color: rgba(0, 0, 0, 1);
   width: 100%;
   height: 100%;
@@ -980,7 +1001,6 @@ select {
 
 #viewerContainer.pdfPresentationMode:fullscreen {
   top: 0;
-  border-top: 2px solid rgba(0, 0, 0, 0);
   background-color: rgba(0, 0, 0, 1);
   width: 100%;
   height: 100%;
@@ -1417,11 +1437,6 @@ html[dir="rtl"] .secondaryToolbar {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: -4px;
-}
-
-#secondaryToolbarButtonContainer.hiddenScrollModeButtons > .scrollModeButtons,
-#secondaryToolbarButtonContainer.hiddenSpreadModeButtons > .spreadModeButtons {
-  display: none !important;
 }
 
 .doorHanger,

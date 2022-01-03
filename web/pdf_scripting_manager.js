@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./event_utils").EventBus} EventBus */
+
+import { apiPageLayoutToViewerModes, RenderingStates } from "./ui_utils.js";
 import { createPromiseCapability, shadow } from "pdfjs-lib";
-import { apiPageLayoutToViewerModes } from "./ui_utils.js";
-import { RenderingStates } from "./pdf_rendering_queue.js";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions

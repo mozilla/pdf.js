@@ -22,6 +22,7 @@ import {
   isRefsEqual,
   isStream,
   Name,
+  Ref,
   RefSet,
   RefSetCache,
 } from "./primitives.js";
@@ -30,9 +31,9 @@ import {
   MissingDataException,
   recoverJsURL,
   toRomanNumerals,
+  XRefEntryException,
 } from "./core_utils.js";
 import {
-  createPromiseCapability,
   createValidAbsoluteUrl,
   DocumentActionEventType,
   FormatError,
@@ -48,6 +49,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
+import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
 import { GlobalImageCache } from "./image_utils.js";
@@ -67,9 +69,14 @@ class Catalog {
     this.xref = xref;
 
     this._catDict = xref.getCatalogObj();
-    if (!isDict(this._catDict)) {
+    if (!(this._catDict instanceof Dict)) {
       throw new FormatError("Catalog object is not a dictionary.");
     }
+    // Given that `XRef.parse` will both fetch *and* validate the /Pages-entry,
+    // the following call must always succeed here:
+    this.toplevelPagesDict; // eslint-disable-line no-unused-expressions
+
+    this._actualNumPages = null;
 
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = new Map();
@@ -150,37 +157,37 @@ class Catalog {
 
   get metadata() {
     const streamRef = this._catDict.getRaw("Metadata");
-    if (!isRef(streamRef)) {
+    if (!(streamRef instanceof Ref)) {
       return shadow(this, "metadata", null);
     }
 
-    const suppressEncryption = !(
-      this.xref.encrypt && this.xref.encrypt.encryptMetadata
-    );
-    const stream = this.xref.fetch(streamRef, suppressEncryption);
     let metadata = null;
+    try {
+      const suppressEncryption = !(
+        this.xref.encrypt && this.xref.encrypt.encryptMetadata
+      );
+      const stream = this.xref.fetch(streamRef, suppressEncryption);
 
-    if (isStream(stream) && isDict(stream.dict)) {
-      const type = stream.dict.get("Type");
-      const subtype = stream.dict.get("Subtype");
+      if (stream instanceof BaseStream && stream.dict instanceof Dict) {
+        const type = stream.dict.get("Type");
+        const subtype = stream.dict.get("Subtype");
 
-      if (isName(type, "Metadata") && isName(subtype, "XML")) {
-        // XXX: This should examine the charset the XML document defines,
-        // however since there are currently no real means to decode arbitrary
-        // charsets, let's just hope that the author of the PDF was reasonable
-        // enough to stick with the XML default charset, which is UTF-8.
-        try {
+        if (isName(type, "Metadata") && isName(subtype, "XML")) {
+          // XXX: This should examine the charset the XML document defines,
+          // however since there are currently no real means to decode arbitrary
+          // charsets, let's just hope that the author of the PDF was reasonable
+          // enough to stick with the XML default charset, which is UTF-8.
           const data = stringToUTF8String(stream.getString());
           if (data) {
             metadata = new MetadataParser(data).serializable;
           }
-        } catch (e) {
-          if (e instanceof MissingDataException) {
-            throw e;
-          }
-          info("Skipping invalid metadata.");
         }
       }
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      info(`Skipping invalid Metadata: "${ex}".`);
     }
     return shadow(this, "metadata", metadata);
   }
@@ -534,14 +541,26 @@ class Catalog {
     };
   }
 
-  get numPages() {
+  setActualNumPages(num = null) {
+    this._actualNumPages = num;
+  }
+
+  get hasActualNumPages() {
+    return this._actualNumPages !== null;
+  }
+
+  get _pagesCount() {
     const obj = this.toplevelPagesDict.get("Count");
     if (!Number.isInteger(obj)) {
       throw new FormatError(
         "Page count in top-level pages dictionary is not an integer."
       );
     }
-    return shadow(this, "numPages", obj);
+    return shadow(this, "_pagesCount", obj);
+  }
+
+  get numPages() {
+    return this.hasActualNumPages ? this._actualNumPages : this._pagesCount;
   }
 
   get destinations() {
@@ -1071,116 +1090,232 @@ class Catalog {
     });
   }
 
-  getPageDict(pageIndex) {
-    const capability = createPromiseCapability();
-    const nodesToVisit = [this._catDict.getRaw("Pages")];
+  async getPageDict(pageIndex) {
+    const nodesToVisit = [this.toplevelPagesDict];
     const visitedNodes = new RefSet();
+
+    const pagesRef = this._catDict.getRaw("Pages");
+    if (pagesRef instanceof Ref) {
+      visitedNodes.put(pagesRef);
+    }
     const xref = this.xref,
-      pageKidsCountCache = this.pageKidsCountCache;
-    let count,
-      currentPageIndex = 0;
+      pageKidsCountCache = this.pageKidsCountCache,
+      pageIndexCache = this.pageIndexCache;
+    let currentPageIndex = 0;
 
-    function next() {
-      while (nodesToVisit.length) {
-        const currentNode = nodesToVisit.pop();
+    while (nodesToVisit.length) {
+      const currentNode = nodesToVisit.pop();
 
-        if (isRef(currentNode)) {
-          count = pageKidsCountCache.get(currentNode);
-          // Skip nodes where the page can't be.
-          if (count > 0 && currentPageIndex + count < pageIndex) {
-            currentPageIndex += count;
-            continue;
+      if (currentNode instanceof Ref) {
+        const count = pageKidsCountCache.get(currentNode);
+        // Skip nodes where the page can't be.
+        if (count >= 0 && currentPageIndex + count <= pageIndex) {
+          currentPageIndex += count;
+          continue;
+        }
+        // Prevent circular references in the /Pages tree.
+        if (visitedNodes.has(currentNode)) {
+          throw new FormatError("Pages tree contains circular reference.");
+        }
+        visitedNodes.put(currentNode);
+
+        const obj = await xref.fetchAsync(currentNode);
+        if (obj instanceof Dict) {
+          let type = obj.getRaw("Type");
+          if (type instanceof Ref) {
+            type = await xref.fetchAsync(type);
           }
-          // Prevent circular references in the /Pages tree.
-          if (visitedNodes.has(currentNode)) {
-            capability.reject(
-              new FormatError("Pages tree contains circular reference.")
-            );
-            return;
-          }
-          visitedNodes.put(currentNode);
-
-          xref.fetchAsync(currentNode).then(function (obj) {
-            if (isDict(obj, "Page") || (isDict(obj) && !obj.has("Kids"))) {
-              if (pageIndex === currentPageIndex) {
-                // Cache the Page reference, since it can *greatly* improve
-                // performance by reducing redundant lookups in long documents
-                // where all nodes are found at *one* level of the tree.
-                if (currentNode && !pageKidsCountCache.has(currentNode)) {
-                  pageKidsCountCache.put(currentNode, 1);
-                }
-                capability.resolve([obj, currentNode]);
-              } else {
-                currentPageIndex++;
-                next();
-              }
-              return;
+          if (isName(type, "Page") || !obj.has("Kids")) {
+            // Cache the Page reference, since it can *greatly* improve
+            // performance by reducing redundant lookups in long documents
+            // where all nodes are found at *one* level of the tree.
+            if (!pageKidsCountCache.has(currentNode)) {
+              pageKidsCountCache.put(currentNode, 1);
             }
-            nodesToVisit.push(obj);
-            next();
-          }, capability.reject);
-          return;
-        }
+            // Help improve performance of the `getPageIndex` method.
+            if (!pageIndexCache.has(currentNode)) {
+              pageIndexCache.put(currentNode, currentPageIndex);
+            }
 
-        // Must be a child page dictionary.
-        if (!isDict(currentNode)) {
-          capability.reject(
-            new FormatError(
-              "Page dictionary kid reference points to wrong type of object."
-            )
-          );
-          return;
-        }
-
-        count = currentNode.get("Count");
-        if (Number.isInteger(count) && count >= 0) {
-          // Cache the Kids count, since it can reduce redundant lookups in
-          // documents where all nodes are found at *one* level of the tree.
-          const objId = currentNode.objId;
-          if (objId && !pageKidsCountCache.has(objId)) {
-            pageKidsCountCache.put(objId, count);
-          }
-          // Skip nodes where the page can't be.
-          if (currentPageIndex + count <= pageIndex) {
-            currentPageIndex += count;
-            continue;
-          }
-        }
-
-        const kids = currentNode.get("Kids");
-        if (!Array.isArray(kids)) {
-          // Prevent errors in corrupt PDF documents that violate the
-          // specification by *inlining* Page dicts directly in the Kids
-          // array, rather than using indirect objects (fixes issue9540.pdf).
-          if (
-            isName(currentNode.get("Type"), "Page") ||
-            (!currentNode.has("Type") && currentNode.has("Contents"))
-          ) {
             if (currentPageIndex === pageIndex) {
-              capability.resolve([currentNode, null]);
-              return;
+              return [obj, currentNode];
             }
             currentPageIndex++;
             continue;
           }
+        }
+        nodesToVisit.push(obj);
+        continue;
+      }
 
-          capability.reject(
-            new FormatError("Page dictionary kids object is not an array.")
-          );
-          return;
+      // Must be a child page dictionary.
+      if (!(currentNode instanceof Dict)) {
+        throw new FormatError(
+          "Page dictionary kid reference points to wrong type of object."
+        );
+      }
+      const { objId } = currentNode;
+
+      let count = currentNode.getRaw("Count");
+      if (count instanceof Ref) {
+        count = await xref.fetchAsync(count);
+      }
+      if (Number.isInteger(count) && count >= 0) {
+        // Cache the Kids count, since it can reduce redundant lookups in
+        // documents where all nodes are found at *one* level of the tree.
+        if (objId && !pageKidsCountCache.has(objId)) {
+          pageKidsCountCache.put(objId, count);
         }
 
-        // Always check all `Kids` nodes, to avoid getting stuck in an empty
-        // node further down in the tree (see issue5644.pdf, issue8088.pdf),
-        // and to ensure that we actually find the correct `Page` dict.
-        for (let last = kids.length - 1; last >= 0; last--) {
-          nodesToVisit.push(kids[last]);
+        // Skip nodes where the page can't be.
+        if (currentPageIndex + count <= pageIndex) {
+          currentPageIndex += count;
+          continue;
         }
       }
-      capability.reject(new Error(`Page index ${pageIndex} not found.`));
+
+      let kids = currentNode.getRaw("Kids");
+      if (kids instanceof Ref) {
+        kids = await xref.fetchAsync(kids);
+      }
+      if (!Array.isArray(kids)) {
+        // Prevent errors in corrupt PDF documents that violate the
+        // specification by *inlining* Page dicts directly in the Kids
+        // array, rather than using indirect objects (fixes issue9540.pdf).
+        let type = currentNode.getRaw("Type");
+        if (type instanceof Ref) {
+          type = await xref.fetchAsync(type);
+        }
+        if (isName(type, "Page") || !currentNode.has("Kids")) {
+          if (currentPageIndex === pageIndex) {
+            return [currentNode, null];
+          }
+          currentPageIndex++;
+          continue;
+        }
+
+        throw new FormatError("Page dictionary kids object is not an array.");
+      }
+
+      // Always check all `Kids` nodes, to avoid getting stuck in an empty
+      // node further down in the tree (see issue5644.pdf, issue8088.pdf),
+      // and to ensure that we actually find the correct `Page` dict.
+      for (let last = kids.length - 1; last >= 0; last--) {
+        nodesToVisit.push(kids[last]);
+      }
     }
-    next();
-    return capability.promise;
+
+    throw new Error(`Page index ${pageIndex} not found.`);
+  }
+
+  /**
+   * Eagerly fetches the entire /Pages-tree; should ONLY be used as a fallback.
+   * @returns {Promise<Map>}
+   */
+  async getAllPageDicts(recoveryMode = false) {
+    const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
+    const visitedNodes = new RefSet();
+
+    const pagesRef = this._catDict.getRaw("Pages");
+    if (pagesRef instanceof Ref) {
+      visitedNodes.put(pagesRef);
+    }
+    const map = new Map(),
+      xref = this.xref,
+      pageIndexCache = this.pageIndexCache;
+    let pageIndex = 0;
+
+    function addPageDict(pageDict, pageRef) {
+      // Help improve performance of the `getPageIndex` method.
+      if (pageRef && !pageIndexCache.has(pageRef)) {
+        pageIndexCache.put(pageRef, pageIndex);
+      }
+
+      map.set(pageIndex++, [pageDict, pageRef]);
+    }
+    function addPageError(error) {
+      if (error instanceof XRefEntryException && !recoveryMode) {
+        throw error;
+      }
+
+      map.set(pageIndex++, [error, null]);
+    }
+
+    while (queue.length > 0) {
+      const queueItem = queue[queue.length - 1];
+      const { currentNode, posInKids } = queueItem;
+
+      let kids = currentNode.getRaw("Kids");
+      if (kids instanceof Ref) {
+        try {
+          kids = await xref.fetchAsync(kids);
+        } catch (ex) {
+          addPageError(ex);
+          break;
+        }
+      }
+      if (!Array.isArray(kids)) {
+        addPageError(
+          new FormatError("Page dictionary kids object is not an array.")
+        );
+        break;
+      }
+
+      if (posInKids >= kids.length) {
+        queue.pop();
+        continue;
+      }
+
+      const kidObj = kids[posInKids];
+      let obj;
+      if (kidObj instanceof Ref) {
+        // Prevent circular references in the /Pages tree.
+        if (visitedNodes.has(kidObj)) {
+          addPageError(
+            new FormatError("Pages tree contains circular reference.")
+          );
+          break;
+        }
+        visitedNodes.put(kidObj);
+
+        try {
+          obj = await xref.fetchAsync(kidObj);
+        } catch (ex) {
+          addPageError(ex);
+          break;
+        }
+      } else {
+        // Prevent errors in corrupt PDF documents that violate the
+        // specification by *inlining* Page dicts directly in the Kids
+        // array, rather than using indirect objects (see issue9540.pdf).
+        obj = kidObj;
+      }
+      if (!(obj instanceof Dict)) {
+        addPageError(
+          new FormatError(
+            "Page dictionary kid reference points to wrong type of object."
+          )
+        );
+        break;
+      }
+
+      let type = obj.getRaw("Type");
+      if (type instanceof Ref) {
+        try {
+          type = await xref.fetchAsync(type);
+        } catch (ex) {
+          addPageError(ex);
+          break;
+        }
+      }
+      if (isName(type, "Page") || !obj.has("Kids")) {
+        addPageDict(obj, kidObj instanceof Ref ? kidObj : null);
+      } else {
+        queue.push({ currentNode: obj, posInKids: 0 });
+      }
+      queueItem.posInKids++;
+    }
+    return map;
   }
 
   getPageIndex(pageRef) {

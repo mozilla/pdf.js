@@ -21,8 +21,8 @@ import { Thermometer } from "./thermometer.js";
 
 const VIEWER_TYPE = "PDF.js";
 const VIEWER_VARIATION = "Full";
-const VIEWER_VERSION = "10.0";
-const FORMS_VERSION = undefined;
+const VIEWER_VERSION = 21.00720099;
+const FORMS_VERSION = 21.00720099;
 
 class App extends PDFObject {
   constructor(data) {

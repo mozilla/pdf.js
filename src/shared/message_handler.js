@@ -83,7 +83,6 @@ class MessageHandler {
     this.comObj = comObj;
     this.callbackId = 1;
     this.streamId = 1;
-    this.postMessageTransfers = true;
     this.streamSinks = Object.create(null);
     this.streamControllers = Object.create(null);
     this.callbackCapabilities = Object.create(null);
@@ -180,7 +179,7 @@ class MessageHandler {
    * @param {Array} [transfers] - List of transfers/ArrayBuffers.
    */
   send(actionName, data, transfers) {
-    this._postMessage(
+    this.comObj.postMessage(
       {
         sourceName: this.sourceName,
         targetName: this.targetName,
@@ -204,7 +203,7 @@ class MessageHandler {
     const capability = createPromiseCapability();
     this.callbackCapabilities[callbackId] = capability;
     try {
-      this._postMessage(
+      this.comObj.postMessage(
         {
           sourceName: this.sourceName,
           targetName: this.targetName,
@@ -247,7 +246,7 @@ class MessageHandler {
             cancelCall: null,
             isClosed: false,
           };
-          this._postMessage(
+          comObj.postMessage(
             {
               sourceName,
               targetName,
@@ -322,7 +321,7 @@ class MessageHandler {
           this.sinkCapability = createPromiseCapability();
           this.ready = this.sinkCapability.promise;
         }
-        self._postMessage(
+        comObj.postMessage(
           {
             sourceName,
             targetName,
@@ -547,20 +546,6 @@ class MessageHandler {
       streamController.cancelCall && streamController.cancelCall.promise,
     ]);
     delete this.streamControllers[streamId];
-  }
-
-  /**
-   * Sends raw message to the comObj.
-   * @param {Object} message - Raw message.
-   * @param transfers List of transfers/ArrayBuffers, or undefined.
-   * @private
-   */
-  _postMessage(message, transfers) {
-    if (transfers && this.postMessageTransfers) {
-      this.comObj.postMessage(message, transfers);
-    } else {
-      this.comObj.postMessage(message);
-    }
   }
 
   destroy() {

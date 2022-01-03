@@ -115,12 +115,21 @@ class BasePdfManager {
 }
 
 class LocalPdfManager extends BasePdfManager {
-  constructor(docId, data, password, evaluatorOptions, enableXfa, docBaseUrl) {
+  constructor(
+    docId,
+    data,
+    password,
+    msgHandler,
+    evaluatorOptions,
+    enableXfa,
+    docBaseUrl
+  ) {
     super();
 
     this._docId = docId;
     this._password = password;
     this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
+    this.msgHandler = msgHandler;
     this.evaluatorOptions = evaluatorOptions;
     this.enableXfa = enableXfa;
 

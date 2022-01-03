@@ -24,7 +24,24 @@ var os = require("os");
 var puppeteer = require("puppeteer");
 var url = require("url");
 var testUtils = require("./testutils.js");
+const dns = require("dns");
+const readline = require("readline");
 const yargs = require("yargs");
+
+// Chrome uses host `127.0.0.1` in the browser's websocket endpoint URL while
+// Firefox uses `localhost`, which before Node.js 17 also resolved to the IPv4
+// address `127.0.0.1` by Node.js' DNS resolver. However, this behavior changed
+// in Node.js 17 where the default is to prefer an IPv6 address if one is
+// offered (which varies based on the OS and/or how the `localhost` hostname
+// resolution is configured), so it can now also resolve to `::1`. This causes
+// Firefox to not start anymore since it doesn't bind on the `::1` interface.
+// To avoid this, we switch Node.js' DNS resolver back to preferring IPv4
+// since we connect to a local browser anyway. Only do this for Node.js versions
+// that actually have this API since it got introduced in Node.js 14.18.0 and
+// it's not relevant for older versions anyway.
+if (dns.setDefaultResultOrder !== undefined) {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 function parseOptions() {
   yargs
@@ -213,14 +230,17 @@ function updateRefImages() {
     sync(false); // don't remove tmp/ for botio
     return;
   }
-  testUtils.confirm(
+
+  const reader = readline.createInterface(process.stdin, process.stdout);
+  reader.question(
     "Would you like to update the master copy in ref/? [yn] ",
-    function (confirmed) {
-      if (confirmed) {
+    function (answer) {
+      if (answer.toLowerCase() === "y") {
         sync(true);
       } else {
         console.log("  OK, not updating.");
       }
+      reader.close();
     }
   );
 }
@@ -342,13 +362,16 @@ function startRefTest(masterMode, showRefImages) {
       }
       console.log("Temporary snapshot dir tmp/ is still around.");
       console.log("tmp/ can be removed if it has nothing you need.");
-      testUtils.confirm(
+
+      const reader = readline.createInterface(process.stdin, process.stdout);
+      reader.question(
         "SHOULD THIS SCRIPT REMOVE tmp/? THINK CAREFULLY [yn] ",
-        function (confirmed) {
-          if (confirmed) {
+        function (answer) {
+          if (answer.toLowerCase() === "y") {
             testUtils.removeDirSync(refsTmpDir);
           }
           setup();
+          reader.close();
         }
       );
     } else {
@@ -921,6 +944,7 @@ async function startBrowser(browserName, startUrl = "") {
       "pdfjs.disabled": true,
       "browser.helperApps.neverAsk.saveToDisk": "application/pdf",
       // Avoid popup when saving is done
+      "browser.download.improvements_to_download_panel": false,
       "browser.download.panel.shown": true,
       // Save file in output
       "browser.download.folderList": 2,
@@ -939,7 +963,7 @@ async function startBrowser(browserName, startUrl = "") {
   if (startUrl) {
     const pages = await browser.pages();
     const page = pages[0];
-    await page.goto(startUrl, { timeout: 0 });
+    await page.goto(startUrl, { timeout: 0, waitUntil: "domcontentloaded" });
   }
 
   return browser;
@@ -974,7 +998,7 @@ function startBrowsers(initSessionCallback, makeStartUrl = null) {
         }
       })
       .catch(function (ex) {
-        console.log(`Error while starting ${browserName}: ${ex}`);
+        console.log(`Error while starting ${browserName}: ${ex.message}`);
         closeSession(browserName);
       });
   }

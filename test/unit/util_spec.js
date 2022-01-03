@@ -185,6 +185,18 @@ describe("util", function () {
       const str = "string\x00With\x00Null\x00Chars";
       expect(removeNullCharacters(str)).toEqual("stringWithNullChars");
     });
+
+    it("should modify string with non-displayable characters", function () {
+      const str = Array.from(Array(32).keys())
+        .map(x => String.fromCharCode(x) + "a")
+        .join("");
+      // \x00 is replaced by an empty string.
+      const expected =
+        "a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a";
+      expect(removeNullCharacters(str, /* replaceInvisible */ true)).toEqual(
+        expected
+      );
+    });
   });
 
   describe("ReadableStream", function () {

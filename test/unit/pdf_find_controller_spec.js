@@ -14,7 +14,7 @@
  */
 
 import { buildGetDocumentParams } from "./test_utils.js";
-import { EventBus } from "../../web/ui_utils.js";
+import { EventBus } from "../../web/event_utils.js";
 import { getDocument } from "../../src/display/api.js";
 import { PDFFindController } from "../../web/pdf_find_controller.js";
 import { SimpleLinkService } from "../../web/pdf_link_service.js";

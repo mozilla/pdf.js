@@ -26,6 +26,7 @@ import {
   AnnotationFlag,
   AnnotationType,
   OPS,
+  RenderingIntentFlag,
   stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
@@ -413,10 +414,13 @@ describe("annotation", function () {
 
   describe("AnnotationBorderStyle", function () {
     it("should set and get a valid width", function () {
-      const borderStyle = new AnnotationBorderStyle();
-      borderStyle.setWidth(3);
+      const borderStyleInt = new AnnotationBorderStyle();
+      borderStyleInt.setWidth(3);
+      const borderStyleNum = new AnnotationBorderStyle();
+      borderStyleNum.setWidth(2.5);
 
-      expect(borderStyle.width).toEqual(3);
+      expect(borderStyleInt.width).toEqual(3);
+      expect(borderStyleNum.width).toEqual(2.5);
     });
 
     it("should not set and get an invalid width", function () {
@@ -1680,6 +1684,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -1694,6 +1699,7 @@ describe("annotation", function () {
         [0, 0, 32, 10],
         [32, 0, 0, 10, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2319,6 +2325,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         checkboxEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2335,6 +2342,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[3][0][0].unicode).toEqual("4");
     });
@@ -2378,6 +2386,7 @@ describe("annotation", function () {
       let operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2392,6 +2401,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2402,6 +2412,7 @@ describe("annotation", function () {
       operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2416,6 +2427,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -2464,6 +2476,7 @@ describe("annotation", function () {
         const operatorList = await annotation.getOperatorList(
           partialEvaluator,
           task,
+          RenderingIntentFlag.PRINT,
           false,
           annotationStorage
         );
@@ -2478,6 +2491,7 @@ describe("annotation", function () {
           [0, 0, 0, 0],
           [0, 0, 0, 0, 0, 0],
           [1, 0, 0, 1, 0, 0],
+          false,
         ]);
         expect(operatorList.argsArray[1]).toEqual(
           new Uint8ClampedArray([26, 51, 76])
@@ -2524,6 +2538,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2538,6 +2553,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2727,6 +2743,7 @@ describe("annotation", function () {
       let operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2741,6 +2758,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2751,6 +2769,7 @@ describe("annotation", function () {
       operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2765,6 +2784,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -2811,6 +2831,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2825,6 +2846,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])

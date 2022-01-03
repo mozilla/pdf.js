@@ -50,6 +50,7 @@
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-dom-node-remove": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
@@ -71,6 +72,7 @@
     "no-inner-declarations": ["error", "functions"],
     "no-invalid-regexp": "error",
     "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
     "no-obj-calls": "error",
     "no-promise-executor-return": "error",
     "no-regex-spaces": "error",
@@ -82,6 +84,7 @@
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
     "no-unsafe-optional-chaining": ["error", { "disallowArithmeticOperators": true }],
+    "no-unused-private-class-members": "error",
     "use-isnan": ["error", { "enforceForIndexOf": true, }],
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
