@@ -103,6 +103,8 @@ function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
  * @implements {IPDFLinkService}
  */
 class PDFLinkService {
+  #pagesRefCache = new Map();
+
   /**
    * @param {PDFLinkServiceOptions} options
    */
@@ -122,14 +124,12 @@ class PDFLinkService {
     this.pdfDocument = null;
     this.pdfViewer = null;
     this.pdfHistory = null;
-
-    this._pagesRefCache = null;
   }
 
   setDocument(pdfDocument, baseUrl = null) {
     this.baseUrl = baseUrl;
     this.pdfDocument = pdfDocument;
-    this._pagesRefCache = Object.create(null);
+    this.#pagesRefCache.clear();
   }
 
   setViewer(pdfViewer) {
@@ -505,7 +505,7 @@ class PDFLinkService {
     }
     const refStr =
       pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
-    this._pagesRefCache[refStr] = pageNum;
+    this.#pagesRefCache.set(refStr, pageNum);
   }
 
   /**
@@ -517,7 +517,7 @@ class PDFLinkService {
     }
     const refStr =
       pageRef.gen === 0 ? `${pageRef.num}R` : `${pageRef.num}R${pageRef.gen}`;
-    return this._pagesRefCache?.[refStr] || null;
+    return this.#pagesRefCache.get(refStr) || null;
   }
 
   /**
