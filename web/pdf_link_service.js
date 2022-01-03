@@ -16,8 +16,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
-import { parseQueryString } from "./ui_utils.js";
-import { removeNullCharacters } from "pdfjs-lib";
+import { parseQueryString, removeNullCharacters } from "./ui_utils.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 
