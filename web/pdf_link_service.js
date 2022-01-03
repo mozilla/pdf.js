@@ -175,10 +175,7 @@ class PDFLinkService {
     this.pdfViewer.pagesRotation = value;
   }
 
-  /**
-   * @private
-   */
-  _goToDestinationHelper(rawDest, namedDest = null, explicitDest) {
+  #goToDestinationHelper(rawDest, namedDest = null, explicitDest) {
     // Dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
     const destRef = explicitDest[0];
     let pageNumber;
@@ -193,11 +190,11 @@ class PDFLinkService {
           .getPageIndex(destRef)
           .then(pageIndex => {
             this.cachePageRef(pageIndex + 1, destRef);
-            this._goToDestinationHelper(rawDest, namedDest, explicitDest);
+            this.#goToDestinationHelper(rawDest, namedDest, explicitDest);
           })
           .catch(() => {
             console.error(
-              `PDFLinkService._goToDestinationHelper: "${destRef}" is not ` +
+              `PDFLinkService.#goToDestinationHelper: "${destRef}" is not ` +
                 `a valid page reference, for dest="${rawDest}".`
             );
           });
@@ -207,14 +204,14 @@ class PDFLinkService {
       pageNumber = destRef + 1;
     } else {
       console.error(
-        `PDFLinkService._goToDestinationHelper: "${destRef}" is not ` +
+        `PDFLinkService.#goToDestinationHelper: "${destRef}" is not ` +
           `a valid destination reference, for dest="${rawDest}".`
       );
       return;
     }
     if (!pageNumber || pageNumber < 1 || pageNumber > this.pagesCount) {
       console.error(
-        `PDFLinkService._goToDestinationHelper: "${pageNumber}" is not ` +
+        `PDFLinkService.#goToDestinationHelper: "${pageNumber}" is not ` +
           `a valid page number, for dest="${rawDest}".`
       );
       return;
@@ -258,7 +255,7 @@ class PDFLinkService {
       );
       return;
     }
-    this._goToDestinationHelper(dest, namedDest, explicitDest);
+    this.#goToDestinationHelper(dest, namedDest, explicitDest);
   }
 
   /**
@@ -405,8 +402,7 @@ class PDFLinkService {
             }
           } else {
             console.error(
-              `PDFLinkService.setHash: "${zoomArg}" is not ` +
-                "a valid zoom value."
+              `PDFLinkService.setHash: "${zoomArg}" is not a valid zoom value.`
             );
           }
         }
@@ -444,13 +440,17 @@ class PDFLinkService {
         }
       } catch (ex) {}
 
-      if (typeof dest === "string" || isValidExplicitDestination(dest)) {
+      if (
+        typeof dest === "string" ||
+        PDFLinkService.#isValidExplicitDestination(dest)
+      ) {
         this.goToDestination(dest);
         return;
       }
       console.error(
-        `PDFLinkService.setHash: "${unescape(hash)}" is not ` +
-          "a valid destination."
+        `PDFLinkService.setHash: "${unescape(
+          hash
+        )}" is not a valid destination.`
       );
     }
   }
@@ -509,7 +509,7 @@ class PDFLinkService {
   }
 
   /**
-   * @private
+   * @ignore
    */
   _cachedPageNumber(pageRef) {
     if (!pageRef) {
@@ -533,65 +533,65 @@ class PDFLinkService {
   isPageCached(pageNumber) {
     return this.pdfViewer.isPageCached(pageNumber);
   }
-}
 
-function isValidExplicitDestination(dest) {
-  if (!Array.isArray(dest)) {
-    return false;
-  }
-  const destLength = dest.length;
-  if (destLength < 2) {
-    return false;
-  }
-  const page = dest[0];
-  if (
-    !(
-      typeof page === "object" &&
-      Number.isInteger(page.num) &&
-      Number.isInteger(page.gen)
-    ) &&
-    !(Number.isInteger(page) && page >= 0)
-  ) {
-    return false;
-  }
-  const zoom = dest[1];
-  if (!(typeof zoom === "object" && typeof zoom.name === "string")) {
-    return false;
-  }
-  let allowNull = true;
-  switch (zoom.name) {
-    case "XYZ":
-      if (destLength !== 5) {
-        return false;
-      }
-      break;
-    case "Fit":
-    case "FitB":
-      return destLength === 2;
-    case "FitH":
-    case "FitBH":
-    case "FitV":
-    case "FitBV":
-      if (destLength !== 3) {
-        return false;
-      }
-      break;
-    case "FitR":
-      if (destLength !== 6) {
-        return false;
-      }
-      allowNull = false;
-      break;
-    default:
-      return false;
-  }
-  for (let i = 2; i < destLength; i++) {
-    const param = dest[i];
-    if (!(typeof param === "number" || (allowNull && param === null))) {
+  static #isValidExplicitDestination(dest) {
+    if (!Array.isArray(dest)) {
       return false;
     }
+    const destLength = dest.length;
+    if (destLength < 2) {
+      return false;
+    }
+    const page = dest[0];
+    if (
+      !(
+        typeof page === "object" &&
+        Number.isInteger(page.num) &&
+        Number.isInteger(page.gen)
+      ) &&
+      !(Number.isInteger(page) && page >= 0)
+    ) {
+      return false;
+    }
+    const zoom = dest[1];
+    if (!(typeof zoom === "object" && typeof zoom.name === "string")) {
+      return false;
+    }
+    let allowNull = true;
+    switch (zoom.name) {
+      case "XYZ":
+        if (destLength !== 5) {
+          return false;
+        }
+        break;
+      case "Fit":
+      case "FitB":
+        return destLength === 2;
+      case "FitH":
+      case "FitBH":
+      case "FitV":
+      case "FitBV":
+        if (destLength !== 3) {
+          return false;
+        }
+        break;
+      case "FitR":
+        if (destLength !== 6) {
+          return false;
+        }
+        allowNull = false;
+        break;
+      default:
+        return false;
+    }
+    for (let i = 2; i < destLength; i++) {
+      const param = dest[i];
+      if (!(typeof param === "number" || (allowNull && param === null))) {
+        return false;
+      }
+    }
+    return true;
   }
-  return true;
 }
 
 /**
