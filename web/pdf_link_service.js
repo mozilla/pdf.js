@@ -16,8 +16,73 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
-import { addLinkAttributes, LinkTarget } from "pdfjs-lib";
 import { parseQueryString } from "./ui_utils.js";
+import { removeNullCharacters } from "pdfjs-lib";
+
+const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
+
+const LinkTarget = {
+  NONE: 0, // Default value.
+  SELF: 1,
+  BLANK: 2,
+  PARENT: 3,
+  TOP: 4,
+};
+
+/**
+ * @typedef ExternalLinkParameters
+ * @typedef {Object} ExternalLinkParameters
+ * @property {string} url - An absolute URL.
+ * @property {LinkTarget} [target] - The link target. The default value is
+ *   `LinkTarget.NONE`.
+ * @property {string} [rel] - The link relationship. The default value is
+ *   `DEFAULT_LINK_REL`.
+ * @property {boolean} [enabled] - Whether the link should be enabled. The
+ *   default value is true.
+ */
+
+/**
+ * Adds various attributes (href, title, target, rel) to hyperlinks.
+ * @param {HTMLAnchorElement} link - The link element.
+ * @param {ExternalLinkParameters} params
+ */
+function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
+  if (!url || typeof url !== "string") {
+    throw new Error('A valid "url" parameter must provided.');
+  }
+
+  const urlNullRemoved = removeNullCharacters(url);
+  if (enabled) {
+    link.href = link.title = urlNullRemoved;
+  } else {
+    link.href = "";
+    link.title = `Disabled: ${urlNullRemoved}`;
+    link.onclick = () => {
+      return false;
+    };
+  }
+
+  let targetStr = ""; // LinkTarget.NONE
+  switch (target) {
+    case LinkTarget.NONE:
+      break;
+    case LinkTarget.SELF:
+      targetStr = "_self";
+      break;
+    case LinkTarget.BLANK:
+      targetStr = "_blank";
+      break;
+    case LinkTarget.PARENT:
+      targetStr = "_parent";
+      break;
+    case LinkTarget.TOP:
+      targetStr = "_top";
+      break;
+  }
+  link.target = targetStr;
+
+  link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
+}
 
 /**
  * @typedef {Object} PDFLinkServiceOptions
@@ -230,7 +295,7 @@ class PDFLinkService {
   }
 
   /**
-   * Wrapper around the `addLinkAttributes`-function in the API.
+   * Wrapper around the `addLinkAttributes` helper function.
    * @param {HTMLAnchorElement} link
    * @param {string} url
    * @param {boolean} [newWindow]
@@ -634,4 +699,4 @@ class SimpleLinkService {
   }
 }
 
-export { PDFLinkService, SimpleLinkService };
+export { LinkTarget, PDFLinkService, SimpleLinkService };

@@ -19,7 +19,11 @@ import {
   DefaultTextLayerFactory,
   DefaultXfaLayerFactory,
 } from "./default_factory.js";
-import { PDFLinkService, SimpleLinkService } from "./pdf_link_service.js";
+import {
+  LinkTarget,
+  PDFLinkService,
+  SimpleLinkService,
+} from "./pdf_link_service.js";
 import { PDFSinglePageViewer, PDFViewer } from "./pdf_viewer.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { DownloadManager } from "./download_manager.js";
@@ -49,6 +53,7 @@ export {
   DownloadManager,
   EventBus,
   GenericL10n,
+  LinkTarget,
   NullL10n,
   PDFFindController,
   PDFHistory,
