@@ -353,9 +353,6 @@ describe("Interaction", () => {
     it("must execute WillPrint and DidPrint actions", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            pending("Disabled in Firefox, because of bug 1741698.");
-          }
           if (process.platform === "win32" && browserName === "firefox") {
             pending("Disabled in Firefox on Windows, because of bug 1662471.");
           }
