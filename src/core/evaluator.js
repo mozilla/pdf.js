@@ -2476,7 +2476,7 @@ class PartialEvaluator {
           return;
         }
 
-        if (Math.abs(advanceX) > textContentItem.height) {
+        if (Math.abs(advanceX) > textContentItem.width) {
           appendEOL();
           return;
         }
