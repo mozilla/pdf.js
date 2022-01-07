@@ -1640,7 +1640,17 @@ function reverseIfRtl(chars) {
   return buf.join("");
 }
 
+const SpecialCharRegExp = new RegExp("^(\\s)|(\\p{Mn})$", "u");
+function getCharUnicodeCategory(char) {
+  const groups = char.match(SpecialCharRegExp);
+  return {
+    isWhitespace: !!(groups && groups[1]),
+    isDiacritic: !!(groups && groups[2]),
+  };
+}
+
 export {
+  getCharUnicodeCategory,
   getNormalizedUnicodes,
   getUnicodeForGlyph,
   getUnicodeRangeFor,
