@@ -2801,10 +2801,14 @@ function webViewerWheel(evt) {
     return;
   }
 
-  if (
-    (evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) ||
-    (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey)
-  ) {
+  // #1007 modified by ngx-extended-pdf-viewer
+  const defaultWheelAction = AppOptions.get("wheelAction");
+
+  const modifierKeyHasBeenPressed =
+    (evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) || (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey);
+  const userIntendsToZoom = modifierKeyHasBeenPressed ? defaultWheelAction !== "zoom" : defaultWheelAction === "zoom";
+  if (userIntendsToZoom) {
+    // #1007 end of modification by ngx-extended-pdf-viewer
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
