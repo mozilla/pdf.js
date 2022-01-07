@@ -18,6 +18,7 @@ import {
   createPromiseCapability,
   Util,
 } from "../shared/util.js";
+import { getMinFontSize } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -692,10 +693,15 @@ class TextLayerRenderTask {
 
       if (width > 0) {
         const scale = textDivProperties.canvasWidth / width;
+        const minFontSize = getMinFontSize();
+        const nFontSize = parseFloat(fontSize);
         if (this._enhanceTextSelection) {
           textDivProperties.scale = scale;
         }
-        transform = `scaleX(${scale})`;
+        transform =
+          nFontSize < minFontSize
+            ? `scale(${(scale * nFontSize) / minFontSize})`
+            : `scaleX(${scale})`;
       }
     }
     if (textDivProperties.angle !== 0) {

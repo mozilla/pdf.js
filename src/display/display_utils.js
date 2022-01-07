@@ -631,6 +631,21 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
   });
 }
 
+/**
+ * get minimum font size
+ * @returns the minimum font size of browser
+ */
+function getMinFontSize() {
+  const div = document.createElement("div");
+  div.style.fontSize = "1px";
+  div.style.visibility = "hidden";
+  document.body.appendChild(div);
+  const computedStyle = window.getComputedStyle(div);
+  const fontSize = parseInt(computedStyle.getPropertyValue("font-size"));
+  div.remove();
+  return fontSize;
+}
+
 export {
   addLinkAttributes,
   deprecated,
@@ -639,6 +654,7 @@ export {
   DOMStandardFontDataFactory,
   DOMSVGFactory,
   getFilenameFromUrl,
+  getMinFontSize,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
   isDataScheme,
