@@ -151,6 +151,14 @@ class EventDispatcher {
           value: savedChange.value,
           selRange: [savedChange.selStart, savedChange.selEnd],
         });
+      } else {
+        // Entry is not valid (rc == false) and it's a commit
+        // so just clear the field.
+        source.obj._send({
+          id: source.obj._id,
+          value: "",
+          selRange: [0, 0],
+        });
       }
     }
   }
