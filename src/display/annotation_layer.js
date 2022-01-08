@@ -780,7 +780,7 @@ class WidgetAnnotationElement extends AnnotationElement {
           detail: {
             id: this.data.id,
             name: eventName,
-            value: event.target.checked,
+            value: valueGetter(event),
           },
         });
       });
@@ -923,8 +923,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       const elementData = {
         userValue: null,
         formattedValue: null,
-        beforeInputSelectionRange: null,
-        beforeInputValue: null,
       };
 
       if (this.data.multiLine) {
@@ -965,7 +963,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         }
         // Reset the cursor position to the start of the field (issue 12359).
         event.target.scrollLeft = 0;
-        elementData.beforeInputSelectionRange = null;
       };
 
       if (this.enableScripting && this.hasJSActions) {
@@ -1007,7 +1004,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         // Even if the field hasn't any actions
         // leaving it can still trigger some actions with Calculate
         element.addEventListener("keydown", event => {
-          elementData.beforeInputValue = event.target.value;
           // if the key is one of Escape, Enter or Tab
           // then the data are committed
           let commitKey = -1;
@@ -1039,9 +1035,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         const _blurListener = blurListener;
         blurListener = null;
         element.addEventListener("blur", event => {
+          elementData.userValue = event.target.value;
           if (this._mouseState.isDown) {
             // Focus out using the mouse: data are committed
-            elementData.userValue = event.target.value;
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
               source: this,
               detail: {
@@ -1057,42 +1053,22 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
           _blurListener(event);
         });
-        element.addEventListener("mousedown", event => {
-          elementData.beforeInputValue = event.target.value;
-          elementData.beforeInputSelectionRange = null;
-        });
-        element.addEventListener("keyup", event => {
-          // keyup is triggered after input
-          if (event.target.selectionStart === event.target.selectionEnd) {
-            elementData.beforeInputSelectionRange = null;
-          }
-        });
-        element.addEventListener("select", event => {
-          elementData.beforeInputSelectionRange = [
-            event.target.selectionStart,
-            event.target.selectionEnd,
-          ];
-        });
 
         if (this.data.actions?.Keystroke) {
-          // We should use beforeinput but this
-          // event isn't available in Firefox
-          element.addEventListener("input", event => {
-            let selStart = -1;
-            let selEnd = -1;
-            if (elementData.beforeInputSelectionRange) {
-              [selStart, selEnd] = elementData.beforeInputSelectionRange;
-            }
+          element.addEventListener("beforeinput", event => {
+            elementData.formattedValue = "";
+            const { data, target } = event;
+            const { value, selectionStart, selectionEnd } = target;
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
               source: this,
               detail: {
                 id,
                 name: "Keystroke",
-                value: elementData.beforeInputValue,
-                change: event.data,
+                value,
+                change: data,
                 willCommit: false,
-                selStart,
-                selEnd,
+                selStart: selectionStart,
+                selEnd: selectionEnd,
               },
             });
           });
