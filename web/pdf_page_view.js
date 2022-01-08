@@ -881,13 +881,31 @@ class PDFPageView {
     const transform = !outputScale.scaled
       ? null
       : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
+    // #916 modified by ngx-extended-pdf-viewer
+    let background = PDFViewerApplicationOptions.get("pdfBackgroundColor");
+    if (typeof background === "function") {
+      const backgroundColor = background({ pageNumber: this.id, pageLabel: this.pageLabel });
+      if (backgroundColor) {
+        background = backgroundColor;
+      }
+    }
+    let backgroundColorToReplace = background ? PDFViewerApplicationOptions.get("pdfBackgroundColorToReplace") : null;
+    if (typeof backgroundColorToReplace === "function") {
+      const colorToReplace = backgroundColorToReplace({ pageNumber: this.id, pageLabel: this.pageLabel });
+      if (colorToReplace) {
+        backgroundColorToReplace = colorToReplace;
+      }
+    }
+    // #916 end of modification by ngx-extended-pdf-viewer
+
     const renderContext = {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
       annotationMode: this.#annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
-      background: PDFViewerApplicationOptions.get("pdfBackgroundColor"),
+      background,
+      backgroundColorToReplace,
       annotationCanvasMap: this._annotationCanvasMap,
     };
     const renderTask = this.pdfPage.render(renderContext);

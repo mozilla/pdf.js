@@ -1409,6 +1409,7 @@ class PDFPageProxy {
     imageLayer = null,
     canvasFactory = null,
     background = null,
+    backgroundColorToReplace = null,
     optionalContentConfigPromise = null,
     annotationCanvasMap = null,
   }) {
@@ -1525,6 +1526,7 @@ class PDFPageProxy {
         transform,
         imageLayer,
         background,
+        backgroundColorToReplace,
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
@@ -3343,7 +3345,7 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { canvasContext, viewport, transform, imageLayer, background } =
+    const { canvasContext, viewport, transform, imageLayer, background, backgroundColorToReplace} =
       this.params;
 
     this.gfx = new CanvasGraphics(
@@ -3360,6 +3362,7 @@ class InternalRenderTask {
       viewport,
       transparency,
       background,
+      backgroundColorToReplace,
     });
     this.operatorListIdx = 0;
     this.graphicsReady = true;

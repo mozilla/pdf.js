@@ -1117,7 +1117,8 @@ class CanvasGraphics {
     transform,
     viewport,
     transparency = false,
-    background = null,
+    background = null, // #916 modified by ngx-extended-pdf-viewer
+    backgroundColorToReplace = null, // #916 modified by ngx-extended-pdf-viewer
   }) {
     // For pdfs that use blend modes we have to clear the canvas else certain
     // blend modes can look wrong since we'd be blending with a white
@@ -1128,9 +1129,17 @@ class CanvasGraphics {
     const height = this.ctx.canvas.height;
 
     this.ctx.save();
-    this.ctx.fillStyle = background || "rgb(255, 255, 255)";
-    this.ctx.fillRect(0, 0, width, height);
+    // #916 modified by ngx-extended-pdf-viewer
+    if (typeof background === "function") {
+      background({ context: this.ctx, width, height });
+    } else {
+      this.ctx.fillStyle = background || "rgb(255, 255, 255)";
+      this.ctx.fillRect(0, 0, width, height);
+      this.background = background;
+    }
+    // #916 end of modification by ngx-extended-pdf-viewer
     this.ctx.restore();
+    this.backgroundColorToReplace = backgroundColorToReplace;
 
     if (transparency) {
       const transparentCanvas = this.cachedCanvases.getCanvas(
@@ -1204,6 +1213,7 @@ class CanvasGraphics {
       fnId = fnArray[i];
 
       if (fnId !== OPS.dependency) {
+//        console.log(this[fnId].toString().split("\n")[0]); // useful for debugging
         this[fnId].apply(this, argsArray[i]);
       } else {
         for (const depObjId of argsArray[i]) {
@@ -1795,7 +1805,23 @@ class CanvasGraphics {
   fill(consumePath) {
     consumePath = typeof consumePath !== "undefined" ? consumePath : true;
     const ctx = this.ctx;
-    const fillColor = this.current.fillColor;
+    // #916 modified by ngx-extended-pdf-viewer
+    let draw = true;
+    let fillColor = this.current.fillColor;
+
+    if (this.backgroundColorToReplace) {
+      if (fillColor === this.backgroundColorToReplace) {
+        if (this.background && typeof this.background !== 'function') {
+          fillColor = this.background;
+        } else {
+          // do not draw the color
+          draw = false;
+        }
+      }
+    }
+    // #916 end of modification by ngx-extended-pdf-viewer
+
+
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
 
@@ -1811,13 +1837,17 @@ class CanvasGraphics {
     }
 
     const intersect = this.current.getClippedPathBoundingBox();
-    if (this.contentVisible && intersect !== null) {
-      if (this.pendingEOFill) {
-        ctx.fill("evenodd");
-        this.pendingEOFill = false;
-      } else {
-        ctx.fill();
+    // #916 modified by ngx-extended-pdf-viewer
+    if (draw) {
+      if (this.contentVisible && intersect !== null) {
+        if (this.pendingEOFill) {
+          ctx.fill("evenodd");
+          this.pendingEOFill = false;
+        } else {
+          ctx.fill();
+        }
       }
+      // #916 end of modification by ngx-extended-pdf-viewer
     }
 
     if (needRestore) {
@@ -2402,7 +2432,21 @@ class CanvasGraphics {
   }
 
   setFillRGBColor(r, g, b) {
-    const color = Util.makeHexColor(r, g, b);
+    // #916 modified by ngx-extended-pdf-viewer
+    let color = Util.makeHexColor(r, g, b);
+    if (this.backgroundColorToReplace) {
+      if (color === this.backgroundColorToReplace) {
+        if (this.background && typeof this.background !== 'function') {
+          color = this.background;
+        } else {
+          // let's hope the fill() function is called,
+          // because it checks whether the color is to be rendered
+		  // this.ctx.globalAlpha = 0; // old approach with side effects
+        }
+      }
+    }
+    // #916 end of modification by ngx-extended-pdf-viewer
+
     this.ctx.fillStyle = color;
     this.current.fillColor = color;
     this.current.patternFill = false;
