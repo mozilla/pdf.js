@@ -463,14 +463,9 @@ const PDFViewerApplication = {
   async _initializeViewerComponents() {
     const { appConfig, externalServices } = this;
 
-    let eventBus;
-    if (appConfig.eventBus) {
-      eventBus = appConfig.eventBus;
-    } else if (externalServices.isInAutomation) {
-      eventBus = new AutomationEventBus();
-    } else {
-      eventBus = new EventBus();
-    }
+    const eventBus = externalServices.isInAutomation
+      ? new AutomationEventBus()
+      : new EventBus();
     this.eventBus = eventBus;
 
     this.overlayManager = new OverlayManager();
