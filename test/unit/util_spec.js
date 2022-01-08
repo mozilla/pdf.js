@@ -25,7 +25,6 @@ import {
   isNum,
   isSameOrigin,
   isString,
-  removeNullCharacters,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -172,30 +171,6 @@ describe("util", function () {
       // UTF-16LE
       const str3 = "\xFF\xFE";
       expect(stringToPDFString(str3)).toEqual("");
-    });
-  });
-
-  describe("removeNullCharacters", function () {
-    it("should not modify string without null characters", function () {
-      const str = "string without null chars";
-      expect(removeNullCharacters(str)).toEqual("string without null chars");
-    });
-
-    it("should modify string with null characters", function () {
-      const str = "string\x00With\x00Null\x00Chars";
-      expect(removeNullCharacters(str)).toEqual("stringWithNullChars");
-    });
-
-    it("should modify string with non-displayable characters", function () {
-      const str = Array.from(Array(32).keys())
-        .map(x => String.fromCharCode(x) + "a")
-        .join("");
-      // \x00 is replaced by an empty string.
-      const expected =
-        "a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a";
-      expect(removeNullCharacters(str, /* replaceInvisible */ true)).toEqual(
-        expected
-      );
     });
   });
 
