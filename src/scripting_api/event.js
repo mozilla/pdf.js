@@ -26,8 +26,8 @@ class Event {
     this.richChange = data.richChange || [];
     this.richChangeEx = data.richChangeEx || [];
     this.richValue = data.richValue || [];
-    this.selEnd = data.selEnd || -1;
-    this.selStart = data.selStart || -1;
+    this.selEnd = data.selEnd ?? -1;
+    this.selStart = data.selStart ?? -1;
     this.shift = data.shift || false;
     this.source = data.source || null;
     this.target = data.target || null;

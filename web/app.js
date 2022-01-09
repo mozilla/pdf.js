@@ -47,7 +47,6 @@ import {
   GlobalWorkerOptions,
   InvalidPDFException,
   isPdfFile,
-  LinkTarget,
   loadScript,
   MissingPDFException,
   OPS,
@@ -58,6 +57,7 @@ import {
   version,
 } from "pdfjs-lib";
 import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
+import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
@@ -66,7 +66,6 @@ import { PDFFindBar } from "./pdf_find_bar.js";
 import { PDFFindController } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
 import { PDFLayerViewer } from "./pdf_layer_viewer.js";
-import { PDFLinkService } from "./pdf_link_service.js";
 import { PDFOutlineViewer } from "./pdf_outline_viewer.js";
 import { PDFPresentationMode } from "./pdf_presentation_mode.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
@@ -469,14 +468,9 @@ const PDFViewerApplication = {
   async _initializeViewerComponents() {
     const { appConfig, externalServices } = this;
 
-    let eventBus;
-    if (appConfig.eventBus) {
-      eventBus = appConfig.eventBus;
-    } else if (externalServices.isInAutomation) {
-      eventBus = new AutomationEventBus();
-    } else {
-      eventBus = new EventBus();
-    }
+    const eventBus = externalServices.isInAutomation
+      ? new AutomationEventBus()
+      : new EventBus();
     this.eventBus = eventBus;
 
     this.overlayManager = new OverlayManager();
