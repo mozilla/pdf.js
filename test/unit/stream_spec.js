@@ -18,36 +18,6 @@ import { PredictorStream } from "../../src/core/predictor_stream.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("stream", function () {
-  beforeEach(function () {
-    jasmine.addMatchers({
-      toMatchTypedArray(util, customEqualityTesters) {
-        return {
-          compare(actual, expected) {
-            const result = {};
-            if (actual.length !== expected.length) {
-              result.pass = false;
-              result.message =
-                "Array length: " +
-                actual.length +
-                ", expected: " +
-                expected.length;
-              return result;
-            }
-            result.pass = true;
-            for (let i = 0, ii = expected.length; i < ii; i++) {
-              const a = actual[i],
-                b = expected[i];
-              if (a !== b) {
-                result.pass = false;
-                break;
-              }
-            }
-            return result;
-          },
-        };
-      },
-    });
-  });
   describe("PredictorStream", function () {
     it("should decode simple predictor data", function () {
       const dict = new Dict();
@@ -65,9 +35,7 @@ describe("stream", function () {
       const predictor = new PredictorStream(input, /* length = */ 9, dict);
       const result = predictor.getBytes(6);
 
-      expect(result).toMatchTypedArray(
-        new Uint8Array([100, 3, 101, 2, 102, 1])
-      );
+      expect(result).toEqual(new Uint8Array([100, 3, 101, 2, 102, 1]));
 
       predictor.reset();
       const clampedResult = predictor.getBytes(6, /* forceClamped = */ true);
