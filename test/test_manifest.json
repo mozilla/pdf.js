@@ -4537,6 +4537,12 @@
        "lastPage": 3,
        "type": "eq"
     },
+    {  "id": "ContentStreamNoCycleType3insideType3",
+       "file": "pdfs/ContentStreamNoCycleType3insideType3.pdf",
+       "md5": "fbf258be0fed9756cbc714f4be6626ff",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "ContentStreamCycleType3insideType3",
        "file": "pdfs/ContentStreamCycleType3insideType3.pdf",
        "md5": "64840fc5dd8ca06afbc86477d9121b59",
