@@ -52,6 +52,11 @@ import {
   VerbosityLevel,
 } from "./shared/util.js";
 import {
+  asyncAppendPreviewImage,
+  asyncGetPDFPreviewImageURL,
+  getViewerSrc,
+} from "./webapp_utility.js";
+import {
   build,
   getDocument,
   LoopbackPort,
@@ -153,4 +158,8 @@ export {
   SVGGraphics,
   // From "./display/xfa_layer.js":
   XfaLayer,
+  // From "./webapp_utility.js":
+  asyncAppendPreviewImage,
+  asyncGetPDFPreviewImageURL,
+  getViewerSrc,
 };
