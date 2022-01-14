@@ -256,7 +256,7 @@ function webViewerLoad() {
         // a *dynamically* created <iframe> element.
 
         // #998 modified by ngx-extended-pdf-viewer: support for Cypress tests
-        if (parent.document.eventListeners("webviewerloaded").length) {
+        if (parent.document.eventListeners && parent.document.eventListeners("webviewerloaded").length) {
           parent.document.dispatchEvent(event);
         } else {
           document.dispatchEvent(event);
