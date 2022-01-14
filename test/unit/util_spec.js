@@ -159,6 +159,19 @@ describe("util", function () {
       expect(stringToPDFString(str)).toEqual("string");
     });
 
+    it("handles UTF-8 strings", function () {
+      const simpleStr = "\xEF\xBB\xBF\x73\x74\x72\x69\x6E\x67";
+      expect(stringToPDFString(simpleStr)).toEqual("string");
+
+      const complexStr =
+        "\xEF\xBB\xBF\xE8\xA1\xA8\xE3\x83\x9D\xE3\x81\x82\x41\xE9\xB7\x97" +
+        "\xC5\x92\xC3\xA9\xEF\xBC\xA2\xE9\x80\x8D\xC3\x9C\xC3\x9F\xC2\xAA" +
+        "\xC4\x85\xC3\xB1\xE4\xB8\x82\xE3\x90\x80\xF0\xA0\x80\x80";
+      expect(stringToPDFString(complexStr)).toEqual(
+        "表ポあA鷗ŒéＢ逍Üßªąñ丂㐀𠀀"
+      );
+    });
+
     it("handles empty strings", function () {
       // ISO Latin 1
       const str1 = "";
@@ -171,6 +184,10 @@ describe("util", function () {
       // UTF-16LE
       const str3 = "\xFF\xFE";
       expect(stringToPDFString(str3)).toEqual("");
+
+      // UTF-8
+      const str4 = "\xEF\xBB\xBF";
+      expect(stringToPDFString(str4)).toEqual("");
     });
   });
 

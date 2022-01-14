@@ -957,25 +957,38 @@ const PDFStringTranslateTable = [
 function stringToPDFString(str) {
   const length = str.length,
     strBuf = [];
+  // UTF-16BE BOM
   if (str[0] === "\xFE" && str[1] === "\xFF") {
-    // UTF16BE BOM
     for (let i = 2; i < length; i += 2) {
       strBuf.push(
         String.fromCharCode((str.charCodeAt(i) << 8) | str.charCodeAt(i + 1))
       );
     }
-  } else if (str[0] === "\xFF" && str[1] === "\xFE") {
-    // UTF16LE BOM
+    return strBuf.join("");
+  }
+  // UTF-16LE BOM
+  if (str[0] === "\xFF" && str[1] === "\xFE") {
     for (let i = 2; i < length; i += 2) {
       strBuf.push(
         String.fromCharCode((str.charCodeAt(i + 1) << 8) | str.charCodeAt(i))
       );
     }
-  } else {
-    for (let i = 0; i < length; ++i) {
-      const code = PDFStringTranslateTable[str.charCodeAt(i)];
-      strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
+    return strBuf.join("");
+  }
+  // UTF-8 BOM
+  if (str[0] === "\xEF" && str[1] === "\xBB" && str[2] === "\xBF") {
+    try {
+      const decoder = new TextDecoder("utf-8", { fatal: true });
+      const buffer = stringToBytes(str);
+      return decoder.decode(buffer);
+    } catch (ex) {
+      warn(`stringToPDFString: "${ex}".`);
     }
+  }
+  // ISO Latin 1
+  for (let i = 0; i < length; ++i) {
+    const code = PDFStringTranslateTable[str.charCodeAt(i)];
+    strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
   }
   return strBuf.join("");
 }
