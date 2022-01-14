@@ -254,7 +254,14 @@ function webViewerLoad() {
         // Attempt to dispatch the event at the embedding `document`,
         // in order to support cases where the viewer is embedded in
         // a *dynamically* created <iframe> element.
-        parent.document.dispatchEvent(event);
+
+        // #998 modified by ngx-extended-pdf-viewer: support for Cypress tests
+        if (parent.document.eventListeners("webviewerloaded").length) {
+          parent.document.dispatchEvent(event);
+        } else {
+          document.dispatchEvent(event);
+        }
+        // #998 end of modification
       } catch (ex) {
         // The viewer could be in e.g. a cross-origin <iframe> element,
         // fallback to dispatching the event at the current `document`.
