@@ -2175,7 +2175,6 @@ class PartialEvaluator {
     stateManager = stateManager || new StateManager(new TextState());
 
     const WhitespaceRegexp = /\s/g;
-    const DiacriticRegExp = new RegExp("^\\p{Mn}$", "u");
     const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
@@ -2480,7 +2479,7 @@ class PartialEvaluator {
           return;
         }
 
-        if (Math.abs(advanceX) > textContentItem.height) {
+        if (Math.abs(advanceX) > textContentItem.width) {
           appendEOL();
           return;
         }
@@ -2576,6 +2575,7 @@ class PartialEvaluator {
 
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
+
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
         let charSpacing =
@@ -2587,13 +2587,12 @@ class PartialEvaluator {
         }
         let scaledDim = glyphWidth * scale;
 
-        let glyphUnicode = glyph.unicode;
         if (
-          glyphUnicode === " " &&
+          glyph.isWhitespace &&
           (i === 0 ||
             i + 1 === ii ||
-            glyphs[i - 1].unicode === " " ||
-            glyphs[i + 1].unicode === " " ||
+            glyphs[i - 1].isWhitespace ||
+            glyphs[i + 1].isWhitespace ||
             extraSpacing)
         ) {
           // Don't push a " " in the textContentItem
@@ -2616,10 +2615,12 @@ class PartialEvaluator {
 
         compareWithLastPosition();
 
+        let glyphUnicode = glyph.unicode;
+
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
-        if (DiacriticRegExp.test(glyph.unicode)) {
+        if (glyph.isDiacritic) {
           scaledDim = 0;
         }
 
