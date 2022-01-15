@@ -6196,5 +6196,12 @@
       "file": "pdfs/issue14415.pdf",
       "md5": "fa306a250a3d37fe0e7a4b3bba51c91e",
       "type": "text"
-   }
+    },
+    {  "id": "issue14438",
+       "file": "pdfs/issue14438.pdf",
+       "md5": "c4f5a21bbd6567fe08583fc9d3149a38",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    }
 ]
