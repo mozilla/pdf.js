@@ -576,10 +576,13 @@ class AbortException extends BaseException {
 }
 
 function bytesToString(bytes) {
-  assert(
-    bytes !== null && typeof bytes === "object" && bytes.length !== undefined,
-    "Invalid argument for bytesToString"
-  );
+  if (
+    typeof bytes !== "object" ||
+    bytes === null ||
+    bytes.length === undefined
+  ) {
+    unreachable("Invalid argument for bytesToString");
+  }
   const length = bytes.length;
   const MAX_ARGUMENT_COUNT = 8192;
   if (length < MAX_ARGUMENT_COUNT) {
@@ -595,7 +598,9 @@ function bytesToString(bytes) {
 }
 
 function stringToBytes(str) {
-  assert(typeof str === "string", "Invalid argument for stringToBytes");
+  if (typeof str !== "string") {
+    unreachable("Invalid argument for stringToBytes");
+  }
   const length = str.length;
   const bytes = new Uint8Array(length);
   for (let i = 0; i < length; ++i) {
@@ -609,12 +614,15 @@ function stringToBytes(str) {
  * @param {Array<any>|Uint8Array|string} arr
  * @returns {number}
  */
+// eslint-disable-next-line consistent-return
 function arrayByteLength(arr) {
   if (arr.length !== undefined) {
     return arr.length;
   }
-  assert(arr.byteLength !== undefined, "arrayByteLength - invalid argument.");
-  return arr.byteLength;
+  if (arr.byteLength !== undefined) {
+    return arr.byteLength;
+  }
+  unreachable("Invalid argument for arrayByteLength");
 }
 
 /**
