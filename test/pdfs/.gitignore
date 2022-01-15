@@ -218,6 +218,8 @@
 !issue7339_reduced.pdf
 !issue3438.pdf
 !issue11403_reduced.pdf
+!ContentStreamNoCycleType3insideType3.pdf
+!ContentStreamCycleType3insideType3.pdf
 !issue2074.pdf
 !scan-bad.pdf
 !issue13561_reduced.pdf
