@@ -43,6 +43,7 @@ import {
   RenderTask,
 } from "../../src/display/api.js";
 import {
+  PageViewport,
   RenderingCancelledException,
   StatTimer,
 } from "../../src/display/display_utils.js";
@@ -1810,6 +1811,8 @@ describe("api", function () {
 
     it("gets viewport", function () {
       const viewport = page.getViewport({ scale: 1.5, rotation: 90 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       expect(viewport.viewBox).toEqual(page.view);
       expect(viewport.scale).toEqual(1.5);
       expect(viewport.rotation).toEqual(90);
@@ -1825,6 +1828,8 @@ describe("api", function () {
         offsetX: 100,
         offsetY: -100,
       });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       expect(viewport.transform).toEqual([1, 0, 0, -1, 100, 741.89]);
     });
 
@@ -1832,11 +1837,14 @@ describe("api", function () {
       const scale = 1,
         rotation = 0;
       const viewport = page.getViewport({ scale, rotation });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const dontFlipViewport = page.getViewport({
         scale,
         rotation,
         dontFlip: true,
       });
+      expect(dontFlipViewport instanceof PageViewport).toEqual(true);
 
       expect(dontFlipViewport).not.toEqual(viewport);
       expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true }));
@@ -2427,11 +2435,12 @@ sozialökonomische Gerechtigkeit.`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const viewport = pdfPage.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
       );
-
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
@@ -2461,11 +2470,12 @@ sozialökonomische Gerechtigkeit.`)
 
     it("cancels rendering of page", async function () {
       const viewport = page.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
       );
-
       const renderTask = page.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
@@ -2491,11 +2501,12 @@ sozialökonomische Gerechtigkeit.`)
 
     it("re-render page, using the same canvas, after cancelling rendering", async function () {
       const viewport = page.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
       );
-
       const renderTask = page.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
@@ -2531,11 +2542,12 @@ sozialökonomische Gerechtigkeit.`)
         pdfDocument.getOptionalContentConfig();
 
       const viewport = page.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
       );
-
       const renderTask1 = page.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
@@ -2573,11 +2585,12 @@ sozialökonomische Gerechtigkeit.`)
       const pdfPage = await pdfDoc.getPage(1);
 
       const viewport = pdfPage.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
       );
-
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
@@ -2602,11 +2615,12 @@ sozialökonomische Gerechtigkeit.`)
       const pdfPage = await pdfDoc.getPage(1);
 
       const viewport = pdfPage.getViewport({ scale: 1 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
       );
-
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
         canvasFactory: CanvasFactory,
@@ -2721,6 +2735,8 @@ sozialökonomische Gerechtigkeit.`)
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 1.2 });
+      expect(viewport instanceof PageViewport).toEqual(true);
+
       const canvasAndCtx = CanvasFactory.create(
         viewport.width,
         viewport.height
