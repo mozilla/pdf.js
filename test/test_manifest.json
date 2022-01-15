@@ -6215,5 +6215,14 @@
        "rounds": 1,
        "type": "eq",
        "annotations": true
-    }
+    },
+    { "id": "bug1749563",
+      "file": "pdfs/bug1749563.pdf",
+      "md5": "11294f6071a8dcc25b0e18953cee68fa",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "type": "eq"
+   }
 ]
