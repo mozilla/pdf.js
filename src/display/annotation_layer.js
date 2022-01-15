@@ -40,6 +40,13 @@ import { XfaLayer } from "./xfa_layer.js";
 const DEFAULT_TAB_INDEX = 1000;
 const GetElementsByNameSet = new WeakSet();
 
+function getRectDims(rect) {
+  return {
+    width: rect[2] - rect[0],
+    height: rect[3] - rect[1],
+  };
+}
+
 /**
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
@@ -189,8 +196,7 @@ class AnnotationElement {
       page = this.page,
       viewport = this.viewport;
     const container = document.createElement("section");
-    let width = data.rect[2] - data.rect[0];
-    let height = data.rect[3] - data.rect[1];
+    let { width, height } = getRectDims(data.rect);
 
     container.setAttribute("data-annotation-id", data.id);
 
@@ -1842,8 +1848,7 @@ class LineAnnotationElement extends AnnotationElement {
     // that acts as the trigger for the popup. Only the line itself should
     // trigger the popup, not the entire container.
     const data = this.data;
-    const width = data.rect[2] - data.rect[0];
-    const height = data.rect[3] - data.rect[1];
+    const { width, height } = getRectDims(data.rect);
     const svg = this.svgFactory.create(width, height);
 
     // PDF coordinates are calculated from a bottom left origin, so transform
@@ -1888,8 +1893,7 @@ class SquareAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the square itself should trigger the
     // popup, not the entire container.
     const data = this.data;
-    const width = data.rect[2] - data.rect[0];
-    const height = data.rect[3] - data.rect[1];
+    const { width, height } = getRectDims(data.rect);
     const svg = this.svgFactory.create(width, height);
 
     // The browser draws half of the borders inside the square and half of
@@ -1936,8 +1940,7 @@ class CircleAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the circle itself should trigger the
     // popup, not the entire container.
     const data = this.data;
-    const width = data.rect[2] - data.rect[0];
-    const height = data.rect[3] - data.rect[1];
+    const { width, height } = getRectDims(data.rect);
     const svg = this.svgFactory.create(width, height);
 
     // The browser draws half of the borders inside the circle and half of
@@ -1987,8 +1990,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the polyline itself should trigger the
     // popup, not the entire container.
     const data = this.data;
-    const width = data.rect[2] - data.rect[0];
-    const height = data.rect[3] - data.rect[1];
+    const { width, height } = getRectDims(data.rect);
     const svg = this.svgFactory.create(width, height);
 
     // Convert the vertices array to a single points string that the SVG
@@ -2076,8 +2078,7 @@ class InkAnnotationElement extends AnnotationElement {
     // Create an invisible polyline with the same points that acts as the
     // trigger for the popup.
     const data = this.data;
-    const width = data.rect[2] - data.rect[0];
-    const height = data.rect[3] - data.rect[1];
+    const { width, height } = getRectDims(data.rect);
     const svg = this.svgFactory.create(width, height);
 
     for (const inkList of data.inkLists) {
@@ -2335,6 +2336,10 @@ class AnnotationLayer {
     // the `PopupAnnotationElement.render` method); fixes issue 11362.
     for (const data of parameters.annotations) {
       if (!data) {
+        continue;
+      }
+      const { width, height } = getRectDims(data.rect);
+      if (width <= 0 || height <= 0) {
         continue;
       }
       if (data.annotationType === AnnotationType.POPUP) {
