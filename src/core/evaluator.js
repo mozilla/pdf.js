@@ -2174,7 +2174,6 @@ class PartialEvaluator {
     resources = resources || Dict.empty;
     stateManager = stateManager || new StateManager(new TextState());
 
-    const WhitespaceRegexp = /\s/g;
     const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
@@ -2348,27 +2347,11 @@ class PartialEvaluator {
       textContentItem.textAdvanceScale = scaleFactor;
     }
 
-    function replaceWhitespace(str) {
-      // Replaces all whitespaces with standard spaces (0x20), to avoid
-      // alignment issues between the textLayer and the canvas if the text
-      // contains e.g. tabs (fixes issue6612.pdf).
-      const ii = str.length;
-      let i = 0,
-        code;
-      while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7f) {
-        i++;
-      }
-      return i < ii ? str.replace(WhitespaceRegexp, " ") : str;
-    }
-
     function runBidiTransform(textChunk) {
       const text = textChunk.str.join("");
       const bidiResult = bidi(text, -1, textChunk.vertical);
-      const str = normalizeWhitespace
-        ? replaceWhitespace(bidiResult.str)
-        : bidiResult.str;
       return {
-        str,
+        str: bidiResult.str,
         dir: bidiResult.dir,
         width: Math.abs(textChunk.totalWidth),
         height: Math.abs(textChunk.totalHeight),
@@ -2615,8 +2598,6 @@ class PartialEvaluator {
 
         compareWithLastPosition();
 
-        let glyphUnicode = glyph.unicode;
-
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
@@ -2639,9 +2620,17 @@ class PartialEvaluator {
           textChunk.prevTransform = getCurrentTextTransform();
         }
 
-        glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
-        glyphUnicode = reverseIfRtl(glyphUnicode);
-        textChunk.str.push(glyphUnicode);
+        if (glyph.isWhitespace && normalizeWhitespace) {
+          // Replaces all whitespaces with standard spaces (0x20), to avoid
+          // alignment issues between the textLayer and the canvas if the text
+          // contains e.g. tabs (fixes issue6612.pdf).
+          textChunk.str.push(" ");
+        } else {
+          let glyphUnicode = glyph.unicode;
+          glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
+          glyphUnicode = reverseIfRtl(glyphUnicode);
+          textChunk.str.push(glyphUnicode);
+        }
 
         if (charSpacing) {
           if (!font.vertical) {
