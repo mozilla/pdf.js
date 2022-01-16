@@ -1770,7 +1770,8 @@ class CanvasGraphics {
           // parallelogram where both heights are lower than 1 and not equal.
           ctx.save();
           ctx.resetTransform();
-          ctx.lineWidth = Math.round(this._combinedScaleFactor);
+          ctx.lineWidth =
+            Math.round(this._combinedScaleFactor) * this.current.lineWidth;
           ctx.stroke();
           ctx.restore();
         } else {
