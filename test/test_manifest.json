@@ -3699,6 +3699,12 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "issue14462",
+       "file": "pdfs/issue14462_reduced.pdf",
+       "md5": "afe38169322f8e124eaeae00f94ea596",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "preistabelle",
       "file": "pdfs/preistabelle.pdf",
       "md5": "d2f0b2086160d4f3d325c79a5dc1fb4d",
