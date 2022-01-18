@@ -11,7 +11,7 @@
     "autoprefixer": "^10.4.2",
     "babel-loader": "^8.2.3",
     "canvas": "^2.9.0",
-    "core-js": "^3.20.2",
+    "core-js": "^3.20.3",
     "cross-env": "^7.0.3",
     "dommatrix": "^0.0.24",
     "es-module-shims": "^1.4.1",
