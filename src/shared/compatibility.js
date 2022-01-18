@@ -100,4 +100,17 @@ if (
     globalThis.ReadableStream =
       require("web-streams-polyfill/dist/ponyfill.js").ReadableStream;
   })();
+
+  // Support: Firefox<94, Chrome<98, Safari, Node.js<17.0.0
+  (function checkStructuredClone() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
+      // The current image decoders are synchronous, hence `structuredClone`
+      // shouldn't need to be polyfilled for the IMAGE_DECODERS build target.
+      return;
+    }
+    if (globalThis.structuredClone) {
+      return;
+    }
+    require("core-js/web/structured-clone.js");
+  })();
 }
