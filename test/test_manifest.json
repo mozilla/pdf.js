@@ -53,13 +53,6 @@
        "rounds": 1,
        "type": "text"
     },
-    {  "id": "tracemonkey-text-enhance",
-       "file": "pdfs/tracemonkey.pdf",
-       "md5": "9a192d8b1a7dc652a19835f6f08098bd",
-       "rounds": 1,
-       "enhance": true,
-       "type": "text"
-    },
     {  "id": "tracemonkey-forced-colors-eq",
       "file": "pdfs/tracemonkey.pdf",
       "md5": "9a192d8b1a7dc652a19835f6f08098bd",
@@ -596,26 +589,10 @@
        "lastPage": 4,
        "type": "text"
     },
-    {  "id": "taro-text-enhance",
-       "file": "pdfs/TaroUTR50SortedList112.pdf",
-       "md5": "ce63eab622ff473a43f8a8de85ef8a46",
-       "link":true,
-       "rounds": 1,
-       "lastPage": 4,
-       "enhance": true,
-       "type": "text"
-    },
     {  "id": "rotated-text",
        "file": "pdfs/rotated.pdf",
        "md5": "aed187f53e969ccdcbab0bb4c59f9e46",
        "rounds": 1,
-       "type": "text"
-    },
-    {  "id": "rotated-text-enhance",
-       "file": "pdfs/rotated.pdf",
-       "md5": "aed187f53e969ccdcbab0bb4c59f9e46",
-       "rounds": 1,
-       "enhance": true,
        "type": "text"
     },
     {

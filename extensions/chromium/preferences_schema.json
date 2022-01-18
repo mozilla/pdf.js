@@ -102,19 +102,13 @@
       "type": "boolean",
       "default": false
     },
-    "enhanceTextSelection": {
-      "description": "DEPRECATED. Set textLayerMode to 2 to use the enhanced text selection layer by default.",
-      "type": "boolean",
-      "default": false
-    },
     "textLayerMode": {
       "title": "Text layer mode",
-      "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.\n 2 = (Experimental) Enabled, with enhanced text selection.",
+      "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.",
       "type": "integer",
       "enum": [
         0,
-        1,
-        2
+        1
       ],
       "default": 1
     },
