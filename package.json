@@ -41,7 +41,7 @@
     "postcss": "^8.4.5",
     "postcss-calc": "^8.2.2",
     "prettier": "^2.5.1",
-    "puppeteer": "^13.0.1",
+    "puppeteer": "^13.1.2",
     "rimraf": "^3.0.2",
     "streamqueue": "^1.1.2",
     "stylelint": "^14.2.0",
