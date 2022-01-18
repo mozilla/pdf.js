@@ -57,7 +57,6 @@ const RendererType =
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
-  ENABLE_ENHANCE: 2,
 };
 
 const ScrollMode = {

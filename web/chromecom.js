@@ -374,12 +374,8 @@ class ChromePreferences extends BasePreferences {
           delete items.enableHandToolOnLoad;
 
           // Migration code for https://github.com/mozilla/pdf.js/pull/9479.
-          if (items.textLayerMode !== 1) {
-            if (items.disableTextLayer) {
-              items.textLayerMode = 0;
-            } else if (items.enhanceTextSelection) {
-              items.textLayerMode = 2;
-            }
+          if (items.textLayerMode !== 1 && items.disableTextLayer) {
+            items.textLayerMode = 0;
           }
           delete items.disableTextLayer;
           delete items.enhanceTextSelection;
