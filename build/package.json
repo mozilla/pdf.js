@@ -2,8 +2,8 @@
     "name": "@certifyinc/pdf.js",
     "version": "1.1.2",
     "repository": {
-      "type": "git",
-      "url": "git://github.com/CertifyInc/pdf.js.git"
+        "type": "git",
+        "url": "git://github.com/CertifyInc/pdf.js.git"
     },
     "license": "Apache-2.0"
 }
