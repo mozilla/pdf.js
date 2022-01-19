@@ -555,11 +555,19 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
     console.log("### Running " + testsName + " tests");
 
     const PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
+    let forceNoChrome = false;
     const args = ["test.js"];
     switch (testsName) {
       case "browser":
         if (!bot) {
           args.push("--reftest");
+        } else {
+          const os = process.env.OS;
+          if (/windows/i.test(os)) {
+            // The browser-tests are too slow in Google Chrome on the Windows
+            // bot, causing a timeout, hence disabling them for now.
+            forceNoChrome = true;
+          }
         }
         if (xfaOnly) {
           args.push("--xfaOnly");
@@ -582,7 +590,7 @@ function createTestSource(testsName, { bot = false, xfaOnly = false } = {}) {
     if (bot) {
       args.push("--strictVerify");
     }
-    if (process.argv.includes("--noChrome")) {
+    if (process.argv.includes("--noChrome") || forceNoChrome) {
       args.push("--noChrome");
     }
 
