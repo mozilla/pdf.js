@@ -2639,6 +2639,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
           // to iterate over all keys.
           cmap.forEach(function(charCode, token) {
+            if (typeof token === "number") {
+              map[charCode] = String.fromCodePoint(token);
+              return;
+            }
             var str = [];
             for (var k = 0; k < token.length; k += 2) {
               var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
