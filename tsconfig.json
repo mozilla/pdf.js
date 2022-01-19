@@ -14,7 +14,6 @@
       "display-network": ["./src/display/network"],
       "display-node_stream": ["./src/display/node_stream"],
       "display-node_utils": ["./src/display/node_utils"],
-      "display-svg": ["./src/display/svg"],
       "pdfjs-lib": ["./src/pdf"]
     }
   },
