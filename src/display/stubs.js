@@ -21,7 +21,6 @@ const NullL10n = null;
 const PDFFetchStream = null;
 const PDFNetworkStream = null;
 const PDFNodeStream = null;
-const SVGGraphics = null;
 
 export {
   NodeCanvasFactory,
@@ -32,5 +31,4 @@ export {
   PDFFetchStream,
   PDFNetworkStream,
   PDFNodeStream,
-  SVGGraphics,
 };

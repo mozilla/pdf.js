@@ -40,7 +40,6 @@ import {
   getDocument,
   PDFDataRangeTransport,
   PDFWorker,
-  SVGGraphics,
   version,
 } from "../../src/display/api.js";
 import {
@@ -105,7 +104,6 @@ const expectedAPI = Object.freeze({
   renderTextLayer,
   setLayerDimensions,
   shadow,
-  SVGGraphics,
   UnexpectedResponseException,
   updateTextLayer,
   Util,

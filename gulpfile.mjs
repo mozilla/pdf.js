@@ -242,7 +242,6 @@ function createWebpackConfig(
     "display-network": "src/display/stubs.js",
     "display-node_stream": "src/display/stubs.js",
     "display-node_utils": "src/display/stubs.js",
-    "display-svg": "src/display/stubs.js",
   };
   const viewerAlias = {
     "web-alt_text_manager": "web/alt_text_manager.js",
@@ -276,7 +275,6 @@ function createWebpackConfig(
     libraryAlias["display-network"] = "src/display/network.js";
     libraryAlias["display-node_stream"] = "src/display/node_stream.js";
     libraryAlias["display-node_utils"] = "src/display/node_utils.js";
-    libraryAlias["display-svg"] = "src/display/svg.js";
 
     viewerAlias["web-com"] = "web/genericcom.js";
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
@@ -1637,7 +1635,6 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
       "display-network": "./network",
       "display-node_stream": "./node_stream",
       "display-node_utils": "./node_utils",
-      "display-svg": "./svg",
     },
   };
   const licenseHeaderLibre = fs
@@ -1670,12 +1667,7 @@ function buildLib(defines, dir) {
       { base: "src/" }
     ),
     gulp.src(
-      [
-        "examples/node/domstubs.js",
-        "external/webL10n/l10n.js",
-        "web/*.js",
-        "!web/{pdfjs,viewer}.js",
-      ],
+      ["external/webL10n/l10n.js", "web/*.js", "!web/{pdfjs,viewer}.js"],
       { base: "." }
     ),
     gulp.src("test/unit/*.js", { base: "." }),
@@ -2217,7 +2209,6 @@ function packageJson() {
       http: false,
       https: false,
       url: false,
-      zlib: false,
     },
     format: "amd", // to not allow system.js to choose 'cjs'
     repository: {
