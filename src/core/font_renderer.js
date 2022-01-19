@@ -25,17 +25,32 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { StandardEncoding } from "./encodings.js";
 import { Stream } from "./stream.js";
 
-function getLong(data, offset) {
+// TODO: use DataView and its methods.
+
+function getUint32(data, offset) {
   return (
-    (data[offset] << 24) |
-    (data[offset + 1] << 16) |
-    (data[offset + 2] << 8) |
-    data[offset + 3]
+    ((data[offset] << 24) |
+      (data[offset + 1] << 16) |
+      (data[offset + 2] << 8) |
+      data[offset + 3]) >>>
+    0
   );
 }
 
-function getUshort(data, offset) {
+function getUint16(data, offset) {
   return (data[offset] << 8) | data[offset + 1];
+}
+
+function getInt16(data, offset) {
+  return ((data[offset] << 24) | (data[offset + 1] << 16)) >> 16;
+}
+
+function getInt8(data, offset) {
+  return (data[offset] << 24) >> 24;
+}
+
+function getFloat214(data, offset) {
+  return getInt16(data, offset) / 16384;
 }
 
 function getSubroutineBias(subrs) {
@@ -51,48 +66,48 @@ function getSubroutineBias(subrs) {
 
 function parseCmap(data, start, end) {
   const offset =
-    getUshort(data, start + 2) === 1
-      ? getLong(data, start + 8)
-      : getLong(data, start + 16);
-  const format = getUshort(data, start + offset);
+    getUint16(data, start + 2) === 1
+      ? getUint32(data, start + 8)
+      : getUint32(data, start + 16);
+  const format = getUint16(data, start + offset);
   let ranges, p, i;
   if (format === 4) {
-    getUshort(data, start + offset + 2); // length
-    const segCount = getUshort(data, start + offset + 6) >> 1;
+    getUint16(data, start + offset + 2); // length
+    const segCount = getUint16(data, start + offset + 6) >> 1;
     p = start + offset + 14;
     ranges = [];
     for (i = 0; i < segCount; i++, p += 2) {
-      ranges[i] = { end: getUshort(data, p) };
+      ranges[i] = { end: getUint16(data, p) };
     }
     p += 2;
     for (i = 0; i < segCount; i++, p += 2) {
-      ranges[i].start = getUshort(data, p);
+      ranges[i].start = getUint16(data, p);
     }
     for (i = 0; i < segCount; i++, p += 2) {
-      ranges[i].idDelta = getUshort(data, p);
+      ranges[i].idDelta = getUint16(data, p);
     }
     for (i = 0; i < segCount; i++, p += 2) {
-      let idOffset = getUshort(data, p);
+      let idOffset = getUint16(data, p);
       if (idOffset === 0) {
         continue;
       }
       ranges[i].ids = [];
       for (let j = 0, jj = ranges[i].end - ranges[i].start + 1; j < jj; j++) {
-        ranges[i].ids[j] = getUshort(data, p + idOffset);
+        ranges[i].ids[j] = getUint16(data, p + idOffset);
         idOffset += 2;
       }
     }
     return ranges;
   } else if (format === 12) {
-    getLong(data, start + offset + 4); // length
-    const groups = getLong(data, start + offset + 12);
+    const groups = getUint32(data, start + offset + 12);
     p = start + offset + 16;
     ranges = [];
     for (i = 0; i < groups; i++) {
+      start = getUint32(data, p);
       ranges.push({
-        start: getLong(data, p),
-        end: getLong(data, p + 4),
-        idDelta: getLong(data, p + 8) - getLong(data, p),
+        start,
+        end: getUint32(data, p + 4),
+        idDelta: getUint32(data, p + 8) - start,
       });
       p += 12;
     }
@@ -126,19 +141,10 @@ function parseGlyfTable(glyf, loca, isGlyphLocationsLong) {
   let itemSize, itemDecode;
   if (isGlyphLocationsLong) {
     itemSize = 4;
-    itemDecode = function fontItemDecodeLong(data, offset) {
-      return (
-        (data[offset] << 24) |
-        (data[offset + 1] << 16) |
-        (data[offset + 2] << 8) |
-        data[offset + 3]
-      );
-    };
+    itemDecode = getUint32;
   } else {
     itemSize = 2;
-    itemDecode = function fontItemDecode(data, offset) {
-      return (data[offset] << 9) | (data[offset + 1] << 1);
-    };
+    itemDecode = (data, offset) => 2 * getUint16(data, offset);
   }
   const glyphs = [];
   let startOffset = itemDecode(loca, 0);
@@ -187,7 +193,7 @@ function compileGlyf(code, cmds, font) {
   }
 
   let i = 0;
-  const numberOfContours = ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
+  const numberOfContours = getInt16(code, i);
   let flags;
   let x = 0,
     y = 0;
@@ -195,45 +201,57 @@ function compileGlyf(code, cmds, font) {
   if (numberOfContours < 0) {
     // composite glyph
     do {
-      flags = (code[i] << 8) | code[i + 1];
-      const glyphIndex = (code[i + 2] << 8) | code[i + 3];
+      flags = getUint16(code, i);
+      const glyphIndex = getUint16(code, i + 2);
       i += 4;
       let arg1, arg2;
       if (flags & 0x01) {
-        arg1 = ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
-        arg2 = ((code[i + 2] << 24) | (code[i + 3] << 16)) >> 16;
+        if (flags & 0x02) {
+          arg1 = getInt16(code, i);
+          arg2 = getInt16(code, i + 2);
+        } else {
+          arg1 = getUint16(code, i);
+          arg2 = getUint16(code, i + 2);
+        }
         i += 4;
       } else {
-        arg1 = code[i++];
-        arg2 = code[i++];
+        if (flags & 0x02) {
+          arg1 = getInt8(code, i++);
+          arg2 = getInt8(code, i++);
+        } else {
+          arg1 = code[i++];
+          arg2 = code[i++];
+        }
       }
       if (flags & 0x02) {
         x = arg1;
         y = arg2;
       } else {
         x = 0;
-        y = 0; // TODO "they are points" ?
+        y = 0;
       }
       let scaleX = 1,
         scaleY = 1,
         scale01 = 0,
         scale10 = 0;
       if (flags & 0x08) {
-        scaleX = scaleY = ((code[i] << 24) | (code[i + 1] << 16)) / 1073741824;
+        scaleX = scaleY = getFloat214(code, i);
         i += 2;
       } else if (flags & 0x40) {
-        scaleX = ((code[i] << 24) | (code[i + 1] << 16)) / 1073741824;
-        scaleY = ((code[i + 2] << 24) | (code[i + 3] << 16)) / 1073741824;
+        scaleX = getFloat214(code, i);
+        scaleY = getFloat214(code, i + 2);
         i += 4;
       } else if (flags & 0x80) {
-        scaleX = ((code[i] << 24) | (code[i + 1] << 16)) / 1073741824;
-        scale01 = ((code[i + 2] << 24) | (code[i + 3] << 16)) / 1073741824;
-        scale10 = ((code[i + 4] << 24) | (code[i + 5] << 16)) / 1073741824;
-        scaleY = ((code[i + 6] << 24) | (code[i + 7] << 16)) / 1073741824;
+        scaleX = getFloat214(code, i);
+        scale01 = getFloat214(code, i + 2);
+        scale10 = getFloat214(code, i + 4);
+        scaleY = getFloat214(code, i + 6);
         i += 8;
       }
       const subglyph = font.glyphs[glyphIndex];
       if (subglyph) {
+        // TODO: the transform should be applied only if there is a scale:
+        // https://github.com/freetype/freetype/blob/edd4fedc5427cf1cf1f4b045e53ff91eb282e9d4/src/truetype/ttgload.c#L1205
         cmds.push(
           { cmd: "save" },
           {
@@ -241,6 +259,11 @@ function compileGlyf(code, cmds, font) {
             args: [scaleX, scale01, scale10, scaleY, x, y],
           }
         );
+
+        if (!(flags & 0x02)) {
+          // TODO: we must use arg1 and arg2 to make something similar to:
+          // https://github.com/freetype/freetype/blob/edd4fedc5427cf1cf1f4b045e53ff91eb282e9d4/src/truetype/ttgload.c#L1209
+        }
         compileGlyf(subglyph, cmds, font);
         cmds.push({ cmd: "restore" });
       }
@@ -250,10 +273,10 @@ function compileGlyf(code, cmds, font) {
     const endPtsOfContours = [];
     let j, jj;
     for (j = 0; j < numberOfContours; j++) {
-      endPtsOfContours.push((code[i] << 8) | code[i + 1]);
+      endPtsOfContours.push(getUint16(code, i));
       i += 2;
     }
-    const instructionLength = (code[i] << 8) | code[i + 1];
+    const instructionLength = getUint16(code, i);
     i += 2 + instructionLength; // skipping the instructions
     const numberOfPoints = endPtsOfContours[endPtsOfContours.length - 1] + 1;
     const points = [];
@@ -270,7 +293,7 @@ function compileGlyf(code, cmds, font) {
     for (j = 0; j < numberOfPoints; j++) {
       switch (points[j].flags & 0x12) {
         case 0x00:
-          x += ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
+          x += getInt16(code, i);
           i += 2;
           break;
         case 0x02:
@@ -285,7 +308,7 @@ function compileGlyf(code, cmds, font) {
     for (j = 0; j < numberOfPoints; j++) {
       switch (points[j].flags & 0x24) {
         case 0x00:
-          y += ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
+          y += getInt16(code, i);
           i += 2;
           break;
         case 0x04:
@@ -840,11 +863,11 @@ class FontRendererFactory {
   static create(font, seacAnalysisEnabled) {
     const data = new Uint8Array(font.data);
     let cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
-    const numTables = getUshort(data, 4);
+    const numTables = getUint16(data, 4);
     for (let i = 0, p = 12; i < numTables; i++, p += 16) {
       const tag = bytesToString(data.subarray(p, p + 4));
-      const offset = getLong(data, p + 8);
-      const length = getLong(data, p + 12);
+      const offset = getUint32(data, p + 8);
+      const length = getUint32(data, p + 12);
       switch (tag) {
         case "cmap":
           cmap = parseCmap(data, offset, offset + length);
@@ -856,8 +879,8 @@ class FontRendererFactory {
           loca = data.subarray(offset, offset + length);
           break;
         case "head":
-          unitsPerEm = getUshort(data, offset + 18);
-          indexToLocFormat = getUshort(data, offset + 50);
+          unitsPerEm = getUint16(data, offset + 18);
+          indexToLocFormat = getUint16(data, offset + 50);
           break;
         case "CFF ":
           cff = parseCff(data, offset, offset + length, seacAnalysisEnabled);
