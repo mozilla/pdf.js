@@ -102,15 +102,15 @@ const DEFINES = Object.freeze({
 });
 
 const WEBPACK_LEGACY_ENVIRONMENT = {
-    arrowFunction: false,
-    bigIntLiteral: false,
-    const: false,
-    destructuring: false,
-    dynamicImport: false,
-    forOf: false,
-    module: false,
-    optionalChaining: false,
-    templateLiteral: false,
+  arrowFunction: false,
+  bigIntLiteral: false,
+  const: false,
+  destructuring: false,
+  dynamicImport: false,
+  forOf: false,
+  module: false,
+  optionalChaining: false,
+  templateLiteral: false,
 };
 
 function transform(charEncoding, transformFunction) {
