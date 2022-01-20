@@ -101,6 +101,18 @@ const DEFINES = Object.freeze({
   IMAGE_DECODERS: false,
 });
 
+const WEBPACK_LEGACY_ENVIRONMENT = {
+    arrowFunction: false,
+    bigIntLiteral: false,
+    const: false,
+    destructuring: false,
+    dynamicImport: false,
+    forOf: false,
+    module: false,
+    optionalChaining: false,
+    templateLiteral: false,
+};
+
 function transform(charEncoding, transformFunction) {
   return through.obj(function (vinylFile, enc, done) {
     const transformedFile = vinylFile.clone();
@@ -231,6 +243,10 @@ function createWebpackConfig(
 
   // Required to expose e.g., the `window` object.
   output.globalObject = "this";
+
+  if (bundleDefines.SKIP_BABEL === false) {
+    output.environment = WEBPACK_LEGACY_ENVIRONMENT;
+  }
 
   return {
     mode: "none",
