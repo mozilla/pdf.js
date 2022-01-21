@@ -1,5 +1,5 @@
 # MasterControl Fork info
-We forked PDF.js so that we could apply a few customizations to their viewer. We're working from a branch called mc-master. We've also added some gulp tasks to build and deploy to our artifactory instance. Follow the instructions from the original README below to install dependencies after you've checked out our branch. 
+We forked PDF.js so that we could apply a few customizations to their viewer. We're working from a branch called mc-master. We've also added some gulp tasks to build and deploy to our artifactory instance. Follow the instructions from the original README below to install dependencies after you've checked out our branch. **This project requires node version < 12 to build properly. The recommended node version is v11.15.0.**
 
 ### Building during development
 To build for use in MasterControl during developmental testing you can run

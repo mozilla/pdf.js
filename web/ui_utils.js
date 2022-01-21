@@ -542,17 +542,17 @@ function isDataSchema(url) {
 
 function getParameterByName(name, url) {
   if (!url) { url = window.location.href;}
+  url = decodeURIComponent(url);
   name = name.replace(/[\[\]]/g, '\\$&');
-  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-    results = regex.exec(url);
+  var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+  var results = regex.exec(url);
   if (!results) {return null;}
   if (!results[2]) {return '';}
   return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
 
 function getWatermarkText() {
-  var defaultWatermark = 'REFERENCE ONLY';
-  return getParameterByName('watermark') || defaultWatermark;
+  return getParameterByName('watermark');
 }
 
 function getDocumentTitle() {
