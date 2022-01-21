@@ -797,7 +797,7 @@ var Font = (function FontClosure() {
         // attempting to recover by assuming that no file exists.
         warn('Font file is empty in "' + name + '" (' + this.loadedName + ")");
       }
-      this.fallbackToSystemFont();
+      this.fallbackToSystemFont(properties);
       return;
     }
 
@@ -854,7 +854,7 @@ var Font = (function FontClosure() {
       }
     } catch (e) {
       warn(e);
-      this.fallbackToSystemFont();
+      this.fallbackToSystemFont(properties);
       return;
     }
 
@@ -991,6 +991,12 @@ var Font = (function FontClosure() {
     }
 
     return [fileType, fileSubtype];
+  }
+
+  function applyStandardFontGlyphMap(map, glyphMap) {
+    for (const charCode in glyphMap) {
+      map[+charCode] = glyphMap[charCode];
+    }
   }
 
   function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
@@ -1482,7 +1488,7 @@ var Font = (function FontClosure() {
       return data;
     },
 
-    fallbackToSystemFont: function Font_fallbackToSystemFont() {
+    fallbackToSystemFont: function Font_fallbackToSystemFont(properties) {
       this.missingFile = true;
       var charCode, unicode;
       // The file data is not specified. Trying to fix the font name
@@ -1514,23 +1520,16 @@ var Font = (function FontClosure() {
         type === "CIDFontType2" &&
         this.cidEncoding.startsWith("Identity-")
       ) {
-        const GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
+        const cidToGidMap = properties.cidToGidMap;
         // Standard fonts might be embedded as CID font without glyph mapping.
         // Building one based on GlyphMapForStandardFonts.
         const map = [];
-        for (charCode in GlyphMapForStandardFonts) {
-          map[+charCode] = GlyphMapForStandardFonts[charCode];
-        }
+        applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
+
         if (/Arial-?Black/i.test(name)) {
-          var SupplementalGlyphMapForArialBlack = getSupplementalGlyphMapForArialBlack();
-          for (charCode in SupplementalGlyphMapForArialBlack) {
-            map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
-          }
+          applyStandardFontGlyphMap(map, getSupplementalGlyphMapForArialBlack());
         } else if (/Calibri/i.test(name)) {
-          let SupplementalGlyphMapForCalibri = getSupplementalGlyphMapForCalibri();
-          for (charCode in SupplementalGlyphMapForCalibri) {
-            map[+charCode] = SupplementalGlyphMapForCalibri[charCode];
-          }
+          applyStandardFontGlyphMap(map, getSupplementalGlyphMapForCalibri());
         }
 
         var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
@@ -1582,10 +1581,7 @@ var Font = (function FontClosure() {
         if (this.composite && this.toUnicode instanceof IdentityToUnicodeMap) {
           if (/Verdana/i.test(name)) {
             // Fixes issue11242_reduced.pdf
-            const GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
-            for (charCode in GlyphMapForStandardFonts) {
-              map[+charCode] = GlyphMapForStandardFonts[charCode];
-            }
+            applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
           }
         }
         this.toFontChar = map;
