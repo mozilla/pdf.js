@@ -1532,6 +1532,29 @@ var Font = (function FontClosure() {
           applyStandardFontGlyphMap(map, getSupplementalGlyphMapForCalibri());
         }
 
+        if (cidToGidMap) {
+          for (const charCode in map) {
+            const cid = map[charCode];
+            if (cidToGidMap[cid] !== undefined) {
+              map[+charCode] = cidToGidMap[cid];
+            }
+          }
+          // When the /CIDToGIDMap is "incomplete", fallback to the included
+          // /ToUnicode-map regardless of its encoding (fixes issue11915.pdf).
+          if (
+            cidToGidMap.length !== this.toUnicode.length &&
+            properties.hasIncludedToUnicodeMap &&
+            this.toUnicode instanceof IdentityToUnicodeMap
+          ) {
+            this.toUnicode.forEach(function (charCode, unicodeCharCode) {
+              const cid = map[charCode];
+              if (cidToGidMap[cid] === undefined) {
+                map[+charCode] = unicodeCharCode;
+              }
+            });
+          }
+        }
+
         var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
         if (!isIdentityUnicode) {
           this.toUnicode.forEach(function(charCode, unicodeCharCode) {
