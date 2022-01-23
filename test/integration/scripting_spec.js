@@ -102,6 +102,11 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await page.type("#\\34 16R", "3.14159", { delay: 200 });
           await page.click("#\\34 19R");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 16R").value !== "3.14159"`
+          );
+
           const text = await page.$eval("#\\34 16R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("3,14");
 
@@ -116,10 +121,20 @@ describe("Interaction", () => {
         pages.map(async ([browserName, page]) => {
           await page.type("#\\34 48R", "61803", { delay: 200 });
           await page.click("#\\34 19R");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 48R").value !== "61803"`
+          );
+
           let text = await page.$eval("#\\34 48R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("61.803,00");
 
           await page.click("#\\34 48R");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 48R").value !== "61.803,00"`
+          );
+
           text = await page.$eval("#\\34 48R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("61803");
 
@@ -128,6 +143,11 @@ describe("Interaction", () => {
 
           await page.type("#\\34 48R", "1.61803", { delay: 200 });
           await page.click("#\\34 19R");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 48R").value !== "1.61803"`
+          );
+
           text = await page.$eval("#\\34 48R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("1,62");
         })
@@ -137,10 +157,21 @@ describe("Interaction", () => {
     it("must format the field with 2 digits and leave field with a TAB", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          const prevSum = await page.$eval("#\\34 27R", el => el.value);
+
           await page.type("#\\34 22R", "2.7182818", { delay: 200 });
           await page.keyboard.press("Tab");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 22R").value !== "2.7182818"`
+          );
+
           const text = await page.$eval("#\\34 22R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("2,72");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 27R").value !== "${prevSum}"`
+          );
 
           const sum = await page.$eval("#\\34 27R", el => el.value);
           expect(sum).withContext(`In ${browserName}`).toEqual("5,86");
@@ -156,8 +187,13 @@ describe("Interaction", () => {
 
           await page.type("#\\34 36R", "0.69314", { delay: 200 });
           await page.keyboard.press("Escape");
+
           const text = await page.$eval("#\\34 36R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("0.69314");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 71R").value !== "${sum}"`
+          );
 
           sum = await page.$eval("#\\34 71R", el => el.value);
           expect(sum).withContext(`In ${browserName}`).toEqual("3,55");
@@ -168,10 +204,16 @@ describe("Interaction", () => {
     it("must format the field with 2 digits on key ENTER", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          const prevSum = await page.$eval("#\\34 27R", el => el.value);
+
           await page.type("#\\34 19R", "0.577215", { delay: 200 });
           await page.keyboard.press("Enter");
           const text = await page.$eval("#\\34 19R", el => el.value);
           expect(text).toEqual("0.577215");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 27R").value !== "${prevSum}"`
+          );
 
           const sum = await page.$eval("#\\34 27R", el => el.value);
           expect(sum).toEqual("6,44");
@@ -193,6 +235,14 @@ describe("Interaction", () => {
 
           // click on reset button
           await page.click("[data-annotation-id='402R']");
+
+          await Promise.all(
+            ["16", "22", "19", "05", "27"].map(id =>
+              page.waitForFunction(
+                `document.querySelector("#\\\\34 ${id}R").value === ""`
+              )
+            )
+          );
 
           let text = await page.$eval("#\\34 16R", el => el.value);
           expect(text).toEqual("");
@@ -451,6 +501,10 @@ describe("Interaction", () => {
             "window.PDFViewerApplication.scriptingReady === true"
           );
 
+          await page.waitForFunction(
+            `document.querySelector("#\\\\34 7R").value !== ""`
+          );
+
           let text = await page.$eval("#\\34 7R", el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("PageOpen 1");
 
@@ -642,6 +696,7 @@ describe("Interaction", () => {
           }
 
           for (const num of [6, 4, 2, 1]) {
+            await clearInput(page, "#\\33 3R");
             await page.click(`option[value=Export${num}]`);
             await page.waitForFunction(
               `document.querySelector("#\\\\33 3R").value !== ""`
@@ -747,7 +802,7 @@ describe("Interaction", () => {
             await page.keyboard.press("Tab");
 
             await page.waitForFunction(
-              `getComputedStyle(document.querySelector("#\\\\31 71R")).value !== "${prev}"`
+              `document.querySelector("#\\\\31 71R").value !== "${prev}"`
             );
 
             sum += val;
@@ -905,6 +960,179 @@ describe("Interaction", () => {
             await page.click("[data-annotation-id='26R']");
           });
           expect(text).withContext(`In ${browserName}`).toEqual("Standard");
+        })
+      );
+    });
+  });
+
+  describe("in issue14307.pdf (1)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14307.pdf", "#\\33 0R");
+      pages.map(async ([, page]) => {
+        page.on("dialog", async dialog => {
+          await dialog.dismiss();
+        });
+      });
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check input for US zip format", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await clearInput(page, "#\\32 9R");
+          await clearInput(page, "#\\33 0R");
+
+          await page.focus("#\\32 9R");
+          await page.type("#\\32 9R", "12A");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 9R").value !== "12A"`
+          );
+
+          let text = await page.$eval(`#\\32 9R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("12");
+
+          await page.focus("#\\32 9R");
+          await page.type("#\\32 9R", "34");
+          await page.click("[data-annotation-id='30R']");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 9R").value !== "1234"`
+          );
+
+          text = await page.$eval(`#\\32 9R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("");
+
+          await page.focus("#\\32 9R");
+          await page.type("#\\32 9R", "12345");
+          await page.click("[data-annotation-id='30R']");
+
+          text = await page.$eval(`#\\32 9R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("12345");
+        })
+      );
+    });
+  });
+
+  describe("in issue14307.pdf (2)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14307.pdf", "#\\33 0R");
+      pages.map(async ([, page]) => {
+        page.on("dialog", async dialog => {
+          await dialog.dismiss();
+        });
+      });
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check input for US phone number (long) format", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await clearInput(page, "#\\32 9R");
+          await clearInput(page, "#\\33 0R");
+
+          await page.focus("#\\33 0R");
+          await page.type("#\\33 0R", "(123) 456A");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").value !== "(123) 456A"`
+          );
+
+          let text = await page.$eval(`#\\33 0R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("(123) 456");
+
+          await page.focus("#\\33 0R");
+          await page.type("#\\33 0R", "-789");
+          await page.click("[data-annotation-id='29R']");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").value !== "(123) 456-789"`
+          );
+
+          text = await page.$eval(`#\\33 0R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("");
+
+          await page.focus("#\\33 0R");
+          await page.type("#\\33 0R", "(123) 456-7890");
+          await page.click("[data-annotation-id='29R']");
+
+          text = await page.$eval(`#\\33 0R`, el => el.value);
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .toEqual("(123) 456-7890");
+        })
+      );
+    });
+  });
+
+  describe("in issue14307.pdf (3)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14307.pdf", "#\\33 0R");
+      pages.map(async ([, page]) => {
+        page.on("dialog", async dialog => {
+          await dialog.dismiss();
+        });
+      });
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check input for US phone number (short) format", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await clearInput(page, "#\\32 9R");
+          await clearInput(page, "#\\33 0R");
+
+          await page.focus("#\\33 0R");
+          await page.type("#\\33 0R", "123A");
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").value !== "123A"`
+          );
+
+          let text = await page.$eval(`#\\33 0R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("123");
+
+          await page.focus("#\\33 0R");
+          await page.type("#\\33 0R", "-456");
+          await page.click("[data-annotation-id='29R']");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\33 0R").value !== "123-456"`
+          );
+
+          text = await page.$eval(`#\\33 0R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("");
+
+          await page.focus("#\\33 0R");
+          await page.type("#\\33 0R", "123-4567");
+          await page.click("[data-annotation-id='29R']");
+
+          text = await page.$eval(`#\\33 0R`, el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("123-4567");
         })
       );
     });
