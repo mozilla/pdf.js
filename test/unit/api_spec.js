@@ -2147,6 +2147,29 @@ sozialökonomische Gerechtigkeit.`)
       await loadingTask.destroy();
     });
 
+    it("gets text content, with invisible text marks (issue 9186)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("issue9186.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(`This Agreement (“Agreement”) is made as of this 25th day of January, 2017, by and
+between EDWARD G. ATSINGER III, not individually but as sole Trustee of the ATSINGER
+FAMILY TRUST /u/a dated October 31, 1980 as amended, and STUART W. EPPERSON, not
+individually but solely as Trustee of the STUART W. EPPERSON REVOCABLE LIVING
+TRUST /u/a dated January 14th 1993 as amended, collectively referred to herein as “Lessor”, and
+Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
+      ).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with beginbfrange operator handled correctly (bug 1627427)", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("bug1627427_reduced.pdf")
