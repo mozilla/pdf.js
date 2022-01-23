@@ -466,6 +466,10 @@ class AForm {
 
     const event = globalThis.event;
     const value = this.AFMergeChange(event);
+    if (!value) {
+      return;
+    }
+
     const checkers = new Map([
       ["9", char => char >= "0" && char <= "9"],
       [
@@ -496,10 +500,6 @@ class AForm {
         }
       }
       return true;
-    }
-
-    if (!value) {
-      return;
     }
 
     const err = `${GlobalConstants.IDS_INVALID_VALUE} = "${cMask}"`;
@@ -538,10 +538,6 @@ class AForm {
 
   AFSpecial_Keystroke(psf) {
     const event = globalThis.event;
-    if (!event.value) {
-      return;
-    }
-
     psf = this.AFMakeNumber(psf);
 
     let formatStr;
