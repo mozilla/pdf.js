@@ -216,7 +216,8 @@ class Glyph {
 
     const category = getCharUnicodeCategory(unicode);
     this.isWhitespace = category.isWhitespace;
-    this.isDiacritic = category.isDiacritic;
+    this.isZeroWidthDiacritic = category.isZeroWidthDiacritic;
+    this.isInvisibleFormatMark = category.isInvisibleFormatMark;
   }
 
   matchesForCache(

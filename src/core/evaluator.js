@@ -2561,6 +2561,9 @@ class PartialEvaluator {
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
+        if (glyph.isInvisibleFormatMark) {
+          continue;
+        }
         let charSpacing =
           textState.charSpacing + (i + 1 === ii ? extraSpacing : 0);
 
@@ -2601,7 +2604,7 @@ class PartialEvaluator {
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
-        if (glyph.isDiacritic) {
+        if (glyph.isZeroWidthDiacritic) {
           scaledDim = 0;
         }
 
