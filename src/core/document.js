@@ -36,16 +36,6 @@ import {
   warn,
 } from "../shared/util.js";
 import {
-  clearPrimitiveCaches,
-  Dict,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  Ref,
-} from "./primitives.js";
-import {
   collectActions,
   getInheritableProperty,
   isWhiteSpace,
@@ -54,12 +44,22 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
+import {
+  Dict,
+  isDict,
+  isName,
+  isRef,
+  isStream,
+  Name,
+  Ref,
+} from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
+import { clearGlobalCaches } from "./cleanup_helper.js";
 import { Linearization } from "./parser.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
@@ -1449,7 +1449,7 @@ class PDFDocument {
   async cleanup(manuallyTriggered = false) {
     return this.catalog
       ? this.catalog.cleanup(manuallyTriggered)
-      : clearPrimitiveCaches();
+      : clearGlobalCaches();
   }
 
   /**
