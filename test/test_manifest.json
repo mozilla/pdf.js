@@ -4042,6 +4042,12 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "bug1743245",
+       "file": "pdfs/bug1743245.pdf",
+       "md5": "01eadf118ec05fe02e91db63536d50f6",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue1002",
       "file": "pdfs/issue1002.pdf",
       "md5": "af62d6cd95079322d4af18edd960d15c",
