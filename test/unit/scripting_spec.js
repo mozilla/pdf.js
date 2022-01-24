@@ -1168,11 +1168,25 @@ describe("Scripting", function () {
           value: "3F?",
           change: "0",
           name: "Keystroke",
-          willCommit: true,
+          willCommit: false,
           selStart: 3,
           selEnd: 3,
         });
         expect(send_queue.has(refId)).toEqual(false);
+
+        await sandbox.dispatchEventInSandbox({
+          id: refId,
+          value: "3F?0",
+          name: "Keystroke",
+          willCommit: true,
+          selStart: 4,
+          selEnd: 4,
+        });
+        expect(send_queue.has(refId)).toEqual(true);
+        expect(send_queue.get(refId)).toEqual({
+          id: refId,
+          valueAsString: "3F?0",
+        });
       });
     });
 
