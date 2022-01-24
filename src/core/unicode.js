@@ -1641,16 +1641,29 @@ function reverseIfRtl(chars) {
 }
 
 const SpecialCharRegExp = new RegExp("^(\\s)|(\\p{Mn})|(\\p{Cf})$", "u");
+const CategoryCache = new Map();
+
 function getCharUnicodeCategory(char) {
+  const cachedCategory = CategoryCache.get(char);
+  if (cachedCategory) {
+    return cachedCategory;
+  }
   const groups = char.match(SpecialCharRegExp);
-  return {
+  const category = {
     isWhitespace: !!(groups && groups[1]),
     isZeroWidthDiacritic: !!(groups && groups[2]),
     isInvisibleFormatMark: !!(groups && groups[3]),
   };
+  CategoryCache.set(char, category);
+  return category;
+}
+
+function clearUnicodeCaches() {
+  CategoryCache.clear();
 }
 
 export {
+  clearUnicodeCaches,
   getCharUnicodeCategory,
   getNormalizedUnicodes,
   getUnicodeForGlyph,
