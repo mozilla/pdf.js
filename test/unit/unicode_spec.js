@@ -47,19 +47,67 @@ describe("unicode", function () {
     it("should correctly determine the character category", function () {
       const tests = {
         // Whitespace
-        " ": { isDiacritic: false, isWhitespace: true },
-        "\t": { isDiacritic: false, isWhitespace: true },
-        "\u2001": { isDiacritic: false, isWhitespace: true },
-        "\uFEFF": { isDiacritic: false, isWhitespace: true },
+        " ": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+        "\t": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+        "\u2001": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+        "\uFEFF": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
 
         // Diacritic
-        "\u0302": { isDiacritic: true, isWhitespace: false },
-        "\u0344": { isDiacritic: true, isWhitespace: false },
-        "\u0361": { isDiacritic: true, isWhitespace: false },
+        "\u0302": {
+          isZeroWidthDiacritic: true,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+        "\u0344": {
+          isZeroWidthDiacritic: true,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+        "\u0361": {
+          isZeroWidthDiacritic: true,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
 
-        // No whitespace or diacritic
-        a: { isDiacritic: false, isWhitespace: false },
-        1: { isDiacritic: false, isWhitespace: false },
+        // Invisible format mark
+        "\u200B": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
+        "\u200D": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
+
+        // No whitespace or diacritic or invisible format mark
+        a: {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+        1: {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
       };
       for (const [character, expectation] of Object.entries(tests)) {
         expect(getCharUnicodeCategory(character)).toEqual(expectation);
