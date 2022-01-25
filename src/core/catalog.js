@@ -14,19 +14,6 @@
  */
 
 import {
-  clearPrimitiveCaches,
-  Dict,
-  isDict,
-  isName,
-  isRef,
-  isRefsEqual,
-  isStream,
-  Name,
-  Ref,
-  RefSet,
-  RefSetCache,
-} from "./primitives.js";
-import {
   collectActions,
   MissingDataException,
   recoverJsURL,
@@ -48,8 +35,21 @@ import {
   stringToUTF8String,
   warn,
 } from "../shared/util.js";
+import {
+  Dict,
+  isDict,
+  isName,
+  isRef,
+  isRefsEqual,
+  isStream,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+} from "./primitives.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
 import { BaseStream } from "./base_stream.js";
+import { clearGlobalCaches } from "./cleanup_helper.js";
 import { ColorSpace } from "./colorspace.js";
 import { FileSpec } from "./file_spec.js";
 import { GlobalImageCache } from "./image_utils.js";
@@ -1069,7 +1069,7 @@ class Catalog {
   }
 
   cleanup(manuallyTriggered = false) {
-    clearPrimitiveCaches();
+    clearGlobalCaches();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
     this.pageIndexCache.clear();
