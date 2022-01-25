@@ -1,6 +1,6 @@
 {
   "name": "pdf.js",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "devDependencies": {
     "@babel/core": "^7.16.5",
     "@babel/plugin-transform-modules-commonjs": "^7.16.5",
@@ -11,6 +11,7 @@
     "acorn": "^8.6.0",
     "autoprefixer": "^10.4.0",
     "babel-loader": "^8.2.3",
+    "browserify": "^13.0.0",
     "canvas": "^2.8.0",
     "core-js": "^3.20.1",
     "cross-env": "^7.0.3",
