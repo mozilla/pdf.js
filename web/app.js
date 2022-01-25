@@ -2691,13 +2691,17 @@ function webViewerWheel(evt) {
       return;
     }
 
+    // It is important that we query deltaMode before delta{X,Y}, so that
+    // Firefox doesn't switch to DOM_DELTA_PIXEL mode for compat with other
+    // browsers, see https://bugzilla.mozilla.org/show_bug.cgi?id=1392460.
+    const deltaMode = evt.deltaMode;
+    const delta = normalizeWheelEventDirection(evt);
     const previousScale = pdfViewer.currentScale;
 
-    const delta = normalizeWheelEventDirection(evt);
     let ticks = 0;
     if (
-      evt.deltaMode === WheelEvent.DOM_DELTA_LINE ||
-      evt.deltaMode === WheelEvent.DOM_DELTA_PAGE
+      deltaMode === WheelEvent.DOM_DELTA_LINE ||
+      deltaMode === WheelEvent.DOM_DELTA_PAGE
     ) {
       // For line-based devices, use one tick per event, because different
       // OSs have different defaults for the number lines. But we generally
