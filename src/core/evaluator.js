@@ -2385,6 +2385,14 @@ class PartialEvaluator {
         });
     }
 
+    function applyInverseRotation(x, y, matrix) {
+      const scale = Math.hypot(matrix[0], matrix[1]);
+      return [
+        (matrix[0] * x + matrix[1] * y) / scale,
+        (matrix[2] * x + matrix[3] * y) / scale,
+      ];
+    }
+
     function compareWithLastPosition() {
       if (
         !combineTextItems ||
@@ -2404,9 +2412,8 @@ class PartialEvaluator {
         return;
       }
 
-      let rotate = 0;
+      let rotate = -1;
       // Take into account the rotation is the current transform.
-      // Only rotations with an angle of 0, 90, 180 or 270 are considered.
       if (
         currentTransform[0] &&
         currentTransform[1] === 0 &&
@@ -2418,28 +2425,40 @@ class PartialEvaluator {
         currentTransform[0] === 0 &&
         currentTransform[3] === 0
       ) {
-        rotate += currentTransform[1] > 0 ? 90 : 270;
+        rotate = currentTransform[1] > 0 ? 90 : 270;
       }
 
-      if (rotate !== 0) {
-        switch (rotate) {
-          case 90:
-            [posX, posY] = [posY, posX];
-            [lastPosX, lastPosY] = [lastPosY, lastPosX];
-            break;
-          case 180:
-            [posX, posY, lastPosX, lastPosY] = [
-              -posX,
-              -posY,
-              -lastPosX,
-              -lastPosY,
-            ];
-            break;
-          case 270:
-            [posX, posY] = [-posY, -posX];
-            [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
-            break;
-        }
+      switch (rotate) {
+        case 0:
+          break;
+        case 90:
+          [posX, posY] = [posY, posX];
+          [lastPosX, lastPosY] = [lastPosY, lastPosX];
+          break;
+        case 180:
+          [posX, posY, lastPosX, lastPosY] = [
+            -posX,
+            -posY,
+            -lastPosX,
+            -lastPosY,
+          ];
+          break;
+        case 270:
+          [posX, posY] = [-posY, -posX];
+          [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
+          break;
+        default:
+          // This is not a 0, 90, 180, 270 rotation so:
+          //  - remove the scale factor from the matrix to get a rotation matrix
+          //  - apply the inverse (which is the transposed) to the positions
+          // and we can then compare positions of the glyphes to detect
+          // a whitespace.
+          [posX, posY] = applyInverseRotation(posX, posY, currentTransform);
+          [lastPosX, lastPosY] = applyInverseRotation(
+            lastPosX,
+            lastPosY,
+            textContentItem.prevTransform
+          );
       }
 
       if (textState.font.vertical) {

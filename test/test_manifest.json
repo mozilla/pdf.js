@@ -6238,5 +6238,11 @@
       "link": true,
       "lastPage": 1,
       "type": "text"
+   },
+   { "id": "issue14497",
+      "file": "pdfs/issue14497.pdf",
+      "md5": "7f795a92caa612117b6928f8bb4c5b65",
+      "rounds": 1,
+      "type": "text"
    }
 ]
