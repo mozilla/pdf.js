@@ -28,6 +28,7 @@
   "globals": {
     "PDFJSDev": false,
     "exports": false,
+    "structuredClone": false,
     "SystemJS": false,
   },
 

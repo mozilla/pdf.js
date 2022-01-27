@@ -1913,91 +1913,14 @@ class LoopbackPort {
   }
 
   postMessage(obj, transfers) {
-    function cloneValue(object) {
-      if (
-        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-        globalThis.structuredClone
-      ) {
-        return globalThis.structuredClone(object, transfers);
-      }
-
-      // Trying to perform a structured clone close to the spec, including
-      // transfers.
-      function fallbackCloneValue(value) {
-        if (
-          typeof value === "function" ||
-          typeof value === "symbol" ||
-          value instanceof URL
-        ) {
-          throw new Error(
-            `LoopbackPort.postMessage - cannot clone: ${value?.toString()}`
-          );
-        }
-
-        if (typeof value !== "object" || value === null) {
-          return value;
-        }
-        if (cloned.has(value)) {
-          // already cloned the object
-          return cloned.get(value);
-        }
-        let buffer, result;
-        if ((buffer = value.buffer) && isArrayBuffer(buffer)) {
-          // We found object with ArrayBuffer (typed array).
-          if (transfers?.includes(buffer)) {
-            result = new value.constructor(
-              buffer,
-              value.byteOffset,
-              value.byteLength
-            );
-          } else {
-            result = new value.constructor(value);
-          }
-          cloned.set(value, result);
-          return result;
-        }
-        if (value instanceof Map) {
-          result = new Map();
-          cloned.set(value, result); // Adding to cache now for cyclic references.
-          for (const [key, val] of value) {
-            result.set(key, fallbackCloneValue(val));
-          }
-          return result;
-        }
-        if (value instanceof Set) {
-          result = new Set();
-          cloned.set(value, result); // Adding to cache now for cyclic references.
-          for (const val of value) {
-            result.add(fallbackCloneValue(val));
-          }
-          return result;
-        }
-        result = Array.isArray(value) ? [] : Object.create(null);
-        cloned.set(value, result); // Adding to cache now for cyclic references.
-        // Cloning all value and object properties, however ignoring properties
-        // defined via getter.
-        for (const i in value) {
-          let desc,
-            p = value;
-          while (!(desc = Object.getOwnPropertyDescriptor(p, i))) {
-            p = Object.getPrototypeOf(p);
-          }
-          if (typeof desc.value === "undefined") {
-            continue;
-          }
-          if (typeof desc.value === "function" && !value.hasOwnProperty?.(i)) {
-            continue;
-          }
-          result[i] = fallbackCloneValue(desc.value);
-        }
-        return result;
-      }
-
-      const cloned = new WeakMap();
-      return fallbackCloneValue(object);
-    }
-
-    const event = { data: cloneValue(obj) };
+    const event = {
+      data:
+        typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("SKIP_BABEL") ||
+        transfers
+          ? structuredClone(obj, transfers)
+          : structuredClone(obj),
+    };
 
     this._deferred.then(() => {
       for (const listener of this._listeners) {
