@@ -1523,12 +1523,14 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
+    const font = await this._getFontData(evaluator, task);
     const [defaultAppearance, fontSize] = this._computeFontSize(
-      totalHeight,
+      totalHeight - defaultPadding,
+      totalWidth - 2 * hPadding,
+      value,
+      font,
       lineCount
     );
-
-    const font = await this._getFontData(evaluator, task);
 
     let descent = font.descent;
     if (isNaN(descent)) {
@@ -1618,34 +1620,84 @@ class WidgetAnnotation extends Annotation {
     return initialState.font;
   }
 
-  _computeFontSize(height, lineCount) {
+  _getTextWidth(text, font) {
+    return (
+      font
+        .charsToGlyphs(text)
+        .reduce((width, glyph) => width + glyph.width, 0) / 1000
+    );
+  }
+
+  _computeFontSize(height, width, text, font, lineCount) {
     let { fontSize } = this.data.defaultAppearanceData;
     if (!fontSize) {
       // A zero value for size means that the font shall be auto-sized:
       // its size shall be computed as a function of the height of the
       // annotation rectangle (see 12.7.3.3).
 
-      const roundWithOneDigit = x => Math.round(x * 10) / 10;
+      const roundWithTwoDigits = x => Math.floor(x * 100) / 100;
 
-      // Represent the percentage of the font size over the height
-      // of a single-line field.
-      const FONT_FACTOR = 0.8;
+      // Represent the percentage of the height of a single-line field over
+      // the font size.
+      // Acrobat seems to use this value.
+      const LINE_FACTOR = 1.35;
+
       if (lineCount === -1) {
-        fontSize = roundWithOneDigit(FONT_FACTOR * height);
+        const textWidth = this._getTextWidth(text, font);
+        fontSize = roundWithTwoDigits(
+          Math.min(height / LINE_FACTOR, width / textWidth)
+        );
       } else {
+        const lines = text.split(/\r\n?|\n/);
+        const cachedLines = [];
+        for (const line of lines) {
+          const encoded = font.encodeString(line).join("");
+          const glyphs = font.charsToGlyphs(encoded);
+          const positions = font.getCharPositions(encoded);
+          cachedLines.push({
+            line: encoded,
+            glyphs,
+            positions,
+          });
+        }
+
+        const isTooBig = fsize => {
+          // Return true when the text doesn't fit the given height.
+          let totalHeight = 0;
+          for (const cache of cachedLines) {
+            const chunks = this._splitLine(null, font, fsize, width, cache);
+            totalHeight += chunks.length * fsize;
+            if (totalHeight > height) {
+              return true;
+            }
+          }
+          return false;
+        };
+
         // Hard to guess how many lines there are.
         // The field may have been sized to have 10 lines
         // and the user entered only 1 so if we get font size from
         // height and number of lines then we'll get something too big.
         // So we compute a fake number of lines based on height and
-        // a font size equal to 10.
+        // a font size equal to 12 (this is the default font size in
+        // Acrobat).
         // Then we'll adjust font size to what we have really.
-        fontSize = 10;
-        let lineHeight = fontSize / FONT_FACTOR;
+        fontSize = 12;
+        let lineHeight = fontSize * LINE_FACTOR;
         let numberOfLines = Math.round(height / lineHeight);
         numberOfLines = Math.max(numberOfLines, lineCount);
-        lineHeight = height / numberOfLines;
-        fontSize = roundWithOneDigit(FONT_FACTOR * lineHeight);
+
+        while (true) {
+          lineHeight = height / numberOfLines;
+          fontSize = roundWithTwoDigits(lineHeight / LINE_FACTOR);
+
+          if (isTooBig(fontSize)) {
+            numberOfLines++;
+            continue;
+          }
+
+          break;
+        }
       }
 
       const { fontName, fontColor } = this.data.defaultAppearanceData;
@@ -1660,13 +1712,7 @@ class WidgetAnnotation extends Annotation {
 
   _renderText(text, font, fontSize, totalWidth, alignment, hPadding, vPadding) {
     // We need to get the width of the text in order to align it correctly
-    const glyphs = font.charsToGlyphs(text);
-    const scale = fontSize / 1000;
-    let width = 0;
-    for (const glyph of glyphs) {
-      width += glyph.width * scale;
-    }
-
+    const width = this._getTextWidth(text, font) * fontSize;
     let shift;
     if (alignment === 1) {
       // Center
@@ -1803,7 +1849,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     hPadding,
     vPadding
   ) {
-    const lines = text.split(/\r\n|\r|\n/);
+    const lines = text.split(/\r\n?|\n/);
     const buf = [];
     const totalWidth = width - 2 * hPadding;
     for (const line of lines) {
@@ -1833,18 +1879,18 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     );
   }
 
-  _splitLine(line, font, fontSize, width) {
+  _splitLine(line, font, fontSize, width, cache = {}) {
     // TODO: need to handle chars which are not in the font.
-    line = font.encodeString(line).join("");
+    line = cache.line || font.encodeString(line).join("");
 
-    const glyphs = font.charsToGlyphs(line);
+    const glyphs = cache.glyphs || font.charsToGlyphs(line);
 
     if (glyphs.length <= 1) {
       // Nothing to split
       return [line];
     }
 
-    const positions = font.getCharPositions(line);
+    const positions = cache.positions || font.getCharPositions(line);
     const scale = fontSize / 1000;
     const chunks = [];
 

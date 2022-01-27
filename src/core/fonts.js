@@ -59,6 +59,7 @@ import {
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { CFFFont } from "./cff_font.js";
 import { FontRendererFactory } from "./font_renderer.js";
+import { getFontBasicMetrics } from "./metrics.js";
 import { GlyfTable } from "./glyf.js";
 import { IdentityCMap } from "./cmap.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
@@ -1074,6 +1075,21 @@ class Font {
     );
 
     fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+
+    const fontBasicMetricsMap = getFontBasicMetrics();
+    const metrics = fontBasicMetricsMap[fontName];
+    if (metrics) {
+      if (isNaN(this.ascent)) {
+        this.ascent = metrics.ascent / PDF_GLYPH_SPACE_UNITS;
+      }
+      if (isNaN(this.descent)) {
+        this.descent = metrics.descent / PDF_GLYPH_SPACE_UNITS;
+      }
+      if (isNaN(this.capHeight)) {
+        this.capHeight = metrics.capHeight / PDF_GLYPH_SPACE_UNITS;
+      }
+    }
+
     this.bold = fontName.search(/bold/gi) !== -1;
     this.italic =
       fontName.search(/oblique/gi) !== -1 || fontName.search(/italic/gi) !== -1;

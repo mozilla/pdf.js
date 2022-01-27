@@ -6250,5 +6250,26 @@
       "md5": "7f795a92caa612117b6928f8bb4c5b65",
       "rounds": 1,
       "type": "text"
+   },
+   {  "id": "issue14052",
+      "file": "pdfs/issue14502.pdf",
+      "md5": "7085cdc31243ab0b979f0c5fa151e491",
+      "rounds": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+        "27R": {
+         "value": "Hello PDF.js World"
+        },
+        "28R": {
+         "value": "PDF.js PDF.js PDF.js PDF.js\nPDF.js PDF.js PDF.js PDF.js\nPDF.js PDF.js PDF.js PDF.js\nPDF.js PDF.js PDF.js PDF.js"
+        },
+        "29R": {
+         "value": "PDF.js"
+        },
+        "30R": {
+         "value": "PDF.js PDF.js PDF.js"
+        }
+      }
    }
 ]
