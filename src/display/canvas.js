@@ -1770,7 +1770,7 @@ class CanvasGraphics {
           // parallelogram where both heights are lower than 1 and not equal.
           ctx.save();
           ctx.resetTransform();
-          ctx.lineWidth = Math.round(this._combinedScaleFactor);
+          ctx.lineWidth = Math.floor(this._combinedScaleFactor);
           ctx.stroke();
           ctx.restore();
         } else {
@@ -2040,7 +2040,7 @@ class CanvasGraphics {
       ) {
         if (resetLineWidthToOne) {
           ctx.resetTransform();
-          ctx.lineWidth = Math.round(this._combinedScaleFactor);
+          ctx.lineWidth = Math.floor(this._combinedScaleFactor);
         }
         ctx.stroke();
       }
@@ -2060,7 +2060,7 @@ class CanvasGraphics {
           ctx.save();
           ctx.moveTo(x, y);
           ctx.resetTransform();
-          ctx.lineWidth = Math.round(this._combinedScaleFactor);
+          ctx.lineWidth = Math.floor(this._combinedScaleFactor);
           ctx.strokeText(character, 0, 0);
           ctx.restore();
         } else {
