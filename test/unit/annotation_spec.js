@@ -1614,7 +1614,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2.00 2.00 Td (test\\\\print) Tj ET Q EMC"
+          " 2.00 3.04 Td (test\\\\print) Tj ET Q EMC"
       );
     });
 
@@ -1732,8 +1732,8 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 8 Tf 0 g 1 0 0 1 0 0 Tm" +
-          " 2.00 2.00 Td (test \\(print\\)) Tj ET Q EMC"
+        "/Tx BMC q BT /Helv 5.92 Tf 0 g 1 0 0 1 0 0 Tm" +
+          " 2.00 3.23 Td (test \\(print\\)) Tj ET Q EMC"
       );
     });
 
@@ -1768,7 +1768,7 @@ describe("annotation", function () {
       const utf16String =
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Goth 8 Tf 0 g 1 0 0 1 0 0 Tm" +
+        "/Tx BMC q BT /Goth 3.5 Tf 0 g 1 0 0 1 0 0 Tm" +
           ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
       );
     });
@@ -1966,7 +1966,7 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 2 Tm" +
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 3.035 Tm" +
           " (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (\\() Tj" +
           " 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj" +
           " 8.00 0 Td (\\)) Tj 8.00 0 Td (a) Tj" +
@@ -2052,7 +2052,7 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         "2 0 obj\n<< /Length 77 /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (hello world) Tj " +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 3.04 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -3377,7 +3377,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2.00 2.00 Td (a value) Tj ET Q EMC"
+          " 2.00 3.04 Td (a value) Tj ET Q EMC"
       );
     });
 
@@ -3388,6 +3388,7 @@ describe("annotation", function () {
       const choiceWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
       ]);
       partialEvaluator.xref = xref;
       const task = new WorkerTask("test save");
@@ -3409,7 +3410,7 @@ describe("annotation", function () {
       expect(data.length).toEqual(2);
       const [oldData, newData] = data;
       expect(oldData.ref).toEqual(Ref.get(123, 0));
-      expect(newData.ref).toEqual(Ref.get(1, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
 
       oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
       expect(oldData.data).toEqual(
@@ -3417,13 +3418,13 @@ describe("annotation", function () {
           "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
           "<< /Font << /Helv 314 0 R>>>> " +
           "/Rect [0 0 32 10] /Opt [(A) (B) (C)] /V (C) " +
-          "/AP << /N 1 0 R>> /M (date)>>\nendobj\n"
+          "/AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "1 0 obj\n" +
+        "2 0 obj\n" +
           "<< /Length 67 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
           "/BBox [0 0 32 10]>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (C) Tj ET Q EMC\n" +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 3.04 Td (C) Tj ET Q EMC\n" +
           "endstream\nendobj\n"
       );
     });
