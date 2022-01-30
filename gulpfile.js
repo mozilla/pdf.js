@@ -607,11 +607,18 @@ function makeRef(done, bot) {
   console.log();
   console.log("### Creating reference images");
 
+  let forceNoChrome = false;
   const args = ["test.js", "--masterMode"];
   if (bot) {
+    const os = process.env.OS;
+    if (/windows/i.test(os)) {
+      // The browser-tests are too slow in Google Chrome on the Windows
+      // bot, causing a timeout, hence disabling them for now.
+      forceNoChrome = true;
+    }
     args.push("--noPrompts", "--strictVerify");
   }
-  if (process.argv.includes("--noChrome")) {
+  if (process.argv.includes("--noChrome") || forceNoChrome) {
     args.push("--noChrome");
   }
 
