@@ -1328,14 +1328,6 @@
       "enableXfa": true,
       "type": "eq"
     },
-    {  "id": "MBTA-pretax-form-July2012",
-      "file": "pdfs/MBTA-pretax-form-July2012.pdf",
-      "md5": "c23beb39e1c91a780da9d4b60cbd157f",
-      "rounds": 1,
-      "link": true,
-      "enableXfa": true,
-      "type": "eq"
-    },
     {  "id": "xfa_bug1716380",
        "file": "pdfs/xfa_bug1716380.pdf",
        "md5": "1351f816f0509fe750ca61ef2bd40872",
