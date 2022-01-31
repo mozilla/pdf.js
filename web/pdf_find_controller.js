@@ -551,9 +551,7 @@ class PDFFindController {
         return this._pdfDocument
           .getPage(i + 1)
           .then(pdfPage => {
-            return pdfPage.getTextContent({
-              normalizeWhitespace: true,
-            });
+            return pdfPage.getTextContent();
           })
           .then(
             textContent => {
