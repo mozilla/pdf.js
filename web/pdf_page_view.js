@@ -701,7 +701,6 @@ class PDFPageView {
         return finishPaintTask(null).then(() => {
           if (textLayer) {
             const readableStream = pdfPage.streamTextContent({
-              normalizeWhitespace: true,
               includeMarkedContent: true,
             });
             textLayer.setTextContentStream(readableStream);
