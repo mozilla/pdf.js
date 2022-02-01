@@ -322,6 +322,12 @@ if (
 
 const userOptions = Object.create(null);
 
+if (globalThis.pdfDefaultOptions) {
+  for (const key in globalThis.pdfDefaultOptions) {
+    userOptions[key] = globalThis.pdfDefaultOptions[key];
+  }
+}
+
 class AppOptions {
   constructor() {
     throw new Error("Cannot initialize AppOptions.");

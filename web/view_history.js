@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { AppOptions } from "./app_options";
+
 const DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
 
 /**
@@ -56,6 +58,9 @@ class ViewHistory {
   }
 
   async _writeToStorage() {
+    if (AppOptions.get("disableHistory")) {
+      return;
+    }
     const databaseStr = JSON.stringify(this.database);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
@@ -66,6 +71,9 @@ class ViewHistory {
   }
 
   async _readFromStorage() {
+    if (AppOptions.get("disableHistory")) {
+      return undefined;
+    }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       return sessionStorage.getItem("pdfjs.history");
     }
