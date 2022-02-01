@@ -1161,6 +1161,10 @@ class PartialEvaluator {
       }
     }
 
+    if (this.parsingType3Font && this.type3FontRefs.has(fontRef)) {
+      return errorFont();
+    }
+
     if (this.fontCache.has(fontRef)) {
       return this.fontCache.get(fontRef);
     }
@@ -2176,8 +2180,6 @@ class PartialEvaluator {
     resources = resources || Dict.empty;
     stateManager = stateManager || new StateManager(new TextState());
 
-    const WhitespaceRegexp = /\s/g;
-    const DiacriticRegExp = new RegExp("^\\p{Mn}$", "u");
     const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
@@ -2351,27 +2353,11 @@ class PartialEvaluator {
       textContentItem.textAdvanceScale = scaleFactor;
     }
 
-    function replaceWhitespace(str) {
-      // Replaces all whitespaces with standard spaces (0x20), to avoid
-      // alignment issues between the textLayer and the canvas if the text
-      // contains e.g. tabs (fixes issue6612.pdf).
-      const ii = str.length;
-      let i = 0,
-        code;
-      while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7f) {
-        i++;
-      }
-      return i < ii ? str.replace(WhitespaceRegexp, " ") : str;
-    }
-
     function runBidiTransform(textChunk) {
       const text = textChunk.str.join("");
       const bidiResult = bidi(text, -1, textChunk.vertical);
-      const str = normalizeWhitespace
-        ? replaceWhitespace(bidiResult.str)
-        : bidiResult.str;
       return {
-        str,
+        str: bidiResult.str,
         dir: bidiResult.dir,
         width: Math.abs(textChunk.totalWidth),
         height: Math.abs(textChunk.totalHeight),
@@ -2405,6 +2391,14 @@ class PartialEvaluator {
         });
     }
 
+    function applyInverseRotation(x, y, matrix) {
+      const scale = Math.hypot(matrix[0], matrix[1]);
+      return [
+        (matrix[0] * x + matrix[1] * y) / scale,
+        (matrix[2] * x + matrix[3] * y) / scale,
+      ];
+    }
+
     function compareWithLastPosition() {
       if (
         !combineTextItems ||
@@ -2424,9 +2418,8 @@ class PartialEvaluator {
         return;
       }
 
-      let rotate = 0;
+      let rotate = -1;
       // Take into account the rotation is the current transform.
-      // Only rotations with an angle of 0, 90, 180 or 270 are considered.
       if (
         currentTransform[0] &&
         currentTransform[1] === 0 &&
@@ -2438,28 +2431,40 @@ class PartialEvaluator {
         currentTransform[0] === 0 &&
         currentTransform[3] === 0
       ) {
-        rotate += currentTransform[1] > 0 ? 90 : 270;
+        rotate = currentTransform[1] > 0 ? 90 : 270;
       }
 
-      if (rotate !== 0) {
-        switch (rotate) {
-          case 90:
-            [posX, posY] = [posY, posX];
-            [lastPosX, lastPosY] = [lastPosY, lastPosX];
-            break;
-          case 180:
-            [posX, posY, lastPosX, lastPosY] = [
-              -posX,
-              -posY,
-              -lastPosX,
-              -lastPosY,
-            ];
-            break;
-          case 270:
-            [posX, posY] = [-posY, -posX];
-            [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
-            break;
-        }
+      switch (rotate) {
+        case 0:
+          break;
+        case 90:
+          [posX, posY] = [posY, posX];
+          [lastPosX, lastPosY] = [lastPosY, lastPosX];
+          break;
+        case 180:
+          [posX, posY, lastPosX, lastPosY] = [
+            -posX,
+            -posY,
+            -lastPosX,
+            -lastPosY,
+          ];
+          break;
+        case 270:
+          [posX, posY] = [-posY, -posX];
+          [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
+          break;
+        default:
+          // This is not a 0, 90, 180, 270 rotation so:
+          //  - remove the scale factor from the matrix to get a rotation matrix
+          //  - apply the inverse (which is the transposed) to the positions
+          // and we can then compare positions of the glyphes to detect
+          // a whitespace.
+          [posX, posY] = applyInverseRotation(posX, posY, currentTransform);
+          [lastPosX, lastPosY] = applyInverseRotation(
+            lastPosX,
+            lastPosY,
+            textContentItem.prevTransform
+          );
       }
 
       if (textState.font.vertical) {
@@ -2482,7 +2487,7 @@ class PartialEvaluator {
           return;
         }
 
-        if (Math.abs(advanceX) > textContentItem.height) {
+        if (Math.abs(advanceX) > textContentItem.width) {
           appendEOL();
           return;
         }
@@ -2578,8 +2583,12 @@ class PartialEvaluator {
 
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
+
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
+        if (glyph.isInvisibleFormatMark) {
+          continue;
+        }
         let charSpacing =
           textState.charSpacing + (i + 1 === ii ? extraSpacing : 0);
 
@@ -2589,13 +2598,12 @@ class PartialEvaluator {
         }
         let scaledDim = glyphWidth * scale;
 
-        let glyphUnicode = glyph.unicode;
         if (
-          glyphUnicode === " " &&
+          glyph.isWhitespace &&
           (i === 0 ||
             i + 1 === ii ||
-            glyphs[i - 1].unicode === " " ||
-            glyphs[i + 1].unicode === " " ||
+            glyphs[i - 1].isWhitespace ||
+            glyphs[i + 1].isWhitespace ||
             extraSpacing)
         ) {
           // Don't push a " " in the textContentItem
@@ -2621,7 +2629,7 @@ class PartialEvaluator {
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
-        if (DiacriticRegExp.test(glyph.unicode)) {
+        if (glyph.isZeroWidthDiacritic) {
           scaledDim = 0;
         }
 
@@ -2640,9 +2648,17 @@ class PartialEvaluator {
           textChunk.prevTransform = getCurrentTextTransform();
         }
 
-        glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
-        glyphUnicode = reverseIfRtl(glyphUnicode);
-        textChunk.str.push(glyphUnicode);
+        if (glyph.isWhitespace && normalizeWhitespace) {
+          // Replaces all whitespaces with standard spaces (0x20), to avoid
+          // alignment issues between the textLayer and the canvas if the text
+          // contains e.g. tabs (fixes issue6612.pdf).
+          textChunk.str.push(" ");
+        } else {
+          let glyphUnicode = glyph.unicode;
+          glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
+          glyphUnicode = reverseIfRtl(glyphUnicode);
+          textChunk.str.push(glyphUnicode);
+        }
 
         if (charSpacing) {
           if (!font.vertical) {
@@ -4189,6 +4205,12 @@ class TranslatedFont {
     // make sense to only be able to render a Type3 glyph partially.
     const type3Evaluator = evaluator.clone({ ignoreErrors: false });
     type3Evaluator.parsingType3Font = true;
+    // Prevent circular references in Type3 fonts.
+    const type3FontRefs = new RefSet(evaluator.type3FontRefs);
+    if (this.dict.objId && !type3FontRefs.has(this.dict.objId)) {
+      type3FontRefs.put(this.dict.objId);
+    }
+    type3Evaluator.type3FontRefs = type3FontRefs;
 
     const translatedFont = this.font,
       type3Dependencies = this.type3Dependencies;

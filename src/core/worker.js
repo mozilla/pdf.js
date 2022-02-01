@@ -32,8 +32,9 @@ import {
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
-import { clearPrimitiveCaches, Dict, Ref } from "./primitives.js";
+import { Dict, Ref } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
+import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
 // ngx-extended-pdf-viewer doesn't need node.js support
 // import { isNodeJS } from "../shared/is_node.js";
@@ -829,7 +830,7 @@ class WorkerMessageHandler {
 
         pdfManager = null;
       } else {
-        clearPrimitiveCaches();
+        clearGlobalCaches();
       }
       if (cancelXHRs) {
         cancelXHRs(new AbortException("Worker was terminated."));

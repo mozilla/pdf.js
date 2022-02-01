@@ -103,7 +103,7 @@ class Sandbox {
   }
 
   dispatchEvent(event) {
-    this.support.callSandboxFunction("dispatchEvent", event);
+    this.support?.callSandboxFunction("dispatchEvent", event);
   }
 
   dumpMemoryUse() {

@@ -550,14 +550,12 @@ class CompositeGlyph {
       pos += 4;
       flags ^= ARG_1_AND_2_ARE_WORDS;
     } else {
-      argument1 = glyf.getUint8(pos);
-      argument2 = glyf.getUint8(pos + 1);
       if (flags & ARGS_ARE_XY_VALUES) {
-        const abs1 = argument1 & 0x7f;
-        argument1 = argument1 & 0x80 ? -abs1 : abs1;
-
-        const abs2 = argument2 & 0x7f;
-        argument2 = argument2 & 0x80 ? -abs2 : abs2;
+        argument1 = glyf.getInt8(pos);
+        argument2 = glyf.getInt8(pos + 1);
+      } else {
+        argument1 = glyf.getUint8(pos);
+        argument2 = glyf.getUint8(pos + 1);
       }
       pos += 2;
     }
