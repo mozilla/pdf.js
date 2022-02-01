@@ -1278,7 +1278,8 @@
        "link": true,
        "rounds": 1,
        "enableXfa": true,
-       "type": "eq"
+       "type": "eq",
+       "about": "Also tests bug 1716838."
     },
     {  "id": "xfa_bug1717668_2",
        "file": "pdfs/xfa_bug1717668_2.pdf",
@@ -1371,14 +1372,6 @@
     {  "id": "xfa_bug1716809",
        "file": "pdfs/xfa_bug1716809.pdf",
        "md5": "7192f9e27e8b84776d107f57cbe353d5",
-       "link": true,
-       "rounds": 1,
-       "enableXfa": true,
-       "type": "eq"
-    },
-    {  "id": "xfa_bug1716838",
-       "file": "pdfs/xfa_bug1716838.pdf",
-       "md5": "564ecff67be690b43c2a144ae5967034",
        "link": true,
        "rounds": 1,
        "enableXfa": true,
