@@ -691,6 +691,8 @@ html[dir="ltr"] .doorHangerRight:before {
 #findMsg {
   color: rgba(251, 0, 0, 1);
 }
+
+#findResultsCount:empty,
 #findMsg:empty {
   display: none;
 }
