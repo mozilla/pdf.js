@@ -2163,7 +2163,6 @@ class PartialEvaluator {
     task,
     resources,
     stateManager = null,
-    normalizeWhitespace = false,
     combineTextItems = false,
     includeMarkedContent = false,
     sink,
@@ -2642,7 +2641,7 @@ class PartialEvaluator {
           textChunk.prevTransform = getCurrentTextTransform();
         }
 
-        if (glyph.isWhitespace && normalizeWhitespace) {
+        if (glyph.isWhitespace) {
           // Replaces all whitespaces with standard spaces (0x20), to avoid
           // alignment issues between the textLayer and the canvas if the text
           // contains e.g. tabs (fixes issue6612.pdf).
@@ -3023,7 +3022,6 @@ class PartialEvaluator {
                     task,
                     resources: xobj.dict.get("Resources") || resources,
                     stateManager: xObjStateManager,
-                    normalizeWhitespace,
                     combineTextItems,
                     includeMarkedContent,
                     sink: sinkWrapper,
