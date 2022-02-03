@@ -644,7 +644,6 @@ class Driver {
               // The text builder will draw its content on the test canvas
               initPromise = page
                 .getTextContent({
-                  normalizeWhitespace: true,
                   includeMarkedContent: true,
                 })
                 .then(function (textContent) {

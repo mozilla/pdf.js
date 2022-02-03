@@ -1966,7 +1966,6 @@ describe("api", function () {
     it("gets text content", async function () {
       const defaultPromise = page.getTextContent();
       const parametersPromise = page.getTextContent({
-        normalizeWhitespace: true,
         disableCombineTextItems: true,
       });
 
