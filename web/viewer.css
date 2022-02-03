@@ -502,7 +502,7 @@ html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
 .findbar.wrapContainers > div {
   clear: both;
 }
-.findbar.wrapContainers > div#findbarMessageContainer {
+.findbar.wrapContainers > div.findbarMessageContainer {
   height: auto;
 }
 html[dir="ltr"] .findbar {
