@@ -223,6 +223,7 @@ function createWebpackConfig(
         regenerator: true,
       },
     ],
+    "@babel/plugin-proposal-optional-chaining"
   ];
 
   const plugins = [];
@@ -256,7 +257,9 @@ function createWebpackConfig(
           loader: "babel-loader",
           exclude: babelExcludeRegExp,
           options: {
-            presets: skipBabel ? undefined : ["@babel/preset-env"],
+            presets: skipBabel ? undefined : [
+              "@babel/preset-env",
+            ],
             plugins: babelPlugins,
           },
         },
