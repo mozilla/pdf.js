@@ -6290,5 +6290,19 @@
       "rounds": 1,
       "link": true,
       "type": "other"
+   },
+   {  "id": "bug1753075",
+      "file": "pdfs/bug1753075.pdf",
+      "md5": "12716fa2dc3e0b3a61d88fef10abc7cf",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
+   },
+   {  "id": "issue13211",
+      "file": "pdfs/issue13211.pdf",
+      "md5": "d193853e8a123dc50eeea593a4150b60",
+      "rounds": 1,
+      "type": "eq"
    }
 ]
