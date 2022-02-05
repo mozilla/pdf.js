@@ -502,7 +502,7 @@ html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
 .findbar.wrapContainers > div {
   clear: both;
 }
-.findbar.wrapContainers > div#findbarMessageContainer {
+.findbar.wrapContainers > div.findbarMessageContainer {
   height: auto;
 }
 html[dir="ltr"] .findbar {
@@ -691,6 +691,8 @@ html[dir="ltr"] .doorHangerRight:before {
 #findMsg {
   color: rgba(251, 0, 0, 1);
 }
+
+#findResultsCount:empty,
 #findMsg:empty {
   display: none;
 }
