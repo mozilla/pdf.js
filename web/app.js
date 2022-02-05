@@ -677,9 +677,7 @@ const PDFViewerApplication = {
     return shadow(
       this,
       "supportsFullscreen",
-      document.fullscreenEnabled ||
-        document.mozFullScreenEnabled ||
-        document.webkitFullscreenEnabled
+      document.fullscreenEnabled || document.webkitFullscreenEnabled
     );
   },
 
