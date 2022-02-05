@@ -430,6 +430,7 @@ class Driver {
       task.pageNum = task.firstPage || 1;
       task.stats = { times: [] };
       task.enableXfa = task.enableXfa === true;
+      task.scale ||= 1;
 
       // Support *linked* test-cases for the other suites, e.g. unit- and
       // integration-tests, without needing to run them as reference-tests.
@@ -601,7 +602,7 @@ class Driver {
         task.pdfDoc.getPage(task.pageNum).then(
           page => {
             const viewport = page.getViewport({
-              scale: PixelsPerInch.PDF_TO_CSS_UNITS,
+              scale: task.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
             });
             this.canvas.width = viewport.width;
             this.canvas.height = viewport.height;
