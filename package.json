@@ -6,7 +6,7 @@
     "@babel/plugin-transform-runtime": "^7.17.0",
     "@babel/preset-env": "^7.16.11",
     "@babel/runtime": "^7.17.0",
-    "@javascript-obfuscator/escodegen": "2.2.2",
+    "@javascript-obfuscator/escodegen": "2.3.0",
     "acorn": "^8.7.0",
     "autoprefixer": "^10.4.2",
     "babel-loader": "^8.2.3",
