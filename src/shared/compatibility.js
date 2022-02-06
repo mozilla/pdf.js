@@ -18,14 +18,8 @@ import { isNodeJS } from "./is_node.js";
 // Skip compatibility checks for modern builds and if we already ran the module.
 if (
   (typeof PDFJSDev === "undefined" || !PDFJSDev.test("SKIP_BABEL")) &&
-  (typeof globalThis === "undefined" || !globalThis._pdfjsCompatibilityChecked)
+  !globalThis._pdfjsCompatibilityChecked
 ) {
-  // Provides support for `globalThis` in legacy browsers.
-  // Support: Firefox<65, Chrome<71, Safari<12.1, Node.js<12.0.0
-  if (typeof globalThis === "undefined" || globalThis.Math !== Math) {
-    // eslint-disable-next-line no-global-assign
-    globalThis = require("core-js/es/global-this");
-  }
   globalThis._pdfjsCompatibilityChecked = true;
 
   // Support: Node.js
@@ -56,15 +50,6 @@ if (
       return;
     }
     globalThis.DOMMatrix = require("dommatrix/dist/dommatrix.js");
-  })();
-
-  // Provides support for Object.fromEntries in legacy browsers.
-  // Support: Firefox<63, Chrome<73, Safari<12.1, Node.js<12.0.0
-  (function checkObjectFromEntries() {
-    if (Object.fromEntries) {
-      return;
-    }
-    require("core-js/es/object/from-entries.js");
   })();
 
   // Provides support for *recent* additions to the Promise specification,
