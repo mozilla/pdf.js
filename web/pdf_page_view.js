@@ -703,7 +703,6 @@ class PDFPageView {
         return finishPaintTask(null).then(() => {
           if (textLayer) {
             const readableStream = pdfPage.streamTextContent({
-              normalizeWhitespace: true,
               includeMarkedContent: true,
             });
             textLayer.setTextContentStream(readableStream);
@@ -965,11 +964,7 @@ class PDFPageView {
       })
       .then(opList => {
         ensureNotCancelled();
-        const svgGfx = new SVGGraphics(
-          pdfPage.commonObjs,
-          pdfPage.objs,
-          /* forceDataSchema = */ compatibilityParams.disableCreateObjectURL
-        );
+        const svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
         return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
           ensureNotCancelled();
           this.svg = svg;

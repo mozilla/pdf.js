@@ -36,7 +36,7 @@ import {
   SpreadMode,
   TextLayerMode,
 } from "./ui_utils.js";
-import { AppOptions, compatibilityParams, OptionKind } from "./app_options.js";
+import { AppOptions, OptionKind } from "./app_options.js";
 import { AutomationEventBus, EventBus } from "./event_utils.js";
 import {
   build,
@@ -698,9 +698,7 @@ const PDFViewerApplication = {
     return shadow(
       this,
       "supportsFullscreen",
-      document.fullscreenEnabled ||
-        document.mozFullScreenEnabled ||
-        document.webkitFullscreenEnabled
+      document.fullscreenEnabled || document.webkitFullscreenEnabled
     );
   },
 
@@ -2594,22 +2592,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
     const file = evt.fileInput.files[0];
 
-    if (!compatibilityParams.disableCreateObjectURL) {
-      let url = URL.createObjectURL(file);
-      if (file.name) {
-        url = { url, originalUrl: file.name };
-      }
-      PDFViewerApplication.open(url);
-    } else {
-      PDFViewerApplication.setTitleUsingUrl(file.name);
-      // Read the local file into a Uint8Array.
-      const fileReader = new FileReader();
-      fileReader.onload = function webViewerChangeFileReaderOnload(event) {
-        const buffer = event.target.result;
-        PDFViewerApplication.open(new Uint8Array(buffer));
-      };
-      fileReader.readAsArrayBuffer(file);
+    let url = URL.createObjectURL(file);
+    if (file.name) {
+      url = { url, originalUrl: file.name };
     }
+    PDFViewerApplication.open(url);
   };
 
   webViewerOpenFile = function (evt) {
@@ -2709,6 +2696,7 @@ function webViewerFindFromUrlHash(evt) {
     fuzzySearch: false, // #304
     highlightAll: true,
     findPrevious: false,
+    matchDiacritics: true,
   });
 }
 

@@ -61,10 +61,8 @@ class DownloadManager {
   }
 
   downloadData(data, filename, contentType) {
-    const blobUrl = createObjectURL(
-      data,
-      contentType,
-      compatibilityParams.disableCreateObjectURL
+    const blobUrl = URL.createObjectURL(
+      new Blob([data], { type: contentType })
     );
     download(blobUrl, filename);
   }
@@ -76,7 +74,7 @@ class DownloadManager {
     const isPdfData = isPdfFile(filename);
     const contentType = isPdfData ? "application/pdf" : "";
 
-    if (isPdfData && !compatibilityParams.disableCreateObjectURL) {
+    if (isPdfData) {
       let blobUrl = this._openBlobUrls.get(element);
       if (!blobUrl) {
         blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));

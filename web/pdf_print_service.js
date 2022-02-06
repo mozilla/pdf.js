@@ -16,7 +16,7 @@
 import { AnnotationMode, PixelsPerInch } from "pdfjs-lib";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import canvasSize from "canvas-size";
-import { compatibilityParams } from "./app_options.js";
+// import { compatibilityParams } from "./app_options.js";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
 let activeService = null;
@@ -241,10 +241,7 @@ PDFPrintService.prototype = {
     this.throwIfInactive();
     const img = document.createElement("img");
     const scratchCanvas = this.scratchCanvas;
-    if (
-      "toBlob" in scratchCanvas &&
-      !compatibilityParams.disableCreateObjectURL
-    ) {
+    if ("toBlob" in scratchCanvas) {
       scratchCanvas.toBlob(function (blob) {
         img.src = URL.createObjectURL(blob);
       });

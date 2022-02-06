@@ -181,6 +181,7 @@ function getViewerConfiguration() {
       findCurrentPageCheckbox: document.getElementById("findCurrentPage"), // #832
       findPageRangeField: document.getElementById("findRange"), // #832
       caseSensitiveCheckbox: document.getElementById("findMatchCase"),
+      matchDiacriticsCheckbox: document.getElementById("findMatchDiacritics"),
       entireWordCheckbox: document.getElementById("findEntireWord"),
       findMultipleSearchTextsCheckbox: document.getElementById(
         "findMultipleSearchTexts"

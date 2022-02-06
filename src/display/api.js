@@ -1096,8 +1096,6 @@ class PDFDocumentProxy {
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
- * @property {boolean} normalizeWhitespace - Replaces all occurrences of
- *   whitespace with standard spaces (0x20). The default value is `false`.
  * @property {boolean} disableCombineTextItems - Do not attempt to combine
  *   same line {@link TextItem}'s. The default value is `false`.
  * @property {boolean} [includeMarkedContent] - When true include marked
@@ -1614,11 +1612,13 @@ class PDFPageProxy {
   }
 
   /**
+   * NOTE: All occurrences of whitespace will be replaced by
+   * standard spaces (0x20).
+   *
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
   streamTextContent({
-    normalizeWhitespace = false,
     disableCombineTextItems = false,
     includeMarkedContent = false,
   } = {}) {
@@ -1628,7 +1628,6 @@ class PDFPageProxy {
       "GetTextContent",
       {
         pageIndex: this._pageIndex,
-        normalizeWhitespace: normalizeWhitespace === true,
         combineTextItems: disableCombineTextItems !== true,
         includeMarkedContent: includeMarkedContent === true,
       },
@@ -1642,6 +1641,9 @@ class PDFPageProxy {
   }
 
   /**
+   * NOTE: All occurrences of whitespace will be replaced by
+   * standard spaces (0x20).
+   *
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {Promise<TextContent>} A promise that is resolved with a
    *   {@link TextContent} object that represents the page's text content.

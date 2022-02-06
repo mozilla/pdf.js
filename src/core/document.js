@@ -438,7 +438,6 @@ class Page {
   extractTextContent({
     handler,
     task,
-    normalizeWhitespace,
     includeMarkedContent,
     sink,
     combineTextItems,
@@ -469,7 +468,6 @@ class Page {
         stream: contentStream,
         task,
         resources: this.resources,
-        normalizeWhitespace,
         includeMarkedContent,
         combineTextItems,
         sink,

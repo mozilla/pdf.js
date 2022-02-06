@@ -26,17 +26,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const isIOS =
     /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
     (platform === "MacIntel" && maxTouchPoints > 1);
-  const isIOSChrome = /CriOS/.test(userAgent);
-
-  // Disables URL.createObjectURL() usage in some environments.
-  // Support: Chrome on iOS
-  (function checkOnBlobSupport() {
-    // Sometimes Chrome on iOS loses data created with createObjectURL(),
-    // see issue 8081.
-    if (isIOSChrome) {
-      compatibilityParams.disableCreateObjectURL = true;
-    }
-  })();
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS

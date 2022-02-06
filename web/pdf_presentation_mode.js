@@ -79,8 +79,6 @@ class PDFPresentationMode {
     } else {
       if (this.container.requestFullscreen) {
         this.container.requestFullscreen();
-      } else if (this.container.mozRequestFullScreen) {
-        this.container.mozRequestFullScreen();
       } else if (this.container.webkitRequestFullscreen) {
         // #426 modified by ngx-extended-pdf-viewer
         document.body.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
@@ -149,11 +147,7 @@ class PDFPresentationMode {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       return !!document.fullscreenElement;
     }
-    return !!(
-      document.fullscreenElement ||
-      document.mozFullScreen ||
-      document.webkitIsFullScreen
-    );
+    return !!(document.fullscreenElement || document.webkitIsFullScreen);
   }
 
   /**
@@ -505,7 +499,6 @@ class PDFPresentationMode {
 
     window.addEventListener("fullscreenchange", this.fullscreenChangeBind);
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      window.addEventListener("mozfullscreenchange", this.fullscreenChangeBind);
       window.addEventListener(
         "webkitfullscreenchange",
         this.fullscreenChangeBind
@@ -519,10 +512,6 @@ class PDFPresentationMode {
   _removeFullscreenChangeListeners() {
     window.removeEventListener("fullscreenchange", this.fullscreenChangeBind);
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      window.removeEventListener(
-        "mozfullscreenchange",
-        this.fullscreenChangeBind
-      );
       window.removeEventListener(
         "webkitfullscreenchange",
         this.fullscreenChangeBind

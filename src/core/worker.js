@@ -774,7 +774,6 @@ class WorkerMessageHandler {
             handler,
             task,
             sink,
-            normalizeWhitespace: data.normalizeWhitespace,
             includeMarkedContent: data.includeMarkedContent,
             combineTextItems: data.combineTextItems,
           })
