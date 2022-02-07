@@ -219,6 +219,13 @@
        "lastPage": 3,
        "type": "eq"
     },
+    {  "id": "bug1753983",
+       "file": "pdfs/bug1753983.pdf",
+       "md5": "432be86262e5071176c49713ce458031",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug921760",
        "file": "pdfs/bug921760.pdf",
        "md5": "1aa136d786a65b0d7cce7bdb3c58c6c3",
