@@ -28,10 +28,10 @@ jobs:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
           scope: '@certifyinc'
-      - run: |
-          npm install gulp-cli
-          npm install
-          gulp generic
+      - run: npm install -g gulp-cli
+      - run: npm install
+      - run: gulp generic
+      - run: | 
           npm version ${{ github.event.inputs.name }}
           cd /home/runner/work/pdf.js/pdf.js/build/generic
           npm version ${{ github.event.inputs.name }}
@@ -41,4 +41,4 @@ jobs:
           git push
           npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
