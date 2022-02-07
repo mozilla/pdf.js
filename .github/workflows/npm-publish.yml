@@ -34,10 +34,13 @@ jobs:
       - run: |
           cd build/generic
           npm version ${{ github.event.inputs.name }}
+      - run: |
           git config --global user.name 'cbillen-emburse'
           git config --global user.email 'connor.billen@emburse.com'
           git commit -am "Automated Build Commit"
           git push
+      - run: |
+          cd build/generic
           npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
