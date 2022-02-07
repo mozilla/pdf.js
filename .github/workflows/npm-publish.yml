@@ -15,11 +15,11 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./build/generic
+#    defaults:
+#      run:
+#        working-directory: ./build/generic
     permissions:
-      contents: read
+      contents: write
       packages: write
     steps:
       - uses: actions/checkout@v2
