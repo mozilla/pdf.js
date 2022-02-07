@@ -29,17 +29,21 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           scope: '@certifyinc'
       - run: npm install -g gulp-cli
-      - run: npm install
+      - run: npm ci
       - run: gulp generic
-      - run: |
-          cd build/generic
+      - name: Bumping Package Version
+        run: |
+          cd build
           npm version ${{ github.event.inputs.name }}
-      - run: |
+          cp package.json generic/
+      - name: Committing Changes to Repo
+        run: |
           git config --global user.name 'cbillen-emburse'
           git config --global user.email 'connor.billen@emburse.com'
           git commit -am "Automated Build Commit"
           git push
-      - run: |
+      - name: Publishing Package
+        run: |
           cd build/generic
           npm publish
         env:
