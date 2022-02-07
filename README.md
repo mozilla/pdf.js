@@ -9,7 +9,8 @@ gulp generic
 ```
 
 In order to test this within CertifyApp, you need to link the package into the CertifyApp project and then run `npm run update-pdfjs`
-to copy the library to the public-facing directory. Instructions on npm linking can be found [here](https://chromeriver.atlassian.net/wiki/spaces/CE/pages/2310012973/Dependency+package+development+with+npm)
+to copy the library to the public-facing directory. Instructions on npm linking can be found [here](https://chromeriver.atlassian.net/wiki/spaces/CE/pages/2310012973/Dependency+package+development+with+npm). Ensure that you're linking
+from the `build/generic` folder, as that's what contains the built out version of the library.
 
 ## Releasing
 A Github Action is available for releasing a new version of the package [here](https://github.com/CertifyInc/pdf.js/actions/workflows/npm-publish.yml).
