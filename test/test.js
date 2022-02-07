@@ -451,7 +451,8 @@ function checkEq(task, results, browser, masterMode) {
     if (!pageResults[page]) {
       continue;
     }
-    var testSnapshot = pageResults[page].snapshot;
+    const pageResult = pageResults[page];
+    let testSnapshot = pageResult.snapshot;
     if (testSnapshot && testSnapshot.startsWith("data:image/png;base64,")) {
       testSnapshot = Buffer.from(testSnapshot.substring(22), "base64");
     } else {
@@ -492,8 +493,8 @@ function checkEq(task, results, browser, masterMode) {
           refSnapshot
         );
 
-        // NB: this follows the format of Mozilla reftest output so that
-        // we can reuse its reftest-analyzer script
+        // This no longer follows the format of Mozilla reftest output.
+        const viewportString = `(${pageResult.viewportWidth}x${pageResult.viewportHeight}x${pageResult.outputScale})`;
         fs.appendFileSync(
           eqLog,
           "REFTEST TEST-UNEXPECTED-FAIL | " +
@@ -503,10 +504,10 @@ function checkEq(task, results, browser, masterMode) {
             "-page" +
             (page + 1) +
             " | image comparison (==)\n" +
-            "REFTEST   IMAGE 1 (TEST): " +
+            `REFTEST   IMAGE 1 (TEST)${viewportString}: ` +
             path.join(testSnapshotDir, page + 1 + ".png") +
             "\n" +
-            "REFTEST   IMAGE 2 (REFERENCE): " +
+            `REFTEST   IMAGE 2 (REFERENCE)${viewportString}: ` +
             path.join(testSnapshotDir, page + 1 + "_ref.png") +
             "\n"
         );
@@ -735,6 +736,9 @@ function refTestPostHandler(req, res) {
     taskResults[round][page] = {
       failure,
       snapshot,
+      viewportWidth: data.viewportWidth,
+      viewportHeight: data.viewportHeight,
+      outputScale: data.outputScale,
     };
     if (stats) {
       stats.push({
