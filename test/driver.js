@@ -37,6 +37,8 @@ const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+const md5FileMap = new Map();
+
 function loadStyles(styles) {
   const promises = [];
 
@@ -430,6 +432,19 @@ class Driver {
       task.pageNum = task.firstPage || 1;
       task.stats = { times: [] };
       task.enableXfa = task.enableXfa === true;
+
+      const prevFile = md5FileMap.get(task.md5);
+      if (prevFile) {
+        if (task.file !== prevFile) {
+          this._nextPage(
+            task,
+            `The "${task.file}" file is identical to the previously used "${prevFile}" file.`
+          );
+          return;
+        }
+      } else {
+        md5FileMap.set(task.md5, task.file);
+      }
 
       // Support *linked* test-cases for the other suites, e.g. unit- and
       // integration-tests, without needing to run them as reference-tests.
