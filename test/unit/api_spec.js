@@ -239,7 +239,7 @@ describe("api", function () {
       const passwordNeededCapability = createPromiseCapability();
       const passwordIncorrectCapability = createPromiseCapability();
       // Attach the callback that is used to request a password;
-      // similarly to how viewer.js handles passwords.
+      // similarly to how the default viewer handles passwords.
       loadingTask.onPassword = function (updatePassword, reason) {
         if (
           reason === PasswordResponses.NEED_PASSWORD &&
@@ -402,6 +402,38 @@ describe("api", function () {
         );
 
         await Promise.all([result1, result2]);
+      }
+    );
+
+    it(
+      "creates pdf doc from password protected PDF file and passes an Error " +
+        "(asynchronously) to the onPassword callback (bug 1754421)",
+      async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("issue3371.pdf")
+        );
+        expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+        // Attach the callback that is used to request a password;
+        // similarly to how the default viewer handles passwords.
+        loadingTask.onPassword = function (updatePassword, reason) {
+          waitSome(() => {
+            updatePassword(new Error("Should reject the loadingTask."));
+          });
+        };
+
+        await loadingTask.promise.then(
+          function () {
+            // Shouldn't get here.
+            expect(false).toEqual(true);
+          },
+          function (reason) {
+            expect(reason instanceof PasswordException).toEqual(true);
+            expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
+          }
+        );
+
+        await loadingTask.destroy();
       }
     );
 
