@@ -4561,7 +4561,7 @@ class EvaluatorPreprocessor {
   }
 
   static get MAX_INVALID_PATH_OPS() {
-    return shadow(this, "MAX_INVALID_PATH_OPS", 20);
+    return shadow(this, "MAX_INVALID_PATH_OPS", 10);
   }
 
   constructor(stream, xref, stateManager = new StateManager()) {
