@@ -1157,7 +1157,7 @@
        "type": "eq"
     },
     {  "id": "xfa_bug1720182",
-       "file": "pdfs/xfa_bug1720182.pdf",
+       "file": "pdfs/xfa_bug1716380.pdf",
        "md5": "1351f816f0509fe750ca61ef2bd40872",
        "link": true,
        "rounds": 1,
@@ -1174,7 +1174,8 @@
          "ComplainantLastname2711": {
            "value": "Bar"
          }
-       }
+       },
+       "about": "This *intentionally* uses the same file as test-case xfa_bug1716380."
     },
     {  "id": "bug1720411",
        "file": "pdfs/bug1720411.pdf",
