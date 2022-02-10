@@ -1190,7 +1190,20 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
         }
         storage.setValue(checkbox.id,
           this.data.fieldName, // #718 modified by ngx-extended-pdf-viewer
-          { value: curChecked });
+          {
+            value: curChecked,
+            exportValue: checkbox.exportValue // #1183 modified by ngx-extended-pdf-viewer
+          });
+      }
+      if (!value) {
+        if (data.exportValue) {
+          storage.setValue(id,
+            this.data.fieldName, // #1183 modified by ngx-extended-pdf-viewer
+            {
+              value: true,
+              exportValue: null
+            });
+        }
       }
       storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
         value: checked
