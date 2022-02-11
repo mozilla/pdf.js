@@ -23,7 +23,6 @@
 import {
   AnnotationMode,
   CMapCompressionType,
-  createObjectURL,
   createPromiseCapability,
   createValidAbsoluteUrl,
   InvalidPDFException,
@@ -109,7 +108,6 @@ export {
   AnnotationMode,
   build,
   CMapCompressionType,
-  createObjectURL,
   createPromiseCapability,
   createValidAbsoluteUrl,
   getDocument,
