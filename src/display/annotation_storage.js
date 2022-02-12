@@ -126,10 +126,7 @@ class AnnotationStorage {
           } else if (value.radioValue) {
             window.setFormValue(fieldname, value.radioValue);
           } else if (value.exportValue) { // #1183 modified by ngx-extended-pdf-viewer
-            if (value.value) {
-              window.setFormValue(fieldname, value.exportValue);
-            }
-          }
+            window.setFormValue(fieldname, value.exportValue);
           } else {
             for (const val of Object.values(value)) {
               window.setFormValue(fieldname, val);
