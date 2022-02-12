@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals __non_webpack_require__ */
 
 import { isNodeJS } from "./is_node.js";
 
@@ -69,21 +70,12 @@ if (
 
   // Support: Node.js
   (function checkReadableStream() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
-      // The current image decoders are synchronous, hence `ReadableStream`
-      // shouldn't need to be polyfilled for the IMAGE_DECODERS build target.
-      return;
-    }
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-      // Slightly reduce the size of the Chromium-extension, given
-      // that `ReadableStream` has been supported since Chrome 43.
-      return;
-    }
     if (globalThis.ReadableStream || !isNodeJS) {
       return;
     }
-    globalThis.ReadableStream =
-      require("web-streams-polyfill/dist/ponyfill.js").ReadableStream;
+    globalThis.ReadableStream = __non_webpack_require__(
+      "web-streams-polyfill/dist/ponyfill.js"
+    ).ReadableStream;
   })();
 
   // Support: Firefox<94, Chrome<98, Safari, Node.js<17.0.0
