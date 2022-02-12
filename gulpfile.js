@@ -2042,6 +2042,9 @@ function packageBowerJson() {
     homepage: DIST_HOMEPAGE,
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
+    dependencies: {
+      "web-streams-polyfill": "^3.2.0",
+    },
     peerDependencies: {
       "worker-loader": "^3.0.8", // Used in `external/dist/webpack.js`.
     },
