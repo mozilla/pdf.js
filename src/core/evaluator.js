@@ -2167,6 +2167,7 @@ class PartialEvaluator {
     includeMarkedContent = false,
     sink,
     seenStyles = new Set(),
+    viewBox,
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
@@ -2393,22 +2394,35 @@ class PartialEvaluator {
     }
 
     function compareWithLastPosition() {
+      const currentTransform = getCurrentTextTransform();
+      let posX = currentTransform[4];
+      let posY = currentTransform[5];
+
+      const shiftedX = posX - viewBox[0];
+      const shiftedY = posY - viewBox[1];
+
+      if (
+        shiftedX < 0 ||
+        shiftedX > viewBox[2] ||
+        shiftedY < 0 ||
+        shiftedY > viewBox[3]
+      ) {
+        return false;
+      }
+
       if (
         !combineTextItems ||
         !textState.font ||
         !textContentItem.prevTransform
       ) {
-        return;
+        return true;
       }
 
-      const currentTransform = getCurrentTextTransform();
-      let posX = currentTransform[4];
-      let posY = currentTransform[5];
       let lastPosX = textContentItem.prevTransform[4];
       let lastPosY = textContentItem.prevTransform[5];
 
       if (lastPosX === posX && lastPosY === posY) {
-        return;
+        return true;
       }
 
       let rotate = -1;
@@ -2473,16 +2487,16 @@ class PartialEvaluator {
             0.5 * textContentItem.width /* not the same column */
           ) {
             appendEOL();
-            return;
+            return true;
           }
 
           flushTextContentItem();
-          return;
+          return true;
         }
 
         if (Math.abs(advanceX) > textContentItem.width) {
           appendEOL();
-          return;
+          return true;
         }
         if (advanceY <= textOrientation * textContentItem.trackingSpaceMin) {
           textContentItem.height += advanceY;
@@ -2508,7 +2522,7 @@ class PartialEvaluator {
           }
         }
 
-        return;
+        return true;
       }
 
       const advanceX = (posX - lastPosX) / textContentItem.textAdvanceScale;
@@ -2523,15 +2537,15 @@ class PartialEvaluator {
           0.5 * textContentItem.height /* not the same line */
         ) {
           appendEOL();
-          return;
+          return true;
         }
         flushTextContentItem();
-        return;
+        return true;
       }
 
       if (Math.abs(advanceY) > textContentItem.height) {
         appendEOL();
-        return;
+        return true;
       }
 
       if (advanceX <= textOrientation * textContentItem.trackingSpaceMin) {
@@ -2553,6 +2567,8 @@ class PartialEvaluator {
           textContentItem.width += advanceX;
         }
       }
+
+      return true;
     }
 
     function buildTextContentItem({ chars, extraSpacing }) {
@@ -2617,7 +2633,10 @@ class PartialEvaluator {
           continue;
         }
 
-        compareWithLastPosition();
+        if (!compareWithLastPosition()) {
+          // The glyph is not in page so just skip it.
+          continue;
+        }
 
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
@@ -3026,6 +3045,7 @@ class PartialEvaluator {
                     includeMarkedContent,
                     sink: sinkWrapper,
                     seenStyles,
+                    viewBox,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
