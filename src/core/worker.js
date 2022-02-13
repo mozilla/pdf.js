@@ -133,15 +133,15 @@ class WorkerMessageHandler {
       // Ensure that (primarily) Node.js users won't accidentally attempt to use
       // a non-translated/non-polyfilled build of the library, since that would
       // quickly fail anyway because of missing functionality.
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
-        typeof ReadableStream === "undefined"
-      ) {
-        throw new Error(
+      if (typeof ReadableStream === "undefined") {
+        const partialMsg =
           "The browser/environment lacks native support for critical " +
-            "functionality used by the PDF.js library (e.g. `ReadableStream`); " +
-            "please use a `legacy`-build instead."
-        );
+          "functionality used by the PDF.js library (e.g. `ReadableStream`); ";
+
+        if (isNodeJS) {
+          throw new Error(partialMsg + "please use a `legacy`-build instead.");
+        }
+        throw new Error(partialMsg + "please update to a supported browser.");
       }
     }
 
