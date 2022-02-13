@@ -471,6 +471,7 @@ class Page {
         includeMarkedContent,
         combineTextItems,
         sink,
+        viewBox: this.view,
       });
     });
   }
