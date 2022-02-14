@@ -15,12 +15,16 @@
 
 const compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const userAgent =
-    (typeof navigator !== "undefined" && navigator.userAgent) || "";
-  const platform =
-    (typeof navigator !== "undefined" && navigator.platform) || "";
-  const maxTouchPoints =
-    (typeof navigator !== "undefined" && navigator.maxTouchPoints) || 1;
+  if (
+    typeof PDFJSDev !== "undefined" &&
+    PDFJSDev.test("LIB") &&
+    typeof navigator === "undefined"
+  ) {
+    globalThis.navigator = Object.create(null);
+  }
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 1;
 
   const isAndroid = /Android/.test(userAgent);
   const isIOS =
@@ -278,7 +282,7 @@ if (
   };
   defaultOptions.locale = {
     /** @type {string} */
-    value: typeof navigator !== "undefined" ? navigator.language : "en-US",
+    value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.sandboxBundleSrc = {
