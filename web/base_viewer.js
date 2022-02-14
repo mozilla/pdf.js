@@ -1547,6 +1547,14 @@ class BaseViewer {
   }
 
   update() {
+    // #1201 modified by ngx-extended-pdf-viewer
+    if (this.scrollMode === ScrollMode.PAGE) {
+      this.viewer.classList.add("singlePageView");
+    } else {
+      this.viewer.classList.remove("singlePageView");
+    }
+    // #1201 end of modification by ngx-extended-pdf-viewer
+
     const visible = this._getVisiblePages();
     const visiblePages = visible.views,
       numVisiblePages = visiblePages.length;
