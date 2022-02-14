@@ -81,10 +81,9 @@ class PasswordPrompt {
     );
   }
 
-  close() {
-    this.overlayManager.close(this.overlayName).then(() => {
-      this.input.value = "";
-    });
+  async close() {
+    await this.overlayManager.close(this.overlayName);
+    this.input.value = "";
   }
 
   #verify() {
