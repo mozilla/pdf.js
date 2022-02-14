@@ -96,7 +96,7 @@ function normalize(text) {
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
     normalizationRegex = new RegExp(
-      `([${replace}])|(\\S-\\n)|(\\n)|(\\p{M}+)`,
+      `([${replace}])|(\\p{M}+(?:-\\n)?)|(\\S-\\n)|(\\n)`,
       "gum"
     );
   }
@@ -159,43 +159,59 @@ function normalize(text) {
       }
 
       if (p2) {
-        // "X-\n" is removed because an hyphen at the end of a line
-        // with not a space before is likely here to mark a break
-        // in a word.
-        positions.push([i - shift, 1 + shift]);
-        shift += 1;
-        shiftOrigin += 1;
-        eol += 1;
-        return p2.charAt(0);
+        const hasTrailingDashEOL = p2.endsWith("\n");
+        const len = hasTrailingDashEOL ? p2.length - 2 : p2.length;
+
+        // Diacritics.
+        hasDiacritics = true;
+        let jj = len;
+        if (i + eol === rawDiacriticsPositions[k]?.[1]) {
+          jj -= rawDiacriticsPositions[k][0];
+          ++k;
+        }
+
+        for (let j = 1; j < jj + 1; j++) {
+          // i is the position of the first diacritic
+          // so (i - 1) is the position for the letter before.
+          positions.push([i - 1 - shift + j, shift - j]);
+        }
+        shift -= jj;
+        shiftOrigin += jj;
+
+        if (hasTrailingDashEOL) {
+          // Diacritics are followed by a -\n.
+          // See comments in `if (p3)` block.
+          i += len - 1;
+          positions.push([i - shift + 1, 1 + shift]);
+          shift += 1;
+          shiftOrigin += 1;
+          eol += 1;
+          return p2.slice(0, len);
+        }
+
+        return p2;
       }
 
       if (p3) {
-        // eol is replaced by space: "foo\nbar" is likely equivalent to
-        // "foo bar".
-        positions.push([i - shift + 1, shift - 1]);
-        shift -= 1;
+        // "X-\n" is removed because an hyphen at the end of a line
+        // with not a space before is likely here to mark a break
+        // in a word.
+        // The \n isn't in the original text so here y = i, n = 1 and o = 2.
+        positions.push([i - shift + 1, 1 + shift]);
+        shift += 1;
         shiftOrigin += 1;
         eol += 1;
-        return " ";
+        return p3.charAt(0);
       }
 
-      // Diacritics.
-      hasDiacritics = true;
-      let jj = p4.length;
-      if (i + eol === rawDiacriticsPositions[k]?.[1]) {
-        jj -= rawDiacriticsPositions[k][0];
-        ++k;
-      }
-
-      for (let j = 1; j < jj + 1; j++) {
-        // i is the position of the first diacritic
-        // so (i - 1) is the position for the letter before.
-        positions.push([i - 1 - shift + j, shift - j]);
-      }
-      shift -= jj;
-      shiftOrigin += jj;
-
-      return p4;
+      // p4
+      // eol is replaced by space: "foo\nbar" is likely equivalent to
+      // "foo bar".
+      positions.push([i - shift + 1, shift - 1]);
+      shift -= 1;
+      shiftOrigin += 1;
+      eol += 1;
+      return " ";
     }
   );
 

@@ -6271,5 +6271,12 @@
          "value": "PDF.js PDF.js PDF.js"
         }
       }
+   },
+   { "id": "issue14562",
+      "file": "pdfs/issue14562.pdf",
+      "md5": "565b0a1e46a32e907837506a10d25277",
+      "rounds": 1,
+      "link": true,
+      "type": "other"
    }
 ]
