@@ -16,6 +16,7 @@
 import { buildGetDocumentParams } from "./test_utils.js";
 import { EventBus } from "../../web/event_utils.js";
 import { getDocument } from "../../src/display/api.js";
+import { isNodeJS } from "../../src/shared/is_node.js";
 import { PDFFindController } from "../../web/pdf_find_controller.js";
 import { SimpleLinkService } from "../../web/pdf_link_service.js";
 
@@ -552,6 +553,50 @@ describe("pdf_find_controller", function () {
       },
       pageMatches: [[1946]],
       pageMatchesLength: [[23]],
+    });
+  });
+
+  it("performs a search in a text containing diacritics before -\\n", async function () {
+    if (isNodeJS) {
+      pending("Linked test-cases are not supported in Node.js.");
+    }
+
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "issue14562.pdf"
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "ä",
+        matchDiacritics: true,
+      },
+      matchesPerPage: [80],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [
+        [
+          299, 337, 414, 476, 623, 797, 978, 984, 1010, 1058, 1079, 1144, 1152,
+          1274, 1343, 1391, 1399, 1421, 1497, 1521, 1527, 1684, 1774, 1786,
+          1857, 1879, 1909, 1946, 2064, 2074, 2161, 2178, 2213, 2227, 2272,
+          2322, 2359, 2401, 2412, 2423, 2462, 2532, 2538, 2553, 2562, 2576,
+          2602, 2613, 2638, 2668, 2792, 2805, 2836, 2848, 2859, 2896, 2902,
+          2916, 2940, 2960, 3091, 3239, 3249, 3339, 3387, 3394, 3468, 3477,
+          3485, 3502, 3690, 3696, 3711, 3758, 3789, 3865, 3977, 4052, 4058,
+          4071,
+        ],
+      ],
+      pageMatchesLength: [
+        [
+          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        ],
+      ],
     });
   });
 });
