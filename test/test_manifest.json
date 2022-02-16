@@ -2157,6 +2157,12 @@
        "type": "eq",
        "about": "Glyph that gets mapped to unicode non-breaking-space."
     },
+    {  "id": "issue14297",
+       "file": "pdfs/issue14297.pdf",
+       "md5": "46eb3d4d4bc47c8009fc4c699d213a18",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "simpletype3font",
        "file": "pdfs/simpletype3font.pdf",
        "md5": "b374c7543920840c61999e9e86939f99",
@@ -2504,6 +2510,12 @@
        "link": true,
        "firstPage": 2,
        "lastPage": 2,
+       "type": "eq"
+    },
+    {  "id": "bug1755507",
+       "file": "pdfs/bug1755507.pdf",
+       "md5": "319d73b8fd680cdc583d69b7f7ab29e9",
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue9367",
