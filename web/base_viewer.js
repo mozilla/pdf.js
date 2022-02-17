@@ -1479,8 +1479,10 @@ class BaseViewer {
     /** #495 modified by ngx-extended-pdf-viewer */
     this.#ensurePdfPageLoaded(pageView).then(() => {
       this.renderingQueue.renderView(pageView);
-      if (this.currentPageNumber !== pageNumber) {
-        this.currentPageNumber = pageNumber;
+      if (this.pageViewMode === "single") {
+        if (this.currentPageNumber !== pageNumber) {
+          this.currentPageNumber = pageNumber;
+        }
       }
     });
     /** end of modification */
