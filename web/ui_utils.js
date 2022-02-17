@@ -87,7 +87,10 @@ function getOutputScale() {
   return {
     sx: pixelRatio,
     sy: pixelRatio,
-    scaled: pixelRatio !== 1,
+
+    get scaled() {
+      return this.sx !== 1 || this.sy !== 1;
+    },
   };
 }
 
