@@ -41,7 +41,6 @@ import {
   isName,
   isRef,
   isRefsEqual,
-  isStream,
   Name,
   Ref,
   RefSet,
@@ -993,7 +992,7 @@ class Catalog {
       }
 
       let js = jsDict.get("JS");
-      if (isStream(js)) {
+      if (js instanceof BaseStream) {
         js = js.getString();
       } else if (typeof js !== "string") {
         return;
@@ -1551,7 +1550,7 @@ class Catalog {
           const jsAction = action.get("JS");
           let js;
 
-          if (isStream(jsAction)) {
+          if (jsAction instanceof BaseStream) {
             js = jsAction.getString();
           } else if (isString(jsAction)) {
             js = jsAction;

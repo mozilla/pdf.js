@@ -21,7 +21,6 @@ import {
   isName,
   isRef,
   isRefsEqual,
-  isStream,
   Name,
   Ref,
   RefSet,
@@ -558,18 +557,6 @@ describe("primitives", function () {
       const ref1 = Ref.get(1, 0);
       const ref2 = Ref.get(2, 0);
       expect(isRefsEqual(ref1, ref2)).toEqual(false);
-    });
-  });
-
-  describe("isStream", function () {
-    it("handles non-streams", function () {
-      const nonStream = {};
-      expect(isStream(nonStream)).toEqual(false);
-    });
-
-    it("handles streams", function () {
-      const stream = new StringStream("foo");
-      expect(isStream(stream)).toEqual(true);
     });
   });
 });

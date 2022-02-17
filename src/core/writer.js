@@ -14,9 +14,10 @@
  */
 
 import { bytesToString, escapeString, warn } from "../shared/util.js";
-import { Dict, isDict, isName, isRef, isStream, Name } from "./primitives.js";
+import { Dict, isDict, isName, isRef, Name } from "./primitives.js";
 import { escapePDFName, parseXFAPath } from "./core_utils.js";
 import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
+import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 
 function writeDict(dict, buffer, transform) {
@@ -87,7 +88,7 @@ function writeValue(value, buffer, transform) {
     buffer.push(value.toString());
   } else if (isDict(value)) {
     writeDict(value, buffer, transform);
-  } else if (isStream(value)) {
+  } else if (value instanceof BaseStream) {
     writeStream(value, buffer, transform);
   } else if (value === null) {
     buffer.push("null");

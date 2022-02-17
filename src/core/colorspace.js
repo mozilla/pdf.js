@@ -21,7 +21,8 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, isStream, Name, Ref } from "./primitives.js";
+import { isDict, isName, Name, Ref } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
 
 /**
@@ -642,7 +643,7 @@ class IndexedCS extends ColorSpace {
     const length = base.numComps * highVal;
     this.lookup = new Uint8Array(length);
 
-    if (isStream(lookup)) {
+    if (lookup instanceof BaseStream) {
       const bytes = lookup.getBytes(length);
       this.lookup.set(bytes);
     } else if (typeof lookup === "string") {

@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-import { isDict, isStream } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { DecodeStream } from "./decode_stream.js";
+import { isDict } from "./primitives.js";
 import { Jbig2Image } from "./jbig2.js";
 import { shadow } from "../shared/util.js";
 
@@ -51,7 +52,7 @@ class Jbig2Stream extends DecodeStream {
     const chunks = [];
     if (isDict(this.params)) {
       const globalsStream = this.params.get("JBIG2Globals");
-      if (isStream(globalsStream)) {
+      if (globalsStream instanceof BaseStream) {
         const globals = globalsStream.getBytes();
         chunks.push({ data: globals, start: 0, end: globals.length });
       }
