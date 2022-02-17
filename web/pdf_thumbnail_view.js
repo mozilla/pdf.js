@@ -233,7 +233,7 @@ class PDFThumbnailView {
       canvas.mozOpaque = true;
     }
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = getOutputScale(ctx);
+    const outputScale = getOutputScale();
 
     canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
     canvas.height = (upscaleFactor * this.canvasHeight * outputScale.sy) | 0;

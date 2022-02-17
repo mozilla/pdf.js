@@ -806,8 +806,7 @@ class PDFPageView {
     }
 
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = getOutputScale(ctx);
-    this.outputScale = outputScale;
+    const outputScale = (this.outputScale = getOutputScale());
 
     if (this.useOnlyCssZoom) {
       const actualSizeViewport = viewport.clone({
@@ -844,9 +843,9 @@ class PDFPageView {
     this.paintedViewportMap.set(canvas, viewport);
 
     // Rendering area
-    const transform = !outputScale.scaled
-      ? null
-      : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
+    const transform = outputScale.scaled
+      ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
+      : null;
     const renderContext = {
       canvasContext: ctx,
       transform,
