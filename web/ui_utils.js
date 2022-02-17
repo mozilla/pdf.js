@@ -79,18 +79,11 @@ const AutoPrintRegExp = /\bprint\s*\(/;
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
- * @returns {Object} The object with horizontal (sx) and vertical (sy)
- *                   scales. The scaled property is set to false if scaling is
- *                   not required, true otherwise.
+ * @returns {Object} The object with horizontal (sx) and vertical (sy) scales.
+ *   The scaled property is false if scaling is not required, true otherwise.
  */
-function getOutputScale(ctx) {
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const backingStoreRatio =
-    ctx.webkitBackingStorePixelRatio ||
-    ctx.mozBackingStorePixelRatio ||
-    ctx.backingStorePixelRatio ||
-    1;
-  const pixelRatio = devicePixelRatio / backingStoreRatio;
+function getOutputScale() {
+  const pixelRatio = window.devicePixelRatio || 1;
   return {
     sx: pixelRatio,
     sy: pixelRatio,
