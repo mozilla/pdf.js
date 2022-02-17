@@ -44,15 +44,7 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import {
-  Dict,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  Ref,
-} from "./primitives.js";
+import { Dict, isDict, isName, isRef, Name, Ref } from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
@@ -638,7 +630,7 @@ function find(stream, signature, limit = 1024, backwards = false) {
 class PDFDocument {
   constructor(pdfManager, arg) {
     let stream;
-    if (isStream(arg)) {
+    if (arg instanceof BaseStream) {
       stream = arg;
     } else if (isArrayBuffer(arg)) {
       stream = new Stream(arg);
@@ -848,7 +840,7 @@ class PDFDocument {
       stylesheet: "",
       "/xdp:xdp": "",
     };
-    if (isStream(xfa) && !xfa.isEmpty) {
+    if (xfa instanceof BaseStream && !xfa.isEmpty) {
       try {
         entries["xdp:xdp"] = stringToUTF8String(xfa.getString());
         return entries;
@@ -876,7 +868,7 @@ class PDFDocument {
         continue;
       }
       const data = this.xref.fetchIfRef(xfa[i + 1]);
-      if (!isStream(data) || data.isEmpty) {
+      if (!(data instanceof BaseStream) || data.isEmpty) {
         continue;
       }
       try {
@@ -923,10 +915,9 @@ class PDFDocument {
     const xfaImages = new Map();
     for (const key of keys) {
       const stream = xfaImagesDict.get(key);
-      if (!isStream(stream)) {
-        continue;
+      if (stream instanceof BaseStream) {
+        xfaImages.set(key, stream.getBytes());
       }
-      xfaImages.set(key, stream.getBytes());
     }
 
     this.xfaFactory.setImages(xfaImages);
@@ -1115,7 +1106,7 @@ class PDFDocument {
       const xfa = acroForm.get("XFA");
       formInfo.hasXfa =
         (Array.isArray(xfa) && xfa.length > 0) ||
-        (isStream(xfa) && !xfa.isEmpty);
+        (xfa instanceof BaseStream && !xfa.isEmpty);
 
       // The document contains AcroForm data if the `Fields` entry is a
       // non-empty array and it doesn't consist of only document signatures.

@@ -23,8 +23,8 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
-import { isStream } from "./primitives.js";
 import { MissingDataException } from "./core_utils.js";
 
 const ShadingType = {
@@ -50,7 +50,7 @@ class Pattern {
     pdfFunctionFactory,
     localColorSpaceCache
   ) {
-    const dict = isStream(shading) ? shading.dict : shading;
+    const dict = shading instanceof BaseStream ? shading.dict : shading;
     const type = dict.get("ShadingType");
 
     try {
@@ -403,7 +403,7 @@ class MeshShading extends BaseShading {
     localColorSpaceCache
   ) {
     super();
-    if (!isStream(stream)) {
+    if (!(stream instanceof BaseStream)) {
       throw new FormatError("Mesh data is not a stream");
     }
     const dict = stream.dict;
