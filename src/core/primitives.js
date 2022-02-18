@@ -394,10 +394,6 @@ function isDict(v, type) {
   );
 }
 
-function isRef(v) {
-  return v instanceof Ref;
-}
-
 function isRefsEqual(v1, v2) {
   if (
     typeof PDFJSDev === "undefined" ||
@@ -426,7 +422,6 @@ export {
   isCmd,
   isDict,
   isName,
-  isRef,
   isRefsEqual,
   Name,
   Ref,

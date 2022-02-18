@@ -19,7 +19,6 @@ import {
   isCmd,
   isDict,
   isName,
-  isRef,
   isRefsEqual,
   Name,
   Ref,
@@ -531,18 +530,6 @@ describe("primitives", function () {
       dict.set("Type", Name.get("Page"));
       expect(isDict(dict, "Page")).toEqual(true);
       expect(isDict(dict, "Contents")).toEqual(false);
-    });
-  });
-
-  describe("isRef", function () {
-    it("handles non-refs", function () {
-      const nonRef = {};
-      expect(isRef(nonRef)).toEqual(false);
-    });
-
-    it("handles refs", function () {
-      const ref = Ref.get(1, 0);
-      expect(isRef(ref)).toEqual(true);
     });
   });
 
