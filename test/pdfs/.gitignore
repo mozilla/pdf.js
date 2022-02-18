@@ -175,6 +175,7 @@
 !issue8565.pdf
 !clippath.pdf
 !issue8795_reduced.pdf
+!bug1755507.pdf
 !close-path-bug.pdf
 !issue6019.pdf
 !issue6621.pdf
@@ -491,6 +492,7 @@
 !pr12564.pdf
 !pr12828.pdf
 !secHandler.pdf
+!issue14297.pdf
 !rc_annotation.pdf
 !issue14267.pdf
 !PDFBOX-4352-0.pdf

@@ -577,6 +577,10 @@ class TilingPattern {
     tmpCtx.translate(-(dimx.scale * adjustedX0), -(dimy.scale * adjustedY0));
     graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
 
+    // To match CanvasGraphics beginDrawing we must save the context here or
+    // else we end up with unbalanced save/restores.
+    tmpCtx.save();
+
     this.clipBbox(graphics, adjustedX0, adjustedY0, adjustedX1, adjustedY1);
 
     graphics.baseTransform = graphics.ctx.mozCurrentTransform.slice();
