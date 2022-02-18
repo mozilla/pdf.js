@@ -78,20 +78,29 @@ const SpreadMode = {
 const AutoPrintRegExp = /\bprint\s*\(/;
 
 /**
- * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
- * @returns {Object} The object with horizontal (sx) and vertical (sy) scales.
- *   The scaled property is false if scaling is not required, true otherwise.
+ * Scale factors for the canvas, necessary with HiDPI displays.
  */
-function getOutputScale() {
-  const pixelRatio = window.devicePixelRatio || 1;
-  return {
-    sx: pixelRatio,
-    sy: pixelRatio,
+class OutputScale {
+  constructor() {
+    const pixelRatio = window.devicePixelRatio || 1;
 
-    get scaled() {
-      return this.sx !== 1 || this.sy !== 1;
-    },
-  };
+    /**
+     * @type {number} Horizontal scale.
+     */
+    this.sx = pixelRatio;
+
+    /**
+     * @type {number} Vertical scale.
+     */
+    this.sy = pixelRatio;
+  }
+
+  /**
+   * @type {boolean} Returns `true` when scaling is required, `false` otherwise.
+   */
+  get scaled() {
+    return this.sx !== 1 || this.sy !== 1;
+  }
 }
 
 /**
@@ -836,7 +845,6 @@ export {
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
   getActiveOrFocusedElement,
-  getOutputScale,
   getPageSizeInches,
   getVisibleElements,
   isPortraitOrientation,
@@ -849,6 +857,7 @@ export {
   noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
+  OutputScale,
   parseQueryString,
   PresentationModeState,
   ProgressBar,
