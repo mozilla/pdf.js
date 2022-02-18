@@ -22,7 +22,7 @@ import {
   stringToPDFString,
   warn,
 } from "../shared/util.js";
-import { Dict, isName, isRef, RefSet } from "./primitives.js";
+import { Dict, isName, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 
 function getLookupTableFactory(initializer) {
@@ -316,7 +316,7 @@ function _collectJS(entry, xref, list, parents) {
   }
 
   let parent = null;
-  if (isRef(entry)) {
+  if (entry instanceof Ref) {
     if (parents.has(entry)) {
       // If we've already found entry then we've a cycle.
       return;

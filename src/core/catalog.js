@@ -39,7 +39,6 @@ import {
   Dict,
   isDict,
   isName,
-  isRef,
   isRefsEqual,
   Name,
   Ref,
@@ -151,7 +150,7 @@ class Catalog {
 
   get acroFormRef() {
     const value = this._catDict.getRaw("AcroForm");
-    return shadow(this, "acroFormRef", isRef(value) ? value : null);
+    return shadow(this, "acroFormRef", value instanceof Ref ? value : null);
   }
 
   get metadata() {
@@ -288,7 +287,7 @@ class Catalog {
       return null;
     }
     obj = obj.getRaw("First");
-    if (!isRef(obj)) {
+    if (!(obj instanceof Ref)) {
       return null;
     }
 
@@ -346,12 +345,12 @@ class Catalog {
 
       i.parent.items.push(outlineItem);
       obj = outlineDict.getRaw("First");
-      if (isRef(obj) && !processed.has(obj)) {
+      if (obj instanceof Ref && !processed.has(obj)) {
         queue.push({ obj, parent: outlineItem });
         processed.put(obj);
       }
       obj = outlineDict.getRaw("Next");
-      if (isRef(obj) && !processed.has(obj)) {
+      if (obj instanceof Ref && !processed.has(obj)) {
         queue.push({ obj, parent: i.parent });
         processed.put(obj);
       }
@@ -420,7 +419,7 @@ class Catalog {
       const groupRefs = [];
       // Ensure all the optional content groups are valid.
       for (const groupRef of groupsData) {
-        if (!isRef(groupRef)) {
+        if (!(groupRef instanceof Ref)) {
           continue;
         }
         groupRefs.push(groupRef);
@@ -451,7 +450,7 @@ class Catalog {
       const onParsed = [];
       if (Array.isArray(refs)) {
         for (const value of refs) {
-          if (!isRef(value)) {
+          if (!(value instanceof Ref)) {
             continue;
           }
           if (contentGroupRefs.includes(value)) {
@@ -469,7 +468,7 @@ class Catalog {
       const order = [];
 
       for (const value of refs) {
-        if (isRef(value) && contentGroupRefs.includes(value)) {
+        if (value instanceof Ref && contentGroupRefs.includes(value)) {
           parsedOrderRefs.put(value); // Handle "hidden" groups, see below.
 
           order.push(value.toString());
@@ -1371,7 +1370,7 @@ class Catalog {
           let found = false;
           for (let i = 0, ii = kids.length; i < ii; i++) {
             const kid = kids[i];
-            if (!isRef(kid)) {
+            if (!(kid instanceof Ref)) {
               throw new FormatError("Kid must be a reference.");
             }
             if (isRefsEqual(kid, kidRef)) {
@@ -1479,7 +1478,7 @@ class Catalog {
           const fields = [];
           const refs = [];
           for (const obj of action.get("Fields") || []) {
-            if (isRef(obj)) {
+            if (obj instanceof Ref) {
               refs.push(obj.toString());
             } else if (isString(obj)) {
               fields.push(stringToPDFString(obj));
