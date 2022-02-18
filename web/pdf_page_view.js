@@ -40,7 +40,7 @@ import {
 import {
   approximateFraction,
   DEFAULT_SCALE,
-  getOutputScale,
+  OutputScale,
   RendererType,
   RenderingStates,
   roundToDivide,
@@ -806,7 +806,7 @@ class PDFPageView {
     }
 
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = (this.outputScale = getOutputScale());
+    const outputScale = (this.outputScale = new OutputScale());
 
     if (this.useOnlyCssZoom) {
       const actualSizeViewport = viewport.clone({
