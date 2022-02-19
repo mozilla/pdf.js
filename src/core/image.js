@@ -14,7 +14,8 @@
  */
 
 import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
-import { isName, isStream, Name } from "./primitives.js";
+import { isName, Name } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
@@ -223,7 +224,7 @@ class PDFImage {
         localColorSpaceCache,
       });
     } else if (mask) {
-      if (isStream(mask)) {
+      if (mask instanceof BaseStream) {
         const maskDict = mask.dict,
           imageMask = maskDict.get("IM", "ImageMask");
         if (!imageMask) {
@@ -268,7 +269,7 @@ class PDFImage {
     if (smask) {
       smaskData = smask;
     } else if (mask) {
-      if (isStream(mask) || Array.isArray(mask)) {
+      if (mask instanceof BaseStream || Array.isArray(mask)) {
         maskData = mask;
       } else {
         warn("Unsupported mask format.");
