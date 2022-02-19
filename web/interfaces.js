@@ -267,9 +267,8 @@ class IDownloadManager {
    * @param {Blob} blob
    * @param {string} url
    * @param {string} filename
-   * @param {string} [sourceEventType]
    */
-  download(blob, url, filename, sourceEventType = "download") {}
+  download(blob, url, filename) {}
 }
 
 /**

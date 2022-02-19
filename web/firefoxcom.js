@@ -158,14 +158,13 @@ class DownloadManager {
     return false;
   }
 
-  download(blob, url, filename, sourceEventType = "download") {
+  download(blob, url, filename) {
     const blobUrl = URL.createObjectURL(blob);
 
     FirefoxCom.requestAsync("download", {
       blobUrl,
       originalUrl: url,
       filename,
-      sourceEventType,
     }).then(error => {
       if (error) {
         // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
@@ -275,7 +274,7 @@ class MozL10n {
     if (!PDFViewerApplication.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+    PDFViewerApplication.eventBus.dispatch("download", { source: window });
   };
 
   window.addEventListener("save", handleEvent);
