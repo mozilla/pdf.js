@@ -26,7 +26,7 @@ const {
   shadow,
   XfaLayer,
 } = pdfjsLib;
-const { SimpleLinkService } = pdfjsViewer;
+const { parseQueryString, SimpleLinkService } = pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
@@ -332,23 +332,16 @@ class Driver {
     this.end = options.end;
 
     // Set parameters from the query string
-    const parameters = this._getQueryStringParameters();
-    this.browser = parameters.browser;
-    this.manifestFile = parameters.manifestFile;
-    this.delay = parameters.delay | 0 || 0;
+    const params = parseQueryString(window.location.search.substring(1));
+    this.browser = params.get("browser");
+    this.manifestFile = params.get("manifestfile");
+    this.delay = params.get("delay") | 0;
     this.inFlightRequests = 0;
-    this.testFilter = parameters.testFilter
-      ? JSON.parse(parameters.testFilter)
-      : [];
-    this.xfaOnly = parameters.xfaOnly === "true";
+    this.testFilter = JSON.parse(params.get("testfilter") || "[]");
+    this.xfaOnly = params.get("xfaonly") === "true";
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
-  }
-
-  _getQueryStringParameters() {
-    const queryString = window.location.search.substring(1);
-    return Object.fromEntries(new URLSearchParams(queryString).entries());
   }
 
   run() {
