@@ -41,7 +41,6 @@ import {
   EOF,
   isDict,
   isName,
-  isRef,
   Name,
   Ref,
   RefSet,
@@ -1119,7 +1118,7 @@ class PartialEvaluator {
     let fontRef;
     if (font) {
       // Loading by ref.
-      if (!isRef(font)) {
+      if (!(font instanceof Ref)) {
         throw new FormatError('The "font" object should be a reference.');
       }
       fontRef = font;
@@ -1185,7 +1184,7 @@ class PartialEvaluator {
     }
     const { descriptor, hash } = preEvaluatedFont;
 
-    const fontRefIsRef = isRef(fontRef);
+    const fontRefIsRef = fontRef instanceof Ref;
     let fontID;
     if (fontRefIsRef) {
       fontID = `f${fontRef.toString()}`;
@@ -1482,7 +1481,7 @@ class PartialEvaluator {
         currentResult.push(nestedResult);
         // Recursively parse a subarray.
         this._parseVisibilityExpression(object, nestingCounter, nestedResult);
-      } else if (isRef(raw)) {
+      } else if (raw instanceof Ref) {
         // Reference to an OCG dictionary.
         currentResult.push(raw.toString());
       }
@@ -1542,7 +1541,7 @@ class PartialEvaluator {
             : null,
           expression: null,
         };
-      } else if (isRef(optionalContentGroups)) {
+      } else if (optionalContentGroups instanceof Ref) {
         return {
           type: optionalContentType,
           id: optionalContentGroups.toString(),
@@ -3783,13 +3782,13 @@ class PartialEvaluator {
       const encoding = baseDict.getRaw("Encoding");
       if (isName(encoding)) {
         hash.update(encoding.name);
-      } else if (isRef(encoding)) {
+      } else if (encoding instanceof Ref) {
         hash.update(encoding.toString());
       } else if (isDict(encoding)) {
         for (const entry of encoding.getRawValues()) {
           if (isName(entry)) {
             hash.update(entry.name);
-          } else if (isRef(entry)) {
+          } else if (entry instanceof Ref) {
             hash.update(entry.toString());
           } else if (Array.isArray(entry)) {
             // 'Differences' array (fixes bug1157493.pdf).
@@ -3800,7 +3799,7 @@ class PartialEvaluator {
               const diffEntry = entry[j];
               if (isName(diffEntry)) {
                 diffBuf[j] = diffEntry.name;
-              } else if (isNum(diffEntry) || isRef(diffEntry)) {
+              } else if (isNum(diffEntry) || diffEntry instanceof Ref) {
                 diffBuf[j] = diffEntry.toString();
               }
             }
@@ -3830,7 +3829,7 @@ class PartialEvaluator {
       if (Array.isArray(widths)) {
         const widthsBuf = [];
         for (const entry of widths) {
-          if (isNum(entry) || isRef(entry)) {
+          if (isNum(entry) || entry instanceof Ref) {
             widthsBuf.push(entry.toString());
           }
         }
@@ -3844,12 +3843,12 @@ class PartialEvaluator {
         if (Array.isArray(compositeWidths)) {
           const widthsBuf = [];
           for (const entry of compositeWidths) {
-            if (isNum(entry) || isRef(entry)) {
+            if (isNum(entry) || entry instanceof Ref) {
               widthsBuf.push(entry.toString());
             } else if (Array.isArray(entry)) {
               const subWidthsBuf = [];
               for (const element of entry) {
-                if (isNum(element) || isRef(element)) {
+                if (isNum(element) || element instanceof Ref) {
                   subWidthsBuf.push(element.toString());
                 }
               }

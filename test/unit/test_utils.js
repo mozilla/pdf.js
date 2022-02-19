@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-import { isRef, Ref } from "../../src/core/primitives.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { assert } from "../../src/shared/util.js";
 import { DocStats } from "../../src/core/core_utils.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
+import { Ref } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
@@ -106,10 +106,10 @@ class XRefMock {
   }
 
   fetchIfRef(obj) {
-    if (!isRef(obj)) {
-      return obj;
+    if (obj instanceof Ref) {
+      return this.fetch(obj);
     }
-    return this.fetch(obj);
+    return obj;
   }
 
   async fetchIfRefAsync(obj) {
