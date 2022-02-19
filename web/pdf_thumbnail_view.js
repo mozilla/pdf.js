@@ -19,7 +19,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
-import { getOutputScale, RenderingStates } from "./ui_utils.js";
+import { OutputScale, RenderingStates } from "./ui_utils.js";
 import { RenderingCancelledException } from "pdfjs-lib";
 
 const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
@@ -233,7 +233,7 @@ class PDFThumbnailView {
       canvas.mozOpaque = true;
     }
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = getOutputScale(ctx);
+    const outputScale = new OutputScale();
 
     canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
     canvas.height = (upscaleFactor * this.canvasHeight * outputScale.sy) | 0;
