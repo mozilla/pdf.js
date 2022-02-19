@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { Dict, isStream, Ref, RefSet } from "./primitives.js";
+import { Dict, Ref, RefSet } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
 import { warn } from "../shared/util.js";
 
@@ -21,15 +22,15 @@ function mayHaveChildren(value) {
   return (
     value instanceof Ref ||
     value instanceof Dict ||
-    Array.isArray(value) ||
-    isStream(value)
+    value instanceof BaseStream ||
+    Array.isArray(value)
   );
 }
 
 function addChildren(node, nodesToVisit) {
   if (node instanceof Dict) {
     node = node.getRawValues();
-  } else if (isStream(node)) {
+  } else if (node instanceof BaseStream) {
     node = node.dict.getRawValues();
   } else if (!Array.isArray(node)) {
     return;
@@ -108,7 +109,7 @@ class ObjectLoader {
           pendingRequests.push({ begin: ex.begin, end: ex.end });
         }
       }
-      if (isStream(currentNode)) {
+      if (currentNode instanceof BaseStream) {
         const baseStreams = currentNode.getBaseStreams();
         if (baseStreams) {
           let foundMissingData = false;

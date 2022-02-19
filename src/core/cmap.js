@@ -20,7 +20,8 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { EOF, isCmd, isName, isStream } from "./primitives.js";
+import { EOF, isCmd, isName } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
@@ -1025,7 +1026,7 @@ const CMapFactory = (function CMapFactoryClosure() {
 
       if (isName(encoding)) {
         return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
-      } else if (isStream(encoding)) {
+      } else if (encoding instanceof BaseStream) {
         const parsedCMap = await parseCMap(
           /* cMap = */ new CMap(),
           /* lexer = */ new Lexer(encoding),

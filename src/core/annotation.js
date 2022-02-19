@@ -39,15 +39,8 @@ import {
   createDefaultAppearance,
   parseDefaultAppearance,
 } from "./default_appearance.js";
-import {
-  Dict,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  RefSet,
-} from "./primitives.js";
+import { Dict, isDict, isName, isRef, Name, RefSet } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
 import { ColorSpace } from "./colorspace.js";
@@ -693,7 +686,7 @@ class Annotation {
 
     // In case the normal appearance is a stream, then it is used directly.
     const normalAppearanceState = appearanceStates.get("N");
-    if (isStream(normalAppearanceState)) {
+    if (normalAppearanceState instanceof BaseStream) {
       this.appearance = normalAppearanceState;
       return;
     }
