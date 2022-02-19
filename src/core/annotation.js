@@ -39,7 +39,7 @@ import {
   createDefaultAppearance,
   parseDefaultAppearance,
 } from "./default_appearance.js";
-import { Dict, isDict, isName, isRef, Name, RefSet } from "./primitives.js";
+import { Dict, isDict, isName, Name, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
@@ -99,7 +99,8 @@ class AnnotationFactory {
       return undefined;
     }
 
-    const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
+    const id =
+      ref instanceof Ref ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
     let subtype = dict.get("Subtype");
@@ -212,7 +213,7 @@ class AnnotationFactory {
         return -1;
       }
       const pageRef = annotDict.getRaw("P");
-      if (!isRef(pageRef)) {
+      if (!(pageRef instanceof Ref)) {
         return -1;
       }
       const pageIndex = await pdfManager.ensureCatalog("getPageIndex", [
@@ -391,7 +392,7 @@ class Annotation {
       if (Array.isArray(kids)) {
         const kidIds = [];
         for (const kid of kids) {
-          if (isRef(kid)) {
+          if (kid instanceof Ref) {
             kidIds.push(kid.toString());
           }
         }
@@ -1051,7 +1052,7 @@ class MarkupAnnotation extends Annotation {
 
     if (dict.has("IRT")) {
       const rawIRT = dict.getRaw("IRT");
-      this.data.inReplyTo = isRef(rawIRT) ? rawIRT.toString() : null;
+      this.data.inReplyTo = rawIRT instanceof Ref ? rawIRT.toString() : null;
 
       const rt = dict.get("RT");
       this.data.replyType = isName(rt) ? rt.name : AnnotationReplyType.REPLY;
@@ -2144,7 +2145,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     const encrypt = evaluator.xref.encrypt;
 
     if (value) {
-      if (isRef(this.parent)) {
+      if (this.parent instanceof Ref) {
         const parent = evaluator.xref.fetch(this.parent);
         let parentTransform = null;
         if (encrypt) {
@@ -2567,7 +2568,7 @@ class PopupAnnotation extends Annotation {
     const parentSubtype = parentItem.get("Subtype");
     this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
     const rawParent = parameters.dict.getRaw("Parent");
-    this.data.parentId = isRef(rawParent) ? rawParent.toString() : null;
+    this.data.parentId = rawParent instanceof Ref ? rawParent.toString() : null;
 
     const parentRect = parentItem.getArray("Rect");
     if (Array.isArray(parentRect) && parentRect.length === 4) {

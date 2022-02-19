@@ -44,7 +44,7 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { Dict, isDict, isName, isRef, Name, Ref } from "./primitives.js";
+import { Dict, isDict, isName, Name, Ref } from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
@@ -1548,7 +1548,12 @@ class PDFDocument {
       return shadow(this, "calculationOrderIds", null);
     }
 
-    const ids = calculationOrder.filter(isRef).map(ref => ref.toString());
+    const ids = [];
+    for (const id of calculationOrder) {
+      if (id instanceof Ref) {
+        ids.push(id.toString());
+      }
+    }
     if (ids.length === 0) {
       return shadow(this, "calculationOrderIds", null);
     }

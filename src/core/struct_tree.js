@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { isDict, isName, isRef } from "./primitives.js";
+import { isDict, isName, Ref } from "./primitives.js";
 import { isString, stringToPDFString, warn } from "../shared/util.js";
 import { NumberTree } from "./name_number_tree.js";
 
@@ -75,7 +75,7 @@ class StructElementNode {
   parseKids() {
     let pageObjId = null;
     const objRef = this.dict.getRaw("Pg");
-    if (isRef(objRef)) {
+    if (objRef instanceof Ref) {
       pageObjId = objRef.toString();
     }
     const kids = this.dict.get("K");
@@ -110,7 +110,7 @@ class StructElementNode {
 
     // Find the dictionary for the kid.
     let kidDict = null;
-    if (isRef(kid)) {
+    if (kid instanceof Ref) {
       kidDict = this.dict.xref.fetch(kid);
     } else if (isDict(kid)) {
       kidDict = kid;
@@ -119,7 +119,7 @@ class StructElementNode {
       return null;
     }
     const pageRef = kidDict.getRaw("Pg");
-    if (isRef(pageRef)) {
+    if (pageRef instanceof Ref) {
       pageObjId = pageRef.toString();
     }
 
@@ -130,9 +130,10 @@ class StructElementNode {
       }
       return new StructElement({
         type: StructElementType.STREAM_CONTENT,
-        refObjId: isRef(kidDict.getRaw("Stm"))
-          ? kidDict.getRaw("Stm").toString()
-          : null,
+        refObjId:
+          kidDict.getRaw("Stm") instanceof Ref
+            ? kidDict.getRaw("Stm").toString()
+            : null,
         pageObjId,
         mcid: kidDict.get("MCID"),
       });
@@ -144,9 +145,10 @@ class StructElementNode {
       }
       return new StructElement({
         type: StructElementType.OBJECT,
-        refObjId: isRef(kidDict.getRaw("Obj"))
-          ? kidDict.getRaw("Obj").toString()
-          : null,
+        refObjId:
+          kidDict.getRaw("Obj") instanceof Ref
+            ? kidDict.getRaw("Obj").toString()
+            : null,
         pageObjId,
       });
     }
@@ -203,7 +205,7 @@ class StructTreePage {
     }
     const map = new Map();
     for (const ref of parentArray) {
-      if (isRef(ref)) {
+      if (ref instanceof Ref) {
         this.addNode(this.rootDict.xref.fetch(ref), map);
       }
     }
