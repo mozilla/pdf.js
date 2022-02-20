@@ -3049,19 +3049,17 @@ class WorkerTransport {
  * @ignore
  */
 class PDFObjects {
-  constructor() {
-    this._objs = Object.create(null);
-  }
+  #objs = Object.create(null);
 
   /**
    * Ensures there is an object defined for `objId`.
-   * @private
    */
-  _ensureObj(objId) {
-    if (this._objs[objId]) {
-      return this._objs[objId];
+  #ensureObj(objId) {
+    const obj = this.#objs[objId];
+    if (obj) {
+      return obj;
     }
-    return (this._objs[objId] = {
+    return (this.#objs[objId] = {
       capability: createPromiseCapability(),
       data: null,
       resolved: false,
@@ -3080,30 +3078,30 @@ class PDFObjects {
     // If there is a callback, then the get can be async and the object is
     // not required to be resolved right now.
     if (callback) {
-      this._ensureObj(objId).capability.promise.then(callback);
+      this.#ensureObj(objId).capability.promise.then(callback);
       return null;
     }
     // If there isn't a callback, the user expects to get the resolved data
     // directly.
-    const obj = this._objs[objId];
+    const obj = this.#objs[objId];
     // If there isn't an object yet or the object isn't resolved, then the
     // data isn't ready yet!
-    if (!obj || !obj.resolved) {
+    if (!obj?.resolved) {
       throw new Error(`Requesting object that isn't resolved yet ${objId}.`);
     }
     return obj.data;
   }
 
   has(objId) {
-    const obj = this._objs[objId];
+    const obj = this.#objs[objId];
     return obj?.resolved || false;
   }
 
   /**
    * Resolves the object `objId` with optional `data`.
    */
-  resolve(objId, data) {
-    const obj = this._ensureObj(objId);
+  resolve(objId, data = null) {
+    const obj = this.#ensureObj(objId);
 
     obj.resolved = true;
     obj.data = data;
@@ -3111,7 +3109,7 @@ class PDFObjects {
   }
 
   clear() {
-    this._objs = Object.create(null);
+    this.#objs = Object.create(null);
   }
 }
 
