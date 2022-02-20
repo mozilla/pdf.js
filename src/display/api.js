@@ -3062,7 +3062,6 @@ class PDFObjects {
     return (this.#objs[objId] = {
       capability: createPromiseCapability(),
       data: null,
-      resolved: false,
     });
   }
 
@@ -3078,7 +3077,8 @@ class PDFObjects {
     // If there is a callback, then the get can be async and the object is
     // not required to be resolved right now.
     if (callback) {
-      this.#ensureObj(objId).capability.promise.then(callback);
+      const obj = this.#ensureObj(objId);
+      obj.capability.promise.then(() => callback(obj.data));
       return null;
     }
     // If there isn't a callback, the user expects to get the resolved data
@@ -3086,7 +3086,7 @@ class PDFObjects {
     const obj = this.#objs[objId];
     // If there isn't an object yet or the object isn't resolved, then the
     // data isn't ready yet!
-    if (!obj?.resolved) {
+    if (!obj?.capability.settled) {
       throw new Error(`Requesting object that isn't resolved yet ${objId}.`);
     }
     return obj.data;
@@ -3094,7 +3094,7 @@ class PDFObjects {
 
   has(objId) {
     const obj = this.#objs[objId];
-    return obj?.resolved || false;
+    return obj?.capability.settled || false;
   }
 
   /**
@@ -3102,10 +3102,8 @@ class PDFObjects {
    */
   resolve(objId, data = null) {
     const obj = this.#ensureObj(objId);
-
-    obj.resolved = true;
     obj.data = data;
-    obj.capability.resolve(data);
+    obj.capability.resolve();
   }
 
   clear() {
