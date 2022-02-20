@@ -91,7 +91,7 @@ const DefaultStandardFontDataFactory =
  */
 
 /**
- * @type IPDFStreamFactory
+ * @type {IPDFStreamFactory}
  * @private
  */
 let createPDFNetworkStream;
@@ -1229,6 +1229,7 @@ class PDFPageProxy {
     this._transport = transport;
     this._stats = pdfBug ? new StatTimer() : null;
     this._pdfBug = pdfBug;
+    /** @type {PDFObjects} */
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
 
@@ -3046,13 +3047,15 @@ class WorkerTransport {
  * A PDF document and page is built of many objects. E.g. there are objects for
  * fonts, images, rendering code, etc. These objects may get processed inside of
  * a worker. This class implements some basic methods to manage these objects.
- * @ignore
  */
 class PDFObjects {
   #objs = Object.create(null);
 
   /**
    * Ensures there is an object defined for `objId`.
+   *
+   * @param {string} objId
+   * @returns {Object}
    */
   #ensureObj(objId) {
     const obj = this.#objs[objId];
@@ -3072,6 +3075,10 @@ class PDFObjects {
    * If called *with* a callback, the callback is called with the data of the
    * object once the object is resolved. That means, if you call this method
    * and the object is already resolved, the callback gets called right away.
+   *
+   * @param {string} objId
+   * @param {function} [callback]
+   * @returns {any}
    */
   get(objId, callback = null) {
     // If there is a callback, then the get can be async and the object is
@@ -3092,6 +3099,10 @@ class PDFObjects {
     return obj.data;
   }
 
+  /**
+   * @param {string} objId
+   * @returns {boolean}
+   */
   has(objId) {
     const obj = this.#objs[objId];
     return obj?.capability.settled || false;
@@ -3099,6 +3110,9 @@ class PDFObjects {
 
   /**
    * Resolves the object `objId` with optional `data`.
+   *
+   * @param {string} objId
+   * @param {any} [data]
    */
   resolve(objId, data = null) {
     const obj = this.#ensureObj(objId);
