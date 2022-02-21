@@ -180,6 +180,18 @@
         "message": "`assert()` must always be invoked with two arguments.",
       },
       {
+        "selector": "CallExpression[callee.name='isCmd'][arguments.length<2]",
+        "message": "Use `instanceof Cmd` rather than `isCmd()` with one argument.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isDict'][arguments.length<2]",
+        "message": "Use `instanceof Dict` rather than `isDict()` with one argument.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isName'][arguments.length<2]",
+        "message": "Use `instanceof Name` rather than `isName()` with one argument.",
+      },
+      {
         "selector": "NewExpression[callee.name='Cmd']",
         "message": "Use `Cmd.get()` rather than `new Cmd()`.",
       },

@@ -470,6 +470,8 @@ describe("primitives", function () {
   });
 
   describe("isName", function () {
+    /* eslint-disable no-restricted-syntax */
+
     it("handles non-names", function () {
       const nonName = {};
       expect(isName(nonName)).toEqual(false);
@@ -493,9 +495,13 @@ describe("primitives", function () {
       expect(isName(emptyName, "")).toEqual(true);
       expect(isName(emptyName, "string")).toEqual(false);
     });
+
+    /* eslint-enable no-restricted-syntax */
   });
 
   describe("isCmd", function () {
+    /* eslint-disable no-restricted-syntax */
+
     it("handles non-commands", function () {
       const nonCmd = {};
       expect(isCmd(nonCmd)).toEqual(false);
@@ -511,9 +517,13 @@ describe("primitives", function () {
       expect(isCmd(cmd, "BT")).toEqual(true);
       expect(isCmd(cmd, "ET")).toEqual(false);
     });
+
+    /* eslint-enable no-restricted-syntax */
   });
 
   describe("isDict", function () {
+    /* eslint-disable no-restricted-syntax */
+
     it("handles non-dictionaries", function () {
       const nonDict = {};
       expect(isDict(nonDict)).toEqual(false);
@@ -531,6 +541,8 @@ describe("primitives", function () {
       expect(isDict(dict, "Page")).toEqual(true);
       expect(isDict(dict, "Contents")).toEqual(false);
     });
+
+    /* eslint-enable no-restricted-syntax */
   });
 
   describe("isRefsEqual", function () {

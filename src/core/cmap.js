@@ -20,7 +20,7 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { EOF, isCmd, isName } from "./primitives.js";
+import { Cmd, EOF, isCmd, Name } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
@@ -901,7 +901,7 @@ const CMapFactory = (function CMapFactoryClosure() {
 
   function parseCMapName(cMap, lexer) {
     const obj = lexer.getObj();
-    if (isName(obj) && isString(obj.name)) {
+    if (obj instanceof Name && isString(obj.name)) {
       cMap.name = obj.name;
     }
   }
@@ -913,19 +913,19 @@ const CMapFactory = (function CMapFactoryClosure() {
         const obj = lexer.getObj();
         if (obj === EOF) {
           break;
-        } else if (isName(obj)) {
+        } else if (obj instanceof Name) {
           if (obj.name === "WMode") {
             parseWMode(cMap, lexer);
           } else if (obj.name === "CMapName") {
             parseCMapName(cMap, lexer);
           }
           previous = obj;
-        } else if (isCmd(obj)) {
+        } else if (obj instanceof Cmd) {
           switch (obj.cmd) {
             case "endcmap":
               break objLoop;
             case "usecmap":
-              if (isName(previous)) {
+              if (previous instanceof Name) {
                 embeddedUseCMap = previous.name;
               }
               break;
@@ -1024,7 +1024,7 @@ const CMapFactory = (function CMapFactoryClosure() {
       const fetchBuiltInCMap = params.fetchBuiltInCMap;
       const useCMap = params.useCMap;
 
-      if (isName(encoding)) {
+      if (encoding instanceof Name) {
         return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
       } else if (encoding instanceof BaseStream) {
         const parsedCMap = await parseCMap(

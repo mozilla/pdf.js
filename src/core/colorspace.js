@@ -21,7 +21,7 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, Name, Ref } from "./primitives.js";
+import { Dict, Name, Ref } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
 
@@ -378,7 +378,7 @@ class ColorSpace {
    */
   static _parse(cs, xref, resources = null, pdfFunctionFactory) {
     cs = xref.fetchIfRef(cs);
-    if (isName(cs)) {
+    if (cs instanceof Name) {
       switch (cs.name) {
         case "G":
         case "DeviceGray":
@@ -392,12 +392,12 @@ class ColorSpace {
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
         default:
-          if (isDict(resources)) {
+          if (resources instanceof Dict) {
             const colorSpaces = resources.get("ColorSpace");
-            if (isDict(colorSpaces)) {
+            if (colorSpaces instanceof Dict) {
               const resourcesCS = colorSpaces.get(cs.name);
               if (resourcesCS) {
-                if (isName(resourcesCS)) {
+                if (resourcesCS instanceof Name) {
                   return this._parse(
                     resourcesCS,
                     xref,

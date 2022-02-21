@@ -15,7 +15,7 @@
 
 import { stringToPDFString, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
-import { isDict } from "./primitives.js";
+import { Dict } from "./primitives.js";
 
 function pickPlatformItem(dict) {
   // Look for the filename in this order:
@@ -43,7 +43,7 @@ function pickPlatformItem(dict) {
  */
 class FileSpec {
   constructor(root, xref) {
-    if (!root || !isDict(root)) {
+    if (!(root instanceof Dict)) {
       return;
     }
     this.xref = xref;
