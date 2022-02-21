@@ -24,7 +24,7 @@ import {
   utf8StringToString,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, Name } from "./primitives.js";
+import { Dict, isName, Name } from "./primitives.js";
 import { DecryptStream } from "./decrypt_stream.js";
 
 class ARCFourCipher {
@@ -1713,7 +1713,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
           // Trying to find default handler -- it usually has Length.
           const cfDict = dict.get("CF");
           const streamCryptoName = dict.get("StmF");
-          if (isDict(cfDict) && isName(streamCryptoName)) {
+          if (cfDict instanceof Dict && isName(streamCryptoName)) {
             cfDict.suppressEncryption = true; // See comment below.
             const handlerDict = cfDict.get(streamCryptoName.name);
             keyLength = (handlerDict && handlerDict.get("Length")) || 128;
@@ -1838,7 +1838,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
       if (algorithm >= 4) {
         const cf = dict.get("CF");
-        if (isDict(cf)) {
+        if (cf instanceof Dict) {
           // The 'CF' dictionary itself should not be encrypted, and by setting
           // `suppressEncryption` we can prevent an infinite loop inside of
           // `XRef_fetchUncompressed` if the dictionary contains indirect

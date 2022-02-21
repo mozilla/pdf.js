@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { isDict, isName, Ref } from "./primitives.js";
+import { Dict, isName, Ref } from "./primitives.js";
 import { isString, stringToPDFString, warn } from "../shared/util.js";
 import { NumberTree } from "./name_number_tree.js";
 
@@ -38,7 +38,7 @@ class StructTreeRoot {
 
   readRoleMap() {
     const roleMapDict = this.dict.get("RoleMap");
-    if (!isDict(roleMapDict)) {
+    if (!(roleMapDict instanceof Dict)) {
       return;
     }
     roleMapDict.forEach((key, value) => {
@@ -112,7 +112,7 @@ class StructElementNode {
     let kidDict = null;
     if (kid instanceof Ref) {
       kidDict = this.dict.xref.fetch(kid);
-    } else if (isDict(kid)) {
+    } else if (kid instanceof Dict) {
       kidDict = kid;
     }
     if (!kidDict) {
@@ -256,7 +256,7 @@ class StructTreePage {
       return false;
     }
 
-    if (isDict(obj)) {
+    if (obj instanceof Dict) {
       if (obj.objId !== dict.objId) {
         return false;
       }

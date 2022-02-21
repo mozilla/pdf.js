@@ -21,7 +21,7 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, Name, Ref } from "./primitives.js";
+import { Dict, isName, Name, Ref } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { MissingDataException } from "./core_utils.js";
 
@@ -392,9 +392,9 @@ class ColorSpace {
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
         default:
-          if (isDict(resources)) {
+          if (resources instanceof Dict) {
             const colorSpaces = resources.get("ColorSpace");
-            if (isDict(colorSpaces)) {
+            if (colorSpaces instanceof Dict) {
               const resourcesCS = colorSpaces.get(cs.name);
               if (resourcesCS) {
                 if (isName(resourcesCS)) {

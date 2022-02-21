@@ -44,7 +44,7 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { Dict, isDict, isName, Name, Ref } from "./primitives.js";
+import { Dict, isName, Name, Ref } from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
@@ -120,7 +120,7 @@ class Page {
     if (!Array.isArray(value)) {
       return value;
     }
-    if (value.length === 1 || !isDict(value[0])) {
+    if (value.length === 1 || !(value[0] instanceof Dict)) {
       return value[0];
     }
     return Dict.merge({ xref: this.xref, dictArray: value });
@@ -1175,7 +1175,7 @@ class PDFDocument {
       info("The document information dictionary is invalid.");
     }
 
-    if (isDict(infoDict)) {
+    if (infoDict instanceof Dict) {
       // Fill the document info with valid entries from the specification,
       // as well as any existing well-formed custom entries.
       for (const key of infoDict.getKeys()) {
