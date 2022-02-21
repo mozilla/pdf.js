@@ -2594,6 +2594,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       url = { url, originalUrl: file.name };
     }
     PDFViewerApplication.open(url);
+    if (window["setNgxExtendedPdfViewerSource"]) {
+      window["setNgxExtendedPdfViewerSource"](file.name ? file.name : url);
+    }
   };
 
   webViewerOpenFile = function (evt) {
