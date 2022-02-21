@@ -496,6 +496,8 @@ describe("primitives", function () {
   });
 
   describe("isCmd", function () {
+    /* eslint-disable no-restricted-syntax */
+
     it("handles non-commands", function () {
       const nonCmd = {};
       expect(isCmd(nonCmd)).toEqual(false);
@@ -511,6 +513,8 @@ describe("primitives", function () {
       expect(isCmd(cmd, "BT")).toEqual(true);
       expect(isCmd(cmd, "ET")).toEqual(false);
     });
+
+    /* eslint-enable no-restricted-syntax */
   });
 
   describe("isDict", function () {

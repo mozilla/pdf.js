@@ -20,7 +20,7 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
-import { EOF, isCmd, isName } from "./primitives.js";
+import { Cmd, EOF, isCmd, isName } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
@@ -920,7 +920,7 @@ const CMapFactory = (function CMapFactoryClosure() {
             parseCMapName(cMap, lexer);
           }
           previous = obj;
-        } else if (isCmd(obj)) {
+        } else if (obj instanceof Cmd) {
           switch (obj.cmd) {
             case "endcmap":
               break objLoop;
