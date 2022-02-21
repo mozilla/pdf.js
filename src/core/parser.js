@@ -22,7 +22,7 @@ import {
   StreamType,
   warn,
 } from "../shared/util.js";
-import { Cmd, Dict, EOF, isCmd, isName, Name, Ref } from "./primitives.js";
+import { Cmd, Dict, EOF, isCmd, Name, Ref } from "./primitives.js";
 import {
   isWhiteSpace,
   MissingDataException,
@@ -128,7 +128,7 @@ class Parser {
         case "<<": // dictionary or stream
           const dict = new Dict(this.xref);
           while (!isCmd(this.buf1, ">>") && this.buf1 !== EOF) {
-            if (!isName(this.buf1)) {
+            if (!(this.buf1 instanceof Name)) {
               info("Malformed dictionary: key must be a name object");
               this.shift();
               continue;
@@ -489,7 +489,7 @@ class Parser {
     const dict = new Dict(this.xref);
     let dictLength;
     while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
-      if (!isName(this.buf1)) {
+      if (!(this.buf1 instanceof Name)) {
         throw new FormatError("Dictionary key must be a name object");
       }
       const key = this.buf1.name;
@@ -506,11 +506,11 @@ class Parser {
     // Extract the name of the first (i.e. the current) image filter.
     const filter = dict.get("F", "Filter");
     let filterName;
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       filterName = filter.name;
     } else if (Array.isArray(filter)) {
       const filterZero = this.xref.fetchIfRef(filter[0]);
-      if (isName(filterZero)) {
+      if (filterZero instanceof Name) {
         filterName = filterZero.name;
       }
     }
@@ -695,7 +695,7 @@ class Parser {
     let filter = dict.get("F", "Filter");
     let params = dict.get("DP", "DecodeParms");
 
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       if (Array.isArray(params)) {
         warn("/DecodeParms should not be an Array, when /Filter is a Name.");
       }
@@ -708,7 +708,7 @@ class Parser {
       const paramsArray = params;
       for (let i = 0, ii = filterArray.length; i < ii; ++i) {
         filter = this.xref.fetchIfRef(filterArray[i]);
-        if (!isName(filter)) {
+        if (!(filter instanceof Name)) {
           throw new FormatError(`Bad filter name "${filter}"`);
         }
 

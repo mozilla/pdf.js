@@ -104,7 +104,7 @@ class AnnotationFactory {
 
     // Determine the annotation's subtype.
     let subtype = dict.get("Subtype");
-    subtype = isName(subtype) ? subtype.name : null;
+    subtype = subtype instanceof Name ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
     const parameters = {
@@ -128,7 +128,7 @@ class AnnotationFactory {
 
       case "Widget":
         let fieldType = getInheritableProperty({ dict, key: "FT" });
-        fieldType = isName(fieldType) ? fieldType.name : null;
+        fieldType = fieldType instanceof Name ? fieldType.name : null;
 
         switch (fieldType) {
           case "Tx":
@@ -698,7 +698,7 @@ class Annotation {
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
     const as = dict.get("AS");
-    if (!isName(as) || !normalAppearanceState.has(as.name)) {
+    if (!(as instanceof Name) || !normalAppearanceState.has(as.name)) {
       return;
     }
     this.appearance = normalAppearanceState.get(as.name);
@@ -912,7 +912,7 @@ class AnnotationBorderStyle {
 
     // Some corrupt PDF generators may provide the width as a `Name`,
     // rather than as a number (fixes issue 10385).
-    if (isName(width)) {
+    if (width instanceof Name) {
       this.width = 0; // This is consistent with the behaviour in Adobe Reader.
       return;
     }
@@ -946,7 +946,7 @@ class AnnotationBorderStyle {
    * @see {@link shared/util.js}
    */
   setStyle(style) {
-    if (!isName(style)) {
+    if (!(style instanceof Name)) {
       return;
     }
     switch (style.name) {
@@ -1055,7 +1055,8 @@ class MarkupAnnotation extends Annotation {
       this.data.inReplyTo = rawIRT instanceof Ref ? rawIRT.toString() : null;
 
       const rt = dict.get("RT");
-      this.data.replyType = isName(rt) ? rt.name : AnnotationReplyType.REPLY;
+      this.data.replyType =
+        rt instanceof Name ? rt.name : AnnotationReplyType.REPLY;
     }
 
     if (this.data.replyType === AnnotationReplyType.GROUP) {
@@ -1265,7 +1266,7 @@ class WidgetAnnotation extends Annotation {
     );
 
     const fieldType = getInheritableProperty({ dict, key: "FT" });
-    data.fieldType = isName(fieldType) ? fieldType.name : null;
+    data.fieldType = fieldType instanceof Name ? fieldType.name : null;
 
     const localResources = getInheritableProperty({ dict, key: "DR" });
     const acroFormResources = params.acroForm.get("DR");
@@ -1306,7 +1307,7 @@ class WidgetAnnotation extends Annotation {
       return formValue
         .filter(item => isString(item))
         .map(item => stringToPDFString(item));
-    } else if (isName(formValue)) {
+    } else if (formValue instanceof Name) {
       return stringToPDFString(formValue.name);
     } else if (isString(formValue)) {
       return stringToPDFString(formValue);
@@ -2321,7 +2322,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (fieldParent instanceof Dict) {
       this.parent = params.dict.getRaw("Parent");
       const fieldParentValue = fieldParent.get("V");
-      if (isName(fieldParentValue)) {
+      if (fieldParentValue instanceof Name) {
         this.data.fieldValue = this._decodeFormValue(fieldParentValue);
       }
     }
@@ -2566,7 +2567,8 @@ class PopupAnnotation extends Annotation {
     }
 
     const parentSubtype = parentItem.get("Subtype");
-    this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
+    this.data.parentType =
+      parentSubtype instanceof Name ? parentSubtype.name : null;
     const rawParent = parameters.dict.getRaw("Parent");
     this.data.parentId = rawParent instanceof Ref ? rawParent.toString() : null;
 

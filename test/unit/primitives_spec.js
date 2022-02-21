@@ -470,6 +470,8 @@ describe("primitives", function () {
   });
 
   describe("isName", function () {
+    /* eslint-disable no-restricted-syntax */
+
     it("handles non-names", function () {
       const nonName = {};
       expect(isName(nonName)).toEqual(false);
@@ -493,6 +495,8 @@ describe("primitives", function () {
       expect(isName(emptyName, "")).toEqual(true);
       expect(isName(emptyName, "string")).toEqual(false);
     });
+
+    /* eslint-enable no-restricted-syntax */
   });
 
   describe("isCmd", function () {

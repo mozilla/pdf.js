@@ -1647,7 +1647,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   function buildCipherConstructor(cf, name, num, gen, key) {
-    if (!isName(name)) {
+    if (!(name instanceof Name)) {
       throw new FormatError("Invalid crypt filter name.");
     }
     const cryptFilter = cf.get(name.name);
@@ -1713,7 +1713,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
           // Trying to find default handler -- it usually has Length.
           const cfDict = dict.get("CF");
           const streamCryptoName = dict.get("StmF");
-          if (cfDict instanceof Dict && isName(streamCryptoName)) {
+          if (cfDict instanceof Dict && streamCryptoName instanceof Name) {
             cfDict.suppressEncryption = true; // See comment below.
             const handlerDict = cfDict.get(streamCryptoName.name);
             keyLength = (handlerDict && handlerDict.get("Length")) || 128;

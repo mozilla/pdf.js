@@ -14,7 +14,7 @@
  */
 
 import { bytesToString, escapeString, warn } from "../shared/util.js";
-import { Dict, isName, Name, Ref } from "./primitives.js";
+import { Dict, Name, Ref } from "./primitives.js";
 import { escapePDFName, parseXFAPath } from "./core_utils.js";
 import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { BaseStream } from "./base_stream.js";
@@ -71,7 +71,7 @@ function numberToString(value) {
 }
 
 function writeValue(value, buffer, transform) {
-  if (isName(value)) {
+  if (value instanceof Name) {
     buffer.push(`/${escapePDFName(value.name)}`);
   } else if (value instanceof Ref) {
     buffer.push(`${value.num} ${value.gen} R`);

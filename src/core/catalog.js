@@ -529,9 +529,10 @@ class Catalog {
       creator: isString(config.get("Creator"))
         ? stringToPDFString(config.get("Creator"))
         : null,
-      baseState: isName(config.get("BaseState"))
-        ? config.get("BaseState").name
-        : null,
+      baseState:
+        config.get("BaseState") instanceof Name
+          ? config.get("BaseState").name
+          : null,
       on: parseOnOff(config.get("ON")),
       off: parseOnOff(config.get("OFF")),
       order: parseOrder(config.get("Order")),
@@ -667,7 +668,7 @@ class Catalog {
 
         if (labelDict.has("S")) {
           const s = labelDict.get("S");
-          if (!isName(s)) {
+          if (!(s instanceof Name)) {
             throw new FormatError("Invalid style in PageLabel dictionary.");
           }
           style = s.name;
@@ -743,7 +744,7 @@ class Catalog {
     // affect the Scroll mode (continuous/non-continuous) used in Adobe Reader.
     let pageLayout = "";
 
-    if (isName(obj)) {
+    if (obj instanceof Name) {
       switch (obj.name) {
         case "SinglePage":
         case "OneColumn":
@@ -761,7 +762,7 @@ class Catalog {
     const obj = this._catDict.get("PageMode");
     let pageMode = "UseNone"; // Default value.
 
-    if (isName(obj)) {
+    if (obj instanceof Name) {
       switch (obj.name) {
         case "UseNone":
         case "UseOutlines":
@@ -1465,7 +1466,7 @@ class Catalog {
 
     if (action instanceof Dict) {
       const actionType = action.get("S");
-      if (!isName(actionType)) {
+      if (!(actionType instanceof Name)) {
         warn("parseDestDictionary: Invalid type in Action dictionary.");
         return;
       }
@@ -1519,7 +1520,7 @@ class Catalog {
           // NOTE: the destination is relative to the *remote* document.
           let remoteDest = action.get("D");
           if (remoteDest) {
-            if (isName(remoteDest)) {
+            if (remoteDest instanceof Name) {
               remoteDest = remoteDest.name;
             }
             if (isString(url)) {
@@ -1540,7 +1541,7 @@ class Catalog {
 
         case "Named":
           const namedAction = action.get("N");
-          if (isName(namedAction)) {
+          if (namedAction instanceof Name) {
             resultObj.action = namedAction.name;
           }
           break;
@@ -1587,7 +1588,7 @@ class Catalog {
       resultObj.unsafeUrl = url;
     }
     if (dest) {
-      if (isName(dest)) {
+      if (dest instanceof Name) {
         dest = dest.name;
       }
       if (isString(dest) || Array.isArray(dest)) {

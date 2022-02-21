@@ -1196,7 +1196,7 @@ class PDFDocument {
           let customValue;
           if (isString(value)) {
             customValue = stringToPDFString(value);
-          } else if (isName(value) || isNum(value) || isBool(value)) {
+          } else if (value instanceof Name || isNum(value) || isBool(value)) {
             customValue = value;
           } else {
             info(`Unsupported value in document info for (custom) "${key}".`);
