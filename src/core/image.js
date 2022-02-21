@@ -14,12 +14,12 @@
  */
 
 import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
-import { isName, Name } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
+import { Name } from "./primitives.js";
 
 /**
  * Decode and clamp a value. The formula is different from the spec because we
@@ -95,7 +95,7 @@ class PDFImage {
     const dict = image.dict;
 
     const filter = dict.get("F", "Filter");
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       switch (filter.name) {
         case "JPXDecode":
           const jpxImage = new JpxImage();
