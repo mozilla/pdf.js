@@ -22,7 +22,8 @@ import {
   stringToPDFString,
   warn,
 } from "../shared/util.js";
-import { Dict, isName, isRef, isStream, RefSet } from "./primitives.js";
+import { Dict, isName, Ref, RefSet } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 
 function getLookupTableFactory(initializer) {
   let lookup;
@@ -315,7 +316,7 @@ function _collectJS(entry, xref, list, parents) {
   }
 
   let parent = null;
-  if (isRef(entry)) {
+  if (entry instanceof Ref) {
     if (parents.has(entry)) {
       // If we've already found entry then we've a cycle.
       return;
@@ -329,15 +330,15 @@ function _collectJS(entry, xref, list, parents) {
       _collectJS(element, xref, list, parents);
     }
   } else if (entry instanceof Dict) {
-    if (isName(entry.get("S"), "JavaScript") && entry.has("JS")) {
+    if (isName(entry.get("S"), "JavaScript")) {
       const js = entry.get("JS");
       let code;
-      if (isStream(js)) {
+      if (js instanceof BaseStream) {
         code = js.getString();
-      } else {
+      } else if (typeof js === "string") {
         code = js;
       }
-      code = stringToPDFString(code);
+      code = code && stringToPDFString(code);
       if (code) {
         list.push(code);
       }

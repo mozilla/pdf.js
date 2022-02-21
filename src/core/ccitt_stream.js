@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { Dict, isDict } from "./primitives.js";
 import { CCITTFaxDecoder } from "./ccitt.js";
 import { DecodeStream } from "./decode_stream.js";
+import { Dict } from "./primitives.js";
 
 class CCITTFaxStream extends DecodeStream {
   constructor(str, maybeLength, params) {
@@ -24,7 +24,7 @@ class CCITTFaxStream extends DecodeStream {
     this.str = str;
     this.dict = str.dict;
 
-    if (!isDict(params)) {
+    if (!(params instanceof Dict)) {
       params = Dict.empty;
     }
 

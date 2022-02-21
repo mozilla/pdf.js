@@ -40,7 +40,7 @@ import {
 import {
   approximateFraction,
   DEFAULT_SCALE,
-  getOutputScale,
+  OutputScale,
   RendererType,
   RenderingStates,
   roundToDivide,
@@ -808,8 +808,7 @@ class PDFPageView {
     }
 
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = getOutputScale(ctx);
-    this.outputScale = outputScale;
+    const outputScale = (this.outputScale = new OutputScale());
 
     if (this.useOnlyCssZoom) {
       const actualSizeViewport = viewport.clone({
@@ -819,7 +818,6 @@ class PDFPageView {
       // of the page.
       outputScale.sx *= actualSizeViewport.width / viewport.width;
       outputScale.sy *= actualSizeViewport.height / viewport.height;
-      outputScale.scaled = true;
     }
 
     if (this.maxCanvasPixels > 0) {
@@ -828,7 +826,6 @@ class PDFPageView {
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
-        outputScale.scaled = true;
         this.hasRestrictedScaling = true;
       } else {
         this.hasRestrictedScaling = false;
@@ -877,9 +874,9 @@ class PDFPageView {
     this.paintedViewportMap.set(canvas, viewport);
 
     // Rendering area
-    const transform = !outputScale.scaled
-      ? null
-      : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
+    const transform = outputScale.scaled
+      ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
+      : null;
     // #916 modified by ngx-extended-pdf-viewer
     let background = PDFViewerApplicationOptions.get("pdfBackgroundColor");
     if (typeof background === "function") {

@@ -14,7 +14,7 @@
  */
 
 import { DecodeStream } from "./decode_stream.js";
-import { isDict } from "./primitives.js";
+import { Dict } from "./primitives.js";
 import { JpegImage } from "./jpg.js";
 import { shadow } from "../shared/util.js";
 
@@ -81,7 +81,7 @@ class JpegStream extends DecodeStream {
       }
     }
     // Fetching the 'ColorTransform' entry, if it exists.
-    if (isDict(this.params)) {
+    if (this.params instanceof Dict) {
       const colorTransform = this.params.get("ColorTransform");
       if (Number.isInteger(colorTransform)) {
         jpegOptions.colorTransform = colorTransform;

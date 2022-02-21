@@ -14,7 +14,6 @@
  */
 
 import { assert, shadow, unreachable } from "../shared/util.js";
-import { BaseStream } from "./base_stream.js";
 
 const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
@@ -395,10 +394,6 @@ function isDict(v, type) {
   );
 }
 
-function isRef(v) {
-  return v instanceof Ref;
-}
-
 function isRefsEqual(v1, v2) {
   if (
     typeof PDFJSDev === "undefined" ||
@@ -410,10 +405,6 @@ function isRefsEqual(v1, v2) {
     );
   }
   return v1.num === v2.num && v1.gen === v2.gen;
-}
-
-function isStream(v) {
-  return v instanceof BaseStream;
 }
 
 function clearPrimitiveCaches() {
@@ -431,9 +422,7 @@ export {
   isCmd,
   isDict,
   isName,
-  isRef,
   isRefsEqual,
-  isStream,
   Name,
   Ref,
   RefSet,

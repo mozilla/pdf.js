@@ -22,7 +22,6 @@ import {
 import {
   BaseException,
   isString,
-  shadow,
   stringToBytes,
   Util,
   warn,
@@ -30,15 +29,13 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-const PixelsPerInch = {
-  CSS: 96.0,
-  PDF: 72.0,
+class PixelsPerInch {
+  static CSS = 96.0;
 
-  /** @type {number} */
-  get PDF_TO_CSS_UNITS() {
-    return shadow(this, "PDF_TO_CSS_UNITS", this.CSS / this.PDF);
-  },
-};
+  static PDF = 72.0;
+
+  static PDF_TO_CSS_UNITS = this.CSS / this.PDF;
+}
 
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {

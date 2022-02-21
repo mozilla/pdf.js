@@ -35,18 +35,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { CMapFactory, IdentityCMap } from "./cmap.js";
-import {
-  Cmd,
-  Dict,
-  EOF,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  Ref,
-  RefSet,
-} from "./primitives.js";
+import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import { ErrorFont, Font } from "./fonts.js";
 import { FontFlags, getFontType } from "./fonts_utils.js";
 import {
@@ -135,7 +124,7 @@ function normalizeBlendMode(value, parsingArray = false) {
     return "source-over";
   }
 
-  if (!isName(value)) {
+  if (!(value instanceof Name)) {
     if (parsingArray) {
       return null;
     }
@@ -340,7 +329,7 @@ class PartialEvaluator {
             continue;
           }
         }
-        if (!isStream(xObject)) {
+        if (!(xObject instanceof BaseStream)) {
           continue;
         }
         if (xObject.dict.objId) {
@@ -1050,7 +1039,7 @@ class PartialEvaluator {
             gStateObj.push([key, false]);
             break;
           }
-          if (isDict(value)) {
+          if (value instanceof Dict) {
             isSimpleGState = false;
 
             promise = promise.then(() => {
@@ -1126,7 +1115,7 @@ class PartialEvaluator {
     let fontRef;
     if (font) {
       // Loading by ref.
-      if (!isRef(font)) {
+      if (!(font instanceof Ref)) {
         throw new FormatError('The "font" object should be a reference.');
       }
       fontRef = font;
@@ -1170,7 +1159,7 @@ class PartialEvaluator {
     }
 
     font = xref.fetchIfRef(fontRef);
-    if (!isDict(font)) {
+    if (!(font instanceof Dict)) {
       return errorFont();
     }
 
@@ -1192,13 +1181,13 @@ class PartialEvaluator {
     }
     const { descriptor, hash } = preEvaluatedFont;
 
-    const fontRefIsRef = isRef(fontRef);
+    const fontRefIsRef = fontRef instanceof Ref;
     let fontID;
     if (fontRefIsRef) {
       fontID = `f${fontRef.toString()}`;
     }
 
-    if (hash && isDict(descriptor)) {
+    if (hash && descriptor instanceof Dict) {
       if (!descriptor.fontAliases) {
         descriptor.fontAliases = Object.create(null);
       }
@@ -1426,7 +1415,7 @@ class PartialEvaluator {
 
       const pattern = this.xref.fetchIfRef(rawPattern);
       if (pattern) {
-        const dict = isStream(pattern) ? pattern.dict : pattern;
+        const dict = pattern instanceof BaseStream ? pattern.dict : pattern;
         const typeNum = dict.get("PatternType");
 
         if (typeNum === PatternType.TILING) {
@@ -1467,7 +1456,7 @@ class PartialEvaluator {
     }
     const length = array.length;
     const operator = this.xref.fetchIfRef(array[0]);
-    if (length < 2 || !isName(operator)) {
+    if (length < 2 || !(operator instanceof Name)) {
       warn("Invalid visibility expression");
       return;
     }
@@ -1489,7 +1478,7 @@ class PartialEvaluator {
         currentResult.push(nestedResult);
         // Recursively parse a subarray.
         this._parseVisibilityExpression(object, nestingCounter, nestedResult);
-      } else if (isRef(raw)) {
+      } else if (raw instanceof Ref) {
         // Reference to an OCG dictionary.
         currentResult.push(raw.toString());
       }
@@ -1498,10 +1487,10 @@ class PartialEvaluator {
 
   async parseMarkedContentProps(contentProperties, resources) {
     let optionalContent;
-    if (isName(contentProperties)) {
+    if (contentProperties instanceof Name) {
       const properties = resources.get("Properties");
       optionalContent = properties.get(contentProperties.name);
-    } else if (isDict(contentProperties)) {
+    } else if (contentProperties instanceof Dict) {
       optionalContent = contentProperties;
     } else {
       throw new FormatError("Optional content properties malformed.");
@@ -1529,7 +1518,7 @@ class PartialEvaluator {
       const optionalContentGroups = optionalContent.get("OCGs");
       if (
         Array.isArray(optionalContentGroups) ||
-        isDict(optionalContentGroups)
+        optionalContentGroups instanceof Dict
       ) {
         const groupIds = [];
         if (Array.isArray(optionalContentGroups)) {
@@ -1544,12 +1533,13 @@ class PartialEvaluator {
         return {
           type: optionalContentType,
           ids: groupIds,
-          policy: isName(optionalContent.get("P"))
-            ? optionalContent.get("P").name
-            : null,
+          policy:
+            optionalContent.get("P") instanceof Name
+              ? optionalContent.get("P").name
+              : null,
           expression: null,
         };
-      } else if (isRef(optionalContentGroups)) {
+      } else if (optionalContentGroups instanceof Ref) {
         return {
           type: optionalContentType,
           id: optionalContentGroups.toString(),
@@ -1670,12 +1660,12 @@ class PartialEvaluator {
                   xobj = xref.fetch(xobj);
                 }
 
-                if (!isStream(xobj)) {
+                if (!(xobj instanceof BaseStream)) {
                   throw new FormatError("XObject should be a stream");
                 }
 
                 const type = xobj.dict.get("Subtype");
-                if (!isName(type)) {
+                if (!(type instanceof Name)) {
                   throw new FormatError("XObject should have a Name subtype");
                 }
 
@@ -2075,7 +2065,7 @@ class PartialEvaluator {
             // but doing so is meaningless without knowing the semantics.
             continue;
           case OPS.beginMarkedContentProps:
-            if (!isName(args[0])) {
+            if (!(args[0] instanceof Name)) {
               warn(`Expected name for beginMarkedContentProps arg0=${args[0]}`);
               continue;
             }
@@ -2992,12 +2982,12 @@ class PartialEvaluator {
                   xobj = xref.fetch(xobj);
                 }
 
-                if (!isStream(xobj)) {
+                if (!(xobj instanceof BaseStream)) {
                   throw new FormatError("XObject should be a stream");
                 }
 
                 const type = xobj.dict.get("Subtype");
-                if (!isName(type)) {
+                if (!(type instanceof Name)) {
                   throw new FormatError("XObject should have a Name subtype");
                 }
 
@@ -3133,7 +3123,7 @@ class PartialEvaluator {
             if (includeMarkedContent) {
               textContent.items.push({
                 type: "beginMarkedContent",
-                tag: isName(args[0]) ? args[0].name : null,
+                tag: args[0] instanceof Name ? args[0].name : null,
               });
             }
             break;
@@ -3141,7 +3131,7 @@ class PartialEvaluator {
             if (includeMarkedContent) {
               flushTextContentItem();
               let mcid = null;
-              if (isDict(args[1])) {
+              if (args[1] instanceof Dict) {
                 mcid = args[1].get("MCID");
               }
               textContent.items.push({
@@ -3149,7 +3139,7 @@ class PartialEvaluator {
                 id: Number.isInteger(mcid)
                   ? `${self.idFactory.getPageObjId()}_mcid${mcid}`
                   : null,
-                tag: isName(args[0]) ? args[0].name : null,
+                tag: args[0] instanceof Name ? args[0].name : null,
               });
             }
             break;
@@ -3205,7 +3195,7 @@ class PartialEvaluator {
     if (properties.composite) {
       // CIDSystemInfo helps to match CID to glyphs
       const cidSystemInfo = dict.get("CIDSystemInfo");
-      if (isDict(cidSystemInfo)) {
+      if (cidSystemInfo instanceof Dict) {
         properties.cidSystemInfo = {
           registry: stringToPDFString(cidSystemInfo.get("Registry")),
           ordering: stringToPDFString(cidSystemInfo.get("Ordering")),
@@ -3230,11 +3220,10 @@ class PartialEvaluator {
     let encoding;
     if (dict.has("Encoding")) {
       encoding = dict.get("Encoding");
-      if (isDict(encoding)) {
+      if (encoding instanceof Dict) {
         baseEncodingName = encoding.get("BaseEncoding");
-        baseEncodingName = isName(baseEncodingName)
-          ? baseEncodingName.name
-          : null;
+        baseEncodingName =
+          baseEncodingName instanceof Name ? baseEncodingName.name : null;
         // Load the differences between the base and original
         if (encoding.has("Differences")) {
           const diffEncoding = encoding.get("Differences");
@@ -3243,7 +3232,7 @@ class PartialEvaluator {
             const data = xref.fetchIfRef(diffEncoding[j]);
             if (isNum(data)) {
               index = data;
-            } else if (isName(data)) {
+            } else if (data instanceof Name) {
               differences[index++] = data.name;
             } else {
               throw new FormatError(
@@ -3252,7 +3241,7 @@ class PartialEvaluator {
             }
           }
         }
-      } else if (isName(encoding)) {
+      } else if (encoding instanceof Name) {
         baseEncodingName = encoding.name;
       } else {
         throw new FormatError("Encoding is not a Name nor a Dict");
@@ -3504,7 +3493,7 @@ class PartialEvaluator {
     if (!cmapObj) {
       return Promise.resolve(null);
     }
-    if (isName(cmapObj)) {
+    if (cmapObj instanceof Name) {
       return CMapFactory.create({
         encoding: cmapObj,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
@@ -3515,7 +3504,7 @@ class PartialEvaluator {
         }
         return new ToUnicodeMap(cmap.getMap());
       });
-    } else if (isStream(cmapObj)) {
+    } else if (cmapObj instanceof BaseStream) {
       return CMapFactory.create({
         encoding: cmapObj,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
@@ -3656,7 +3645,7 @@ class PartialEvaluator {
       } else {
         // Trying get the BaseFont metrics (see comment above).
         const baseFontName = dict.get("BaseFont");
-        if (isName(baseFontName)) {
+        if (baseFontName instanceof Name) {
           const metrics = this.getBaseFontMetrics(baseFontName.name);
 
           glyphsWidths = this.buildCharCodeToWidth(metrics.widths, properties);
@@ -3754,7 +3743,7 @@ class PartialEvaluator {
   preEvaluateFont(dict) {
     const baseDict = dict;
     let type = dict.get("Subtype");
-    if (!isName(type)) {
+    if (!(type instanceof Name)) {
       throw new FormatError("invalid font Subtype");
     }
 
@@ -3775,7 +3764,7 @@ class PartialEvaluator {
         throw new FormatError("Descendant font is not a dictionary.");
       }
       type = dict.get("Subtype");
-      if (!isName(type)) {
+      if (!(type instanceof Name)) {
         throw new FormatError("invalid font Subtype");
       }
       composite = true;
@@ -3788,15 +3777,15 @@ class PartialEvaluator {
       hash = new MurmurHash3_64();
 
       const encoding = baseDict.getRaw("Encoding");
-      if (isName(encoding)) {
+      if (encoding instanceof Name) {
         hash.update(encoding.name);
-      } else if (isRef(encoding)) {
+      } else if (encoding instanceof Ref) {
         hash.update(encoding.toString());
-      } else if (isDict(encoding)) {
+      } else if (encoding instanceof Dict) {
         for (const entry of encoding.getRawValues()) {
-          if (isName(entry)) {
+          if (entry instanceof Name) {
             hash.update(entry.name);
-          } else if (isRef(entry)) {
+          } else if (entry instanceof Ref) {
             hash.update(entry.toString());
           } else if (Array.isArray(entry)) {
             // 'Differences' array (fixes bug1157493.pdf).
@@ -3805,9 +3794,9 @@ class PartialEvaluator {
 
             for (let j = 0; j < diffLength; j++) {
               const diffEntry = entry[j];
-              if (isName(diffEntry)) {
+              if (diffEntry instanceof Name) {
                 diffBuf[j] = diffEntry.name;
-              } else if (isNum(diffEntry) || isRef(diffEntry)) {
+              } else if (isNum(diffEntry) || diffEntry instanceof Ref) {
                 diffBuf[j] = diffEntry.toString();
               }
             }
@@ -3819,7 +3808,7 @@ class PartialEvaluator {
       hash.update(`${firstChar}-${lastChar}`); // Fixes issue10665_reduced.pdf
 
       toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
-      if (isStream(toUnicode)) {
+      if (toUnicode instanceof BaseStream) {
         const stream = toUnicode.str || toUnicode;
         const uint8array = stream.buffer
           ? new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength)
@@ -3829,7 +3818,7 @@ class PartialEvaluator {
               stream.end - stream.start
             );
         hash.update(uint8array);
-      } else if (isName(toUnicode)) {
+      } else if (toUnicode instanceof Name) {
         hash.update(toUnicode.name);
       }
 
@@ -3837,7 +3826,7 @@ class PartialEvaluator {
       if (Array.isArray(widths)) {
         const widthsBuf = [];
         for (const entry of widths) {
-          if (isNum(entry) || isRef(entry)) {
+          if (isNum(entry) || entry instanceof Ref) {
             widthsBuf.push(entry.toString());
           }
         }
@@ -3851,12 +3840,12 @@ class PartialEvaluator {
         if (Array.isArray(compositeWidths)) {
           const widthsBuf = [];
           for (const entry of compositeWidths) {
-            if (isNum(entry) || isRef(entry)) {
+            if (isNum(entry) || entry instanceof Ref) {
               widthsBuf.push(entry.toString());
             } else if (Array.isArray(entry)) {
               const subWidthsBuf = [];
               for (const element of entry) {
-                if (isNum(element) || isRef(element)) {
+                if (isNum(element) || element instanceof Ref) {
                   subWidthsBuf.push(element.toString());
                 }
               }
@@ -3917,7 +3906,7 @@ class PartialEvaluator {
         // FontDescriptor was not required.
         // This case is here for compatibility.
         let baseFontName = dict.get("BaseFont");
-        if (!isName(baseFontName)) {
+        if (!(baseFontName instanceof Name)) {
           throw new FormatError("Base font is not specified");
         }
 
@@ -4013,7 +4002,7 @@ class PartialEvaluator {
     }
     fontName = fontName || baseFont;
 
-    if (!isName(fontName)) {
+    if (!(fontName instanceof Name)) {
       throw new FormatError("invalid font name");
     }
 
@@ -4097,7 +4086,7 @@ class PartialEvaluator {
 
     if (composite) {
       const cidEncoding = baseDict.get("Encoding");
-      if (isName(cidEncoding)) {
+      if (cidEncoding instanceof Name) {
         properties.cidEncoding = cidEncoding.name;
       }
       const cMap = await CMapFactory.create({
