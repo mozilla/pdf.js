@@ -120,7 +120,7 @@ class Catalog {
     let collection = null;
     try {
       const obj = this._catDict.get("Collection");
-      if (isDict(obj) && obj.size > 0) {
+      if (obj instanceof Dict && obj.size > 0) {
         collection = obj;
       }
     } catch (ex) {
@@ -136,7 +136,7 @@ class Catalog {
     let acroForm = null;
     try {
       const obj = this._catDict.get("AcroForm");
-      if (isDict(obj) && obj.size > 0) {
+      if (obj instanceof Dict && obj.size > 0) {
         acroForm = obj;
       }
     } catch (ex) {
@@ -208,7 +208,7 @@ class Catalog {
    */
   _readMarkInfo() {
     const obj = this._catDict.get("MarkInfo");
-    if (!isDict(obj)) {
+    if (!(obj instanceof Dict)) {
       return null;
     }
 
@@ -249,7 +249,7 @@ class Catalog {
    */
   _readStructTreeRoot() {
     const obj = this._catDict.get("StructTreeRoot");
-    if (!isDict(obj)) {
+    if (!(obj instanceof Dict)) {
       return null;
     }
     const root = new StructTreeRoot(obj);
@@ -259,7 +259,7 @@ class Catalog {
 
   get toplevelPagesDict() {
     const pagesObj = this._catDict.get("Pages");
-    if (!isDict(pagesObj)) {
+    if (!(pagesObj instanceof Dict)) {
       throw new FormatError("Invalid top-level pages dictionary.");
     }
     return shadow(this, "toplevelPagesDict", pagesObj);
@@ -283,7 +283,7 @@ class Catalog {
    */
   _readDocumentOutline() {
     let obj = this._catDict.get("Outlines");
-    if (!isDict(obj)) {
+    if (!(obj instanceof Dict)) {
       return null;
     }
     obj = obj.getRaw("First");
@@ -376,7 +376,7 @@ class Catalog {
    */
   _readPermissions() {
     const encrypt = this.xref.trailer.get("Encrypt");
-    if (!isDict(encrypt)) {
+    if (!(encrypt instanceof Dict)) {
       return null;
     }
 
@@ -529,9 +529,10 @@ class Catalog {
       creator: isString(config.get("Creator"))
         ? stringToPDFString(config.get("Creator"))
         : null,
-      baseState: isName(config.get("BaseState"))
-        ? config.get("BaseState").name
-        : null,
+      baseState:
+        config.get("BaseState") instanceof Name
+          ? config.get("BaseState").name
+          : null,
       on: parseOnOff(config.get("ON")),
       off: parseOnOff(config.get("OFF")),
       order: parseOrder(config.get("Order")),
@@ -654,7 +655,7 @@ class Catalog {
       const labelDict = nums.get(i);
 
       if (labelDict !== undefined) {
-        if (!isDict(labelDict)) {
+        if (!(labelDict instanceof Dict)) {
           throw new FormatError("PageLabel is not a dictionary.");
         }
 
@@ -667,7 +668,7 @@ class Catalog {
 
         if (labelDict.has("S")) {
           const s = labelDict.get("S");
-          if (!isName(s)) {
+          if (!(s instanceof Name)) {
             throw new FormatError("Invalid style in PageLabel dictionary.");
           }
           style = s.name;
@@ -743,7 +744,7 @@ class Catalog {
     // affect the Scroll mode (continuous/non-continuous) used in Adobe Reader.
     let pageLayout = "";
 
-    if (isName(obj)) {
+    if (obj instanceof Name) {
       switch (obj.name) {
         case "SinglePage":
         case "OneColumn":
@@ -761,7 +762,7 @@ class Catalog {
     const obj = this._catDict.get("PageMode");
     let pageMode = "UseNone"; // Default value.
 
-    if (isName(obj)) {
+    if (obj instanceof Name) {
       switch (obj.name) {
         case "UseNone":
         case "UseOutlines":
@@ -799,7 +800,7 @@ class Catalog {
     const obj = this._catDict.get("ViewerPreferences");
     let prefs = null;
 
-    if (isDict(obj)) {
+    if (obj instanceof Dict) {
       for (const key in ViewerPreferencesValidators) {
         if (!obj.has(key)) {
           continue;
@@ -921,7 +922,7 @@ class Catalog {
     const obj = this._catDict.get("OpenAction");
     const openAction = Object.create(null);
 
-    if (isDict(obj)) {
+    if (obj instanceof Dict) {
       // Convert the OpenAction dictionary into a format that works with
       // `parseDestDictionary`, to avoid having to re-implement those checks.
       const destDict = new Dict(this.xref);
@@ -1337,7 +1338,7 @@ class Catalog {
           if (
             isRefsEqual(kidRef, pageRef) &&
             !isDict(node, "Page") &&
-            !(isDict(node) && !node.has("Type") && node.has("Contents"))
+            !(node instanceof Dict && !node.has("Type") && node.has("Contents"))
           ) {
             throw new FormatError(
               "The reference does not point to a /Page dictionary."
@@ -1346,7 +1347,7 @@ class Catalog {
           if (!node) {
             return null;
           }
-          if (!isDict(node)) {
+          if (!(node instanceof Dict)) {
             throw new FormatError("Node must be a dictionary.");
           }
           parentRef = node.getRaw("Parent");
@@ -1356,7 +1357,7 @@ class Catalog {
           if (!parent) {
             return null;
           }
-          if (!isDict(parent)) {
+          if (!(parent instanceof Dict)) {
             throw new FormatError("Parent must be a dictionary.");
           }
           return parent.getAsync("Kids");
@@ -1379,7 +1380,7 @@ class Catalog {
             }
             kidPromises.push(
               xref.fetchAsync(kid).then(function (obj) {
-                if (!isDict(obj)) {
+                if (!(obj instanceof Dict)) {
                   throw new FormatError("Kid node must be a dictionary.");
                 }
                 if (obj.has("Count")) {
@@ -1430,7 +1431,7 @@ class Catalog {
    */
   static parseDestDictionary(params) {
     const destDict = params.destDict;
-    if (!isDict(destDict)) {
+    if (!(destDict instanceof Dict)) {
       warn("parseDestDictionary: `destDict` must be a dictionary.");
       return;
     }
@@ -1444,14 +1445,14 @@ class Catalog {
     let action = destDict.get("A"),
       url,
       dest;
-    if (!isDict(action)) {
+    if (!(action instanceof Dict)) {
       if (destDict.has("Dest")) {
         // A /Dest entry should *only* contain a Name or an Array, but some bad
         // PDF generators ignore that and treat it as an /A entry.
         action = destDict.get("Dest");
       } else {
         action = destDict.get("AA");
-        if (isDict(action)) {
+        if (action instanceof Dict) {
           if (action.has("D")) {
             // MouseDown
             action = action.get("D");
@@ -1463,9 +1464,9 @@ class Catalog {
       }
     }
 
-    if (isDict(action)) {
+    if (action instanceof Dict) {
       const actionType = action.get("S");
-      if (!isName(actionType)) {
+      if (!(actionType instanceof Name)) {
         warn("parseDestDictionary: Invalid type in Action dictionary.");
         return;
       }
@@ -1508,7 +1509,7 @@ class Catalog {
 
         case "GoToR":
           const urlDict = action.get("F");
-          if (isDict(urlDict)) {
+          if (urlDict instanceof Dict) {
             // We assume that we found a FileSpec dictionary
             // and fetch the URL without checking any further.
             url = urlDict.get("F") || null;
@@ -1519,7 +1520,7 @@ class Catalog {
           // NOTE: the destination is relative to the *remote* document.
           let remoteDest = action.get("D");
           if (remoteDest) {
-            if (isName(remoteDest)) {
+            if (remoteDest instanceof Name) {
               remoteDest = remoteDest.name;
             }
             if (isString(url)) {
@@ -1540,7 +1541,7 @@ class Catalog {
 
         case "Named":
           const namedAction = action.get("N");
-          if (isName(namedAction)) {
+          if (namedAction instanceof Name) {
             resultObj.action = namedAction.name;
           }
           break;
@@ -1587,7 +1588,7 @@ class Catalog {
       resultObj.unsafeUrl = url;
     }
     if (dest) {
-      if (isName(dest)) {
+      if (dest instanceof Name) {
         dest = dest.name;
       }
       if (isString(dest) || Array.isArray(dest)) {

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { Dict, isDict, Ref } from "./primitives.js";
+import { Dict, Ref } from "./primitives.js";
 import {
   FormatError,
   info,
@@ -508,7 +508,7 @@ function isPDFFunction(v) {
   let fnDict;
   if (typeof v !== "object") {
     return false;
-  } else if (isDict(v)) {
+  } else if (v instanceof Dict) {
     fnDict = v;
   } else if (v instanceof BaseStream) {
     fnDict = v.dict;

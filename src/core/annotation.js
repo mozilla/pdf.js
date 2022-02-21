@@ -39,7 +39,7 @@ import {
   createDefaultAppearance,
   parseDefaultAppearance,
 } from "./default_appearance.js";
-import { Dict, isDict, isName, Name, Ref, RefSet } from "./primitives.js";
+import { Dict, isName, Name, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
@@ -95,7 +95,7 @@ class AnnotationFactory {
     pageIndex = -1
   ) {
     const dict = xref.fetchIfRef(ref);
-    if (!isDict(dict)) {
+    if (!(dict instanceof Dict)) {
       return undefined;
     }
 
@@ -104,7 +104,7 @@ class AnnotationFactory {
 
     // Determine the annotation's subtype.
     let subtype = dict.get("Subtype");
-    subtype = isName(subtype) ? subtype.name : null;
+    subtype = subtype instanceof Name ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
     const parameters = {
@@ -128,7 +128,7 @@ class AnnotationFactory {
 
       case "Widget":
         let fieldType = getInheritableProperty({ dict, key: "FT" });
-        fieldType = isName(fieldType) ? fieldType.name : null;
+        fieldType = fieldType instanceof Name ? fieldType.name : null;
 
         switch (fieldType) {
           case "Tx":
@@ -209,7 +209,7 @@ class AnnotationFactory {
   static async _getPageIndex(xref, ref, pdfManager) {
     try {
       const annotDict = await xref.fetchIfRefAsync(ref);
-      if (!isDict(annotDict)) {
+      if (!(annotDict instanceof Dict)) {
         return -1;
       }
       const pageRef = annotDict.getRaw("P");
@@ -636,7 +636,7 @@ class Annotation {
     }
 
     this.borderStyle = new AnnotationBorderStyle();
-    if (!isDict(borderStyle)) {
+    if (!(borderStyle instanceof Dict)) {
       return;
     }
     if (borderStyle.has("BS")) {
@@ -681,7 +681,7 @@ class Annotation {
     this.appearance = null;
 
     const appearanceStates = dict.get("AP");
-    if (!isDict(appearanceStates)) {
+    if (!(appearanceStates instanceof Dict)) {
       return;
     }
 
@@ -691,14 +691,14 @@ class Annotation {
       this.appearance = normalAppearanceState;
       return;
     }
-    if (!isDict(normalAppearanceState)) {
+    if (!(normalAppearanceState instanceof Dict)) {
       return;
     }
 
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
     const as = dict.get("AS");
-    if (!isName(as) || !normalAppearanceState.has(as.name)) {
+    if (!(as instanceof Name) || !normalAppearanceState.has(as.name)) {
       return;
     }
     this.appearance = normalAppearanceState.get(as.name);
@@ -912,7 +912,7 @@ class AnnotationBorderStyle {
 
     // Some corrupt PDF generators may provide the width as a `Name`,
     // rather than as a number (fixes issue 10385).
-    if (isName(width)) {
+    if (width instanceof Name) {
       this.width = 0; // This is consistent with the behaviour in Adobe Reader.
       return;
     }
@@ -946,7 +946,7 @@ class AnnotationBorderStyle {
    * @see {@link shared/util.js}
    */
   setStyle(style) {
-    if (!isName(style)) {
+    if (!(style instanceof Name)) {
       return;
     }
     switch (style.name) {
@@ -1055,7 +1055,8 @@ class MarkupAnnotation extends Annotation {
       this.data.inReplyTo = rawIRT instanceof Ref ? rawIRT.toString() : null;
 
       const rt = dict.get("RT");
-      this.data.replyType = isName(rt) ? rt.name : AnnotationReplyType.REPLY;
+      this.data.replyType =
+        rt instanceof Name ? rt.name : AnnotationReplyType.REPLY;
     }
 
     if (this.data.replyType === AnnotationReplyType.GROUP) {
@@ -1265,7 +1266,7 @@ class WidgetAnnotation extends Annotation {
     );
 
     const fieldType = getInheritableProperty({ dict, key: "FT" });
-    data.fieldType = isName(fieldType) ? fieldType.name : null;
+    data.fieldType = fieldType instanceof Name ? fieldType.name : null;
 
     const localResources = getInheritableProperty({ dict, key: "DR" });
     const acroFormResources = params.acroForm.get("DR");
@@ -1306,7 +1307,7 @@ class WidgetAnnotation extends Annotation {
       return formValue
         .filter(item => isString(item))
         .map(item => stringToPDFString(item));
-    } else if (isName(formValue)) {
+    } else if (formValue instanceof Name) {
       return stringToPDFString(formValue.name);
     } else if (isString(formValue)) {
       return stringToPDFString(formValue);
@@ -1418,7 +1419,7 @@ class WidgetAnnotation extends Annotation {
     const { xref } = evaluator;
 
     const dict = xref.fetchIfRef(this.ref);
-    if (!isDict(dict)) {
+    if (!(dict instanceof Dict)) {
       return null;
     }
 
@@ -2085,7 +2086,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     const dict = evaluator.xref.fetchIfRef(this.ref);
-    if (!isDict(dict)) {
+    if (!(dict instanceof Dict)) {
       return null;
     }
 
@@ -2131,7 +2132,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     const dict = evaluator.xref.fetchIfRef(this.ref);
-    if (!isDict(dict)) {
+    if (!(dict instanceof Dict)) {
       return null;
     }
 
@@ -2158,7 +2159,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         parentBuffer = [`${this.parent.num} ${this.parent.gen} obj\n`];
         writeDict(parent, parentBuffer, parentTransform);
         parentBuffer.push("\nendobj\n");
-      } else if (isDict(this.parent)) {
+      } else if (this.parent instanceof Dict) {
         this.parent.set("V", name);
       }
     }
@@ -2250,12 +2251,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
   _processCheckBox(params) {
     const customAppearance = params.dict.get("AP");
-    if (!isDict(customAppearance)) {
+    if (!(customAppearance instanceof Dict)) {
       return;
     }
 
     const normalAppearance = customAppearance.get("N");
-    if (!isDict(normalAppearance)) {
+    if (!(normalAppearance instanceof Dict)) {
       return;
     }
 
@@ -2318,21 +2319,21 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     // The parent field's `V` entry holds a `Name` object with the appearance
     // state of whichever child field is currently in the "on" state.
     const fieldParent = params.dict.get("Parent");
-    if (isDict(fieldParent)) {
+    if (fieldParent instanceof Dict) {
       this.parent = params.dict.getRaw("Parent");
       const fieldParentValue = fieldParent.get("V");
-      if (isName(fieldParentValue)) {
+      if (fieldParentValue instanceof Name) {
         this.data.fieldValue = this._decodeFormValue(fieldParentValue);
       }
     }
 
     // The button's value corresponds to its appearance state.
     const appearanceStates = params.dict.get("AP");
-    if (!isDict(appearanceStates)) {
+    if (!(appearanceStates instanceof Dict)) {
       return;
     }
     const normalAppearance = appearanceStates.get("N");
-    if (!isDict(normalAppearance)) {
+    if (!(normalAppearance instanceof Dict)) {
       return;
     }
     for (const key of normalAppearance.getKeys()) {
@@ -2566,7 +2567,8 @@ class PopupAnnotation extends Annotation {
     }
 
     const parentSubtype = parentItem.get("Subtype");
-    this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
+    this.data.parentType =
+      parentSubtype instanceof Name ? parentSubtype.name : null;
     const rawParent = parameters.dict.getRaw("Parent");
     this.data.parentId = rawParent instanceof Ref ? rawParent.toString() : null;
 
