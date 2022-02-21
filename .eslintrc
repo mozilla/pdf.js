@@ -184,6 +184,10 @@
         "message": "Use `instanceof Cmd` rather than `isCmd()` with one argument.",
       },
       {
+        "selector": "CallExpression[callee.name='isDict'][arguments.length<2]",
+        "message": "Use `instanceof Dict` rather than `isDict()` with one argument.",
+      },
+      {
         "selector": "NewExpression[callee.name='Cmd']",
         "message": "Use `Cmd.get()` rather than `new Cmd()`.",
       },

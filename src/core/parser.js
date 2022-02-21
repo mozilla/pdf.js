@@ -22,16 +22,7 @@ import {
   StreamType,
   warn,
 } from "../shared/util.js";
-import {
-  Cmd,
-  Dict,
-  EOF,
-  isCmd,
-  isDict,
-  isName,
-  Name,
-  Ref,
-} from "./primitives.js";
+import { Cmd, Dict, EOF, isCmd, isName, Name, Ref } from "./primitives.js";
 import {
   isWhiteSpace,
   MissingDataException,
@@ -1401,7 +1392,7 @@ class Linearization {
         Number.isInteger(obj1) &&
         Number.isInteger(obj2) &&
         isCmd(obj3, "obj") &&
-        isDict(linDict) &&
+        linDict instanceof Dict &&
         isNum((obj = linDict.get("Linearized"))) &&
         obj > 0
       )

@@ -14,14 +14,14 @@
  */
 
 import { DecodeStream } from "./decode_stream.js";
+import { Dict } from "./primitives.js";
 import { FormatError } from "../shared/util.js";
-import { isDict } from "./primitives.js";
 
 class PredictorStream extends DecodeStream {
   constructor(str, maybeLength, params) {
     super(maybeLength);
 
-    if (!isDict(params)) {
+    if (!(params instanceof Dict)) {
       return str; // no prediction
     }
     const predictor = (this.predictor = params.get("Predictor") || 1);

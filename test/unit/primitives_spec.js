@@ -518,6 +518,8 @@ describe("primitives", function () {
   });
 
   describe("isDict", function () {
+    /* eslint-disable no-restricted-syntax */
+
     it("handles non-dictionaries", function () {
       const nonDict = {};
       expect(isDict(nonDict)).toEqual(false);
@@ -535,6 +537,8 @@ describe("primitives", function () {
       expect(isDict(dict, "Page")).toEqual(true);
       expect(isDict(dict, "Contents")).toEqual(false);
     });
+
+    /* eslint-enable no-restricted-syntax */
   });
 
   describe("isRefsEqual", function () {
