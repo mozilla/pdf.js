@@ -20,7 +20,6 @@ import {
   FontType,
   FormatError,
   info,
-  isNum,
   shadow,
   string32,
   warn,
@@ -3184,7 +3183,9 @@ class Font {
       }
     }
     width = this.widths[widthCode];
-    width = isNum(width) ? width : this.defaultWidth;
+    if (typeof width !== "number") {
+      width = this.defaultWidth;
+    }
     const vmetric = this.vmetrics && this.vmetrics[widthCode];
 
     let unicode = this.toUnicode.get(charcode) || charcode;
