@@ -1187,7 +1187,7 @@ class PDFDocument {
           } else {
             info(`Bad value in document info for "${key}".`);
           }
-        } else if (typeof key === "string") {
+        } else {
           // For custom values, only accept white-listed types to prevent
           // errors that would occur when trying to send non-serializable
           // objects to the main-thread (for example `Dict` or `Stream`).
