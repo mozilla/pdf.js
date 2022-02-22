@@ -149,6 +149,17 @@ describe("primitives", function () {
       checkInvalidKeyValues(dictWithSizeKey);
     });
 
+    it("should not accept to set a non-string key", function () {
+      const dict = new Dict();
+      expect(function () {
+        dict.set(123, "val");
+      }).toThrow(new Error('Dict.set: The "key" must be a string.'));
+
+      expect(dict.has(123)).toBeFalsy();
+
+      checkInvalidKeyValues(dict);
+    });
+
     it("should not accept to set a key with an undefined value", function () {
       const dict = new Dict();
       expect(function () {
