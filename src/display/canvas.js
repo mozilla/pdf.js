@@ -19,7 +19,6 @@ import {
   ImageKind,
   info,
   IsLittleEndianCached,
-  isNum,
   OPS,
   shadow,
   TextRenderingMode,
@@ -2210,7 +2209,7 @@ class CanvasGraphics {
       i;
     for (i = 0; i < glyphsLength; ++i) {
       const glyph = glyphs[i];
-      if (isNum(glyph)) {
+      if (typeof glyph === "number") {
         x += (spacingDir * glyph * fontSize) / 1000;
         continue;
       }
@@ -2336,7 +2335,7 @@ class CanvasGraphics {
 
     for (i = 0; i < glyphsLength; ++i) {
       glyph = glyphs[i];
-      if (isNum(glyph)) {
+      if (typeof glyph === "number") {
         spacingLength = (spacingDir * glyph * fontSize) / 1000;
         this.ctx.translate(spacingLength, 0);
         current.x += spacingLength * textHScale;

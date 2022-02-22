@@ -1034,10 +1034,6 @@ function isBool(v) {
   return typeof v === "boolean";
 }
 
-function isNum(v) {
-  return typeof v === "number";
-}
-
 function isString(v) {
   return typeof v === "string";
 }
@@ -1146,7 +1142,6 @@ export {
   isBool,
   IsEvalSupportedCached,
   IsLittleEndianCached,
-  isNum,
   isSameOrigin,
   isString,
   MissingPDFException,

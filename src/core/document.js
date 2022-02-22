@@ -20,8 +20,6 @@ import {
   InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
-  isBool,
-  isNum,
   isString,
   OPS,
   PageActionEventType,
@@ -177,7 +175,7 @@ class Page {
 
   get userUnit() {
     let obj = this.pageDict.get("UserUnit");
-    if (!isNum(obj) || obj <= 0) {
+    if (typeof obj !== "number" || obj <= 0) {
       obj = DEFAULT_USER_UNIT;
     }
     return shadow(this, "userUnit", obj);
@@ -1193,10 +1191,15 @@ class PDFDocument {
           // For custom values, only accept white-listed types to prevent
           // errors that would occur when trying to send non-serializable
           // objects to the main-thread (for example `Dict` or `Stream`).
+          const customType = typeof value;
           let customValue;
-          if (isString(value)) {
+          if (customType === "string") {
             customValue = stringToPDFString(value);
-          } else if (value instanceof Name || isNum(value) || isBool(value)) {
+          } else if (
+            value instanceof Name ||
+            customType === "number" ||
+            customType === "boolean"
+          ) {
             customValue = value;
           } else {
             info(`Unsupported value in document info for (custom) "${key}".`);
