@@ -24,7 +24,6 @@ import {
   IDENTITY_MATRIX,
   info,
   isArrayEqual,
-  isNum,
   isString,
   OPS,
   shadow,
@@ -572,7 +571,7 @@ class PartialEvaluator {
     const w = dict.get("W", "Width");
     const h = dict.get("H", "Height");
 
-    if (!(w && isNum(w)) || !(h && isNum(h))) {
+    if (!(w && typeof w === "number") || !(h && typeof h === "number")) {
       warn("Image dimensions are missing, or not numbers.");
       return;
     }
@@ -1790,7 +1789,7 @@ class PartialEvaluator {
                   combinedGlyphs,
                   self.handleText(arrItem, state)
                 );
-              } else if (isNum(arrItem)) {
+              } else if (typeof arrItem === "number") {
                 combinedGlyphs.push(arrItem);
               }
             }
@@ -3224,7 +3223,7 @@ class PartialEvaluator {
           let index = 0;
           for (let j = 0, jj = diffEncoding.length; j < jj; j++) {
             const data = xref.fetchIfRef(diffEncoding[j]);
-            if (isNum(data)) {
+            if (typeof data === "number") {
               index = data;
             } else if (data instanceof Name) {
               differences[index++] = data.name;
@@ -3703,7 +3702,7 @@ class PartialEvaluator {
     }
     const glyphWidths = Metrics[lookupName];
 
-    if (isNum(glyphWidths)) {
+    if (typeof glyphWidths === "number") {
       defaultWidth = glyphWidths;
       monospace = true;
     } else {
@@ -3790,7 +3789,10 @@ class PartialEvaluator {
               const diffEntry = entry[j];
               if (diffEntry instanceof Name) {
                 diffBuf[j] = diffEntry.name;
-              } else if (isNum(diffEntry) || diffEntry instanceof Ref) {
+              } else if (
+                typeof diffEntry === "number" ||
+                diffEntry instanceof Ref
+              ) {
                 diffBuf[j] = diffEntry.toString();
               }
             }
@@ -3820,7 +3822,7 @@ class PartialEvaluator {
       if (Array.isArray(widths)) {
         const widthsBuf = [];
         for (const entry of widths) {
-          if (isNum(entry) || entry instanceof Ref) {
+          if (typeof entry === "number" || entry instanceof Ref) {
             widthsBuf.push(entry.toString());
           }
         }
@@ -3834,12 +3836,12 @@ class PartialEvaluator {
         if (Array.isArray(compositeWidths)) {
           const widthsBuf = [];
           for (const entry of compositeWidths) {
-            if (isNum(entry) || entry instanceof Ref) {
+            if (typeof entry === "number" || entry instanceof Ref) {
               widthsBuf.push(entry.toString());
             } else if (Array.isArray(entry)) {
               const subWidthsBuf = [];
               for (const element of entry) {
-                if (isNum(element) || element instanceof Ref) {
+                if (typeof element === "number" || element instanceof Ref) {
                   subWidthsBuf.push(element.toString());
                 }
               }

@@ -22,7 +22,6 @@ import {
   isArrayBuffer,
   isAscii,
   isBool,
-  isNum,
   isSameOrigin,
   isString,
   string32,
@@ -88,23 +87,6 @@ describe("util", function () {
       expect(isBool(0)).toEqual(false);
       expect(isBool(null)).toEqual(false);
       expect(isBool(undefined)).toEqual(false);
-    });
-  });
-
-  describe("isNum", function () {
-    it("handles numeric values", function () {
-      expect(isNum(1)).toEqual(true);
-      expect(isNum(0)).toEqual(true);
-      expect(isNum(-1)).toEqual(true);
-      expect(isNum(1000000000000000000)).toEqual(true);
-      expect(isNum(12.34)).toEqual(true);
-    });
-
-    it("handles non-numeric values", function () {
-      expect(isNum("true")).toEqual(false);
-      expect(isNum(true)).toEqual(false);
-      expect(isNum(null)).toEqual(false);
-      expect(isNum(undefined)).toEqual(false);
     });
   });
 
