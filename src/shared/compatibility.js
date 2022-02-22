@@ -78,7 +78,7 @@ if (
     ).ReadableStream;
   })();
 
-  // Support: Firefox<94, Chrome<98, Safari, Node.js<17.0.0
+  // Support: Firefox<94, Chrome<98, Safari<15.4, Node.js<17.0.0
   (function checkStructuredClone() {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
       // The current image decoders are synchronous, hence `structuredClone`
