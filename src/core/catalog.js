@@ -26,7 +26,6 @@ import {
   FormatError,
   info,
   isBool,
-  isNum,
   isString,
   objectSize,
   PermissionFlag,
@@ -381,7 +380,7 @@ class Catalog {
     }
 
     let flags = encrypt.get("P");
-    if (!isNum(flags)) {
+    if (typeof flags !== "number") {
       return null;
     }
 
@@ -1475,7 +1474,7 @@ class Catalog {
       switch (actionName) {
         case "ResetForm":
           const flags = action.get("Flags");
-          const include = ((isNum(flags) ? flags : 0) & 1) === 0;
+          const include = ((typeof flags === "number" ? flags : 0) & 1) === 0;
           const fields = [];
           const refs = [];
           for (const obj of action.get("Fields") || []) {
