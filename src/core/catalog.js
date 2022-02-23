@@ -25,7 +25,6 @@ import {
   DocumentActionEventType,
   FormatError,
   info,
-  isBool,
   isString,
   objectSize,
   PermissionFlag,
@@ -221,7 +220,7 @@ class Catalog {
         continue;
       }
       const value = obj.get(key);
-      if (!isBool(value)) {
+      if (typeof value !== "boolean") {
         continue;
       }
       markInfo[key] = value;
@@ -776,44 +775,30 @@ class Catalog {
   }
 
   get viewerPreferences() {
-    const ViewerPreferencesValidators = {
-      HideToolbar: isBool,
-      HideMenubar: isBool,
-      HideWindowUI: isBool,
-      FitWindow: isBool,
-      CenterWindow: isBool,
-      DisplayDocTitle: isBool,
-      NonFullScreenPageMode: isName,
-      Direction: isName,
-      ViewArea: isName,
-      ViewClip: isName,
-      PrintArea: isName,
-      PrintClip: isName,
-      PrintScaling: isName,
-      Duplex: isName,
-      PickTrayByPDFSize: isBool,
-      PrintPageRange: Array.isArray,
-      NumCopies: Number.isInteger,
-    };
-
     const obj = this._catDict.get("ViewerPreferences");
+    if (!(obj instanceof Dict)) {
+      return shadow(this, "viewerPreferences", null);
+    }
     let prefs = null;
 
-    if (obj instanceof Dict) {
-      for (const key in ViewerPreferencesValidators) {
-        if (!obj.has(key)) {
-          continue;
-        }
-        const value = obj.get(key);
-        // Make sure the (standard) value conforms to the specification.
-        if (!ViewerPreferencesValidators[key](value)) {
-          info(`Bad value in ViewerPreferences for "${key}".`);
-          continue;
-        }
-        let prefValue;
+    for (const key of obj.getKeys()) {
+      const value = obj.get(key);
+      let prefValue;
 
-        switch (key) {
-          case "NonFullScreenPageMode":
+      switch (key) {
+        case "HideToolbar":
+        case "HideMenubar":
+        case "HideWindowUI":
+        case "FitWindow":
+        case "CenterWindow":
+        case "DisplayDocTitle":
+        case "PickTrayByPDFSize":
+          if (typeof value === "boolean") {
+            prefValue = value;
+          }
+          break;
+        case "NonFullScreenPageMode":
+          if (value instanceof Name) {
             switch (value.name) {
               case "UseNone":
               case "UseOutlines":
@@ -824,8 +809,10 @@ class Catalog {
               default:
                 prefValue = "UseNone";
             }
-            break;
-          case "Direction":
+          }
+          break;
+        case "Direction":
+          if (value instanceof Name) {
             switch (value.name) {
               case "L2R":
               case "R2L":
@@ -834,11 +821,13 @@ class Catalog {
               default:
                 prefValue = "L2R";
             }
-            break;
-          case "ViewArea":
-          case "ViewClip":
-          case "PrintArea":
-          case "PrintClip":
+          }
+          break;
+        case "ViewArea":
+        case "ViewClip":
+        case "PrintArea":
+        case "PrintClip":
+          if (value instanceof Name) {
             switch (value.name) {
               case "MediaBox":
               case "CropBox":
@@ -850,8 +839,10 @@ class Catalog {
               default:
                 prefValue = "CropBox";
             }
-            break;
-          case "PrintScaling":
+          }
+          break;
+        case "PrintScaling":
+          if (value instanceof Name) {
             switch (value.name) {
               case "None":
               case "AppDefault":
@@ -860,8 +851,10 @@ class Catalog {
               default:
                 prefValue = "AppDefault";
             }
-            break;
-          case "Duplex":
+          }
+          break;
+        case "Duplex":
+          if (value instanceof Name) {
             switch (value.name) {
               case "Simplex":
               case "DuplexFlipShortEdge":
@@ -871,13 +864,11 @@ class Catalog {
               default:
                 prefValue = "None";
             }
-            break;
-          case "PrintPageRange":
-            const length = value.length;
-            if (length % 2 !== 0) {
-              // The number of elements must be even.
-              break;
-            }
+          }
+          break;
+        case "PrintPageRange":
+          // The number of elements must be even.
+          if (Array.isArray(value) && value.length % 2 === 0) {
             const isValid = value.every((page, i, arr) => {
               return (
                 Number.isInteger(page) &&
@@ -889,30 +880,26 @@ class Catalog {
             if (isValid) {
               prefValue = value;
             }
-            break;
-          case "NumCopies":
-            if (value > 0) {
-              prefValue = value;
-            }
-            break;
-          default:
-            if (typeof value !== "boolean") {
-              throw new FormatError(
-                `viewerPreferences - expected a boolean value for: ${key}`
-              );
-            }
-            prefValue = value;
-        }
-
-        if (prefValue !== undefined) {
-          if (!prefs) {
-            prefs = Object.create(null);
           }
-          prefs[key] = prefValue;
-        } else {
-          info(`Bad value in ViewerPreferences for "${key}".`);
-        }
+          break;
+        case "NumCopies":
+          if (Number.isInteger(value) && value > 0) {
+            prefValue = value;
+          }
+          break;
+        default:
+          warn(`Ignoring non-standard key in ViewerPreferences: ${key}.`);
+          continue;
       }
+
+      if (prefValue === undefined) {
+        warn(`Bad value, for key "${key}", in ViewerPreferences: ${value}.`);
+        continue;
+      }
+      if (!prefs) {
+        prefs = Object.create(null);
+      }
+      prefs[key] = prefValue;
     }
     return shadow(this, "viewerPreferences", prefs);
   }
@@ -1533,7 +1520,7 @@ class Catalog {
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
           const newWindow = action.get("NewWindow");
-          if (isBool(newWindow)) {
+          if (typeof newWindow === "boolean") {
             resultObj.newWindow = newWindow;
           }
           break;
