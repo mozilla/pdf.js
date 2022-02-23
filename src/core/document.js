@@ -20,7 +20,6 @@ import {
   InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
-  isString,
   OPS,
   PageActionEventType,
   RenderingIntentFlag,
@@ -1129,18 +1128,6 @@ class PDFDocument {
   }
 
   get documentInfo() {
-    const DocumentInfoValidators = {
-      Title: isString,
-      Author: isString,
-      Subject: isString,
-      Keywords: isString,
-      Creator: isString,
-      Producer: isString,
-      CreationDate: isString,
-      ModDate: isString,
-      Trapped: isName,
-    };
-
     let version = this._version;
     if (
       typeof version !== "string" ||
@@ -1172,46 +1159,64 @@ class PDFDocument {
       }
       info("The document information dictionary is invalid.");
     }
+    if (!(infoDict instanceof Dict)) {
+      return shadow(this, "documentInfo", docInfo);
+    }
 
-    if (infoDict instanceof Dict) {
-      // Fill the document info with valid entries from the specification,
-      // as well as any existing well-formed custom entries.
-      for (const key of infoDict.getKeys()) {
-        const value = infoDict.get(key);
+    for (const key of infoDict.getKeys()) {
+      const value = infoDict.get(key);
 
-        if (DocumentInfoValidators[key]) {
-          // Make sure the (standard) value conforms to the specification.
-          if (DocumentInfoValidators[key](value)) {
-            docInfo[key] =
-              typeof value !== "string" ? value : stringToPDFString(value);
-          } else {
-            info(`Bad value in document info for "${key}".`);
+      switch (key) {
+        case "Title":
+        case "Author":
+        case "Subject":
+        case "Keywords":
+        case "Creator":
+        case "Producer":
+        case "CreationDate":
+        case "ModDate":
+          if (typeof value === "string") {
+            docInfo[key] = stringToPDFString(value);
+            continue;
           }
-        } else {
+          break;
+        case "Trapped":
+          if (value instanceof Name) {
+            docInfo[key] = value;
+            continue;
+          }
+          break;
+        default:
           // For custom values, only accept white-listed types to prevent
           // errors that would occur when trying to send non-serializable
           // objects to the main-thread (for example `Dict` or `Stream`).
-          const customType = typeof value;
           let customValue;
-          if (customType === "string") {
-            customValue = stringToPDFString(value);
-          } else if (
-            value instanceof Name ||
-            customType === "number" ||
-            customType === "boolean"
-          ) {
-            customValue = value;
-          } else {
-            info(`Unsupported value in document info for (custom) "${key}".`);
-            continue;
+          switch (typeof value) {
+            case "string":
+              customValue = stringToPDFString(value);
+              break;
+            case "number":
+            case "boolean":
+              customValue = value;
+              break;
+            default:
+              if (value instanceof Name) {
+                customValue = value;
+              }
+              break;
           }
 
+          if (customValue === undefined) {
+            warn(`Bad value, for custom key "${key}", in Info: ${value}.`);
+            continue;
+          }
           if (!docInfo.Custom) {
             docInfo.Custom = Object.create(null);
           }
           docInfo.Custom[key] = customValue;
-        }
+          continue;
       }
+      warn(`Bad value, for key "${key}", in Info: ${value}.`);
     }
     return shadow(this, "documentInfo", docInfo);
   }
