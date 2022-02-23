@@ -198,11 +198,14 @@ class Dict {
 
   set(key, value) {
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")) &&
-      value === undefined
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
     ) {
-      unreachable('Dict.set: The "value" cannot be undefined.');
+      if (typeof key !== "string") {
+        unreachable('Dict.set: The "key" must be a string.');
+      } else if (value === undefined) {
+        unreachable('Dict.set: The "value" cannot be undefined.');
+      }
     }
     this._map[key] = value;
   }
