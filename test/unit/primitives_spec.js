@@ -55,6 +55,12 @@ describe("primitives", function () {
       expect(firstEmpty).toBe(secondEmpty);
       expect(firstEmpty).not.toBe(normalName);
     });
+
+    it("should not accept to create a non-string name", function () {
+      expect(function () {
+        Name.get(123);
+      }).toThrow(new Error('Name: The "name" must be a string.'));
+    });
   });
 
   describe("Cmd", function () {
@@ -73,6 +79,12 @@ describe("primitives", function () {
       expect(firstBT).toBe(secondBT);
       expect(firstET).toBe(secondET);
       expect(firstBT).not.toBe(firstET);
+    });
+
+    it("should not accept to create a non-string cmd", function () {
+      expect(function () {
+        Cmd.get(123);
+      }).toThrow(new Error('Cmd: The "cmd" must be a string.'));
     });
   });
 
