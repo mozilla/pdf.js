@@ -24,7 +24,6 @@ import {
   IDENTITY_MATRIX,
   info,
   isArrayEqual,
-  isString,
   OPS,
   shadow,
   stringToPDFString,
@@ -1784,7 +1783,7 @@ class PartialEvaluator {
             var state = stateManager.state;
             for (i = 0; i < arrLength; ++i) {
               const arrItem = arr[i];
-              if (isString(arrItem)) {
+              if (typeof arrItem === "string") {
                 Array.prototype.push.apply(
                   combinedGlyphs,
                   self.handleText(arrItem, state)
@@ -3974,10 +3973,10 @@ class PartialEvaluator {
     let fontName = descriptor.get("FontName");
     let baseFont = dict.get("BaseFont");
     // Some bad PDFs have a string as the font name.
-    if (isString(fontName)) {
+    if (typeof fontName === "string") {
       fontName = Name.get(fontName);
     }
-    if (isString(baseFont)) {
+    if (typeof baseFont === "string") {
       baseFont = Name.get(baseFont);
     }
 
