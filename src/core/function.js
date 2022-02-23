@@ -17,7 +17,6 @@ import { Dict, Ref } from "./primitives.js";
 import {
   FormatError,
   info,
-  isBool,
   IsEvalSupportedCached,
   shadow,
   unreachable,
@@ -627,7 +626,7 @@ class PostScriptEvaluator {
         case "and":
           b = stack.pop();
           a = stack.pop();
-          if (isBool(a) && isBool(b)) {
+          if (typeof a === "boolean" && typeof b === "boolean") {
             stack.push(a && b);
           } else {
             stack.push(a & b);
@@ -751,7 +750,7 @@ class PostScriptEvaluator {
           break;
         case "not":
           a = stack.pop();
-          if (isBool(a)) {
+          if (typeof a === "boolean") {
             stack.push(!a);
           } else {
             stack.push(~a);
@@ -760,7 +759,7 @@ class PostScriptEvaluator {
         case "or":
           b = stack.pop();
           a = stack.pop();
-          if (isBool(a) && isBool(b)) {
+          if (typeof a === "boolean" && typeof b === "boolean") {
             stack.push(a || b);
           } else {
             stack.push(a | b);
@@ -802,7 +801,7 @@ class PostScriptEvaluator {
         case "xor":
           b = stack.pop();
           a = stack.pop();
-          if (isBool(a) && isBool(b)) {
+          if (typeof a === "boolean" && typeof b === "boolean") {
             stack.push(a !== b);
           } else {
             stack.push(a ^ b);
