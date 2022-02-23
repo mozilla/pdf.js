@@ -25,7 +25,6 @@ import {
   DocumentActionEventType,
   FormatError,
   info,
-  isBool,
   isString,
   objectSize,
   PermissionFlag,
@@ -221,7 +220,7 @@ class Catalog {
         continue;
       }
       const value = obj.get(key);
-      if (!isBool(value)) {
+      if (typeof value !== "boolean") {
         continue;
       }
       markInfo[key] = value;
@@ -1521,7 +1520,7 @@ class Catalog {
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
           const newWindow = action.get("NewWindow");
-          if (isBool(newWindow)) {
+          if (typeof newWindow === "boolean") {
             resultObj.newWindow = newWindow;
           }
           break;
