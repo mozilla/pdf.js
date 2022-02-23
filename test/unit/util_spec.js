@@ -21,7 +21,6 @@ import {
   getModificationDate,
   isArrayBuffer,
   isAscii,
-  isBool,
   isSameOrigin,
   isString,
   string32,
@@ -71,22 +70,6 @@ describe("util", function () {
       expect(isArrayBuffer(1)).toEqual(false);
       expect(isArrayBuffer(null)).toEqual(false);
       expect(isArrayBuffer(undefined)).toEqual(false);
-    });
-  });
-
-  describe("isBool", function () {
-    it("handles boolean values", function () {
-      expect(isBool(true)).toEqual(true);
-      expect(isBool(false)).toEqual(true);
-    });
-
-    it("handles non-boolean values", function () {
-      expect(isBool("true")).toEqual(false);
-      expect(isBool("false")).toEqual(false);
-      expect(isBool(1)).toEqual(false);
-      expect(isBool(0)).toEqual(false);
-      expect(isBool(null)).toEqual(false);
-      expect(isBool(undefined)).toEqual(false);
     });
   });
 

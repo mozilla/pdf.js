@@ -1030,10 +1030,6 @@ function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
 }
 
-function isBool(v) {
-  return typeof v === "boolean";
-}
-
 function isString(v) {
   return typeof v === "string";
 }
@@ -1139,7 +1135,6 @@ export {
   isArrayBuffer,
   isArrayEqual,
   isAscii,
-  isBool,
   IsEvalSupportedCached,
   IsLittleEndianCached,
   isSameOrigin,
