@@ -17,7 +17,7 @@
  * Hashes roughly 100 KB per millisecond on i7 3.4 GHz.
  */
 
-import { isArrayBuffer, isString } from "../shared/util.js";
+import { isArrayBuffer } from "../shared/util.js";
 
 const SEED = 0xc3d2e1f0;
 // Workaround for missing math precision in JS.
@@ -32,7 +32,7 @@ class MurmurHash3_64 {
 
   update(input) {
     let data, length;
-    if (isString(input)) {
+    if (typeof input === "string") {
       data = new Uint8Array(input.length * 2);
       length = 0;
       for (let i = 0, ii = input.length; i < ii; i++) {

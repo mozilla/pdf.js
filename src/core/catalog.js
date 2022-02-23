@@ -25,7 +25,6 @@ import {
   DocumentActionEventType,
   FormatError,
   info,
-  isString,
   objectSize,
   PermissionFlag,
   shadow,
@@ -424,12 +423,14 @@ class Catalog {
         const group = this.xref.fetchIfRef(groupRef);
         groups.push({
           id: groupRef.toString(),
-          name: isString(group.get("Name"))
-            ? stringToPDFString(group.get("Name"))
-            : null,
-          intent: isString(group.get("Intent"))
-            ? stringToPDFString(group.get("Intent"))
-            : null,
+          name:
+            typeof group.get("Name") === "string"
+              ? stringToPDFString(group.get("Name"))
+              : null,
+          intent:
+            typeof group.get("Intent") === "string"
+              ? stringToPDFString(group.get("Intent"))
+              : null,
         });
       }
       config = this._readOptionalContentConfig(defaultConfig, groupRefs);
@@ -521,12 +522,14 @@ class Catalog {
       MAX_NESTED_LEVELS = 10;
 
     return {
-      name: isString(config.get("Name"))
-        ? stringToPDFString(config.get("Name"))
-        : null,
-      creator: isString(config.get("Creator"))
-        ? stringToPDFString(config.get("Creator"))
-        : null,
+      name:
+        typeof config.get("Name") === "string"
+          ? stringToPDFString(config.get("Name"))
+          : null,
+      creator:
+        typeof config.get("Creator") === "string"
+          ? stringToPDFString(config.get("Creator"))
+          : null,
       baseState:
         config.get("BaseState") instanceof Name
           ? config.get("BaseState").name
@@ -676,7 +679,7 @@ class Catalog {
 
         if (labelDict.has("P")) {
           const p = labelDict.get("P");
-          if (!isString(p)) {
+          if (typeof p !== "string") {
             throw new FormatError("Invalid prefix in PageLabel dictionary.");
           }
           prefix = stringToPDFString(p);
@@ -1467,7 +1470,7 @@ class Catalog {
           for (const obj of action.get("Fields") || []) {
             if (obj instanceof Ref) {
               refs.push(obj.toString());
-            } else if (isString(obj)) {
+            } else if (typeof obj === "string") {
               fields.push(stringToPDFString(obj));
             }
           }
@@ -1499,7 +1502,7 @@ class Catalog {
             // We assume that we found a FileSpec dictionary
             // and fetch the URL without checking any further.
             url = urlDict.get("F") || null;
-          } else if (isString(urlDict)) {
+          } else if (typeof urlDict === "string") {
             url = urlDict;
           }
 
@@ -1509,9 +1512,9 @@ class Catalog {
             if (remoteDest instanceof Name) {
               remoteDest = remoteDest.name;
             }
-            if (isString(url)) {
+            if (typeof url === "string") {
               const baseUrl = url.split("#")[0];
-              if (isString(remoteDest)) {
+              if (typeof remoteDest === "string") {
                 url = baseUrl + "#" + remoteDest;
               } else if (Array.isArray(remoteDest)) {
                 url = baseUrl + "#" + JSON.stringify(remoteDest);
@@ -1538,7 +1541,7 @@ class Catalog {
 
           if (jsAction instanceof BaseStream) {
             js = jsAction.getString();
-          } else if (isString(jsAction)) {
+          } else if (typeof jsAction === "string") {
             js = jsAction;
           }
 
@@ -1563,7 +1566,7 @@ class Catalog {
       dest = destDict.get("Dest");
     }
 
-    if (isString(url)) {
+    if (typeof url === "string") {
       const absoluteUrl = createValidAbsoluteUrl(url, docBaseUrl, {
         addDefaultProtocol: true,
         tryConvertEncoding: true,
@@ -1577,7 +1580,7 @@ class Catalog {
       if (dest instanceof Name) {
         dest = dest.name;
       }
-      if (isString(dest) || Array.isArray(dest)) {
+      if (typeof dest === "string" || Array.isArray(dest)) {
         resultObj.dest = dest;
       }
     }

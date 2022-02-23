@@ -22,7 +22,6 @@ import {
   isArrayBuffer,
   isAscii,
   isSameOrigin,
-  isString,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -70,20 +69,6 @@ describe("util", function () {
       expect(isArrayBuffer(1)).toEqual(false);
       expect(isArrayBuffer(null)).toEqual(false);
       expect(isArrayBuffer(undefined)).toEqual(false);
-    });
-  });
-
-  describe("isString", function () {
-    it("handles string values", function () {
-      expect(isString("foo")).toEqual(true);
-      expect(isString("")).toEqual(true);
-    });
-
-    it("handles non-string values", function () {
-      expect(isString(true)).toEqual(false);
-      expect(isString(1)).toEqual(false);
-      expect(isString(null)).toEqual(false);
-      expect(isString(undefined)).toEqual(false);
     });
   });
 
