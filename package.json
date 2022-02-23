@@ -10,7 +10,7 @@
     "acorn": "^6.4.0",
     "autoprefixer": "^9.7.3",
     "babel-loader": "^8.0.6",
-    "canvas": "^2.6.1",
+    "canvas": "^2.9.0",
     "core-js": "^3.6.1",
     "escodegen": "^1.12.0",
     "eslint": "^6.8.0",
