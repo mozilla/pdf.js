@@ -6142,6 +6142,18 @@
       "forms": true,
       "lastPage": 1
     },
+    {
+      "id": "issue12716-hidpi",
+      "file": "pdfs/issue12716.pdf",
+      "md5": "9bdc9c552bcfccd629f5f97385e79ca5",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "forms": true,
+      "lastPage": 1,
+      "outputScale": 2,
+      "about": "This tests draws to another canvas for the button, so it's a good test to ensure output scale is working."
+    },
     {  "id": "xfa_issue13500",
        "file": "pdfs/xfa_issue13500.pdf",
        "md5": "b81274a19f5a95c1466db3648f1be491",

@@ -228,10 +228,15 @@ window.onload = function () {
         });
         continue;
       }
-      match = line.match(/^ {2}IMAGE[^:]*: (.*)$/);
+      match = line.match(/^ {2}IMAGE[^:]*\((\d+)x(\d+)x(\d+)\): (.*)$/);
       if (match) {
         const item = gTestItems[gTestItems.length - 1];
-        item.images.push(match[1]);
+        item.images.push({
+          width: parseFloat(match[1]),
+          height: parseFloat(match[2]),
+          outputScale: parseFloat(match[3]),
+          file: match[4],
+        });
       }
     }
     buildViewer();
@@ -335,16 +340,31 @@ window.onload = function () {
     const cell = ID("images");
 
     ID("image1").style.display = "";
+    const scale = item.images[0].outputScale / window.devicePixelRatio;
+    ID("image1").setAttribute("width", item.images[0].width * scale);
+    ID("image1").setAttribute("height", item.images[0].height * scale);
+
+    ID("svg").setAttribute("width", item.images[0].width * scale);
+    ID("svg").setAttribute("height", item.images[0].height * scale);
+
     ID("image2").style.display = "none";
+    if (item.images[1]) {
+      ID("image2").setAttribute("width", item.images[1].width * scale);
+      ID("image2").setAttribute("height", item.images[1].height * scale);
+    }
     ID("diffrect").style.display = "none";
     ID("imgcontrols").reset();
 
-    ID("image1").setAttributeNS(XLINK_NS, "xlink:href", gPath + item.images[0]);
+    ID("image1").setAttributeNS(
+      XLINK_NS,
+      "xlink:href",
+      gPath + item.images[0].file
+    );
     // Making the href be #image1 doesn't seem to work
     ID("feimage1").setAttributeNS(
       XLINK_NS,
       "xlink:href",
-      gPath + item.images[0]
+      gPath + item.images[0].file
     );
     if (item.images.length === 1) {
       ID("imgcontrols").style.display = "none";
@@ -353,28 +373,22 @@ window.onload = function () {
       ID("image2").setAttributeNS(
         XLINK_NS,
         "xlink:href",
-        gPath + item.images[1]
+        gPath + item.images[1].file
       );
       // Making the href be #image2 doesn't seem to work
       ID("feimage2").setAttributeNS(
         XLINK_NS,
         "xlink:href",
-        gPath + item.images[1]
+        gPath + item.images[1].file
       );
     }
     cell.style.display = "";
-    getImageData(item.images[0], function (data) {
+    getImageData(item.images[0].file, function (data) {
       gImage1Data = data;
-      syncSVGSize(gImage1Data);
     });
-    getImageData(item.images[1], function (data) {
+    getImageData(item.images[1].file, function (data) {
       gImage2Data = data;
     });
-  }
-
-  function syncSVGSize(imageData) {
-    ID("svg").setAttribute("width", imageData.width);
-    ID("svg").setAttribute("height", imageData.height);
   }
 
   function showImage(i) {
@@ -414,7 +428,7 @@ window.onload = function () {
   }
 
   function canvasPixelAsHex(data, x, y) {
-    const offset = (y * data.width + x) * 4;
+    const offset = (y * data.width + x) * 4 * window.devicePixelRatio;
     const r = data.data[offset];
     const g = data.data[offset + 1];
     const b = data.data[offset + 2];

@@ -61,7 +61,7 @@ function loadStyles(styles) {
   return Promise.all(promises);
 }
 
-function writeSVG(svgElement, ctx) {
+function writeSVG(svgElement, ctx, outputScale) {
   // We need to have UTF-8 encoded XML.
   const svg_xml = unescape(
     encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
@@ -104,7 +104,7 @@ function inlineImages(images) {
   return Promise.all(imagePromises);
 }
 
-async function convertCanvasesToImages(annotationCanvasMap) {
+async function convertCanvasesToImages(annotationCanvasMap, outputScale) {
   const results = new Map();
   const promises = [];
   for (const [key, canvas] of annotationCanvasMap) {
@@ -112,7 +112,10 @@ async function convertCanvasesToImages(annotationCanvasMap) {
       new Promise(resolve => {
         canvas.toBlob(blob => {
           const image = document.createElement("img");
-          image.onload = resolve;
+          image.onload = function () {
+            image.style.width = Math.floor(image.width / outputScale) + "px";
+            resolve();
+          };
           results.set(key, image);
           image.src = URL.createObjectURL(blob);
         });
@@ -200,6 +203,7 @@ class Rasterize {
   static async annotationLayer(
     ctx,
     viewport,
+    outputScale,
     annotations,
     annotationCanvasMap,
     page,
@@ -215,7 +219,8 @@ class Rasterize {
 
       const annotationViewport = viewport.clone({ dontFlip: true });
       const annotationImageMap = await convertCanvasesToImages(
-        annotationCanvasMap
+        annotationCanvasMap,
+        outputScale
       );
 
       // Rendering annotation layer as HTML.
@@ -608,12 +613,37 @@ class Driver {
         ctx = this.canvas.getContext("2d", { alpha: false });
         task.pdfDoc.getPage(task.pageNum).then(
           page => {
-            const viewport = page.getViewport({
+            // Default to creating the test images at the devices pixel ratio,
+            // unless the test explicitly specifies an output scale.
+            const outputScale = task.outputScale || window.devicePixelRatio;
+            let viewport = page.getViewport({
               scale: PixelsPerInch.PDF_TO_CSS_UNITS,
             });
-            this.canvas.width = viewport.width;
-            this.canvas.height = viewport.height;
+            // Restrict the test from creating a canvas that is too big.
+            const MAX_CANVAS_PIXEL_DIMENSION = 4096;
+            const largestDimension = Math.max(viewport.width, viewport.height);
+            if (
+              Math.floor(largestDimension * outputScale) >
+              MAX_CANVAS_PIXEL_DIMENSION
+            ) {
+              const rescale = MAX_CANVAS_PIXEL_DIMENSION / largestDimension;
+              viewport = viewport.clone({
+                scale: PixelsPerInch.PDF_TO_CSS_UNITS * rescale,
+              });
+            }
+            const pixelWidth = Math.floor(viewport.width * outputScale);
+            const pixelHeight = Math.floor(viewport.height * outputScale);
+            task.viewportWidth = Math.floor(viewport.width);
+            task.viewportHeight = Math.floor(viewport.height);
+            task.outputScale = outputScale;
+            this.canvas.width = pixelWidth;
+            this.canvas.height = pixelHeight;
+            this.canvas.style.width = Math.floor(viewport.width) + "px";
+            this.canvas.style.height = Math.floor(viewport.height) + "px";
             this._clearCanvas();
+
+            const transform =
+              outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
 
             // Initialize various `eq` test subtypes, see comment below.
             let renderAnnotations = false,
@@ -639,8 +669,8 @@ class Driver {
                 textLayerCanvas = document.createElement("canvas");
                 this.textLayerCanvas = textLayerCanvas;
               }
-              textLayerCanvas.width = viewport.width;
-              textLayerCanvas.height = viewport.height;
+              textLayerCanvas.width = pixelWidth;
+              textLayerCanvas.height = pixelHeight;
               const textLayerContext = textLayerCanvas.getContext("2d");
               textLayerContext.clearRect(
                 0,
@@ -648,6 +678,7 @@ class Driver {
                 textLayerCanvas.width,
                 textLayerCanvas.height
               );
+              textLayerContext.scale(outputScale, outputScale);
               const enhanceText = !!task.enhance;
               // The text builder will draw its content on the test canvas
               initPromise = page
@@ -679,8 +710,8 @@ class Driver {
                   annotationLayerCanvas = document.createElement("canvas");
                   this.annotationLayerCanvas = annotationLayerCanvas;
                 }
-                annotationLayerCanvas.width = viewport.width;
-                annotationLayerCanvas.height = viewport.height;
+                annotationLayerCanvas.width = pixelWidth;
+                annotationLayerCanvas.height = pixelHeight;
                 annotationLayerContext = annotationLayerCanvas.getContext("2d");
                 annotationLayerContext.clearRect(
                   0,
@@ -688,6 +719,7 @@ class Driver {
                   annotationLayerCanvas.width,
                   annotationLayerCanvas.height
                 );
+                annotationLayerContext.scale(outputScale, outputScale);
 
                 if (!renderXfa) {
                   // The annotation builder will draw its content
@@ -716,6 +748,7 @@ class Driver {
               viewport,
               optionalContentConfigPromise: task.optionalContentConfigPromise,
               annotationCanvasMap,
+              transform,
             };
             if (renderForms) {
               renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
@@ -732,7 +765,7 @@ class Driver {
                 ctx.save();
                 ctx.globalCompositeOperation = "screen";
                 ctx.fillStyle = "rgb(128, 255, 128)"; // making it green
-                ctx.fillRect(0, 0, viewport.width, viewport.height);
+                ctx.fillRect(0, 0, pixelWidth, pixelHeight);
                 ctx.restore();
                 ctx.drawImage(textLayerCanvas, 0, 0);
               }
@@ -762,6 +795,7 @@ class Driver {
                     Rasterize.annotationLayer(
                       annotationLayerContext,
                       viewport,
+                      outputScale,
                       data,
                       annotationCanvasMap,
                       page,
@@ -871,6 +905,9 @@ class Driver {
       page: task.pageNum,
       snapshot,
       stats: task.stats.times,
+      viewportWidth: task.viewportWidth,
+      viewportHeight: task.viewportHeight,
+      outputScale: task.outputScale,
     });
     this._send("/submit_task_results", result, callback);
   }
