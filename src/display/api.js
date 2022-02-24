@@ -2848,7 +2848,7 @@ class WorkerTransport {
       pageNumber <= 0 ||
       pageNumber > this._numPages
     ) {
-      return Promise.reject(new Error("Invalid page request"));
+      return Promise.reject(new Error("Invalid page request."));
     }
 
     const pageIndex = pageNumber - 1,
