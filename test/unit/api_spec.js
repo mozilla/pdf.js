@@ -815,40 +815,23 @@ describe("api", function () {
     });
 
     it("gets non-existent page", async function () {
-      let outOfRangePromise = pdfDocument.getPage(100);
-      let nonIntegerPromise = pdfDocument.getPage(2.5);
-      let nonNumberPromise = pdfDocument.getPage("1");
+      const pageNumbers = [
+        /* outOfRange = */ 100,
+        /* nonInteger = */ 2.5,
+        /* nonNumber = */ "1",
+      ];
 
-      outOfRangePromise = outOfRangePromise.then(
-        function () {
-          throw new Error("shall fail for out-of-range pageNumber parameter");
-        },
-        function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-        }
-      );
-      nonIntegerPromise = nonIntegerPromise.then(
-        function () {
-          throw new Error("shall fail for non-integer pageNumber parameter");
-        },
-        function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-        }
-      );
-      nonNumberPromise = nonNumberPromise.then(
-        function () {
-          throw new Error("shall fail for non-number pageNumber parameter");
-        },
-        function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-        }
-      );
+      for (const pageNumber of pageNumbers) {
+        try {
+          await pdfDocument.getPage(pageNumber);
 
-      await Promise.all([
-        outOfRangePromise,
-        nonIntegerPromise,
-        nonNumberPromise,
-      ]);
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        } catch (reason) {
+          expect(reason instanceof Error).toEqual(true);
+          expect(reason.message).toEqual("Invalid page request.");
+        }
+      }
     });
 
     it("gets page, from /Pages tree with circular reference", async function () {
