@@ -850,11 +850,6 @@ class Driver {
     // Send the quit request
     const r = new XMLHttpRequest();
     r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
-    r.onreadystatechange = function (e) {
-      if (r.readyState === 4) {
-        window.close();
-      }
-    };
     r.send(null);
   }
 
