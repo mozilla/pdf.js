@@ -75,13 +75,21 @@ a {
   width: 320px;
 }
 
-#images {
-  overflow: auto;
+#imagepane {
   position: fixed;
   left: 340px;
   right: 0;
   top: 10px;
   bottom: 0;
+}
+
+#images {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22px;
+  bottom: 0;
+  overflow: auto;
 }
 
 #imgcontrols {
@@ -178,4 +186,9 @@ a {
 #referenceImage,
 #differences {
   margin: 0 0 10px 20px;
+}
+
+#shortcuts {
+  float: right;
+  font-size: 10px;
 }
