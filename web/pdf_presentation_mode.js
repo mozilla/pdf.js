@@ -63,28 +63,19 @@ class PDFPresentationMode {
    * @returns {boolean} Indicating if the request was successful.
    */
   request() {
-    if (this.switchInProgress || this.active || !this.pdfViewer.pagesCount) {
+    if (
+      this.switchInProgress ||
+      this.active ||
+      !this.pdfViewer.pagesCount ||
+      !this.container.requestFullscreen
+    ) {
       return false;
     }
     this.#addFullscreenChangeListeners();
     this.#setSwitchInProgress();
     this.#notifyStateChange();
 
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      if (this.container.requestFullscreen) {
-        this.container.requestFullscreen();
-      } else {
-        return false;
-      }
-    } else {
-      if (this.container.requestFullscreen) {
-        this.container.requestFullscreen();
-      } else if (this.container.webkitRequestFullscreen) {
-        this.container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-      } else {
-        return false;
-      }
-    }
+    this.container.requestFullscreen();
 
     this.args = {
       pageNumber: this.pdfViewer.currentPageNumber,
@@ -92,7 +83,6 @@ class PDFPresentationMode {
       scrollMode: this.pdfViewer.scrollMode,
       spreadMode: this.pdfViewer.spreadMode,
     };
-
     return true;
   }
 
@@ -134,13 +124,6 @@ class PDFPresentationMode {
         this.mouseScrollTimeStamp = currentTime;
       }
     }
-  }
-
-  get isFullscreen() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      return !!document.fullscreenElement;
-    }
-    return !!(document.fullscreenElement || document.webkitIsFullScreen);
   }
 
   #notifyStateChange() {
@@ -386,7 +369,7 @@ class PDFPresentationMode {
   }
 
   #fullscreenChange() {
-    if (this.isFullscreen) {
+    if (/* isFullscreen = */ document.fullscreenElement) {
       this.#enter();
     } else {
       this.#exit();
@@ -395,25 +378,11 @@ class PDFPresentationMode {
 
   #addFullscreenChangeListeners() {
     this.fullscreenChangeBind = this.#fullscreenChange.bind(this);
-
     window.addEventListener("fullscreenchange", this.fullscreenChangeBind);
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      window.addEventListener(
-        "webkitfullscreenchange",
-        this.fullscreenChangeBind
-      );
-    }
   }
 
   #removeFullscreenChangeListeners() {
     window.removeEventListener("fullscreenchange", this.fullscreenChangeBind);
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      window.removeEventListener(
-        "webkitfullscreenchange",
-        this.fullscreenChangeBind
-      );
-    }
-
     delete this.fullscreenChangeBind;
   }
 }
