@@ -337,9 +337,6 @@ class JpxImage {
             if (cod.selectiveArithmeticCodingBypass) {
               unsupported.push("selectiveArithmeticCodingBypass");
             }
-            if (cod.resetContextProbabilities) {
-              unsupported.push("resetContextProbabilities");
-            }
             if (cod.terminationOnEachCodingPass) {
               unsupported.push("terminationOnEachCodingPass");
             }
@@ -1290,7 +1287,8 @@ function copyCoefficients(
   delta,
   mb,
   reversible,
-  segmentationSymbolUsed
+  segmentationSymbolUsed,
+  resetContextProbabilities
 ) {
   const x0 = subband.tbx0;
   const y0 = subband.tby0;
@@ -1356,6 +1354,11 @@ function copyCoefficients(
           }
           break;
       }
+
+      if (resetContextProbabilities) {
+        bitModel.reset();
+      }
+
       currentCodingpassType = (currentCodingpassType + 1) % 3;
     }
 
@@ -1404,6 +1407,8 @@ function transformTile(context, tile, c) {
   const scalarExpounded = quantizationParameters.scalarExpounded;
   const guardBits = quantizationParameters.guardBits;
   const segmentationSymbolUsed = codingStyleParameters.segmentationSymbolUsed;
+  const resetContextProbabilities =
+    codingStyleParameters.resetContextProbabilities;
   const precision = context.components[c].precision;
 
   const reversible = codingStyleParameters.reversibleTransformation;
@@ -1455,7 +1460,8 @@ function transformTile(context, tile, c) {
         delta,
         mb,
         reversible,
-        segmentationSymbolUsed
+        segmentationSymbolUsed,
+        resetContextProbabilities
       );
     }
     subbandCoefficients.push({
