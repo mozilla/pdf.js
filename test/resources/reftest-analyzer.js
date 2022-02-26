@@ -336,6 +336,7 @@ window.onload = function () {
     }
     gSelected = i;
     ID("url" + gSelected).classList.add("selected");
+    ID("url" + gSelected).scrollIntoView();
     const item = gTestItems[i];
     const cell = ID("images");
 
