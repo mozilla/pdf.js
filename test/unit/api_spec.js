@@ -815,40 +815,23 @@ describe("api", function () {
     });
 
     it("gets non-existent page", async function () {
-      let outOfRangePromise = pdfDocument.getPage(100);
-      let nonIntegerPromise = pdfDocument.getPage(2.5);
-      let nonNumberPromise = pdfDocument.getPage("1");
+      const pageNumbers = [
+        /* outOfRange = */ 100,
+        /* nonInteger = */ 2.5,
+        /* nonNumber = */ "1",
+      ];
 
-      outOfRangePromise = outOfRangePromise.then(
-        function () {
-          throw new Error("shall fail for out-of-range pageNumber parameter");
-        },
-        function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-        }
-      );
-      nonIntegerPromise = nonIntegerPromise.then(
-        function () {
-          throw new Error("shall fail for non-integer pageNumber parameter");
-        },
-        function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-        }
-      );
-      nonNumberPromise = nonNumberPromise.then(
-        function () {
-          throw new Error("shall fail for non-number pageNumber parameter");
-        },
-        function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-        }
-      );
+      for (const pageNumber of pageNumbers) {
+        try {
+          await pdfDocument.getPage(pageNumber);
 
-      await Promise.all([
-        outOfRangePromise,
-        nonIntegerPromise,
-        nonNumberPromise,
-      ]);
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        } catch (reason) {
+          expect(reason instanceof Error).toEqual(true);
+          expect(reason.message).toEqual("Invalid page request.");
+        }
+      }
     });
 
     it("gets page, from /Pages tree with circular reference", async function () {
@@ -907,18 +890,35 @@ describe("api", function () {
     });
 
     it("gets invalid page index", async function () {
-      const ref = { num: 3, gen: 0 }; // Reference to a font dictionary.
+      const pageRefs = [
+        /* fontRef = */ { num: 3, gen: 0 },
+        /* invalidRef = */ { num: -1, gen: 0 },
+        /* nonRef = */ "qwerty",
+        /* nullRef = */ null,
+      ];
 
-      try {
-        await pdfDocument.getPageIndex(ref);
+      const expectedErrors = [
+        {
+          exception: UnknownErrorException,
+          message: "The reference does not point to a /Page dictionary.",
+        },
+        { exception: Error, message: "Invalid pageIndex request." },
+        { exception: Error, message: "Invalid pageIndex request." },
+        { exception: Error, message: "Invalid pageIndex request." },
+      ];
 
-        // Shouldn't get here.
-        expect(false).toEqual(true);
-      } catch (reason) {
-        expect(reason instanceof UnknownErrorException).toEqual(true);
-        expect(reason.message).toEqual(
-          "The reference does not point to a /Page dictionary."
-        );
+      for (let i = 0, ii = pageRefs.length; i < ii; i++) {
+        try {
+          await pdfDocument.getPageIndex(pageRefs[i]);
+
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        } catch (reason) {
+          const { exception, message } = expectedErrors[i];
+
+          expect(reason instanceof exception).toEqual(true);
+          expect(reason.message).toEqual(message);
+        }
       }
     });
 
