@@ -14,7 +14,7 @@
  */
 
 import { Dict, isName, Name, Ref } from "./primitives.js";
-import { isString, stringToPDFString, warn } from "../shared/util.js";
+import { stringToPDFString, warn } from "../shared/util.js";
 import { NumberTree } from "./name_number_tree.js";
 
 const MAX_DEPTH = 40;
@@ -295,11 +295,11 @@ class StructTreePage {
       obj.children = [];
       parent.children.push(obj);
       const alt = node.dict.get("Alt");
-      if (isString(alt)) {
+      if (typeof alt === "string") {
         obj.alt = stringToPDFString(alt);
       }
       const lang = node.dict.get("Lang");
-      if (isString(lang)) {
+      if (typeof lang === "string") {
         obj.lang = stringToPDFString(lang);
       }
 

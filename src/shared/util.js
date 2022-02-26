@@ -1030,10 +1030,6 @@ function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
 }
 
-function isString(v) {
-  return typeof v === "string";
-}
-
 function isArrayBuffer(v) {
   return typeof v === "object" && v !== null && v.byteLength !== undefined;
 }
@@ -1138,7 +1134,6 @@ export {
   IsEvalSupportedCached,
   IsLittleEndianCached,
   isSameOrigin,
-  isString,
   MissingPDFException,
   objectFromMap,
   objectSize,
