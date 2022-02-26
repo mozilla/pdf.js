@@ -16,7 +16,6 @@
 import {
   CMapCompressionType,
   FormatError,
-  isString,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -767,7 +766,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   }
 
   function expectString(obj) {
-    if (!isString(obj)) {
+    if (typeof obj !== "string") {
       throw new FormatError("Malformed CMap: expected string.");
     }
   }
@@ -812,7 +811,7 @@ const CMapFactory = (function CMapFactoryClosure() {
       expectString(obj);
       const high = strToInt(obj);
       obj = lexer.getObj();
-      if (Number.isInteger(obj) || isString(obj)) {
+      if (Number.isInteger(obj) || typeof obj === "string") {
         const dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
         cMap.mapBfRange(low, high, dstLow);
       } else if (isCmd(obj, "[")) {
@@ -878,12 +877,12 @@ const CMapFactory = (function CMapFactoryClosure() {
       if (isCmd(obj, "endcodespacerange")) {
         return;
       }
-      if (!isString(obj)) {
+      if (typeof obj !== "string") {
         break;
       }
       const low = strToInt(obj);
       obj = lexer.getObj();
-      if (!isString(obj)) {
+      if (typeof obj !== "string") {
         break;
       }
       const high = strToInt(obj);

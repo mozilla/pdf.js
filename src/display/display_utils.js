@@ -19,13 +19,7 @@ import {
   BaseStandardFontDataFactory,
   BaseSVGFactory,
 } from "./base_factory.js";
-import {
-  BaseException,
-  isString,
-  stringToBytes,
-  Util,
-  warn,
-} from "../shared/util.js";
+import { BaseException, stringToBytes, Util, warn } from "../shared/util.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -482,7 +476,7 @@ class PDFDateString {
    * @returns {Date|null}
    */
   static toDateObject(input) {
-    if (!input || !isString(input)) {
+    if (!input || typeof input !== "string") {
       return null;
     }
 
