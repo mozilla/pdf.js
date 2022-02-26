@@ -108,7 +108,7 @@ Note that we only mention the most relevant files and folders.
 │   ├── interfaces.js                      - interface definitions for the core/display layers
 │   ├── pdf.*.js                           - wrapper files for bundling
 │   └── worker_loader.js                   - used for developer builds to load worker files
-├── test/                                  - unit, font and reference tests
+├── test/                                  - unit, font, reference, and integration tests
 ├── web/                                   - viewer layer
 ├── LICENSE
 ├── README.md

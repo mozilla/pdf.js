@@ -1373,7 +1373,7 @@ gulp.task("jsdoc", function (done) {
   console.log();
   console.log("### Generating documentation (JSDoc)");
 
-  const JSDOC_FILES = ["src/doc_helper.js", "src/display/api.js"];
+  const JSDOC_FILES = ["src/display/api.js"];
 
   rimraf(JSDOC_BUILD_DIR, function () {
     mkdirp(JSDOC_BUILD_DIR).then(function () {
