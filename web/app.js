@@ -671,14 +671,7 @@ const PDFViewerApplication = {
   },
 
   get supportsFullscreen() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
-    }
-    return shadow(
-      this,
-      "supportsFullscreen",
-      document.fullscreenEnabled || document.webkitFullscreenEnabled
-    );
+    return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
   },
 
   get supportsIntegratedFind() {
