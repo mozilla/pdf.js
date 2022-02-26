@@ -24,6 +24,13 @@ const Name = (function NameClosure() {
   // eslint-disable-next-line no-shadow
   class Name {
     constructor(name) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        typeof name !== "string"
+      ) {
+        unreachable('Name: The "name" must be a string.');
+      }
       this.name = name;
     }
 
@@ -47,6 +54,13 @@ const Cmd = (function CmdClosure() {
   // eslint-disable-next-line no-shadow
   class Cmd {
     constructor(cmd) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        typeof cmd !== "string"
+      ) {
+        unreachable('Cmd: The "cmd" must be a string.');
+      }
       this.cmd = cmd;
     }
 

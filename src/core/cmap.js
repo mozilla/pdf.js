@@ -901,7 +901,7 @@ const CMapFactory = (function CMapFactoryClosure() {
 
   function parseCMapName(cMap, lexer) {
     const obj = lexer.getObj();
-    if (obj instanceof Name && isString(obj.name)) {
+    if (obj instanceof Name) {
       cMap.name = obj.name;
     }
   }
