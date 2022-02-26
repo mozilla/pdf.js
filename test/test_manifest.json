@@ -4922,6 +4922,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "jpx-resetContextProbabilities",
+       "file": "pdfs/jp2k-resetprob.pdf",
+       "md5": "fc9fb23e0a08d985b70cfb32fa9e9ca1",
+       "rounds": 1,
+       "type": "eq",
+       "about": "Fixes one part of bug 1731483."
+    },
     {  "id": "bug1140761",
        "file": "pdfs/bug1140761.pdf",
        "md5": "b74eced7634d4f248dc6265f8225d432",
