@@ -21,7 +21,6 @@ import {
   getVerbosityLevel,
   info,
   InvalidPDFException,
-  isString,
   MissingPDFException,
   PasswordException,
   setVerbosityLevel,
@@ -489,8 +488,8 @@ class WorkerMessageHandler {
       });
     });
 
-    handler.on("GetPageIndex", function wphSetupGetPageIndex({ ref }) {
-      const pageRef = Ref.get(ref.num, ref.gen);
+    handler.on("GetPageIndex", function wphSetupGetPageIndex(data) {
+      const pageRef = Ref.get(data.num, data.gen);
       return pdfManager.ensureCatalog("getPageIndex", [pageRef]);
     });
 
@@ -673,7 +672,7 @@ class WorkerMessageHandler {
             const xrefInfo = xref.trailer.get("Info") || null;
             if (xrefInfo instanceof Dict) {
               xrefInfo.forEach((key, value) => {
-                if (isString(key) && isString(value)) {
+                if (typeof value === "string") {
                   infoObj[key] = stringToPDFString(value);
                 }
               });

@@ -22,7 +22,7 @@ import {
   PasswordException,
   UnexpectedResponseException,
   UnknownErrorException,
-  warn,
+  unreachable,
 } from "./util.js";
 
 const CallbackKind = {
@@ -50,16 +50,9 @@ function wrapReason(reason) {
       (typeof reason === "object" && reason !== null)
     )
   ) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
-      throw new Error(
-        'wrapReason: Expected "reason" to be a (possibly cloned) Error.'
-      );
-    }
-    warn('wrapReason: Expected "reason" to be a (possibly cloned) Error.');
-    return reason;
+    unreachable(
+      'wrapReason: Expected "reason" to be a (possibly cloned) Error.'
+    );
   }
   switch (reason.name) {
     case "AbortException":

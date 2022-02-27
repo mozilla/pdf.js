@@ -2892,7 +2892,7 @@ class WorkerTransport {
       pageNumber <= 0 ||
       pageNumber > this._numPages
     ) {
-      return Promise.reject(new Error("Invalid page request"));
+      return Promise.reject(new Error("Invalid page request."));
     }
 
     const pageIndex = pageNumber - 1,
@@ -2923,8 +2923,19 @@ class WorkerTransport {
   }
 
   getPageIndex(ref) {
+    if (
+      typeof ref !== "object" ||
+      ref === null ||
+      !Number.isInteger(ref.num) ||
+      ref.num < 0 ||
+      !Number.isInteger(ref.gen) ||
+      ref.gen < 0
+    ) {
+      return Promise.reject(new Error("Invalid pageIndex request."));
+    }
     return this.messageHandler.sendWithPromise("GetPageIndex", {
-      ref,
+      num: ref.num,
+      gen: ref.gen,
     });
   }
 

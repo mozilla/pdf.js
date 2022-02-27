@@ -25,9 +25,6 @@ import {
   DocumentActionEventType,
   FormatError,
   info,
-  isBool,
-  isNum,
-  isString,
   objectSize,
   PermissionFlag,
   shadow,
@@ -222,7 +219,7 @@ class Catalog {
         continue;
       }
       const value = obj.get(key);
-      if (!isBool(value)) {
+      if (typeof value !== "boolean") {
         continue;
       }
       markInfo[key] = value;
@@ -381,7 +378,7 @@ class Catalog {
     }
 
     let flags = encrypt.get("P");
-    if (!isNum(flags)) {
+    if (typeof flags !== "number") {
       return null;
     }
 
@@ -426,12 +423,14 @@ class Catalog {
         const group = this.xref.fetchIfRef(groupRef);
         groups.push({
           id: groupRef.toString(),
-          name: isString(group.get("Name"))
-            ? stringToPDFString(group.get("Name"))
-            : null,
-          intent: isString(group.get("Intent"))
-            ? stringToPDFString(group.get("Intent"))
-            : null,
+          name:
+            typeof group.get("Name") === "string"
+              ? stringToPDFString(group.get("Name"))
+              : null,
+          intent:
+            typeof group.get("Intent") === "string"
+              ? stringToPDFString(group.get("Intent"))
+              : null,
         });
       }
       config = this._readOptionalContentConfig(defaultConfig, groupRefs);
@@ -523,12 +522,14 @@ class Catalog {
       MAX_NESTED_LEVELS = 10;
 
     return {
-      name: isString(config.get("Name"))
-        ? stringToPDFString(config.get("Name"))
-        : null,
-      creator: isString(config.get("Creator"))
-        ? stringToPDFString(config.get("Creator"))
-        : null,
+      name:
+        typeof config.get("Name") === "string"
+          ? stringToPDFString(config.get("Name"))
+          : null,
+      creator:
+        typeof config.get("Creator") === "string"
+          ? stringToPDFString(config.get("Creator"))
+          : null,
       baseState:
         config.get("BaseState") instanceof Name
           ? config.get("BaseState").name
@@ -678,7 +679,7 @@ class Catalog {
 
         if (labelDict.has("P")) {
           const p = labelDict.get("P");
-          if (!isString(p)) {
+          if (typeof p !== "string") {
             throw new FormatError("Invalid prefix in PageLabel dictionary.");
           }
           prefix = stringToPDFString(p);
@@ -777,44 +778,30 @@ class Catalog {
   }
 
   get viewerPreferences() {
-    const ViewerPreferencesValidators = {
-      HideToolbar: isBool,
-      HideMenubar: isBool,
-      HideWindowUI: isBool,
-      FitWindow: isBool,
-      CenterWindow: isBool,
-      DisplayDocTitle: isBool,
-      NonFullScreenPageMode: isName,
-      Direction: isName,
-      ViewArea: isName,
-      ViewClip: isName,
-      PrintArea: isName,
-      PrintClip: isName,
-      PrintScaling: isName,
-      Duplex: isName,
-      PickTrayByPDFSize: isBool,
-      PrintPageRange: Array.isArray,
-      NumCopies: Number.isInteger,
-    };
-
     const obj = this._catDict.get("ViewerPreferences");
+    if (!(obj instanceof Dict)) {
+      return shadow(this, "viewerPreferences", null);
+    }
     let prefs = null;
 
-    if (obj instanceof Dict) {
-      for (const key in ViewerPreferencesValidators) {
-        if (!obj.has(key)) {
-          continue;
-        }
-        const value = obj.get(key);
-        // Make sure the (standard) value conforms to the specification.
-        if (!ViewerPreferencesValidators[key](value)) {
-          info(`Bad value in ViewerPreferences for "${key}".`);
-          continue;
-        }
-        let prefValue;
+    for (const key of obj.getKeys()) {
+      const value = obj.get(key);
+      let prefValue;
 
-        switch (key) {
-          case "NonFullScreenPageMode":
+      switch (key) {
+        case "HideToolbar":
+        case "HideMenubar":
+        case "HideWindowUI":
+        case "FitWindow":
+        case "CenterWindow":
+        case "DisplayDocTitle":
+        case "PickTrayByPDFSize":
+          if (typeof value === "boolean") {
+            prefValue = value;
+          }
+          break;
+        case "NonFullScreenPageMode":
+          if (value instanceof Name) {
             switch (value.name) {
               case "UseNone":
               case "UseOutlines":
@@ -825,8 +812,10 @@ class Catalog {
               default:
                 prefValue = "UseNone";
             }
-            break;
-          case "Direction":
+          }
+          break;
+        case "Direction":
+          if (value instanceof Name) {
             switch (value.name) {
               case "L2R":
               case "R2L":
@@ -835,11 +824,13 @@ class Catalog {
               default:
                 prefValue = "L2R";
             }
-            break;
-          case "ViewArea":
-          case "ViewClip":
-          case "PrintArea":
-          case "PrintClip":
+          }
+          break;
+        case "ViewArea":
+        case "ViewClip":
+        case "PrintArea":
+        case "PrintClip":
+          if (value instanceof Name) {
             switch (value.name) {
               case "MediaBox":
               case "CropBox":
@@ -851,8 +842,10 @@ class Catalog {
               default:
                 prefValue = "CropBox";
             }
-            break;
-          case "PrintScaling":
+          }
+          break;
+        case "PrintScaling":
+          if (value instanceof Name) {
             switch (value.name) {
               case "None":
               case "AppDefault":
@@ -861,8 +854,10 @@ class Catalog {
               default:
                 prefValue = "AppDefault";
             }
-            break;
-          case "Duplex":
+          }
+          break;
+        case "Duplex":
+          if (value instanceof Name) {
             switch (value.name) {
               case "Simplex":
               case "DuplexFlipShortEdge":
@@ -872,13 +867,11 @@ class Catalog {
               default:
                 prefValue = "None";
             }
-            break;
-          case "PrintPageRange":
-            const length = value.length;
-            if (length % 2 !== 0) {
-              // The number of elements must be even.
-              break;
-            }
+          }
+          break;
+        case "PrintPageRange":
+          // The number of elements must be even.
+          if (Array.isArray(value) && value.length % 2 === 0) {
             const isValid = value.every((page, i, arr) => {
               return (
                 Number.isInteger(page) &&
@@ -890,30 +883,26 @@ class Catalog {
             if (isValid) {
               prefValue = value;
             }
-            break;
-          case "NumCopies":
-            if (value > 0) {
-              prefValue = value;
-            }
-            break;
-          default:
-            if (typeof value !== "boolean") {
-              throw new FormatError(
-                `viewerPreferences - expected a boolean value for: ${key}`
-              );
-            }
-            prefValue = value;
-        }
-
-        if (prefValue !== undefined) {
-          if (!prefs) {
-            prefs = Object.create(null);
           }
-          prefs[key] = prefValue;
-        } else {
-          info(`Bad value in ViewerPreferences for "${key}".`);
-        }
+          break;
+        case "NumCopies":
+          if (Number.isInteger(value) && value > 0) {
+            prefValue = value;
+          }
+          break;
+        default:
+          warn(`Ignoring non-standard key in ViewerPreferences: ${key}.`);
+          continue;
       }
+
+      if (prefValue === undefined) {
+        warn(`Bad value, for key "${key}", in ViewerPreferences: ${value}.`);
+        continue;
+      }
+      if (!prefs) {
+        prefs = Object.create(null);
+      }
+      prefs[key] = prefValue;
     }
     return shadow(this, "viewerPreferences", prefs);
   }
@@ -1475,13 +1464,13 @@ class Catalog {
       switch (actionName) {
         case "ResetForm":
           const flags = action.get("Flags");
-          const include = ((isNum(flags) ? flags : 0) & 1) === 0;
+          const include = ((typeof flags === "number" ? flags : 0) & 1) === 0;
           const fields = [];
           const refs = [];
           for (const obj of action.get("Fields") || []) {
             if (obj instanceof Ref) {
               refs.push(obj.toString());
-            } else if (isString(obj)) {
+            } else if (typeof obj === "string") {
               fields.push(stringToPDFString(obj));
             }
           }
@@ -1513,7 +1502,7 @@ class Catalog {
             // We assume that we found a FileSpec dictionary
             // and fetch the URL without checking any further.
             url = urlDict.get("F") || null;
-          } else if (isString(urlDict)) {
+          } else if (typeof urlDict === "string") {
             url = urlDict;
           }
 
@@ -1523,9 +1512,9 @@ class Catalog {
             if (remoteDest instanceof Name) {
               remoteDest = remoteDest.name;
             }
-            if (isString(url)) {
+            if (typeof url === "string") {
               const baseUrl = url.split("#")[0];
-              if (isString(remoteDest)) {
+              if (typeof remoteDest === "string") {
                 url = baseUrl + "#" + remoteDest;
               } else if (Array.isArray(remoteDest)) {
                 url = baseUrl + "#" + JSON.stringify(remoteDest);
@@ -1534,7 +1523,7 @@ class Catalog {
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
           const newWindow = action.get("NewWindow");
-          if (isBool(newWindow)) {
+          if (typeof newWindow === "boolean") {
             resultObj.newWindow = newWindow;
           }
           break;
@@ -1552,7 +1541,7 @@ class Catalog {
 
           if (jsAction instanceof BaseStream) {
             js = jsAction.getString();
-          } else if (isString(jsAction)) {
+          } else if (typeof jsAction === "string") {
             js = jsAction;
           }
 
@@ -1577,7 +1566,7 @@ class Catalog {
       dest = destDict.get("Dest");
     }
 
-    if (isString(url)) {
+    if (typeof url === "string") {
       const absoluteUrl = createValidAbsoluteUrl(url, docBaseUrl, {
         addDefaultProtocol: true,
         tryConvertEncoding: true,
@@ -1591,7 +1580,7 @@ class Catalog {
       if (dest instanceof Name) {
         dest = dest.name;
       }
-      if (isString(dest) || Array.isArray(dest)) {
+      if (typeof dest === "string" || Array.isArray(dest)) {
         resultObj.dest = dest;
       }
     }

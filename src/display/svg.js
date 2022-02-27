@@ -18,7 +18,6 @@ import {
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   ImageKind,
-  isNum,
   OPS,
   TextRenderingMode,
   unreachable,
@@ -810,7 +809,7 @@ if (
           // Word break
           x += fontDirection * wordSpacing;
           continue;
-        } else if (isNum(glyph)) {
+        } else if (typeof glyph === "number") {
           x += (spacingDir * glyph * fontSize) / 1000;
           continue;
         }

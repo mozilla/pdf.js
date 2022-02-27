@@ -1043,18 +1043,6 @@ function utf8StringToString(str) {
   return unescape(encodeURIComponent(str));
 }
 
-function isBool(v) {
-  return typeof v === "boolean";
-}
-
-function isNum(v) {
-  return typeof v === "number";
-}
-
-function isString(v) {
-  return typeof v === "string";
-}
-
 function isArrayBuffer(v) {
   return typeof v === "object" && v !== null && v.byteLength !== undefined;
 }
@@ -1156,12 +1144,9 @@ export {
   isArrayBuffer,
   isArrayEqual,
   isAscii,
-  isBool,
   IsEvalSupportedCached,
   IsLittleEndianCached,
-  isNum,
   isSameOrigin,
-  isString,
   MissingPDFException,
   objectFromMap,
   objectSize,

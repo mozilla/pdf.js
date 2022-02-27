@@ -18,7 +18,6 @@ import {
   bytesToString,
   FormatError,
   info,
-  isNum,
   StreamType,
   warn,
 } from "../shared/util.js";
@@ -1393,7 +1392,7 @@ class Linearization {
         Number.isInteger(obj2) &&
         isCmd(obj3, "obj") &&
         linDict instanceof Dict &&
-        isNum((obj = linDict.get("Linearized"))) &&
+        typeof (obj = linDict.get("Linearized")) === "number" &&
         obj > 0
       )
     ) {
