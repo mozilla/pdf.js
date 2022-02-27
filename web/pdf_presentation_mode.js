@@ -269,13 +269,12 @@ class PDFPresentationMode {
       document.getElementsByClassName("toolbar")[0].classList.remove("hidden-by-fullscreen");
     }
   }
-
   // #426 end of modification
 
   /**
    * @private
    */
-  _mouseDown(evt) {
+  #mouseDown(evt) {
     if (this.contextMenuOpen) {
       this.contextMenuOpen = false;
       evt.preventDefault();
