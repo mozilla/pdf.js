@@ -10,6 +10,7 @@
     "acorn": "^8.7.0",
     "autoprefixer": "^10.4.2",
     "babel-loader": "^8.2.3",
+    "caniuse-lite": "^1.0.30001312",
     "canvas": "^2.9.0",
     "core-js": "^3.21.1",
     "cross-env": "^7.0.3",
