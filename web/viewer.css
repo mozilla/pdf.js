@@ -1291,10 +1291,8 @@ html[dir="rtl"] .toolbarField[type="checkbox"] {
   background-position: 3px;
 }
 
-.toolbarField.pageNumber::-webkit-inner-spin-button,
-.toolbarField.pageNumber::-webkit-outer-spin-button {
+.toolbarField.pageNumber::-webkit-inner-spin-button {
   -webkit-appearance: none;
-  margin: 0;
 }
 
 .toolbarField:focus {
