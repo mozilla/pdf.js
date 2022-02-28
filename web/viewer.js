@@ -249,5 +249,14 @@ if (
 } else {
   document.addEventListener("DOMContentLoaded", webViewerLoad, true);
 }
+// [Download] tooltip message to [Save] if file is open locally on the machine
+function tooltipmessage() {
+  const currenturl = window.location.href;
+  if (currenturl.substring(0, 7) !== "https://") {
+    document.getElementById("secondaryDownload").title = "Save";
+    document.getElementById("download").title = "Save";
+  }
+}
+tooltipmessage();
 
 export { PDFViewerApplication, AppOptions as PDFViewerApplicationOptions };
