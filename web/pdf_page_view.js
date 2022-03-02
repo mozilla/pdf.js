@@ -320,23 +320,6 @@ class PDFPageView {
   }
 
   update({ scale = 0, rotation = null, optionalContentConfigPromise = null }) {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("GENERIC") &&
-      typeof arguments[0] !== "object"
-    ) {
-      console.error(
-        "PDFPageView.update called with separate parameters, please use an object instead."
-      );
-
-      this.update({
-        scale: arguments[0],
-        rotation: arguments[1],
-        optionalContentConfigPromise: arguments[2],
-      });
-      return;
-    }
-
     this.scale = scale || this.scale;
     if (typeof rotation === "number") {
       this.rotation = rotation; // The rotation may be zero.

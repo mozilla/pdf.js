@@ -77,11 +77,7 @@ eventBus.on("pagesinit", function () {
 
   // We can try searching for things.
   if (SEARCH_FOR) {
-    if (!pdfFindController._onFind) {
-      pdfFindController.executeCommand("find", { query: SEARCH_FOR });
-    } else {
-      eventBus.dispatch("find", { type: "", query: SEARCH_FOR });
-    }
+    eventBus.dispatch("find", { type: "", query: SEARCH_FOR });
   }
 });
 
