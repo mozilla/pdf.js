@@ -149,8 +149,6 @@ class DefaultExternalServices {
 
   static initPassiveLoading(callbacks) {}
 
-  static async fallback(data) {}
-
   static reportTelemetry(data) {}
 
   static createDownloadManager(options) {
@@ -192,7 +190,6 @@ class DefaultExternalServices {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: createPromiseCapability(),
-  _fellback: false,
   appConfig: null,
   pdfDocument: null,
   pdfLoadingTask: null,
@@ -825,7 +822,6 @@ const PDFViewerApplication = {
       this.pdfDocumentProperties.setDocument(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
-    this._fellback = false;
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
@@ -924,7 +920,7 @@ const PDFViewerApplication = {
       this.progress(loaded / total);
     };
 
-    // Listen for unsupported features to trigger the fallback UI.
+    // Listen for unsupported features to report telemetry.
     loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
     return loadingTask.promise.then(
@@ -1019,25 +1015,6 @@ const PDFViewerApplication = {
       type: "unsupportedFeature",
       featureId,
     });
-
-    // Only trigger the fallback once so we don't spam the user with messages
-    // for one PDF.
-    if (this._fellback) {
-      return;
-    }
-    this._fellback = true;
-
-    this.externalServices
-      .fallback({
-        featureId,
-        url: this.baseUrl,
-      })
-      .then(download => {
-        if (!download) {
-          return;
-        }
-        this.download({ sourceEventType: "download" });
-      });
   },
 
   /**
