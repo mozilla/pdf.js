@@ -261,22 +261,8 @@ class PDFFindController {
     this._eventBus = eventBus;
 
     this._reset();
-    eventBus._on("find", this._onFind.bind(this));
-    eventBus._on("findbarclose", this._onFindBarClose.bind(this));
-
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this.executeCommand = (cmd, state) => {
-        console.error(
-          "Deprecated method `PDFFindController.executeCommand` called, " +
-            'please dispatch a "find"-event using the EventBus instead.'
-        );
-
-        const eventState = Object.assign(Object.create(null), state, {
-          type: cmd.substring("find".length),
-        });
-        this._onFind(eventState);
-      };
-    }
+    eventBus._on("find", this.#onFind.bind(this));
+    eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
   }
 
   get highlightMatches() {
@@ -316,10 +302,7 @@ class PDFFindController {
     this._firstPageCapability.resolve();
   }
 
-  /**
-   * @private
-   */
-  _onFind(state) {
+  #onFind(state) {
     if (!state) {
       return;
     }
@@ -895,7 +878,7 @@ class PDFFindController {
     }
   }
 
-  _onFindBarClose(evt) {
+  #onFindBarClose(evt) {
     const pdfDocument = this._pdfDocument;
     // Since searching is asynchronous, ensure that the removal of highlighted
     // matches (from the UI) is async too such that the 'updatetextlayermatches'
