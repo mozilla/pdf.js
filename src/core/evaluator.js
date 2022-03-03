@@ -576,8 +576,13 @@ class PartialEvaluator {
     }
     const maxImageSize = this.options.maxImageSize;
     if (maxImageSize !== -1 && w * h > maxImageSize) {
-      warn("Image exceeded maximum allowed size and was removed.");
-      return;
+      const msg = "Image exceeded maximum allowed size and was removed.";
+
+      if (this.options.ignoreErrors) {
+        warn(msg);
+        return;
+      }
+      throw new Error(msg);
     }
 
     let optionalContent;
