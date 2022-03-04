@@ -29,7 +29,6 @@ const LinkTarget = {
 };
 
 /**
- * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
  * @property {string} url - An absolute URL.
  * @property {LinkTarget} [target] - The link target. The default value is
