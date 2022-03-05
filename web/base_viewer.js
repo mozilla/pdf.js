@@ -1160,7 +1160,7 @@ class BaseViewer {
   }
 
   /**
-   * @typedef ScrollPageIntoViewParameters
+   * @typedef {Object} ScrollPageIntoViewParameters
    * @property {number} pageNumber - The page number.
    * @property {Array} [destArray] - The original PDF destination array, in the
    *   format: <page-ref> </XYZ|/FitXXX> <args..>
