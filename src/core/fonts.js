@@ -1980,6 +1980,20 @@ class Font {
       locaEntries.sort((a, b) => {
         return a.index - b.index;
       });
+      // Calculate the endOffset of the "first" glyph correctly when there are
+      // *multiple* empty ones at the start of the data (fixes issue14618.pdf).
+      for (i = 0; i < numGlyphs; i++) {
+        const { offset, endOffset } = locaEntries[i];
+        if (offset !== 0 || endOffset !== 0) {
+          break;
+        }
+        const nextOffset = locaEntries[i + 1].offset;
+        if (nextOffset === 0) {
+          continue;
+        }
+        locaEntries[i].endOffset = nextOffset;
+        break;
+      }
 
       const missingGlyphs = Object.create(null);
       let writeOffset = 0;

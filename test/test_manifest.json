@@ -351,6 +351,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue14618",
+       "file": "pdfs/issue14618.pdf",
+       "md5": "8a4a5aac59519228019aaffdfbd56f17",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
        "md5": "24643ebe348a568cfe6a532055c71493",
