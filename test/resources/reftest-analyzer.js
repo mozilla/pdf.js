@@ -147,20 +147,17 @@ window.onload = function () {
     }
   }
 
-  function loadFromWeb(url) {
+  async function loadFromWeb(url) {
     const lastSlash = url.lastIndexOf("/");
     if (lastSlash) {
       gPath = url.substring(0, lastSlash + 1);
     }
 
-    const r = new XMLHttpRequest();
-    r.open("GET", url);
-    r.onreadystatechange = function () {
-      if (r.readyState === 4) {
-        processLog(r.response);
-      }
-    };
-    r.send(null);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    processLog(await response.text());
   }
 
   function fileEntryChanged() {
