@@ -845,9 +845,9 @@ class Driver {
     this.end.textContent = "Tests finished. Close this window!";
 
     // Send the quit request
-    const r = new XMLHttpRequest();
-    r.open("POST", `/tellMeToQuit?browser=${escape(this.browser)}`, false);
-    r.send(null);
+    fetch(`/tellMeToQuit?browser=${escape(this.browser)}`, {
+      method: "POST",
+    });
   }
 
   _info(message) {
