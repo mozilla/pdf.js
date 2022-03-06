@@ -44,24 +44,23 @@ function loadStyles(styles) {
 
   for (const file of styles) {
     promises.push(
-      new Promise(function (resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", file);
-        xhr.onload = function () {
-          resolve(xhr.responseText);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error(`Error fetching style (${file}): ${e}`));
-        };
-        xhr.send(null);
-      })
+      fetch(file)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(response.statusText);
+          }
+          return response.text();
+        })
+        .catch(reason => {
+          throw new Error(`Error fetching style (${file}): ${reason}`);
+        })
     );
   }
 
   return Promise.all(promises);
 }
 
-function writeSVG(svgElement, ctx, outputScale) {
+function writeSVG(svgElement, ctx) {
   // We need to have UTF-8 encoded XML.
   const svg_xml = unescape(
     encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
