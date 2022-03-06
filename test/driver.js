@@ -368,34 +368,32 @@ class Driver {
     this._log(`Harness thinks this browser is ${this.browser}\n`);
     this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
-    const r = new XMLHttpRequest();
-    r.open("GET", this.manifestFile, false);
-    r.onreadystatechange = () => {
-      if (r.readyState === 4) {
-        this._log("done\n");
-        this.manifest = JSON.parse(r.responseText);
-        if (this.testFilter?.length || this.xfaOnly) {
-          this.manifest = this.manifest.filter(item => {
-            if (this.testFilter.includes(item.id)) {
-              return true;
-            }
-            if (this.xfaOnly && item.enableXfa) {
-              return true;
-            }
-            return false;
-          });
-        }
-        this.currentTask = 0;
-        this._nextTask();
-      }
-    };
     if (this.delay > 0) {
       this._log("\nDelaying for " + this.delay + " ms...\n");
     }
     // When gathering the stats the numbers seem to be more reliable
     // if the browser is given more time to start.
-    setTimeout(function () {
-      r.send(null);
+    setTimeout(async () => {
+      const response = await fetch(this.manifestFile);
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      this._log("done\n");
+      this.manifest = await response.json();
+
+      if (this.testFilter?.length || this.xfaOnly) {
+        this.manifest = this.manifest.filter(item => {
+          if (this.testFilter.includes(item.id)) {
+            return true;
+          }
+          if (this.xfaOnly && item.enableXfa) {
+            return true;
+          }
+          return false;
+        });
+      }
+      this.currentTask = 0;
+      this._nextTask();
     }, this.delay);
   }
 
