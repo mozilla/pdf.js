@@ -159,13 +159,13 @@ class SecondaryToolbar {
 
     // Bind the event listeners for click, cursor tool, and scroll/spread mode
     // actions.
-    this._bindClickListeners();
-    this._bindCursorToolsListener(options);
-    this._bindScrollModeListener(options);
-    this._bindSpreadModeListener(options);
+    this.#bindClickListeners();
+    this.#bindCursorToolsListener(options);
+    this.#bindScrollModeListener(options);
+    this.#bindSpreadModeListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
-    this.eventBus._on("resize", this._setMaxHeight.bind(this));
+    this.eventBus._on("resize", this.#setMaxHeight.bind(this));
   }
 
   /**
@@ -177,31 +177,31 @@ class SecondaryToolbar {
 
   setPageNumber(pageNumber) {
     this.pageNumber = pageNumber;
-    this._updateUIState();
+    this.#updateUIState();
   }
 
   setPagesCount(pagesCount) {
     this.pagesCount = pagesCount;
-    this._updateUIState();
+    this.#updateUIState();
   }
 
   reset() {
     this.pageNumber = 0;
     this.pagesCount = 0;
-    this._updateUIState();
+    this.#updateUIState();
 
     // Reset the Scroll/Spread buttons too, since they're document specific.
     this.eventBus.dispatch("secondarytoolbarreset", { source: this });
   }
 
-  _updateUIState() {
+  #updateUIState() {
     this.items.firstPage.disabled = this.pageNumber <= 1;
     this.items.lastPage.disabled = this.pageNumber >= this.pagesCount;
     this.items.pageRotateCw.disabled = this.pagesCount === 0;
     this.items.pageRotateCcw.disabled = this.pagesCount === 0;
   }
 
-  _bindClickListeners() {
+  #bindClickListeners() {
     // Button to toggle the visibility of the secondary toolbar.
     this.toggleButton.addEventListener("click", this.toggle.bind(this));
 
@@ -222,7 +222,7 @@ class SecondaryToolbar {
     }
   }
 
-  _bindCursorToolsListener(buttons) {
+  #bindCursorToolsListener(buttons) {
     this.eventBus._on("cursortoolchanged", function ({ tool }) {
       buttons.cursorSelectToolButton.classList.toggle(
         "toggled",
@@ -235,7 +235,7 @@ class SecondaryToolbar {
     });
   }
 
-  _bindScrollModeListener(buttons) {
+  #bindScrollModeListener(buttons) {
     const scrollModeChanged = ({ mode }) => {
       buttons.scrollPageButton.classList.toggle(
         "toggled",
@@ -279,7 +279,7 @@ class SecondaryToolbar {
     });
   }
 
-  _bindSpreadModeListener(buttons) {
+  #bindSpreadModeListener(buttons) {
     function spreadModeChanged({ mode }) {
       buttons.spreadNoneButton.classList.toggle(
         "toggled",
@@ -308,7 +308,7 @@ class SecondaryToolbar {
       return;
     }
     this.opened = true;
-    this._setMaxHeight();
+    this.#setMaxHeight();
 
     this.toggleButton.classList.add("toggled");
     this.toggleButton.setAttribute("aria-expanded", "true");
@@ -333,10 +333,7 @@ class SecondaryToolbar {
     }
   }
 
-  /**
-   * @private
-   */
-  _setMaxHeight() {
+  #setMaxHeight() {
     if (!this.opened) {
       return; // Only adjust the 'max-height' if the toolbar is visible.
     }

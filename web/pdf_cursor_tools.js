@@ -46,7 +46,7 @@ class PDFCursorTools {
       element: this.container,
     });
 
-    this._addEventListeners();
+    this.#addEventListeners();
 
     // Defer the initial `switchTool` call, to give other viewer components
     // time to initialize *and* register 'cursortoolchanged' event listeners.
@@ -106,23 +106,17 @@ class PDFCursorTools {
     // in order to prevent setting it to an invalid state.
     this.active = tool;
 
-    this._dispatchEvent();
+    this.#dispatchEvent();
   }
 
-  /**
-   * @private
-   */
-  _dispatchEvent() {
+  #dispatchEvent() {
     this.eventBus.dispatch("cursortoolchanged", {
       source: this,
       tool: this.active,
     });
   }
 
-  /**
-   * @private
-   */
-  _addEventListeners() {
+  #addEventListeners() {
     this.eventBus._on("switchcursortool", evt => {
       this.switchTool(evt.tool);
     });
