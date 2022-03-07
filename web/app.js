@@ -36,7 +36,6 @@ import {
 import {
   AnnotationEditorType,
   build,
-  createPromiseCapability,
   FeatureTest,
   getDocument,
   getFilenameFromUrl,
@@ -49,6 +48,7 @@ import {
   MissingPDFException,
   OPS,
   PDFWorker,
+  PromiseCapability,
   shadow,
   UnexpectedResponseException,
   version,
@@ -156,7 +156,7 @@ class DefaultExternalServices {
 
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
-  _initializedCapability: createPromiseCapability(),
+  _initializedCapability: new PromiseCapability(),
   appConfig: null,
   pdfDocument: null,
   pdfLoadingTask: null,

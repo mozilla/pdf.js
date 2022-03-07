@@ -28,9 +28,9 @@ import {
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
-  createPromiseCapability,
   PermissionFlag,
   PixelsPerInch,
+  PromiseCapability,
   version,
 } from "pdfjs-lib";
 import {
@@ -1025,9 +1025,9 @@ class PDFViewer {
     this._location = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
-    this._firstPageCapability = createPromiseCapability();
-    this._onePageRenderedCapability = createPromiseCapability();
-    this._pagesCapability = createPromiseCapability();
+    this._firstPageCapability = new PromiseCapability();
+    this._onePageRenderedCapability = new PromiseCapability();
+    this._pagesCapability = new PromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
