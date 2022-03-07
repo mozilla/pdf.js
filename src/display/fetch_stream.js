@@ -16,7 +16,7 @@
 import {
   AbortException,
   assert,
-  createPromiseCapability,
+  PromiseCapability,
   warn,
 } from "../shared/util.js";
 import {
@@ -118,7 +118,7 @@ class PDFFetchStreamReader {
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
     this._contentLength = source.length;
-    this._headersCapability = createPromiseCapability();
+    this._headersCapability = new PromiseCapability();
     this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
@@ -224,7 +224,7 @@ class PDFFetchStreamRangeReader {
     this._loaded = 0;
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
-    this._readCapability = createPromiseCapability();
+    this._readCapability = new PromiseCapability();
     this._isStreamingSupported = !source.disableStream;
 
     this._abortController = new AbortController();

@@ -16,7 +16,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
 import { apiPageLayoutToViewerModes, RenderingStates } from "./ui_utils.js";
-import { createPromiseCapability, shadow } from "pdfjs-lib";
+import { PromiseCapability, shadow } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PDFScriptingManagerOptions
@@ -357,7 +357,7 @@ class PDFScriptingManager {
       visitedPages = this._visitedPages;
 
     if (initialize) {
-      this._closeCapability = createPromiseCapability();
+      this._closeCapability = new PromiseCapability();
     }
     if (!this._closeCapability) {
       return; // Scripting isn't fully initialized yet.
@@ -443,7 +443,7 @@ class PDFScriptingManager {
    * @private
    */
   _createScripting() {
-    this._destroyCapability = createPromiseCapability();
+    this._destroyCapability = new PromiseCapability();
 
     if (this._scripting) {
       throw new Error("_createScripting: Scripting already exists.");

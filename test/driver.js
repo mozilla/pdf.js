@@ -17,10 +17,10 @@
 const {
   AnnotationLayer,
   AnnotationMode,
-  createPromiseCapability,
   getDocument,
   GlobalWorkerOptions,
   PixelsPerInch,
+  PromiseCapability,
   renderTextLayer,
   shadow,
   XfaLayer,
@@ -922,7 +922,7 @@ class Driver {
   }
 
   _send(url, message) {
-    const capability = createPromiseCapability();
+    const capability = new PromiseCapability();
     this.inflight.textContent = this.inFlightRequests++;
 
     fetch(url, {

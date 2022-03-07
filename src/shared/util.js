@@ -975,42 +975,41 @@ function getModificationDate(date = new Date()) {
   return buffer.join("");
 }
 
-/**
- * Promise Capability object.
- *
- * @typedef {Object} PromiseCapability
- * @property {Promise<any>} promise - A Promise object.
- * @property {boolean} settled - If the Promise has been fulfilled/rejected.
- * @property {function} resolve - Fulfills the Promise.
- * @property {function} reject - Rejects the Promise.
- */
+class PromiseCapability {
+  #settled = false;
 
-/**
- * Creates a promise capability object.
- * @alias createPromiseCapability
- *
- * @returns {PromiseCapability}
- */
-function createPromiseCapability() {
-  const capability = Object.create(null);
-  let isSettled = false;
+  constructor() {
+    /**
+     * @type {Promise<any>} The Promise object.
+     */
+    this.promise = new Promise((resolve, reject) => {
+      /**
+       * @type {function} Fulfills the Promise.
+       */
+      this.resolve = data => {
+        this.#settled = true;
+        resolve(data);
+      };
 
-  Object.defineProperty(capability, "settled", {
-    get() {
-      return isSettled;
-    },
-  });
-  capability.promise = new Promise(function (resolve, reject) {
-    capability.resolve = function (data) {
-      isSettled = true;
-      resolve(data);
-    };
-    capability.reject = function (reason) {
-      isSettled = true;
-      reject(reason);
-    };
-  });
-  return capability;
+      /**
+       * @type {function} Rejects the Promise.
+       */
+      this.reject = reason => {
+        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+          assert(reason instanceof Error, 'Expected valid "reason" argument.');
+        }
+        this.#settled = true;
+        reject(reason);
+      };
+    });
+  }
+
+  /**
+   * @type {boolean} If the Promise has been fulfilled/rejected.
+   */
+  get settled() {
+    return this.#settled;
+  }
 }
 
 let NormalizeRegex = null;
@@ -1052,7 +1051,6 @@ export {
   BASELINE_FACTOR,
   bytesToString,
   CMapCompressionType,
-  createPromiseCapability,
   createValidAbsoluteUrl,
   DocumentActionEventType,
   FeatureTest,
@@ -1078,6 +1076,7 @@ export {
   PasswordException,
   PasswordResponses,
   PermissionFlag,
+  PromiseCapability,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,

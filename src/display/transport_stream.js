@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability } from "../shared/util.js";
+import { assert, PromiseCapability } from "../shared/util.js";
 import { isPdfFile } from "./display_utils.js";
 
 /** @implements {IPDFStream} */
@@ -235,7 +235,7 @@ class PDFDataTransportStreamReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = createPromiseCapability();
+    const requestCapability = new PromiseCapability();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }
@@ -300,7 +300,7 @@ class PDFDataTransportStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = createPromiseCapability();
+    const requestCapability = new PromiseCapability();
     this._requests.push(requestCapability);
     return requestCapability.promise;
   }

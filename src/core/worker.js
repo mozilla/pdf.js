@@ -16,12 +16,12 @@
 import {
   AbortException,
   assert,
-  createPromiseCapability,
   getVerbosityLevel,
   info,
   InvalidPDFException,
   MissingPDFException,
   PasswordException,
+  PromiseCapability,
   setVerbosityLevel,
   stringToPDFString,
   UnexpectedResponseException,
@@ -46,7 +46,7 @@ class WorkerTask {
   constructor(name) {
     this.name = name;
     this.terminated = false;
-    this._capability = createPromiseCapability();
+    this._capability = new PromiseCapability();
   }
 
   get finished() {
@@ -228,7 +228,7 @@ class WorkerMessageHandler {
         password,
         rangeChunkSize,
       };
-      const pdfManagerCapability = createPromiseCapability();
+      const pdfManagerCapability = new PromiseCapability();
       let newPdfManager;
 
       if (data) {
