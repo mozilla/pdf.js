@@ -55,6 +55,9 @@ if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
   };
 
   NodeCanvasFactory = class extends BaseCanvasFactory {
+    /**
+     * @ignore
+     */
     _createCanvas(width, height) {
       const Canvas = __non_webpack_require__("canvas");
       return Canvas.createCanvas(width, height);
@@ -62,6 +65,9 @@ if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
   };
 
   NodeCMapReaderFactory = class extends BaseCMapReaderFactory {
+    /**
+     * @ignore
+     */
     _fetchData(url, compressionType) {
       return fetchData(url).then(data => {
         return { cMapData: data, compressionType };
@@ -70,6 +76,9 @@ if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
   };
 
   NodeStandardFontDataFactory = class extends BaseStandardFontDataFactory {
+    /**
+     * @ignore
+     */
     _fetchData(url) {
       return fetchData(url);
     }
