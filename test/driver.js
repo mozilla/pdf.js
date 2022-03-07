@@ -19,6 +19,7 @@
 const {
   AnnotationLayer,
   AnnotationMode,
+  createPromiseCapability,
   getDocument,
   GlobalWorkerOptions,
   PixelsPerInch,
@@ -571,7 +572,7 @@ class Driver {
 
     if (!task.pdfDoc) {
       const dataUrl = this.canvas.toDataURL("image/png");
-      this._sendResult(dataUrl, task, failure, () => {
+      this._sendResult(dataUrl, task, failure).then(() => {
         this._log(
           "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
         );
@@ -831,7 +832,7 @@ class Driver {
     this._log("Snapshotting... ");
 
     const dataUrl = this.canvas.toDataURL("image/png");
-    this._sendResult(dataUrl, task, failure, () => {
+    this._sendResult(dataUrl, task, failure).then(() => {
       this._log(
         "done" + (failure ? " (failed !: " + failure + ")" : "") + "\n"
       );
@@ -885,7 +886,7 @@ class Driver {
     }
   }
 
-  _sendResult(snapshot, task, failure, callback) {
+  _sendResult(snapshot, task, failure) {
     const result = JSON.stringify({
       browser: this.browser,
       id: task.id,
@@ -901,29 +902,38 @@ class Driver {
       viewportHeight: task.viewportHeight,
       outputScale: task.outputScale,
     });
-    this._send("/submit_task_results", result, callback);
+    return this._send("/submit_task_results", result);
   }
 
-  _send(url, message, callback) {
-    const r = new XMLHttpRequest();
-    r.open("POST", url, true);
-    r.setRequestHeader("Content-Type", "application/json");
-    r.onreadystatechange = e => {
-      if (r.readyState === 4) {
-        this.inFlightRequests--;
-
-        // Retry until successful
-        if (r.status !== 200) {
-          setTimeout(() => {
-            this._send(url, message);
-          });
-        }
-        if (callback) {
-          callback();
-        }
-      }
-    };
+  _send(url, message) {
+    const capability = createPromiseCapability();
     this.inflight.textContent = this.inFlightRequests++;
-    r.send(message);
+
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: message,
+    })
+      .then(response => {
+        // Retry until successful.
+        if (!response.ok || response.status !== 200) {
+          throw new Error(response.statusText);
+        }
+
+        this.inFlightRequests--;
+        capability.resolve();
+      })
+      .catch(reason => {
+        console.warn(`Driver._send failed (${url}): ${reason}`);
+
+        this.inFlightRequests--;
+        capability.resolve();
+
+        this._send(url, message);
+      });
+
+    return capability.promise;
   }
 }
