@@ -18,7 +18,6 @@ import {
   FormatError,
   info,
   InvalidPDFException,
-  isArrayBuffer,
   isArrayEqual,
   OPS,
   PageActionEventType,
@@ -43,13 +42,13 @@ import {
 } from "./core_utils.js";
 import { Dict, isName, Name, Ref } from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
-import { NullStream, Stream } from "./stream.js";
 import { AnnotationFactory } from "./annotation.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { Linearization } from "./parser.js";
+import { NullStream } from "./stream.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
@@ -625,14 +624,15 @@ function find(stream, signature, limit = 1024, backwards = false) {
  * The `PDFDocument` class holds all the (worker-thread) data of the PDF file.
  */
 class PDFDocument {
-  constructor(pdfManager, arg) {
-    let stream;
-    if (arg instanceof BaseStream) {
-      stream = arg;
-    } else if (isArrayBuffer(arg)) {
-      stream = new Stream(arg);
-    } else {
-      throw new Error("PDFDocument: Unknown argument type");
+  constructor(pdfManager, stream) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        stream instanceof BaseStream,
+        'PDFDocument: Invalid "stream" argument.'
+      );
     }
     if (stream.length <= 0) {
       throw new InvalidPDFException(
