@@ -50,7 +50,9 @@ if (
     if (globalThis.DOMMatrix || !isNodeJS) {
       return;
     }
-    globalThis.DOMMatrix = require("dommatrix/dist/dommatrix.js");
+    globalThis.DOMMatrix = __non_webpack_require__(
+      "dommatrix/dist/dommatrix.js"
+    );
   })();
 
   // Provides support for *recent* additions to the Promise specification,
