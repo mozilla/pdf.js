@@ -79,29 +79,52 @@ function writeSVG(svgElement, ctx) {
   });
 }
 
-function inlineImages(images) {
-  const imagePromises = [];
-  for (let i = 0, ii = images.length; i < ii; i++) {
-    imagePromises.push(
-      new Promise(function (resolve, reject) {
-        const xhr = new XMLHttpRequest();
-        xhr.responseType = "blob";
-        xhr.onload = function () {
-          const reader = new FileReader();
-          reader.onloadend = function () {
-            resolve(reader.result);
-          };
-          reader.readAsDataURL(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          reject(new Error("Error fetching inline image " + e));
-        };
-        xhr.open("GET", images[i].src);
-        xhr.send();
-      })
+async function inlineImages(node, silentErrors = false) {
+  const promises = [];
+
+  for (const image of node.getElementsByTagName("img")) {
+    const url = image.src;
+
+    promises.push(
+      fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(response.statusText);
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve(reader.result);
+            };
+            reader.onerror = reject;
+
+            reader.readAsDataURL(blob);
+          });
+        })
+        .then(dataUrl => {
+          return new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = evt => {
+              if (silentErrors) {
+                resolve();
+                return;
+              }
+              reject(evt);
+            };
+
+            image.src = dataUrl;
+          });
+        })
+        .catch(reason => {
+          throw new Error(`Error inlining image (${url}): ${reason}`);
+        })
     );
   }
-  return Promise.all(imagePromises);
+
+  await Promise.all(promises);
 }
 
 async function convertCanvasesToImages(annotationCanvasMap, outputScale) {
@@ -124,29 +147,6 @@ async function convertCanvasesToImages(annotationCanvasMap, outputScale) {
   }
   await Promise.all(promises);
   return results;
-}
-
-async function resolveImages(node, silentErrors = false) {
-  const images = node.getElementsByTagName("img");
-  const data = await inlineImages(images);
-
-  const loadedPromises = [];
-  for (let i = 0, ii = data.length; i < ii; i++) {
-    loadedPromises.push(
-      new Promise(function (resolveImage, rejectImage) {
-        images[i].onload = resolveImage;
-        images[i].onerror = function (e) {
-          if (silentErrors) {
-            resolveImage();
-          } else {
-            rejectImage(new Error("Error loading image " + e));
-          }
-        };
-        images[i].src = data[i];
-      })
-    );
-  }
-  await Promise.all(loadedPromises);
 }
 
 class Rasterize {
@@ -237,7 +237,7 @@ class Rasterize {
       AnnotationLayer.render(parameters);
 
       // Inline SVG images from text annotations.
-      await resolveImages(div);
+      await inlineImages(div);
       foreignObject.appendChild(div);
       svg.appendChild(foreignObject);
 
@@ -301,7 +301,7 @@ class Rasterize {
       });
 
       // Some unsupported type of images (e.g. tiff) lead to errors.
-      await resolveImages(div, /* silentErrors = */ true);
+      await inlineImages(div, /* silentErrors = */ true);
       svg.appendChild(foreignObject);
 
       await writeSVG(svg, ctx);
