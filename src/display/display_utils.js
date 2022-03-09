@@ -37,6 +37,9 @@ class DOMCanvasFactory extends BaseCanvasFactory {
     this._document = ownerDocument;
   }
 
+  /**
+   * @ignore
+   */
   _createCanvas(width, height) {
     const canvas = this._document.createElement("canvas");
     canvas.width = width;
@@ -91,6 +94,9 @@ async function fetchData(url, asTypedArray = false) {
 }
 
 class DOMCMapReaderFactory extends BaseCMapReaderFactory {
+  /**
+   * @ignore
+   */
   _fetchData(url, compressionType) {
     return fetchData(url, /* asTypedArray = */ this.isCompressed).then(data => {
       return { cMapData: data, compressionType };
@@ -99,12 +105,18 @@ class DOMCMapReaderFactory extends BaseCMapReaderFactory {
 }
 
 class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
+  /**
+   * @ignore
+   */
   _fetchData(url) {
     return fetchData(url, /* asTypedArray = */ true);
   }
 }
 
 class DOMSVGFactory extends BaseSVGFactory {
+  /**
+   * @ignore
+   */
   _createSVG(type) {
     return document.createElementNS(SVG_NS, type);
   }

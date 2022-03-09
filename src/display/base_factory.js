@@ -57,7 +57,7 @@ class BaseCanvasFactory {
   }
 
   /**
-   * @private
+   * @ignore
    */
   _createCanvas(width, height) {
     unreachable("Abstract method `_createCanvas` called.");
@@ -96,7 +96,7 @@ class BaseCMapReaderFactory {
   }
 
   /**
-   * @private
+   * @ignore
    */
   _fetchData(url, compressionType) {
     unreachable("Abstract method `_fetchData` called.");
@@ -129,7 +129,7 @@ class BaseStandardFontDataFactory {
   }
 
   /**
-   * @private
+   * @ignore
    */
   _fetchData(url) {
     unreachable("Abstract method `_fetchData` called.");
@@ -165,7 +165,7 @@ class BaseSVGFactory {
   }
 
   /**
-   * @private
+   * @ignore
    */
   _createSVG(type) {
     unreachable("Abstract method `_createSVG` called.");
