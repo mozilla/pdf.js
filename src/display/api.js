@@ -26,7 +26,6 @@ import {
   info,
   InvalidPDFException,
   isArrayBuffer,
-  isSameOrigin,
   MissingPDFException,
   PasswordException,
   RenderingIntentFlag,
@@ -1959,7 +1958,7 @@ const PDFWorkerUtil = {
   fallbackWorkerSrc: null,
   fakeWorkerId: 0,
 };
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // eslint-disable-next-line no-undef
   if (isNodeJS && typeof __non_webpack_require__ === "function") {
     // Workers aren't supported in Node.js, force-disabling them there.
@@ -1977,6 +1976,22 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       );
     }
   }
+
+  // Check if URLs have the same origin. For non-HTTP based URLs, returns false.
+  PDFWorkerUtil.isSameOrigin = function (baseUrl, otherUrl) {
+    let base;
+    try {
+      base = new URL(baseUrl);
+      if (!base.origin || base.origin === "null") {
+        return false; // non-HTTP url
+      }
+    } catch (e) {
+      return false;
+    }
+
+    const other = new URL(otherUrl, base);
+    return base.origin === other.origin;
+  };
 
   PDFWorkerUtil.createCDNWrapper = function (url) {
     // We will rely on blob URL's property to specify origin.
@@ -2079,7 +2094,7 @@ class PDFWorker {
         if (
           typeof PDFJSDev !== "undefined" &&
           PDFJSDev.test("GENERIC") &&
-          !isSameOrigin(window.location.href, workerSrc)
+          !PDFWorkerUtil.isSameOrigin(window.location.href, workerSrc)
         ) {
           workerSrc = PDFWorkerUtil.createCDNWrapper(
             new URL(workerSrc, window.location).href
@@ -3370,6 +3385,7 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  PDFWorkerUtil,
   RenderTask,
   setPDFNetworkStreamFactory,
   version,

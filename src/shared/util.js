@@ -411,22 +411,6 @@ function assert(cond, msg) {
   }
 }
 
-// Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
-function isSameOrigin(baseUrl, otherUrl) {
-  let base;
-  try {
-    base = new URL(baseUrl);
-    if (!base.origin || base.origin === "null") {
-      return false; // non-HTTP url
-    }
-  } catch (e) {
-    return false;
-  }
-
-  const other = new URL(otherUrl, base);
-  return base.origin === other.origin;
-}
-
 // Checks if URLs use one of the allowed protocols, e.g. to avoid XSS.
 function _isValidProtocol(url) {
   if (!url) {
@@ -1133,7 +1117,6 @@ export {
   isAscii,
   IsEvalSupportedCached,
   IsLittleEndianCached,
-  isSameOrigin,
   MissingPDFException,
   objectFromMap,
   objectSize,
