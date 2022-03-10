@@ -1,23 +1,29 @@
 const TestReporter = function (browser) {
-  function send(action, json, cb) {
-    const r = new XMLHttpRequest();
-    // (The POST URI is ignored atm.)
-    r.open("POST", action, true);
-    r.setRequestHeader("Content-Type", "application/json");
-    r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
-      if (r.readyState === 4) {
-        // Retry until successful
-        if (r.status !== 200) {
-          send(action, json, cb);
-        } else {
-          if (cb) {
-            cb();
+  function send(action, json) {
+    return new Promise(resolve => {
+      json.browser = browser;
+
+      fetch(action, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(json),
+      })
+        .then(response => {
+          // Retry until successful.
+          if (!response.ok || response.status !== 200) {
+            throw new Error(response.statusText);
           }
-        }
-      }
-    };
-    json.browser = browser;
-    r.send(JSON.stringify(json));
+          resolve();
+        })
+        .catch(reason => {
+          console.warn(`TestReporter - send failed (${action}): ${reason}`);
+          resolve();
+
+          send(action, json);
+        });
+    });
   }
 
   function sendInfo(message) {
