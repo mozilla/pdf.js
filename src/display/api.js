@@ -339,6 +339,12 @@ function getDocument(src) {
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }
+  if (typeof params.cMapUrl !== "string") {
+    params.cMapUrl = null;
+  }
+  if (typeof params.standardFontDataUrl !== "string") {
+    params.standardFontDataUrl = null;
+  }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
       params.CMapReaderFactory === DOMCMapReaderFactory &&
