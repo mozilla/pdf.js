@@ -21,7 +21,6 @@ import {
   getModificationDate,
   isArrayBuffer,
   isAscii,
-  isSameOrigin,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -162,31 +161,6 @@ describe("util", function () {
     it("should have property `href`", function () {
       const url = new URL("https://example.com");
       expect(typeof url.href).toEqual("string");
-    });
-  });
-
-  describe("isSameOrigin", function () {
-    it("handles invalid base URLs", function () {
-      // The base URL is not valid.
-      expect(isSameOrigin("/foo", "/bar")).toEqual(false);
-
-      // The base URL has no origin.
-      expect(isSameOrigin("blob:foo", "/bar")).toEqual(false);
-    });
-
-    it("correctly checks if the origin of both URLs matches", function () {
-      expect(
-        isSameOrigin(
-          "https://www.mozilla.org/foo",
-          "https://www.mozilla.org/bar"
-        )
-      ).toEqual(true);
-      expect(
-        isSameOrigin(
-          "https://www.mozilla.org/foo",
-          "https://www.example.com/bar"
-        )
-      ).toEqual(false);
     });
   });
 
