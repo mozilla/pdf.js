@@ -1296,12 +1296,6 @@ describe("api", function () {
     });
 
     it("gets fieldObjects", async function () {
-      if (isNodeJS) {
-        pending(
-          "Node.js appears to ignore Object properties that are explicitly " +
-            "set to `undefined`, thus breaking the expectations used below."
-        );
-      }
       const loadingTask = getDocument(buildGetDocumentParams("js-authors.pdf"));
       const pdfDoc = await loadingTask.promise;
       const fieldObjects = await pdfDoc.getFieldObjects();
