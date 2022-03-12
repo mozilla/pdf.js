@@ -84,8 +84,14 @@ class BasePreferences {
    */
   async reset() {
     await this.#initializedPromise;
+    const prefs = this.#prefs;
+
     this.#prefs = Object.create(null);
-    return this._writeToStorage(this.#defaults);
+    return this._writeToStorage(this.#defaults).catch(reason => {
+      // Revert all preference values, since writing to storage failed.
+      this.#prefs = prefs;
+      throw reason;
+    });
   }
 
   /**
@@ -97,15 +103,16 @@ class BasePreferences {
    */
   async set(name, value) {
     await this.#initializedPromise;
-    const defaultValue = this.#defaults[name];
+    const defaultValue = this.#defaults[name],
+      prefs = this.#prefs;
 
     if (defaultValue === undefined) {
       throw new Error(`Set preference: "${name}" is undefined.`);
     } else if (value === undefined) {
       throw new Error("Set preference: no value is specified.");
     }
-    const valueType = typeof value;
-    const defaultType = typeof defaultValue;
+    const valueType = typeof value,
+      defaultType = typeof defaultValue;
 
     if (valueType !== defaultType) {
       if (valueType === "number" && defaultType === "string") {
@@ -120,8 +127,13 @@ class BasePreferences {
         throw new Error(`Set preference: "${value}" must be an integer.`);
       }
     }
+
     this.#prefs[name] = value;
-    return this._writeToStorage(this.#prefs);
+    return this._writeToStorage(this.#prefs).catch(reason => {
+      // Revert all preference values, since writing to storage failed.
+      this.#prefs = prefs;
+      throw reason;
+    });
   }
 
   /**
