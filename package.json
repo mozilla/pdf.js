@@ -41,6 +41,8 @@
     "needle": "^3.0.0",
     "postcss": "^8.4.7",
     "postcss-calc": "^8.2.4",
+    "postcss-dir-pseudo-class": "^6.0.4",
+    "postcss-logical": "^5.0.4",
     "prettier": "^2.5.1",
     "puppeteer": "^13.4.1",
     "rimraf": "^3.0.2",
