@@ -904,21 +904,15 @@ html[dir="rtl"] .dropdownToolbarButton::after {
   color: var(--main-color);
   margin: 0;
   padding: 1px 0 2px;
+  padding-inline-start: 4px;
   border: none;
   background-color: var(--dropdown-btn-bg-color);
-}
-html[dir="ltr"] .dropdownToolbarButton > select {
-  padding-left: 4px;
-}
-html[dir="rtl"] .dropdownToolbarButton > select {
-  padding-right: 4px;
 }
 .dropdownToolbarButton > select:hover,
 .dropdownToolbarButton > select:focus-visible {
   background-color: var(--button-hover-color);
   color: var(--toggled-btn-color);
 }
-
 .dropdownToolbarButton > select > option {
   background: var(--doorhanger-bg-color);
   color: var(--main-color);
@@ -1129,28 +1123,18 @@ html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
   position: relative;
   margin: 0;
   padding: 0 0 1px;
+  padding-inline-start: 36px;
   height: auto;
   min-height: 26px;
   width: auto;
   min-width: 100%;
+  text-align: start;
   white-space: normal;
   border-radius: 0;
   box-sizing: border-box;
 }
-html[dir="ltr"] .secondaryToolbarButton {
-  padding-left: 36px;
-  text-align: left;
-}
-html[dir="rtl"] .secondaryToolbarButton {
-  padding-right: 36px;
-  text-align: right;
-}
-
-html[dir="ltr"] .secondaryToolbarButton > span {
-  padding-right: 4px;
-}
-html[dir="rtl"] .secondaryToolbarButton > span {
-  padding-left: 4px;
+.secondaryToolbarButton > span {
+  padding-inline-end: 4px;
 }
 
 .secondaryToolbarButton.firstPage::before {
@@ -1309,11 +1293,8 @@ html[dir="rtl"] .toolbarField[type="checkbox"] {
   cursor: default;
 }
 
-html[dir="ltr"] #numPages.toolbarLabel {
-  padding-left: 3px;
-}
-html[dir="rtl"] #numPages.toolbarLabel {
-  padding-right: 3px;
+#numPages.toolbarLabel {
+  padding-inline-start: 3px;
 }
 
 #thumbnailView {
@@ -1419,6 +1400,8 @@ html[dir="rtl"] .treeItem > .treeItems {
   min-width: calc(100% - 4px);
   height: auto;
   margin-bottom: 1px;
+  padding: 2px 0 5px;
+  padding-inline-start: 4px;
   border-radius: 2px;
   color: var(--treeitem-color);
   font-size: 13px;
@@ -1427,21 +1410,12 @@ html[dir="rtl"] .treeItem > .treeItems {
   white-space: normal;
   cursor: pointer;
 }
-html[dir="ltr"] .treeItem > a {
-  padding: 2px 0 5px 4px;
-}
-html[dir="rtl"] .treeItem > a {
-  padding: 2px 4px 5px 0;
-}
 
 #layersView .treeItem > a > * {
   cursor: pointer;
 }
-html[dir="ltr"] #layersView .treeItem > a > label {
-  padding-left: 4px;
-}
-html[dir="rtl"] #layersView .treesItem > a > label {
-  padding-right: 4px;
+#layersView .treeItem > a > label {
+  padding-inline-start: 4px;
 }
 
 .treeItemToggler {
@@ -1604,12 +1578,7 @@ html[dir="rtl"] .treeItemToggler::before {
 }
 #documentPropertiesOverlay .row > * {
   min-width: 100px;
-}
-html[dir="ltr"] #documentPropertiesOverlay .row > * {
-  text-align: left;
-}
-html[dir="rtl"] #documentPropertiesOverlay .row > * {
-  text-align: right;
+  text-align: start;
 }
 #documentPropertiesOverlay .row > span {
   width: 125px;
