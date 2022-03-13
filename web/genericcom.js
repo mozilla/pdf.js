@@ -21,8 +21,7 @@ import { GenericScripting } from "./generic_scripting.js";
 
 if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
   throw new Error(
-    'Module "pdfjs-web/genericcom" shall not be used outside ' +
-      "GENERIC build."
+    'Module "pdfjs-web/genericcom" shall not be used outside GENERIC build.'
   );
 }
 
