@@ -17,7 +17,9 @@
 "use strict";
 
 const autoprefixer = require("autoprefixer");
-const calc = require("postcss-calc");
+const postcssCalc = require("postcss-calc");
+const postcssDirPseudoClass = require("postcss-dir-pseudo-class");
+const postcssLogical = require("postcss-logical");
 const fs = require("fs");
 const gulp = require("gulp");
 const postcss = require("gulp-postcss");
@@ -849,7 +851,14 @@ function buildGeneric(defines, dir) {
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", defines)
-      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
+      .pipe(
+        postcss([
+          postcssCalc(),
+          postcssLogical({ preserve: true }),
+          postcssDirPseudoClass(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
+      )
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -925,7 +934,14 @@ function buildComponents(defines, dir) {
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
     preprocessCSS("web/pdf_viewer.css", defines)
-      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
+      .pipe(
+        postcss([
+          postcssCalc(),
+          postcssLogical({ preserve: true }),
+          postcssDirPseudoClass(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
+      )
       .pipe(gulp.dest(dir)),
   ]);
 }
@@ -1015,7 +1031,14 @@ function buildMinified(defines, dir) {
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
     preprocessCSS("web/viewer.css", defines)
-      .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
+      .pipe(
+        postcss([
+          postcssCalc(),
+          postcssLogical({ preserve: true }),
+          postcssDirPseudoClass(),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
+      )
       .pipe(gulp.dest(dir + "web")),
 
     gulp
@@ -1338,7 +1361,11 @@ gulp.task(
         ),
         preprocessCSS("web/viewer.css", defines)
           .pipe(
-            postcss([autoprefixer({ overrideBrowserslist: ["Chrome >= 73"] })])
+            postcss([
+              postcssLogical({ preserve: true }),
+              postcssDirPseudoClass(),
+              autoprefixer({ overrideBrowserslist: ["Chrome >= 73"] }),
+            ])
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
@@ -1873,7 +1900,11 @@ gulp.task("dev-css", function createDevCSS() {
 
     preprocessCSS("web/viewer.css", defines)
       .pipe(
-        postcss([autoprefixer({ overrideBrowserslist: ["last 2 versions"] })])
+        postcss([
+          postcssLogical({ preserve: true }),
+          postcssDirPseudoClass(),
+          autoprefixer({ overrideBrowserslist: ["last 2 versions"] }),
+        ])
       )
       .pipe(gulp.dest(cssDir)),
   ]);
