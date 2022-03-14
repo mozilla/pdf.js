@@ -801,16 +801,15 @@ gulp.task("cmaps", function (done) {
   done();
 });
 
-function preprocessCSS(source, mode, defines, cleanup) {
+function preprocessCSS(source, mode, defines) {
   const outName = getTempFile("~preprocess", ".css");
   builder.preprocessCSS(mode, source, outName);
   let out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
-  if (cleanup) {
-    // Strip out all license headers in the middle.
-    const reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
-    out = out.replace(reg, "");
-  }
+
+  // Strip out all license headers in the middle.
+  const reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
+  out = out.replace(reg, "");
 
   const i = source.lastIndexOf("/");
   return createStringSource(source.substr(i + 1), out);
@@ -849,7 +848,7 @@ function buildGeneric(defines, dir) {
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", "generic", defines, true)
+    preprocessCSS("web/viewer.css", "generic", defines)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
@@ -925,7 +924,7 @@ function buildComponents(defines, dir) {
   return merge([
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
-    preprocessCSS("web/pdf_viewer.css", "components", defines, true)
+    preprocessCSS("web/pdf_viewer.css", "components", defines)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir)),
   ]);
@@ -1015,7 +1014,7 @@ function buildMinified(defines, dir) {
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", "minified", defines, true)
+    preprocessCSS("web/viewer.css", "minified", defines)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
@@ -1252,7 +1251,7 @@ gulp.task(
         preprocessHTML("web/viewer.html", defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
         ),
-        preprocessCSS("web/viewer.css", "mozcentral", defines, true)
+        preprocessCSS("web/viewer.css", "mozcentral", defines)
           .pipe(
             postcss([
               autoprefixer({
@@ -1344,7 +1343,7 @@ gulp.task(
         preprocessHTML("web/viewer.html", defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
         ),
-        preprocessCSS("web/viewer.css", "chrome", defines, true)
+        preprocessCSS("web/viewer.css", "chrome", defines)
           .pipe(
             postcss([autoprefixer({ overrideBrowserslist: ["Chrome >= 73"] })])
           )
