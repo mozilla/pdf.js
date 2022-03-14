@@ -1699,7 +1699,6 @@ html[dir="rtl"] .treeItemToggler::before {
 }
 
 .grab-to-pan-grab {
-  cursor: url("images/grab.cur"), move !important;
   cursor: grab !important;
 }
 .grab-to-pan-grab
@@ -1708,7 +1707,6 @@ html[dir="rtl"] .treeItemToggler::before {
 }
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
-  cursor: url("images/grabbing.cur"), move !important;
   cursor: grabbing !important;
   position: fixed;
   background: rgba(0, 0, 0, 0);

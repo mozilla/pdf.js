@@ -63,7 +63,7 @@ const DIST_DIR = BUILD_DIR + "dist/";
 const TYPES_DIR = BUILD_DIR + "types/";
 const TMP_DIR = BUILD_DIR + "tmp/";
 const TYPESTEST_DIR = BUILD_DIR + "typestest/";
-const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
+const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif}", "web/debugger.js"];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
 const REPO = "git@github.com:mozilla/pdf.js.git";
@@ -1215,13 +1215,6 @@ gulp.task(
       const version = versionJSON.version,
         commit = versionJSON.commit;
 
-      // Ignore the fallback cursor images, since they're unnecessary in
-      // Firefox.
-      const MOZCENTRAL_COMMON_WEB_FILES = [
-        ...COMMON_WEB_FILES,
-        "!web/images/*.cur",
-      ];
-
       return merge([
         createMainBundle(defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
@@ -1239,7 +1232,7 @@ gulp.task(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
         ),
         gulp
-          .src(MOZCENTRAL_COMMON_WEB_FILES, { base: "web/" })
+          .src(COMMON_WEB_FILES, { base: "web/" })
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
         createCMapBundle().pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/cmaps")
