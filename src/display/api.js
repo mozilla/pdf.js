@@ -533,9 +533,7 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
  * after which individual pages can be rendered.
  */
 class PDFDocumentLoadingTask {
-  static get idCounters() {
-    return shadow(this, "idCounters", { doc: 0 });
-  }
+  static #docId = 0;
 
   constructor() {
     this._capability = createPromiseCapability();
@@ -546,7 +544,7 @@ class PDFDocumentLoadingTask {
      * Unique identifier for the document loading task.
      * @type {string}
      */
-    this.docId = `d${PDFDocumentLoadingTask.idCounters.doc++}`;
+    this.docId = `d${PDFDocumentLoadingTask.#docId++}`;
 
     /**
      * Whether the loading task is destroyed or not.
@@ -2017,16 +2015,14 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
  * @param {PDFWorkerParameters} params - The worker initialization parameters.
  */
 class PDFWorker {
-  static get _workerPorts() {
-    return shadow(this, "_workerPorts", new WeakMap());
-  }
+  static #workerPorts = new WeakMap();
 
   constructor({
     name = null,
     port = null,
     verbosity = getVerbosityLevel(),
   } = {}) {
-    if (port && PDFWorker._workerPorts.has(port)) {
+    if (port && PDFWorker.#workerPorts.has(port)) {
       throw new Error("Cannot use more than one PDFWorker per port.");
     }
 
@@ -2040,7 +2036,7 @@ class PDFWorker {
     this._messageHandler = null;
 
     if (port) {
-      PDFWorker._workerPorts.set(port, this);
+      PDFWorker.#workerPorts.set(port, this);
       this._initializeFromPort(port);
       return;
     }
@@ -2245,7 +2241,7 @@ class PDFWorker {
       this._webWorker.terminate();
       this._webWorker = null;
     }
-    PDFWorker._workerPorts.delete(this._port);
+    PDFWorker.#workerPorts.delete(this._port);
     this._port = null;
     if (this._messageHandler) {
       this._messageHandler.destroy();
@@ -2260,8 +2256,8 @@ class PDFWorker {
     if (!params?.port) {
       throw new Error("PDFWorker.fromPort - invalid method signature.");
     }
-    if (this._workerPorts.has(params.port)) {
-      return this._workerPorts.get(params.port);
+    if (this.#workerPorts.has(params.port)) {
+      return this.#workerPorts.get(params.port);
     }
     return new PDFWorker(params);
   }
@@ -3196,9 +3192,7 @@ class RenderTask {
  * @ignore
  */
 class InternalRenderTask {
-  static get canvasInUse() {
-    return shadow(this, "canvasInUse", new WeakSet());
-  }
+  static #canvasInUse = new WeakSet();
 
   constructor({
     callback,
@@ -3251,14 +3245,14 @@ class InternalRenderTask {
       return;
     }
     if (this._canvas) {
-      if (InternalRenderTask.canvasInUse.has(this._canvas)) {
+      if (InternalRenderTask.#canvasInUse.has(this._canvas)) {
         throw new Error(
           "Cannot use the same canvas during multiple render() operations. " +
             "Use different canvas or ensure previous operations were " +
             "cancelled or completed."
         );
       }
-      InternalRenderTask.canvasInUse.add(this._canvas);
+      InternalRenderTask.#canvasInUse.add(this._canvas);
     }
 
     if (this._pdfBug && globalThis.StepperManager?.enabled) {
@@ -3298,7 +3292,7 @@ class InternalRenderTask {
       this.gfx.endDrawing();
     }
     if (this._canvas) {
-      InternalRenderTask.canvasInUse.delete(this._canvas);
+      InternalRenderTask.#canvasInUse.delete(this._canvas);
     }
     this.callback(
       error ||
@@ -3364,7 +3358,7 @@ class InternalRenderTask {
       if (this.operatorList.lastChunk) {
         this.gfx.endDrawing();
         if (this._canvas) {
-          InternalRenderTask.canvasInUse.delete(this._canvas);
+          InternalRenderTask.#canvasInUse.delete(this._canvas);
         }
         this.callback();
       }
