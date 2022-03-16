@@ -884,8 +884,6 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 .dropdownToolbarButton::after {
   top: 6px;
   pointer-events: none;
-
-  -webkit-mask-image: var(--toolbarButton-menuArrow-icon);
   mask-image: var(--toolbarButton-menuArrow-icon);
 }
 html[dir="ltr"] .dropdownToolbarButton::after {
@@ -945,7 +943,6 @@ html[dir="rtl"] .dropdownToolbarButton::after {
 
   content: "";
   background-color: var(--toolbar-icon-bg-color);
-  -webkit-mask-size: cover;
   mask-size: cover;
 }
 
@@ -980,7 +977,6 @@ html[dir="rtl"] .secondaryToolbarButton::before {
 }
 
 .toolbarButton#sidebarToggle::before {
-  -webkit-mask-image: var(--toolbarButton-sidebarToggle-icon);
   mask-image: var(--toolbarButton-sidebarToggle-icon);
 }
 html[dir="rtl"] .toolbarButton#sidebarToggle::before {
@@ -988,7 +984,6 @@ html[dir="rtl"] .toolbarButton#sidebarToggle::before {
 }
 
 .toolbarButton#secondaryToolbarToggle::before {
-  -webkit-mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
 }
 html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
@@ -996,56 +991,46 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
 }
 
 .toolbarButton.findPrevious::before {
-  -webkit-mask-image: var(--findbarButton-previous-icon);
   mask-image: var(--findbarButton-previous-icon);
 }
 
 .toolbarButton.findNext::before {
-  -webkit-mask-image: var(--findbarButton-next-icon);
   mask-image: var(--findbarButton-next-icon);
 }
 
 .toolbarButton.pageUp::before {
-  -webkit-mask-image: var(--toolbarButton-pageUp-icon);
   mask-image: var(--toolbarButton-pageUp-icon);
 }
 
 .toolbarButton.pageDown::before {
-  -webkit-mask-image: var(--toolbarButton-pageDown-icon);
   mask-image: var(--toolbarButton-pageDown-icon);
 }
 
 .toolbarButton.zoomOut::before {
-  -webkit-mask-image: var(--toolbarButton-zoomOut-icon);
   mask-image: var(--toolbarButton-zoomOut-icon);
 }
 
 .toolbarButton.zoomIn::before {
-  -webkit-mask-image: var(--toolbarButton-zoomIn-icon);
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
-  -webkit-mask-image: var(--toolbarButton-presentationMode-icon);
   mask-image: var(--toolbarButton-presentationMode-icon);
 }
 
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
-  -webkit-mask-image: var(--toolbarButton-print-icon);
   mask-image: var(--toolbarButton-print-icon);
 }
 
 .toolbarButton.openFile::before,
 .secondaryToolbarButton.openFile::before {
-  -webkit-mask-image: var(--toolbarButton-openFile-icon);
   mask-image: var(--toolbarButton-openFile-icon);
 }
 
 .toolbarButton.download::before,
 .secondaryToolbarButton.download::before {
-  -webkit-mask-image: var(--toolbarButton-download-icon);
   mask-image: var(--toolbarButton-download-icon);
 }
 
@@ -1061,17 +1046,14 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
 
 .toolbarButton.bookmark::before,
 .secondaryToolbarButton.bookmark::before {
-  -webkit-mask-image: var(--toolbarButton-bookmark-icon);
   mask-image: var(--toolbarButton-bookmark-icon);
 }
 
 #viewThumbnail.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewThumbnail-icon);
   mask-image: var(--toolbarButton-viewThumbnail-icon);
 }
 
 #viewOutline.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewOutline-icon);
   mask-image: var(--toolbarButton-viewOutline-icon);
 }
 html[dir="rtl"] #viewOutline.toolbarButton::before {
@@ -1079,17 +1061,14 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 }
 
 #viewAttachments.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewAttachments-icon);
   mask-image: var(--toolbarButton-viewAttachments-icon);
 }
 
 #viewLayers.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewLayers-icon);
   mask-image: var(--toolbarButton-viewLayers-icon);
 }
 
 #currentOutlineItem.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-currentOutlineItem-icon);
   mask-image: var(--toolbarButton-currentOutlineItem-icon);
 }
 html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
@@ -1097,7 +1076,6 @@ html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
 }
 
 #viewFind.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-search-icon);
   mask-image: var(--toolbarButton-search-icon);
 }
 
@@ -1138,72 +1116,58 @@ html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
 }
 
 .secondaryToolbarButton.firstPage::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-firstPage-icon);
   mask-image: var(--secondaryToolbarButton-firstPage-icon);
 }
 
 .secondaryToolbarButton.lastPage::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-lastPage-icon);
   mask-image: var(--secondaryToolbarButton-lastPage-icon);
 }
 
 .secondaryToolbarButton.rotateCcw::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
   mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
 }
 
 .secondaryToolbarButton.rotateCw::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-rotateCw-icon);
   mask-image: var(--secondaryToolbarButton-rotateCw-icon);
 }
 
 .secondaryToolbarButton.selectTool::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-selectTool-icon);
   mask-image: var(--secondaryToolbarButton-selectTool-icon);
 }
 
 .secondaryToolbarButton.handTool::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-handTool-icon);
   mask-image: var(--secondaryToolbarButton-handTool-icon);
 }
 
 .secondaryToolbarButton.scrollPage::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollPage-icon);
   mask-image: var(--secondaryToolbarButton-scrollPage-icon);
 }
 
 .secondaryToolbarButton.scrollVertical::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
   mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
 }
 
 .secondaryToolbarButton.scrollHorizontal::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
   mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
 }
 
 .secondaryToolbarButton.scrollWrapped::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
   mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
 }
 
 .secondaryToolbarButton.spreadNone::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-spreadNone-icon);
   mask-image: var(--secondaryToolbarButton-spreadNone-icon);
 }
 
 .secondaryToolbarButton.spreadOdd::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
   mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
 }
 
 .secondaryToolbarButton.spreadEven::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-spreadEven-icon);
   mask-image: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
 .secondaryToolbarButton.documentProperties::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-documentProperties-icon);
   mask-image: var(--secondaryToolbarButton-documentProperties-icon);
 }
 
@@ -1425,11 +1389,9 @@ html[dir="rtl"] .treeItem > .treeItems {
   color: rgba(255, 255, 255, 0.5);
 }
 .treeItemToggler::before {
-  -webkit-mask-image: var(--treeitem-expanded-icon);
   mask-image: var(--treeitem-expanded-icon);
 }
 .treeItemToggler.treeItemsHidden::before {
-  -webkit-mask-image: var(--treeitem-collapsed-icon);
   mask-image: var(--treeitem-collapsed-icon);
 }
 html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
