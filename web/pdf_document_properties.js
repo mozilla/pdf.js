@@ -52,6 +52,8 @@ function getPageName(size, isPortrait, pageNames) {
  */
 
 class PDFDocumentProperties {
+  #fieldData = null;
+
   /**
    * @param {PDFDocumentPropertiesOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
@@ -70,7 +72,7 @@ class PDFDocumentProperties {
     this.overlayManager = overlayManager;
     this.l10n = l10n;
 
-    this._reset();
+    this.#reset();
     // Bind the event listener for the Close button.
     closeButton.addEventListener("click", this.close.bind(this));
 
@@ -97,15 +99,6 @@ class PDFDocumentProperties {
    * Open the document properties overlay.
    */
   async open() {
-    const freezeFieldData = data => {
-      Object.defineProperty(this, "fieldData", {
-        value: Object.freeze(data),
-        writable: false,
-        enumerable: true,
-        configurable: true,
-      });
-    };
-
     await Promise.all([
       this.overlayManager.open(this.overlayName),
       this._dataAvailableCapability.promise,
@@ -116,11 +109,11 @@ class PDFDocumentProperties {
     // If the document properties were previously fetched (for this PDF file),
     // just update the dialog immediately to avoid redundant lookups.
     if (
-      this.fieldData &&
-      currentPageNumber === this.fieldData._currentPageNumber &&
-      pagesRotation === this.fieldData._pagesRotation
+      this.#fieldData &&
+      currentPageNumber === this.#fieldData._currentPageNumber &&
+      pagesRotation === this.#fieldData._pagesRotation
     ) {
-      this._updateUI();
+      this.#updateUI();
       return;
     }
 
@@ -141,16 +134,16 @@ class PDFDocumentProperties {
       isLinearized,
     ] = await Promise.all([
       contentDispositionFilename || getPdfFilenameFromUrl(this.url),
-      this._parseFileSize(contentLength),
-      this._parseDate(info.CreationDate),
-      this._parseDate(info.ModDate),
+      this.#parseFileSize(contentLength),
+      this.#parseDate(info.CreationDate),
+      this.#parseDate(info.ModDate),
       this.pdfDocument.getPage(currentPageNumber).then(pdfPage => {
-        return this._parsePageSize(getPageSizeInches(pdfPage), pagesRotation);
+        return this.#parsePageSize(getPageSizeInches(pdfPage), pagesRotation);
       }),
-      this._parseLinearization(info.IsLinearized),
+      this.#parseLinearization(info.IsLinearized),
     ]);
 
-    freezeFieldData({
+    this.#fieldData = Object.freeze({
       fileName,
       fileSize,
       title: info.Title,
@@ -168,7 +161,7 @@ class PDFDocumentProperties {
       _currentPageNumber: currentPageNumber,
       _pagesRotation: pagesRotation,
     });
-    this._updateUI();
+    this.#updateUI();
 
     // Get the correct fileSize, since it may not have been available
     // or could potentially be wrong.
@@ -176,11 +169,11 @@ class PDFDocumentProperties {
     if (contentLength === length) {
       return; // The fileSize has already been correctly set.
     }
-    const data = Object.assign(Object.create(null), this.fieldData);
-    data.fileSize = await this._parseFileSize(length);
+    const data = Object.assign(Object.create(null), this.#fieldData);
+    data.fileSize = await this.#parseFileSize(length);
 
-    freezeFieldData(data);
-    this._updateUI();
+    this.#fieldData = Object.freeze(data);
+    this.#updateUI();
   }
 
   /**
@@ -201,8 +194,8 @@ class PDFDocumentProperties {
    */
   setDocument(pdfDocument, url = null) {
     if (this.pdfDocument) {
-      this._reset();
-      this._updateUI(true);
+      this.#reset();
+      this.#updateUI(true);
     }
     if (!pdfDocument) {
       return;
@@ -213,14 +206,11 @@ class PDFDocumentProperties {
     this._dataAvailableCapability.resolve();
   }
 
-  /**
-   * @private
-   */
-  _reset() {
+  #reset() {
     this.pdfDocument = null;
     this.url = null;
 
-    delete this.fieldData;
+    this.#fieldData = null;
     this._dataAvailableCapability = createPromiseCapability();
     this._currentPageNumber = 1;
     this._pagesRotation = 0;
@@ -230,10 +220,9 @@ class PDFDocumentProperties {
    * Always updates all of the dialog fields, to prevent inconsistent UI state.
    * NOTE: If the contents of a particular field is neither a non-empty string,
    *       nor a number, it will fall back to `DEFAULT_FIELD_CONTENT`.
-   * @private
    */
-  _updateUI(reset = false) {
-    if (reset || !this.fieldData) {
+  #updateUI(reset = false) {
+    if (reset || !this.#fieldData) {
       for (const id in this.fields) {
         this.fields[id].textContent = DEFAULT_FIELD_CONTENT;
       }
@@ -245,16 +234,13 @@ class PDFDocumentProperties {
       return;
     }
     for (const id in this.fields) {
-      const content = this.fieldData[id];
+      const content = this.#fieldData[id];
       this.fields[id].textContent =
         content || content === 0 ? content : DEFAULT_FIELD_CONTENT;
     }
   }
 
-  /**
-   * @private
-   */
-  async _parseFileSize(fileSize = 0) {
+  async #parseFileSize(fileSize = 0) {
     const kb = fileSize / 1024,
       mb = kb / 1024;
     if (!kb) {
@@ -267,10 +253,7 @@ class PDFDocumentProperties {
     });
   }
 
-  /**
-   * @private
-   */
-  async _parsePageSize(pageSizeInches, pagesRotation) {
+  async #parsePageSize(pageSizeInches, pagesRotation) {
     if (!pageSizeInches) {
       return undefined;
     }
@@ -364,10 +347,7 @@ class PDFDocumentProperties {
     );
   }
 
-  /**
-   * @private
-   */
-  async _parseDate(inputDate) {
+  async #parseDate(inputDate) {
     const dateObject = PDFDateString.toDateObject(inputDate);
     if (!dateObject) {
       return undefined;
@@ -378,10 +358,7 @@ class PDFDocumentProperties {
     });
   }
 
-  /**
-   * @private
-   */
-  _parseLinearization(isLinearized) {
+  #parseLinearization(isLinearized) {
     return this.l10n.get(
       `document_properties_linearized_${isLinearized ? "yes" : "no"}`
     );
