@@ -235,21 +235,19 @@ select {
   position: absolute;
   top: 32px;
   bottom: 0;
+  inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
   visibility: hidden;
   z-index: 100;
   border-top: 1px solid rgba(51, 51, 51, 1);
+  transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 html[dir="ltr"] #sidebarContainer {
-  transition-property: left;
-  left: calc(-1 * var(--sidebar-width));
   border-right: var(--doorhanger-border-color-whcm);
 }
 html[dir="rtl"] #sidebarContainer {
-  transition-property: right;
-  right: calc(-1 * var(--sidebar-width));
   border-left: var(--doorhanger-border-color-whcm);
 }
 
@@ -264,11 +262,8 @@ html[dir="rtl"] #sidebarContainer {
 #outerContainer.sidebarOpen #sidebarContainer {
   visibility: visible;
 }
-html[dir="ltr"] #outerContainer.sidebarOpen #sidebarContainer {
-  left: 0;
-}
-html[dir="rtl"] #outerContainer.sidebarOpen #sidebarContainer {
-  right: 0;
+#outerContainer.sidebarOpen #sidebarContainer {
+  inset-inline-start: 0;
 }
 
 #mainContainer {
@@ -283,17 +278,16 @@ html[dir="rtl"] #outerContainer.sidebarOpen #sidebarContainer {
 #sidebarContent {
   top: 32px;
   bottom: 0;
+  inset-inline-start: 0;
   overflow: auto;
   position: absolute;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.1);
 }
 html[dir="ltr"] #sidebarContent {
-  left: 0;
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
 }
 html[dir="rtl"] #sidebarContent {
-  right: 0;
   box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25);
 }
 
@@ -316,17 +310,9 @@ html[dir="rtl"] #sidebarContent {
   transition-duration: 0s;
 }
 
-html[dir="ltr"]
-  #outerContainer.sidebarOpen
-  #viewerContainer:not(.pdfPresentationMode) {
-  transition-property: left;
-  left: var(--sidebar-width);
-}
-html[dir="rtl"]
-  #outerContainer.sidebarOpen
-  #viewerContainer:not(.pdfPresentationMode) {
-  transition-property: right;
-  right: var(--sidebar-width);
+#outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
+  inset-inline-start: var(--sidebar-width);
+  transition-property: inset-inline-start;
 }
 
 .toolbar {
@@ -366,15 +352,10 @@ html[dir="rtl"] #toolbarSidebar {
   position: absolute;
   top: 0;
   bottom: 0;
+  inset-inline-end: -6px;
   width: 6px;
   z-index: 200;
   cursor: ew-resize;
-}
-html[dir="ltr"] #sidebarResizer {
-  right: -6px;
-}
-html[dir="rtl"] #sidebarResizer {
-  left: -6px;
 }
 
 #toolbarContainer,
@@ -392,29 +373,17 @@ html[dir="rtl"] #sidebarResizer {
 
 #loadingBar {
   position: absolute;
+  inset-inline: 0 var(--loadingBar-end-offset);
   height: 4px;
   background-color: var(--body-bg-color);
   border-bottom: 1px solid var(--toolbar-border-color);
-
+  transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
-html[dir="ltr"] #loadingBar {
-  transition-property: left;
-  left: 0;
-  right: var(--loadingBar-end-offset);
-}
-html[dir="rtl"] #loadingBar {
-  transition-property: right;
-  left: var(--loadingBar-end-offset);
-  right: 0;
-}
 
-html[dir="ltr"] #outerContainer.sidebarOpen #loadingBar {
-  left: var(--sidebar-width);
-}
-html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
-  right: var(--sidebar-width);
+#outerContainer.sidebarOpen #loadingBar {
+  inset-inline-start: var(--sidebar-width);
 }
 
 #outerContainer.sidebarResizing #loadingBar {
@@ -482,6 +451,7 @@ html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
 }
 
 .findbar {
+  inset-inline-start: 64px;
   min-width: 300px;
   background-color: var(--toolbar-bg-color);
 }
@@ -493,12 +463,6 @@ html[dir="rtl"] #outerContainer.sidebarOpen #loadingBar {
 }
 .findbar.wrapContainers > div.findbarMessageContainer {
   height: auto;
-}
-html[dir="ltr"] .findbar {
-  left: 64px;
-}
-html[dir="rtl"] .findbar {
-  right: 64px;
 }
 
 .findbar .splitToolbarButton {
@@ -583,15 +547,10 @@ html[dir="rtl"] #findInput[data-status="pending"] {
 
 .secondaryToolbar {
   padding: 6px 0 10px;
+  inset-inline-end: 4px;
   height: auto;
   z-index: 30000;
   background-color: var(--doorhanger-bg-color);
-}
-html[dir="ltr"] .secondaryToolbar {
-  right: 4px;
-}
-html[dir="rtl"] .secondaryToolbar {
-  left: 4px;
 }
 
 #secondaryToolbarButtonContainer {
@@ -742,12 +701,11 @@ html[dir="rtl"] .secondaryToolbar {
 .splitToolbarButton > .toolbarButton {
   position: relative;
 }
-html[dir="ltr"] .splitToolbarButton > .toolbarButton:first-child,
-html[dir="rtl"] .splitToolbarButton > .toolbarButton:last-child,
-html[dir="ltr"] .splitToolbarButton > .toolbarButton:last-child,
-html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
+.splitToolbarButton > .toolbarButton:first-child,
+.splitToolbarButton > .toolbarButton:last-child {
   margin: 0;
 }
+
 .splitToolbarButtonSeparator {
   float: inline-start;
   padding: 10px 0;
@@ -828,14 +786,9 @@ html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
 }
 .dropdownToolbarButton::after {
   top: 6px;
+  inset-inline-end: 7px;
   pointer-events: none;
   mask-image: var(--toolbarButton-menuArrow-icon);
-}
-html[dir="ltr"] .dropdownToolbarButton::after {
-  right: 7px;
-}
-html[dir="rtl"] .dropdownToolbarButton::after {
-  left: 7px;
 }
 
 .dropdownToolbarButton > select {
@@ -913,12 +866,7 @@ html[dir="rtl"] .dropdownToolbarButton::after {
 .secondaryToolbarButton::before {
   opacity: var(--doorhanger-icon-opacity);
   top: 5px;
-}
-html[dir="ltr"] .secondaryToolbarButton::before {
-  left: 12px;
-}
-html[dir="rtl"] .secondaryToolbarButton::before {
-  right: 12px;
+  inset-inline-start: 12px;
 }
 
 .toolbarButton#sidebarToggle::before {
@@ -1028,18 +976,13 @@ html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
   position: absolute;
   display: inline-block;
   top: 1px;
+  inset-inline-start: 17px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
   content: "";
   background-color: rgba(112, 219, 85, 1);
   height: 9px;
   width: 9px;
   border-radius: 50%;
-}
-html[dir="ltr"] .toolbarButton.pdfSidebarNotification::after {
-  left: 17px;
-}
-html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
-  right: 17px;
 }
 
 .secondaryToolbarButton {
@@ -1715,11 +1658,8 @@ html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
     background-color: var(--sidebar-narrow-bg-color);
   }
 
-  html[dir="ltr"] #outerContainer.sidebarOpen #viewerContainer {
-    left: 0 !important;
-  }
-  html[dir="rtl"] #outerContainer.sidebarOpen #viewerContainer {
-    right: 0 !important;
+  #outerContainer.sidebarOpen #viewerContainer {
+    inset-inline-start: 0 !important;
   }
 
   #outerContainer .hiddenLargeView,
@@ -1761,11 +1701,8 @@ html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
   .toolbarButtonSpacer {
     width: 0;
   }
-  html[dir="ltr"] .findbar {
-    left: 34px;
-  }
-  html[dir="rtl"] .findbar {
-    right: 34px;
+  .findbar {
+    inset-inline-start: 34px;
   }
 }
 
