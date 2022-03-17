@@ -240,15 +240,10 @@ select {
   visibility: hidden;
   z-index: 100;
   border-top: 1px solid rgba(51, 51, 51, 1);
+  border-inline-end: var(--doorhanger-border-color-whcm);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
-}
-html[dir="ltr"] #sidebarContainer {
-  border-right: var(--doorhanger-border-color-whcm);
-}
-html[dir="rtl"] #sidebarContainer {
-  border-left: var(--doorhanger-border-color-whcm);
 }
 
 #outerContainer.sidebarResizing #sidebarContainer {
@@ -484,16 +479,9 @@ html[dir="rtl"] #toolbarSidebar {
 
 .findbar .splitToolbarButton > .findNext {
   width: 29px;
-}
-html[dir="ltr"] .findbar .splitToolbarButton > .findNext {
-  border-bottom-right-radius: 2px;
-  border-top-right-radius: 2px;
-  border-right: 1px solid var(--field-border-color);
-}
-html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
-  border-bottom-left-radius: 2px;
-  border-top-left-radius: 2px;
-  border-left: 1px solid var(--field-border-color);
+  border-start-end-radius: 2px;
+  border-end-end-radius: 2px;
+  border-inline-end: 1px solid var(--field-border-color);
 }
 
 .findbar input[type="checkbox"] {
@@ -510,15 +498,6 @@ html[dir="rtl"] .findbar .splitToolbarButton > .findNext {
   background-color: var(--button-hover-color);
 }
 
-html[dir="ltr"] #findInput {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-html[dir="rtl"] #findInput {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
 .findbar .toolbarField[type="checkbox"]:checked + .toolbarLabel {
   background-color: var(--toggled-btn-bg-color) !important;
   color: var(--toggled-btn-color);
@@ -526,6 +505,8 @@ html[dir="rtl"] #findInput {
 
 #findInput {
   width: 200px;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
 }
 #findInput::-webkit-input-placeholder {
   color: rgba(191, 191, 191, 1);
