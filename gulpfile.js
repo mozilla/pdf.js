@@ -63,7 +63,7 @@ const DIST_DIR = BUILD_DIR + "dist/";
 const TYPES_DIR = BUILD_DIR + "types/";
 const TMP_DIR = BUILD_DIR + "tmp/";
 const TYPESTEST_DIR = BUILD_DIR + "typestest/";
-const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif,cur}", "web/debugger.js"];
+const COMMON_WEB_FILES = ["web/images/*.{png,svg,gif}", "web/debugger.js"];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
 const REPO = "git@github.com:mozilla/pdf.js.git";
@@ -832,16 +832,15 @@ gulp.task("cmaps", function (done) {
   done();
 });
 
-function preprocessCSS(source, mode, defines, cleanup) {
+function preprocessCSS(source, mode, defines) {
   const outName = getTempFile("~preprocess", ".css");
   builder.preprocessCSS(mode, source, outName);
   let out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
-  if (cleanup) {
-    // Strip out all license headers in the middle.
-    const reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
-    out = out.replace(reg, "");
-  }
+
+  // Strip out all license headers in the middle.
+  const reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
+  out = out.replace(reg, "");
 
   const i = source.lastIndexOf("/");
   return createStringSource(source.substr(i + 1), out);
@@ -880,7 +879,7 @@ function buildGeneric(defines, dir) {
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", "generic", defines, true)
+    preprocessCSS("web/viewer.css", "generic", defines)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
@@ -956,7 +955,7 @@ function buildComponents(defines, dir) {
   return merge([
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(dir + "images")),
-    preprocessCSS("web/pdf_viewer.css", "components", defines, true)
+    preprocessCSS("web/pdf_viewer.css", "components", defines)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir)),
   ]);
@@ -1046,7 +1045,7 @@ function buildMinified(defines, dir) {
     createStandardFontBundle().pipe(gulp.dest(dir + "web/standard_fonts")),
 
     preprocessHTML("web/viewer.html", defines).pipe(gulp.dest(dir + "web")),
-    preprocessCSS("web/viewer.css", "minified", defines, true)
+    preprocessCSS("web/viewer.css", "minified", defines)
       .pipe(postcss([calc(), autoprefixer(AUTOPREFIXER_CONFIG)]))
       .pipe(gulp.dest(dir + "web")),
 
@@ -1235,13 +1234,6 @@ gulp.task(
       const version = versionJSON.version,
         commit = versionJSON.commit;
 
-      // Ignore the fallback cursor images, since they're unnecessary in
-      // Firefox.
-      const MOZCENTRAL_COMMON_WEB_FILES = [
-        ...COMMON_WEB_FILES,
-        "!web/images/*.cur",
-      ];
-
       return merge([
         createMainBundle(defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
@@ -1259,7 +1251,7 @@ gulp.task(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
         ),
         gulp
-          .src(MOZCENTRAL_COMMON_WEB_FILES, { base: "web/" })
+          .src(COMMON_WEB_FILES, { base: "web/" })
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
         createCMapBundle().pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/cmaps")
@@ -1271,7 +1263,7 @@ gulp.task(
         preprocessHTML("web/viewer.html", defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
         ),
-        preprocessCSS("web/viewer.css", "mozcentral", defines, true)
+        preprocessCSS("web/viewer.css", "mozcentral", defines)
           .pipe(
             postcss([
               autoprefixer({
@@ -1363,7 +1355,7 @@ gulp.task(
         preprocessHTML("web/viewer.html", defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
         ),
-        preprocessCSS("web/viewer.css", "chrome", defines, true)
+        preprocessCSS("web/viewer.css", "chrome", defines)
           .pipe(
             postcss([autoprefixer({ overrideBrowserslist: ["Chrome >= 73"] })])
           )
@@ -1888,6 +1880,24 @@ gulp.task(
   )
 );
 
+gulp.task("dev-css", function createDevCSS() {
+  console.log();
+  console.log("### Building development CSS");
+
+  const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+  const cssDir = BUILD_DIR + "dev-css/";
+
+  return merge([
+    gulp.src("web/images/*", { base: "web/" }).pipe(gulp.dest(cssDir)),
+
+    preprocessCSS("web/viewer.css", "generic", defines)
+      .pipe(
+        postcss([autoprefixer({ overrideBrowserslist: ["last 2 versions"] })])
+      )
+      .pipe(gulp.dest(cssDir)),
+  ]);
+});
+
 gulp.task(
   "dev-sandbox",
   gulp.series(
@@ -1916,6 +1926,13 @@ gulp.task(
 gulp.task(
   "server",
   gulp.parallel(
+    function watchDevCSS() {
+      gulp.watch(
+        ["web/*.css", "web/images/*"],
+        { ignoreInitial: false },
+        gulp.series("dev-css")
+      );
+    },
     function watchDevSandbox() {
       gulp.watch(
         [

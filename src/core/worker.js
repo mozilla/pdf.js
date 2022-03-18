@@ -446,7 +446,7 @@ class WorkerMessageHandler {
 
       // modified by ngx-extended-pdf-viewer #376
       let cMapUrl = evaluatorOptions.cMapUrl;
-      if (cMapUrl.constructor.name === "Function") {
+      if (cMapUrl?.constructor.name === "Function") {
         evaluatorOptions.cMapUrl = cMapUrl();
       }
       // #376 end of modification

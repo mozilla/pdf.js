@@ -884,8 +884,6 @@ html[dir="rtl"] #toolbarViewerLeft > .toolbarButton:first-child {
 .dropdownToolbarButton::after {
   top: 6px;
   pointer-events: none;
-
-  -webkit-mask-image: var(--toolbarButton-menuArrow-icon);
   mask-image: var(--toolbarButton-menuArrow-icon);
 }
 html[dir="ltr"] .dropdownToolbarButton::after {
@@ -904,21 +902,15 @@ html[dir="rtl"] .dropdownToolbarButton::after {
   color: var(--main-color);
   margin: 0;
   padding: 1px 0 2px;
+  padding-inline-start: 4px;
   border: none;
   background-color: var(--dropdown-btn-bg-color);
-}
-html[dir="ltr"] .dropdownToolbarButton > select {
-  padding-left: 4px;
-}
-html[dir="rtl"] .dropdownToolbarButton > select {
-  padding-right: 4px;
 }
 .dropdownToolbarButton > select:hover,
 .dropdownToolbarButton > select:focus-visible {
   background-color: var(--button-hover-color);
   color: var(--toggled-btn-color);
 }
-
 .dropdownToolbarButton > select > option {
   background: var(--doorhanger-bg-color);
   color: var(--main-color);
@@ -951,7 +943,6 @@ html[dir="rtl"] .dropdownToolbarButton > select {
 
   content: "";
   background-color: var(--toolbar-icon-bg-color);
-  -webkit-mask-size: cover;
   mask-size: cover;
 }
 
@@ -986,7 +977,6 @@ html[dir="rtl"] .secondaryToolbarButton::before {
 }
 
 .toolbarButton#sidebarToggle::before {
-  -webkit-mask-image: var(--toolbarButton-sidebarToggle-icon);
   mask-image: var(--toolbarButton-sidebarToggle-icon);
 }
 html[dir="rtl"] .toolbarButton#sidebarToggle::before {
@@ -994,7 +984,6 @@ html[dir="rtl"] .toolbarButton#sidebarToggle::before {
 }
 
 .toolbarButton#secondaryToolbarToggle::before {
-  -webkit-mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
 }
 html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
@@ -1002,56 +991,46 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
 }
 
 .toolbarButton.findPrevious::before {
-  -webkit-mask-image: var(--findbarButton-previous-icon);
   mask-image: var(--findbarButton-previous-icon);
 }
 
 .toolbarButton.findNext::before {
-  -webkit-mask-image: var(--findbarButton-next-icon);
   mask-image: var(--findbarButton-next-icon);
 }
 
 .toolbarButton.pageUp::before {
-  -webkit-mask-image: var(--toolbarButton-pageUp-icon);
   mask-image: var(--toolbarButton-pageUp-icon);
 }
 
 .toolbarButton.pageDown::before {
-  -webkit-mask-image: var(--toolbarButton-pageDown-icon);
   mask-image: var(--toolbarButton-pageDown-icon);
 }
 
 .toolbarButton.zoomOut::before {
-  -webkit-mask-image: var(--toolbarButton-zoomOut-icon);
   mask-image: var(--toolbarButton-zoomOut-icon);
 }
 
 .toolbarButton.zoomIn::before {
-  -webkit-mask-image: var(--toolbarButton-zoomIn-icon);
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
-  -webkit-mask-image: var(--toolbarButton-presentationMode-icon);
   mask-image: var(--toolbarButton-presentationMode-icon);
 }
 
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
-  -webkit-mask-image: var(--toolbarButton-print-icon);
   mask-image: var(--toolbarButton-print-icon);
 }
 
 .toolbarButton.openFile::before,
 .secondaryToolbarButton.openFile::before {
-  -webkit-mask-image: var(--toolbarButton-openFile-icon);
   mask-image: var(--toolbarButton-openFile-icon);
 }
 
 .toolbarButton.download::before,
 .secondaryToolbarButton.download::before {
-  -webkit-mask-image: var(--toolbarButton-download-icon);
   mask-image: var(--toolbarButton-download-icon);
 }
 
@@ -1067,17 +1046,14 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
 
 .toolbarButton.bookmark::before,
 .secondaryToolbarButton.bookmark::before {
-  -webkit-mask-image: var(--toolbarButton-bookmark-icon);
   mask-image: var(--toolbarButton-bookmark-icon);
 }
 
 #viewThumbnail.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewThumbnail-icon);
   mask-image: var(--toolbarButton-viewThumbnail-icon);
 }
 
 #viewOutline.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewOutline-icon);
   mask-image: var(--toolbarButton-viewOutline-icon);
 }
 html[dir="rtl"] #viewOutline.toolbarButton::before {
@@ -1085,17 +1061,14 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 }
 
 #viewAttachments.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewAttachments-icon);
   mask-image: var(--toolbarButton-viewAttachments-icon);
 }
 
 #viewLayers.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-viewLayers-icon);
   mask-image: var(--toolbarButton-viewLayers-icon);
 }
 
 #currentOutlineItem.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-currentOutlineItem-icon);
   mask-image: var(--toolbarButton-currentOutlineItem-icon);
 }
 html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
@@ -1103,7 +1076,6 @@ html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
 }
 
 #viewFind.toolbarButton::before {
-  -webkit-mask-image: var(--toolbarButton-search-icon);
   mask-image: var(--toolbarButton-search-icon);
 }
 
@@ -1129,97 +1101,73 @@ html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
   position: relative;
   margin: 0;
   padding: 0 0 1px;
+  padding-inline-start: 36px;
   height: auto;
   min-height: 26px;
   width: auto;
   min-width: 100%;
+  text-align: start;
   white-space: normal;
   border-radius: 0;
   box-sizing: border-box;
 }
-html[dir="ltr"] .secondaryToolbarButton {
-  padding-left: 36px;
-  text-align: left;
-}
-html[dir="rtl"] .secondaryToolbarButton {
-  padding-right: 36px;
-  text-align: right;
-}
-
-html[dir="ltr"] .secondaryToolbarButton > span {
-  padding-right: 4px;
-}
-html[dir="rtl"] .secondaryToolbarButton > span {
-  padding-left: 4px;
+.secondaryToolbarButton > span {
+  padding-inline-end: 4px;
 }
 
 .secondaryToolbarButton.firstPage::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-firstPage-icon);
   mask-image: var(--secondaryToolbarButton-firstPage-icon);
 }
 
 .secondaryToolbarButton.lastPage::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-lastPage-icon);
   mask-image: var(--secondaryToolbarButton-lastPage-icon);
 }
 
 .secondaryToolbarButton.rotateCcw::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
   mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
 }
 
 .secondaryToolbarButton.rotateCw::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-rotateCw-icon);
   mask-image: var(--secondaryToolbarButton-rotateCw-icon);
 }
 
 .secondaryToolbarButton.selectTool::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-selectTool-icon);
   mask-image: var(--secondaryToolbarButton-selectTool-icon);
 }
 
 .secondaryToolbarButton.handTool::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-handTool-icon);
   mask-image: var(--secondaryToolbarButton-handTool-icon);
 }
 
 .secondaryToolbarButton.scrollPage::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollPage-icon);
   mask-image: var(--secondaryToolbarButton-scrollPage-icon);
 }
 
 .secondaryToolbarButton.scrollVertical::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
   mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
 }
 
 .secondaryToolbarButton.scrollHorizontal::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
   mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
 }
 
 .secondaryToolbarButton.scrollWrapped::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
   mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
 }
 
 .secondaryToolbarButton.spreadNone::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-spreadNone-icon);
   mask-image: var(--secondaryToolbarButton-spreadNone-icon);
 }
 
 .secondaryToolbarButton.spreadOdd::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
   mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
 }
 
 .secondaryToolbarButton.spreadEven::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-spreadEven-icon);
   mask-image: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
 .secondaryToolbarButton.documentProperties::before {
-  -webkit-mask-image: var(--secondaryToolbarButton-documentProperties-icon);
   mask-image: var(--secondaryToolbarButton-documentProperties-icon);
 }
 
@@ -1309,11 +1257,8 @@ html[dir="rtl"] .toolbarField[type="checkbox"] {
   cursor: default;
 }
 
-html[dir="ltr"] #numPages.toolbarLabel {
-  padding-left: 3px;
-}
-html[dir="rtl"] #numPages.toolbarLabel {
-  padding-right: 3px;
+#numPages.toolbarLabel {
+  padding-inline-start: 3px;
 }
 
 #thumbnailView {
@@ -1419,6 +1364,8 @@ html[dir="rtl"] .treeItem > .treeItems {
   min-width: calc(100% - 4px);
   height: auto;
   margin-bottom: 1px;
+  padding: 2px 0 5px;
+  padding-inline-start: 4px;
   border-radius: 2px;
   color: var(--treeitem-color);
   font-size: 13px;
@@ -1427,21 +1374,12 @@ html[dir="rtl"] .treeItem > .treeItems {
   white-space: normal;
   cursor: pointer;
 }
-html[dir="ltr"] .treeItem > a {
-  padding: 2px 0 5px 4px;
-}
-html[dir="rtl"] .treeItem > a {
-  padding: 2px 4px 5px 0;
-}
 
 #layersView .treeItem > a > * {
   cursor: pointer;
 }
-html[dir="ltr"] #layersView .treeItem > a > label {
-  padding-left: 4px;
-}
-html[dir="rtl"] #layersView .treesItem > a > label {
-  padding-right: 4px;
+#layersView .treeItem > a > label {
+  padding-inline-start: 4px;
 }
 
 .treeItemToggler {
@@ -1451,11 +1389,9 @@ html[dir="rtl"] #layersView .treesItem > a > label {
   color: rgba(255, 255, 255, 0.5);
 }
 .treeItemToggler::before {
-  -webkit-mask-image: var(--treeitem-expanded-icon);
   mask-image: var(--treeitem-expanded-icon);
 }
 .treeItemToggler.treeItemsHidden::before {
-  -webkit-mask-image: var(--treeitem-collapsed-icon);
   mask-image: var(--treeitem-collapsed-icon);
 }
 html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
@@ -1604,12 +1540,7 @@ html[dir="rtl"] .treeItemToggler::before {
 }
 #documentPropertiesOverlay .row > * {
   min-width: 100px;
-}
-html[dir="ltr"] #documentPropertiesOverlay .row > * {
-  text-align: left;
-}
-html[dir="rtl"] #documentPropertiesOverlay .row > * {
-  text-align: right;
+  text-align: start;
 }
 #documentPropertiesOverlay .row > span {
   width: 125px;
@@ -1730,7 +1661,6 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
 }
 
 .grab-to-pan-grab {
-  cursor: url("images/grab.cur"), move !important;
   cursor: grab !important;
 }
 .grab-to-pan-grab
@@ -1739,7 +1669,6 @@ html[dir="rtl"] #documentPropertiesOverlay .row > * {
 }
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
-  cursor: url("images/grabbing.cur"), move !important;
   cursor: grabbing !important;
   position: fixed;
   background: rgba(0, 0, 0, 0);

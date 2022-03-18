@@ -16,7 +16,6 @@
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
 /** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
 
-import { warn } from "../shared/util.js";
 import { XfaText } from "./xfa_text.js";
 
 /**
@@ -134,15 +133,7 @@ class XfaLayer {
     }
 
     if (isHTMLAnchorElement) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-        !linkService.addLinkAttributes
-      ) {
-        warn(
-          "XfaLayer.setAttribute - missing `addLinkAttributes`-method on the `linkService`-instance."
-        );
-      }
-      linkService.addLinkAttributes?.(
+      linkService.addLinkAttributes(
         html,
         attributes.href,
         attributes.newWindow

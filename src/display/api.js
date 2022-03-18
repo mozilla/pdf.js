@@ -26,7 +26,6 @@ import {
   info,
   InvalidPDFException,
   isArrayBuffer,
-  isSameOrigin,
   MissingPDFException,
   PasswordException,
   RenderingIntentFlag,
@@ -355,6 +354,12 @@ function getDocument(src) {
   if (!Number.isInteger(params.maxImageSize)) {
     params.maxImageSize = -1;
   }
+  if (typeof params.cMapUrl !== "string") {
+    params.cMapUrl = null;
+  }
+  if (typeof params.standardFontDataUrl !== "string") {
+    params.standardFontDataUrl = null;
+  }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
       params.CMapReaderFactory === DOMCMapReaderFactory &&
@@ -502,7 +507,7 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   // #376 modified by ngx-extended-pdf-viewer
   let cMapUrl = source.cMapUrl;
-  if (cMapUrl.constructor.name === "Function") {
+  if (cMapUrl?.constructor.name === "Function") {
     cMapUrl = cMapUrl();
   }
   const workerId = await worker.messageHandler.sendWithPromise(
@@ -1993,7 +1998,7 @@ const PDFWorkerUtil = {
   fallbackWorkerSrc: null,
   fakeWorkerId: 0,
 };
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // eslint-disable-next-line no-undef
   if (isNodeJS && typeof __non_webpack_require__ === "function") {
     // Workers aren't supported in Node.js, force-disabling them there.
@@ -2011,6 +2016,22 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       );
     }
   }
+
+  // Check if URLs have the same origin. For non-HTTP based URLs, returns false.
+  PDFWorkerUtil.isSameOrigin = function (baseUrl, otherUrl) {
+    let base;
+    try {
+      base = new URL(baseUrl);
+      if (!base.origin || base.origin === "null") {
+        return false; // non-HTTP url
+      }
+    } catch (e) {
+      return false;
+    }
+
+    const other = new URL(otherUrl, base);
+    return base.origin === other.origin;
+  };
 
   PDFWorkerUtil.createCDNWrapper = function (url) {
     // We will rely on blob URL's property to specify origin.
@@ -2113,7 +2134,7 @@ class PDFWorker {
         if (
           typeof PDFJSDev !== "undefined" &&
           PDFJSDev.test("GENERIC") &&
-          !isSameOrigin(window.location.href, workerSrc)
+          !PDFWorkerUtil.isSameOrigin(window.location.href, workerSrc)
         ) {
           workerSrc = PDFWorkerUtil.createCDNWrapper(
             new URL(workerSrc, window.location).href
@@ -2388,7 +2409,7 @@ class WorkerTransport {
     if (!params.useWorkerFetch) {
       // modified by ngx-extended-pdf-viewer #376
 	  let cMapUrl = params.cMapUrl;
-	  if (cMapUrl.constructor.name === "Function") {
+	  if (cMapUrl?.constructor.name === "Function") {
 	    cMapUrl = cMapUrl();
 	  }
       this.CMapReaderFactory = new params.CMapReaderFactory({
@@ -3417,6 +3438,7 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  PDFWorkerUtil,
   RenderTask,
   setPDFNetworkStreamFactory,
   version,

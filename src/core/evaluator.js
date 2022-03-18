@@ -367,7 +367,7 @@ class PartialEvaluator {
 
     // modified by ngx-extended-pdf-viewer #376
 	  let cMapUrl = this.options.cMapUrl;
-	  if (cMapUrl.constructor.name === "Function") {
+	  if (cMapUrl?.constructor.name === "Function") {
 	    cMapUrl = cMapUrl();
 	  }
     if (cMapUrl !== null) {

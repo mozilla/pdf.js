@@ -437,7 +437,7 @@ document.mozL10n.setExternalLocalizerServices({
   },
 
   getStrings(key) {
-    return FirefoxCom.requestSync("getStrings", key);
+    return FirefoxCom.requestSync("getStrings", null);
   },
 });
 
