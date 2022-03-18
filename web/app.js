@@ -150,8 +150,6 @@ class DefaultExternalServices {
 
   static initPassiveLoading(callbacks) {}
 
-  static async fallback(data) {}
-
   static reportTelemetry(data) {}
 
   static createDownloadManager(options) {
@@ -193,7 +191,6 @@ class DefaultExternalServices {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: createPromiseCapability(),
-  _fellback: false,
   appConfig: null,
   pdfDocument: null,
   pdfLoadingTask: null,
@@ -865,7 +862,6 @@ const PDFViewerApplication = {
       this.pdfDocumentProperties.setDocument(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
-    this._fellback = false;
     this.store = null;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
@@ -952,16 +948,23 @@ const PDFViewerApplication = {
         }
       }
 
-      const loadingTask = getDocument(parameters);
-      this.pdfLoadingTask = loadingTask;
+    // Finally, update the API parameters with the arguments (if they exist).
+    if (args) {
+      for (const key in args) {
+        parameters[key] = args[key];
+      }
+    }
 
-      loadingTask.onPassword = (updateCallback, reason) => {
-        this.pdfLinkService.externalLinkEnabled = false;
-        this.passwordPrompt.setUpdateCallback(updateCallback, reason);
-        this.passwordPrompt.open();
-      };
+    const loadingTask = getDocument(parameters);
+    this.pdfLoadingTask = loadingTask;
 
-      loadingTask.onProgress = ({ loaded, total }) => {
+    loadingTask.onPassword = (updateCallback, reason) => {
+      this.pdfLinkService.externalLinkEnabled = false;
+      this.passwordPrompt.setUpdateCallback(updateCallback, reason);
+      this.passwordPrompt.open();
+    };
+
+    loadingTask.onProgress = ({ loaded, total }) => {
         this.progress(loaded / total);
         // #588 modified by ngx-extended-pdf-viewer
         this.eventBus.dispatch("progress", {
@@ -973,6 +976,8 @@ const PDFViewerApplication = {
         });
         // #588 end of modification
       };
+
+
 
       // Listen for unsupported features to trigger the fallback UI.
       loadingTask.onUnsupportedFeature = this.fallback.bind(this);
@@ -1071,25 +1076,6 @@ const PDFViewerApplication = {
       type: "unsupportedFeature",
       featureId,
     });
-
-    // Only trigger the fallback once so we don't spam the user with messages
-    // for one PDF.
-    if (this._fellback) {
-      return;
-    }
-    this._fellback = true;
-
-    this.externalServices
-      .fallback({
-        featureId,
-        url: this.baseUrl,
-      })
-      .then(download => {
-        if (!download) {
-          return;
-        }
-        this.download({ sourceEventType: "download" });
-      });
   },
 
   /**

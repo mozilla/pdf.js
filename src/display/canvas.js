@@ -1116,6 +1116,7 @@ class CanvasGraphics {
       // the transformation must already be set in canvasCtx._transformMatrix.
       addContextCurrentTransform(canvasCtx);
     }
+    this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
   }
 
@@ -1174,10 +1175,6 @@ class CanvasGraphics {
     this.viewportScale = viewport.scale;
 
     this.baseTransform = this.ctx.mozCurrentTransform.slice();
-    this._combinedScaleFactor = Math.hypot(
-      this.baseTransform[0],
-      this.baseTransform[2]
-    );
 
     if (this.imageLayer) {
       this.imageLayer.beginLayout();
@@ -1435,6 +1432,9 @@ class CanvasGraphics {
 
   // Graphics state
   setLineWidth(width) {
+    if (width !== this.current.lineWidth) {
+      this._cachedScaleForStroking = null;
+    }
     this.current.lineWidth = width;
     this.ctx.lineWidth = width;
   }
@@ -1643,6 +1643,7 @@ class CanvasGraphics {
       // Ensure that the clipping path is reset (fixes issue6413.pdf).
       this.pendingClip = null;
 
+      this._cachedScaleForStroking = null;
       this._cachedGetSinglePixelWidth = null;
     }
   }
@@ -1650,6 +1651,7 @@ class CanvasGraphics {
   transform(a, b, c, d, e, f) {
     this.ctx.transform(a, b, c, d, e, f);
 
+    this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
   }
 
@@ -1786,7 +1788,6 @@ class CanvasGraphics {
     ctx.globalAlpha = this.current.strokeAlpha;
     if (this.contentVisible) {
       if (typeof strokeColor === "object" && strokeColor?.getPattern) {
-        const lineWidth = this.getSinglePixelWidth();
         ctx.save();
         ctx.strokeStyle = strokeColor.getPattern(
           ctx,
@@ -1794,25 +1795,10 @@ class CanvasGraphics {
           ctx.mozCurrentTransformInverse,
           PathType.STROKE
         );
-        // Prevent drawing too thin lines by enforcing a minimum line width.
-        ctx.lineWidth = Math.max(lineWidth, this.current.lineWidth);
-        ctx.stroke();
+        this.rescaleAndStroke(/* saveRestore */ false);
         ctx.restore();
       } else {
-        const lineWidth = this.getSinglePixelWidth();
-        if (lineWidth < 0 && -lineWidth >= this.current.lineWidth) {
-          // The current transform will transform a square pixel into a
-          // parallelogram where both heights are lower than 1 and not equal.
-          ctx.save();
-          ctx.resetTransform();
-          ctx.lineWidth = Math.floor(this._combinedScaleFactor);
-          ctx.stroke();
-          ctx.restore();
-        } else {
-          // Prevent drawing too thin lines by enforcing a minimum line width.
-          ctx.lineWidth = Math.max(lineWidth, this.current.lineWidth);
-          ctx.stroke();
-        }
+        this.rescaleAndStroke(/* saveRestore */ true);
       }
     }
     if (consumePath) {
@@ -2057,7 +2043,7 @@ class CanvasGraphics {
     this.moveText(0, this.current.leading);
   }
 
-  paintChar(character, x, y, patternTransform, resetLineWidthToOne) {
+  paintChar(character, x, y, patternTransform) {
     const ctx = this.ctx;
     const current = this.current;
     const font = current.font;
@@ -2093,10 +2079,6 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        if (resetLineWidthToOne) {
-          ctx.resetTransform();
-          ctx.lineWidth = Math.floor(this._combinedScaleFactor);
-        }
         ctx.stroke();
       }
       ctx.restore();
@@ -2111,16 +2093,7 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        if (resetLineWidthToOne) {
-          ctx.save();
-          ctx.moveTo(x, y);
-          ctx.resetTransform();
-          ctx.lineWidth = Math.floor(this._combinedScaleFactor);
-          ctx.strokeText(character, 0, 0);
-          ctx.restore();
-        } else {
-          ctx.strokeText(character, x, y);
-        }
+        ctx.strokeText(character, x, y);
       }
     }
 
@@ -2211,7 +2184,6 @@ class CanvasGraphics {
     }
 
     let lineWidth = current.lineWidth;
-    let resetLineWidthToOne = false;
     const scale = current.textMatrixScale;
     if (scale === 0 || lineWidth === 0) {
       const fillStrokeMode =
@@ -2220,9 +2192,7 @@ class CanvasGraphics {
         fillStrokeMode === TextRenderingMode.STROKE ||
         fillStrokeMode === TextRenderingMode.FILL_STROKE
       ) {
-        this._cachedGetSinglePixelWidth = null;
         lineWidth = this.getSinglePixelWidth();
-        resetLineWidthToOne = lineWidth < 0;
       }
     } else {
       lineWidth /= scale;
@@ -2290,13 +2260,7 @@ class CanvasGraphics {
           // common case
           ctx.fillText(character, scaledX, scaledY);
         } else {
-          this.paintChar(
-            character,
-            scaledX,
-            scaledY,
-            patternTransform,
-            resetLineWidthToOne
-          );
+          this.paintChar(character, scaledX, scaledY, patternTransform);
           if (accent) {
             const scaledAccentX =
               scaledX + (fontSize * accent.offset.x) / fontSizeScale;
@@ -2306,8 +2270,7 @@ class CanvasGraphics {
               accent.fontChar,
               scaledAccentX,
               scaledAccentY,
-              patternTransform,
-              resetLineWidthToOne
+              patternTransform
             );
           }
         }
@@ -2332,6 +2295,7 @@ class CanvasGraphics {
     }
     ctx.restore();
     this.compose();
+
     return undefined;
   }
 
@@ -2355,6 +2319,7 @@ class CanvasGraphics {
     if (isTextInvisible || fontSize === 0) {
       return;
     }
+    this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
 
     ctx.save();
@@ -3165,46 +3130,112 @@ class CanvasGraphics {
   }
 
   getSinglePixelWidth() {
-    if (this._cachedGetSinglePixelWidth === null) {
-      // If transform is [a b] then a pixel (square) is transformed
-      //                 [c d]
-      // into a parallelogram: its area is the abs value of the determinant.
-      // This parallelogram has 2 heights:
-      //  - Area / |col_1|;
-      //  - Area / |col_2|.
-      // so in order to get a height of at least 1, pixel height
-      // must be computed as followed:
-      //  h = max(sqrt(a² + c²) / |det(M)|, sqrt(b² + d²) / |det(M)|).
-      // This is equivalent to:
-      //  h = max(|line_1_inv(M)|, |line_2_inv(M)|)
+    if (!this._cachedGetSinglePixelWidth) {
       const m = this.ctx.mozCurrentTransform;
-
-      const absDet = Math.abs(m[0] * m[3] - m[2] * m[1]);
-      const sqNorm1 = m[0] ** 2 + m[2] ** 2;
-      const sqNorm2 = m[1] ** 2 + m[3] ** 2;
-      const pixelHeight = Math.sqrt(Math.max(sqNorm1, sqNorm2)) / absDet;
-      if (sqNorm1 !== sqNorm2 && this._combinedScaleFactor * pixelHeight > 1) {
-        // The parallelogram isn't a square and at least one height
-        // is lower than 1 so the resulting line width must be 1
-        // but it cannot be achieved with one scale: when scaling a pixel
-        // we'll get a rectangle (see issue #12295).
-        // For example with matrix [0.001 0, 0, 100], a pixel is transformed
-        // in a rectangle 0.001x100. If we just scale by 1000 (to have a 1)
-        // then we'll get a rectangle 1x1e5 which is wrong.
-        // In this case, we must reset the transform, set linewidth to 1
-        // and then stroke.
-        this._cachedGetSinglePixelWidth = -(
-          this._combinedScaleFactor * pixelHeight
-        );
-      } else if (absDet > Number.EPSILON) {
-        this._cachedGetSinglePixelWidth = pixelHeight;
+      if (m[1] === 0 && m[2] === 0) {
+        // Fast path
+        this._cachedGetSinglePixelWidth =
+          1 / Math.min(Math.abs(m[0]), Math.abs(m[3]));
       } else {
-        // Matrix is non-invertible.
-        this._cachedGetSinglePixelWidth = 1;
+        const absDet = Math.abs(m[0] * m[3] - m[2] * m[1]);
+        const normX = Math.hypot(m[0], m[2]);
+        const normY = Math.hypot(m[1], m[3]);
+        this._cachedGetSinglePixelWidth = Math.max(normX, normY) / absDet;
       }
     }
-
     return this._cachedGetSinglePixelWidth;
+  }
+
+  getScaleForStroking() {
+    // A pixel has thicknessX = thicknessY = 1;
+    // A transformed pixel is a parallelogram and the thicknesses
+    // corresponds to the heights.
+    // The goal of this function is to rescale before setting the
+    // lineWidth in order to have both thicknesses greater or equal
+    // to 1 after transform.
+    if (!this._cachedScaleForStroking) {
+      const { lineWidth } = this.current;
+      const m = this.ctx.mozCurrentTransform;
+      let scaleX, scaleY;
+
+      if (m[1] === 0 && m[2] === 0) {
+        // Fast path
+        const normX = Math.abs(m[0]);
+        const normY = Math.abs(m[3]);
+        if (lineWidth === 0) {
+          scaleX = 1 / normX;
+          scaleY = 1 / normY;
+        } else {
+          const scaledXLineWidth = normX * lineWidth;
+          const scaledYLineWidth = normY * lineWidth;
+          scaleX = scaledXLineWidth < 1 ? 1 / scaledXLineWidth : 1;
+          scaleY = scaledYLineWidth < 1 ? 1 / scaledYLineWidth : 1;
+        }
+      } else {
+        // A pixel (base (x, y)) is transformed by M into a parallelogram:
+        //  - its area is |det(M)|;
+        //  - heightY (orthogonal to Mx) has a length: |det(M)| / norm(Mx);
+        //  - heightX (orthogonal to My) has a length: |det(M)| / norm(My).
+        // heightX and heightY are the thicknesses of the transformed pixel
+        // and they must be both greater or equal to 1.
+        const absDet = Math.abs(m[0] * m[3] - m[2] * m[1]);
+        const normX = Math.hypot(m[0], m[1]);
+        const normY = Math.hypot(m[2], m[3]);
+        if (lineWidth === 0) {
+          scaleX = normY / absDet;
+          scaleY = normX / absDet;
+        } else {
+          const baseArea = lineWidth * absDet;
+          scaleX = normY > baseArea ? normY / baseArea : 1;
+          scaleY = normX > baseArea ? normX / baseArea : 1;
+        }
+      }
+      this._cachedScaleForStroking = [scaleX, scaleY];
+    }
+    return this._cachedScaleForStroking;
+  }
+
+  // Rescale before stroking in order to have a final lineWidth
+  // with both thicknesses greater or equal to 1.
+  rescaleAndStroke(saveRestore) {
+    const { ctx } = this;
+    const { lineWidth } = this.current;
+    const [scaleX, scaleY] = this.getScaleForStroking();
+
+    ctx.lineWidth = lineWidth || 1;
+
+    if (scaleX === 1 && scaleY === 1) {
+      ctx.stroke();
+      return;
+    }
+
+    let savedMatrix, savedDashes, savedDashOffset;
+    if (saveRestore) {
+      savedMatrix = ctx.mozCurrentTransform.slice();
+      savedDashes = ctx.getLineDash().slice();
+      savedDashOffset = ctx.lineDashOffset;
+    }
+
+    ctx.scale(scaleX, scaleY);
+
+    // How the dashed line is rendered depends on the current transform...
+    // so we added a rescale to handle too thin lines and consequently
+    // the way the line is dashed will be modified.
+    // If scaleX === scaleY, the dashed lines will be rendered correctly
+    // else we'll have some bugs (but only with too thin lines).
+    // Here we take the max... why not taking the min... or something else.
+    // Anyway, as said it's buggy when scaleX !== scaleY.
+    const scale = Math.max(scaleX, scaleY);
+    ctx.setLineDash(ctx.getLineDash().map(x => x / scale));
+    ctx.lineDashOffset /= scale;
+
+    ctx.stroke();
+
+    if (saveRestore) {
+      ctx.setTransform(...savedMatrix);
+      ctx.setLineDash(savedDashes);
+      ctx.lineDashOffset = savedDashOffset;
+    }
   }
 
   getCanvasPosition(x, y) {

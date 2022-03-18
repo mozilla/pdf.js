@@ -1406,7 +1406,7 @@ class Catalog {
   }
 
   /**
-   * @typedef ParseDestDictionaryParameters
+   * @typedef {Object} ParseDestDictionaryParameters
    * @property {Dict} destDict - The dictionary containing the destination.
    * @property {Object} resultObj - The object where the parsed destination
    *   properties will be placed.
