@@ -75,9 +75,8 @@ class WorkerMessageHandler {
       }
       testMessageProcessed = true;
 
-      // Ensure that `TypedArray`s can be sent to the worker,
-      // and that `postMessage` transfers are supported.
-      handler.send("test", data instanceof Uint8Array && data[0] === 255);
+      // Ensure that `TypedArray`s can be sent to the worker.
+      handler.send("test", data instanceof Uint8Array);
     });
 
     handler.on("configure", function wphConfigure(data) {
