@@ -244,12 +244,12 @@ select {
 }
 html[dir="ltr"] #sidebarContainer {
   transition-property: left;
-  left: calc(0px - var(--sidebar-width));
+  left: calc(-1 * var(--sidebar-width));
   border-right: var(--doorhanger-border-color-whcm);
 }
 html[dir="rtl"] #sidebarContainer {
   transition-property: right;
-  right: calc(0px - var(--sidebar-width));
+  right: calc(-1 * var(--sidebar-width));
   border-left: var(--doorhanger-border-color-whcm);
 }
 
@@ -668,46 +668,31 @@ html[dir="rtl"] .secondaryToolbar {
   transform: translateX(-50%);
 }
 
-html[dir="ltr"] #toolbarViewerLeft,
-html[dir="rtl"] #toolbarViewerRight,
-html[dir="ltr"] #toolbarSidebarLeft,
-html[dir="rtl"] #toolbarSidebarRight {
-  float: left;
+#toolbarViewerLeft,
+#toolbarSidebarLeft {
+  float: inline-start;
 }
-html[dir="ltr"] #toolbarViewerRight,
-html[dir="rtl"] #toolbarViewerLeft,
-html[dir="ltr"] #toolbarSidebarRight,
-html[dir="rtl"] #toolbarSidebarLeft {
-  float: right;
+#toolbarViewerRight,
+#toolbarSidebarRight {
+  float: inline-end;
 }
-html[dir="ltr"] #toolbarViewerLeft > *,
-html[dir="ltr"] #toolbarViewerMiddle > *,
-html[dir="ltr"] #toolbarViewerRight > *,
-html[dir="ltr"] #toolbarSidebarLeft *,
-html[dir="ltr"] #toolbarSidebarRight *,
-html[dir="ltr"] .findbar * {
+
+#toolbarViewerLeft > *,
+#toolbarViewerMiddle > *,
+#toolbarViewerRight > *,
+#toolbarSidebarLeft *,
+#toolbarSidebarRight *,
+.findbar * {
   position: relative;
-  float: left;
-}
-html[dir="rtl"] #toolbarViewerLeft > *,
-html[dir="rtl"] #toolbarViewerMiddle > *,
-html[dir="rtl"] #toolbarViewerRight > *,
-html[dir="rtl"] #toolbarSidebarLeft *,
-html[dir="rtl"] #toolbarSidebarRight *,
-html[dir="rtl"] .findbar * {
-  position: relative;
-  float: right;
+  float: inline-start;
 }
 
 .splitToolbarButton {
   margin: 2px 2px 0;
   display: inline-block;
 }
-html[dir="ltr"] .splitToolbarButton > .toolbarButton {
-  float: left;
-}
-html[dir="rtl"] .splitToolbarButton > .toolbarButton {
-  float: right;
+.splitToolbarButton > .toolbarButton {
+  float: inline-start;
 }
 
 .toolbarButton,
@@ -764,6 +749,7 @@ html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
   margin: 0;
 }
 .splitToolbarButtonSeparator {
+  float: inline-start;
   padding: 10px 0;
   width: 1px;
   background-color: var(--separator-color);
@@ -776,13 +762,6 @@ html[dir="rtl"] .splitToolbarButton > .toolbarButton:first-child {
   background-color: var(--field-border-color);
   margin: 0;
   padding: 13px 0;
-}
-
-html[dir="ltr"] .splitToolbarButtonSeparator {
-  float: left;
-}
-html[dir="rtl"] .splitToolbarButtonSeparator {
-  float: right;
 }
 
 .toolbarButton,
@@ -1230,13 +1209,8 @@ html[dir="rtl"] .toolbarButton.pdfSidebarNotification::after {
 }
 
 .thumbnail {
+  float: inline-start;
   margin: 0 10px 5px;
-}
-html[dir="ltr"] .thumbnail {
-  float: left;
-}
-html[dir="rtl"] .thumbnail {
-  float: right;
 }
 
 #thumbnailView > a:last-of-type > .thumbnail {
@@ -1332,11 +1306,13 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 
 .treeItemToggler {
   position: relative;
+  float: inline-start;
   height: 0;
   width: 0;
   color: rgba(255, 255, 255, 0.5);
 }
 .treeItemToggler::before {
+  inset-inline-end: 4px;
   mask-image: var(--treeitem-expanded-icon);
 }
 .treeItemToggler.treeItemsHidden::before {
@@ -1347,18 +1323,6 @@ html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
 }
 .treeItemToggler.treeItemsHidden ~ .treeItems {
   display: none;
-}
-html[dir="ltr"] .treeItemToggler {
-  float: left;
-}
-html[dir="rtl"] .treeItemToggler {
-  float: right;
-}
-html[dir="ltr"] .treeItemToggler::before {
-  right: 4px;
-}
-html[dir="rtl"] .treeItemToggler::before {
-  left: 4px;
 }
 
 .treeItem.selected > a {
@@ -1396,7 +1360,6 @@ html[dir="rtl"] .treeItemToggler::before {
 #errorMessageLeft {
   float: left;
 }
-
 #errorMessageRight {
   float: right;
 }

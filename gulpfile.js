@@ -17,7 +17,6 @@
 "use strict";
 
 const autoprefixer = require("autoprefixer");
-const postcssCalc = require("postcss-calc");
 const postcssDirPseudoClass = require("postcss-dir-pseudo-class");
 const postcssLogical = require("postcss-logical");
 const fs = require("fs");
@@ -853,7 +852,6 @@ function buildGeneric(defines, dir) {
     preprocessCSS("web/viewer.css", defines)
       .pipe(
         postcss([
-          postcssCalc(),
           postcssLogical({ preserve: true }),
           postcssDirPseudoClass(),
           autoprefixer(AUTOPREFIXER_CONFIG),
@@ -936,7 +934,6 @@ function buildComponents(defines, dir) {
     preprocessCSS("web/pdf_viewer.css", defines)
       .pipe(
         postcss([
-          postcssCalc(),
           postcssLogical({ preserve: true }),
           postcssDirPseudoClass(),
           autoprefixer(AUTOPREFIXER_CONFIG),
@@ -1033,7 +1030,6 @@ function buildMinified(defines, dir) {
     preprocessCSS("web/viewer.css", defines)
       .pipe(
         postcss([
-          postcssCalc(),
           postcssLogical({ preserve: true }),
           postcssDirPseudoClass(),
           autoprefixer(AUTOPREFIXER_CONFIG),
