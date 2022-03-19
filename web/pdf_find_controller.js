@@ -669,12 +669,11 @@ class PDFFindController {
           })
           .then(
             textContent => {
-              const textItems = textContent.items;
               const strBuf = [];
 
-              for (let j = 0, jj = textItems.length; j < jj; j++) {
-                strBuf.push(textItems[j].str);
-                if (textItems[j].hasEOL) {
+              for (const textItem of textContent.items) {
+                strBuf.push(textItem.str);
+                if (textItem.hasEOL) {
                   strBuf.push("\n");
                 }
               }
@@ -685,7 +684,7 @@ class PDFFindController {
                 this._pageDiffs[i],
                 this._hasDiacritics[i],
               ] = normalize(strBuf.join(""));
-              extractTextCapability.resolve(i);
+              extractTextCapability.resolve();
             },
             reason => {
               console.error(
@@ -696,7 +695,7 @@ class PDFFindController {
               this._pageContents[i] = "";
               this._pageDiffs[i] = null;
               this._hasDiacritics[i] = false;
-              extractTextCapability.resolve(i);
+              extractTextCapability.resolve();
             }
           );
       });
@@ -751,9 +750,9 @@ class PDFFindController {
           continue;
         }
         this._pendingFindMatches.add(i);
-        this._extractTextPromises[i].then(pageIdx => {
-          this._pendingFindMatches.delete(pageIdx);
-          this._calculateMatch(pageIdx);
+        this._extractTextPromises[i].then(() => {
+          this._pendingFindMatches.delete(i);
+          this._calculateMatch(i);
         });
       }
     }
