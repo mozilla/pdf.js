@@ -199,7 +199,7 @@ function preprocess(inFilename, outFilename, defines) {
 }
 exports.preprocess = preprocess;
 
-function preprocessCSS(mode, source, destination) {
+function preprocessCSS(inFilename, outFilename, defines) {
   function hasPrefixedMozcentral(line) {
     return /(^|\W)-(ms|o|webkit)-\w/.test(line);
   }
@@ -262,16 +262,16 @@ function preprocessCSS(mode, source, destination) {
     return lines.join("\n");
   }
 
-  if (!mode) {
-    throw new Error("Invalid CSS preprocessor mode");
+  if (!defines) {
+    throw new Error("Missing CSS preprocessor defines.");
   }
 
-  let content = fs.readFileSync(source, "utf8").toString();
-  content = expandImports(content, source);
-  if (mode === "mozcentral") {
+  let content = fs.readFileSync(inFilename, "utf8").toString();
+  content = expandImports(content, inFilename);
+  if (defines.MOZCENTRAL) {
     content = removePrefixed(content, hasPrefixedMozcentral);
   }
-  fs.writeFileSync(destination, content);
+  fs.writeFileSync(outFilename, content);
 }
 exports.preprocessCSS = preprocessCSS;
 
