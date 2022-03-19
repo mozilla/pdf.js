@@ -418,28 +418,41 @@ describe("primitives", function () {
   });
 
   describe("RefSet", function () {
-    it("should have a stored value", function () {
-      const ref = Ref.get(4, 2);
-      const refset = new RefSet();
-      refset.put(ref);
-      expect(refset.has(ref)).toBeTruthy();
-    });
-    it("should not have an unknown value", function () {
-      const ref = Ref.get(4, 2);
-      const refset = new RefSet();
-      expect(refset.has(ref)).toBeFalsy();
+    const ref1 = Ref.get(4, 2),
+      ref2 = Ref.get(5, 2);
+    let refSet;
 
-      refset.put(ref);
-      const anotherRef = Ref.get(2, 4);
-      expect(refset.has(anotherRef)).toBeFalsy();
+    beforeEach(function () {
+      refSet = new RefSet();
+    });
+
+    afterEach(function () {
+      refSet = null;
+    });
+
+    it("should have a stored value", function () {
+      refSet.put(ref1);
+      expect(refSet.has(ref1)).toBeTruthy();
+    });
+
+    it("should not have an unknown value", function () {
+      expect(refSet.has(ref1)).toBeFalsy();
+      refSet.put(ref1);
+      expect(refSet.has(ref2)).toBeFalsy();
+    });
+
+    it("should support iteration", function () {
+      refSet.put(ref1);
+      refSet.put(ref2);
+      expect([...refSet]).toEqual([ref1.toString(), ref2.toString()]);
     });
   });
 
   describe("RefSetCache", function () {
-    const ref1 = Ref.get(4, 2);
-    const ref2 = Ref.get(5, 2);
-    const obj1 = Name.get("foo");
-    const obj2 = Name.get("bar");
+    const ref1 = Ref.get(4, 2),
+      ref2 = Ref.get(5, 2),
+      obj1 = Name.get("foo"),
+      obj2 = Name.get("bar");
     let cache;
 
     beforeEach(function () {
@@ -483,12 +496,7 @@ describe("primitives", function () {
     it("should support iteration", function () {
       cache.put(ref1, obj1);
       cache.put(ref2, obj2);
-
-      const values = [];
-      cache.forEach(function (value) {
-        values.push(value);
-      });
-      expect(values).toEqual([obj1, obj2]);
+      expect([...cache]).toEqual([obj1, obj2]);
     });
   });
 

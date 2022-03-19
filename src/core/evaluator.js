@@ -352,9 +352,9 @@ class PartialEvaluator {
     // When no blend modes exist, there's no need re-fetch/re-parse any of the
     // processed `Ref`s again for subsequent pages. This helps reduce redundant
     // `XRef.fetch` calls for some documents (e.g. issue6961.pdf).
-    processed.forEach(ref => {
+    for (const ref of processed) {
       nonBlendModesSet.put(ref);
-    });
+    }
     return false;
   }
 

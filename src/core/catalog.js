@@ -1040,42 +1040,32 @@ class Catalog {
     return shadow(this, "jsActions", actions);
   }
 
-  fontFallback(id, handler) {
-    const promises = [];
-    this.fontCache.forEach(function (promise) {
-      promises.push(promise);
-    });
+  async fontFallback(id, handler) {
+    const translatedFonts = await Promise.all(this.fontCache);
 
-    return Promise.all(promises).then(translatedFonts => {
-      for (const translatedFont of translatedFonts) {
-        if (translatedFont.loadedName === id) {
-          translatedFont.fallback(handler);
-          return;
-        }
+    for (const translatedFont of translatedFonts) {
+      if (translatedFont.loadedName === id) {
+        translatedFont.fallback(handler);
+        return;
       }
-    });
+    }
   }
 
-  cleanup(manuallyTriggered = false) {
+  async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
     this.pageIndexCache.clear();
     this.nonBlendModesSet.clear();
 
-    const promises = [];
-    this.fontCache.forEach(function (promise) {
-      promises.push(promise);
-    });
+    const translatedFonts = await Promise.all(this.fontCache);
 
-    return Promise.all(promises).then(translatedFonts => {
-      for (const { dict } of translatedFonts) {
-        delete dict.cacheKey;
-      }
-      this.fontCache.clear();
-      this.builtInCMapCache.clear();
-      this.standardFontDataCache.clear();
-    });
+    for (const { dict } of translatedFonts) {
+      delete dict.cacheKey;
+    }
+    this.fontCache.clear();
+    this.builtInCMapCache.clear();
+    this.standardFontDataCache.clear();
   }
 
   async getPageDict(pageIndex) {
