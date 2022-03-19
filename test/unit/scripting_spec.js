@@ -598,6 +598,21 @@ describe("Scripting", function () {
       });
     });
 
+    describe("AFParseDateEx", function () {
+      it("should parse a date with a format", async () => {
+        const check = async (date, format, expected) => {
+          const value = await myeval(
+            `AFParseDateEx("${date}", "${format}").toISOString()`
+          );
+          expect(value).toEqual(new Date(expected).toISOString());
+        };
+
+        await check("05", "dd", "2000/01/05");
+        await check("12", "mm", "2000/12/01");
+        await check("2022", "yyyy", "2022/01/01");
+      });
+    });
+
     describe("AFExtractNums", function () {
       it("should extract numbers", async () => {
         let value = await myeval(`AFExtractNums("123 456 789")`);

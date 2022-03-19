@@ -373,6 +373,10 @@ class Util extends PDFObject {
   }
 
   scand(cFormat, cDate) {
+    if (typeof cDate !== "string") {
+      return new Date(cDate);
+    }
+
     if (cDate === "") {
       return new Date();
     }
@@ -536,15 +540,15 @@ class Util extends PDFObject {
 
     const [re, actions] = this._scandCache.get(cFormat);
 
-    const matches = new RegExp(re, "g").exec(cDate);
+    const matches = new RegExp(`^${re}$`, "g").exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
       return null;
     }
 
     const data = {
-      year: 0,
+      year: 2000,
       month: 0,
-      day: 0,
+      day: 1,
       hours: 0,
       minutes: 0,
       seconds: 0,
