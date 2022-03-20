@@ -15,6 +15,7 @@
 /* eslint-env node */
 
 "use strict";
+//jshint esversion:6
 
 const autoprefixer = require("autoprefixer");
 const postcssDirPseudoClass = require("postcss-dir-pseudo-class");
