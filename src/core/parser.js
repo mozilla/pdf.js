@@ -156,8 +156,7 @@ class Parser {
           }
           this.shift();
           return dict;
-        default:
-          // simple object
+        default: // simple object
           return buf1;
       }
     }
