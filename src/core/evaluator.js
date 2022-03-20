@@ -3374,8 +3374,7 @@ class PartialEvaluator {
               }
             }
             break;
-          default:
-            // 'uniXXXX'/'uXXXX{XX}' glyphs
+          default: // 'uniXXXX'/'uXXXX{XX}' glyphs
             const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
             if (unicode !== -1) {
               code = unicode;
