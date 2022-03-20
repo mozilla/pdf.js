@@ -179,9 +179,9 @@ class GlobalImageCache {
 
   get _byteSize() {
     let byteSize = 0;
-    this._imageCache.forEach(imageData => {
+    for (const imageData of this._imageCache) {
       byteSize += imageData.byteSize;
-    });
+    }
     return byteSize;
   }
 

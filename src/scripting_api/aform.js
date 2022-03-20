@@ -53,16 +53,19 @@ class AForm {
   }
 
   _parseDate(cFormat, cDate) {
-    const ddate = Date.parse(cDate);
-    if (isNaN(ddate)) {
-      try {
-        return this._util.scand(cFormat, cDate);
-      } catch (error) {
-        return null;
+    let date = null;
+    try {
+      date = this._util.scand(cFormat, cDate);
+    } catch (error) {}
+    if (!date) {
+      date = Date.parse(cDate);
+      if (isNaN(date)) {
+        date = null;
+      } else {
+        date = new Date(date);
       }
-    } else {
-      return new Date(ddate);
     }
+    return date;
   }
 
   AFMergeChange(event = globalThis.event) {
