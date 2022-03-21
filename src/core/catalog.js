@@ -634,6 +634,19 @@ class Catalog {
     return shadow(this, "pageLabels", obj);
   }
 
+  get pageLabelDetails() {
+    let obj = null;
+    try {
+      obj = this._readPageLabelDetails();
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn("Unable to read page label details.");
+    }
+    return shadow(this, "pageLabelDetails", obj);
+  }
+
   /**
    * @private
    */
@@ -732,7 +745,89 @@ class Catalog {
           currentLabel = "";
       }
 
-      pageLabels[i] = prefix + currentLabel;
+      pageLabels[i] = {
+        value: prefix + currentLabel,
+        labelDict,
+      };
+      currentIndex++;
+    }
+    return pageLabels;
+  }
+
+  /**
+   * @private
+   */
+  _readPageLabelDetails() {
+    const obj = this._catDict.getRaw("PageLabels");
+
+    if (!obj) {
+      return null;
+    }
+
+    const pageLabels = new Array(this.numPages);
+    let style = null,
+      prefix = "";
+
+    const numberTree = new NumberTree(obj, this.xref);
+    const nums = numberTree.getAll();
+    let currentIndex = 1;
+
+    for (let i = 0, ii = this.numPages; i < ii; i++) {
+      if (i in nums) {
+        const labelDict = nums[i];
+        if (!(labelDict instanceof Dict)) {
+          throw new FormatError("PageLabel is not a dictionary.");
+        }
+
+        if (
+          labelDict.has("Type") &&
+          !isName(labelDict.get("Type"), "PageLabel")
+        ) {
+          throw new FormatError("Invalid type in PageLabel dictionary.");
+        }
+
+        if (labelDict.has("S")) {
+          const s = labelDict.get("S");
+          if (!(s instanceof Name)) {
+            throw new FormatError("Invalid style in PageLabel dictionary.");
+          }
+          style = {
+            D: "decimal_arabic",
+            R: "uppercase_roman",
+            r: "lowercase_roman",
+            A: "uppercase_latin",
+            a: "lowercase_latin",
+          }[s.name];
+        } else {
+          style = "no_style";
+        }
+
+        if (labelDict.has("P")) {
+          const p = labelDict.get("P");
+          if (!(p instanceof String)) {
+            throw new FormatError("Invalid prefix in PageLabel dictionary.");
+          }
+          prefix = stringToPDFString(p);
+        } else {
+          prefix = "";
+        }
+
+        if (labelDict.has("St")) {
+          const st = labelDict.get("St");
+          if (!(Number.isInteger(st) && st >= 1)) {
+            throw new FormatError("Invalid start in PageLabel dictionary.");
+          }
+          currentIndex = st;
+        } else {
+          currentIndex = 1;
+        }
+      }
+
+      pageLabels[i] = {
+        firstPageNum: currentIndex,
+        prefix,
+        style,
+      };
       currentIndex++;
     }
     return pageLabels;
