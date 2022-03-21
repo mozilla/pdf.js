@@ -6329,5 +6329,11 @@
       "md5": "d193853e8a123dc50eeea593a4150b60",
       "rounds": 1,
       "type": "eq"
+   },
+   {  "id": "issue14627",
+      "file": "pdfs/issue14627.pdf",
+      "md5": "5d1bfcc3b3130bfa7e33e43990e2213a",
+      "rounds": 1,
+      "type": "text"
    }
 ]

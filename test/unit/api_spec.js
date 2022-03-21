@@ -1999,7 +1999,7 @@ describe("api", function () {
       const data = await Promise.all([defaultPromise, parametersPromise]);
 
       expect(!!data[0].items).toEqual(true);
-      expect(data[0].items.length).toEqual(11);
+      expect(data[0].items.length).toEqual(15);
       expect(!!data[0].styles).toEqual(true);
 
       const page1 = mergeText(data[0].items);
