@@ -342,10 +342,17 @@ function ensureOverlay() {
     overlayPromise = overlayManager.register(
       "printServiceOverlay",
       document.getElementById("printServiceOverlay"),
-      abort,
-      true
+      /* canForceClose = */ true
     );
-    document.getElementById("printCancel").onclick = abort;
+    document.getElementById("printCancel").onclick = () => {
+      overlayManager.close("printServiceOverlay");
+    };
+
+    PDFViewerApplication.eventBus._on("overlayclosed", ({ source, name }) => {
+      if (source === overlayManager && name === "printServiceOverlay") {
+        abort();
+      }
+    });
   }
   return overlayPromise;
 }

@@ -76,11 +76,7 @@ class PDFDocumentProperties {
     // Bind the event listener for the Close button.
     closeButton.addEventListener("click", this.close.bind(this));
 
-    this.overlayManager.register(
-      this.overlayName,
-      this.container,
-      this.close.bind(this)
-    );
+    this.overlayManager.register(this.overlayName, this.container);
 
     eventBus._on("pagechanging", evt => {
       this._currentPageNumber = evt.pageNumber;
@@ -179,7 +175,7 @@ class PDFDocumentProperties {
   /**
    * Close the document properties overlay.
    */
-  close() {
+  async close() {
     this.overlayManager.close(this.overlayName);
   }
 

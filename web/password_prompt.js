@@ -32,11 +32,18 @@ class PasswordPrompt {
   /**
    * @param {PasswordPromptOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
+   * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    * @param {boolean} [isViewerEmbedded] - If the viewer is embedded, in e.g.
    *   an <iframe> or an <object>. The default value is `false`.
    */
-  constructor(options, overlayManager, l10n, isViewerEmbedded = false) {
+  constructor(
+    options,
+    overlayManager,
+    eventBus,
+    l10n,
+    isViewerEmbedded = false
+  ) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
@@ -62,9 +69,14 @@ class PasswordPrompt {
     this.overlayManager.register(
       this.overlayName,
       this.container,
-      this.#cancel.bind(this),
-      true
+      /* canForceClose = */ true
     );
+
+    eventBus._on("overlayclosed", ({ source, name }) => {
+      if (source === this.overlayManager && name === this.overlayName) {
+        this.input.value = "";
+      }
+    });
   }
 
   async open() {
@@ -82,8 +94,7 @@ class PasswordPrompt {
   }
 
   async close() {
-    await this.overlayManager.close(this.overlayName);
-    this.input.value = "";
+    this.overlayManager.close(this.overlayName);
   }
 
   #verify() {

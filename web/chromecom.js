@@ -160,16 +160,24 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     onCloseOverlay = function () {
       window.removeEventListener("focus", reloadIfRuntimeIsUnavailable);
       reloadIfRuntimeIsUnavailable();
-      overlayManager.close("chromeFileAccessOverlay");
     };
   }
   if (!chromeFileAccessOverlayPromise) {
     chromeFileAccessOverlayPromise = overlayManager.register(
       "chromeFileAccessOverlay",
       document.getElementById("chromeFileAccessOverlay"),
-      onCloseOverlay,
-      true
+      /* canForceClose = */ true
     );
+
+    PDFViewerApplication.eventBus._on("overlayclosed", ({ source, name }) => {
+      if (
+        source === overlayManager &&
+        name === "chromeFileAccessOverlay" &&
+        onCloseOverlay
+      ) {
+        onCloseOverlay();
+      }
+    });
   }
   chromeFileAccessOverlayPromise.then(function () {
     const iconPath = chrome.runtime.getManifest().icons[48];

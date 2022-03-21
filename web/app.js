@@ -464,7 +464,7 @@ const PDFViewerApplication = {
       : new EventBus();
     this.eventBus = eventBus;
 
-    this.overlayManager = new OverlayManager();
+    this.overlayManager = new OverlayManager(eventBus);
 
     const pdfRenderingQueue = new PDFRenderingQueue();
     pdfRenderingQueue.onIdle = this._cleanup.bind(this);
@@ -580,6 +580,7 @@ const PDFViewerApplication = {
     this.passwordPrompt = new PasswordPrompt(
       appConfig.passwordOverlay,
       this.overlayManager,
+      eventBus,
       this.l10n,
       this.isViewerEmbedded
     );
