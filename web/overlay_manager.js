@@ -80,10 +80,10 @@ class OverlayManager {
     if (!this.#overlays[name]) {
       throw new Error("The overlay does not exist.");
     } else if (this.#active) {
-      if (this.#overlays[name].canForceClose) {
-        this.#closeThroughCaller();
-      } else if (this.#active === name) {
+      if (this.#active === name) {
         throw new Error("The overlay is already active.");
+      } else if (this.#overlays[name].canForceClose) {
+        this.#closeThroughCaller();
       } else {
         throw new Error("Another overlay is currently active.");
       }
