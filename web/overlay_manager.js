@@ -14,14 +14,14 @@
  */
 
 class OverlayManager {
-  constructor() {
-    this._overlays = {};
-    this._active = null;
-    this._keyDownBound = this._keyDown.bind(this);
-  }
+  #overlays = Object.create(null);
+
+  #active = null;
+
+  #keyDownBound = null;
 
   get active() {
-    return this._active;
+    return this.#active;
   }
 
   /**
@@ -46,10 +46,10 @@ class OverlayManager {
     let container;
     if (!name || !element || !(container = element.parentNode)) {
       throw new Error("Not enough parameters.");
-    } else if (this._overlays[name]) {
+    } else if (this.#overlays[name]) {
       throw new Error("The overlay is already registered.");
     }
-    this._overlays[name] = {
+    this.#overlays[name] = {
       element,
       container,
       callerCloseMethod,
@@ -63,12 +63,12 @@ class OverlayManager {
    *                    unregistered.
    */
   async unregister(name) {
-    if (!this._overlays[name]) {
+    if (!this.#overlays[name]) {
       throw new Error("The overlay does not exist.");
-    } else if (this._active === name) {
+    } else if (this.#active === name) {
       throw new Error("The overlay cannot be removed while it is active.");
     }
-    delete this._overlays[name];
+    delete this.#overlays[name];
   }
 
   /**
@@ -77,22 +77,23 @@ class OverlayManager {
    *                    opened.
    */
   async open(name) {
-    if (!this._overlays[name]) {
+    if (!this.#overlays[name]) {
       throw new Error("The overlay does not exist.");
-    } else if (this._active) {
-      if (this._overlays[name].canForceClose) {
-        this._closeThroughCaller();
-      } else if (this._active === name) {
+    } else if (this.#active) {
+      if (this.#active === name) {
         throw new Error("The overlay is already active.");
+      } else if (this.#overlays[name].canForceClose) {
+        this.#closeThroughCaller();
       } else {
         throw new Error("Another overlay is currently active.");
       }
     }
-    this._active = name;
-    this._overlays[this._active].element.classList.remove("hidden");
-    this._overlays[this._active].container.classList.remove("hidden");
+    this.#active = name;
+    this.#overlays[this.#active].element.classList.remove("hidden");
+    this.#overlays[this.#active].container.classList.remove("hidden");
 
-    window.addEventListener("keydown", this._keyDownBound);
+    this.#keyDownBound = this.#keyDown.bind(this);
+    window.addEventListener("keydown", this.#keyDownBound);
   }
 
   /**
@@ -101,39 +102,34 @@ class OverlayManager {
    *                    closed.
    */
   async close(name) {
-    if (!this._overlays[name]) {
+    if (!this.#overlays[name]) {
       throw new Error("The overlay does not exist.");
-    } else if (!this._active) {
+    } else if (!this.#active) {
       throw new Error("The overlay is currently not active.");
-    } else if (this._active !== name) {
+    } else if (this.#active !== name) {
       throw new Error("Another overlay is currently active.");
     }
-    this._overlays[this._active].container.classList.add("hidden");
-    this._overlays[this._active].element.classList.add("hidden");
-    this._active = null;
+    this.#overlays[this.#active].container.classList.add("hidden");
+    this.#overlays[this.#active].element.classList.add("hidden");
+    this.#active = null;
 
-    window.removeEventListener("keydown", this._keyDownBound);
+    window.removeEventListener("keydown", this.#keyDownBound);
+    this.#keyDownBound = null;
   }
 
-  /**
-   * @private
-   */
-  _keyDown(evt) {
-    if (this._active && evt.keyCode === /* Esc = */ 27) {
-      this._closeThroughCaller();
+  #keyDown(evt) {
+    if (this.#active && evt.keyCode === /* Esc = */ 27) {
+      this.#closeThroughCaller();
       evt.preventDefault();
     }
   }
 
-  /**
-   * @private
-   */
-  _closeThroughCaller() {
-    if (this._overlays[this._active].callerCloseMethod) {
-      this._overlays[this._active].callerCloseMethod();
+  #closeThroughCaller() {
+    if (this.#overlays[this.#active].callerCloseMethod) {
+      this.#overlays[this.#active].callerCloseMethod();
     }
-    if (this._active) {
-      this.close(this._active);
+    if (this.#active) {
+      this.close(this.#active);
     }
   }
 }
