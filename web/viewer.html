@@ -233,7 +233,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 
             <div class="horizontalToolbarSeparator"></div>
 
-            <button id="documentProperties" class="secondaryToolbarButton documentProperties" title="Document Properties…" tabindex="69" data-l10n-id="document_properties">
+            <button id="documentProperties" class="secondaryToolbarButton documentProperties" title="Document Properties…" tabindex="69" data-l10n-id="document_properties" aria-controls="documentPropertiesDialog">
               <span data-l10n-id="document_properties_label">Document Properties…</span>
             </button>
           </div>
@@ -355,7 +355,7 @@ See https://github.com/adobe-type-tools/cmap-resources
       <div id="dialogContainer">
         <dialog id="passwordDialog">
           <div class="row">
-            <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
+            <label for="password" id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</label>
           </div>
           <div class="row">
             <input type="password" id="password" class="toolbarField">
@@ -367,56 +367,70 @@ See https://github.com/adobe-type-tools/cmap-resources
         </dialog>
         <dialog id="documentPropertiesDialog">
           <div class="row">
-            <span data-l10n-id="document_properties_file_name">File name:</span> <p id="fileNameField">-</p>
+            <span id="fileNameLabel" data-l10n-id="document_properties_file_name">File name:</span>
+            <p id="fileNameField" aria-labelledby="fileNameLabel">-</p>
           </div>
           <div class="row">
-            <span data-l10n-id="document_properties_file_size">File size:</span> <p id="fileSizeField">-</p>
-          </div>
-          <div class="separator"></div>
-          <div class="row">
-            <span data-l10n-id="document_properties_title">Title:</span> <p id="titleField">-</p>
-          </div>
-          <div class="row">
-            <span data-l10n-id="document_properties_author">Author:</span> <p id="authorField">-</p>
-          </div>
-          <div class="row">
-            <span data-l10n-id="document_properties_subject">Subject:</span> <p id="subjectField">-</p>
-          </div>
-          <div class="row">
-            <span data-l10n-id="document_properties_keywords">Keywords:</span> <p id="keywordsField">-</p>
-          </div>
-          <div class="row">
-            <span data-l10n-id="document_properties_creation_date">Creation Date:</span> <p id="creationDateField">-</p>
-          </div>
-          <div class="row">
-            <span data-l10n-id="document_properties_modification_date">Modification Date:</span> <p id="modificationDateField">-</p>
-          </div>
-          <div class="row">
-            <span data-l10n-id="document_properties_creator">Creator:</span> <p id="creatorField">-</p>
+            <span id="fileSizeLabel" data-l10n-id="document_properties_file_size">File size:</span>
+            <p id="fileSizeField" aria-labelledby="fileSizeLabel">-</p>
           </div>
           <div class="separator"></div>
           <div class="row">
-            <span data-l10n-id="document_properties_producer">PDF Producer:</span> <p id="producerField">-</p>
+            <span id="titleLabel" data-l10n-id="document_properties_title">Title:</span>
+            <p id="titleField" aria-labelledby="titleLabel">-</p>
           </div>
           <div class="row">
-            <span data-l10n-id="document_properties_version">PDF Version:</span> <p id="versionField">-</p>
+            <span id="authorLabel" data-l10n-id="document_properties_author">Author:</span>
+            <p id="authorField" aria-labelledby="authorLabel">-</p>
           </div>
           <div class="row">
-            <span data-l10n-id="document_properties_page_count">Page Count:</span> <p id="pageCountField">-</p>
+            <span id="subjectLabel" data-l10n-id="document_properties_subject">Subject:</span>
+            <p id="subjectField" aria-labelledby="subjectLabel">-</p>
           </div>
           <div class="row">
-            <span data-l10n-id="document_properties_page_size">Page Size:</span> <p id="pageSizeField">-</p>
+            <span id="keywordsLabel" data-l10n-id="document_properties_keywords">Keywords:</span>
+            <p id="keywordsField" aria-labelledby="keywordsLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="creationDateLabel" data-l10n-id="document_properties_creation_date">Creation Date:</span>
+            <p id="creationDateField" aria-labelledby="creationDateLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="modificationDateLabel" data-l10n-id="document_properties_modification_date">Modification Date:</span>
+            <p id="modificationDateField" aria-labelledby="modificationDateLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="creatorLabel" data-l10n-id="document_properties_creator">Creator:</span>
+            <p id="creatorField" aria-labelledby="creatorLabel">-</p>
           </div>
           <div class="separator"></div>
           <div class="row">
-            <span data-l10n-id="document_properties_linearized">Fast Web View:</span> <p id="linearizedField">-</p>
+            <span id="producerLabel" data-l10n-id="document_properties_producer">PDF Producer:</span>
+            <p id="producerField" aria-labelledby="producerLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="versionLabel" data-l10n-id="document_properties_version">PDF Version:</span>
+            <p id="versionField" aria-labelledby="versionLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="pageCountLabel" data-l10n-id="document_properties_page_count">Page Count:</span>
+            <p id="pageCountField" aria-labelledby="pageCountLabel">-</p>
+          </div>
+          <div class="row">
+            <span id="pageSizeLabel" data-l10n-id="document_properties_page_size">Page Size:</span>
+            <p id="pageSizeField" aria-labelledby="pageSizeLabel">-</p>
+          </div>
+          <div class="separator"></div>
+          <div class="row">
+            <span id="linearizedLabel" data-l10n-id="document_properties_linearized">Fast Web View:</span>
+            <p id="linearizedField" aria-labelledby="linearizedLabel">-</p>
           </div>
           <div class="buttonRow">
             <button id="documentPropertiesClose" class="dialogButton"><span data-l10n-id="document_properties_close">Close</span></button>
           </div>
         </dialog>
 <!--#if !MOZCENTRAL-->
-        <dialog id="printServiceDialog">
+        <dialog id="printServiceDialog" style="min-width: 200px;">
           <div class="row">
             <span data-l10n-id="print_progress_message">Preparing document for printing…</span>
           </div>
