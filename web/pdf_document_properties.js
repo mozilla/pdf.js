@@ -45,7 +45,6 @@ function getPageName(size, isPortrait, pageNames) {
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
- * @property {string} dialogName - Name/identifier for the dialog.
  * @property {HTMLDialogElement} dialog - The overlay's DOM element.
  * @property {Object} fields - Names and elements of the overlay's fields.
  * @property {HTMLButtonElement} closeButton - Button for closing the overlay.
@@ -60,13 +59,7 @@ class PDFDocumentProperties {
    * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(
-    { dialogName, dialog, fields, closeButton },
-    overlayManager,
-    eventBus,
-    l10n
-  ) {
-    this.dialogName = dialogName;
+  constructor({ dialog, fields, closeButton }, overlayManager, eventBus, l10n) {
     this.dialog = dialog;
     this.fields = fields;
     this.overlayManager = overlayManager;
@@ -76,7 +69,7 @@ class PDFDocumentProperties {
     // Bind the event listener for the Close button.
     closeButton.addEventListener("click", this.close.bind(this));
 
-    this.overlayManager.register(this.dialogName, this.dialog);
+    this.overlayManager.register(this.dialog);
 
     eventBus._on("pagechanging", evt => {
       this._currentPageNumber = evt.pageNumber;
@@ -96,7 +89,7 @@ class PDFDocumentProperties {
    */
   async open() {
     await Promise.all([
-      this.overlayManager.open(this.dialogName),
+      this.overlayManager.open(this.dialog),
       this._dataAvailableCapability.promise,
     ]);
     const currentPageNumber = this._currentPageNumber;
@@ -176,7 +169,7 @@ class PDFDocumentProperties {
    * Close the document properties overlay.
    */
   async close() {
-    this.overlayManager.close(this.dialogName);
+    this.overlayManager.close(this.dialog);
   }
 
   /**
@@ -224,7 +217,7 @@ class PDFDocumentProperties {
       }
       return;
     }
-    if (this.overlayManager.active !== this.dialogName) {
+    if (this.overlayManager.active !== this.dialog) {
       // Don't bother updating the dialog if has already been closed,
       // since it will be updated the next time `this.open` is called.
       return;

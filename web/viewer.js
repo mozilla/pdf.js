@@ -161,7 +161,6 @@ function getViewerConfiguration() {
       findNextButton: document.getElementById("findNext"),
     },
     passwordOverlay: {
-      dialogName: "passwordDialog",
       dialog: document.getElementById("passwordDialog"),
       label: document.getElementById("passwordText"),
       input: document.getElementById("password"),
@@ -169,7 +168,6 @@ function getViewerConfiguration() {
       cancelButton: document.getElementById("passwordCancel"),
     },
     documentProperties: {
-      dialogName: "documentPropertiesDialog",
       dialog: document.getElementById("documentPropertiesDialog"),
       closeButton: document.getElementById("documentPropertiesClose"),
       fields: {
