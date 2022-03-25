@@ -162,13 +162,11 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
       reloadIfRuntimeIsUnavailable();
     });
   }
-  if (!chromeFileAccessOverlayPromise) {
-    chromeFileAccessOverlayPromise = overlayManager.register(
-      "chromeFileAccessDialog",
-      dialog,
-      /* canForceClose = */ true
-    );
-  }
+  chromeFileAccessOverlayPromise ||= overlayManager.register(
+    dialog,
+    /* canForceClose = */ true
+  );
+
   chromeFileAccessOverlayPromise.then(function () {
     const iconPath = chrome.runtime.getManifest().icons[48];
     document.getElementById("chrome-pdfjs-logo-bg").style.backgroundImage =
@@ -227,11 +225,11 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
           originalUrl = "file:///fakepath/to/" + encodeURIComponent(file.name);
         }
         callback(URL.createObjectURL(file), file.size, originalUrl);
-        overlayManager.close("chromeFileAccessOverlay");
+        overlayManager.close(dialog);
       }
     };
 
-    overlayManager.open("chromeFileAccessDialog");
+    overlayManager.open(dialog);
   });
 }
 

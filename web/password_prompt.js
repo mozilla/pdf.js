@@ -17,7 +17,6 @@ import { PasswordResponses } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PasswordPromptOptions
- * @property {string} dialogName - Name/identifier for the dialog.
  * @property {HTMLDialogElement} dialog - The overlay's DOM element.
  * @property {HTMLParagraphElement} label - Label containing instructions for
  *                                          entering the password.
@@ -41,7 +40,6 @@ class PasswordPrompt {
    *   an <iframe> or an <object>. The default value is `false`.
    */
   constructor(options, overlayManager, l10n, isViewerEmbedded = false) {
-    this.dialogName = options.dialogName;
     this.dialog = options.dialog;
     this.label = options.label;
     this.input = options.input;
@@ -60,17 +58,13 @@ class PasswordPrompt {
       }
     });
 
-    this.overlayManager.register(
-      this.dialogName,
-      this.dialog,
-      /* canForceClose = */ true
-    );
+    this.overlayManager.register(this.dialog, /* canForceClose = */ true);
 
     this.dialog.addEventListener("close", this.#cancel.bind(this));
   }
 
   async open() {
-    await this.overlayManager.open(this.dialogName);
+    await this.overlayManager.open(this.dialog);
 
     const passwordIncorrect =
       this.#reason === PasswordResponses.INCORRECT_PASSWORD;
@@ -84,8 +78,8 @@ class PasswordPrompt {
   }
 
   async close() {
-    if (this.overlayManager.active === this.dialogName) {
-      this.overlayManager.close(this.dialogName);
+    if (this.overlayManager.active === this.dialog) {
+      this.overlayManager.close(this.dialog);
     }
   }
 
