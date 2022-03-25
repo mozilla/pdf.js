@@ -6167,6 +6167,12 @@
       "outputScale": 2,
       "about": "This tests draws to another canvas for the button, so it's a good test to ensure output scale is working."
     },
+    {  "id": "bug973572_page3",
+       "file": "pdfs/bug973572_page3.pdf",
+       "md5": "d637ae0f153f92835618f18d59b0650b",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "xfa_issue13500",
        "file": "pdfs/xfa_issue13500.pdf",
        "md5": "b81274a19f5a95c1466db3648f1be491",
