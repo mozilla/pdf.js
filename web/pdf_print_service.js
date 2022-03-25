@@ -115,8 +115,7 @@ PDFPrintService.prototype = {
   destroy() {
     if (activeService !== this) {
       // |activeService| cannot be replaced without calling destroy() first,
-      // so if it differs then an external consumer has a stale reference to
-      // us.
+      // so if it differs then an external consumer has a stale reference to us.
       return;
     }
     this.printContainer.textContent = "";
@@ -132,10 +131,9 @@ PDFPrintService.prototype = {
     this.scratchCanvas = null;
     activeService = null;
     ensureOverlay().then(function () {
-      if (overlayManager.active !== "printServiceOverlay") {
-        return; // overlay was already closed
+      if (overlayManager.active === "printServiceDialog") {
+        overlayManager.close("printServiceDialog");
       }
-      overlayManager.close("printServiceOverlay");
     });
   },
 
@@ -231,7 +229,7 @@ window.print = function () {
   }
   ensureOverlay().then(function () {
     if (activeService) {
-      overlayManager.open("printServiceOverlay");
+      overlayManager.open("printServiceDialog");
     }
   });
 
@@ -241,8 +239,8 @@ window.print = function () {
     if (!activeService) {
       console.error("Expected print service to be initialized.");
       ensureOverlay().then(function () {
-        if (overlayManager.active === "printServiceOverlay") {
-          overlayManager.close("printServiceOverlay");
+        if (overlayManager.active === "printServiceDialog") {
+          overlayManager.close("printServiceDialog");
         }
       });
       return; // eslint-disable-line no-unsafe-finally
@@ -283,10 +281,10 @@ function abort() {
 }
 
 function renderProgress(index, total, l10n) {
-  const progressContainer = document.getElementById("printServiceOverlay");
+  const progressDialog = document.getElementById("printServiceDialog");
   const progress = Math.round((100 * index) / total);
-  const progressBar = progressContainer.querySelector("progress");
-  const progressPerc = progressContainer.querySelector(".relative-progress");
+  const progressBar = progressDialog.querySelector("progress");
+  const progressPerc = progressDialog.querySelector(".relative-progress");
   progressBar.value = progress;
   l10n.get("print_progress_percent", { progress }).then(msg => {
     progressPerc.textContent = msg;
@@ -338,14 +336,16 @@ function ensureOverlay() {
     if (!overlayManager) {
       throw new Error("The overlay manager has not yet been initialized.");
     }
+    const dialog = document.getElementById("printServiceDialog");
 
     overlayPromise = overlayManager.register(
-      "printServiceOverlay",
-      document.getElementById("printServiceOverlay"),
-      abort,
-      true
+      "printServiceDialog",
+      dialog,
+      /* canForceClose = */ true
     );
+
     document.getElementById("printCancel").onclick = abort;
+    dialog.addEventListener("close", abort);
   }
   return overlayPromise;
 }

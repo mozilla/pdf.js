@@ -62,9 +62,9 @@
   --doorhanger-hover-color: rgba(12, 12, 13, 1);
   --doorhanger-hover-bg-color: rgba(237, 237, 237, 1);
   --doorhanger-separator-color: rgba(222, 222, 222, 1);
-  --overlay-button-border: 0 none;
-  --overlay-button-bg-color: rgba(12, 12, 13, 0.1);
-  --overlay-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+  --dialog-button-border: 0 none;
+  --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
+  --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
 
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
@@ -146,8 +146,8 @@
     --doorhanger-hover-color: rgba(249, 249, 250, 1);
     --doorhanger-hover-bg-color: rgba(93, 94, 98, 1);
     --doorhanger-separator-color: rgba(92, 92, 97, 1);
-    --overlay-button-bg-color: rgba(92, 92, 97, 1);
-    --overlay-button-hover-bg-color: rgba(115, 115, 115, 1);
+    --dialog-button-bg-color: rgba(92, 92, 97, 1);
+    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
 
     /* This image is used in <input> elements, which unfortunately means that
      * the `mask-image` approach used with all of the other images doesn't work
@@ -168,9 +168,9 @@
     --doorhanger-hover-color: ButtonFace;
     --doorhanger-border-color-whcm: 1px solid ButtonText;
     --doorhanger-triangle-opacity-whcm: 0;
-    --overlay-button-border: 1px solid Highlight;
-    --overlay-button-hover-bg-color: Highlight;
-    --overlay-button-hover-color: ButtonFace;
+    --dialog-button-border: 1px solid Highlight;
+    --dialog-button-hover-bg-color: Highlight;
+    --dialog-button-hover-color: ButtonFace;
     --field-border-color: ButtonText;
   }
 }
@@ -628,21 +628,21 @@ select {
 
 .toolbarButton,
 .secondaryToolbarButton,
-.overlayButton {
+.dialogButton {
   border: 0 none;
   background: none;
   width: 28px;
   height: 28px;
 }
 
-.overlayButton:hover,
-.overlayButton:focus-visible {
-  background-color: var(--overlay-button-hover-bg-color);
+.dialogButton:hover,
+.dialogButton:focus-visible {
+  background-color: var(--dialog-button-hover-bg-color);
 }
 
-.overlayButton:hover > span,
-.overlayButton:focus-visible > span {
-  color: var(--overlay-button-hover-color);
+.dialogButton:hover > span,
+.dialogButton:focus-visible > span {
+  color: var(--dialog-button-hover-color);
 }
 
 .toolbarButton > span {
@@ -654,7 +654,7 @@ select {
 
 .toolbarButton[disabled],
 .secondaryToolbarButton[disabled],
-.overlayButton[disabled] {
+.dialogButton[disabled] {
   opacity: 0.5;
 }
 
@@ -697,7 +697,7 @@ select {
 .toolbarButton,
 .dropdownToolbarButton,
 .secondaryToolbarButton,
-.overlayButton {
+.dialogButton {
   min-width: 16px;
   margin: 2px 1px;
   padding: 2px 6px 0;
@@ -1278,32 +1278,17 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   width: 98%;
 }
 
-.overlayButton {
+.dialogButton {
   width: auto;
   margin: 3px 4px 2px !important;
   padding: 2px 11px;
   color: var(--main-color);
-  background-color: var(--overlay-button-bg-color);
-  border: var(--overlay-button-border) !important;
+  background-color: var(--dialog-button-bg-color);
+  border: var(--dialog-button-border) !important;
 }
 
-#overlayContainer {
-  display: table;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.2);
-  z-index: 40000;
-}
-
-#overlayContainer > .container {
-  display: table-cell;
-  vertical-align: middle;
-  text-align: center;
-}
-
-#overlayContainer > .container > .dialog {
-  display: inline-block;
+dialog {
+  margin: auto;
   padding: 15px;
   border-spacing: 4px;
   color: var(--main-color);
@@ -1314,20 +1299,24 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.2);
+  user-select: none;
+}
 
-.dialog > .row {
+dialog > .row {
   display: table-row;
 }
 
-.dialog > .row > * {
+dialog > .row > * {
   display: table-cell;
 }
 
-.dialog .toolbarField {
+dialog .toolbarField {
   margin: 5px 0;
 }
 
-.dialog .separator {
+dialog .separator {
   display: block;
   margin: 4px 0;
   height: 1px;
@@ -1335,38 +1324,38 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   background-color: var(--separator-color);
 }
 
-.dialog .buttonRow {
+dialog .buttonRow {
   text-align: center;
   vertical-align: middle;
 }
 
-.dialog :link {
+dialog :link {
   color: rgba(255, 255, 255, 1);
 }
 
-#passwordOverlay > .dialog {
+#passwordDialog {
   text-align: center;
 }
-#passwordOverlay .toolbarField {
+#passwordDialog .toolbarField {
   width: 200px;
 }
 
-#documentPropertiesOverlay > .dialog {
+#documentPropertiesDialog {
   text-align: left;
 }
-#documentPropertiesOverlay .row > * {
+#documentPropertiesDialog .row > * {
   min-width: 100px;
   text-align: start;
 }
-#documentPropertiesOverlay .row > span {
+#documentPropertiesDialog .row > span {
   width: 125px;
   word-wrap: break-word;
 }
-#documentPropertiesOverlay .row > p {
+#documentPropertiesDialog .row > p {
   max-width: 225px;
   word-wrap: break-word;
 }
-#documentPropertiesOverlay .buttonRow {
+#documentPropertiesDialog .buttonRow {
   margin-top: 10px;
 }
 
