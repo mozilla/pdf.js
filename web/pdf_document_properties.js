@@ -45,9 +45,9 @@ function getPageName(size, isPortrait, pageNames) {
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
- * @property {string} overlayName - Name/identifier for the overlay.
+ * @property {string} dialogName - Name/identifier for the dialog.
+ * @property {HTMLDialogElement} dialog - The overlay's DOM element.
  * @property {Object} fields - Names and elements of the overlay's fields.
- * @property {HTMLDivElement} container - Div container for the overlay.
  * @property {HTMLButtonElement} closeButton - Button for closing the overlay.
  */
 
@@ -61,14 +61,14 @@ class PDFDocumentProperties {
    * @param {IL10n} l10n - Localization service.
    */
   constructor(
-    { overlayName, fields, container, closeButton },
+    { dialogName, dialog, fields, closeButton },
     overlayManager,
     eventBus,
     l10n
   ) {
-    this.overlayName = overlayName;
+    this.dialogName = dialogName;
+    this.dialog = dialog;
     this.fields = fields;
-    this.container = container;
     this.overlayManager = overlayManager;
     this.l10n = l10n;
 
@@ -76,11 +76,7 @@ class PDFDocumentProperties {
     // Bind the event listener for the Close button.
     closeButton.addEventListener("click", this.close.bind(this));
 
-    this.overlayManager.register(
-      this.overlayName,
-      this.container,
-      this.close.bind(this)
-    );
+    this.overlayManager.register(this.dialogName, this.dialog);
 
     eventBus._on("pagechanging", evt => {
       this._currentPageNumber = evt.pageNumber;
@@ -100,7 +96,7 @@ class PDFDocumentProperties {
    */
   async open() {
     await Promise.all([
-      this.overlayManager.open(this.overlayName),
+      this.overlayManager.open(this.dialogName),
       this._dataAvailableCapability.promise,
     ]);
     const currentPageNumber = this._currentPageNumber;
@@ -179,8 +175,8 @@ class PDFDocumentProperties {
   /**
    * Close the document properties overlay.
    */
-  close() {
-    this.overlayManager.close(this.overlayName);
+  async close() {
+    this.overlayManager.close(this.dialogName);
   }
 
   /**
@@ -228,7 +224,7 @@ class PDFDocumentProperties {
       }
       return;
     }
-    if (this.overlayManager.active !== this.overlayName) {
+    if (this.overlayManager.active !== this.dialogName) {
       // Don't bother updating the dialog if has already been closed,
       // since it will be updated the next time `this.open` is called.
       return;
