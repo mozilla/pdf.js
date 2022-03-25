@@ -37,6 +37,15 @@ class OverlayManager {
     }
     this.#overlays.set(dialog, { canForceClose });
 
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("GENERIC && !SKIP_BABEL") &&
+      !dialog.showModal
+    ) {
+      const dialogPolyfill = require("dialog-polyfill/dist/dialog-polyfill.js");
+      dialogPolyfill.registerDialog(dialog);
+    }
+
     dialog.addEventListener("cancel", evt => {
       this.#active = null;
     });
