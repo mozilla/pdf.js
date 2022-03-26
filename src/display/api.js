@@ -332,7 +332,6 @@ function getDocument(src) {
     params[key] = value;
   }
 
-  params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.CMapReaderFactory =
     params.CMapReaderFactory || DefaultCMapReaderFactory;
   params.StandardFontDataFactory =
@@ -342,6 +341,9 @@ function getDocument(src) {
   params.pdfBug = params.pdfBug === true;
   params.enableXfa = params.enableXfa === true;
 
+  if (!Number.isInteger(params.rangeChunkSize) || params.rangeChunkSize < 1) {
+    params.rangeChunkSize = DEFAULT_RANGE_CHUNK_SIZE;
+  }
   if (
     typeof params.docBaseUrl !== "string" ||
     isDataScheme(params.docBaseUrl)
@@ -351,7 +353,7 @@ function getDocument(src) {
     // they contain the *entire* PDF document and can thus be arbitrarily long.
     params.docBaseUrl = null;
   }
-  if (!Number.isInteger(params.maxImageSize)) {
+  if (!Number.isInteger(params.maxImageSize) || params.maxImageSize < -1) {
     params.maxImageSize = -1;
   }
   if (typeof params.cMapUrl !== "string") {
@@ -379,7 +381,10 @@ function getDocument(src) {
         isNodeJS
       ) && !params.disableFontFace;
   }
-  if (typeof params.ownerDocument === "undefined") {
+  if (
+    typeof params.ownerDocument !== "object" ||
+    params.ownerDocument === null
+  ) {
     params.ownerDocument = globalThis.document;
   }
 
