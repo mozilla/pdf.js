@@ -143,7 +143,11 @@ function writeXFADataForAcroform(str, newRefs) {
     }
     const node = xml.documentElement.searchNode(parseXFAPath(path), 0);
     if (node) {
-      node.childNodes = [new SimpleDOMNode("#text", value)];
+      if (Array.isArray(value)) {
+        node.childNodes = value.map(val => new SimpleDOMNode("value", val));
+      } else {
+        node.childNodes = [new SimpleDOMNode("#text", value)];
+      }
     } else {
       warn(`Node not found for path: ${path}`);
     }

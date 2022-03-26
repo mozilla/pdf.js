@@ -233,7 +233,11 @@ class Field extends PDFObject {
     if (this._isChoice) {
       if (this.multipleSelection) {
         const values = new Set(value);
-        this._currentValueIndices.length = 0;
+        if (Array.isArray(this._currentValueIndices)) {
+          this._currentValueIndices.length = 0;
+        } else {
+          this._currentValueIndices = [];
+        }
         this._items.forEach(({ displayValue }, i) => {
           if (values.has(displayValue)) {
             this._currentValueIndices.push(i);
