@@ -55,7 +55,7 @@ class GrabToPan {
   activate() {
     if (!this.active) {
       this.active = true;
-      this.element.addEventListener("mousedown", this._onMouseDown, true);
+      this.element.addEventListener("mousedown", this._onMouseDown); // #1243 modified by ngx-extended-pdf-viewer
       this.element.classList.add(CSS_CLASS_GRAB);
 
       this.onActiveChanged?.(true);
@@ -68,7 +68,7 @@ class GrabToPan {
   deactivate() {
     if (this.active) {
       this.active = false;
-      this.element.removeEventListener("mousedown", this._onMouseDown, true);
+      this.element.removeEventListener("mousedown", this._onMouseDown); // #1243 modified by ngx-extended-pdf-viewer
       this._endPan();
       this.element.classList.remove(CSS_CLASS_GRAB);
 
@@ -97,7 +97,7 @@ class GrabToPan {
       return true;
     }
 	// #716 end of modification
-	
+
     // Check whether the clicked element is, a child of, an input element/link.
     return node.matches(
       "a[href], a[href] *, input, textarea, button, button *, select, option"

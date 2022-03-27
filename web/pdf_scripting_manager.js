@@ -153,9 +153,12 @@ class PDFScriptingManager {
     for (const [name, listener] of this._internalEvents) {
       this._eventBus._on(name, listener);
     }
+    // #1243 modified by ngx-extended-pdf-viewer
+    const viewer = document.querySelector(".pdfViewer");
     for (const [name, listener] of this._domEvents) {
-      window.addEventListener(name, listener);
+      viewer.addEventListener(name, listener);
     }
+    // #1243 end of modification by ngx-extended-pdf-viewer
 
     try {
       const docProperties = await this._getDocProperties();
@@ -507,7 +510,7 @@ class PDFScriptingManager {
     this._internalEvents.clear();
 
     for (const [name, listener] of this._domEvents) {
-      window.removeEventListener(name, listener);
+      window.removeEventListener(name, listener, true);
     }
     this._domEvents.clear();
 
