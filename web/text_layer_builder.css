@@ -24,6 +24,7 @@
   opacity: 0.2;
   line-height: 1;
   text-size-adjust: none;
+  forced-color-adjust: none;
 }
 
 .textLayer span,
