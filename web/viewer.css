@@ -16,6 +16,7 @@
 @import url(pdf_viewer.css);
 
 :root {
+  --dir-factor: 1;
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
@@ -102,6 +103,10 @@
   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+}
+
+:root:dir(rtl) {
+  --dir-factor: -1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -278,12 +283,7 @@ select {
   position: absolute;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.1);
-}
-html[dir="ltr"] #sidebarContent {
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25);
-}
-html[dir="rtl"] #sidebarContent {
-  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25);
+  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25);
 }
 
 #viewerContainer {
@@ -326,14 +326,8 @@ html[dir="rtl"] #sidebarContent {
   width: 100%;
   height: 32px;
   background-color: var(--sidebar-toolbar-bg-color);
-}
-html[dir="ltr"] #toolbarSidebar {
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
-    0 0 1px rgba(0, 0, 0, 0.1);
-}
-html[dir="rtl"] #toolbarSidebar {
-  box-shadow: inset 1px 0 0 rgba(0, 0, 0, 0.25), 0 1px 0 rgba(0, 0, 0, 0.15),
-    0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25),
+    0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 #toolbarSidebar .toolbarButton {
@@ -517,10 +511,7 @@ html[dir="rtl"] #toolbarSidebar {
 #findInput[data-status="pending"] {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
-  background-position: 98%;
-}
-html[dir="rtl"] #findInput[data-status="pending"] {
-  background-position: 3px;
+  background-position: calc(50% + 48% * var(--dir-factor));
 }
 #findInput[data-status="notFound"] {
   background-color: rgba(255, 102, 102, 1);
@@ -852,16 +843,12 @@ html[dir="rtl"] #findInput[data-status="pending"] {
 
 .toolbarButton#sidebarToggle::before {
   mask-image: var(--toolbarButton-sidebarToggle-icon);
-}
-html[dir="rtl"] .toolbarButton#sidebarToggle::before {
-  transform: scaleX(-1);
+  transform: scaleX(var(--dir-factor));
 }
 
 .toolbarButton#secondaryToolbarToggle::before {
   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
-}
-html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
-  transform: scaleX(-1);
+  transform: scaleX(var(--dir-factor));
 }
 
 .toolbarButton.findPrevious::before {
@@ -929,9 +916,7 @@ html[dir="rtl"] .toolbarButton#secondaryToolbarToggle::before {
 
 #viewOutline.toolbarButton::before {
   mask-image: var(--toolbarButton-viewOutline-icon);
-}
-html[dir="rtl"] #viewOutline.toolbarButton::before {
-  transform: scaleX(-1);
+  transform: scaleX(var(--dir-factor));
 }
 
 #viewAttachments.toolbarButton::before {
@@ -944,9 +929,7 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
 
 #currentOutlineItem.toolbarButton::before {
   mask-image: var(--toolbarButton-currentOutlineItem-icon);
-}
-html[dir="rtl"] #currentOutlineItem.toolbarButton::before {
-  transform: scaleX(-1);
+  transform: scaleX(var(--dir-factor));
 }
 
 #viewFind.toolbarButton::before {
@@ -1241,9 +1224,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 }
 .treeItemToggler.treeItemsHidden::before {
   mask-image: var(--treeitem-collapsed-icon);
-}
-html[dir="rtl"] .treeItemToggler.treeItemsHidden::before {
-  transform: scaleX(-1);
+  transform: scaleX(var(--dir-factor));
 }
 .treeItemToggler.treeItemsHidden ~ .treeItems {
   display: none;
