@@ -154,7 +154,7 @@ class PDFScriptingManager {
       this._eventBus._on(name, listener);
     }
     for (const [name, listener] of this._domEvents) {
-      window.addEventListener(name, listener);
+      window.addEventListener(name, listener, true);
     }
 
     try {
@@ -507,7 +507,7 @@ class PDFScriptingManager {
     this._internalEvents.clear();
 
     for (const [name, listener] of this._domEvents) {
-      window.removeEventListener(name, listener);
+      window.removeEventListener(name, listener, true);
     }
     this._domEvents.clear();
 
