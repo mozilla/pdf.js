@@ -3376,8 +3376,111 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2.00 3.04 Td (a value) Tj ET Q EMC"
+        [
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "ET Q EMC",
+        ].join("\n")
+      );
+    });
+
+    it("should render choice with multiple selections but one is visible for printing", async function () {
+      choiceWidgetDict.set("Ff", AnnotationFieldFlag.MULTISELECT);
+      choiceWidgetDict.set("Opt", [
+        ["A", "a"],
+        ["B", "b"],
+        ["C", "c"],
+        ["D", "d"],
+      ]);
+      choiceWidgetDict.set("V", ["A"]);
+
+      const choiceWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: ["A", "C"] });
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(appearance).toEqual(
+        [
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2.00 -5.88 Td (a) Tj",
+          "0.00 -6.75 Td (b) Tj",
+          "ET Q EMC",
+        ].join("\n")
+      );
+    });
+
+    it("should render choice with multiple selections for printing", async function () {
+      choiceWidgetDict.set("Ff", AnnotationFieldFlag.MULTISELECT);
+      choiceWidgetDict.set("Opt", [
+        ["A", "a"],
+        ["B", "b"],
+        ["C", "c"],
+        ["D", "d"],
+      ]);
+      choiceWidgetDict.set("V", ["A"]);
+
+      const choiceWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: ["B", "C"] });
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(appearance).toEqual(
+        [
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "1 -3.5 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2.00 -5.88 Td (b) Tj",
+          "0.00 -6.75 Td (c) Tj",
+          "ET Q EMC",
+        ].join("\n")
       );
     });
 
@@ -3421,11 +3524,90 @@ describe("annotation", function () {
           "/AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n" +
-          "<< /Length 67 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
-          "/BBox [0 0 32 10]>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 3.04 Td (C) Tj ET Q EMC\n" +
-          "endstream\nendobj\n"
+        [
+          "2 0 obj",
+          "<< /Length 136 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10]>> stream",
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2.00 -5.88 Td (C) Tj",
+          "ET Q EMC",
+          "endstream",
+          "endobj\n",
+        ].join("\n")
+      );
+    });
+
+    it("should save choice with multiple selections", async function () {
+      choiceWidgetDict.set("Ff", AnnotationFieldFlag.MULTISELECT);
+      choiceWidgetDict.set("Opt", [
+        ["A", "a"],
+        ["B", "b"],
+        ["C", "c"],
+        ["D", "d"],
+      ]);
+      choiceWidgetDict.set("V", ["A"]);
+
+      const choiceWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test save");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: ["B", "C"] });
+
+      const data = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+
+      expect(data.length).toEqual(2);
+      const [oldData, newData] = data;
+      expect(oldData.ref).toEqual(Ref.get(123, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
+
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(oldData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] /Ff 2097152 /Opt " +
+          "[[(A) (a)] [(B) (b)] [(C) (c)] [(D) (d)]] /V [(B) (C)] /AP " +
+          "<< /N 2 0 R>> /M (date)>>\nendobj\n"
+      );
+      expect(newData.data).toEqual(
+        [
+          "2 0 obj",
+          "<< /Length 177 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10]>> stream",
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "1 -3.5 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2.00 -5.88 Td (b) Tj",
+          "0.00 -6.75 Td (c) Tj",
+          "ET Q EMC",
+          "endstream",
+          "endobj\n",
+        ].join("\n")
       );
     });
   });
