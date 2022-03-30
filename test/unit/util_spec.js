@@ -49,9 +49,8 @@ describe("util", function () {
         bytes[i] = "a".charCodeAt(0);
       }
 
-      // Create a string with `length` 'a' characters. We need an array of size
-      // `length + 1` since `join` puts the argument between the array elements.
-      const string = Array(length + 1).join("a");
+      // Create a string with `length` 'a' characters.
+      const string = "a".repeat(length);
 
       expect(bytesToString(bytes)).toEqual(string);
     });
