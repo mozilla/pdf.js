@@ -50,6 +50,11 @@ import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
 
+// Represent the percentage of the height of a single-line field over
+// the font size.
+// Acrobat seems to use this value.
+const LINE_FACTOR = 1.35;
+
 class AnnotationFactory {
   /**
    * Create an `Annotation` object of the correct type for the given reference
@@ -1405,6 +1410,16 @@ class WidgetAnnotation extends Annotation {
       return null;
     }
 
+    // Value can be an array (with choice list and multiple selections)
+    if (
+      Array.isArray(value) &&
+      Array.isArray(this.data.fieldValue) &&
+      value.length === this.data.fieldValue.length &&
+      value.every((x, i) => x === this.data.fieldValue[i])
+    ) {
+      return null;
+    }
+
     let appearance = await this._getAppearance(
       evaluator,
       task,
@@ -1448,7 +1463,8 @@ class WidgetAnnotation extends Annotation {
       appearance = newTransform.encryptString(appearance);
     }
 
-    dict.set("V", isAscii(value) ? value : stringToUTF16BEString(value));
+    const encoder = val => (isAscii(val) ? val : stringToUTF16BEString(val));
+    dict.set("V", Array.isArray(value) ? value.map(encoder) : encoder(value));
     dict.set("AP", AP);
     dict.set("M", `D:${getModificationDate()}`);
 
@@ -1629,11 +1645,6 @@ class WidgetAnnotation extends Annotation {
 
       const roundWithTwoDigits = x => Math.floor(x * 100) / 100;
 
-      // Represent the percentage of the height of a single-line field over
-      // the font size.
-      // Acrobat seems to use this value.
-      const LINE_FACTOR = 1.35;
-
       if (lineCount === -1) {
         const textWidth = this._getTextWidth(text, font);
         fontSize = roundWithTwoDigits(
@@ -1703,14 +1714,14 @@ class WidgetAnnotation extends Annotation {
   }
 
   _renderText(text, font, fontSize, totalWidth, alignment, hPadding, vPadding) {
-    // We need to get the width of the text in order to align it correctly
-    const width = this._getTextWidth(text, font) * fontSize;
     let shift;
     if (alignment === 1) {
       // Center
+      const width = this._getTextWidth(text, font) * fontSize;
       shift = (totalWidth - width) / 2;
     } else if (alignment === 2) {
       // Right
+      const width = this._getTextWidth(text, font) * fontSize;
       shift = totalWidth - width - hPadding;
     } else {
       shift = hPadding;
@@ -2482,6 +2493,135 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       fillColor: this.data.backgroundColor,
       type,
     };
+  }
+
+  async _getAppearance(evaluator, task, annotationStorage) {
+    if (this.data.combo) {
+      return super._getAppearance(evaluator, task, annotationStorage);
+    }
+
+    if (!annotationStorage) {
+      return null;
+    }
+    const storageEntry = annotationStorage.get(this.data.id);
+    let exportedValue = storageEntry && storageEntry.value;
+    if (exportedValue === undefined) {
+      // The annotation hasn't been rendered so use the appearance
+      return null;
+    }
+
+    if (!Array.isArray(exportedValue)) {
+      exportedValue = [exportedValue];
+    }
+
+    const defaultPadding = 2;
+    const hPadding = defaultPadding;
+    const totalHeight = this.data.rect[3] - this.data.rect[1];
+    const totalWidth = this.data.rect[2] - this.data.rect[0];
+    const lineCount = this.data.options.length;
+    const valueIndices = [];
+    for (let i = 0; i < lineCount; i++) {
+      const { exportValue } = this.data.options[i];
+      if (exportedValue.includes(exportValue)) {
+        valueIndices.push(i);
+      }
+    }
+
+    if (!this._defaultAppearance) {
+      // The DA is required and must be a string.
+      // If there is no font named Helvetica in the resource dictionary,
+      // the evaluator will fall back to a default font.
+      // Doing so prevents exceptions and allows saving/printing
+      // the file as expected.
+      this.data.defaultAppearanceData = parseDefaultAppearance(
+        (this._defaultAppearance = "/Helvetica 0 Tf 0 g")
+      );
+    }
+
+    const font = await this._getFontData(evaluator, task);
+
+    let defaultAppearance;
+    let { fontSize } = this.data.defaultAppearanceData;
+    if (!fontSize) {
+      const lineHeight = (totalHeight - defaultPadding) / lineCount;
+      let lineWidth = -1;
+      let value;
+      for (const { displayValue } of this.data.options) {
+        const width = this._getTextWidth(displayValue);
+        if (width > lineWidth) {
+          lineWidth = width;
+          value = displayValue;
+        }
+      }
+
+      [defaultAppearance, fontSize] = this._computeFontSize(
+        lineHeight,
+        totalWidth - 2 * hPadding,
+        value,
+        font,
+        -1
+      );
+    } else {
+      defaultAppearance = this._defaultAppearance;
+    }
+
+    const lineHeight = fontSize * LINE_FACTOR;
+    const vPadding = (lineHeight - fontSize) / 2;
+    const numberOfVisibleLines = Math.floor(totalHeight / lineHeight);
+
+    let firstIndex;
+    if (valueIndices.length === 1) {
+      const valuePosition = valueIndices[0];
+      const indexInPage = valuePosition % numberOfVisibleLines;
+      firstIndex = valuePosition - indexInPage;
+    } else {
+      // If nothing is selected (valueIndice.length === 0), we render
+      // from the first element.
+      firstIndex = valueIndices.length ? valueIndices[0] : 0;
+    }
+    const end = Math.min(firstIndex + numberOfVisibleLines + 1, lineCount);
+
+    const buf = ["/Tx BMC q", `1 1 ${totalWidth} ${totalHeight} re W n`];
+
+    if (valueIndices.length) {
+      // This value has been copied/pasted from annotation-choice-widget.pdf.
+      // It corresponds to rgb(153, 193, 218).
+      buf.push("0.600006 0.756866 0.854904 rg");
+
+      // Highlight the lines in filling a blue rectangle at the selected
+      // positions.
+      for (const index of valueIndices) {
+        if (firstIndex <= index && index < end) {
+          buf.push(
+            `1 ${
+              totalHeight - (index - firstIndex + 1) * lineHeight
+            } ${totalWidth} ${lineHeight} re f`
+          );
+        }
+      }
+    }
+    buf.push("BT", defaultAppearance, `1 0 0 1 0 ${totalHeight} Tm`);
+
+    for (let i = firstIndex; i < end; i++) {
+      const { displayValue } = this.data.options[i];
+      const hpadding = i === firstIndex ? hPadding : 0;
+      const vpadding = i === firstIndex ? vPadding : 0;
+      buf.push(
+        this._renderText(
+          displayValue,
+          font,
+          fontSize,
+          totalWidth,
+          0,
+          hpadding,
+          -lineHeight + vpadding
+        )
+      );
+    }
+
+    buf.push("ET Q EMC");
+
+    return buf.join("\n");
   }
 }
 
