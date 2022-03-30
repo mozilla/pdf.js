@@ -20,6 +20,7 @@ import canvasSize from "canvas-size";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
 let activeService = null;
+let dialog = null;
 let overlayManager = null;
 
 // Renders the page to the canvas of the given print service, and returns
@@ -157,8 +158,7 @@ PDFPrintService.prototype = {
   destroy() {
     if (activeService !== this) {
       // |activeService| cannot be replaced without calling destroy() first,
-      // so if it differs then an external consumer has a stale reference to
-      // us.
+      // so if it differs then an external consumer has a stale reference to us.
       return;
     }
     this.printContainer.textContent = "";
@@ -174,11 +174,10 @@ PDFPrintService.prototype = {
     this.scratchCanvas = null;
     activeService = null;
     ensureOverlay().then(function () {
-      if (overlayManager.active !== "printServiceOverlay") {
-        return; // overlay was already closed
+      if (overlayManager.active === dialog) {
+        overlayManager.close(dialog);
+        overlayManager.unregister(dialog); // #104
       }
-      overlayManager.close("printServiceOverlay");
-      overlayManager.unregister("printServiceOverlay"); // #104
     });
     overlayPromise = undefined; // #104
   },
@@ -300,7 +299,7 @@ window.printPDF = function () {
   }
   ensureOverlay().then(function () {
     if (activeService) {
-      overlayManager.open("printServiceOverlay");
+      overlayManager.open(dialog);
     }
   });
 
@@ -310,8 +309,8 @@ window.printPDF = function () {
     if (!activeService) {
       Window['ngxConsole'].error("Expected print service to be initialized.");
       ensureOverlay().then(function () {
-        if (overlayManager.active === "printServiceOverlay") {
-          overlayManager.close("printServiceOverlay");
+        if (overlayManager.active === dialog) {
+          overlayManager.close(dialog);
         }
       });
       return; // eslint-disable-line no-unsafe-finally
@@ -360,10 +359,10 @@ function abort() {
 }
 
 function renderProgress(index, total, l10n, eventBus) { // #588 modified by ngx-extended-pdf-viewer
-  const progressContainer = document.getElementById("printServiceOverlay");
+  dialog ||= document.getElementById("printServiceDialog");
   const progress = Math.round((100 * index) / total);
-  const progressBar = progressContainer.querySelector("progress");
-  const progressPerc = progressContainer.querySelector(".relative-progress");
+  const progressBar = dialog.querySelector("progress");
+  const progressPerc = dialog.querySelector(".relative-progress");
   progressBar.value = progress;
   l10n.get("print_progress_percent", { progress }).then(msg => {
     progressPerc.textContent = msg;
@@ -379,27 +378,31 @@ function renderProgress(index, total, l10n, eventBus) { // #588 modified by ngx-
   // #588 end of modification
 }
 
-PDFViewerApplication.printKeyDownListener = function (event) {
-  // Intercept Cmd/Ctrl + P in all browsers.
-  // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
-  if (
-    event.keyCode === /* P= */ 80 &&
-    (event.ctrlKey || event.metaKey) &&
-    !event.altKey &&
-    (!event.shiftKey || window.chrome || window.opera)
-  ) {
-    window.printPDF();
+window.addEventListener(
+  "keydown",
+  function (event) {
+    // Intercept Cmd/Ctrl + P in all browsers.
+    // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
+    if (
+      event.keyCode === /* P= */ 80 &&
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      (!event.shiftKey || window.chrome || window.opera)
+    ) {
+      window.print();
 
-    // The (browser) print dialog cannot be prevented from being shown in
-    // IE11.
-    event.preventDefault();
-    if (event.stopImmediatePropagation) {
-      event.stopImmediatePropagation();
-    } else {
-      event.stopPropagation();
+      // The (browser) print dialog cannot be prevented from being shown in
+      // IE11.
+      event.preventDefault();
+      if (event.stopImmediatePropagation) {
+        event.stopImmediatePropagation();
+      } else {
+        event.stopPropagation();
+      }
     }
-  }
-};
+  },
+  true
+);
 
 if ("onbeforeprint" in window) {
   // Do not propagate before/afterprint events when they are not triggered
@@ -420,14 +423,15 @@ function ensureOverlay() {
     if (!overlayManager) {
       throw new Error("The overlay manager has not yet been initialized.");
     }
+    dialog ||= document.getElementById("printServiceDialog");
 
     overlayPromise = overlayManager.register(
-      "printServiceOverlay",
-      document.getElementById("printServiceOverlay"),
-      abort,
-      true
+      dialog,
+      /* canForceClose = */ true
     );
+
     document.getElementById("printCancel").onclick = abort;
+    dialog.addEventListener("close", abort);
   }
   return overlayPromise;
 }

@@ -49,6 +49,9 @@ class EventDispatcher {
 
   mergeChange(event) {
     let value = event.value;
+    if (Array.isArray(value)) {
+      return value;
+    }
     if (typeof value !== "string") {
       value = value.toString();
     }
