@@ -147,7 +147,7 @@ function reloadIfRuntimeIsUnavailable() {
 
 let chromeFileAccessOverlayPromise;
 function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
-  let onCloseOverlay = null;
+  const dialog = document.getElementById("chromeFileAccessDialog");
   if (top !== window) {
     // When the extension reloads after receiving new permissions, the pages
     // have to be reloaded to restore the extension runtime. Auto-reload
@@ -157,20 +157,16 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
     // for detecting unload of the top-level frame. Should this ever change
     // (crbug.com/511670), then the user can just reload the tab.
     window.addEventListener("focus", reloadIfRuntimeIsUnavailable);
-    onCloseOverlay = function () {
+    dialog.addEventListener("close", function () {
       window.removeEventListener("focus", reloadIfRuntimeIsUnavailable);
       reloadIfRuntimeIsUnavailable();
-      overlayManager.close("chromeFileAccessOverlay");
-    };
+    });
   }
-  if (!chromeFileAccessOverlayPromise) {
-    chromeFileAccessOverlayPromise = overlayManager.register(
-      "chromeFileAccessOverlay",
-      document.getElementById("chromeFileAccessOverlay"),
-      onCloseOverlay,
-      true
-    );
-  }
+  chromeFileAccessOverlayPromise ||= overlayManager.register(
+    dialog,
+    /* canForceClose = */ true
+  );
+
   chromeFileAccessOverlayPromise.then(function () {
     const iconPath = chrome.runtime.getManifest().icons[48];
     document.getElementById("chrome-pdfjs-logo-bg").style.backgroundImage =
@@ -229,11 +225,11 @@ function requestAccessToLocalFile(fileUrl, overlayManager, callback) {
           originalUrl = "file:///fakepath/to/" + encodeURIComponent(file.name);
         }
         callback(URL.createObjectURL(file), file.size, originalUrl);
-        overlayManager.close("chromeFileAccessOverlay");
+        overlayManager.close(dialog);
       }
     };
 
-    overlayManager.open("chromeFileAccessOverlay");
+    overlayManager.open(dialog);
   });
 }
 
