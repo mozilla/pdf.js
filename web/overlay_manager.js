@@ -14,123 +14,93 @@
  */
 
 class OverlayManager {
-  #overlays = Object.create(null);
+  #overlays = new WeakMap();
 
   #active = null;
-
-  #keyDownBound = null;
 
   get active() {
     return this.#active;
   }
 
   /**
-   * @param {string} name - The name of the overlay that is registered.
-   * @param {HTMLDivElement} element - The overlay's DOM element.
-   * @param {function} [callerCloseMethod] - The method that, if present, calls
-   *                   `OverlayManager.close` from the object registering the
-   *                   overlay. Access to this method is necessary in order to
-   *                   run cleanup code when e.g. the overlay is force closed.
-   *                   The default is `null`.
+   * @param {HTMLDialogElement} dialog - The overlay's DOM element.
    * @param {boolean} [canForceClose] - Indicates if opening the overlay closes
    *                  an active overlay. The default is `false`.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    registered.
    */
-  async register(
-    name,
-    element,
-    callerCloseMethod = null,
-    canForceClose = false
-  ) {
-    let container;
-    if (!name || !element || !(container = element.parentNode)) {
+  async register(dialog, canForceClose = false) {
+    if (typeof dialog !== "object") {
       throw new Error("Not enough parameters.");
-    } else if (this.#overlays[name]) {
+    } else if (this.#overlays.has(dialog)) {
       throw new Error("The overlay is already registered.");
     }
-    this.#overlays[name] = {
-      element,
-      container,
-      callerCloseMethod,
-      canForceClose,
-    };
+    this.#overlays.set(dialog, { canForceClose });
+
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("GENERIC && !SKIP_BABEL") &&
+      !dialog.showModal
+    ) {
+      const dialogPolyfill = require("dialog-polyfill/dist/dialog-polyfill.js");
+      dialogPolyfill.registerDialog(dialog);
+    }
+
+    dialog.addEventListener("cancel", evt => {
+      this.#active = null;
+    });
   }
 
   /**
-   * @param {string} name - The name of the overlay that is unregistered.
+   * @param {HTMLDialogElement} dialog - The overlay's DOM element.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    unregistered.
    */
-  async unregister(name) {
-    if (!this.#overlays[name]) {
+  async unregister(dialog) {
+    if (!this.#overlays.has(dialog)) {
       throw new Error("The overlay does not exist.");
-    } else if (this.#active === name) {
+    } else if (this.#active === dialog) {
       throw new Error("The overlay cannot be removed while it is active.");
     }
-    delete this.#overlays[name];
+    this.#overlays.delete(dialog);
   }
 
   /**
-   * @param {string} name - The name of the overlay that should be opened.
+   * @param {HTMLDialogElement} dialog - The overlay's DOM element.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    opened.
    */
-  async open(name) {
-    if (!this.#overlays[name]) {
+  async open(dialog) {
+    if (!this.#overlays.has(dialog)) {
       throw new Error("The overlay does not exist.");
     } else if (this.#active) {
-      if (this.#active === name) {
+      if (this.#active === dialog) {
         throw new Error("The overlay is already active.");
-      } else if (this.#overlays[name].canForceClose) {
-        this.#closeThroughCaller();
+      } else if (this.#overlays.get(dialog).canForceClose) {
+        await this.close();
       } else {
         throw new Error("Another overlay is currently active.");
       }
     }
-    this.#active = name;
-    this.#overlays[this.#active].element.classList.remove("hidden");
-    this.#overlays[this.#active].container.classList.remove("hidden");
-
-    this.#keyDownBound = this.#keyDown.bind(this);
-    window.addEventListener("keydown", this.#keyDownBound);
+    this.#active = dialog;
+    dialog.showModal();
   }
 
   /**
-   * @param {string} name - The name of the overlay that should be closed.
+   * @param {HTMLDialogElement} dialog - The overlay's DOM element.
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    closed.
    */
-  async close(name) {
-    if (!this.#overlays[name]) {
+  async close(dialog = this.#active) {
+    if (!this.#overlays.has(dialog)) {
       throw new Error("The overlay does not exist.");
     } else if (!this.#active) {
       throw new Error("The overlay is currently not active.");
-    } else if (this.#active !== name) {
+    } else if (this.#active !== dialog) {
       throw new Error("Another overlay is currently active.");
     }
-    this.#overlays[this.#active].container.classList.add("hidden");
-    this.#overlays[this.#active].element.classList.add("hidden");
+    dialog.close();
     this.#active = null;
-
-    window.removeEventListener("keydown", this.#keyDownBound);
-    this.#keyDownBound = null;
-  }
-
-  #keyDown(evt) {
-    if (this.#active && evt.keyCode === /* Esc = */ 27) {
-      this.#closeThroughCaller();
-      evt.preventDefault();
-    }
-  }
-
-  #closeThroughCaller() {
-    if (this.#overlays[this.#active].callerCloseMethod) {
-      this.#overlays[this.#active].callerCloseMethod();
-    }
-    if (this.#active) {
-      this.close(this.#active);
-    }
   }
 }
 
