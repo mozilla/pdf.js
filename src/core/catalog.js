@@ -717,11 +717,7 @@ class Catalog {
           const character = String.fromCharCode(
             baseCharCode + (letterIndex % LIMIT)
           );
-          const charBuf = [];
-          for (let j = 0, jj = (letterIndex / LIMIT) | 0; j <= jj; j++) {
-            charBuf.push(character);
-          }
-          currentLabel = charBuf.join("");
+          currentLabel = character.repeat(Math.floor(letterIndex / LIMIT) + 1);
           break;
         default:
           if (style) {
