@@ -223,10 +223,10 @@ class PDFSidebar {
     this.attachmentsButton.classList.toggle("toggled", isAttachments);
     this.layersButton.classList.toggle("toggled", isLayers);
 
-    this.thumbnailButton.setAttribute("aria-checked", `${isThumbs}`);
-    this.outlineButton.setAttribute("aria-checked", `${isOutline}`);
-    this.attachmentsButton.setAttribute("aria-checked", `${isAttachments}`);
-    this.layersButton.setAttribute("aria-checked", `${isLayers}`);
+    this.thumbnailButton.setAttribute("aria-checked", isThumbs);
+    this.outlineButton.setAttribute("aria-checked", isOutline);
+    this.attachmentsButton.setAttribute("aria-checked", isAttachments);
+    this.layersButton.setAttribute("aria-checked", isLayers);
     // ... and for all views.
     this.thumbnailView.classList.toggle("hidden", !isThumbs);
     this.outlineView.classList.toggle("hidden", !isOutline);
