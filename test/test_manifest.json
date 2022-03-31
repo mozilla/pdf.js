@@ -6332,5 +6332,27 @@
       "md5": "5d1bfcc3b3130bfa7e33e43990e2213a",
       "rounds": 1,
       "type": "text"
+   },
+   {  "id": "issue14685",
+      "file": "pdfs/issue14685.pdf",
+      "md5": "2c608203b9b1d13455f0b1d9cebc9515",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
+   },
+   {  "id": "issue14685-print",
+      "file": "pdfs/issue14685.pdf",
+      "md5": "2c608203b9b1d13455f0b1d9cebc9515",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+        "150R": {
+         "value": "Hello PDF.js World"
+        }
+      }
    }
 ]
