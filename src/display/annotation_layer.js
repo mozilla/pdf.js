@@ -1370,8 +1370,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const id = this.data.id;
 
     const storedData = storage.getValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
-      value: this.data.fieldValue.length > 0 ? this.data.fieldValue[0] : undefined,
-
+      value: this.data.fieldValue,
     });
 
     let { fontSize } = this.data.defaultAppearanceData;
@@ -1568,7 +1567,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     } else {
       selectElement.addEventListener("input", event => { // #718 modified by ngx-extended-pdf-viewer
         storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
-          value: getValue(event),
+          value: getValue(event, /* isExport */ true),
           radioValue: getValue(event, true), // #718 modified by ngx-extended-pdf-viewer
         });
       });
