@@ -328,6 +328,10 @@ class SimpleDOMNode {
       .join("");
   }
 
+  get children() {
+    return this.childNodes || [];
+  }
+
   hasChildNodes() {
     return this.childNodes && this.childNodes.length > 0;
   }
@@ -492,11 +496,12 @@ class SimpleXMLParser extends XMLParserBase {
     this._currentFragment = this._stack.pop() || [];
     const lastElement = this._currentFragment[this._currentFragment.length - 1];
     if (!lastElement) {
-      return;
+      return null;
     }
     for (let i = 0, ii = lastElement.childNodes.length; i < ii; i++) {
       lastElement.childNodes[i].parentNode = lastElement;
     }
+    return lastElement;
   }
 
   onError(code) {

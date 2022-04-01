@@ -47,6 +47,7 @@ import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
+import { DatasetReader } from "./dataset_reader.js";
 import { Linearization } from "./parser.js";
 import { NullStream } from "./stream.js";
 import { ObjectLoader } from "./object_loader.js";
@@ -818,6 +819,47 @@ class PDFDocument {
         Array.isArray(rectangle) && rectangle.every(value => value === 0);
       return isSignature && isInvisible;
     });
+  }
+
+  get xfaDatasets() {
+    const acroForm = this.catalog.acroForm;
+    if (!acroForm) {
+      return shadow(this, "xfaDatasets", null);
+    }
+
+    const xfa = acroForm.get("XFA");
+    if (xfa instanceof BaseStream && !xfa.isEmpty) {
+      try {
+        const xdp = stringToUTF8String(xfa.getString());
+        return shadow(this, "xfaDatasets", new DatasetReader({ xdp }));
+      } catch (_) {
+        warn("XFA - Invalid utf-8 string.");
+        return shadow(this, "xfaDatasets", null);
+      }
+    }
+
+    if (!Array.isArray(xfa) || xfa.length === 0) {
+      return null;
+    }
+
+    for (let i = 0, ii = xfa.length; i < ii; i += 2) {
+      if (xfa[i] !== "datasets") {
+        continue;
+      }
+      const data = this.xref.fetchIfRef(xfa[i + 1]);
+      if (!(data instanceof BaseStream) || data.isEmpty) {
+        continue;
+      }
+      try {
+        const datasets = stringToUTF8String(data.getString());
+        return shadow(this, "xfaDatasets", new DatasetReader({ datasets }));
+      } catch (_) {
+        warn("XFA - Invalid utf-8 string.");
+        return shadow(this, "xfaDatasets", null);
+      }
+    }
+
+    return shadow(this, "xfaDatasets", null);
   }
 
   get xfaData() {
