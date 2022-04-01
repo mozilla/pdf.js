@@ -52,7 +52,7 @@ class DatasetReader {
     } else {
       const parser = new DatasetXMLParser({ hasAttributes: true });
       try {
-        parser.parseFromString(data.xdp);
+        parser.parseFromString(data["xdp:xdp"]);
       } catch (_) {}
       this.node = parser.node;
     }
