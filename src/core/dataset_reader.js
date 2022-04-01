@@ -13,8 +13,18 @@
  * limitations under the License.
  */
 
+import { stringToUTF8String, warn } from "../shared/util.js";
 import { parseXFAPath } from "./core_utils.js";
 import { SimpleXMLParser } from "./xml_parser.js";
+
+function decodeString(str) {
+  try {
+    return stringToUTF8String(str);
+  } catch (ex) {
+    warn(`UTF-8 decoding failed: "${ex}".`);
+    return str;
+  }
+}
 
 class DatasetXMLParser extends SimpleXMLParser {
   constructor(options) {
@@ -60,10 +70,10 @@ class DatasetReader {
 
     const first = node.firstChild;
     if (first && first.nodeName === "value") {
-      return node.children.map(child => child.textContent);
+      return node.children.map(child => decodeString(child.textContent));
     }
 
-    return node.textContent;
+    return decodeString(node.textContent);
   }
 }
 
