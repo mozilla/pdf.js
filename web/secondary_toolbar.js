@@ -230,8 +230,8 @@ class SecondaryToolbar {
       cursorSelectToolButton.classList.toggle("toggled", isSelect);
       cursorHandToolButton.classList.toggle("toggled", isHand);
 
-      cursorSelectToolButton.setAttribute("aria-checked", `${isSelect}`);
-      cursorHandToolButton.setAttribute("aria-checked", `${isHand}`);
+      cursorSelectToolButton.setAttribute("aria-checked", isSelect);
+      cursorHandToolButton.setAttribute("aria-checked", isHand);
     });
   }
 
@@ -255,10 +255,10 @@ class SecondaryToolbar {
       scrollHorizontalButton.classList.toggle("toggled", isHorizontal);
       scrollWrappedButton.classList.toggle("toggled", isWrapped);
 
-      scrollPageButton.setAttribute("aria-checked", `${isPage}`);
-      scrollVerticalButton.setAttribute("aria-checked", `${isVertical}`);
-      scrollHorizontalButton.setAttribute("aria-checked", `${isHorizontal}`);
-      scrollWrappedButton.setAttribute("aria-checked", `${isWrapped}`);
+      scrollPageButton.setAttribute("aria-checked", isPage);
+      scrollVerticalButton.setAttribute("aria-checked", isVertical);
+      scrollHorizontalButton.setAttribute("aria-checked", isHorizontal);
+      scrollWrappedButton.setAttribute("aria-checked", isWrapped);
 
       // Permanently *disable* the Scroll buttons when PAGE-scrolling is being
       // enforced for *very* long/large documents; please see the `BaseViewer`.
@@ -298,9 +298,9 @@ class SecondaryToolbar {
       spreadOddButton.classList.toggle("toggled", isOdd);
       spreadEvenButton.classList.toggle("toggled", isEven);
 
-      spreadNoneButton.setAttribute("aria-checked", `${isNone}`);
-      spreadOddButton.setAttribute("aria-checked", `${isOdd}`);
-      spreadEvenButton.setAttribute("aria-checked", `${isEven}`);
+      spreadNoneButton.setAttribute("aria-checked", isNone);
+      spreadOddButton.setAttribute("aria-checked", isOdd);
+      spreadEvenButton.setAttribute("aria-checked", isEven);
     }
     this.eventBus._on("spreadmodechanged", spreadModeChanged);
 
