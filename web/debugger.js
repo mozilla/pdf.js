@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-"use strict";
+let opMap;
 
-// eslint-disable-next-line no-var
-var FontInspector = (function FontInspectorClosure() {
+const FontInspector = (function FontInspectorClosure() {
   let fonts;
   let active = false;
   const fontAttribute = "data-font-name";
@@ -154,12 +153,8 @@ var FontInspector = (function FontInspectorClosure() {
   };
 })();
 
-let opMap;
-
 // Manages all the page steppers.
-//
-// eslint-disable-next-line no-var
-var StepperManager = (function StepperManagerClosure() {
+const StepperManager = (function StepperManagerClosure() {
   let steppers = [];
   let stepperDiv = null;
   let stepperControls = null;
@@ -451,8 +446,7 @@ const Stepper = (function StepperClosure() {
   return Stepper;
 })();
 
-// eslint-disable-next-line no-var
-var Stats = (function Stats() {
+const Stats = (function Stats() {
   let stats = [];
   function clear(node) {
     node.textContent = ""; // Remove any `node` contents from the DOM.
@@ -510,7 +504,7 @@ var Stats = (function Stats() {
 })();
 
 // Manages all the debugging tools.
-window.PDFBug = (function PDFBugClosure() {
+const PDFBug = (function PDFBugClosure() {
   const panelWidth = 300;
   const buttons = [];
   let activePanel = null;
@@ -562,13 +556,13 @@ window.PDFBug = (function PDFBugClosure() {
       container.style.right = panelWidth + "px";
 
       // Initialize all the debugging tools.
-      for (const [i, tool] of this.tools.entries()) {
+      for (const tool of this.tools) {
         const panel = document.createElement("div");
         const panelButton = document.createElement("button");
         panelButton.textContent = tool.name;
         panelButton.addEventListener("click", event => {
           event.preventDefault();
-          this.selectPanel(i);
+          this.selectPanel(tool);
         });
         controls.appendChild(panelButton);
         panels.appendChild(panel);
@@ -609,3 +603,9 @@ window.PDFBug = (function PDFBugClosure() {
     },
   };
 })();
+
+globalThis.FontInspector = FontInspector;
+globalThis.StepperManager = StepperManager;
+globalThis.Stats = Stats;
+
+export { PDFBug };
