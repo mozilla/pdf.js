@@ -447,10 +447,11 @@ select {
 .findbar > div {
   height: 32px;
 }
-.findbar.wrapContainers > div {
+.findbar.wrapContainers > div,
+.findbar.wrapContainers > div#findbarMessageContainer > * {
   clear: both;
 }
-.findbar.wrapContainers > div.findbarMessageContainer {
+.findbar.wrapContainers > div#findbarMessageContainer {
   height: auto;
 }
 
