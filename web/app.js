@@ -330,11 +330,15 @@ const PDFViewerApplication = {
     if (!hash) {
       return;
     }
-    const params = parseQueryString(hash),
-      waitOn = [];
+    const { mainContainer, viewerContainer } = this.appConfig,
+      params = parseQueryString(hash);
 
     if (params.get("disableworker") === "true") {
-      waitOn.push(loadFakeWorker());
+      try {
+        await loadFakeWorker();
+      } catch (ex) {
+        console.error(`_parseHashParameters: "${ex.message}".`);
+      }
     }
     if (params.has("disablerange")) {
       AppOptions.set("disableRange", params.get("disablerange") === "true");
@@ -368,8 +372,13 @@ const PDFViewerApplication = {
         case "visible":
         case "shadow":
         case "hover":
-          const viewer = this.appConfig.viewerContainer;
-          viewer.classList.add(`textLayer-${params.get("textlayer")}`);
+          viewerContainer.classList.add(`textLayer-${params.get("textlayer")}`);
+          try {
+            await loadPDFBug(this);
+            this._PDFBug.loadCSS();
+          } catch (ex) {
+            console.error(`_parseHashParameters: "${ex.message}".`);
+          }
           break;
       }
     }
@@ -378,7 +387,12 @@ const PDFViewerApplication = {
       AppOptions.set("fontExtraProperties", true);
 
       const enabled = params.get("pdfbug").split(",");
-      waitOn.push(initPDFBug(enabled));
+      try {
+        await loadPDFBug(this);
+        this._PDFBug.init({ OPS }, mainContainer, enabled);
+      } catch (ex) {
+        console.error(`_parseHashParameters: "${ex.message}".`);
+      }
     }
     // It is not possible to change locale for the (various) extension builds.
     if (
@@ -387,15 +401,6 @@ const PDFViewerApplication = {
       params.has("locale")
     ) {
       AppOptions.set("locale", params.get("locale"));
-    }
-
-    if (waitOn.length === 0) {
-      return;
-    }
-    try {
-      await Promise.all(waitOn);
-    } catch (reason) {
-      console.error(`_parseHashParameters: "${reason.message}".`);
     }
   },
 
@@ -2120,15 +2125,14 @@ async function loadFakeWorker() {
   await loadScript(PDFWorker.workerSrc);
 }
 
-async function initPDFBug(enabledTabs) {
-  const { debuggerScriptPath, mainContainer } = PDFViewerApplication.appConfig;
+async function loadPDFBug(self) {
+  const { debuggerScriptPath } = self.appConfig;
   const { PDFBug } =
     typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
       ? await import(debuggerScriptPath) // eslint-disable-line no-unsanitized/method
       : await __non_webpack_import__(debuggerScriptPath); // eslint-disable-line no-undef
-  PDFBug.init({ OPS }, mainContainer, enabledTabs);
 
-  PDFViewerApplication._PDFBug = PDFBug;
+  self._PDFBug = PDFBug;
 }
 
 function reportPageStatsPDFBug({ pageNumber }) {
