@@ -15,9 +15,9 @@
 
 import { Dict, Ref } from "./primitives.js";
 import {
+  FeatureTest,
   FormatError,
   info,
-  IsEvalSupportedCached,
   shadow,
   unreachable,
 } from "../shared/util.js";
@@ -438,7 +438,7 @@ class PDFFunction {
     const parser = new PostScriptParser(lexer);
     const code = parser.parse();
 
-    if (isEvalSupported && IsEvalSupportedCached.value) {
+    if (isEvalSupported && FeatureTest.isEvalSupported) {
       const compiled = new PostScriptCompiler().compile(code, domain, range);
       if (compiled) {
         // Compiled function consists of simple expressions such as addition,
