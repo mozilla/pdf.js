@@ -209,20 +209,16 @@ class Catalog {
       return null;
     }
 
-    const markInfo = Object.assign(Object.create(null), {
+    const markInfo = {
       Marked: false,
       UserProperties: false,
       Suspects: false,
-    });
+    };
     for (const key in markInfo) {
-      if (!obj.has(key)) {
-        continue;
-      }
       const value = obj.get(key);
-      if (typeof value !== "boolean") {
-        continue;
+      if (typeof value === "boolean") {
+        markInfo[key] = value;
       }
-      markInfo[key] = value;
     }
 
     return markInfo;
