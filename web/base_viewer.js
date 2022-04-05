@@ -1418,37 +1418,7 @@ class BaseViewer {
       : this.container.scrollHeight > this.container.clientHeight;
   }
 
-  /**
-   * Helper method for `this._getVisiblePages`. Should only ever be used when
-   * the viewer can only display a single page at a time, for example:
-   *  - When PresentationMode is active.
-   */
-  _getCurrentVisiblePage() {
-    if (!this.pagesCount) {
-      return { views: [] };
-    }
-    const pageView = this._pages[this._currentPageNumber - 1];
-    // NOTE: Compute the `x` and `y` properties of the current view,
-    // since `this._updateLocation` depends of them being available.
-    const element = pageView.div;
-
-    const view = {
-      id: pageView.id,
-      x: element.offsetLeft + element.clientLeft,
-      y: element.offsetTop + element.clientTop,
-      view: pageView,
-    };
-    const ids = new Set([pageView.id]);
-
-    return { first: view, last: view, views: [view], ids };
-  }
-
   _getVisiblePages() {
-    if (this.isInPresentationMode) {
-      // The algorithm in `getVisibleElements` doesn't work in all browsers and
-      // configurations (e.g. Chrome) when PresentationMode is active.
-      return this._getCurrentVisiblePage();
-    }
     const views =
         this._scrollMode === ScrollMode.PAGE
           ? this.#scrollModePageState.pages
