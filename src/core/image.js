@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 
-import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
+import {
+  assert,
+  FeatureTest,
+  FormatError,
+  ImageKind,
+  info,
+  warn,
+} from "../shared/util.js";
+import { applyMaskImageData } from "../shared/image_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
@@ -288,7 +296,7 @@ class PDFImage {
     });
   }
 
-  static createMask({
+  static createRawMask({
     imgArray,
     width,
     height,
@@ -302,7 +310,7 @@ class PDFImage {
     ) {
       assert(
         imgArray instanceof Uint8ClampedArray,
-        'PDFImage.createMask: Unsupported "imgArray" type.'
+        'PDFImage.createRawMask: Unsupported "imgArray" type.'
       );
     }
     // |imgArray| might not contain full data for every pixel of the mask, so
@@ -341,6 +349,69 @@ class PDFImage {
     }
 
     return { data, width, height, interpolate };
+  }
+
+  static createMask({
+    imgArray,
+    width,
+    height,
+    imageIsFromDecodeStream,
+    inverseDecode,
+    interpolate,
+  }) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(
+        imgArray instanceof Uint8ClampedArray,
+        'PDFImage.createMask: Unsupported "imgArray" type.'
+      );
+    }
+
+    const isSingleOpaquePixel =
+      width === 1 &&
+      height === 1 &&
+      inverseDecode === (imgArray.length === 0 || !!(imgArray[0] & 128));
+
+    if (isSingleOpaquePixel) {
+      return { isSingleOpaquePixel };
+    }
+
+    if (FeatureTest.isOffscreenCanvasSupported) {
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+      const imgData = ctx.createImageData(width, height);
+      applyMaskImageData({
+        src: imgArray,
+        dest: imgData.data,
+        width,
+        height,
+        inverseDecode,
+      });
+
+      ctx.putImageData(imgData, 0, 0);
+      const bitmap = canvas.transferToImageBitmap();
+
+      return {
+        data: null,
+        width,
+        height,
+        interpolate,
+        bitmap,
+      };
+    }
+
+    // Get the data almost as they're and they'll be decoded
+    // just before being drawn.
+    return this.createRawMask({
+      imgArray,
+      width,
+      height,
+      inverseDecode,
+      imageIsFromDecodeStream,
+      interpolate,
+    });
   }
 
   get drawWidth() {

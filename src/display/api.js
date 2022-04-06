@@ -1241,6 +1241,8 @@ class PDFPageProxy {
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
 
+    this._bitmaps = new Set();
+
     this.cleanupAfterRender = false;
     this.pendingCleanup = false;
     this._intentStates = new Map();
@@ -1696,6 +1698,10 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
+    for (const bitmap of this._bitmaps) {
+      bitmap.close();
+    }
+    this._bitmaps.clear();
     this._annotationPromises.clear();
     this._jsActionsPromise = null;
     this._structTreePromise = null;
@@ -1737,6 +1743,10 @@ class PDFPageProxy {
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
+    for (const bitmap of this._bitmaps) {
+      bitmap.close();
+    }
+    this._bitmaps.clear();
     this.pendingCleanup = false;
     return true;
   }
@@ -2778,8 +2788,19 @@ class WorkerTransport {
 
           // Heuristic that will allow us not to store large data.
           const MAX_IMAGE_SIZE_TO_STORE = 8000000;
-          if (imageData?.data?.length > MAX_IMAGE_SIZE_TO_STORE) {
-            pageProxy.cleanupAfterRender = true;
+          if (imageData) {
+            let length;
+            if (imageData.bitmap) {
+              const { bitmap, width, height } = imageData;
+              length = width * height * 4;
+              pageProxy._bitmaps.add(bitmap);
+            } else {
+              length = imageData.data?.length || 0;
+            }
+
+            if (length > MAX_IMAGE_SIZE_TO_STORE) {
+              pageProxy.cleanupAfterRender = true;
+            }
           }
           break;
         case "Pattern":
