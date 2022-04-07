@@ -2047,9 +2047,8 @@ const PDFViewerApplication = {
    * @private
    */
   _unblockDocumentLoadEvent() {
-    if (document.blockUnblockOnload) {
-      document.blockUnblockOnload(false);
-    }
+    document.blockUnblockOnload?.(false);
+
     // Ensure that this method is only ever run once.
     this._unblockDocumentLoadEvent = () => {};
   },
@@ -2112,9 +2111,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 }
 
 async function loadFakeWorker() {
-  if (!GlobalWorkerOptions.workerSrc) {
-    GlobalWorkerOptions.workerSrc = AppOptions.get("workerSrc");
-  }
+  GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
+
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     window.pdfjsWorker = await import("pdfjs/core/worker.js");
     return;
