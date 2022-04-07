@@ -339,6 +339,10 @@ function replaceWebpackRequire() {
   return replace("__webpack_require__", "__w_pdfjs_require__");
 }
 
+function replaceNonWebpackImport() {
+  return replace("__non_webpack_import__", "import");
+}
+
 function replaceJSRootName(amdName, jsName) {
   // Saving old-style JS module name.
   return replace(
@@ -379,6 +383,7 @@ function createMainBundle(defines) {
     .src("./src/pdf.js")
     .pipe(webpack2Stream(mainFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceNonWebpackImport())
     .pipe(replaceJSRootName(mainAMDName, "pdfjsLib"));
 }
 
@@ -400,6 +405,7 @@ function createScriptingBundle(defines, extraOptions = undefined) {
     .src("./src/pdf.scripting.js")
     .pipe(webpack2Stream(scriptingFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceNonWebpackImport())
     .pipe(
       replace(
         'root["' + scriptingAMDName + '"] = factory()',
@@ -458,6 +464,7 @@ function createSandboxBundle(defines, extraOptions = undefined) {
     .src("./src/pdf.sandbox.js")
     .pipe(webpack2Stream(sandboxFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceNonWebpackImport())
     .pipe(replaceJSRootName(sandboxAMDName, "pdfjsSandbox"));
 }
 
@@ -476,6 +483,7 @@ function createWorkerBundle(defines) {
     .src("./src/pdf.worker.js")
     .pipe(webpack2Stream(workerFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceNonWebpackImport())
     .pipe(replaceJSRootName(workerAMDName, "pdfjsWorker"));
 }
 
@@ -491,7 +499,10 @@ function createWebBundle(defines, options) {
       defaultPreferencesDir: options.defaultPreferencesDir,
     }
   );
-  return gulp.src("./web/viewer.js").pipe(webpack2Stream(viewerFileConfig));
+  return gulp
+    .src("./web/viewer.js")
+    .pipe(webpack2Stream(viewerFileConfig))
+    .pipe(replaceNonWebpackImport());
 }
 
 function createComponentsBundle(defines) {
@@ -508,6 +519,7 @@ function createComponentsBundle(defines) {
     .src("./web/pdf_viewer.component.js")
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceNonWebpackImport())
     .pipe(replaceJSRootName(componentsAMDName, "pdfjsViewer"));
 }
 
@@ -525,6 +537,7 @@ function createImageDecodersBundle(defines) {
     .src("./src/pdf.image_decoders.js")
     .pipe(webpack2Stream(componentsFileConfig))
     .pipe(replaceWebpackRequire())
+    .pipe(replaceNonWebpackImport())
     .pipe(replaceJSRootName(imageDecodersAMDName, "pdfjsImageDecoders"));
 }
 
@@ -1446,12 +1459,14 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   // __non_webpack_require__ has to be used.
   // In this target, we don't create a bundle, so we have to replace the
   // occurrences of __non_webpack_require__ ourselves.
-  function babelPluginReplaceNonWebPackRequire(babel) {
+  function babelPluginReplaceNonWebpackImports(babel) {
     return {
       visitor: {
         Identifier(curPath, state) {
           if (curPath.node.name === "__non_webpack_require__") {
             curPath.replaceWith(babel.types.identifier("require"));
+          } else if (curPath.node.name === "__non_webpack_import__") {
+            curPath.replaceWith(babel.types.identifier("import"));
           }
         },
       },
@@ -1473,7 +1488,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
             regenerator: true,
           },
         ],
-        babelPluginReplaceNonWebPackRequire,
+        babelPluginReplaceNonWebpackImports,
       ],
     }).code;
     const removeCjsSrc =

@@ -73,14 +73,16 @@ class AnnotationFactory {
   static create(xref, ref, pdfManager, idFactory, collectFields) {
     return Promise.all([
       pdfManager.ensureCatalog("acroForm"),
+      pdfManager.ensureDoc("xfaDatasets"),
       collectFields ? this._getPageIndex(xref, ref, pdfManager) : -1,
-    ]).then(([acroForm, pageIndex]) =>
+    ]).then(([acroForm, xfaDatasets, pageIndex]) =>
       pdfManager.ensure(this, "_create", [
         xref,
         ref,
         pdfManager,
         idFactory,
         acroForm,
+        xfaDatasets,
         collectFields,
         pageIndex,
       ])
@@ -96,6 +98,7 @@ class AnnotationFactory {
     pdfManager,
     idFactory,
     acroForm,
+    xfaDatasets,
     collectFields,
     pageIndex = -1
   ) {
@@ -120,6 +123,7 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      xfaDatasets,
       collectFields,
       pageIndex,
     };
@@ -1245,7 +1249,7 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
-    const fieldValue = getInheritableProperty({
+    let fieldValue = getInheritableProperty({
       dict,
       key: "V",
       getArray: true,
@@ -1258,6 +1262,15 @@ class WidgetAnnotation extends Annotation {
       getArray: true,
     });
     data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
+
+    if (fieldValue === undefined && params.xfaDatasets) {
+      // Try to figure out if we have something in the xfa dataset.
+      const path = this._title.str;
+      if (path) {
+        this._hasValueFromXFA = true;
+        data.fieldValue = fieldValue = params.xfaDatasets.getValue(path);
+      }
+    }
 
     // When no "V" entry exists, let the fieldValue fallback to the "DV" entry
     // (fixes issue13823.pdf).
@@ -1424,17 +1437,20 @@ class WidgetAnnotation extends Annotation {
   }
 
   async save(evaluator, task, annotationStorage) {
-    if (!annotationStorage) {
-      return null;
-    }
-    const storageEntry = annotationStorage.get(this.data.id);
-    const value = storageEntry && storageEntry.value;
+    const storageEntry = annotationStorage
+      ? annotationStorage.get(this.data.id)
+      : undefined;
+    let value = storageEntry && storageEntry.value;
     if (value === this.data.fieldValue || value === undefined) {
-      return null;
+      if (!this._hasValueFromXFA) {
+        return null;
+      }
+      value = value || this.data.fieldValue;
     }
 
     // Value can be an array (with choice list and multiple selections)
     if (
+      !this._hasValueFromXFA &&
       Array.isArray(value) &&
       Array.isArray(this.data.fieldValue) &&
       value.length === this.data.fieldValue.length &&
@@ -1516,14 +1532,23 @@ class WidgetAnnotation extends Annotation {
 
   async _getAppearance(evaluator, task, annotationStorage) {
     const isPassword = this.hasFieldFlag(AnnotationFieldFlag.PASSWORD);
-    if (!annotationStorage || isPassword) {
+    if (isPassword) {
       return null;
     }
-    const storageEntry = annotationStorage.get(this.data.id);
+    const storageEntry = annotationStorage
+      ? annotationStorage.get(this.data.id)
+      : undefined;
     let value = storageEntry && storageEntry.value;
     if (value === undefined) {
-      // The annotation hasn't been rendered so use the appearance
-      return null;
+      if (!this._hasValueFromXFA || this.appearance) {
+        // The annotation hasn't been rendered so use the appearance.
+        return null;
+      }
+      // The annotation has its value in XFA datasets but not in the V field.
+      value = this.data.fieldValue;
+      if (!value) {
+        return "";
+      }
     }
 
     value = value.trim();

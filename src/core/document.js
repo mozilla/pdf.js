@@ -47,6 +47,7 @@ import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 import { Catalog } from "./catalog.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
+import { DatasetReader } from "./dataset_reader.js";
 import { Linearization } from "./parser.js";
 import { NullStream } from "./stream.js";
 import { ObjectLoader } from "./object_loader.js";
@@ -820,7 +821,7 @@ class PDFDocument {
     });
   }
 
-  get xfaData() {
+  get _xfaStreams() {
     const acroForm = this.catalog.acroForm;
     if (!acroForm) {
       return null;
@@ -838,13 +839,8 @@ class PDFDocument {
       "/xdp:xdp": "",
     };
     if (xfa instanceof BaseStream && !xfa.isEmpty) {
-      try {
-        entries["xdp:xdp"] = stringToUTF8String(xfa.getString());
-        return entries;
-      } catch (_) {
-        warn("XFA - Invalid utf-8 string.");
-        return null;
-      }
+      entries["xdp:xdp"] = xfa;
+      return entries;
     }
 
     if (!Array.isArray(xfa) || xfa.length === 0) {
@@ -868,14 +864,51 @@ class PDFDocument {
       if (!(data instanceof BaseStream) || data.isEmpty) {
         continue;
       }
+      entries[name] = data;
+    }
+    return entries;
+  }
+
+  get xfaDatasets() {
+    const streams = this._xfaStreams;
+    if (!streams) {
+      return shadow(this, "xfaDatasets", null);
+    }
+    for (const key of ["datasets", "xdp:xdp"]) {
+      const stream = streams[key];
+      if (!stream) {
+        continue;
+      }
       try {
-        entries[name] = stringToUTF8String(data.getString());
+        const str = stringToUTF8String(stream.getString());
+        const data = { [key]: str };
+        return shadow(this, "xfaDatasets", new DatasetReader(data));
+      } catch (_) {
+        warn("XFA - Invalid utf-8 string.");
+        break;
+      }
+    }
+    return shadow(this, "xfaDatasets", null);
+  }
+
+  get xfaData() {
+    const streams = this._xfaStreams;
+    if (!streams) {
+      return null;
+    }
+    const data = Object.create(null);
+    for (const [key, stream] of Object.entries(streams)) {
+      if (!stream) {
+        continue;
+      }
+      try {
+        data[key] = stringToUTF8String(stream.getString());
       } catch (_) {
         warn("XFA - Invalid utf-8 string.");
         return null;
       }
     }
-    return entries;
+    return data;
   }
 
   get xfaFactory() {

@@ -168,6 +168,7 @@ class PDFFindBar {
     this.findField.setAttribute("data-status", status);
     this.findFieldMultiline.classList.toggle("notFound", status === "notFound"); // #201
     this.findFieldMultiline.setAttribute("data-status", status); // #201
+    this.findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
 
     findMsg.then(msg => {
       this.findMsg.textContent = msg;

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFBug, Stats */
 
 import {
   animationStarted,
@@ -255,6 +254,7 @@ const PDFViewerApplication = {
   _docStats: null,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
+  _PDFBug: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -887,10 +887,8 @@ const PDFViewerApplication = {
     this.findBar?.reset();
     this.toolbar.reset();
     this.secondaryToolbar.reset();
+    this._PDFBug?.cleanup();
 
-    if (typeof PDFBug !== "undefined") {
-      PDFBug.cleanup();
-    }
     await Promise.all(promises);
   },
 
@@ -2221,22 +2219,23 @@ async function loadFakeWorker() {
 
 async function initPDFBug(enabledTabs) {
   const { debuggerScriptPath, mainContainer } = PDFViewerApplication.appConfig;
-  await loadScript(debuggerScriptPath);
+  const { PDFBug } =
+    typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      ? await import(debuggerScriptPath) // eslint-disable-line no-unsanitized/method
+      : await __non_webpack_import__(debuggerScriptPath); // eslint-disable-line no-undef
   PDFBug.init({ OPS }, mainContainer, enabledTabs);
+
+  PDFViewerApplication._PDFBug = PDFBug;
 }
 
 function reportPageStatsPDFBug({ pageNumber }) {
-  if (typeof Stats === "undefined" || !Stats.enabled) {
+  if (!globalThis.Stats?.enabled) {
     return;
   }
   const pageView = PDFViewerApplication.pdfViewer.getPageView(
     /* index = */ pageNumber - 1
   );
-  const pageStats = pageView?.pdfPage?.stats;
-  if (!pageStats) {
-    return;
-  }
-  Stats.add(pageNumber, pageStats);
+  globalThis.Stats.add(pageNumber, pageView?.pdfPage?.stats);
 }
 
 function webViewerInitialized() {
