@@ -294,4 +294,6 @@ if (
   document.addEventListener("DOMContentLoaded", webViewerLoad, true);
 }
 
+window.webViewerLoad = webViewerLoad;
+
 export { PDFViewerApplication, AppOptions as PDFViewerApplicationOptions };
