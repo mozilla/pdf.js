@@ -116,7 +116,7 @@ class PDFFindBar {
     this.pageRange.addEventListener("input", () => { // #802
       this.dispatchEvent("pageRangeChange"); // #802
     }); // #802
-    this.matchDiacritics.addEventListener("click", () => {
+    this.matchDiacritics?.addEventListener("click", () => {
       this.dispatchEvent("diacriticmatchingchange");
     });
 
