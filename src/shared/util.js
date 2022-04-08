@@ -682,11 +682,6 @@ function isLittleEndian() {
   const view32 = new Uint32Array(buffer8.buffer, 0, 1);
   return view32[0] === 1;
 }
-const IsLittleEndianCached = {
-  get value() {
-    return shadow(this, "value", isLittleEndian());
-  },
-};
 
 // Checks if it's possible to eval JS expressions.
 function isEvalSupported() {
@@ -697,11 +692,16 @@ function isEvalSupported() {
     return false;
   }
 }
-const IsEvalSupportedCached = {
-  get value() {
-    return shadow(this, "value", isEvalSupported());
-  },
-};
+
+class FeatureTest {
+  static get isLittleEndian() {
+    return shadow(this, "isLittleEndian", isLittleEndian());
+  }
+
+  static get isEvalSupported() {
+    return shadow(this, "isEvalSupported", isEvalSupported());
+  }
+}
 
 const hexNumbers = [...Array(256).keys()].map(n =>
   n.toString(16).padStart(2, "0")
@@ -1103,6 +1103,7 @@ export {
   createValidAbsoluteUrl,
   DocumentActionEventType,
   escapeString,
+  FeatureTest,
   FONT_IDENTITY_MATRIX,
   FontType,
   FormatError,
@@ -1115,8 +1116,6 @@ export {
   isArrayBuffer,
   isArrayEqual,
   isAscii,
-  IsEvalSupportedCached,
-  IsLittleEndianCached,
   MissingPDFException,
   objectFromMap,
   objectSize,
