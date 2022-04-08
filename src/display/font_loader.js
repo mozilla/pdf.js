@@ -16,7 +16,7 @@
 import {
   assert,
   bytesToString,
-  IsEvalSupportedCached,
+  FeatureTest,
   shadow,
   string32,
   unreachable,
@@ -455,7 +455,7 @@ class FontFaceObject {
     }
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...
-    if (this.isEvalSupported && IsEvalSupportedCached.value) {
+    if (this.isEvalSupported && FeatureTest.isEvalSupported) {
       const jsBuf = [];
       for (const current of cmds) {
         const args = current.args !== undefined ? current.args.join(",") : "";
