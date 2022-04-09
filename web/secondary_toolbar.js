@@ -196,23 +196,29 @@ class SecondaryToolbar {
 
   #updateUIState() {
     this.items.firstPage.disabled = this.pageNumber <= 1;
+    // modified by ngx-extended-pdf-viewer
     if (document.getElementById("previousPage")) {
       document.getElementById("previousPage").disabled = this.pageNumber <= 1;
     }
+    // end of modification
     this.items.lastPage.disabled = this.pageNumber >= this.pagesCount;
+    // modified by ngx-extended-pdf-viewer
     if (document.getElementById("nextPage")) {
       document.getElementById("nextPage").disabled = this.pageNumber >= this.pagesCount;
     }
+    // end of modification
 
     this.items.pageRotateCw.disabled = this.pagesCount === 0;
     this.items.pageRotateCcw.disabled = this.pagesCount === 0;
 
+    // modified by ngx-extended-pdf-viewer
     this.eventBus.dispatch("updateuistate", {
       source: this,
       widget: "SecondaryToolbar",
       pageNumber: this.pageNumber,
       pagesCount: this.pagesCount,
     });
+    // end of modification
   }
 
   #bindClickListeners() {

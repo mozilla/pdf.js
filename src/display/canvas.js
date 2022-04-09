@@ -1216,7 +1216,6 @@ class CanvasGraphics {
       fnId = fnArray[i];
 
       if (fnId !== OPS.dependency) {
-//        console.log(this[fnId].toString().split("\n")[0]); // useful for debugging
         this[fnId].apply(this, argsArray[i]);
       } else {
         for (const depObjId of argsArray[i]) {
@@ -1831,7 +1830,6 @@ class CanvasGraphics {
       }
     }
     // #916 end of modification by ngx-extended-pdf-viewer
-
 
     const isPatternFill = this.current.patternFill;
     let needRestore = false;

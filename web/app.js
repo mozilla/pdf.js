@@ -254,7 +254,6 @@ const PDFViewerApplication = {
   _docStats: null,
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
-  _PDFBug: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -526,7 +525,6 @@ const PDFViewerApplication = {
       annotationMode: AppOptions.get("annotationMode"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       removePageBorders: AppOptions.get("removePageBorders"), // #194
-      renderInteractiveForms: AppOptions.get("renderInteractiveForms"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
@@ -747,7 +745,7 @@ const PDFViewerApplication = {
           this._documentError(msg, err);
         });
       },
-      onProgress(loaded, total) {
+      onProgress: (loaded, total) => {
         this.progress(loaded / total);
         // #588 modified by ngx-extended-pdf-viewer
         this.eventBus.dispatch("progress", {
@@ -887,7 +885,6 @@ const PDFViewerApplication = {
     this.findBar?.reset();
     this.toolbar.reset();
     this.secondaryToolbar.reset();
-    this._PDFBug?.cleanup();
 
     await Promise.all(promises);
   },
@@ -946,13 +943,6 @@ const PDFViewerApplication = {
         }
       }
 
-    // Finally, update the API parameters with the arguments (if they exist).
-    if (args) {
-      for (const key in args) {
-        parameters[key] = args[key];
-      }
-    }
-
     const loadingTask = getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
@@ -975,9 +965,7 @@ const PDFViewerApplication = {
         // #588 end of modification
       };
 
-
-
-      // Listen for unsupported features to trigger the fallback UI.
+      // Listen for unsupported features to report telemetry.
       loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
       this.loadingBar.show(); // #707 added by ngx-extended-pdf-viewer
@@ -985,26 +973,26 @@ const PDFViewerApplication = {
         pdfDocument => {
           this.load(pdfDocument);
         },
-        exception => {
+        reason => {
           if (loadingTask !== this.pdfLoadingTask) {
             return undefined; // Ignore errors for previously opened PDF files.
           }
 
           let key = "loading_error";
-          if (exception instanceof InvalidPDFException) {
+          if (reason instanceof InvalidPDFException) {
             key = "invalid_file_error";
-          } else if (exception instanceof MissingPDFException) {
+          } else if (reason instanceof MissingPDFException) {
             key = "missing_file_error";
-          } else if (exception instanceof UnexpectedResponseException) {
+          } else if (reason instanceof UnexpectedResponseException) {
             key = "unexpected_response_error";
           }
           return this.l10n.get(key).then(msg => {
-            this._documentError(msg, { message: exception?.message });
-            throw exception;
+            this._documentError(msg, { message: reason?.message });
+            throw reason;
           });
         }
       );
-      });
+    });
   },
 
   /**
@@ -1904,7 +1892,6 @@ const PDFViewerApplication = {
     this.pdfScriptingManager.dispatchDidPrint();
 
     if (this.printService) {
-      document.body.removeAttribute("data-pdfjsprinting");
       this.printService.destroy();
       this.printService = null;
 
@@ -2299,10 +2286,10 @@ function webViewerInitialized() {
         if (!files || files.length === 0) {
           return;
         }
-        PDFViewerApplication.eventBus.dispatch("fileinputchange",  {
+        PDFViewerApplication.eventBus.dispatch("fileinputchange", {
           source: this,
           fileInput: evt.dataTransfer,
-          dropEvent: evt // #972 allowing users to read the drop coordinate
+          dropEvent: evt // #972 allowing users to read the drop coordinates
         });
       } // #686 end of modification
     });
@@ -2722,11 +2709,13 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
   }
+  // modified by ngx-extended-pdf-viewer
   const pageNumberInput = document.getElementById("pageNumber");
   if (pageNumberInput) {
     const pageScrollEvent = new CustomEvent("page-change");
     pageNumberInput.dispatchEvent(pageScrollEvent);
   }
+  // end of modification by ngx-extended-pdf-viewer
 }
 
 function webViewerVisibilityChange(evt) {
@@ -2859,6 +2848,7 @@ function webViewerClick(evt) {
     (appConfig.toolbar.container.contains(evt.target) &&
       evt.target !== appConfig.secondaryToolbar.toggleButton)
   ) {
+    // modified by ngx-extended-pdf-viewer?
     if (
       evt.target &&
       evt.target.parentElement === appConfig.secondaryToolbar.toggleButton
@@ -2873,6 +2863,7 @@ function webViewerClick(evt) {
     ) {
       return;
     }
+    // end of modification by ngx-extended-pdf-viewer
 
     PDFViewerApplication.secondaryToolbar.close();
   }
@@ -2893,9 +2884,12 @@ function webViewerKeyDown(evt) {
     (evt.shiftKey ? 4 : 0) |
     (evt.metaKey ? 8 : 0);
 
+  // modified by ngx-extended-pdf-viewer
   if (window.isKeyIgnored && window.isKeyIgnored(cmd, evt.keyCode)) {
     return;
   }
+  // end of modification by ngx-extended-pdf-viewer
+
   // First, handle the key bindings that are independent whether an input
   // control is selected or not.
   if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {

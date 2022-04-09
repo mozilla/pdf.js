@@ -127,13 +127,16 @@ class PDFThumbnailView {
 
     this.l10n = l10n;
 
+    // modified by ngx-extended-pdf-viewer
     if (window.pdfThumbnailGenerator) {
       window.pdfThumbnailGenerator(this, linkService, id, container, this._thumbPageTitle);
     } else {
       this.createThumbnail(this, linkService, id, container, this._thumbPageTitle);
     }
+    // end of modification
   }
 
+  // modified by ngx-extended-pdf-viewer
   createThumbnail(pdfThumbnailView, linkService, id, container, thumbPageTitlePromise) {
     const anchor = document.createElement("a");
     anchor.href = linkService.getAnchorUrl("#page=" + id);

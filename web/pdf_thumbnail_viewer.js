@@ -181,7 +181,7 @@ class PDFThumbnailViewer {
    * @param {PDFDocumentProxy} pdfDocument
    */
   setDocument(pdfDocument) {
-    this.initialized = false;
+    this.initialized = false; // #1055 ngx-extended-pdf-viewer
     if (this.pdfDocument) {
       this._cancelRendering();
       this._resetView();

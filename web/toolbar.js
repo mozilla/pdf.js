@@ -179,6 +179,7 @@ class Toolbar {
 
     this.eventBus._on("localized", () => {
       this._wasLocalized = true;
+      this._adjustScaleWidth();
       this._updateUIState(true);
     });
   }
@@ -234,6 +235,7 @@ class Toolbar {
           items.customScaleOption.selected = true;
         }
       });
+    // modified by ngx-extended-pdf-viewer
     this.eventBus.dispatch("updateuistate", {
       source: this,
       widget: "Toolbar",
@@ -242,6 +244,7 @@ class Toolbar {
       pageScaleValue,
       pageScale,
     });
+    // end of modification
   }
 
   updateLoadingIndicatorState(loading = false) {

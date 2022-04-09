@@ -892,7 +892,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       if (element.domElement) {
         element.domElement[key] = value;
       }
-      storage.setValue(element.id,  this.data.fieldName, { [keyInStorage]: value });
+      storage.setValue(element.id, this.data.fieldName, { [keyInStorage]: value });
     }
   }
 

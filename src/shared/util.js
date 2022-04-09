@@ -390,10 +390,10 @@ function getVerbosityLevel() {
 // end users.
 function info(msg) {
   if (verbosity >= VerbosityLevel.INFOS) {
-    if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) {
+    if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) { // #804 ngx-extended-pdf-viewer
       console.log(`Info: ${msg}`);
-    } else if (Window && Window['ngxConsole']) {
-      Window['ngxConsole'].log(`Info: ${msg}`);
+    } else if (Window && Window['ngxConsole']) { // #804 ngx-extended-pdf-viewer
+      Window['ngxConsole'].log(`Info: ${msg}`); // #804 ngx-extended-pdf-viewer
     } else {
       console.log(`Info: ${msg}`);
     }
@@ -403,10 +403,10 @@ function info(msg) {
 // Non-fatal warnings.
 function warn(msg) {
   if (verbosity >= VerbosityLevel.WARNINGS) {
-    if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) {
+    if (typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope) { // #804 ngx-extended-pdf-viewer
       console.log(`Warning: ${msg}`);
-    } else if (Window && Window["ngxConsole"]) {
-      Window["ngxConsole"].log(`Warning: ${msg}`);
+    } else if (Window && Window["ngxConsole"]) { // #804 ngx-extended-pdf-viewer
+      Window["ngxConsole"].log(`Warning: ${msg}`); // #804 ngx-extended-pdf-viewer
     } else {
       console.log(`Warning: ${msg}`);
     }

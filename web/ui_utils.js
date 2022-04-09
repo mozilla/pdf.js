@@ -490,7 +490,7 @@ function getVisibleElements({
   horizontal = false,
   rtl = false,
 }) {
-  const top = scrollEl.scrollTop,   // performance measuring: 761 ms
+  const top = scrollEl.scrollTop,
     bottom = top + scrollEl.clientHeight;
   const left = scrollEl.scrollLeft,
     right = left + scrollEl.clientWidth;
@@ -758,7 +758,7 @@ class ProgressBar {
     if (!viewer) {
       return;
     }
-    const container = viewer.parentNode; // performance measuring: 1274 ms
+    const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
       const doc = document.documentElement;

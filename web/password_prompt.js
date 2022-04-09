@@ -65,8 +65,10 @@ class PasswordPrompt {
 
   async open() {
     await this.overlayManager.open(this.dialog);
+    // modified by ngx-extended-pdf-viewer
     this.input.type = "password";
     this.input.focus();
+    // end of modification by ngx-extended-pdf-viewer
 
     const passwordIncorrect =
       this.#reason === PasswordResponses.INCORRECT_PASSWORD;
@@ -82,7 +84,7 @@ class PasswordPrompt {
   async close() {
     if (this.overlayManager.active === this.dialog) {
       this.overlayManager.close(this.dialog);
-      this.input.value = "";
+      this.input.value = ""; // modified by ngx-extended-pdf-viewer
     }
   }
 

@@ -16,7 +16,6 @@
 import { AnnotationMode, PixelsPerInch } from "pdfjs-lib";
 import { PDFPrintServiceFactory, PDFViewerApplication } from "./app.js";
 import canvasSize from "canvas-size";
-// import { compatibilityParams } from "./app_options.js";
 import { getXfaHtmlForPrinting } from "./print_utils.js";
 
 let activeService = null;

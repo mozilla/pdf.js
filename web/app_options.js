@@ -272,7 +272,7 @@ const defaultOptions = {
     value:
       typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
         ? "../src/worker_loader.js"
-        : "./assets/pdf.worker.js", // todo or pdf.worker-es5.js
+        : "./assets/pdf.worker.js",
     kind: OptionKind.WORKER,
   },
 };

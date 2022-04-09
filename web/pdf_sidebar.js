@@ -260,7 +260,7 @@ class PDFSidebar {
     if (this.isOpen) {
       return;
     }
-    await this.pdfThumbnailViewer.renderThumbnails();
+    await this.pdfThumbnailViewer.renderThumbnails(); // #1055 improve performance
     this.isOpen = true;
     this.toggleButton.classList.add("toggled");
     this.toggleButton.setAttribute("aria-expanded", "true");
@@ -437,11 +437,12 @@ class PDFSidebar {
         // #645 modified by ngx-extended-pdf-viewer
         if (evt.currentOutlineItemPromise) { // #645 modified by ngx-extended-pdf-viewer
 	      	evt.currentOutlineItemPromise.then(enabled => {
-	        if (!this.isInitialViewSet) {
-	          return;
-	        }
-	        this._currentOutlineItemButton.disabled = !enabled;
-	      });        } // #645 modified by ngx-extended-pdf-viewer
+            if (!this.isInitialViewSet) {
+              return;
+            }
+            this._currentOutlineItemButton.disabled = !enabled;
+          });
+        } // #645 modified by ngx-extended-pdf-viewer
       }
     });
 

@@ -71,7 +71,6 @@ import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
-
 const DEFAULT_CACHE_SIZE = 10;
 const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
@@ -1147,7 +1146,7 @@ class BaseViewer {
     }
 
     if (!pageSpot && !this.isInPresentationMode) {
-      const left = pageDiv.offsetLeft + pageDiv.clientLeft; // performance measuring: 789 ms
+      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
       const right = left + pageDiv.clientWidth;
       const { scrollLeft, clientWidth } = this.container;
       if (
@@ -1486,7 +1485,6 @@ class BaseViewer {
       }
     });
     /** end of modification */
-
 
     if (scale === "page-fit" && !destArray[4]) {
       this._scrollIntoView({
