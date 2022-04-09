@@ -359,6 +359,12 @@ function getDocument(src) {
   if (typeof params.cMapUrl !== "string") {
     params.cMapUrl = null;
   }
+
+  // #1292 modified by ngx-extended-pdf-viewer
+  if (typeof params.standardFontDataUrl === "function") {
+    params.standardFontDataUrl = params.standardFontDataUrl();
+  }
+  // #1292 end of modification by ngx-extended-pdf-viewer
   if (typeof params.standardFontDataUrl !== "string") {
     params.standardFontDataUrl = null;
   }
