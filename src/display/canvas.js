@@ -31,6 +31,7 @@ import {
   PathType,
   TilingPattern,
 } from "./pattern_helper.js";
+import { applyMaskImageData } from "../shared/image_utils.js";
 import { PixelsPerInch } from "./display_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
@@ -845,6 +846,13 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
 }
 
 function putBinaryImageMask(ctx, imgData) {
+  if (imgData.bitmap) {
+    // The bitmap has been created in the worker.
+    ctx.drawImage(imgData.bitmap, 0, 0);
+    return;
+  }
+
+  // Slow path: OffscreenCanvas isn't available in the worker.
   const height = imgData.height,
     width = imgData.width;
   const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
@@ -862,20 +870,15 @@ function putBinaryImageMask(ctx, imgData) {
 
     // Expand the mask so it can be used by the canvas.  Any required
     // inversion has already been handled.
-    let destPos = 3; // alpha component offset
-    for (let j = 0; j < thisChunkHeight; j++) {
-      let elem,
-        mask = 0;
-      for (let k = 0; k < width; k++) {
-        if (!mask) {
-          elem = src[srcPos++];
-          mask = 128;
-        }
-        dest[destPos] = elem & mask ? 0 : 255;
-        destPos += 4;
-        mask >>= 1;
-      }
-    }
+
+    ({ srcPos } = applyMaskImageData({
+      src,
+      srcPos,
+      dest,
+      width,
+      height: thisChunkHeight,
+    }));
+
     ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
   }
 }
@@ -1118,6 +1121,15 @@ class CanvasGraphics {
     }
     this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
+  }
+
+  getObject(data, fallback = null) {
+    if (typeof data === "string") {
+      return data.startsWith("g_")
+        ? this.commonObjs.get(data)
+        : this.objs.get(data);
+    }
+    return fallback;
   }
 
   beginDrawing({
@@ -2754,6 +2766,9 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
+
+    img = this.getObject(img.data, img);
+
     const ctx = this.ctx;
     const width = img.width,
       height = img.height;
@@ -2785,7 +2800,7 @@ class CanvasGraphics {
   }
 
   paintImageMaskXObjectRepeat(
-    imgData,
+    img,
     scaleX,
     skewX = 0,
     skewY = 0,
@@ -2795,11 +2810,14 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
+
+    img = this.getObject(img.data, img);
+
     const ctx = this.ctx;
     ctx.save();
     const currentTransform = ctx.mozCurrentTransform;
     ctx.transform(scaleX, skewX, skewY, scaleY, 0, 0);
-    const mask = this._createMaskCanvas(imgData);
+    const mask = this._createMaskCanvas(img);
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     for (let i = 0, ii = positions.length; i < ii; i += 2) {
@@ -2869,9 +2887,7 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
-    const imgData = objId.startsWith("g_")
-      ? this.commonObjs.get(objId)
-      : this.objs.get(objId);
+    const imgData = this.getObject(objId);
     if (!imgData) {
       warn("Dependent image isn't ready yet");
       return;
@@ -2884,9 +2900,7 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
-    const imgData = objId.startsWith("g_")
-      ? this.commonObjs.get(objId)
-      : this.objs.get(objId);
+    const imgData = this.getObject(objId);
     if (!imgData) {
       warn("Dependent image isn't ready yet");
       return;
