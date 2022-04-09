@@ -2142,7 +2142,7 @@ function reportPageStatsPDFBug({ pageNumber }) {
 }
 
 function webViewerInitialized() {
-  const appConfig = PDFViewerApplication.appConfig;
+  const { appConfig, eventBus } = PDFViewerApplication;
   let file;
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     const queryString = document.location.search.substring(1);
@@ -2156,13 +2156,7 @@ function webViewerInitialized() {
   }
 
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    const fileInput = document.createElement("input");
-    fileInput.id = appConfig.openFileInputName;
-    fileInput.className = "fileInput";
-    fileInput.setAttribute("type", "file");
-    fileInput.oncontextmenu = noContextMenuHandler;
-    document.body.appendChild(fileInput);
-
+    const fileInput = appConfig.openFileInput;
     if (
       !window.File ||
       !window.FileReader ||
@@ -2176,11 +2170,11 @@ function webViewerInitialized() {
     }
 
     fileInput.addEventListener("change", function (evt) {
-      const files = evt.target.files;
+      const { files } = evt.target;
       if (!files || files.length === 0) {
         return;
       }
-      PDFViewerApplication.eventBus.dispatch("fileinputchange", {
+      eventBus.dispatch("fileinputchange", {
         source: this,
         fileInput: evt.target,
       });
@@ -2195,11 +2189,11 @@ function webViewerInitialized() {
     appConfig.mainContainer.addEventListener("drop", function (evt) {
       evt.preventDefault();
 
-      const files = evt.dataTransfer.files;
+      const { files } = evt.dataTransfer;
       if (!files || files.length === 0) {
         return;
       }
-      PDFViewerApplication.eventBus.dispatch("fileinputchange", {
+      eventBus.dispatch("fileinputchange", {
         source: this,
         fileInput: evt.dataTransfer,
       });
@@ -2234,7 +2228,7 @@ function webViewerInitialized() {
     "transitionend",
     function (evt) {
       if (evt.target === /* mainContainer */ this) {
-        PDFViewerApplication.eventBus.dispatch("resize", { source: this });
+        eventBus.dispatch("resize", { source: this });
       }
     },
     true
@@ -2460,8 +2454,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   };
 
   webViewerOpenFile = function (evt) {
-    const openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
-    document.getElementById(openFileInputName).click();
+    const fileInput = PDFViewerApplication.appConfig.openFileInput;
+    fileInput.click();
   };
 }
 
