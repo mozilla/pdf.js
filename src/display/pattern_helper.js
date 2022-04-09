@@ -563,7 +563,7 @@ class TilingPattern {
     let adjustedY0 = y0;
     let adjustedX1 = x1;
     let adjustedY1 = y1;
-    // Some bounding boxes have negative x0/y0 cordinates which will cause the
+    // Some bounding boxes have negative x0/y0 coordinates which will cause the
     // some of the drawing to be off of the canvas. To avoid this shift the
     // bounding box over.
     if (x0 < 0) {
