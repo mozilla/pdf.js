@@ -14,11 +14,11 @@
  */
 
 import {
+  FeatureTest,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   ImageKind,
   info,
-  IsLittleEndianCached,
   OPS,
   shadow,
   TextRenderingMode,
@@ -702,7 +702,7 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
     const dest32DataLength = dest32.length;
     const fullSrcDiff = (width + 7) >> 3;
     let white = 0xffffffff;
-    let black = IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
+    let black = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
 
     if (transferMapGray) {
       if (transferMapGray[0] === 0xff && transferMapGray[0xff] === 0) {
