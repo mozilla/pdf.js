@@ -1666,7 +1666,7 @@ describe("api", function () {
 
       expect(fingerprints1).not.toEqual(fingerprints2);
 
-      expect(fingerprints1).toEqual(["2f695a83d6e7553c24fc08b7ac69712d", null]);
+      expect(fingerprints1).toEqual(["657428c0628e329f9a281fb6d2d092d4", null]);
       expect(fingerprints2).toEqual(["04c7126b34a46b6d4d6e7a1eff7edcb6", null]);
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);

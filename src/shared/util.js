@@ -701,6 +701,14 @@ class FeatureTest {
   static get isEvalSupported() {
     return shadow(this, "isEvalSupported", isEvalSupported());
   }
+
+  static get isOffscreenCanvasSupported() {
+    return shadow(
+      this,
+      "isOffscreenCanvasSupported",
+      typeof OffscreenCanvas !== "undefined"
+    );
+  }
 }
 
 const hexNumbers = [...Array(256).keys()].map(n =>
