@@ -20,7 +20,6 @@ import {
   SpreadMode,
 } from "./ui_utils.js";
 
-const DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 const DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
 const ACTIVE_SELECTOR = "pdfPresentationMode";
 const CONTROLS_SELECTOR = "pdfPresentationModeControls";
@@ -42,6 +41,8 @@ const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
  */
 
 class PDFPresentationMode {
+  #args = null;
+
   /**
    * @param {PDFPresentationModeOptions} options
    */
@@ -51,7 +52,6 @@ class PDFPresentationMode {
     this.eventBus = eventBus;
 
     this.active = false;
-    this.args = null;
     this.contextMenuOpen = false;
     this.mouseScrollTimeStamp = 0;
     this.mouseScrollDelta = 0;
@@ -60,9 +60,9 @@ class PDFPresentationMode {
 
   /**
    * Request the browser to enter fullscreen mode.
-   * @returns {boolean} Indicating if the request was successful.
+   * @returns {Promise<boolean>} Indicating if the request was successful.
    */
-  request() {
+  async request() {
     if (
       this.switchInProgress ||
       this.active ||
@@ -75,22 +75,30 @@ class PDFPresentationMode {
     this.#setSwitchInProgress();
     this.#notifyStateChange();
 
-    this.container.requestFullscreen();
+    const promise = this.container.requestFullscreen();
 
-    this.args = {
+    this.#args = {
       pageNumber: this.pdfViewer.currentPageNumber,
       scaleValue: this.pdfViewer.currentScaleValue,
       scrollMode: this.pdfViewer.scrollMode,
       spreadMode: this.pdfViewer.spreadMode,
     };
-    return true;
+
+    try {
+      await promise;
+      return true;
+    } catch (reason) {
+      this.#removeFullscreenChangeListeners();
+      this.#resetSwitchInProgress();
+      this.#notifyStateChange();
+    }
+    return false;
   }
 
   #mouseWheel(evt) {
     if (!this.active) {
       return;
     }
-
     evt.preventDefault();
 
     const delta = normalizeWheelEventDelta(evt);
@@ -139,29 +147,12 @@ class PDFPresentationMode {
     });
   }
 
-  /**
-   * Used to initialize a timeout when requesting Presentation Mode,
-   * i.e. when the browser is requested to enter fullscreen mode.
-   * This timeout is used to prevent the current page from being scrolled
-   * partially, or completely, out of view when entering Presentation Mode.
-   * NOTE: This issue seems limited to certain zoom levels (e.g. page-width).
-   */
   #setSwitchInProgress() {
-    if (this.switchInProgress) {
-      clearTimeout(this.switchInProgress);
-    }
-    this.switchInProgress = setTimeout(() => {
-      this.#removeFullscreenChangeListeners();
-      delete this.switchInProgress;
-      this.#notifyStateChange();
-    }, DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
+    this.switchInProgress = true;
   }
 
   #resetSwitchInProgress() {
-    if (this.switchInProgress) {
-      clearTimeout(this.switchInProgress);
-      delete this.switchInProgress;
-    }
+    this.switchInProgress = false;
   }
 
   #enter() {
@@ -175,7 +166,7 @@ class PDFPresentationMode {
     setTimeout(() => {
       this.pdfViewer.scrollMode = ScrollMode.PAGE;
       this.pdfViewer.spreadMode = SpreadMode.NONE;
-      this.pdfViewer.currentPageNumber = this.args.pageNumber;
+      this.pdfViewer.currentPageNumber = this.#args.pageNumber;
       this.pdfViewer.currentScaleValue = "page-fit";
     }, 0);
 
@@ -200,11 +191,11 @@ class PDFPresentationMode {
       this.#removeFullscreenChangeListeners();
       this.#notifyStateChange();
 
-      this.pdfViewer.scrollMode = this.args.scrollMode;
-      this.pdfViewer.spreadMode = this.args.spreadMode;
-      this.pdfViewer.currentScaleValue = this.args.scaleValue;
+      this.pdfViewer.scrollMode = this.#args.scrollMode;
+      this.pdfViewer.spreadMode = this.#args.spreadMode;
+      this.pdfViewer.currentScaleValue = this.#args.scaleValue;
       this.pdfViewer.currentPageNumber = pageNumber;
-      this.args = null;
+      this.#args = null;
     }, 0);
 
     this.#removeWindowListeners();
