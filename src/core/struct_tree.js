@@ -280,7 +280,7 @@ class StructTreePage {
   }
 
   /**
-   * Convert the tree structure into a simplifed object literal that can
+   * Convert the tree structure into a simplified object literal that can
    * be sent to the main thread.
    * @returns {Object}
    */

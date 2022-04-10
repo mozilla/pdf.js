@@ -29,7 +29,7 @@ import {
 } from "./charsets.js";
 import { ExpertEncoding, StandardEncoding } from "./encodings.js";
 
-// Maximum subroutine call depth of type 2 chartrings. Matches OTS.
+// Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
 
 /**
