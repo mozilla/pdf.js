@@ -546,7 +546,7 @@ class PartialEvaluator {
   }
 
   _sendImgData(objId, imgData, cacheGlobally = false) {
-    const transfers = imgData ? [imgData.data.buffer] : null;
+    const transfers = imgData ? [imgData.bitmap || imgData.data.buffer] : null;
 
     if (this.parsingType3Font || cacheGlobally) {
       return this.handler.send(
@@ -618,6 +618,33 @@ class PartialEvaluator {
       );
       const decode = dict.getArray("D", "Decode");
 
+      if (this.parsingType3Font) {
+        imgData = PDFImage.createRawMask({
+          imgArray,
+          width: w,
+          height: h,
+          imageIsFromDecodeStream: image instanceof DecodeStream,
+          inverseDecode: !!decode && decode[0] > 0,
+          interpolate,
+        });
+
+        imgData.cached = !!cacheKey;
+        args = [imgData];
+
+        operatorList.addOp(OPS.paintImageMaskXObject, args);
+        if (cacheKey) {
+          localImageCache.set(cacheKey, imageRef, {
+            fn: OPS.paintImageMaskXObject,
+            args,
+          });
+        }
+
+        if (optionalContent !== undefined) {
+          operatorList.addOp(OPS.endMarkedContent, []);
+        }
+        return;
+      }
+
       imgData = PDFImage.createMask({
         imgArray,
         width: w,
@@ -626,8 +653,36 @@ class PartialEvaluator {
         inverseDecode: !!decode && decode[0] > 0,
         interpolate,
       });
-      imgData.cached = !!cacheKey;
-      args = [imgData];
+
+      if (imgData.isSingleOpaquePixel) {
+        // Handles special case of mainly LaTeX documents which use image
+        // masks to draw lines with the current fill style.
+        operatorList.addOp(OPS.paintSolidColorImageMask, []);
+        if (cacheKey) {
+          localImageCache.set(cacheKey, imageRef, {
+            fn: OPS.paintSolidColorImageMask,
+            args: [],
+          });
+        }
+
+        if (optionalContent !== undefined) {
+          operatorList.addOp(OPS.endMarkedContent, []);
+        }
+        return;
+      }
+
+      const objId = `mask_${this.idFactory.createObjId()}`;
+      operatorList.addDependency(objId);
+      this._sendImgData(objId, imgData);
+
+      args = [
+        {
+          data: objId,
+          width: imgData.width,
+          height: imgData.height,
+          interpolate: imgData.interpolate,
+        },
+      ];
 
       operatorList.addOp(OPS.paintImageMaskXObject, args);
       if (cacheKey) {
