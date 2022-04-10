@@ -1364,16 +1364,6 @@ dialog :link {
   clear: both;
 }
 
-.fileInput {
-  background: rgba(255, 255, 255, 1);
-  color: rgba(0, 0, 0, 1);
-  margin-top: 5px;
-  visibility: hidden;
-  position: fixed;
-  right: 0;
-  top: 0;
-}
-
 #PDFBug {
   background: none repeat scroll 0 0 rgba(255, 255, 255, 1);
   border: 1px solid rgba(102, 102, 102, 1);
@@ -1535,10 +1525,6 @@ dialog :link {
 
   .page[data-loaded] {
     display: block;
-  }
-
-  .fileInput {
-    display: none;
   }
 
   /* Rules for browsers that support PDF.js printing */
