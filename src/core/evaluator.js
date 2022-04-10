@@ -436,7 +436,7 @@ class PartialEvaluator {
     if (!data) {
       return null;
     }
-    // Cache the "raw" standard font data, to avoid fetching it repeateadly
+    // Cache the "raw" standard font data, to avoid fetching it repeatedly
     // (see e.g. issue 11399).
     this.standardFontDataCache.set(name, data);
 
