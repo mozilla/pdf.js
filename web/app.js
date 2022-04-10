@@ -2085,7 +2085,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     "https://mozilla.github.io",
   ];
   validateFileURL = function (file) {
-    if (file === undefined) {
+    if (!file) {
       return;
     }
     try {
@@ -2157,17 +2157,7 @@ function webViewerInitialized() {
 
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     const fileInput = appConfig.openFileInput;
-    if (
-      !window.File ||
-      !window.FileReader ||
-      !window.FileList ||
-      !window.Blob
-    ) {
-      appConfig.toolbar.openFile.hidden = true;
-      appConfig.secondaryToolbar.openFileButton.hidden = true;
-    } else {
-      fileInput.value = null;
-    }
+    fileInput.value = null;
 
     fileInput.addEventListener("change", function (evt) {
       const { files } = evt.target;
