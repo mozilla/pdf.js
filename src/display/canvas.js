@@ -43,7 +43,7 @@ const MAX_FONT_SIZE = 100;
 const MAX_GROUP_SIZE = 4096;
 
 // Defines the time the `executeOperatorList`-method is going to be executing
-// before it stops and shedules a continue of execution.
+// before it stops and schedules a continue of execution.
 const EXECUTION_TIME = 15; // ms
 // Defines the number of steps before checking the execution time.
 const EXECUTION_STEPS = 10;

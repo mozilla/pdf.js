@@ -172,7 +172,7 @@ class WorkerMessageHandler {
       // Check that at least the first page can be successfully loaded,
       // since otherwise the XRef table is definitely not valid.
       await pdfManager.ensureDoc("checkFirstPage", [recoveryMode]);
-      // Check that the last page can be sucessfully loaded, to ensure that
+      // Check that the last page can be successfully loaded, to ensure that
       // `numPages` is correct, and fallback to walking the entire /Pages-tree.
       await pdfManager.ensureDoc("checkLastPage", [recoveryMode]);
 

@@ -3161,7 +3161,7 @@ class HighlightAnnotation extends MarkupAnnotation {
           // Workaround for cases where there's no /ExtGState-entry directly
           // available, e.g. when the appearance stream contains a /XObject of
           // the /Form-type, since that causes the highlighting to completely
-          // obsure the PDF content below it (fixes issue13242.pdf).
+          // obscure the PDF content below it (fixes issue13242.pdf).
           warn("HighlightAnnotation - ignoring built-in appearance stream.");
         }
         // Default color is yellow in Acrobat Reader
