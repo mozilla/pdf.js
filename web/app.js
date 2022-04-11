@@ -899,6 +899,7 @@ const PDFViewerApplication = {
    *                      is opened.
    */
   async open(file, args) {
+    window.adjacentPagesLoader = undefined;
     window.ngxZone.runOutsideAngular(async () => {
       if (this.pdfLoadingTask) {
         // We need to destroy already opened document.
