@@ -429,7 +429,6 @@ select {
   position: absolute;
   z-index: 10000;
   height: auto;
-  min-width: 16px;
   padding: 0 4px;
   margin: 4px 2px;
   color: rgba(217, 217, 217, 1);
@@ -1066,7 +1065,6 @@ select {
 
 .toolbarField.pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
-  min-width: 16px;
   text-align: right;
   width: 40px;
 }
@@ -1189,7 +1187,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 .treeItem > a {
   text-decoration: none;
   display: inline-block;
-  min-width: 95%;
   /* Subtract the right padding (left, in RTL mode) of the container: */
   min-width: calc(100% - 4px);
   height: auto;
