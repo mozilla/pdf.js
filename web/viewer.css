@@ -254,8 +254,6 @@ select {
 #outerContainer.sidebarResizing #sidebarContainer {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
   transition-duration: 0s;
-  /* Prevent e.g. the thumbnails being selected when the sidebar is resized. */
-  user-select: none;
 }
 
 #outerContainer.sidebarMoving #sidebarContainer,
@@ -1100,13 +1098,21 @@ select {
   padding-inline-start: 3px;
 }
 
-#thumbnailView {
+#thumbnailView,
+#outlineView,
+#attachmentsView,
+#layersView {
   position: absolute;
-  width: calc(100% - 60px);
+  width: calc(100% - 8px);
   top: 0;
   bottom: 0;
-  padding: 10px 30px 0;
+  padding: 4px 4px 0;
   overflow: auto;
+  user-select: none;
+}
+#thumbnailView {
+  width: calc(100% - 60px);
+  padding: 10px 30px 0;
 }
 
 #thumbnailView > a:active,
@@ -1165,18 +1171,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   background-color: var(--sidebaritem-bg-color);
   background-clip: padding-box;
   color: rgba(255, 255, 255, 1);
-}
-
-#outlineView,
-#attachmentsView,
-#layersView {
-  position: absolute;
-  width: calc(100% - 8px);
-  top: 0;
-  bottom: 0;
-  padding: 4px 4px 0;
-  overflow: auto;
-  user-select: none;
 }
 
 .treeWithDeepNesting > .treeItem,
