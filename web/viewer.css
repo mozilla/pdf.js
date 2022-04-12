@@ -787,14 +787,6 @@ select {
   color: var(--main-color);
 }
 
-#customScaleOption {
-  display: none;
-}
-
-#pageWidthOption {
-  border-bottom: 1px rgba(255, 255, 255, 0.5) solid;
-}
-
 .toolbarButtonSpacer {
   width: 30px;
   display: inline-block;
