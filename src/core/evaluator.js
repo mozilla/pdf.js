@@ -675,6 +675,7 @@ class PartialEvaluator {
           width: imgData.width,
           height: imgData.height,
           interpolate: imgData.interpolate,
+          count: 1,
         },
       ];
 
@@ -1676,6 +1677,13 @@ class PartialEvaluator {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
                 operatorList.addOp(localImage.fn, localImage.args);
+                if (
+                  localImage.fn === OPS.paintImageMaskXObject &&
+                  localImage.args[0] &&
+                  localImage.args[0].count > 0
+                ) {
+                  localImage.args[0].count++;
+                }
                 args = null;
                 continue;
               }
@@ -1692,7 +1700,13 @@ class PartialEvaluator {
                   const localImage = localImageCache.getByRef(xobj);
                   if (localImage) {
                     operatorList.addOp(localImage.fn, localImage.args);
-
+                    if (
+                      localImage.fn === OPS.paintImageMaskXObject &&
+                      localImage.args[0] &&
+                      localImage.args[0].count > 0
+                    ) {
+                      localImage.args[0].count++;
+                    }
                     resolveXObject();
                     return;
                   }
@@ -1809,6 +1823,13 @@ class PartialEvaluator {
               const localImage = localImageCache.getByName(cacheKey);
               if (localImage) {
                 operatorList.addOp(localImage.fn, localImage.args);
+                if (
+                  localImage.fn === OPS.paintImageMaskXObject &&
+                  localImage.args[0] &&
+                  localImage.args[0].count > 0
+                ) {
+                  localImage.args[0].count++;
+                }
                 args = null;
                 continue;
               }

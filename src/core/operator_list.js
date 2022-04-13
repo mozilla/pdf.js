@@ -256,6 +256,8 @@ addState(
           data: maskParams.data,
           width: maskParams.width,
           height: maskParams.height,
+          interpolate: maskParams.interpolate,
+          count: maskParams.count,
           transform: transformArgs,
         });
       }
