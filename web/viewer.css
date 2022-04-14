@@ -254,8 +254,6 @@ select {
 #outerContainer.sidebarResizing #sidebarContainer {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
   transition-duration: 0s;
-  /* Prevent e.g. the thumbnails being selected when the sidebar is resized. */
-  user-select: none;
 }
 
 #outerContainer.sidebarMoving #sidebarContainer,
@@ -429,7 +427,6 @@ select {
   position: absolute;
   z-index: 10000;
   height: auto;
-  min-width: 16px;
   padding: 0 4px;
   margin: 4px 2px;
   color: rgba(217, 217, 217, 1);
@@ -1066,7 +1063,6 @@ select {
 
 .toolbarField.pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
-  min-width: 16px;
   text-align: right;
   width: 40px;
 }
@@ -1102,13 +1098,21 @@ select {
   padding-inline-start: 3px;
 }
 
-#thumbnailView {
+#thumbnailView,
+#outlineView,
+#attachmentsView,
+#layersView {
   position: absolute;
-  width: calc(100% - 60px);
+  width: calc(100% - 8px);
   top: 0;
   bottom: 0;
-  padding: 10px 30px 0;
+  padding: 4px 4px 0;
   overflow: auto;
+  user-select: none;
+}
+#thumbnailView {
+  width: calc(100% - 60px);
+  padding: 10px 30px 0;
 }
 
 #thumbnailView > a:active,
@@ -1169,18 +1173,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   color: rgba(255, 255, 255, 1);
 }
 
-#outlineView,
-#attachmentsView,
-#layersView {
-  position: absolute;
-  width: calc(100% - 8px);
-  top: 0;
-  bottom: 0;
-  padding: 4px 4px 0;
-  overflow: auto;
-  user-select: none;
-}
-
 .treeWithDeepNesting > .treeItem,
 .treeItem > .treeItems {
   margin-inline-start: 20px;
@@ -1189,7 +1181,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 .treeItem > a {
   text-decoration: none;
   display: inline-block;
-  min-width: 95%;
   /* Subtract the right padding (left, in RTL mode) of the container: */
   min-width: calc(100% - 4px);
   height: auto;
