@@ -329,16 +329,14 @@ class PDFPageView {
     }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    const viewportScale = this.scale * PixelsPerInch.PDF_TO_CSS_UNITS;
     this.viewport = this.viewport.clone({
-      scale: viewportScale,
+      scale: this.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: totalRotation,
     });
 
     if (this._isStandalone) {
       const { style } = document.documentElement;
       style.setProperty("--zoom-factor", this.scale);
-      style.setProperty("--viewport-scale-factor", viewportScale);
     }
 
     if (this.svg) {

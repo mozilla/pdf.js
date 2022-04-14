@@ -2726,8 +2726,9 @@ class CanvasGraphics {
           canvasHeight
         );
         const { canvas, context } = this.annotationCanvas;
-        canvas.style.width = `calc(${width}px * var(--viewport-scale-factor))`;
-        canvas.style.height = `calc(${height}px * var(--viewport-scale-factor))`;
+        const viewportScaleFactorStr = `var(--zoom-factor) * ${PixelsPerInch.PDF_TO_CSS_UNITS}`;
+        canvas.style.width = `calc(${width}px * ${viewportScaleFactorStr})`;
+        canvas.style.height = `calc(${height}px * ${viewportScaleFactorStr})`;
         this.annotationCanvasMap.set(id, canvas);
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
