@@ -34,8 +34,8 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  * @typedef {Object} PDFSidebarElements
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
- * @property {HTMLDivElement} viewerContainer - The viewer container
- *   (in which the viewer element is placed).
+ * @property {HTMLDivElement} sidebarContainer - The sidebar container
+ *   (in which the views are placed).
  * @property {HTMLButtonElement} toggleButton - The button used for
  *   opening/closing the sidebar.
  * @property {HTMLButtonElement} thumbnailButton - The button used to show
@@ -79,7 +79,7 @@ class PDFSidebar {
     this.pdfThumbnailViewer = pdfThumbnailViewer;
 
     this.outerContainer = elements.outerContainer;
-    this.viewerContainer = elements.viewerContainer;
+    this.sidebarContainer = elements.sidebarContainer;
     this.toggleButton = elements.toggleButton;
 
     this.thumbnailButton = elements.thumbnailButton;
@@ -369,8 +369,8 @@ class PDFSidebar {
    * @private
    */
   _addEventListeners() {
-    this.viewerContainer.addEventListener("transitionend", evt => {
-      if (evt.target === this.viewerContainer) {
+    this.sidebarContainer.addEventListener("transitionend", evt => {
+      if (evt.target === this.sidebarContainer) {
         this.outerContainer.classList.remove("sidebarMoving");
       }
     });
