@@ -1595,18 +1595,8 @@ dialog :link {
   #sidebarContainer {
     background-color: var(--sidebar-narrow-bg-color);
   }
-
   #outerContainer.sidebarOpen #viewerContainer {
     inset-inline-start: 0 !important;
-  }
-
-  #outerContainer .hiddenLargeView,
-  #outerContainer .hiddenMediumView {
-    display: inherit;
-  }
-  #outerContainer .visibleLargeView,
-  #outerContainer .visibleMediumView {
-    display: none;
   }
 }
 
