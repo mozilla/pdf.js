@@ -67,7 +67,14 @@ class ViewHistory {
       sessionStorage.setItem("pdfjs.history", databaseStr);
       return;
     }
-    localStorage.setItem("pdfjs.history", databaseStr);
+    // #1313 modified by ngx-extended-pdf-viewer
+    try {
+      localStorage.setItem("pdfjs.history", databaseStr);
+    } catch (safariSecurityException) {
+      // localStorage is not available on Safari
+    }
+    // #1313 end of modification by ngx-extended-pdf-viewer
+
   }
 
   async _readFromStorage() {
@@ -77,7 +84,14 @@ class ViewHistory {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       return sessionStorage.getItem("pdfjs.history");
     }
-    return localStorage.getItem("pdfjs.history");
+    // #1313 modified by ngx-extended-pdf-viewer
+    try {
+      return localStorage.getItem("pdfjs.history");
+    } catch (safariSecurityException) {
+      // localStorage is not available on Safari
+      return undefined;
+    }
+    // #1313 end of modification by ngx-extended-pdf-viewer
   }
 
   async set(name, val) {
