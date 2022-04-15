@@ -156,7 +156,7 @@ class PDFScriptingManager {
     // #1243 modified by ngx-extended-pdf-viewer
     const viewer = document.querySelector(".pdfViewer");
     for (const [name, listener] of this._domEvents) {
-      viewer.addEventListener(name, listener);
+      viewer.addEventListener(name, listener, true);
     }
     // #1243 end of modification by ngx-extended-pdf-viewer
 
