@@ -285,10 +285,16 @@ class PDFHistory {
       return;
     }
 
+    let hash = `page=${pageNumber}`;
+    const params = parseQueryString(this._destination.hash);
+    if (params.has("zoom")) {
+      hash += `&zoom=${params.get("zoom")}`;
+    }
+
     this._pushOrReplaceState({
       // Simulate an internal destination, for `this._tryPushCurrentPosition`:
       dest: null,
-      hash: `page=${pageNumber}`,
+      hash,
       page: pageNumber,
       rotation: this.linkService.rotation,
     });
