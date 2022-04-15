@@ -222,14 +222,17 @@ class Toolbar {
       .get("page_scale_percent", { scale: Math.round(pageScale * 10000) / 100 })
       .then(msg => {
         let predefinedValueFound = false;
-        for (const option of items.scaleSelect.options) {
-          if (option.value !== pageScaleValue) {
-            option.selected = false;
-            continue;
+        // #1315 modified by ngx-extended-pdf-viewer
+        if (items.scaleSelect.options) {
+          for (const option of items.scaleSelect.options) {
+            if (option.value !== pageScaleValue) {
+              option.selected = false;
+              continue;
+            }
+            option.selected = true;
+            predefinedValueFound = true;
           }
-          option.selected = true;
-          predefinedValueFound = true;
-        }
+        } // #1315 end of modofication by ngx-extended-pdf-viewer
         if (!predefinedValueFound) {
           items.customScaleOption.textContent = msg;
           items.customScaleOption.selected = true;
