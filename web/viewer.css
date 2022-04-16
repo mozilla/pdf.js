@@ -1474,14 +1474,10 @@ dialog :link {
   #sidebarContainer,
   #secondaryToolbar,
   .toolbar,
-  #loadingBox,
   #errorWrapper,
   .textLayer,
   .canvasWrapper {
     display: none;
-  }
-  #viewerContainer {
-    overflow: visible;
   }
 
   #mainContainer,
