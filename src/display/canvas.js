@@ -364,6 +364,10 @@ class CachedCanvases {
     return canvasEntry;
   }
 
+  delete(id) {
+    delete this.cache[id];
+  }
+
   clear() {
     for (const id in this.cache) {
       const canvasEntry = this.cache[id];
@@ -1121,6 +1125,7 @@ class CanvasGraphics {
     }
     this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
+    this._cachedBitmapsMap = new Map();
   }
 
   getObject(data, fallback = null) {
@@ -1156,7 +1161,7 @@ class CanvasGraphics {
         "transparent",
         width,
         height,
-        true
+        /* trackTransform */ true
       );
       this.compositeCtx = this.ctx;
       this.transparentCanvas = transparentCanvas.canvas;
@@ -1275,6 +1280,19 @@ class CanvasGraphics {
     this.cachedCanvases.clear();
     this.cachedPatterns.clear();
 
+    for (const cache of this._cachedBitmapsMap.values()) {
+      for (const canvas of cache.values()) {
+        if (
+          typeof HTMLCanvasElement !== "undefined" &&
+          canvas instanceof HTMLCanvasElement
+        ) {
+          canvas.width = canvas.height = 0;
+        }
+      }
+      cache.clear();
+    }
+    this._cachedBitmapsMap.clear();
+
     if (this.imageLayer) {
       this.imageLayer.endLayout();
     }
@@ -1316,7 +1334,8 @@ class CanvasGraphics {
       tmpCanvas = this.cachedCanvases.getCanvas(
         tmpCanvasId,
         newWidth,
-        newHeight
+        newHeight,
+        /* trackTransform */ false
       );
       tmpCtx = tmpCanvas.context;
       tmpCtx.clearRect(0, 0, newWidth, newHeight);
@@ -1345,24 +1364,65 @@ class CanvasGraphics {
 
   _createMaskCanvas(img) {
     const ctx = this.ctx;
-    const width = img.width,
-      height = img.height;
+    const { width, height } = img;
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
-    const maskCanvas = this.cachedCanvases.getCanvas(
-      "maskCanvas",
-      width,
-      height
-    );
-    const maskCtx = maskCanvas.context;
-    putBinaryImageMask(maskCtx, img);
+    const currentTransform = ctx.mozCurrentTransform;
+
+    let cache, cacheKey, scaled, maskCanvas;
+    if ((img.bitmap || img.data) && img.count > 1) {
+      const mainKey = img.bitmap || img.data.buffer;
+      // We're reusing the same image several times, so we can cache it.
+      // In case we've a pattern fill we just keep the scaled version of
+      // the image.
+      // Only the scaling part matters, the translation part is just used
+      // to compute offsets.
+      // TODO: handle the case of a pattern fill if it's possible.
+      const withoutTranslation = currentTransform.slice(0, 4);
+      cacheKey = JSON.stringify(
+        isPatternFill ? withoutTranslation : [withoutTranslation, fillColor]
+      );
+
+      cache = this._cachedBitmapsMap.get(mainKey);
+      if (!cache) {
+        cache = new Map();
+        this._cachedBitmapsMap.set(mainKey, cache);
+      }
+      const cachedImage = cache.get(cacheKey);
+      if (cachedImage && !isPatternFill) {
+        const offsetX = Math.round(
+          Math.min(currentTransform[0], currentTransform[2]) +
+            currentTransform[4]
+        );
+        const offsetY = Math.round(
+          Math.min(currentTransform[1], currentTransform[3]) +
+            currentTransform[5]
+        );
+        return {
+          canvas: cachedImage,
+          offsetX,
+          offsetY,
+        };
+      }
+      scaled = cachedImage;
+    }
+
+    if (!scaled) {
+      maskCanvas = this.cachedCanvases.getCanvas(
+        "maskCanvas",
+        width,
+        height,
+        /* trackTransform */ false
+      );
+      putBinaryImageMask(maskCanvas.context, img);
+    }
 
     // Create the mask canvas at the size it will be drawn at and also set
     // its transform to match the current transform so if there are any
     // patterns applied they will be applied relative to the correct
     // transform.
-    const objToCanvas = ctx.mozCurrentTransform;
-    let maskToCanvas = Util.transform(objToCanvas, [
+
+    let maskToCanvas = Util.transform(currentTransform, [
       1 / width,
       0,
       0,
@@ -1380,29 +1440,41 @@ class CanvasGraphics {
       "fillCanvas",
       drawnWidth,
       drawnHeight,
-      true
+      /* trackTransform */ true
     );
     const fillCtx = fillCanvas.context;
+
     // The offset will be the top-left cordinate mask.
+    // If objToCanvas is [a,b,c,d,e,f] then:
+    //   - offsetX = min(a, c) + e
+    //   - offsetY = min(b, d) + f
     const offsetX = Math.min(cord1[0], cord2[0]);
     const offsetY = Math.min(cord1[1], cord2[1]);
     fillCtx.translate(-offsetX, -offsetY);
     fillCtx.transform.apply(fillCtx, maskToCanvas);
-    // Pre-scale if needed to improve image smoothing.
-    const scaled = this._scaleImage(
-      maskCanvas.canvas,
-      fillCtx.mozCurrentTransformInverse
-    );
+
+    if (!scaled) {
+      // Pre-scale if needed to improve image smoothing.
+      scaled = this._scaleImage(
+        maskCanvas.canvas,
+        fillCtx.mozCurrentTransformInverse
+      );
+      scaled = scaled.img;
+      if (cache && isPatternFill) {
+        cache.set(cacheKey, scaled);
+      }
+    }
+
     fillCtx.imageSmoothingEnabled = getImageSmoothingEnabled(
       fillCtx.mozCurrentTransform,
       img.interpolate
     );
     fillCtx.drawImage(
-      scaled.img,
+      scaled,
       0,
       0,
-      scaled.img.width,
-      scaled.img.height,
+      scaled.width,
+      scaled.height,
       0,
       0,
       width,
@@ -1423,6 +1495,13 @@ class CanvasGraphics {
       : fillColor;
 
     fillCtx.fillRect(0, 0, width, height);
+
+    if (cache && !isPatternFill) {
+      // The fill canvas is put in the cache associated to the mask image
+      // so we must remove from the cached canvas: it mustn't be used again.
+      this.cachedCanvases.delete("fillCanvas");
+      cache.set(cacheKey, fillCanvas.canvas);
+    }
 
     // Round the offsets to avoid drawing fractional pixels.
     return {
@@ -1555,7 +1634,7 @@ class CanvasGraphics {
       cacheId,
       drawnWidth,
       drawnHeight,
-      true
+      /* trackTransform */ true
     );
     this.suspendedCtx = this.ctx;
     this.ctx = scratchCanvas.context;
@@ -2097,7 +2176,8 @@ class CanvasGraphics {
     const { context: ctx } = this.cachedCanvases.getCanvas(
       "isFontSubpixelAAEnabled",
       10,
-      10
+      10,
+      /* trackTransform */ false
     );
     ctx.scale(1.5, 1);
     ctx.fillText("I", 0, 10);
@@ -2606,7 +2686,7 @@ class CanvasGraphics {
       cacheId,
       drawnWidth,
       drawnHeight,
-      true
+      /* trackTransform */ true
     );
     const groupCtx = scratchCanvas.context;
 
@@ -2768,7 +2848,9 @@ class CanvasGraphics {
       return;
     }
 
+    const count = img.count;
     img = this.getObject(img.data, img);
+    img.count = count;
 
     const ctx = this.ctx;
     const width = img.width,
@@ -2854,7 +2936,8 @@ class CanvasGraphics {
       const maskCanvas = this.cachedCanvases.getCanvas(
         "maskCanvas",
         width,
-        height
+        height,
+        /* trackTransform */ false
       );
       const maskCtx = maskCanvas.context;
       maskCtx.save();
@@ -2945,7 +3028,8 @@ class CanvasGraphics {
       const tmpCanvas = this.cachedCanvases.getCanvas(
         "inlineImage",
         width,
-        height
+        height,
+        /* trackTransform */ false
       );
       const tmpCtx = tmpCanvas.context;
       putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
@@ -2991,7 +3075,12 @@ class CanvasGraphics {
     const w = imgData.width;
     const h = imgData.height;
 
-    const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
+    const tmpCanvas = this.cachedCanvases.getCanvas(
+      "inlineImage",
+      w,
+      h,
+      /* trackTransform */ false
+    );
     const tmpCtx = tmpCanvas.context;
     putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
 

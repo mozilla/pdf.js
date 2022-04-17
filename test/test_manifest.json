@@ -6354,5 +6354,13 @@
          "value": "Hello PDF.js World"
         }
       }
+   },
+   {  "id": "bug857031",
+      "file": "pdfs/bug857031.pdf",
+      "md5": "f11ecd7f75675e0cafbc9880c1a586c7",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
    }
 ]
