@@ -2103,7 +2103,7 @@ function packageBowerJson() {
     license: DIST_LICENSE,
     dependencies: {
       dommatrix: "^0.0.24",
-      "web-streams-polyfill": "^3.2.0",
+      "web-streams-polyfill": "^3.2.1",
     },
     peerDependencies: {
       "worker-loader": "^3.0.8", // Used in `external/dist/webpack.js`.
