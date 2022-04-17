@@ -199,14 +199,10 @@ function createWebpackConfig(
     !disableSourceMaps;
   const skipBabel = bundleDefines.SKIP_BABEL;
 
-  // `core-js` (see https://github.com/zloirock/core-js/issues/514),
-  // `web-streams-polyfill` (already using a transpiled file), and
+  // `core-js` (see https://github.com/zloirock/core-js/issues/514), and
   // `src/core/{glyphlist,unicode}.js` (Babel is too slow for those when
   // source-maps are enabled) should be excluded from processing.
-  const babelExcludes = [
-    "node_modules[\\\\\\/]core-js",
-    "node_modules[\\\\\\/]web-streams-polyfill",
-  ];
+  const babelExcludes = ["node_modules[\\\\\\/]core-js"];
   if (enableSourceMaps) {
     babelExcludes.push("src[\\\\\\/]core[\\\\\\/](glyphlist|unicode)");
   }
