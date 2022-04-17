@@ -6362,5 +6362,13 @@
       "link": true,
       "lastPage": 1,
       "type": "eq"
+   },
+   {  "id": "issue12306",
+      "file": "pdfs/issue12306.pdf",
+      "md5": "7fd05ba56791238b5a60adc6cc0e7a22",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
    }
 ]
