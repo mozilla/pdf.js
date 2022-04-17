@@ -634,6 +634,10 @@ class CanvasExtraState {
     this.startNewPathAndClipBox(intersect || [0, 0, 0, 0]);
   }
 
+  isEmptyClip() {
+    return this.minX === Infinity;
+  }
+
   startNewPathAndClipBox(box) {
     this.clipBox = box;
     this.minX = Infinity;
@@ -2434,7 +2438,7 @@ class CanvasGraphics {
     // TODO According to the spec we're also suppose to ignore any operators
     // that set color or include images while processing this type3 font.
     this.ctx.rect(llx, lly, urx - llx, ury - lly);
-    this.clip();
+    this.ctx.clip();
     this.endPath();
   }
 
@@ -2820,7 +2824,7 @@ class CanvasGraphics {
         resetCtxToDefault(this.ctx);
 
         this.ctx.rect(rect[0], rect[1], width, height);
-        this.clip();
+        this.ctx.clip();
         this.endPath();
       }
     }
@@ -3170,6 +3174,7 @@ class CanvasGraphics {
   // Helper functions
 
   consumePath(clipBox) {
+    const isEmpty = this.current.isEmptyClip();
     if (this.pendingClip) {
       this.current.updateClipFromPath();
     }
@@ -3178,10 +3183,12 @@ class CanvasGraphics {
     }
     const ctx = this.ctx;
     if (this.pendingClip) {
-      if (this.pendingClip === EO_CLIP) {
-        ctx.clip("evenodd");
-      } else {
-        ctx.clip();
+      if (!isEmpty) {
+        if (this.pendingClip === EO_CLIP) {
+          ctx.clip("evenodd");
+        } else {
+          ctx.clip();
+        }
       }
       this.pendingClip = null;
     }
