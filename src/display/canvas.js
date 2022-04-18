@@ -604,8 +604,23 @@ class CanvasExtraState {
     this.maxY = Math.max(this.maxY, y);
   }
 
-  updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3) {
+  updateScalingPathMinMax(transform, minMax) {
+    Util.scaleMinMax(transform, minMax);
+    this.minX = Math.min(this.minX, minMax[0]);
+    this.maxX = Math.max(this.maxX, minMax[1]);
+    this.minY = Math.min(this.minY, minMax[2]);
+    this.maxY = Math.max(this.maxY, minMax[3]);
+  }
+
+  updateCurvePathMinMax(transform, x0, y0, x1, y1, x2, y2, x3, y3, minMax) {
     const box = Util.bezierBoundingBox(x0, y0, x1, y1, x2, y2, x3, y3);
+    if (minMax) {
+      minMax[0] = Math.min(minMax[0], box[0], box[2]);
+      minMax[1] = Math.max(minMax[1], box[0], box[2]);
+      minMax[2] = Math.min(minMax[2], box[1], box[3]);
+      minMax[3] = Math.max(minMax[3], box[1], box[3]);
+      return;
+    }
     this.updatePathMinMax(transform, box[0], box[1]);
     this.updatePathMinMax(transform, box[2], box[3]);
   }
@@ -1737,12 +1752,25 @@ class CanvasGraphics {
   }
 
   // Path
-  constructPath(ops, args) {
+  constructPath(ops, args, minMax) {
     const ctx = this.ctx;
     const current = this.current;
     let x = current.x,
       y = current.y;
     let startX, startY;
+    const currentTransform = ctx.mozCurrentTransform;
+
+    // Most of the time the current transform is a scaling matrix
+    // so we don't need to transform points before computing min/max:
+    // we can compute min/max first and then smartly "apply" the
+    // transform (see Util.scaleMinMax).
+    // For rectangle, moveTo and lineTo, min/max are computed in the
+    // worker (see evaluator.js).
+    const isScalingMatrix =
+      (currentTransform[0] === 0 && currentTransform[3] === 0) ||
+      (currentTransform[1] === 0 && currentTransform[2] === 0);
+    const minMaxForBezier = isScalingMatrix ? minMax.slice(0) : null;
+
     for (let i = 0, j = 0, ii = ops.length; i < ii; i++) {
       switch (ops[i] | 0) {
         case OPS.rectangle:
@@ -1761,21 +1789,27 @@ class CanvasGraphics {
             ctx.lineTo(xw, yh);
             ctx.lineTo(x, yh);
           }
-          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
-          current.updatePathMinMax(ctx.mozCurrentTransform, xw, yh);
+          if (!isScalingMatrix) {
+            current.updatePathMinMax(currentTransform, x, y);
+            current.updatePathMinMax(currentTransform, xw, yh);
+          }
           ctx.closePath();
           break;
         case OPS.moveTo:
           x = args[j++];
           y = args[j++];
           ctx.moveTo(x, y);
-          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
+          if (!isScalingMatrix) {
+            current.updatePathMinMax(currentTransform, x, y);
+          }
           break;
         case OPS.lineTo:
           x = args[j++];
           y = args[j++];
           ctx.lineTo(x, y);
-          current.updatePathMinMax(ctx.mozCurrentTransform, x, y);
+          if (!isScalingMatrix) {
+            current.updatePathMinMax(currentTransform, x, y);
+          }
           break;
         case OPS.curveTo:
           startX = x;
@@ -1791,7 +1825,7 @@ class CanvasGraphics {
             y
           );
           current.updateCurvePathMinMax(
-            ctx.mozCurrentTransform,
+            currentTransform,
             startX,
             startY,
             args[j],
@@ -1799,7 +1833,8 @@ class CanvasGraphics {
             args[j + 2],
             args[j + 3],
             x,
-            y
+            y,
+            minMaxForBezier
           );
           j += 6;
           break;
@@ -1815,7 +1850,7 @@ class CanvasGraphics {
             args[j + 3]
           );
           current.updateCurvePathMinMax(
-            ctx.mozCurrentTransform,
+            currentTransform,
             startX,
             startY,
             x,
@@ -1823,7 +1858,8 @@ class CanvasGraphics {
             args[j],
             args[j + 1],
             args[j + 2],
-            args[j + 3]
+            args[j + 3],
+            minMaxForBezier
           );
           x = args[j + 2];
           y = args[j + 3];
@@ -1836,7 +1872,7 @@ class CanvasGraphics {
           y = args[j + 3];
           ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
           current.updateCurvePathMinMax(
-            ctx.mozCurrentTransform,
+            currentTransform,
             startX,
             startY,
             args[j],
@@ -1844,7 +1880,8 @@ class CanvasGraphics {
             x,
             y,
             x,
-            y
+            y,
+            minMaxForBezier
           );
           j += 4;
           break;
@@ -1853,6 +1890,11 @@ class CanvasGraphics {
           break;
       }
     }
+
+    if (isScalingMatrix) {
+      current.updateScalingPathMinMax(currentTransform, minMaxForBezier);
+    }
+
     current.setCurrentPoint(x, y);
   }
 
