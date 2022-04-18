@@ -619,6 +619,12 @@ class TilingPattern {
     const bboxWidth = x1 - x0;
     const bboxHeight = y1 - y0;
     graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
+    graphics.current.updateRectMinMax(graphics.ctx.mozCurrentTransform, [
+      x0,
+      y0,
+      x1,
+      y1,
+    ]);
     graphics.clip();
     graphics.endPath();
   }

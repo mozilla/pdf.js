@@ -604,6 +604,15 @@ class CanvasExtraState {
     this.maxY = Math.max(this.maxY, y);
   }
 
+  updateRectMinMax(transform, rect) {
+    const p1 = Util.applyTransform(rect, transform);
+    const p2 = Util.applyTransform(rect.slice(2), transform);
+    this.minX = Math.min(this.minX, p1[0], p2[0]);
+    this.minY = Math.min(this.minY, p1[1], p2[1]);
+    this.maxX = Math.max(this.maxX, p1[0], p2[0]);
+    this.maxY = Math.max(this.maxY, p1[1], p2[1]);
+  }
+
   updateScalingPathMinMax(transform, minMax) {
     Util.scaleMinMax(transform, minMax);
     this.minX = Math.min(this.minX, minMax[0]);
@@ -621,8 +630,7 @@ class CanvasExtraState {
       minMax[3] = Math.max(minMax[3], box[1], box[3]);
       return;
     }
-    this.updatePathMinMax(transform, box[0], box[1]);
-    this.updatePathMinMax(transform, box[2], box[3]);
+    this.updateRectMinMax(transform, box);
   }
 
   getPathBoundingBox(pathType = PathType.FILL, transform = null) {
@@ -1794,8 +1802,7 @@ class CanvasGraphics {
             ctx.lineTo(x, yh);
           }
           if (!isScalingMatrix) {
-            current.updatePathMinMax(currentTransform, x, y);
-            current.updatePathMinMax(currentTransform, xw, yh);
+            current.updateRectMinMax(currentTransform, [x, y, xw, yh]);
           }
           ctx.closePath();
           break;
@@ -2622,16 +2629,7 @@ class CanvasGraphics {
       const width = bbox[2] - bbox[0];
       const height = bbox[3] - bbox[1];
       this.ctx.rect(bbox[0], bbox[1], width, height);
-      this.current.updatePathMinMax(
-        this.ctx.mozCurrentTransform,
-        bbox[0],
-        bbox[1]
-      );
-      this.current.updatePathMinMax(
-        this.ctx.mozCurrentTransform,
-        bbox[2],
-        bbox[3]
-      );
+      this.current.updateRectMinMax(this.ctx.mozCurrentTransform, bbox);
       this.clip();
       this.endPath();
     }
