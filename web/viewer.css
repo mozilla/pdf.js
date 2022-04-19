@@ -180,14 +180,13 @@
   margin: 0;
 }
 
-html {
+html,
+body {
   height: 100%;
   width: 100%;
 }
 
 body {
-  height: 100%;
-  width: 100%;
   background-color: var(--body-bg-color);
 }
 
@@ -200,9 +199,7 @@ select {
   scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
 }
 
-.hidden {
-  display: none !important;
-}
+.hidden,
 [hidden] {
   display: none !important;
 }
@@ -251,11 +248,6 @@ select {
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
-#outerContainer.sidebarResizing #sidebarContainer {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
-}
-
 #outerContainer.sidebarMoving #sidebarContainer,
 #outerContainer.sidebarOpen #sidebarContainer {
   visibility: visible;
@@ -296,11 +288,6 @@ select {
 #viewerContainer:not(.pdfPresentationMode) {
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
-}
-
-#outerContainer.sidebarResizing #viewerContainer {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
 }
 
 #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
@@ -373,11 +360,6 @@ select {
   inset-inline-start: var(--sidebar-width);
 }
 
-#outerContainer.sidebarResizing #loadingBar {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
-}
-
 #loadingBar .progress {
   position: absolute;
   top: 0;
@@ -419,6 +401,13 @@ select {
     var(--progressBar-indeterminate-blend-color) 100px
   );
   animation: progressIndeterminate 1s linear infinite;
+}
+
+#outerContainer.sidebarResizing #sidebarContainer,
+#outerContainer.sidebarResizing #viewerContainer,
+#outerContainer.sidebarResizing #loadingBar {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
 }
 
 .findbar,
