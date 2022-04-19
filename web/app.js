@@ -78,7 +78,7 @@ import { Toolbar } from "./toolbar.js";
 import { ViewHistory } from "./view_history.js";
 
 const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
-const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
+const FORCE_PAGES_LOADED_TIMEOUT = 10; // ms // #1316 ngx-extended-pdf-viewer temporary workaround to speed up rendering
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
 
 const ViewOnLoad = {
