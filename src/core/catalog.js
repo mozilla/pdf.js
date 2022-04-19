@@ -1387,6 +1387,22 @@ class Catalog {
     return next(pageRef);
   }
 
+  get baseUrl() {
+    const uri = this._catDict.get("URI");
+    if (uri instanceof Dict) {
+      const base = uri.get("Base");
+      if (typeof base === "string") {
+        const absoluteUrl = createValidAbsoluteUrl(base, null, {
+          tryConvertEncoding: true,
+        });
+        if (absoluteUrl) {
+          return shadow(this, "baseUrl", absoluteUrl.href);
+        }
+      }
+    }
+    return shadow(this, "baseUrl", null);
+  }
+
   /**
    * @typedef {Object} ParseDestDictionaryParameters
    * @property {Dict} destDict - The dictionary containing the destination.
@@ -1464,8 +1480,6 @@ class Catalog {
             // Some bad PDFs do not put parentheses around relative URLs.
             url = "/" + url.name;
           }
-          // TODO: pdf spec mentions urls can be relative to a Base
-          // entry in the dictionary.
           break;
 
         case "GoTo":

@@ -72,9 +72,12 @@ class AnnotationFactory {
   static create(xref, ref, pdfManager, idFactory, collectFields) {
     return Promise.all([
       pdfManager.ensureCatalog("acroForm"),
+      // Only necessary to prevent the `pdfManager.docBaseUrl`-getter, used
+      // with certain Annotations, from throwing and thus breaking parsing:
+      pdfManager.ensureCatalog("baseUrl"),
       pdfManager.ensureDoc("xfaDatasets"),
       collectFields ? this._getPageIndex(xref, ref, pdfManager) : -1,
-    ]).then(([acroForm, xfaDatasets, pageIndex]) =>
+    ]).then(([acroForm, baseUrl, xfaDatasets, pageIndex]) =>
       pdfManager.ensure(this, "_create", [
         xref,
         ref,
