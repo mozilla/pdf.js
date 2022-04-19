@@ -2950,6 +2950,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue14802",
+       "file": "pdfs/issue14802.pdf",
+       "md5": "c1e774945fee539c7fcfec00b36dd4e6",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "LinkAnnotation with a relative link, and a /Catalog Base-URI."
+    },
     {  "id": "issue1127-text",
        "file": "pdfs/issue1127.pdf",
        "md5": "4fb2be5ffefeafda4ba977de2a1bb4d8",
