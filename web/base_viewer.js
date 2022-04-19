@@ -920,24 +920,19 @@ class BaseViewer {
       }
 
       // Finally, append the new pages to the viewer and apply the spreadMode.
-      let spread = null;
+      const spread = document.createElement("div");
+      spread.className = "spread";
+
       for (const i of pageIndexSet) {
         const pageView = this._pages[i];
         if (!pageView) {
           continue;
         }
-        if (spread === null) {
-          spread = document.createElement("div");
-          spread.className = "spread";
-          viewer.appendChild(spread);
-        } else if (i % 2 === parity) {
-          spread = spread.cloneNode(false);
-          viewer.appendChild(spread);
-        }
         spread.appendChild(pageView.div);
 
         state.pages.push(pageView);
       }
+      viewer.appendChild(spread);
     }
 
     state.scrollDown = pageNumber >= state.previousPageNumber;
