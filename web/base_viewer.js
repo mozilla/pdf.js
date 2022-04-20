@@ -354,7 +354,7 @@ class BaseViewer {
   _setCurrentPageNumber(val, resetCurrentPageView = false) {
     if (this._currentPageNumber === val) {
       if (resetCurrentPageView) {
-        this._resetCurrentPageView();
+        this.#resetCurrentPageView();
       }
       return true;
     }
@@ -373,7 +373,7 @@ class BaseViewer {
     });
 
     if (resetCurrentPageView) {
-      this._resetCurrentPageView();
+      this.#resetCurrentPageView();
     }
     return true;
   }
@@ -946,12 +946,11 @@ class BaseViewer {
     this.update();
   }
 
-  _scrollIntoView({ pageDiv, pageSpot = null, pageNumber = null }) {
+  _scrollIntoView({ pageDiv, pageNumber, pageSpot = null }) {
     if (this._scrollMode === ScrollMode.PAGE) {
-      if (pageNumber) {
-        // Ensure that `this._currentPageNumber` is correct.
-        this._setCurrentPageNumber(pageNumber);
-      }
+      // Ensure that `this._currentPageNumber` is correct.
+      this._setCurrentPageNumber(pageNumber);
+
       this.#ensurePageViewVisible();
       // Ensure that rendering always occurs, to avoid showing a blank page,
       // even if the current position doesn't change when the page is scrolled.
@@ -1122,16 +1121,17 @@ class BaseViewer {
 
   /**
    * Refreshes page view: scrolls to the current page and updates the scale.
-   * @private
    */
-  _resetCurrentPageView() {
+  #resetCurrentPageView() {
+    const pageNumber = this._currentPageNumber;
+
     if (this.isInPresentationMode) {
       // Fixes the case when PDF has different page sizes.
       this._setScale(this._currentScaleValue, true);
     }
 
-    const pageView = this._pages[this._currentPageNumber - 1];
-    this._scrollIntoView({ pageDiv: pageView.div });
+    const pageView = this._pages[pageNumber - 1];
+    this._scrollIntoView({ pageDiv: pageView.div, pageNumber });
   }
 
   /**
@@ -1349,28 +1349,25 @@ class BaseViewer {
 
     this.renderingQueue.renderHighestPriority(visible);
 
-    if (!this.isInPresentationMode) {
-      const isSimpleLayout =
-        this._spreadMode === SpreadMode.NONE &&
-        (this._scrollMode === ScrollMode.PAGE ||
-          this._scrollMode === ScrollMode.VERTICAL);
-      let currentId = this._currentPageNumber;
-      let stillFullyVisible = false;
+    const isSimpleLayout =
+      this._spreadMode === SpreadMode.NONE &&
+      (this._scrollMode === ScrollMode.PAGE ||
+        this._scrollMode === ScrollMode.VERTICAL);
+    const currentId = this._currentPageNumber;
+    let stillFullyVisible = false;
 
-      for (const page of visiblePages) {
-        if (page.percent < 100) {
-          break;
-        }
-        if (page.id === currentId && isSimpleLayout) {
-          stillFullyVisible = true;
-          break;
-        }
+    for (const page of visiblePages) {
+      if (page.percent < 100) {
+        break;
       }
-      if (!stillFullyVisible) {
-        currentId = visiblePages[0].id;
+      if (page.id === currentId && isSimpleLayout) {
+        stillFullyVisible = true;
+        break;
       }
-      this._setCurrentPageNumber(currentId);
     }
+    this._setCurrentPageNumber(
+      stillFullyVisible ? currentId : visiblePages[0].id
+    );
 
     this._updateLocation(visible.first);
     this.eventBus.dispatch("updateviewarea", {
