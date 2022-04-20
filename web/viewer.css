@@ -29,7 +29,7 @@
 
   --main-color: rgba(12, 12, 13, 1);
   --body-bg-color: rgba(237, 237, 240, 1);
-  --errorWrapper-bg-color: rgba(255, 110, 110, 1);
+  --errorWrapper-bg-color: rgba(255, 110, 110, 1); /* -webkit-non-mozcentral */
   --progressBar-color: rgba(10, 132, 255, 1);
   --progressBar-indeterminate-bg-color: rgba(221, 221, 222, 1);
   --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
@@ -112,7 +112,7 @@
   :root {
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
-    --errorWrapper-bg-color: rgba(169, 14, 14, 1);
+    --errorWrapper-bg-color: rgba(169, 14, 14, 1); /* -webkit-non-mozcentral */
     --progressBar-color: rgba(0, 96, 223, 1);
     --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
     --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
@@ -1194,7 +1194,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   background: rgba(0, 0, 255, 0.3);
 }
 
-#errorWrapper {
+#errorWrapper /* -webkit-non-mozcentral */ {
   background-color: var(--errorWrapper-bg-color);
   color: var(--main-color);
   left: 0;
@@ -1204,14 +1204,17 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding: 3px 6px;
 }
 
-#errorMessageLeft {
+#errorMessageLeft /* -webkit-non-mozcentral */ {
   float: left;
 }
-#errorMessageRight {
+#errorMessageRight /* -webkit-non-mozcentral */ {
   float: right;
 }
 
-#errorMoreInfo {
+#errorSpacer /* -webkit-non-mozcentral */ {
+  clear: both;
+}
+#errorMoreInfo /* -webkit-non-mozcentral */ {
   background-color: var(--field-bg-color);
   color: var(--field-color);
   border: 1px solid var(--field-border-color);
@@ -1298,10 +1301,6 @@ dialog :link {
 }
 #documentPropertiesDialog .buttonRow {
   margin-top: 10px;
-}
-
-.clearBoth {
-  clear: both;
 }
 
 .grab-to-pan-grab {
