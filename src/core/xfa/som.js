@@ -136,7 +136,7 @@ function parseExpression(expr, dotDotAllowed, noExpr = true) {
           return null;
         }
         // TODO:
-        // Javascript expression: should be a boolean operation with a path
+        // JavaScript expression: should be a boolean operation with a path
         // so maybe we can have our own parser for that stuff or
         // maybe use the formcalc one.
         operator = operators.dotParen;
