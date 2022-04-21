@@ -275,12 +275,16 @@ class PDFImage {
     const mask = image.dict.get("Mask");
 
     if (smask) {
-      smaskData = smask;
+      if (smask instanceof BaseStream) {
+        smaskData = smask;
+      } else {
+        warn("Unsupported /SMask format.");
+      }
     } else if (mask) {
       if (mask instanceof BaseStream || Array.isArray(mask)) {
         maskData = mask;
       } else {
-        warn("Unsupported mask format.");
+        warn("Unsupported /Mask format.");
       }
     }
 
