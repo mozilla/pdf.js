@@ -691,11 +691,8 @@ select {
   color: var(--toggled-btn-color);
 }
 
+.toolbarButton.toggled::before,
 .secondaryToolbarButton.toggled::before {
-  background-color: var(--toggled-btn-color);
-}
-
-.toolbarButton.toggled::before {
   background-color: var(--toggled-btn-color);
 }
 
@@ -710,7 +707,6 @@ select {
   padding: 0;
   overflow: hidden;
   background-color: var(--dropdown-btn-bg-color);
-  margin-top: 2px !important;
 }
 .dropdownToolbarButton::after {
   top: 6px;
