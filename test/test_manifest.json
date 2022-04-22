@@ -98,6 +98,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue14814",
+       "file": "pdfs/issue14814.pdf",
+       "md5": "a1c8b677335ff5ea0d07e35e7dffb6e8",
+       "rounds": 1,
+       "firstPage": 2,
+       "type": "eq"
+    },
     {  "id": "issue14269",
        "file": "pdfs/issue14269.pdf",
        "md5": "f34abf77a418f54e13fbcd03b063432e",
