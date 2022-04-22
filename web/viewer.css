@@ -313,13 +313,6 @@ select {
     0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
-#toolbarSidebar .toolbarButton {
-  margin-inline-end: 2px !important;
-}
-#toolbarSidebarRight .toolbarButton {
-  margin-inline-end: 3px !important;
-}
-
 #sidebarResizer {
   position: absolute;
   top: 0;
@@ -580,8 +573,18 @@ select {
   float: inline-start;
 }
 
+#toolbarViewerLeft {
+  padding-inline-start: 1px;
+}
+#toolbarViewerRight {
+  padding-inline-end: 1px;
+}
+#toolbarSidebarRight {
+  padding-inline-end: 2px;
+}
+
 .splitToolbarButton {
-  margin: 2px 2px 0;
+  margin: 2px;
   display: inline-block;
 }
 .splitToolbarButton > .toolbarButton {
@@ -620,10 +623,6 @@ select {
   opacity: 0.5;
 }
 
-.splitToolbarButton.toggled .toolbarButton {
-  margin: 0;
-}
-
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus-visible,
 .dropdownToolbarButton:hover,
@@ -634,10 +633,10 @@ select {
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
-}
-.splitToolbarButton > .toolbarButton:first-child,
-.splitToolbarButton > .toolbarButton:last-child {
   margin: 0;
+}
+#toolbarSidebar .splitToolbarButton > .toolbarButton {
+  margin-inline-end: 2px;
 }
 
 .splitToolbarButtonSeparator {
@@ -665,13 +664,6 @@ select {
   user-select: none;
   cursor: default;
   box-sizing: border-box;
-}
-
-#toolbarViewerLeft > .toolbarButton:first-child {
-  margin-inline-start: 2px;
-}
-#toolbarViewerRight > .toolbarButton:last-child {
-  margin-inline-end: 2px;
 }
 
 .toolbarButton:hover,
