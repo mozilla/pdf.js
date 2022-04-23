@@ -151,12 +151,9 @@ class PDFThumbnailViewer {
   }
 
   cleanup() {
-    for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
-      if (
-        this._thumbnails[i] &&
-        this._thumbnails[i].renderingState !== RenderingStates.FINISHED
-      ) {
-        this._thumbnails[i].reset();
+    for (const thumbnail of this._thumbnails) {
+      if (thumbnail.renderingState !== RenderingStates.FINISHED) {
+        thumbnail.reset();
       }
     }
     TempImageFactory.destroyCanvas();
@@ -237,10 +234,8 @@ class PDFThumbnailViewer {
    * @private
    */
   _cancelRendering() {
-    for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
-      if (this._thumbnails[i]) {
-        this._thumbnails[i].cancelRendering();
-      }
+    for (const thumbnail of this._thumbnails) {
+      thumbnail.cancelRendering();
     }
   }
 
