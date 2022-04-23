@@ -2965,6 +2965,18 @@
        "annotations": true,
        "about": "LinkAnnotation with a relative link, and a /Catalog Base-URI."
     },
+    {  "id": "issue14824",
+       "file": "pdfs/issue14824.pdf",
+       "md5": "7b8d061ab0a342e3606a3b3ba1925d5b",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 4,
+       "type": "eq",
+       "optionalContent": {
+         "7R": false
+       },
+       "about": "Need to test *at least* three pages, since the `GlobalImageCache` is involved."
+    },
     {  "id": "issue1127-text",
        "file": "pdfs/issue1127.pdf",
        "md5": "4fb2be5ffefeafda4ba977de2a1bb4d8",

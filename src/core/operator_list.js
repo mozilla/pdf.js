@@ -622,6 +622,18 @@ class OperatorList {
     }
   }
 
+  addImageOps(fn, args, optionalContent) {
+    if (optionalContent !== undefined) {
+      this.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+    }
+
+    this.addOp(fn, args);
+
+    if (optionalContent !== undefined) {
+      this.addOp(OPS.endMarkedContent, []);
+    }
+  }
+
   addDependency(dependency) {
     if (this.dependencies.has(dependency)) {
       return;
