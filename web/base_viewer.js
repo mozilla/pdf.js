@@ -1467,12 +1467,9 @@ class BaseViewer {
   }
 
   cleanup() {
-    for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      if (
-        this._pages[i] &&
-        this._pages[i].renderingState !== RenderingStates.FINISHED
-      ) {
-        this._pages[i].reset();
+    for (const pageView of this._pages) {
+      if (pageView.renderingState !== RenderingStates.FINISHED) {
+        pageView.reset();
       }
     }
   }
@@ -1481,10 +1478,8 @@ class BaseViewer {
    * @private
    */
   _cancelRendering() {
-    for (let i = 0, ii = this._pages.length; i < ii; i++) {
-      if (this._pages[i]) {
-        this._pages[i].cancelRendering();
-      }
+    for (const pageView of this._pages) {
+      pageView.cancelRendering();
     }
   }
 
@@ -1873,8 +1868,8 @@ class BaseViewer {
       viewer.textContent = "";
 
       if (this._spreadMode === SpreadMode.NONE) {
-        for (let i = 0, ii = pages.length; i < ii; ++i) {
-          viewer.appendChild(pages[i].div);
+        for (const pageView of this._pages) {
+          viewer.appendChild(pageView.div);
         }
       } else {
         const parity = this._spreadMode - 1;
