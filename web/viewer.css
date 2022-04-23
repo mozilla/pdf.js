@@ -1321,44 +1321,9 @@ dialog :link {
 }
 
 @media print {
-  /* General rules for printing. */
   body {
     background: rgba(0, 0, 0, 0) none;
   }
-
-  /* Rules for browsers that don't support mozPrintCallback. */
-  #sidebarContainer,
-  #secondaryToolbar,
-  .toolbar,
-  #errorWrapper,
-  .textLayer,
-  .canvasWrapper {
-    display: none;
-  }
-
-  #mainContainer,
-  #viewerContainer,
-  .page,
-  .page canvas {
-    position: static;
-    padding: 0;
-    margin: 0;
-  }
-
-  .page {
-    float: left;
-    display: none;
-    border: none;
-    box-shadow: none;
-    background-clip: content-box;
-    background-color: rgba(255, 255, 255, 1);
-  }
-
-  .page[data-loaded] {
-    display: block;
-  }
-
-  /* Rules for browsers that support PDF.js printing */
   body[data-pdfjsprinting] #outerContainer {
     display: none;
   }
