@@ -170,6 +170,16 @@ function normalizeBlendMode(value, parsingArray = false) {
   return "source-over";
 }
 
+function incrementCachedImageMaskCount(data) {
+  if (
+    data.fn === OPS.paintImageMaskXObject &&
+    data.args[0] &&
+    data.args[0].count > 0
+  ) {
+    data.args[0].count++;
+  }
+}
+
 // Trying to minimize Date.now() usage and check every 100 time.
 class TimeSlotManager {
   static get TIME_SLOT_DURATION_MS() {
@@ -1707,13 +1717,7 @@ class PartialEvaluator {
                   localImage.optionalContent
                 );
 
-                if (
-                  localImage.fn === OPS.paintImageMaskXObject &&
-                  localImage.args[0] &&
-                  localImage.args[0].count > 0
-                ) {
-                  localImage.args[0].count++;
-                }
+                incrementCachedImageMaskCount(localImage);
                 args = null;
                 continue;
               }
@@ -1735,13 +1739,7 @@ class PartialEvaluator {
                       localImage.optionalContent
                     );
 
-                    if (
-                      localImage.fn === OPS.paintImageMaskXObject &&
-                      localImage.args[0] &&
-                      localImage.args[0].count > 0
-                    ) {
-                      localImage.args[0].count++;
-                    }
+                    incrementCachedImageMaskCount(localImage);
                     resolveXObject();
                     return;
                   }
@@ -1867,13 +1865,7 @@ class PartialEvaluator {
                   localImage.optionalContent
                 );
 
-                if (
-                  localImage.fn === OPS.paintImageMaskXObject &&
-                  localImage.args[0] &&
-                  localImage.args[0].count > 0
-                ) {
-                  localImage.args[0].count++;
-                }
+                incrementCachedImageMaskCount(localImage);
                 args = null;
                 continue;
               }
