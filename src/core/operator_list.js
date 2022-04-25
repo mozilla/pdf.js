@@ -256,6 +256,8 @@ addState(
           data: maskParams.data,
           width: maskParams.width,
           height: maskParams.height,
+          interpolate: maskParams.interpolate,
+          count: maskParams.count,
           transform: transformArgs,
         });
       }
@@ -617,6 +619,18 @@ class OperatorList {
         // Heuristic to flush on boundary of restore or endText.
         this.flush();
       }
+    }
+  }
+
+  addImageOps(fn, args, optionalContent) {
+    if (optionalContent !== undefined) {
+      this.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+    }
+
+    this.addOp(fn, args);
+
+    if (optionalContent !== undefined) {
+      this.addOp(OPS.endMarkedContent, []);
     }
   }
 

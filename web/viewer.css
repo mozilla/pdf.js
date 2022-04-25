@@ -29,7 +29,7 @@
 
   --main-color: rgba(12, 12, 13, 1);
   --body-bg-color: rgba(237, 237, 240, 1);
-  --errorWrapper-bg-color: rgba(255, 110, 110, 1);
+  --errorWrapper-bg-color: rgba(255, 110, 110, 1); /* -webkit-non-mozcentral */
   --progressBar-color: rgba(10, 132, 255, 1);
   --progressBar-indeterminate-bg-color: rgba(221, 221, 222, 1);
   --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
@@ -51,7 +51,6 @@
   --field-color: rgba(6, 6, 6, 1);
   --field-bg-color: rgba(255, 255, 255, 1);
   --field-border-color: rgba(187, 187, 188, 1);
-  --findbar-nextprevious-btn-bg-color: rgba(227, 228, 230, 1);
   --treeitem-color: rgba(0, 0, 0, 0.8);
   --treeitem-hover-color: rgba(0, 0, 0, 0.9);
   --treeitem-selected-color: rgba(0, 0, 0, 0.9);
@@ -113,7 +112,7 @@
   :root {
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
-    --errorWrapper-bg-color: rgba(169, 14, 14, 1);
+    --errorWrapper-bg-color: rgba(169, 14, 14, 1); /* -webkit-non-mozcentral */
     --progressBar-color: rgba(0, 96, 223, 1);
     --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
     --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
@@ -135,7 +134,6 @@
     --field-color: rgba(250, 250, 250, 1);
     --field-bg-color: rgba(64, 64, 68, 1);
     --field-border-color: rgba(115, 115, 115, 1);
-    --findbar-nextprevious-btn-bg-color: rgba(89, 89, 89, 1);
     --treeitem-color: rgba(255, 255, 255, 0.8);
     --treeitem-hover-color: rgba(255, 255, 255, 0.9);
     --treeitem-selected-color: rgba(255, 255, 255, 0.9);
@@ -180,14 +178,13 @@
   margin: 0;
 }
 
-html {
+html,
+body {
   height: 100%;
   width: 100%;
 }
 
 body {
-  height: 100%;
-  width: 100%;
   background-color: var(--body-bg-color);
 }
 
@@ -200,9 +197,7 @@ select {
   scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
 }
 
-.hidden {
-  display: none !important;
-}
+.hidden,
 [hidden] {
   display: none !important;
 }
@@ -251,11 +246,6 @@ select {
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
-#outerContainer.sidebarResizing #sidebarContainer {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
-}
-
 #outerContainer.sidebarMoving #sidebarContainer,
 #outerContainer.sidebarOpen #sidebarContainer {
   visibility: visible;
@@ -298,11 +288,6 @@ select {
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
-#outerContainer.sidebarResizing #viewerContainer {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
-}
-
 #outerContainer.sidebarOpen #viewerContainer:not(.pdfPresentationMode) {
   inset-inline-start: var(--sidebar-width);
   transition-property: inset-inline-start;
@@ -326,13 +311,6 @@ select {
   background-color: var(--sidebar-toolbar-bg-color);
   box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25),
     0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
-}
-
-#toolbarSidebar .toolbarButton {
-  margin-inline-end: 2px !important;
-}
-#toolbarSidebarRight .toolbarButton {
-  margin-inline-end: 3px !important;
 }
 
 #sidebarResizer {
@@ -371,11 +349,6 @@ select {
 
 #outerContainer.sidebarOpen #loadingBar {
   inset-inline-start: var(--sidebar-width);
-}
-
-#outerContainer.sidebarResizing #loadingBar {
-  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
-  transition-duration: 0s;
 }
 
 #loadingBar .progress {
@@ -421,6 +394,13 @@ select {
   animation: progressIndeterminate 1s linear infinite;
 }
 
+#outerContainer.sidebarResizing #sidebarContainer,
+#outerContainer.sidebarResizing #viewerContainer,
+#outerContainer.sidebarResizing #loadingBar {
+  /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+  transition-duration: 0s;
+}
+
 .findbar,
 .secondaryToolbar {
   top: 32px;
@@ -444,36 +424,15 @@ select {
 .findbar > div {
   height: 32px;
 }
+.findbar > div#findbarInputContainer {
+  margin-inline-end: 4px;
+}
 .findbar.wrapContainers > div,
 .findbar.wrapContainers > div#findbarMessageContainer > * {
   clear: both;
 }
 .findbar.wrapContainers > div#findbarMessageContainer {
   height: auto;
-}
-
-.findbar .splitToolbarButton {
-  margin-top: 3px;
-  margin-inline: 0 5px;
-}
-
-.findbar .splitToolbarButton > .toolbarButton {
-  background-color: var(--findbar-nextprevious-btn-bg-color);
-  border-radius: 0;
-  height: 26px;
-  border-top: 1px solid var(--field-border-color);
-  border-bottom: 1px solid var(--field-border-color);
-}
-
-.findbar .splitToolbarButton > .toolbarButton::before {
-  top: 5px;
-}
-
-.findbar .splitToolbarButton > .findNext {
-  width: 29px;
-  border-start-end-radius: 2px;
-  border-end-end-radius: 2px;
-  border-inline-end: 1px solid var(--field-border-color);
 }
 
 .findbar input[type="checkbox"] {
@@ -497,8 +456,6 @@ select {
 
 #findInput {
   width: 200px;
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
 }
 #findInput::-webkit-input-placeholder {
   color: rgba(191, 191, 191, 1);
@@ -616,8 +573,18 @@ select {
   float: inline-start;
 }
 
+#toolbarViewerLeft {
+  padding-inline-start: 1px;
+}
+#toolbarViewerRight {
+  padding-inline-end: 1px;
+}
+#toolbarSidebarRight {
+  padding-inline-end: 2px;
+}
+
 .splitToolbarButton {
-  margin: 2px 2px 0;
+  margin: 2px;
   display: inline-block;
 }
 .splitToolbarButton > .toolbarButton {
@@ -656,10 +623,6 @@ select {
   opacity: 0.5;
 }
 
-.splitToolbarButton.toggled .toolbarButton {
-  margin: 0;
-}
-
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus-visible,
 .dropdownToolbarButton:hover,
@@ -670,10 +633,10 @@ select {
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
-}
-.splitToolbarButton > .toolbarButton:first-child,
-.splitToolbarButton > .toolbarButton:last-child {
   margin: 0;
+}
+#toolbarSidebar .splitToolbarButton > .toolbarButton {
+  margin-inline-end: 2px;
 }
 
 .splitToolbarButtonSeparator {
@@ -684,12 +647,6 @@ select {
   z-index: 99;
   display: inline-block;
   margin: 4px 0;
-}
-
-.findbar .splitToolbarButtonSeparator {
-  background-color: var(--field-border-color);
-  margin: 0;
-  padding: 13px 0;
 }
 
 .toolbarButton,
@@ -709,13 +666,6 @@ select {
   box-sizing: border-box;
 }
 
-#toolbarViewerLeft > .toolbarButton:first-child {
-  margin-inline-start: 2px;
-}
-#toolbarViewerRight > .toolbarButton:last-child {
-  margin-inline-end: 2px;
-}
-
 .toolbarButton:hover,
 .toolbarButton:focus-visible {
   background-color: var(--button-hover-color);
@@ -733,11 +683,8 @@ select {
   color: var(--toggled-btn-color);
 }
 
+.toolbarButton.toggled::before,
 .secondaryToolbarButton.toggled::before {
-  background-color: var(--toggled-btn-color);
-}
-
-.toolbarButton.toggled::before {
   background-color: var(--toggled-btn-color);
 }
 
@@ -752,7 +699,6 @@ select {
   padding: 0;
   overflow: hidden;
   background-color: var(--dropdown-btn-bg-color);
-  margin-top: 2px !important;
 }
 .dropdownToolbarButton::after {
   top: 6px;
@@ -841,11 +787,11 @@ select {
   transform: scaleX(var(--dir-factor));
 }
 
-.toolbarButton.findPrevious::before {
+#findPrevious.toolbarButton::before {
   mask-image: var(--findbarButton-previous-icon);
 }
 
-.toolbarButton.findNext::before {
+#findNext.toolbarButton::before {
   mask-image: var(--findbarButton-next-icon);
 }
 
@@ -1236,7 +1182,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   background: rgba(0, 0, 255, 0.3);
 }
 
-#errorWrapper {
+#errorWrapper /* -webkit-non-mozcentral */ {
   background-color: var(--errorWrapper-bg-color);
   color: var(--main-color);
   left: 0;
@@ -1246,14 +1192,17 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding: 3px 6px;
 }
 
-#errorMessageLeft {
+#errorMessageLeft /* -webkit-non-mozcentral */ {
   float: left;
 }
-#errorMessageRight {
+#errorMessageRight /* -webkit-non-mozcentral */ {
   float: right;
 }
 
-#errorMoreInfo {
+#errorSpacer /* -webkit-non-mozcentral */ {
+  clear: both;
+}
+#errorMoreInfo /* -webkit-non-mozcentral */ {
   background-color: var(--field-bg-color);
   color: var(--field-color);
   border: 1px solid var(--field-border-color);
@@ -1342,99 +1291,6 @@ dialog :link {
   margin-top: 10px;
 }
 
-.clearBoth {
-  clear: both;
-}
-
-#PDFBug {
-  background-color: rgba(255, 255, 255, 1);
-  border: 1px solid rgba(102, 102, 102, 1);
-  position: fixed;
-  top: 32px;
-  right: 0;
-  bottom: 0;
-  font-size: 10px;
-  padding: 0;
-  width: 300px;
-}
-#PDFBug .controls {
-  background: rgba(238, 238, 238, 1);
-  border-bottom: 1px solid rgba(102, 102, 102, 1);
-  padding: 3px;
-}
-#PDFBug .panels {
-  bottom: 0;
-  left: 0;
-  overflow: auto;
-  position: absolute;
-  right: 0;
-  top: 27px;
-}
-#PDFBug .panels > div {
-  padding: 5px;
-}
-#PDFBug button.active {
-  font-weight: bold;
-}
-.debuggerShowText,
-.debuggerHideText:hover {
-  background-color: rgba(255, 255, 0, 1);
-}
-#PDFBug .stats {
-  font-family: courier;
-  font-size: 10px;
-  white-space: pre;
-}
-#PDFBug .stats .title {
-  font-weight: bold;
-}
-#PDFBug table {
-  font-size: 10px;
-  white-space: pre;
-}
-#PDFBug table.showText {
-  border-collapse: collapse;
-  text-align: center;
-}
-#PDFBug table.showText,
-#PDFBug table.showText tr,
-#PDFBug table.showText td {
-  border: 1px solid black;
-  padding: 1px;
-}
-#PDFBug table.showText td.advance {
-  color: grey;
-}
-
-#viewer.textLayer-visible .textLayer {
-  opacity: 1;
-}
-
-#viewer.textLayer-visible .canvasWrapper {
-  background-color: rgba(128, 255, 128, 1);
-}
-
-#viewer.textLayer-visible .canvasWrapper canvas {
-  mix-blend-mode: screen;
-}
-
-#viewer.textLayer-visible .textLayer span {
-  background-color: rgba(255, 255, 0, 0.1);
-  color: rgba(0, 0, 0, 1);
-  border: solid 1px rgba(255, 0, 0, 0.5);
-  box-sizing: border-box;
-}
-
-#viewer.textLayer-hover .textLayer span:hover {
-  background-color: rgba(255, 255, 255, 1);
-  color: rgba(0, 0, 0, 1);
-}
-
-#viewer.textLayer-shadow .textLayer span {
-  background-color: rgba(255, 255, 255, 0.6);
-  color: rgba(0, 0, 0, 1);
-}
-
 .grab-to-pan-grab {
   cursor: grab !important;
 }
@@ -1465,48 +1321,9 @@ dialog :link {
 }
 
 @media print {
-  /* General rules for printing. */
   body {
     background: rgba(0, 0, 0, 0) none;
   }
-
-  /* Rules for browsers that don't support mozPrintCallback. */
-  #sidebarContainer,
-  #secondaryToolbar,
-  .toolbar,
-  #loadingBox,
-  #errorWrapper,
-  .textLayer,
-  .canvasWrapper {
-    display: none;
-  }
-  #viewerContainer {
-    overflow: visible;
-  }
-
-  #mainContainer,
-  #viewerContainer,
-  .page,
-  .page canvas {
-    position: static;
-    padding: 0;
-    margin: 0;
-  }
-
-  .page {
-    float: left;
-    display: none;
-    border: none;
-    box-shadow: none;
-    background-clip: content-box;
-    background-color: rgba(255, 255, 255, 1);
-  }
-
-  .page[data-loaded] {
-    display: block;
-  }
-
-  /* Rules for browsers that support PDF.js printing */
   body[data-pdfjsprinting] #outerContainer {
     display: none;
   }
