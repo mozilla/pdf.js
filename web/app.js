@@ -2192,7 +2192,7 @@ function webViewerInitialized() {
         fileInput: evt.dataTransfer,
       });
     });
-  } else {
+  } else if (!PDFJSDev.test("MOZCENTRAL")) {
     appConfig.toolbar.openFile.hidden = true;
     appConfig.secondaryToolbar.openFileButton.hidden = true;
   }

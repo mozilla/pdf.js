@@ -65,7 +65,6 @@ class SecondaryToolbar {
         eventName: "presentationmode",
         close: true,
       },
-      { element: options.openFileButton, eventName: "openfile", close: true },
       { element: options.printButton, eventName: "print", close: true },
       { element: options.downloadButton, eventName: "download", close: true },
       { element: options.viewBookmarkButton, eventName: null, close: true },
@@ -141,6 +140,13 @@ class SecondaryToolbar {
         close: true,
       },
     ];
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      this.buttons.push({
+        element: options.openFileButton,
+        eventName: "openfile",
+        close: true,
+      });
+    }
     this.items = {
       firstPage: options.firstPageButton,
       lastPage: options.lastPageButton,

@@ -62,7 +62,6 @@ class Toolbar {
       { element: options.next, eventName: "nextpage" },
       { element: options.zoomIn, eventName: "zoomin" },
       { element: options.zoomOut, eventName: "zoomout" },
-      { element: options.openFile, eventName: "openfile" },
       { element: options.print, eventName: "print" },
       {
         element: options.presentationModeButton,
@@ -71,6 +70,9 @@ class Toolbar {
       { element: options.download, eventName: "download" },
       { element: options.viewBookmark, eventName: null },
     ];
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      this.buttons.push({ element: options.openFile, eventName: "openfile" });
+    }
     this.items = {
       numPages: options.numPages,
       pageNumber: options.pageNumber,
