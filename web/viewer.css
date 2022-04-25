@@ -625,9 +625,7 @@ select {
 
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus-visible,
-.dropdownToolbarButton:hover,
-.toolbarButton.textButton:hover,
-.toolbarButton.textButton:focus-visible {
+.dropdownToolbarButton:hover {
   background-color: var(--button-hover-color);
 }
 .splitToolbarButton > .toolbarButton {
