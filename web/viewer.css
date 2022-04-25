@@ -629,7 +629,6 @@ select {
 .toolbarButton.textButton:hover,
 .toolbarButton.textButton:focus-visible {
   background-color: var(--button-hover-color);
-  z-index: 199;
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
@@ -641,12 +640,10 @@ select {
 
 .splitToolbarButtonSeparator {
   float: inline-start;
-  padding: 10px 0;
-  width: 1px;
-  background-color: var(--separator-color);
-  z-index: 99;
-  display: inline-block;
   margin: 4px 0;
+  width: 1px;
+  height: 20px;
+  background-color: var(--separator-color);
 }
 
 .toolbarButton,
@@ -961,18 +958,17 @@ select {
 
 .verticalToolbarSeparator {
   display: block;
-  padding: 11px 0;
   margin: 5px 2px;
   width: 1px;
+  height: 22px;
   background-color: var(--separator-color);
 }
-
 .horizontalToolbarSeparator {
   display: block;
-  margin: 6px 0 5px;
+  margin: 6px 0;
   height: 1px;
   width: 100%;
-  border-top: 1px solid var(--doorhanger-separator-color);
+  background-color: var(--doorhanger-separator-color);
 }
 
 .toolbarField {
