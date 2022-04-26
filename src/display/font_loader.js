@@ -77,6 +77,25 @@ class BaseFontLoader {
     }
   }
 
+  async loadNonEmbeddedFont(loadedName, localNames) {
+    if (!this.isFontLoadingAPISupported) {
+      return false;
+    }
+
+    if (!Array.isArray(localNames)) {
+      localNames = [localNames];
+    }
+    localNames = localNames.map(name => `local('${name}')`).join(" ");
+    const fontFace = new FontFace(loadedName, localNames);
+    try {
+      await fontFace.load();
+      this.addNativeFontFace(fontFace);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async bind(font) {
     // Add the font to the DOM only once; skip if the font is already loaded.
     if (font.attached || font.missingFile) {

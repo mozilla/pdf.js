@@ -400,10 +400,15 @@ class PartialEvaluator {
     return data;
   }
 
-  async fetchStandardFontData(name) {
+  async fetchStandardFontData(name, localName, loadedName) {
     const cachedData = this.standardFontDataCache.get(name);
+    const result = {
+      data: null,
+      isExistingLocally: false,
+    };
     if (cachedData) {
-      return new Stream(cachedData);
+      result.data = new Stream(cachedData);
+      return result;
     }
 
     // The symbol fonts are not consistent across platforms, always load the
@@ -413,7 +418,21 @@ class PartialEvaluator {
       name !== "Symbol" &&
       name !== "ZapfDingbats"
     ) {
-      return null;
+      if (!this.options.disableFontFace && localName && loadedName) {
+        const isExistingLocally = await this.handler.sendWithPromise(
+          "LoadNonEmbeddedFont",
+          {
+            loadedName,
+            localName,
+          }
+        );
+        if (isExistingLocally) {
+          result.isExistingLocally = true;
+          return result;
+        }
+      } else {
+        return result;
+      }
     }
 
     const standardFontNameToFileName = getFontNameToFileMap(),
@@ -444,13 +463,14 @@ class PartialEvaluator {
     }
 
     if (!data) {
-      return null;
+      return result;
     }
     // Cache the "raw" standard font data, to avoid fetching it repeatedly
     // (see e.g. issue 11399).
     this.standardFontDataCache.set(name, data);
+    result.data = new Stream(data);
 
-    return new Stream(data);
+    return result;
   }
 
   async buildFormXObject(
@@ -4125,8 +4145,14 @@ class PartialEvaluator {
         let file = null;
         if (standardFontName) {
           properties.isStandardFont = true;
-          file = await this.fetchStandardFontData(standardFontName);
+          const result = await this.fetchStandardFontData(
+            standardFontName,
+            properties.name,
+            properties.loadedName
+          );
+          file = result.data;
           properties.isInternalFont = !!file;
+          properties.isExistingLocally = result.isExistingLocally;
         }
         return this.extractDataStructures(dict, dict, properties).then(
           newProperties => {
@@ -4198,6 +4224,7 @@ class PartialEvaluator {
     }
     let isStandardFont = false;
     let isInternalFont = false;
+    let isExistingLocally = false;
     let glyphScaleFactors = null;
     if (fontFile) {
       if (fontFile.dict) {
@@ -4216,7 +4243,8 @@ class PartialEvaluator {
         cssFontInfo.fontFamily = `${cssFontInfo.fontFamily}-PdfJS-XFA`;
         cssFontInfo.metrics = standardFontName.metrics || null;
         glyphScaleFactors = standardFontName.factors || null;
-        fontFile = await this.fetchStandardFontData(standardFontName.name);
+        ({ data: fontFile, isExistingLocally } =
+          await this.fetchStandardFontData(standardFontName.name, null, null));
         isInternalFont = !!fontFile;
 
         // We're using a substitution font but for example widths (if any)
@@ -4230,7 +4258,12 @@ class PartialEvaluator {
       const standardFontName = getStandardFontName(fontName.name);
       if (standardFontName) {
         isStandardFont = true;
-        fontFile = await this.fetchStandardFontData(standardFontName);
+        ({ data: fontFile, isExistingLocally } =
+          await this.fetchStandardFontData(
+            standardFontName,
+            fontName.name,
+            baseDict.loadedName
+          ));
         isInternalFont = !!fontFile;
       }
     }
@@ -4245,6 +4278,7 @@ class PartialEvaluator {
       length3,
       isStandardFont,
       isInternalFont,
+      isExistingLocally,
       loadedName: baseDict.loadedName,
       composite,
       fixedPitch: false,

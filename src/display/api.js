@@ -2860,6 +2860,13 @@ class WorkerTransport {
       }
       return this.StandardFontDataFactory.fetch(data);
     });
+
+    messageHandler.on("LoadNonEmbeddedFont", ({ loadedName, localName }) => {
+      if (this.destroyed) {
+        return Promise.reject(new Error("Worker was destroyed."));
+      }
+      return this.fontLoader.loadNonEmbeddedFont(loadedName, localName);
+    });
   }
 
   _onUnsupportedFeature({ featureId }) {

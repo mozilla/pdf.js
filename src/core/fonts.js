@@ -1212,7 +1212,9 @@ class Font {
     }
 
     amendFallbackToUnicode(properties);
-    this.loadedName = fontName.split("-")[0];
+    if (!properties.isExistingLocally) {
+      this.loadedName = fontName.split("-")[0];
+    }
     this.fontType = getFontType(type, subtype, properties.isStandardFont);
   }
 
