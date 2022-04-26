@@ -3349,7 +3349,13 @@ class InternalRenderTask {
 
   _scheduleNext() {
     if (this._useRequestAnimationFrame) {
-      window.requestAnimationFrame(() => {
+      // When a window is minimized or a tab is made inactive
+      // requestAnimationFrame will not fire.  If the document
+      // is being rendered into a different window the rendering
+      // will pause.  This can be avoided by using the
+      // requestAnimationFrame from the canvas' window instead.
+      const win = this._canvas.ownerDocument.defaultView || window;
+      win.requestAnimationFrame(() => {
         this._nextBound().catch(this._cancelBound);
       });
     } else {
