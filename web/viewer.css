@@ -77,7 +77,7 @@
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
-  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
+  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg); /* -webkit-non-mozcentral */
   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
   --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
   --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
@@ -821,8 +821,8 @@ select {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-.toolbarButton.openFile::before,
-.secondaryToolbarButton.openFile::before {
+.toolbarButton.openFile::before, /* -webkit-non-mozcentral */
+.secondaryToolbarButton.openFile::before /* -webkit-non-mozcentral */ {
   mask-image: var(--toolbarButton-openFile-icon);
 }
 

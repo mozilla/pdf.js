@@ -88,7 +88,10 @@ function getViewerConfiguration() {
       zoomIn: document.getElementById("zoomIn"),
       zoomOut: document.getElementById("zoomOut"),
       viewFind: document.getElementById("viewFind"),
-      openFile: document.getElementById("openFile"),
+      openFile:
+        typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
+          ? document.getElementById("openFile")
+          : null,
       print: document.getElementById("print"),
       presentationModeButton: document.getElementById("presentationMode"),
       download: document.getElementById("download"),
@@ -103,7 +106,10 @@ function getViewerConfiguration() {
       presentationModeButton: document.getElementById(
         "secondaryPresentationMode"
       ),
-      openFileButton: document.getElementById("secondaryOpenFile"),
+      openFileButton:
+        typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
+          ? document.getElementById("secondaryOpenFile")
+          : null,
       printButton: document.getElementById("secondaryPrint"),
       downloadButton: document.getElementById("secondaryDownload"),
       viewBookmarkButton: document.getElementById("secondaryViewBookmark"),
