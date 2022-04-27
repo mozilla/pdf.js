@@ -1004,6 +1004,21 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets a destination, from /Names (NameTree) dictionary with keys using PDFDocEncoding (issue 14847)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue14847.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const destination = await pdfDoc.getDestination("index");
+      expect(destination).toEqual([
+        { num: 10, gen: 0 },
+        { name: "XYZ" },
+        85.039,
+        728.504,
+        null,
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("gets non-string destination", async function () {
       let numberPromise = pdfDocument.getDestination(4.3);
       let booleanPromise = pdfDocument.getDestination(true);
