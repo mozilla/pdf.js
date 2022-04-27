@@ -790,54 +790,54 @@ select {
   mask-image: var(--findbarButton-next-icon);
 }
 
-.toolbarButton.pageUp::before {
+.toolbarButton#previous::before {
   mask-image: var(--toolbarButton-pageUp-icon);
 }
 
-.toolbarButton.pageDown::before {
+.toolbarButton#next::before {
   mask-image: var(--toolbarButton-pageDown-icon);
 }
 
-.toolbarButton.zoomOut::before {
+.toolbarButton#zoomOut::before {
   mask-image: var(--toolbarButton-zoomOut-icon);
 }
 
-.toolbarButton.zoomIn::before {
+.toolbarButton#zoomIn::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-.toolbarButton.presentationMode::before,
-.secondaryToolbarButton.presentationMode::before {
+.toolbarButton#presentationMode::before,
+.secondaryToolbarButton#secondaryPresentationMode::before {
   mask-image: var(--toolbarButton-presentationMode-icon);
 }
 
-.toolbarButton.print::before,
-.secondaryToolbarButton.print::before {
+.toolbarButton#print::before,
+.secondaryToolbarButton#secondaryPrint::before {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-.toolbarButton.openFile::before, /* -webkit-non-mozcentral */
-.secondaryToolbarButton.openFile::before /* -webkit-non-mozcentral */ {
+.toolbarButton#openFile::before, /* -webkit-non-mozcentral */
+.secondaryToolbarButton#secondaryOpenFile::before /* -webkit-non-mozcentral */ {
   mask-image: var(--toolbarButton-openFile-icon);
 }
 
-.toolbarButton.download::before,
-.secondaryToolbarButton.download::before {
+.toolbarButton#download::before,
+.secondaryToolbarButton#secondaryDownload::before {
   mask-image: var(--toolbarButton-download-icon);
 }
 
-.secondaryToolbarButton.bookmark {
+a.secondaryToolbarButton {
   padding-top: 6px;
   text-decoration: none;
 }
-
-.bookmark[href="#"] {
+a.toolbarButton[href="#"],
+a.secondaryToolbarButton[href="#"] {
   opacity: 0.5;
   pointer-events: none;
 }
 
-.toolbarButton.bookmark::before,
-.secondaryToolbarButton.bookmark::before {
+.toolbarButton#viewBookmark::before,
+.secondaryToolbarButton#secondaryViewBookmark::before {
   mask-image: var(--toolbarButton-bookmark-icon);
 }
 
@@ -898,59 +898,59 @@ select {
   padding-inline-end: 4px;
 }
 
-.secondaryToolbarButton.firstPage::before {
+.secondaryToolbarButton#firstPage::before {
   mask-image: var(--secondaryToolbarButton-firstPage-icon);
 }
 
-.secondaryToolbarButton.lastPage::before {
+.secondaryToolbarButton#lastPage::before {
   mask-image: var(--secondaryToolbarButton-lastPage-icon);
 }
 
-.secondaryToolbarButton.rotateCcw::before {
+.secondaryToolbarButton#pageRotateCcw::before {
   mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
 }
 
-.secondaryToolbarButton.rotateCw::before {
+.secondaryToolbarButton#pageRotateCw::before {
   mask-image: var(--secondaryToolbarButton-rotateCw-icon);
 }
 
-.secondaryToolbarButton.selectTool::before {
+.secondaryToolbarButton#cursorSelectTool::before {
   mask-image: var(--secondaryToolbarButton-selectTool-icon);
 }
 
-.secondaryToolbarButton.handTool::before {
+.secondaryToolbarButton#cursorHandTool::before {
   mask-image: var(--secondaryToolbarButton-handTool-icon);
 }
 
-.secondaryToolbarButton.scrollPage::before {
+.secondaryToolbarButton#scrollPage::before {
   mask-image: var(--secondaryToolbarButton-scrollPage-icon);
 }
 
-.secondaryToolbarButton.scrollVertical::before {
+.secondaryToolbarButton#scrollVertical::before {
   mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
 }
 
-.secondaryToolbarButton.scrollHorizontal::before {
+.secondaryToolbarButton#scrollHorizontal::before {
   mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
 }
 
-.secondaryToolbarButton.scrollWrapped::before {
+.secondaryToolbarButton#scrollWrapped::before {
   mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
 }
 
-.secondaryToolbarButton.spreadNone::before {
+.secondaryToolbarButton#spreadNone::before {
   mask-image: var(--secondaryToolbarButton-spreadNone-icon);
 }
 
-.secondaryToolbarButton.spreadOdd::before {
+.secondaryToolbarButton#spreadOdd::before {
   mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
 }
 
-.secondaryToolbarButton.spreadEven::before {
+.secondaryToolbarButton#spreadEven::before {
   mask-image: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
-.secondaryToolbarButton.documentProperties::before {
+.secondaryToolbarButton#documentProperties::before {
   mask-image: var(--secondaryToolbarButton-documentProperties-icon);
 }
 
@@ -975,9 +975,7 @@ select {
   border-radius: 2px;
   background-color: var(--field-bg-color);
   background-clip: padding-box;
-  border-width: 1px;
-  border-style: solid;
-  border-color: var(--field-border-color);
+  border: 1px solid var(--field-border-color);
   box-shadow: none;
   color: var(--field-color);
   font-size: 12px;
@@ -993,19 +991,18 @@ select {
   margin-inline-start: 7px;
 }
 
-.toolbarField.pageNumber {
+.toolbarField#pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
   text-align: right;
   width: 40px;
 }
-
-.toolbarField.pageNumber.visiblePageIsLoading {
+.toolbarField#pageNumber.visiblePageIsLoading {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
   background-position: 3px;
 }
 
-.toolbarField.pageNumber::-webkit-inner-spin-button {
+.toolbarField#pageNumber::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
 
