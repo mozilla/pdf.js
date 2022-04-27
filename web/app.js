@@ -2281,7 +2281,7 @@ function webViewerInitialized() {
         });
       } // #686 end of modification
     });
-  } else {
+  } else if (!PDFJSDev.test("MOZCENTRAL")) {
     appConfig.toolbar.openFile.hidden = true;
     appConfig.secondaryToolbar.openFileButton.hidden = true;
   }
