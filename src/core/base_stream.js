@@ -40,7 +40,7 @@ class BaseStream {
     unreachable("Abstract method `getByte` called");
   }
 
-  getBytes(length, forceClamped = false) {
+  getBytes(length) {
     unreachable("Abstract method `getBytes` called");
   }
 
@@ -52,8 +52,8 @@ class BaseStream {
     return peekedByte;
   }
 
-  peekBytes(length, forceClamped = false) {
-    const bytes = this.getBytes(length, forceClamped);
+  peekBytes(length) {
+    const bytes = this.getBytes(length);
     this.pos -= bytes.length;
     return bytes;
   }
@@ -80,7 +80,7 @@ class BaseStream {
   }
 
   getString(length) {
-    return bytesToString(this.getBytes(length, /* forceClamped = */ false));
+    return bytesToString(this.getBytes(length));
   }
 
   skip(n) {
