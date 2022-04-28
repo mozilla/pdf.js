@@ -377,6 +377,78 @@ class CachedCanvases {
   }
 }
 
+function drawImageAtIntegerCoords(
+  ctx,
+  srcImg,
+  srcX,
+  srcY,
+  srcW,
+  srcH,
+  destX,
+  destY,
+  destW,
+  destH
+) {
+  const [a, b, c, d, tx, ty] = ctx.mozCurrentTransform;
+  if (b === 0 && c === 0) {
+    // top-left corner is at (X, Y) and
+    // bottom-right one is at (X + width, Y + height).
+
+    // If leftX is 4.321 then it's rounded to 4.
+    // If width is 10.432 then it's rounded to 11 because
+    // rightX = leftX + width = 14.753 which is rounded to 15
+    // so after rounding the total width is 11 (15 - 4).
+    // It's why we can't just floor/ceil uniformly, it just depends
+    // on the values we've.
+
+    const tlX = destX * a + tx;
+    const rTlX = Math.round(tlX);
+    const tlY = destY * d + ty;
+    const rTlY = Math.round(tlY);
+    const brX = (destX + destW) * a + tx;
+
+    // Some pdf contains images with 1x1 images so in case of 0-width after
+    // scaling we must fallback on 1 to be sure there is something.
+    const rWidth = Math.abs(Math.round(brX) - rTlX) || 1;
+    const brY = (destY + destH) * d + ty;
+    const rHeight = Math.abs(Math.round(brY) - rTlY) || 1;
+
+    // We must apply a transformation in order to apply it on the image itself.
+    // For example if a == 1 && d == -1, it means that the image itself is
+    // mirrored w.r.t. the x-axis.
+    ctx.setTransform(Math.sign(a), 0, 0, Math.sign(d), rTlX, rTlY);
+    ctx.drawImage(srcImg, srcX, srcY, srcW, srcH, 0, 0, rWidth, rHeight);
+    ctx.setTransform(a, b, c, d, tx, ty);
+
+    return [rWidth, rHeight];
+  }
+
+  if (a === 0 && d === 0) {
+    // This path is taken in issue9462.pdf (page 3).
+    const tlX = destY * c + tx;
+    const rTlX = Math.round(tlX);
+    const tlY = destX * b + ty;
+    const rTlY = Math.round(tlY);
+    const brX = (destY + destH) * c + tx;
+    const rWidth = Math.abs(Math.round(brX) - rTlX) || 1;
+    const brY = (destX + destW) * b + ty;
+    const rHeight = Math.abs(Math.round(brY) - rTlY) || 1;
+
+    ctx.setTransform(0, Math.sign(b), Math.sign(c), 0, rTlX, rTlY);
+    ctx.drawImage(srcImg, srcX, srcY, srcW, srcH, 0, 0, rHeight, rWidth);
+    ctx.setTransform(a, b, c, d, tx, ty);
+
+    return [rHeight, rWidth];
+  }
+
+  // Not a scale matrix so let the render handle the case without rounding.
+  ctx.drawImage(srcImg, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
+
+  const scaleX = Math.hypot(a, b);
+  const scaleY = Math.hypot(c, d);
+  return [scaleX * destW, scaleY * destH];
+}
+
 function compileType3Glyph(imgData) {
   const POINT_TO_PROCESS_LIMIT = 1000;
   const POINT_TYPES = new Uint8Array([
@@ -1461,8 +1533,8 @@ class CanvasGraphics {
     const cord1 = Util.applyTransform([0, 0], maskToCanvas);
     const cord2 = Util.applyTransform([width, height], maskToCanvas);
     const rect = Util.normalizeRect([cord1[0], cord1[1], cord2[0], cord2[1]]);
-    const drawnWidth = Math.ceil(rect[2] - rect[0]);
-    const drawnHeight = Math.ceil(rect[3] - rect[1]);
+    const drawnWidth = Math.round(rect[2] - rect[0]) || 1;
+    const drawnHeight = Math.round(rect[3] - rect[1]) || 1;
     const fillCanvas = this.cachedCanvases.getCanvas(
       "fillCanvas",
       drawnWidth,
@@ -1496,7 +1568,9 @@ class CanvasGraphics {
       fillCtx.mozCurrentTransform,
       img.interpolate
     );
-    fillCtx.drawImage(
+
+    drawImageAtIntegerCoords(
+      fillCtx,
       scaled,
       0,
       0,
@@ -3005,7 +3079,18 @@ class CanvasGraphics {
       ctx.save();
       ctx.transform.apply(ctx, image.transform);
       ctx.scale(1, -1);
-      ctx.drawImage(maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
+      drawImageAtIntegerCoords(
+        ctx,
+        maskCanvas.canvas,
+        0,
+        0,
+        width,
+        height,
+        0,
+        -1,
+        1,
+        1
+      );
       ctx.restore();
     }
     this.compose();
@@ -3085,7 +3170,9 @@ class CanvasGraphics {
       ctx.mozCurrentTransform,
       imgData.interpolate
     );
-    ctx.drawImage(
+
+    const [rWidth, rHeight] = drawImageAtIntegerCoords(
+      ctx,
       scaled.img,
       0,
       0,
@@ -3103,8 +3190,8 @@ class CanvasGraphics {
         imgData,
         left: position[0],
         top: position[1],
-        width: width / ctx.mozCurrentTransformInverse[0],
-        height: height / ctx.mozCurrentTransformInverse[3],
+        width: rWidth,
+        height: rHeight,
       });
     }
     this.compose();
@@ -3133,7 +3220,8 @@ class CanvasGraphics {
       ctx.save();
       ctx.transform.apply(ctx, entry.transform);
       ctx.scale(1, -1);
-      ctx.drawImage(
+      drawImageAtIntegerCoords(
+        ctx,
         tmpCanvas.canvas,
         entry.x,
         entry.y,
