@@ -613,10 +613,7 @@ class PartialEvaluator {
       // for later.
       const interpolate = dict.get("I", "Interpolate");
       const bitStrideLength = (w + 7) >> 3;
-      const imgArray = image.getBytes(
-        bitStrideLength * h,
-        /* forceClamped = */ true
-      );
+      const imgArray = image.getBytes(bitStrideLength * h);
       const decode = dict.getArray("D", "Decode");
 
       if (this.parsingType3Font) {
