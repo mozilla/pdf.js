@@ -2229,30 +2229,22 @@ function webViewerInitialized() {
   );
 
   try {
-    webViewerOpenFileViaURL(file);
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      if (file) {
+        PDFViewerApplication.open(file);
+      } else {
+        PDFViewerApplication._hideViewBookmark();
+      }
+    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
+      PDFViewerApplication.setTitleUsingUrl(file, /* downloadUrl = */ file);
+      PDFViewerApplication.initPassiveLoading();
+    } else {
+      throw new Error("Not implemented: webViewerInitialized");
+    }
   } catch (reason) {
     PDFViewerApplication.l10n.get("loading_error").then(msg => {
       PDFViewerApplication._documentError(msg, reason);
     });
-  }
-}
-
-function webViewerOpenFileViaURL(file) {
-  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    if (file) {
-      PDFViewerApplication.open(file);
-    } else {
-      PDFViewerApplication._hideViewBookmark();
-    }
-  } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-    PDFViewerApplication.setTitleUsingUrl(file, /* downloadUrl = */ file);
-    PDFViewerApplication.initPassiveLoading();
-  } else {
-    if (file) {
-      throw new Error("Not implemented: webViewerOpenFileViaURL");
-    } else {
-      PDFViewerApplication._hideViewBookmark();
-    }
   }
 }
 
