@@ -36,12 +36,6 @@ describe("stream", function () {
       const result = predictor.getBytes(6);
 
       expect(result).toEqual(new Uint8Array([100, 3, 101, 2, 102, 1]));
-
-      predictor.reset();
-      const clampedResult = predictor.getBytes(6, /* forceClamped = */ true);
-      expect(clampedResult).toEqual(
-        new Uint8ClampedArray([100, 3, 101, 2, 102, 1])
-      );
     });
   });
 });
