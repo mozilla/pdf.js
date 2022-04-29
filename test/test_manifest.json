@@ -6403,5 +6403,29 @@
       "link": true,
       "lastPage": 1,
       "type": "eq"
+   },
+   {  "id": "issue3351.1",
+      "file": "pdfs/issue3351.1.pdf",
+      "md5": "4216245a5f18bb3eac80575ccf0b272d",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
+   },
+   {  "id": "issue3351.2",
+      "file": "pdfs/issue3351.2.pdf",
+      "md5": "fa3fd1659c409c7824ef8838c3071efc",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
+   },
+   {  "id": "issue3351.3",
+      "file": "pdfs/issue3351.3.pdf",
+      "md5": "60e2f2c480b6bc0e7f726743c6896520",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq"
    }
 ]
