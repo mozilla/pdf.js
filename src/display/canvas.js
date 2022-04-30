@@ -32,6 +32,7 @@ import {
   TilingPattern,
 } from "./pattern_helper.js";
 import { applyMaskImageData } from "../shared/image_utils.js";
+import { isNodeJS } from "../shared/is_node.js";
 import { PixelsPerInch } from "./display_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
@@ -556,7 +557,13 @@ function compileType3Glyph(imgData) {
 
   // building outlines
   const steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
-  const outlines = [];
+  let path, outlines, coords;
+  if (!isNodeJS) {
+    path = new Path2D();
+  } else {
+    outlines = [];
+  }
+
   for (i = 0; count && i <= height; i++) {
     let p = i * width1;
     const end = p + width;
@@ -566,7 +573,12 @@ function compileType3Glyph(imgData) {
     if (p === end) {
       continue;
     }
-    const coords = [p % width1, i];
+
+    if (path) {
+      path.moveTo(p % width1, i);
+    } else {
+      coords = [p % width1, i];
+    }
 
     const p0 = p;
     let type = points[p];
@@ -590,13 +602,20 @@ function compileType3Glyph(imgData) {
         points[p] &= (type >> 2) | (type << 2);
       }
 
-      coords.push(p % width1, (p / width1) | 0);
+      if (path) {
+        path.lineTo(p % width1, (p / width1) | 0);
+      } else {
+        coords.push(p % width1, (p / width1) | 0);
+      }
 
       if (!points[p]) {
         --count;
       }
     } while (p0 !== p);
-    outlines.push(coords);
+
+    if (!path) {
+      outlines.push(coords);
+    }
     --i;
   }
 
@@ -605,15 +624,18 @@ function compileType3Glyph(imgData) {
     // the path shall be painted in [0..1]x[0..1] space
     c.scale(1 / width, -1 / height);
     c.translate(0, -height);
-    c.beginPath();
-    for (let k = 0, kk = outlines.length; k < kk; k++) {
-      const o = outlines[k];
-      c.moveTo(o[0], o[1]);
-      for (let l = 2, ll = o.length; l < ll; l += 2) {
-        c.lineTo(o[l], o[l + 1]);
+    if (path) {
+      c.fill(path);
+    } else {
+      c.beginPath();
+      for (const o of outlines) {
+        c.moveTo(o[0], o[1]);
+        for (let l = 2, ll = o.length; l < ll; l += 2) {
+          c.lineTo(o[l], o[l + 1]);
+        }
       }
+      c.fill();
     }
-    c.fill();
     c.beginPath();
     c.restore();
   };
