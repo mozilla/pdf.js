@@ -772,102 +772,102 @@ select {
   inset-inline-start: 12px;
 }
 
-.toolbarButton#sidebarToggle::before {
+#sidebarToggle::before {
   mask-image: var(--toolbarButton-sidebarToggle-icon);
   transform: scaleX(var(--dir-factor));
 }
 
-.toolbarButton#secondaryToolbarToggle::before {
+#secondaryToolbarToggle::before {
   mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
   transform: scaleX(var(--dir-factor));
 }
 
-#findPrevious.toolbarButton::before {
+#findPrevious::before {
   mask-image: var(--findbarButton-previous-icon);
 }
 
-#findNext.toolbarButton::before {
+#findNext::before {
   mask-image: var(--findbarButton-next-icon);
 }
 
-.toolbarButton.pageUp::before {
+#previous::before {
   mask-image: var(--toolbarButton-pageUp-icon);
 }
 
-.toolbarButton.pageDown::before {
+#next::before {
   mask-image: var(--toolbarButton-pageDown-icon);
 }
 
-.toolbarButton.zoomOut::before {
+#zoomOut::before {
   mask-image: var(--toolbarButton-zoomOut-icon);
 }
 
-.toolbarButton.zoomIn::before {
+#zoomIn::before {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-.toolbarButton.presentationMode::before,
-.secondaryToolbarButton.presentationMode::before {
+#presentationMode::before,
+#secondaryPresentationMode::before {
   mask-image: var(--toolbarButton-presentationMode-icon);
 }
 
-.toolbarButton.print::before,
-.secondaryToolbarButton.print::before {
+#print::before,
+#secondaryPrint::before {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-.toolbarButton.openFile::before, /* -webkit-non-mozcentral */
-.secondaryToolbarButton.openFile::before /* -webkit-non-mozcentral */ {
+#openFile::before, /* -webkit-non-mozcentral */
+#secondaryOpenFile::before /* -webkit-non-mozcentral */ {
   mask-image: var(--toolbarButton-openFile-icon);
 }
 
-.toolbarButton.download::before,
-.secondaryToolbarButton.download::before {
+#download::before,
+#secondaryDownload::before {
   mask-image: var(--toolbarButton-download-icon);
 }
 
-.secondaryToolbarButton.bookmark {
+a.secondaryToolbarButton {
   padding-top: 6px;
   text-decoration: none;
 }
-
-.bookmark[href="#"] {
+a.toolbarButton[href="#"],
+a.secondaryToolbarButton[href="#"] {
   opacity: 0.5;
   pointer-events: none;
 }
 
-.toolbarButton.bookmark::before,
-.secondaryToolbarButton.bookmark::before {
+#viewBookmark::before,
+#secondaryViewBookmark::before {
   mask-image: var(--toolbarButton-bookmark-icon);
 }
 
-#viewThumbnail.toolbarButton::before {
+#viewThumbnail::before {
   mask-image: var(--toolbarButton-viewThumbnail-icon);
 }
 
-#viewOutline.toolbarButton::before {
+#viewOutline::before {
   mask-image: var(--toolbarButton-viewOutline-icon);
   transform: scaleX(var(--dir-factor));
 }
 
-#viewAttachments.toolbarButton::before {
+#viewAttachments::before {
   mask-image: var(--toolbarButton-viewAttachments-icon);
 }
 
-#viewLayers.toolbarButton::before {
+#viewLayers::before {
   mask-image: var(--toolbarButton-viewLayers-icon);
 }
 
-#currentOutlineItem.toolbarButton::before {
+#currentOutlineItem::before {
   mask-image: var(--toolbarButton-currentOutlineItem-icon);
   transform: scaleX(var(--dir-factor));
 }
 
-#viewFind.toolbarButton::before {
+#viewFind::before {
   mask-image: var(--toolbarButton-search-icon);
 }
 
-.toolbarButton.pdfSidebarNotification::after {
+.pdfSidebarNotification::after {
   position: absolute;
   display: inline-block;
   top: 1px;
@@ -898,59 +898,59 @@ select {
   padding-inline-end: 4px;
 }
 
-.secondaryToolbarButton.firstPage::before {
+#firstPage::before {
   mask-image: var(--secondaryToolbarButton-firstPage-icon);
 }
 
-.secondaryToolbarButton.lastPage::before {
+#lastPage::before {
   mask-image: var(--secondaryToolbarButton-lastPage-icon);
 }
 
-.secondaryToolbarButton.rotateCcw::before {
+#pageRotateCcw::before {
   mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
 }
 
-.secondaryToolbarButton.rotateCw::before {
+#pageRotateCw::before {
   mask-image: var(--secondaryToolbarButton-rotateCw-icon);
 }
 
-.secondaryToolbarButton.selectTool::before {
+#cursorSelectTool::before {
   mask-image: var(--secondaryToolbarButton-selectTool-icon);
 }
 
-.secondaryToolbarButton.handTool::before {
+#cursorHandTool::before {
   mask-image: var(--secondaryToolbarButton-handTool-icon);
 }
 
-.secondaryToolbarButton.scrollPage::before {
+#scrollPage::before {
   mask-image: var(--secondaryToolbarButton-scrollPage-icon);
 }
 
-.secondaryToolbarButton.scrollVertical::before {
+#scrollVertical::before {
   mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
 }
 
-.secondaryToolbarButton.scrollHorizontal::before {
+#scrollHorizontal::before {
   mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
 }
 
-.secondaryToolbarButton.scrollWrapped::before {
+#scrollWrapped::before {
   mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
 }
 
-.secondaryToolbarButton.spreadNone::before {
+#spreadNone::before {
   mask-image: var(--secondaryToolbarButton-spreadNone-icon);
 }
 
-.secondaryToolbarButton.spreadOdd::before {
+#spreadOdd::before {
   mask-image: var(--secondaryToolbarButton-spreadOdd-icon);
 }
 
-.secondaryToolbarButton.spreadEven::before {
+#spreadEven::before {
   mask-image: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
-.secondaryToolbarButton.documentProperties::before {
+#documentProperties::before {
   mask-image: var(--secondaryToolbarButton-documentProperties-icon);
 }
 
@@ -975,9 +975,7 @@ select {
   border-radius: 2px;
   background-color: var(--field-bg-color);
   background-clip: padding-box;
-  border-width: 1px;
-  border-style: solid;
-  border-color: var(--field-border-color);
+  border: 1px solid var(--field-border-color);
   box-shadow: none;
   color: var(--field-color);
   font-size: 12px;
@@ -993,19 +991,18 @@ select {
   margin-inline-start: 7px;
 }
 
-.toolbarField.pageNumber {
+#pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
   text-align: right;
   width: 40px;
 }
-
-.toolbarField.pageNumber.visiblePageIsLoading {
+#pageNumber.visiblePageIsLoading {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
   background-position: 3px;
 }
 
-.toolbarField.pageNumber::-webkit-inner-spin-button {
+#pageNumber::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
 
