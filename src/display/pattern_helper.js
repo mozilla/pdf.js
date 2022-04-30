@@ -21,6 +21,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { isNodeJS } from "../shared/is_node.js";
 
 const PathType = {
   FILL: "Fill",
@@ -29,7 +30,7 @@ const PathType = {
 };
 
 function applyBoundingBox(ctx, bbox) {
-  if (!bbox || typeof Path2D === "undefined") {
+  if (!bbox || isNodeJS) {
     return;
   }
   const width = bbox[2] - bbox[0];
