@@ -2106,7 +2106,7 @@ function packageBowerJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     dependencies: {
-      dommatrix: "^0.0.24",
+      dommatrix: "^1.0.1",
       "web-streams-polyfill": "^3.2.1",
     },
     peerDependencies: {
