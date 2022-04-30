@@ -14,7 +14,6 @@
  */
 
 import {
-  assert,
   ImageKind,
   OPS,
   RenderingIntentFlag,
@@ -109,7 +108,7 @@ addState(
     }
     const imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
     const imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-    const imgData = new Uint8ClampedArray(imgWidth * imgHeight * 4);
+    const imgData = new Uint8Array(imgWidth * imgHeight * 4);
     const imgRowSize = imgWidth << 2;
     for (let q = 0; q < count; q++) {
       const data = argsArray[iFirstPIIXO + (q << 2)][0].data;
@@ -678,17 +677,6 @@ class OperatorList {
         case OPS.paintInlineImageXObjectGroup:
         case OPS.paintImageMaskXObject:
           const arg = argsArray[i][0]; // First parameter in imgData.
-
-          if (
-            typeof PDFJSDev === "undefined" ||
-            PDFJSDev.test("!PRODUCTION || TESTING")
-          ) {
-            assert(
-              arg.data instanceof Uint8ClampedArray ||
-                typeof arg.data === "string",
-              'OperatorList._transfers: Unsupported "arg.data" type.'
-            );
-          }
           if (
             !arg.cached &&
             arg.data &&
