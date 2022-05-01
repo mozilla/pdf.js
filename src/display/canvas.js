@@ -451,24 +451,29 @@ function drawImageAtIntegerCoords(
 }
 
 function compileType3Glyph(imgData) {
+  const { width, height } = imgData;
+  if (
+    !COMPILE_TYPE3_GLYPHS ||
+    width > MAX_SIZE_TO_COMPILE ||
+    height > MAX_SIZE_TO_COMPILE
+  ) {
+    return null;
+  }
+
   const POINT_TO_PROCESS_LIMIT = 1000;
   const POINT_TYPES = new Uint8Array([
     0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0,
   ]);
 
-  const width = imgData.width,
-    height = imgData.height,
-    width1 = width + 1;
-  let i, ii, j, j0;
-  const points = new Uint8Array(width1 * (height + 1));
+  const width1 = width + 1,
+    points = new Uint8Array(width1 * (height + 1));
+  let i, j, j0;
 
   // decodes bit-packed mask data
   const lineSize = (width + 7) & ~7,
-    data0 = imgData.data;
-  const data = new Uint8Array(lineSize * height);
+    data = new Uint8Array(lineSize * height);
   let pos = 0;
-  for (i = 0, ii = data0.length; i < ii; i++) {
-    const elem = data0[i];
+  for (const elem of imgData.data) {
     let mask = 128;
     while (mask > 0) {
       data[pos++] = elem & mask ? 0 : 255;
@@ -2987,28 +2992,22 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
-
     const count = img.count;
     img = this.getObject(img.data, img);
     img.count = count;
 
     const ctx = this.ctx;
-    const width = img.width,
-      height = img.height;
-
     const glyph = this.processingType3;
 
-    if (COMPILE_TYPE3_GLYPHS && glyph && glyph.compiled === undefined) {
-      if (width <= MAX_SIZE_TO_COMPILE && height <= MAX_SIZE_TO_COMPILE) {
-        glyph.compiled = compileType3Glyph({ data: img.data, width, height });
-      } else {
-        glyph.compiled = null;
+    if (glyph) {
+      if (glyph.compiled === undefined) {
+        glyph.compiled = compileType3Glyph(img);
       }
-    }
 
-    if (glyph?.compiled) {
-      glyph.compiled(ctx);
-      return;
+      if (glyph.compiled) {
+        glyph.compiled(ctx);
+        return;
+      }
     }
     const mask = this._createMaskCanvas(img);
     const maskCanvas = mask.canvas;
