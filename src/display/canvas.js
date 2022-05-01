@@ -32,6 +32,7 @@ import {
   TilingPattern,
 } from "./pattern_helper.js";
 import { applyMaskImageData } from "../shared/image_utils.js";
+import { isNodeJS } from "../shared/is_node.js";
 import { PixelsPerInch } from "./display_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
@@ -450,24 +451,29 @@ function drawImageAtIntegerCoords(
 }
 
 function compileType3Glyph(imgData) {
+  const { width, height } = imgData;
+  if (
+    !COMPILE_TYPE3_GLYPHS ||
+    width > MAX_SIZE_TO_COMPILE ||
+    height > MAX_SIZE_TO_COMPILE
+  ) {
+    return null;
+  }
+
   const POINT_TO_PROCESS_LIMIT = 1000;
   const POINT_TYPES = new Uint8Array([
     0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0,
   ]);
 
-  const width = imgData.width,
-    height = imgData.height,
-    width1 = width + 1;
-  let i, ii, j, j0;
-  const points = new Uint8Array(width1 * (height + 1));
+  const width1 = width + 1,
+    points = new Uint8Array(width1 * (height + 1));
+  let i, j, j0;
 
   // decodes bit-packed mask data
   const lineSize = (width + 7) & ~7,
-    data0 = imgData.data;
-  const data = new Uint8Array(lineSize * height);
+    data = new Uint8Array(lineSize * height);
   let pos = 0;
-  for (i = 0, ii = data0.length; i < ii; i++) {
-    const elem = data0[i];
+  for (const elem of imgData.data) {
     let mask = 128;
     while (mask > 0) {
       data[pos++] = elem & mask ? 0 : 255;
@@ -556,7 +562,13 @@ function compileType3Glyph(imgData) {
 
   // building outlines
   const steps = new Int32Array([0, width1, -1, 0, -width1, 0, 0, 0, 1]);
-  const outlines = [];
+  let path, outlines, coords;
+  if (!isNodeJS) {
+    path = new Path2D();
+  } else {
+    outlines = [];
+  }
+
   for (i = 0; count && i <= height; i++) {
     let p = i * width1;
     const end = p + width;
@@ -566,7 +578,12 @@ function compileType3Glyph(imgData) {
     if (p === end) {
       continue;
     }
-    const coords = [p % width1, i];
+
+    if (path) {
+      path.moveTo(p % width1, i);
+    } else {
+      coords = [p % width1, i];
+    }
 
     const p0 = p;
     let type = points[p];
@@ -590,13 +607,20 @@ function compileType3Glyph(imgData) {
         points[p] &= (type >> 2) | (type << 2);
       }
 
-      coords.push(p % width1, (p / width1) | 0);
+      if (path) {
+        path.lineTo(p % width1, (p / width1) | 0);
+      } else {
+        coords.push(p % width1, (p / width1) | 0);
+      }
 
       if (!points[p]) {
         --count;
       }
     } while (p0 !== p);
-    outlines.push(coords);
+
+    if (!path) {
+      outlines.push(coords);
+    }
     --i;
   }
 
@@ -605,15 +629,18 @@ function compileType3Glyph(imgData) {
     // the path shall be painted in [0..1]x[0..1] space
     c.scale(1 / width, -1 / height);
     c.translate(0, -height);
-    c.beginPath();
-    for (let k = 0, kk = outlines.length; k < kk; k++) {
-      const o = outlines[k];
-      c.moveTo(o[0], o[1]);
-      for (let l = 2, ll = o.length; l < ll; l += 2) {
-        c.lineTo(o[l], o[l + 1]);
+    if (path) {
+      c.fill(path);
+    } else {
+      c.beginPath();
+      for (const o of outlines) {
+        c.moveTo(o[0], o[1]);
+        for (let l = 2, ll = o.length; l < ll; l += 2) {
+          c.lineTo(o[l], o[l + 1]);
+        }
       }
+      c.fill();
     }
-    c.fill();
     c.beginPath();
     c.restore();
   };
@@ -2965,28 +2992,22 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
-
     const count = img.count;
     img = this.getObject(img.data, img);
     img.count = count;
 
     const ctx = this.ctx;
-    const width = img.width,
-      height = img.height;
-
     const glyph = this.processingType3;
 
-    if (COMPILE_TYPE3_GLYPHS && glyph && glyph.compiled === undefined) {
-      if (width <= MAX_SIZE_TO_COMPILE && height <= MAX_SIZE_TO_COMPILE) {
-        glyph.compiled = compileType3Glyph({ data: img.data, width, height });
-      } else {
-        glyph.compiled = null;
+    if (glyph) {
+      if (glyph.compiled === undefined) {
+        glyph.compiled = compileType3Glyph(img);
       }
-    }
 
-    if (glyph?.compiled) {
-      glyph.compiled(ctx);
-      return;
+      if (glyph.compiled) {
+        glyph.compiled(ctx);
+        return;
+      }
     }
     const mask = this._createMaskCanvas(img);
     const maskCanvas = mask.canvas;
