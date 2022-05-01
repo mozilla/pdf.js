@@ -16,7 +16,7 @@
     "cross-env": "^7.0.3",
     "dialog-polyfill": "^0.5.6",
     "dommatrix": "^1.0.1",
-    "es-module-shims": "^1.5.4",
+    "es-module-shims": "1.4.7",
     "eslint": "^8.14.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-fetch-options": "^0.0.5",
