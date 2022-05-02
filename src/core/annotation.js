@@ -1518,7 +1518,8 @@ class WidgetAnnotation extends Annotation {
     const storageEntry = annotationStorage
       ? annotationStorage.get(this.data.id)
       : undefined;
-    let value = storageEntry && storageEntry.value;
+    let value =
+      storageEntry && (storageEntry.formattedValue || storageEntry.value);
     if (value === undefined) {
       if (!this._hasValueFromXFA || this.appearance) {
         // The annotation hasn't been rendered so use the appearance.
@@ -1981,7 +1982,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     return {
       id: this.data.id,
       value: this.data.fieldValue,
-      defaultValue: this.data.defaultFieldValue,
+      defaultValue: this.data.defaultFieldValue || "",
       multiline: this.data.multiLine,
       password: this.hasFieldFlag(AnnotationFieldFlag.PASSWORD),
       charLimit: this.data.maxLen,

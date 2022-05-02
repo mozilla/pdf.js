@@ -45,6 +45,7 @@ class EventDispatcher {
     this._objects = objects;
 
     this._document.obj._eventDispatcher = this;
+    this._isCalculating = false;
   }
 
   mergeChange(event) {
@@ -129,61 +130,84 @@ class EventDispatcher {
         return;
       case "Action":
         this.runActions(source, source, event, name);
-        if (this._document.obj.calculate) {
-          this.runCalculate(source, event);
-        }
+        this.runCalculate(source, event);
         return;
     }
 
     this.runActions(source, source, event, name);
 
-    if (name === "Keystroke") {
-      if (event.rc) {
-        if (event.willCommit) {
-          this.runValidation(source, event);
-        } else if (
-          event.change !== savedChange.change ||
+    if (name !== "Keystroke") {
+      return;
+    }
+
+    if (event.rc) {
+      if (event.willCommit) {
+        this.runValidation(source, event);
+      } else {
+        const value = (source.obj.value = this.mergeChange(event));
+        let selStart, selEnd;
+        if (
           event.selStart !== savedChange.selStart ||
           event.selEnd !== savedChange.selEnd
         ) {
-          source.wrapped.value = this.mergeChange(event);
+          // Selection has been changed by the script so apply the changes.
+          selStart = event.selStart;
+          selEnd = event.selEnd;
+        } else {
+          selEnd = selStart = savedChange.selStart + event.change.length;
         }
-      } else if (!event.willCommit) {
         source.obj._send({
           id: source.obj._id,
-          value: savedChange.value,
-          selRange: [savedChange.selStart, savedChange.selEnd],
-        });
-      } else {
-        // Entry is not valid (rc == false) and it's a commit
-        // so just clear the field.
-        source.obj._send({
-          id: source.obj._id,
-          value: "",
-          selRange: [0, 0],
+          value,
+          selRange: [selStart, selEnd],
         });
       }
+    } else if (!event.willCommit) {
+      source.obj._send({
+        id: source.obj._id,
+        value: savedChange.value,
+        selRange: [savedChange.selStart, savedChange.selEnd],
+      });
+    } else {
+      // Entry is not valid (rc == false) and it's a commit
+      // so just clear the field.
+      source.obj._send({
+        id: source.obj._id,
+        value: "",
+        formattedValue: null,
+        selRange: [0, 0],
+      });
     }
   }
 
   runValidation(source, event) {
-    const hasRan = this.runActions(source, source, event, "Validate");
+    const didValidateRun = this.runActions(source, source, event, "Validate");
     if (event.rc) {
-      if (hasRan) {
-        source.wrapped.value = event.value;
-        source.wrapped.valueAsString = event.value;
-      } else {
-        source.obj.value = event.value;
-        source.obj.valueAsString = event.value;
+      source.obj.value = event.value;
+
+      this.runCalculate(source, event);
+
+      const savedValue = (event.value = source.obj.value);
+      let formattedValue = null;
+
+      if (this.runActions(source, source, event, "Format")) {
+        formattedValue = event.value;
       }
 
-      if (this._document.obj.calculate) {
-        this.runCalculate(source, event);
-      }
-
-      event.value = source.obj.value;
-      this.runActions(source, source, event, "Format");
-      source.wrapped.valueAsString = event.value;
+      source.obj._send({
+        id: source.obj._id,
+        value: savedValue,
+        formattedValue,
+      });
+      event.value = savedValue;
+    } else if (didValidateRun) {
+      // The value is not valid.
+      source.obj._send({
+        id: source.obj._id,
+        value: "",
+        formattedValue: null,
+        selRange: [0, 0],
+      });
     }
   }
 
@@ -198,17 +222,42 @@ class EventDispatcher {
   }
 
   calculateNow() {
-    if (!this._calculationOrder) {
+    // This function can be called by a JS script (doc.calculateNow()).
+    // If !this._calculationOrder then there is nothing to calculate.
+    // _isCalculating is here to prevent infinite recursion with calculateNow.
+    // If !this._document.obj.calculate then the script doesn't want to have
+    // a calculate.
+
+    if (
+      !this._calculationOrder ||
+      this._isCalculating ||
+      !this._document.obj.calculate
+    ) {
       return;
     }
+    this._isCalculating = true;
     const first = this._calculationOrder[0];
     const source = this._objects[first];
     globalThis.event = new Event({});
-    this.runCalculate(source, globalThis.event);
+
+    try {
+      this.runCalculate(source, globalThis.event);
+    } catch (error) {
+      this._isCalculating = false;
+      throw error;
+    }
+
+    this._isCalculating = false;
   }
 
   runCalculate(source, event) {
-    if (!this._calculationOrder) {
+    // _document.obj.calculate is equivalent to doc.calculate and can be
+    // changed by a script to allow a future calculate or not.
+    // This function is either called by calculateNow or when an action
+    // is triggered (in this case we cannot be currently calculating).
+    // So there are no need to check for _isCalculating because it has
+    // been already done in calculateNow.
+    if (!this._calculationOrder || !this._document.obj.calculate) {
       return;
     }
 
@@ -218,31 +267,43 @@ class EventDispatcher {
       }
 
       if (!this._document.obj.calculate) {
-        // An action may have changed calculate value.
-        continue;
+        // An action could have changed calculate value.
+        break;
       }
 
       event.value = null;
       const target = this._objects[targetId];
+      let savedValue = target.obj.value;
       this.runActions(source, target, event, "Calculate");
       if (!event.rc) {
         continue;
       }
+
       if (event.value !== null) {
-        target.wrapped.value = event.value;
+        // A new value has been calculated so set it.
+        target.obj.value = event.value;
       }
 
       event.value = target.obj.value;
       this.runActions(target, target, event, "Validate");
       if (!event.rc) {
+        if (target.obj.value !== savedValue) {
+          target.wrapped.value = savedValue;
+        }
         continue;
       }
 
-      event.value = target.obj.value;
-      this.runActions(target, target, event, "Format");
-      if (event.value !== null) {
-        target.wrapped.valueAsString = event.value;
+      savedValue = event.value = target.obj.value;
+      let formattedValue = null;
+      if (this.runActions(target, target, event, "Format")) {
+        formattedValue = event.value;
       }
+
+      target.obj._send({
+        id: target.obj._id,
+        value: savedValue,
+        formattedValue,
+      });
     }
   }
 }

@@ -1320,7 +1320,7 @@ describe("api", function () {
           {
             id: "25R",
             value: "",
-            defaultValue: null,
+            defaultValue: "",
             multiline: false,
             password: false,
             charLimit: null,

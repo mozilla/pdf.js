@@ -237,7 +237,7 @@ describe("Interaction", () => {
           await page.click("[data-annotation-id='402R']");
 
           await Promise.all(
-            ["16", "22", "19", "05", "27"].map(id =>
+            ["16", "22", "19", "05"].map(id =>
               page.waitForFunction(
                 `document.querySelector("#\\\\34 ${id}R").value === ""`
               )
@@ -256,11 +256,14 @@ describe("Interaction", () => {
           text = await page.$eval("#\\34 05R", el => el.value);
           expect(text).toEqual("");
 
-          const sum = await page.$eval("#\\34 27R", el => el.value);
-          expect(sum).toEqual("");
-
           checked = await page.$eval("#\\34 49R", el => el.checked);
           expect(checked).toEqual(false);
+
+          const visibility = await page.$eval(
+            "#\\34 27R",
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility).toEqual("hidden");
         })
       );
     });
@@ -1133,6 +1136,168 @@ describe("Interaction", () => {
 
           text = await page.$eval(`#\\33 0R`, el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("123-4567");
+        })
+      );
+    });
+  });
+
+  describe("in issue14862.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14862.pdf", "#\\32 7R");
+      pages.map(async ([, page]) => {
+        page.on("dialog", async dialog => {
+          await dialog.dismiss();
+        });
+      });
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must convert input in uppercase", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.type("#\\32 7R", "Hello", { delay: 100 });
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 7R").value !== "Hello"`
+          );
+
+          let text = await page.$eval("#\\32 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("HELLO");
+
+          await page.type("#\\32 7R", " world", { delay: 100 });
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 7R").value !== "HELLO world"`
+          );
+
+          text = await page.$eval("#\\32 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("HELLO WORLD");
+
+          await page.keyboard.press("Backspace");
+          await page.keyboard.press("Backspace");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 7R").value !== "HELLO WORLD"`
+          );
+
+          text = await page.$eval("#\\32 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("HELLO WOR");
+
+          await page.type("#\\32 7R", "12.dL", { delay: 100 });
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 7R").value !== "HELLO WOR"`
+          );
+
+          text = await page.$eval("#\\32 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("HELLO WORDL");
+
+          await page.type("#\\32 7R", " ", { delay: 100 });
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("Backspace");
+          await page.keyboard.up("Control");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 7R").value !== "HELLO WORDL "`
+          );
+
+          text = await page.$eval("#\\32 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("HELLO ");
+
+          await page.$eval("#\\32 7R", el => {
+            // Select LL
+            el.selectionStart = 2;
+            el.selectionEnd = 4;
+          });
+
+          await page.keyboard.press("a");
+          text = await page.$eval("#\\32 7R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("HEAO ");
+        })
+      );
+    });
+
+    it("must check that an infinite loop is not triggered", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.type("#\\32 8R", "Hello", { delay: 100 });
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 8R").value !== "123"`
+          );
+
+          let text = await page.$eval("#\\32 8R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("Hello123");
+
+          // The action will trigger a calculateNow which itself
+          // will trigger a resetForm (inducing a calculateNow) and a
+          // calculateNow.
+          await page.click("[data-annotation-id='31R']");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 8R").value !== "Hello123"`
+          );
+
+          // Without preventing against infinite loop the field is empty.
+          text = await page.$eval("#\\32 8R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("123");
+        })
+      );
+    });
+  });
+
+  describe("in issue14705.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue14705.pdf", "#\\32 9R");
+      pages.map(async ([, page]) => {
+        page.on("dialog", async dialog => {
+          await dialog.dismiss();
+        });
+      });
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that field value is correctly updated", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.type("#\\32 9R", "Hello World", { delay: 100 });
+          await page.click("#\\32 7R");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 9R").value !== "Hello World"`
+          );
+
+          let text = await page.$eval("#\\32 9R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("checked");
+
+          await page.click("#\\32 7R");
+
+          await page.waitForFunction(
+            `document.querySelector("#\\\\32 9R").value !== "checked"`
+          );
+
+          text = await page.$eval("#\\32 9R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("unchecked");
         })
       );
     });
