@@ -465,14 +465,14 @@ function compileType3Glyph(imgData) {
     0, 2, 4, 0, 1, 0, 5, 4, 8, 10, 0, 8, 0, 2, 1, 0,
   ]);
 
-  const width1 = width + 1,
-    points = new Uint8Array(width1 * (height + 1));
+  const width1 = width + 1;
+  let points = new Uint8Array(width1 * (height + 1));
   let i, j, j0;
 
   // decodes bit-packed mask data
-  const lineSize = (width + 7) & ~7,
-    data = new Uint8Array(lineSize * height);
-  let pos = 0;
+  const lineSize = (width + 7) & ~7;
+  let data = new Uint8Array(lineSize * height),
+    pos = 0;
   for (const elem of imgData.data) {
     let mask = 128;
     while (mask > 0) {
@@ -623,6 +623,10 @@ function compileType3Glyph(imgData) {
     }
     --i;
   }
+
+  // Immediately release the, potentially large, `Uint8Array`s after parsing.
+  data = null;
+  points = null;
 
   const drawOutline = function (c) {
     c.save();
