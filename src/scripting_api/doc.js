@@ -820,8 +820,8 @@ class Doc extends PDFObject {
     /* Not implemented */
   }
 
-  getField(cName) {
-    if (typeof cName === "object") {
+  _getField(cName) {
+    if (cName && typeof cName === "object") {
       cName = cName.cName;
     }
     if (typeof cName !== "string") {
@@ -859,6 +859,14 @@ class Doc extends PDFObject {
     return null;
   }
 
+  getField(cName) {
+    const field = this._getField(cName);
+    if (!field) {
+      return null;
+    }
+    return field.wrapped;
+  }
+
   _getChildren(fieldName) {
     // Children of foo.bar are foo.bar.oof, foo.bar.rab
     // but not foo.bar.oof.FOO.
@@ -889,7 +897,7 @@ class Doc extends PDFObject {
   }
 
   getNthFieldName(nIndex) {
-    if (typeof nIndex === "object") {
+    if (nIndex && typeof nIndex === "object") {
       nIndex = nIndex.nIndex;
     }
     if (typeof nIndex !== "number") {
@@ -1027,7 +1035,7 @@ class Doc extends PDFObject {
     bAnnotations = true,
     printParams = null
   ) {
-    if (typeof bUI === "object") {
+    if (bUI && typeof bUI === "object") {
       nStart = bUI.nStart;
       nEnd = bUI.nEnd;
       bSilent = bUI.bSilent;
@@ -1103,30 +1111,52 @@ class Doc extends PDFObject {
   }
 
   resetForm(aFields = null) {
-    if (aFields && !Array.isArray(aFields) && typeof aFields === "object") {
+    // Handle the case resetForm({ aFields: ... })
+    if (aFields && typeof aFields === "object") {
       aFields = aFields.aFields;
     }
+
+    if (aFields && !Array.isArray(aFields)) {
+      aFields = [aFields];
+    }
+
     let mustCalculate = false;
+    let fieldsToReset;
     if (aFields) {
+      fieldsToReset = [];
       for (const fieldName of aFields) {
         if (!fieldName) {
           continue;
         }
-        const field = this.getField(fieldName);
+        if (typeof fieldName !== "string") {
+          // In Acrobat if a fieldName is not a string all the fields are reset.
+          fieldsToReset = null;
+          break;
+        }
+        const field = this._getField(fieldName);
         if (!field) {
           continue;
         }
-        field.value = field.defaultValue;
-        field.valueAsString = field.value;
+        fieldsToReset.push(field);
         mustCalculate = true;
       }
-    } else {
-      mustCalculate = this._fields.size !== 0;
-      for (const field of this._fields.values()) {
-        field.value = field.defaultValue;
-        field.valueAsString = field.value;
-      }
     }
+
+    if (!fieldsToReset) {
+      fieldsToReset = this._fields.values();
+      mustCalculate = this._fields.size !== 0;
+    }
+
+    for (const field of fieldsToReset) {
+      field.obj.value = field.obj.defaultValue;
+      this._send({
+        id: field.obj._id,
+        value: field.obj.defaultValue,
+        formattedValue: null,
+        selRange: [0, 0],
+      });
+    }
+
     if (mustCalculate) {
       this.calculateNow();
     }
