@@ -1576,7 +1576,9 @@ class Catalog {
       if (dest instanceof Name) {
         dest = dest.name;
       }
-      if (typeof dest === "string" || Array.isArray(dest)) {
+      if (typeof dest === "string") {
+        resultObj.dest = stringToPDFString(dest);
+      } else if (Array.isArray(dest)) {
         resultObj.dest = dest;
       }
     }
