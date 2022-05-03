@@ -353,15 +353,10 @@ function getDocument(src) {
     params.isEvalSupported = true;
   }
   if (typeof params.disableFontFace !== "boolean") {
-    params.disableFontFace =
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS;
+    params.disableFontFace = isNodeJS;
   }
   if (typeof params.useSystemFonts !== "boolean") {
-    params.useSystemFonts =
-      !(
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-        isNodeJS
-      ) && !params.disableFontFace;
+    params.useSystemFonts = !isNodeJS && !params.disableFontFace;
   }
   if (
     typeof params.ownerDocument !== "object" ||
