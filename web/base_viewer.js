@@ -885,23 +885,10 @@ class BaseViewer {
     // ... and clear out the active ones.
     state.pages.length = 0;
 
-    if (this._spreadMode === SpreadMode.NONE) {
+    if (this._spreadMode === SpreadMode.NONE && !this.isInPresentationMode) {
       // Finally, append the new page to the viewer.
       const pageView = this._pages[pageNumber - 1];
-
-      if (this.isInPresentationMode) {
-        const spread = document.createElement("div");
-        spread.className = "spread";
-        const dummyPage = document.createElement("div");
-        dummyPage.className = "dummyPage";
-        dummyPage.style.height = `${this.container.clientHeight}px`;
-
-        spread.appendChild(dummyPage);
-        spread.appendChild(pageView.div);
-        viewer.appendChild(spread);
-      } else {
-        viewer.appendChild(pageView.div);
-      }
+      viewer.appendChild(pageView.div);
 
       state.pages.push(pageView);
     } else {
@@ -909,7 +896,10 @@ class BaseViewer {
         parity = this._spreadMode - 1;
 
       // Determine the pageIndices in the new spread.
-      if (pageNumber % 2 !== parity) {
+      if (parity === -1) {
+        // PresentationMode is active, with `SpreadMode.NONE` set.
+        pageIndexSet.add(pageNumber - 1);
+      } else if (pageNumber % 2 !== parity) {
         // Left-hand side page.
         pageIndexSet.add(pageNumber - 1);
         pageIndexSet.add(pageNumber);
@@ -922,6 +912,13 @@ class BaseViewer {
       // Finally, append the new pages to the viewer and apply the spreadMode.
       const spread = document.createElement("div");
       spread.className = "spread";
+
+      if (this.isInPresentationMode) {
+        const dummyPage = document.createElement("div");
+        dummyPage.className = "dummyPage";
+        dummyPage.style.height = `${this.container.clientHeight}px`;
+        spread.appendChild(dummyPage);
+      }
 
       for (const i of pageIndexSet) {
         const pageView = this._pages[i];
