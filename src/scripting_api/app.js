@@ -434,7 +434,7 @@ class App extends PDFObject {
     oDoc = null,
     oCheckbox = null
   ) {
-    if (typeof cMsg === "object") {
+    if (cMsg && typeof cMsg === "object") {
       nType = cMsg.nType;
       cMsg = cMsg.cMsg;
     }
@@ -580,7 +580,7 @@ class App extends PDFObject {
   }
 
   response(cQuestion, cTitle = "", cDefault = "", bPassword = "", cLabel = "") {
-    if (typeof cQuestion === "object") {
+    if (cQuestion && typeof cQuestion === "object") {
       cDefault = cQuestion.cDefault;
       cQuestion = cQuestion.cQuestion;
     }
@@ -590,7 +590,7 @@ class App extends PDFObject {
   }
 
   setInterval(cExpr, nMilliseconds = 0) {
-    if (typeof cExpr === "object") {
+    if (cExpr && typeof cExpr === "object") {
       nMilliseconds = cExpr.nMilliseconds || 0;
       cExpr = cExpr.cExpr;
     }
@@ -609,7 +609,7 @@ class App extends PDFObject {
   }
 
   setTimeOut(cExpr, nMilliseconds = 0) {
-    if (typeof cExpr === "object") {
+    if (cExpr && typeof cExpr === "object") {
       nMilliseconds = cExpr.nMilliseconds || 0;
       cExpr = cExpr.cExpr;
     }

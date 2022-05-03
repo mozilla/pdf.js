@@ -81,6 +81,18 @@ class AnnotationStorage {
   }
 
   /**
+   * Get the value for a given key.
+   *
+   * @public
+   * @memberof AnnotationStorage
+   * @param {string} key
+   * @returns {Object}
+   */
+  getRawValue(key) {
+    return this._storage.get(key);
+  }
+
+  /**
    * Set the value for a given key
    *
    * @public
