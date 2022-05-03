@@ -19,70 +19,54 @@ import {
   BaseCMapReaderFactory,
   BaseStandardFontDataFactory,
 } from "./base_factory.js";
-import { isNodeJS } from "../shared/is_node.js";
-import { unreachable } from "../shared/util.js";
 
-let NodeCanvasFactory = class {
-  constructor() {
-    unreachable("Not implemented: NodeCanvasFactory");
-  }
-};
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+  throw new Error(
+    'Module "./node_utils.js" shall not be used with MOZCENTRAL builds.'
+  );
+}
 
-let NodeCMapReaderFactory = class {
-  constructor() {
-    unreachable("Not implemented: NodeCMapReaderFactory");
-  }
-};
-
-let NodeStandardFontDataFactory = class {
-  constructor() {
-    unreachable("Not implemented: NodeStandardFontDataFactory");
-  }
-};
-
-if ((typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS) {
-  const fetchData = function (url) {
-    return new Promise((resolve, reject) => {
-      const fs = __non_webpack_require__("fs");
-      fs.readFile(url, (error, data) => {
-        if (error || !data) {
-          reject(new Error(error));
-          return;
-        }
-        resolve(new Uint8Array(data));
-      });
+const fetchData = function (url) {
+  return new Promise((resolve, reject) => {
+    const fs = __non_webpack_require__("fs");
+    fs.readFile(url, (error, data) => {
+      if (error || !data) {
+        reject(new Error(error));
+        return;
+      }
+      resolve(new Uint8Array(data));
     });
-  };
+  });
+};
 
-  NodeCanvasFactory = class extends BaseCanvasFactory {
-    /**
-     * @ignore
-     */
-    _createCanvas(width, height) {
-      const Canvas = __non_webpack_require__("canvas");
-      return Canvas.createCanvas(width, height);
-    }
-  };
+class NodeCanvasFactory extends BaseCanvasFactory {
+  /**
+   * @ignore
+   */
+  _createCanvas(width, height) {
+    const Canvas = __non_webpack_require__("canvas");
+    return Canvas.createCanvas(width, height);
+  }
+}
 
-  NodeCMapReaderFactory = class extends BaseCMapReaderFactory {
-    /**
-     * @ignore
-     */
-    _fetchData(url, compressionType) {
-      return fetchData(url).then(data => {
-        return { cMapData: data, compressionType };
-      });
-    }
-  };
+class NodeCMapReaderFactory extends BaseCMapReaderFactory {
+  /**
+   * @ignore
+   */
+  _fetchData(url, compressionType) {
+    return fetchData(url).then(data => {
+      return { cMapData: data, compressionType };
+    });
+  }
+}
 
-  NodeStandardFontDataFactory = class extends BaseStandardFontDataFactory {
-    /**
-     * @ignore
-     */
-    _fetchData(url) {
-      return fetchData(url);
-    }
-  };
+class NodeStandardFontDataFactory extends BaseStandardFontDataFactory {
+  /**
+   * @ignore
+   */
+  _fetchData(url) {
+    return fetchData(url);
+  }
 }
 
 export {
