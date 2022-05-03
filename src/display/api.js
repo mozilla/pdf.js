@@ -49,11 +49,6 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-import {
-  NodeCanvasFactory,
-  NodeCMapReaderFactory,
-  NodeStandardFontDataFactory,
-} from "./node_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
@@ -67,18 +62,21 @@ import { XfaText } from "./xfa_text.js";
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 
-const DefaultCanvasFactory =
-  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
-    ? NodeCanvasFactory
-    : DOMCanvasFactory;
-const DefaultCMapReaderFactory =
-  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
-    ? NodeCMapReaderFactory
-    : DOMCMapReaderFactory;
-const DefaultStandardFontDataFactory =
-  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) && isNodeJS
-    ? NodeStandardFontDataFactory
-    : DOMStandardFontDataFactory;
+let DefaultCanvasFactory = DOMCanvasFactory;
+let DefaultCMapReaderFactory = DOMCMapReaderFactory;
+let DefaultStandardFontDataFactory = DOMStandardFontDataFactory;
+
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS) {
+  const {
+    NodeCanvasFactory,
+    NodeCMapReaderFactory,
+    NodeStandardFontDataFactory,
+  } = require("./node_utils.js");
+
+  DefaultCanvasFactory = NodeCanvasFactory;
+  DefaultCMapReaderFactory = NodeCMapReaderFactory;
+  DefaultStandardFontDataFactory = NodeStandardFontDataFactory;
+}
 
 /**
  * @typedef {function} IPDFStreamFactory
