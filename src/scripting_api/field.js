@@ -87,8 +87,6 @@ class Field extends PDFObject {
 
     this._globalEval = data.globalEval;
     this._appObjects = data.appObjects;
-
-    this.valueAsString = data.valueAsString || this._value;
   }
 
   get currentValueIndices() {
@@ -252,14 +250,11 @@ class Field extends PDFObject {
   }
 
   get valueAsString() {
-    if (this._valueAsString === undefined) {
-      this._valueAsString = this._value ? this._value.toString() : "";
-    }
-    return this._valueAsString;
+    return (this._value ?? "").toString();
   }
 
-  set valueAsString(val) {
-    this._valueAsString = val ? val.toString() : "";
+  set valueAsString(_) {
+    // Do nothing.
   }
 
   browseForFileToSubmit() {
@@ -376,7 +371,9 @@ class Field extends PDFObject {
     }
 
     if (this._children === null) {
-      this._children = this._document.obj._getChildren(this._fieldPath);
+      this._children = this._document.obj
+        ._getChildren(this._fieldPath)
+        .map(child => child.wrapped);
     }
     return this._children;
   }
@@ -481,7 +478,7 @@ class Field extends PDFObject {
   }
 
   _reset() {
-    this.value = this.valueAsString = this.defaultValue;
+    this.value = this.defaultValue;
   }
 
   _runActions(event) {
