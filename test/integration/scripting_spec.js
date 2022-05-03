@@ -995,7 +995,7 @@ describe("Interaction", () => {
           await clearInput(page, "#\\33 0R");
 
           await page.focus("#\\32 9R");
-          await page.type("#\\32 9R", "12A");
+          await page.type("#\\32 9R", "12A", { delay: 100 });
           await page.waitForFunction(
             `document.querySelector("#\\\\32 9R").value !== "12A"`
           );
@@ -1004,7 +1004,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("12");
 
           await page.focus("#\\32 9R");
-          await page.type("#\\32 9R", "34");
+          await page.type("#\\32 9R", "34", { delay: 100 });
           await page.click("[data-annotation-id='30R']");
 
           await page.waitForFunction(
@@ -1015,7 +1015,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
           await page.focus("#\\32 9R");
-          await page.type("#\\32 9R", "12345");
+          await page.type("#\\32 9R", "12345", { delay: 100 });
           await page.click("[data-annotation-id='30R']");
 
           text = await page.$eval(`#\\32 9R`, el => el.value);
@@ -1052,7 +1052,7 @@ describe("Interaction", () => {
           await clearInput(page, "#\\33 0R");
 
           await page.focus("#\\33 0R");
-          await page.type("#\\33 0R", "(123) 456A");
+          await page.type("#\\33 0R", "(123) 456A", { delay: 100 });
           await page.waitForFunction(
             `document.querySelector("#\\\\33 0R").value !== "(123) 456A"`
           );
@@ -1061,7 +1061,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("(123) 456");
 
           await page.focus("#\\33 0R");
-          await page.type("#\\33 0R", "-789");
+          await page.type("#\\33 0R", "-789", { delay: 100 });
           await page.click("[data-annotation-id='29R']");
 
           await page.waitForFunction(
@@ -1072,7 +1072,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
           await page.focus("#\\33 0R");
-          await page.type("#\\33 0R", "(123) 456-7890");
+          await page.type("#\\33 0R", "(123) 456-7890", { delay: 100 });
           await page.click("[data-annotation-id='29R']");
 
           text = await page.$eval(`#\\33 0R`, el => el.value);
@@ -1111,7 +1111,7 @@ describe("Interaction", () => {
           await clearInput(page, "#\\33 0R");
 
           await page.focus("#\\33 0R");
-          await page.type("#\\33 0R", "123A");
+          await page.type("#\\33 0R", "123A", { delay: 100 });
           await page.waitForFunction(
             `document.querySelector("#\\\\33 0R").value !== "123A"`
           );
@@ -1120,7 +1120,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("123");
 
           await page.focus("#\\33 0R");
-          await page.type("#\\33 0R", "-456");
+          await page.type("#\\33 0R", "-456", { delay: 100 });
           await page.click("[data-annotation-id='29R']");
 
           await page.waitForFunction(
@@ -1131,7 +1131,7 @@ describe("Interaction", () => {
           expect(text).withContext(`In ${browserName}`).toEqual("");
 
           await page.focus("#\\33 0R");
-          await page.type("#\\33 0R", "123-4567");
+          await page.type("#\\33 0R", "123-4567", { delay: 100 });
           await page.click("[data-annotation-id='29R']");
 
           text = await page.$eval(`#\\33 0R`, el => el.value);
