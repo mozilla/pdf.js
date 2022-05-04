@@ -46,7 +46,6 @@ class AnnotationStorage {
     if (value === undefined) {
       return defaultValue;
     }
-
     return Object.assign(defaultValue, value);
   }
 
@@ -59,7 +58,13 @@ class AnnotationStorage {
    * @returns {Object}
    */
   getRawValue(key) {
-    return this._storage.get(key);
+    const value = this._storage.get(key);
+    if (value === undefined) {
+      return value;
+    }
+    // Ensure that the stored value can't be accidentally changed, since that'd
+    // break the "modified"-handling and thus OperatorList-caching in the API.
+    return Object.assign(Object.create(null), value);
   }
 
   /**
@@ -69,11 +74,12 @@ class AnnotationStorage {
    * @memberof AnnotationStorage
    * @param {string} key
    * @param {Object} value
+   * @param {boolean} [forceReplace]
    */
-  setValue(key, value) {
+  setValue(key, value, forceReplace = false) {
     const obj = this._storage.get(key);
     let modified = false;
-    if (obj !== undefined) {
+    if (obj !== undefined && !forceReplace) {
       for (const [entry, val] of Object.entries(value)) {
         if (obj[entry] !== val) {
           modified = true;

@@ -383,9 +383,10 @@ class AnnotationElement {
     if (!this.enableScripting) {
       return;
     }
+    const { id } = this.data;
 
     // Some properties may have been updated thanks to JS.
-    const storedData = this.annotationStorage.getRawValue(this.data.id);
+    const storedData = this.annotationStorage.getRawValue(id);
     if (!storedData) {
       return;
     }
@@ -397,6 +398,11 @@ class AnnotationElement {
         action({ detail, target: element });
         // The action has been consumed: no need to keep it.
         delete storedData[actionName];
+        this.annotationStorage.setValue(
+          id,
+          storedData,
+          /* forceReplace = */ true
+        );
       }
     }
   }
