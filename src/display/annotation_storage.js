@@ -97,7 +97,9 @@ class AnnotationStorage {
   }
 
   getAll() {
-    return this._storage.size > 0 ? objectFromMap(this._storage) : null;
+    return this._storage.size > 0
+      ? objectFromMap(this._storage, /* copySubObjects = */ true)
+      : null;
   }
 
   get size() {

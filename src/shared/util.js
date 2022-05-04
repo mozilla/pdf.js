@@ -667,10 +667,14 @@ function objectSize(obj) {
 
 // Ensure that the returned Object has a `null` prototype; hence why
 // `Object.fromEntries(...)` is not used.
-function objectFromMap(map) {
+function objectFromMap(map, copySubObjects = false) {
   const obj = Object.create(null);
   for (const [key, value] of map) {
-    obj[key] = value;
+    if (copySubObjects && typeof value === "object" && value !== null) {
+      obj[key] = Object.assign(Object.create(null), value);
+    } else {
+      obj[key] = value;
+    }
   }
   return obj;
 }
