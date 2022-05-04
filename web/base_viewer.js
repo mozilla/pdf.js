@@ -116,6 +116,9 @@ const PagesCountLimit = {
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enablePermissions] - Enables PDF document permissions,
  *   when they exist. The default value is `false`.
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  */
 
 class PDFPageViewBuffer {
@@ -262,6 +265,22 @@ class BaseViewer {
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.l10n = options.l10n || NullL10n;
     this.#enablePermissions = options.enablePermissions || false;
+    this.pageColors = options.pageColors || null;
+
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      if (
+        options.pageColors &&
+        (!CSS.supports("color", options.pageColors.background) ||
+          !CSS.supports("color", options.pageColors.foreground))
+      ) {
+        if (options.pageColors.background || options.pageColors.foreground) {
+          console.warn(
+            "Ignoring `pageColors`-option, since the browser doesn't support the values used."
+          );
+        }
+        this.pageColors = null;
+      }
+    }
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -698,6 +717,7 @@ class BaseViewer {
             renderer: this.renderer,
             useOnlyCssZoom: this.useOnlyCssZoom,
             maxCanvasPixels: this.maxCanvasPixels,
+            pageColors: this.pageColors,
             l10n: this.l10n,
           });
           this._pages.push(pageView);

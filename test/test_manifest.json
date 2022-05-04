@@ -60,6 +60,38 @@
        "enhance": true,
        "type": "text"
     },
+    {  "id": "tracemonkey-forced-colors-eq",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "pageColors": {
+         "background": "black",
+         "foreground": "#00FF00"
+      },
+      "type": "eq"
+   },
+   {  "id": "tracemonkey-viewer-colors-eq",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "pageColors": {
+         "background": "Canvas",
+         "foreground": "CanvasText"
+      },
+      "type": "eq",
+      "about": "Uses the same pageColors as the viewer."
+   },
+   {  "id": "tracemonkey-default-colors-eq",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "pageColors": {
+         "background": "white",
+         "foreground": "black"
+      },
+      "type": "eq",
+      "about": "Uses the default colors."
+   },
     {  "id": "issue3925",
        "file": "pdfs/issue3925.pdf",
        "md5": "c5c895deecf7a7565393587e0d61be2b",

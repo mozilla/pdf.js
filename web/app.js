@@ -525,6 +525,10 @@ const PDFViewerApplication = {
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enablePermissions: AppOptions.get("enablePermissions"),
+      pageColors: {
+        background: AppOptions.get("pageBackgroundColor"),
+        foreground: AppOptions.get("pageForegroundColor"),
+      },
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
