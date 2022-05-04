@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { objectFromMap } from "../shared/util.js";
 
 /**
@@ -21,7 +22,6 @@ import { objectFromMap } from "../shared/util.js";
 class AnnotationStorage {
   constructor() {
     this._storage = new Map();
-    this._timeStamp = Date.now();
     this._modified = false;
 
     // Callbacks to signal when the modification state is set or reset.
@@ -85,7 +85,6 @@ class AnnotationStorage {
       this._storage.set(key, value);
     }
     if (modified) {
-      this._timeStamp = Date.now();
       this._setModified();
     }
   }
@@ -131,8 +130,13 @@ class AnnotationStorage {
    * PLEASE NOTE: Only intended for usage within the API itself.
    * @ignore
    */
-  get lastModified() {
-    return this._timeStamp.toString();
+  get hash() {
+    const hash = new MurmurHash3_64();
+
+    for (const [key, value] of this._storage) {
+      hash.update(`${key}:${JSON.stringify(value)}`);
+    }
+    return hash.hexdigest();
   }
 }
 

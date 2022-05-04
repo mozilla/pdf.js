@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { MurmurHash3_64 } from "../../src/core/murmurhash3.js";
+import { MurmurHash3_64 } from "../../src/shared/murmurhash3.js";
 
 describe("MurmurHash3_64", function () {
   it("instantiates without seed", function () {

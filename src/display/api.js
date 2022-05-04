@@ -2402,7 +2402,7 @@ class WorkerTransport {
     isOpList = false
   ) {
     let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
-    let lastModified = "";
+    let annotationHash = "";
 
     switch (intent) {
       case "any":
@@ -2429,7 +2429,7 @@ class WorkerTransport {
       case AnnotationMode.ENABLE_STORAGE:
         renderingIntent += RenderingIntentFlag.ANNOTATIONS_STORAGE;
 
-        lastModified = this.annotationStorage.lastModified;
+        annotationHash = this.annotationStorage.hash;
         break;
       default:
         warn(`getRenderingIntent - invalid annotationMode: ${annotationMode}`);
@@ -2441,7 +2441,7 @@ class WorkerTransport {
 
     return {
       renderingIntent,
-      cacheKey: `${renderingIntent}_${lastModified}`,
+      cacheKey: `${renderingIntent}_${annotationHash}`,
     };
   }
 
