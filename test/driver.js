@@ -648,7 +648,8 @@ class Driver {
               renderForms = false,
               renderPrint = false,
               renderXfa = false,
-              annotationCanvasMap = null;
+              annotationCanvasMap = null,
+              pageColors = null;
 
             if (task.annotationStorage) {
               const entries = Object.entries(task.annotationStorage),
@@ -699,6 +700,7 @@ class Driver {
               renderForms = !!task.forms;
               renderPrint = !!task.print;
               renderXfa = !!task.enableXfa;
+              pageColors = task.pageColors || null;
 
               // Render the annotation layer if necessary.
               if (renderAnnotations || renderForms || renderXfa) {
@@ -746,6 +748,7 @@ class Driver {
               viewport,
               optionalContentConfigPromise: task.optionalContentConfigPromise,
               annotationCanvasMap,
+              pageColors,
               transform,
             };
             if (renderForms) {
