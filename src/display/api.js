@@ -1162,6 +1162,12 @@ class PDFDocumentProxy {
  *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
  *   a `CanvasPattern` object (a repetitive image). The default value is
  *   'rgb(255,255,255)'.
+ *
+ *   NOTE: This option may be partially, or completely, ignored when the
+ *   `pageColors`-option is used.
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
  *   A promise that should resolve with an {@link OptionalContentConfig}
  *   created from `PDFDocumentProxy.getOptionalContentConfig`. If `null`,
@@ -1386,6 +1392,7 @@ class PDFPageProxy {
     background = null,
     optionalContentConfigPromise = null,
     annotationCanvasMap = null,
+    pageColors = null,
   }) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       if (arguments[0]?.renderInteractiveForms !== undefined) {
@@ -1509,6 +1516,7 @@ class PDFPageProxy {
       canvasFactory: canvasFactoryInstance,
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
+      pageColors,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -3212,6 +3220,7 @@ class InternalRenderTask {
     canvasFactory,
     useRequestAnimationFrame = false,
     pdfBug = false,
+    pageColors = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3223,6 +3232,7 @@ class InternalRenderTask {
     this._pageIndex = pageIndex;
     this.canvasFactory = canvasFactory;
     this._pdfBug = pdfBug;
+    this.pageColors = pageColors;
 
     this.running = false;
     this.graphicsReadyCallback = null;
@@ -3277,7 +3287,8 @@ class InternalRenderTask {
       this.canvasFactory,
       imageLayer,
       optionalContentConfig,
-      this.annotationCanvasMap
+      this.annotationCanvasMap,
+      this.pageColors
     );
     this.gfx.beginDrawing({
       transform,

@@ -82,6 +82,9 @@ import { NullL10n } from "./l10n_utils.js";
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -118,6 +121,7 @@ class PDFPageView {
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
+    this.pageColors = options.pageColors || null;
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
@@ -832,6 +836,7 @@ class PDFPageView {
       annotationMode: this.#annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       annotationCanvasMap: this._annotationCanvasMap,
+      pageColors: this.pageColors,
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
