@@ -100,9 +100,6 @@ function getViewerConfiguration() {
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
       toggleButton: document.getElementById("secondaryToolbarToggle"),
-      toolbarButtonContainer: document.getElementById(
-        "secondaryToolbarButtonContainer"
-      ),
       presentationModeButton: document.getElementById(
         "secondaryPresentationMode"
       ),

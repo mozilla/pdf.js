@@ -300,6 +300,7 @@ class BaseViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add("removePageBorders");
     }
+    this.updateContainerHeightCss();
     // Defer the dispatching of this event, to give other viewer components
     // time to initialize *and* register 'baseviewerinit' event listeners.
     Promise.resolve().then(() => {
@@ -936,7 +937,6 @@ class BaseViewer {
       if (this.isInPresentationMode) {
         const dummyPage = document.createElement("div");
         dummyPage.className = "dummyPage";
-        dummyPage.style.height = `${this.container.clientHeight}px`;
         spread.appendChild(dummyPage);
       }
 
@@ -994,14 +994,6 @@ class BaseViewer {
    * only because of limited numerical precision.
    */
   #isSameScale(newScale) {
-    if (
-      this.isInPresentationMode &&
-      this.container.clientHeight !== this.#previousContainerHeight
-    ) {
-      // Ensure that the current page remains centered vertically if/when
-      // the window is resized while PresentationMode is active.
-      return false;
-    }
     return (
       newScale === this._currentScale ||
       Math.abs(newScale - this._currentScale) < 1e-15
@@ -1062,8 +1054,7 @@ class BaseViewer {
     if (this.defaultRenderingQueue) {
       this.update();
     }
-
-    this.#previousContainerHeight = this.container.clientHeight;
+    this.updateContainerHeightCss();
   }
 
   /**
@@ -1096,8 +1087,7 @@ class BaseViewer {
         hPadding = vPadding = 4;
       } else if (this.removePageBorders) {
         hPadding = vPadding = 0;
-      }
-      if (this._scrollMode === ScrollMode.HORIZONTAL) {
+      } else if (this._scrollMode === ScrollMode.HORIZONTAL) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       const pageWidthScale =
@@ -2076,6 +2066,16 @@ class BaseViewer {
       newScale = Math.max(MIN_SCALE, newScale);
     } while (--steps > 0 && newScale > MIN_SCALE);
     this.currentScaleValue = newScale;
+  }
+
+  updateContainerHeightCss() {
+    const height = this.container.clientHeight;
+
+    if (height !== this.#previousContainerHeight) {
+      this.#previousContainerHeight = height;
+
+      this._doc.style.setProperty("--viewer-container-height", `${height}px`);
+    }
   }
 }
 
