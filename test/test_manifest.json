@@ -4630,6 +4630,12 @@
        "password": "\u00E6\u00F8\u00E5",
        "about": "The password (æøå) is UTF8 encoded."
     },
+    {  "id": "issue14881",
+       "file": "pdfs/issue14881.pdf",
+       "md5": "1aa3f2c7929eaf4502fcf6488ff31b5f",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "High-Pressure-Measurement-WP-001287",
        "file": "pdfs/High-Pressure-Measurement-WP-001287.pdf",
        "md5": "aeba7e47bbe50cbf08bb8bdff78fec8c",
