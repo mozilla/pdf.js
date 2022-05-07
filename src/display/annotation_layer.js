@@ -23,7 +23,6 @@ import {
   AnnotationType,
   assert,
   shadow,
-  stringToPDFString,
   unreachable,
   Util,
   warn,
@@ -2296,7 +2295,6 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
 
     this.linkService.eventBus?.dispatch("fileattachmentannotation", {
       source: this,
-      id: stringToPDFString(filename),
       filename,
       content,
     });
