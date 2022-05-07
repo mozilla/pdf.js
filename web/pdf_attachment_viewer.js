@@ -38,7 +38,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
 
     this.eventBus._on(
       "fileattachmentannotation",
-      this._appendAttachment.bind(this)
+      this.#appendAttachment.bind(this)
     );
   }
 
@@ -140,27 +140,22 @@ class PDFAttachmentViewer extends BaseTreeViewer {
 
   /**
    * Used to append FileAttachment annotations to the sidebar.
-   * @private
    */
-  _appendAttachment({ id, filename, content }) {
+  #appendAttachment({ filename, content }) {
     const renderedPromise = this._renderedCapability.promise;
 
     renderedPromise.then(() => {
       if (renderedPromise !== this._renderedCapability.promise) {
         return; // The FileAttachment annotation belongs to a previous document.
       }
-      let attachments = this._attachments;
+      const attachments = this._attachments || Object.create(null);
 
-      if (!attachments) {
-        attachments = Object.create(null);
-      } else {
-        for (const name in attachments) {
-          if (id === name) {
-            return; // Ignore the new attachment if it already exists.
-          }
+      for (const name in attachments) {
+        if (filename === name) {
+          return; // Ignore the new attachment if it already exists.
         }
       }
-      attachments[id] = {
+      attachments[filename] = {
         filename,
         content,
       };
