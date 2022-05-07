@@ -70,7 +70,7 @@ class Toolbar {
       { element: options.download, eventName: "download" },
       { element: options.viewBookmark, eventName: null },
     ];
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({ element: options.openFile, eventName: "openfile" });
     }
     this.items = {
