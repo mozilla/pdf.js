@@ -1334,6 +1334,11 @@ gulp.task(
       const CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
         CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
 
+      const CHROME_WEB_FILES = [
+        ...COMMON_WEB_FILES,
+        "!web/images/toolbarButton-openFile.svg",
+      ];
+
       // Clear out everything in the chrome extension build directory
       rimraf.sync(CHROME_BUILD_DIR);
 
@@ -1353,7 +1358,7 @@ gulp.task(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
         ),
         gulp
-          .src(COMMON_WEB_FILES, { base: "web/" })
+          .src(CHROME_WEB_FILES, { base: "web/" })
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
         gulp
