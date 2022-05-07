@@ -963,10 +963,12 @@ class BaseViewer {
     this.update();
   }
 
-  _scrollIntoView({ pageDiv, pageNumber, pageSpot = null }) {
+  #scrollIntoView(pageView, pageSpot = null) {
+    const { div, id } = pageView;
+
     if (this._scrollMode === ScrollMode.PAGE) {
       // Ensure that `this._currentPageNumber` is correct.
-      this._setCurrentPageNumber(pageNumber);
+      this._setCurrentPageNumber(id);
 
       this.#ensurePageViewVisible();
       // Ensure that rendering always occurs, to avoid showing a blank page,
@@ -975,8 +977,8 @@ class BaseViewer {
     }
 
     if (!pageSpot && !this.isInPresentationMode) {
-      const left = pageDiv.offsetLeft + pageDiv.clientLeft;
-      const right = left + pageDiv.clientWidth;
+      const left = div.offsetLeft + div.clientLeft,
+        right = left + div.clientWidth;
       const { scrollLeft, clientWidth } = this.container;
       if (
         this._scrollMode === ScrollMode.HORIZONTAL ||
@@ -986,7 +988,7 @@ class BaseViewer {
         pageSpot = { left: 0, top: 0 };
       }
     }
-    scrollIntoView(pageDiv, pageSpot);
+    scrollIntoView(div, pageSpot);
   }
 
   /**
@@ -1140,15 +1142,13 @@ class BaseViewer {
    * Refreshes page view: scrolls to the current page and updates the scale.
    */
   #resetCurrentPageView() {
-    const pageNumber = this._currentPageNumber;
+    const pageView = this._pages[this._currentPageNumber - 1];
 
     if (this.isInPresentationMode) {
       // Fixes the case when PDF has different page sizes.
       this._setScale(this._currentScaleValue, true);
     }
-
-    const pageView = this._pages[pageNumber - 1];
-    this._scrollIntoView({ pageDiv: pageView.div, pageNumber });
+    this.#scrollIntoView(pageView);
   }
 
   /**
@@ -1292,10 +1292,7 @@ class BaseViewer {
     }
 
     if (scale === "page-fit" && !destArray[4]) {
-      this._scrollIntoView({
-        pageDiv: pageView.div,
-        pageNumber,
-      });
+      this.#scrollIntoView(pageView);
       return;
     }
 
@@ -1313,11 +1310,7 @@ class BaseViewer {
       left = Math.max(left, 0);
       top = Math.max(top, 0);
     }
-    this._scrollIntoView({
-      pageDiv: pageView.div,
-      pageSpot: { left, top },
-      pageNumber,
-    });
+    this.#scrollIntoView(pageView, /* pageSpot = */ { left, top });
   }
 
   _updateLocation(firstPage) {
