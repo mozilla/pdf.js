@@ -574,7 +574,6 @@ const PDFViewerApplication = {
 
     this.secondaryToolbar = new SecondaryToolbar(
       appConfig.secondaryToolbar,
-      container,
       eventBus
     );
 
@@ -2401,6 +2400,8 @@ function webViewerSpreadModeChanged(evt) {
 
 function webViewerResize() {
   const { pdfDocument, pdfViewer } = PDFViewerApplication;
+  pdfViewer.updateContainerHeightCss();
+
   if (!pdfDocument) {
     return;
   }
