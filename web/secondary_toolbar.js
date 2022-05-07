@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { SCROLLBAR_PADDING, ScrollMode, SpreadMode } from "./ui_utils.js";
+import { ScrollMode, SpreadMode } from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
 import { PagesCountLimit } from "./base_viewer.js";
 
@@ -22,9 +22,6 @@ import { PagesCountLimit } from "./base_viewer.js";
  * @property {HTMLDivElement} toolbar - Container for the secondary toolbar.
  * @property {HTMLButtonElement} toggleButton - Button to toggle the visibility
  *   of the secondary toolbar.
- * @property {HTMLDivElement} toolbarButtonContainer - Container where all the
- *   toolbar buttons are placed. The maximum height of the toolbar is controlled
- *   dynamically by adjusting the 'max-height' CSS property of this DOM element.
  * @property {HTMLButtonElement} presentationModeButton - Button for entering
  *   presentation mode.
  * @property {HTMLButtonElement} openFileButton - Button to open a file.
@@ -52,13 +49,11 @@ import { PagesCountLimit } from "./base_viewer.js";
 class SecondaryToolbar {
   /**
    * @param {SecondaryToolbarOptions} options
-   * @param {HTMLDivElement} mainContainer
    * @param {EventBus} eventBus
    */
-  constructor(options, mainContainer, eventBus) {
+  constructor(options, eventBus) {
     this.toolbar = options.toolbar;
     this.toggleButton = options.toggleButton;
-    this.toolbarButtonContainer = options.toolbarButtonContainer;
     this.buttons = [
       {
         element: options.presentationModeButton,
@@ -154,12 +149,8 @@ class SecondaryToolbar {
       pageRotateCcw: options.pageRotateCcwButton,
     };
 
-    this.mainContainer = mainContainer;
     this.eventBus = eventBus;
-
     this.opened = false;
-    this.containerHeight = null;
-    this.previousContainerHeight = null;
 
     this.reset();
 
@@ -169,9 +160,6 @@ class SecondaryToolbar {
     this.#bindCursorToolsListener(options);
     this.#bindScrollModeListener(options);
     this.#bindSpreadModeListener(options);
-
-    // Bind the event listener for adjusting the 'max-height' of the toolbar.
-    this.eventBus._on("resize", this.#setMaxHeight.bind(this));
   }
 
   /**
@@ -322,8 +310,6 @@ class SecondaryToolbar {
       return;
     }
     this.opened = true;
-    this.#setMaxHeight();
-
     this.toggleButton.classList.add("toggled");
     this.toggleButton.setAttribute("aria-expanded", "true");
     this.toolbar.classList.remove("hidden");
@@ -345,22 +331,6 @@ class SecondaryToolbar {
     } else {
       this.open();
     }
-  }
-
-  #setMaxHeight() {
-    if (!this.opened) {
-      return; // Only adjust the 'max-height' if the toolbar is visible.
-    }
-    this.containerHeight = this.mainContainer.clientHeight;
-
-    if (this.containerHeight === this.previousContainerHeight) {
-      return;
-    }
-    this.toolbarButtonContainer.style.maxHeight = `${
-      this.containerHeight - SCROLLBAR_PADDING
-    }px`;
-
-    this.previousContainerHeight = this.containerHeight;
   }
 }
 
