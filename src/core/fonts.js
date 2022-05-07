@@ -1499,14 +1499,14 @@ class Font {
       }
 
       const format = file.getUint16();
-      file.skip(2 + 2); // length + language
-
       let hasShortCmap = false;
       const mappings = [];
       let j, glyphId;
 
       // TODO(mack): refactor this cmap subtable reading logic out
       if (format === 0) {
+        file.skip(2 + 2); // length + language
+
         for (j = 0; j < 256; j++) {
           const index = file.getByte();
           if (!index) {
@@ -1519,6 +1519,8 @@ class Font {
         }
         hasShortCmap = true;
       } else if (format === 2) {
+        file.skip(2 + 2); // length + language
+
         const subHeaderKeys = [];
         let maxSubHeaderKey = 0;
         // Read subHeaderKeys. If subHeaderKeys[i] === 0, then i is a
@@ -1568,6 +1570,8 @@ class Font {
           }
         }
       } else if (format === 4) {
+        file.skip(2 + 2); // length + language
+
         // re-creating the table in format 4 since the encoding
         // might be changed
         const segCount = file.getUint16() >> 1;
@@ -1630,6 +1634,8 @@ class Font {
           }
         }
       } else if (format === 6) {
+        file.skip(2 + 2); // length + language
+
         // Format 6 is a 2-bytes dense mapping, which means the font data
         // lives glue together even if they are pretty far in the unicode
         // table. (This looks weird, so I can have missed something), this
@@ -1646,6 +1652,26 @@ class Font {
             charCode,
             glyphId,
           });
+        }
+      } else if (format === 12) {
+        file.skip(2 + 4 + 4); // reserved + length + language
+
+        const nGroups = file.getInt32() >>> 0;
+        for (j = 0; j < nGroups; j++) {
+          const startCharCode = file.getInt32() >>> 0;
+          const endCharCode = file.getInt32() >>> 0;
+          let glyphCode = file.getInt32() >>> 0;
+
+          for (
+            let charCode = startCharCode;
+            charCode <= endCharCode;
+            charCode++
+          ) {
+            mappings.push({
+              charCode,
+              glyphId: glyphCode++,
+            });
+          }
         }
       } else {
         warn("cmap table has unsupported format: " + format);
