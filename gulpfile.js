@@ -816,7 +816,7 @@ gulp.task("cmaps", function (done) {
 
 function preprocessCSS(source, defines) {
   const outName = getTempFile("~preprocess", ".css");
-  builder.preprocessCSS(source, outName, defines);
+  builder.preprocess(source, outName, defines);
   let out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
 
