@@ -191,7 +191,7 @@ class EventDispatcher {
       let formattedValue = null;
 
       if (this.runActions(source, source, event, "Format")) {
-        formattedValue = event.value;
+        formattedValue = event.value?.toString?.();
       }
 
       source.obj._send({
@@ -296,7 +296,7 @@ class EventDispatcher {
       savedValue = event.value = target.obj.value;
       let formattedValue = null;
       if (this.runActions(target, target, event, "Format")) {
-        formattedValue = event.value;
+        formattedValue = event.value?.toString?.();
       }
 
       target.obj._send({
