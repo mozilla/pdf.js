@@ -1952,6 +1952,9 @@ const PDFViewerApplication = {
   },
 
   unbindEvents() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: unbindEvents");
+    }
     const { eventBus, _boundEvents } = this;
 
     eventBus._off("resize", webViewerResize);
@@ -2008,6 +2011,9 @@ const PDFViewerApplication = {
   },
 
   unbindWindowEvents() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: unbindWindowEvents");
+    }
     const { _boundEvents } = this;
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
