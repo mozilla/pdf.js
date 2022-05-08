@@ -526,8 +526,8 @@ const PDFViewerApplication = {
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enablePermissions: AppOptions.get("enablePermissions"),
       pageColors: {
-        background: AppOptions.get("pageBackgroundColor"),
-        foreground: AppOptions.get("pageForegroundColor"),
+        background: AppOptions.get("pageColorsBackground"),
+        foreground: AppOptions.get("pageColorsForeground"),
       },
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);

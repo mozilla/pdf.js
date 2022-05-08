@@ -129,12 +129,12 @@ const defaultOptions = {
     compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
   },
-  pageBackgroundColor: {
+  pageColorsBackground: {
     /** @type {string} */
     value: "Canvas",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  pageForegroundColor: {
+  pageColorsForeground: {
     /** @type {string} */
     value: "CanvasText",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
