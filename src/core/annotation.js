@@ -1532,6 +1532,8 @@ class WidgetAnnotation extends Annotation {
       }
     }
 
+    assert(typeof value === "string", "Expected `value` to be a string.");
+
     value = value.trim();
 
     if (value === "") {
