@@ -135,7 +135,7 @@ class SecondaryToolbar {
         close: true,
       },
     ];
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({
         element: options.openFileButton,
         eventName: "openfile",
