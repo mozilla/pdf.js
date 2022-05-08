@@ -1302,7 +1302,19 @@ class CanvasGraphics {
           typeof defaultBg === "string" && /^#[0-9A-Fa-f]{6}$/.test(defaultBg);
       }
 
-      if ((fg === "#000000" && bg === "#ffffff") || !isValidDefaultBg) {
+      if (
+        (fg === "#000000" && bg === "#ffffff") ||
+        fg === bg ||
+        !isValidDefaultBg
+      ) {
+        // Ignore the `pageColors`-option when:
+        //  - The computed background/foreground colors have their default
+        //    values, i.e. white/black.
+        //  - The computed background/foreground colors are identical,
+        //    since that'd render the `canvas` mostly blank.
+        //  - The `background`-option has a value that's incompatible with
+        //    the `pageColors`-values.
+        //
         this.foregroundColor = this.backgroundColor = null;
       } else {
         // https://developer.mozilla.org/en-US/docs/Web/Accessibility/Understanding_Colors_and_Luminance
