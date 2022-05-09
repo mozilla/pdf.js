@@ -51,13 +51,6 @@ class TempImageFactory {
 
     // Since this is a temporary canvas, we need to fill it with a white
     // background ourselves. `_getPageDrawContext` uses CSS rules for this.
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      tempCanvas.mozOpaque = true;
-    }
-
     const ctx = tempCanvas.getContext("2d", { alpha: false });
     ctx.save();
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -225,13 +218,6 @@ class PDFThumbnailView {
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
     const canvas = document.createElement("canvas");
-
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
     const ctx = canvas.getContext("2d", { alpha: false });
     const outputScale = new OutputScale();
 

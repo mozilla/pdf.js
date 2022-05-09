@@ -261,12 +261,6 @@ class Toolbar {
 
     // The temporary canvas is used to measure text length in the DOM.
     let canvas = document.createElement("canvas");
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
     let ctx = canvas.getContext("2d", { alpha: false });
 
     await animationStarted;

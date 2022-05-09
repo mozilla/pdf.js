@@ -730,12 +730,6 @@ class TextLayerRenderTask {
     const canvas = this._document.createElement("canvas");
     canvas.height = canvas.width = DEFAULT_FONT_SIZE;
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
     this._layoutTextCtx = canvas.getContext("2d", { alpha: false });
 
     if (this._textContent) {
