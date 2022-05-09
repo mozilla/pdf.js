@@ -607,7 +607,6 @@ class Driver {
         this._log(
           " Loading page " + task.pageNum + "/" + task.pdfDoc.numPages + "... "
         );
-        this.canvas.mozOpaque = true;
         ctx = this.canvas.getContext("2d", { alpha: false });
         task.pdfDoc.getPage(task.pageNum).then(
           page => {

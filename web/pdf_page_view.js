@@ -783,13 +783,6 @@ class PDFPageView {
     canvasWrapper.appendChild(canvas);
     this.canvas = canvas;
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
-
     const ctx = canvas.getContext("2d", { alpha: false });
     const outputScale = (this.outputScale = new OutputScale());
 
