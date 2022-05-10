@@ -3618,6 +3618,7 @@ describe("annotation", function () {
       lineDict.set("Type", Name.get("Annot"));
       lineDict.set("Subtype", Name.get("Line"));
       lineDict.set("L", [1, 2, 3, 4]);
+      lineDict.set("LE", ["Square", "Circle"]);
 
       const lineRef = Ref.get(122, 0);
       const xref = new XRefMock([{ ref: lineRef, data: lineDict }]);
@@ -3630,6 +3631,28 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.LINE);
       expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+      expect(data.lineEndings).toEqual(["None", "None"]);
+    });
+
+    it("should set the line endings", async function () {
+      const lineDict = new Dict();
+      lineDict.set("Type", Name.get("Annot"));
+      lineDict.set("Subtype", Name.get("Line"));
+      lineDict.set("L", [1, 2, 3, 4]);
+      lineDict.set("LE", [Name.get("Square"), Name.get("Circle")]);
+
+      const lineRef = Ref.get(122, 0);
+      const xref = new XRefMock([{ ref: lineRef, data: lineDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        lineRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.LINE);
+      expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+      expect(data.lineEndings).toEqual(["Square", "Circle"]);
     });
   });
 
