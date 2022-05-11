@@ -57,7 +57,7 @@ function preprocess(inFilename, outFilename, defines) {
   }
   const lines = content.split("\n"),
     totalLines = lines.length;
-  let out = "";
+  const out = [];
   let i = 0;
   function readLine() {
     if (i < totalLines) {
@@ -69,7 +69,7 @@ function preprocess(inFilename, outFilename, defines) {
     typeof outFilename === "function"
       ? outFilename
       : function (line) {
-          out += line + "\n";
+          out.push(line);
         };
   function evaluateCondition(code) {
     if (!code || !code.trim()) {
@@ -210,7 +210,7 @@ function preprocess(inFilename, outFilename, defines) {
     );
   }
   if (typeof outFilename !== "function") {
-    fs.writeFileSync(outFilename, out);
+    fs.writeFileSync(outFilename, out.join("\n"));
   }
 }
 exports.preprocess = preprocess;
