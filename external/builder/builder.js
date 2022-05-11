@@ -4,6 +4,8 @@ const fs = require("fs"),
   path = require("path"),
   vm = require("vm");
 
+const AllWhitespaceRegexp = /^\s+$/g;
+
 /**
  * A simple preprocessor that is based on the Firefox preprocessor
  * (https://dxr.mozilla.org/mozilla-central/source/build/docs/preprocessor.rst).
@@ -69,6 +71,12 @@ function preprocess(inFilename, outFilename, defines) {
     typeof outFilename === "function"
       ? outFilename
       : function (line) {
+          if (!line || AllWhitespaceRegexp.test(line)) {
+            const prevLine = out[out.length - 1];
+            if (!prevLine || AllWhitespaceRegexp.test(prevLine)) {
+              return; // Avoid adding consecutive blank lines.
+            }
+          }
           out.push(line);
         };
   function evaluateCondition(code) {
