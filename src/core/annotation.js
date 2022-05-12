@@ -614,6 +614,39 @@ class Annotation {
   }
 
   /**
+   * Set the line endings; should only be used with specific annotation types.
+   * @param {Array} lineEndings - The line endings array.
+   */
+  setLineEndings(lineEndings) {
+    this.lineEndings = ["None", "None"]; // The default values.
+
+    if (Array.isArray(lineEndings) && lineEndings.length === 2) {
+      for (let i = 0; i < 2; i++) {
+        const obj = lineEndings[i];
+
+        if (obj instanceof Name) {
+          switch (obj.name) {
+            case "None":
+              continue;
+            case "Square":
+            case "Circle":
+            case "Diamond":
+            case "OpenArrow":
+            case "ClosedArrow":
+            case "Butt":
+            case "ROpenArrow":
+            case "RClosedArrow":
+            case "Slash":
+              this.lineEndings[i] = obj.name;
+              continue;
+          }
+        }
+        warn(`Ignoring invalid lineEnding: ${obj}`);
+      }
+    }
+  }
+
+  /**
    * Set the color for background and border if any.
    * The default values are transparent.
    *
@@ -2803,22 +2836,26 @@ class LineAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
+    const { dict } = parameters;
     this.data.annotationType = AnnotationType.LINE;
 
-    const lineCoordinates = parameters.dict.getArray("L");
+    const lineCoordinates = dict.getArray("L");
     this.data.lineCoordinates = Util.normalizeRect(lineCoordinates);
+
+    this.setLineEndings(dict.getArray("LE"));
+    this.data.lineEndings = this.lineEndings;
 
     if (!this.appearance) {
       // The default stroke color is black.
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
-      const strokeAlpha = parameters.dict.get("CA");
+      const strokeAlpha = dict.get("CA");
 
       // The default fill color is transparent. Setting the fill colour is
       // necessary if/when we want to add support for non-default line endings.
       let fillColor = null,
-        interiorColor = parameters.dict.getArray("IC");
+        interiorColor = dict.getArray("IC");
       if (interiorColor) {
         interiorColor = getRgbColor(interiorColor, null);
         fillColor = interiorColor
@@ -2996,13 +3033,20 @@ class PolylineAnnotation extends MarkupAnnotation {
   constructor(parameters) {
     super(parameters);
 
+    const { dict } = parameters;
     this.data.annotationType = AnnotationType.POLYLINE;
     this.data.vertices = [];
+
+    if (!(this instanceof PolygonAnnotation)) {
+      // Only meaningful for polyline annotations.
+      this.setLineEndings(dict.getArray("LE"));
+      this.data.lineEndings = this.lineEndings;
+    }
 
     // The vertices array is an array of numbers representing the alternating
     // horizontal and vertical coordinates, respectively, of each vertex.
     // Convert this to an array of objects with x and y coordinates.
-    const rawVertices = parameters.dict.getArray("Vertices");
+    const rawVertices = dict.getArray("Vertices");
     if (!Array.isArray(rawVertices)) {
       return;
     }
@@ -3018,7 +3062,7 @@ class PolylineAnnotation extends MarkupAnnotation {
       const strokeColor = this.color
         ? Array.from(this.color).map(c => c / 255)
         : [0, 0, 0];
-      const strokeAlpha = parameters.dict.get("CA");
+      const strokeAlpha = dict.get("CA");
 
       const borderWidth = this.borderStyle.width || 1,
         borderAdjust = 2 * borderWidth;
