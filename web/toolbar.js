@@ -260,8 +260,8 @@ class Toolbar {
       );
 
     // The temporary canvas is used to measure text length in the DOM.
-    let canvas = document.createElement("canvas");
-    let ctx = canvas.getContext("2d", { alpha: false });
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
     ctx.font = `${style.fontSize} ${style.fontFamily}`;
 
     let maxWidth = 0;
@@ -281,7 +281,6 @@ class Toolbar {
     // immediately, which can greatly reduce memory consumption.
     canvas.width = 0;
     canvas.height = 0;
-    canvas = ctx = null;
   }
 }
 
