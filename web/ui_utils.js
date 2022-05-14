@@ -23,8 +23,6 @@ const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
 
-const LOADINGBAR_END_OFFSET_VAR = "--loadingBar-end-offset";
-
 const RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -684,7 +682,16 @@ function clamp(v, min, max) {
 }
 
 class ProgressBar {
-  constructor(id, { height, width, units } = {}) {
+  constructor(id) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      arguments.length > 1
+    ) {
+      throw new Error(
+        "ProgressBar no longer accepts any additional options, " +
+          "please use CSS rules to modify its appearance instead."
+      );
+    }
     this.visible = true;
 
     // Fetch the sub-elements for later.
@@ -692,26 +699,18 @@ class ProgressBar {
     // Get the loading bar element, so it can be resized to fit the viewer.
     this.bar = this.div.parentNode;
 
-    // Get options, with sensible defaults.
-    this.height = height || 100;
-    this.width = width || 100;
-    this.units = units || "%";
-
-    // Initialize heights.
-    this.div.style.height = this.height + this.units;
     this.percent = 0;
   }
 
-  _updateBar() {
+  #updateBar() {
     if (this._indeterminate) {
       this.div.classList.add("indeterminate");
-      this.div.style.width = this.width + this.units;
       return;
     }
-
     this.div.classList.remove("indeterminate");
-    const progressSize = (this.width * this._percent) / 100;
-    this.div.style.width = progressSize + this.units;
+
+    const doc = document.documentElement;
+    doc.style.setProperty("--progressBar-percent", `${this._percent}%`);
   }
 
   get percent() {
@@ -721,7 +720,7 @@ class ProgressBar {
   set percent(val) {
     this._indeterminate = isNaN(val);
     this._percent = clamp(val, 0, 100);
-    this._updateBar();
+    this.#updateBar();
   }
 
   setWidth(viewer) {
@@ -732,7 +731,7 @@ class ProgressBar {
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
       const doc = document.documentElement;
-      doc.style.setProperty(LOADINGBAR_END_OFFSET_VAR, `${scrollbarWidth}px`);
+      doc.style.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
     }
   }
 

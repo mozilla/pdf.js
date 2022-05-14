@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+:root {
+  --progressBar-percent: 0%;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -191,13 +195,12 @@ canvas {
   height: 0.6rem;
   background-color: rgba(51, 51, 51, 1);
   border-bottom: 1px solid rgba(51, 51, 51, 1);
-  margin-top: 5rem;
 }
 
 #loadingBar .progress {
   position: absolute;
   left: 0;
-  width: 0;
+  width: var(--progressBar-percent);
   height: 100%;
   background-color: rgba(221, 221, 221, 1);
   overflow: hidden;
@@ -217,6 +220,7 @@ canvas {
 }
 
 #loadingBar .progress.indeterminate {
+  width: 100%;
   background-color: rgba(153, 153, 153, 1);
   transition: none;
 }
