@@ -230,7 +230,7 @@ function createWebpackConfig(
   }
 
   // Required to expose e.g., the `window` object.
-  output.globalObject = "this";
+  output.globalObject = "globalThis";
 
   return {
     mode: "none",
