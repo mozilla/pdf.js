@@ -82,7 +82,9 @@ const PDFViewerApplication = {
         self.pdfDocument = pdfDocument;
         self.pdfViewer.setDocument(pdfDocument);
         self.pdfLinkService.setDocument(pdfDocument);
-        self.pdfHistory.initialize({ fingerprint: pdfDocument.fingerprint });
+        self.pdfHistory.initialize({
+          fingerprint: pdfDocument.fingerprints[0],
+        });
 
         self.loadingBar.hide();
         self.setTitleUsingMetadata(pdfDocument);
@@ -159,7 +161,7 @@ const PDFViewerApplication = {
   },
 
   get loadingBar() {
-    const bar = new pdfjsViewer.ProgressBar("#loadingBar", {});
+    const bar = new pdfjsViewer.ProgressBar("#loadingBar");
 
     return pdfjsLib.shadow(this, "loadingBar", bar);
   },
@@ -187,7 +189,7 @@ const PDFViewerApplication = {
       // Provides some basic debug information
       console.log(
         "PDF " +
-          pdfDocument.fingerprint +
+          pdfDocument.fingerprints[0] +
           " [" +
           info.PDFFormatVersion +
           " " +
