@@ -4765,6 +4765,7 @@ class EvaluatorPreprocessor {
     });
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
+    this._isPathOp = false;
     this._numInvalidPathOPS = 0;
   }
 
@@ -4810,6 +4811,13 @@ class EvaluatorPreprocessor {
         const numArgs = opSpec.numArgs;
         let argsLength = args !== null ? args.length : 0;
 
+        // If the *previous* command wasn't a path operator, reset the heuristic
+        // used with incomplete path operators below (fixes issue14917.pdf).
+        if (!this._isPathOp) {
+          this._numInvalidPathOPS = 0;
+        }
+        this._isPathOp = fn >= OPS.moveTo && fn <= OPS.endPath;
+
         if (!opSpec.variableArgs) {
           // Postscript commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
           if (argsLength !== numArgs) {
@@ -4837,8 +4845,7 @@ class EvaluatorPreprocessor {
             // used to error, rather than just warn, once a number of invalid
             // path operators have been encountered (fixes bug1443140.pdf).
             if (
-              fn >= OPS.moveTo &&
-              fn <= OPS.endPath && // Path operator
+              this._isPathOp &&
               ++this._numInvalidPathOPS >
                 EvaluatorPreprocessor.MAX_INVALID_PATH_OPS
             ) {

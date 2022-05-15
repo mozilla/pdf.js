@@ -3016,6 +3016,14 @@
        },
        "about": "Need to test *at least* three pages, since the `GlobalImageCache` is involved."
     },
+    {  "id": "issue14917",
+       "file": "pdfs/issue14917.pdf",
+       "md5": "12201b35853f78a501ac46b91608f8b6",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue1127-text",
        "file": "pdfs/issue1127.pdf",
        "md5": "4fb2be5ffefeafda4ba977de2a1bb4d8",
