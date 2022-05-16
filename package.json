@@ -43,5 +43,6 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "packageManager": "yarn@3.2.0"
 }
