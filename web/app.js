@@ -538,6 +538,10 @@ const PDFViewerApplication = {
       pageViewMode: AppOptions.get("pageViewMode"),
       /** end of modification */
       enablePermissions: AppOptions.get("enablePermissions"),
+      pageColors: {
+        background: AppOptions.get("pageColorsBackground"),
+        foreground: AppOptions.get("pageColorsForeground"),
+      },
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -583,7 +587,6 @@ const PDFViewerApplication = {
 
     this.secondaryToolbar = new SecondaryToolbar(
       appConfig.secondaryToolbar,
-      container,
       eventBus
     );
 
@@ -2026,6 +2029,9 @@ const PDFViewerApplication = {
   },
 
   unbindEvents() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: unbindEvents");
+    }
     const { eventBus, _boundEvents } = this;
 
     eventBus._off("resize", webViewerResize);
@@ -2082,6 +2088,9 @@ const PDFViewerApplication = {
   },
 
   unbindWindowEvents() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      throw new Error("Not implemented: unbindWindowEvents");
+    }
     const { _boundEvents } = this;
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
@@ -2281,9 +2290,6 @@ function webViewerInitialized() {
         });
       } // #686 end of modification
     });
-  } else if (!PDFJSDev.test("MOZCENTRAL")) {
-    appConfig.toolbar.openFile.hidden = true;
-    appConfig.secondaryToolbar.openFileButton.hidden = true;
   }
 
   if (!PDFViewerApplication.supportsDocumentFonts) {
@@ -2496,6 +2502,8 @@ function webViewerSpreadModeChanged(evt) {
 
 function webViewerResize() {
   const { pdfDocument, pdfViewer } = PDFViewerApplication;
+  pdfViewer.updateContainerHeightCss();
+
   if (!pdfDocument) {
     return;
   }

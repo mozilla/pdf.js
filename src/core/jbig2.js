@@ -1558,9 +1558,7 @@ class SimpleSegmentVisitor {
     // The contents of ArrayBuffers are initialized to 0.
     // Fill the buffer with 0xFF only if info.defaultPixelValue is set
     if (info.defaultPixelValue) {
-      for (let i = 0, ii = buffer.length; i < ii; i++) {
-        buffer[i] = 0xff;
-      }
+      buffer.fill(0xff);
     }
     this.buffer = buffer;
   }

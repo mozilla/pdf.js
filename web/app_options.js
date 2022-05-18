@@ -129,6 +129,16 @@ const defaultOptions = {
     compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
   },
+  pageColorsBackground: {
+    /** @type {string} */
+    value: "Canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  pageColorsForeground: {
+    /** @type {string} */
+    value: "CanvasText",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   pdfBugEnabled: {
     /** @type {boolean} */
     value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),

@@ -78,8 +78,19 @@ class PDFPresentationMode {
       pageNumber: pdfViewer.currentPageNumber,
       scaleValue: pdfViewer.currentScaleValue,
       scrollMode: pdfViewer.scrollMode,
-      spreadMode: pdfViewer.spreadMode,
+      spreadMode: null,
     };
+
+    if (
+      pdfViewer.spreadMode !== SpreadMode.NONE &&
+      !(pdfViewer.pageViewsReady && pdfViewer.hasEqualPageSizes)
+    ) {
+      console.warn(
+        "Ignoring Spread modes when entering PresentationMode, " +
+          "since the document may contain varying page sizes."
+      );
+      this.#args.spreadMode = pdfViewer.spreadMode;
+    }
 
     try {
       await promise;
@@ -151,7 +162,9 @@ class PDFPresentationMode {
     // Presentation Mode, by waiting until fullscreen mode in enabled.
     setTimeout(() => {
       this.pdfViewer.scrollMode = ScrollMode.PAGE;
-      this.pdfViewer.spreadMode = SpreadMode.NONE;
+      if (this.#args.spreadMode !== null) {
+        this.pdfViewer.spreadMode = SpreadMode.NONE;
+      }
       this.pdfViewer.currentPageNumber = this.#args.pageNumber;
       this.pdfViewer.currentScaleValue = "page-fit";
     }, 0);
@@ -177,7 +190,9 @@ class PDFPresentationMode {
       this.#notifyStateChange(PresentationModeState.NORMAL);
 
       this.pdfViewer.scrollMode = this.#args.scrollMode;
-      this.pdfViewer.spreadMode = this.#args.spreadMode;
+      if (this.#args.spreadMode !== null) {
+        this.pdfViewer.spreadMode = this.#args.spreadMode;
+      }
       this.pdfViewer.currentScaleValue = this.#args.scaleValue;
       this.pdfViewer.currentPageNumber = pageNumber;
       this.#args = null;

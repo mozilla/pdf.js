@@ -70,7 +70,7 @@ class Toolbar {
       { element: options.download, eventName: "download" },
       { element: options.viewBookmark, eventName: null },
     ];
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({ element: options.openFile, eventName: "openfile" });
     }
     this.items = {
@@ -181,7 +181,7 @@ class Toolbar {
 
     this.eventBus._on("localized", () => {
       this._wasLocalized = true;
-      this._adjustScaleWidth();
+      this.#adjustScaleWidth();
       this._updateUIState(true);
     });
   }
@@ -261,9 +261,8 @@ class Toolbar {
   /**
    * Increase the width of the zoom dropdown DOM element if, and only if, it's
    * too narrow to fit the *longest* of the localized strings.
-   * @private
    */
-  async _adjustScaleWidth() {
+  async #adjustScaleWidth() {
     const { items, l10n } = this;
 
     const predefinedValuesPromise = Promise.all([
@@ -272,6 +271,7 @@ class Toolbar {
       l10n.get("page_scale_fit"),
       l10n.get("page_scale_width"),
     ]);
+    await animationStarted;
 
     const style = getComputedStyle(items.scaleSelect),
       scaleSelectContainerWidth = parseInt(
@@ -284,16 +284,8 @@ class Toolbar {
       );
 
     // The temporary canvas is used to measure text length in the DOM.
-    let canvas = document.createElement("canvas");
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
-    let ctx = canvas.getContext("2d", { alpha: false });
-
-    await animationStarted;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
     ctx.font = `${style.fontSize} ${style.fontFamily}`;
 
     let maxWidth = 0;
@@ -315,7 +307,6 @@ class Toolbar {
     // immediately, which can greatly reduce memory consumption.
     canvas.width = 0;
     canvas.height = 0;
-    canvas = ctx = null;
   }
 }
 

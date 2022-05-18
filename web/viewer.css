@@ -22,14 +22,17 @@
   --sidebar-transition-timing-function: ease;
   --scale-select-container-width: 140px;
   --scale-select-overflow: 22px;
-  --loadingBar-end-offset: 0;
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
 
   --main-color: rgba(12, 12, 13, 1);
   --body-bg-color: rgba(237, 237, 240, 1);
-  --errorWrapper-bg-color: rgba(255, 110, 110, 1); /* -webkit-non-mozcentral */
+  /*#if !MOZCENTRAL*/
+  --errorWrapper-bg-color: rgba(255, 110, 110, 1);
+  /*#endif*/
+  --progressBar-percent: 0%;
+  --progressBar-end-offset: 0;
   --progressBar-color: rgba(10, 132, 255, 1);
   --progressBar-indeterminate-bg-color: rgba(221, 221, 222, 1);
   --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
@@ -77,7 +80,9 @@
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
-  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg); /* -webkit-non-mozcentral */
+  /*#if GENERIC*/
+  --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
+  /*#endif*/
   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
   --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
   --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
@@ -112,7 +117,9 @@
   :root {
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
-    --errorWrapper-bg-color: rgba(169, 14, 14, 1); /* -webkit-non-mozcentral */
+    /*#if !MOZCENTRAL*/
+    --errorWrapper-bg-color: rgba(169, 14, 14, 1);
+    /*#endif*/
     --progressBar-color: rgba(0, 96, 223, 1);
     --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
     --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
@@ -338,7 +345,7 @@ select {
 
 #loadingBar {
   position: absolute;
-  inset-inline: 0 var(--loadingBar-end-offset);
+  inset-inline: 0 var(--progressBar-end-offset);
   height: 4px;
   background-color: var(--body-bg-color);
   border-bottom: 1px solid var(--toolbar-border-color);
@@ -355,7 +362,7 @@ select {
   position: absolute;
   top: 0;
   left: 0;
-  width: 0%;
+  width: var(--progressBar-percent);
   height: 100%;
   background-color: var(--progressBar-color);
   overflow: hidden;
@@ -372,6 +379,7 @@ select {
 }
 
 #loadingBar .progress.indeterminate {
+  width: 100%;
   background-color: var(--progressBar-indeterminate-bg-color);
   transition: none;
 }
@@ -457,9 +465,11 @@ select {
 #findInput {
   width: 200px;
 }
+/*#if !MOZCENTRAL*/
 #findInput::-webkit-input-placeholder {
   color: rgba(191, 191, 191, 1);
 }
+/*#endif*/
 #findInput::placeholder {
   font-style: normal;
 }
@@ -482,7 +492,8 @@ select {
 
 #secondaryToolbarButtonContainer {
   max-width: 220px;
-  max-height: 400px;
+  min-height: 26px;
+  max-height: calc(var(--viewer-container-height) - 40px);
   overflow-y: auto;
   margin-bottom: -4px;
 }
@@ -816,10 +827,12 @@ select {
   mask-image: var(--toolbarButton-print-icon);
 }
 
-#openFile::before, /* -webkit-non-mozcentral */
-#secondaryOpenFile::before /* -webkit-non-mozcentral */ {
+/*#if GENERIC*/
+#openFile::before,
+#secondaryOpenFile::before {
   mask-image: var(--toolbarButton-openFile-icon);
 }
+/*#endif*/
 
 #download::before,
 #secondaryDownload::before {
@@ -1001,10 +1014,11 @@ a.secondaryToolbarButton[href="#"] {
   background-repeat: no-repeat;
   background-position: 3px;
 }
-
+/*#if !MOZCENTRAL*/
 #pageNumber::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
+/*#endif*/
 
 .toolbarField:focus {
   border-color: #0a84ff;
@@ -1173,7 +1187,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   background: rgba(0, 0, 255, 0.3);
 }
 
-#errorWrapper /* -webkit-non-mozcentral */ {
+/*#if !MOZCENTRAL*/
+#errorWrapper {
   background-color: var(--errorWrapper-bg-color);
   color: var(--main-color);
   left: 0;
@@ -1183,17 +1198,17 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding: 3px 6px;
 }
 
-#errorMessageLeft /* -webkit-non-mozcentral */ {
+#errorMessageLeft {
   float: left;
 }
-#errorMessageRight /* -webkit-non-mozcentral */ {
+#errorMessageRight {
   float: right;
 }
 
-#errorSpacer /* -webkit-non-mozcentral */ {
+#errorSpacer {
   clear: both;
 }
-#errorMoreInfo /* -webkit-non-mozcentral */ {
+#errorMoreInfo {
   background-color: var(--field-bg-color);
   color: var(--field-color);
   border: 1px solid var(--field-border-color);
@@ -1201,6 +1216,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   margin: 3px;
   width: 98%;
 }
+/*#endif*/
 
 .dialogButton {
   width: auto;

@@ -114,7 +114,7 @@ function getViewerConfiguration() {
       zoomOut: document.getElementById("zoomOut"),
       viewFind: document.getElementById("viewFind"),
       openFile:
-        typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
+        typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
           ? document.getElementById("openFile")
           : null,
       print: document.getElementById("print"),
@@ -125,14 +125,11 @@ function getViewerConfiguration() {
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
       toggleButton: document.getElementById("secondaryToolbarToggle"),
-      toolbarButtonContainer: document.getElementById(
-        "secondaryToolbarButtonContainer"
-      ),
       presentationModeButton: document.getElementById(
         "secondaryPresentationMode"
       ),
       openFileButton:
-        typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
+        typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
           ? document.getElementById("secondaryOpenFile")
           : null,
       printButton: document.getElementById("secondaryPrint"),
