@@ -24,6 +24,7 @@ import {
   escapeString,
   getModificationDate,
   isAscii,
+  LINE_FACTOR,
   OPS,
   RenderingIntentFlag,
   shadow,
@@ -54,11 +55,6 @@ import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
-
-// Represent the percentage of the height of a single-line field over
-// the font size.
-// Acrobat seems to use this value.
-const LINE_FACTOR = 1.35;
 
 class AnnotationFactory {
   /**
@@ -1921,6 +1917,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
+    this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
   }
 
   _getCombAppearance(defaultAppearance, font, text, width, hPadding, vPadding) {
@@ -2787,6 +2784,9 @@ class LinkAnnotation extends Annotation {
     if (quadPoints) {
       this.data.quadPoints = quadPoints;
     }
+
+    // The color entry for a link annotation is the color of the border.
+    this.data.borderColor = this.data.borderColor || this.data.color;
 
     Catalog.parseDestDictionary({
       destDict: params.dict,

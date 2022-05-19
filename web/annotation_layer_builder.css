@@ -59,10 +59,9 @@
   background-image: var(--annotation-unfocused-field-background);
   border: 1px solid transparent;
   box-sizing: border-box;
-  font-size: 9px;
+  font: 9px sans-serif;
   height: 100%;
   margin: 0;
-  padding: 0 3px;
   vertical-align: top;
   width: 100%;
 }
@@ -76,8 +75,6 @@
 }
 
 .annotationLayer .textWidgetAnnotation textarea {
-  font: message-box;
-  font-size: 9px;
   resize: none;
 }
 
@@ -167,7 +164,6 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
   appearance: none;
-  padding: 0;
 }
 
 .annotationLayer .popupWrapper {

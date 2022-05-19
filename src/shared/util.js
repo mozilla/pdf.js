@@ -18,6 +18,10 @@ import "./compatibility.js";
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+// Represent the percentage of the height of a single-line field over
+// the font size. Acrobat seems to use this value.
+const LINE_FACTOR = 1.35;
+
 /**
  * Refer to the `WorkerTransport.getRenderingIntent`-method in the API, to see
  * how these flags are being used:
@@ -1162,6 +1166,7 @@ export {
   isArrayBuffer,
   isArrayEqual,
   isAscii,
+  LINE_FACTOR,
   MissingPDFException,
   objectFromMap,
   objectSize,
