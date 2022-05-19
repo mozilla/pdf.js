@@ -751,7 +751,9 @@ class Driver {
               transform,
             };
             if (renderForms) {
-              renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
+              renderContext.annotationMode = task.annotationStorage
+                ? AnnotationMode.ENABLE_STORAGE
+                : AnnotationMode.ENABLE_FORMS;
             } else if (renderPrint) {
               if (task.annotationStorage) {
                 renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
