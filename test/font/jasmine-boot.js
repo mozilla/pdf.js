@@ -34,75 +34,68 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* globals jasmineRequire, TestReporter */
+/* globals jasmineRequire */
 
 // Modified jasmine's boot.js file to load PDF.js libraries async.
 
-'use strict';
+"use strict";
 
-function initializePDFJS(callback) {
-  Promise.all([SystemJS.import('pdfjs/core/fonts'),
-               SystemJS.import('pdfjs/core/stream'),
-               SystemJS.import('pdfjs/core/primitives'),
-               SystemJS.import('pdfjs/core/cmap')])
-         .then(function (modules) {
-    var fonts = modules[0], stream = modules[1],
-        primitives = modules[2], cmap = modules[3];
-    // Expose some of the PDFJS members to global scope for tests.
-    window.Font = fonts.Font;
-    window.ToUnicodeMap = fonts.ToUnicodeMap;
-    window.Stream = stream.Stream;
-    window.Name = primitives.Name;
-    window.CMapFactory = cmap.CMapFactory;
+import { TestReporter } from "../unit/testreporter.js";
 
-    callback();
-  });
+async function initializePDFJS(callback) {
+  await Promise.all(
+    [
+      "pdfjs-test/font/font_core_spec.js",
+      "pdfjs-test/font/font_os2_spec.js",
+      "pdfjs-test/font/font_post_spec.js",
+      "pdfjs-test/font/font_fpgm_spec.js",
+    ].map(function (moduleName) {
+      // eslint-disable-next-line no-unsanitized/method
+      return import(moduleName);
+    })
+  );
+
+  callback();
 }
 
-(function() {
+(function () {
   window.jasmine = jasmineRequire.core(jasmineRequire);
 
   jasmineRequire.html(jasmine);
 
-  var env = jasmine.getEnv();
+  const env = jasmine.getEnv();
 
-  var jasmineInterface = jasmineRequire.interface(jasmine, env);
+  const jasmineInterface = jasmineRequire.interface(jasmine, env);
   extend(window, jasmineInterface);
 
   // Runner Parameters
-  var queryString = new jasmine.QueryString({
+  const queryString = new jasmine.QueryString({
     getWindowLocation() {
       return window.location;
     },
   });
 
-  var catchingExceptions = queryString.getParam('catch');
-  env.catchExceptions(typeof catchingExceptions === 'undefined' ?
-                      true : catchingExceptions);
+  const config = {
+    failFast: queryString.getParam("failFast"),
+    oneFailurePerSpec: queryString.getParam("oneFailurePerSpec"),
+    hideDisabled: queryString.getParam("hideDisabled"),
+  };
 
-  var throwingExpectationFailures = queryString.getParam('throwFailures');
-  env.throwOnExpectationFailure(throwingExpectationFailures);
+  const random = queryString.getParam("random");
+  if (random !== undefined && random !== "") {
+    config.random = random;
+  }
 
-  var random = queryString.getParam('random');
-  env.randomizeTests(random);
-
-  var seed = queryString.getParam('seed');
+  const seed = queryString.getParam("seed");
   if (seed) {
-    env.seed(seed);
+    config.seed = seed;
   }
 
   // Reporters
-  var htmlReporter = new jasmine.HtmlReporter({
+  const htmlReporter = new jasmine.HtmlReporter({
     env,
-    onRaiseExceptionsClick() {
-      queryString.navigateWithNewParam('catch', !env.catchingExceptions());
-    },
-    onThrowExpectationsClick() {
-      queryString.navigateWithNewParam('throwFailures',
-                                       !env.throwingExpectationFailures());
-    },
-    onRandomClick() {
-      queryString.navigateWithNewParam('random', !env.randomTests());
+    navigateWithNewParam(key, value) {
+      return queryString.navigateWithNewParam(key, value);
     },
     addToExistingQueryString(key, value) {
       return queryString.fullStringWithNewParam(key, value);
@@ -121,47 +114,48 @@ function initializePDFJS(callback) {
 
   env.addReporter(htmlReporter);
 
-  if (queryString.getParam('browser')) {
-    var testReporter = new TestReporter(queryString.getParam('browser'),
-                                        queryString.getParam('path'));
+  if (queryString.getParam("browser")) {
+    const testReporter = new TestReporter(queryString.getParam("browser"));
     env.addReporter(testReporter);
   }
 
   // Filter which specs will be run by matching the start of the full name
   // against the `spec` query param.
-  var specFilter = new jasmine.HtmlSpecFilter({
+  const specFilter = new jasmine.HtmlSpecFilter({
     filterString() {
-      return queryString.getParam('spec');
+      return queryString.getParam("spec");
     },
   });
 
-  env.specFilter = function(spec) {
+  config.specFilter = function (spec) {
     return specFilter.matches(spec.getFullName());
   };
+
+  env.configure(config);
 
   // Sets longer timeout.
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
 
-  // Replace the browser window's `onload`, ensure it's called, and then run
-  // all of the loaded specs. This includes initializing the `HtmlReporter`
-  // instance and then executing the loaded Jasmine environment.
-  var currentWindowOnload = window.onload;
-
-  window.onload = function() {
-    if (currentWindowOnload) {
-      currentWindowOnload();
-    }
-
-    initializePDFJS(function () {
-      htmlReporter.initialize();
-      env.execute();
-    });
-  };
-
   function extend(destination, source) {
-    for (var property in source) {
+    for (const property in source) {
       destination[property] = source[property];
     }
     return destination;
   }
-}());
+
+  function fontTestInit() {
+    initializePDFJS(function () {
+      htmlReporter.initialize();
+      env.execute();
+    });
+  }
+
+  if (
+    document.readyState === "interactive" ||
+    document.readyState === "complete"
+  ) {
+    fontTestInit();
+  } else {
+    document.addEventListener("DOMContentLoaded", fontTestInit, true);
+  }
+})();

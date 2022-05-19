@@ -13,67 +13,62 @@
  * limitations under the License.
  */
 
-import { isDict, isStream } from './primitives';
-import { DecodeStream } from './stream';
-import { Jbig2Image } from './jbig2';
-import { shadow } from '../shared/util';
+import { BaseStream } from "./base_stream.js";
+import { DecodeStream } from "./decode_stream.js";
+import { Dict } from "./primitives.js";
+import { Jbig2Image } from "./jbig2.js";
+import { shadow } from "../shared/util.js";
 
 /**
  * For JBIG2's we use a library to decode these images and
  * the stream behaves like all the other DecodeStreams.
  */
-var Jbig2Stream = (function Jbig2StreamClosure() {
-  function Jbig2Stream(stream, maybeLength, dict, params) {
-    this.stream = stream;
-    this.maybeLength = maybeLength;
-    this.dict = dict;
-    this.params = params;
+class Jbig2Stream extends DecodeStream {
+  constructor(stream, maybeLength, params) {
+    super(maybeLength);
 
-    DecodeStream.call(this, maybeLength);
+    this.stream = stream;
+    this.dict = stream.dict;
+    this.maybeLength = maybeLength;
+    this.params = params;
   }
 
-  Jbig2Stream.prototype = Object.create(DecodeStream.prototype);
+  get bytes() {
+    // If `this.maybeLength` is null, we'll get the entire stream.
+    return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
+  }
 
-  Object.defineProperty(Jbig2Stream.prototype, 'bytes', {
-    get() {
-      // If this.maybeLength is null, we'll get the entire stream.
-      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
-    },
-    configurable: true,
-  });
+  ensureBuffer(requested) {
+    // No-op, since `this.readBlock` will always parse the entire image and
+    // directly insert all of its data into `this.buffer`.
+  }
 
-  Jbig2Stream.prototype.ensureBuffer = function(req) {
-    if (this.bufferLength) {
+  readBlock() {
+    if (this.eof) {
       return;
     }
+    const jbig2Image = new Jbig2Image();
 
-    var jbig2Image = new Jbig2Image();
-
-    var chunks = [];
-    if (isDict(this.params)) {
-      var globalsStream = this.params.get('JBIG2Globals');
-      if (isStream(globalsStream)) {
-        var globals = globalsStream.getBytes();
-        chunks.push({ data: globals, start: 0, end: globals.length, });
+    const chunks = [];
+    if (this.params instanceof Dict) {
+      const globalsStream = this.params.get("JBIG2Globals");
+      if (globalsStream instanceof BaseStream) {
+        const globals = globalsStream.getBytes();
+        chunks.push({ data: globals, start: 0, end: globals.length });
       }
     }
-    chunks.push({ data: this.bytes, start: 0, end: this.bytes.length, });
-    var data = jbig2Image.parseChunks(chunks);
-    var dataLength = data.length;
+    chunks.push({ data: this.bytes, start: 0, end: this.bytes.length });
+    const data = jbig2Image.parseChunks(chunks);
+    const dataLength = data.length;
 
     // JBIG2 had black as 1 and white as 0, inverting the colors
-    for (var i = 0; i < dataLength; i++) {
-      data[i] ^= 0xFF;
+    for (let i = 0; i < dataLength; i++) {
+      data[i] ^= 0xff;
     }
-
     this.buffer = data;
     this.bufferLength = dataLength;
     this.eof = true;
-  };
+  }
+}
 
-  return Jbig2Stream;
-})();
-
-export {
-  Jbig2Stream,
-};
+export { Jbig2Stream };

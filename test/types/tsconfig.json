@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "outDir": "../../build/tmp",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "baseUrl": "./",
+    "strict": true,
+    "types": [],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
+    "paths": {
+      "pdfjs-dist": ["../../build/typestest"],
+      "pdfjs-dist/*": ["../../build/typestest/types/*"]
+    }
+  },
+  "files": [
+    "main.ts"
+  ]
+}

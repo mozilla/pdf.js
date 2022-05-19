@@ -13,83 +13,139 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
-var fs = require('fs');
-var https = require('https');
-var path = require('path');
+const fs = require("fs");
+const https = require("https");
+const path = require("path");
 
-// Defines all languages that have a translation at mozilla-central.
+// Fetches all languages that have an *active* translation in mozilla-central.
 // This is used in gulpfile.js for the `importl10n` command.
-var langCodes = [
-  'ach', 'af', 'ak', 'an', 'ar', 'as', 'ast', 'az', 'be', 'bg',
-  'bn-BD', 'bn-IN', 'br', 'bs', 'ca', 'cs', 'csb', 'cy', 'da',
-  'de', 'el', 'en-GB', 'en-ZA', 'eo', 'es-AR', 'es-CL', 'es-ES',
-  'es-MX', 'et', 'eu', 'fa', 'ff', 'fi', 'fr', 'fy-NL', 'ga-IE',
-  'gd', 'gl', 'gu-IN', 'he', 'hi-IN', 'hr', 'hu', 'hy-AM', 'id',
-  'is', 'it', 'ja', 'ka', 'kk', 'km', 'kn', 'ko', 'ku', 'lg',
-  'lij', 'lt', 'lv', 'mai', 'mk', 'ml', 'mn', 'mr', 'ms', 'my',
-  'nb-NO', 'nl', 'nn-NO', 'nso', 'oc', 'or', 'pa-IN', 'pl',
-  'pt-BR', 'pt-PT', 'rm', 'ro', 'ru', 'rw', 'sah', 'si', 'sk',
-  'sl', 'son', 'sq', 'sr', 'sv-SE', 'sw', 'ta', 'ta-LK', 'te',
-  'th', 'tl', 'tn', 'tr', 'uk', 'ur', 'vi', 'wo', 'xh', 'zh-CN',
-  'zh-TW', 'zu'
-];
+
+const DEFAULT_LOCALE = "en-US";
+
+const EXCLUDE_LANG_CODES = ["ca-valencia", "ja-JP-mac"];
 
 function normalizeText(s) {
-  return s.replace(/\r\n?/g, '\n').replace(/\uFEFF/g, '');
+  return s.replace(/\r\n?/g, "\n").replace(/\uFEFF/g, "");
 }
 
-function downloadLanguageFiles(root, langCode, callback) {
-  console.log('Downloading ' + langCode + '...');
+function downloadLanguageCodes() {
+  console.log("Downloading language codes...\n");
+
+  const ALL_LOCALES =
+    "https://hg.mozilla.org/mozilla-central/raw-file/tip/browser/locales/all-locales";
+
+  return new Promise(function (resolve) {
+    https.get(ALL_LOCALES, function (response) {
+      if (response.statusCode === 200) {
+        let content = "";
+        response.setEncoding("utf8");
+        response.on("data", function (chunk) {
+          content += chunk;
+        });
+        response.on("end", function () {
+          content = content.trim(); // Remove any leading/trailing white-space.
+          const langCodes = normalizeText(content).split("\n");
+          // Remove all locales that we don't want to download below.
+          for (const langCode of [DEFAULT_LOCALE, ...EXCLUDE_LANG_CODES]) {
+            const i = langCodes.indexOf(langCode);
+            if (i > -1) {
+              langCodes.splice(i, 1);
+            }
+          }
+          resolve(langCodes);
+        });
+      } else {
+        resolve([]);
+      }
+    });
+  });
+}
+
+function downloadLanguageFiles(root, langCode) {
+  console.log("Downloading " + langCode + "...");
 
   // Constants for constructing the URLs. Translations are taken from the
   // Nightly channel as those are the most recent ones.
-  var MOZ_CENTRAL_ROOT = 'https://hg.mozilla.org/l10n-central/';
-  var MOZ_CENTRAL_PDFJS_DIR = '/raw-file/tip/browser/pdfviewer/';
+  const MOZ_CENTRAL_ROOT = "https://hg.mozilla.org/l10n-central/";
+  const MOZ_CENTRAL_PDFJS_DIR = "/raw-file/default/browser/pdfviewer/";
 
   // Defines which files to download for each language.
-  var files = ['chrome.properties', 'viewer.properties'];
-  var downloadsLeft = files.length;
+  const files = ["viewer.properties"];
+  let downloadsLeft = files.length;
 
-  var outputDir = path.join(root, langCode);
+  const outputDir = path.join(root, langCode);
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
   }
 
-  // Download the necessary files for this language.
-  files.forEach(function(fileName) {
-    var outputPath = path.join(outputDir, fileName);
-    var url = MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
+  return new Promise(function (resolve) {
+    // Download the necessary files for this language.
+    files.forEach(function (fileName) {
+      const outputPath = path.join(outputDir, fileName);
+      const url =
+        MOZ_CENTRAL_ROOT + langCode + MOZ_CENTRAL_PDFJS_DIR + fileName;
 
-    https.get(url, function(response) {
-      var content = '';
-      response.setEncoding('utf8');
-      response.on('data', function(chunk) {
-        content += chunk;
-      });
-      response.on('end', function() {
-        fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
-        downloadsLeft--;
-        if (downloadsLeft === 0) {
-          callback();
+      https.get(url, function (response) {
+        // Not all files exist for each language. Files without translations
+        // have been removed (https://bugzilla.mozilla.org/show_bug.cgi?id=1443175).
+        if (response.statusCode === 200) {
+          let content = "";
+          response.setEncoding("utf8");
+          response.on("data", function (chunk) {
+            content += chunk;
+          });
+          response.on("end", function () {
+            fs.writeFileSync(outputPath, normalizeText(content), "utf8");
+            if (--downloadsLeft === 0) {
+              resolve();
+            }
+          });
+        } else {
+          if (--downloadsLeft === 0) {
+            resolve();
+          }
         }
       });
     });
   });
 }
 
-function downloadL10n(root, callback) {
-  var i = 0;
-  (function next() {
-    if (i >= langCodes.length) {
-      if (callback) {
-        callback();
-      }
-      return;
+async function downloadL10n(root, callback) {
+  const langCodes = await downloadLanguageCodes();
+
+  for (const langCode of langCodes) {
+    if (!langCode) {
+      continue;
     }
-    downloadLanguageFiles(root, langCodes[i++], next);
-  })();
+    await downloadLanguageFiles(root, langCode);
+  }
+
+  const removeCodes = [];
+  for (const entry of fs.readdirSync(root)) {
+    const dirPath = path.join(root, entry),
+      stat = fs.lstatSync(dirPath);
+
+    if (
+      stat.isDirectory() &&
+      entry !== DEFAULT_LOCALE &&
+      !langCodes.includes(entry)
+    ) {
+      removeCodes.push(entry);
+    }
+  }
+  if (removeCodes.length) {
+    console.log(
+      "\nConsider removing the following unmaintained locales:\n" +
+        removeCodes.join(", ") +
+        "\n"
+    );
+  }
+
+  if (callback) {
+    callback();
+  }
 }
 
 exports.downloadL10n = downloadL10n;

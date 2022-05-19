@@ -13,32 +13,67 @@
  * limitations under the License.
  */
 
-import { AnnotationLayer } from 'pdfjs-lib';
-import { NullL10n } from './ui_utils';
-import { SimpleLinkService } from './pdf_link_service';
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+
+import { AnnotationLayer } from "pdfjs-lib";
+import { NullL10n } from "./l10n_utils.js";
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
- * @property {PDFPage} pdfPage
- * @property {boolean} renderInteractiveForms
+ * @property {PDFPageProxy} pdfPage
+ * @property {AnnotationStorage} [annotationStorage]
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
+ * @property {boolean} renderForms
  * @property {IPDFLinkService} linkService
- * @property {DownloadManager} downloadManager
+ * @property {IDownloadManager} downloadManager
  * @property {IL10n} l10n - Localization service.
+ * @property {boolean} [enableScripting]
+ * @property {Promise<boolean>} [hasJSActionsPromise]
+ * @property {Promise<Object<string, Array<Object>> | null>}
+ *   [fieldObjectsPromise]
+ * @property {Object} [mouseState]
+ * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  */
 
 class AnnotationLayerBuilder {
   /**
    * @param {AnnotationLayerBuilderOptions} options
    */
-  constructor({ pageDiv, pdfPage, linkService, downloadManager,
-                renderInteractiveForms = false, l10n = NullL10n, }) {
+  constructor({
+    pageDiv,
+    pdfPage,
+    linkService,
+    downloadManager,
+    annotationStorage = null,
+    imageResourcesPath = "",
+    renderForms = true,
+    l10n = NullL10n,
+    enableScripting = false,
+    hasJSActionsPromise = null,
+    fieldObjectsPromise = null,
+    mouseState = null,
+    annotationCanvasMap = null,
+  }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
     this.linkService = linkService;
     this.downloadManager = downloadManager;
-    this.renderInteractiveForms = renderInteractiveForms;
+    this.imageResourcesPath = imageResourcesPath;
+    this.renderForms = renderForms;
     this.l10n = l10n;
+    this.annotationStorage = annotationStorage;
+    this.enableScripting = enableScripting;
+    this._hasJSActionsPromise = hasJSActionsPromise;
+    this._fieldObjectsPromise = fieldObjectsPromise;
+    this._mouseState = mouseState;
+    this._annotationCanvasMap = annotationCanvasMap;
 
     this.div = null;
     this._cancelled = false;
@@ -47,42 +82,53 @@ class AnnotationLayerBuilder {
   /**
    * @param {PageViewport} viewport
    * @param {string} intent (default value is 'display')
+   * @returns {Promise<void>} A promise that is resolved when rendering of the
+   *   annotations is complete.
    */
-  render(viewport, intent = 'display') {
-    this.pdfPage.getAnnotations({ intent, }).then((annotations) => {
-      if (this._cancelled) {
-        return;
-      }
+  async render(viewport, intent = "display") {
+    const [annotations, hasJSActions = false, fieldObjects = null] =
+      await Promise.all([
+        this.pdfPage.getAnnotations({ intent }),
+        this._hasJSActionsPromise,
+        this._fieldObjectsPromise,
+      ]);
 
-      let parameters = {
-        viewport: viewport.clone({ dontFlip: true, }),
-        div: this.div,
-        annotations,
-        page: this.pdfPage,
-        renderInteractiveForms: this.renderInteractiveForms,
-        linkService: this.linkService,
-        downloadManager: this.downloadManager,
-      };
+    if (this._cancelled || annotations.length === 0) {
+      return;
+    }
 
-      if (this.div) {
-        // If an annotationLayer already exists, refresh its children's
-        // transformation matrices.
-        AnnotationLayer.update(parameters);
-      } else {
-        // Create an annotation layer div and render the annotations
-        // if there is at least one annotation.
-        if (annotations.length === 0) {
-          return;
-        }
-        this.div = document.createElement('div');
-        this.div.className = 'annotationLayer';
-        this.pageDiv.appendChild(this.div);
-        parameters.div = this.div;
+    const parameters = {
+      viewport: viewport.clone({ dontFlip: true }),
+      div: this.div,
+      annotations,
+      page: this.pdfPage,
+      imageResourcesPath: this.imageResourcesPath,
+      renderForms: this.renderForms,
+      linkService: this.linkService,
+      downloadManager: this.downloadManager,
+      annotationStorage: this.annotationStorage,
+      enableScripting: this.enableScripting,
+      hasJSActions,
+      fieldObjects,
+      mouseState: this._mouseState,
+      annotationCanvasMap: this._annotationCanvasMap,
+    };
 
-        AnnotationLayer.render(parameters);
-        this.l10n.translate(this.div);
-      }
-    });
+    if (this.div) {
+      // If an annotationLayer already exists, refresh its children's
+      // transformation matrices.
+      AnnotationLayer.update(parameters);
+    } else {
+      // Create an annotation layer div and render the annotations
+      // if there is at least one annotation.
+      this.div = document.createElement("div");
+      this.div.className = "annotationLayer";
+      this.pageDiv.appendChild(this.div);
+      parameters.div = this.div;
+
+      AnnotationLayer.render(parameters);
+      this.l10n.translate(this.div);
+    }
   }
 
   cancel() {
@@ -93,34 +139,8 @@ class AnnotationLayerBuilder {
     if (!this.div) {
       return;
     }
-    this.div.setAttribute('hidden', 'true');
+    this.div.hidden = true;
   }
 }
 
-/**
- * @implements IPDFAnnotationLayerFactory
- */
-class DefaultAnnotationLayerFactory {
-  /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
-   * @param {boolean} renderInteractiveForms
-   * @param {IL10n} l10n
-   * @returns {AnnotationLayerBuilder}
-   */
-  createAnnotationLayerBuilder(pageDiv, pdfPage, renderInteractiveForms = false,
-                               l10n = NullL10n) {
-    return new AnnotationLayerBuilder({
-      pageDiv,
-      pdfPage,
-      renderInteractiveForms,
-      linkService: new SimpleLinkService(),
-      l10n,
-    });
-  }
-}
-
-export {
-  AnnotationLayerBuilder,
-  DefaultAnnotationLayerFactory,
-};
+export { AnnotationLayerBuilder };

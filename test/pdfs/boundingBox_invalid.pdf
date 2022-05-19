@@ -1,0 +1,130 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Pages 2 0 R
+/Type /Catalog
+>>
+endobj 
+2 0 obj 
+<<
+/Kids [3 0 R 4 0 R 5 0 R]
+/Type /Pages
+/Count 3
+>>
+endobj 
+3 0 obj 
+<<
+/Parent 2 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 6 0 R
+>>
+>>
+/MediaBox [0 0 0 0]
+/Type /Page
+/Contents 7 0 R
+>>
+endobj 
+4 0 obj 
+<<
+/CropBox [0 0 0 0]
+/Parent 2 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 6 0 R
+>>
+>>
+/MediaBox [0 0 800 600]
+/Type /Page
+/Contents 8 0 R
+>>
+endobj 
+5 0 obj 
+<<
+/CropBox [600 800 1000 1000]
+/Parent 2 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 6 0 R
+>>
+>>
+/MediaBox [0 0 600 800]
+/Type /Page
+/Contents 9 0 R
+>>
+endobj 
+6 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Type /Font
+/Encoding /WinAnsiEncoding
+>>
+endobj 
+7 0 obj 
+<<
+/Length 48
+>>
+stream
+BT
+25 700 TD
+/F1 30 Tf
+(Empty /MediaBox) Tj
+ET
+
+
+endstream 
+endobj 
+8 0 obj 
+<<
+/Length 46
+>>
+stream
+BT
+25 500 TD
+/F1 30 Tf
+(Empty /CropBox) Tj
+ET
+
+endstream 
+endobj 
+9 0 obj 
+<<
+/Length 73
+>>
+stream
+BT
+25 700 TD
+/F1 30 Tf
+(Empty /CropBox and /MediaBox intersection) Tj
+ET
+
+endstream 
+endobj xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000066 00000 n 
+0000000137 00000 n 
+0000000263 00000 n 
+0000000412 00000 n 
+0000000571 00000 n 
+0000000672 00000 n 
+0000000773 00000 n 
+0000000872 00000 n 
+trailer
+
+<<
+/Root 1 0 R
+/Size 10
+>>
+startxref
+997
+%%EOF

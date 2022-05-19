@@ -13,47 +13,47 @@
  * limitations under the License.
  */
 
-import { DefaultExternalServices, PDFViewerApplication } from './app';
-import { BasePreferences } from './preferences';
-import { DownloadManager } from './download_manager';
-import { GenericL10n } from './genericl10n';
-import { PDFJS } from 'pdfjs-lib';
+import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
+import { BasePreferences } from "./preferences.js";
+import { DownloadManager } from "./download_manager.js";
+import { GenericL10n } from "./genericl10n.js";
+import { GenericScripting } from "./generic_scripting.js";
 
-if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
-  throw new Error('Module "pdfjs-web/genericcom" shall not be used outside ' +
-                  'GENERIC build.');
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
+  throw new Error(
+    'Module "pdfjs-web/genericcom" shall not be used outside GENERIC build.'
+  );
 }
 
-let GenericCom = {};
+const GenericCom = {};
 
 class GenericPreferences extends BasePreferences {
-  _writeToStorage(prefObj) {
-    return new Promise(function(resolve) {
-      localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
-      resolve();
-    });
+  async _writeToStorage(prefObj) {
+    localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
   }
 
-  _readFromStorage(prefObj) {
-    return new Promise(function(resolve) {
-      let readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
-      resolve(readPrefs);
-    });
+  async _readFromStorage(prefObj) {
+    return JSON.parse(localStorage.getItem("pdfjs.preferences"));
   }
 }
 
-let GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function() {
-  return new DownloadManager();
-};
-GenericExternalServices.createPreferences = function() {
-  return new GenericPreferences();
-};
-GenericExternalServices.createL10n = function () {
-  return new GenericL10n(PDFJS.locale);
-};
+class GenericExternalServices extends DefaultExternalServices {
+  static createDownloadManager(options) {
+    return new DownloadManager();
+  }
+
+  static createPreferences() {
+    return new GenericPreferences();
+  }
+
+  static createL10n({ locale = "en-US" }) {
+    return new GenericL10n(locale);
+  }
+
+  static createScripting({ sandboxBundleSrc }) {
+    return new GenericScripting(sandboxBundleSrc);
+  }
+}
 PDFViewerApplication.externalServices = GenericExternalServices;
 
-export {
-  GenericCom,
-};
+export { GenericCom };

@@ -13,39 +13,45 @@
  * limitations under the License.
  */
 
-import '../external/webL10n/l10n';
+/** @typedef {import("./interfaces").IL10n} IL10n */
 
-let webL10n = document.webL10n;
+import "../external/webL10n/l10n.js";
+import { fixupLangCode, getL10nFallback } from "./l10n_utils.js";
 
+const webL10n = document.webL10n;
+
+/**
+ * @implements {IL10n}
+ */
 class GenericL10n {
   constructor(lang) {
     this._lang = lang;
     this._ready = new Promise((resolve, reject) => {
-      webL10n.setLanguage(lang, () => {
+      webL10n.setLanguage(fixupLangCode(lang), () => {
         resolve(webL10n);
       });
     });
   }
 
-  getDirection() {
-    return this._ready.then((l10n) => {
-      return l10n.getDirection();
-    });
+  async getLanguage() {
+    const l10n = await this._ready;
+    return l10n.getLanguage();
   }
 
-  get(property, args, fallback) {
-    return this._ready.then((l10n) => {
-      return l10n.get(property, args, fallback);
-    });
+  async getDirection() {
+    const l10n = await this._ready;
+    return l10n.getDirection();
   }
 
-  translate(element) {
-    return this._ready.then((l10n) => {
-      return l10n.translate(element);
-    });
+  async get(key, args = null, fallback = getL10nFallback(key, args)) {
+    const l10n = await this._ready;
+    return l10n.get(key, args, fallback);
+  }
+
+  async translate(element) {
+    const l10n = await this._ready;
+    return l10n.translate(element);
   }
 }
 
-export {
-  GenericL10n,
-};
+export { GenericL10n };

@@ -1,0 +1,81 @@
+%PDF-1.5
+%‚„œ”
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Count 1
+/Kids [3 0 R]
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Contents 6 0 R
+/MediaBox [0 0 350 100]
+/Resources 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+  /Font << /F1 5 0 R >>
+>>
+endobj
+
+5 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+>>
+endobj
+
+6 0 obj
+<< /Length 165 >>
+stream
+BT
+  1 0 0 1 25 44 Tm
+  /F1 25 Tf
+  0 0 0 rg
+  (Abc ) Tj
+  0 0 1 RG
+  74 40 m
+  265 40 l
+  S
+  0 0 1 rg
+  (www.google.com ) Tj
+  0 0 0 rg
+  (test) Tj
+ET
+endstream
+endobj
+
+xref
+0 7
+0000000000 65535 f
+0000000017 00000 n
+0000000074 00000 n
+0000000140 00000 n
+0000000255 00000 n
+0000000307 00000 n
+0000000414 00000 n
+
+trailer
+<<
+/Size 7
+/Root 1 0 R
+/ID [<281dda44e224156a5143dc0ac9d261ed> <281dda44e224156a5143dc0ac9d261ed>]
+>>
+startxref
+638
+%%EOF

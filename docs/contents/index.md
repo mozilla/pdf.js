@@ -9,6 +9,6 @@ template: layout.jade
 </p>
 <p class="text-center">
   <a type="button" class="btn btn-lg btn-default" href="getting_started/#download">Download</a>
-  <a type="button" class="btn btn-lg btn-default" href="web/viewer.html">Demo</a>
+  <a type="button" class="btn btn-lg btn-default" href="https://github.com/mozilla/pdf.js#online-demo">Demo</a>
   <a type="button" class="btn btn-lg btn-default" href="https://github.com/mozilla/pdf.js">GitHub Project</a>
 </p>

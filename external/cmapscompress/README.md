@@ -1,6 +1,6 @@
 # Quick notes about binary CMap format (bcmap)
 
-The format is designed to package some information from the CMap files located at external/cmap. Please notice for size optimization reasons, the original information blocks can be changed (split or joined) and items in the blocks can be swaped.
+The format is designed to package some information from the CMap files located at external/cmap. Please notice for size optimization reasons, the original information blocks can be changed (split or joined) and items in the blocks can be swapped.
 
 The data stored in binary format in network byte order (big-endian).
 
@@ -34,7 +34,7 @@ Then records follow. The records starts from the record header encoded as B, whe
 ## Metadata record
 
 The metadata record header bit 4-0 contain id of the metadata:
-  - 0 – comment, body of the record is encoded comment string (S) 
+  - 0 – comment, body of the record is encoded comment string (S)
   - 1 – UseCMap, body of the record is usecmap id string (S)
 
 ## Data records

@@ -13,16 +13,18 @@
  * limitations under the License.
  */
 
-import { Dict, isDict } from './primitives';
-import { CCITTFaxDecoder } from './ccitt';
-import { DecodeStream } from './stream';
+import { CCITTFaxDecoder } from "./ccitt.js";
+import { DecodeStream } from "./decode_stream.js";
+import { Dict } from "./primitives.js";
 
-var CCITTFaxStream = (function CCITTFaxStreamClosure() {
-  function CCITTFaxStream(str, maybeLength, params) {
+class CCITTFaxStream extends DecodeStream {
+  constructor(str, maybeLength, params) {
+    super(maybeLength);
+
     this.str = str;
     this.dict = str.dict;
 
-    if (!isDict(params)) {
+    if (!(params instanceof Dict)) {
       params = Dict.empty;
     }
 
@@ -32,23 +34,19 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       },
     };
     this.ccittFaxDecoder = new CCITTFaxDecoder(source, {
-      K: params.get('K'),
-      EndOfLine: params.get('EndOfLine'),
-      EncodedByteAlign: params.get('EncodedByteAlign'),
-      Columns: params.get('Columns'),
-      Rows: params.get('Rows'),
-      EndOfBlock: params.get('EndOfBlock'),
-      BlackIs1: params.get('BlackIs1'),
+      K: params.get("K"),
+      EndOfLine: params.get("EndOfLine"),
+      EncodedByteAlign: params.get("EncodedByteAlign"),
+      Columns: params.get("Columns"),
+      Rows: params.get("Rows"),
+      EndOfBlock: params.get("EndOfBlock"),
+      BlackIs1: params.get("BlackIs1"),
     });
-
-    DecodeStream.call(this, maybeLength);
   }
 
-  CCITTFaxStream.prototype = Object.create(DecodeStream.prototype);
-
-  CCITTFaxStream.prototype.readBlock = function() {
+  readBlock() {
     while (!this.eof) {
-      let c = this.ccittFaxDecoder.readNextChar();
+      const c = this.ccittFaxDecoder.readNextChar();
       if (c === -1) {
         this.eof = true;
         return;
@@ -56,11 +54,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       this.ensureBuffer(this.bufferLength + 1);
       this.buffer[this.bufferLength++] = c;
     }
-  };
+  }
+}
 
-  return CCITTFaxStream;
-})();
-
-export {
-  CCITTFaxStream,
-};
+export { CCITTFaxStream };

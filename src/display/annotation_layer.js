@@ -13,25 +13,56 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./api").PDFPageProxy} PDFPageProxy */
+/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
+/** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
+
 import {
-  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
-  getFilenameFromUrl, LinkTarget
-} from './dom_utils';
+  AnnotationBorderStyleType,
+  AnnotationType,
+  assert,
+  shadow,
+  unreachable,
+  Util,
+  warn,
+} from "../shared/util.js";
 import {
-  AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
-} from '../shared/util';
+  DOMSVGFactory,
+  getFilenameFromUrl,
+  PDFDateString,
+} from "./display_utils.js";
+import { AnnotationStorage } from "./annotation_storage.js";
+import { ColorConverters } from "../shared/scripting_utils.js";
+import { XfaLayer } from "./xfa_layer.js";
+
+const DEFAULT_TAB_INDEX = 1000;
+const GetElementsByNameSet = new WeakSet();
+
+function getRectDims(rect) {
+  return {
+    width: rect[2] - rect[0],
+    height: rect[3] - rect[1],
+  };
+}
 
 /**
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
  * @property {HTMLDivElement} layer
- * @property {PDFPage} page
+ * @property {PDFPageProxy} page
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
- * @property {DownloadManager} downloadManager
- * @property {string} imageResourcesPath
- * @property {boolean} renderInteractiveForms
+ * @property {IDownloadManager} downloadManager
+ * @property {AnnotationStorage} [annotationStorage]
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
+ * @property {boolean} renderForms
  * @property {Object} svgFactory
+ * @property {boolean} [enableScripting]
+ * @property {boolean} [hasJSActions]
+ * @property {Object} [fieldObjects]
+ * @property {Object} [mouseState]
  */
 
 class AnnotationElementFactory {
@@ -40,7 +71,7 @@ class AnnotationElementFactory {
    * @returns {AnnotationElement}
    */
   static create(parameters) {
-    let subtype = parameters.data.annotationType;
+    const subtype = parameters.data.annotationType;
 
     switch (subtype) {
       case AnnotationType.LINK:
@@ -50,26 +81,28 @@ class AnnotationElementFactory {
         return new TextAnnotationElement(parameters);
 
       case AnnotationType.WIDGET:
-        let fieldType = parameters.data.fieldType;
+        const fieldType = parameters.data.fieldType;
 
         switch (fieldType) {
-          case 'Tx':
+          case "Tx":
             return new TextWidgetAnnotationElement(parameters);
-          case 'Btn':
+          case "Btn":
             if (parameters.data.radioButton) {
               return new RadioButtonWidgetAnnotationElement(parameters);
             } else if (parameters.data.checkBox) {
               return new CheckboxWidgetAnnotationElement(parameters);
             }
-            warn('Unimplemented button widget annotation: pushbutton');
-            break;
-          case 'Ch':
+            return new PushButtonWidgetAnnotationElement(parameters);
+          case "Ch":
             return new ChoiceWidgetAnnotationElement(parameters);
         }
         return new WidgetAnnotationElement(parameters);
 
       case AnnotationType.POPUP:
         return new PopupAnnotationElement(parameters);
+
+      case AnnotationType.FREETEXT:
+        return new FreeTextAnnotationElement(parameters);
 
       case AnnotationType.LINE:
         return new LineAnnotationElement(parameters);
@@ -82,6 +115,12 @@ class AnnotationElementFactory {
 
       case AnnotationType.POLYLINE:
         return new PolylineAnnotationElement(parameters);
+
+      case AnnotationType.CARET:
+        return new CaretAnnotationElement(parameters);
+
+      case AnnotationType.INK:
+        return new InkAnnotationElement(parameters);
 
       case AnnotationType.POLYGON:
         return new PolygonAnnotationElement(parameters);
@@ -111,7 +150,14 @@ class AnnotationElementFactory {
 }
 
 class AnnotationElement {
-  constructor(parameters, isRenderable = false, ignoreBorder = false) {
+  constructor(
+    parameters,
+    {
+      isRenderable = false,
+      ignoreBorder = false,
+      createQuadrilaterals = false,
+    } = {}
+  ) {
     this.isRenderable = isRenderable;
     this.data = parameters.data;
     this.layer = parameters.layer;
@@ -120,11 +166,19 @@ class AnnotationElement {
     this.linkService = parameters.linkService;
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
-    this.renderInteractiveForms = parameters.renderInteractiveForms;
+    this.renderForms = parameters.renderForms;
     this.svgFactory = parameters.svgFactory;
+    this.annotationStorage = parameters.annotationStorage;
+    this.enableScripting = parameters.enableScripting;
+    this.hasJSActions = parameters.hasJSActions;
+    this._fieldObjects = parameters.fieldObjects;
+    this._mouseState = parameters.mouseState;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
+    }
+    if (createQuadrilaterals) {
+      this.quadrilaterals = this._createQuadrilaterals(ignoreBorder);
     }
   }
 
@@ -137,86 +191,241 @@ class AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   _createContainer(ignoreBorder = false) {
-    let data = this.data, page = this.page, viewport = this.viewport;
-    let container = document.createElement('section');
-    let width = data.rect[2] - data.rect[0];
-    let height = data.rect[3] - data.rect[1];
+    const data = this.data,
+      page = this.page,
+      viewport = this.viewport;
+    const container = document.createElement("section");
+    let { width, height } = getRectDims(data.rect);
 
-    container.setAttribute('data-annotation-id', data.id);
+    container.setAttribute("data-annotation-id", data.id);
 
     // Do *not* modify `data.rect`, since that will corrupt the annotation
     // position on subsequent calls to `_createContainer` (see issue 6804).
-    let rect = Util.normalizeRect([
+    const rect = Util.normalizeRect([
       data.rect[0],
       page.view[3] - data.rect[1] + page.view[1],
       data.rect[2],
-      page.view[3] - data.rect[3] + page.view[1]
+      page.view[3] - data.rect[3] + page.view[1],
     ]);
 
-    CustomStyle.setProp('transform', container,
-                        'matrix(' + viewport.transform.join(',') + ')');
-    CustomStyle.setProp('transformOrigin', container,
-                        -rect[0] + 'px ' + -rect[1] + 'px');
+    if (data.hasOwnCanvas) {
+      const transform = viewport.transform.slice();
+      const [scaleX, scaleY] = Util.singularValueDecompose2dScale(transform);
+      width = Math.ceil(width * scaleX);
+      height = Math.ceil(height * scaleY);
+      rect[0] *= scaleX;
+      rect[1] *= scaleY;
+      // Reset the scale part of the transform matrix (which must be diagonal
+      // or anti-diagonal) in order to avoid to rescale the canvas.
+      // The canvas for the annotation is correctly scaled when it is drawn
+      // (see `beginAnnotation` in canvas.js).
+      for (let i = 0; i < 4; i++) {
+        transform[i] = Math.sign(transform[i]);
+      }
+      container.style.transform = `matrix(${transform.join(",")})`;
+    } else {
+      container.style.transform = `matrix(${viewport.transform.join(",")})`;
+    }
+
+    container.style.transformOrigin = `${-rect[0]}px ${-rect[1]}px`;
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
-      container.style.borderWidth = data.borderStyle.width + 'px';
+      container.style.borderWidth = `${data.borderStyle.width}px`;
       if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
         // Underline styles only have a bottom border, so we do not need
         // to adjust for all borders. This yields a similar result as
         // Adobe Acrobat/Reader.
-        width = width - 2 * data.borderStyle.width;
-        height = height - 2 * data.borderStyle.width;
+        width -= 2 * data.borderStyle.width;
+        height -= 2 * data.borderStyle.width;
       }
 
-      let horizontalRadius = data.borderStyle.horizontalCornerRadius;
-      let verticalRadius = data.borderStyle.verticalCornerRadius;
+      const horizontalRadius = data.borderStyle.horizontalCornerRadius;
+      const verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
-        let radius = horizontalRadius + 'px / ' + verticalRadius + 'px';
-        CustomStyle.setProp('borderRadius', container, radius);
+        const radius = `${horizontalRadius}px / ${verticalRadius}px`;
+        container.style.borderRadius = radius;
       }
 
       switch (data.borderStyle.style) {
         case AnnotationBorderStyleType.SOLID:
-          container.style.borderStyle = 'solid';
+          container.style.borderStyle = "solid";
           break;
 
         case AnnotationBorderStyleType.DASHED:
-          container.style.borderStyle = 'dashed';
+          container.style.borderStyle = "dashed";
           break;
 
         case AnnotationBorderStyleType.BEVELED:
-          warn('Unimplemented border style: beveled');
+          warn("Unimplemented border style: beveled");
           break;
 
         case AnnotationBorderStyleType.INSET:
-          warn('Unimplemented border style: inset');
+          warn("Unimplemented border style: inset");
           break;
 
         case AnnotationBorderStyleType.UNDERLINE:
-          container.style.borderBottomStyle = 'solid';
+          container.style.borderBottomStyle = "solid";
           break;
 
         default:
           break;
       }
 
-      if (data.color) {
-        container.style.borderColor = Util.makeCssRgb(data.color[0] | 0,
-                                                      data.color[1] | 0,
-                                                      data.color[2] | 0);
+      const borderColor = data.borderColor || data.color || null;
+      if (borderColor) {
+        container.style.borderColor = Util.makeHexColor(
+          data.color[0] | 0,
+          data.color[1] | 0,
+          data.color[2] | 0
+        );
       } else {
         // Transparent (invisible) border, so do not draw it at all.
         container.style.borderWidth = 0;
       }
     }
 
-    container.style.left = rect[0] + 'px';
-    container.style.top = rect[1] + 'px';
+    container.style.left = `${rect[0]}px`;
+    container.style.top = `${rect[1]}px`;
 
-    container.style.width = width + 'px';
-    container.style.height = height + 'px';
-
+    if (data.hasOwnCanvas) {
+      container.style.width = container.style.height = "auto";
+    } else {
+      container.style.width = `${width}px`;
+      container.style.height = `${height}px`;
+    }
     return container;
+  }
+
+  get _commonActions() {
+    const setColor = (jsName, styleName, event) => {
+      const color = event.detail[jsName];
+      event.target.style[styleName] = ColorConverters[`${color[0]}_HTML`](
+        color.slice(1)
+      );
+    };
+
+    return shadow(this, "_commonActions", {
+      display: event => {
+        const hidden = event.detail.display % 2 === 1;
+        event.target.style.visibility = hidden ? "hidden" : "visible";
+        this.annotationStorage.setValue(this.data.id, {
+          hidden,
+          print: event.detail.display === 0 || event.detail.display === 3,
+        });
+      },
+      print: event => {
+        this.annotationStorage.setValue(this.data.id, {
+          print: event.detail.print,
+        });
+      },
+      hidden: event => {
+        event.target.style.visibility = event.detail.hidden
+          ? "hidden"
+          : "visible";
+        this.annotationStorage.setValue(this.data.id, {
+          hidden: event.detail.hidden,
+        });
+      },
+      focus: event => {
+        setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+      },
+      userName: event => {
+        // tooltip
+        event.target.title = event.detail.userName;
+      },
+      readonly: event => {
+        if (event.detail.readonly) {
+          event.target.setAttribute("readonly", "");
+        } else {
+          event.target.removeAttribute("readonly");
+        }
+      },
+      required: event => {
+        if (event.detail.required) {
+          event.target.setAttribute("required", "");
+        } else {
+          event.target.removeAttribute("required");
+        }
+      },
+      bgColor: event => {
+        setColor("bgColor", "backgroundColor", event);
+      },
+      fillColor: event => {
+        setColor("fillColor", "backgroundColor", event);
+      },
+      fgColor: event => {
+        setColor("fgColor", "color", event);
+      },
+      textColor: event => {
+        setColor("textColor", "color", event);
+      },
+      borderColor: event => {
+        setColor("borderColor", "borderColor", event);
+      },
+      strokeColor: event => {
+        setColor("strokeColor", "borderColor", event);
+      },
+    });
+  }
+
+  _dispatchEventFromSandbox(actions, jsEvent) {
+    const commonActions = this._commonActions;
+    for (const name of Object.keys(jsEvent.detail)) {
+      const action = actions[name] || commonActions[name];
+      if (action) {
+        action(jsEvent);
+      }
+    }
+  }
+
+  _setDefaultPropertiesFromJS(element) {
+    if (!this.enableScripting) {
+      return;
+    }
+
+    // Some properties may have been updated thanks to JS.
+    const storedData = this.annotationStorage.getRawValue(this.data.id);
+    if (!storedData) {
+      return;
+    }
+
+    const commonActions = this._commonActions;
+    for (const [actionName, detail] of Object.entries(storedData)) {
+      const action = commonActions[actionName];
+      if (action) {
+        action({ detail, target: element });
+        // The action has been consumed: no need to keep it.
+        delete storedData[actionName];
+      }
+    }
+  }
+
+  /**
+   * Create quadrilaterals from the annotation's quadpoints.
+   *
+   * @private
+   * @param {boolean} ignoreBorder
+   * @memberof AnnotationElement
+   * @returns {Array<HTMLSectionElement>}
+   */
+  _createQuadrilaterals(ignoreBorder = false) {
+    if (!this.data.quadPoints) {
+      return null;
+    }
+
+    const quadrilaterals = [];
+    const savedRect = this.data.rect;
+    for (const quadPoint of this.data.quadPoints) {
+      this.data.rect = [
+        quadPoint[2].x,
+        quadPoint[2].y,
+        quadPoint[1].x,
+        quadPoint[1].y,
+      ];
+      quadrilaterals.push(this._createContainer(ignoreBorder));
+    }
+    this.data.rect = savedRect;
+    return quadrilaterals;
   }
 
   /**
@@ -225,29 +434,36 @@ class AnnotationElement {
    * are of a type that works with popups (such as Highlight annotations).
    *
    * @private
-   * @param {HTMLSectionElement} container
    * @param {HTMLDivElement|HTMLImageElement|null} trigger
    * @param {Object} data
    * @memberof AnnotationElement
    */
-  _createPopup(container, trigger, data) {
+  _createPopup(trigger, data) {
+    let container = this.container;
+    if (this.quadrilaterals) {
+      trigger = trigger || this.quadrilaterals;
+      container = this.quadrilaterals[0];
+    }
+
     // If no trigger element is specified, create it.
     if (!trigger) {
-      trigger = document.createElement('div');
+      trigger = document.createElement("div");
       trigger.style.height = container.style.height;
       trigger.style.width = container.style.width;
       container.appendChild(trigger);
     }
 
-    let popupElement = new PopupElement({
+    const popupElement = new PopupElement({
       container,
       trigger,
       color: data.color,
-      title: data.title,
-      contents: data.contents,
+      titleObj: data.titleObj,
+      modificationDate: data.modificationDate,
+      contentsObj: data.contentsObj,
+      richText: data.richText,
       hideWrapper: true,
     });
-    let popup = popupElement.render();
+    const popup = popupElement.render();
 
     // Position the popup next to the annotation's container.
     popup.style.left = container.style.width;
@@ -256,47 +472,155 @@ class AnnotationElement {
   }
 
   /**
-   * Render the annotation's HTML element in the empty container.
+   * Render the quadrilaterals of the annotation.
+   *
+   * @private
+   * @param {string} className
+   * @memberof AnnotationElement
+   * @returns {Array<HTMLSectionElement>}
+   */
+  _renderQuadrilaterals(className) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      assert(this.quadrilaterals, "Missing quadrilaterals during rendering");
+    }
+
+    for (const quadrilateral of this.quadrilaterals) {
+      quadrilateral.className = className;
+    }
+    return this.quadrilaterals;
+  }
+
+  /**
+   * Render the annotation's HTML element(s).
    *
    * @public
    * @memberof AnnotationElement
+   * @returns {HTMLSectionElement|Array<HTMLSectionElement>}
    */
   render() {
-    throw new Error('Abstract method `AnnotationElement.render` called');
+    unreachable("Abstract method `AnnotationElement.render` called");
+  }
+
+  /**
+   * @private
+   * @returns {Array}
+   */
+  _getElementsByName(name, skipId = null) {
+    const fields = [];
+
+    if (this._fieldObjects) {
+      const fieldObj = this._fieldObjects[name];
+      if (fieldObj) {
+        for (const { page, id, exportValues } of fieldObj) {
+          if (page === -1) {
+            continue;
+          }
+          if (id === skipId) {
+            continue;
+          }
+          const exportValue =
+            typeof exportValues === "string" ? exportValues : null;
+
+          const domElement = document.getElementById(id);
+          if (domElement && !GetElementsByNameSet.has(domElement)) {
+            warn(`_getElementsByName - element not allowed: ${id}`);
+            continue;
+          }
+          fields.push({ id, exportValue, domElement });
+        }
+      }
+      return fields;
+    }
+    // Fallback to a regular DOM lookup, to ensure that the standalone
+    // viewer components won't break.
+    for (const domElement of document.getElementsByName(name)) {
+      const { id, exportValue } = domElement;
+      if (id === skipId) {
+        continue;
+      }
+      if (!GetElementsByNameSet.has(domElement)) {
+        continue;
+      }
+      fields.push({ id, exportValue, domElement });
+    }
+    return fields;
+  }
+
+  static get platform() {
+    const platform = typeof navigator !== "undefined" ? navigator.platform : "";
+
+    return shadow(this, "platform", {
+      isWin: platform.includes("Win"),
+      isMac: platform.includes("Mac"),
+    });
   }
 }
 
 class LinkAnnotationElement extends AnnotationElement {
-  constructor(parameters) {
-    let isRenderable = !!(parameters.data.url || parameters.data.dest ||
-                          parameters.data.action);
-    super(parameters, isRenderable);
+  constructor(parameters, options = null) {
+    const isRenderable = !!(
+      parameters.data.url ||
+      parameters.data.dest ||
+      parameters.data.action ||
+      parameters.data.isTooltipOnly ||
+      parameters.data.resetForm ||
+      (parameters.data.actions &&
+        (parameters.data.actions.Action ||
+          parameters.data.actions["Mouse Up"] ||
+          parameters.data.actions["Mouse Down"]))
+    );
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: !!options?.ignoreBorder,
+      createQuadrilaterals: true,
+    });
   }
 
-  /**
-   * Render the link annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof LinkAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'linkAnnotation';
+    const { data, linkService } = this;
+    const link = document.createElement("a");
 
-    let link = document.createElement('a');
-    addLinkAttributes(link, {
-      url: this.data.url,
-      target: (this.data.newWindow ? LinkTarget.BLANK : undefined),
-    });
+    if (data.url) {
+      linkService.addLinkAttributes(link, data.url, data.newWindow);
+    } else if (data.action) {
+      this._bindNamedAction(link, data.action);
+    } else if (data.dest) {
+      this._bindLink(link, data.dest);
+    } else {
+      let hasClickAction = false;
+      if (
+        data.actions &&
+        (data.actions.Action ||
+          data.actions["Mouse Up"] ||
+          data.actions["Mouse Down"]) &&
+        this.enableScripting &&
+        this.hasJSActions
+      ) {
+        hasClickAction = true;
+        this._bindJSAction(link, data);
+      }
 
-    if (!this.data.url) {
-      if (this.data.action) {
-        this._bindNamedAction(link, this.data.action);
-      } else {
-        this._bindLink(link, this.data.dest);
+      if (data.resetForm) {
+        this._bindResetFormAction(link, data.resetForm);
+      } else if (!hasClickAction) {
+        this._bindLink(link, "");
       }
     }
 
+    if (this.quadrilaterals) {
+      return this._renderQuadrilaterals("linkAnnotation").map(
+        (quadrilateral, index) => {
+          const linkElement = index === 0 ? link : link.cloneNode();
+          quadrilateral.appendChild(linkElement);
+          return quadrilateral;
+        }
+      );
+    }
+
+    this.container.className = "linkAnnotation";
     this.container.appendChild(link);
     return this.container;
   }
@@ -313,12 +637,12 @@ class LinkAnnotationElement extends AnnotationElement {
     link.href = this.linkService.getDestinationHash(destination);
     link.onclick = () => {
       if (destination) {
-        this.linkService.navigateTo(destination);
+        this.linkService.goToDestination(destination);
       }
       return false;
     };
-    if (destination) {
-      link.className = 'internalLink';
+    if (destination || destination === /* isTooltipOnly = */ "") {
+      link.className = "internalLink";
     }
   }
 
@@ -331,43 +655,181 @@ class LinkAnnotationElement extends AnnotationElement {
    * @memberof LinkAnnotationElement
    */
   _bindNamedAction(link, action) {
-    link.href = this.linkService.getAnchorUrl('');
+    link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.linkService.executeNamedAction(action);
       return false;
     };
-    link.className = 'internalLink';
+    link.className = "internalLink";
+  }
+
+  /**
+   * Bind JS actions to the link element.
+   *
+   * @private
+   * @param {Object} link
+   * @param {Object} data
+   * @memberof LinkAnnotationElement
+   */
+  _bindJSAction(link, data) {
+    link.href = this.linkService.getAnchorUrl("");
+    const map = new Map([
+      ["Action", "onclick"],
+      ["Mouse Up", "onmouseup"],
+      ["Mouse Down", "onmousedown"],
+    ]);
+    for (const name of Object.keys(data.actions)) {
+      const jsName = map.get(name);
+      if (!jsName) {
+        continue;
+      }
+      link[jsName] = () => {
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: data.id,
+            name,
+          },
+        });
+        return false;
+      };
+    }
+
+    if (!link.onclick) {
+      link.onclick = () => false;
+    }
+    link.className = "internalLink";
+  }
+
+  _bindResetFormAction(link, resetForm) {
+    const otherClickAction = link.onclick;
+    if (!otherClickAction) {
+      link.href = this.linkService.getAnchorUrl("");
+    }
+    link.className = "internalLink";
+
+    if (!this._fieldObjects) {
+      warn(
+        `_bindResetFormAction - "resetForm" action not supported, ` +
+          "ensure that the `fieldObjects` parameter is provided."
+      );
+      if (!otherClickAction) {
+        link.onclick = () => false;
+      }
+      return;
+    }
+
+    link.onclick = () => {
+      if (otherClickAction) {
+        otherClickAction();
+      }
+
+      const {
+        fields: resetFormFields,
+        refs: resetFormRefs,
+        include,
+      } = resetForm;
+
+      const allFields = [];
+      if (resetFormFields.length !== 0 || resetFormRefs.length !== 0) {
+        const fieldIds = new Set(resetFormRefs);
+        for (const fieldName of resetFormFields) {
+          const fields = this._fieldObjects[fieldName] || [];
+          for (const { id } of fields) {
+            fieldIds.add(id);
+          }
+        }
+        for (const fields of Object.values(this._fieldObjects)) {
+          for (const field of fields) {
+            if (fieldIds.has(field.id) === include) {
+              allFields.push(field);
+            }
+          }
+        }
+      } else {
+        for (const fields of Object.values(this._fieldObjects)) {
+          allFields.push(...fields);
+        }
+      }
+
+      const storage = this.annotationStorage;
+      const allIds = [];
+      for (const field of allFields) {
+        const { id } = field;
+        allIds.push(id);
+        switch (field.type) {
+          case "text": {
+            const value = field.defaultValue || "";
+            storage.setValue(id, { value });
+            break;
+          }
+          case "checkbox":
+          case "radiobutton": {
+            const value = field.defaultValue === field.exportValues;
+            storage.setValue(id, { value });
+            break;
+          }
+          case "combobox":
+          case "listbox": {
+            const value = field.defaultValue || "";
+            storage.setValue(id, { value });
+            break;
+          }
+          default:
+            continue;
+        }
+        const domElement = document.getElementById(id);
+        if (!domElement || !GetElementsByNameSet.has(domElement)) {
+          continue;
+        }
+        domElement.dispatchEvent(new Event("resetform"));
+      }
+
+      if (this.enableScripting) {
+        // Update the values in the sandbox.
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: "app",
+            ids: allIds,
+            name: "ResetForm",
+          },
+        });
+      }
+
+      return false;
+    };
   }
 }
 
 class TextAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the text annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof TextAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'textAnnotation';
+    this.container.className = "textAnnotation";
 
-    let image = document.createElement('img');
+    const image = document.createElement("img");
     image.style.height = this.container.style.height;
     image.style.width = this.container.style.width;
-    image.src = this.imageResourcesPath + 'annotation-' +
-      this.data.name.toLowerCase() + '.svg';
-    image.alt = '[{{type}} Annotation]';
-    image.dataset.l10nId = 'text_annotation_type';
-    image.dataset.l10nArgs = JSON.stringify({ type: this.data.name, });
+    image.src =
+      this.imageResourcesPath +
+      "annotation-" +
+      this.data.name.toLowerCase() +
+      ".svg";
+    image.alt = "[{{type}} Annotation]";
+    image.dataset.l10nId = "text_annotation_type";
+    image.dataset.l10nArgs = JSON.stringify({ type: this.data.name });
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, image, this.data);
+      this._createPopup(image, this.data);
     }
 
     this.container.appendChild(image);
@@ -376,81 +838,341 @@ class TextAnnotationElement extends AnnotationElement {
 }
 
 class WidgetAnnotationElement extends AnnotationElement {
-  /**
-   * Render the widget annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof WidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     // Show only the container for unsupported field types.
+    if (this.data.alternativeText) {
+      this.container.title = this.data.alternativeText;
+    }
+
     return this.container;
+  }
+
+  _getKeyModifier(event) {
+    const { isWin, isMac } = AnnotationElement.platform;
+    return (isWin && event.ctrlKey) || (isMac && event.metaKey);
+  }
+
+  _setEventListener(element, baseName, eventName, valueGetter) {
+    if (baseName.includes("mouse")) {
+      // Mouse events
+      element.addEventListener(baseName, event => {
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: this.data.id,
+            name: eventName,
+            value: valueGetter(event),
+            shift: event.shiftKey,
+            modifier: this._getKeyModifier(event),
+          },
+        });
+      });
+    } else {
+      // Non mouse event
+      element.addEventListener(baseName, event => {
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id: this.data.id,
+            name: eventName,
+            value: valueGetter(event),
+          },
+        });
+      });
+    }
+  }
+
+  _setEventListeners(element, names, getter) {
+    for (const [baseName, eventName] of names) {
+      if (eventName === "Action" || this.data.actions?.[eventName]) {
+        this._setEventListener(element, baseName, eventName, getter);
+      }
+    }
+  }
+
+  _setBackgroundColor(element) {
+    const color = this.data.backgroundColor || null;
+    element.style.backgroundColor =
+      color === null
+        ? "transparent"
+        : Util.makeHexColor(color[0], color[1], color[2]);
   }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    let isRenderable = parameters.renderInteractiveForms ||
+    const isRenderable =
+      parameters.renderForms ||
       (!parameters.data.hasAppearance && !!parameters.data.fieldValue);
-    super(parameters, isRenderable);
+    super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the text widget annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof TextWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
-  render() {
-    const TEXT_ALIGNMENT = ['left', 'center', 'right'];
+  setPropertyOnSiblings(base, key, value, keyInStorage) {
+    const storage = this.annotationStorage;
+    for (const element of this._getElementsByName(
+      base.name,
+      /* skipId = */ base.id
+    )) {
+      if (element.domElement) {
+        element.domElement[key] = value;
+      }
+      storage.setValue(element.id, { [keyInStorage]: value });
+    }
+  }
 
-    this.container.className = 'textWidgetAnnotation';
+  render() {
+    const storage = this.annotationStorage;
+    const id = this.data.id;
+
+    this.container.className = "textWidgetAnnotation";
 
     let element = null;
-    if (this.renderInteractiveForms) {
+    if (this.renderForms) {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
       //       from parsing the elements correctly for the reference tests.
+      const storedData = storage.getValue(id, {
+        value: this.data.fieldValue,
+      });
+      const textContent = storedData.formattedValue || storedData.value || "";
+      const elementData = {
+        userValue: null,
+        formattedValue: null,
+        valueOnFocus: "",
+      };
+
       if (this.data.multiLine) {
-        element = document.createElement('textarea');
-        element.textContent = this.data.fieldValue;
+        element = document.createElement("textarea");
+        element.textContent = textContent;
       } else {
-        element = document.createElement('input');
-        element.type = 'text';
-        element.setAttribute('value', this.data.fieldValue);
+        element = document.createElement("input");
+        element.type = "text";
+        element.setAttribute("value", textContent);
+      }
+      GetElementsByNameSet.add(element);
+      element.disabled = this.data.readOnly;
+      element.name = this.data.fieldName;
+      element.tabIndex = DEFAULT_TAB_INDEX;
+
+      elementData.userValue = textContent;
+      element.setAttribute("id", id);
+
+      element.addEventListener("input", event => {
+        storage.setValue(id, { value: event.target.value });
+        this.setPropertyOnSiblings(
+          element,
+          "value",
+          event.target.value,
+          "value"
+        );
+      });
+
+      element.addEventListener("resetform", event => {
+        const defaultValue = this.data.defaultFieldValue ?? "";
+        element.value = elementData.userValue = defaultValue;
+        elementData.formattedValue = null;
+      });
+
+      let blurListener = event => {
+        const { formattedValue } = elementData;
+        if (formattedValue !== null && formattedValue !== undefined) {
+          event.target.value = formattedValue;
+        }
+        // Reset the cursor position to the start of the field (issue 12359).
+        event.target.scrollLeft = 0;
+      };
+
+      if (this.enableScripting && this.hasJSActions) {
+        element.addEventListener("focus", event => {
+          if (elementData.userValue) {
+            event.target.value = elementData.userValue;
+          }
+          elementData.valueOnFocus = event.target.value;
+        });
+
+        element.addEventListener("updatefromsandbox", jsEvent => {
+          const actions = {
+            value(event) {
+              elementData.userValue = event.detail.value ?? "";
+              storage.setValue(id, { value: elementData.userValue.toString() });
+              event.target.value = elementData.userValue;
+            },
+            formattedValue(event) {
+              const { formattedValue } = event.detail;
+              elementData.formattedValue = formattedValue;
+              if (
+                formattedValue !== null &&
+                formattedValue !== undefined &&
+                event.target !== document.activeElement
+              ) {
+                // Input hasn't the focus so display formatted string
+                event.target.value = formattedValue;
+              }
+              storage.setValue(id, {
+                formattedValue,
+              });
+            },
+            selRange(event) {
+              event.target.setSelectionRange(...event.detail.selRange);
+            },
+          };
+          this._dispatchEventFromSandbox(actions, jsEvent);
+        });
+
+        // Even if the field hasn't any actions
+        // leaving it can still trigger some actions with Calculate
+        element.addEventListener("keydown", event => {
+          // if the key is one of Escape, Enter or Tab
+          // then the data are committed
+          let commitKey = -1;
+          if (event.key === "Escape") {
+            commitKey = 0;
+          } else if (event.key === "Enter") {
+            commitKey = 2;
+          } else if (event.key === "Tab") {
+            commitKey = 3;
+          }
+          if (commitKey === -1) {
+            return;
+          }
+          const { value } = event.target;
+          if (elementData.valueOnFocus === value) {
+            return;
+          }
+          // Save the entered value
+          elementData.userValue = value;
+          this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+            source: this,
+            detail: {
+              id,
+              name: "Keystroke",
+              value,
+              willCommit: true,
+              commitKey,
+              selStart: event.target.selectionStart,
+              selEnd: event.target.selectionEnd,
+            },
+          });
+        });
+        const _blurListener = blurListener;
+        blurListener = null;
+        element.addEventListener("blur", event => {
+          const { value } = event.target;
+          elementData.userValue = value;
+          if (this._mouseState.isDown && elementData.valueOnFocus !== value) {
+            // Focus out using the mouse: data are committed
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value,
+                willCommit: true,
+                commitKey: 1,
+                selStart: event.target.selectionStart,
+                selEnd: event.target.selectionEnd,
+              },
+            });
+          }
+          _blurListener(event);
+        });
+
+        if (this.data.actions?.Keystroke) {
+          element.addEventListener("beforeinput", event => {
+            const { data, target } = event;
+            const { value, selectionStart, selectionEnd } = target;
+
+            let selStart = selectionStart,
+              selEnd = selectionEnd;
+
+            switch (event.inputType) {
+              // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
+              case "deleteWordBackward": {
+                const match = value
+                  .substring(0, selectionStart)
+                  .match(/\w*[^\w]*$/);
+                if (match) {
+                  selStart -= match[0].length;
+                }
+                break;
+              }
+              case "deleteWordForward": {
+                const match = value
+                  .substring(selectionStart)
+                  .match(/^[^\w]*\w*/);
+                if (match) {
+                  selEnd += match[0].length;
+                }
+                break;
+              }
+              case "deleteContentBackward":
+                if (selectionStart === selectionEnd) {
+                  selStart -= 1;
+                }
+                break;
+              case "deleteContentForward":
+                if (selectionStart === selectionEnd) {
+                  selEnd += 1;
+                }
+                break;
+            }
+
+            // We handle the event ourselves.
+            event.preventDefault();
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value,
+                change: data || "",
+                willCommit: false,
+                selStart,
+                selEnd,
+              },
+            });
+          });
+        }
+
+        this._setEventListeners(
+          element,
+          [
+            ["focus", "Focus"],
+            ["blur", "Blur"],
+            ["mousedown", "Mouse Down"],
+            ["mouseenter", "Mouse Enter"],
+            ["mouseleave", "Mouse Exit"],
+            ["mouseup", "Mouse Up"],
+          ],
+          event => event.target.value
+        );
       }
 
-      element.disabled = this.data.readOnly;
+      if (blurListener) {
+        element.addEventListener("blur", blurListener);
+      }
 
       if (this.data.maxLen !== null) {
         element.maxLength = this.data.maxLen;
       }
 
       if (this.data.comb) {
-        let fieldWidth = this.data.rect[2] - this.data.rect[0];
-        let combWidth = fieldWidth / this.data.maxLen;
+        const fieldWidth = this.data.rect[2] - this.data.rect[0];
+        const combWidth = fieldWidth / this.data.maxLen;
 
-        element.classList.add('comb');
-        element.style.letterSpacing = 'calc(' + combWidth + 'px - 1ch)';
+        element.classList.add("comb");
+        element.style.letterSpacing = `calc(${combWidth}px - 1ch)`;
       }
     } else {
-      element = document.createElement('div');
+      element = document.createElement("div");
       element.textContent = this.data.fieldValue;
-      element.style.verticalAlign = 'middle';
-      element.style.display = 'table-cell';
-
-      let font = null;
-      if (this.data.fontRefName) {
-        font = this.page.commonObjs.getData(this.data.fontRefName);
-      }
-      this._setTextStyle(element, font);
+      element.style.verticalAlign = "middle";
+      element.style.display = "table-cell";
     }
 
-    if (this.data.textAlignment !== null) {
-      element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
-    }
+    this._setTextStyle(element);
+    this._setBackgroundColor(element);
+    this._setDefaultPropertiesFromJS(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -461,53 +1183,106 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    *
    * @private
    * @param {HTMLDivElement} element
-   * @param {Object} font
    * @memberof TextWidgetAnnotationElement
    */
-  _setTextStyle(element, font) {
-    // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
-    let style = element.style;
-    style.fontSize = this.data.fontSize + 'px';
-    style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
+  _setTextStyle(element) {
+    const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const { fontSize, fontColor } = this.data.defaultAppearanceData;
+    const style = element.style;
 
-    if (!font) {
-      return;
+    // TODO: If the font-size is zero, calculate it based on the height and
+    //       width of the element.
+    // Not setting `style.fontSize` will use the default font-size for now.
+    if (fontSize) {
+      style.fontSize = `${fontSize}px`;
     }
 
-    style.fontWeight = (font.black ?
-      (font.bold ? '900' : 'bold') :
-      (font.bold ? 'bold' : 'normal'));
-    style.fontStyle = (font.italic ? 'italic' : 'normal');
+    style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
 
-    // Use a reasonable default font if the font doesn't specify a fallback.
-    let fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
-    let fallbackName = font.fallbackName || 'Helvetica, sans-serif';
-    style.fontFamily = fontFamily + fallbackName;
+    if (this.data.textAlignment !== null) {
+      style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
+    }
   }
 }
 
 class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    super(parameters, parameters.renderInteractiveForms);
+    super(parameters, { isRenderable: parameters.renderForms });
   }
 
-  /**
-   * Render the checkbox widget annotation's HTML element
-   * in the empty container.
-   *
-   * @public
-   * @memberof CheckboxWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'buttonWidgetAnnotation checkBox';
-
-    let element = document.createElement('input');
-    element.disabled = this.data.readOnly;
-    element.type = 'checkbox';
-    if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
-      element.setAttribute('checked', true);
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    let value = storage.getValue(id, {
+      value: data.exportValue === data.fieldValue,
+    }).value;
+    if (typeof value === "string") {
+      // The value has been changed through js and set in annotationStorage.
+      value = value !== "Off";
+      storage.setValue(id, { value });
     }
+
+    this.container.className = "buttonWidgetAnnotation checkBox";
+
+    const element = document.createElement("input");
+    GetElementsByNameSet.add(element);
+    element.disabled = data.readOnly;
+    element.type = "checkbox";
+    element.name = data.fieldName;
+    if (value) {
+      element.setAttribute("checked", true);
+    }
+    element.setAttribute("id", id);
+    element.setAttribute("exportValue", data.exportValue);
+    element.tabIndex = DEFAULT_TAB_INDEX;
+
+    element.addEventListener("change", event => {
+      const { name, checked } = event.target;
+      for (const checkbox of this._getElementsByName(name, /* skipId = */ id)) {
+        const curChecked = checked && checkbox.exportValue === data.exportValue;
+        if (checkbox.domElement) {
+          checkbox.domElement.checked = curChecked;
+        }
+        storage.setValue(checkbox.id, { value: curChecked });
+      }
+      storage.setValue(id, { value: checked });
+    });
+
+    element.addEventListener("resetform", event => {
+      const defaultValue = data.defaultFieldValue || "Off";
+      event.target.checked = defaultValue === data.exportValue;
+    });
+
+    if (this.enableScripting && this.hasJSActions) {
+      element.addEventListener("updatefromsandbox", jsEvent => {
+        const actions = {
+          value(event) {
+            event.target.checked = event.detail.value !== "Off";
+            storage.setValue(id, { value: event.target.checked });
+          },
+        };
+        this._dispatchEventFromSandbox(actions, jsEvent);
+      });
+
+      this._setEventListeners(
+        element,
+        [
+          ["change", "Validate"],
+          ["change", "Action"],
+          ["focus", "Focus"],
+          ["blur", "Blur"],
+          ["mousedown", "Mouse Down"],
+          ["mouseenter", "Mouse Enter"],
+          ["mouseleave", "Mouse Exit"],
+          ["mouseup", "Mouse Up"],
+        ],
+        event => event.target.checked
+      );
+    }
+
+    this._setBackgroundColor(element);
+    this._setDefaultPropertiesFromJS(element);
 
     this.container.appendChild(element);
     return this.container;
@@ -516,75 +1291,323 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
 
 class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
   constructor(parameters) {
-    super(parameters, parameters.renderInteractiveForms);
+    super(parameters, { isRenderable: parameters.renderForms });
   }
 
-  /**
-   * Render the radio button widget annotation's HTML element
-   * in the empty container.
-   *
-   * @public
-   * @memberof RadioButtonWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'buttonWidgetAnnotation radioButton';
-
-    let element = document.createElement('input');
-    element.disabled = this.data.readOnly;
-    element.type = 'radio';
-    element.name = this.data.fieldName;
-    if (this.data.fieldValue === this.data.buttonValue) {
-      element.setAttribute('checked', true);
+    this.container.className = "buttonWidgetAnnotation radioButton";
+    const storage = this.annotationStorage;
+    const data = this.data;
+    const id = data.id;
+    let value = storage.getValue(id, {
+      value: data.fieldValue === data.buttonValue,
+    }).value;
+    if (typeof value === "string") {
+      // The value has been changed through js and set in annotationStorage.
+      value = value !== data.buttonValue;
+      storage.setValue(id, { value });
     }
+
+    const element = document.createElement("input");
+    GetElementsByNameSet.add(element);
+    element.disabled = data.readOnly;
+    element.type = "radio";
+    element.name = data.fieldName;
+    if (value) {
+      element.setAttribute("checked", true);
+    }
+    element.setAttribute("id", id);
+    element.tabIndex = DEFAULT_TAB_INDEX;
+
+    element.addEventListener("change", event => {
+      const { name, checked } = event.target;
+      for (const radio of this._getElementsByName(name, /* skipId = */ id)) {
+        storage.setValue(radio.id, { value: false });
+      }
+      storage.setValue(id, { value: checked });
+    });
+
+    element.addEventListener("resetform", event => {
+      const defaultValue = data.defaultFieldValue;
+      event.target.checked =
+        defaultValue !== null &&
+        defaultValue !== undefined &&
+        defaultValue === data.buttonValue;
+    });
+
+    if (this.enableScripting && this.hasJSActions) {
+      const pdfButtonValue = data.buttonValue;
+      element.addEventListener("updatefromsandbox", jsEvent => {
+        const actions = {
+          value: event => {
+            const checked = pdfButtonValue === event.detail.value;
+            for (const radio of this._getElementsByName(event.target.name)) {
+              const curChecked = checked && radio.id === id;
+              if (radio.domElement) {
+                radio.domElement.checked = curChecked;
+              }
+              storage.setValue(radio.id, { value: curChecked });
+            }
+          },
+        };
+        this._dispatchEventFromSandbox(actions, jsEvent);
+      });
+
+      this._setEventListeners(
+        element,
+        [
+          ["change", "Validate"],
+          ["change", "Action"],
+          ["focus", "Focus"],
+          ["blur", "Blur"],
+          ["mousedown", "Mouse Down"],
+          ["mouseenter", "Mouse Enter"],
+          ["mouseleave", "Mouse Exit"],
+          ["mouseup", "Mouse Up"],
+        ],
+        event => event.target.checked
+      );
+    }
+
+    this._setBackgroundColor(element);
+    this._setDefaultPropertiesFromJS(element);
 
     this.container.appendChild(element);
     return this.container;
   }
 }
 
-class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
+class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
   constructor(parameters) {
-    super(parameters, parameters.renderInteractiveForms);
+    super(parameters, { ignoreBorder: parameters.data.hasAppearance });
   }
 
-  /**
-   * Render the choice widget annotation's HTML element in the empty
-   * container.
-   *
-   * @public
-   * @memberof ChoiceWidgetAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'choiceWidgetAnnotation';
+    // The rendering and functionality of a push button widget annotation is
+    // equal to that of a link annotation, but may have more functionality, such
+    // as performing actions on form fields (resetting, submitting, et cetera).
+    const container = super.render();
+    container.className = "buttonWidgetAnnotation pushButton";
 
-    let selectElement = document.createElement('select');
+    if (this.data.alternativeText) {
+      container.title = this.data.alternativeText;
+    }
+
+    this._setDefaultPropertiesFromJS(container);
+
+    return container;
+  }
+}
+
+class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
+  constructor(parameters) {
+    super(parameters, { isRenderable: parameters.renderForms });
+  }
+
+  render() {
+    this.container.className = "choiceWidgetAnnotation";
+    const storage = this.annotationStorage;
+    const id = this.data.id;
+
+    const storedData = storage.getValue(id, {
+      value: this.data.fieldValue,
+    });
+
+    let { fontSize } = this.data.defaultAppearanceData;
+    if (!fontSize) {
+      fontSize = 9;
+    }
+    const fontSizeStyle = `calc(${fontSize}px * var(--zoom-factor))`;
+
+    const selectElement = document.createElement("select");
+    GetElementsByNameSet.add(selectElement);
     selectElement.disabled = this.data.readOnly;
+    selectElement.name = this.data.fieldName;
+    selectElement.setAttribute("id", id);
+    selectElement.tabIndex = DEFAULT_TAB_INDEX;
+
+    selectElement.style.fontSize = `${fontSize}px`;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
       selectElement.size = this.data.options.length;
-
       if (this.data.multiSelect) {
         selectElement.multiple = true;
       }
     }
 
-    // Insert the options into the choice field.
-    for (let i = 0, ii = this.data.options.length; i < ii; i++) {
-      let option = this.data.options[i];
+    selectElement.addEventListener("resetform", event => {
+      const defaultValue = this.data.defaultFieldValue;
+      for (const option of selectElement.options) {
+        option.selected = option.value === defaultValue;
+      }
+    });
 
-      let optionElement = document.createElement('option');
+    // Insert the options into the choice field.
+    for (const option of this.data.options) {
+      const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
-
-      if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
-        optionElement.setAttribute('selected', true);
+      if (this.data.combo) {
+        optionElement.style.fontSize = fontSizeStyle;
       }
-
+      if (storedData.value.includes(option.exportValue)) {
+        optionElement.setAttribute("selected", true);
+      }
       selectElement.appendChild(optionElement);
     }
+
+    const getValue = (event, isExport) => {
+      const name = isExport ? "value" : "textContent";
+      const options = event.target.options;
+      if (!event.target.multiple) {
+        return options.selectedIndex === -1
+          ? null
+          : options[options.selectedIndex][name];
+      }
+      return Array.prototype.filter
+        .call(options, option => option.selected)
+        .map(option => option[name]);
+    };
+
+    const getItems = event => {
+      const options = event.target.options;
+      return Array.prototype.map.call(options, option => {
+        return { displayValue: option.textContent, exportValue: option.value };
+      });
+    };
+
+    if (this.enableScripting && this.hasJSActions) {
+      selectElement.addEventListener("updatefromsandbox", jsEvent => {
+        const actions = {
+          value(event) {
+            const value = event.detail.value;
+            const values = new Set(Array.isArray(value) ? value : [value]);
+            for (const option of selectElement.options) {
+              option.selected = values.has(option.value);
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+            });
+          },
+          multipleSelection(event) {
+            selectElement.multiple = true;
+          },
+          remove(event) {
+            const options = selectElement.options;
+            const index = event.detail.remove;
+            options[index].selected = false;
+            selectElement.remove(index);
+            if (options.length > 0) {
+              const i = Array.prototype.findIndex.call(
+                options,
+                option => option.selected
+              );
+              if (i === -1) {
+                options[0].selected = true;
+              }
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          clear(event) {
+            while (selectElement.length !== 0) {
+              selectElement.remove(0);
+            }
+            storage.setValue(id, { value: null, items: [] });
+          },
+          insert(event) {
+            const { index, displayValue, exportValue } = event.detail.insert;
+            const optionElement = document.createElement("option");
+            optionElement.textContent = displayValue;
+            optionElement.value = exportValue;
+            selectElement.insertBefore(
+              optionElement,
+              selectElement.children[index]
+            );
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          items(event) {
+            const { items } = event.detail;
+            while (selectElement.length !== 0) {
+              selectElement.remove(0);
+            }
+            for (const item of items) {
+              const { displayValue, exportValue } = item;
+              const optionElement = document.createElement("option");
+              optionElement.textContent = displayValue;
+              optionElement.value = exportValue;
+              selectElement.appendChild(optionElement);
+            }
+            if (selectElement.options.length > 0) {
+              selectElement.options[0].selected = true;
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+              items: getItems(event),
+            });
+          },
+          indices(event) {
+            const indices = new Set(event.detail.indices);
+            for (const option of event.target.options) {
+              option.selected = indices.has(option.index);
+            }
+            storage.setValue(id, {
+              value: getValue(event, /* isExport */ true),
+            });
+          },
+          editable(event) {
+            event.target.disabled = !event.detail.editable;
+          },
+        };
+        this._dispatchEventFromSandbox(actions, jsEvent);
+      });
+
+      selectElement.addEventListener("input", event => {
+        const exportValue = getValue(event, /* isExport */ true);
+        const value = getValue(event, /* isExport */ false);
+        storage.setValue(id, { value: exportValue });
+
+        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+          source: this,
+          detail: {
+            id,
+            name: "Keystroke",
+            value,
+            changeEx: exportValue,
+            willCommit: true,
+            commitKey: 1,
+            keyDown: false,
+          },
+        });
+      });
+
+      this._setEventListeners(
+        selectElement,
+        [
+          ["focus", "Focus"],
+          ["blur", "Blur"],
+          ["mousedown", "Mouse Down"],
+          ["mouseenter", "Mouse Enter"],
+          ["mouseleave", "Mouse Exit"],
+          ["mouseup", "Mouse Up"],
+          ["input", "Action"],
+        ],
+        event => event.target.checked
+      );
+    } else {
+      selectElement.addEventListener("input", function (event) {
+        storage.setValue(id, { value: getValue(event, /* isExport */ true) });
+      });
+    }
+
+    this._setBackgroundColor(selectElement);
+    this._setDefaultPropertiesFromJS(selectElement);
 
     this.container.appendChild(selectElement);
     return this.container;
@@ -593,50 +1616,64 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
 class PopupAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable);
+    const isRenderable = !!(
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable });
   }
 
-  /**
-   * Render the popup annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof PopupAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line', 'Square', 'Circle', 'PolyLine', 'Polygon'];
+    const IGNORE_TYPES = [
+      "Line",
+      "Square",
+      "Circle",
+      "PolyLine",
+      "Polygon",
+      "Ink",
+    ];
 
-    this.container.className = 'popupAnnotation';
+    this.container.className = "popupAnnotation";
 
-    if (IGNORE_TYPES.indexOf(this.data.parentType) >= 0) {
+    if (IGNORE_TYPES.includes(this.data.parentType)) {
       return this.container;
     }
 
-    let selector = '[data-annotation-id="' + this.data.parentId + '"]';
-    let parentElement = this.layer.querySelector(selector);
-    if (!parentElement) {
+    const selector = `[data-annotation-id="${this.data.parentId}"]`;
+    const parentElements = this.layer.querySelectorAll(selector);
+    if (parentElements.length === 0) {
       return this.container;
     }
 
-    let popup = new PopupElement({
+    const popup = new PopupElement({
       container: this.container,
-      trigger: parentElement,
+      trigger: Array.from(parentElements),
       color: this.data.color,
-      title: this.data.title,
-      contents: this.data.contents,
+      titleObj: this.data.titleObj,
+      modificationDate: this.data.modificationDate,
+      contentsObj: this.data.contentsObj,
+      richText: this.data.richText,
     });
 
     // Position the popup next to the parent annotation's container.
     // PDF viewers ignore a popup annotation's rectangle.
-    let parentLeft = parseFloat(parentElement.style.left);
-    let parentWidth = parseFloat(parentElement.style.width);
-    CustomStyle.setProp('transformOrigin', this.container,
-                        -(parentLeft + parentWidth) + 'px -' +
-                        parentElement.style.top);
-    this.container.style.left = (parentLeft + parentWidth) + 'px';
+    const page = this.page;
+    const rect = Util.normalizeRect([
+      this.data.parentRect[0],
+      page.view[3] - this.data.parentRect[1] + page.view[1],
+      this.data.parentRect[2],
+      page.view[3] - this.data.parentRect[3] + page.view[1],
+    ]);
+    const popupLeft =
+      rect[0] + this.data.parentRect[2] - this.data.parentRect[0];
+    const popupTop = rect[1];
+
+    this.container.style.transformOrigin = `${-popupLeft}px ${-popupTop}px`;
+    this.container.style.left = `${popupLeft}px`;
+    this.container.style.top = `${popupTop}px`;
 
     this.container.appendChild(popup.render());
     return this.container;
@@ -648,57 +1685,88 @@ class PopupElement {
     this.container = parameters.container;
     this.trigger = parameters.trigger;
     this.color = parameters.color;
-    this.title = parameters.title;
-    this.contents = parameters.contents;
+    this.titleObj = parameters.titleObj;
+    this.modificationDate = parameters.modificationDate;
+    this.contentsObj = parameters.contentsObj;
+    this.richText = parameters.richText;
     this.hideWrapper = parameters.hideWrapper || false;
 
     this.pinned = false;
   }
 
-  /**
-   * Render the popup's HTML element.
-   *
-   * @public
-   * @memberof PopupElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     const BACKGROUND_ENLIGHT = 0.7;
 
-    let wrapper = document.createElement('div');
-    wrapper.className = 'popupWrapper';
+    const wrapper = document.createElement("div");
+    wrapper.className = "popupWrapper";
 
     // For Popup annotations we hide the entire section because it contains
     // only the popup. However, for Text annotations without a separate Popup
     // annotation, we cannot hide the entire container as the image would
     // disappear too. In that special case, hiding the wrapper suffices.
-    this.hideElement = (this.hideWrapper ? wrapper : this.container);
-    this.hideElement.setAttribute('hidden', true);
+    this.hideElement = this.hideWrapper ? wrapper : this.container;
+    this.hideElement.hidden = true;
 
-    let popup = document.createElement('div');
-    popup.className = 'popup';
+    const popup = document.createElement("div");
+    popup.className = "popup";
 
-    let color = this.color;
+    const color = this.color;
     if (color) {
       // Enlighten the color.
-      let r = BACKGROUND_ENLIGHT * (255 - color[0]) + color[0];
-      let g = BACKGROUND_ENLIGHT * (255 - color[1]) + color[1];
-      let b = BACKGROUND_ENLIGHT * (255 - color[2]) + color[2];
-      popup.style.backgroundColor = Util.makeCssRgb(r | 0, g | 0, b | 0);
+      const r = BACKGROUND_ENLIGHT * (255 - color[0]) + color[0];
+      const g = BACKGROUND_ENLIGHT * (255 - color[1]) + color[1];
+      const b = BACKGROUND_ENLIGHT * (255 - color[2]) + color[2];
+      popup.style.backgroundColor = Util.makeHexColor(r | 0, g | 0, b | 0);
     }
 
-    let contents = this._formatContents(this.contents);
-    let title = document.createElement('h1');
-    title.textContent = this.title;
+    const title = document.createElement("h1");
+    title.dir = this.titleObj.dir;
+    title.textContent = this.titleObj.str;
+    popup.appendChild(title);
+
+    // The modification date is shown in the popup instead of the creation
+    // date if it is available and can be parsed correctly, which is
+    // consistent with other viewers such as Adobe Acrobat.
+    const dateObject = PDFDateString.toDateObject(this.modificationDate);
+    if (dateObject) {
+      const modificationDate = document.createElement("span");
+      modificationDate.className = "popupDate";
+      modificationDate.textContent = "{{date}}, {{time}}";
+      modificationDate.dataset.l10nId = "annotation_date_string";
+      modificationDate.dataset.l10nArgs = JSON.stringify({
+        date: dateObject.toLocaleDateString(),
+        time: dateObject.toLocaleTimeString(),
+      });
+      popup.appendChild(modificationDate);
+    }
+
+    if (
+      this.richText?.str &&
+      (!this.contentsObj?.str || this.contentsObj.str === this.richText.str)
+    ) {
+      XfaLayer.render({
+        xfaHtml: this.richText.html,
+        intent: "richText",
+        div: popup,
+      });
+      popup.lastChild.className = "richText popupContent";
+    } else {
+      const contents = this._formatContents(this.contentsObj);
+      popup.appendChild(contents);
+    }
+
+    if (!Array.isArray(this.trigger)) {
+      this.trigger = [this.trigger];
+    }
 
     // Attach the event listeners to the trigger element.
-    this.trigger.addEventListener('click', this._toggle.bind(this));
-    this.trigger.addEventListener('mouseover', this._show.bind(this, false));
-    this.trigger.addEventListener('mouseout', this._hide.bind(this, false));
-    popup.addEventListener('click', this._hide.bind(this, true));
+    for (const element of this.trigger) {
+      element.addEventListener("click", this._toggle.bind(this));
+      element.addEventListener("mouseover", this._show.bind(this, false));
+      element.addEventListener("mouseout", this._hide.bind(this, false));
+    }
+    popup.addEventListener("click", this._hide.bind(this, true));
 
-    popup.appendChild(title);
-    popup.appendChild(contents);
     wrapper.appendChild(popup);
     return wrapper;
   }
@@ -707,18 +1775,20 @@ class PopupElement {
    * Format the contents of the popup by adding newlines where necessary.
    *
    * @private
-   * @param {string} contents
+   * @param {Object<string, string>} contentsObj
    * @memberof PopupElement
    * @returns {HTMLParagraphElement}
    */
-  _formatContents(contents) {
-    let p = document.createElement('p');
-    let lines = contents.split(/(?:\r\n?|\n)/);
+  _formatContents({ str, dir }) {
+    const p = document.createElement("p");
+    p.className = "popupContent";
+    p.dir = dir;
+    const lines = str.split(/(?:\r\n?|\n)/);
     for (let i = 0, ii = lines.length; i < ii; ++i) {
-      let line = lines[i];
+      const line = lines[i];
       p.appendChild(document.createTextNode(line));
-      if (i < (ii - 1)) {
-        p.appendChild(document.createElement('br'));
+      if (i < ii - 1) {
+        p.appendChild(document.createElement("br"));
       }
     }
     return p;
@@ -749,8 +1819,8 @@ class PopupElement {
     if (pin) {
       this.pinned = true;
     }
-    if (this.hideElement.hasAttribute('hidden')) {
-      this.hideElement.removeAttribute('hidden');
+    if (this.hideElement.hidden) {
+      this.hideElement.hidden = false;
       this.container.style.zIndex += 1;
     }
   }
@@ -766,54 +1836,74 @@ class PopupElement {
     if (unpin) {
       this.pinned = false;
     }
-    if (!this.hideElement.hasAttribute('hidden') && !this.pinned) {
-      this.hideElement.setAttribute('hidden', true);
+    if (!this.hideElement.hidden && !this.pinned) {
+      this.hideElement.hidden = true;
       this.container.style.zIndex -= 1;
     }
   }
 }
 
-class LineAnnotationElement extends AnnotationElement {
+class FreeTextAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the line annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof LineAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'lineAnnotation';
+    this.container.className = "freeTextAnnotation";
+
+    if (!this.data.hasPopup) {
+      this._createPopup(null, this.data);
+    }
+    return this.container;
+  }
+}
+
+class LineAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
+  }
+
+  render() {
+    this.container.className = "lineAnnotation";
 
     // Create an invisible line with the same starting and ending coordinates
     // that acts as the trigger for the popup. Only the line itself should
     // trigger the popup, not the entire container.
-    let data = this.data;
-    let width = data.rect[2] - data.rect[0];
-    let height = data.rect[3] - data.rect[1];
-    let svg = this.svgFactory.create(width, height);
+    const data = this.data;
+    const { width, height } = getRectDims(data.rect);
+    const svg = this.svgFactory.create(width, height);
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    let line = this.svgFactory.createElement('svg:line');
-    line.setAttribute('x1', data.rect[2] - data.lineCoordinates[0]);
-    line.setAttribute('y1', data.rect[3] - data.lineCoordinates[1]);
-    line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
-    line.setAttribute('y2', data.rect[3] - data.lineCoordinates[3]);
-    line.setAttribute('stroke-width', data.borderStyle.width);
-    line.setAttribute('stroke', 'transparent');
+    const line = this.svgFactory.createElement("svg:line");
+    line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
+    line.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
+    line.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
+    line.setAttribute("y2", data.rect[3] - data.lineCoordinates[3]);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    line.setAttribute("stroke-width", data.borderStyle.width || 1);
+    line.setAttribute("stroke", "transparent");
+    line.setAttribute("fill", "transparent");
 
     svg.appendChild(line);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the line instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, line, data);
+    this._createPopup(line, data);
 
     return this.container;
   }
@@ -821,48 +1911,46 @@ class LineAnnotationElement extends AnnotationElement {
 
 class SquareAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the square annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof SquareAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'squareAnnotation';
+    this.container.className = "squareAnnotation";
 
     // Create an invisible square with the same rectangle that acts as the
     // trigger for the popup. Only the square itself should trigger the
     // popup, not the entire container.
-    let data = this.data;
-    let width = data.rect[2] - data.rect[0];
-    let height = data.rect[3] - data.rect[1];
-    let svg = this.svgFactory.create(width, height);
+    const data = this.data;
+    const { width, height } = getRectDims(data.rect);
+    const svg = this.svgFactory.create(width, height);
 
     // The browser draws half of the borders inside the square and half of
     // the borders outside the square by default. This behavior cannot be
     // changed programmatically, so correct for that here.
-    let borderWidth = data.borderStyle.width;
-    let square = this.svgFactory.createElement('svg:rect');
-    square.setAttribute('x', borderWidth / 2);
-    square.setAttribute('y', borderWidth / 2);
-    square.setAttribute('width', width - borderWidth);
-    square.setAttribute('height', height - borderWidth);
-    square.setAttribute('stroke-width', borderWidth);
-    square.setAttribute('stroke', 'transparent');
-    square.setAttribute('fill', 'none');
+    const borderWidth = data.borderStyle.width;
+    const square = this.svgFactory.createElement("svg:rect");
+    square.setAttribute("x", borderWidth / 2);
+    square.setAttribute("y", borderWidth / 2);
+    square.setAttribute("width", width - borderWidth);
+    square.setAttribute("height", height - borderWidth);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    square.setAttribute("stroke-width", borderWidth || 1);
+    square.setAttribute("stroke", "transparent");
+    square.setAttribute("fill", "transparent");
 
     svg.appendChild(square);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the square instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, square, data);
+    this._createPopup(square, data);
 
     return this.container;
   }
@@ -870,48 +1958,46 @@ class SquareAnnotationElement extends AnnotationElement {
 
 class CircleAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the circle annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof CircleAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'circleAnnotation';
+    this.container.className = "circleAnnotation";
 
     // Create an invisible circle with the same ellipse that acts as the
     // trigger for the popup. Only the circle itself should trigger the
     // popup, not the entire container.
-    let data = this.data;
-    let width = data.rect[2] - data.rect[0];
-    let height = data.rect[3] - data.rect[1];
-    let svg = this.svgFactory.create(width, height);
+    const data = this.data;
+    const { width, height } = getRectDims(data.rect);
+    const svg = this.svgFactory.create(width, height);
 
     // The browser draws half of the borders inside the circle and half of
     // the borders outside the circle by default. This behavior cannot be
     // changed programmatically, so correct for that here.
-    let borderWidth = data.borderStyle.width;
-    let circle = this.svgFactory.createElement('svg:ellipse');
-    circle.setAttribute('cx', width / 2);
-    circle.setAttribute('cy', height / 2);
-    circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
-    circle.setAttribute('ry', (height / 2) - (borderWidth / 2));
-    circle.setAttribute('stroke-width', borderWidth);
-    circle.setAttribute('stroke', 'transparent');
-    circle.setAttribute('fill', 'none');
+    const borderWidth = data.borderStyle.width;
+    const circle = this.svgFactory.createElement("svg:ellipse");
+    circle.setAttribute("cx", width / 2);
+    circle.setAttribute("cy", height / 2);
+    circle.setAttribute("rx", width / 2 - borderWidth / 2);
+    circle.setAttribute("ry", height / 2 - borderWidth / 2);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    circle.setAttribute("stroke-width", borderWidth || 1);
+    circle.setAttribute("stroke", "transparent");
+    circle.setAttribute("fill", "transparent");
 
     svg.appendChild(circle);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the circle instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, circle, data);
+    this._createPopup(circle, data);
 
     return this.container;
   }
@@ -919,58 +2005,54 @@ class CircleAnnotationElement extends AnnotationElement {
 
 class PolylineAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
 
-    this.containerClassName = 'polylineAnnotation';
-    this.svgElementName = 'svg:polyline';
+    this.containerClassName = "polylineAnnotation";
+    this.svgElementName = "svg:polyline";
   }
 
-  /**
-   * Render the polyline annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof PolylineAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
     this.container.className = this.containerClassName;
 
     // Create an invisible polyline with the same points that acts as the
     // trigger for the popup. Only the polyline itself should trigger the
     // popup, not the entire container.
-    let data = this.data;
-    let width = data.rect[2] - data.rect[0];
-    let height = data.rect[3] - data.rect[1];
-    let svg = this.svgFactory.create(width, height);
+    const data = this.data;
+    const { width, height } = getRectDims(data.rect);
+    const svg = this.svgFactory.create(width, height);
 
     // Convert the vertices array to a single points string that the SVG
     // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
     // calculated from a bottom left origin, so transform the polyline
     // coordinates to a top left origin for the SVG element.
-    let vertices = data.vertices;
     let points = [];
-    for (let i = 0, ii = vertices.length; i < ii; i++) {
-      let x = vertices[i].x - data.rect[0];
-      let y = data.rect[3] - vertices[i].y;
-      points.push(x + ',' + y);
+    for (const coordinate of data.vertices) {
+      const x = coordinate.x - data.rect[0];
+      const y = data.rect[3] - coordinate.y;
+      points.push(x + "," + y);
     }
-    points = points.join(' ');
+    points = points.join(" ");
 
-    let borderWidth = data.borderStyle.width;
-    let polyline = this.svgFactory.createElement(this.svgElementName);
-    polyline.setAttribute('points', points);
-    polyline.setAttribute('stroke-width', borderWidth);
-    polyline.setAttribute('stroke', 'transparent');
-    polyline.setAttribute('fill', 'none');
+    const polyline = this.svgFactory.createElement(this.svgElementName);
+    polyline.setAttribute("points", points);
+    // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+    // won't be possible to open/close the popup (note e.g. issue 11122).
+    polyline.setAttribute("stroke-width", data.borderStyle.width || 1);
+    polyline.setAttribute("stroke", "transparent");
+    polyline.setAttribute("fill", "transparent");
 
     svg.appendChild(polyline);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the polyline
     // instead of to the entire container (which is the default).
-    this._createPopup(this.container, polyline, data);
+    this._createPopup(polyline, data);
 
     return this.container;
   }
@@ -981,126 +2063,223 @@ class PolygonAnnotationElement extends PolylineAnnotationElement {
     // Polygons are specific forms of polylines, so reuse their logic.
     super(parameters);
 
-    this.containerClassName = 'polygonAnnotation';
-    this.svgElementName = 'svg:polygon';
+    this.containerClassName = "polygonAnnotation";
+    this.svgElementName = "svg:polygon";
+  }
+}
+
+class CaretAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
+  }
+
+  render() {
+    this.container.className = "caretAnnotation";
+
+    if (!this.data.hasPopup) {
+      this._createPopup(null, this.data);
+    }
+    return this.container;
+  }
+}
+
+class InkAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
+
+    this.containerClassName = "inkAnnotation";
+
+    // Use the polyline SVG element since it allows us to use coordinates
+    // directly and to draw both straight lines and curves.
+    this.svgElementName = "svg:polyline";
+  }
+
+  render() {
+    this.container.className = this.containerClassName;
+
+    // Create an invisible polyline with the same points that acts as the
+    // trigger for the popup.
+    const data = this.data;
+    const { width, height } = getRectDims(data.rect);
+    const svg = this.svgFactory.create(width, height);
+
+    for (const inkList of data.inkLists) {
+      // Convert the ink list to a single points string that the SVG
+      // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
+      // calculated from a bottom left origin, so transform the polyline
+      // coordinates to a top left origin for the SVG element.
+      let points = [];
+      for (const coordinate of inkList) {
+        const x = coordinate.x - data.rect[0];
+        const y = data.rect[3] - coordinate.y;
+        points.push(`${x},${y}`);
+      }
+      points = points.join(" ");
+
+      const polyline = this.svgFactory.createElement(this.svgElementName);
+      polyline.setAttribute("points", points);
+      // Ensure that the 'stroke-width' is always non-zero, since otherwise it
+      // won't be possible to open/close the popup (note e.g. issue 11122).
+      polyline.setAttribute("stroke-width", data.borderStyle.width || 1);
+      polyline.setAttribute("stroke", "transparent");
+      polyline.setAttribute("fill", "transparent");
+
+      // Create the popup ourselves so that we can bind it to the polyline
+      // instead of to the entire container (which is the default).
+      this._createPopup(polyline, data);
+
+      svg.appendChild(polyline);
+    }
+
+    this.container.append(svg);
+    return this.container;
   }
 }
 
 class HighlightAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
-  /**
-   * Render the highlight annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof HighlightAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'highlightAnnotation';
-
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      return this._renderQuadrilaterals("highlightAnnotation");
+    }
+
+    this.container.className = "highlightAnnotation";
     return this.container;
   }
 }
 
 class UnderlineAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
-  /**
-   * Render the underline annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof UnderlineAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'underlineAnnotation';
-
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      return this._renderQuadrilaterals("underlineAnnotation");
+    }
+
+    this.container.className = "underlineAnnotation";
     return this.container;
   }
 }
 
 class SquigglyAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
-  /**
-   * Render the squiggly annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof SquigglyAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'squigglyAnnotation';
-
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      return this._renderQuadrilaterals("squigglyAnnotation");
+    }
+
+    this.container.className = "squigglyAnnotation";
     return this.container;
   }
 }
 
 class StrikeOutAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, {
+      isRenderable,
+      ignoreBorder: true,
+      createQuadrilaterals: true,
+    });
   }
 
-  /**
-   * Render the strikeout annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof StrikeOutAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'strikeoutAnnotation';
-
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
+
+    if (this.quadrilaterals) {
+      return this._renderQuadrilaterals("strikeoutAnnotation");
+    }
+
+    this.container.className = "strikeoutAnnotation";
     return this.container;
   }
 }
 
 class StampAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    let isRenderable = !!(parameters.data.hasPopup ||
-                          parameters.data.title || parameters.data.contents);
-    super(parameters, isRenderable, /* ignoreBorder = */ true);
+    const isRenderable = !!(
+      parameters.data.hasPopup ||
+      parameters.data.titleObj?.str ||
+      parameters.data.contentsObj?.str ||
+      parameters.data.richText?.str
+    );
+    super(parameters, { isRenderable, ignoreBorder: true });
   }
 
-  /**
-   * Render the stamp annotation's HTML element in the empty container.
-   *
-   * @public
-   * @memberof StampAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'stampAnnotation';
+    this.container.className = "stampAnnotation";
 
     if (!this.data.hasPopup) {
-      this._createPopup(this.container, null, this.data);
+      this._createPopup(null, this.data);
     }
     return this.container;
   }
@@ -1108,37 +2287,34 @@ class StampAnnotationElement extends AnnotationElement {
 
 class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    super(parameters, /* isRenderable = */ true);
+    super(parameters, { isRenderable: true });
 
-    let file = this.data.file;
-    this.filename = getFilenameFromUrl(file.filename);
-    this.content = file.content;
+    const { filename, content } = this.data.file;
+    this.filename = getFilenameFromUrl(filename);
+    this.content = content;
 
-    this.linkService.onFileAttachmentAnnotation({
-      id: stringToPDFString(file.filename),
-      filename: file.filename,
-      content: file.content,
+    this.linkService.eventBus?.dispatch("fileattachmentannotation", {
+      source: this,
+      filename,
+      content,
     });
   }
 
-  /**
-   * Render the file attachment annotation's HTML element in the empty
-   * container.
-   *
-   * @public
-   * @memberof FileAttachmentAnnotationElement
-   * @returns {HTMLSectionElement}
-   */
   render() {
-    this.container.className = 'fileAttachmentAnnotation';
+    this.container.className = "fileAttachmentAnnotation";
 
-    let trigger = document.createElement('div');
+    const trigger = document.createElement("div");
     trigger.style.height = this.container.style.height;
     trigger.style.width = this.container.style.width;
-    trigger.addEventListener('dblclick', this._download.bind(this));
+    trigger.addEventListener("dblclick", this._download.bind(this));
 
-    if (!this.data.hasPopup && (this.data.title || this.data.contents)) {
-      this._createPopup(this.container, trigger, this.data);
+    if (
+      !this.data.hasPopup &&
+      (this.data.titleObj?.str ||
+        this.data.contentsObj?.str ||
+        this.data.richText)
+    ) {
+      this._createPopup(trigger, this.data);
     }
 
     this.container.appendChild(trigger);
@@ -1152,11 +2328,11 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
    * @memberof FileAttachmentAnnotationElement
    */
   _download() {
-    if (!this.downloadManager) {
-      warn('Download cannot be started due to unavailable download manager');
-      return;
-    }
-    this.downloadManager.downloadData(this.content, this.filename, '');
+    this.downloadManager?.openOrDownloadData(
+      this.container,
+      this.content,
+      this.filename
+    );
   }
 }
 
@@ -1165,10 +2341,16 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {PageViewport} viewport
  * @property {HTMLDivElement} div
  * @property {Array} annotations
- * @property {PDFPage} page
+ * @property {PDFPageProxy} page
  * @property {IPDFLinkService} linkService
- * @property {string} imageResourcesPath
- * @property {boolean} renderInteractiveForms
+ * @property {IDownloadManager} downloadManager
+ * @property {string} [imageResourcesPath] - Path for image resources, mainly
+ *   for annotation icons. Include trailing slash.
+ * @property {boolean} renderForms
+ * @property {boolean} [enableScripting] - Enable embedded script execution.
+ * @property {boolean} [hasJSActions] - Some fields have JS actions.
+ *   The default value is `false`.
+ * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  */
 
 class AnnotationLayer {
@@ -1180,27 +2362,71 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static render(parameters) {
-    for (let i = 0, ii = parameters.annotations.length; i < ii; i++) {
-      let data = parameters.annotations[i];
+    const sortedAnnotations = [],
+      popupAnnotations = [];
+    // Ensure that Popup annotations are handled last, since they're dependant
+    // upon the parent annotation having already been rendered (please refer to
+    // the `PopupAnnotationElement.render` method); fixes issue 11362.
+    for (const data of parameters.annotations) {
       if (!data) {
         continue;
       }
-      let element = AnnotationElementFactory.create({
+      const { width, height } = getRectDims(data.rect);
+      if (width <= 0 || height <= 0) {
+        continue;
+      }
+      if (data.annotationType === AnnotationType.POPUP) {
+        popupAnnotations.push(data);
+        continue;
+      }
+      sortedAnnotations.push(data);
+    }
+    if (popupAnnotations.length) {
+      sortedAnnotations.push(...popupAnnotations);
+    }
+
+    const div = parameters.div;
+
+    for (const data of sortedAnnotations) {
+      const element = AnnotationElementFactory.create({
         data,
-        layer: parameters.div,
+        layer: div,
         page: parameters.page,
         viewport: parameters.viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath ||
-                            getDefaultSetting('imageResourcesPath'),
-        renderInteractiveForms: parameters.renderInteractiveForms || false,
+        imageResourcesPath: parameters.imageResourcesPath || "",
+        renderForms: parameters.renderForms !== false,
         svgFactory: new DOMSVGFactory(),
+        annotationStorage:
+          parameters.annotationStorage || new AnnotationStorage(),
+        enableScripting: parameters.enableScripting,
+        hasJSActions: parameters.hasJSActions,
+        fieldObjects: parameters.fieldObjects,
+        mouseState: parameters.mouseState || { isDown: false },
       });
       if (element.isRenderable) {
-        parameters.div.appendChild(element.render());
+        const rendered = element.render();
+        if (data.hidden) {
+          rendered.style.visibility = "hidden";
+        }
+        if (Array.isArray(rendered)) {
+          for (const renderedElement of rendered) {
+            div.appendChild(renderedElement);
+          }
+        } else {
+          if (element instanceof PopupAnnotationElement) {
+            // Popup annotation elements should not be on top of other
+            // annotation elements to prevent interfering with mouse events.
+            div.prepend(rendered);
+          } else {
+            div.appendChild(rendered);
+          }
+        }
       }
     }
+
+    this.#setAnnotationCanvasMap(div, parameters.annotationCanvasMap);
   }
 
   /**
@@ -1211,19 +2437,74 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
-    for (let i = 0, ii = parameters.annotations.length; i < ii; i++) {
-      let data = parameters.annotations[i];
-      let element = parameters.div.querySelector(
-        '[data-annotation-id="' + data.id + '"]');
-      if (element) {
-        CustomStyle.setProp('transform', element,
-          'matrix(' + parameters.viewport.transform.join(',') + ')');
+    const { page, viewport, annotations, annotationCanvasMap, div } =
+      parameters;
+    const transform = viewport.transform;
+    const matrix = `matrix(${transform.join(",")})`;
+
+    let scale, ownMatrix;
+    for (const data of annotations) {
+      const elements = div.querySelectorAll(
+        `[data-annotation-id="${data.id}"]`
+      );
+      if (elements) {
+        for (const element of elements) {
+          if (data.hasOwnCanvas) {
+            const rect = Util.normalizeRect([
+              data.rect[0],
+              page.view[3] - data.rect[1] + page.view[1],
+              data.rect[2],
+              page.view[3] - data.rect[3] + page.view[1],
+            ]);
+
+            if (!ownMatrix) {
+              // When an annotation has its own canvas, then
+              // the scale has been already applied to the canvas,
+              // so we musn't scale it twice.
+              scale = Math.abs(transform[0] || transform[1]);
+              const ownTransform = transform.slice();
+              for (let i = 0; i < 4; i++) {
+                ownTransform[i] = Math.sign(ownTransform[i]);
+              }
+              ownMatrix = `matrix(${ownTransform.join(",")})`;
+            }
+
+            const left = rect[0] * scale;
+            const top = rect[1] * scale;
+            element.style.left = `${left}px`;
+            element.style.top = `${top}px`;
+            element.style.transformOrigin = `${-left}px ${-top}px`;
+            element.style.transform = ownMatrix;
+          } else {
+            element.style.transform = matrix;
+          }
+        }
       }
     }
-    parameters.div.removeAttribute('hidden');
+
+    this.#setAnnotationCanvasMap(div, annotationCanvasMap);
+    div.hidden = false;
+  }
+
+  static #setAnnotationCanvasMap(div, annotationCanvasMap) {
+    if (!annotationCanvasMap) {
+      return;
+    }
+    for (const [id, canvas] of annotationCanvasMap) {
+      const element = div.querySelector(`[data-annotation-id="${id}"]`);
+      if (!element) {
+        continue;
+      }
+
+      const { firstChild } = element;
+      if (firstChild.nodeName === "CANVAS") {
+        element.replaceChild(canvas, firstChild);
+      } else {
+        element.insertBefore(canvas, firstChild);
+      }
+    }
+    annotationCanvasMap.clear();
   }
 }
 
-export {
-  AnnotationLayer,
-};
+export { AnnotationLayer };

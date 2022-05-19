@@ -1,0 +1,90 @@
+%PDF-1.5
+%‚„œ”
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Count 1
+/Kids [3 0 R]
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/Contents 6 0 R
+/MediaBox [0 0 200 50]
+/Resources 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+  /Font << /F2 5 0 R >>
+>>
+endobj
+
+5 0 obj
+<<
+  /Type /Font
+  /Subtype /Type1
+  /BaseFont /Helvetica
+  /Encoding <<
+    /Type /Encoding
+    /Differences [32 /space 35 /numbersign 37 /percent 40 /parenleft /parenright
+      44 /comma /hyphen /period /slash /zero /one /two /three /four /five /six
+      /seven /eight /nine /colon /semicolon /less 65 /A /B /C /D /E /F /G /H /I
+      /J /K /L /M /N /O /P /Q /R /S /T /U /V /W /X /Y 91 /bracketleft 93 /bracketright
+      97 /a /b /c /d /e /f /g /h /i /j /k /l /m /n /o /p 114 /r /s /t /u /v /w /x
+      /y /z 128 /.notdef 147 /.notdef 160 /.notdef 194 /.notdef 226 /.notdef]
+  >>
+  /FirstChar 32
+  /LastChar 226
+  /Widths [278 0 0 556 0 889 0 0 333 333 0 0 278 333 278 278 556 556 556 556 556
+    556 556 556 556 556 278 278 584 0 0 0 0 667 667 722 722 667 611 778 722 278
+    500 667 556 833 722 778 667 778 722 667 611 722 667 944 667 667 0 278 0 278
+    0 0 0 556 556 500 556 556 278 556 556 222 222 500 222 833 556 556 556 0 333
+    500 278 556 500 722 500 500 500 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0 0 0 0 0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    0 0 0 0 0 0]
+>>
+endobj
+
+6 0 obj
+<< /Length 71 >>
+stream
+BT
+  14 17 Td
+  /F2 18 Tf
+  (\302\240 2. Eat a healthy diet.) Tj
+ET
+endstream
+endobj
+
+xref
+0 7
+0000000000 65535 f
+0000000017 00000 n
+0000000074 00000 n
+0000000140 00000 n
+0000000254 00000 n
+0000000306 00000 n
+0000001548 00000 n
+
+trailer
+<<
+/Size 7
+/Root 1 0 R
+/ID [<7b642074abed518fedb35b69fbbf85c0> <7b642074abed518fedb35b69fbbf85c0>]
+>>
+startxref
+1677
+%%EOF

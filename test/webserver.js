@@ -13,58 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable object-shorthand */
+/* eslint-disable no-var */
 
-'use strict';
+"use strict";
 
-var http = require('http');
-var path = require('path');
-var fs = require('fs');
+var http = require("http");
+var path = require("path");
+var fs = require("fs");
 
 var mimeTypes = {
-  '.css': 'text/css',
-  '.html': 'text/html',
-  '.js': 'application/javascript',
-  '.json': 'application/json',
-  '.svg': 'image/svg+xml',
-  '.pdf': 'application/pdf',
-  '.xhtml': 'application/xhtml+xml',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.png': 'image/png',
-  '.log': 'text/plain',
-  '.bcmap': 'application/octet-stream',
-  '.properties': 'text/plain',
+  ".css": "text/css",
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".pdf": "application/pdf",
+  ".xhtml": "application/xhtml+xml",
+  ".gif": "image/gif",
+  ".ico": "image/x-icon",
+  ".png": "image/png",
+  ".log": "text/plain",
+  ".bcmap": "application/octet-stream",
+  ".properties": "text/plain",
 };
 
-var defaultMimeType = 'application/octet-stream';
+var defaultMimeType = "application/octet-stream";
 
 function WebServer() {
-  this.root = '.';
-  this.host = 'localhost';
+  this.root = ".";
+  this.host = "localhost";
   this.port = 0;
   this.server = null;
   this.verbose = false;
   this.cacheExpirationTime = 0;
   this.disableRangeRequests = false;
   this.hooks = {
-    'GET': [crossOriginHandler],
-    'POST': [],
+    GET: [crossOriginHandler],
+    POST: [],
   };
 }
 WebServer.prototype = {
-  start: function (callback) {
+  start(callback) {
     this._ensureNonZeroPort();
     this.server = http.createServer(this._handler.bind(this));
     this.server.listen(this.port, this.host, callback);
     console.log(
-      'Server running at http://' + this.host + ':' + this.port + '/');
+      "Server running at http://" + this.host + ":" + this.port + "/"
+    );
   },
-  stop: function (callback) {
+  stop(callback) {
     this.server.close(callback);
     this.server = null;
   },
-  _ensureNonZeroPort: function () {
+  _ensureNonZeroPort() {
     if (!this.port) {
       // If port is 0, a random port will be chosen instead. Do not set a host
       // name to make sure that the port is synchronously set by .listen().
@@ -77,16 +78,33 @@ WebServer.prototype = {
       server.close();
     }
   },
-  _handler: function (req, res) {
-    var url = req.url.replace(/\/\//g, '/');
+  _handler(req, res) {
+    var url = req.url.replace(/\/\//g, "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
-    var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];
+    try {
+      // Guard against directory traversal attacks such as
+      // `/../../../../../../../etc/passwd`, which let you make GET requests
+      // for files outside of `this.root`.
+      var pathPart = path.normalize(decodeURI(urlParts[1]));
+      // path.normalize returns a path on the basis of the current platform.
+      // Windows paths cause issues in statFile and serverDirectoryIndex.
+      // Converting to unix path would avoid platform checks in said functions.
+      pathPart = pathPart.replace(/\\/g, "/");
+    } catch (ex) {
+      // If the URI cannot be decoded, a `URIError` is thrown. This happens for
+      // malformed URIs such as `http://localhost:8888/%s%s` and should be
+      // handled as a bad request.
+      res.writeHead(400);
+      res.end("Bad request", "utf8");
+      return;
+    }
+    var queryPart = urlParts[3];
     var verbose = this.verbose;
 
     var methodHooks = this.hooks[req.method];
     if (!methodHooks) {
       res.writeHead(405);
-      res.end('Unsupported request method', 'utf8');
+      res.end("Unsupported request method", "utf8");
       return;
     }
     var handled = methodHooks.some(function (hook) {
@@ -96,9 +114,11 @@ WebServer.prototype = {
       return;
     }
 
-    if (pathPart === '/favicon.ico') {
-      fs.realpath(path.join(this.root, 'test/resources/favicon.ico'),
-                  checkFile);
+    if (pathPart === "/favicon.ico") {
+      fs.realpath(
+        path.join(this.root, "test/resources/favicon.ico"),
+        checkFile
+      );
       return;
     }
 
@@ -113,7 +133,7 @@ WebServer.prototype = {
         res.writeHead(404);
         res.end();
         if (verbose) {
-          console.error(url + ': not found');
+          console.error(url + ": not found");
         }
         return;
       }
@@ -133,9 +153,9 @@ WebServer.prototype = {
       fileSize = stats.size;
       var isDir = stats.isDirectory();
       if (isDir && !/\/$/.test(pathPart)) {
-        res.setHeader('Location', pathPart + '/' + urlParts[2]);
+        res.setHeader("Location", pathPart + "/" + urlParts[2]);
         res.writeHead(301);
-        res.end('Redirected', 'utf8');
+        res.end("Redirected", "utf8");
         return;
       }
       if (isDir) {
@@ -143,12 +163,12 @@ WebServer.prototype = {
         return;
       }
 
-      var range = req.headers['range'];
+      var range = req.headers.range;
       if (range && !disableRangeRequests) {
-        var rangesMatches = /^bytes=(\d+)\-(\d+)?/.exec(range);
+        var rangesMatches = /^bytes=(\d+)-(\d+)?/.exec(range);
         if (!rangesMatches) {
           res.writeHead(501);
-          res.end('Bad range', 'utf8');
+          res.end("Bad range", "utf8");
           if (verbose) {
             console.error(url + ': bad range: "' + range + '"');
           }
@@ -157,11 +177,13 @@ WebServer.prototype = {
         var start = +rangesMatches[1];
         var end = +rangesMatches[2];
         if (verbose) {
-          console.log(url + ': range ' + start + ' - ' + end);
+          console.log(url + ": range " + start + " - " + end);
         }
-        serveRequestedFileRange(filePath,
-                                start,
-                                isNaN(end) ? fileSize : (end + 1));
+        serveRequestedFileRange(
+          filePath,
+          start,
+          isNaN(end) ? fileSize : end + 1
+        );
         return;
       }
       if (verbose) {
@@ -174,53 +196,61 @@ WebServer.prototype = {
       // Escape untrusted input so that it can safely be used in a HTML response
       // in HTML and in HTML attributes.
       return untrusted
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
 
     function serveDirectoryIndex(dir) {
-      res.setHeader('Content-Type', 'text/html');
+      res.setHeader("Content-Type", "text/html");
       res.writeHead(200);
 
-      if (queryPart === 'frame') {
-        res.end('<html><frameset cols=*,200><frame name=pdf>' +
-          '<frame src=\"' + encodeURI(pathPart) +
-          '?side\"></frameset></html>', 'utf8');
+      if (queryPart === "frame") {
+        res.end(
+          "<html><frameset cols=*,200><frame name=pdf>" +
+            '<frame src="' +
+            encodeURI(pathPart) +
+            '?side"></frameset></html>',
+          "utf8"
+        );
         return;
       }
-      var all = queryPart === 'all';
+      var all = queryPart === "all";
       fs.readdir(dir, function (err, files) {
         if (err) {
           res.end();
           return;
         }
-        res.write('<html><head><meta charset=\"utf-8\"></head><body>' +
-                  '<h1>PDFs of ' + pathPart + '</h1>\n');
-        if (pathPart !== '/') {
-          res.write('<a href=\"..\">..</a><br>\n');
+        res.write(
+          '<html><head><meta charset="utf-8"></head><body>' +
+            "<h1>PDFs of " +
+            pathPart +
+            "</h1>\n"
+        );
+        if (pathPart !== "/") {
+          res.write('<a href="..">..</a><br>\n');
         }
         files.forEach(function (file) {
           var stat;
           var item = pathPart + file;
-          var href = '';
-          var label = '';
-          var extraAttributes = '';
+          var href = "";
+          var label = "";
+          var extraAttributes = "";
           try {
             stat = fs.statSync(path.join(dir, file));
           } catch (e) {
             href = encodeURI(item);
-            label = file + ' (' + e + ')';
+            label = file + " (" + e + ")";
             extraAttributes = ' style="color:red"';
           }
           if (stat) {
             if (stat.isDirectory()) {
               href = encodeURI(item);
               label = file;
-            } else if (path.extname(file).toLowerCase() === '.pdf') {
-              href = '/web/viewer.html?file=' + encodeURIComponent(item);
+            } else if (path.extname(file).toLowerCase() === ".pdf") {
+              href = "/web/viewer.html?file=" + encodeURIComponent(item);
               label = file;
               extraAttributes = ' target="pdf"';
             } else if (all) {
@@ -229,69 +259,82 @@ WebServer.prototype = {
             }
           }
           if (label) {
-            res.write('<a href=\"' + escapeHTML(href) + '\"' +
-              extraAttributes + '>' + escapeHTML(label) + '</a><br>\n');
+            res.write(
+              '<a href="' +
+                escapeHTML(href) +
+                '"' +
+                extraAttributes +
+                ">" +
+                escapeHTML(label) +
+                "</a><br>\n"
+            );
           }
         });
         if (files.length === 0) {
-          res.write('<p>no files found</p>\n');
+          res.write("<p>no files found</p>\n");
         }
-        if (!all && queryPart !== 'side') {
-          res.write('<hr><p>(only PDF files are shown, ' +
-            '<a href=\"?all\">show all</a>)</p>\n');
+        if (!all && queryPart !== "side") {
+          res.write(
+            "<hr><p>(only PDF files are shown, " +
+              '<a href="?all">show all</a>)</p>\n'
+          );
         }
-        res.end('</body></html>');
+        res.end("</body></html>");
       });
     }
 
-    function serveRequestedFile(filePath) {
-      var stream = fs.createReadStream(filePath, { flags: 'rs', });
+    function serveRequestedFile(reqFilePath) {
+      var stream = fs.createReadStream(reqFilePath, { flags: "rs" });
 
-      stream.on('error', function (error) {
+      stream.on("error", function (error) {
         res.writeHead(500);
         res.end();
       });
 
-      var ext = path.extname(filePath).toLowerCase();
+      var ext = path.extname(reqFilePath).toLowerCase();
       var contentType = mimeTypes[ext] || defaultMimeType;
 
       if (!disableRangeRequests) {
-        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader("Accept-Ranges", "bytes");
       }
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Length', fileSize);
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Content-Length", fileSize);
       if (cacheExpirationTime > 0) {
         var expireTime = new Date();
         expireTime.setSeconds(expireTime.getSeconds() + cacheExpirationTime);
-        res.setHeader('Expires', expireTime.toUTCString());
+        res.setHeader("Expires", expireTime.toUTCString());
       }
       res.writeHead(200);
 
       stream.pipe(res);
     }
 
-    function serveRequestedFileRange(filePath, start, end) {
-      var stream = fs.createReadStream(filePath, {
-        flags: 'rs', start: start, end: end - 1, });
+    function serveRequestedFileRange(reqFilePath, start, end) {
+      var stream = fs.createReadStream(reqFilePath, {
+        flags: "rs",
+        start,
+        end: end - 1,
+      });
 
-      stream.on('error', function (error) {
+      stream.on("error", function (error) {
         res.writeHead(500);
         res.end();
       });
 
-      var ext = path.extname(filePath).toLowerCase();
+      var ext = path.extname(reqFilePath).toLowerCase();
       var contentType = mimeTypes[ext] || defaultMimeType;
 
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Length', (end - start));
-      res.setHeader('Content-Range',
-        'bytes ' + start + '-' + (end - 1) + '/' + fileSize);
+      res.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Content-Length", end - start);
+      res.setHeader(
+        "Content-Range",
+        "bytes " + start + "-" + (end - 1) + "/" + fileSize
+      );
       res.writeHead(206);
 
       stream.pipe(res);
     }
-
   },
 };
 
@@ -300,12 +343,12 @@ WebServer.prototype = {
 // expected if the user does "gulp server" and then visits
 // http://localhost:8888/test/unit/unit_test.html?spec=Cross-origin
 function crossOriginHandler(req, res) {
-  if (req.url === '/test/pdfs/basicapi.pdf?cors=withCredentials') {
-    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  if (req.url === "/test/pdfs/basicapi.pdf?cors=withCredentials") {
+    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
   }
-  if (req.url === '/test/pdfs/basicapi.pdf?cors=withoutCredentials') {
-    res.setHeader('Access-Control-Allow-Origin', req.headers['origin']);
+  if (req.url === "/test/pdfs/basicapi.pdf?cors=withoutCredentials") {
+    res.setHeader("Access-Control-Allow-Origin", req.headers.origin);
   }
 }
 

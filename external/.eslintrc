@@ -6,8 +6,4 @@
   "env": {
     "node": true,
   },
-
-  "rules": {
-    "object-shorthand": "off",
-  },
 }

@@ -15,7 +15,7 @@ function f2() {
   // tail
 }
 
-function f2() {
+function f3() {
   if ("1") { // begin block
     "1";
   }

@@ -14,4539 +14,4545 @@
  */
 /* no-babel-preset */
 
-var getLookupTableFactory = require('../shared/util').getLookupTableFactory;
+import { getArrayLookupTableFactory } from "./core_utils.js";
 
-var getGlyphsUnicode = getLookupTableFactory(function (t) {
-  t['A'] = 0x0041;
-  t['AE'] = 0x00C6;
-  t['AEacute'] = 0x01FC;
-  t['AEmacron'] = 0x01E2;
-  t['AEsmall'] = 0xF7E6;
-  t['Aacute'] = 0x00C1;
-  t['Aacutesmall'] = 0xF7E1;
-  t['Abreve'] = 0x0102;
-  t['Abreveacute'] = 0x1EAE;
-  t['Abrevecyrillic'] = 0x04D0;
-  t['Abrevedotbelow'] = 0x1EB6;
-  t['Abrevegrave'] = 0x1EB0;
-  t['Abrevehookabove'] = 0x1EB2;
-  t['Abrevetilde'] = 0x1EB4;
-  t['Acaron'] = 0x01CD;
-  t['Acircle'] = 0x24B6;
-  t['Acircumflex'] = 0x00C2;
-  t['Acircumflexacute'] = 0x1EA4;
-  t['Acircumflexdotbelow'] = 0x1EAC;
-  t['Acircumflexgrave'] = 0x1EA6;
-  t['Acircumflexhookabove'] = 0x1EA8;
-  t['Acircumflexsmall'] = 0xF7E2;
-  t['Acircumflextilde'] = 0x1EAA;
-  t['Acute'] = 0xF6C9;
-  t['Acutesmall'] = 0xF7B4;
-  t['Acyrillic'] = 0x0410;
-  t['Adblgrave'] = 0x0200;
-  t['Adieresis'] = 0x00C4;
-  t['Adieresiscyrillic'] = 0x04D2;
-  t['Adieresismacron'] = 0x01DE;
-  t['Adieresissmall'] = 0xF7E4;
-  t['Adotbelow'] = 0x1EA0;
-  t['Adotmacron'] = 0x01E0;
-  t['Agrave'] = 0x00C0;
-  t['Agravesmall'] = 0xF7E0;
-  t['Ahookabove'] = 0x1EA2;
-  t['Aiecyrillic'] = 0x04D4;
-  t['Ainvertedbreve'] = 0x0202;
-  t['Alpha'] = 0x0391;
-  t['Alphatonos'] = 0x0386;
-  t['Amacron'] = 0x0100;
-  t['Amonospace'] = 0xFF21;
-  t['Aogonek'] = 0x0104;
-  t['Aring'] = 0x00C5;
-  t['Aringacute'] = 0x01FA;
-  t['Aringbelow'] = 0x1E00;
-  t['Aringsmall'] = 0xF7E5;
-  t['Asmall'] = 0xF761;
-  t['Atilde'] = 0x00C3;
-  t['Atildesmall'] = 0xF7E3;
-  t['Aybarmenian'] = 0x0531;
-  t['B'] = 0x0042;
-  t['Bcircle'] = 0x24B7;
-  t['Bdotaccent'] = 0x1E02;
-  t['Bdotbelow'] = 0x1E04;
-  t['Becyrillic'] = 0x0411;
-  t['Benarmenian'] = 0x0532;
-  t['Beta'] = 0x0392;
-  t['Bhook'] = 0x0181;
-  t['Blinebelow'] = 0x1E06;
-  t['Bmonospace'] = 0xFF22;
-  t['Brevesmall'] = 0xF6F4;
-  t['Bsmall'] = 0xF762;
-  t['Btopbar'] = 0x0182;
-  t['C'] = 0x0043;
-  t['Caarmenian'] = 0x053E;
-  t['Cacute'] = 0x0106;
-  t['Caron'] = 0xF6CA;
-  t['Caronsmall'] = 0xF6F5;
-  t['Ccaron'] = 0x010C;
-  t['Ccedilla'] = 0x00C7;
-  t['Ccedillaacute'] = 0x1E08;
-  t['Ccedillasmall'] = 0xF7E7;
-  t['Ccircle'] = 0x24B8;
-  t['Ccircumflex'] = 0x0108;
-  t['Cdot'] = 0x010A;
-  t['Cdotaccent'] = 0x010A;
-  t['Cedillasmall'] = 0xF7B8;
-  t['Chaarmenian'] = 0x0549;
-  t['Cheabkhasiancyrillic'] = 0x04BC;
-  t['Checyrillic'] = 0x0427;
-  t['Chedescenderabkhasiancyrillic'] = 0x04BE;
-  t['Chedescendercyrillic'] = 0x04B6;
-  t['Chedieresiscyrillic'] = 0x04F4;
-  t['Cheharmenian'] = 0x0543;
-  t['Chekhakassiancyrillic'] = 0x04CB;
-  t['Cheverticalstrokecyrillic'] = 0x04B8;
-  t['Chi'] = 0x03A7;
-  t['Chook'] = 0x0187;
-  t['Circumflexsmall'] = 0xF6F6;
-  t['Cmonospace'] = 0xFF23;
-  t['Coarmenian'] = 0x0551;
-  t['Csmall'] = 0xF763;
-  t['D'] = 0x0044;
-  t['DZ'] = 0x01F1;
-  t['DZcaron'] = 0x01C4;
-  t['Daarmenian'] = 0x0534;
-  t['Dafrican'] = 0x0189;
-  t['Dcaron'] = 0x010E;
-  t['Dcedilla'] = 0x1E10;
-  t['Dcircle'] = 0x24B9;
-  t['Dcircumflexbelow'] = 0x1E12;
-  t['Dcroat'] = 0x0110;
-  t['Ddotaccent'] = 0x1E0A;
-  t['Ddotbelow'] = 0x1E0C;
-  t['Decyrillic'] = 0x0414;
-  t['Deicoptic'] = 0x03EE;
-  t['Delta'] = 0x2206;
-  t['Deltagreek'] = 0x0394;
-  t['Dhook'] = 0x018A;
-  t['Dieresis'] = 0xF6CB;
-  t['DieresisAcute'] = 0xF6CC;
-  t['DieresisGrave'] = 0xF6CD;
-  t['Dieresissmall'] = 0xF7A8;
-  t['Digammagreek'] = 0x03DC;
-  t['Djecyrillic'] = 0x0402;
-  t['Dlinebelow'] = 0x1E0E;
-  t['Dmonospace'] = 0xFF24;
-  t['Dotaccentsmall'] = 0xF6F7;
-  t['Dslash'] = 0x0110;
-  t['Dsmall'] = 0xF764;
-  t['Dtopbar'] = 0x018B;
-  t['Dz'] = 0x01F2;
-  t['Dzcaron'] = 0x01C5;
-  t['Dzeabkhasiancyrillic'] = 0x04E0;
-  t['Dzecyrillic'] = 0x0405;
-  t['Dzhecyrillic'] = 0x040F;
-  t['E'] = 0x0045;
-  t['Eacute'] = 0x00C9;
-  t['Eacutesmall'] = 0xF7E9;
-  t['Ebreve'] = 0x0114;
-  t['Ecaron'] = 0x011A;
-  t['Ecedillabreve'] = 0x1E1C;
-  t['Echarmenian'] = 0x0535;
-  t['Ecircle'] = 0x24BA;
-  t['Ecircumflex'] = 0x00CA;
-  t['Ecircumflexacute'] = 0x1EBE;
-  t['Ecircumflexbelow'] = 0x1E18;
-  t['Ecircumflexdotbelow'] = 0x1EC6;
-  t['Ecircumflexgrave'] = 0x1EC0;
-  t['Ecircumflexhookabove'] = 0x1EC2;
-  t['Ecircumflexsmall'] = 0xF7EA;
-  t['Ecircumflextilde'] = 0x1EC4;
-  t['Ecyrillic'] = 0x0404;
-  t['Edblgrave'] = 0x0204;
-  t['Edieresis'] = 0x00CB;
-  t['Edieresissmall'] = 0xF7EB;
-  t['Edot'] = 0x0116;
-  t['Edotaccent'] = 0x0116;
-  t['Edotbelow'] = 0x1EB8;
-  t['Efcyrillic'] = 0x0424;
-  t['Egrave'] = 0x00C8;
-  t['Egravesmall'] = 0xF7E8;
-  t['Eharmenian'] = 0x0537;
-  t['Ehookabove'] = 0x1EBA;
-  t['Eightroman'] = 0x2167;
-  t['Einvertedbreve'] = 0x0206;
-  t['Eiotifiedcyrillic'] = 0x0464;
-  t['Elcyrillic'] = 0x041B;
-  t['Elevenroman'] = 0x216A;
-  t['Emacron'] = 0x0112;
-  t['Emacronacute'] = 0x1E16;
-  t['Emacrongrave'] = 0x1E14;
-  t['Emcyrillic'] = 0x041C;
-  t['Emonospace'] = 0xFF25;
-  t['Encyrillic'] = 0x041D;
-  t['Endescendercyrillic'] = 0x04A2;
-  t['Eng'] = 0x014A;
-  t['Enghecyrillic'] = 0x04A4;
-  t['Enhookcyrillic'] = 0x04C7;
-  t['Eogonek'] = 0x0118;
-  t['Eopen'] = 0x0190;
-  t['Epsilon'] = 0x0395;
-  t['Epsilontonos'] = 0x0388;
-  t['Ercyrillic'] = 0x0420;
-  t['Ereversed'] = 0x018E;
-  t['Ereversedcyrillic'] = 0x042D;
-  t['Escyrillic'] = 0x0421;
-  t['Esdescendercyrillic'] = 0x04AA;
-  t['Esh'] = 0x01A9;
-  t['Esmall'] = 0xF765;
-  t['Eta'] = 0x0397;
-  t['Etarmenian'] = 0x0538;
-  t['Etatonos'] = 0x0389;
-  t['Eth'] = 0x00D0;
-  t['Ethsmall'] = 0xF7F0;
-  t['Etilde'] = 0x1EBC;
-  t['Etildebelow'] = 0x1E1A;
-  t['Euro'] = 0x20AC;
-  t['Ezh'] = 0x01B7;
-  t['Ezhcaron'] = 0x01EE;
-  t['Ezhreversed'] = 0x01B8;
-  t['F'] = 0x0046;
-  t['Fcircle'] = 0x24BB;
-  t['Fdotaccent'] = 0x1E1E;
-  t['Feharmenian'] = 0x0556;
-  t['Feicoptic'] = 0x03E4;
-  t['Fhook'] = 0x0191;
-  t['Fitacyrillic'] = 0x0472;
-  t['Fiveroman'] = 0x2164;
-  t['Fmonospace'] = 0xFF26;
-  t['Fourroman'] = 0x2163;
-  t['Fsmall'] = 0xF766;
-  t['G'] = 0x0047;
-  t['GBsquare'] = 0x3387;
-  t['Gacute'] = 0x01F4;
-  t['Gamma'] = 0x0393;
-  t['Gammaafrican'] = 0x0194;
-  t['Gangiacoptic'] = 0x03EA;
-  t['Gbreve'] = 0x011E;
-  t['Gcaron'] = 0x01E6;
-  t['Gcedilla'] = 0x0122;
-  t['Gcircle'] = 0x24BC;
-  t['Gcircumflex'] = 0x011C;
-  t['Gcommaaccent'] = 0x0122;
-  t['Gdot'] = 0x0120;
-  t['Gdotaccent'] = 0x0120;
-  t['Gecyrillic'] = 0x0413;
-  t['Ghadarmenian'] = 0x0542;
-  t['Ghemiddlehookcyrillic'] = 0x0494;
-  t['Ghestrokecyrillic'] = 0x0492;
-  t['Gheupturncyrillic'] = 0x0490;
-  t['Ghook'] = 0x0193;
-  t['Gimarmenian'] = 0x0533;
-  t['Gjecyrillic'] = 0x0403;
-  t['Gmacron'] = 0x1E20;
-  t['Gmonospace'] = 0xFF27;
-  t['Grave'] = 0xF6CE;
-  t['Gravesmall'] = 0xF760;
-  t['Gsmall'] = 0xF767;
-  t['Gsmallhook'] = 0x029B;
-  t['Gstroke'] = 0x01E4;
-  t['H'] = 0x0048;
-  t['H18533'] = 0x25CF;
-  t['H18543'] = 0x25AA;
-  t['H18551'] = 0x25AB;
-  t['H22073'] = 0x25A1;
-  t['HPsquare'] = 0x33CB;
-  t['Haabkhasiancyrillic'] = 0x04A8;
-  t['Hadescendercyrillic'] = 0x04B2;
-  t['Hardsigncyrillic'] = 0x042A;
-  t['Hbar'] = 0x0126;
-  t['Hbrevebelow'] = 0x1E2A;
-  t['Hcedilla'] = 0x1E28;
-  t['Hcircle'] = 0x24BD;
-  t['Hcircumflex'] = 0x0124;
-  t['Hdieresis'] = 0x1E26;
-  t['Hdotaccent'] = 0x1E22;
-  t['Hdotbelow'] = 0x1E24;
-  t['Hmonospace'] = 0xFF28;
-  t['Hoarmenian'] = 0x0540;
-  t['Horicoptic'] = 0x03E8;
-  t['Hsmall'] = 0xF768;
-  t['Hungarumlaut'] = 0xF6CF;
-  t['Hungarumlautsmall'] = 0xF6F8;
-  t['Hzsquare'] = 0x3390;
-  t['I'] = 0x0049;
-  t['IAcyrillic'] = 0x042F;
-  t['IJ'] = 0x0132;
-  t['IUcyrillic'] = 0x042E;
-  t['Iacute'] = 0x00CD;
-  t['Iacutesmall'] = 0xF7ED;
-  t['Ibreve'] = 0x012C;
-  t['Icaron'] = 0x01CF;
-  t['Icircle'] = 0x24BE;
-  t['Icircumflex'] = 0x00CE;
-  t['Icircumflexsmall'] = 0xF7EE;
-  t['Icyrillic'] = 0x0406;
-  t['Idblgrave'] = 0x0208;
-  t['Idieresis'] = 0x00CF;
-  t['Idieresisacute'] = 0x1E2E;
-  t['Idieresiscyrillic'] = 0x04E4;
-  t['Idieresissmall'] = 0xF7EF;
-  t['Idot'] = 0x0130;
-  t['Idotaccent'] = 0x0130;
-  t['Idotbelow'] = 0x1ECA;
-  t['Iebrevecyrillic'] = 0x04D6;
-  t['Iecyrillic'] = 0x0415;
-  t['Ifraktur'] = 0x2111;
-  t['Igrave'] = 0x00CC;
-  t['Igravesmall'] = 0xF7EC;
-  t['Ihookabove'] = 0x1EC8;
-  t['Iicyrillic'] = 0x0418;
-  t['Iinvertedbreve'] = 0x020A;
-  t['Iishortcyrillic'] = 0x0419;
-  t['Imacron'] = 0x012A;
-  t['Imacroncyrillic'] = 0x04E2;
-  t['Imonospace'] = 0xFF29;
-  t['Iniarmenian'] = 0x053B;
-  t['Iocyrillic'] = 0x0401;
-  t['Iogonek'] = 0x012E;
-  t['Iota'] = 0x0399;
-  t['Iotaafrican'] = 0x0196;
-  t['Iotadieresis'] = 0x03AA;
-  t['Iotatonos'] = 0x038A;
-  t['Ismall'] = 0xF769;
-  t['Istroke'] = 0x0197;
-  t['Itilde'] = 0x0128;
-  t['Itildebelow'] = 0x1E2C;
-  t['Izhitsacyrillic'] = 0x0474;
-  t['Izhitsadblgravecyrillic'] = 0x0476;
-  t['J'] = 0x004A;
-  t['Jaarmenian'] = 0x0541;
-  t['Jcircle'] = 0x24BF;
-  t['Jcircumflex'] = 0x0134;
-  t['Jecyrillic'] = 0x0408;
-  t['Jheharmenian'] = 0x054B;
-  t['Jmonospace'] = 0xFF2A;
-  t['Jsmall'] = 0xF76A;
-  t['K'] = 0x004B;
-  t['KBsquare'] = 0x3385;
-  t['KKsquare'] = 0x33CD;
-  t['Kabashkircyrillic'] = 0x04A0;
-  t['Kacute'] = 0x1E30;
-  t['Kacyrillic'] = 0x041A;
-  t['Kadescendercyrillic'] = 0x049A;
-  t['Kahookcyrillic'] = 0x04C3;
-  t['Kappa'] = 0x039A;
-  t['Kastrokecyrillic'] = 0x049E;
-  t['Kaverticalstrokecyrillic'] = 0x049C;
-  t['Kcaron'] = 0x01E8;
-  t['Kcedilla'] = 0x0136;
-  t['Kcircle'] = 0x24C0;
-  t['Kcommaaccent'] = 0x0136;
-  t['Kdotbelow'] = 0x1E32;
-  t['Keharmenian'] = 0x0554;
-  t['Kenarmenian'] = 0x053F;
-  t['Khacyrillic'] = 0x0425;
-  t['Kheicoptic'] = 0x03E6;
-  t['Khook'] = 0x0198;
-  t['Kjecyrillic'] = 0x040C;
-  t['Klinebelow'] = 0x1E34;
-  t['Kmonospace'] = 0xFF2B;
-  t['Koppacyrillic'] = 0x0480;
-  t['Koppagreek'] = 0x03DE;
-  t['Ksicyrillic'] = 0x046E;
-  t['Ksmall'] = 0xF76B;
-  t['L'] = 0x004C;
-  t['LJ'] = 0x01C7;
-  t['LL'] = 0xF6BF;
-  t['Lacute'] = 0x0139;
-  t['Lambda'] = 0x039B;
-  t['Lcaron'] = 0x013D;
-  t['Lcedilla'] = 0x013B;
-  t['Lcircle'] = 0x24C1;
-  t['Lcircumflexbelow'] = 0x1E3C;
-  t['Lcommaaccent'] = 0x013B;
-  t['Ldot'] = 0x013F;
-  t['Ldotaccent'] = 0x013F;
-  t['Ldotbelow'] = 0x1E36;
-  t['Ldotbelowmacron'] = 0x1E38;
-  t['Liwnarmenian'] = 0x053C;
-  t['Lj'] = 0x01C8;
-  t['Ljecyrillic'] = 0x0409;
-  t['Llinebelow'] = 0x1E3A;
-  t['Lmonospace'] = 0xFF2C;
-  t['Lslash'] = 0x0141;
-  t['Lslashsmall'] = 0xF6F9;
-  t['Lsmall'] = 0xF76C;
-  t['M'] = 0x004D;
-  t['MBsquare'] = 0x3386;
-  t['Macron'] = 0xF6D0;
-  t['Macronsmall'] = 0xF7AF;
-  t['Macute'] = 0x1E3E;
-  t['Mcircle'] = 0x24C2;
-  t['Mdotaccent'] = 0x1E40;
-  t['Mdotbelow'] = 0x1E42;
-  t['Menarmenian'] = 0x0544;
-  t['Mmonospace'] = 0xFF2D;
-  t['Msmall'] = 0xF76D;
-  t['Mturned'] = 0x019C;
-  t['Mu'] = 0x039C;
-  t['N'] = 0x004E;
-  t['NJ'] = 0x01CA;
-  t['Nacute'] = 0x0143;
-  t['Ncaron'] = 0x0147;
-  t['Ncedilla'] = 0x0145;
-  t['Ncircle'] = 0x24C3;
-  t['Ncircumflexbelow'] = 0x1E4A;
-  t['Ncommaaccent'] = 0x0145;
-  t['Ndotaccent'] = 0x1E44;
-  t['Ndotbelow'] = 0x1E46;
-  t['Nhookleft'] = 0x019D;
-  t['Nineroman'] = 0x2168;
-  t['Nj'] = 0x01CB;
-  t['Njecyrillic'] = 0x040A;
-  t['Nlinebelow'] = 0x1E48;
-  t['Nmonospace'] = 0xFF2E;
-  t['Nowarmenian'] = 0x0546;
-  t['Nsmall'] = 0xF76E;
-  t['Ntilde'] = 0x00D1;
-  t['Ntildesmall'] = 0xF7F1;
-  t['Nu'] = 0x039D;
-  t['O'] = 0x004F;
-  t['OE'] = 0x0152;
-  t['OEsmall'] = 0xF6FA;
-  t['Oacute'] = 0x00D3;
-  t['Oacutesmall'] = 0xF7F3;
-  t['Obarredcyrillic'] = 0x04E8;
-  t['Obarreddieresiscyrillic'] = 0x04EA;
-  t['Obreve'] = 0x014E;
-  t['Ocaron'] = 0x01D1;
-  t['Ocenteredtilde'] = 0x019F;
-  t['Ocircle'] = 0x24C4;
-  t['Ocircumflex'] = 0x00D4;
-  t['Ocircumflexacute'] = 0x1ED0;
-  t['Ocircumflexdotbelow'] = 0x1ED8;
-  t['Ocircumflexgrave'] = 0x1ED2;
-  t['Ocircumflexhookabove'] = 0x1ED4;
-  t['Ocircumflexsmall'] = 0xF7F4;
-  t['Ocircumflextilde'] = 0x1ED6;
-  t['Ocyrillic'] = 0x041E;
-  t['Odblacute'] = 0x0150;
-  t['Odblgrave'] = 0x020C;
-  t['Odieresis'] = 0x00D6;
-  t['Odieresiscyrillic'] = 0x04E6;
-  t['Odieresissmall'] = 0xF7F6;
-  t['Odotbelow'] = 0x1ECC;
-  t['Ogoneksmall'] = 0xF6FB;
-  t['Ograve'] = 0x00D2;
-  t['Ogravesmall'] = 0xF7F2;
-  t['Oharmenian'] = 0x0555;
-  t['Ohm'] = 0x2126;
-  t['Ohookabove'] = 0x1ECE;
-  t['Ohorn'] = 0x01A0;
-  t['Ohornacute'] = 0x1EDA;
-  t['Ohorndotbelow'] = 0x1EE2;
-  t['Ohorngrave'] = 0x1EDC;
-  t['Ohornhookabove'] = 0x1EDE;
-  t['Ohorntilde'] = 0x1EE0;
-  t['Ohungarumlaut'] = 0x0150;
-  t['Oi'] = 0x01A2;
-  t['Oinvertedbreve'] = 0x020E;
-  t['Omacron'] = 0x014C;
-  t['Omacronacute'] = 0x1E52;
-  t['Omacrongrave'] = 0x1E50;
-  t['Omega'] = 0x2126;
-  t['Omegacyrillic'] = 0x0460;
-  t['Omegagreek'] = 0x03A9;
-  t['Omegaroundcyrillic'] = 0x047A;
-  t['Omegatitlocyrillic'] = 0x047C;
-  t['Omegatonos'] = 0x038F;
-  t['Omicron'] = 0x039F;
-  t['Omicrontonos'] = 0x038C;
-  t['Omonospace'] = 0xFF2F;
-  t['Oneroman'] = 0x2160;
-  t['Oogonek'] = 0x01EA;
-  t['Oogonekmacron'] = 0x01EC;
-  t['Oopen'] = 0x0186;
-  t['Oslash'] = 0x00D8;
-  t['Oslashacute'] = 0x01FE;
-  t['Oslashsmall'] = 0xF7F8;
-  t['Osmall'] = 0xF76F;
-  t['Ostrokeacute'] = 0x01FE;
-  t['Otcyrillic'] = 0x047E;
-  t['Otilde'] = 0x00D5;
-  t['Otildeacute'] = 0x1E4C;
-  t['Otildedieresis'] = 0x1E4E;
-  t['Otildesmall'] = 0xF7F5;
-  t['P'] = 0x0050;
-  t['Pacute'] = 0x1E54;
-  t['Pcircle'] = 0x24C5;
-  t['Pdotaccent'] = 0x1E56;
-  t['Pecyrillic'] = 0x041F;
-  t['Peharmenian'] = 0x054A;
-  t['Pemiddlehookcyrillic'] = 0x04A6;
-  t['Phi'] = 0x03A6;
-  t['Phook'] = 0x01A4;
-  t['Pi'] = 0x03A0;
-  t['Piwrarmenian'] = 0x0553;
-  t['Pmonospace'] = 0xFF30;
-  t['Psi'] = 0x03A8;
-  t['Psicyrillic'] = 0x0470;
-  t['Psmall'] = 0xF770;
-  t['Q'] = 0x0051;
-  t['Qcircle'] = 0x24C6;
-  t['Qmonospace'] = 0xFF31;
-  t['Qsmall'] = 0xF771;
-  t['R'] = 0x0052;
-  t['Raarmenian'] = 0x054C;
-  t['Racute'] = 0x0154;
-  t['Rcaron'] = 0x0158;
-  t['Rcedilla'] = 0x0156;
-  t['Rcircle'] = 0x24C7;
-  t['Rcommaaccent'] = 0x0156;
-  t['Rdblgrave'] = 0x0210;
-  t['Rdotaccent'] = 0x1E58;
-  t['Rdotbelow'] = 0x1E5A;
-  t['Rdotbelowmacron'] = 0x1E5C;
-  t['Reharmenian'] = 0x0550;
-  t['Rfraktur'] = 0x211C;
-  t['Rho'] = 0x03A1;
-  t['Ringsmall'] = 0xF6FC;
-  t['Rinvertedbreve'] = 0x0212;
-  t['Rlinebelow'] = 0x1E5E;
-  t['Rmonospace'] = 0xFF32;
-  t['Rsmall'] = 0xF772;
-  t['Rsmallinverted'] = 0x0281;
-  t['Rsmallinvertedsuperior'] = 0x02B6;
-  t['S'] = 0x0053;
-  t['SF010000'] = 0x250C;
-  t['SF020000'] = 0x2514;
-  t['SF030000'] = 0x2510;
-  t['SF040000'] = 0x2518;
-  t['SF050000'] = 0x253C;
-  t['SF060000'] = 0x252C;
-  t['SF070000'] = 0x2534;
-  t['SF080000'] = 0x251C;
-  t['SF090000'] = 0x2524;
-  t['SF100000'] = 0x2500;
-  t['SF110000'] = 0x2502;
-  t['SF190000'] = 0x2561;
-  t['SF200000'] = 0x2562;
-  t['SF210000'] = 0x2556;
-  t['SF220000'] = 0x2555;
-  t['SF230000'] = 0x2563;
-  t['SF240000'] = 0x2551;
-  t['SF250000'] = 0x2557;
-  t['SF260000'] = 0x255D;
-  t['SF270000'] = 0x255C;
-  t['SF280000'] = 0x255B;
-  t['SF360000'] = 0x255E;
-  t['SF370000'] = 0x255F;
-  t['SF380000'] = 0x255A;
-  t['SF390000'] = 0x2554;
-  t['SF400000'] = 0x2569;
-  t['SF410000'] = 0x2566;
-  t['SF420000'] = 0x2560;
-  t['SF430000'] = 0x2550;
-  t['SF440000'] = 0x256C;
-  t['SF450000'] = 0x2567;
-  t['SF460000'] = 0x2568;
-  t['SF470000'] = 0x2564;
-  t['SF480000'] = 0x2565;
-  t['SF490000'] = 0x2559;
-  t['SF500000'] = 0x2558;
-  t['SF510000'] = 0x2552;
-  t['SF520000'] = 0x2553;
-  t['SF530000'] = 0x256B;
-  t['SF540000'] = 0x256A;
-  t['Sacute'] = 0x015A;
-  t['Sacutedotaccent'] = 0x1E64;
-  t['Sampigreek'] = 0x03E0;
-  t['Scaron'] = 0x0160;
-  t['Scarondotaccent'] = 0x1E66;
-  t['Scaronsmall'] = 0xF6FD;
-  t['Scedilla'] = 0x015E;
-  t['Schwa'] = 0x018F;
-  t['Schwacyrillic'] = 0x04D8;
-  t['Schwadieresiscyrillic'] = 0x04DA;
-  t['Scircle'] = 0x24C8;
-  t['Scircumflex'] = 0x015C;
-  t['Scommaaccent'] = 0x0218;
-  t['Sdotaccent'] = 0x1E60;
-  t['Sdotbelow'] = 0x1E62;
-  t['Sdotbelowdotaccent'] = 0x1E68;
-  t['Seharmenian'] = 0x054D;
-  t['Sevenroman'] = 0x2166;
-  t['Shaarmenian'] = 0x0547;
-  t['Shacyrillic'] = 0x0428;
-  t['Shchacyrillic'] = 0x0429;
-  t['Sheicoptic'] = 0x03E2;
-  t['Shhacyrillic'] = 0x04BA;
-  t['Shimacoptic'] = 0x03EC;
-  t['Sigma'] = 0x03A3;
-  t['Sixroman'] = 0x2165;
-  t['Smonospace'] = 0xFF33;
-  t['Softsigncyrillic'] = 0x042C;
-  t['Ssmall'] = 0xF773;
-  t['Stigmagreek'] = 0x03DA;
-  t['T'] = 0x0054;
-  t['Tau'] = 0x03A4;
-  t['Tbar'] = 0x0166;
-  t['Tcaron'] = 0x0164;
-  t['Tcedilla'] = 0x0162;
-  t['Tcircle'] = 0x24C9;
-  t['Tcircumflexbelow'] = 0x1E70;
-  t['Tcommaaccent'] = 0x0162;
-  t['Tdotaccent'] = 0x1E6A;
-  t['Tdotbelow'] = 0x1E6C;
-  t['Tecyrillic'] = 0x0422;
-  t['Tedescendercyrillic'] = 0x04AC;
-  t['Tenroman'] = 0x2169;
-  t['Tetsecyrillic'] = 0x04B4;
-  t['Theta'] = 0x0398;
-  t['Thook'] = 0x01AC;
-  t['Thorn'] = 0x00DE;
-  t['Thornsmall'] = 0xF7FE;
-  t['Threeroman'] = 0x2162;
-  t['Tildesmall'] = 0xF6FE;
-  t['Tiwnarmenian'] = 0x054F;
-  t['Tlinebelow'] = 0x1E6E;
-  t['Tmonospace'] = 0xFF34;
-  t['Toarmenian'] = 0x0539;
-  t['Tonefive'] = 0x01BC;
-  t['Tonesix'] = 0x0184;
-  t['Tonetwo'] = 0x01A7;
-  t['Tretroflexhook'] = 0x01AE;
-  t['Tsecyrillic'] = 0x0426;
-  t['Tshecyrillic'] = 0x040B;
-  t['Tsmall'] = 0xF774;
-  t['Twelveroman'] = 0x216B;
-  t['Tworoman'] = 0x2161;
-  t['U'] = 0x0055;
-  t['Uacute'] = 0x00DA;
-  t['Uacutesmall'] = 0xF7FA;
-  t['Ubreve'] = 0x016C;
-  t['Ucaron'] = 0x01D3;
-  t['Ucircle'] = 0x24CA;
-  t['Ucircumflex'] = 0x00DB;
-  t['Ucircumflexbelow'] = 0x1E76;
-  t['Ucircumflexsmall'] = 0xF7FB;
-  t['Ucyrillic'] = 0x0423;
-  t['Udblacute'] = 0x0170;
-  t['Udblgrave'] = 0x0214;
-  t['Udieresis'] = 0x00DC;
-  t['Udieresisacute'] = 0x01D7;
-  t['Udieresisbelow'] = 0x1E72;
-  t['Udieresiscaron'] = 0x01D9;
-  t['Udieresiscyrillic'] = 0x04F0;
-  t['Udieresisgrave'] = 0x01DB;
-  t['Udieresismacron'] = 0x01D5;
-  t['Udieresissmall'] = 0xF7FC;
-  t['Udotbelow'] = 0x1EE4;
-  t['Ugrave'] = 0x00D9;
-  t['Ugravesmall'] = 0xF7F9;
-  t['Uhookabove'] = 0x1EE6;
-  t['Uhorn'] = 0x01AF;
-  t['Uhornacute'] = 0x1EE8;
-  t['Uhorndotbelow'] = 0x1EF0;
-  t['Uhorngrave'] = 0x1EEA;
-  t['Uhornhookabove'] = 0x1EEC;
-  t['Uhorntilde'] = 0x1EEE;
-  t['Uhungarumlaut'] = 0x0170;
-  t['Uhungarumlautcyrillic'] = 0x04F2;
-  t['Uinvertedbreve'] = 0x0216;
-  t['Ukcyrillic'] = 0x0478;
-  t['Umacron'] = 0x016A;
-  t['Umacroncyrillic'] = 0x04EE;
-  t['Umacrondieresis'] = 0x1E7A;
-  t['Umonospace'] = 0xFF35;
-  t['Uogonek'] = 0x0172;
-  t['Upsilon'] = 0x03A5;
-  t['Upsilon1'] = 0x03D2;
-  t['Upsilonacutehooksymbolgreek'] = 0x03D3;
-  t['Upsilonafrican'] = 0x01B1;
-  t['Upsilondieresis'] = 0x03AB;
-  t['Upsilondieresishooksymbolgreek'] = 0x03D4;
-  t['Upsilonhooksymbol'] = 0x03D2;
-  t['Upsilontonos'] = 0x038E;
-  t['Uring'] = 0x016E;
-  t['Ushortcyrillic'] = 0x040E;
-  t['Usmall'] = 0xF775;
-  t['Ustraightcyrillic'] = 0x04AE;
-  t['Ustraightstrokecyrillic'] = 0x04B0;
-  t['Utilde'] = 0x0168;
-  t['Utildeacute'] = 0x1E78;
-  t['Utildebelow'] = 0x1E74;
-  t['V'] = 0x0056;
-  t['Vcircle'] = 0x24CB;
-  t['Vdotbelow'] = 0x1E7E;
-  t['Vecyrillic'] = 0x0412;
-  t['Vewarmenian'] = 0x054E;
-  t['Vhook'] = 0x01B2;
-  t['Vmonospace'] = 0xFF36;
-  t['Voarmenian'] = 0x0548;
-  t['Vsmall'] = 0xF776;
-  t['Vtilde'] = 0x1E7C;
-  t['W'] = 0x0057;
-  t['Wacute'] = 0x1E82;
-  t['Wcircle'] = 0x24CC;
-  t['Wcircumflex'] = 0x0174;
-  t['Wdieresis'] = 0x1E84;
-  t['Wdotaccent'] = 0x1E86;
-  t['Wdotbelow'] = 0x1E88;
-  t['Wgrave'] = 0x1E80;
-  t['Wmonospace'] = 0xFF37;
-  t['Wsmall'] = 0xF777;
-  t['X'] = 0x0058;
-  t['Xcircle'] = 0x24CD;
-  t['Xdieresis'] = 0x1E8C;
-  t['Xdotaccent'] = 0x1E8A;
-  t['Xeharmenian'] = 0x053D;
-  t['Xi'] = 0x039E;
-  t['Xmonospace'] = 0xFF38;
-  t['Xsmall'] = 0xF778;
-  t['Y'] = 0x0059;
-  t['Yacute'] = 0x00DD;
-  t['Yacutesmall'] = 0xF7FD;
-  t['Yatcyrillic'] = 0x0462;
-  t['Ycircle'] = 0x24CE;
-  t['Ycircumflex'] = 0x0176;
-  t['Ydieresis'] = 0x0178;
-  t['Ydieresissmall'] = 0xF7FF;
-  t['Ydotaccent'] = 0x1E8E;
-  t['Ydotbelow'] = 0x1EF4;
-  t['Yericyrillic'] = 0x042B;
-  t['Yerudieresiscyrillic'] = 0x04F8;
-  t['Ygrave'] = 0x1EF2;
-  t['Yhook'] = 0x01B3;
-  t['Yhookabove'] = 0x1EF6;
-  t['Yiarmenian'] = 0x0545;
-  t['Yicyrillic'] = 0x0407;
-  t['Yiwnarmenian'] = 0x0552;
-  t['Ymonospace'] = 0xFF39;
-  t['Ysmall'] = 0xF779;
-  t['Ytilde'] = 0x1EF8;
-  t['Yusbigcyrillic'] = 0x046A;
-  t['Yusbigiotifiedcyrillic'] = 0x046C;
-  t['Yuslittlecyrillic'] = 0x0466;
-  t['Yuslittleiotifiedcyrillic'] = 0x0468;
-  t['Z'] = 0x005A;
-  t['Zaarmenian'] = 0x0536;
-  t['Zacute'] = 0x0179;
-  t['Zcaron'] = 0x017D;
-  t['Zcaronsmall'] = 0xF6FF;
-  t['Zcircle'] = 0x24CF;
-  t['Zcircumflex'] = 0x1E90;
-  t['Zdot'] = 0x017B;
-  t['Zdotaccent'] = 0x017B;
-  t['Zdotbelow'] = 0x1E92;
-  t['Zecyrillic'] = 0x0417;
-  t['Zedescendercyrillic'] = 0x0498;
-  t['Zedieresiscyrillic'] = 0x04DE;
-  t['Zeta'] = 0x0396;
-  t['Zhearmenian'] = 0x053A;
-  t['Zhebrevecyrillic'] = 0x04C1;
-  t['Zhecyrillic'] = 0x0416;
-  t['Zhedescendercyrillic'] = 0x0496;
-  t['Zhedieresiscyrillic'] = 0x04DC;
-  t['Zlinebelow'] = 0x1E94;
-  t['Zmonospace'] = 0xFF3A;
-  t['Zsmall'] = 0xF77A;
-  t['Zstroke'] = 0x01B5;
-  t['a'] = 0x0061;
-  t['aabengali'] = 0x0986;
-  t['aacute'] = 0x00E1;
-  t['aadeva'] = 0x0906;
-  t['aagujarati'] = 0x0A86;
-  t['aagurmukhi'] = 0x0A06;
-  t['aamatragurmukhi'] = 0x0A3E;
-  t['aarusquare'] = 0x3303;
-  t['aavowelsignbengali'] = 0x09BE;
-  t['aavowelsigndeva'] = 0x093E;
-  t['aavowelsigngujarati'] = 0x0ABE;
-  t['abbreviationmarkarmenian'] = 0x055F;
-  t['abbreviationsigndeva'] = 0x0970;
-  t['abengali'] = 0x0985;
-  t['abopomofo'] = 0x311A;
-  t['abreve'] = 0x0103;
-  t['abreveacute'] = 0x1EAF;
-  t['abrevecyrillic'] = 0x04D1;
-  t['abrevedotbelow'] = 0x1EB7;
-  t['abrevegrave'] = 0x1EB1;
-  t['abrevehookabove'] = 0x1EB3;
-  t['abrevetilde'] = 0x1EB5;
-  t['acaron'] = 0x01CE;
-  t['acircle'] = 0x24D0;
-  t['acircumflex'] = 0x00E2;
-  t['acircumflexacute'] = 0x1EA5;
-  t['acircumflexdotbelow'] = 0x1EAD;
-  t['acircumflexgrave'] = 0x1EA7;
-  t['acircumflexhookabove'] = 0x1EA9;
-  t['acircumflextilde'] = 0x1EAB;
-  t['acute'] = 0x00B4;
-  t['acutebelowcmb'] = 0x0317;
-  t['acutecmb'] = 0x0301;
-  t['acutecomb'] = 0x0301;
-  t['acutedeva'] = 0x0954;
-  t['acutelowmod'] = 0x02CF;
-  t['acutetonecmb'] = 0x0341;
-  t['acyrillic'] = 0x0430;
-  t['adblgrave'] = 0x0201;
-  t['addakgurmukhi'] = 0x0A71;
-  t['adeva'] = 0x0905;
-  t['adieresis'] = 0x00E4;
-  t['adieresiscyrillic'] = 0x04D3;
-  t['adieresismacron'] = 0x01DF;
-  t['adotbelow'] = 0x1EA1;
-  t['adotmacron'] = 0x01E1;
-  t['ae'] = 0x00E6;
-  t['aeacute'] = 0x01FD;
-  t['aekorean'] = 0x3150;
-  t['aemacron'] = 0x01E3;
-  t['afii00208'] = 0x2015;
-  t['afii08941'] = 0x20A4;
-  t['afii10017'] = 0x0410;
-  t['afii10018'] = 0x0411;
-  t['afii10019'] = 0x0412;
-  t['afii10020'] = 0x0413;
-  t['afii10021'] = 0x0414;
-  t['afii10022'] = 0x0415;
-  t['afii10023'] = 0x0401;
-  t['afii10024'] = 0x0416;
-  t['afii10025'] = 0x0417;
-  t['afii10026'] = 0x0418;
-  t['afii10027'] = 0x0419;
-  t['afii10028'] = 0x041A;
-  t['afii10029'] = 0x041B;
-  t['afii10030'] = 0x041C;
-  t['afii10031'] = 0x041D;
-  t['afii10032'] = 0x041E;
-  t['afii10033'] = 0x041F;
-  t['afii10034'] = 0x0420;
-  t['afii10035'] = 0x0421;
-  t['afii10036'] = 0x0422;
-  t['afii10037'] = 0x0423;
-  t['afii10038'] = 0x0424;
-  t['afii10039'] = 0x0425;
-  t['afii10040'] = 0x0426;
-  t['afii10041'] = 0x0427;
-  t['afii10042'] = 0x0428;
-  t['afii10043'] = 0x0429;
-  t['afii10044'] = 0x042A;
-  t['afii10045'] = 0x042B;
-  t['afii10046'] = 0x042C;
-  t['afii10047'] = 0x042D;
-  t['afii10048'] = 0x042E;
-  t['afii10049'] = 0x042F;
-  t['afii10050'] = 0x0490;
-  t['afii10051'] = 0x0402;
-  t['afii10052'] = 0x0403;
-  t['afii10053'] = 0x0404;
-  t['afii10054'] = 0x0405;
-  t['afii10055'] = 0x0406;
-  t['afii10056'] = 0x0407;
-  t['afii10057'] = 0x0408;
-  t['afii10058'] = 0x0409;
-  t['afii10059'] = 0x040A;
-  t['afii10060'] = 0x040B;
-  t['afii10061'] = 0x040C;
-  t['afii10062'] = 0x040E;
-  t['afii10063'] = 0xF6C4;
-  t['afii10064'] = 0xF6C5;
-  t['afii10065'] = 0x0430;
-  t['afii10066'] = 0x0431;
-  t['afii10067'] = 0x0432;
-  t['afii10068'] = 0x0433;
-  t['afii10069'] = 0x0434;
-  t['afii10070'] = 0x0435;
-  t['afii10071'] = 0x0451;
-  t['afii10072'] = 0x0436;
-  t['afii10073'] = 0x0437;
-  t['afii10074'] = 0x0438;
-  t['afii10075'] = 0x0439;
-  t['afii10076'] = 0x043A;
-  t['afii10077'] = 0x043B;
-  t['afii10078'] = 0x043C;
-  t['afii10079'] = 0x043D;
-  t['afii10080'] = 0x043E;
-  t['afii10081'] = 0x043F;
-  t['afii10082'] = 0x0440;
-  t['afii10083'] = 0x0441;
-  t['afii10084'] = 0x0442;
-  t['afii10085'] = 0x0443;
-  t['afii10086'] = 0x0444;
-  t['afii10087'] = 0x0445;
-  t['afii10088'] = 0x0446;
-  t['afii10089'] = 0x0447;
-  t['afii10090'] = 0x0448;
-  t['afii10091'] = 0x0449;
-  t['afii10092'] = 0x044A;
-  t['afii10093'] = 0x044B;
-  t['afii10094'] = 0x044C;
-  t['afii10095'] = 0x044D;
-  t['afii10096'] = 0x044E;
-  t['afii10097'] = 0x044F;
-  t['afii10098'] = 0x0491;
-  t['afii10099'] = 0x0452;
-  t['afii10100'] = 0x0453;
-  t['afii10101'] = 0x0454;
-  t['afii10102'] = 0x0455;
-  t['afii10103'] = 0x0456;
-  t['afii10104'] = 0x0457;
-  t['afii10105'] = 0x0458;
-  t['afii10106'] = 0x0459;
-  t['afii10107'] = 0x045A;
-  t['afii10108'] = 0x045B;
-  t['afii10109'] = 0x045C;
-  t['afii10110'] = 0x045E;
-  t['afii10145'] = 0x040F;
-  t['afii10146'] = 0x0462;
-  t['afii10147'] = 0x0472;
-  t['afii10148'] = 0x0474;
-  t['afii10192'] = 0xF6C6;
-  t['afii10193'] = 0x045F;
-  t['afii10194'] = 0x0463;
-  t['afii10195'] = 0x0473;
-  t['afii10196'] = 0x0475;
-  t['afii10831'] = 0xF6C7;
-  t['afii10832'] = 0xF6C8;
-  t['afii10846'] = 0x04D9;
-  t['afii299'] = 0x200E;
-  t['afii300'] = 0x200F;
-  t['afii301'] = 0x200D;
-  t['afii57381'] = 0x066A;
-  t['afii57388'] = 0x060C;
-  t['afii57392'] = 0x0660;
-  t['afii57393'] = 0x0661;
-  t['afii57394'] = 0x0662;
-  t['afii57395'] = 0x0663;
-  t['afii57396'] = 0x0664;
-  t['afii57397'] = 0x0665;
-  t['afii57398'] = 0x0666;
-  t['afii57399'] = 0x0667;
-  t['afii57400'] = 0x0668;
-  t['afii57401'] = 0x0669;
-  t['afii57403'] = 0x061B;
-  t['afii57407'] = 0x061F;
-  t['afii57409'] = 0x0621;
-  t['afii57410'] = 0x0622;
-  t['afii57411'] = 0x0623;
-  t['afii57412'] = 0x0624;
-  t['afii57413'] = 0x0625;
-  t['afii57414'] = 0x0626;
-  t['afii57415'] = 0x0627;
-  t['afii57416'] = 0x0628;
-  t['afii57417'] = 0x0629;
-  t['afii57418'] = 0x062A;
-  t['afii57419'] = 0x062B;
-  t['afii57420'] = 0x062C;
-  t['afii57421'] = 0x062D;
-  t['afii57422'] = 0x062E;
-  t['afii57423'] = 0x062F;
-  t['afii57424'] = 0x0630;
-  t['afii57425'] = 0x0631;
-  t['afii57426'] = 0x0632;
-  t['afii57427'] = 0x0633;
-  t['afii57428'] = 0x0634;
-  t['afii57429'] = 0x0635;
-  t['afii57430'] = 0x0636;
-  t['afii57431'] = 0x0637;
-  t['afii57432'] = 0x0638;
-  t['afii57433'] = 0x0639;
-  t['afii57434'] = 0x063A;
-  t['afii57440'] = 0x0640;
-  t['afii57441'] = 0x0641;
-  t['afii57442'] = 0x0642;
-  t['afii57443'] = 0x0643;
-  t['afii57444'] = 0x0644;
-  t['afii57445'] = 0x0645;
-  t['afii57446'] = 0x0646;
-  t['afii57448'] = 0x0648;
-  t['afii57449'] = 0x0649;
-  t['afii57450'] = 0x064A;
-  t['afii57451'] = 0x064B;
-  t['afii57452'] = 0x064C;
-  t['afii57453'] = 0x064D;
-  t['afii57454'] = 0x064E;
-  t['afii57455'] = 0x064F;
-  t['afii57456'] = 0x0650;
-  t['afii57457'] = 0x0651;
-  t['afii57458'] = 0x0652;
-  t['afii57470'] = 0x0647;
-  t['afii57505'] = 0x06A4;
-  t['afii57506'] = 0x067E;
-  t['afii57507'] = 0x0686;
-  t['afii57508'] = 0x0698;
-  t['afii57509'] = 0x06AF;
-  t['afii57511'] = 0x0679;
-  t['afii57512'] = 0x0688;
-  t['afii57513'] = 0x0691;
-  t['afii57514'] = 0x06BA;
-  t['afii57519'] = 0x06D2;
-  t['afii57534'] = 0x06D5;
-  t['afii57636'] = 0x20AA;
-  t['afii57645'] = 0x05BE;
-  t['afii57658'] = 0x05C3;
-  t['afii57664'] = 0x05D0;
-  t['afii57665'] = 0x05D1;
-  t['afii57666'] = 0x05D2;
-  t['afii57667'] = 0x05D3;
-  t['afii57668'] = 0x05D4;
-  t['afii57669'] = 0x05D5;
-  t['afii57670'] = 0x05D6;
-  t['afii57671'] = 0x05D7;
-  t['afii57672'] = 0x05D8;
-  t['afii57673'] = 0x05D9;
-  t['afii57674'] = 0x05DA;
-  t['afii57675'] = 0x05DB;
-  t['afii57676'] = 0x05DC;
-  t['afii57677'] = 0x05DD;
-  t['afii57678'] = 0x05DE;
-  t['afii57679'] = 0x05DF;
-  t['afii57680'] = 0x05E0;
-  t['afii57681'] = 0x05E1;
-  t['afii57682'] = 0x05E2;
-  t['afii57683'] = 0x05E3;
-  t['afii57684'] = 0x05E4;
-  t['afii57685'] = 0x05E5;
-  t['afii57686'] = 0x05E6;
-  t['afii57687'] = 0x05E7;
-  t['afii57688'] = 0x05E8;
-  t['afii57689'] = 0x05E9;
-  t['afii57690'] = 0x05EA;
-  t['afii57694'] = 0xFB2A;
-  t['afii57695'] = 0xFB2B;
-  t['afii57700'] = 0xFB4B;
-  t['afii57705'] = 0xFB1F;
-  t['afii57716'] = 0x05F0;
-  t['afii57717'] = 0x05F1;
-  t['afii57718'] = 0x05F2;
-  t['afii57723'] = 0xFB35;
-  t['afii57793'] = 0x05B4;
-  t['afii57794'] = 0x05B5;
-  t['afii57795'] = 0x05B6;
-  t['afii57796'] = 0x05BB;
-  t['afii57797'] = 0x05B8;
-  t['afii57798'] = 0x05B7;
-  t['afii57799'] = 0x05B0;
-  t['afii57800'] = 0x05B2;
-  t['afii57801'] = 0x05B1;
-  t['afii57802'] = 0x05B3;
-  t['afii57803'] = 0x05C2;
-  t['afii57804'] = 0x05C1;
-  t['afii57806'] = 0x05B9;
-  t['afii57807'] = 0x05BC;
-  t['afii57839'] = 0x05BD;
-  t['afii57841'] = 0x05BF;
-  t['afii57842'] = 0x05C0;
-  t['afii57929'] = 0x02BC;
-  t['afii61248'] = 0x2105;
-  t['afii61289'] = 0x2113;
-  t['afii61352'] = 0x2116;
-  t['afii61573'] = 0x202C;
-  t['afii61574'] = 0x202D;
-  t['afii61575'] = 0x202E;
-  t['afii61664'] = 0x200C;
-  t['afii63167'] = 0x066D;
-  t['afii64937'] = 0x02BD;
-  t['agrave'] = 0x00E0;
-  t['agujarati'] = 0x0A85;
-  t['agurmukhi'] = 0x0A05;
-  t['ahiragana'] = 0x3042;
-  t['ahookabove'] = 0x1EA3;
-  t['aibengali'] = 0x0990;
-  t['aibopomofo'] = 0x311E;
-  t['aideva'] = 0x0910;
-  t['aiecyrillic'] = 0x04D5;
-  t['aigujarati'] = 0x0A90;
-  t['aigurmukhi'] = 0x0A10;
-  t['aimatragurmukhi'] = 0x0A48;
-  t['ainarabic'] = 0x0639;
-  t['ainfinalarabic'] = 0xFECA;
-  t['aininitialarabic'] = 0xFECB;
-  t['ainmedialarabic'] = 0xFECC;
-  t['ainvertedbreve'] = 0x0203;
-  t['aivowelsignbengali'] = 0x09C8;
-  t['aivowelsigndeva'] = 0x0948;
-  t['aivowelsigngujarati'] = 0x0AC8;
-  t['akatakana'] = 0x30A2;
-  t['akatakanahalfwidth'] = 0xFF71;
-  t['akorean'] = 0x314F;
-  t['alef'] = 0x05D0;
-  t['alefarabic'] = 0x0627;
-  t['alefdageshhebrew'] = 0xFB30;
-  t['aleffinalarabic'] = 0xFE8E;
-  t['alefhamzaabovearabic'] = 0x0623;
-  t['alefhamzaabovefinalarabic'] = 0xFE84;
-  t['alefhamzabelowarabic'] = 0x0625;
-  t['alefhamzabelowfinalarabic'] = 0xFE88;
-  t['alefhebrew'] = 0x05D0;
-  t['aleflamedhebrew'] = 0xFB4F;
-  t['alefmaddaabovearabic'] = 0x0622;
-  t['alefmaddaabovefinalarabic'] = 0xFE82;
-  t['alefmaksuraarabic'] = 0x0649;
-  t['alefmaksurafinalarabic'] = 0xFEF0;
-  t['alefmaksurainitialarabic'] = 0xFEF3;
-  t['alefmaksuramedialarabic'] = 0xFEF4;
-  t['alefpatahhebrew'] = 0xFB2E;
-  t['alefqamatshebrew'] = 0xFB2F;
-  t['aleph'] = 0x2135;
-  t['allequal'] = 0x224C;
-  t['alpha'] = 0x03B1;
-  t['alphatonos'] = 0x03AC;
-  t['amacron'] = 0x0101;
-  t['amonospace'] = 0xFF41;
-  t['ampersand'] = 0x0026;
-  t['ampersandmonospace'] = 0xFF06;
-  t['ampersandsmall'] = 0xF726;
-  t['amsquare'] = 0x33C2;
-  t['anbopomofo'] = 0x3122;
-  t['angbopomofo'] = 0x3124;
-  t['angbracketleft'] = 0x3008; // Glyph is missing from Adobe's original list.
-  t['angbracketright'] = 0x3009; // Glyph is missing from Adobe's original list.
-  t['angkhankhuthai'] = 0x0E5A;
-  t['angle'] = 0x2220;
-  t['anglebracketleft'] = 0x3008;
-  t['anglebracketleftvertical'] = 0xFE3F;
-  t['anglebracketright'] = 0x3009;
-  t['anglebracketrightvertical'] = 0xFE40;
-  t['angleleft'] = 0x2329;
-  t['angleright'] = 0x232A;
-  t['angstrom'] = 0x212B;
-  t['anoteleia'] = 0x0387;
-  t['anudattadeva'] = 0x0952;
-  t['anusvarabengali'] = 0x0982;
-  t['anusvaradeva'] = 0x0902;
-  t['anusvaragujarati'] = 0x0A82;
-  t['aogonek'] = 0x0105;
-  t['apaatosquare'] = 0x3300;
-  t['aparen'] = 0x249C;
-  t['apostrophearmenian'] = 0x055A;
-  t['apostrophemod'] = 0x02BC;
-  t['apple'] = 0xF8FF;
-  t['approaches'] = 0x2250;
-  t['approxequal'] = 0x2248;
-  t['approxequalorimage'] = 0x2252;
-  t['approximatelyequal'] = 0x2245;
-  t['araeaekorean'] = 0x318E;
-  t['araeakorean'] = 0x318D;
-  t['arc'] = 0x2312;
-  t['arighthalfring'] = 0x1E9A;
-  t['aring'] = 0x00E5;
-  t['aringacute'] = 0x01FB;
-  t['aringbelow'] = 0x1E01;
-  t['arrowboth'] = 0x2194;
-  t['arrowdashdown'] = 0x21E3;
-  t['arrowdashleft'] = 0x21E0;
-  t['arrowdashright'] = 0x21E2;
-  t['arrowdashup'] = 0x21E1;
-  t['arrowdblboth'] = 0x21D4;
-  t['arrowdbldown'] = 0x21D3;
-  t['arrowdblleft'] = 0x21D0;
-  t['arrowdblright'] = 0x21D2;
-  t['arrowdblup'] = 0x21D1;
-  t['arrowdown'] = 0x2193;
-  t['arrowdownleft'] = 0x2199;
-  t['arrowdownright'] = 0x2198;
-  t['arrowdownwhite'] = 0x21E9;
-  t['arrowheaddownmod'] = 0x02C5;
-  t['arrowheadleftmod'] = 0x02C2;
-  t['arrowheadrightmod'] = 0x02C3;
-  t['arrowheadupmod'] = 0x02C4;
-  t['arrowhorizex'] = 0xF8E7;
-  t['arrowleft'] = 0x2190;
-  t['arrowleftdbl'] = 0x21D0;
-  t['arrowleftdblstroke'] = 0x21CD;
-  t['arrowleftoverright'] = 0x21C6;
-  t['arrowleftwhite'] = 0x21E6;
-  t['arrowright'] = 0x2192;
-  t['arrowrightdblstroke'] = 0x21CF;
-  t['arrowrightheavy'] = 0x279E;
-  t['arrowrightoverleft'] = 0x21C4;
-  t['arrowrightwhite'] = 0x21E8;
-  t['arrowtableft'] = 0x21E4;
-  t['arrowtabright'] = 0x21E5;
-  t['arrowup'] = 0x2191;
-  t['arrowupdn'] = 0x2195;
-  t['arrowupdnbse'] = 0x21A8;
-  t['arrowupdownbase'] = 0x21A8;
-  t['arrowupleft'] = 0x2196;
-  t['arrowupleftofdown'] = 0x21C5;
-  t['arrowupright'] = 0x2197;
-  t['arrowupwhite'] = 0x21E7;
-  t['arrowvertex'] = 0xF8E6;
-  t['asciicircum'] = 0x005E;
-  t['asciicircummonospace'] = 0xFF3E;
-  t['asciitilde'] = 0x007E;
-  t['asciitildemonospace'] = 0xFF5E;
-  t['ascript'] = 0x0251;
-  t['ascriptturned'] = 0x0252;
-  t['asmallhiragana'] = 0x3041;
-  t['asmallkatakana'] = 0x30A1;
-  t['asmallkatakanahalfwidth'] = 0xFF67;
-  t['asterisk'] = 0x002A;
-  t['asteriskaltonearabic'] = 0x066D;
-  t['asteriskarabic'] = 0x066D;
-  t['asteriskmath'] = 0x2217;
-  t['asteriskmonospace'] = 0xFF0A;
-  t['asterisksmall'] = 0xFE61;
-  t['asterism'] = 0x2042;
-  t['asuperior'] = 0xF6E9;
-  t['asymptoticallyequal'] = 0x2243;
-  t['at'] = 0x0040;
-  t['atilde'] = 0x00E3;
-  t['atmonospace'] = 0xFF20;
-  t['atsmall'] = 0xFE6B;
-  t['aturned'] = 0x0250;
-  t['aubengali'] = 0x0994;
-  t['aubopomofo'] = 0x3120;
-  t['audeva'] = 0x0914;
-  t['augujarati'] = 0x0A94;
-  t['augurmukhi'] = 0x0A14;
-  t['aulengthmarkbengali'] = 0x09D7;
-  t['aumatragurmukhi'] = 0x0A4C;
-  t['auvowelsignbengali'] = 0x09CC;
-  t['auvowelsigndeva'] = 0x094C;
-  t['auvowelsigngujarati'] = 0x0ACC;
-  t['avagrahadeva'] = 0x093D;
-  t['aybarmenian'] = 0x0561;
-  t['ayin'] = 0x05E2;
-  t['ayinaltonehebrew'] = 0xFB20;
-  t['ayinhebrew'] = 0x05E2;
-  t['b'] = 0x0062;
-  t['babengali'] = 0x09AC;
-  t['backslash'] = 0x005C;
-  t['backslashmonospace'] = 0xFF3C;
-  t['badeva'] = 0x092C;
-  t['bagujarati'] = 0x0AAC;
-  t['bagurmukhi'] = 0x0A2C;
-  t['bahiragana'] = 0x3070;
-  t['bahtthai'] = 0x0E3F;
-  t['bakatakana'] = 0x30D0;
-  t['bar'] = 0x007C;
-  t['barmonospace'] = 0xFF5C;
-  t['bbopomofo'] = 0x3105;
-  t['bcircle'] = 0x24D1;
-  t['bdotaccent'] = 0x1E03;
-  t['bdotbelow'] = 0x1E05;
-  t['beamedsixteenthnotes'] = 0x266C;
-  t['because'] = 0x2235;
-  t['becyrillic'] = 0x0431;
-  t['beharabic'] = 0x0628;
-  t['behfinalarabic'] = 0xFE90;
-  t['behinitialarabic'] = 0xFE91;
-  t['behiragana'] = 0x3079;
-  t['behmedialarabic'] = 0xFE92;
-  t['behmeeminitialarabic'] = 0xFC9F;
-  t['behmeemisolatedarabic'] = 0xFC08;
-  t['behnoonfinalarabic'] = 0xFC6D;
-  t['bekatakana'] = 0x30D9;
-  t['benarmenian'] = 0x0562;
-  t['bet'] = 0x05D1;
-  t['beta'] = 0x03B2;
-  t['betasymbolgreek'] = 0x03D0;
-  t['betdagesh'] = 0xFB31;
-  t['betdageshhebrew'] = 0xFB31;
-  t['bethebrew'] = 0x05D1;
-  t['betrafehebrew'] = 0xFB4C;
-  t['bhabengali'] = 0x09AD;
-  t['bhadeva'] = 0x092D;
-  t['bhagujarati'] = 0x0AAD;
-  t['bhagurmukhi'] = 0x0A2D;
-  t['bhook'] = 0x0253;
-  t['bihiragana'] = 0x3073;
-  t['bikatakana'] = 0x30D3;
-  t['bilabialclick'] = 0x0298;
-  t['bindigurmukhi'] = 0x0A02;
-  t['birusquare'] = 0x3331;
-  t['blackcircle'] = 0x25CF;
-  t['blackdiamond'] = 0x25C6;
-  t['blackdownpointingtriangle'] = 0x25BC;
-  t['blackleftpointingpointer'] = 0x25C4;
-  t['blackleftpointingtriangle'] = 0x25C0;
-  t['blacklenticularbracketleft'] = 0x3010;
-  t['blacklenticularbracketleftvertical'] = 0xFE3B;
-  t['blacklenticularbracketright'] = 0x3011;
-  t['blacklenticularbracketrightvertical'] = 0xFE3C;
-  t['blacklowerlefttriangle'] = 0x25E3;
-  t['blacklowerrighttriangle'] = 0x25E2;
-  t['blackrectangle'] = 0x25AC;
-  t['blackrightpointingpointer'] = 0x25BA;
-  t['blackrightpointingtriangle'] = 0x25B6;
-  t['blacksmallsquare'] = 0x25AA;
-  t['blacksmilingface'] = 0x263B;
-  t['blacksquare'] = 0x25A0;
-  t['blackstar'] = 0x2605;
-  t['blackupperlefttriangle'] = 0x25E4;
-  t['blackupperrighttriangle'] = 0x25E5;
-  t['blackuppointingsmalltriangle'] = 0x25B4;
-  t['blackuppointingtriangle'] = 0x25B2;
-  t['blank'] = 0x2423;
-  t['blinebelow'] = 0x1E07;
-  t['block'] = 0x2588;
-  t['bmonospace'] = 0xFF42;
-  t['bobaimaithai'] = 0x0E1A;
-  t['bohiragana'] = 0x307C;
-  t['bokatakana'] = 0x30DC;
-  t['bparen'] = 0x249D;
-  t['bqsquare'] = 0x33C3;
-  t['braceex'] = 0xF8F4;
-  t['braceleft'] = 0x007B;
-  t['braceleftbt'] = 0xF8F3;
-  t['braceleftmid'] = 0xF8F2;
-  t['braceleftmonospace'] = 0xFF5B;
-  t['braceleftsmall'] = 0xFE5B;
-  t['bracelefttp'] = 0xF8F1;
-  t['braceleftvertical'] = 0xFE37;
-  t['braceright'] = 0x007D;
-  t['bracerightbt'] = 0xF8FE;
-  t['bracerightmid'] = 0xF8FD;
-  t['bracerightmonospace'] = 0xFF5D;
-  t['bracerightsmall'] = 0xFE5C;
-  t['bracerighttp'] = 0xF8FC;
-  t['bracerightvertical'] = 0xFE38;
-  t['bracketleft'] = 0x005B;
-  t['bracketleftbt'] = 0xF8F0;
-  t['bracketleftex'] = 0xF8EF;
-  t['bracketleftmonospace'] = 0xFF3B;
-  t['bracketlefttp'] = 0xF8EE;
-  t['bracketright'] = 0x005D;
-  t['bracketrightbt'] = 0xF8FB;
-  t['bracketrightex'] = 0xF8FA;
-  t['bracketrightmonospace'] = 0xFF3D;
-  t['bracketrighttp'] = 0xF8F9;
-  t['breve'] = 0x02D8;
-  t['brevebelowcmb'] = 0x032E;
-  t['brevecmb'] = 0x0306;
-  t['breveinvertedbelowcmb'] = 0x032F;
-  t['breveinvertedcmb'] = 0x0311;
-  t['breveinverteddoublecmb'] = 0x0361;
-  t['bridgebelowcmb'] = 0x032A;
-  t['bridgeinvertedbelowcmb'] = 0x033A;
-  t['brokenbar'] = 0x00A6;
-  t['bstroke'] = 0x0180;
-  t['bsuperior'] = 0xF6EA;
-  t['btopbar'] = 0x0183;
-  t['buhiragana'] = 0x3076;
-  t['bukatakana'] = 0x30D6;
-  t['bullet'] = 0x2022;
-  t['bulletinverse'] = 0x25D8;
-  t['bulletoperator'] = 0x2219;
-  t['bullseye'] = 0x25CE;
-  t['c'] = 0x0063;
-  t['caarmenian'] = 0x056E;
-  t['cabengali'] = 0x099A;
-  t['cacute'] = 0x0107;
-  t['cadeva'] = 0x091A;
-  t['cagujarati'] = 0x0A9A;
-  t['cagurmukhi'] = 0x0A1A;
-  t['calsquare'] = 0x3388;
-  t['candrabindubengali'] = 0x0981;
-  t['candrabinducmb'] = 0x0310;
-  t['candrabindudeva'] = 0x0901;
-  t['candrabindugujarati'] = 0x0A81;
-  t['capslock'] = 0x21EA;
-  t['careof'] = 0x2105;
-  t['caron'] = 0x02C7;
-  t['caronbelowcmb'] = 0x032C;
-  t['caroncmb'] = 0x030C;
-  t['carriagereturn'] = 0x21B5;
-  t['cbopomofo'] = 0x3118;
-  t['ccaron'] = 0x010D;
-  t['ccedilla'] = 0x00E7;
-  t['ccedillaacute'] = 0x1E09;
-  t['ccircle'] = 0x24D2;
-  t['ccircumflex'] = 0x0109;
-  t['ccurl'] = 0x0255;
-  t['cdot'] = 0x010B;
-  t['cdotaccent'] = 0x010B;
-  t['cdsquare'] = 0x33C5;
-  t['cedilla'] = 0x00B8;
-  t['cedillacmb'] = 0x0327;
-  t['cent'] = 0x00A2;
-  t['centigrade'] = 0x2103;
-  t['centinferior'] = 0xF6DF;
-  t['centmonospace'] = 0xFFE0;
-  t['centoldstyle'] = 0xF7A2;
-  t['centsuperior'] = 0xF6E0;
-  t['chaarmenian'] = 0x0579;
-  t['chabengali'] = 0x099B;
-  t['chadeva'] = 0x091B;
-  t['chagujarati'] = 0x0A9B;
-  t['chagurmukhi'] = 0x0A1B;
-  t['chbopomofo'] = 0x3114;
-  t['cheabkhasiancyrillic'] = 0x04BD;
-  t['checkmark'] = 0x2713;
-  t['checyrillic'] = 0x0447;
-  t['chedescenderabkhasiancyrillic'] = 0x04BF;
-  t['chedescendercyrillic'] = 0x04B7;
-  t['chedieresiscyrillic'] = 0x04F5;
-  t['cheharmenian'] = 0x0573;
-  t['chekhakassiancyrillic'] = 0x04CC;
-  t['cheverticalstrokecyrillic'] = 0x04B9;
-  t['chi'] = 0x03C7;
-  t['chieuchacirclekorean'] = 0x3277;
-  t['chieuchaparenkorean'] = 0x3217;
-  t['chieuchcirclekorean'] = 0x3269;
-  t['chieuchkorean'] = 0x314A;
-  t['chieuchparenkorean'] = 0x3209;
-  t['chochangthai'] = 0x0E0A;
-  t['chochanthai'] = 0x0E08;
-  t['chochingthai'] = 0x0E09;
-  t['chochoethai'] = 0x0E0C;
-  t['chook'] = 0x0188;
-  t['cieucacirclekorean'] = 0x3276;
-  t['cieucaparenkorean'] = 0x3216;
-  t['cieuccirclekorean'] = 0x3268;
-  t['cieuckorean'] = 0x3148;
-  t['cieucparenkorean'] = 0x3208;
-  t['cieucuparenkorean'] = 0x321C;
-  t['circle'] = 0x25CB;
-  t['circlecopyrt'] = 0x00A9; // Glyph is missing from Adobe's original list.
-  t['circlemultiply'] = 0x2297;
-  t['circleot'] = 0x2299;
-  t['circleplus'] = 0x2295;
-  t['circlepostalmark'] = 0x3036;
-  t['circlewithlefthalfblack'] = 0x25D0;
-  t['circlewithrighthalfblack'] = 0x25D1;
-  t['circumflex'] = 0x02C6;
-  t['circumflexbelowcmb'] = 0x032D;
-  t['circumflexcmb'] = 0x0302;
-  t['clear'] = 0x2327;
-  t['clickalveolar'] = 0x01C2;
-  t['clickdental'] = 0x01C0;
-  t['clicklateral'] = 0x01C1;
-  t['clickretroflex'] = 0x01C3;
-  t['club'] = 0x2663;
-  t['clubsuitblack'] = 0x2663;
-  t['clubsuitwhite'] = 0x2667;
-  t['cmcubedsquare'] = 0x33A4;
-  t['cmonospace'] = 0xFF43;
-  t['cmsquaredsquare'] = 0x33A0;
-  t['coarmenian'] = 0x0581;
-  t['colon'] = 0x003A;
-  t['colonmonetary'] = 0x20A1;
-  t['colonmonospace'] = 0xFF1A;
-  t['colonsign'] = 0x20A1;
-  t['colonsmall'] = 0xFE55;
-  t['colontriangularhalfmod'] = 0x02D1;
-  t['colontriangularmod'] = 0x02D0;
-  t['comma'] = 0x002C;
-  t['commaabovecmb'] = 0x0313;
-  t['commaaboverightcmb'] = 0x0315;
-  t['commaaccent'] = 0xF6C3;
-  t['commaarabic'] = 0x060C;
-  t['commaarmenian'] = 0x055D;
-  t['commainferior'] = 0xF6E1;
-  t['commamonospace'] = 0xFF0C;
-  t['commareversedabovecmb'] = 0x0314;
-  t['commareversedmod'] = 0x02BD;
-  t['commasmall'] = 0xFE50;
-  t['commasuperior'] = 0xF6E2;
-  t['commaturnedabovecmb'] = 0x0312;
-  t['commaturnedmod'] = 0x02BB;
-  t['compass'] = 0x263C;
-  t['congruent'] = 0x2245;
-  t['contourintegral'] = 0x222E;
-  t['control'] = 0x2303;
-  t['controlACK'] = 0x0006;
-  t['controlBEL'] = 0x0007;
-  t['controlBS'] = 0x0008;
-  t['controlCAN'] = 0x0018;
-  t['controlCR'] = 0x000D;
-  t['controlDC1'] = 0x0011;
-  t['controlDC2'] = 0x0012;
-  t['controlDC3'] = 0x0013;
-  t['controlDC4'] = 0x0014;
-  t['controlDEL'] = 0x007F;
-  t['controlDLE'] = 0x0010;
-  t['controlEM'] = 0x0019;
-  t['controlENQ'] = 0x0005;
-  t['controlEOT'] = 0x0004;
-  t['controlESC'] = 0x001B;
-  t['controlETB'] = 0x0017;
-  t['controlETX'] = 0x0003;
-  t['controlFF'] = 0x000C;
-  t['controlFS'] = 0x001C;
-  t['controlGS'] = 0x001D;
-  t['controlHT'] = 0x0009;
-  t['controlLF'] = 0x000A;
-  t['controlNAK'] = 0x0015;
-  t['controlNULL'] = 0x0000; // Glyph is missing from Adobe's original list.
-  t['controlRS'] = 0x001E;
-  t['controlSI'] = 0x000F;
-  t['controlSO'] = 0x000E;
-  t['controlSOT'] = 0x0002;
-  t['controlSTX'] = 0x0001;
-  t['controlSUB'] = 0x001A;
-  t['controlSYN'] = 0x0016;
-  t['controlUS'] = 0x001F;
-  t['controlVT'] = 0x000B;
-  t['copyright'] = 0x00A9;
-  t['copyrightsans'] = 0xF8E9;
-  t['copyrightserif'] = 0xF6D9;
-  t['cornerbracketleft'] = 0x300C;
-  t['cornerbracketlefthalfwidth'] = 0xFF62;
-  t['cornerbracketleftvertical'] = 0xFE41;
-  t['cornerbracketright'] = 0x300D;
-  t['cornerbracketrighthalfwidth'] = 0xFF63;
-  t['cornerbracketrightvertical'] = 0xFE42;
-  t['corporationsquare'] = 0x337F;
-  t['cosquare'] = 0x33C7;
-  t['coverkgsquare'] = 0x33C6;
-  t['cparen'] = 0x249E;
-  t['cruzeiro'] = 0x20A2;
-  t['cstretched'] = 0x0297;
-  t['curlyand'] = 0x22CF;
-  t['curlyor'] = 0x22CE;
-  t['currency'] = 0x00A4;
-  t['cyrBreve'] = 0xF6D1;
-  t['cyrFlex'] = 0xF6D2;
-  t['cyrbreve'] = 0xF6D4;
-  t['cyrflex'] = 0xF6D5;
-  t['d'] = 0x0064;
-  t['daarmenian'] = 0x0564;
-  t['dabengali'] = 0x09A6;
-  t['dadarabic'] = 0x0636;
-  t['dadeva'] = 0x0926;
-  t['dadfinalarabic'] = 0xFEBE;
-  t['dadinitialarabic'] = 0xFEBF;
-  t['dadmedialarabic'] = 0xFEC0;
-  t['dagesh'] = 0x05BC;
-  t['dageshhebrew'] = 0x05BC;
-  t['dagger'] = 0x2020;
-  t['daggerdbl'] = 0x2021;
-  t['dagujarati'] = 0x0AA6;
-  t['dagurmukhi'] = 0x0A26;
-  t['dahiragana'] = 0x3060;
-  t['dakatakana'] = 0x30C0;
-  t['dalarabic'] = 0x062F;
-  t['dalet'] = 0x05D3;
-  t['daletdagesh'] = 0xFB33;
-  t['daletdageshhebrew'] = 0xFB33;
-  t['dalethebrew'] = 0x05D3;
-  t['dalfinalarabic'] = 0xFEAA;
-  t['dammaarabic'] = 0x064F;
-  t['dammalowarabic'] = 0x064F;
-  t['dammatanaltonearabic'] = 0x064C;
-  t['dammatanarabic'] = 0x064C;
-  t['danda'] = 0x0964;
-  t['dargahebrew'] = 0x05A7;
-  t['dargalefthebrew'] = 0x05A7;
-  t['dasiapneumatacyrilliccmb'] = 0x0485;
-  t['dblGrave'] = 0xF6D3;
-  t['dblanglebracketleft'] = 0x300A;
-  t['dblanglebracketleftvertical'] = 0xFE3D;
-  t['dblanglebracketright'] = 0x300B;
-  t['dblanglebracketrightvertical'] = 0xFE3E;
-  t['dblarchinvertedbelowcmb'] = 0x032B;
-  t['dblarrowleft'] = 0x21D4;
-  t['dblarrowright'] = 0x21D2;
-  t['dbldanda'] = 0x0965;
-  t['dblgrave'] = 0xF6D6;
-  t['dblgravecmb'] = 0x030F;
-  t['dblintegral'] = 0x222C;
-  t['dbllowline'] = 0x2017;
-  t['dbllowlinecmb'] = 0x0333;
-  t['dbloverlinecmb'] = 0x033F;
-  t['dblprimemod'] = 0x02BA;
-  t['dblverticalbar'] = 0x2016;
-  t['dblverticallineabovecmb'] = 0x030E;
-  t['dbopomofo'] = 0x3109;
-  t['dbsquare'] = 0x33C8;
-  t['dcaron'] = 0x010F;
-  t['dcedilla'] = 0x1E11;
-  t['dcircle'] = 0x24D3;
-  t['dcircumflexbelow'] = 0x1E13;
-  t['dcroat'] = 0x0111;
-  t['ddabengali'] = 0x09A1;
-  t['ddadeva'] = 0x0921;
-  t['ddagujarati'] = 0x0AA1;
-  t['ddagurmukhi'] = 0x0A21;
-  t['ddalarabic'] = 0x0688;
-  t['ddalfinalarabic'] = 0xFB89;
-  t['dddhadeva'] = 0x095C;
-  t['ddhabengali'] = 0x09A2;
-  t['ddhadeva'] = 0x0922;
-  t['ddhagujarati'] = 0x0AA2;
-  t['ddhagurmukhi'] = 0x0A22;
-  t['ddotaccent'] = 0x1E0B;
-  t['ddotbelow'] = 0x1E0D;
-  t['decimalseparatorarabic'] = 0x066B;
-  t['decimalseparatorpersian'] = 0x066B;
-  t['decyrillic'] = 0x0434;
-  t['degree'] = 0x00B0;
-  t['dehihebrew'] = 0x05AD;
-  t['dehiragana'] = 0x3067;
-  t['deicoptic'] = 0x03EF;
-  t['dekatakana'] = 0x30C7;
-  t['deleteleft'] = 0x232B;
-  t['deleteright'] = 0x2326;
-  t['delta'] = 0x03B4;
-  t['deltaturned'] = 0x018D;
-  t['denominatorminusonenumeratorbengali'] = 0x09F8;
-  t['dezh'] = 0x02A4;
-  t['dhabengali'] = 0x09A7;
-  t['dhadeva'] = 0x0927;
-  t['dhagujarati'] = 0x0AA7;
-  t['dhagurmukhi'] = 0x0A27;
-  t['dhook'] = 0x0257;
-  t['dialytikatonos'] = 0x0385;
-  t['dialytikatonoscmb'] = 0x0344;
-  t['diamond'] = 0x2666;
-  t['diamondsuitwhite'] = 0x2662;
-  t['dieresis'] = 0x00A8;
-  t['dieresisacute'] = 0xF6D7;
-  t['dieresisbelowcmb'] = 0x0324;
-  t['dieresiscmb'] = 0x0308;
-  t['dieresisgrave'] = 0xF6D8;
-  t['dieresistonos'] = 0x0385;
-  t['dihiragana'] = 0x3062;
-  t['dikatakana'] = 0x30C2;
-  t['dittomark'] = 0x3003;
-  t['divide'] = 0x00F7;
-  t['divides'] = 0x2223;
-  t['divisionslash'] = 0x2215;
-  t['djecyrillic'] = 0x0452;
-  t['dkshade'] = 0x2593;
-  t['dlinebelow'] = 0x1E0F;
-  t['dlsquare'] = 0x3397;
-  t['dmacron'] = 0x0111;
-  t['dmonospace'] = 0xFF44;
-  t['dnblock'] = 0x2584;
-  t['dochadathai'] = 0x0E0E;
-  t['dodekthai'] = 0x0E14;
-  t['dohiragana'] = 0x3069;
-  t['dokatakana'] = 0x30C9;
-  t['dollar'] = 0x0024;
-  t['dollarinferior'] = 0xF6E3;
-  t['dollarmonospace'] = 0xFF04;
-  t['dollaroldstyle'] = 0xF724;
-  t['dollarsmall'] = 0xFE69;
-  t['dollarsuperior'] = 0xF6E4;
-  t['dong'] = 0x20AB;
-  t['dorusquare'] = 0x3326;
-  t['dotaccent'] = 0x02D9;
-  t['dotaccentcmb'] = 0x0307;
-  t['dotbelowcmb'] = 0x0323;
-  t['dotbelowcomb'] = 0x0323;
-  t['dotkatakana'] = 0x30FB;
-  t['dotlessi'] = 0x0131;
-  t['dotlessj'] = 0xF6BE;
-  t['dotlessjstrokehook'] = 0x0284;
-  t['dotmath'] = 0x22C5;
-  t['dottedcircle'] = 0x25CC;
-  t['doubleyodpatah'] = 0xFB1F;
-  t['doubleyodpatahhebrew'] = 0xFB1F;
-  t['downtackbelowcmb'] = 0x031E;
-  t['downtackmod'] = 0x02D5;
-  t['dparen'] = 0x249F;
-  t['dsuperior'] = 0xF6EB;
-  t['dtail'] = 0x0256;
-  t['dtopbar'] = 0x018C;
-  t['duhiragana'] = 0x3065;
-  t['dukatakana'] = 0x30C5;
-  t['dz'] = 0x01F3;
-  t['dzaltone'] = 0x02A3;
-  t['dzcaron'] = 0x01C6;
-  t['dzcurl'] = 0x02A5;
-  t['dzeabkhasiancyrillic'] = 0x04E1;
-  t['dzecyrillic'] = 0x0455;
-  t['dzhecyrillic'] = 0x045F;
-  t['e'] = 0x0065;
-  t['eacute'] = 0x00E9;
-  t['earth'] = 0x2641;
-  t['ebengali'] = 0x098F;
-  t['ebopomofo'] = 0x311C;
-  t['ebreve'] = 0x0115;
-  t['ecandradeva'] = 0x090D;
-  t['ecandragujarati'] = 0x0A8D;
-  t['ecandravowelsigndeva'] = 0x0945;
-  t['ecandravowelsigngujarati'] = 0x0AC5;
-  t['ecaron'] = 0x011B;
-  t['ecedillabreve'] = 0x1E1D;
-  t['echarmenian'] = 0x0565;
-  t['echyiwnarmenian'] = 0x0587;
-  t['ecircle'] = 0x24D4;
-  t['ecircumflex'] = 0x00EA;
-  t['ecircumflexacute'] = 0x1EBF;
-  t['ecircumflexbelow'] = 0x1E19;
-  t['ecircumflexdotbelow'] = 0x1EC7;
-  t['ecircumflexgrave'] = 0x1EC1;
-  t['ecircumflexhookabove'] = 0x1EC3;
-  t['ecircumflextilde'] = 0x1EC5;
-  t['ecyrillic'] = 0x0454;
-  t['edblgrave'] = 0x0205;
-  t['edeva'] = 0x090F;
-  t['edieresis'] = 0x00EB;
-  t['edot'] = 0x0117;
-  t['edotaccent'] = 0x0117;
-  t['edotbelow'] = 0x1EB9;
-  t['eegurmukhi'] = 0x0A0F;
-  t['eematragurmukhi'] = 0x0A47;
-  t['efcyrillic'] = 0x0444;
-  t['egrave'] = 0x00E8;
-  t['egujarati'] = 0x0A8F;
-  t['eharmenian'] = 0x0567;
-  t['ehbopomofo'] = 0x311D;
-  t['ehiragana'] = 0x3048;
-  t['ehookabove'] = 0x1EBB;
-  t['eibopomofo'] = 0x311F;
-  t['eight'] = 0x0038;
-  t['eightarabic'] = 0x0668;
-  t['eightbengali'] = 0x09EE;
-  t['eightcircle'] = 0x2467;
-  t['eightcircleinversesansserif'] = 0x2791;
-  t['eightdeva'] = 0x096E;
-  t['eighteencircle'] = 0x2471;
-  t['eighteenparen'] = 0x2485;
-  t['eighteenperiod'] = 0x2499;
-  t['eightgujarati'] = 0x0AEE;
-  t['eightgurmukhi'] = 0x0A6E;
-  t['eighthackarabic'] = 0x0668;
-  t['eighthangzhou'] = 0x3028;
-  t['eighthnotebeamed'] = 0x266B;
-  t['eightideographicparen'] = 0x3227;
-  t['eightinferior'] = 0x2088;
-  t['eightmonospace'] = 0xFF18;
-  t['eightoldstyle'] = 0xF738;
-  t['eightparen'] = 0x247B;
-  t['eightperiod'] = 0x248F;
-  t['eightpersian'] = 0x06F8;
-  t['eightroman'] = 0x2177;
-  t['eightsuperior'] = 0x2078;
-  t['eightthai'] = 0x0E58;
-  t['einvertedbreve'] = 0x0207;
-  t['eiotifiedcyrillic'] = 0x0465;
-  t['ekatakana'] = 0x30A8;
-  t['ekatakanahalfwidth'] = 0xFF74;
-  t['ekonkargurmukhi'] = 0x0A74;
-  t['ekorean'] = 0x3154;
-  t['elcyrillic'] = 0x043B;
-  t['element'] = 0x2208;
-  t['elevencircle'] = 0x246A;
-  t['elevenparen'] = 0x247E;
-  t['elevenperiod'] = 0x2492;
-  t['elevenroman'] = 0x217A;
-  t['ellipsis'] = 0x2026;
-  t['ellipsisvertical'] = 0x22EE;
-  t['emacron'] = 0x0113;
-  t['emacronacute'] = 0x1E17;
-  t['emacrongrave'] = 0x1E15;
-  t['emcyrillic'] = 0x043C;
-  t['emdash'] = 0x2014;
-  t['emdashvertical'] = 0xFE31;
-  t['emonospace'] = 0xFF45;
-  t['emphasismarkarmenian'] = 0x055B;
-  t['emptyset'] = 0x2205;
-  t['enbopomofo'] = 0x3123;
-  t['encyrillic'] = 0x043D;
-  t['endash'] = 0x2013;
-  t['endashvertical'] = 0xFE32;
-  t['endescendercyrillic'] = 0x04A3;
-  t['eng'] = 0x014B;
-  t['engbopomofo'] = 0x3125;
-  t['enghecyrillic'] = 0x04A5;
-  t['enhookcyrillic'] = 0x04C8;
-  t['enspace'] = 0x2002;
-  t['eogonek'] = 0x0119;
-  t['eokorean'] = 0x3153;
-  t['eopen'] = 0x025B;
-  t['eopenclosed'] = 0x029A;
-  t['eopenreversed'] = 0x025C;
-  t['eopenreversedclosed'] = 0x025E;
-  t['eopenreversedhook'] = 0x025D;
-  t['eparen'] = 0x24A0;
-  t['epsilon'] = 0x03B5;
-  t['epsilontonos'] = 0x03AD;
-  t['equal'] = 0x003D;
-  t['equalmonospace'] = 0xFF1D;
-  t['equalsmall'] = 0xFE66;
-  t['equalsuperior'] = 0x207C;
-  t['equivalence'] = 0x2261;
-  t['erbopomofo'] = 0x3126;
-  t['ercyrillic'] = 0x0440;
-  t['ereversed'] = 0x0258;
-  t['ereversedcyrillic'] = 0x044D;
-  t['escyrillic'] = 0x0441;
-  t['esdescendercyrillic'] = 0x04AB;
-  t['esh'] = 0x0283;
-  t['eshcurl'] = 0x0286;
-  t['eshortdeva'] = 0x090E;
-  t['eshortvowelsigndeva'] = 0x0946;
-  t['eshreversedloop'] = 0x01AA;
-  t['eshsquatreversed'] = 0x0285;
-  t['esmallhiragana'] = 0x3047;
-  t['esmallkatakana'] = 0x30A7;
-  t['esmallkatakanahalfwidth'] = 0xFF6A;
-  t['estimated'] = 0x212E;
-  t['esuperior'] = 0xF6EC;
-  t['eta'] = 0x03B7;
-  t['etarmenian'] = 0x0568;
-  t['etatonos'] = 0x03AE;
-  t['eth'] = 0x00F0;
-  t['etilde'] = 0x1EBD;
-  t['etildebelow'] = 0x1E1B;
-  t['etnahtafoukhhebrew'] = 0x0591;
-  t['etnahtafoukhlefthebrew'] = 0x0591;
-  t['etnahtahebrew'] = 0x0591;
-  t['etnahtalefthebrew'] = 0x0591;
-  t['eturned'] = 0x01DD;
-  t['eukorean'] = 0x3161;
-  t['euro'] = 0x20AC;
-  t['evowelsignbengali'] = 0x09C7;
-  t['evowelsigndeva'] = 0x0947;
-  t['evowelsigngujarati'] = 0x0AC7;
-  t['exclam'] = 0x0021;
-  t['exclamarmenian'] = 0x055C;
-  t['exclamdbl'] = 0x203C;
-  t['exclamdown'] = 0x00A1;
-  t['exclamdownsmall'] = 0xF7A1;
-  t['exclammonospace'] = 0xFF01;
-  t['exclamsmall'] = 0xF721;
-  t['existential'] = 0x2203;
-  t['ezh'] = 0x0292;
-  t['ezhcaron'] = 0x01EF;
-  t['ezhcurl'] = 0x0293;
-  t['ezhreversed'] = 0x01B9;
-  t['ezhtail'] = 0x01BA;
-  t['f'] = 0x0066;
-  t['fadeva'] = 0x095E;
-  t['fagurmukhi'] = 0x0A5E;
-  t['fahrenheit'] = 0x2109;
-  t['fathaarabic'] = 0x064E;
-  t['fathalowarabic'] = 0x064E;
-  t['fathatanarabic'] = 0x064B;
-  t['fbopomofo'] = 0x3108;
-  t['fcircle'] = 0x24D5;
-  t['fdotaccent'] = 0x1E1F;
-  t['feharabic'] = 0x0641;
-  t['feharmenian'] = 0x0586;
-  t['fehfinalarabic'] = 0xFED2;
-  t['fehinitialarabic'] = 0xFED3;
-  t['fehmedialarabic'] = 0xFED4;
-  t['feicoptic'] = 0x03E5;
-  t['female'] = 0x2640;
-  t['ff'] = 0xFB00;
-  t['ffi'] = 0xFB03;
-  t['ffl'] = 0xFB04;
-  t['fi'] = 0xFB01;
-  t['fifteencircle'] = 0x246E;
-  t['fifteenparen'] = 0x2482;
-  t['fifteenperiod'] = 0x2496;
-  t['figuredash'] = 0x2012;
-  t['filledbox'] = 0x25A0;
-  t['filledrect'] = 0x25AC;
-  t['finalkaf'] = 0x05DA;
-  t['finalkafdagesh'] = 0xFB3A;
-  t['finalkafdageshhebrew'] = 0xFB3A;
-  t['finalkafhebrew'] = 0x05DA;
-  t['finalmem'] = 0x05DD;
-  t['finalmemhebrew'] = 0x05DD;
-  t['finalnun'] = 0x05DF;
-  t['finalnunhebrew'] = 0x05DF;
-  t['finalpe'] = 0x05E3;
-  t['finalpehebrew'] = 0x05E3;
-  t['finaltsadi'] = 0x05E5;
-  t['finaltsadihebrew'] = 0x05E5;
-  t['firsttonechinese'] = 0x02C9;
-  t['fisheye'] = 0x25C9;
-  t['fitacyrillic'] = 0x0473;
-  t['five'] = 0x0035;
-  t['fivearabic'] = 0x0665;
-  t['fivebengali'] = 0x09EB;
-  t['fivecircle'] = 0x2464;
-  t['fivecircleinversesansserif'] = 0x278E;
-  t['fivedeva'] = 0x096B;
-  t['fiveeighths'] = 0x215D;
-  t['fivegujarati'] = 0x0AEB;
-  t['fivegurmukhi'] = 0x0A6B;
-  t['fivehackarabic'] = 0x0665;
-  t['fivehangzhou'] = 0x3025;
-  t['fiveideographicparen'] = 0x3224;
-  t['fiveinferior'] = 0x2085;
-  t['fivemonospace'] = 0xFF15;
-  t['fiveoldstyle'] = 0xF735;
-  t['fiveparen'] = 0x2478;
-  t['fiveperiod'] = 0x248C;
-  t['fivepersian'] = 0x06F5;
-  t['fiveroman'] = 0x2174;
-  t['fivesuperior'] = 0x2075;
-  t['fivethai'] = 0x0E55;
-  t['fl'] = 0xFB02;
-  t['florin'] = 0x0192;
-  t['fmonospace'] = 0xFF46;
-  t['fmsquare'] = 0x3399;
-  t['fofanthai'] = 0x0E1F;
-  t['fofathai'] = 0x0E1D;
-  t['fongmanthai'] = 0x0E4F;
-  t['forall'] = 0x2200;
-  t['four'] = 0x0034;
-  t['fourarabic'] = 0x0664;
-  t['fourbengali'] = 0x09EA;
-  t['fourcircle'] = 0x2463;
-  t['fourcircleinversesansserif'] = 0x278D;
-  t['fourdeva'] = 0x096A;
-  t['fourgujarati'] = 0x0AEA;
-  t['fourgurmukhi'] = 0x0A6A;
-  t['fourhackarabic'] = 0x0664;
-  t['fourhangzhou'] = 0x3024;
-  t['fourideographicparen'] = 0x3223;
-  t['fourinferior'] = 0x2084;
-  t['fourmonospace'] = 0xFF14;
-  t['fournumeratorbengali'] = 0x09F7;
-  t['fouroldstyle'] = 0xF734;
-  t['fourparen'] = 0x2477;
-  t['fourperiod'] = 0x248B;
-  t['fourpersian'] = 0x06F4;
-  t['fourroman'] = 0x2173;
-  t['foursuperior'] = 0x2074;
-  t['fourteencircle'] = 0x246D;
-  t['fourteenparen'] = 0x2481;
-  t['fourteenperiod'] = 0x2495;
-  t['fourthai'] = 0x0E54;
-  t['fourthtonechinese'] = 0x02CB;
-  t['fparen'] = 0x24A1;
-  t['fraction'] = 0x2044;
-  t['franc'] = 0x20A3;
-  t['g'] = 0x0067;
-  t['gabengali'] = 0x0997;
-  t['gacute'] = 0x01F5;
-  t['gadeva'] = 0x0917;
-  t['gafarabic'] = 0x06AF;
-  t['gaffinalarabic'] = 0xFB93;
-  t['gafinitialarabic'] = 0xFB94;
-  t['gafmedialarabic'] = 0xFB95;
-  t['gagujarati'] = 0x0A97;
-  t['gagurmukhi'] = 0x0A17;
-  t['gahiragana'] = 0x304C;
-  t['gakatakana'] = 0x30AC;
-  t['gamma'] = 0x03B3;
-  t['gammalatinsmall'] = 0x0263;
-  t['gammasuperior'] = 0x02E0;
-  t['gangiacoptic'] = 0x03EB;
-  t['gbopomofo'] = 0x310D;
-  t['gbreve'] = 0x011F;
-  t['gcaron'] = 0x01E7;
-  t['gcedilla'] = 0x0123;
-  t['gcircle'] = 0x24D6;
-  t['gcircumflex'] = 0x011D;
-  t['gcommaaccent'] = 0x0123;
-  t['gdot'] = 0x0121;
-  t['gdotaccent'] = 0x0121;
-  t['gecyrillic'] = 0x0433;
-  t['gehiragana'] = 0x3052;
-  t['gekatakana'] = 0x30B2;
-  t['geometricallyequal'] = 0x2251;
-  t['gereshaccenthebrew'] = 0x059C;
-  t['gereshhebrew'] = 0x05F3;
-  t['gereshmuqdamhebrew'] = 0x059D;
-  t['germandbls'] = 0x00DF;
-  t['gershayimaccenthebrew'] = 0x059E;
-  t['gershayimhebrew'] = 0x05F4;
-  t['getamark'] = 0x3013;
-  t['ghabengali'] = 0x0998;
-  t['ghadarmenian'] = 0x0572;
-  t['ghadeva'] = 0x0918;
-  t['ghagujarati'] = 0x0A98;
-  t['ghagurmukhi'] = 0x0A18;
-  t['ghainarabic'] = 0x063A;
-  t['ghainfinalarabic'] = 0xFECE;
-  t['ghaininitialarabic'] = 0xFECF;
-  t['ghainmedialarabic'] = 0xFED0;
-  t['ghemiddlehookcyrillic'] = 0x0495;
-  t['ghestrokecyrillic'] = 0x0493;
-  t['gheupturncyrillic'] = 0x0491;
-  t['ghhadeva'] = 0x095A;
-  t['ghhagurmukhi'] = 0x0A5A;
-  t['ghook'] = 0x0260;
-  t['ghzsquare'] = 0x3393;
-  t['gihiragana'] = 0x304E;
-  t['gikatakana'] = 0x30AE;
-  t['gimarmenian'] = 0x0563;
-  t['gimel'] = 0x05D2;
-  t['gimeldagesh'] = 0xFB32;
-  t['gimeldageshhebrew'] = 0xFB32;
-  t['gimelhebrew'] = 0x05D2;
-  t['gjecyrillic'] = 0x0453;
-  t['glottalinvertedstroke'] = 0x01BE;
-  t['glottalstop'] = 0x0294;
-  t['glottalstopinverted'] = 0x0296;
-  t['glottalstopmod'] = 0x02C0;
-  t['glottalstopreversed'] = 0x0295;
-  t['glottalstopreversedmod'] = 0x02C1;
-  t['glottalstopreversedsuperior'] = 0x02E4;
-  t['glottalstopstroke'] = 0x02A1;
-  t['glottalstopstrokereversed'] = 0x02A2;
-  t['gmacron'] = 0x1E21;
-  t['gmonospace'] = 0xFF47;
-  t['gohiragana'] = 0x3054;
-  t['gokatakana'] = 0x30B4;
-  t['gparen'] = 0x24A2;
-  t['gpasquare'] = 0x33AC;
-  t['gradient'] = 0x2207;
-  t['grave'] = 0x0060;
-  t['gravebelowcmb'] = 0x0316;
-  t['gravecmb'] = 0x0300;
-  t['gravecomb'] = 0x0300;
-  t['gravedeva'] = 0x0953;
-  t['gravelowmod'] = 0x02CE;
-  t['gravemonospace'] = 0xFF40;
-  t['gravetonecmb'] = 0x0340;
-  t['greater'] = 0x003E;
-  t['greaterequal'] = 0x2265;
-  t['greaterequalorless'] = 0x22DB;
-  t['greatermonospace'] = 0xFF1E;
-  t['greaterorequivalent'] = 0x2273;
-  t['greaterorless'] = 0x2277;
-  t['greateroverequal'] = 0x2267;
-  t['greatersmall'] = 0xFE65;
-  t['gscript'] = 0x0261;
-  t['gstroke'] = 0x01E5;
-  t['guhiragana'] = 0x3050;
-  t['guillemotleft'] = 0x00AB;
-  t['guillemotright'] = 0x00BB;
-  t['guilsinglleft'] = 0x2039;
-  t['guilsinglright'] = 0x203A;
-  t['gukatakana'] = 0x30B0;
-  t['guramusquare'] = 0x3318;
-  t['gysquare'] = 0x33C9;
-  t['h'] = 0x0068;
-  t['haabkhasiancyrillic'] = 0x04A9;
-  t['haaltonearabic'] = 0x06C1;
-  t['habengali'] = 0x09B9;
-  t['hadescendercyrillic'] = 0x04B3;
-  t['hadeva'] = 0x0939;
-  t['hagujarati'] = 0x0AB9;
-  t['hagurmukhi'] = 0x0A39;
-  t['haharabic'] = 0x062D;
-  t['hahfinalarabic'] = 0xFEA2;
-  t['hahinitialarabic'] = 0xFEA3;
-  t['hahiragana'] = 0x306F;
-  t['hahmedialarabic'] = 0xFEA4;
-  t['haitusquare'] = 0x332A;
-  t['hakatakana'] = 0x30CF;
-  t['hakatakanahalfwidth'] = 0xFF8A;
-  t['halantgurmukhi'] = 0x0A4D;
-  t['hamzaarabic'] = 0x0621;
-  t['hamzalowarabic'] = 0x0621;
-  t['hangulfiller'] = 0x3164;
-  t['hardsigncyrillic'] = 0x044A;
-  t['harpoonleftbarbup'] = 0x21BC;
-  t['harpoonrightbarbup'] = 0x21C0;
-  t['hasquare'] = 0x33CA;
-  t['hatafpatah'] = 0x05B2;
-  t['hatafpatah16'] = 0x05B2;
-  t['hatafpatah23'] = 0x05B2;
-  t['hatafpatah2f'] = 0x05B2;
-  t['hatafpatahhebrew'] = 0x05B2;
-  t['hatafpatahnarrowhebrew'] = 0x05B2;
-  t['hatafpatahquarterhebrew'] = 0x05B2;
-  t['hatafpatahwidehebrew'] = 0x05B2;
-  t['hatafqamats'] = 0x05B3;
-  t['hatafqamats1b'] = 0x05B3;
-  t['hatafqamats28'] = 0x05B3;
-  t['hatafqamats34'] = 0x05B3;
-  t['hatafqamatshebrew'] = 0x05B3;
-  t['hatafqamatsnarrowhebrew'] = 0x05B3;
-  t['hatafqamatsquarterhebrew'] = 0x05B3;
-  t['hatafqamatswidehebrew'] = 0x05B3;
-  t['hatafsegol'] = 0x05B1;
-  t['hatafsegol17'] = 0x05B1;
-  t['hatafsegol24'] = 0x05B1;
-  t['hatafsegol30'] = 0x05B1;
-  t['hatafsegolhebrew'] = 0x05B1;
-  t['hatafsegolnarrowhebrew'] = 0x05B1;
-  t['hatafsegolquarterhebrew'] = 0x05B1;
-  t['hatafsegolwidehebrew'] = 0x05B1;
-  t['hbar'] = 0x0127;
-  t['hbopomofo'] = 0x310F;
-  t['hbrevebelow'] = 0x1E2B;
-  t['hcedilla'] = 0x1E29;
-  t['hcircle'] = 0x24D7;
-  t['hcircumflex'] = 0x0125;
-  t['hdieresis'] = 0x1E27;
-  t['hdotaccent'] = 0x1E23;
-  t['hdotbelow'] = 0x1E25;
-  t['he'] = 0x05D4;
-  t['heart'] = 0x2665;
-  t['heartsuitblack'] = 0x2665;
-  t['heartsuitwhite'] = 0x2661;
-  t['hedagesh'] = 0xFB34;
-  t['hedageshhebrew'] = 0xFB34;
-  t['hehaltonearabic'] = 0x06C1;
-  t['heharabic'] = 0x0647;
-  t['hehebrew'] = 0x05D4;
-  t['hehfinalaltonearabic'] = 0xFBA7;
-  t['hehfinalalttwoarabic'] = 0xFEEA;
-  t['hehfinalarabic'] = 0xFEEA;
-  t['hehhamzaabovefinalarabic'] = 0xFBA5;
-  t['hehhamzaaboveisolatedarabic'] = 0xFBA4;
-  t['hehinitialaltonearabic'] = 0xFBA8;
-  t['hehinitialarabic'] = 0xFEEB;
-  t['hehiragana'] = 0x3078;
-  t['hehmedialaltonearabic'] = 0xFBA9;
-  t['hehmedialarabic'] = 0xFEEC;
-  t['heiseierasquare'] = 0x337B;
-  t['hekatakana'] = 0x30D8;
-  t['hekatakanahalfwidth'] = 0xFF8D;
-  t['hekutaarusquare'] = 0x3336;
-  t['henghook'] = 0x0267;
-  t['herutusquare'] = 0x3339;
-  t['het'] = 0x05D7;
-  t['hethebrew'] = 0x05D7;
-  t['hhook'] = 0x0266;
-  t['hhooksuperior'] = 0x02B1;
-  t['hieuhacirclekorean'] = 0x327B;
-  t['hieuhaparenkorean'] = 0x321B;
-  t['hieuhcirclekorean'] = 0x326D;
-  t['hieuhkorean'] = 0x314E;
-  t['hieuhparenkorean'] = 0x320D;
-  t['hihiragana'] = 0x3072;
-  t['hikatakana'] = 0x30D2;
-  t['hikatakanahalfwidth'] = 0xFF8B;
-  t['hiriq'] = 0x05B4;
-  t['hiriq14'] = 0x05B4;
-  t['hiriq21'] = 0x05B4;
-  t['hiriq2d'] = 0x05B4;
-  t['hiriqhebrew'] = 0x05B4;
-  t['hiriqnarrowhebrew'] = 0x05B4;
-  t['hiriqquarterhebrew'] = 0x05B4;
-  t['hiriqwidehebrew'] = 0x05B4;
-  t['hlinebelow'] = 0x1E96;
-  t['hmonospace'] = 0xFF48;
-  t['hoarmenian'] = 0x0570;
-  t['hohipthai'] = 0x0E2B;
-  t['hohiragana'] = 0x307B;
-  t['hokatakana'] = 0x30DB;
-  t['hokatakanahalfwidth'] = 0xFF8E;
-  t['holam'] = 0x05B9;
-  t['holam19'] = 0x05B9;
-  t['holam26'] = 0x05B9;
-  t['holam32'] = 0x05B9;
-  t['holamhebrew'] = 0x05B9;
-  t['holamnarrowhebrew'] = 0x05B9;
-  t['holamquarterhebrew'] = 0x05B9;
-  t['holamwidehebrew'] = 0x05B9;
-  t['honokhukthai'] = 0x0E2E;
-  t['hookabovecomb'] = 0x0309;
-  t['hookcmb'] = 0x0309;
-  t['hookpalatalizedbelowcmb'] = 0x0321;
-  t['hookretroflexbelowcmb'] = 0x0322;
-  t['hoonsquare'] = 0x3342;
-  t['horicoptic'] = 0x03E9;
-  t['horizontalbar'] = 0x2015;
-  t['horncmb'] = 0x031B;
-  t['hotsprings'] = 0x2668;
-  t['house'] = 0x2302;
-  t['hparen'] = 0x24A3;
-  t['hsuperior'] = 0x02B0;
-  t['hturned'] = 0x0265;
-  t['huhiragana'] = 0x3075;
-  t['huiitosquare'] = 0x3333;
-  t['hukatakana'] = 0x30D5;
-  t['hukatakanahalfwidth'] = 0xFF8C;
-  t['hungarumlaut'] = 0x02DD;
-  t['hungarumlautcmb'] = 0x030B;
-  t['hv'] = 0x0195;
-  t['hyphen'] = 0x002D;
-  t['hypheninferior'] = 0xF6E5;
-  t['hyphenmonospace'] = 0xFF0D;
-  t['hyphensmall'] = 0xFE63;
-  t['hyphensuperior'] = 0xF6E6;
-  t['hyphentwo'] = 0x2010;
-  t['i'] = 0x0069;
-  t['iacute'] = 0x00ED;
-  t['iacyrillic'] = 0x044F;
-  t['ibengali'] = 0x0987;
-  t['ibopomofo'] = 0x3127;
-  t['ibreve'] = 0x012D;
-  t['icaron'] = 0x01D0;
-  t['icircle'] = 0x24D8;
-  t['icircumflex'] = 0x00EE;
-  t['icyrillic'] = 0x0456;
-  t['idblgrave'] = 0x0209;
-  t['ideographearthcircle'] = 0x328F;
-  t['ideographfirecircle'] = 0x328B;
-  t['ideographicallianceparen'] = 0x323F;
-  t['ideographiccallparen'] = 0x323A;
-  t['ideographiccentrecircle'] = 0x32A5;
-  t['ideographicclose'] = 0x3006;
-  t['ideographiccomma'] = 0x3001;
-  t['ideographiccommaleft'] = 0xFF64;
-  t['ideographiccongratulationparen'] = 0x3237;
-  t['ideographiccorrectcircle'] = 0x32A3;
-  t['ideographicearthparen'] = 0x322F;
-  t['ideographicenterpriseparen'] = 0x323D;
-  t['ideographicexcellentcircle'] = 0x329D;
-  t['ideographicfestivalparen'] = 0x3240;
-  t['ideographicfinancialcircle'] = 0x3296;
-  t['ideographicfinancialparen'] = 0x3236;
-  t['ideographicfireparen'] = 0x322B;
-  t['ideographichaveparen'] = 0x3232;
-  t['ideographichighcircle'] = 0x32A4;
-  t['ideographiciterationmark'] = 0x3005;
-  t['ideographiclaborcircle'] = 0x3298;
-  t['ideographiclaborparen'] = 0x3238;
-  t['ideographicleftcircle'] = 0x32A7;
-  t['ideographiclowcircle'] = 0x32A6;
-  t['ideographicmedicinecircle'] = 0x32A9;
-  t['ideographicmetalparen'] = 0x322E;
-  t['ideographicmoonparen'] = 0x322A;
-  t['ideographicnameparen'] = 0x3234;
-  t['ideographicperiod'] = 0x3002;
-  t['ideographicprintcircle'] = 0x329E;
-  t['ideographicreachparen'] = 0x3243;
-  t['ideographicrepresentparen'] = 0x3239;
-  t['ideographicresourceparen'] = 0x323E;
-  t['ideographicrightcircle'] = 0x32A8;
-  t['ideographicsecretcircle'] = 0x3299;
-  t['ideographicselfparen'] = 0x3242;
-  t['ideographicsocietyparen'] = 0x3233;
-  t['ideographicspace'] = 0x3000;
-  t['ideographicspecialparen'] = 0x3235;
-  t['ideographicstockparen'] = 0x3231;
-  t['ideographicstudyparen'] = 0x323B;
-  t['ideographicsunparen'] = 0x3230;
-  t['ideographicsuperviseparen'] = 0x323C;
-  t['ideographicwaterparen'] = 0x322C;
-  t['ideographicwoodparen'] = 0x322D;
-  t['ideographiczero'] = 0x3007;
-  t['ideographmetalcircle'] = 0x328E;
-  t['ideographmooncircle'] = 0x328A;
-  t['ideographnamecircle'] = 0x3294;
-  t['ideographsuncircle'] = 0x3290;
-  t['ideographwatercircle'] = 0x328C;
-  t['ideographwoodcircle'] = 0x328D;
-  t['ideva'] = 0x0907;
-  t['idieresis'] = 0x00EF;
-  t['idieresisacute'] = 0x1E2F;
-  t['idieresiscyrillic'] = 0x04E5;
-  t['idotbelow'] = 0x1ECB;
-  t['iebrevecyrillic'] = 0x04D7;
-  t['iecyrillic'] = 0x0435;
-  t['ieungacirclekorean'] = 0x3275;
-  t['ieungaparenkorean'] = 0x3215;
-  t['ieungcirclekorean'] = 0x3267;
-  t['ieungkorean'] = 0x3147;
-  t['ieungparenkorean'] = 0x3207;
-  t['igrave'] = 0x00EC;
-  t['igujarati'] = 0x0A87;
-  t['igurmukhi'] = 0x0A07;
-  t['ihiragana'] = 0x3044;
-  t['ihookabove'] = 0x1EC9;
-  t['iibengali'] = 0x0988;
-  t['iicyrillic'] = 0x0438;
-  t['iideva'] = 0x0908;
-  t['iigujarati'] = 0x0A88;
-  t['iigurmukhi'] = 0x0A08;
-  t['iimatragurmukhi'] = 0x0A40;
-  t['iinvertedbreve'] = 0x020B;
-  t['iishortcyrillic'] = 0x0439;
-  t['iivowelsignbengali'] = 0x09C0;
-  t['iivowelsigndeva'] = 0x0940;
-  t['iivowelsigngujarati'] = 0x0AC0;
-  t['ij'] = 0x0133;
-  t['ikatakana'] = 0x30A4;
-  t['ikatakanahalfwidth'] = 0xFF72;
-  t['ikorean'] = 0x3163;
-  t['ilde'] = 0x02DC;
-  t['iluyhebrew'] = 0x05AC;
-  t['imacron'] = 0x012B;
-  t['imacroncyrillic'] = 0x04E3;
-  t['imageorapproximatelyequal'] = 0x2253;
-  t['imatragurmukhi'] = 0x0A3F;
-  t['imonospace'] = 0xFF49;
-  t['increment'] = 0x2206;
-  t['infinity'] = 0x221E;
-  t['iniarmenian'] = 0x056B;
-  t['integral'] = 0x222B;
-  t['integralbottom'] = 0x2321;
-  t['integralbt'] = 0x2321;
-  t['integralex'] = 0xF8F5;
-  t['integraltop'] = 0x2320;
-  t['integraltp'] = 0x2320;
-  t['intersection'] = 0x2229;
-  t['intisquare'] = 0x3305;
-  t['invbullet'] = 0x25D8;
-  t['invcircle'] = 0x25D9;
-  t['invsmileface'] = 0x263B;
-  t['iocyrillic'] = 0x0451;
-  t['iogonek'] = 0x012F;
-  t['iota'] = 0x03B9;
-  t['iotadieresis'] = 0x03CA;
-  t['iotadieresistonos'] = 0x0390;
-  t['iotalatin'] = 0x0269;
-  t['iotatonos'] = 0x03AF;
-  t['iparen'] = 0x24A4;
-  t['irigurmukhi'] = 0x0A72;
-  t['ismallhiragana'] = 0x3043;
-  t['ismallkatakana'] = 0x30A3;
-  t['ismallkatakanahalfwidth'] = 0xFF68;
-  t['issharbengali'] = 0x09FA;
-  t['istroke'] = 0x0268;
-  t['isuperior'] = 0xF6ED;
-  t['iterationhiragana'] = 0x309D;
-  t['iterationkatakana'] = 0x30FD;
-  t['itilde'] = 0x0129;
-  t['itildebelow'] = 0x1E2D;
-  t['iubopomofo'] = 0x3129;
-  t['iucyrillic'] = 0x044E;
-  t['ivowelsignbengali'] = 0x09BF;
-  t['ivowelsigndeva'] = 0x093F;
-  t['ivowelsigngujarati'] = 0x0ABF;
-  t['izhitsacyrillic'] = 0x0475;
-  t['izhitsadblgravecyrillic'] = 0x0477;
-  t['j'] = 0x006A;
-  t['jaarmenian'] = 0x0571;
-  t['jabengali'] = 0x099C;
-  t['jadeva'] = 0x091C;
-  t['jagujarati'] = 0x0A9C;
-  t['jagurmukhi'] = 0x0A1C;
-  t['jbopomofo'] = 0x3110;
-  t['jcaron'] = 0x01F0;
-  t['jcircle'] = 0x24D9;
-  t['jcircumflex'] = 0x0135;
-  t['jcrossedtail'] = 0x029D;
-  t['jdotlessstroke'] = 0x025F;
-  t['jecyrillic'] = 0x0458;
-  t['jeemarabic'] = 0x062C;
-  t['jeemfinalarabic'] = 0xFE9E;
-  t['jeeminitialarabic'] = 0xFE9F;
-  t['jeemmedialarabic'] = 0xFEA0;
-  t['jeharabic'] = 0x0698;
-  t['jehfinalarabic'] = 0xFB8B;
-  t['jhabengali'] = 0x099D;
-  t['jhadeva'] = 0x091D;
-  t['jhagujarati'] = 0x0A9D;
-  t['jhagurmukhi'] = 0x0A1D;
-  t['jheharmenian'] = 0x057B;
-  t['jis'] = 0x3004;
-  t['jmonospace'] = 0xFF4A;
-  t['jparen'] = 0x24A5;
-  t['jsuperior'] = 0x02B2;
-  t['k'] = 0x006B;
-  t['kabashkircyrillic'] = 0x04A1;
-  t['kabengali'] = 0x0995;
-  t['kacute'] = 0x1E31;
-  t['kacyrillic'] = 0x043A;
-  t['kadescendercyrillic'] = 0x049B;
-  t['kadeva'] = 0x0915;
-  t['kaf'] = 0x05DB;
-  t['kafarabic'] = 0x0643;
-  t['kafdagesh'] = 0xFB3B;
-  t['kafdageshhebrew'] = 0xFB3B;
-  t['kaffinalarabic'] = 0xFEDA;
-  t['kafhebrew'] = 0x05DB;
-  t['kafinitialarabic'] = 0xFEDB;
-  t['kafmedialarabic'] = 0xFEDC;
-  t['kafrafehebrew'] = 0xFB4D;
-  t['kagujarati'] = 0x0A95;
-  t['kagurmukhi'] = 0x0A15;
-  t['kahiragana'] = 0x304B;
-  t['kahookcyrillic'] = 0x04C4;
-  t['kakatakana'] = 0x30AB;
-  t['kakatakanahalfwidth'] = 0xFF76;
-  t['kappa'] = 0x03BA;
-  t['kappasymbolgreek'] = 0x03F0;
-  t['kapyeounmieumkorean'] = 0x3171;
-  t['kapyeounphieuphkorean'] = 0x3184;
-  t['kapyeounpieupkorean'] = 0x3178;
-  t['kapyeounssangpieupkorean'] = 0x3179;
-  t['karoriisquare'] = 0x330D;
-  t['kashidaautoarabic'] = 0x0640;
-  t['kashidaautonosidebearingarabic'] = 0x0640;
-  t['kasmallkatakana'] = 0x30F5;
-  t['kasquare'] = 0x3384;
-  t['kasraarabic'] = 0x0650;
-  t['kasratanarabic'] = 0x064D;
-  t['kastrokecyrillic'] = 0x049F;
-  t['katahiraprolongmarkhalfwidth'] = 0xFF70;
-  t['kaverticalstrokecyrillic'] = 0x049D;
-  t['kbopomofo'] = 0x310E;
-  t['kcalsquare'] = 0x3389;
-  t['kcaron'] = 0x01E9;
-  t['kcedilla'] = 0x0137;
-  t['kcircle'] = 0x24DA;
-  t['kcommaaccent'] = 0x0137;
-  t['kdotbelow'] = 0x1E33;
-  t['keharmenian'] = 0x0584;
-  t['kehiragana'] = 0x3051;
-  t['kekatakana'] = 0x30B1;
-  t['kekatakanahalfwidth'] = 0xFF79;
-  t['kenarmenian'] = 0x056F;
-  t['kesmallkatakana'] = 0x30F6;
-  t['kgreenlandic'] = 0x0138;
-  t['khabengali'] = 0x0996;
-  t['khacyrillic'] = 0x0445;
-  t['khadeva'] = 0x0916;
-  t['khagujarati'] = 0x0A96;
-  t['khagurmukhi'] = 0x0A16;
-  t['khaharabic'] = 0x062E;
-  t['khahfinalarabic'] = 0xFEA6;
-  t['khahinitialarabic'] = 0xFEA7;
-  t['khahmedialarabic'] = 0xFEA8;
-  t['kheicoptic'] = 0x03E7;
-  t['khhadeva'] = 0x0959;
-  t['khhagurmukhi'] = 0x0A59;
-  t['khieukhacirclekorean'] = 0x3278;
-  t['khieukhaparenkorean'] = 0x3218;
-  t['khieukhcirclekorean'] = 0x326A;
-  t['khieukhkorean'] = 0x314B;
-  t['khieukhparenkorean'] = 0x320A;
-  t['khokhaithai'] = 0x0E02;
-  t['khokhonthai'] = 0x0E05;
-  t['khokhuatthai'] = 0x0E03;
-  t['khokhwaithai'] = 0x0E04;
-  t['khomutthai'] = 0x0E5B;
-  t['khook'] = 0x0199;
-  t['khorakhangthai'] = 0x0E06;
-  t['khzsquare'] = 0x3391;
-  t['kihiragana'] = 0x304D;
-  t['kikatakana'] = 0x30AD;
-  t['kikatakanahalfwidth'] = 0xFF77;
-  t['kiroguramusquare'] = 0x3315;
-  t['kiromeetorusquare'] = 0x3316;
-  t['kirosquare'] = 0x3314;
-  t['kiyeokacirclekorean'] = 0x326E;
-  t['kiyeokaparenkorean'] = 0x320E;
-  t['kiyeokcirclekorean'] = 0x3260;
-  t['kiyeokkorean'] = 0x3131;
-  t['kiyeokparenkorean'] = 0x3200;
-  t['kiyeoksioskorean'] = 0x3133;
-  t['kjecyrillic'] = 0x045C;
-  t['klinebelow'] = 0x1E35;
-  t['klsquare'] = 0x3398;
-  t['kmcubedsquare'] = 0x33A6;
-  t['kmonospace'] = 0xFF4B;
-  t['kmsquaredsquare'] = 0x33A2;
-  t['kohiragana'] = 0x3053;
-  t['kohmsquare'] = 0x33C0;
-  t['kokaithai'] = 0x0E01;
-  t['kokatakana'] = 0x30B3;
-  t['kokatakanahalfwidth'] = 0xFF7A;
-  t['kooposquare'] = 0x331E;
-  t['koppacyrillic'] = 0x0481;
-  t['koreanstandardsymbol'] = 0x327F;
-  t['koroniscmb'] = 0x0343;
-  t['kparen'] = 0x24A6;
-  t['kpasquare'] = 0x33AA;
-  t['ksicyrillic'] = 0x046F;
-  t['ktsquare'] = 0x33CF;
-  t['kturned'] = 0x029E;
-  t['kuhiragana'] = 0x304F;
-  t['kukatakana'] = 0x30AF;
-  t['kukatakanahalfwidth'] = 0xFF78;
-  t['kvsquare'] = 0x33B8;
-  t['kwsquare'] = 0x33BE;
-  t['l'] = 0x006C;
-  t['labengali'] = 0x09B2;
-  t['lacute'] = 0x013A;
-  t['ladeva'] = 0x0932;
-  t['lagujarati'] = 0x0AB2;
-  t['lagurmukhi'] = 0x0A32;
-  t['lakkhangyaothai'] = 0x0E45;
-  t['lamaleffinalarabic'] = 0xFEFC;
-  t['lamalefhamzaabovefinalarabic'] = 0xFEF8;
-  t['lamalefhamzaaboveisolatedarabic'] = 0xFEF7;
-  t['lamalefhamzabelowfinalarabic'] = 0xFEFA;
-  t['lamalefhamzabelowisolatedarabic'] = 0xFEF9;
-  t['lamalefisolatedarabic'] = 0xFEFB;
-  t['lamalefmaddaabovefinalarabic'] = 0xFEF6;
-  t['lamalefmaddaaboveisolatedarabic'] = 0xFEF5;
-  t['lamarabic'] = 0x0644;
-  t['lambda'] = 0x03BB;
-  t['lambdastroke'] = 0x019B;
-  t['lamed'] = 0x05DC;
-  t['lameddagesh'] = 0xFB3C;
-  t['lameddageshhebrew'] = 0xFB3C;
-  t['lamedhebrew'] = 0x05DC;
-  t['lamfinalarabic'] = 0xFEDE;
-  t['lamhahinitialarabic'] = 0xFCCA;
-  t['laminitialarabic'] = 0xFEDF;
-  t['lamjeeminitialarabic'] = 0xFCC9;
-  t['lamkhahinitialarabic'] = 0xFCCB;
-  t['lamlamhehisolatedarabic'] = 0xFDF2;
-  t['lammedialarabic'] = 0xFEE0;
-  t['lammeemhahinitialarabic'] = 0xFD88;
-  t['lammeeminitialarabic'] = 0xFCCC;
-  t['largecircle'] = 0x25EF;
-  t['lbar'] = 0x019A;
-  t['lbelt'] = 0x026C;
-  t['lbopomofo'] = 0x310C;
-  t['lcaron'] = 0x013E;
-  t['lcedilla'] = 0x013C;
-  t['lcircle'] = 0x24DB;
-  t['lcircumflexbelow'] = 0x1E3D;
-  t['lcommaaccent'] = 0x013C;
-  t['ldot'] = 0x0140;
-  t['ldotaccent'] = 0x0140;
-  t['ldotbelow'] = 0x1E37;
-  t['ldotbelowmacron'] = 0x1E39;
-  t['leftangleabovecmb'] = 0x031A;
-  t['lefttackbelowcmb'] = 0x0318;
-  t['less'] = 0x003C;
-  t['lessequal'] = 0x2264;
-  t['lessequalorgreater'] = 0x22DA;
-  t['lessmonospace'] = 0xFF1C;
-  t['lessorequivalent'] = 0x2272;
-  t['lessorgreater'] = 0x2276;
-  t['lessoverequal'] = 0x2266;
-  t['lesssmall'] = 0xFE64;
-  t['lezh'] = 0x026E;
-  t['lfblock'] = 0x258C;
-  t['lhookretroflex'] = 0x026D;
-  t['lira'] = 0x20A4;
-  t['liwnarmenian'] = 0x056C;
-  t['lj'] = 0x01C9;
-  t['ljecyrillic'] = 0x0459;
-  t['ll'] = 0xF6C0;
-  t['lladeva'] = 0x0933;
-  t['llagujarati'] = 0x0AB3;
-  t['llinebelow'] = 0x1E3B;
-  t['llladeva'] = 0x0934;
-  t['llvocalicbengali'] = 0x09E1;
-  t['llvocalicdeva'] = 0x0961;
-  t['llvocalicvowelsignbengali'] = 0x09E3;
-  t['llvocalicvowelsigndeva'] = 0x0963;
-  t['lmiddletilde'] = 0x026B;
-  t['lmonospace'] = 0xFF4C;
-  t['lmsquare'] = 0x33D0;
-  t['lochulathai'] = 0x0E2C;
-  t['logicaland'] = 0x2227;
-  t['logicalnot'] = 0x00AC;
-  t['logicalnotreversed'] = 0x2310;
-  t['logicalor'] = 0x2228;
-  t['lolingthai'] = 0x0E25;
-  t['longs'] = 0x017F;
-  t['lowlinecenterline'] = 0xFE4E;
-  t['lowlinecmb'] = 0x0332;
-  t['lowlinedashed'] = 0xFE4D;
-  t['lozenge'] = 0x25CA;
-  t['lparen'] = 0x24A7;
-  t['lslash'] = 0x0142;
-  t['lsquare'] = 0x2113;
-  t['lsuperior'] = 0xF6EE;
-  t['ltshade'] = 0x2591;
-  t['luthai'] = 0x0E26;
-  t['lvocalicbengali'] = 0x098C;
-  t['lvocalicdeva'] = 0x090C;
-  t['lvocalicvowelsignbengali'] = 0x09E2;
-  t['lvocalicvowelsigndeva'] = 0x0962;
-  t['lxsquare'] = 0x33D3;
-  t['m'] = 0x006D;
-  t['mabengali'] = 0x09AE;
-  t['macron'] = 0x00AF;
-  t['macronbelowcmb'] = 0x0331;
-  t['macroncmb'] = 0x0304;
-  t['macronlowmod'] = 0x02CD;
-  t['macronmonospace'] = 0xFFE3;
-  t['macute'] = 0x1E3F;
-  t['madeva'] = 0x092E;
-  t['magujarati'] = 0x0AAE;
-  t['magurmukhi'] = 0x0A2E;
-  t['mahapakhhebrew'] = 0x05A4;
-  t['mahapakhlefthebrew'] = 0x05A4;
-  t['mahiragana'] = 0x307E;
-  t['maichattawalowleftthai'] = 0xF895;
-  t['maichattawalowrightthai'] = 0xF894;
-  t['maichattawathai'] = 0x0E4B;
-  t['maichattawaupperleftthai'] = 0xF893;
-  t['maieklowleftthai'] = 0xF88C;
-  t['maieklowrightthai'] = 0xF88B;
-  t['maiekthai'] = 0x0E48;
-  t['maiekupperleftthai'] = 0xF88A;
-  t['maihanakatleftthai'] = 0xF884;
-  t['maihanakatthai'] = 0x0E31;
-  t['maitaikhuleftthai'] = 0xF889;
-  t['maitaikhuthai'] = 0x0E47;
-  t['maitholowleftthai'] = 0xF88F;
-  t['maitholowrightthai'] = 0xF88E;
-  t['maithothai'] = 0x0E49;
-  t['maithoupperleftthai'] = 0xF88D;
-  t['maitrilowleftthai'] = 0xF892;
-  t['maitrilowrightthai'] = 0xF891;
-  t['maitrithai'] = 0x0E4A;
-  t['maitriupperleftthai'] = 0xF890;
-  t['maiyamokthai'] = 0x0E46;
-  t['makatakana'] = 0x30DE;
-  t['makatakanahalfwidth'] = 0xFF8F;
-  t['male'] = 0x2642;
-  t['mansyonsquare'] = 0x3347;
-  t['maqafhebrew'] = 0x05BE;
-  t['mars'] = 0x2642;
-  t['masoracirclehebrew'] = 0x05AF;
-  t['masquare'] = 0x3383;
-  t['mbopomofo'] = 0x3107;
-  t['mbsquare'] = 0x33D4;
-  t['mcircle'] = 0x24DC;
-  t['mcubedsquare'] = 0x33A5;
-  t['mdotaccent'] = 0x1E41;
-  t['mdotbelow'] = 0x1E43;
-  t['meemarabic'] = 0x0645;
-  t['meemfinalarabic'] = 0xFEE2;
-  t['meeminitialarabic'] = 0xFEE3;
-  t['meemmedialarabic'] = 0xFEE4;
-  t['meemmeeminitialarabic'] = 0xFCD1;
-  t['meemmeemisolatedarabic'] = 0xFC48;
-  t['meetorusquare'] = 0x334D;
-  t['mehiragana'] = 0x3081;
-  t['meizierasquare'] = 0x337E;
-  t['mekatakana'] = 0x30E1;
-  t['mekatakanahalfwidth'] = 0xFF92;
-  t['mem'] = 0x05DE;
-  t['memdagesh'] = 0xFB3E;
-  t['memdageshhebrew'] = 0xFB3E;
-  t['memhebrew'] = 0x05DE;
-  t['menarmenian'] = 0x0574;
-  t['merkhahebrew'] = 0x05A5;
-  t['merkhakefulahebrew'] = 0x05A6;
-  t['merkhakefulalefthebrew'] = 0x05A6;
-  t['merkhalefthebrew'] = 0x05A5;
-  t['mhook'] = 0x0271;
-  t['mhzsquare'] = 0x3392;
-  t['middledotkatakanahalfwidth'] = 0xFF65;
-  t['middot'] = 0x00B7;
-  t['mieumacirclekorean'] = 0x3272;
-  t['mieumaparenkorean'] = 0x3212;
-  t['mieumcirclekorean'] = 0x3264;
-  t['mieumkorean'] = 0x3141;
-  t['mieumpansioskorean'] = 0x3170;
-  t['mieumparenkorean'] = 0x3204;
-  t['mieumpieupkorean'] = 0x316E;
-  t['mieumsioskorean'] = 0x316F;
-  t['mihiragana'] = 0x307F;
-  t['mikatakana'] = 0x30DF;
-  t['mikatakanahalfwidth'] = 0xFF90;
-  t['minus'] = 0x2212;
-  t['minusbelowcmb'] = 0x0320;
-  t['minuscircle'] = 0x2296;
-  t['minusmod'] = 0x02D7;
-  t['minusplus'] = 0x2213;
-  t['minute'] = 0x2032;
-  t['miribaarusquare'] = 0x334A;
-  t['mirisquare'] = 0x3349;
-  t['mlonglegturned'] = 0x0270;
-  t['mlsquare'] = 0x3396;
-  t['mmcubedsquare'] = 0x33A3;
-  t['mmonospace'] = 0xFF4D;
-  t['mmsquaredsquare'] = 0x339F;
-  t['mohiragana'] = 0x3082;
-  t['mohmsquare'] = 0x33C1;
-  t['mokatakana'] = 0x30E2;
-  t['mokatakanahalfwidth'] = 0xFF93;
-  t['molsquare'] = 0x33D6;
-  t['momathai'] = 0x0E21;
-  t['moverssquare'] = 0x33A7;
-  t['moverssquaredsquare'] = 0x33A8;
-  t['mparen'] = 0x24A8;
-  t['mpasquare'] = 0x33AB;
-  t['mssquare'] = 0x33B3;
-  t['msuperior'] = 0xF6EF;
-  t['mturned'] = 0x026F;
-  t['mu'] = 0x00B5;
-  t['mu1'] = 0x00B5;
-  t['muasquare'] = 0x3382;
-  t['muchgreater'] = 0x226B;
-  t['muchless'] = 0x226A;
-  t['mufsquare'] = 0x338C;
-  t['mugreek'] = 0x03BC;
-  t['mugsquare'] = 0x338D;
-  t['muhiragana'] = 0x3080;
-  t['mukatakana'] = 0x30E0;
-  t['mukatakanahalfwidth'] = 0xFF91;
-  t['mulsquare'] = 0x3395;
-  t['multiply'] = 0x00D7;
-  t['mumsquare'] = 0x339B;
-  t['munahhebrew'] = 0x05A3;
-  t['munahlefthebrew'] = 0x05A3;
-  t['musicalnote'] = 0x266A;
-  t['musicalnotedbl'] = 0x266B;
-  t['musicflatsign'] = 0x266D;
-  t['musicsharpsign'] = 0x266F;
-  t['mussquare'] = 0x33B2;
-  t['muvsquare'] = 0x33B6;
-  t['muwsquare'] = 0x33BC;
-  t['mvmegasquare'] = 0x33B9;
-  t['mvsquare'] = 0x33B7;
-  t['mwmegasquare'] = 0x33BF;
-  t['mwsquare'] = 0x33BD;
-  t['n'] = 0x006E;
-  t['nabengali'] = 0x09A8;
-  t['nabla'] = 0x2207;
-  t['nacute'] = 0x0144;
-  t['nadeva'] = 0x0928;
-  t['nagujarati'] = 0x0AA8;
-  t['nagurmukhi'] = 0x0A28;
-  t['nahiragana'] = 0x306A;
-  t['nakatakana'] = 0x30CA;
-  t['nakatakanahalfwidth'] = 0xFF85;
-  t['napostrophe'] = 0x0149;
-  t['nasquare'] = 0x3381;
-  t['nbopomofo'] = 0x310B;
-  t['nbspace'] = 0x00A0;
-  t['ncaron'] = 0x0148;
-  t['ncedilla'] = 0x0146;
-  t['ncircle'] = 0x24DD;
-  t['ncircumflexbelow'] = 0x1E4B;
-  t['ncommaaccent'] = 0x0146;
-  t['ndotaccent'] = 0x1E45;
-  t['ndotbelow'] = 0x1E47;
-  t['nehiragana'] = 0x306D;
-  t['nekatakana'] = 0x30CD;
-  t['nekatakanahalfwidth'] = 0xFF88;
-  t['newsheqelsign'] = 0x20AA;
-  t['nfsquare'] = 0x338B;
-  t['ngabengali'] = 0x0999;
-  t['ngadeva'] = 0x0919;
-  t['ngagujarati'] = 0x0A99;
-  t['ngagurmukhi'] = 0x0A19;
-  t['ngonguthai'] = 0x0E07;
-  t['nhiragana'] = 0x3093;
-  t['nhookleft'] = 0x0272;
-  t['nhookretroflex'] = 0x0273;
-  t['nieunacirclekorean'] = 0x326F;
-  t['nieunaparenkorean'] = 0x320F;
-  t['nieuncieuckorean'] = 0x3135;
-  t['nieuncirclekorean'] = 0x3261;
-  t['nieunhieuhkorean'] = 0x3136;
-  t['nieunkorean'] = 0x3134;
-  t['nieunpansioskorean'] = 0x3168;
-  t['nieunparenkorean'] = 0x3201;
-  t['nieunsioskorean'] = 0x3167;
-  t['nieuntikeutkorean'] = 0x3166;
-  t['nihiragana'] = 0x306B;
-  t['nikatakana'] = 0x30CB;
-  t['nikatakanahalfwidth'] = 0xFF86;
-  t['nikhahitleftthai'] = 0xF899;
-  t['nikhahitthai'] = 0x0E4D;
-  t['nine'] = 0x0039;
-  t['ninearabic'] = 0x0669;
-  t['ninebengali'] = 0x09EF;
-  t['ninecircle'] = 0x2468;
-  t['ninecircleinversesansserif'] = 0x2792;
-  t['ninedeva'] = 0x096F;
-  t['ninegujarati'] = 0x0AEF;
-  t['ninegurmukhi'] = 0x0A6F;
-  t['ninehackarabic'] = 0x0669;
-  t['ninehangzhou'] = 0x3029;
-  t['nineideographicparen'] = 0x3228;
-  t['nineinferior'] = 0x2089;
-  t['ninemonospace'] = 0xFF19;
-  t['nineoldstyle'] = 0xF739;
-  t['nineparen'] = 0x247C;
-  t['nineperiod'] = 0x2490;
-  t['ninepersian'] = 0x06F9;
-  t['nineroman'] = 0x2178;
-  t['ninesuperior'] = 0x2079;
-  t['nineteencircle'] = 0x2472;
-  t['nineteenparen'] = 0x2486;
-  t['nineteenperiod'] = 0x249A;
-  t['ninethai'] = 0x0E59;
-  t['nj'] = 0x01CC;
-  t['njecyrillic'] = 0x045A;
-  t['nkatakana'] = 0x30F3;
-  t['nkatakanahalfwidth'] = 0xFF9D;
-  t['nlegrightlong'] = 0x019E;
-  t['nlinebelow'] = 0x1E49;
-  t['nmonospace'] = 0xFF4E;
-  t['nmsquare'] = 0x339A;
-  t['nnabengali'] = 0x09A3;
-  t['nnadeva'] = 0x0923;
-  t['nnagujarati'] = 0x0AA3;
-  t['nnagurmukhi'] = 0x0A23;
-  t['nnnadeva'] = 0x0929;
-  t['nohiragana'] = 0x306E;
-  t['nokatakana'] = 0x30CE;
-  t['nokatakanahalfwidth'] = 0xFF89;
-  t['nonbreakingspace'] = 0x00A0;
-  t['nonenthai'] = 0x0E13;
-  t['nonuthai'] = 0x0E19;
-  t['noonarabic'] = 0x0646;
-  t['noonfinalarabic'] = 0xFEE6;
-  t['noonghunnaarabic'] = 0x06BA;
-  t['noonghunnafinalarabic'] = 0xFB9F;
-  t['nooninitialarabic'] = 0xFEE7;
-  t['noonjeeminitialarabic'] = 0xFCD2;
-  t['noonjeemisolatedarabic'] = 0xFC4B;
-  t['noonmedialarabic'] = 0xFEE8;
-  t['noonmeeminitialarabic'] = 0xFCD5;
-  t['noonmeemisolatedarabic'] = 0xFC4E;
-  t['noonnoonfinalarabic'] = 0xFC8D;
-  t['notcontains'] = 0x220C;
-  t['notelement'] = 0x2209;
-  t['notelementof'] = 0x2209;
-  t['notequal'] = 0x2260;
-  t['notgreater'] = 0x226F;
-  t['notgreaternorequal'] = 0x2271;
-  t['notgreaternorless'] = 0x2279;
-  t['notidentical'] = 0x2262;
-  t['notless'] = 0x226E;
-  t['notlessnorequal'] = 0x2270;
-  t['notparallel'] = 0x2226;
-  t['notprecedes'] = 0x2280;
-  t['notsubset'] = 0x2284;
-  t['notsucceeds'] = 0x2281;
-  t['notsuperset'] = 0x2285;
-  t['nowarmenian'] = 0x0576;
-  t['nparen'] = 0x24A9;
-  t['nssquare'] = 0x33B1;
-  t['nsuperior'] = 0x207F;
-  t['ntilde'] = 0x00F1;
-  t['nu'] = 0x03BD;
-  t['nuhiragana'] = 0x306C;
-  t['nukatakana'] = 0x30CC;
-  t['nukatakanahalfwidth'] = 0xFF87;
-  t['nuktabengali'] = 0x09BC;
-  t['nuktadeva'] = 0x093C;
-  t['nuktagujarati'] = 0x0ABC;
-  t['nuktagurmukhi'] = 0x0A3C;
-  t['numbersign'] = 0x0023;
-  t['numbersignmonospace'] = 0xFF03;
-  t['numbersignsmall'] = 0xFE5F;
-  t['numeralsigngreek'] = 0x0374;
-  t['numeralsignlowergreek'] = 0x0375;
-  t['numero'] = 0x2116;
-  t['nun'] = 0x05E0;
-  t['nundagesh'] = 0xFB40;
-  t['nundageshhebrew'] = 0xFB40;
-  t['nunhebrew'] = 0x05E0;
-  t['nvsquare'] = 0x33B5;
-  t['nwsquare'] = 0x33BB;
-  t['nyabengali'] = 0x099E;
-  t['nyadeva'] = 0x091E;
-  t['nyagujarati'] = 0x0A9E;
-  t['nyagurmukhi'] = 0x0A1E;
-  t['o'] = 0x006F;
-  t['oacute'] = 0x00F3;
-  t['oangthai'] = 0x0E2D;
-  t['obarred'] = 0x0275;
-  t['obarredcyrillic'] = 0x04E9;
-  t['obarreddieresiscyrillic'] = 0x04EB;
-  t['obengali'] = 0x0993;
-  t['obopomofo'] = 0x311B;
-  t['obreve'] = 0x014F;
-  t['ocandradeva'] = 0x0911;
-  t['ocandragujarati'] = 0x0A91;
-  t['ocandravowelsigndeva'] = 0x0949;
-  t['ocandravowelsigngujarati'] = 0x0AC9;
-  t['ocaron'] = 0x01D2;
-  t['ocircle'] = 0x24DE;
-  t['ocircumflex'] = 0x00F4;
-  t['ocircumflexacute'] = 0x1ED1;
-  t['ocircumflexdotbelow'] = 0x1ED9;
-  t['ocircumflexgrave'] = 0x1ED3;
-  t['ocircumflexhookabove'] = 0x1ED5;
-  t['ocircumflextilde'] = 0x1ED7;
-  t['ocyrillic'] = 0x043E;
-  t['odblacute'] = 0x0151;
-  t['odblgrave'] = 0x020D;
-  t['odeva'] = 0x0913;
-  t['odieresis'] = 0x00F6;
-  t['odieresiscyrillic'] = 0x04E7;
-  t['odotbelow'] = 0x1ECD;
-  t['oe'] = 0x0153;
-  t['oekorean'] = 0x315A;
-  t['ogonek'] = 0x02DB;
-  t['ogonekcmb'] = 0x0328;
-  t['ograve'] = 0x00F2;
-  t['ogujarati'] = 0x0A93;
-  t['oharmenian'] = 0x0585;
-  t['ohiragana'] = 0x304A;
-  t['ohookabove'] = 0x1ECF;
-  t['ohorn'] = 0x01A1;
-  t['ohornacute'] = 0x1EDB;
-  t['ohorndotbelow'] = 0x1EE3;
-  t['ohorngrave'] = 0x1EDD;
-  t['ohornhookabove'] = 0x1EDF;
-  t['ohorntilde'] = 0x1EE1;
-  t['ohungarumlaut'] = 0x0151;
-  t['oi'] = 0x01A3;
-  t['oinvertedbreve'] = 0x020F;
-  t['okatakana'] = 0x30AA;
-  t['okatakanahalfwidth'] = 0xFF75;
-  t['okorean'] = 0x3157;
-  t['olehebrew'] = 0x05AB;
-  t['omacron'] = 0x014D;
-  t['omacronacute'] = 0x1E53;
-  t['omacrongrave'] = 0x1E51;
-  t['omdeva'] = 0x0950;
-  t['omega'] = 0x03C9;
-  t['omega1'] = 0x03D6;
-  t['omegacyrillic'] = 0x0461;
-  t['omegalatinclosed'] = 0x0277;
-  t['omegaroundcyrillic'] = 0x047B;
-  t['omegatitlocyrillic'] = 0x047D;
-  t['omegatonos'] = 0x03CE;
-  t['omgujarati'] = 0x0AD0;
-  t['omicron'] = 0x03BF;
-  t['omicrontonos'] = 0x03CC;
-  t['omonospace'] = 0xFF4F;
-  t['one'] = 0x0031;
-  t['onearabic'] = 0x0661;
-  t['onebengali'] = 0x09E7;
-  t['onecircle'] = 0x2460;
-  t['onecircleinversesansserif'] = 0x278A;
-  t['onedeva'] = 0x0967;
-  t['onedotenleader'] = 0x2024;
-  t['oneeighth'] = 0x215B;
-  t['onefitted'] = 0xF6DC;
-  t['onegujarati'] = 0x0AE7;
-  t['onegurmukhi'] = 0x0A67;
-  t['onehackarabic'] = 0x0661;
-  t['onehalf'] = 0x00BD;
-  t['onehangzhou'] = 0x3021;
-  t['oneideographicparen'] = 0x3220;
-  t['oneinferior'] = 0x2081;
-  t['onemonospace'] = 0xFF11;
-  t['onenumeratorbengali'] = 0x09F4;
-  t['oneoldstyle'] = 0xF731;
-  t['oneparen'] = 0x2474;
-  t['oneperiod'] = 0x2488;
-  t['onepersian'] = 0x06F1;
-  t['onequarter'] = 0x00BC;
-  t['oneroman'] = 0x2170;
-  t['onesuperior'] = 0x00B9;
-  t['onethai'] = 0x0E51;
-  t['onethird'] = 0x2153;
-  t['oogonek'] = 0x01EB;
-  t['oogonekmacron'] = 0x01ED;
-  t['oogurmukhi'] = 0x0A13;
-  t['oomatragurmukhi'] = 0x0A4B;
-  t['oopen'] = 0x0254;
-  t['oparen'] = 0x24AA;
-  t['openbullet'] = 0x25E6;
-  t['option'] = 0x2325;
-  t['ordfeminine'] = 0x00AA;
-  t['ordmasculine'] = 0x00BA;
-  t['orthogonal'] = 0x221F;
-  t['oshortdeva'] = 0x0912;
-  t['oshortvowelsigndeva'] = 0x094A;
-  t['oslash'] = 0x00F8;
-  t['oslashacute'] = 0x01FF;
-  t['osmallhiragana'] = 0x3049;
-  t['osmallkatakana'] = 0x30A9;
-  t['osmallkatakanahalfwidth'] = 0xFF6B;
-  t['ostrokeacute'] = 0x01FF;
-  t['osuperior'] = 0xF6F0;
-  t['otcyrillic'] = 0x047F;
-  t['otilde'] = 0x00F5;
-  t['otildeacute'] = 0x1E4D;
-  t['otildedieresis'] = 0x1E4F;
-  t['oubopomofo'] = 0x3121;
-  t['overline'] = 0x203E;
-  t['overlinecenterline'] = 0xFE4A;
-  t['overlinecmb'] = 0x0305;
-  t['overlinedashed'] = 0xFE49;
-  t['overlinedblwavy'] = 0xFE4C;
-  t['overlinewavy'] = 0xFE4B;
-  t['overscore'] = 0x00AF;
-  t['ovowelsignbengali'] = 0x09CB;
-  t['ovowelsigndeva'] = 0x094B;
-  t['ovowelsigngujarati'] = 0x0ACB;
-  t['p'] = 0x0070;
-  t['paampssquare'] = 0x3380;
-  t['paasentosquare'] = 0x332B;
-  t['pabengali'] = 0x09AA;
-  t['pacute'] = 0x1E55;
-  t['padeva'] = 0x092A;
-  t['pagedown'] = 0x21DF;
-  t['pageup'] = 0x21DE;
-  t['pagujarati'] = 0x0AAA;
-  t['pagurmukhi'] = 0x0A2A;
-  t['pahiragana'] = 0x3071;
-  t['paiyannoithai'] = 0x0E2F;
-  t['pakatakana'] = 0x30D1;
-  t['palatalizationcyrilliccmb'] = 0x0484;
-  t['palochkacyrillic'] = 0x04C0;
-  t['pansioskorean'] = 0x317F;
-  t['paragraph'] = 0x00B6;
-  t['parallel'] = 0x2225;
-  t['parenleft'] = 0x0028;
-  t['parenleftaltonearabic'] = 0xFD3E;
-  t['parenleftbt'] = 0xF8ED;
-  t['parenleftex'] = 0xF8EC;
-  t['parenleftinferior'] = 0x208D;
-  t['parenleftmonospace'] = 0xFF08;
-  t['parenleftsmall'] = 0xFE59;
-  t['parenleftsuperior'] = 0x207D;
-  t['parenlefttp'] = 0xF8EB;
-  t['parenleftvertical'] = 0xFE35;
-  t['parenright'] = 0x0029;
-  t['parenrightaltonearabic'] = 0xFD3F;
-  t['parenrightbt'] = 0xF8F8;
-  t['parenrightex'] = 0xF8F7;
-  t['parenrightinferior'] = 0x208E;
-  t['parenrightmonospace'] = 0xFF09;
-  t['parenrightsmall'] = 0xFE5A;
-  t['parenrightsuperior'] = 0x207E;
-  t['parenrighttp'] = 0xF8F6;
-  t['parenrightvertical'] = 0xFE36;
-  t['partialdiff'] = 0x2202;
-  t['paseqhebrew'] = 0x05C0;
-  t['pashtahebrew'] = 0x0599;
-  t['pasquare'] = 0x33A9;
-  t['patah'] = 0x05B7;
-  t['patah11'] = 0x05B7;
-  t['patah1d'] = 0x05B7;
-  t['patah2a'] = 0x05B7;
-  t['patahhebrew'] = 0x05B7;
-  t['patahnarrowhebrew'] = 0x05B7;
-  t['patahquarterhebrew'] = 0x05B7;
-  t['patahwidehebrew'] = 0x05B7;
-  t['pazerhebrew'] = 0x05A1;
-  t['pbopomofo'] = 0x3106;
-  t['pcircle'] = 0x24DF;
-  t['pdotaccent'] = 0x1E57;
-  t['pe'] = 0x05E4;
-  t['pecyrillic'] = 0x043F;
-  t['pedagesh'] = 0xFB44;
-  t['pedageshhebrew'] = 0xFB44;
-  t['peezisquare'] = 0x333B;
-  t['pefinaldageshhebrew'] = 0xFB43;
-  t['peharabic'] = 0x067E;
-  t['peharmenian'] = 0x057A;
-  t['pehebrew'] = 0x05E4;
-  t['pehfinalarabic'] = 0xFB57;
-  t['pehinitialarabic'] = 0xFB58;
-  t['pehiragana'] = 0x307A;
-  t['pehmedialarabic'] = 0xFB59;
-  t['pekatakana'] = 0x30DA;
-  t['pemiddlehookcyrillic'] = 0x04A7;
-  t['perafehebrew'] = 0xFB4E;
-  t['percent'] = 0x0025;
-  t['percentarabic'] = 0x066A;
-  t['percentmonospace'] = 0xFF05;
-  t['percentsmall'] = 0xFE6A;
-  t['period'] = 0x002E;
-  t['periodarmenian'] = 0x0589;
-  t['periodcentered'] = 0x00B7;
-  t['periodhalfwidth'] = 0xFF61;
-  t['periodinferior'] = 0xF6E7;
-  t['periodmonospace'] = 0xFF0E;
-  t['periodsmall'] = 0xFE52;
-  t['periodsuperior'] = 0xF6E8;
-  t['perispomenigreekcmb'] = 0x0342;
-  t['perpendicular'] = 0x22A5;
-  t['perthousand'] = 0x2030;
-  t['peseta'] = 0x20A7;
-  t['pfsquare'] = 0x338A;
-  t['phabengali'] = 0x09AB;
-  t['phadeva'] = 0x092B;
-  t['phagujarati'] = 0x0AAB;
-  t['phagurmukhi'] = 0x0A2B;
-  t['phi'] = 0x03C6;
-  t['phi1'] = 0x03D5;
-  t['phieuphacirclekorean'] = 0x327A;
-  t['phieuphaparenkorean'] = 0x321A;
-  t['phieuphcirclekorean'] = 0x326C;
-  t['phieuphkorean'] = 0x314D;
-  t['phieuphparenkorean'] = 0x320C;
-  t['philatin'] = 0x0278;
-  t['phinthuthai'] = 0x0E3A;
-  t['phisymbolgreek'] = 0x03D5;
-  t['phook'] = 0x01A5;
-  t['phophanthai'] = 0x0E1E;
-  t['phophungthai'] = 0x0E1C;
-  t['phosamphaothai'] = 0x0E20;
-  t['pi'] = 0x03C0;
-  t['pieupacirclekorean'] = 0x3273;
-  t['pieupaparenkorean'] = 0x3213;
-  t['pieupcieuckorean'] = 0x3176;
-  t['pieupcirclekorean'] = 0x3265;
-  t['pieupkiyeokkorean'] = 0x3172;
-  t['pieupkorean'] = 0x3142;
-  t['pieupparenkorean'] = 0x3205;
-  t['pieupsioskiyeokkorean'] = 0x3174;
-  t['pieupsioskorean'] = 0x3144;
-  t['pieupsiostikeutkorean'] = 0x3175;
-  t['pieupthieuthkorean'] = 0x3177;
-  t['pieuptikeutkorean'] = 0x3173;
-  t['pihiragana'] = 0x3074;
-  t['pikatakana'] = 0x30D4;
-  t['pisymbolgreek'] = 0x03D6;
-  t['piwrarmenian'] = 0x0583;
-  t['plus'] = 0x002B;
-  t['plusbelowcmb'] = 0x031F;
-  t['pluscircle'] = 0x2295;
-  t['plusminus'] = 0x00B1;
-  t['plusmod'] = 0x02D6;
-  t['plusmonospace'] = 0xFF0B;
-  t['plussmall'] = 0xFE62;
-  t['plussuperior'] = 0x207A;
-  t['pmonospace'] = 0xFF50;
-  t['pmsquare'] = 0x33D8;
-  t['pohiragana'] = 0x307D;
-  t['pointingindexdownwhite'] = 0x261F;
-  t['pointingindexleftwhite'] = 0x261C;
-  t['pointingindexrightwhite'] = 0x261E;
-  t['pointingindexupwhite'] = 0x261D;
-  t['pokatakana'] = 0x30DD;
-  t['poplathai'] = 0x0E1B;
-  t['postalmark'] = 0x3012;
-  t['postalmarkface'] = 0x3020;
-  t['pparen'] = 0x24AB;
-  t['precedes'] = 0x227A;
-  t['prescription'] = 0x211E;
-  t['primemod'] = 0x02B9;
-  t['primereversed'] = 0x2035;
-  t['product'] = 0x220F;
-  t['projective'] = 0x2305;
-  t['prolongedkana'] = 0x30FC;
-  t['propellor'] = 0x2318;
-  t['propersubset'] = 0x2282;
-  t['propersuperset'] = 0x2283;
-  t['proportion'] = 0x2237;
-  t['proportional'] = 0x221D;
-  t['psi'] = 0x03C8;
-  t['psicyrillic'] = 0x0471;
-  t['psilipneumatacyrilliccmb'] = 0x0486;
-  t['pssquare'] = 0x33B0;
-  t['puhiragana'] = 0x3077;
-  t['pukatakana'] = 0x30D7;
-  t['pvsquare'] = 0x33B4;
-  t['pwsquare'] = 0x33BA;
-  t['q'] = 0x0071;
-  t['qadeva'] = 0x0958;
-  t['qadmahebrew'] = 0x05A8;
-  t['qafarabic'] = 0x0642;
-  t['qaffinalarabic'] = 0xFED6;
-  t['qafinitialarabic'] = 0xFED7;
-  t['qafmedialarabic'] = 0xFED8;
-  t['qamats'] = 0x05B8;
-  t['qamats10'] = 0x05B8;
-  t['qamats1a'] = 0x05B8;
-  t['qamats1c'] = 0x05B8;
-  t['qamats27'] = 0x05B8;
-  t['qamats29'] = 0x05B8;
-  t['qamats33'] = 0x05B8;
-  t['qamatsde'] = 0x05B8;
-  t['qamatshebrew'] = 0x05B8;
-  t['qamatsnarrowhebrew'] = 0x05B8;
-  t['qamatsqatanhebrew'] = 0x05B8;
-  t['qamatsqatannarrowhebrew'] = 0x05B8;
-  t['qamatsqatanquarterhebrew'] = 0x05B8;
-  t['qamatsqatanwidehebrew'] = 0x05B8;
-  t['qamatsquarterhebrew'] = 0x05B8;
-  t['qamatswidehebrew'] = 0x05B8;
-  t['qarneyparahebrew'] = 0x059F;
-  t['qbopomofo'] = 0x3111;
-  t['qcircle'] = 0x24E0;
-  t['qhook'] = 0x02A0;
-  t['qmonospace'] = 0xFF51;
-  t['qof'] = 0x05E7;
-  t['qofdagesh'] = 0xFB47;
-  t['qofdageshhebrew'] = 0xFB47;
-  t['qofhebrew'] = 0x05E7;
-  t['qparen'] = 0x24AC;
-  t['quarternote'] = 0x2669;
-  t['qubuts'] = 0x05BB;
-  t['qubuts18'] = 0x05BB;
-  t['qubuts25'] = 0x05BB;
-  t['qubuts31'] = 0x05BB;
-  t['qubutshebrew'] = 0x05BB;
-  t['qubutsnarrowhebrew'] = 0x05BB;
-  t['qubutsquarterhebrew'] = 0x05BB;
-  t['qubutswidehebrew'] = 0x05BB;
-  t['question'] = 0x003F;
-  t['questionarabic'] = 0x061F;
-  t['questionarmenian'] = 0x055E;
-  t['questiondown'] = 0x00BF;
-  t['questiondownsmall'] = 0xF7BF;
-  t['questiongreek'] = 0x037E;
-  t['questionmonospace'] = 0xFF1F;
-  t['questionsmall'] = 0xF73F;
-  t['quotedbl'] = 0x0022;
-  t['quotedblbase'] = 0x201E;
-  t['quotedblleft'] = 0x201C;
-  t['quotedblmonospace'] = 0xFF02;
-  t['quotedblprime'] = 0x301E;
-  t['quotedblprimereversed'] = 0x301D;
-  t['quotedblright'] = 0x201D;
-  t['quoteleft'] = 0x2018;
-  t['quoteleftreversed'] = 0x201B;
-  t['quotereversed'] = 0x201B;
-  t['quoteright'] = 0x2019;
-  t['quoterightn'] = 0x0149;
-  t['quotesinglbase'] = 0x201A;
-  t['quotesingle'] = 0x0027;
-  t['quotesinglemonospace'] = 0xFF07;
-  t['r'] = 0x0072;
-  t['raarmenian'] = 0x057C;
-  t['rabengali'] = 0x09B0;
-  t['racute'] = 0x0155;
-  t['radeva'] = 0x0930;
-  t['radical'] = 0x221A;
-  t['radicalex'] = 0xF8E5;
-  t['radoverssquare'] = 0x33AE;
-  t['radoverssquaredsquare'] = 0x33AF;
-  t['radsquare'] = 0x33AD;
-  t['rafe'] = 0x05BF;
-  t['rafehebrew'] = 0x05BF;
-  t['ragujarati'] = 0x0AB0;
-  t['ragurmukhi'] = 0x0A30;
-  t['rahiragana'] = 0x3089;
-  t['rakatakana'] = 0x30E9;
-  t['rakatakanahalfwidth'] = 0xFF97;
-  t['ralowerdiagonalbengali'] = 0x09F1;
-  t['ramiddlediagonalbengali'] = 0x09F0;
-  t['ramshorn'] = 0x0264;
-  t['ratio'] = 0x2236;
-  t['rbopomofo'] = 0x3116;
-  t['rcaron'] = 0x0159;
-  t['rcedilla'] = 0x0157;
-  t['rcircle'] = 0x24E1;
-  t['rcommaaccent'] = 0x0157;
-  t['rdblgrave'] = 0x0211;
-  t['rdotaccent'] = 0x1E59;
-  t['rdotbelow'] = 0x1E5B;
-  t['rdotbelowmacron'] = 0x1E5D;
-  t['referencemark'] = 0x203B;
-  t['reflexsubset'] = 0x2286;
-  t['reflexsuperset'] = 0x2287;
-  t['registered'] = 0x00AE;
-  t['registersans'] = 0xF8E8;
-  t['registerserif'] = 0xF6DA;
-  t['reharabic'] = 0x0631;
-  t['reharmenian'] = 0x0580;
-  t['rehfinalarabic'] = 0xFEAE;
-  t['rehiragana'] = 0x308C;
-  t['rekatakana'] = 0x30EC;
-  t['rekatakanahalfwidth'] = 0xFF9A;
-  t['resh'] = 0x05E8;
-  t['reshdageshhebrew'] = 0xFB48;
-  t['reshhebrew'] = 0x05E8;
-  t['reversedtilde'] = 0x223D;
-  t['reviahebrew'] = 0x0597;
-  t['reviamugrashhebrew'] = 0x0597;
-  t['revlogicalnot'] = 0x2310;
-  t['rfishhook'] = 0x027E;
-  t['rfishhookreversed'] = 0x027F;
-  t['rhabengali'] = 0x09DD;
-  t['rhadeva'] = 0x095D;
-  t['rho'] = 0x03C1;
-  t['rhook'] = 0x027D;
-  t['rhookturned'] = 0x027B;
-  t['rhookturnedsuperior'] = 0x02B5;
-  t['rhosymbolgreek'] = 0x03F1;
-  t['rhotichookmod'] = 0x02DE;
-  t['rieulacirclekorean'] = 0x3271;
-  t['rieulaparenkorean'] = 0x3211;
-  t['rieulcirclekorean'] = 0x3263;
-  t['rieulhieuhkorean'] = 0x3140;
-  t['rieulkiyeokkorean'] = 0x313A;
-  t['rieulkiyeoksioskorean'] = 0x3169;
-  t['rieulkorean'] = 0x3139;
-  t['rieulmieumkorean'] = 0x313B;
-  t['rieulpansioskorean'] = 0x316C;
-  t['rieulparenkorean'] = 0x3203;
-  t['rieulphieuphkorean'] = 0x313F;
-  t['rieulpieupkorean'] = 0x313C;
-  t['rieulpieupsioskorean'] = 0x316B;
-  t['rieulsioskorean'] = 0x313D;
-  t['rieulthieuthkorean'] = 0x313E;
-  t['rieultikeutkorean'] = 0x316A;
-  t['rieulyeorinhieuhkorean'] = 0x316D;
-  t['rightangle'] = 0x221F;
-  t['righttackbelowcmb'] = 0x0319;
-  t['righttriangle'] = 0x22BF;
-  t['rihiragana'] = 0x308A;
-  t['rikatakana'] = 0x30EA;
-  t['rikatakanahalfwidth'] = 0xFF98;
-  t['ring'] = 0x02DA;
-  t['ringbelowcmb'] = 0x0325;
-  t['ringcmb'] = 0x030A;
-  t['ringhalfleft'] = 0x02BF;
-  t['ringhalfleftarmenian'] = 0x0559;
-  t['ringhalfleftbelowcmb'] = 0x031C;
-  t['ringhalfleftcentered'] = 0x02D3;
-  t['ringhalfright'] = 0x02BE;
-  t['ringhalfrightbelowcmb'] = 0x0339;
-  t['ringhalfrightcentered'] = 0x02D2;
-  t['rinvertedbreve'] = 0x0213;
-  t['rittorusquare'] = 0x3351;
-  t['rlinebelow'] = 0x1E5F;
-  t['rlongleg'] = 0x027C;
-  t['rlonglegturned'] = 0x027A;
-  t['rmonospace'] = 0xFF52;
-  t['rohiragana'] = 0x308D;
-  t['rokatakana'] = 0x30ED;
-  t['rokatakanahalfwidth'] = 0xFF9B;
-  t['roruathai'] = 0x0E23;
-  t['rparen'] = 0x24AD;
-  t['rrabengali'] = 0x09DC;
-  t['rradeva'] = 0x0931;
-  t['rragurmukhi'] = 0x0A5C;
-  t['rreharabic'] = 0x0691;
-  t['rrehfinalarabic'] = 0xFB8D;
-  t['rrvocalicbengali'] = 0x09E0;
-  t['rrvocalicdeva'] = 0x0960;
-  t['rrvocalicgujarati'] = 0x0AE0;
-  t['rrvocalicvowelsignbengali'] = 0x09C4;
-  t['rrvocalicvowelsigndeva'] = 0x0944;
-  t['rrvocalicvowelsigngujarati'] = 0x0AC4;
-  t['rsuperior'] = 0xF6F1;
-  t['rtblock'] = 0x2590;
-  t['rturned'] = 0x0279;
-  t['rturnedsuperior'] = 0x02B4;
-  t['ruhiragana'] = 0x308B;
-  t['rukatakana'] = 0x30EB;
-  t['rukatakanahalfwidth'] = 0xFF99;
-  t['rupeemarkbengali'] = 0x09F2;
-  t['rupeesignbengali'] = 0x09F3;
-  t['rupiah'] = 0xF6DD;
-  t['ruthai'] = 0x0E24;
-  t['rvocalicbengali'] = 0x098B;
-  t['rvocalicdeva'] = 0x090B;
-  t['rvocalicgujarati'] = 0x0A8B;
-  t['rvocalicvowelsignbengali'] = 0x09C3;
-  t['rvocalicvowelsigndeva'] = 0x0943;
-  t['rvocalicvowelsigngujarati'] = 0x0AC3;
-  t['s'] = 0x0073;
-  t['sabengali'] = 0x09B8;
-  t['sacute'] = 0x015B;
-  t['sacutedotaccent'] = 0x1E65;
-  t['sadarabic'] = 0x0635;
-  t['sadeva'] = 0x0938;
-  t['sadfinalarabic'] = 0xFEBA;
-  t['sadinitialarabic'] = 0xFEBB;
-  t['sadmedialarabic'] = 0xFEBC;
-  t['sagujarati'] = 0x0AB8;
-  t['sagurmukhi'] = 0x0A38;
-  t['sahiragana'] = 0x3055;
-  t['sakatakana'] = 0x30B5;
-  t['sakatakanahalfwidth'] = 0xFF7B;
-  t['sallallahoualayhewasallamarabic'] = 0xFDFA;
-  t['samekh'] = 0x05E1;
-  t['samekhdagesh'] = 0xFB41;
-  t['samekhdageshhebrew'] = 0xFB41;
-  t['samekhhebrew'] = 0x05E1;
-  t['saraaathai'] = 0x0E32;
-  t['saraaethai'] = 0x0E41;
-  t['saraaimaimalaithai'] = 0x0E44;
-  t['saraaimaimuanthai'] = 0x0E43;
-  t['saraamthai'] = 0x0E33;
-  t['saraathai'] = 0x0E30;
-  t['saraethai'] = 0x0E40;
-  t['saraiileftthai'] = 0xF886;
-  t['saraiithai'] = 0x0E35;
-  t['saraileftthai'] = 0xF885;
-  t['saraithai'] = 0x0E34;
-  t['saraothai'] = 0x0E42;
-  t['saraueeleftthai'] = 0xF888;
-  t['saraueethai'] = 0x0E37;
-  t['saraueleftthai'] = 0xF887;
-  t['sarauethai'] = 0x0E36;
-  t['sarauthai'] = 0x0E38;
-  t['sarauuthai'] = 0x0E39;
-  t['sbopomofo'] = 0x3119;
-  t['scaron'] = 0x0161;
-  t['scarondotaccent'] = 0x1E67;
-  t['scedilla'] = 0x015F;
-  t['schwa'] = 0x0259;
-  t['schwacyrillic'] = 0x04D9;
-  t['schwadieresiscyrillic'] = 0x04DB;
-  t['schwahook'] = 0x025A;
-  t['scircle'] = 0x24E2;
-  t['scircumflex'] = 0x015D;
-  t['scommaaccent'] = 0x0219;
-  t['sdotaccent'] = 0x1E61;
-  t['sdotbelow'] = 0x1E63;
-  t['sdotbelowdotaccent'] = 0x1E69;
-  t['seagullbelowcmb'] = 0x033C;
-  t['second'] = 0x2033;
-  t['secondtonechinese'] = 0x02CA;
-  t['section'] = 0x00A7;
-  t['seenarabic'] = 0x0633;
-  t['seenfinalarabic'] = 0xFEB2;
-  t['seeninitialarabic'] = 0xFEB3;
-  t['seenmedialarabic'] = 0xFEB4;
-  t['segol'] = 0x05B6;
-  t['segol13'] = 0x05B6;
-  t['segol1f'] = 0x05B6;
-  t['segol2c'] = 0x05B6;
-  t['segolhebrew'] = 0x05B6;
-  t['segolnarrowhebrew'] = 0x05B6;
-  t['segolquarterhebrew'] = 0x05B6;
-  t['segoltahebrew'] = 0x0592;
-  t['segolwidehebrew'] = 0x05B6;
-  t['seharmenian'] = 0x057D;
-  t['sehiragana'] = 0x305B;
-  t['sekatakana'] = 0x30BB;
-  t['sekatakanahalfwidth'] = 0xFF7E;
-  t['semicolon'] = 0x003B;
-  t['semicolonarabic'] = 0x061B;
-  t['semicolonmonospace'] = 0xFF1B;
-  t['semicolonsmall'] = 0xFE54;
-  t['semivoicedmarkkana'] = 0x309C;
-  t['semivoicedmarkkanahalfwidth'] = 0xFF9F;
-  t['sentisquare'] = 0x3322;
-  t['sentosquare'] = 0x3323;
-  t['seven'] = 0x0037;
-  t['sevenarabic'] = 0x0667;
-  t['sevenbengali'] = 0x09ED;
-  t['sevencircle'] = 0x2466;
-  t['sevencircleinversesansserif'] = 0x2790;
-  t['sevendeva'] = 0x096D;
-  t['seveneighths'] = 0x215E;
-  t['sevengujarati'] = 0x0AED;
-  t['sevengurmukhi'] = 0x0A6D;
-  t['sevenhackarabic'] = 0x0667;
-  t['sevenhangzhou'] = 0x3027;
-  t['sevenideographicparen'] = 0x3226;
-  t['seveninferior'] = 0x2087;
-  t['sevenmonospace'] = 0xFF17;
-  t['sevenoldstyle'] = 0xF737;
-  t['sevenparen'] = 0x247A;
-  t['sevenperiod'] = 0x248E;
-  t['sevenpersian'] = 0x06F7;
-  t['sevenroman'] = 0x2176;
-  t['sevensuperior'] = 0x2077;
-  t['seventeencircle'] = 0x2470;
-  t['seventeenparen'] = 0x2484;
-  t['seventeenperiod'] = 0x2498;
-  t['seventhai'] = 0x0E57;
-  t['sfthyphen'] = 0x00AD;
-  t['shaarmenian'] = 0x0577;
-  t['shabengali'] = 0x09B6;
-  t['shacyrillic'] = 0x0448;
-  t['shaddaarabic'] = 0x0651;
-  t['shaddadammaarabic'] = 0xFC61;
-  t['shaddadammatanarabic'] = 0xFC5E;
-  t['shaddafathaarabic'] = 0xFC60;
-  t['shaddakasraarabic'] = 0xFC62;
-  t['shaddakasratanarabic'] = 0xFC5F;
-  t['shade'] = 0x2592;
-  t['shadedark'] = 0x2593;
-  t['shadelight'] = 0x2591;
-  t['shademedium'] = 0x2592;
-  t['shadeva'] = 0x0936;
-  t['shagujarati'] = 0x0AB6;
-  t['shagurmukhi'] = 0x0A36;
-  t['shalshelethebrew'] = 0x0593;
-  t['shbopomofo'] = 0x3115;
-  t['shchacyrillic'] = 0x0449;
-  t['sheenarabic'] = 0x0634;
-  t['sheenfinalarabic'] = 0xFEB6;
-  t['sheeninitialarabic'] = 0xFEB7;
-  t['sheenmedialarabic'] = 0xFEB8;
-  t['sheicoptic'] = 0x03E3;
-  t['sheqel'] = 0x20AA;
-  t['sheqelhebrew'] = 0x20AA;
-  t['sheva'] = 0x05B0;
-  t['sheva115'] = 0x05B0;
-  t['sheva15'] = 0x05B0;
-  t['sheva22'] = 0x05B0;
-  t['sheva2e'] = 0x05B0;
-  t['shevahebrew'] = 0x05B0;
-  t['shevanarrowhebrew'] = 0x05B0;
-  t['shevaquarterhebrew'] = 0x05B0;
-  t['shevawidehebrew'] = 0x05B0;
-  t['shhacyrillic'] = 0x04BB;
-  t['shimacoptic'] = 0x03ED;
-  t['shin'] = 0x05E9;
-  t['shindagesh'] = 0xFB49;
-  t['shindageshhebrew'] = 0xFB49;
-  t['shindageshshindot'] = 0xFB2C;
-  t['shindageshshindothebrew'] = 0xFB2C;
-  t['shindageshsindot'] = 0xFB2D;
-  t['shindageshsindothebrew'] = 0xFB2D;
-  t['shindothebrew'] = 0x05C1;
-  t['shinhebrew'] = 0x05E9;
-  t['shinshindot'] = 0xFB2A;
-  t['shinshindothebrew'] = 0xFB2A;
-  t['shinsindot'] = 0xFB2B;
-  t['shinsindothebrew'] = 0xFB2B;
-  t['shook'] = 0x0282;
-  t['sigma'] = 0x03C3;
-  t['sigma1'] = 0x03C2;
-  t['sigmafinal'] = 0x03C2;
-  t['sigmalunatesymbolgreek'] = 0x03F2;
-  t['sihiragana'] = 0x3057;
-  t['sikatakana'] = 0x30B7;
-  t['sikatakanahalfwidth'] = 0xFF7C;
-  t['siluqhebrew'] = 0x05BD;
-  t['siluqlefthebrew'] = 0x05BD;
-  t['similar'] = 0x223C;
-  t['sindothebrew'] = 0x05C2;
-  t['siosacirclekorean'] = 0x3274;
-  t['siosaparenkorean'] = 0x3214;
-  t['sioscieuckorean'] = 0x317E;
-  t['sioscirclekorean'] = 0x3266;
-  t['sioskiyeokkorean'] = 0x317A;
-  t['sioskorean'] = 0x3145;
-  t['siosnieunkorean'] = 0x317B;
-  t['siosparenkorean'] = 0x3206;
-  t['siospieupkorean'] = 0x317D;
-  t['siostikeutkorean'] = 0x317C;
-  t['six'] = 0x0036;
-  t['sixarabic'] = 0x0666;
-  t['sixbengali'] = 0x09EC;
-  t['sixcircle'] = 0x2465;
-  t['sixcircleinversesansserif'] = 0x278F;
-  t['sixdeva'] = 0x096C;
-  t['sixgujarati'] = 0x0AEC;
-  t['sixgurmukhi'] = 0x0A6C;
-  t['sixhackarabic'] = 0x0666;
-  t['sixhangzhou'] = 0x3026;
-  t['sixideographicparen'] = 0x3225;
-  t['sixinferior'] = 0x2086;
-  t['sixmonospace'] = 0xFF16;
-  t['sixoldstyle'] = 0xF736;
-  t['sixparen'] = 0x2479;
-  t['sixperiod'] = 0x248D;
-  t['sixpersian'] = 0x06F6;
-  t['sixroman'] = 0x2175;
-  t['sixsuperior'] = 0x2076;
-  t['sixteencircle'] = 0x246F;
-  t['sixteencurrencydenominatorbengali'] = 0x09F9;
-  t['sixteenparen'] = 0x2483;
-  t['sixteenperiod'] = 0x2497;
-  t['sixthai'] = 0x0E56;
-  t['slash'] = 0x002F;
-  t['slashmonospace'] = 0xFF0F;
-  t['slong'] = 0x017F;
-  t['slongdotaccent'] = 0x1E9B;
-  t['smileface'] = 0x263A;
-  t['smonospace'] = 0xFF53;
-  t['sofpasuqhebrew'] = 0x05C3;
-  t['softhyphen'] = 0x00AD;
-  t['softsigncyrillic'] = 0x044C;
-  t['sohiragana'] = 0x305D;
-  t['sokatakana'] = 0x30BD;
-  t['sokatakanahalfwidth'] = 0xFF7F;
-  t['soliduslongoverlaycmb'] = 0x0338;
-  t['solidusshortoverlaycmb'] = 0x0337;
-  t['sorusithai'] = 0x0E29;
-  t['sosalathai'] = 0x0E28;
-  t['sosothai'] = 0x0E0B;
-  t['sosuathai'] = 0x0E2A;
-  t['space'] = 0x0020;
-  t['spacehackarabic'] = 0x0020;
-  t['spade'] = 0x2660;
-  t['spadesuitblack'] = 0x2660;
-  t['spadesuitwhite'] = 0x2664;
-  t['sparen'] = 0x24AE;
-  t['squarebelowcmb'] = 0x033B;
-  t['squarecc'] = 0x33C4;
-  t['squarecm'] = 0x339D;
-  t['squarediagonalcrosshatchfill'] = 0x25A9;
-  t['squarehorizontalfill'] = 0x25A4;
-  t['squarekg'] = 0x338F;
-  t['squarekm'] = 0x339E;
-  t['squarekmcapital'] = 0x33CE;
-  t['squareln'] = 0x33D1;
-  t['squarelog'] = 0x33D2;
-  t['squaremg'] = 0x338E;
-  t['squaremil'] = 0x33D5;
-  t['squaremm'] = 0x339C;
-  t['squaremsquared'] = 0x33A1;
-  t['squareorthogonalcrosshatchfill'] = 0x25A6;
-  t['squareupperlefttolowerrightfill'] = 0x25A7;
-  t['squareupperrighttolowerleftfill'] = 0x25A8;
-  t['squareverticalfill'] = 0x25A5;
-  t['squarewhitewithsmallblack'] = 0x25A3;
-  t['srsquare'] = 0x33DB;
-  t['ssabengali'] = 0x09B7;
-  t['ssadeva'] = 0x0937;
-  t['ssagujarati'] = 0x0AB7;
-  t['ssangcieuckorean'] = 0x3149;
-  t['ssanghieuhkorean'] = 0x3185;
-  t['ssangieungkorean'] = 0x3180;
-  t['ssangkiyeokkorean'] = 0x3132;
-  t['ssangnieunkorean'] = 0x3165;
-  t['ssangpieupkorean'] = 0x3143;
-  t['ssangsioskorean'] = 0x3146;
-  t['ssangtikeutkorean'] = 0x3138;
-  t['ssuperior'] = 0xF6F2;
-  t['sterling'] = 0x00A3;
-  t['sterlingmonospace'] = 0xFFE1;
-  t['strokelongoverlaycmb'] = 0x0336;
-  t['strokeshortoverlaycmb'] = 0x0335;
-  t['subset'] = 0x2282;
-  t['subsetnotequal'] = 0x228A;
-  t['subsetorequal'] = 0x2286;
-  t['succeeds'] = 0x227B;
-  t['suchthat'] = 0x220B;
-  t['suhiragana'] = 0x3059;
-  t['sukatakana'] = 0x30B9;
-  t['sukatakanahalfwidth'] = 0xFF7D;
-  t['sukunarabic'] = 0x0652;
-  t['summation'] = 0x2211;
-  t['sun'] = 0x263C;
-  t['superset'] = 0x2283;
-  t['supersetnotequal'] = 0x228B;
-  t['supersetorequal'] = 0x2287;
-  t['svsquare'] = 0x33DC;
-  t['syouwaerasquare'] = 0x337C;
-  t['t'] = 0x0074;
-  t['tabengali'] = 0x09A4;
-  t['tackdown'] = 0x22A4;
-  t['tackleft'] = 0x22A3;
-  t['tadeva'] = 0x0924;
-  t['tagujarati'] = 0x0AA4;
-  t['tagurmukhi'] = 0x0A24;
-  t['taharabic'] = 0x0637;
-  t['tahfinalarabic'] = 0xFEC2;
-  t['tahinitialarabic'] = 0xFEC3;
-  t['tahiragana'] = 0x305F;
-  t['tahmedialarabic'] = 0xFEC4;
-  t['taisyouerasquare'] = 0x337D;
-  t['takatakana'] = 0x30BF;
-  t['takatakanahalfwidth'] = 0xFF80;
-  t['tatweelarabic'] = 0x0640;
-  t['tau'] = 0x03C4;
-  t['tav'] = 0x05EA;
-  t['tavdages'] = 0xFB4A;
-  t['tavdagesh'] = 0xFB4A;
-  t['tavdageshhebrew'] = 0xFB4A;
-  t['tavhebrew'] = 0x05EA;
-  t['tbar'] = 0x0167;
-  t['tbopomofo'] = 0x310A;
-  t['tcaron'] = 0x0165;
-  t['tccurl'] = 0x02A8;
-  t['tcedilla'] = 0x0163;
-  t['tcheharabic'] = 0x0686;
-  t['tchehfinalarabic'] = 0xFB7B;
-  t['tchehinitialarabic'] = 0xFB7C;
-  t['tchehmedialarabic'] = 0xFB7D;
-  t['tcircle'] = 0x24E3;
-  t['tcircumflexbelow'] = 0x1E71;
-  t['tcommaaccent'] = 0x0163;
-  t['tdieresis'] = 0x1E97;
-  t['tdotaccent'] = 0x1E6B;
-  t['tdotbelow'] = 0x1E6D;
-  t['tecyrillic'] = 0x0442;
-  t['tedescendercyrillic'] = 0x04AD;
-  t['teharabic'] = 0x062A;
-  t['tehfinalarabic'] = 0xFE96;
-  t['tehhahinitialarabic'] = 0xFCA2;
-  t['tehhahisolatedarabic'] = 0xFC0C;
-  t['tehinitialarabic'] = 0xFE97;
-  t['tehiragana'] = 0x3066;
-  t['tehjeeminitialarabic'] = 0xFCA1;
-  t['tehjeemisolatedarabic'] = 0xFC0B;
-  t['tehmarbutaarabic'] = 0x0629;
-  t['tehmarbutafinalarabic'] = 0xFE94;
-  t['tehmedialarabic'] = 0xFE98;
-  t['tehmeeminitialarabic'] = 0xFCA4;
-  t['tehmeemisolatedarabic'] = 0xFC0E;
-  t['tehnoonfinalarabic'] = 0xFC73;
-  t['tekatakana'] = 0x30C6;
-  t['tekatakanahalfwidth'] = 0xFF83;
-  t['telephone'] = 0x2121;
-  t['telephoneblack'] = 0x260E;
-  t['telishagedolahebrew'] = 0x05A0;
-  t['telishaqetanahebrew'] = 0x05A9;
-  t['tencircle'] = 0x2469;
-  t['tenideographicparen'] = 0x3229;
-  t['tenparen'] = 0x247D;
-  t['tenperiod'] = 0x2491;
-  t['tenroman'] = 0x2179;
-  t['tesh'] = 0x02A7;
-  t['tet'] = 0x05D8;
-  t['tetdagesh'] = 0xFB38;
-  t['tetdageshhebrew'] = 0xFB38;
-  t['tethebrew'] = 0x05D8;
-  t['tetsecyrillic'] = 0x04B5;
-  t['tevirhebrew'] = 0x059B;
-  t['tevirlefthebrew'] = 0x059B;
-  t['thabengali'] = 0x09A5;
-  t['thadeva'] = 0x0925;
-  t['thagujarati'] = 0x0AA5;
-  t['thagurmukhi'] = 0x0A25;
-  t['thalarabic'] = 0x0630;
-  t['thalfinalarabic'] = 0xFEAC;
-  t['thanthakhatlowleftthai'] = 0xF898;
-  t['thanthakhatlowrightthai'] = 0xF897;
-  t['thanthakhatthai'] = 0x0E4C;
-  t['thanthakhatupperleftthai'] = 0xF896;
-  t['theharabic'] = 0x062B;
-  t['thehfinalarabic'] = 0xFE9A;
-  t['thehinitialarabic'] = 0xFE9B;
-  t['thehmedialarabic'] = 0xFE9C;
-  t['thereexists'] = 0x2203;
-  t['therefore'] = 0x2234;
-  t['theta'] = 0x03B8;
-  t['theta1'] = 0x03D1;
-  t['thetasymbolgreek'] = 0x03D1;
-  t['thieuthacirclekorean'] = 0x3279;
-  t['thieuthaparenkorean'] = 0x3219;
-  t['thieuthcirclekorean'] = 0x326B;
-  t['thieuthkorean'] = 0x314C;
-  t['thieuthparenkorean'] = 0x320B;
-  t['thirteencircle'] = 0x246C;
-  t['thirteenparen'] = 0x2480;
-  t['thirteenperiod'] = 0x2494;
-  t['thonangmonthothai'] = 0x0E11;
-  t['thook'] = 0x01AD;
-  t['thophuthaothai'] = 0x0E12;
-  t['thorn'] = 0x00FE;
-  t['thothahanthai'] = 0x0E17;
-  t['thothanthai'] = 0x0E10;
-  t['thothongthai'] = 0x0E18;
-  t['thothungthai'] = 0x0E16;
-  t['thousandcyrillic'] = 0x0482;
-  t['thousandsseparatorarabic'] = 0x066C;
-  t['thousandsseparatorpersian'] = 0x066C;
-  t['three'] = 0x0033;
-  t['threearabic'] = 0x0663;
-  t['threebengali'] = 0x09E9;
-  t['threecircle'] = 0x2462;
-  t['threecircleinversesansserif'] = 0x278C;
-  t['threedeva'] = 0x0969;
-  t['threeeighths'] = 0x215C;
-  t['threegujarati'] = 0x0AE9;
-  t['threegurmukhi'] = 0x0A69;
-  t['threehackarabic'] = 0x0663;
-  t['threehangzhou'] = 0x3023;
-  t['threeideographicparen'] = 0x3222;
-  t['threeinferior'] = 0x2083;
-  t['threemonospace'] = 0xFF13;
-  t['threenumeratorbengali'] = 0x09F6;
-  t['threeoldstyle'] = 0xF733;
-  t['threeparen'] = 0x2476;
-  t['threeperiod'] = 0x248A;
-  t['threepersian'] = 0x06F3;
-  t['threequarters'] = 0x00BE;
-  t['threequartersemdash'] = 0xF6DE;
-  t['threeroman'] = 0x2172;
-  t['threesuperior'] = 0x00B3;
-  t['threethai'] = 0x0E53;
-  t['thzsquare'] = 0x3394;
-  t['tihiragana'] = 0x3061;
-  t['tikatakana'] = 0x30C1;
-  t['tikatakanahalfwidth'] = 0xFF81;
-  t['tikeutacirclekorean'] = 0x3270;
-  t['tikeutaparenkorean'] = 0x3210;
-  t['tikeutcirclekorean'] = 0x3262;
-  t['tikeutkorean'] = 0x3137;
-  t['tikeutparenkorean'] = 0x3202;
-  t['tilde'] = 0x02DC;
-  t['tildebelowcmb'] = 0x0330;
-  t['tildecmb'] = 0x0303;
-  t['tildecomb'] = 0x0303;
-  t['tildedoublecmb'] = 0x0360;
-  t['tildeoperator'] = 0x223C;
-  t['tildeoverlaycmb'] = 0x0334;
-  t['tildeverticalcmb'] = 0x033E;
-  t['timescircle'] = 0x2297;
-  t['tipehahebrew'] = 0x0596;
-  t['tipehalefthebrew'] = 0x0596;
-  t['tippigurmukhi'] = 0x0A70;
-  t['titlocyrilliccmb'] = 0x0483;
-  t['tiwnarmenian'] = 0x057F;
-  t['tlinebelow'] = 0x1E6F;
-  t['tmonospace'] = 0xFF54;
-  t['toarmenian'] = 0x0569;
-  t['tohiragana'] = 0x3068;
-  t['tokatakana'] = 0x30C8;
-  t['tokatakanahalfwidth'] = 0xFF84;
-  t['tonebarextrahighmod'] = 0x02E5;
-  t['tonebarextralowmod'] = 0x02E9;
-  t['tonebarhighmod'] = 0x02E6;
-  t['tonebarlowmod'] = 0x02E8;
-  t['tonebarmidmod'] = 0x02E7;
-  t['tonefive'] = 0x01BD;
-  t['tonesix'] = 0x0185;
-  t['tonetwo'] = 0x01A8;
-  t['tonos'] = 0x0384;
-  t['tonsquare'] = 0x3327;
-  t['topatakthai'] = 0x0E0F;
-  t['tortoiseshellbracketleft'] = 0x3014;
-  t['tortoiseshellbracketleftsmall'] = 0xFE5D;
-  t['tortoiseshellbracketleftvertical'] = 0xFE39;
-  t['tortoiseshellbracketright'] = 0x3015;
-  t['tortoiseshellbracketrightsmall'] = 0xFE5E;
-  t['tortoiseshellbracketrightvertical'] = 0xFE3A;
-  t['totaothai'] = 0x0E15;
-  t['tpalatalhook'] = 0x01AB;
-  t['tparen'] = 0x24AF;
-  t['trademark'] = 0x2122;
-  t['trademarksans'] = 0xF8EA;
-  t['trademarkserif'] = 0xF6DB;
-  t['tretroflexhook'] = 0x0288;
-  t['triagdn'] = 0x25BC;
-  t['triaglf'] = 0x25C4;
-  t['triagrt'] = 0x25BA;
-  t['triagup'] = 0x25B2;
-  t['ts'] = 0x02A6;
-  t['tsadi'] = 0x05E6;
-  t['tsadidagesh'] = 0xFB46;
-  t['tsadidageshhebrew'] = 0xFB46;
-  t['tsadihebrew'] = 0x05E6;
-  t['tsecyrillic'] = 0x0446;
-  t['tsere'] = 0x05B5;
-  t['tsere12'] = 0x05B5;
-  t['tsere1e'] = 0x05B5;
-  t['tsere2b'] = 0x05B5;
-  t['tserehebrew'] = 0x05B5;
-  t['tserenarrowhebrew'] = 0x05B5;
-  t['tserequarterhebrew'] = 0x05B5;
-  t['tserewidehebrew'] = 0x05B5;
-  t['tshecyrillic'] = 0x045B;
-  t['tsuperior'] = 0xF6F3;
-  t['ttabengali'] = 0x099F;
-  t['ttadeva'] = 0x091F;
-  t['ttagujarati'] = 0x0A9F;
-  t['ttagurmukhi'] = 0x0A1F;
-  t['tteharabic'] = 0x0679;
-  t['ttehfinalarabic'] = 0xFB67;
-  t['ttehinitialarabic'] = 0xFB68;
-  t['ttehmedialarabic'] = 0xFB69;
-  t['tthabengali'] = 0x09A0;
-  t['tthadeva'] = 0x0920;
-  t['tthagujarati'] = 0x0AA0;
-  t['tthagurmukhi'] = 0x0A20;
-  t['tturned'] = 0x0287;
-  t['tuhiragana'] = 0x3064;
-  t['tukatakana'] = 0x30C4;
-  t['tukatakanahalfwidth'] = 0xFF82;
-  t['tusmallhiragana'] = 0x3063;
-  t['tusmallkatakana'] = 0x30C3;
-  t['tusmallkatakanahalfwidth'] = 0xFF6F;
-  t['twelvecircle'] = 0x246B;
-  t['twelveparen'] = 0x247F;
-  t['twelveperiod'] = 0x2493;
-  t['twelveroman'] = 0x217B;
-  t['twentycircle'] = 0x2473;
-  t['twentyhangzhou'] = 0x5344;
-  t['twentyparen'] = 0x2487;
-  t['twentyperiod'] = 0x249B;
-  t['two'] = 0x0032;
-  t['twoarabic'] = 0x0662;
-  t['twobengali'] = 0x09E8;
-  t['twocircle'] = 0x2461;
-  t['twocircleinversesansserif'] = 0x278B;
-  t['twodeva'] = 0x0968;
-  t['twodotenleader'] = 0x2025;
-  t['twodotleader'] = 0x2025;
-  t['twodotleadervertical'] = 0xFE30;
-  t['twogujarati'] = 0x0AE8;
-  t['twogurmukhi'] = 0x0A68;
-  t['twohackarabic'] = 0x0662;
-  t['twohangzhou'] = 0x3022;
-  t['twoideographicparen'] = 0x3221;
-  t['twoinferior'] = 0x2082;
-  t['twomonospace'] = 0xFF12;
-  t['twonumeratorbengali'] = 0x09F5;
-  t['twooldstyle'] = 0xF732;
-  t['twoparen'] = 0x2475;
-  t['twoperiod'] = 0x2489;
-  t['twopersian'] = 0x06F2;
-  t['tworoman'] = 0x2171;
-  t['twostroke'] = 0x01BB;
-  t['twosuperior'] = 0x00B2;
-  t['twothai'] = 0x0E52;
-  t['twothirds'] = 0x2154;
-  t['u'] = 0x0075;
-  t['uacute'] = 0x00FA;
-  t['ubar'] = 0x0289;
-  t['ubengali'] = 0x0989;
-  t['ubopomofo'] = 0x3128;
-  t['ubreve'] = 0x016D;
-  t['ucaron'] = 0x01D4;
-  t['ucircle'] = 0x24E4;
-  t['ucircumflex'] = 0x00FB;
-  t['ucircumflexbelow'] = 0x1E77;
-  t['ucyrillic'] = 0x0443;
-  t['udattadeva'] = 0x0951;
-  t['udblacute'] = 0x0171;
-  t['udblgrave'] = 0x0215;
-  t['udeva'] = 0x0909;
-  t['udieresis'] = 0x00FC;
-  t['udieresisacute'] = 0x01D8;
-  t['udieresisbelow'] = 0x1E73;
-  t['udieresiscaron'] = 0x01DA;
-  t['udieresiscyrillic'] = 0x04F1;
-  t['udieresisgrave'] = 0x01DC;
-  t['udieresismacron'] = 0x01D6;
-  t['udotbelow'] = 0x1EE5;
-  t['ugrave'] = 0x00F9;
-  t['ugujarati'] = 0x0A89;
-  t['ugurmukhi'] = 0x0A09;
-  t['uhiragana'] = 0x3046;
-  t['uhookabove'] = 0x1EE7;
-  t['uhorn'] = 0x01B0;
-  t['uhornacute'] = 0x1EE9;
-  t['uhorndotbelow'] = 0x1EF1;
-  t['uhorngrave'] = 0x1EEB;
-  t['uhornhookabove'] = 0x1EED;
-  t['uhorntilde'] = 0x1EEF;
-  t['uhungarumlaut'] = 0x0171;
-  t['uhungarumlautcyrillic'] = 0x04F3;
-  t['uinvertedbreve'] = 0x0217;
-  t['ukatakana'] = 0x30A6;
-  t['ukatakanahalfwidth'] = 0xFF73;
-  t['ukcyrillic'] = 0x0479;
-  t['ukorean'] = 0x315C;
-  t['umacron'] = 0x016B;
-  t['umacroncyrillic'] = 0x04EF;
-  t['umacrondieresis'] = 0x1E7B;
-  t['umatragurmukhi'] = 0x0A41;
-  t['umonospace'] = 0xFF55;
-  t['underscore'] = 0x005F;
-  t['underscoredbl'] = 0x2017;
-  t['underscoremonospace'] = 0xFF3F;
-  t['underscorevertical'] = 0xFE33;
-  t['underscorewavy'] = 0xFE4F;
-  t['union'] = 0x222A;
-  t['universal'] = 0x2200;
-  t['uogonek'] = 0x0173;
-  t['uparen'] = 0x24B0;
-  t['upblock'] = 0x2580;
-  t['upperdothebrew'] = 0x05C4;
-  t['upsilon'] = 0x03C5;
-  t['upsilondieresis'] = 0x03CB;
-  t['upsilondieresistonos'] = 0x03B0;
-  t['upsilonlatin'] = 0x028A;
-  t['upsilontonos'] = 0x03CD;
-  t['uptackbelowcmb'] = 0x031D;
-  t['uptackmod'] = 0x02D4;
-  t['uragurmukhi'] = 0x0A73;
-  t['uring'] = 0x016F;
-  t['ushortcyrillic'] = 0x045E;
-  t['usmallhiragana'] = 0x3045;
-  t['usmallkatakana'] = 0x30A5;
-  t['usmallkatakanahalfwidth'] = 0xFF69;
-  t['ustraightcyrillic'] = 0x04AF;
-  t['ustraightstrokecyrillic'] = 0x04B1;
-  t['utilde'] = 0x0169;
-  t['utildeacute'] = 0x1E79;
-  t['utildebelow'] = 0x1E75;
-  t['uubengali'] = 0x098A;
-  t['uudeva'] = 0x090A;
-  t['uugujarati'] = 0x0A8A;
-  t['uugurmukhi'] = 0x0A0A;
-  t['uumatragurmukhi'] = 0x0A42;
-  t['uuvowelsignbengali'] = 0x09C2;
-  t['uuvowelsigndeva'] = 0x0942;
-  t['uuvowelsigngujarati'] = 0x0AC2;
-  t['uvowelsignbengali'] = 0x09C1;
-  t['uvowelsigndeva'] = 0x0941;
-  t['uvowelsigngujarati'] = 0x0AC1;
-  t['v'] = 0x0076;
-  t['vadeva'] = 0x0935;
-  t['vagujarati'] = 0x0AB5;
-  t['vagurmukhi'] = 0x0A35;
-  t['vakatakana'] = 0x30F7;
-  t['vav'] = 0x05D5;
-  t['vavdagesh'] = 0xFB35;
-  t['vavdagesh65'] = 0xFB35;
-  t['vavdageshhebrew'] = 0xFB35;
-  t['vavhebrew'] = 0x05D5;
-  t['vavholam'] = 0xFB4B;
-  t['vavholamhebrew'] = 0xFB4B;
-  t['vavvavhebrew'] = 0x05F0;
-  t['vavyodhebrew'] = 0x05F1;
-  t['vcircle'] = 0x24E5;
-  t['vdotbelow'] = 0x1E7F;
-  t['vecyrillic'] = 0x0432;
-  t['veharabic'] = 0x06A4;
-  t['vehfinalarabic'] = 0xFB6B;
-  t['vehinitialarabic'] = 0xFB6C;
-  t['vehmedialarabic'] = 0xFB6D;
-  t['vekatakana'] = 0x30F9;
-  t['venus'] = 0x2640;
-  t['verticalbar'] = 0x007C;
-  t['verticallineabovecmb'] = 0x030D;
-  t['verticallinebelowcmb'] = 0x0329;
-  t['verticallinelowmod'] = 0x02CC;
-  t['verticallinemod'] = 0x02C8;
-  t['vewarmenian'] = 0x057E;
-  t['vhook'] = 0x028B;
-  t['vikatakana'] = 0x30F8;
-  t['viramabengali'] = 0x09CD;
-  t['viramadeva'] = 0x094D;
-  t['viramagujarati'] = 0x0ACD;
-  t['visargabengali'] = 0x0983;
-  t['visargadeva'] = 0x0903;
-  t['visargagujarati'] = 0x0A83;
-  t['vmonospace'] = 0xFF56;
-  t['voarmenian'] = 0x0578;
-  t['voicediterationhiragana'] = 0x309E;
-  t['voicediterationkatakana'] = 0x30FE;
-  t['voicedmarkkana'] = 0x309B;
-  t['voicedmarkkanahalfwidth'] = 0xFF9E;
-  t['vokatakana'] = 0x30FA;
-  t['vparen'] = 0x24B1;
-  t['vtilde'] = 0x1E7D;
-  t['vturned'] = 0x028C;
-  t['vuhiragana'] = 0x3094;
-  t['vukatakana'] = 0x30F4;
-  t['w'] = 0x0077;
-  t['wacute'] = 0x1E83;
-  t['waekorean'] = 0x3159;
-  t['wahiragana'] = 0x308F;
-  t['wakatakana'] = 0x30EF;
-  t['wakatakanahalfwidth'] = 0xFF9C;
-  t['wakorean'] = 0x3158;
-  t['wasmallhiragana'] = 0x308E;
-  t['wasmallkatakana'] = 0x30EE;
-  t['wattosquare'] = 0x3357;
-  t['wavedash'] = 0x301C;
-  t['wavyunderscorevertical'] = 0xFE34;
-  t['wawarabic'] = 0x0648;
-  t['wawfinalarabic'] = 0xFEEE;
-  t['wawhamzaabovearabic'] = 0x0624;
-  t['wawhamzaabovefinalarabic'] = 0xFE86;
-  t['wbsquare'] = 0x33DD;
-  t['wcircle'] = 0x24E6;
-  t['wcircumflex'] = 0x0175;
-  t['wdieresis'] = 0x1E85;
-  t['wdotaccent'] = 0x1E87;
-  t['wdotbelow'] = 0x1E89;
-  t['wehiragana'] = 0x3091;
-  t['weierstrass'] = 0x2118;
-  t['wekatakana'] = 0x30F1;
-  t['wekorean'] = 0x315E;
-  t['weokorean'] = 0x315D;
-  t['wgrave'] = 0x1E81;
-  t['whitebullet'] = 0x25E6;
-  t['whitecircle'] = 0x25CB;
-  t['whitecircleinverse'] = 0x25D9;
-  t['whitecornerbracketleft'] = 0x300E;
-  t['whitecornerbracketleftvertical'] = 0xFE43;
-  t['whitecornerbracketright'] = 0x300F;
-  t['whitecornerbracketrightvertical'] = 0xFE44;
-  t['whitediamond'] = 0x25C7;
-  t['whitediamondcontainingblacksmalldiamond'] = 0x25C8;
-  t['whitedownpointingsmalltriangle'] = 0x25BF;
-  t['whitedownpointingtriangle'] = 0x25BD;
-  t['whiteleftpointingsmalltriangle'] = 0x25C3;
-  t['whiteleftpointingtriangle'] = 0x25C1;
-  t['whitelenticularbracketleft'] = 0x3016;
-  t['whitelenticularbracketright'] = 0x3017;
-  t['whiterightpointingsmalltriangle'] = 0x25B9;
-  t['whiterightpointingtriangle'] = 0x25B7;
-  t['whitesmallsquare'] = 0x25AB;
-  t['whitesmilingface'] = 0x263A;
-  t['whitesquare'] = 0x25A1;
-  t['whitestar'] = 0x2606;
-  t['whitetelephone'] = 0x260F;
-  t['whitetortoiseshellbracketleft'] = 0x3018;
-  t['whitetortoiseshellbracketright'] = 0x3019;
-  t['whiteuppointingsmalltriangle'] = 0x25B5;
-  t['whiteuppointingtriangle'] = 0x25B3;
-  t['wihiragana'] = 0x3090;
-  t['wikatakana'] = 0x30F0;
-  t['wikorean'] = 0x315F;
-  t['wmonospace'] = 0xFF57;
-  t['wohiragana'] = 0x3092;
-  t['wokatakana'] = 0x30F2;
-  t['wokatakanahalfwidth'] = 0xFF66;
-  t['won'] = 0x20A9;
-  t['wonmonospace'] = 0xFFE6;
-  t['wowaenthai'] = 0x0E27;
-  t['wparen'] = 0x24B2;
-  t['wring'] = 0x1E98;
-  t['wsuperior'] = 0x02B7;
-  t['wturned'] = 0x028D;
-  t['wynn'] = 0x01BF;
-  t['x'] = 0x0078;
-  t['xabovecmb'] = 0x033D;
-  t['xbopomofo'] = 0x3112;
-  t['xcircle'] = 0x24E7;
-  t['xdieresis'] = 0x1E8D;
-  t['xdotaccent'] = 0x1E8B;
-  t['xeharmenian'] = 0x056D;
-  t['xi'] = 0x03BE;
-  t['xmonospace'] = 0xFF58;
-  t['xparen'] = 0x24B3;
-  t['xsuperior'] = 0x02E3;
-  t['y'] = 0x0079;
-  t['yaadosquare'] = 0x334E;
-  t['yabengali'] = 0x09AF;
-  t['yacute'] = 0x00FD;
-  t['yadeva'] = 0x092F;
-  t['yaekorean'] = 0x3152;
-  t['yagujarati'] = 0x0AAF;
-  t['yagurmukhi'] = 0x0A2F;
-  t['yahiragana'] = 0x3084;
-  t['yakatakana'] = 0x30E4;
-  t['yakatakanahalfwidth'] = 0xFF94;
-  t['yakorean'] = 0x3151;
-  t['yamakkanthai'] = 0x0E4E;
-  t['yasmallhiragana'] = 0x3083;
-  t['yasmallkatakana'] = 0x30E3;
-  t['yasmallkatakanahalfwidth'] = 0xFF6C;
-  t['yatcyrillic'] = 0x0463;
-  t['ycircle'] = 0x24E8;
-  t['ycircumflex'] = 0x0177;
-  t['ydieresis'] = 0x00FF;
-  t['ydotaccent'] = 0x1E8F;
-  t['ydotbelow'] = 0x1EF5;
-  t['yeharabic'] = 0x064A;
-  t['yehbarreearabic'] = 0x06D2;
-  t['yehbarreefinalarabic'] = 0xFBAF;
-  t['yehfinalarabic'] = 0xFEF2;
-  t['yehhamzaabovearabic'] = 0x0626;
-  t['yehhamzaabovefinalarabic'] = 0xFE8A;
-  t['yehhamzaaboveinitialarabic'] = 0xFE8B;
-  t['yehhamzaabovemedialarabic'] = 0xFE8C;
-  t['yehinitialarabic'] = 0xFEF3;
-  t['yehmedialarabic'] = 0xFEF4;
-  t['yehmeeminitialarabic'] = 0xFCDD;
-  t['yehmeemisolatedarabic'] = 0xFC58;
-  t['yehnoonfinalarabic'] = 0xFC94;
-  t['yehthreedotsbelowarabic'] = 0x06D1;
-  t['yekorean'] = 0x3156;
-  t['yen'] = 0x00A5;
-  t['yenmonospace'] = 0xFFE5;
-  t['yeokorean'] = 0x3155;
-  t['yeorinhieuhkorean'] = 0x3186;
-  t['yerahbenyomohebrew'] = 0x05AA;
-  t['yerahbenyomolefthebrew'] = 0x05AA;
-  t['yericyrillic'] = 0x044B;
-  t['yerudieresiscyrillic'] = 0x04F9;
-  t['yesieungkorean'] = 0x3181;
-  t['yesieungpansioskorean'] = 0x3183;
-  t['yesieungsioskorean'] = 0x3182;
-  t['yetivhebrew'] = 0x059A;
-  t['ygrave'] = 0x1EF3;
-  t['yhook'] = 0x01B4;
-  t['yhookabove'] = 0x1EF7;
-  t['yiarmenian'] = 0x0575;
-  t['yicyrillic'] = 0x0457;
-  t['yikorean'] = 0x3162;
-  t['yinyang'] = 0x262F;
-  t['yiwnarmenian'] = 0x0582;
-  t['ymonospace'] = 0xFF59;
-  t['yod'] = 0x05D9;
-  t['yoddagesh'] = 0xFB39;
-  t['yoddageshhebrew'] = 0xFB39;
-  t['yodhebrew'] = 0x05D9;
-  t['yodyodhebrew'] = 0x05F2;
-  t['yodyodpatahhebrew'] = 0xFB1F;
-  t['yohiragana'] = 0x3088;
-  t['yoikorean'] = 0x3189;
-  t['yokatakana'] = 0x30E8;
-  t['yokatakanahalfwidth'] = 0xFF96;
-  t['yokorean'] = 0x315B;
-  t['yosmallhiragana'] = 0x3087;
-  t['yosmallkatakana'] = 0x30E7;
-  t['yosmallkatakanahalfwidth'] = 0xFF6E;
-  t['yotgreek'] = 0x03F3;
-  t['yoyaekorean'] = 0x3188;
-  t['yoyakorean'] = 0x3187;
-  t['yoyakthai'] = 0x0E22;
-  t['yoyingthai'] = 0x0E0D;
-  t['yparen'] = 0x24B4;
-  t['ypogegrammeni'] = 0x037A;
-  t['ypogegrammenigreekcmb'] = 0x0345;
-  t['yr'] = 0x01A6;
-  t['yring'] = 0x1E99;
-  t['ysuperior'] = 0x02B8;
-  t['ytilde'] = 0x1EF9;
-  t['yturned'] = 0x028E;
-  t['yuhiragana'] = 0x3086;
-  t['yuikorean'] = 0x318C;
-  t['yukatakana'] = 0x30E6;
-  t['yukatakanahalfwidth'] = 0xFF95;
-  t['yukorean'] = 0x3160;
-  t['yusbigcyrillic'] = 0x046B;
-  t['yusbigiotifiedcyrillic'] = 0x046D;
-  t['yuslittlecyrillic'] = 0x0467;
-  t['yuslittleiotifiedcyrillic'] = 0x0469;
-  t['yusmallhiragana'] = 0x3085;
-  t['yusmallkatakana'] = 0x30E5;
-  t['yusmallkatakanahalfwidth'] = 0xFF6D;
-  t['yuyekorean'] = 0x318B;
-  t['yuyeokorean'] = 0x318A;
-  t['yyabengali'] = 0x09DF;
-  t['yyadeva'] = 0x095F;
-  t['z'] = 0x007A;
-  t['zaarmenian'] = 0x0566;
-  t['zacute'] = 0x017A;
-  t['zadeva'] = 0x095B;
-  t['zagurmukhi'] = 0x0A5B;
-  t['zaharabic'] = 0x0638;
-  t['zahfinalarabic'] = 0xFEC6;
-  t['zahinitialarabic'] = 0xFEC7;
-  t['zahiragana'] = 0x3056;
-  t['zahmedialarabic'] = 0xFEC8;
-  t['zainarabic'] = 0x0632;
-  t['zainfinalarabic'] = 0xFEB0;
-  t['zakatakana'] = 0x30B6;
-  t['zaqefgadolhebrew'] = 0x0595;
-  t['zaqefqatanhebrew'] = 0x0594;
-  t['zarqahebrew'] = 0x0598;
-  t['zayin'] = 0x05D6;
-  t['zayindagesh'] = 0xFB36;
-  t['zayindageshhebrew'] = 0xFB36;
-  t['zayinhebrew'] = 0x05D6;
-  t['zbopomofo'] = 0x3117;
-  t['zcaron'] = 0x017E;
-  t['zcircle'] = 0x24E9;
-  t['zcircumflex'] = 0x1E91;
-  t['zcurl'] = 0x0291;
-  t['zdot'] = 0x017C;
-  t['zdotaccent'] = 0x017C;
-  t['zdotbelow'] = 0x1E93;
-  t['zecyrillic'] = 0x0437;
-  t['zedescendercyrillic'] = 0x0499;
-  t['zedieresiscyrillic'] = 0x04DF;
-  t['zehiragana'] = 0x305C;
-  t['zekatakana'] = 0x30BC;
-  t['zero'] = 0x0030;
-  t['zeroarabic'] = 0x0660;
-  t['zerobengali'] = 0x09E6;
-  t['zerodeva'] = 0x0966;
-  t['zerogujarati'] = 0x0AE6;
-  t['zerogurmukhi'] = 0x0A66;
-  t['zerohackarabic'] = 0x0660;
-  t['zeroinferior'] = 0x2080;
-  t['zeromonospace'] = 0xFF10;
-  t['zerooldstyle'] = 0xF730;
-  t['zeropersian'] = 0x06F0;
-  t['zerosuperior'] = 0x2070;
-  t['zerothai'] = 0x0E50;
-  t['zerowidthjoiner'] = 0xFEFF;
-  t['zerowidthnonjoiner'] = 0x200C;
-  t['zerowidthspace'] = 0x200B;
-  t['zeta'] = 0x03B6;
-  t['zhbopomofo'] = 0x3113;
-  t['zhearmenian'] = 0x056A;
-  t['zhebrevecyrillic'] = 0x04C2;
-  t['zhecyrillic'] = 0x0436;
-  t['zhedescendercyrillic'] = 0x0497;
-  t['zhedieresiscyrillic'] = 0x04DD;
-  t['zihiragana'] = 0x3058;
-  t['zikatakana'] = 0x30B8;
-  t['zinorhebrew'] = 0x05AE;
-  t['zlinebelow'] = 0x1E95;
-  t['zmonospace'] = 0xFF5A;
-  t['zohiragana'] = 0x305E;
-  t['zokatakana'] = 0x30BE;
-  t['zparen'] = 0x24B5;
-  t['zretroflexhook'] = 0x0290;
-  t['zstroke'] = 0x01B6;
-  t['zuhiragana'] = 0x305A;
-  t['zukatakana'] = 0x30BA;
-  t['.notdef'] = 0x0000;
+const getGlyphsUnicode = getArrayLookupTableFactory(function () {
+  // prettier-ignore
+  return [
+    "A", 0x0041,
+    "AE", 0x00c6,
+    "AEacute", 0x01fc,
+    "AEmacron", 0x01e2,
+    "AEsmall", 0xf7e6,
+    "Aacute", 0x00c1,
+    "Aacutesmall", 0xf7e1,
+    "Abreve", 0x0102,
+    "Abreveacute", 0x1eae,
+    "Abrevecyrillic", 0x04d0,
+    "Abrevedotbelow", 0x1eb6,
+    "Abrevegrave", 0x1eb0,
+    "Abrevehookabove", 0x1eb2,
+    "Abrevetilde", 0x1eb4,
+    "Acaron", 0x01cd,
+    "Acircle", 0x24b6,
+    "Acircumflex", 0x00c2,
+    "Acircumflexacute", 0x1ea4,
+    "Acircumflexdotbelow", 0x1eac,
+    "Acircumflexgrave", 0x1ea6,
+    "Acircumflexhookabove", 0x1ea8,
+    "Acircumflexsmall", 0xf7e2,
+    "Acircumflextilde", 0x1eaa,
+    "Acute", 0xf6c9,
+    "Acutesmall", 0xf7b4,
+    "Acyrillic", 0x0410,
+    "Adblgrave", 0x0200,
+    "Adieresis", 0x00c4,
+    "Adieresiscyrillic", 0x04d2,
+    "Adieresismacron", 0x01de,
+    "Adieresissmall", 0xf7e4,
+    "Adotbelow", 0x1ea0,
+    "Adotmacron", 0x01e0,
+    "Agrave", 0x00c0,
+    "Agravesmall", 0xf7e0,
+    "Ahookabove", 0x1ea2,
+    "Aiecyrillic", 0x04d4,
+    "Ainvertedbreve", 0x0202,
+    "Alpha", 0x0391,
+    "Alphatonos", 0x0386,
+    "Amacron", 0x0100,
+    "Amonospace", 0xff21,
+    "Aogonek", 0x0104,
+    "Aring", 0x00c5,
+    "Aringacute", 0x01fa,
+    "Aringbelow", 0x1e00,
+    "Aringsmall", 0xf7e5,
+    "Asmall", 0xf761,
+    "Atilde", 0x00c3,
+    "Atildesmall", 0xf7e3,
+    "Aybarmenian", 0x0531,
+    "B", 0x0042,
+    "Bcircle", 0x24b7,
+    "Bdotaccent", 0x1e02,
+    "Bdotbelow", 0x1e04,
+    "Becyrillic", 0x0411,
+    "Benarmenian", 0x0532,
+    "Beta", 0x0392,
+    "Bhook", 0x0181,
+    "Blinebelow", 0x1e06,
+    "Bmonospace", 0xff22,
+    "Brevesmall", 0xf6f4,
+    "Bsmall", 0xf762,
+    "Btopbar", 0x0182,
+    "C", 0x0043,
+    "Caarmenian", 0x053e,
+    "Cacute", 0x0106,
+    "Caron", 0xf6ca,
+    "Caronsmall", 0xf6f5,
+    "Ccaron", 0x010c,
+    "Ccedilla", 0x00c7,
+    "Ccedillaacute", 0x1e08,
+    "Ccedillasmall", 0xf7e7,
+    "Ccircle", 0x24b8,
+    "Ccircumflex", 0x0108,
+    "Cdot", 0x010a,
+    "Cdotaccent", 0x010a,
+    "Cedillasmall", 0xf7b8,
+    "Chaarmenian", 0x0549,
+    "Cheabkhasiancyrillic", 0x04bc,
+    "Checyrillic", 0x0427,
+    "Chedescenderabkhasiancyrillic", 0x04be,
+    "Chedescendercyrillic", 0x04b6,
+    "Chedieresiscyrillic", 0x04f4,
+    "Cheharmenian", 0x0543,
+    "Chekhakassiancyrillic", 0x04cb,
+    "Cheverticalstrokecyrillic", 0x04b8,
+    "Chi", 0x03a7,
+    "Chook", 0x0187,
+    "Circumflexsmall", 0xf6f6,
+    "Cmonospace", 0xff23,
+    "Coarmenian", 0x0551,
+    "Csmall", 0xf763,
+    "D", 0x0044,
+    "DZ", 0x01f1,
+    "DZcaron", 0x01c4,
+    "Daarmenian", 0x0534,
+    "Dafrican", 0x0189,
+    "Dcaron", 0x010e,
+    "Dcedilla", 0x1e10,
+    "Dcircle", 0x24b9,
+    "Dcircumflexbelow", 0x1e12,
+    "Dcroat", 0x0110,
+    "Ddotaccent", 0x1e0a,
+    "Ddotbelow", 0x1e0c,
+    "Decyrillic", 0x0414,
+    "Deicoptic", 0x03ee,
+    "Delta", 0x2206,
+    "Deltagreek", 0x0394,
+    "Dhook", 0x018a,
+    "Dieresis", 0xf6cb,
+    "DieresisAcute", 0xf6cc,
+    "DieresisGrave", 0xf6cd,
+    "Dieresissmall", 0xf7a8,
+    "Digammagreek", 0x03dc,
+    "Djecyrillic", 0x0402,
+    "Dlinebelow", 0x1e0e,
+    "Dmonospace", 0xff24,
+    "Dotaccentsmall", 0xf6f7,
+    "Dslash", 0x0110,
+    "Dsmall", 0xf764,
+    "Dtopbar", 0x018b,
+    "Dz", 0x01f2,
+    "Dzcaron", 0x01c5,
+    "Dzeabkhasiancyrillic", 0x04e0,
+    "Dzecyrillic", 0x0405,
+    "Dzhecyrillic", 0x040f,
+    "E", 0x0045,
+    "Eacute", 0x00c9,
+    "Eacutesmall", 0xf7e9,
+    "Ebreve", 0x0114,
+    "Ecaron", 0x011a,
+    "Ecedillabreve", 0x1e1c,
+    "Echarmenian", 0x0535,
+    "Ecircle", 0x24ba,
+    "Ecircumflex", 0x00ca,
+    "Ecircumflexacute", 0x1ebe,
+    "Ecircumflexbelow", 0x1e18,
+    "Ecircumflexdotbelow", 0x1ec6,
+    "Ecircumflexgrave", 0x1ec0,
+    "Ecircumflexhookabove", 0x1ec2,
+    "Ecircumflexsmall", 0xf7ea,
+    "Ecircumflextilde", 0x1ec4,
+    "Ecyrillic", 0x0404,
+    "Edblgrave", 0x0204,
+    "Edieresis", 0x00cb,
+    "Edieresissmall", 0xf7eb,
+    "Edot", 0x0116,
+    "Edotaccent", 0x0116,
+    "Edotbelow", 0x1eb8,
+    "Efcyrillic", 0x0424,
+    "Egrave", 0x00c8,
+    "Egravesmall", 0xf7e8,
+    "Eharmenian", 0x0537,
+    "Ehookabove", 0x1eba,
+    "Eightroman", 0x2167,
+    "Einvertedbreve", 0x0206,
+    "Eiotifiedcyrillic", 0x0464,
+    "Elcyrillic", 0x041b,
+    "Elevenroman", 0x216a,
+    "Emacron", 0x0112,
+    "Emacronacute", 0x1e16,
+    "Emacrongrave", 0x1e14,
+    "Emcyrillic", 0x041c,
+    "Emonospace", 0xff25,
+    "Encyrillic", 0x041d,
+    "Endescendercyrillic", 0x04a2,
+    "Eng", 0x014a,
+    "Enghecyrillic", 0x04a4,
+    "Enhookcyrillic", 0x04c7,
+    "Eogonek", 0x0118,
+    "Eopen", 0x0190,
+    "Epsilon", 0x0395,
+    "Epsilontonos", 0x0388,
+    "Ercyrillic", 0x0420,
+    "Ereversed", 0x018e,
+    "Ereversedcyrillic", 0x042d,
+    "Escyrillic", 0x0421,
+    "Esdescendercyrillic", 0x04aa,
+    "Esh", 0x01a9,
+    "Esmall", 0xf765,
+    "Eta", 0x0397,
+    "Etarmenian", 0x0538,
+    "Etatonos", 0x0389,
+    "Eth", 0x00d0,
+    "Ethsmall", 0xf7f0,
+    "Etilde", 0x1ebc,
+    "Etildebelow", 0x1e1a,
+    "Euro", 0x20ac,
+    "Ezh", 0x01b7,
+    "Ezhcaron", 0x01ee,
+    "Ezhreversed", 0x01b8,
+    "F", 0x0046,
+    "Fcircle", 0x24bb,
+    "Fdotaccent", 0x1e1e,
+    "Feharmenian", 0x0556,
+    "Feicoptic", 0x03e4,
+    "Fhook", 0x0191,
+    "Fitacyrillic", 0x0472,
+    "Fiveroman", 0x2164,
+    "Fmonospace", 0xff26,
+    "Fourroman", 0x2163,
+    "Fsmall", 0xf766,
+    "G", 0x0047,
+    "GBsquare", 0x3387,
+    "Gacute", 0x01f4,
+    "Gamma", 0x0393,
+    "Gammaafrican", 0x0194,
+    "Gangiacoptic", 0x03ea,
+    "Gbreve", 0x011e,
+    "Gcaron", 0x01e6,
+    "Gcedilla", 0x0122,
+    "Gcircle", 0x24bc,
+    "Gcircumflex", 0x011c,
+    "Gcommaaccent", 0x0122,
+    "Gdot", 0x0120,
+    "Gdotaccent", 0x0120,
+    "Gecyrillic", 0x0413,
+    "Ghadarmenian", 0x0542,
+    "Ghemiddlehookcyrillic", 0x0494,
+    "Ghestrokecyrillic", 0x0492,
+    "Gheupturncyrillic", 0x0490,
+    "Ghook", 0x0193,
+    "Gimarmenian", 0x0533,
+    "Gjecyrillic", 0x0403,
+    "Gmacron", 0x1e20,
+    "Gmonospace", 0xff27,
+    "Grave", 0xf6ce,
+    "Gravesmall", 0xf760,
+    "Gsmall", 0xf767,
+    "Gsmallhook", 0x029b,
+    "Gstroke", 0x01e4,
+    "H", 0x0048,
+    "H18533", 0x25cf,
+    "H18543", 0x25aa,
+    "H18551", 0x25ab,
+    "H22073", 0x25a1,
+    "HPsquare", 0x33cb,
+    "Haabkhasiancyrillic", 0x04a8,
+    "Hadescendercyrillic", 0x04b2,
+    "Hardsigncyrillic", 0x042a,
+    "Hbar", 0x0126,
+    "Hbrevebelow", 0x1e2a,
+    "Hcedilla", 0x1e28,
+    "Hcircle", 0x24bd,
+    "Hcircumflex", 0x0124,
+    "Hdieresis", 0x1e26,
+    "Hdotaccent", 0x1e22,
+    "Hdotbelow", 0x1e24,
+    "Hmonospace", 0xff28,
+    "Hoarmenian", 0x0540,
+    "Horicoptic", 0x03e8,
+    "Hsmall", 0xf768,
+    "Hungarumlaut", 0xf6cf,
+    "Hungarumlautsmall", 0xf6f8,
+    "Hzsquare", 0x3390,
+    "I", 0x0049,
+    "IAcyrillic", 0x042f,
+    "IJ", 0x0132,
+    "IUcyrillic", 0x042e,
+    "Iacute", 0x00cd,
+    "Iacutesmall", 0xf7ed,
+    "Ibreve", 0x012c,
+    "Icaron", 0x01cf,
+    "Icircle", 0x24be,
+    "Icircumflex", 0x00ce,
+    "Icircumflexsmall", 0xf7ee,
+    "Icyrillic", 0x0406,
+    "Idblgrave", 0x0208,
+    "Idieresis", 0x00cf,
+    "Idieresisacute", 0x1e2e,
+    "Idieresiscyrillic", 0x04e4,
+    "Idieresissmall", 0xf7ef,
+    "Idot", 0x0130,
+    "Idotaccent", 0x0130,
+    "Idotbelow", 0x1eca,
+    "Iebrevecyrillic", 0x04d6,
+    "Iecyrillic", 0x0415,
+    "Ifraktur", 0x2111,
+    "Igrave", 0x00cc,
+    "Igravesmall", 0xf7ec,
+    "Ihookabove", 0x1ec8,
+    "Iicyrillic", 0x0418,
+    "Iinvertedbreve", 0x020a,
+    "Iishortcyrillic", 0x0419,
+    "Imacron", 0x012a,
+    "Imacroncyrillic", 0x04e2,
+    "Imonospace", 0xff29,
+    "Iniarmenian", 0x053b,
+    "Iocyrillic", 0x0401,
+    "Iogonek", 0x012e,
+    "Iota", 0x0399,
+    "Iotaafrican", 0x0196,
+    "Iotadieresis", 0x03aa,
+    "Iotatonos", 0x038a,
+    "Ismall", 0xf769,
+    "Istroke", 0x0197,
+    "Itilde", 0x0128,
+    "Itildebelow", 0x1e2c,
+    "Izhitsacyrillic", 0x0474,
+    "Izhitsadblgravecyrillic", 0x0476,
+    "J", 0x004a,
+    "Jaarmenian", 0x0541,
+    "Jcircle", 0x24bf,
+    "Jcircumflex", 0x0134,
+    "Jecyrillic", 0x0408,
+    "Jheharmenian", 0x054b,
+    "Jmonospace", 0xff2a,
+    "Jsmall", 0xf76a,
+    "K", 0x004b,
+    "KBsquare", 0x3385,
+    "KKsquare", 0x33cd,
+    "Kabashkircyrillic", 0x04a0,
+    "Kacute", 0x1e30,
+    "Kacyrillic", 0x041a,
+    "Kadescendercyrillic", 0x049a,
+    "Kahookcyrillic", 0x04c3,
+    "Kappa", 0x039a,
+    "Kastrokecyrillic", 0x049e,
+    "Kaverticalstrokecyrillic", 0x049c,
+    "Kcaron", 0x01e8,
+    "Kcedilla", 0x0136,
+    "Kcircle", 0x24c0,
+    "Kcommaaccent", 0x0136,
+    "Kdotbelow", 0x1e32,
+    "Keharmenian", 0x0554,
+    "Kenarmenian", 0x053f,
+    "Khacyrillic", 0x0425,
+    "Kheicoptic", 0x03e6,
+    "Khook", 0x0198,
+    "Kjecyrillic", 0x040c,
+    "Klinebelow", 0x1e34,
+    "Kmonospace", 0xff2b,
+    "Koppacyrillic", 0x0480,
+    "Koppagreek", 0x03de,
+    "Ksicyrillic", 0x046e,
+    "Ksmall", 0xf76b,
+    "L", 0x004c,
+    "LJ", 0x01c7,
+    "LL", 0xf6bf,
+    "Lacute", 0x0139,
+    "Lambda", 0x039b,
+    "Lcaron", 0x013d,
+    "Lcedilla", 0x013b,
+    "Lcircle", 0x24c1,
+    "Lcircumflexbelow", 0x1e3c,
+    "Lcommaaccent", 0x013b,
+    "Ldot", 0x013f,
+    "Ldotaccent", 0x013f,
+    "Ldotbelow", 0x1e36,
+    "Ldotbelowmacron", 0x1e38,
+    "Liwnarmenian", 0x053c,
+    "Lj", 0x01c8,
+    "Ljecyrillic", 0x0409,
+    "Llinebelow", 0x1e3a,
+    "Lmonospace", 0xff2c,
+    "Lslash", 0x0141,
+    "Lslashsmall", 0xf6f9,
+    "Lsmall", 0xf76c,
+    "M", 0x004d,
+    "MBsquare", 0x3386,
+    "Macron", 0xf6d0,
+    "Macronsmall", 0xf7af,
+    "Macute", 0x1e3e,
+    "Mcircle", 0x24c2,
+    "Mdotaccent", 0x1e40,
+    "Mdotbelow", 0x1e42,
+    "Menarmenian", 0x0544,
+    "Mmonospace", 0xff2d,
+    "Msmall", 0xf76d,
+    "Mturned", 0x019c,
+    "Mu", 0x039c,
+    "N", 0x004e,
+    "NJ", 0x01ca,
+    "Nacute", 0x0143,
+    "Ncaron", 0x0147,
+    "Ncedilla", 0x0145,
+    "Ncircle", 0x24c3,
+    "Ncircumflexbelow", 0x1e4a,
+    "Ncommaaccent", 0x0145,
+    "Ndotaccent", 0x1e44,
+    "Ndotbelow", 0x1e46,
+    "Nhookleft", 0x019d,
+    "Nineroman", 0x2168,
+    "Nj", 0x01cb,
+    "Njecyrillic", 0x040a,
+    "Nlinebelow", 0x1e48,
+    "Nmonospace", 0xff2e,
+    "Nowarmenian", 0x0546,
+    "Nsmall", 0xf76e,
+    "Ntilde", 0x00d1,
+    "Ntildesmall", 0xf7f1,
+    "Nu", 0x039d,
+    "O", 0x004f,
+    "OE", 0x0152,
+    "OEsmall", 0xf6fa,
+    "Oacute", 0x00d3,
+    "Oacutesmall", 0xf7f3,
+    "Obarredcyrillic", 0x04e8,
+    "Obarreddieresiscyrillic", 0x04ea,
+    "Obreve", 0x014e,
+    "Ocaron", 0x01d1,
+    "Ocenteredtilde", 0x019f,
+    "Ocircle", 0x24c4,
+    "Ocircumflex", 0x00d4,
+    "Ocircumflexacute", 0x1ed0,
+    "Ocircumflexdotbelow", 0x1ed8,
+    "Ocircumflexgrave", 0x1ed2,
+    "Ocircumflexhookabove", 0x1ed4,
+    "Ocircumflexsmall", 0xf7f4,
+    "Ocircumflextilde", 0x1ed6,
+    "Ocyrillic", 0x041e,
+    "Odblacute", 0x0150,
+    "Odblgrave", 0x020c,
+    "Odieresis", 0x00d6,
+    "Odieresiscyrillic", 0x04e6,
+    "Odieresissmall", 0xf7f6,
+    "Odotbelow", 0x1ecc,
+    "Ogoneksmall", 0xf6fb,
+    "Ograve", 0x00d2,
+    "Ogravesmall", 0xf7f2,
+    "Oharmenian", 0x0555,
+    "Ohm", 0x2126,
+    "Ohookabove", 0x1ece,
+    "Ohorn", 0x01a0,
+    "Ohornacute", 0x1eda,
+    "Ohorndotbelow", 0x1ee2,
+    "Ohorngrave", 0x1edc,
+    "Ohornhookabove", 0x1ede,
+    "Ohorntilde", 0x1ee0,
+    "Ohungarumlaut", 0x0150,
+    "Oi", 0x01a2,
+    "Oinvertedbreve", 0x020e,
+    "Omacron", 0x014c,
+    "Omacronacute", 0x1e52,
+    "Omacrongrave", 0x1e50,
+    "Omega", 0x2126,
+    "Omegacyrillic", 0x0460,
+    "Omegagreek", 0x03a9,
+    "Omegaroundcyrillic", 0x047a,
+    "Omegatitlocyrillic", 0x047c,
+    "Omegatonos", 0x038f,
+    "Omicron", 0x039f,
+    "Omicrontonos", 0x038c,
+    "Omonospace", 0xff2f,
+    "Oneroman", 0x2160,
+    "Oogonek", 0x01ea,
+    "Oogonekmacron", 0x01ec,
+    "Oopen", 0x0186,
+    "Oslash", 0x00d8,
+    "Oslashacute", 0x01fe,
+    "Oslashsmall", 0xf7f8,
+    "Osmall", 0xf76f,
+    "Ostrokeacute", 0x01fe,
+    "Otcyrillic", 0x047e,
+    "Otilde", 0x00d5,
+    "Otildeacute", 0x1e4c,
+    "Otildedieresis", 0x1e4e,
+    "Otildesmall", 0xf7f5,
+    "P", 0x0050,
+    "Pacute", 0x1e54,
+    "Pcircle", 0x24c5,
+    "Pdotaccent", 0x1e56,
+    "Pecyrillic", 0x041f,
+    "Peharmenian", 0x054a,
+    "Pemiddlehookcyrillic", 0x04a6,
+    "Phi", 0x03a6,
+    "Phook", 0x01a4,
+    "Pi", 0x03a0,
+    "Piwrarmenian", 0x0553,
+    "Pmonospace", 0xff30,
+    "Psi", 0x03a8,
+    "Psicyrillic", 0x0470,
+    "Psmall", 0xf770,
+    "Q", 0x0051,
+    "Qcircle", 0x24c6,
+    "Qmonospace", 0xff31,
+    "Qsmall", 0xf771,
+    "R", 0x0052,
+    "Raarmenian", 0x054c,
+    "Racute", 0x0154,
+    "Rcaron", 0x0158,
+    "Rcedilla", 0x0156,
+    "Rcircle", 0x24c7,
+    "Rcommaaccent", 0x0156,
+    "Rdblgrave", 0x0210,
+    "Rdotaccent", 0x1e58,
+    "Rdotbelow", 0x1e5a,
+    "Rdotbelowmacron", 0x1e5c,
+    "Reharmenian", 0x0550,
+    "Rfraktur", 0x211c,
+    "Rho", 0x03a1,
+    "Ringsmall", 0xf6fc,
+    "Rinvertedbreve", 0x0212,
+    "Rlinebelow", 0x1e5e,
+    "Rmonospace", 0xff32,
+    "Rsmall", 0xf772,
+    "Rsmallinverted", 0x0281,
+    "Rsmallinvertedsuperior", 0x02b6,
+    "S", 0x0053,
+    "SF010000", 0x250c,
+    "SF020000", 0x2514,
+    "SF030000", 0x2510,
+    "SF040000", 0x2518,
+    "SF050000", 0x253c,
+    "SF060000", 0x252c,
+    "SF070000", 0x2534,
+    "SF080000", 0x251c,
+    "SF090000", 0x2524,
+    "SF100000", 0x2500,
+    "SF110000", 0x2502,
+    "SF190000", 0x2561,
+    "SF200000", 0x2562,
+    "SF210000", 0x2556,
+    "SF220000", 0x2555,
+    "SF230000", 0x2563,
+    "SF240000", 0x2551,
+    "SF250000", 0x2557,
+    "SF260000", 0x255d,
+    "SF270000", 0x255c,
+    "SF280000", 0x255b,
+    "SF360000", 0x255e,
+    "SF370000", 0x255f,
+    "SF380000", 0x255a,
+    "SF390000", 0x2554,
+    "SF400000", 0x2569,
+    "SF410000", 0x2566,
+    "SF420000", 0x2560,
+    "SF430000", 0x2550,
+    "SF440000", 0x256c,
+    "SF450000", 0x2567,
+    "SF460000", 0x2568,
+    "SF470000", 0x2564,
+    "SF480000", 0x2565,
+    "SF490000", 0x2559,
+    "SF500000", 0x2558,
+    "SF510000", 0x2552,
+    "SF520000", 0x2553,
+    "SF530000", 0x256b,
+    "SF540000", 0x256a,
+    "Sacute", 0x015a,
+    "Sacutedotaccent", 0x1e64,
+    "Sampigreek", 0x03e0,
+    "Scaron", 0x0160,
+    "Scarondotaccent", 0x1e66,
+    "Scaronsmall", 0xf6fd,
+    "Scedilla", 0x015e,
+    "Schwa", 0x018f,
+    "Schwacyrillic", 0x04d8,
+    "Schwadieresiscyrillic", 0x04da,
+    "Scircle", 0x24c8,
+    "Scircumflex", 0x015c,
+    "Scommaaccent", 0x0218,
+    "Sdotaccent", 0x1e60,
+    "Sdotbelow", 0x1e62,
+    "Sdotbelowdotaccent", 0x1e68,
+    "Seharmenian", 0x054d,
+    "Sevenroman", 0x2166,
+    "Shaarmenian", 0x0547,
+    "Shacyrillic", 0x0428,
+    "Shchacyrillic", 0x0429,
+    "Sheicoptic", 0x03e2,
+    "Shhacyrillic", 0x04ba,
+    "Shimacoptic", 0x03ec,
+    "Sigma", 0x03a3,
+    "Sixroman", 0x2165,
+    "Smonospace", 0xff33,
+    "Softsigncyrillic", 0x042c,
+    "Ssmall", 0xf773,
+    "Stigmagreek", 0x03da,
+    "T", 0x0054,
+    "Tau", 0x03a4,
+    "Tbar", 0x0166,
+    "Tcaron", 0x0164,
+    "Tcedilla", 0x0162,
+    "Tcircle", 0x24c9,
+    "Tcircumflexbelow", 0x1e70,
+    "Tcommaaccent", 0x0162,
+    "Tdotaccent", 0x1e6a,
+    "Tdotbelow", 0x1e6c,
+    "Tecyrillic", 0x0422,
+    "Tedescendercyrillic", 0x04ac,
+    "Tenroman", 0x2169,
+    "Tetsecyrillic", 0x04b4,
+    "Theta", 0x0398,
+    "Thook", 0x01ac,
+    "Thorn", 0x00de,
+    "Thornsmall", 0xf7fe,
+    "Threeroman", 0x2162,
+    "Tildesmall", 0xf6fe,
+    "Tiwnarmenian", 0x054f,
+    "Tlinebelow", 0x1e6e,
+    "Tmonospace", 0xff34,
+    "Toarmenian", 0x0539,
+    "Tonefive", 0x01bc,
+    "Tonesix", 0x0184,
+    "Tonetwo", 0x01a7,
+    "Tretroflexhook", 0x01ae,
+    "Tsecyrillic", 0x0426,
+    "Tshecyrillic", 0x040b,
+    "Tsmall", 0xf774,
+    "Twelveroman", 0x216b,
+    "Tworoman", 0x2161,
+    "U", 0x0055,
+    "Uacute", 0x00da,
+    "Uacutesmall", 0xf7fa,
+    "Ubreve", 0x016c,
+    "Ucaron", 0x01d3,
+    "Ucircle", 0x24ca,
+    "Ucircumflex", 0x00db,
+    "Ucircumflexbelow", 0x1e76,
+    "Ucircumflexsmall", 0xf7fb,
+    "Ucyrillic", 0x0423,
+    "Udblacute", 0x0170,
+    "Udblgrave", 0x0214,
+    "Udieresis", 0x00dc,
+    "Udieresisacute", 0x01d7,
+    "Udieresisbelow", 0x1e72,
+    "Udieresiscaron", 0x01d9,
+    "Udieresiscyrillic", 0x04f0,
+    "Udieresisgrave", 0x01db,
+    "Udieresismacron", 0x01d5,
+    "Udieresissmall", 0xf7fc,
+    "Udotbelow", 0x1ee4,
+    "Ugrave", 0x00d9,
+    "Ugravesmall", 0xf7f9,
+    "Uhookabove", 0x1ee6,
+    "Uhorn", 0x01af,
+    "Uhornacute", 0x1ee8,
+    "Uhorndotbelow", 0x1ef0,
+    "Uhorngrave", 0x1eea,
+    "Uhornhookabove", 0x1eec,
+    "Uhorntilde", 0x1eee,
+    "Uhungarumlaut", 0x0170,
+    "Uhungarumlautcyrillic", 0x04f2,
+    "Uinvertedbreve", 0x0216,
+    "Ukcyrillic", 0x0478,
+    "Umacron", 0x016a,
+    "Umacroncyrillic", 0x04ee,
+    "Umacrondieresis", 0x1e7a,
+    "Umonospace", 0xff35,
+    "Uogonek", 0x0172,
+    "Upsilon", 0x03a5,
+    "Upsilon1", 0x03d2,
+    "Upsilonacutehooksymbolgreek", 0x03d3,
+    "Upsilonafrican", 0x01b1,
+    "Upsilondieresis", 0x03ab,
+    "Upsilondieresishooksymbolgreek", 0x03d4,
+    "Upsilonhooksymbol", 0x03d2,
+    "Upsilontonos", 0x038e,
+    "Uring", 0x016e,
+    "Ushortcyrillic", 0x040e,
+    "Usmall", 0xf775,
+    "Ustraightcyrillic", 0x04ae,
+    "Ustraightstrokecyrillic", 0x04b0,
+    "Utilde", 0x0168,
+    "Utildeacute", 0x1e78,
+    "Utildebelow", 0x1e74,
+    "V", 0x0056,
+    "Vcircle", 0x24cb,
+    "Vdotbelow", 0x1e7e,
+    "Vecyrillic", 0x0412,
+    "Vewarmenian", 0x054e,
+    "Vhook", 0x01b2,
+    "Vmonospace", 0xff36,
+    "Voarmenian", 0x0548,
+    "Vsmall", 0xf776,
+    "Vtilde", 0x1e7c,
+    "W", 0x0057,
+    "Wacute", 0x1e82,
+    "Wcircle", 0x24cc,
+    "Wcircumflex", 0x0174,
+    "Wdieresis", 0x1e84,
+    "Wdotaccent", 0x1e86,
+    "Wdotbelow", 0x1e88,
+    "Wgrave", 0x1e80,
+    "Wmonospace", 0xff37,
+    "Wsmall", 0xf777,
+    "X", 0x0058,
+    "Xcircle", 0x24cd,
+    "Xdieresis", 0x1e8c,
+    "Xdotaccent", 0x1e8a,
+    "Xeharmenian", 0x053d,
+    "Xi", 0x039e,
+    "Xmonospace", 0xff38,
+    "Xsmall", 0xf778,
+    "Y", 0x0059,
+    "Yacute", 0x00dd,
+    "Yacutesmall", 0xf7fd,
+    "Yatcyrillic", 0x0462,
+    "Ycircle", 0x24ce,
+    "Ycircumflex", 0x0176,
+    "Ydieresis", 0x0178,
+    "Ydieresissmall", 0xf7ff,
+    "Ydotaccent", 0x1e8e,
+    "Ydotbelow", 0x1ef4,
+    "Yericyrillic", 0x042b,
+    "Yerudieresiscyrillic", 0x04f8,
+    "Ygrave", 0x1ef2,
+    "Yhook", 0x01b3,
+    "Yhookabove", 0x1ef6,
+    "Yiarmenian", 0x0545,
+    "Yicyrillic", 0x0407,
+    "Yiwnarmenian", 0x0552,
+    "Ymonospace", 0xff39,
+    "Ysmall", 0xf779,
+    "Ytilde", 0x1ef8,
+    "Yusbigcyrillic", 0x046a,
+    "Yusbigiotifiedcyrillic", 0x046c,
+    "Yuslittlecyrillic", 0x0466,
+    "Yuslittleiotifiedcyrillic", 0x0468,
+    "Z", 0x005a,
+    "Zaarmenian", 0x0536,
+    "Zacute", 0x0179,
+    "Zcaron", 0x017d,
+    "Zcaronsmall", 0xf6ff,
+    "Zcircle", 0x24cf,
+    "Zcircumflex", 0x1e90,
+    "Zdot", 0x017b,
+    "Zdotaccent", 0x017b,
+    "Zdotbelow", 0x1e92,
+    "Zecyrillic", 0x0417,
+    "Zedescendercyrillic", 0x0498,
+    "Zedieresiscyrillic", 0x04de,
+    "Zeta", 0x0396,
+    "Zhearmenian", 0x053a,
+    "Zhebrevecyrillic", 0x04c1,
+    "Zhecyrillic", 0x0416,
+    "Zhedescendercyrillic", 0x0496,
+    "Zhedieresiscyrillic", 0x04dc,
+    "Zlinebelow", 0x1e94,
+    "Zmonospace", 0xff3a,
+    "Zsmall", 0xf77a,
+    "Zstroke", 0x01b5,
+    "a", 0x0061,
+    "aabengali", 0x0986,
+    "aacute", 0x00e1,
+    "aadeva", 0x0906,
+    "aagujarati", 0x0a86,
+    "aagurmukhi", 0x0a06,
+    "aamatragurmukhi", 0x0a3e,
+    "aarusquare", 0x3303,
+    "aavowelsignbengali", 0x09be,
+    "aavowelsigndeva", 0x093e,
+    "aavowelsigngujarati", 0x0abe,
+    "abbreviationmarkarmenian", 0x055f,
+    "abbreviationsigndeva", 0x0970,
+    "abengali", 0x0985,
+    "abopomofo", 0x311a,
+    "abreve", 0x0103,
+    "abreveacute", 0x1eaf,
+    "abrevecyrillic", 0x04d1,
+    "abrevedotbelow", 0x1eb7,
+    "abrevegrave", 0x1eb1,
+    "abrevehookabove", 0x1eb3,
+    "abrevetilde", 0x1eb5,
+    "acaron", 0x01ce,
+    "acircle", 0x24d0,
+    "acircumflex", 0x00e2,
+    "acircumflexacute", 0x1ea5,
+    "acircumflexdotbelow", 0x1ead,
+    "acircumflexgrave", 0x1ea7,
+    "acircumflexhookabove", 0x1ea9,
+    "acircumflextilde", 0x1eab,
+    "acute", 0x00b4,
+    "acutebelowcmb", 0x0317,
+    "acutecmb", 0x0301,
+    "acutecomb", 0x0301,
+    "acutedeva", 0x0954,
+    "acutelowmod", 0x02cf,
+    "acutetonecmb", 0x0341,
+    "acyrillic", 0x0430,
+    "adblgrave", 0x0201,
+    "addakgurmukhi", 0x0a71,
+    "adeva", 0x0905,
+    "adieresis", 0x00e4,
+    "adieresiscyrillic", 0x04d3,
+    "adieresismacron", 0x01df,
+    "adotbelow", 0x1ea1,
+    "adotmacron", 0x01e1,
+    "ae", 0x00e6,
+    "aeacute", 0x01fd,
+    "aekorean", 0x3150,
+    "aemacron", 0x01e3,
+    "afii00208", 0x2015,
+    "afii08941", 0x20a4,
+    "afii10017", 0x0410,
+    "afii10018", 0x0411,
+    "afii10019", 0x0412,
+    "afii10020", 0x0413,
+    "afii10021", 0x0414,
+    "afii10022", 0x0415,
+    "afii10023", 0x0401,
+    "afii10024", 0x0416,
+    "afii10025", 0x0417,
+    "afii10026", 0x0418,
+    "afii10027", 0x0419,
+    "afii10028", 0x041a,
+    "afii10029", 0x041b,
+    "afii10030", 0x041c,
+    "afii10031", 0x041d,
+    "afii10032", 0x041e,
+    "afii10033", 0x041f,
+    "afii10034", 0x0420,
+    "afii10035", 0x0421,
+    "afii10036", 0x0422,
+    "afii10037", 0x0423,
+    "afii10038", 0x0424,
+    "afii10039", 0x0425,
+    "afii10040", 0x0426,
+    "afii10041", 0x0427,
+    "afii10042", 0x0428,
+    "afii10043", 0x0429,
+    "afii10044", 0x042a,
+    "afii10045", 0x042b,
+    "afii10046", 0x042c,
+    "afii10047", 0x042d,
+    "afii10048", 0x042e,
+    "afii10049", 0x042f,
+    "afii10050", 0x0490,
+    "afii10051", 0x0402,
+    "afii10052", 0x0403,
+    "afii10053", 0x0404,
+    "afii10054", 0x0405,
+    "afii10055", 0x0406,
+    "afii10056", 0x0407,
+    "afii10057", 0x0408,
+    "afii10058", 0x0409,
+    "afii10059", 0x040a,
+    "afii10060", 0x040b,
+    "afii10061", 0x040c,
+    "afii10062", 0x040e,
+    "afii10063", 0xf6c4,
+    "afii10064", 0xf6c5,
+    "afii10065", 0x0430,
+    "afii10066", 0x0431,
+    "afii10067", 0x0432,
+    "afii10068", 0x0433,
+    "afii10069", 0x0434,
+    "afii10070", 0x0435,
+    "afii10071", 0x0451,
+    "afii10072", 0x0436,
+    "afii10073", 0x0437,
+    "afii10074", 0x0438,
+    "afii10075", 0x0439,
+    "afii10076", 0x043a,
+    "afii10077", 0x043b,
+    "afii10078", 0x043c,
+    "afii10079", 0x043d,
+    "afii10080", 0x043e,
+    "afii10081", 0x043f,
+    "afii10082", 0x0440,
+    "afii10083", 0x0441,
+    "afii10084", 0x0442,
+    "afii10085", 0x0443,
+    "afii10086", 0x0444,
+    "afii10087", 0x0445,
+    "afii10088", 0x0446,
+    "afii10089", 0x0447,
+    "afii10090", 0x0448,
+    "afii10091", 0x0449,
+    "afii10092", 0x044a,
+    "afii10093", 0x044b,
+    "afii10094", 0x044c,
+    "afii10095", 0x044d,
+    "afii10096", 0x044e,
+    "afii10097", 0x044f,
+    "afii10098", 0x0491,
+    "afii10099", 0x0452,
+    "afii10100", 0x0453,
+    "afii10101", 0x0454,
+    "afii10102", 0x0455,
+    "afii10103", 0x0456,
+    "afii10104", 0x0457,
+    "afii10105", 0x0458,
+    "afii10106", 0x0459,
+    "afii10107", 0x045a,
+    "afii10108", 0x045b,
+    "afii10109", 0x045c,
+    "afii10110", 0x045e,
+    "afii10145", 0x040f,
+    "afii10146", 0x0462,
+    "afii10147", 0x0472,
+    "afii10148", 0x0474,
+    "afii10192", 0xf6c6,
+    "afii10193", 0x045f,
+    "afii10194", 0x0463,
+    "afii10195", 0x0473,
+    "afii10196", 0x0475,
+    "afii10831", 0xf6c7,
+    "afii10832", 0xf6c8,
+    "afii10846", 0x04d9,
+    "afii299", 0x200e,
+    "afii300", 0x200f,
+    "afii301", 0x200d,
+    "afii57381", 0x066a,
+    "afii57388", 0x060c,
+    "afii57392", 0x0660,
+    "afii57393", 0x0661,
+    "afii57394", 0x0662,
+    "afii57395", 0x0663,
+    "afii57396", 0x0664,
+    "afii57397", 0x0665,
+    "afii57398", 0x0666,
+    "afii57399", 0x0667,
+    "afii57400", 0x0668,
+    "afii57401", 0x0669,
+    "afii57403", 0x061b,
+    "afii57407", 0x061f,
+    "afii57409", 0x0621,
+    "afii57410", 0x0622,
+    "afii57411", 0x0623,
+    "afii57412", 0x0624,
+    "afii57413", 0x0625,
+    "afii57414", 0x0626,
+    "afii57415", 0x0627,
+    "afii57416", 0x0628,
+    "afii57417", 0x0629,
+    "afii57418", 0x062a,
+    "afii57419", 0x062b,
+    "afii57420", 0x062c,
+    "afii57421", 0x062d,
+    "afii57422", 0x062e,
+    "afii57423", 0x062f,
+    "afii57424", 0x0630,
+    "afii57425", 0x0631,
+    "afii57426", 0x0632,
+    "afii57427", 0x0633,
+    "afii57428", 0x0634,
+    "afii57429", 0x0635,
+    "afii57430", 0x0636,
+    "afii57431", 0x0637,
+    "afii57432", 0x0638,
+    "afii57433", 0x0639,
+    "afii57434", 0x063a,
+    "afii57440", 0x0640,
+    "afii57441", 0x0641,
+    "afii57442", 0x0642,
+    "afii57443", 0x0643,
+    "afii57444", 0x0644,
+    "afii57445", 0x0645,
+    "afii57446", 0x0646,
+    "afii57448", 0x0648,
+    "afii57449", 0x0649,
+    "afii57450", 0x064a,
+    "afii57451", 0x064b,
+    "afii57452", 0x064c,
+    "afii57453", 0x064d,
+    "afii57454", 0x064e,
+    "afii57455", 0x064f,
+    "afii57456", 0x0650,
+    "afii57457", 0x0651,
+    "afii57458", 0x0652,
+    "afii57470", 0x0647,
+    "afii57505", 0x06a4,
+    "afii57506", 0x067e,
+    "afii57507", 0x0686,
+    "afii57508", 0x0698,
+    "afii57509", 0x06af,
+    "afii57511", 0x0679,
+    "afii57512", 0x0688,
+    "afii57513", 0x0691,
+    "afii57514", 0x06ba,
+    "afii57519", 0x06d2,
+    "afii57534", 0x06d5,
+    "afii57636", 0x20aa,
+    "afii57645", 0x05be,
+    "afii57658", 0x05c3,
+    "afii57664", 0x05d0,
+    "afii57665", 0x05d1,
+    "afii57666", 0x05d2,
+    "afii57667", 0x05d3,
+    "afii57668", 0x05d4,
+    "afii57669", 0x05d5,
+    "afii57670", 0x05d6,
+    "afii57671", 0x05d7,
+    "afii57672", 0x05d8,
+    "afii57673", 0x05d9,
+    "afii57674", 0x05da,
+    "afii57675", 0x05db,
+    "afii57676", 0x05dc,
+    "afii57677", 0x05dd,
+    "afii57678", 0x05de,
+    "afii57679", 0x05df,
+    "afii57680", 0x05e0,
+    "afii57681", 0x05e1,
+    "afii57682", 0x05e2,
+    "afii57683", 0x05e3,
+    "afii57684", 0x05e4,
+    "afii57685", 0x05e5,
+    "afii57686", 0x05e6,
+    "afii57687", 0x05e7,
+    "afii57688", 0x05e8,
+    "afii57689", 0x05e9,
+    "afii57690", 0x05ea,
+    "afii57694", 0xfb2a,
+    "afii57695", 0xfb2b,
+    "afii57700", 0xfb4b,
+    "afii57705", 0xfb1f,
+    "afii57716", 0x05f0,
+    "afii57717", 0x05f1,
+    "afii57718", 0x05f2,
+    "afii57723", 0xfb35,
+    "afii57793", 0x05b4,
+    "afii57794", 0x05b5,
+    "afii57795", 0x05b6,
+    "afii57796", 0x05bb,
+    "afii57797", 0x05b8,
+    "afii57798", 0x05b7,
+    "afii57799", 0x05b0,
+    "afii57800", 0x05b2,
+    "afii57801", 0x05b1,
+    "afii57802", 0x05b3,
+    "afii57803", 0x05c2,
+    "afii57804", 0x05c1,
+    "afii57806", 0x05b9,
+    "afii57807", 0x05bc,
+    "afii57839", 0x05bd,
+    "afii57841", 0x05bf,
+    "afii57842", 0x05c0,
+    "afii57929", 0x02bc,
+    "afii61248", 0x2105,
+    "afii61289", 0x2113,
+    "afii61352", 0x2116,
+    "afii61573", 0x202c,
+    "afii61574", 0x202d,
+    "afii61575", 0x202e,
+    "afii61664", 0x200c,
+    "afii63167", 0x066d,
+    "afii64937", 0x02bd,
+    "agrave", 0x00e0,
+    "agujarati", 0x0a85,
+    "agurmukhi", 0x0a05,
+    "ahiragana", 0x3042,
+    "ahookabove", 0x1ea3,
+    "aibengali", 0x0990,
+    "aibopomofo", 0x311e,
+    "aideva", 0x0910,
+    "aiecyrillic", 0x04d5,
+    "aigujarati", 0x0a90,
+    "aigurmukhi", 0x0a10,
+    "aimatragurmukhi", 0x0a48,
+    "ainarabic", 0x0639,
+    "ainfinalarabic", 0xfeca,
+    "aininitialarabic", 0xfecb,
+    "ainmedialarabic", 0xfecc,
+    "ainvertedbreve", 0x0203,
+    "aivowelsignbengali", 0x09c8,
+    "aivowelsigndeva", 0x0948,
+    "aivowelsigngujarati", 0x0ac8,
+    "akatakana", 0x30a2,
+    "akatakanahalfwidth", 0xff71,
+    "akorean", 0x314f,
+    "alef", 0x05d0,
+    "alefarabic", 0x0627,
+    "alefdageshhebrew", 0xfb30,
+    "aleffinalarabic", 0xfe8e,
+    "alefhamzaabovearabic", 0x0623,
+    "alefhamzaabovefinalarabic", 0xfe84,
+    "alefhamzabelowarabic", 0x0625,
+    "alefhamzabelowfinalarabic", 0xfe88,
+    "alefhebrew", 0x05d0,
+    "aleflamedhebrew", 0xfb4f,
+    "alefmaddaabovearabic", 0x0622,
+    "alefmaddaabovefinalarabic", 0xfe82,
+    "alefmaksuraarabic", 0x0649,
+    "alefmaksurafinalarabic", 0xfef0,
+    "alefmaksurainitialarabic", 0xfef3,
+    "alefmaksuramedialarabic", 0xfef4,
+    "alefpatahhebrew", 0xfb2e,
+    "alefqamatshebrew", 0xfb2f,
+    "aleph", 0x2135,
+    "allequal", 0x224c,
+    "alpha", 0x03b1,
+    "alphatonos", 0x03ac,
+    "amacron", 0x0101,
+    "amonospace", 0xff41,
+    "ampersand", 0x0026,
+    "ampersandmonospace", 0xff06,
+    "ampersandsmall", 0xf726,
+    "amsquare", 0x33c2,
+    "anbopomofo", 0x3122,
+    "angbopomofo", 0x3124,
+    "angbracketleft", 0x3008, // Glyph is missing from Adobe's original list.
+    "angbracketright", 0x3009, // Glyph is missing from Adobe's original list.
+    "angkhankhuthai", 0x0e5a,
+    "angle", 0x2220,
+    "anglebracketleft", 0x3008,
+    "anglebracketleftvertical", 0xfe3f,
+    "anglebracketright", 0x3009,
+    "anglebracketrightvertical", 0xfe40,
+    "angleleft", 0x2329,
+    "angleright", 0x232a,
+    "angstrom", 0x212b,
+    "anoteleia", 0x0387,
+    "anudattadeva", 0x0952,
+    "anusvarabengali", 0x0982,
+    "anusvaradeva", 0x0902,
+    "anusvaragujarati", 0x0a82,
+    "aogonek", 0x0105,
+    "apaatosquare", 0x3300,
+    "aparen", 0x249c,
+    "apostrophearmenian", 0x055a,
+    "apostrophemod", 0x02bc,
+    "apple", 0xf8ff,
+    "approaches", 0x2250,
+    "approxequal", 0x2248,
+    "approxequalorimage", 0x2252,
+    "approximatelyequal", 0x2245,
+    "araeaekorean", 0x318e,
+    "araeakorean", 0x318d,
+    "arc", 0x2312,
+    "arighthalfring", 0x1e9a,
+    "aring", 0x00e5,
+    "aringacute", 0x01fb,
+    "aringbelow", 0x1e01,
+    "arrowboth", 0x2194,
+    "arrowdashdown", 0x21e3,
+    "arrowdashleft", 0x21e0,
+    "arrowdashright", 0x21e2,
+    "arrowdashup", 0x21e1,
+    "arrowdblboth", 0x21d4,
+    "arrowdbldown", 0x21d3,
+    "arrowdblleft", 0x21d0,
+    "arrowdblright", 0x21d2,
+    "arrowdblup", 0x21d1,
+    "arrowdown", 0x2193,
+    "arrowdownleft", 0x2199,
+    "arrowdownright", 0x2198,
+    "arrowdownwhite", 0x21e9,
+    "arrowheaddownmod", 0x02c5,
+    "arrowheadleftmod", 0x02c2,
+    "arrowheadrightmod", 0x02c3,
+    "arrowheadupmod", 0x02c4,
+    "arrowhorizex", 0xf8e7,
+    "arrowleft", 0x2190,
+    "arrowleftdbl", 0x21d0,
+    "arrowleftdblstroke", 0x21cd,
+    "arrowleftoverright", 0x21c6,
+    "arrowleftwhite", 0x21e6,
+    "arrowright", 0x2192,
+    "arrowrightdblstroke", 0x21cf,
+    "arrowrightheavy", 0x279e,
+    "arrowrightoverleft", 0x21c4,
+    "arrowrightwhite", 0x21e8,
+    "arrowtableft", 0x21e4,
+    "arrowtabright", 0x21e5,
+    "arrowup", 0x2191,
+    "arrowupdn", 0x2195,
+    "arrowupdnbse", 0x21a8,
+    "arrowupdownbase", 0x21a8,
+    "arrowupleft", 0x2196,
+    "arrowupleftofdown", 0x21c5,
+    "arrowupright", 0x2197,
+    "arrowupwhite", 0x21e7,
+    "arrowvertex", 0xf8e6,
+    "asciicircum", 0x005e,
+    "asciicircummonospace", 0xff3e,
+    "asciitilde", 0x007e,
+    "asciitildemonospace", 0xff5e,
+    "ascript", 0x0251,
+    "ascriptturned", 0x0252,
+    "asmallhiragana", 0x3041,
+    "asmallkatakana", 0x30a1,
+    "asmallkatakanahalfwidth", 0xff67,
+    "asterisk", 0x002a,
+    "asteriskaltonearabic", 0x066d,
+    "asteriskarabic", 0x066d,
+    "asteriskmath", 0x2217,
+    "asteriskmonospace", 0xff0a,
+    "asterisksmall", 0xfe61,
+    "asterism", 0x2042,
+    "asuperior", 0xf6e9,
+    "asymptoticallyequal", 0x2243,
+    "at", 0x0040,
+    "atilde", 0x00e3,
+    "atmonospace", 0xff20,
+    "atsmall", 0xfe6b,
+    "aturned", 0x0250,
+    "aubengali", 0x0994,
+    "aubopomofo", 0x3120,
+    "audeva", 0x0914,
+    "augujarati", 0x0a94,
+    "augurmukhi", 0x0a14,
+    "aulengthmarkbengali", 0x09d7,
+    "aumatragurmukhi", 0x0a4c,
+    "auvowelsignbengali", 0x09cc,
+    "auvowelsigndeva", 0x094c,
+    "auvowelsigngujarati", 0x0acc,
+    "avagrahadeva", 0x093d,
+    "aybarmenian", 0x0561,
+    "ayin", 0x05e2,
+    "ayinaltonehebrew", 0xfb20,
+    "ayinhebrew", 0x05e2,
+    "b", 0x0062,
+    "babengali", 0x09ac,
+    "backslash", 0x005c,
+    "backslashmonospace", 0xff3c,
+    "badeva", 0x092c,
+    "bagujarati", 0x0aac,
+    "bagurmukhi", 0x0a2c,
+    "bahiragana", 0x3070,
+    "bahtthai", 0x0e3f,
+    "bakatakana", 0x30d0,
+    "bar", 0x007c,
+    "barmonospace", 0xff5c,
+    "bbopomofo", 0x3105,
+    "bcircle", 0x24d1,
+    "bdotaccent", 0x1e03,
+    "bdotbelow", 0x1e05,
+    "beamedsixteenthnotes", 0x266c,
+    "because", 0x2235,
+    "becyrillic", 0x0431,
+    "beharabic", 0x0628,
+    "behfinalarabic", 0xfe90,
+    "behinitialarabic", 0xfe91,
+    "behiragana", 0x3079,
+    "behmedialarabic", 0xfe92,
+    "behmeeminitialarabic", 0xfc9f,
+    "behmeemisolatedarabic", 0xfc08,
+    "behnoonfinalarabic", 0xfc6d,
+    "bekatakana", 0x30d9,
+    "benarmenian", 0x0562,
+    "bet", 0x05d1,
+    "beta", 0x03b2,
+    "betasymbolgreek", 0x03d0,
+    "betdagesh", 0xfb31,
+    "betdageshhebrew", 0xfb31,
+    "bethebrew", 0x05d1,
+    "betrafehebrew", 0xfb4c,
+    "bhabengali", 0x09ad,
+    "bhadeva", 0x092d,
+    "bhagujarati", 0x0aad,
+    "bhagurmukhi", 0x0a2d,
+    "bhook", 0x0253,
+    "bihiragana", 0x3073,
+    "bikatakana", 0x30d3,
+    "bilabialclick", 0x0298,
+    "bindigurmukhi", 0x0a02,
+    "birusquare", 0x3331,
+    "blackcircle", 0x25cf,
+    "blackdiamond", 0x25c6,
+    "blackdownpointingtriangle", 0x25bc,
+    "blackleftpointingpointer", 0x25c4,
+    "blackleftpointingtriangle", 0x25c0,
+    "blacklenticularbracketleft", 0x3010,
+    "blacklenticularbracketleftvertical", 0xfe3b,
+    "blacklenticularbracketright", 0x3011,
+    "blacklenticularbracketrightvertical", 0xfe3c,
+    "blacklowerlefttriangle", 0x25e3,
+    "blacklowerrighttriangle", 0x25e2,
+    "blackrectangle", 0x25ac,
+    "blackrightpointingpointer", 0x25ba,
+    "blackrightpointingtriangle", 0x25b6,
+    "blacksmallsquare", 0x25aa,
+    "blacksmilingface", 0x263b,
+    "blacksquare", 0x25a0,
+    "blackstar", 0x2605,
+    "blackupperlefttriangle", 0x25e4,
+    "blackupperrighttriangle", 0x25e5,
+    "blackuppointingsmalltriangle", 0x25b4,
+    "blackuppointingtriangle", 0x25b2,
+    "blank", 0x2423,
+    "blinebelow", 0x1e07,
+    "block", 0x2588,
+    "bmonospace", 0xff42,
+    "bobaimaithai", 0x0e1a,
+    "bohiragana", 0x307c,
+    "bokatakana", 0x30dc,
+    "bparen", 0x249d,
+    "bqsquare", 0x33c3,
+    "braceex", 0xf8f4,
+    "braceleft", 0x007b,
+    "braceleftbt", 0xf8f3,
+    "braceleftmid", 0xf8f2,
+    "braceleftmonospace", 0xff5b,
+    "braceleftsmall", 0xfe5b,
+    "bracelefttp", 0xf8f1,
+    "braceleftvertical", 0xfe37,
+    "braceright", 0x007d,
+    "bracerightbt", 0xf8fe,
+    "bracerightmid", 0xf8fd,
+    "bracerightmonospace", 0xff5d,
+    "bracerightsmall", 0xfe5c,
+    "bracerighttp", 0xf8fc,
+    "bracerightvertical", 0xfe38,
+    "bracketleft", 0x005b,
+    "bracketleftbt", 0xf8f0,
+    "bracketleftex", 0xf8ef,
+    "bracketleftmonospace", 0xff3b,
+    "bracketlefttp", 0xf8ee,
+    "bracketright", 0x005d,
+    "bracketrightbt", 0xf8fb,
+    "bracketrightex", 0xf8fa,
+    "bracketrightmonospace", 0xff3d,
+    "bracketrighttp", 0xf8f9,
+    "breve", 0x02d8,
+    "brevebelowcmb", 0x032e,
+    "brevecmb", 0x0306,
+    "breveinvertedbelowcmb", 0x032f,
+    "breveinvertedcmb", 0x0311,
+    "breveinverteddoublecmb", 0x0361,
+    "bridgebelowcmb", 0x032a,
+    "bridgeinvertedbelowcmb", 0x033a,
+    "brokenbar", 0x00a6,
+    "bstroke", 0x0180,
+    "bsuperior", 0xf6ea,
+    "btopbar", 0x0183,
+    "buhiragana", 0x3076,
+    "bukatakana", 0x30d6,
+    "bullet", 0x2022,
+    "bulletinverse", 0x25d8,
+    "bulletoperator", 0x2219,
+    "bullseye", 0x25ce,
+    "c", 0x0063,
+    "caarmenian", 0x056e,
+    "cabengali", 0x099a,
+    "cacute", 0x0107,
+    "cadeva", 0x091a,
+    "cagujarati", 0x0a9a,
+    "cagurmukhi", 0x0a1a,
+    "calsquare", 0x3388,
+    "candrabindubengali", 0x0981,
+    "candrabinducmb", 0x0310,
+    "candrabindudeva", 0x0901,
+    "candrabindugujarati", 0x0a81,
+    "capslock", 0x21ea,
+    "careof", 0x2105,
+    "caron", 0x02c7,
+    "caronbelowcmb", 0x032c,
+    "caroncmb", 0x030c,
+    "carriagereturn", 0x21b5,
+    "cbopomofo", 0x3118,
+    "ccaron", 0x010d,
+    "ccedilla", 0x00e7,
+    "ccedillaacute", 0x1e09,
+    "ccircle", 0x24d2,
+    "ccircumflex", 0x0109,
+    "ccurl", 0x0255,
+    "cdot", 0x010b,
+    "cdotaccent", 0x010b,
+    "cdsquare", 0x33c5,
+    "cedilla", 0x00b8,
+    "cedillacmb", 0x0327,
+    "cent", 0x00a2,
+    "centigrade", 0x2103,
+    "centinferior", 0xf6df,
+    "centmonospace", 0xffe0,
+    "centoldstyle", 0xf7a2,
+    "centsuperior", 0xf6e0,
+    "chaarmenian", 0x0579,
+    "chabengali", 0x099b,
+    "chadeva", 0x091b,
+    "chagujarati", 0x0a9b,
+    "chagurmukhi", 0x0a1b,
+    "chbopomofo", 0x3114,
+    "cheabkhasiancyrillic", 0x04bd,
+    "checkmark", 0x2713,
+    "checyrillic", 0x0447,
+    "chedescenderabkhasiancyrillic", 0x04bf,
+    "chedescendercyrillic", 0x04b7,
+    "chedieresiscyrillic", 0x04f5,
+    "cheharmenian", 0x0573,
+    "chekhakassiancyrillic", 0x04cc,
+    "cheverticalstrokecyrillic", 0x04b9,
+    "chi", 0x03c7,
+    "chieuchacirclekorean", 0x3277,
+    "chieuchaparenkorean", 0x3217,
+    "chieuchcirclekorean", 0x3269,
+    "chieuchkorean", 0x314a,
+    "chieuchparenkorean", 0x3209,
+    "chochangthai", 0x0e0a,
+    "chochanthai", 0x0e08,
+    "chochingthai", 0x0e09,
+    "chochoethai", 0x0e0c,
+    "chook", 0x0188,
+    "cieucacirclekorean", 0x3276,
+    "cieucaparenkorean", 0x3216,
+    "cieuccirclekorean", 0x3268,
+    "cieuckorean", 0x3148,
+    "cieucparenkorean", 0x3208,
+    "cieucuparenkorean", 0x321c,
+    "circle", 0x25cb,
+    "circlecopyrt", 0x00a9, // Glyph is missing from Adobe's original list.
+    "circlemultiply", 0x2297,
+    "circleot", 0x2299,
+    "circleplus", 0x2295,
+    "circlepostalmark", 0x3036,
+    "circlewithlefthalfblack", 0x25d0,
+    "circlewithrighthalfblack", 0x25d1,
+    "circumflex", 0x02c6,
+    "circumflexbelowcmb", 0x032d,
+    "circumflexcmb", 0x0302,
+    "clear", 0x2327,
+    "clickalveolar", 0x01c2,
+    "clickdental", 0x01c0,
+    "clicklateral", 0x01c1,
+    "clickretroflex", 0x01c3,
+    "club", 0x2663,
+    "clubsuitblack", 0x2663,
+    "clubsuitwhite", 0x2667,
+    "cmcubedsquare", 0x33a4,
+    "cmonospace", 0xff43,
+    "cmsquaredsquare", 0x33a0,
+    "coarmenian", 0x0581,
+    "colon", 0x003a,
+    "colonmonetary", 0x20a1,
+    "colonmonospace", 0xff1a,
+    "colonsign", 0x20a1,
+    "colonsmall", 0xfe55,
+    "colontriangularhalfmod", 0x02d1,
+    "colontriangularmod", 0x02d0,
+    "comma", 0x002c,
+    "commaabovecmb", 0x0313,
+    "commaaboverightcmb", 0x0315,
+    "commaaccent", 0xf6c3,
+    "commaarabic", 0x060c,
+    "commaarmenian", 0x055d,
+    "commainferior", 0xf6e1,
+    "commamonospace", 0xff0c,
+    "commareversedabovecmb", 0x0314,
+    "commareversedmod", 0x02bd,
+    "commasmall", 0xfe50,
+    "commasuperior", 0xf6e2,
+    "commaturnedabovecmb", 0x0312,
+    "commaturnedmod", 0x02bb,
+    "compass", 0x263c,
+    "congruent", 0x2245,
+    "contourintegral", 0x222e,
+    "control", 0x2303,
+    "controlACK", 0x0006,
+    "controlBEL", 0x0007,
+    "controlBS", 0x0008,
+    "controlCAN", 0x0018,
+    "controlCR", 0x000d,
+    "controlDC1", 0x0011,
+    "controlDC2", 0x0012,
+    "controlDC3", 0x0013,
+    "controlDC4", 0x0014,
+    "controlDEL", 0x007f,
+    "controlDLE", 0x0010,
+    "controlEM", 0x0019,
+    "controlENQ", 0x0005,
+    "controlEOT", 0x0004,
+    "controlESC", 0x001b,
+    "controlETB", 0x0017,
+    "controlETX", 0x0003,
+    "controlFF", 0x000c,
+    "controlFS", 0x001c,
+    "controlGS", 0x001d,
+    "controlHT", 0x0009,
+    "controlLF", 0x000a,
+    "controlNAK", 0x0015,
+    "controlNULL", 0x0000, // Glyph is missing from Adobe's original list.
+    "controlRS", 0x001e,
+    "controlSI", 0x000f,
+    "controlSO", 0x000e,
+    "controlSOT", 0x0002,
+    "controlSTX", 0x0001,
+    "controlSUB", 0x001a,
+    "controlSYN", 0x0016,
+    "controlUS", 0x001f,
+    "controlVT", 0x000b,
+    "copyright", 0x00a9,
+    "copyrightsans", 0xf8e9,
+    "copyrightserif", 0xf6d9,
+    "cornerbracketleft", 0x300c,
+    "cornerbracketlefthalfwidth", 0xff62,
+    "cornerbracketleftvertical", 0xfe41,
+    "cornerbracketright", 0x300d,
+    "cornerbracketrighthalfwidth", 0xff63,
+    "cornerbracketrightvertical", 0xfe42,
+    "corporationsquare", 0x337f,
+    "cosquare", 0x33c7,
+    "coverkgsquare", 0x33c6,
+    "cparen", 0x249e,
+    "cruzeiro", 0x20a2,
+    "cstretched", 0x0297,
+    "curlyand", 0x22cf,
+    "curlyor", 0x22ce,
+    "currency", 0x00a4,
+    "cyrBreve", 0xf6d1,
+    "cyrFlex", 0xf6d2,
+    "cyrbreve", 0xf6d4,
+    "cyrflex", 0xf6d5,
+    "d", 0x0064,
+    "daarmenian", 0x0564,
+    "dabengali", 0x09a6,
+    "dadarabic", 0x0636,
+    "dadeva", 0x0926,
+    "dadfinalarabic", 0xfebe,
+    "dadinitialarabic", 0xfebf,
+    "dadmedialarabic", 0xfec0,
+    "dagesh", 0x05bc,
+    "dageshhebrew", 0x05bc,
+    "dagger", 0x2020,
+    "daggerdbl", 0x2021,
+    "dagujarati", 0x0aa6,
+    "dagurmukhi", 0x0a26,
+    "dahiragana", 0x3060,
+    "dakatakana", 0x30c0,
+    "dalarabic", 0x062f,
+    "dalet", 0x05d3,
+    "daletdagesh", 0xfb33,
+    "daletdageshhebrew", 0xfb33,
+    "dalethebrew", 0x05d3,
+    "dalfinalarabic", 0xfeaa,
+    "dammaarabic", 0x064f,
+    "dammalowarabic", 0x064f,
+    "dammatanaltonearabic", 0x064c,
+    "dammatanarabic", 0x064c,
+    "danda", 0x0964,
+    "dargahebrew", 0x05a7,
+    "dargalefthebrew", 0x05a7,
+    "dasiapneumatacyrilliccmb", 0x0485,
+    "dblGrave", 0xf6d3,
+    "dblanglebracketleft", 0x300a,
+    "dblanglebracketleftvertical", 0xfe3d,
+    "dblanglebracketright", 0x300b,
+    "dblanglebracketrightvertical", 0xfe3e,
+    "dblarchinvertedbelowcmb", 0x032b,
+    "dblarrowleft", 0x21d4,
+    "dblarrowright", 0x21d2,
+    "dbldanda", 0x0965,
+    "dblgrave", 0xf6d6,
+    "dblgravecmb", 0x030f,
+    "dblintegral", 0x222c,
+    "dbllowline", 0x2017,
+    "dbllowlinecmb", 0x0333,
+    "dbloverlinecmb", 0x033f,
+    "dblprimemod", 0x02ba,
+    "dblverticalbar", 0x2016,
+    "dblverticallineabovecmb", 0x030e,
+    "dbopomofo", 0x3109,
+    "dbsquare", 0x33c8,
+    "dcaron", 0x010f,
+    "dcedilla", 0x1e11,
+    "dcircle", 0x24d3,
+    "dcircumflexbelow", 0x1e13,
+    "dcroat", 0x0111,
+    "ddabengali", 0x09a1,
+    "ddadeva", 0x0921,
+    "ddagujarati", 0x0aa1,
+    "ddagurmukhi", 0x0a21,
+    "ddalarabic", 0x0688,
+    "ddalfinalarabic", 0xfb89,
+    "dddhadeva", 0x095c,
+    "ddhabengali", 0x09a2,
+    "ddhadeva", 0x0922,
+    "ddhagujarati", 0x0aa2,
+    "ddhagurmukhi", 0x0a22,
+    "ddotaccent", 0x1e0b,
+    "ddotbelow", 0x1e0d,
+    "decimalseparatorarabic", 0x066b,
+    "decimalseparatorpersian", 0x066b,
+    "decyrillic", 0x0434,
+    "degree", 0x00b0,
+    "dehihebrew", 0x05ad,
+    "dehiragana", 0x3067,
+    "deicoptic", 0x03ef,
+    "dekatakana", 0x30c7,
+    "deleteleft", 0x232b,
+    "deleteright", 0x2326,
+    "delta", 0x03b4,
+    "deltaturned", 0x018d,
+    "denominatorminusonenumeratorbengali", 0x09f8,
+    "dezh", 0x02a4,
+    "dhabengali", 0x09a7,
+    "dhadeva", 0x0927,
+    "dhagujarati", 0x0aa7,
+    "dhagurmukhi", 0x0a27,
+    "dhook", 0x0257,
+    "dialytikatonos", 0x0385,
+    "dialytikatonoscmb", 0x0344,
+    "diamond", 0x2666,
+    "diamondsuitwhite", 0x2662,
+    "dieresis", 0x00a8,
+    "dieresisacute", 0xf6d7,
+    "dieresisbelowcmb", 0x0324,
+    "dieresiscmb", 0x0308,
+    "dieresisgrave", 0xf6d8,
+    "dieresistonos", 0x0385,
+    "dihiragana", 0x3062,
+    "dikatakana", 0x30c2,
+    "dittomark", 0x3003,
+    "divide", 0x00f7,
+    "divides", 0x2223,
+    "divisionslash", 0x2215,
+    "djecyrillic", 0x0452,
+    "dkshade", 0x2593,
+    "dlinebelow", 0x1e0f,
+    "dlsquare", 0x3397,
+    "dmacron", 0x0111,
+    "dmonospace", 0xff44,
+    "dnblock", 0x2584,
+    "dochadathai", 0x0e0e,
+    "dodekthai", 0x0e14,
+    "dohiragana", 0x3069,
+    "dokatakana", 0x30c9,
+    "dollar", 0x0024,
+    "dollarinferior", 0xf6e3,
+    "dollarmonospace", 0xff04,
+    "dollaroldstyle", 0xf724,
+    "dollarsmall", 0xfe69,
+    "dollarsuperior", 0xf6e4,
+    "dong", 0x20ab,
+    "dorusquare", 0x3326,
+    "dotaccent", 0x02d9,
+    "dotaccentcmb", 0x0307,
+    "dotbelowcmb", 0x0323,
+    "dotbelowcomb", 0x0323,
+    "dotkatakana", 0x30fb,
+    "dotlessi", 0x0131,
+    "dotlessj", 0xf6be,
+    "dotlessjstrokehook", 0x0284,
+    "dotmath", 0x22c5,
+    "dottedcircle", 0x25cc,
+    "doubleyodpatah", 0xfb1f,
+    "doubleyodpatahhebrew", 0xfb1f,
+    "downtackbelowcmb", 0x031e,
+    "downtackmod", 0x02d5,
+    "dparen", 0x249f,
+    "dsuperior", 0xf6eb,
+    "dtail", 0x0256,
+    "dtopbar", 0x018c,
+    "duhiragana", 0x3065,
+    "dukatakana", 0x30c5,
+    "dz", 0x01f3,
+    "dzaltone", 0x02a3,
+    "dzcaron", 0x01c6,
+    "dzcurl", 0x02a5,
+    "dzeabkhasiancyrillic", 0x04e1,
+    "dzecyrillic", 0x0455,
+    "dzhecyrillic", 0x045f,
+    "e", 0x0065,
+    "eacute", 0x00e9,
+    "earth", 0x2641,
+    "ebengali", 0x098f,
+    "ebopomofo", 0x311c,
+    "ebreve", 0x0115,
+    "ecandradeva", 0x090d,
+    "ecandragujarati", 0x0a8d,
+    "ecandravowelsigndeva", 0x0945,
+    "ecandravowelsigngujarati", 0x0ac5,
+    "ecaron", 0x011b,
+    "ecedillabreve", 0x1e1d,
+    "echarmenian", 0x0565,
+    "echyiwnarmenian", 0x0587,
+    "ecircle", 0x24d4,
+    "ecircumflex", 0x00ea,
+    "ecircumflexacute", 0x1ebf,
+    "ecircumflexbelow", 0x1e19,
+    "ecircumflexdotbelow", 0x1ec7,
+    "ecircumflexgrave", 0x1ec1,
+    "ecircumflexhookabove", 0x1ec3,
+    "ecircumflextilde", 0x1ec5,
+    "ecyrillic", 0x0454,
+    "edblgrave", 0x0205,
+    "edeva", 0x090f,
+    "edieresis", 0x00eb,
+    "edot", 0x0117,
+    "edotaccent", 0x0117,
+    "edotbelow", 0x1eb9,
+    "eegurmukhi", 0x0a0f,
+    "eematragurmukhi", 0x0a47,
+    "efcyrillic", 0x0444,
+    "egrave", 0x00e8,
+    "egujarati", 0x0a8f,
+    "eharmenian", 0x0567,
+    "ehbopomofo", 0x311d,
+    "ehiragana", 0x3048,
+    "ehookabove", 0x1ebb,
+    "eibopomofo", 0x311f,
+    "eight", 0x0038,
+    "eightarabic", 0x0668,
+    "eightbengali", 0x09ee,
+    "eightcircle", 0x2467,
+    "eightcircleinversesansserif", 0x2791,
+    "eightdeva", 0x096e,
+    "eighteencircle", 0x2471,
+    "eighteenparen", 0x2485,
+    "eighteenperiod", 0x2499,
+    "eightgujarati", 0x0aee,
+    "eightgurmukhi", 0x0a6e,
+    "eighthackarabic", 0x0668,
+    "eighthangzhou", 0x3028,
+    "eighthnotebeamed", 0x266b,
+    "eightideographicparen", 0x3227,
+    "eightinferior", 0x2088,
+    "eightmonospace", 0xff18,
+    "eightoldstyle", 0xf738,
+    "eightparen", 0x247b,
+    "eightperiod", 0x248f,
+    "eightpersian", 0x06f8,
+    "eightroman", 0x2177,
+    "eightsuperior", 0x2078,
+    "eightthai", 0x0e58,
+    "einvertedbreve", 0x0207,
+    "eiotifiedcyrillic", 0x0465,
+    "ekatakana", 0x30a8,
+    "ekatakanahalfwidth", 0xff74,
+    "ekonkargurmukhi", 0x0a74,
+    "ekorean", 0x3154,
+    "elcyrillic", 0x043b,
+    "element", 0x2208,
+    "elevencircle", 0x246a,
+    "elevenparen", 0x247e,
+    "elevenperiod", 0x2492,
+    "elevenroman", 0x217a,
+    "ellipsis", 0x2026,
+    "ellipsisvertical", 0x22ee,
+    "emacron", 0x0113,
+    "emacronacute", 0x1e17,
+    "emacrongrave", 0x1e15,
+    "emcyrillic", 0x043c,
+    "emdash", 0x2014,
+    "emdashvertical", 0xfe31,
+    "emonospace", 0xff45,
+    "emphasismarkarmenian", 0x055b,
+    "emptyset", 0x2205,
+    "enbopomofo", 0x3123,
+    "encyrillic", 0x043d,
+    "endash", 0x2013,
+    "endashvertical", 0xfe32,
+    "endescendercyrillic", 0x04a3,
+    "eng", 0x014b,
+    "engbopomofo", 0x3125,
+    "enghecyrillic", 0x04a5,
+    "enhookcyrillic", 0x04c8,
+    "enspace", 0x2002,
+    "eogonek", 0x0119,
+    "eokorean", 0x3153,
+    "eopen", 0x025b,
+    "eopenclosed", 0x029a,
+    "eopenreversed", 0x025c,
+    "eopenreversedclosed", 0x025e,
+    "eopenreversedhook", 0x025d,
+    "eparen", 0x24a0,
+    "epsilon", 0x03b5,
+    "epsilontonos", 0x03ad,
+    "equal", 0x003d,
+    "equalmonospace", 0xff1d,
+    "equalsmall", 0xfe66,
+    "equalsuperior", 0x207c,
+    "equivalence", 0x2261,
+    "erbopomofo", 0x3126,
+    "ercyrillic", 0x0440,
+    "ereversed", 0x0258,
+    "ereversedcyrillic", 0x044d,
+    "escyrillic", 0x0441,
+    "esdescendercyrillic", 0x04ab,
+    "esh", 0x0283,
+    "eshcurl", 0x0286,
+    "eshortdeva", 0x090e,
+    "eshortvowelsigndeva", 0x0946,
+    "eshreversedloop", 0x01aa,
+    "eshsquatreversed", 0x0285,
+    "esmallhiragana", 0x3047,
+    "esmallkatakana", 0x30a7,
+    "esmallkatakanahalfwidth", 0xff6a,
+    "estimated", 0x212e,
+    "esuperior", 0xf6ec,
+    "eta", 0x03b7,
+    "etarmenian", 0x0568,
+    "etatonos", 0x03ae,
+    "eth", 0x00f0,
+    "etilde", 0x1ebd,
+    "etildebelow", 0x1e1b,
+    "etnahtafoukhhebrew", 0x0591,
+    "etnahtafoukhlefthebrew", 0x0591,
+    "etnahtahebrew", 0x0591,
+    "etnahtalefthebrew", 0x0591,
+    "eturned", 0x01dd,
+    "eukorean", 0x3161,
+    "euro", 0x20ac,
+    "evowelsignbengali", 0x09c7,
+    "evowelsigndeva", 0x0947,
+    "evowelsigngujarati", 0x0ac7,
+    "exclam", 0x0021,
+    "exclamarmenian", 0x055c,
+    "exclamdbl", 0x203c,
+    "exclamdown", 0x00a1,
+    "exclamdownsmall", 0xf7a1,
+    "exclammonospace", 0xff01,
+    "exclamsmall", 0xf721,
+    "existential", 0x2203,
+    "ezh", 0x0292,
+    "ezhcaron", 0x01ef,
+    "ezhcurl", 0x0293,
+    "ezhreversed", 0x01b9,
+    "ezhtail", 0x01ba,
+    "f", 0x0066,
+    "fadeva", 0x095e,
+    "fagurmukhi", 0x0a5e,
+    "fahrenheit", 0x2109,
+    "fathaarabic", 0x064e,
+    "fathalowarabic", 0x064e,
+    "fathatanarabic", 0x064b,
+    "fbopomofo", 0x3108,
+    "fcircle", 0x24d5,
+    "fdotaccent", 0x1e1f,
+    "feharabic", 0x0641,
+    "feharmenian", 0x0586,
+    "fehfinalarabic", 0xfed2,
+    "fehinitialarabic", 0xfed3,
+    "fehmedialarabic", 0xfed4,
+    "feicoptic", 0x03e5,
+    "female", 0x2640,
+    "ff", 0xfb00,
+    "f_f", 0xfb00, // Fixes issue 11016.
+    "ffi", 0xfb03,
+    "ffl", 0xfb04,
+    "fi", 0xfb01,
+    "fifteencircle", 0x246e,
+    "fifteenparen", 0x2482,
+    "fifteenperiod", 0x2496,
+    "figuredash", 0x2012,
+    "filledbox", 0x25a0,
+    "filledrect", 0x25ac,
+    "finalkaf", 0x05da,
+    "finalkafdagesh", 0xfb3a,
+    "finalkafdageshhebrew", 0xfb3a,
+    "finalkafhebrew", 0x05da,
+    "finalmem", 0x05dd,
+    "finalmemhebrew", 0x05dd,
+    "finalnun", 0x05df,
+    "finalnunhebrew", 0x05df,
+    "finalpe", 0x05e3,
+    "finalpehebrew", 0x05e3,
+    "finaltsadi", 0x05e5,
+    "finaltsadihebrew", 0x05e5,
+    "firsttonechinese", 0x02c9,
+    "fisheye", 0x25c9,
+    "fitacyrillic", 0x0473,
+    "five", 0x0035,
+    "fivearabic", 0x0665,
+    "fivebengali", 0x09eb,
+    "fivecircle", 0x2464,
+    "fivecircleinversesansserif", 0x278e,
+    "fivedeva", 0x096b,
+    "fiveeighths", 0x215d,
+    "fivegujarati", 0x0aeb,
+    "fivegurmukhi", 0x0a6b,
+    "fivehackarabic", 0x0665,
+    "fivehangzhou", 0x3025,
+    "fiveideographicparen", 0x3224,
+    "fiveinferior", 0x2085,
+    "fivemonospace", 0xff15,
+    "fiveoldstyle", 0xf735,
+    "fiveparen", 0x2478,
+    "fiveperiod", 0x248c,
+    "fivepersian", 0x06f5,
+    "fiveroman", 0x2174,
+    "fivesuperior", 0x2075,
+    "fivethai", 0x0e55,
+    "fl", 0xfb02,
+    "florin", 0x0192,
+    "fmonospace", 0xff46,
+    "fmsquare", 0x3399,
+    "fofanthai", 0x0e1f,
+    "fofathai", 0x0e1d,
+    "fongmanthai", 0x0e4f,
+    "forall", 0x2200,
+    "four", 0x0034,
+    "fourarabic", 0x0664,
+    "fourbengali", 0x09ea,
+    "fourcircle", 0x2463,
+    "fourcircleinversesansserif", 0x278d,
+    "fourdeva", 0x096a,
+    "fourgujarati", 0x0aea,
+    "fourgurmukhi", 0x0a6a,
+    "fourhackarabic", 0x0664,
+    "fourhangzhou", 0x3024,
+    "fourideographicparen", 0x3223,
+    "fourinferior", 0x2084,
+    "fourmonospace", 0xff14,
+    "fournumeratorbengali", 0x09f7,
+    "fouroldstyle", 0xf734,
+    "fourparen", 0x2477,
+    "fourperiod", 0x248b,
+    "fourpersian", 0x06f4,
+    "fourroman", 0x2173,
+    "foursuperior", 0x2074,
+    "fourteencircle", 0x246d,
+    "fourteenparen", 0x2481,
+    "fourteenperiod", 0x2495,
+    "fourthai", 0x0e54,
+    "fourthtonechinese", 0x02cb,
+    "fparen", 0x24a1,
+    "fraction", 0x2044,
+    "franc", 0x20a3,
+    "g", 0x0067,
+    "gabengali", 0x0997,
+    "gacute", 0x01f5,
+    "gadeva", 0x0917,
+    "gafarabic", 0x06af,
+    "gaffinalarabic", 0xfb93,
+    "gafinitialarabic", 0xfb94,
+    "gafmedialarabic", 0xfb95,
+    "gagujarati", 0x0a97,
+    "gagurmukhi", 0x0a17,
+    "gahiragana", 0x304c,
+    "gakatakana", 0x30ac,
+    "gamma", 0x03b3,
+    "gammalatinsmall", 0x0263,
+    "gammasuperior", 0x02e0,
+    "gangiacoptic", 0x03eb,
+    "gbopomofo", 0x310d,
+    "gbreve", 0x011f,
+    "gcaron", 0x01e7,
+    "gcedilla", 0x0123,
+    "gcircle", 0x24d6,
+    "gcircumflex", 0x011d,
+    "gcommaaccent", 0x0123,
+    "gdot", 0x0121,
+    "gdotaccent", 0x0121,
+    "gecyrillic", 0x0433,
+    "gehiragana", 0x3052,
+    "gekatakana", 0x30b2,
+    "geometricallyequal", 0x2251,
+    "gereshaccenthebrew", 0x059c,
+    "gereshhebrew", 0x05f3,
+    "gereshmuqdamhebrew", 0x059d,
+    "germandbls", 0x00df,
+    "gershayimaccenthebrew", 0x059e,
+    "gershayimhebrew", 0x05f4,
+    "getamark", 0x3013,
+    "ghabengali", 0x0998,
+    "ghadarmenian", 0x0572,
+    "ghadeva", 0x0918,
+    "ghagujarati", 0x0a98,
+    "ghagurmukhi", 0x0a18,
+    "ghainarabic", 0x063a,
+    "ghainfinalarabic", 0xfece,
+    "ghaininitialarabic", 0xfecf,
+    "ghainmedialarabic", 0xfed0,
+    "ghemiddlehookcyrillic", 0x0495,
+    "ghestrokecyrillic", 0x0493,
+    "gheupturncyrillic", 0x0491,
+    "ghhadeva", 0x095a,
+    "ghhagurmukhi", 0x0a5a,
+    "ghook", 0x0260,
+    "ghzsquare", 0x3393,
+    "gihiragana", 0x304e,
+    "gikatakana", 0x30ae,
+    "gimarmenian", 0x0563,
+    "gimel", 0x05d2,
+    "gimeldagesh", 0xfb32,
+    "gimeldageshhebrew", 0xfb32,
+    "gimelhebrew", 0x05d2,
+    "gjecyrillic", 0x0453,
+    "glottalinvertedstroke", 0x01be,
+    "glottalstop", 0x0294,
+    "glottalstopinverted", 0x0296,
+    "glottalstopmod", 0x02c0,
+    "glottalstopreversed", 0x0295,
+    "glottalstopreversedmod", 0x02c1,
+    "glottalstopreversedsuperior", 0x02e4,
+    "glottalstopstroke", 0x02a1,
+    "glottalstopstrokereversed", 0x02a2,
+    "gmacron", 0x1e21,
+    "gmonospace", 0xff47,
+    "gohiragana", 0x3054,
+    "gokatakana", 0x30b4,
+    "gparen", 0x24a2,
+    "gpasquare", 0x33ac,
+    "gradient", 0x2207,
+    "grave", 0x0060,
+    "gravebelowcmb", 0x0316,
+    "gravecmb", 0x0300,
+    "gravecomb", 0x0300,
+    "gravedeva", 0x0953,
+    "gravelowmod", 0x02ce,
+    "gravemonospace", 0xff40,
+    "gravetonecmb", 0x0340,
+    "greater", 0x003e,
+    "greaterequal", 0x2265,
+    "greaterequalorless", 0x22db,
+    "greatermonospace", 0xff1e,
+    "greaterorequivalent", 0x2273,
+    "greaterorless", 0x2277,
+    "greateroverequal", 0x2267,
+    "greatersmall", 0xfe65,
+    "gscript", 0x0261,
+    "gstroke", 0x01e5,
+    "guhiragana", 0x3050,
+    "guillemotleft", 0x00ab,
+    "guillemotright", 0x00bb,
+    "guilsinglleft", 0x2039,
+    "guilsinglright", 0x203a,
+    "gukatakana", 0x30b0,
+    "guramusquare", 0x3318,
+    "gysquare", 0x33c9,
+    "h", 0x0068,
+    "haabkhasiancyrillic", 0x04a9,
+    "haaltonearabic", 0x06c1,
+    "habengali", 0x09b9,
+    "hadescendercyrillic", 0x04b3,
+    "hadeva", 0x0939,
+    "hagujarati", 0x0ab9,
+    "hagurmukhi", 0x0a39,
+    "haharabic", 0x062d,
+    "hahfinalarabic", 0xfea2,
+    "hahinitialarabic", 0xfea3,
+    "hahiragana", 0x306f,
+    "hahmedialarabic", 0xfea4,
+    "haitusquare", 0x332a,
+    "hakatakana", 0x30cf,
+    "hakatakanahalfwidth", 0xff8a,
+    "halantgurmukhi", 0x0a4d,
+    "hamzaarabic", 0x0621,
+    "hamzalowarabic", 0x0621,
+    "hangulfiller", 0x3164,
+    "hardsigncyrillic", 0x044a,
+    "harpoonleftbarbup", 0x21bc,
+    "harpoonrightbarbup", 0x21c0,
+    "hasquare", 0x33ca,
+    "hatafpatah", 0x05b2,
+    "hatafpatah16", 0x05b2,
+    "hatafpatah23", 0x05b2,
+    "hatafpatah2f", 0x05b2,
+    "hatafpatahhebrew", 0x05b2,
+    "hatafpatahnarrowhebrew", 0x05b2,
+    "hatafpatahquarterhebrew", 0x05b2,
+    "hatafpatahwidehebrew", 0x05b2,
+    "hatafqamats", 0x05b3,
+    "hatafqamats1b", 0x05b3,
+    "hatafqamats28", 0x05b3,
+    "hatafqamats34", 0x05b3,
+    "hatafqamatshebrew", 0x05b3,
+    "hatafqamatsnarrowhebrew", 0x05b3,
+    "hatafqamatsquarterhebrew", 0x05b3,
+    "hatafqamatswidehebrew", 0x05b3,
+    "hatafsegol", 0x05b1,
+    "hatafsegol17", 0x05b1,
+    "hatafsegol24", 0x05b1,
+    "hatafsegol30", 0x05b1,
+    "hatafsegolhebrew", 0x05b1,
+    "hatafsegolnarrowhebrew", 0x05b1,
+    "hatafsegolquarterhebrew", 0x05b1,
+    "hatafsegolwidehebrew", 0x05b1,
+    "hbar", 0x0127,
+    "hbopomofo", 0x310f,
+    "hbrevebelow", 0x1e2b,
+    "hcedilla", 0x1e29,
+    "hcircle", 0x24d7,
+    "hcircumflex", 0x0125,
+    "hdieresis", 0x1e27,
+    "hdotaccent", 0x1e23,
+    "hdotbelow", 0x1e25,
+    "he", 0x05d4,
+    "heart", 0x2665,
+    "heartsuitblack", 0x2665,
+    "heartsuitwhite", 0x2661,
+    "hedagesh", 0xfb34,
+    "hedageshhebrew", 0xfb34,
+    "hehaltonearabic", 0x06c1,
+    "heharabic", 0x0647,
+    "hehebrew", 0x05d4,
+    "hehfinalaltonearabic", 0xfba7,
+    "hehfinalalttwoarabic", 0xfeea,
+    "hehfinalarabic", 0xfeea,
+    "hehhamzaabovefinalarabic", 0xfba5,
+    "hehhamzaaboveisolatedarabic", 0xfba4,
+    "hehinitialaltonearabic", 0xfba8,
+    "hehinitialarabic", 0xfeeb,
+    "hehiragana", 0x3078,
+    "hehmedialaltonearabic", 0xfba9,
+    "hehmedialarabic", 0xfeec,
+    "heiseierasquare", 0x337b,
+    "hekatakana", 0x30d8,
+    "hekatakanahalfwidth", 0xff8d,
+    "hekutaarusquare", 0x3336,
+    "henghook", 0x0267,
+    "herutusquare", 0x3339,
+    "het", 0x05d7,
+    "hethebrew", 0x05d7,
+    "hhook", 0x0266,
+    "hhooksuperior", 0x02b1,
+    "hieuhacirclekorean", 0x327b,
+    "hieuhaparenkorean", 0x321b,
+    "hieuhcirclekorean", 0x326d,
+    "hieuhkorean", 0x314e,
+    "hieuhparenkorean", 0x320d,
+    "hihiragana", 0x3072,
+    "hikatakana", 0x30d2,
+    "hikatakanahalfwidth", 0xff8b,
+    "hiriq", 0x05b4,
+    "hiriq14", 0x05b4,
+    "hiriq21", 0x05b4,
+    "hiriq2d", 0x05b4,
+    "hiriqhebrew", 0x05b4,
+    "hiriqnarrowhebrew", 0x05b4,
+    "hiriqquarterhebrew", 0x05b4,
+    "hiriqwidehebrew", 0x05b4,
+    "hlinebelow", 0x1e96,
+    "hmonospace", 0xff48,
+    "hoarmenian", 0x0570,
+    "hohipthai", 0x0e2b,
+    "hohiragana", 0x307b,
+    "hokatakana", 0x30db,
+    "hokatakanahalfwidth", 0xff8e,
+    "holam", 0x05b9,
+    "holam19", 0x05b9,
+    "holam26", 0x05b9,
+    "holam32", 0x05b9,
+    "holamhebrew", 0x05b9,
+    "holamnarrowhebrew", 0x05b9,
+    "holamquarterhebrew", 0x05b9,
+    "holamwidehebrew", 0x05b9,
+    "honokhukthai", 0x0e2e,
+    "hookabovecomb", 0x0309,
+    "hookcmb", 0x0309,
+    "hookpalatalizedbelowcmb", 0x0321,
+    "hookretroflexbelowcmb", 0x0322,
+    "hoonsquare", 0x3342,
+    "horicoptic", 0x03e9,
+    "horizontalbar", 0x2015,
+    "horncmb", 0x031b,
+    "hotsprings", 0x2668,
+    "house", 0x2302,
+    "hparen", 0x24a3,
+    "hsuperior", 0x02b0,
+    "hturned", 0x0265,
+    "huhiragana", 0x3075,
+    "huiitosquare", 0x3333,
+    "hukatakana", 0x30d5,
+    "hukatakanahalfwidth", 0xff8c,
+    "hungarumlaut", 0x02dd,
+    "hungarumlautcmb", 0x030b,
+    "hv", 0x0195,
+    "hyphen", 0x002d,
+    "hypheninferior", 0xf6e5,
+    "hyphenmonospace", 0xff0d,
+    "hyphensmall", 0xfe63,
+    "hyphensuperior", 0xf6e6,
+    "hyphentwo", 0x2010,
+    "i", 0x0069,
+    "iacute", 0x00ed,
+    "iacyrillic", 0x044f,
+    "ibengali", 0x0987,
+    "ibopomofo", 0x3127,
+    "ibreve", 0x012d,
+    "icaron", 0x01d0,
+    "icircle", 0x24d8,
+    "icircumflex", 0x00ee,
+    "icyrillic", 0x0456,
+    "idblgrave", 0x0209,
+    "ideographearthcircle", 0x328f,
+    "ideographfirecircle", 0x328b,
+    "ideographicallianceparen", 0x323f,
+    "ideographiccallparen", 0x323a,
+    "ideographiccentrecircle", 0x32a5,
+    "ideographicclose", 0x3006,
+    "ideographiccomma", 0x3001,
+    "ideographiccommaleft", 0xff64,
+    "ideographiccongratulationparen", 0x3237,
+    "ideographiccorrectcircle", 0x32a3,
+    "ideographicearthparen", 0x322f,
+    "ideographicenterpriseparen", 0x323d,
+    "ideographicexcellentcircle", 0x329d,
+    "ideographicfestivalparen", 0x3240,
+    "ideographicfinancialcircle", 0x3296,
+    "ideographicfinancialparen", 0x3236,
+    "ideographicfireparen", 0x322b,
+    "ideographichaveparen", 0x3232,
+    "ideographichighcircle", 0x32a4,
+    "ideographiciterationmark", 0x3005,
+    "ideographiclaborcircle", 0x3298,
+    "ideographiclaborparen", 0x3238,
+    "ideographicleftcircle", 0x32a7,
+    "ideographiclowcircle", 0x32a6,
+    "ideographicmedicinecircle", 0x32a9,
+    "ideographicmetalparen", 0x322e,
+    "ideographicmoonparen", 0x322a,
+    "ideographicnameparen", 0x3234,
+    "ideographicperiod", 0x3002,
+    "ideographicprintcircle", 0x329e,
+    "ideographicreachparen", 0x3243,
+    "ideographicrepresentparen", 0x3239,
+    "ideographicresourceparen", 0x323e,
+    "ideographicrightcircle", 0x32a8,
+    "ideographicsecretcircle", 0x3299,
+    "ideographicselfparen", 0x3242,
+    "ideographicsocietyparen", 0x3233,
+    "ideographicspace", 0x3000,
+    "ideographicspecialparen", 0x3235,
+    "ideographicstockparen", 0x3231,
+    "ideographicstudyparen", 0x323b,
+    "ideographicsunparen", 0x3230,
+    "ideographicsuperviseparen", 0x323c,
+    "ideographicwaterparen", 0x322c,
+    "ideographicwoodparen", 0x322d,
+    "ideographiczero", 0x3007,
+    "ideographmetalcircle", 0x328e,
+    "ideographmooncircle", 0x328a,
+    "ideographnamecircle", 0x3294,
+    "ideographsuncircle", 0x3290,
+    "ideographwatercircle", 0x328c,
+    "ideographwoodcircle", 0x328d,
+    "ideva", 0x0907,
+    "idieresis", 0x00ef,
+    "idieresisacute", 0x1e2f,
+    "idieresiscyrillic", 0x04e5,
+    "idotbelow", 0x1ecb,
+    "iebrevecyrillic", 0x04d7,
+    "iecyrillic", 0x0435,
+    "ieungacirclekorean", 0x3275,
+    "ieungaparenkorean", 0x3215,
+    "ieungcirclekorean", 0x3267,
+    "ieungkorean", 0x3147,
+    "ieungparenkorean", 0x3207,
+    "igrave", 0x00ec,
+    "igujarati", 0x0a87,
+    "igurmukhi", 0x0a07,
+    "ihiragana", 0x3044,
+    "ihookabove", 0x1ec9,
+    "iibengali", 0x0988,
+    "iicyrillic", 0x0438,
+    "iideva", 0x0908,
+    "iigujarati", 0x0a88,
+    "iigurmukhi", 0x0a08,
+    "iimatragurmukhi", 0x0a40,
+    "iinvertedbreve", 0x020b,
+    "iishortcyrillic", 0x0439,
+    "iivowelsignbengali", 0x09c0,
+    "iivowelsigndeva", 0x0940,
+    "iivowelsigngujarati", 0x0ac0,
+    "ij", 0x0133,
+    "ikatakana", 0x30a4,
+    "ikatakanahalfwidth", 0xff72,
+    "ikorean", 0x3163,
+    "ilde", 0x02dc,
+    "iluyhebrew", 0x05ac,
+    "imacron", 0x012b,
+    "imacroncyrillic", 0x04e3,
+    "imageorapproximatelyequal", 0x2253,
+    "imatragurmukhi", 0x0a3f,
+    "imonospace", 0xff49,
+    "increment", 0x2206,
+    "infinity", 0x221e,
+    "iniarmenian", 0x056b,
+    "integral", 0x222b,
+    "integralbottom", 0x2321,
+    "integralbt", 0x2321,
+    "integralex", 0xf8f5,
+    "integraltop", 0x2320,
+    "integraltp", 0x2320,
+    "intersection", 0x2229,
+    "intisquare", 0x3305,
+    "invbullet", 0x25d8,
+    "invcircle", 0x25d9,
+    "invsmileface", 0x263b,
+    "iocyrillic", 0x0451,
+    "iogonek", 0x012f,
+    "iota", 0x03b9,
+    "iotadieresis", 0x03ca,
+    "iotadieresistonos", 0x0390,
+    "iotalatin", 0x0269,
+    "iotatonos", 0x03af,
+    "iparen", 0x24a4,
+    "irigurmukhi", 0x0a72,
+    "ismallhiragana", 0x3043,
+    "ismallkatakana", 0x30a3,
+    "ismallkatakanahalfwidth", 0xff68,
+    "issharbengali", 0x09fa,
+    "istroke", 0x0268,
+    "isuperior", 0xf6ed,
+    "iterationhiragana", 0x309d,
+    "iterationkatakana", 0x30fd,
+    "itilde", 0x0129,
+    "itildebelow", 0x1e2d,
+    "iubopomofo", 0x3129,
+    "iucyrillic", 0x044e,
+    "ivowelsignbengali", 0x09bf,
+    "ivowelsigndeva", 0x093f,
+    "ivowelsigngujarati", 0x0abf,
+    "izhitsacyrillic", 0x0475,
+    "izhitsadblgravecyrillic", 0x0477,
+    "j", 0x006a,
+    "jaarmenian", 0x0571,
+    "jabengali", 0x099c,
+    "jadeva", 0x091c,
+    "jagujarati", 0x0a9c,
+    "jagurmukhi", 0x0a1c,
+    "jbopomofo", 0x3110,
+    "jcaron", 0x01f0,
+    "jcircle", 0x24d9,
+    "jcircumflex", 0x0135,
+    "jcrossedtail", 0x029d,
+    "jdotlessstroke", 0x025f,
+    "jecyrillic", 0x0458,
+    "jeemarabic", 0x062c,
+    "jeemfinalarabic", 0xfe9e,
+    "jeeminitialarabic", 0xfe9f,
+    "jeemmedialarabic", 0xfea0,
+    "jeharabic", 0x0698,
+    "jehfinalarabic", 0xfb8b,
+    "jhabengali", 0x099d,
+    "jhadeva", 0x091d,
+    "jhagujarati", 0x0a9d,
+    "jhagurmukhi", 0x0a1d,
+    "jheharmenian", 0x057b,
+    "jis", 0x3004,
+    "jmonospace", 0xff4a,
+    "jparen", 0x24a5,
+    "jsuperior", 0x02b2,
+    "k", 0x006b,
+    "kabashkircyrillic", 0x04a1,
+    "kabengali", 0x0995,
+    "kacute", 0x1e31,
+    "kacyrillic", 0x043a,
+    "kadescendercyrillic", 0x049b,
+    "kadeva", 0x0915,
+    "kaf", 0x05db,
+    "kafarabic", 0x0643,
+    "kafdagesh", 0xfb3b,
+    "kafdageshhebrew", 0xfb3b,
+    "kaffinalarabic", 0xfeda,
+    "kafhebrew", 0x05db,
+    "kafinitialarabic", 0xfedb,
+    "kafmedialarabic", 0xfedc,
+    "kafrafehebrew", 0xfb4d,
+    "kagujarati", 0x0a95,
+    "kagurmukhi", 0x0a15,
+    "kahiragana", 0x304b,
+    "kahookcyrillic", 0x04c4,
+    "kakatakana", 0x30ab,
+    "kakatakanahalfwidth", 0xff76,
+    "kappa", 0x03ba,
+    "kappasymbolgreek", 0x03f0,
+    "kapyeounmieumkorean", 0x3171,
+    "kapyeounphieuphkorean", 0x3184,
+    "kapyeounpieupkorean", 0x3178,
+    "kapyeounssangpieupkorean", 0x3179,
+    "karoriisquare", 0x330d,
+    "kashidaautoarabic", 0x0640,
+    "kashidaautonosidebearingarabic", 0x0640,
+    "kasmallkatakana", 0x30f5,
+    "kasquare", 0x3384,
+    "kasraarabic", 0x0650,
+    "kasratanarabic", 0x064d,
+    "kastrokecyrillic", 0x049f,
+    "katahiraprolongmarkhalfwidth", 0xff70,
+    "kaverticalstrokecyrillic", 0x049d,
+    "kbopomofo", 0x310e,
+    "kcalsquare", 0x3389,
+    "kcaron", 0x01e9,
+    "kcedilla", 0x0137,
+    "kcircle", 0x24da,
+    "kcommaaccent", 0x0137,
+    "kdotbelow", 0x1e33,
+    "keharmenian", 0x0584,
+    "kehiragana", 0x3051,
+    "kekatakana", 0x30b1,
+    "kekatakanahalfwidth", 0xff79,
+    "kenarmenian", 0x056f,
+    "kesmallkatakana", 0x30f6,
+    "kgreenlandic", 0x0138,
+    "khabengali", 0x0996,
+    "khacyrillic", 0x0445,
+    "khadeva", 0x0916,
+    "khagujarati", 0x0a96,
+    "khagurmukhi", 0x0a16,
+    "khaharabic", 0x062e,
+    "khahfinalarabic", 0xfea6,
+    "khahinitialarabic", 0xfea7,
+    "khahmedialarabic", 0xfea8,
+    "kheicoptic", 0x03e7,
+    "khhadeva", 0x0959,
+    "khhagurmukhi", 0x0a59,
+    "khieukhacirclekorean", 0x3278,
+    "khieukhaparenkorean", 0x3218,
+    "khieukhcirclekorean", 0x326a,
+    "khieukhkorean", 0x314b,
+    "khieukhparenkorean", 0x320a,
+    "khokhaithai", 0x0e02,
+    "khokhonthai", 0x0e05,
+    "khokhuatthai", 0x0e03,
+    "khokhwaithai", 0x0e04,
+    "khomutthai", 0x0e5b,
+    "khook", 0x0199,
+    "khorakhangthai", 0x0e06,
+    "khzsquare", 0x3391,
+    "kihiragana", 0x304d,
+    "kikatakana", 0x30ad,
+    "kikatakanahalfwidth", 0xff77,
+    "kiroguramusquare", 0x3315,
+    "kiromeetorusquare", 0x3316,
+    "kirosquare", 0x3314,
+    "kiyeokacirclekorean", 0x326e,
+    "kiyeokaparenkorean", 0x320e,
+    "kiyeokcirclekorean", 0x3260,
+    "kiyeokkorean", 0x3131,
+    "kiyeokparenkorean", 0x3200,
+    "kiyeoksioskorean", 0x3133,
+    "kjecyrillic", 0x045c,
+    "klinebelow", 0x1e35,
+    "klsquare", 0x3398,
+    "kmcubedsquare", 0x33a6,
+    "kmonospace", 0xff4b,
+    "kmsquaredsquare", 0x33a2,
+    "kohiragana", 0x3053,
+    "kohmsquare", 0x33c0,
+    "kokaithai", 0x0e01,
+    "kokatakana", 0x30b3,
+    "kokatakanahalfwidth", 0xff7a,
+    "kooposquare", 0x331e,
+    "koppacyrillic", 0x0481,
+    "koreanstandardsymbol", 0x327f,
+    "koroniscmb", 0x0343,
+    "kparen", 0x24a6,
+    "kpasquare", 0x33aa,
+    "ksicyrillic", 0x046f,
+    "ktsquare", 0x33cf,
+    "kturned", 0x029e,
+    "kuhiragana", 0x304f,
+    "kukatakana", 0x30af,
+    "kukatakanahalfwidth", 0xff78,
+    "kvsquare", 0x33b8,
+    "kwsquare", 0x33be,
+    "l", 0x006c,
+    "labengali", 0x09b2,
+    "lacute", 0x013a,
+    "ladeva", 0x0932,
+    "lagujarati", 0x0ab2,
+    "lagurmukhi", 0x0a32,
+    "lakkhangyaothai", 0x0e45,
+    "lamaleffinalarabic", 0xfefc,
+    "lamalefhamzaabovefinalarabic", 0xfef8,
+    "lamalefhamzaaboveisolatedarabic", 0xfef7,
+    "lamalefhamzabelowfinalarabic", 0xfefa,
+    "lamalefhamzabelowisolatedarabic", 0xfef9,
+    "lamalefisolatedarabic", 0xfefb,
+    "lamalefmaddaabovefinalarabic", 0xfef6,
+    "lamalefmaddaaboveisolatedarabic", 0xfef5,
+    "lamarabic", 0x0644,
+    "lambda", 0x03bb,
+    "lambdastroke", 0x019b,
+    "lamed", 0x05dc,
+    "lameddagesh", 0xfb3c,
+    "lameddageshhebrew", 0xfb3c,
+    "lamedhebrew", 0x05dc,
+    "lamfinalarabic", 0xfede,
+    "lamhahinitialarabic", 0xfcca,
+    "laminitialarabic", 0xfedf,
+    "lamjeeminitialarabic", 0xfcc9,
+    "lamkhahinitialarabic", 0xfccb,
+    "lamlamhehisolatedarabic", 0xfdf2,
+    "lammedialarabic", 0xfee0,
+    "lammeemhahinitialarabic", 0xfd88,
+    "lammeeminitialarabic", 0xfccc,
+    "largecircle", 0x25ef,
+    "lbar", 0x019a,
+    "lbelt", 0x026c,
+    "lbopomofo", 0x310c,
+    "lcaron", 0x013e,
+    "lcedilla", 0x013c,
+    "lcircle", 0x24db,
+    "lcircumflexbelow", 0x1e3d,
+    "lcommaaccent", 0x013c,
+    "ldot", 0x0140,
+    "ldotaccent", 0x0140,
+    "ldotbelow", 0x1e37,
+    "ldotbelowmacron", 0x1e39,
+    "leftangleabovecmb", 0x031a,
+    "lefttackbelowcmb", 0x0318,
+    "less", 0x003c,
+    "lessequal", 0x2264,
+    "lessequalorgreater", 0x22da,
+    "lessmonospace", 0xff1c,
+    "lessorequivalent", 0x2272,
+    "lessorgreater", 0x2276,
+    "lessoverequal", 0x2266,
+    "lesssmall", 0xfe64,
+    "lezh", 0x026e,
+    "lfblock", 0x258c,
+    "lhookretroflex", 0x026d,
+    "lira", 0x20a4,
+    "liwnarmenian", 0x056c,
+    "lj", 0x01c9,
+    "ljecyrillic", 0x0459,
+    "ll", 0xf6c0,
+    "lladeva", 0x0933,
+    "llagujarati", 0x0ab3,
+    "llinebelow", 0x1e3b,
+    "llladeva", 0x0934,
+    "llvocalicbengali", 0x09e1,
+    "llvocalicdeva", 0x0961,
+    "llvocalicvowelsignbengali", 0x09e3,
+    "llvocalicvowelsigndeva", 0x0963,
+    "lmiddletilde", 0x026b,
+    "lmonospace", 0xff4c,
+    "lmsquare", 0x33d0,
+    "lochulathai", 0x0e2c,
+    "logicaland", 0x2227,
+    "logicalnot", 0x00ac,
+    "logicalnotreversed", 0x2310,
+    "logicalor", 0x2228,
+    "lolingthai", 0x0e25,
+    "longs", 0x017f,
+    "lowlinecenterline", 0xfe4e,
+    "lowlinecmb", 0x0332,
+    "lowlinedashed", 0xfe4d,
+    "lozenge", 0x25ca,
+    "lparen", 0x24a7,
+    "lslash", 0x0142,
+    "lsquare", 0x2113,
+    "lsuperior", 0xf6ee,
+    "ltshade", 0x2591,
+    "luthai", 0x0e26,
+    "lvocalicbengali", 0x098c,
+    "lvocalicdeva", 0x090c,
+    "lvocalicvowelsignbengali", 0x09e2,
+    "lvocalicvowelsigndeva", 0x0962,
+    "lxsquare", 0x33d3,
+    "m", 0x006d,
+    "mabengali", 0x09ae,
+    "macron", 0x00af,
+    "macronbelowcmb", 0x0331,
+    "macroncmb", 0x0304,
+    "macronlowmod", 0x02cd,
+    "macronmonospace", 0xffe3,
+    "macute", 0x1e3f,
+    "madeva", 0x092e,
+    "magujarati", 0x0aae,
+    "magurmukhi", 0x0a2e,
+    "mahapakhhebrew", 0x05a4,
+    "mahapakhlefthebrew", 0x05a4,
+    "mahiragana", 0x307e,
+    "maichattawalowleftthai", 0xf895,
+    "maichattawalowrightthai", 0xf894,
+    "maichattawathai", 0x0e4b,
+    "maichattawaupperleftthai", 0xf893,
+    "maieklowleftthai", 0xf88c,
+    "maieklowrightthai", 0xf88b,
+    "maiekthai", 0x0e48,
+    "maiekupperleftthai", 0xf88a,
+    "maihanakatleftthai", 0xf884,
+    "maihanakatthai", 0x0e31,
+    "maitaikhuleftthai", 0xf889,
+    "maitaikhuthai", 0x0e47,
+    "maitholowleftthai", 0xf88f,
+    "maitholowrightthai", 0xf88e,
+    "maithothai", 0x0e49,
+    "maithoupperleftthai", 0xf88d,
+    "maitrilowleftthai", 0xf892,
+    "maitrilowrightthai", 0xf891,
+    "maitrithai", 0x0e4a,
+    "maitriupperleftthai", 0xf890,
+    "maiyamokthai", 0x0e46,
+    "makatakana", 0x30de,
+    "makatakanahalfwidth", 0xff8f,
+    "male", 0x2642,
+    "mansyonsquare", 0x3347,
+    "maqafhebrew", 0x05be,
+    "mars", 0x2642,
+    "masoracirclehebrew", 0x05af,
+    "masquare", 0x3383,
+    "mbopomofo", 0x3107,
+    "mbsquare", 0x33d4,
+    "mcircle", 0x24dc,
+    "mcubedsquare", 0x33a5,
+    "mdotaccent", 0x1e41,
+    "mdotbelow", 0x1e43,
+    "meemarabic", 0x0645,
+    "meemfinalarabic", 0xfee2,
+    "meeminitialarabic", 0xfee3,
+    "meemmedialarabic", 0xfee4,
+    "meemmeeminitialarabic", 0xfcd1,
+    "meemmeemisolatedarabic", 0xfc48,
+    "meetorusquare", 0x334d,
+    "mehiragana", 0x3081,
+    "meizierasquare", 0x337e,
+    "mekatakana", 0x30e1,
+    "mekatakanahalfwidth", 0xff92,
+    "mem", 0x05de,
+    "memdagesh", 0xfb3e,
+    "memdageshhebrew", 0xfb3e,
+    "memhebrew", 0x05de,
+    "menarmenian", 0x0574,
+    "merkhahebrew", 0x05a5,
+    "merkhakefulahebrew", 0x05a6,
+    "merkhakefulalefthebrew", 0x05a6,
+    "merkhalefthebrew", 0x05a5,
+    "mhook", 0x0271,
+    "mhzsquare", 0x3392,
+    "middledotkatakanahalfwidth", 0xff65,
+    "middot", 0x00b7,
+    "mieumacirclekorean", 0x3272,
+    "mieumaparenkorean", 0x3212,
+    "mieumcirclekorean", 0x3264,
+    "mieumkorean", 0x3141,
+    "mieumpansioskorean", 0x3170,
+    "mieumparenkorean", 0x3204,
+    "mieumpieupkorean", 0x316e,
+    "mieumsioskorean", 0x316f,
+    "mihiragana", 0x307f,
+    "mikatakana", 0x30df,
+    "mikatakanahalfwidth", 0xff90,
+    "minus", 0x2212,
+    "minusbelowcmb", 0x0320,
+    "minuscircle", 0x2296,
+    "minusmod", 0x02d7,
+    "minusplus", 0x2213,
+    "minute", 0x2032,
+    "miribaarusquare", 0x334a,
+    "mirisquare", 0x3349,
+    "mlonglegturned", 0x0270,
+    "mlsquare", 0x3396,
+    "mmcubedsquare", 0x33a3,
+    "mmonospace", 0xff4d,
+    "mmsquaredsquare", 0x339f,
+    "mohiragana", 0x3082,
+    "mohmsquare", 0x33c1,
+    "mokatakana", 0x30e2,
+    "mokatakanahalfwidth", 0xff93,
+    "molsquare", 0x33d6,
+    "momathai", 0x0e21,
+    "moverssquare", 0x33a7,
+    "moverssquaredsquare", 0x33a8,
+    "mparen", 0x24a8,
+    "mpasquare", 0x33ab,
+    "mssquare", 0x33b3,
+    "msuperior", 0xf6ef,
+    "mturned", 0x026f,
+    "mu", 0x00b5,
+    "mu1", 0x00b5,
+    "muasquare", 0x3382,
+    "muchgreater", 0x226b,
+    "muchless", 0x226a,
+    "mufsquare", 0x338c,
+    "mugreek", 0x03bc,
+    "mugsquare", 0x338d,
+    "muhiragana", 0x3080,
+    "mukatakana", 0x30e0,
+    "mukatakanahalfwidth", 0xff91,
+    "mulsquare", 0x3395,
+    "multiply", 0x00d7,
+    "mumsquare", 0x339b,
+    "munahhebrew", 0x05a3,
+    "munahlefthebrew", 0x05a3,
+    "musicalnote", 0x266a,
+    "musicalnotedbl", 0x266b,
+    "musicflatsign", 0x266d,
+    "musicsharpsign", 0x266f,
+    "mussquare", 0x33b2,
+    "muvsquare", 0x33b6,
+    "muwsquare", 0x33bc,
+    "mvmegasquare", 0x33b9,
+    "mvsquare", 0x33b7,
+    "mwmegasquare", 0x33bf,
+    "mwsquare", 0x33bd,
+    "n", 0x006e,
+    "nabengali", 0x09a8,
+    "nabla", 0x2207,
+    "nacute", 0x0144,
+    "nadeva", 0x0928,
+    "nagujarati", 0x0aa8,
+    "nagurmukhi", 0x0a28,
+    "nahiragana", 0x306a,
+    "nakatakana", 0x30ca,
+    "nakatakanahalfwidth", 0xff85,
+    "napostrophe", 0x0149,
+    "nasquare", 0x3381,
+    "nbopomofo", 0x310b,
+    "nbspace", 0x00a0,
+    "ncaron", 0x0148,
+    "ncedilla", 0x0146,
+    "ncircle", 0x24dd,
+    "ncircumflexbelow", 0x1e4b,
+    "ncommaaccent", 0x0146,
+    "ndotaccent", 0x1e45,
+    "ndotbelow", 0x1e47,
+    "nehiragana", 0x306d,
+    "nekatakana", 0x30cd,
+    "nekatakanahalfwidth", 0xff88,
+    "newsheqelsign", 0x20aa,
+    "nfsquare", 0x338b,
+    "ngabengali", 0x0999,
+    "ngadeva", 0x0919,
+    "ngagujarati", 0x0a99,
+    "ngagurmukhi", 0x0a19,
+    "ngonguthai", 0x0e07,
+    "nhiragana", 0x3093,
+    "nhookleft", 0x0272,
+    "nhookretroflex", 0x0273,
+    "nieunacirclekorean", 0x326f,
+    "nieunaparenkorean", 0x320f,
+    "nieuncieuckorean", 0x3135,
+    "nieuncirclekorean", 0x3261,
+    "nieunhieuhkorean", 0x3136,
+    "nieunkorean", 0x3134,
+    "nieunpansioskorean", 0x3168,
+    "nieunparenkorean", 0x3201,
+    "nieunsioskorean", 0x3167,
+    "nieuntikeutkorean", 0x3166,
+    "nihiragana", 0x306b,
+    "nikatakana", 0x30cb,
+    "nikatakanahalfwidth", 0xff86,
+    "nikhahitleftthai", 0xf899,
+    "nikhahitthai", 0x0e4d,
+    "nine", 0x0039,
+    "ninearabic", 0x0669,
+    "ninebengali", 0x09ef,
+    "ninecircle", 0x2468,
+    "ninecircleinversesansserif", 0x2792,
+    "ninedeva", 0x096f,
+    "ninegujarati", 0x0aef,
+    "ninegurmukhi", 0x0a6f,
+    "ninehackarabic", 0x0669,
+    "ninehangzhou", 0x3029,
+    "nineideographicparen", 0x3228,
+    "nineinferior", 0x2089,
+    "ninemonospace", 0xff19,
+    "nineoldstyle", 0xf739,
+    "nineparen", 0x247c,
+    "nineperiod", 0x2490,
+    "ninepersian", 0x06f9,
+    "nineroman", 0x2178,
+    "ninesuperior", 0x2079,
+    "nineteencircle", 0x2472,
+    "nineteenparen", 0x2486,
+    "nineteenperiod", 0x249a,
+    "ninethai", 0x0e59,
+    "nj", 0x01cc,
+    "njecyrillic", 0x045a,
+    "nkatakana", 0x30f3,
+    "nkatakanahalfwidth", 0xff9d,
+    "nlegrightlong", 0x019e,
+    "nlinebelow", 0x1e49,
+    "nmonospace", 0xff4e,
+    "nmsquare", 0x339a,
+    "nnabengali", 0x09a3,
+    "nnadeva", 0x0923,
+    "nnagujarati", 0x0aa3,
+    "nnagurmukhi", 0x0a23,
+    "nnnadeva", 0x0929,
+    "nohiragana", 0x306e,
+    "nokatakana", 0x30ce,
+    "nokatakanahalfwidth", 0xff89,
+    "nonbreakingspace", 0x00a0,
+    "nonenthai", 0x0e13,
+    "nonuthai", 0x0e19,
+    "noonarabic", 0x0646,
+    "noonfinalarabic", 0xfee6,
+    "noonghunnaarabic", 0x06ba,
+    "noonghunnafinalarabic", 0xfb9f,
+    "nooninitialarabic", 0xfee7,
+    "noonjeeminitialarabic", 0xfcd2,
+    "noonjeemisolatedarabic", 0xfc4b,
+    "noonmedialarabic", 0xfee8,
+    "noonmeeminitialarabic", 0xfcd5,
+    "noonmeemisolatedarabic", 0xfc4e,
+    "noonnoonfinalarabic", 0xfc8d,
+    "notcontains", 0x220c,
+    "notelement", 0x2209,
+    "notelementof", 0x2209,
+    "notequal", 0x2260,
+    "notgreater", 0x226f,
+    "notgreaternorequal", 0x2271,
+    "notgreaternorless", 0x2279,
+    "notidentical", 0x2262,
+    "notless", 0x226e,
+    "notlessnorequal", 0x2270,
+    "notparallel", 0x2226,
+    "notprecedes", 0x2280,
+    "notsubset", 0x2284,
+    "notsucceeds", 0x2281,
+    "notsuperset", 0x2285,
+    "nowarmenian", 0x0576,
+    "nparen", 0x24a9,
+    "nssquare", 0x33b1,
+    "nsuperior", 0x207f,
+    "ntilde", 0x00f1,
+    "nu", 0x03bd,
+    "nuhiragana", 0x306c,
+    "nukatakana", 0x30cc,
+    "nukatakanahalfwidth", 0xff87,
+    "nuktabengali", 0x09bc,
+    "nuktadeva", 0x093c,
+    "nuktagujarati", 0x0abc,
+    "nuktagurmukhi", 0x0a3c,
+    "numbersign", 0x0023,
+    "numbersignmonospace", 0xff03,
+    "numbersignsmall", 0xfe5f,
+    "numeralsigngreek", 0x0374,
+    "numeralsignlowergreek", 0x0375,
+    "numero", 0x2116,
+    "nun", 0x05e0,
+    "nundagesh", 0xfb40,
+    "nundageshhebrew", 0xfb40,
+    "nunhebrew", 0x05e0,
+    "nvsquare", 0x33b5,
+    "nwsquare", 0x33bb,
+    "nyabengali", 0x099e,
+    "nyadeva", 0x091e,
+    "nyagujarati", 0x0a9e,
+    "nyagurmukhi", 0x0a1e,
+    "o", 0x006f,
+    "oacute", 0x00f3,
+    "oangthai", 0x0e2d,
+    "obarred", 0x0275,
+    "obarredcyrillic", 0x04e9,
+    "obarreddieresiscyrillic", 0x04eb,
+    "obengali", 0x0993,
+    "obopomofo", 0x311b,
+    "obreve", 0x014f,
+    "ocandradeva", 0x0911,
+    "ocandragujarati", 0x0a91,
+    "ocandravowelsigndeva", 0x0949,
+    "ocandravowelsigngujarati", 0x0ac9,
+    "ocaron", 0x01d2,
+    "ocircle", 0x24de,
+    "ocircumflex", 0x00f4,
+    "ocircumflexacute", 0x1ed1,
+    "ocircumflexdotbelow", 0x1ed9,
+    "ocircumflexgrave", 0x1ed3,
+    "ocircumflexhookabove", 0x1ed5,
+    "ocircumflextilde", 0x1ed7,
+    "ocyrillic", 0x043e,
+    "odblacute", 0x0151,
+    "odblgrave", 0x020d,
+    "odeva", 0x0913,
+    "odieresis", 0x00f6,
+    "odieresiscyrillic", 0x04e7,
+    "odotbelow", 0x1ecd,
+    "oe", 0x0153,
+    "oekorean", 0x315a,
+    "ogonek", 0x02db,
+    "ogonekcmb", 0x0328,
+    "ograve", 0x00f2,
+    "ogujarati", 0x0a93,
+    "oharmenian", 0x0585,
+    "ohiragana", 0x304a,
+    "ohookabove", 0x1ecf,
+    "ohorn", 0x01a1,
+    "ohornacute", 0x1edb,
+    "ohorndotbelow", 0x1ee3,
+    "ohorngrave", 0x1edd,
+    "ohornhookabove", 0x1edf,
+    "ohorntilde", 0x1ee1,
+    "ohungarumlaut", 0x0151,
+    "oi", 0x01a3,
+    "oinvertedbreve", 0x020f,
+    "okatakana", 0x30aa,
+    "okatakanahalfwidth", 0xff75,
+    "okorean", 0x3157,
+    "olehebrew", 0x05ab,
+    "omacron", 0x014d,
+    "omacronacute", 0x1e53,
+    "omacrongrave", 0x1e51,
+    "omdeva", 0x0950,
+    "omega", 0x03c9,
+    "omega1", 0x03d6,
+    "omegacyrillic", 0x0461,
+    "omegalatinclosed", 0x0277,
+    "omegaroundcyrillic", 0x047b,
+    "omegatitlocyrillic", 0x047d,
+    "omegatonos", 0x03ce,
+    "omgujarati", 0x0ad0,
+    "omicron", 0x03bf,
+    "omicrontonos", 0x03cc,
+    "omonospace", 0xff4f,
+    "one", 0x0031,
+    "onearabic", 0x0661,
+    "onebengali", 0x09e7,
+    "onecircle", 0x2460,
+    "onecircleinversesansserif", 0x278a,
+    "onedeva", 0x0967,
+    "onedotenleader", 0x2024,
+    "oneeighth", 0x215b,
+    "onefitted", 0xf6dc,
+    "onegujarati", 0x0ae7,
+    "onegurmukhi", 0x0a67,
+    "onehackarabic", 0x0661,
+    "onehalf", 0x00bd,
+    "onehangzhou", 0x3021,
+    "oneideographicparen", 0x3220,
+    "oneinferior", 0x2081,
+    "onemonospace", 0xff11,
+    "onenumeratorbengali", 0x09f4,
+    "oneoldstyle", 0xf731,
+    "oneparen", 0x2474,
+    "oneperiod", 0x2488,
+    "onepersian", 0x06f1,
+    "onequarter", 0x00bc,
+    "oneroman", 0x2170,
+    "onesuperior", 0x00b9,
+    "onethai", 0x0e51,
+    "onethird", 0x2153,
+    "oogonek", 0x01eb,
+    "oogonekmacron", 0x01ed,
+    "oogurmukhi", 0x0a13,
+    "oomatragurmukhi", 0x0a4b,
+    "oopen", 0x0254,
+    "oparen", 0x24aa,
+    "openbullet", 0x25e6,
+    "option", 0x2325,
+    "ordfeminine", 0x00aa,
+    "ordmasculine", 0x00ba,
+    "orthogonal", 0x221f,
+    "oshortdeva", 0x0912,
+    "oshortvowelsigndeva", 0x094a,
+    "oslash", 0x00f8,
+    "oslashacute", 0x01ff,
+    "osmallhiragana", 0x3049,
+    "osmallkatakana", 0x30a9,
+    "osmallkatakanahalfwidth", 0xff6b,
+    "ostrokeacute", 0x01ff,
+    "osuperior", 0xf6f0,
+    "otcyrillic", 0x047f,
+    "otilde", 0x00f5,
+    "otildeacute", 0x1e4d,
+    "otildedieresis", 0x1e4f,
+    "oubopomofo", 0x3121,
+    "overline", 0x203e,
+    "overlinecenterline", 0xfe4a,
+    "overlinecmb", 0x0305,
+    "overlinedashed", 0xfe49,
+    "overlinedblwavy", 0xfe4c,
+    "overlinewavy", 0xfe4b,
+    "overscore", 0x00af,
+    "ovowelsignbengali", 0x09cb,
+    "ovowelsigndeva", 0x094b,
+    "ovowelsigngujarati", 0x0acb,
+    "p", 0x0070,
+    "paampssquare", 0x3380,
+    "paasentosquare", 0x332b,
+    "pabengali", 0x09aa,
+    "pacute", 0x1e55,
+    "padeva", 0x092a,
+    "pagedown", 0x21df,
+    "pageup", 0x21de,
+    "pagujarati", 0x0aaa,
+    "pagurmukhi", 0x0a2a,
+    "pahiragana", 0x3071,
+    "paiyannoithai", 0x0e2f,
+    "pakatakana", 0x30d1,
+    "palatalizationcyrilliccmb", 0x0484,
+    "palochkacyrillic", 0x04c0,
+    "pansioskorean", 0x317f,
+    "paragraph", 0x00b6,
+    "parallel", 0x2225,
+    "parenleft", 0x0028,
+    "parenleftaltonearabic", 0xfd3e,
+    "parenleftbt", 0xf8ed,
+    "parenleftex", 0xf8ec,
+    "parenleftinferior", 0x208d,
+    "parenleftmonospace", 0xff08,
+    "parenleftsmall", 0xfe59,
+    "parenleftsuperior", 0x207d,
+    "parenlefttp", 0xf8eb,
+    "parenleftvertical", 0xfe35,
+    "parenright", 0x0029,
+    "parenrightaltonearabic", 0xfd3f,
+    "parenrightbt", 0xf8f8,
+    "parenrightex", 0xf8f7,
+    "parenrightinferior", 0x208e,
+    "parenrightmonospace", 0xff09,
+    "parenrightsmall", 0xfe5a,
+    "parenrightsuperior", 0x207e,
+    "parenrighttp", 0xf8f6,
+    "parenrightvertical", 0xfe36,
+    "partialdiff", 0x2202,
+    "paseqhebrew", 0x05c0,
+    "pashtahebrew", 0x0599,
+    "pasquare", 0x33a9,
+    "patah", 0x05b7,
+    "patah11", 0x05b7,
+    "patah1d", 0x05b7,
+    "patah2a", 0x05b7,
+    "patahhebrew", 0x05b7,
+    "patahnarrowhebrew", 0x05b7,
+    "patahquarterhebrew", 0x05b7,
+    "patahwidehebrew", 0x05b7,
+    "pazerhebrew", 0x05a1,
+    "pbopomofo", 0x3106,
+    "pcircle", 0x24df,
+    "pdotaccent", 0x1e57,
+    "pe", 0x05e4,
+    "pecyrillic", 0x043f,
+    "pedagesh", 0xfb44,
+    "pedageshhebrew", 0xfb44,
+    "peezisquare", 0x333b,
+    "pefinaldageshhebrew", 0xfb43,
+    "peharabic", 0x067e,
+    "peharmenian", 0x057a,
+    "pehebrew", 0x05e4,
+    "pehfinalarabic", 0xfb57,
+    "pehinitialarabic", 0xfb58,
+    "pehiragana", 0x307a,
+    "pehmedialarabic", 0xfb59,
+    "pekatakana", 0x30da,
+    "pemiddlehookcyrillic", 0x04a7,
+    "perafehebrew", 0xfb4e,
+    "percent", 0x0025,
+    "percentarabic", 0x066a,
+    "percentmonospace", 0xff05,
+    "percentsmall", 0xfe6a,
+    "period", 0x002e,
+    "periodarmenian", 0x0589,
+    "periodcentered", 0x00b7,
+    "periodhalfwidth", 0xff61,
+    "periodinferior", 0xf6e7,
+    "periodmonospace", 0xff0e,
+    "periodsmall", 0xfe52,
+    "periodsuperior", 0xf6e8,
+    "perispomenigreekcmb", 0x0342,
+    "perpendicular", 0x22a5,
+    "perthousand", 0x2030,
+    "peseta", 0x20a7,
+    "pfsquare", 0x338a,
+    "phabengali", 0x09ab,
+    "phadeva", 0x092b,
+    "phagujarati", 0x0aab,
+    "phagurmukhi", 0x0a2b,
+    "phi", 0x03c6,
+    "phi1", 0x03d5,
+    "phieuphacirclekorean", 0x327a,
+    "phieuphaparenkorean", 0x321a,
+    "phieuphcirclekorean", 0x326c,
+    "phieuphkorean", 0x314d,
+    "phieuphparenkorean", 0x320c,
+    "philatin", 0x0278,
+    "phinthuthai", 0x0e3a,
+    "phisymbolgreek", 0x03d5,
+    "phook", 0x01a5,
+    "phophanthai", 0x0e1e,
+    "phophungthai", 0x0e1c,
+    "phosamphaothai", 0x0e20,
+    "pi", 0x03c0,
+    "pieupacirclekorean", 0x3273,
+    "pieupaparenkorean", 0x3213,
+    "pieupcieuckorean", 0x3176,
+    "pieupcirclekorean", 0x3265,
+    "pieupkiyeokkorean", 0x3172,
+    "pieupkorean", 0x3142,
+    "pieupparenkorean", 0x3205,
+    "pieupsioskiyeokkorean", 0x3174,
+    "pieupsioskorean", 0x3144,
+    "pieupsiostikeutkorean", 0x3175,
+    "pieupthieuthkorean", 0x3177,
+    "pieuptikeutkorean", 0x3173,
+    "pihiragana", 0x3074,
+    "pikatakana", 0x30d4,
+    "pisymbolgreek", 0x03d6,
+    "piwrarmenian", 0x0583,
+    "plus", 0x002b,
+    "plusbelowcmb", 0x031f,
+    "pluscircle", 0x2295,
+    "plusminus", 0x00b1,
+    "plusmod", 0x02d6,
+    "plusmonospace", 0xff0b,
+    "plussmall", 0xfe62,
+    "plussuperior", 0x207a,
+    "pmonospace", 0xff50,
+    "pmsquare", 0x33d8,
+    "pohiragana", 0x307d,
+    "pointingindexdownwhite", 0x261f,
+    "pointingindexleftwhite", 0x261c,
+    "pointingindexrightwhite", 0x261e,
+    "pointingindexupwhite", 0x261d,
+    "pokatakana", 0x30dd,
+    "poplathai", 0x0e1b,
+    "postalmark", 0x3012,
+    "postalmarkface", 0x3020,
+    "pparen", 0x24ab,
+    "precedes", 0x227a,
+    "prescription", 0x211e,
+    "primemod", 0x02b9,
+    "primereversed", 0x2035,
+    "product", 0x220f,
+    "projective", 0x2305,
+    "prolongedkana", 0x30fc,
+    "propellor", 0x2318,
+    "propersubset", 0x2282,
+    "propersuperset", 0x2283,
+    "proportion", 0x2237,
+    "proportional", 0x221d,
+    "psi", 0x03c8,
+    "psicyrillic", 0x0471,
+    "psilipneumatacyrilliccmb", 0x0486,
+    "pssquare", 0x33b0,
+    "puhiragana", 0x3077,
+    "pukatakana", 0x30d7,
+    "pvsquare", 0x33b4,
+    "pwsquare", 0x33ba,
+    "q", 0x0071,
+    "qadeva", 0x0958,
+    "qadmahebrew", 0x05a8,
+    "qafarabic", 0x0642,
+    "qaffinalarabic", 0xfed6,
+    "qafinitialarabic", 0xfed7,
+    "qafmedialarabic", 0xfed8,
+    "qamats", 0x05b8,
+    "qamats10", 0x05b8,
+    "qamats1a", 0x05b8,
+    "qamats1c", 0x05b8,
+    "qamats27", 0x05b8,
+    "qamats29", 0x05b8,
+    "qamats33", 0x05b8,
+    "qamatsde", 0x05b8,
+    "qamatshebrew", 0x05b8,
+    "qamatsnarrowhebrew", 0x05b8,
+    "qamatsqatanhebrew", 0x05b8,
+    "qamatsqatannarrowhebrew", 0x05b8,
+    "qamatsqatanquarterhebrew", 0x05b8,
+    "qamatsqatanwidehebrew", 0x05b8,
+    "qamatsquarterhebrew", 0x05b8,
+    "qamatswidehebrew", 0x05b8,
+    "qarneyparahebrew", 0x059f,
+    "qbopomofo", 0x3111,
+    "qcircle", 0x24e0,
+    "qhook", 0x02a0,
+    "qmonospace", 0xff51,
+    "qof", 0x05e7,
+    "qofdagesh", 0xfb47,
+    "qofdageshhebrew", 0xfb47,
+    "qofhebrew", 0x05e7,
+    "qparen", 0x24ac,
+    "quarternote", 0x2669,
+    "qubuts", 0x05bb,
+    "qubuts18", 0x05bb,
+    "qubuts25", 0x05bb,
+    "qubuts31", 0x05bb,
+    "qubutshebrew", 0x05bb,
+    "qubutsnarrowhebrew", 0x05bb,
+    "qubutsquarterhebrew", 0x05bb,
+    "qubutswidehebrew", 0x05bb,
+    "question", 0x003f,
+    "questionarabic", 0x061f,
+    "questionarmenian", 0x055e,
+    "questiondown", 0x00bf,
+    "questiondownsmall", 0xf7bf,
+    "questiongreek", 0x037e,
+    "questionmonospace", 0xff1f,
+    "questionsmall", 0xf73f,
+    "quotedbl", 0x0022,
+    "quotedblbase", 0x201e,
+    "quotedblleft", 0x201c,
+    "quotedblmonospace", 0xff02,
+    "quotedblprime", 0x301e,
+    "quotedblprimereversed", 0x301d,
+    "quotedblright", 0x201d,
+    "quoteleft", 0x2018,
+    "quoteleftreversed", 0x201b,
+    "quotereversed", 0x201b,
+    "quoteright", 0x2019,
+    "quoterightn", 0x0149,
+    "quotesinglbase", 0x201a,
+    "quotesingle", 0x0027,
+    "quotesinglemonospace", 0xff07,
+    "r", 0x0072,
+    "raarmenian", 0x057c,
+    "rabengali", 0x09b0,
+    "racute", 0x0155,
+    "radeva", 0x0930,
+    "radical", 0x221a,
+    "radicalex", 0xf8e5,
+    "radoverssquare", 0x33ae,
+    "radoverssquaredsquare", 0x33af,
+    "radsquare", 0x33ad,
+    "rafe", 0x05bf,
+    "rafehebrew", 0x05bf,
+    "ragujarati", 0x0ab0,
+    "ragurmukhi", 0x0a30,
+    "rahiragana", 0x3089,
+    "rakatakana", 0x30e9,
+    "rakatakanahalfwidth", 0xff97,
+    "ralowerdiagonalbengali", 0x09f1,
+    "ramiddlediagonalbengali", 0x09f0,
+    "ramshorn", 0x0264,
+    "ratio", 0x2236,
+    "rbopomofo", 0x3116,
+    "rcaron", 0x0159,
+    "rcedilla", 0x0157,
+    "rcircle", 0x24e1,
+    "rcommaaccent", 0x0157,
+    "rdblgrave", 0x0211,
+    "rdotaccent", 0x1e59,
+    "rdotbelow", 0x1e5b,
+    "rdotbelowmacron", 0x1e5d,
+    "referencemark", 0x203b,
+    "reflexsubset", 0x2286,
+    "reflexsuperset", 0x2287,
+    "registered", 0x00ae,
+    "registersans", 0xf8e8,
+    "registerserif", 0xf6da,
+    "reharabic", 0x0631,
+    "reharmenian", 0x0580,
+    "rehfinalarabic", 0xfeae,
+    "rehiragana", 0x308c,
+    "rekatakana", 0x30ec,
+    "rekatakanahalfwidth", 0xff9a,
+    "resh", 0x05e8,
+    "reshdageshhebrew", 0xfb48,
+    "reshhebrew", 0x05e8,
+    "reversedtilde", 0x223d,
+    "reviahebrew", 0x0597,
+    "reviamugrashhebrew", 0x0597,
+    "revlogicalnot", 0x2310,
+    "rfishhook", 0x027e,
+    "rfishhookreversed", 0x027f,
+    "rhabengali", 0x09dd,
+    "rhadeva", 0x095d,
+    "rho", 0x03c1,
+    "rhook", 0x027d,
+    "rhookturned", 0x027b,
+    "rhookturnedsuperior", 0x02b5,
+    "rhosymbolgreek", 0x03f1,
+    "rhotichookmod", 0x02de,
+    "rieulacirclekorean", 0x3271,
+    "rieulaparenkorean", 0x3211,
+    "rieulcirclekorean", 0x3263,
+    "rieulhieuhkorean", 0x3140,
+    "rieulkiyeokkorean", 0x313a,
+    "rieulkiyeoksioskorean", 0x3169,
+    "rieulkorean", 0x3139,
+    "rieulmieumkorean", 0x313b,
+    "rieulpansioskorean", 0x316c,
+    "rieulparenkorean", 0x3203,
+    "rieulphieuphkorean", 0x313f,
+    "rieulpieupkorean", 0x313c,
+    "rieulpieupsioskorean", 0x316b,
+    "rieulsioskorean", 0x313d,
+    "rieulthieuthkorean", 0x313e,
+    "rieultikeutkorean", 0x316a,
+    "rieulyeorinhieuhkorean", 0x316d,
+    "rightangle", 0x221f,
+    "righttackbelowcmb", 0x0319,
+    "righttriangle", 0x22bf,
+    "rihiragana", 0x308a,
+    "rikatakana", 0x30ea,
+    "rikatakanahalfwidth", 0xff98,
+    "ring", 0x02da,
+    "ringbelowcmb", 0x0325,
+    "ringcmb", 0x030a,
+    "ringhalfleft", 0x02bf,
+    "ringhalfleftarmenian", 0x0559,
+    "ringhalfleftbelowcmb", 0x031c,
+    "ringhalfleftcentered", 0x02d3,
+    "ringhalfright", 0x02be,
+    "ringhalfrightbelowcmb", 0x0339,
+    "ringhalfrightcentered", 0x02d2,
+    "rinvertedbreve", 0x0213,
+    "rittorusquare", 0x3351,
+    "rlinebelow", 0x1e5f,
+    "rlongleg", 0x027c,
+    "rlonglegturned", 0x027a,
+    "rmonospace", 0xff52,
+    "rohiragana", 0x308d,
+    "rokatakana", 0x30ed,
+    "rokatakanahalfwidth", 0xff9b,
+    "roruathai", 0x0e23,
+    "rparen", 0x24ad,
+    "rrabengali", 0x09dc,
+    "rradeva", 0x0931,
+    "rragurmukhi", 0x0a5c,
+    "rreharabic", 0x0691,
+    "rrehfinalarabic", 0xfb8d,
+    "rrvocalicbengali", 0x09e0,
+    "rrvocalicdeva", 0x0960,
+    "rrvocalicgujarati", 0x0ae0,
+    "rrvocalicvowelsignbengali", 0x09c4,
+    "rrvocalicvowelsigndeva", 0x0944,
+    "rrvocalicvowelsigngujarati", 0x0ac4,
+    "rsuperior", 0xf6f1,
+    "rtblock", 0x2590,
+    "rturned", 0x0279,
+    "rturnedsuperior", 0x02b4,
+    "ruhiragana", 0x308b,
+    "rukatakana", 0x30eb,
+    "rukatakanahalfwidth", 0xff99,
+    "rupeemarkbengali", 0x09f2,
+    "rupeesignbengali", 0x09f3,
+    "rupiah", 0xf6dd,
+    "ruthai", 0x0e24,
+    "rvocalicbengali", 0x098b,
+    "rvocalicdeva", 0x090b,
+    "rvocalicgujarati", 0x0a8b,
+    "rvocalicvowelsignbengali", 0x09c3,
+    "rvocalicvowelsigndeva", 0x0943,
+    "rvocalicvowelsigngujarati", 0x0ac3,
+    "s", 0x0073,
+    "sabengali", 0x09b8,
+    "sacute", 0x015b,
+    "sacutedotaccent", 0x1e65,
+    "sadarabic", 0x0635,
+    "sadeva", 0x0938,
+    "sadfinalarabic", 0xfeba,
+    "sadinitialarabic", 0xfebb,
+    "sadmedialarabic", 0xfebc,
+    "sagujarati", 0x0ab8,
+    "sagurmukhi", 0x0a38,
+    "sahiragana", 0x3055,
+    "sakatakana", 0x30b5,
+    "sakatakanahalfwidth", 0xff7b,
+    "sallallahoualayhewasallamarabic", 0xfdfa,
+    "samekh", 0x05e1,
+    "samekhdagesh", 0xfb41,
+    "samekhdageshhebrew", 0xfb41,
+    "samekhhebrew", 0x05e1,
+    "saraaathai", 0x0e32,
+    "saraaethai", 0x0e41,
+    "saraaimaimalaithai", 0x0e44,
+    "saraaimaimuanthai", 0x0e43,
+    "saraamthai", 0x0e33,
+    "saraathai", 0x0e30,
+    "saraethai", 0x0e40,
+    "saraiileftthai", 0xf886,
+    "saraiithai", 0x0e35,
+    "saraileftthai", 0xf885,
+    "saraithai", 0x0e34,
+    "saraothai", 0x0e42,
+    "saraueeleftthai", 0xf888,
+    "saraueethai", 0x0e37,
+    "saraueleftthai", 0xf887,
+    "sarauethai", 0x0e36,
+    "sarauthai", 0x0e38,
+    "sarauuthai", 0x0e39,
+    "sbopomofo", 0x3119,
+    "scaron", 0x0161,
+    "scarondotaccent", 0x1e67,
+    "scedilla", 0x015f,
+    "schwa", 0x0259,
+    "schwacyrillic", 0x04d9,
+    "schwadieresiscyrillic", 0x04db,
+    "schwahook", 0x025a,
+    "scircle", 0x24e2,
+    "scircumflex", 0x015d,
+    "scommaaccent", 0x0219,
+    "sdotaccent", 0x1e61,
+    "sdotbelow", 0x1e63,
+    "sdotbelowdotaccent", 0x1e69,
+    "seagullbelowcmb", 0x033c,
+    "second", 0x2033,
+    "secondtonechinese", 0x02ca,
+    "section", 0x00a7,
+    "seenarabic", 0x0633,
+    "seenfinalarabic", 0xfeb2,
+    "seeninitialarabic", 0xfeb3,
+    "seenmedialarabic", 0xfeb4,
+    "segol", 0x05b6,
+    "segol13", 0x05b6,
+    "segol1f", 0x05b6,
+    "segol2c", 0x05b6,
+    "segolhebrew", 0x05b6,
+    "segolnarrowhebrew", 0x05b6,
+    "segolquarterhebrew", 0x05b6,
+    "segoltahebrew", 0x0592,
+    "segolwidehebrew", 0x05b6,
+    "seharmenian", 0x057d,
+    "sehiragana", 0x305b,
+    "sekatakana", 0x30bb,
+    "sekatakanahalfwidth", 0xff7e,
+    "semicolon", 0x003b,
+    "semicolonarabic", 0x061b,
+    "semicolonmonospace", 0xff1b,
+    "semicolonsmall", 0xfe54,
+    "semivoicedmarkkana", 0x309c,
+    "semivoicedmarkkanahalfwidth", 0xff9f,
+    "sentisquare", 0x3322,
+    "sentosquare", 0x3323,
+    "seven", 0x0037,
+    "sevenarabic", 0x0667,
+    "sevenbengali", 0x09ed,
+    "sevencircle", 0x2466,
+    "sevencircleinversesansserif", 0x2790,
+    "sevendeva", 0x096d,
+    "seveneighths", 0x215e,
+    "sevengujarati", 0x0aed,
+    "sevengurmukhi", 0x0a6d,
+    "sevenhackarabic", 0x0667,
+    "sevenhangzhou", 0x3027,
+    "sevenideographicparen", 0x3226,
+    "seveninferior", 0x2087,
+    "sevenmonospace", 0xff17,
+    "sevenoldstyle", 0xf737,
+    "sevenparen", 0x247a,
+    "sevenperiod", 0x248e,
+    "sevenpersian", 0x06f7,
+    "sevenroman", 0x2176,
+    "sevensuperior", 0x2077,
+    "seventeencircle", 0x2470,
+    "seventeenparen", 0x2484,
+    "seventeenperiod", 0x2498,
+    "seventhai", 0x0e57,
+    "sfthyphen", 0x00ad,
+    "shaarmenian", 0x0577,
+    "shabengali", 0x09b6,
+    "shacyrillic", 0x0448,
+    "shaddaarabic", 0x0651,
+    "shaddadammaarabic", 0xfc61,
+    "shaddadammatanarabic", 0xfc5e,
+    "shaddafathaarabic", 0xfc60,
+    "shaddakasraarabic", 0xfc62,
+    "shaddakasratanarabic", 0xfc5f,
+    "shade", 0x2592,
+    "shadedark", 0x2593,
+    "shadelight", 0x2591,
+    "shademedium", 0x2592,
+    "shadeva", 0x0936,
+    "shagujarati", 0x0ab6,
+    "shagurmukhi", 0x0a36,
+    "shalshelethebrew", 0x0593,
+    "shbopomofo", 0x3115,
+    "shchacyrillic", 0x0449,
+    "sheenarabic", 0x0634,
+    "sheenfinalarabic", 0xfeb6,
+    "sheeninitialarabic", 0xfeb7,
+    "sheenmedialarabic", 0xfeb8,
+    "sheicoptic", 0x03e3,
+    "sheqel", 0x20aa,
+    "sheqelhebrew", 0x20aa,
+    "sheva", 0x05b0,
+    "sheva115", 0x05b0,
+    "sheva15", 0x05b0,
+    "sheva22", 0x05b0,
+    "sheva2e", 0x05b0,
+    "shevahebrew", 0x05b0,
+    "shevanarrowhebrew", 0x05b0,
+    "shevaquarterhebrew", 0x05b0,
+    "shevawidehebrew", 0x05b0,
+    "shhacyrillic", 0x04bb,
+    "shimacoptic", 0x03ed,
+    "shin", 0x05e9,
+    "shindagesh", 0xfb49,
+    "shindageshhebrew", 0xfb49,
+    "shindageshshindot", 0xfb2c,
+    "shindageshshindothebrew", 0xfb2c,
+    "shindageshsindot", 0xfb2d,
+    "shindageshsindothebrew", 0xfb2d,
+    "shindothebrew", 0x05c1,
+    "shinhebrew", 0x05e9,
+    "shinshindot", 0xfb2a,
+    "shinshindothebrew", 0xfb2a,
+    "shinsindot", 0xfb2b,
+    "shinsindothebrew", 0xfb2b,
+    "shook", 0x0282,
+    "sigma", 0x03c3,
+    "sigma1", 0x03c2,
+    "sigmafinal", 0x03c2,
+    "sigmalunatesymbolgreek", 0x03f2,
+    "sihiragana", 0x3057,
+    "sikatakana", 0x30b7,
+    "sikatakanahalfwidth", 0xff7c,
+    "siluqhebrew", 0x05bd,
+    "siluqlefthebrew", 0x05bd,
+    "similar", 0x223c,
+    "sindothebrew", 0x05c2,
+    "siosacirclekorean", 0x3274,
+    "siosaparenkorean", 0x3214,
+    "sioscieuckorean", 0x317e,
+    "sioscirclekorean", 0x3266,
+    "sioskiyeokkorean", 0x317a,
+    "sioskorean", 0x3145,
+    "siosnieunkorean", 0x317b,
+    "siosparenkorean", 0x3206,
+    "siospieupkorean", 0x317d,
+    "siostikeutkorean", 0x317c,
+    "six", 0x0036,
+    "sixarabic", 0x0666,
+    "sixbengali", 0x09ec,
+    "sixcircle", 0x2465,
+    "sixcircleinversesansserif", 0x278f,
+    "sixdeva", 0x096c,
+    "sixgujarati", 0x0aec,
+    "sixgurmukhi", 0x0a6c,
+    "sixhackarabic", 0x0666,
+    "sixhangzhou", 0x3026,
+    "sixideographicparen", 0x3225,
+    "sixinferior", 0x2086,
+    "sixmonospace", 0xff16,
+    "sixoldstyle", 0xf736,
+    "sixparen", 0x2479,
+    "sixperiod", 0x248d,
+    "sixpersian", 0x06f6,
+    "sixroman", 0x2175,
+    "sixsuperior", 0x2076,
+    "sixteencircle", 0x246f,
+    "sixteencurrencydenominatorbengali", 0x09f9,
+    "sixteenparen", 0x2483,
+    "sixteenperiod", 0x2497,
+    "sixthai", 0x0e56,
+    "slash", 0x002f,
+    "slashmonospace", 0xff0f,
+    "slong", 0x017f,
+    "slongdotaccent", 0x1e9b,
+    "smileface", 0x263a,
+    "smonospace", 0xff53,
+    "sofpasuqhebrew", 0x05c3,
+    "softhyphen", 0x00ad,
+    "softsigncyrillic", 0x044c,
+    "sohiragana", 0x305d,
+    "sokatakana", 0x30bd,
+    "sokatakanahalfwidth", 0xff7f,
+    "soliduslongoverlaycmb", 0x0338,
+    "solidusshortoverlaycmb", 0x0337,
+    "sorusithai", 0x0e29,
+    "sosalathai", 0x0e28,
+    "sosothai", 0x0e0b,
+    "sosuathai", 0x0e2a,
+    "space", 0x0020,
+    "spacehackarabic", 0x0020,
+    "spade", 0x2660,
+    "spadesuitblack", 0x2660,
+    "spadesuitwhite", 0x2664,
+    "sparen", 0x24ae,
+    "squarebelowcmb", 0x033b,
+    "squarecc", 0x33c4,
+    "squarecm", 0x339d,
+    "squarediagonalcrosshatchfill", 0x25a9,
+    "squarehorizontalfill", 0x25a4,
+    "squarekg", 0x338f,
+    "squarekm", 0x339e,
+    "squarekmcapital", 0x33ce,
+    "squareln", 0x33d1,
+    "squarelog", 0x33d2,
+    "squaremg", 0x338e,
+    "squaremil", 0x33d5,
+    "squaremm", 0x339c,
+    "squaremsquared", 0x33a1,
+    "squareorthogonalcrosshatchfill", 0x25a6,
+    "squareupperlefttolowerrightfill", 0x25a7,
+    "squareupperrighttolowerleftfill", 0x25a8,
+    "squareverticalfill", 0x25a5,
+    "squarewhitewithsmallblack", 0x25a3,
+    "srsquare", 0x33db,
+    "ssabengali", 0x09b7,
+    "ssadeva", 0x0937,
+    "ssagujarati", 0x0ab7,
+    "ssangcieuckorean", 0x3149,
+    "ssanghieuhkorean", 0x3185,
+    "ssangieungkorean", 0x3180,
+    "ssangkiyeokkorean", 0x3132,
+    "ssangnieunkorean", 0x3165,
+    "ssangpieupkorean", 0x3143,
+    "ssangsioskorean", 0x3146,
+    "ssangtikeutkorean", 0x3138,
+    "ssuperior", 0xf6f2,
+    "sterling", 0x00a3,
+    "sterlingmonospace", 0xffe1,
+    "strokelongoverlaycmb", 0x0336,
+    "strokeshortoverlaycmb", 0x0335,
+    "subset", 0x2282,
+    "subsetnotequal", 0x228a,
+    "subsetorequal", 0x2286,
+    "succeeds", 0x227b,
+    "suchthat", 0x220b,
+    "suhiragana", 0x3059,
+    "sukatakana", 0x30b9,
+    "sukatakanahalfwidth", 0xff7d,
+    "sukunarabic", 0x0652,
+    "summation", 0x2211,
+    "sun", 0x263c,
+    "superset", 0x2283,
+    "supersetnotequal", 0x228b,
+    "supersetorequal", 0x2287,
+    "svsquare", 0x33dc,
+    "syouwaerasquare", 0x337c,
+    "t", 0x0074,
+    "tabengali", 0x09a4,
+    "tackdown", 0x22a4,
+    "tackleft", 0x22a3,
+    "tadeva", 0x0924,
+    "tagujarati", 0x0aa4,
+    "tagurmukhi", 0x0a24,
+    "taharabic", 0x0637,
+    "tahfinalarabic", 0xfec2,
+    "tahinitialarabic", 0xfec3,
+    "tahiragana", 0x305f,
+    "tahmedialarabic", 0xfec4,
+    "taisyouerasquare", 0x337d,
+    "takatakana", 0x30bf,
+    "takatakanahalfwidth", 0xff80,
+    "tatweelarabic", 0x0640,
+    "tau", 0x03c4,
+    "tav", 0x05ea,
+    "tavdages", 0xfb4a,
+    "tavdagesh", 0xfb4a,
+    "tavdageshhebrew", 0xfb4a,
+    "tavhebrew", 0x05ea,
+    "tbar", 0x0167,
+    "tbopomofo", 0x310a,
+    "tcaron", 0x0165,
+    "tccurl", 0x02a8,
+    "tcedilla", 0x0163,
+    "tcheharabic", 0x0686,
+    "tchehfinalarabic", 0xfb7b,
+    "tchehinitialarabic", 0xfb7c,
+    "tchehmedialarabic", 0xfb7d,
+    "tcircle", 0x24e3,
+    "tcircumflexbelow", 0x1e71,
+    "tcommaaccent", 0x0163,
+    "tdieresis", 0x1e97,
+    "tdotaccent", 0x1e6b,
+    "tdotbelow", 0x1e6d,
+    "tecyrillic", 0x0442,
+    "tedescendercyrillic", 0x04ad,
+    "teharabic", 0x062a,
+    "tehfinalarabic", 0xfe96,
+    "tehhahinitialarabic", 0xfca2,
+    "tehhahisolatedarabic", 0xfc0c,
+    "tehinitialarabic", 0xfe97,
+    "tehiragana", 0x3066,
+    "tehjeeminitialarabic", 0xfca1,
+    "tehjeemisolatedarabic", 0xfc0b,
+    "tehmarbutaarabic", 0x0629,
+    "tehmarbutafinalarabic", 0xfe94,
+    "tehmedialarabic", 0xfe98,
+    "tehmeeminitialarabic", 0xfca4,
+    "tehmeemisolatedarabic", 0xfc0e,
+    "tehnoonfinalarabic", 0xfc73,
+    "tekatakana", 0x30c6,
+    "tekatakanahalfwidth", 0xff83,
+    "telephone", 0x2121,
+    "telephoneblack", 0x260e,
+    "telishagedolahebrew", 0x05a0,
+    "telishaqetanahebrew", 0x05a9,
+    "tencircle", 0x2469,
+    "tenideographicparen", 0x3229,
+    "tenparen", 0x247d,
+    "tenperiod", 0x2491,
+    "tenroman", 0x2179,
+    "tesh", 0x02a7,
+    "tet", 0x05d8,
+    "tetdagesh", 0xfb38,
+    "tetdageshhebrew", 0xfb38,
+    "tethebrew", 0x05d8,
+    "tetsecyrillic", 0x04b5,
+    "tevirhebrew", 0x059b,
+    "tevirlefthebrew", 0x059b,
+    "thabengali", 0x09a5,
+    "thadeva", 0x0925,
+    "thagujarati", 0x0aa5,
+    "thagurmukhi", 0x0a25,
+    "thalarabic", 0x0630,
+    "thalfinalarabic", 0xfeac,
+    "thanthakhatlowleftthai", 0xf898,
+    "thanthakhatlowrightthai", 0xf897,
+    "thanthakhatthai", 0x0e4c,
+    "thanthakhatupperleftthai", 0xf896,
+    "theharabic", 0x062b,
+    "thehfinalarabic", 0xfe9a,
+    "thehinitialarabic", 0xfe9b,
+    "thehmedialarabic", 0xfe9c,
+    "thereexists", 0x2203,
+    "therefore", 0x2234,
+    "theta", 0x03b8,
+    "theta1", 0x03d1,
+    "thetasymbolgreek", 0x03d1,
+    "thieuthacirclekorean", 0x3279,
+    "thieuthaparenkorean", 0x3219,
+    "thieuthcirclekorean", 0x326b,
+    "thieuthkorean", 0x314c,
+    "thieuthparenkorean", 0x320b,
+    "thirteencircle", 0x246c,
+    "thirteenparen", 0x2480,
+    "thirteenperiod", 0x2494,
+    "thonangmonthothai", 0x0e11,
+    "thook", 0x01ad,
+    "thophuthaothai", 0x0e12,
+    "thorn", 0x00fe,
+    "thothahanthai", 0x0e17,
+    "thothanthai", 0x0e10,
+    "thothongthai", 0x0e18,
+    "thothungthai", 0x0e16,
+    "thousandcyrillic", 0x0482,
+    "thousandsseparatorarabic", 0x066c,
+    "thousandsseparatorpersian", 0x066c,
+    "three", 0x0033,
+    "threearabic", 0x0663,
+    "threebengali", 0x09e9,
+    "threecircle", 0x2462,
+    "threecircleinversesansserif", 0x278c,
+    "threedeva", 0x0969,
+    "threeeighths", 0x215c,
+    "threegujarati", 0x0ae9,
+    "threegurmukhi", 0x0a69,
+    "threehackarabic", 0x0663,
+    "threehangzhou", 0x3023,
+    "threeideographicparen", 0x3222,
+    "threeinferior", 0x2083,
+    "threemonospace", 0xff13,
+    "threenumeratorbengali", 0x09f6,
+    "threeoldstyle", 0xf733,
+    "threeparen", 0x2476,
+    "threeperiod", 0x248a,
+    "threepersian", 0x06f3,
+    "threequarters", 0x00be,
+    "threequartersemdash", 0xf6de,
+    "threeroman", 0x2172,
+    "threesuperior", 0x00b3,
+    "threethai", 0x0e53,
+    "thzsquare", 0x3394,
+    "tihiragana", 0x3061,
+    "tikatakana", 0x30c1,
+    "tikatakanahalfwidth", 0xff81,
+    "tikeutacirclekorean", 0x3270,
+    "tikeutaparenkorean", 0x3210,
+    "tikeutcirclekorean", 0x3262,
+    "tikeutkorean", 0x3137,
+    "tikeutparenkorean", 0x3202,
+    "tilde", 0x02dc,
+    "tildebelowcmb", 0x0330,
+    "tildecmb", 0x0303,
+    "tildecomb", 0x0303,
+    "tildedoublecmb", 0x0360,
+    "tildeoperator", 0x223c,
+    "tildeoverlaycmb", 0x0334,
+    "tildeverticalcmb", 0x033e,
+    "timescircle", 0x2297,
+    "tipehahebrew", 0x0596,
+    "tipehalefthebrew", 0x0596,
+    "tippigurmukhi", 0x0a70,
+    "titlocyrilliccmb", 0x0483,
+    "tiwnarmenian", 0x057f,
+    "tlinebelow", 0x1e6f,
+    "tmonospace", 0xff54,
+    "toarmenian", 0x0569,
+    "tohiragana", 0x3068,
+    "tokatakana", 0x30c8,
+    "tokatakanahalfwidth", 0xff84,
+    "tonebarextrahighmod", 0x02e5,
+    "tonebarextralowmod", 0x02e9,
+    "tonebarhighmod", 0x02e6,
+    "tonebarlowmod", 0x02e8,
+    "tonebarmidmod", 0x02e7,
+    "tonefive", 0x01bd,
+    "tonesix", 0x0185,
+    "tonetwo", 0x01a8,
+    "tonos", 0x0384,
+    "tonsquare", 0x3327,
+    "topatakthai", 0x0e0f,
+    "tortoiseshellbracketleft", 0x3014,
+    "tortoiseshellbracketleftsmall", 0xfe5d,
+    "tortoiseshellbracketleftvertical", 0xfe39,
+    "tortoiseshellbracketright", 0x3015,
+    "tortoiseshellbracketrightsmall", 0xfe5e,
+    "tortoiseshellbracketrightvertical", 0xfe3a,
+    "totaothai", 0x0e15,
+    "tpalatalhook", 0x01ab,
+    "tparen", 0x24af,
+    "trademark", 0x2122,
+    "trademarksans", 0xf8ea,
+    "trademarkserif", 0xf6db,
+    "tretroflexhook", 0x0288,
+    "triagdn", 0x25bc,
+    "triaglf", 0x25c4,
+    "triagrt", 0x25ba,
+    "triagup", 0x25b2,
+    "ts", 0x02a6,
+    "tsadi", 0x05e6,
+    "tsadidagesh", 0xfb46,
+    "tsadidageshhebrew", 0xfb46,
+    "tsadihebrew", 0x05e6,
+    "tsecyrillic", 0x0446,
+    "tsere", 0x05b5,
+    "tsere12", 0x05b5,
+    "tsere1e", 0x05b5,
+    "tsere2b", 0x05b5,
+    "tserehebrew", 0x05b5,
+    "tserenarrowhebrew", 0x05b5,
+    "tserequarterhebrew", 0x05b5,
+    "tserewidehebrew", 0x05b5,
+    "tshecyrillic", 0x045b,
+    "tsuperior", 0xf6f3,
+    "ttabengali", 0x099f,
+    "ttadeva", 0x091f,
+    "ttagujarati", 0x0a9f,
+    "ttagurmukhi", 0x0a1f,
+    "tteharabic", 0x0679,
+    "ttehfinalarabic", 0xfb67,
+    "ttehinitialarabic", 0xfb68,
+    "ttehmedialarabic", 0xfb69,
+    "tthabengali", 0x09a0,
+    "tthadeva", 0x0920,
+    "tthagujarati", 0x0aa0,
+    "tthagurmukhi", 0x0a20,
+    "tturned", 0x0287,
+    "tuhiragana", 0x3064,
+    "tukatakana", 0x30c4,
+    "tukatakanahalfwidth", 0xff82,
+    "tusmallhiragana", 0x3063,
+    "tusmallkatakana", 0x30c3,
+    "tusmallkatakanahalfwidth", 0xff6f,
+    "twelvecircle", 0x246b,
+    "twelveparen", 0x247f,
+    "twelveperiod", 0x2493,
+    "twelveroman", 0x217b,
+    "twentycircle", 0x2473,
+    "twentyhangzhou", 0x5344,
+    "twentyparen", 0x2487,
+    "twentyperiod", 0x249b,
+    "two", 0x0032,
+    "twoarabic", 0x0662,
+    "twobengali", 0x09e8,
+    "twocircle", 0x2461,
+    "twocircleinversesansserif", 0x278b,
+    "twodeva", 0x0968,
+    "twodotenleader", 0x2025,
+    "twodotleader", 0x2025,
+    "twodotleadervertical", 0xfe30,
+    "twogujarati", 0x0ae8,
+    "twogurmukhi", 0x0a68,
+    "twohackarabic", 0x0662,
+    "twohangzhou", 0x3022,
+    "twoideographicparen", 0x3221,
+    "twoinferior", 0x2082,
+    "twomonospace", 0xff12,
+    "twonumeratorbengali", 0x09f5,
+    "twooldstyle", 0xf732,
+    "twoparen", 0x2475,
+    "twoperiod", 0x2489,
+    "twopersian", 0x06f2,
+    "tworoman", 0x2171,
+    "twostroke", 0x01bb,
+    "twosuperior", 0x00b2,
+    "twothai", 0x0e52,
+    "twothirds", 0x2154,
+    "u", 0x0075,
+    "uacute", 0x00fa,
+    "ubar", 0x0289,
+    "ubengali", 0x0989,
+    "ubopomofo", 0x3128,
+    "ubreve", 0x016d,
+    "ucaron", 0x01d4,
+    "ucircle", 0x24e4,
+    "ucircumflex", 0x00fb,
+    "ucircumflexbelow", 0x1e77,
+    "ucyrillic", 0x0443,
+    "udattadeva", 0x0951,
+    "udblacute", 0x0171,
+    "udblgrave", 0x0215,
+    "udeva", 0x0909,
+    "udieresis", 0x00fc,
+    "udieresisacute", 0x01d8,
+    "udieresisbelow", 0x1e73,
+    "udieresiscaron", 0x01da,
+    "udieresiscyrillic", 0x04f1,
+    "udieresisgrave", 0x01dc,
+    "udieresismacron", 0x01d6,
+    "udotbelow", 0x1ee5,
+    "ugrave", 0x00f9,
+    "ugujarati", 0x0a89,
+    "ugurmukhi", 0x0a09,
+    "uhiragana", 0x3046,
+    "uhookabove", 0x1ee7,
+    "uhorn", 0x01b0,
+    "uhornacute", 0x1ee9,
+    "uhorndotbelow", 0x1ef1,
+    "uhorngrave", 0x1eeb,
+    "uhornhookabove", 0x1eed,
+    "uhorntilde", 0x1eef,
+    "uhungarumlaut", 0x0171,
+    "uhungarumlautcyrillic", 0x04f3,
+    "uinvertedbreve", 0x0217,
+    "ukatakana", 0x30a6,
+    "ukatakanahalfwidth", 0xff73,
+    "ukcyrillic", 0x0479,
+    "ukorean", 0x315c,
+    "umacron", 0x016b,
+    "umacroncyrillic", 0x04ef,
+    "umacrondieresis", 0x1e7b,
+    "umatragurmukhi", 0x0a41,
+    "umonospace", 0xff55,
+    "underscore", 0x005f,
+    "underscoredbl", 0x2017,
+    "underscoremonospace", 0xff3f,
+    "underscorevertical", 0xfe33,
+    "underscorewavy", 0xfe4f,
+    "union", 0x222a,
+    "universal", 0x2200,
+    "uogonek", 0x0173,
+    "uparen", 0x24b0,
+    "upblock", 0x2580,
+    "upperdothebrew", 0x05c4,
+    "upsilon", 0x03c5,
+    "upsilondieresis", 0x03cb,
+    "upsilondieresistonos", 0x03b0,
+    "upsilonlatin", 0x028a,
+    "upsilontonos", 0x03cd,
+    "uptackbelowcmb", 0x031d,
+    "uptackmod", 0x02d4,
+    "uragurmukhi", 0x0a73,
+    "uring", 0x016f,
+    "ushortcyrillic", 0x045e,
+    "usmallhiragana", 0x3045,
+    "usmallkatakana", 0x30a5,
+    "usmallkatakanahalfwidth", 0xff69,
+    "ustraightcyrillic", 0x04af,
+    "ustraightstrokecyrillic", 0x04b1,
+    "utilde", 0x0169,
+    "utildeacute", 0x1e79,
+    "utildebelow", 0x1e75,
+    "uubengali", 0x098a,
+    "uudeva", 0x090a,
+    "uugujarati", 0x0a8a,
+    "uugurmukhi", 0x0a0a,
+    "uumatragurmukhi", 0x0a42,
+    "uuvowelsignbengali", 0x09c2,
+    "uuvowelsigndeva", 0x0942,
+    "uuvowelsigngujarati", 0x0ac2,
+    "uvowelsignbengali", 0x09c1,
+    "uvowelsigndeva", 0x0941,
+    "uvowelsigngujarati", 0x0ac1,
+    "v", 0x0076,
+    "vadeva", 0x0935,
+    "vagujarati", 0x0ab5,
+    "vagurmukhi", 0x0a35,
+    "vakatakana", 0x30f7,
+    "vav", 0x05d5,
+    "vavdagesh", 0xfb35,
+    "vavdagesh65", 0xfb35,
+    "vavdageshhebrew", 0xfb35,
+    "vavhebrew", 0x05d5,
+    "vavholam", 0xfb4b,
+    "vavholamhebrew", 0xfb4b,
+    "vavvavhebrew", 0x05f0,
+    "vavyodhebrew", 0x05f1,
+    "vcircle", 0x24e5,
+    "vdotbelow", 0x1e7f,
+    "vecyrillic", 0x0432,
+    "veharabic", 0x06a4,
+    "vehfinalarabic", 0xfb6b,
+    "vehinitialarabic", 0xfb6c,
+    "vehmedialarabic", 0xfb6d,
+    "vekatakana", 0x30f9,
+    "venus", 0x2640,
+    "verticalbar", 0x007c,
+    "verticallineabovecmb", 0x030d,
+    "verticallinebelowcmb", 0x0329,
+    "verticallinelowmod", 0x02cc,
+    "verticallinemod", 0x02c8,
+    "vewarmenian", 0x057e,
+    "vhook", 0x028b,
+    "vikatakana", 0x30f8,
+    "viramabengali", 0x09cd,
+    "viramadeva", 0x094d,
+    "viramagujarati", 0x0acd,
+    "visargabengali", 0x0983,
+    "visargadeva", 0x0903,
+    "visargagujarati", 0x0a83,
+    "vmonospace", 0xff56,
+    "voarmenian", 0x0578,
+    "voicediterationhiragana", 0x309e,
+    "voicediterationkatakana", 0x30fe,
+    "voicedmarkkana", 0x309b,
+    "voicedmarkkanahalfwidth", 0xff9e,
+    "vokatakana", 0x30fa,
+    "vparen", 0x24b1,
+    "vtilde", 0x1e7d,
+    "vturned", 0x028c,
+    "vuhiragana", 0x3094,
+    "vukatakana", 0x30f4,
+    "w", 0x0077,
+    "wacute", 0x1e83,
+    "waekorean", 0x3159,
+    "wahiragana", 0x308f,
+    "wakatakana", 0x30ef,
+    "wakatakanahalfwidth", 0xff9c,
+    "wakorean", 0x3158,
+    "wasmallhiragana", 0x308e,
+    "wasmallkatakana", 0x30ee,
+    "wattosquare", 0x3357,
+    "wavedash", 0x301c,
+    "wavyunderscorevertical", 0xfe34,
+    "wawarabic", 0x0648,
+    "wawfinalarabic", 0xfeee,
+    "wawhamzaabovearabic", 0x0624,
+    "wawhamzaabovefinalarabic", 0xfe86,
+    "wbsquare", 0x33dd,
+    "wcircle", 0x24e6,
+    "wcircumflex", 0x0175,
+    "wdieresis", 0x1e85,
+    "wdotaccent", 0x1e87,
+    "wdotbelow", 0x1e89,
+    "wehiragana", 0x3091,
+    "weierstrass", 0x2118,
+    "wekatakana", 0x30f1,
+    "wekorean", 0x315e,
+    "weokorean", 0x315d,
+    "wgrave", 0x1e81,
+    "whitebullet", 0x25e6,
+    "whitecircle", 0x25cb,
+    "whitecircleinverse", 0x25d9,
+    "whitecornerbracketleft", 0x300e,
+    "whitecornerbracketleftvertical", 0xfe43,
+    "whitecornerbracketright", 0x300f,
+    "whitecornerbracketrightvertical", 0xfe44,
+    "whitediamond", 0x25c7,
+    "whitediamondcontainingblacksmalldiamond", 0x25c8,
+    "whitedownpointingsmalltriangle", 0x25bf,
+    "whitedownpointingtriangle", 0x25bd,
+    "whiteleftpointingsmalltriangle", 0x25c3,
+    "whiteleftpointingtriangle", 0x25c1,
+    "whitelenticularbracketleft", 0x3016,
+    "whitelenticularbracketright", 0x3017,
+    "whiterightpointingsmalltriangle", 0x25b9,
+    "whiterightpointingtriangle", 0x25b7,
+    "whitesmallsquare", 0x25ab,
+    "whitesmilingface", 0x263a,
+    "whitesquare", 0x25a1,
+    "whitestar", 0x2606,
+    "whitetelephone", 0x260f,
+    "whitetortoiseshellbracketleft", 0x3018,
+    "whitetortoiseshellbracketright", 0x3019,
+    "whiteuppointingsmalltriangle", 0x25b5,
+    "whiteuppointingtriangle", 0x25b3,
+    "wihiragana", 0x3090,
+    "wikatakana", 0x30f0,
+    "wikorean", 0x315f,
+    "wmonospace", 0xff57,
+    "wohiragana", 0x3092,
+    "wokatakana", 0x30f2,
+    "wokatakanahalfwidth", 0xff66,
+    "won", 0x20a9,
+    "wonmonospace", 0xffe6,
+    "wowaenthai", 0x0e27,
+    "wparen", 0x24b2,
+    "wring", 0x1e98,
+    "wsuperior", 0x02b7,
+    "wturned", 0x028d,
+    "wynn", 0x01bf,
+    "x", 0x0078,
+    "xabovecmb", 0x033d,
+    "xbopomofo", 0x3112,
+    "xcircle", 0x24e7,
+    "xdieresis", 0x1e8d,
+    "xdotaccent", 0x1e8b,
+    "xeharmenian", 0x056d,
+    "xi", 0x03be,
+    "xmonospace", 0xff58,
+    "xparen", 0x24b3,
+    "xsuperior", 0x02e3,
+    "y", 0x0079,
+    "yaadosquare", 0x334e,
+    "yabengali", 0x09af,
+    "yacute", 0x00fd,
+    "yadeva", 0x092f,
+    "yaekorean", 0x3152,
+    "yagujarati", 0x0aaf,
+    "yagurmukhi", 0x0a2f,
+    "yahiragana", 0x3084,
+    "yakatakana", 0x30e4,
+    "yakatakanahalfwidth", 0xff94,
+    "yakorean", 0x3151,
+    "yamakkanthai", 0x0e4e,
+    "yasmallhiragana", 0x3083,
+    "yasmallkatakana", 0x30e3,
+    "yasmallkatakanahalfwidth", 0xff6c,
+    "yatcyrillic", 0x0463,
+    "ycircle", 0x24e8,
+    "ycircumflex", 0x0177,
+    "ydieresis", 0x00ff,
+    "ydotaccent", 0x1e8f,
+    "ydotbelow", 0x1ef5,
+    "yeharabic", 0x064a,
+    "yehbarreearabic", 0x06d2,
+    "yehbarreefinalarabic", 0xfbaf,
+    "yehfinalarabic", 0xfef2,
+    "yehhamzaabovearabic", 0x0626,
+    "yehhamzaabovefinalarabic", 0xfe8a,
+    "yehhamzaaboveinitialarabic", 0xfe8b,
+    "yehhamzaabovemedialarabic", 0xfe8c,
+    "yehinitialarabic", 0xfef3,
+    "yehmedialarabic", 0xfef4,
+    "yehmeeminitialarabic", 0xfcdd,
+    "yehmeemisolatedarabic", 0xfc58,
+    "yehnoonfinalarabic", 0xfc94,
+    "yehthreedotsbelowarabic", 0x06d1,
+    "yekorean", 0x3156,
+    "yen", 0x00a5,
+    "yenmonospace", 0xffe5,
+    "yeokorean", 0x3155,
+    "yeorinhieuhkorean", 0x3186,
+    "yerahbenyomohebrew", 0x05aa,
+    "yerahbenyomolefthebrew", 0x05aa,
+    "yericyrillic", 0x044b,
+    "yerudieresiscyrillic", 0x04f9,
+    "yesieungkorean", 0x3181,
+    "yesieungpansioskorean", 0x3183,
+    "yesieungsioskorean", 0x3182,
+    "yetivhebrew", 0x059a,
+    "ygrave", 0x1ef3,
+    "yhook", 0x01b4,
+    "yhookabove", 0x1ef7,
+    "yiarmenian", 0x0575,
+    "yicyrillic", 0x0457,
+    "yikorean", 0x3162,
+    "yinyang", 0x262f,
+    "yiwnarmenian", 0x0582,
+    "ymonospace", 0xff59,
+    "yod", 0x05d9,
+    "yoddagesh", 0xfb39,
+    "yoddageshhebrew", 0xfb39,
+    "yodhebrew", 0x05d9,
+    "yodyodhebrew", 0x05f2,
+    "yodyodpatahhebrew", 0xfb1f,
+    "yohiragana", 0x3088,
+    "yoikorean", 0x3189,
+    "yokatakana", 0x30e8,
+    "yokatakanahalfwidth", 0xff96,
+    "yokorean", 0x315b,
+    "yosmallhiragana", 0x3087,
+    "yosmallkatakana", 0x30e7,
+    "yosmallkatakanahalfwidth", 0xff6e,
+    "yotgreek", 0x03f3,
+    "yoyaekorean", 0x3188,
+    "yoyakorean", 0x3187,
+    "yoyakthai", 0x0e22,
+    "yoyingthai", 0x0e0d,
+    "yparen", 0x24b4,
+    "ypogegrammeni", 0x037a,
+    "ypogegrammenigreekcmb", 0x0345,
+    "yr", 0x01a6,
+    "yring", 0x1e99,
+    "ysuperior", 0x02b8,
+    "ytilde", 0x1ef9,
+    "yturned", 0x028e,
+    "yuhiragana", 0x3086,
+    "yuikorean", 0x318c,
+    "yukatakana", 0x30e6,
+    "yukatakanahalfwidth", 0xff95,
+    "yukorean", 0x3160,
+    "yusbigcyrillic", 0x046b,
+    "yusbigiotifiedcyrillic", 0x046d,
+    "yuslittlecyrillic", 0x0467,
+    "yuslittleiotifiedcyrillic", 0x0469,
+    "yusmallhiragana", 0x3085,
+    "yusmallkatakana", 0x30e5,
+    "yusmallkatakanahalfwidth", 0xff6d,
+    "yuyekorean", 0x318b,
+    "yuyeokorean", 0x318a,
+    "yyabengali", 0x09df,
+    "yyadeva", 0x095f,
+    "z", 0x007a,
+    "zaarmenian", 0x0566,
+    "zacute", 0x017a,
+    "zadeva", 0x095b,
+    "zagurmukhi", 0x0a5b,
+    "zaharabic", 0x0638,
+    "zahfinalarabic", 0xfec6,
+    "zahinitialarabic", 0xfec7,
+    "zahiragana", 0x3056,
+    "zahmedialarabic", 0xfec8,
+    "zainarabic", 0x0632,
+    "zainfinalarabic", 0xfeb0,
+    "zakatakana", 0x30b6,
+    "zaqefgadolhebrew", 0x0595,
+    "zaqefqatanhebrew", 0x0594,
+    "zarqahebrew", 0x0598,
+    "zayin", 0x05d6,
+    "zayindagesh", 0xfb36,
+    "zayindageshhebrew", 0xfb36,
+    "zayinhebrew", 0x05d6,
+    "zbopomofo", 0x3117,
+    "zcaron", 0x017e,
+    "zcircle", 0x24e9,
+    "zcircumflex", 0x1e91,
+    "zcurl", 0x0291,
+    "zdot", 0x017c,
+    "zdotaccent", 0x017c,
+    "zdotbelow", 0x1e93,
+    "zecyrillic", 0x0437,
+    "zedescendercyrillic", 0x0499,
+    "zedieresiscyrillic", 0x04df,
+    "zehiragana", 0x305c,
+    "zekatakana", 0x30bc,
+    "zero", 0x0030,
+    "zeroarabic", 0x0660,
+    "zerobengali", 0x09e6,
+    "zerodeva", 0x0966,
+    "zerogujarati", 0x0ae6,
+    "zerogurmukhi", 0x0a66,
+    "zerohackarabic", 0x0660,
+    "zeroinferior", 0x2080,
+    "zeromonospace", 0xff10,
+    "zerooldstyle", 0xf730,
+    "zeropersian", 0x06f0,
+    "zerosuperior", 0x2070,
+    "zerothai", 0x0e50,
+    "zerowidthjoiner", 0xfeff,
+    "zerowidthnonjoiner", 0x200c,
+    "zerowidthspace", 0x200b,
+    "zeta", 0x03b6,
+    "zhbopomofo", 0x3113,
+    "zhearmenian", 0x056a,
+    "zhebrevecyrillic", 0x04c2,
+    "zhecyrillic", 0x0436,
+    "zhedescendercyrillic", 0x0497,
+    "zhedieresiscyrillic", 0x04dd,
+    "zihiragana", 0x3058,
+    "zikatakana", 0x30b8,
+    "zinorhebrew", 0x05ae,
+    "zlinebelow", 0x1e95,
+    "zmonospace", 0xff5a,
+    "zohiragana", 0x305e,
+    "zokatakana", 0x30be,
+    "zparen", 0x24b5,
+    "zretroflexhook", 0x0290,
+    "zstroke", 0x01b6,
+    "zuhiragana", 0x305a,
+    "zukatakana", 0x30ba,
+    ".notdef", 0x0000,
 
-  // TeX-specific glyph names.
-  t['angbracketleftbig'] = 0x2329;
-  t['angbracketleftBig'] = 0x2329;
-  t['angbracketleftbigg'] = 0x2329;
-  t['angbracketleftBigg'] = 0x2329;
-  t['angbracketrightBig'] = 0x232A;
-  t['angbracketrightbig'] = 0x232A;
-  t['angbracketrightBigg'] = 0x232A;
-  t['angbracketrightbigg'] = 0x232A;
-  t['arrowhookleft'] = 0x21AA;
-  t['arrowhookright'] = 0x21A9;
-  t['arrowlefttophalf'] = 0x21BC;
-  t['arrowleftbothalf'] = 0x21BD;
-  t['arrownortheast'] = 0x2197;
-  t['arrownorthwest'] = 0x2196;
-  t['arrowrighttophalf'] = 0x21C0;
-  t['arrowrightbothalf'] = 0x21C1;
-  t['arrowsoutheast'] = 0x2198;
-  t['arrowsouthwest'] = 0x2199;
-  t['backslashbig'] = 0x2216;
-  t['backslashBig'] = 0x2216;
-  t['backslashBigg'] = 0x2216;
-  t['backslashbigg'] = 0x2216;
-  t['bardbl'] = 0x2016;
-  t['bracehtipdownleft'] = 0xFE37;
-  t['bracehtipdownright'] = 0xFE37;
-  t['bracehtipupleft'] = 0xFE38;
-  t['bracehtipupright'] = 0xFE38;
-  t['braceleftBig'] = 0x007B;
-  t['braceleftbig'] = 0x007B;
-  t['braceleftbigg'] = 0x007B;
-  t['braceleftBigg'] = 0x007B;
-  t['bracerightBig'] = 0x007D;
-  t['bracerightbig'] = 0x007D;
-  t['bracerightbigg'] = 0x007D;
-  t['bracerightBigg'] = 0x007D;
-  t['bracketleftbig'] = 0x005B;
-  t['bracketleftBig'] = 0x005B;
-  t['bracketleftbigg'] = 0x005B;
-  t['bracketleftBigg'] = 0x005B;
-  t['bracketrightBig'] = 0x005D;
-  t['bracketrightbig'] = 0x005D;
-  t['bracketrightbigg'] = 0x005D;
-  t['bracketrightBigg'] = 0x005D;
-  t['ceilingleftbig'] = 0x2308;
-  t['ceilingleftBig'] = 0x2308;
-  t['ceilingleftBigg'] = 0x2308;
-  t['ceilingleftbigg'] = 0x2308;
-  t['ceilingrightbig'] = 0x2309;
-  t['ceilingrightBig'] = 0x2309;
-  t['ceilingrightbigg'] = 0x2309;
-  t['ceilingrightBigg'] = 0x2309;
-  t['circledotdisplay'] = 0x2299;
-  t['circledottext'] = 0x2299;
-  t['circlemultiplydisplay'] = 0x2297;
-  t['circlemultiplytext'] = 0x2297;
-  t['circleplusdisplay'] = 0x2295;
-  t['circleplustext'] = 0x2295;
-  t['contintegraldisplay'] = 0x222E;
-  t['contintegraltext'] = 0x222E;
-  t['coproductdisplay'] = 0x2210;
-  t['coproducttext'] = 0x2210;
-  t['floorleftBig'] = 0x230A;
-  t['floorleftbig'] = 0x230A;
-  t['floorleftbigg'] = 0x230A;
-  t['floorleftBigg'] = 0x230A;
-  t['floorrightbig'] = 0x230B;
-  t['floorrightBig'] = 0x230B;
-  t['floorrightBigg'] = 0x230B;
-  t['floorrightbigg'] = 0x230B;
-  t['hatwide'] = 0x0302;
-  t['hatwider'] = 0x0302;
-  t['hatwidest'] = 0x0302;
-  t['intercal'] = 0x1D40;
-  t['integraldisplay'] = 0x222B;
-  t['integraltext'] = 0x222B;
-  t['intersectiondisplay'] = 0x22C2;
-  t['intersectiontext'] = 0x22C2;
-  t['logicalanddisplay'] = 0x2227;
-  t['logicalandtext'] = 0x2227;
-  t['logicalordisplay'] = 0x2228;
-  t['logicalortext'] = 0x2228;
-  t['parenleftBig'] = 0x0028;
-  t['parenleftbig'] = 0x0028;
-  t['parenleftBigg'] = 0x0028;
-  t['parenleftbigg'] = 0x0028;
-  t['parenrightBig'] = 0x0029;
-  t['parenrightbig'] = 0x0029;
-  t['parenrightBigg'] = 0x0029;
-  t['parenrightbigg'] = 0x0029;
-  t['prime'] = 0x2032;
-  t['productdisplay'] = 0x220F;
-  t['producttext'] = 0x220F;
-  t['radicalbig'] = 0x221A;
-  t['radicalBig'] = 0x221A;
-  t['radicalBigg'] = 0x221A;
-  t['radicalbigg'] = 0x221A;
-  t['radicalbt'] = 0x221A;
-  t['radicaltp'] = 0x221A;
-  t['radicalvertex'] = 0x221A;
-  t['slashbig'] = 0x002F;
-  t['slashBig'] = 0x002F;
-  t['slashBigg'] = 0x002F;
-  t['slashbigg'] = 0x002F;
-  t['summationdisplay'] = 0x2211;
-  t['summationtext'] = 0x2211;
-  t['tildewide'] = 0x02DC;
-  t['tildewider'] = 0x02DC;
-  t['tildewidest'] = 0x02DC;
-  t['uniondisplay'] = 0x22C3;
-  t['unionmultidisplay'] = 0x228E;
-  t['unionmultitext'] = 0x228E;
-  t['unionsqdisplay'] = 0x2294;
-  t['unionsqtext'] = 0x2294;
-  t['uniontext'] = 0x22C3;
-  t['vextenddouble'] = 0x2225;
-  t['vextendsingle'] = 0x2223;
+    // TeX-specific glyph names.
+    "angbracketleftbig", 0x2329,
+    "angbracketleftBig", 0x2329,
+    "angbracketleftbigg", 0x2329,
+    "angbracketleftBigg", 0x2329,
+    "angbracketrightBig", 0x232a,
+    "angbracketrightbig", 0x232a,
+    "angbracketrightBigg", 0x232a,
+    "angbracketrightbigg", 0x232a,
+    "arrowhookleft", 0x21aa,
+    "arrowhookright", 0x21a9,
+    "arrowlefttophalf", 0x21bc,
+    "arrowleftbothalf", 0x21bd,
+    "arrownortheast", 0x2197,
+    "arrownorthwest", 0x2196,
+    "arrowrighttophalf", 0x21c0,
+    "arrowrightbothalf", 0x21c1,
+    "arrowsoutheast", 0x2198,
+    "arrowsouthwest", 0x2199,
+    "backslashbig", 0x2216,
+    "backslashBig", 0x2216,
+    "backslashBigg", 0x2216,
+    "backslashbigg", 0x2216,
+    "bardbl", 0x2016,
+    "bracehtipdownleft", 0xfe37,
+    "bracehtipdownright", 0xfe37,
+    "bracehtipupleft", 0xfe38,
+    "bracehtipupright", 0xfe38,
+    "braceleftBig", 0x007b,
+    "braceleftbig", 0x007b,
+    "braceleftbigg", 0x007b,
+    "braceleftBigg", 0x007b,
+    "bracerightBig", 0x007d,
+    "bracerightbig", 0x007d,
+    "bracerightbigg", 0x007d,
+    "bracerightBigg", 0x007d,
+    "bracketleftbig", 0x005b,
+    "bracketleftBig", 0x005b,
+    "bracketleftbigg", 0x005b,
+    "bracketleftBigg", 0x005b,
+    "bracketrightBig", 0x005d,
+    "bracketrightbig", 0x005d,
+    "bracketrightbigg", 0x005d,
+    "bracketrightBigg", 0x005d,
+    "ceilingleftbig", 0x2308,
+    "ceilingleftBig", 0x2308,
+    "ceilingleftBigg", 0x2308,
+    "ceilingleftbigg", 0x2308,
+    "ceilingrightbig", 0x2309,
+    "ceilingrightBig", 0x2309,
+    "ceilingrightbigg", 0x2309,
+    "ceilingrightBigg", 0x2309,
+    "circledotdisplay", 0x2299,
+    "circledottext", 0x2299,
+    "circlemultiplydisplay", 0x2297,
+    "circlemultiplytext", 0x2297,
+    "circleplusdisplay", 0x2295,
+    "circleplustext", 0x2295,
+    "contintegraldisplay", 0x222e,
+    "contintegraltext", 0x222e,
+    "coproductdisplay", 0x2210,
+    "coproducttext", 0x2210,
+    "floorleftBig", 0x230a,
+    "floorleftbig", 0x230a,
+    "floorleftbigg", 0x230a,
+    "floorleftBigg", 0x230a,
+    "floorrightbig", 0x230b,
+    "floorrightBig", 0x230b,
+    "floorrightBigg", 0x230b,
+    "floorrightbigg", 0x230b,
+    "hatwide", 0x0302,
+    "hatwider", 0x0302,
+    "hatwidest", 0x0302,
+    "intercal", 0x1d40,
+    "integraldisplay", 0x222b,
+    "integraltext", 0x222b,
+    "intersectiondisplay", 0x22c2,
+    "intersectiontext", 0x22c2,
+    "logicalanddisplay", 0x2227,
+    "logicalandtext", 0x2227,
+    "logicalordisplay", 0x2228,
+    "logicalortext", 0x2228,
+    "parenleftBig", 0x0028,
+    "parenleftbig", 0x0028,
+    "parenleftBigg", 0x0028,
+    "parenleftbigg", 0x0028,
+    "parenrightBig", 0x0029,
+    "parenrightbig", 0x0029,
+    "parenrightBigg", 0x0029,
+    "parenrightbigg", 0x0029,
+    "prime", 0x2032,
+    "productdisplay", 0x220f,
+    "producttext", 0x220f,
+    "radicalbig", 0x221a,
+    "radicalBig", 0x221a,
+    "radicalBigg", 0x221a,
+    "radicalbigg", 0x221a,
+    "radicalbt", 0x221a,
+    "radicaltp", 0x221a,
+    "radicalvertex", 0x221a,
+    "slashbig", 0x002f,
+    "slashBig", 0x002f,
+    "slashBigg", 0x002f,
+    "slashbigg", 0x002f,
+    "summationdisplay", 0x2211,
+    "summationtext", 0x2211,
+    "tildewide", 0x02dc,
+    "tildewider", 0x02dc,
+    "tildewidest", 0x02dc,
+    "uniondisplay", 0x22c3,
+    "unionmultidisplay", 0x228e,
+    "unionmultitext", 0x228e,
+    "unionsqdisplay", 0x2294,
+    "unionsqtext", 0x2294,
+    "uniontext", 0x22c3,
+    "vextenddouble", 0x2225,
+    "vextendsingle", 0x2223,
+  ];
 });
 
-var getDingbatsGlyphsUnicode = getLookupTableFactory(function (t) {
-  t['space'] = 0x0020;
-  t['a1'] = 0x2701;
-  t['a2'] = 0x2702;
-  t['a202'] = 0x2703;
-  t['a3'] = 0x2704;
-  t['a4'] = 0x260E;
-  t['a5'] = 0x2706;
-  t['a119'] = 0x2707;
-  t['a118'] = 0x2708;
-  t['a117'] = 0x2709;
-  t['a11'] = 0x261B;
-  t['a12'] = 0x261E;
-  t['a13'] = 0x270C;
-  t['a14'] = 0x270D;
-  t['a15'] = 0x270E;
-  t['a16'] = 0x270F;
-  t['a105'] = 0x2710;
-  t['a17'] = 0x2711;
-  t['a18'] = 0x2712;
-  t['a19'] = 0x2713;
-  t['a20'] = 0x2714;
-  t['a21'] = 0x2715;
-  t['a22'] = 0x2716;
-  t['a23'] = 0x2717;
-  t['a24'] = 0x2718;
-  t['a25'] = 0x2719;
-  t['a26'] = 0x271A;
-  t['a27'] = 0x271B;
-  t['a28'] = 0x271C;
-  t['a6'] = 0x271D;
-  t['a7'] = 0x271E;
-  t['a8'] = 0x271F;
-  t['a9'] = 0x2720;
-  t['a10'] = 0x2721;
-  t['a29'] = 0x2722;
-  t['a30'] = 0x2723;
-  t['a31'] = 0x2724;
-  t['a32'] = 0x2725;
-  t['a33'] = 0x2726;
-  t['a34'] = 0x2727;
-  t['a35'] = 0x2605;
-  t['a36'] = 0x2729;
-  t['a37'] = 0x272A;
-  t['a38'] = 0x272B;
-  t['a39'] = 0x272C;
-  t['a40'] = 0x272D;
-  t['a41'] = 0x272E;
-  t['a42'] = 0x272F;
-  t['a43'] = 0x2730;
-  t['a44'] = 0x2731;
-  t['a45'] = 0x2732;
-  t['a46'] = 0x2733;
-  t['a47'] = 0x2734;
-  t['a48'] = 0x2735;
-  t['a49'] = 0x2736;
-  t['a50'] = 0x2737;
-  t['a51'] = 0x2738;
-  t['a52'] = 0x2739;
-  t['a53'] = 0x273A;
-  t['a54'] = 0x273B;
-  t['a55'] = 0x273C;
-  t['a56'] = 0x273D;
-  t['a57'] = 0x273E;
-  t['a58'] = 0x273F;
-  t['a59'] = 0x2740;
-  t['a60'] = 0x2741;
-  t['a61'] = 0x2742;
-  t['a62'] = 0x2743;
-  t['a63'] = 0x2744;
-  t['a64'] = 0x2745;
-  t['a65'] = 0x2746;
-  t['a66'] = 0x2747;
-  t['a67'] = 0x2748;
-  t['a68'] = 0x2749;
-  t['a69'] = 0x274A;
-  t['a70'] = 0x274B;
-  t['a71'] = 0x25CF;
-  t['a72'] = 0x274D;
-  t['a73'] = 0x25A0;
-  t['a74'] = 0x274F;
-  t['a203'] = 0x2750;
-  t['a75'] = 0x2751;
-  t['a204'] = 0x2752;
-  t['a76'] = 0x25B2;
-  t['a77'] = 0x25BC;
-  t['a78'] = 0x25C6;
-  t['a79'] = 0x2756;
-  t['a81'] = 0x25D7;
-  t['a82'] = 0x2758;
-  t['a83'] = 0x2759;
-  t['a84'] = 0x275A;
-  t['a97'] = 0x275B;
-  t['a98'] = 0x275C;
-  t['a99'] = 0x275D;
-  t['a100'] = 0x275E;
-  t['a101'] = 0x2761;
-  t['a102'] = 0x2762;
-  t['a103'] = 0x2763;
-  t['a104'] = 0x2764;
-  t['a106'] = 0x2765;
-  t['a107'] = 0x2766;
-  t['a108'] = 0x2767;
-  t['a112'] = 0x2663;
-  t['a111'] = 0x2666;
-  t['a110'] = 0x2665;
-  t['a109'] = 0x2660;
-  t['a120'] = 0x2460;
-  t['a121'] = 0x2461;
-  t['a122'] = 0x2462;
-  t['a123'] = 0x2463;
-  t['a124'] = 0x2464;
-  t['a125'] = 0x2465;
-  t['a126'] = 0x2466;
-  t['a127'] = 0x2467;
-  t['a128'] = 0x2468;
-  t['a129'] = 0x2469;
-  t['a130'] = 0x2776;
-  t['a131'] = 0x2777;
-  t['a132'] = 0x2778;
-  t['a133'] = 0x2779;
-  t['a134'] = 0x277A;
-  t['a135'] = 0x277B;
-  t['a136'] = 0x277C;
-  t['a137'] = 0x277D;
-  t['a138'] = 0x277E;
-  t['a139'] = 0x277F;
-  t['a140'] = 0x2780;
-  t['a141'] = 0x2781;
-  t['a142'] = 0x2782;
-  t['a143'] = 0x2783;
-  t['a144'] = 0x2784;
-  t['a145'] = 0x2785;
-  t['a146'] = 0x2786;
-  t['a147'] = 0x2787;
-  t['a148'] = 0x2788;
-  t['a149'] = 0x2789;
-  t['a150'] = 0x278A;
-  t['a151'] = 0x278B;
-  t['a152'] = 0x278C;
-  t['a153'] = 0x278D;
-  t['a154'] = 0x278E;
-  t['a155'] = 0x278F;
-  t['a156'] = 0x2790;
-  t['a157'] = 0x2791;
-  t['a158'] = 0x2792;
-  t['a159'] = 0x2793;
-  t['a160'] = 0x2794;
-  t['a161'] = 0x2192;
-  t['a163'] = 0x2194;
-  t['a164'] = 0x2195;
-  t['a196'] = 0x2798;
-  t['a165'] = 0x2799;
-  t['a192'] = 0x279A;
-  t['a166'] = 0x279B;
-  t['a167'] = 0x279C;
-  t['a168'] = 0x279D;
-  t['a169'] = 0x279E;
-  t['a170'] = 0x279F;
-  t['a171'] = 0x27A0;
-  t['a172'] = 0x27A1;
-  t['a173'] = 0x27A2;
-  t['a162'] = 0x27A3;
-  t['a174'] = 0x27A4;
-  t['a175'] = 0x27A5;
-  t['a176'] = 0x27A6;
-  t['a177'] = 0x27A7;
-  t['a178'] = 0x27A8;
-  t['a179'] = 0x27A9;
-  t['a193'] = 0x27AA;
-  t['a180'] = 0x27AB;
-  t['a199'] = 0x27AC;
-  t['a181'] = 0x27AD;
-  t['a200'] = 0x27AE;
-  t['a182'] = 0x27AF;
-  t['a201'] = 0x27B1;
-  t['a183'] = 0x27B2;
-  t['a184'] = 0x27B3;
-  t['a197'] = 0x27B4;
-  t['a185'] = 0x27B5;
-  t['a194'] = 0x27B6;
-  t['a198'] = 0x27B7;
-  t['a186'] = 0x27B8;
-  t['a195'] = 0x27B9;
-  t['a187'] = 0x27BA;
-  t['a188'] = 0x27BB;
-  t['a189'] = 0x27BC;
-  t['a190'] = 0x27BD;
-  t['a191'] = 0x27BE;
-  t['a89'] = 0x2768; // 0xF8D7
-  t['a90'] = 0x2769; // 0xF8D8
-  t['a93'] = 0x276A; // 0xF8D9
-  t['a94'] = 0x276B; // 0xF8DA
-  t['a91'] = 0x276C; // 0xF8DB
-  t['a92'] = 0x276D; // 0xF8DC
-  t['a205'] = 0x276E; // 0xF8DD
-  t['a85'] = 0x276F; // 0xF8DE
-  t['a206'] = 0x2770; // 0xF8DF
-  t['a86'] = 0x2771; // 0xF8E0
-  t['a87'] = 0x2772; // 0xF8E1
-  t['a88'] = 0x2773; // 0xF8E2
-  t['a95'] = 0x2774; // 0xF8E3
-  t['a96'] = 0x2775; // 0xF8E4
-  t['.notdef'] = 0x0000;
+const getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
+  // prettier-ignore
+  return [
+    "space", 0x0020,
+    "a1", 0x2701,
+    "a2", 0x2702,
+    "a202", 0x2703,
+    "a3", 0x2704,
+    "a4", 0x260e,
+    "a5", 0x2706,
+    "a119", 0x2707,
+    "a118", 0x2708,
+    "a117", 0x2709,
+    "a11", 0x261b,
+    "a12", 0x261e,
+    "a13", 0x270c,
+    "a14", 0x270d,
+    "a15", 0x270e,
+    "a16", 0x270f,
+    "a105", 0x2710,
+    "a17", 0x2711,
+    "a18", 0x2712,
+    "a19", 0x2713,
+    "a20", 0x2714,
+    "a21", 0x2715,
+    "a22", 0x2716,
+    "a23", 0x2717,
+    "a24", 0x2718,
+    "a25", 0x2719,
+    "a26", 0x271a,
+    "a27", 0x271b,
+    "a28", 0x271c,
+    "a6", 0x271d,
+    "a7", 0x271e,
+    "a8", 0x271f,
+    "a9", 0x2720,
+    "a10", 0x2721,
+    "a29", 0x2722,
+    "a30", 0x2723,
+    "a31", 0x2724,
+    "a32", 0x2725,
+    "a33", 0x2726,
+    "a34", 0x2727,
+    "a35", 0x2605,
+    "a36", 0x2729,
+    "a37", 0x272a,
+    "a38", 0x272b,
+    "a39", 0x272c,
+    "a40", 0x272d,
+    "a41", 0x272e,
+    "a42", 0x272f,
+    "a43", 0x2730,
+    "a44", 0x2731,
+    "a45", 0x2732,
+    "a46", 0x2733,
+    "a47", 0x2734,
+    "a48", 0x2735,
+    "a49", 0x2736,
+    "a50", 0x2737,
+    "a51", 0x2738,
+    "a52", 0x2739,
+    "a53", 0x273a,
+    "a54", 0x273b,
+    "a55", 0x273c,
+    "a56", 0x273d,
+    "a57", 0x273e,
+    "a58", 0x273f,
+    "a59", 0x2740,
+    "a60", 0x2741,
+    "a61", 0x2742,
+    "a62", 0x2743,
+    "a63", 0x2744,
+    "a64", 0x2745,
+    "a65", 0x2746,
+    "a66", 0x2747,
+    "a67", 0x2748,
+    "a68", 0x2749,
+    "a69", 0x274a,
+    "a70", 0x274b,
+    "a71", 0x25cf,
+    "a72", 0x274d,
+    "a73", 0x25a0,
+    "a74", 0x274f,
+    "a203", 0x2750,
+    "a75", 0x2751,
+    "a204", 0x2752,
+    "a76", 0x25b2,
+    "a77", 0x25bc,
+    "a78", 0x25c6,
+    "a79", 0x2756,
+    "a81", 0x25d7,
+    "a82", 0x2758,
+    "a83", 0x2759,
+    "a84", 0x275a,
+    "a97", 0x275b,
+    "a98", 0x275c,
+    "a99", 0x275d,
+    "a100", 0x275e,
+    "a101", 0x2761,
+    "a102", 0x2762,
+    "a103", 0x2763,
+    "a104", 0x2764,
+    "a106", 0x2765,
+    "a107", 0x2766,
+    "a108", 0x2767,
+    "a112", 0x2663,
+    "a111", 0x2666,
+    "a110", 0x2665,
+    "a109", 0x2660,
+    "a120", 0x2460,
+    "a121", 0x2461,
+    "a122", 0x2462,
+    "a123", 0x2463,
+    "a124", 0x2464,
+    "a125", 0x2465,
+    "a126", 0x2466,
+    "a127", 0x2467,
+    "a128", 0x2468,
+    "a129", 0x2469,
+    "a130", 0x2776,
+    "a131", 0x2777,
+    "a132", 0x2778,
+    "a133", 0x2779,
+    "a134", 0x277a,
+    "a135", 0x277b,
+    "a136", 0x277c,
+    "a137", 0x277d,
+    "a138", 0x277e,
+    "a139", 0x277f,
+    "a140", 0x2780,
+    "a141", 0x2781,
+    "a142", 0x2782,
+    "a143", 0x2783,
+    "a144", 0x2784,
+    "a145", 0x2785,
+    "a146", 0x2786,
+    "a147", 0x2787,
+    "a148", 0x2788,
+    "a149", 0x2789,
+    "a150", 0x278a,
+    "a151", 0x278b,
+    "a152", 0x278c,
+    "a153", 0x278d,
+    "a154", 0x278e,
+    "a155", 0x278f,
+    "a156", 0x2790,
+    "a157", 0x2791,
+    "a158", 0x2792,
+    "a159", 0x2793,
+    "a160", 0x2794,
+    "a161", 0x2192,
+    "a163", 0x2194,
+    "a164", 0x2195,
+    "a196", 0x2798,
+    "a165", 0x2799,
+    "a192", 0x279a,
+    "a166", 0x279b,
+    "a167", 0x279c,
+    "a168", 0x279d,
+    "a169", 0x279e,
+    "a170", 0x279f,
+    "a171", 0x27a0,
+    "a172", 0x27a1,
+    "a173", 0x27a2,
+    "a162", 0x27a3,
+    "a174", 0x27a4,
+    "a175", 0x27a5,
+    "a176", 0x27a6,
+    "a177", 0x27a7,
+    "a178", 0x27a8,
+    "a179", 0x27a9,
+    "a193", 0x27aa,
+    "a180", 0x27ab,
+    "a199", 0x27ac,
+    "a181", 0x27ad,
+    "a200", 0x27ae,
+    "a182", 0x27af,
+    "a201", 0x27b1,
+    "a183", 0x27b2,
+    "a184", 0x27b3,
+    "a197", 0x27b4,
+    "a185", 0x27b5,
+    "a194", 0x27b6,
+    "a198", 0x27b7,
+    "a186", 0x27b8,
+    "a195", 0x27b9,
+    "a187", 0x27ba,
+    "a188", 0x27bb,
+    "a189", 0x27bc,
+    "a190", 0x27bd,
+    "a191", 0x27be,
+    "a89", 0x2768, // 0xF8D7
+    "a90", 0x2769, // 0xF8D8
+    "a93", 0x276a, // 0xF8D9
+    "a94", 0x276b, // 0xF8DA
+    "a91", 0x276c, // 0xF8DB
+    "a92", 0x276d, // 0xF8DC
+    "a205", 0x276e, // 0xF8DD
+    "a85", 0x276f, // 0xF8DE
+    "a206", 0x2770, // 0xF8DF
+    "a86", 0x2771, // 0xF8E0
+    "a87", 0x2772, // 0xF8E1
+    "a88", 0x2773, // 0xF8E2
+    "a95", 0x2774, // 0xF8E3
+    "a96", 0x2775, // 0xF8E4
+    ".notdef", 0x0000,
+  ];
 });
 
-exports.getGlyphsUnicode = getGlyphsUnicode;
-exports.getDingbatsGlyphsUnicode = getDingbatsGlyphsUnicode;
+export { getDingbatsGlyphsUnicode, getGlyphsUnicode };

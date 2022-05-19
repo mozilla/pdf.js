@@ -1,0 +1,11 @@
+{
+  "extends": [
+    "../.eslintrc"
+  ],
+
+  "globals": {
+    "pdfjsImageDecoders": false,
+    "pdfjsLib": false,
+    "pdfjsViewer": false,
+  },
+}
