@@ -225,7 +225,9 @@ window.onload = function () {
         });
         continue;
       }
-      match = line.match(/^ {2}IMAGE[^:]*\((\d+)x(\d+)x(\d+)\): (.*)$/);
+      match = line.match(
+        /^ {2}IMAGE[^:]*\((\d+\.?\d*)x(\d+\.?\d*)x(\d+\.?\d*)\): (.*)$/
+      );
       if (match) {
         const item = gTestItems[gTestItems.length - 1];
         item.images.push({
