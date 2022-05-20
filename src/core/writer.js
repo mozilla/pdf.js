@@ -15,7 +15,7 @@
 
 import { bytesToString, escapeString, warn } from "../shared/util.js";
 import { Dict, Name, Ref } from "./primitives.js";
-import { escapePDFName, parseXFAPath } from "./core_utils.js";
+import { escapePDFName, numberToString, parseXFAPath } from "./core_utils.js";
 import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
@@ -51,23 +51,6 @@ function writeArray(array, buffer, transform) {
     writeValue(val, buffer, transform);
   }
   buffer.push("]");
-}
-
-function numberToString(value) {
-  if (Number.isInteger(value)) {
-    return value.toString();
-  }
-
-  const roundedValue = Math.round(value * 100);
-  if (roundedValue % 100 === 0) {
-    return (roundedValue / 100).toString();
-  }
-
-  if (roundedValue % 10 === 0) {
-    return value.toFixed(1);
-  }
-
-  return value.toFixed(2);
 }
 
 function writeValue(value, buffer, transform) {

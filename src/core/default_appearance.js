@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { escapePDFName, numberToString } from "./core_utils.js";
 import { OPS, warn } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
-import { escapePDFName } from "./core_utils.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
 import { Name } from "./primitives.js";
 import { StringStream } from "./stream.js";
@@ -82,18 +82,21 @@ function parseDefaultAppearance(str) {
   return new DefaultAppearanceEvaluator(str).parse();
 }
 
-// Create default appearance string from some information.
-function createDefaultAppearance({ fontSize, fontName, fontColor }) {
-  let colorCmd;
-  if (fontColor.every(c => c === 0)) {
-    colorCmd = "0 g";
-  } else {
-    colorCmd =
-      Array.from(fontColor)
-        .map(c => (c / 255).toFixed(2))
-        .join(" ") + " rg";
+function getPdfColor(color) {
+  if (color[0] === color[1] && color[1] === color[2]) {
+    const gray = color[0] / 255;
+    return `${numberToString(gray)} g`;
   }
-  return `/${escapePDFName(fontName)} ${fontSize} Tf ${colorCmd}`;
+  return (
+    Array.from(color)
+      .map(c => numberToString(c / 255))
+      .join(" ") + " rg"
+  );
 }
 
-export { createDefaultAppearance, parseDefaultAppearance };
+// Create default appearance string from some information.
+function createDefaultAppearance({ fontSize, fontName, fontColor }) {
+  return `/${escapePDFName(fontName)} ${fontSize} Tf ${getPdfColor(fontColor)}`;
+}
+
+export { createDefaultAppearance, getPdfColor, parseDefaultAppearance };

@@ -531,6 +531,23 @@ function recoverJsURL(str) {
   return null;
 }
 
+function numberToString(value) {
+  if (Number.isInteger(value)) {
+    return value.toString();
+  }
+
+  const roundedValue = Math.round(value * 100);
+  if (roundedValue % 100 === 0) {
+    return (roundedValue / 100).toString();
+  }
+
+  if (roundedValue % 10 === 0) {
+    return value.toFixed(1);
+  }
+
+  return value.toFixed(2);
+}
+
 export {
   collectActions,
   DocStats,
@@ -542,6 +559,7 @@ export {
   isWhiteSpace,
   log2,
   MissingDataException,
+  numberToString,
   ParserEOFException,
   parseXFAPath,
   readInt8,

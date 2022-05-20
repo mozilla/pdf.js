@@ -1614,7 +1614,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2.00 3.04 Td (test\\\\print) Tj ET Q EMC"
+          " 2 3.04 Td (test\\\\print) Tj ET Q EMC"
       );
     });
 
@@ -1650,7 +1650,7 @@ describe("annotation", function () {
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm" +
-          ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
+          ` 2 2 Td (${utf16String}) Tj ET Q EMC`
       );
     });
 
@@ -1733,7 +1733,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5.92 Tf 0 g 1 0 0 1 0 0 Tm" +
-          " 2.00 3.23 Td (test \\(print\\)) Tj ET Q EMC"
+          " 2 3.23 Td (test \\(print\\)) Tj ET Q EMC"
       );
     });
 
@@ -1769,7 +1769,7 @@ describe("annotation", function () {
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 3.5 Tf 0 g 1 0 0 1 0 0 Tm" +
-          ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
+          ` 2 2 Td (${utf16String}) Tj ET Q EMC`
       );
     });
 
@@ -1832,13 +1832,13 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm " +
-          "2.00 -5.00 Td (a aa aaa ) Tj\n" +
-          "0.00 -5.00 Td (aaaa aaaaa ) Tj\n" +
-          "0.00 -5.00 Td (aaaaaa ) Tj\n" +
-          "0.00 -5.00 Td (pneumonoultr) Tj\n" +
-          "0.00 -5.00 Td (amicroscopi) Tj\n" +
-          "0.00 -5.00 Td (csilicovolca) Tj\n" +
-          "0.00 -5.00 Td (noconiosis) Tj ET Q EMC"
+          "2 -5 Td (a aa aaa ) Tj\n" +
+          "0 -5 Td (aaaa aaaaa ) Tj\n" +
+          "0 -5 Td (aaaaaa ) Tj\n" +
+          "0 -5 Td (pneumonoultr) Tj\n" +
+          "0 -5 Td (amicroscopi) Tj\n" +
+          "0 -5 Td (csilicovolca) Tj\n" +
+          "0 -5 Td (noconiosis) Tj ET Q EMC"
       );
     });
 
@@ -1873,8 +1873,8 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 10 Tm " +
-          "2.00 -5.00 Td (\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f) Tj\n" +
-          "0.00 -5.00 Td (\x4e\x16\x75\x4c\x30\x6e) Tj ET Q EMC"
+          "2 -5 Td (\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f) Tj\n" +
+          "0 -5 Td (\x4e\x16\x75\x4c\x30\x6e) Tj ET Q EMC"
       );
     });
 
@@ -1891,25 +1891,25 @@ describe("annotation", function () {
       partialEvaluator.xref = xref;
       const expectedAppearance =
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm " +
-        "2.00 -5.00 Td " +
+        "2 -5 Td " +
         "(Lorem ipsum dolor sit amet, consectetur adipiscing elit.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Aliquam vitae felis ac lectus bibendum ultricies quis non) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "( diam.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Morbi id porttitor quam, a iaculis dui.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Pellentesque habitant morbi tristique senectus et netus ) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(et malesuada fames ac turpis egestas.) Tj\n" +
-        "0.00 -5.00 Td () Tj\n" +
-        "0.00 -5.00 Td () Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td () Tj\n" +
+        "0 -5 Td () Tj\n" +
+        "0 -5 Td " +
         "(Nulla consectetur, ligula in tincidunt placerat, velit ) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(augue consectetur orci, sed mattis libero nunc ut massa.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Etiam facilisis tempus interdum.) Tj ET Q EMC";
 
       const annotation = await AnnotationFactory.create(
@@ -1967,10 +1967,10 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 3.035 Tm" +
-          " (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (\\() Tj" +
-          " 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj" +
-          " 8.00 0 Td (\\)) Tj 8.00 0 Td (a) Tj" +
-          " 8.00 0 Td (\\\\) Tj ET Q EMC"
+          " (a) Tj 8 0 Td (a) Tj 8 0 Td (\\() Tj" +
+          " 8 0 Td (a) Tj 8 0 Td (a) Tj" +
+          " 8 0 Td (\\)) Tj 8 0 Td (a) Tj" +
+          " 8 0 Td (\\\\) Tj ET Q EMC"
       );
     });
 
@@ -2007,10 +2007,10 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 2 2 Tm" +
-          " (\x30\x53) Tj 8.00 0 Td (\x30\x93) Tj 8.00 0 Td (\x30\x6b) Tj" +
-          " 8.00 0 Td (\x30\x61) Tj 8.00 0 Td (\x30\x6f) Tj" +
-          " 8.00 0 Td (\x4e\x16) Tj 8.00 0 Td (\x75\x4c) Tj" +
-          " 8.00 0 Td (\x30\x6e) Tj ET Q EMC"
+          " (\x30\x53) Tj 8 0 Td (\x30\x93) Tj 8 0 Td (\x30\x6b) Tj" +
+          " 8 0 Td (\x30\x61) Tj 8 0 Td (\x30\x6f) Tj" +
+          " 8 0 Td (\x4e\x16) Tj 8 0 Td (\x75\x4c) Tj" +
+          " 8 0 Td (\x30\x6e) Tj ET Q EMC"
       );
     });
 
@@ -2050,9 +2050,9 @@ describe("annotation", function () {
           "/V (hello world) /AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 77 /Subtype /Form /Resources " +
+        "2 0 obj\n<< /Length 74 /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 3.04 Td (hello world) Tj " +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.04 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -2181,9 +2181,9 @@ describe("annotation", function () {
           `/V (\xfe\xff${utf16String}) /AP << /N 2 0 R>> /M (date)>>\nendobj\n`
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 82 /Subtype /Form /Resources " +
+        "2 0 obj\n<< /Length 76 /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
-          `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (${utf16String}) Tj ` +
+          `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2 2 Td (${utf16String}) Tj ` +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -3428,8 +3428,8 @@ describe("annotation", function () {
           "BT",
           "/Helv 5 Tf",
           "1 0 0 1 0 10 Tm",
-          "2.00 -5.88 Td (a) Tj",
-          "0.00 -6.75 Td (b) Tj",
+          "2 -5.88 Td (a) Tj",
+          "0 -6.75 Td (b) Tj",
           "ET Q EMC",
         ].join("\n")
       );
@@ -3477,8 +3477,8 @@ describe("annotation", function () {
           "BT",
           "/Helv 5 Tf",
           "1 0 0 1 0 10 Tm",
-          "2.00 -5.88 Td (b) Tj",
-          "0.00 -6.75 Td (c) Tj",
+          "2 -5.88 Td (b) Tj",
+          "0 -6.75 Td (c) Tj",
           "ET Q EMC",
         ].join("\n")
       );
@@ -3526,7 +3526,7 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         [
           "2 0 obj",
-          "<< /Length 136 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+          "<< /Length 133 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
             "/BBox [0 0 32 10]>> stream",
           "/Tx BMC q",
           "1 1 32 10 re W n",
@@ -3535,7 +3535,7 @@ describe("annotation", function () {
           "BT",
           "/Helv 5 Tf",
           "1 0 0 1 0 10 Tm",
-          "2.00 -5.88 Td (C) Tj",
+          "2 -5.88 Td (C) Tj",
           "ET Q EMC",
           "endstream",
           "endobj\n",
@@ -3592,7 +3592,7 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         [
           "2 0 obj",
-          "<< /Length 177 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+          "<< /Length 171 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
             "/BBox [0 0 32 10]>> stream",
           "/Tx BMC q",
           "1 1 32 10 re W n",
@@ -3602,8 +3602,8 @@ describe("annotation", function () {
           "BT",
           "/Helv 5 Tf",
           "1 0 0 1 0 10 Tm",
-          "2.00 -5.88 Td (b) Tj",
-          "0.00 -6.75 Td (c) Tj",
+          "2 -5.88 Td (b) Tj",
+          "0 -6.75 Td (c) Tj",
           "ET Q EMC",
           "endstream",
           "endobj\n",
