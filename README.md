@@ -79,7 +79,7 @@ It is also possible to view all test PDF files on the right side by opening:
 
 ## Building PDF.js
 
-In order to bundle all `src/` files into two production scripts and build the generic
+To bundle all `src/` files into two production scripts and build the generic
 viewer, run:
 
     $ gulp generic
