@@ -141,6 +141,6 @@ File an issue:
 
 + https://github.com/mozilla/pdf.js/issues/new
 
-Follow us on twitter: @pdfjs
+Follow us on Twitter: @pdfjs
 
 + https://twitter.com/pdfjs
