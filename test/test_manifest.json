@@ -6480,5 +6480,19 @@
       "link": true,
       "lastPage": 1,
       "type": "eq"
+   },
+   {  "id": "issue14928",
+      "file": "pdfs/issue14928.pdf",
+      "md5": "9687feb927eeb1b2a6f0794ea00f5c60",
+      "rounds": 1,
+      "link": true,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+        "1483R": {
+          "value": "05/17/2022"
+        }
+      }
    }
 ]

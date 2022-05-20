@@ -21,7 +21,7 @@ import {
 describe("Default appearance", function () {
   describe("parseDefaultAppearance and createDefaultAppearance", function () {
     it("should parse and create default appearance", function () {
-      const da = "/F1 12 Tf 0.10 0.20 0.30 rg";
+      const da = "/F1 12 Tf 0.1 0.2 0.3 rg";
       const result = {
         fontSize: 12,
         fontName: "F1",
@@ -42,8 +42,7 @@ describe("Default appearance", function () {
     });
 
     it("should parse default appearance with save/restore", function () {
-      const da =
-        "q Q 0.10 0.20 0.30 rg /F1 12 Tf q 0.30 0.20 0.10 rg /F2 13 Tf Q";
+      const da = "q Q 0.1 0.2 0.3 rg /F1 12 Tf q 0.3 0.2 0.1 rg /F2 13 Tf Q";
       expect(parseDefaultAppearance(da)).toEqual({
         fontSize: 12,
         fontName: "F1",
