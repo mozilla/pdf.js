@@ -311,7 +311,7 @@ class PDFScriptingManager {
           this._pdfViewer.currentScaleValue = value;
           break;
         case "SaveAs":
-          this._eventBus.dispatch("save", { source: this });
+          this._eventBus.dispatch("download", { source: this });
           break;
         case "FirstPage":
           this._pdfViewer.currentPageNumber = 1;
