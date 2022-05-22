@@ -677,6 +677,13 @@ const animationStarted = new Promise(function (resolve) {
   window.requestAnimationFrame(resolve);
 });
 
+const docStyle =
+  typeof PDFJSDev !== "undefined" &&
+  PDFJSDev.test("LIB") &&
+  typeof document === "undefined"
+    ? null
+    : document.documentElement.style;
+
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
@@ -709,8 +716,7 @@ class ProgressBar {
     }
     this.div.classList.remove("indeterminate");
 
-    const doc = document.documentElement;
-    doc.style.setProperty("--progressBar-percent", `${this._percent}%`);
+    docStyle.setProperty("--progressBar-percent", `${this._percent}%`);
   }
 
   get percent() {
@@ -730,8 +736,7 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      const doc = document.documentElement;
-      doc.style.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
+      docStyle.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
     }
   }
 
@@ -843,6 +848,7 @@ export {
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
+  docStyle,
   getActiveOrFocusedElement,
   getPageSizeInches,
   getVisibleElements,
