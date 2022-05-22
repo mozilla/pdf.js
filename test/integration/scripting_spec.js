@@ -1302,4 +1302,38 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in bug1766987.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1766987.pdf", "#\\37 5R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that field value is correctly formatted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let text = await page.$eval("#\\37 5R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("150.32 €");
+
+          text = await page.$eval("#\\38 2R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("12.74 Kwh");
+
+          text = await page.$eval("#\\39 1R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("352.19 Kwh");
+
+          text = await page.$eval("#\\31 01R", el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("20.57 €");
+        })
+      );
+    });
+  });
 });
