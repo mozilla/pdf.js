@@ -76,6 +76,11 @@ class EventDispatcher {
         event.name = baseEvent.name;
       }
       if (id === "doc") {
+        if (event.name === "Open") {
+          // Before running the Open event, we format all the fields
+          // (see bug 1766987).
+          this.formatAll();
+        }
         this._document.obj._dispatchDocEvent(event.name);
       } else if (id === "page") {
         this._document.obj._dispatchPageEvent(
@@ -177,6 +182,20 @@ class EventDispatcher {
         formattedValue: null,
         selRange: [0, 0],
       });
+    }
+  }
+
+  formatAll() {
+    // Run format actions if any for all the fields.
+    const event = (globalThis.event = new Event({}));
+    for (const source of Object.values(this._objects)) {
+      event.value = source.obj.value;
+      if (this.runActions(source, source, event, "Format")) {
+        source.obj._send({
+          id: source.obj._id,
+          formattedValue: event.value?.toString?.(),
+        });
+      }
     }
   }
 
