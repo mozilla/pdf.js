@@ -16,6 +16,9 @@
 
 import { isNodeJS } from "./is_node.js";
 
+// GlobalThis object is available since chrome 71.
+require("core-js/stable/global-this.js");
+
 // Skip compatibility checks for modern builds and if we already ran the module.
 if (
   (typeof PDFJSDev === "undefined" || !PDFJSDev.test("SKIP_BABEL")) &&
