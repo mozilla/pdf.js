@@ -2058,6 +2058,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue14953",
+       "file": "pdfs/issue14953.pdf",
+       "md5": "dd7d6cb92e58d75a0eb8c0476a3bc64a",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "extgstate-text",
        "file": "pdfs/extgstate.pdf",
        "md5": "001bb4ec04463a01d93aad748361f049",
