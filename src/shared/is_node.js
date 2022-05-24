@@ -26,6 +26,6 @@ const isNodeJS =
   process + "" === "[object process]" &&
   !process.versions.nw &&
   !(process.versions.electron && process.type && process.type !== "browser") &&
-  !(window && window.BSDeviceInfo);
+  !(typeof window !== "undefined" && window && window.BSDeviceInfo);
 
 export { isNodeJS };
