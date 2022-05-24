@@ -4463,21 +4463,30 @@ class TranslatedFont {
         "Type3 glyph shall start with the d1 operator."
       );
     }
-    if (isEmptyBBox) {
+    const charBBox = Util.normalizeRect(operatorList.argsArray[0].slice(2)),
+      width = charBBox[2] - charBBox[0],
+      height = charBBox[3] - charBBox[1];
+
+    if (width === 0 || height === 0) {
+      // Skip the d1 operator when its bounds are bogus (fixes issue14953.pdf).
+      operatorList.fnArray.splice(0, 1);
+      operatorList.argsArray.splice(0, 1);
+    } else if (isEmptyBBox) {
       if (!this._bbox) {
         this._bbox = [Infinity, Infinity, -Infinity, -Infinity];
       }
-      const charBBox = Util.normalizeRect(operatorList.argsArray[0].slice(2));
-
       this._bbox[0] = Math.min(this._bbox[0], charBBox[0]);
       this._bbox[1] = Math.min(this._bbox[1], charBBox[1]);
       this._bbox[2] = Math.max(this._bbox[2], charBBox[2]);
       this._bbox[3] = Math.max(this._bbox[3], charBBox[3]);
     }
-    let i = 1,
+
+    let i = 0,
       ii = operatorList.length;
     while (i < ii) {
       switch (operatorList.fnArray[i]) {
+        case OPS.setCharWidthAndBounds:
+          break; // Handled above.
         case OPS.setStrokeColorSpace:
         case OPS.setFillColorSpace:
         case OPS.setStrokeColor:

@@ -2652,8 +2652,6 @@ class CanvasGraphics {
   }
 
   setCharWidthAndBounds(xWidth, yWidth, llx, lly, urx, ury) {
-    // TODO According to the spec we're also suppose to ignore any operators
-    // that set color or include images while processing this type3 font.
     this.ctx.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip();
     this.endPath();
