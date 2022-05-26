@@ -68,6 +68,7 @@ class PDFSidebar {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
+    this.isInitialEventDispatched = false;
 
     /**
      * Callback used when the sidebar has been opened/closed, to ensure that
@@ -103,6 +104,7 @@ class PDFSidebar {
 
   reset() {
     this.isInitialViewSet = false;
+    this.isInitialEventDispatched = false;
 
     this._hideUINotification(/* reset = */ true);
     this.switchView(SidebarView.THUMBS);
@@ -136,9 +138,11 @@ class PDFSidebar {
       this._dispatchEvent();
       return;
     }
-    // Prevent dispatching two back-to-back `sidebarviewchanged` events,
-    // since `this._switchView` dispatched the event if the view changed.
-    if (!this._switchView(view, /* forceOpen */ true)) {
+    this.switchView(view, /* forceOpen = */ true);
+
+    // Prevent dispatching two back-to-back "sidebarviewchanged" events,
+    // since `this.switchView` dispatched the event if the view changed.
+    if (!this.isInitialEventDispatched) {
       this._dispatchEvent();
     }
   }
@@ -150,14 +154,6 @@ class PDFSidebar {
    *                                The default value is `false`.
    */
   switchView(view, forceOpen = false) {
-    this._switchView(view, forceOpen);
-  }
-
-  /**
-   * @returns {boolean} Indicating if `this._dispatchEvent` was called.
-   * @private
-   */
-  _switchView(view, forceOpen = false) {
     const isViewChanged = view !== this.active;
     let shouldForceRendering = false;
 
@@ -165,9 +161,8 @@ class PDFSidebar {
       case SidebarView.NONE:
         if (this.isOpen) {
           this.close();
-          return true; // Closing will trigger rendering and dispatch the event.
         }
-        return false;
+        return; // Closing will trigger rendering and dispatch the event.
       case SidebarView.THUMBS:
         if (this.isOpen && isViewChanged) {
           shouldForceRendering = true;
@@ -175,22 +170,22 @@ class PDFSidebar {
         break;
       case SidebarView.OUTLINE:
         if (this.outlineButton.disabled) {
-          return false;
+          return;
         }
         break;
       case SidebarView.ATTACHMENTS:
         if (this.attachmentsButton.disabled) {
-          return false;
+          return;
         }
         break;
       case SidebarView.LAYERS:
         if (this.layersButton.disabled) {
-          return false;
+          return;
         }
         break;
       default:
-        console.error(`PDFSidebar._switchView: "${view}" is not a valid view.`);
-        return false;
+        console.error(`PDFSidebar.switchView: "${view}" is not a valid view.`);
+        return;
     }
     // Update the active view *after* it has been validated above,
     // in order to prevent setting it to an invalid state.
@@ -222,7 +217,7 @@ class PDFSidebar {
 
     if (forceOpen && !this.isOpen) {
       this.open();
-      return true; // Opening will trigger rendering and dispatch the event.
+      return; // Opening will trigger rendering and dispatch the event.
     }
     if (shouldForceRendering) {
       this._updateThumbnailViewer();
@@ -231,7 +226,6 @@ class PDFSidebar {
     if (isViewChanged) {
       this._dispatchEvent();
     }
-    return isViewChanged;
   }
 
   open() {
@@ -280,6 +274,10 @@ class PDFSidebar {
    * @private
    */
   _dispatchEvent() {
+    if (this.isInitialViewSet && !this.isInitialEventDispatched) {
+      this.isInitialEventDispatched = true;
+    }
+
     this.eventBus.dispatch("sidebarviewchanged", {
       source: this,
       view: this.visibleView,
