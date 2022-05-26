@@ -40,6 +40,7 @@ import {
 import {
   approximateFraction,
   DEFAULT_SCALE,
+  docStyle,
   OutputScale,
   RendererType,
   RenderingStates,
@@ -339,8 +340,7 @@ class PDFPageView {
     });
 
     if (this._isStandalone) {
-      const { style } = document.documentElement;
-      style.setProperty("--zoom-factor", this.scale);
+      docStyle.setProperty("--zoom-factor", this.scale);
     }
 
     if (this.svg) {
