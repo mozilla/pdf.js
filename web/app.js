@@ -504,8 +504,13 @@ const PDFViewerApplication = {
     });
     this.pdfScriptingManager = pdfScriptingManager;
 
-    const container = appConfig.mainContainer;
-    const viewer = appConfig.viewerContainer;
+    const container = appConfig.mainContainer,
+      viewer = appConfig.viewerContainer;
+    const pageColors = {
+      background: AppOptions.get("pageColorsBackground"),
+      foreground: AppOptions.get("pageColorsForeground"),
+    };
+
     this.pdfViewer = new PDFViewer({
       container,
       viewer,
@@ -525,10 +530,7 @@ const PDFViewerApplication = {
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
       maxCanvasPixels: AppOptions.get("maxCanvasPixels"),
       enablePermissions: AppOptions.get("enablePermissions"),
-      pageColors: {
-        background: AppOptions.get("pageColorsBackground"),
-        foreground: AppOptions.get("pageColorsForeground"),
-      },
+      pageColors,
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -540,6 +542,7 @@ const PDFViewerApplication = {
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
       l10n: this.l10n,
+      pageColors,
     });
     pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 

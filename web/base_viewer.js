@@ -269,13 +269,15 @@ class BaseViewer {
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       if (
-        options.pageColors &&
-        (!CSS.supports("color", options.pageColors.background) ||
-          !CSS.supports("color", options.pageColors.foreground))
+        this.pageColors &&
+        !(
+          CSS.supports("color", this.pageColors.background) &&
+          CSS.supports("color", this.pageColors.foreground)
+        )
       ) {
-        if (options.pageColors.background || options.pageColors.foreground) {
+        if (this.pageColors.background || this.pageColors.foreground) {
           console.warn(
-            "Ignoring `pageColors`-option, since the browser doesn't support the values used."
+            "BaseViewer: Ignoring `pageColors`-option, since the browser doesn't support the values used."
           );
         }
         this.pageColors = null;
