@@ -41,6 +41,7 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFFindController, FindState } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
 import { PDFPageView } from "./pdf_page_view.js";
+import { RenderingStates, PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 
 // eslint-disable-next-line no-unused-vars
@@ -72,4 +73,6 @@ export {
   TextLayerBuilder,
   TextHighlighter,
   XfaLayerBuilder,
+  RenderingStates,
+  PDFRenderingQueue
 };
