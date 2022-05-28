@@ -6507,5 +6507,26 @@
       "rounds": 1,
       "link": true,
       "type": "other"
+   },
+   {  "id": "issue14301",
+      "file": "pdfs/issue14301.pdf",
+      "md5": "9973936dcf8dd41daa62c04a4eb621f0",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 2,
+      "type": "eq",
+      "forms": true,
+      "annotationStorage": {
+        "1832R": {
+         "value": "3"
+        },
+        "1827R": {
+         "value": "2"
+        },
+        "1808R": {
+         "value": "1"
+        }
+      }
    }
 ]
