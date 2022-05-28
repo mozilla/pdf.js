@@ -208,7 +208,9 @@ function preprocess(inFilename, outFilename, defines) {
         !stack.includes(STATE_IF_FALSE) &&
         !stack.includes(STATE_ELSE_FALSE)
       ) {
-        writeLine(line.replace(/^\/\/|^<!--/g, "  ").replace(/-->$/g, ""));
+        writeLine(
+          line.replace(/^\/\/|^\/\*|^<!--/g, "  ").replace(/\*\/$|-->$/g, "")
+        );
       }
     }
   }
