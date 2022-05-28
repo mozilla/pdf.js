@@ -21,6 +21,10 @@ import { PDFFindController } from "../../web/pdf_find_controller.js";
 import { SimpleLinkService } from "../../web/pdf_link_service.js";
 
 const tracemonkeyFileName = "tracemonkey.pdf";
+const CMAP_PARAMS = {
+  cMapUrl: isNodeJS ? "./external/bcmaps/" : "../../../external/bcmaps/",
+  cMapPacked: true,
+};
 
 class MockLinkService extends SimpleLinkService {
   constructor() {
@@ -49,7 +53,9 @@ class MockLinkService extends SimpleLinkService {
 
 async function initPdfFindController(filename) {
   const loadingTask = getDocument(
-    buildGetDocumentParams(filename || tracemonkeyFileName)
+    buildGetDocumentParams(filename || tracemonkeyFileName, {
+      ...CMAP_PARAMS,
+    })
   );
   const pdfDocument = await loadingTask.promise;
 
@@ -597,6 +603,27 @@ describe("pdf_find_controller", function () {
           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         ],
       ],
+    });
+  });
+
+  it("performs a search in a text containing some Hangul syllables", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "bug1771477.pdf"
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "안녕하세요 세계",
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[139]],
+      pageMatchesLength: [[8]],
     });
   });
 });
