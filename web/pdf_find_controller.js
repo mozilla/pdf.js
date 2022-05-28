@@ -86,19 +86,62 @@ const SPECIAL_CHARS_REG_EXP =
 const NOT_DIACRITIC_FROM_END_REG_EXP = /([^\p{M}])\p{M}*$/u;
 const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*([^\p{M}])/u;
 
-let normalizationRegex = null;
+// The range [AC00-D7AF] corresponds to the Hangul syllables.
+// The few other chars are some CJK Compatibility Ideographs.
+const SYLLABLES_REG_EXP = /[\uAC00-\uD7AF\uFA6C\uFACF-\uFAD1\uFAD5-\uFAD7]+/g;
+const SYLLABLES_LENGTHS = new Map();
+// When decomposed (in using NFD) the above syllables will start
+// with one of the chars in this regexp.
+const FIRST_CHAR_SYLLABLES_REG_EXP =
+  "[\\u1100-\\u1112\\ud7a4-\\ud7af\\ud84a\\ud84c\\ud850\\ud854\\ud857\\ud85f]";
+
+let noSyllablesRegExp = null;
+let withSyllablesRegExp = null;
+
 function normalize(text) {
   // The diacritics in the text or in the query can be composed or not.
   // So we use a decomposed text using NFD (and the same for the query)
   // in order to be sure that diacritics are in the same order.
 
-  if (!normalizationRegex) {
+  // Collect syllables length and positions.
+  const syllablePositions = [];
+  let m;
+  while ((m = SYLLABLES_REG_EXP.exec(text)) !== null) {
+    let { index } = m;
+    for (const char of m[0]) {
+      let len = SYLLABLES_LENGTHS.get(char);
+      if (!len) {
+        len = char.normalize("NFD").length;
+        SYLLABLES_LENGTHS.set(char, len);
+      }
+      syllablePositions.push([len, index++]);
+    }
+  }
+
+  let normalizationRegex;
+  if (syllablePositions.length === 0 && noSyllablesRegExp) {
+    normalizationRegex = noSyllablesRegExp;
+  } else if (syllablePositions.length > 0 && withSyllablesRegExp) {
+    normalizationRegex = withSyllablesRegExp;
+  } else {
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
-    normalizationRegex = new RegExp(
-      `([${replace}])|(\\p{M}+(?:-\\n)?)|(\\S-\\n)|(\\n)`,
-      "gum"
-    );
+    const regexp = `([${replace}])|(\\p{M}+(?:-\\n)?)|(\\S-\\n)|(\\n)`;
+
+    if (syllablePositions.length === 0) {
+      // Most of the syllables belong to Hangul so there are no need
+      // to search for them in a non-Hangul document.
+      // We use the \0 in order to have the same number of groups.
+      normalizationRegex = noSyllablesRegExp = new RegExp(
+        regexp + "|(\\u0000)",
+        "gum"
+      );
+    } else {
+      normalizationRegex = withSyllablesRegExp = new RegExp(
+        regexp + `|(${FIRST_CHAR_SYLLABLES_REG_EXP})`,
+        "gum"
+      );
+    }
   }
 
   // The goal of this function is to normalize the string and
@@ -130,14 +173,14 @@ function normalize(text) {
 
   // Collect diacritics length and positions.
   const rawDiacriticsPositions = [];
-  let m;
   while ((m = DIACRITICS_REG_EXP.exec(text)) !== null) {
     rawDiacriticsPositions.push([m[0].length, m.index]);
   }
 
   let normalized = text.normalize("NFD");
   const positions = [[0, 0]];
-  let k = 0;
+  let rawDiacriticsIndex = 0;
+  let syllableIndex = 0;
   let shift = 0;
   let shiftOrigin = 0;
   let eol = 0;
@@ -145,7 +188,7 @@ function normalize(text) {
 
   normalized = normalized.replace(
     normalizationRegex,
-    (match, p1, p2, p3, p4, i) => {
+    (match, p1, p2, p3, p4, p5, i) => {
       i -= shiftOrigin;
       if (p1) {
         // Maybe fractions or quotations mark...
@@ -165,12 +208,12 @@ function normalize(text) {
         // Diacritics.
         hasDiacritics = true;
         let jj = len;
-        if (i + eol === rawDiacriticsPositions[k]?.[1]) {
-          jj -= rawDiacriticsPositions[k][0];
-          ++k;
+        if (i + eol === rawDiacriticsPositions[rawDiacriticsIndex]?.[1]) {
+          jj -= rawDiacriticsPositions[rawDiacriticsIndex][0];
+          ++rawDiacriticsIndex;
         }
 
-        for (let j = 1; j < jj + 1; j++) {
+        for (let j = 1; j <= jj; j++) {
           // i is the position of the first diacritic
           // so (i - 1) is the position for the letter before.
           positions.push([i - 1 - shift + j, shift - j]);
@@ -204,14 +247,29 @@ function normalize(text) {
         return p3.charAt(0);
       }
 
-      // p4
-      // eol is replaced by space: "foo\nbar" is likely equivalent to
-      // "foo bar".
-      positions.push([i - shift + 1, shift - 1]);
-      shift -= 1;
-      shiftOrigin += 1;
-      eol += 1;
-      return " ";
+      if (p4) {
+        // eol is replaced by space: "foo\nbar" is likely equivalent to
+        // "foo bar".
+        positions.push([i - shift + 1, shift - 1]);
+        shift -= 1;
+        shiftOrigin += 1;
+        eol += 1;
+        return " ";
+      }
+
+      // p5
+      if (i + eol === syllablePositions[syllableIndex]?.[1]) {
+        // A syllable (1 char) is replaced with several chars (n) so
+        // newCharsLen = n - 1.
+        const newCharLen = syllablePositions[syllableIndex][0] - 1;
+        ++syllableIndex;
+        for (let j = 1; j <= newCharLen; j++) {
+          positions.push([i - (shift - j), shift - j]);
+        }
+        shift -= newCharLen;
+        shiftOrigin += newCharLen;
+      }
+      return p5;
     }
   );
 
