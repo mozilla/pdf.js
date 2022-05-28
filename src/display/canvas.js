@@ -1291,7 +1291,6 @@ class CanvasGraphics {
       background({ context: this.ctx, width, height });
     }
     // #916 end of modification by ngx-extended-pdf-viewer
-
     else if (this.foregroundColor && this.backgroundColor) {
       // Get the #RRGGBB value of the color. If it's a name (e.g. CanvasText)
       // then it'll be converted to its rgb value.
@@ -1354,12 +1353,16 @@ class CanvasGraphics {
     } else {
     if (background)
       this.background = background;
-      this.backgroundColor = backgroundColor;
+      this.backgroundColor = background;
     }
     // #916 end of modification by ngx-extended-pdf-viewer
 
-    this.ctx.fillStyle = this.backgroundColor || defaultBackgroundColor;
-    this.ctx.fillRect(0, 0, width, height);
+    // #916 modification by ngx-extended-pdf-viewer
+    if (typeof background !== "function") {
+      this.ctx.fillStyle = this.backgroundColor || defaultBackgroundColor;
+      this.ctx.fillRect(0, 0, width, height);
+    }
+    // #916 end of modification by ngx-extended-pdf-viewer
     this.ctx.restore();
     this.backgroundColorToReplace = backgroundColorToReplace;
 
@@ -2685,8 +2688,6 @@ class CanvasGraphics {
   }
 
   setCharWidthAndBounds(xWidth, yWidth, llx, lly, urx, ury) {
-    // TODO According to the spec we're also suppose to ignore any operators
-    // that set color or include images while processing this type3 font.
     this.ctx.rect(llx, lly, urx - llx, ury - lly);
     this.ctx.clip();
     this.endPath();

@@ -29,17 +29,12 @@
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 
-import {
-  AnnotationMode,
-  createPromiseCapability,
-  PermissionFlag,
-  PixelsPerInch,
-  version,
-} from "pdfjs-lib";
+import { AnnotationMode, createPromiseCapability, PermissionFlag, PixelsPerInch, version } from "pdfjs-lib";
 import {
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
+  docStyle,
   getVisibleElements,
   isPortraitOrientation,
   isValidRotation,
@@ -220,12 +215,9 @@ class BaseViewer {
     if (this.constructor === BaseViewer) {
       throw new Error("Cannot initialize BaseViewer.");
     }
-    const viewerVersion =
-      typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
+    const viewerVersion = typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
     if (version !== viewerVersion) {
-      throw new Error(
-        `The API version "${version}" does not match the Viewer version "${viewerVersion}".`
-      );
+      throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
@@ -234,23 +226,12 @@ class BaseViewer {
     this.pageViewMode = options.pageViewMode || "multiple";
     /** end of modification */
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || GENERIC")
-    ) {
-      if (
-        !(
-          this.container?.tagName.toUpperCase() === "DIV" &&
-          this.viewer?.tagName.toUpperCase() === "DIV"
-        )
-      ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")) {
+      if (!(this.container?.tagName.toUpperCase() === "DIV" && this.viewer?.tagName.toUpperCase() === "DIV")) {
         throw new Error("Invalid `container` and/or `viewer` option.");
       }
 
-      if (
-        this.container.offsetParent &&
-        getComputedStyle(this.container).position !== "absolute"
-      ) {
+      if (this.container.offsetParent && getComputedStyle(this.container).position !== "absolute") {
         throw new Error("The `container` must be absolutely positioned.");
       }
     }
@@ -261,8 +242,7 @@ class BaseViewer {
     this._scriptingManager = options.scriptingManager || null;
     this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
-    this.#annotationMode =
-      options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
+    this.#annotationMode = options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
@@ -275,13 +255,10 @@ class BaseViewer {
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       if (
         options.pageColors &&
-        (!CSS.supports("color", options.pageColors.background) ||
-          !CSS.supports("color", options.pageColors.foreground))
+        (!CSS.supports("color", options.pageColors.background) || !CSS.supports("color", options.pageColors.foreground))
       ) {
         if (options.pageColors.background || options.pageColors.foreground) {
-          console.warn(
-            "Ignoring `pageColors`-option, since the browser doesn't support the values used."
-          );
+          console.warn("Ignoring `pageColors`-option, since the browser doesn't support the values used.");
         }
         this.pageColors = null;
       }
@@ -295,7 +272,6 @@ class BaseViewer {
     } else {
       this.renderingQueue = options.renderingQueue;
     }
-    this._doc = document.documentElement;
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.presentationModeState = PresentationModeState.UNKNOWN;
@@ -373,15 +349,15 @@ class BaseViewer {
 
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
-      Window['ngxConsole'].error(`currentPageNumber: "${val}" is not a valid page.`);
+      Window["ngxConsole"].error(`currentPageNumber: "${val}" is not a valid page.`);
     }
-	// #716 modified by ngx-extended-pdf-viewer
+    // #716 modified by ngx-extended-pdf-viewer
     if (this.pageFlip) {
       if (flip) {
-        Window['ngxConsole'].log("Flip");
+        Window["ngxConsole"].log("Flip");
         this.pageFlip.flip(val - 1);
       } else {
-        Window['ngxConsole'].log("turn to page");
+        Window["ngxConsole"].log("turn to page");
         this.pageFlip.turnToPage(val - 1);
       }
     }
@@ -507,12 +483,12 @@ class BaseViewer {
   ensureAdjecentPagesAreLoaded() {
     if (!window.adjacentPagesLoader) {
       window.adjacentPagesLoader = evt => {
-        Window['ngxConsole'].log("rendered", evt);
+        Window["ngxConsole"].log("rendered", evt);
         let pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber)];
         if (pageView) {
           let isLoading = pageView.div.querySelector(".loadingIcon");
           if (isLoading) {
-            Window['ngxConsole'].log("asking for the next page");
+            Window["ngxConsole"].log("asking for the next page");
             this.#ensurePdfPageLoaded(pageView).then(() => {
               this.renderingQueue.renderView(pageView);
             });
@@ -520,7 +496,7 @@ class BaseViewer {
             pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 1)];
             isLoading = pageView.div.querySelector(".loadingIcon");
             if (isLoading) {
-              Window['ngxConsole'].log("asking for the next + 1 page");
+              Window["ngxConsole"].log("asking for the next + 1 page");
               this.#ensurePdfPageLoaded(pageView).then(() => {
                 this.renderingQueue.renderView(pageView);
               });
@@ -528,7 +504,7 @@ class BaseViewer {
               pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 2)];
               isLoading = pageView.div.querySelector(".loadingIcon");
               if (isLoading) {
-                Window['ngxConsole'].log("asking for the next + 2 page");
+                Window["ngxConsole"].log("asking for the next + 2 page");
                 this.#ensurePdfPageLoaded(pageView).then(() => {
                   this.renderingQueue.renderView(pageView);
                 });
@@ -536,7 +512,7 @@ class BaseViewer {
                 pageView = this._pages[Math.min(this._pages.length - 1, this.currentPageNumber + 3)];
                 isLoading = pageView.div.querySelector(".loadingIcon");
                 if (isLoading) {
-                  Window['ngxConsole'].log("asking for the next + 3 page");
+                  Window["ngxConsole"].log("asking for the next + 3 page");
                   this.#ensurePdfPageLoaded(pageView).then(() => {
                     this.renderingQueue.renderView(pageView);
                   });
@@ -544,7 +520,7 @@ class BaseViewer {
                   pageView = this._pages[Math.max(0, this.currentPageNumber - 1)];
                   isLoading = pageView.div.querySelector(".loadingIcon");
                   if (isLoading) {
-                    Window['ngxConsole'].log("asking for the current page");
+                    Window["ngxConsole"].log("asking for the current page");
                     this.#ensurePdfPageLoaded(pageView).then(() => {
                       this.renderingQueue.renderView(pageView);
                     });
@@ -552,12 +528,12 @@ class BaseViewer {
                     pageView = this._pages[Math.max(0, this.currentPageNumber - 2)];
                     isLoading = pageView.div.querySelector(".loadingIcon");
                     if (isLoading) {
-                      Window['ngxConsole'].log("asking for the previous page");
+                      Window["ngxConsole"].log("asking for the previous page");
                       this.#ensurePdfPageLoaded(pageView).then(() => {
                         this.renderingQueue.renderView(pageView);
                       });
                     } else {
-                      Window['ngxConsole'].log("Finished preloading the pages");
+                      Window["ngxConsole"].log("Finished preloading the pages");
                     }
                   }
                 }
@@ -596,7 +572,7 @@ class BaseViewer {
     }
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(page, /* resetCurrentPageView = */ true)) {
-      Window['ngxConsole'].error(`currentPageLabel: "${val}" is not a valid page.`);
+      Window["ngxConsole"].error(`currentPageLabel: "${val}" is not a valid page.`);
     }
   }
 
@@ -604,9 +580,7 @@ class BaseViewer {
    * @type {number}
    */
   get currentScale() {
-    return this._currentScale !== UNKNOWN_SCALE
-      ? this._currentScale
-      : DEFAULT_SCALE;
+    return this._currentScale !== UNKNOWN_SCALE ? this._currentScale : DEFAULT_SCALE;
   }
 
   /**
@@ -713,10 +687,7 @@ class BaseViewer {
       this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
 
-    if (
-      !permissions.includes(PermissionFlag.MODIFY_ANNOTATIONS) &&
-      !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS)
-    ) {
+    if (!permissions.includes(PermissionFlag.MODIFY_ANNOTATIONS) && !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS)) {
       if (this.#annotationMode === AnnotationMode.ENABLE_FORMS) {
         this.#previousAnnotationMode = this.#annotationMode; // Allow resetting.
         this.#annotationMode = AnnotationMode.ENABLE;
@@ -735,11 +706,7 @@ class BaseViewer {
     //    element; fixes bug 1618621.
     //  - The viewer is visible, but none of the pages are (e.g. if the
     //    viewer is very small); fixes bug 1618955.
-    if (
-      document.visibilityState === "hidden" ||
-      !this.container.offsetParent ||
-      this._getVisiblePages().views.length === 0
-    ) {
+    if (document.visibilityState === "hidden" || !this.container.offsetParent || this._getVisiblePages().views.length === 0) {
       return Promise.resolve();
     }
 
@@ -752,19 +719,13 @@ class BaseViewer {
         }
         resolve();
 
-        document.removeEventListener(
-          "visibilitychange",
-          this.#onVisibilityChange
-        );
+        document.removeEventListener("visibilitychange", this.#onVisibilityChange);
         this.#onVisibilityChange = null;
       };
       document.addEventListener("visibilitychange", this.#onVisibilityChange);
     });
 
-    return Promise.race([
-      this._onePageRenderedCapability.promise,
-      visibilityChangePromise,
-    ]);
+    return Promise.race([this._onePageRenderedCapability.promise, visibilityChangePromise]);
   }
 
   /**
@@ -794,16 +755,12 @@ class BaseViewer {
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
-    const permissionsPromise = this.#enablePermissions
-      ? pdfDocument.getPermissions()
-      : Promise.resolve();
+    const permissionsPromise = this.#enablePermissions ? pdfDocument.getPermissions() : Promise.resolve();
 
     // Given that browsers don't handle huge amounts of DOM-elements very well,
     // enforce usage of PAGE-scrolling when loading *very* long/large documents.
     if (pagesCount > PagesCountLimit.FORCE_SCROLL_MODE_PAGE) {
-      console.warn(
-        "Forcing PAGE-scrolling for performance reasons, given the length of the document."
-      );
+      console.warn("Forcing PAGE-scrolling for performance reasons, given the length of the document.");
       const mode = (this._scrollMode = ScrollMode.PAGE);
       this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
     }
@@ -838,10 +795,7 @@ class BaseViewer {
       this._onAfterDraw = null;
 
       if (this.#onVisibilityChange) {
-        document.removeEventListener(
-          "visibilitychange",
-          this.#onVisibilityChange
-        );
+        document.removeEventListener("visibilitychange", this.#onVisibilityChange);
         this.#onVisibilityChange = null;
       }
     };
@@ -858,18 +812,13 @@ class BaseViewer {
         this._optionalContentConfigPromise = optionalContentConfigPromise;
         this.#initializePermissions(permissions);
 
-        const viewerElement =
-          this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
+        const viewerElement = this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
         const scale = this.currentScale;
         const viewport = firstPdfPage.getViewport({
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
         });
-        const textLayerFactory =
-          this.textLayerMode !== TextLayerMode.DISABLE && !isPureXfa
-            ? this
-            : null;
-        const annotationLayerFactory =
-          this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
+        const textLayerFactory = this.textLayerMode !== TextLayerMode.DISABLE && !isPureXfa ? this : null;
+        const annotationLayerFactory = this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -927,10 +876,7 @@ class BaseViewer {
 
           // In addition to 'disableAutoFetch' being set, also attempt to reduce
           // resource usage when loading *very* long/large documents.
-          if (
-            pdfDocument.loadingParams.disableAutoFetch ||
-            pagesCount > PagesCountLimit.FORCE_LAZY_PAGE_INIT
-          ) {
+          if (pdfDocument.loadingParams.disableAutoFetch || pagesCount > PagesCountLimit.FORCE_LAZY_PAGE_INIT) {
             // XXX: Printing is semi-broken with auto fetch disabled.
             this._pagesCapability.resolve();
             return;
@@ -954,10 +900,7 @@ class BaseViewer {
                 }
               },
               reason => {
-                Window['ngxConsole'].error(
-                  `Unable to get page ${pageNum} to initialize viewer`,
-                  reason
-                );
+                Window["ngxConsole"].error(`Unable to get page ${pageNum} to initialize viewer`, reason);
                 if (--getPagesLeft === 0) {
                   this._pagesCapability.resolve();
                 }
@@ -990,7 +933,7 @@ class BaseViewer {
         }
       })
       .catch(reason => {
-        Window['ngxConsole'].error("Unable to initialize viewer", reason);
+        Window["ngxConsole"].error("Unable to initialize viewer", reason);
 
         this._pagesCapability.reject(reason);
       });
@@ -1005,11 +948,9 @@ class BaseViewer {
     }
     if (!labels) {
       this._pageLabels = null;
-    } else if (
-      !(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)
-    ) {
+    } else if (!(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)) {
       this._pageLabels = null;
-      Window['ngxConsole'].error(`setPageLabels: Invalid page labels.`);
+      Window["ngxConsole"].error(`setPageLabels: Invalid page labels.`);
     } else {
       this._pageLabels = labels;
     }
@@ -1054,10 +995,7 @@ class BaseViewer {
       this._onAfterDraw = null;
     }
     if (this.#onVisibilityChange) {
-      document.removeEventListener(
-        "visibilitychange",
-        this.#onVisibilityChange
-      );
+      document.removeEventListener("visibilitychange", this.#onVisibilityChange);
       this.#onVisibilityChange = null;
     }
     // Remove the pages from the DOM...
@@ -1145,6 +1083,38 @@ class BaseViewer {
     this.update();
   }
 
+  // #1301 modified by ngx-extended-pdf-viewer:
+  // add an API to allow to scroll within a page
+  scrollPagePosIntoView(pageNumber, pageSpot) {
+    const pageDiv = this._pages[pageNumber - 1].div;
+
+    if (pageSpot) {
+      const targetPageSpot = { ...pageSpot };
+      if (typeof targetPageSpot.top === "string") {
+        if (targetPageSpot.top.endsWith("%")) {
+          const percent = Number(targetPageSpot.top.replace("%", ""));
+          const viewerHeight = this.viewer.querySelector(".page")?.clientHeight;
+          let height = pageDiv.clientHeight ? pageDiv.clientHeight : viewerHeight;
+          const visibleWindowHeight = this.viewer.parentElement.clientHeight;
+          height = Math.max(0, height - visibleWindowHeight);
+          targetPageSpot.top = (percent * height) / 100;
+        }
+      }
+      if (typeof targetPageSpot.left === "string") {
+        if (targetPageSpot.left.endsWith("%")) {
+          const percent = Number(targetPageSpot.left.replace("%", ""));
+          const viewerWidth = this.viewer.querySelector(".page")?.clientWidth;
+          const width = pageDiv.clientWidth ? pageDiv.clientWidth : viewerWidth;
+          targetPageSpot.left = (percent * width) / 100;
+        }
+      }
+      this.#scrollIntoView({ div: pageDiv, id: pageNumber }, targetPageSpot);
+    } else {
+      this.#scrollIntoView({ pageDiv, pageNumber });
+    }
+  }
+  // #1301 end of modification by ngx-extended-pdf-viewer
+
   #scrollIntoView(pageView, pageSpot = null) {
     const { div, id } = pageView;
 
@@ -1162,15 +1132,11 @@ class BaseViewer {
       const left = div.offsetLeft + div.clientLeft,
         right = left + div.clientWidth;
       const { scrollLeft, clientWidth } = this.container;
-      if (
-        this._scrollMode === ScrollMode.HORIZONTAL ||
-        left < scrollLeft ||
-        right > scrollLeft + clientWidth
-      ) {
+      if (this._scrollMode === ScrollMode.HORIZONTAL || left < scrollLeft || right > scrollLeft + clientWidth) {
         pageSpot = { left: 0, top: 0 };
       }
     }
-    scrollIntoView(pageDiv, pageSpot, false, this.pageViewMode === "infinite-scroll");
+    scrollIntoView(div, pageSpot, false, this.pageViewMode === "infinite-scroll");
   }
 
   /**
@@ -1178,10 +1144,7 @@ class BaseViewer {
    * only because of limited numerical precision.
    */
   #isSameScale(newScale) {
-    return (
-      newScale === this._currentScale ||
-      Math.abs(newScale - this._currentScale) < 1e-15
-    );
+    return newScale === this._currentScale || Math.abs(newScale - this._currentScale) < 1e-15;
   }
 
   _setScaleUpdatePages(newScale, newValue, noScroll = false, preset = false) {
@@ -1198,7 +1161,7 @@ class BaseViewer {
       return;
     }
 
-    this._doc.style.setProperty("--zoom-factor", newScale);
+    docStyle.setProperty("--zoom-factor", newScale);
 
     const updateArgs = { scale: newScale };
     for (const pageView of this._pages) {
@@ -1209,18 +1172,9 @@ class BaseViewer {
     if (!noScroll) {
       let page = this._currentPageNumber,
         dest;
-      if (
-        this._location &&
-        !(this.isInPresentationMode || this.isChangingPresentationMode)
-      ) {
+      if (this._location && !(this.isInPresentationMode || this.isChangingPresentationMode)) {
         page = this._location.pageNumber;
-        dest = [
-          null,
-          { name: "XYZ" },
-          this._location.left,
-          this._location.top,
-          null,
-        ];
+        dest = [null, { name: "XYZ" }, this._location.left, this._location.top, null];
       }
       this.scrollPageIntoView({
         pageNumber: page,
@@ -1245,10 +1199,7 @@ class BaseViewer {
    * @private
    */
   get _pageWidthScaleFactor() {
-    if (
-      this._spreadMode !== SpreadMode.NONE &&
-      this._scrollMode !== ScrollMode.HORIZONTAL
-    ) {
+    if (this._spreadMode !== SpreadMode.NONE && this._scrollMode !== ScrollMode.HORIZONTAL) {
       return 2;
     }
     return 1;
@@ -1285,12 +1236,8 @@ class BaseViewer {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
       const pageWidthScale =
-        (((this.container.clientWidth - hPadding) / currentPage.width) *
-          currentPage.scale) /
-        this._pageWidthScaleFactor;
-      const pageHeightScale =
-        ((this.container.clientHeight - vPadding) / currentPage.height) *
-        currentPage.scale;
+        (((this.container.clientWidth - hPadding) / currentPage.width) * currentPage.scale) / this._pageWidthScaleFactor;
+      const pageHeightScale = ((this.container.clientHeight - vPadding) / currentPage.height) * currentPage.scale;
       switch (value) {
         case "page-actual":
           scale = 1;
@@ -1307,13 +1254,11 @@ class BaseViewer {
         case "auto":
           // For pages in landscape mode, fit the page height to the viewer
           // *unless* the page would thus become too wide to fit horizontally.
-          const horizontalScale = isPortraitOrientation(currentPage)
-            ? pageWidthScale
-            : Math.min(pageHeightScale, pageWidthScale);
+          const horizontalScale = isPortraitOrientation(currentPage) ? pageWidthScale : Math.min(pageHeightScale, pageWidthScale);
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:
-          Window['ngxConsole'].error(`_setScale: "${value}" is an unknown zoom value.`);
+          Window["ngxConsole"].error(`_setScale: "${value}" is an unknown zoom value.`);
           return;
       }
       this._setScaleUpdatePages(scale, value, noScroll, /* preset = */ true);
@@ -1364,21 +1309,13 @@ class BaseViewer {
    * Scrolls page into view.
    * @param {ScrollPageIntoViewParameters} params
    */
-  scrollPageIntoView({
-    pageNumber,
-    destArray = null,
-    allowNegativeOffset = false,
-    ignoreDestinationZoom = false,
-  }) {
+  scrollPageIntoView({ pageNumber, destArray = null, allowNegativeOffset = false, ignoreDestinationZoom = false }) {
     if (!this.pdfDocument) {
       return;
     }
-    const pageView =
-      Number.isInteger(pageNumber) && this._pages[pageNumber - 1];
+    const pageView = Number.isInteger(pageNumber) && this._pages[pageNumber - 1];
     if (!pageView) {
-      Window['ngxConsole'].error(
-        `scrollPageIntoView: "${pageNumber}" is not a valid pageNumber parameter.`
-      );
+      Window["ngxConsole"].error(`scrollPageIntoView: "${pageNumber}" is not a valid pageNumber parameter.`);
       return;
     }
 
@@ -1393,14 +1330,8 @@ class BaseViewer {
       widthScale,
       heightScale;
     const changeOrientation = pageView.rotation % 180 !== 0;
-    const pageWidth =
-      (changeOrientation ? pageView.height : pageView.width) /
-      pageView.scale /
-      PixelsPerInch.PDF_TO_CSS_UNITS;
-    const pageHeight =
-      (changeOrientation ? pageView.width : pageView.height) /
-      pageView.scale /
-      PixelsPerInch.PDF_TO_CSS_UNITS;
+    const pageWidth = (changeOrientation ? pageView.height : pageView.width) / pageView.scale / PixelsPerInch.PDF_TO_CSS_UNITS;
+    const pageHeight = (changeOrientation ? pageView.width : pageView.height) / pageView.scale / PixelsPerInch.PDF_TO_CSS_UNITS;
     let scale = 0;
     switch (destArray[1].name) {
       case "XYZ":
@@ -1448,20 +1379,12 @@ class BaseViewer {
         const hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
         const vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
-        widthScale =
-          (this.container.clientWidth - hPadding) /
-          width /
-          PixelsPerInch.PDF_TO_CSS_UNITS;
-        heightScale =
-          (this.container.clientHeight - vPadding) /
-          height /
-          PixelsPerInch.PDF_TO_CSS_UNITS;
+        widthScale = (this.container.clientWidth - hPadding) / width / PixelsPerInch.PDF_TO_CSS_UNITS;
+        heightScale = (this.container.clientHeight - vPadding) / height / PixelsPerInch.PDF_TO_CSS_UNITS;
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
-        Window['ngxConsole'].error(
-          `scrollPageIntoView: "${destArray[1].name}" is not a valid destination type.`
-        );
+        Window["ngxConsole"].error(`scrollPageIntoView: "${destArray[1].name}" is not a valid destination type.`);
         return;
     }
 
@@ -1489,10 +1412,7 @@ class BaseViewer {
       return;
     }
 
-    const boundingRect = [
-      pageView.viewport.convertToViewportPoint(x, y),
-      pageView.viewport.convertToViewportPoint(x + width, y + height),
-    ];
+    const boundingRect = [pageView.viewport.convertToViewportPoint(x, y), pageView.viewport.convertToViewportPoint(x + width, y + height)];
     let left = Math.min(boundingRect[0][0], boundingRect[1][0]);
     let top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
@@ -1510,17 +1430,12 @@ class BaseViewer {
     const currentScale = this._currentScale;
     const currentScaleValue = this._currentScaleValue;
     const normalizedScaleValue =
-      parseFloat(currentScaleValue) === currentScale
-        ? Math.round(currentScale * 10000) / 100
-        : currentScaleValue;
+      parseFloat(currentScaleValue) === currentScale ? Math.round(currentScale * 10000) / 100 : currentScaleValue;
 
     const pageNumber = firstPage.id;
     const currentPageView = this._pages[pageNumber - 1];
     const container = this.container;
-    const topLeft = currentPageView.getPagePoint(
-      container.scrollLeft - firstPage.x,
-      container.scrollTop - firstPage.y
-    );
+    const topLeft = currentPageView.getPagePoint(container.scrollLeft - firstPage.x, container.scrollTop - firstPage.y);
     const intLeft = Math.round(topLeft[0]);
     const intTop = Math.round(topLeft[1]);
 
@@ -1564,9 +1479,7 @@ class BaseViewer {
     this.renderingQueue.renderHighestPriority(visible);
 
     const isSimpleLayout =
-      this._spreadMode === SpreadMode.NONE &&
-      (this._scrollMode === ScrollMode.PAGE ||
-        this._scrollMode === ScrollMode.VERTICAL);
+      this._spreadMode === SpreadMode.NONE && (this._scrollMode === ScrollMode.PAGE || this._scrollMode === ScrollMode.VERTICAL);
     const currentId = this._currentPageNumber;
     let stillFullyVisible = false;
 
@@ -1579,9 +1492,7 @@ class BaseViewer {
         break;
       }
     }
-    this._setCurrentPageNumber(
-      stillFullyVisible ? currentId : visiblePages[0].id
-    );
+    this._setCurrentPageNumber(stillFullyVisible ? currentId : visiblePages[0].id);
 
     this._updateLocation(visible.first);
     this.eventBus.dispatch("updateviewarea", {
@@ -1614,22 +1525,15 @@ class BaseViewer {
   }
 
   get isHorizontalScrollbarEnabled() {
-    return this.isInPresentationMode
-      ? false
-      : this.container.scrollWidth > this.container.clientWidth;
+    return this.isInPresentationMode ? false : this.container.scrollWidth > this.container.clientWidth;
   }
 
   get isVerticalScrollbarEnabled() {
-    return this.isInPresentationMode
-      ? false
-      : this.container.scrollHeight > this.container.clientHeight;
+    return this.isInPresentationMode ? false : this.container.scrollHeight > this.container.clientHeight;
   }
 
   _getVisiblePages() {
-    const views =
-        this._scrollMode === ScrollMode.PAGE
-          ? this.#scrollModePageState.pages
-          : this._pages,
+    const views = this._scrollMode === ScrollMode.PAGE ? this.#scrollModePageState.pages : this._pages,
       horizontal = this._scrollMode === ScrollMode.HORIZONTAL,
       rtl = horizontal && this._isContainerRtl;
 
@@ -1649,14 +1553,8 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return false;
     }
-    if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.pagesCount
-      )
-    ) {
-      Window['ngxConsole'].error(`isPageVisible: "${pageNumber}" is not a valid page.`);
+    if (!(Number.isInteger(pageNumber) && pageNumber > 0 && pageNumber <= this.pagesCount)) {
+      Window["ngxConsole"].error(`isPageVisible: "${pageNumber}" is not a valid page.`);
       return false;
     }
     return this._getVisiblePages().ids.has(pageNumber);
@@ -1669,14 +1567,8 @@ class BaseViewer {
     if (!this.pdfDocument) {
       return false;
     }
-    if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.pagesCount
-      )
-    ) {
-      Window['ngxConsole'].error(`isPageCached: "${pageNumber}" is not a valid page.`);
+    if (!(Number.isInteger(pageNumber) && pageNumber > 0 && pageNumber <= this.pagesCount)) {
+      Window["ngxConsole"].error(`isPageCached: "${pageNumber}" is not a valid page.`);
       return false;
     }
     const pageView = this._pages[pageNumber - 1];
@@ -1718,7 +1610,7 @@ class BaseViewer {
       }
       return pdfPage;
     } catch (reason) {
-      Window['ngxConsole'].error("Unable to get page for page view", reason);
+      Window["ngxConsole"].error("Unable to get page for page view", reason);
       return null; // Page error -- there is nothing that can be done.
     }
   }
@@ -1758,16 +1650,9 @@ class BaseViewer {
   forceRendering(currentlyVisiblePages) {
     const visiblePages = currentlyVisiblePages || this._getVisiblePages();
     const scrollAhead = this.#getScrollAhead(visiblePages);
-    const preRenderExtra =
-      this._spreadMode !== SpreadMode.NONE &&
-      this._scrollMode !== ScrollMode.HORIZONTAL;
+    const preRenderExtra = this._spreadMode !== SpreadMode.NONE && this._scrollMode !== ScrollMode.HORIZONTAL;
 
-    const pageView = this.renderingQueue.getHighestPriority(
-      visiblePages,
-      this._pages,
-      scrollAhead,
-      preRenderExtra
-    );
+    const pageView = this.renderingQueue.getHighestPriority(visiblePages, this._pages, scrollAhead, preRenderExtra);
     this.#toggleLoadingIconSpinner(visiblePages.ids);
 
     if (pageView) {
@@ -1788,22 +1673,13 @@ class BaseViewer {
    * @param {TextHighlighter} highlighter
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder(
-    textLayerDiv,
-    pageIndex,
-    viewport,
-    enhanceTextSelection = false,
-    eventBus,
-    highlighter
-  ) {
+  createTextLayerBuilder(textLayerDiv, pageIndex, viewport, enhanceTextSelection = false, eventBus, highlighter) {
     return new TextLayerBuilder({
       textLayerDiv,
       eventBus,
       pageIndex,
       viewport,
-      enhanceTextSelection: this.isInPresentationMode
-        ? false
-        : enhanceTextSelection,
+      enhanceTextSelection: this.isInPresentationMode ? false : enhanceTextSelection,
       highlighter,
     });
   }
@@ -1854,18 +1730,15 @@ class BaseViewer {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
-      annotationStorage:
-        annotationStorage || this.pdfDocument?.annotationStorage,
+      annotationStorage: annotationStorage || this.pdfDocument?.annotationStorage,
       imageResourcesPath,
       renderForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
       enableScripting: enableScripting ?? this.enableScripting,
-      hasJSActionsPromise:
-        hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
-      fieldObjectsPromise:
-        fieldObjectsPromise || this.pdfDocument?.getFieldObjects(),
+      hasJSActionsPromise: hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
+      fieldObjectsPromise: fieldObjectsPromise || this.pdfDocument?.getFieldObjects(),
       mouseState: mouseState || this._scriptingManager?.mouseState,
       annotationCanvasMap,
     });
@@ -1882,8 +1755,7 @@ class BaseViewer {
     return new XfaLayerBuilder({
       pageDiv,
       pdfPage,
-      annotationStorage:
-        annotationStorage || this.pdfDocument?.annotationStorage,
+      annotationStorage: annotationStorage || this.pdfDocument?.annotationStorage,
       linkService: this.linkService,
     });
   }
@@ -1906,10 +1778,7 @@ class BaseViewer {
     const firstPageView = this._pages[0];
     for (let i = 1, ii = this._pages.length; i < ii; ++i) {
       const pageView = this._pages[i];
-      if (
-        pageView.width !== firstPageView.width ||
-        pageView.height !== firstPageView.height
-      ) {
+      if (pageView.width !== firstPageView.width || pageView.height !== firstPageView.height) {
         return false;
       }
     }
@@ -2019,10 +1888,7 @@ class BaseViewer {
     const scrollMode = this._scrollMode,
       viewer = this.viewer;
 
-    viewer.classList.toggle(
-      "scrollHorizontal",
-      scrollMode === ScrollMode.HORIZONTAL
-    );
+    viewer.classList.toggle("scrollHorizontal", scrollMode === ScrollMode.HORIZONTAL);
     viewer.classList.toggle("scrollWrapped", scrollMode === ScrollMode.WRAPPED);
 
     if (!this.pdfDocument || !pageNumber) {
@@ -2230,8 +2096,7 @@ class BaseViewer {
     if (currentPageNumber >= pagesCount) {
       return false;
     }
-    const advance =
-      this._getPageAdvance(currentPageNumber, /* previous = */ false) || 1;
+    const advance = this._getPageAdvance(currentPageNumber, /* previous = */ false) || 1;
 
     this.currentPageNumber = Math.min(currentPageNumber + advance, pagesCount);
     return true;
@@ -2247,8 +2112,7 @@ class BaseViewer {
     if (currentPageNumber <= 1) {
       return false;
     }
-    const advance =
-      this._getPageAdvance(currentPageNumber, /* previous = */ true) || 1;
+    const advance = this._getPageAdvance(currentPageNumber, /* previous = */ true) || 1;
 
     this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
     return true;
@@ -2300,7 +2164,7 @@ class BaseViewer {
     if (height !== this.#previousContainerHeight) {
       this.#previousContainerHeight = height;
 
-      this._doc.style.setProperty("--viewer-container-height", `${height}px`);
+      docStyle.setProperty("--viewer-container-height", `${height}px`);
     }
   }
 }
