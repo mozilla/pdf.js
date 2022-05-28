@@ -561,7 +561,10 @@ const PDFViewerApplication = {
       appConfig.documentProperties,
       this.overlayManager,
       eventBus,
-      this.l10n
+      this.l10n,
+      /* fileNameLookup = */ () => {
+        return this._docFilename;
+      }
     );
 
     this.pdfCursorTools = new PDFCursorTools({
@@ -1194,7 +1197,7 @@ const PDFViewerApplication = {
       baseDocumentUrl = location.href.split("#")[0];
     }
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
-    this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
+    this.pdfDocumentProperties.setDocument(pdfDocument);
 
     const pdfViewer = this.pdfViewer;
     pdfViewer.setDocument(pdfDocument);
@@ -1515,16 +1518,15 @@ const PDFViewerApplication = {
         `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
         `(PDF.js: ${version || "-"})`
     );
-    let pdfTitle = info?.Title;
+    let pdfTitle = info.Title;
 
     const metadataTitle = metadata?.get("dc:title");
     if (metadataTitle) {
       // Ghostscript can produce invalid 'dc:title' Metadata entries:
       //  - The title may be "Untitled" (fixes bug 1031612).
       //  - The title may contain incorrectly encoded characters, which thus
-      //    looks broken, hence we ignore the Metadata entry when it
-      //    contains characters from the Specials Unicode block
-      //    (fixes bug 1605526).
+      //    looks broken, hence we ignore the Metadata entry when it contains
+      //    characters from the Specials Unicode block (fixes bug 1605526).
       if (
         metadataTitle !== "Untitled" &&
         !/[\uFFF0-\uFFFF]/g.test(metadataTitle)
@@ -1534,10 +1536,10 @@ const PDFViewerApplication = {
     }
     if (pdfTitle) {
       this.setTitle(
-        `${pdfTitle} - ${contentDispositionFilename || document.title}`
+        `${pdfTitle} - ${this._contentDispositionFilename || document.title}`
       );
-    } else if (contentDispositionFilename) {
-      this.setTitle(contentDispositionFilename);
+    } else if (this._contentDispositionFilename) {
+      this.setTitle(this._contentDispositionFilename);
     }
 
     if (

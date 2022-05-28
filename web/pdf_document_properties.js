@@ -13,11 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  createPromiseCapability,
-  getPdfFilenameFromUrl,
-  PDFDateString,
-} from "pdfjs-lib";
+import { createPromiseCapability, PDFDateString } from "pdfjs-lib";
 import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
 
 const DEFAULT_FIELD_CONTENT = "-";
@@ -58,12 +54,21 @@ class PDFDocumentProperties {
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {EventBus} eventBus - The application event bus.
    * @param {IL10n} l10n - Localization service.
+   * @param {function} fileNameLookup - The function that is used to lookup
+   *   the document fileName.
    */
-  constructor({ dialog, fields, closeButton }, overlayManager, eventBus, l10n) {
+  constructor(
+    { dialog, fields, closeButton },
+    overlayManager,
+    eventBus,
+    l10n,
+    fileNameLookup
+  ) {
     this.dialog = dialog;
     this.fields = fields;
     this.overlayManager = overlayManager;
     this.l10n = l10n;
+    this._fileNameLookup = fileNameLookup;
 
     this.#reset();
     // Bind the event listener for the Close button.
@@ -110,7 +115,7 @@ class PDFDocumentProperties {
     const {
       info,
       /* metadata, */
-      contentDispositionFilename,
+      /* contentDispositionFilename, */
       contentLength,
     } = await this.pdfDocument.getMetadata();
 
@@ -122,7 +127,7 @@ class PDFDocumentProperties {
       pageSize,
       isLinearized,
     ] = await Promise.all([
-      contentDispositionFilename || getPdfFilenameFromUrl(this.url),
+      this._fileNameLookup(),
       this.#parseFileSize(contentLength),
       this.#parseDate(info.CreationDate),
       this.#parseDate(info.ModDate),
@@ -173,15 +178,13 @@ class PDFDocumentProperties {
   }
 
   /**
-   * Set a reference to the PDF document and the URL in order
-   * to populate the overlay fields with the document properties.
-   * Note that the overlay will contain no information if this method
-   * is not called.
+   * Set a reference to the PDF document in order to populate the dialog fields
+   * with the document properties. Note that the dialog will contain no
+   * information if this method is not called.
    *
    * @param {PDFDocumentProxy} pdfDocument - A reference to the PDF document.
-   * @param {string} url - The URL of the document.
    */
-  setDocument(pdfDocument, url = null) {
+  setDocument(pdfDocument) {
     if (this.pdfDocument) {
       this.#reset();
       this.#updateUI(true);
@@ -190,14 +193,12 @@ class PDFDocumentProperties {
       return;
     }
     this.pdfDocument = pdfDocument;
-    this.url = url;
 
     this._dataAvailableCapability.resolve();
   }
 
   #reset() {
     this.pdfDocument = null;
-    this.url = null;
 
     this.#fieldData = null;
     this._dataAvailableCapability = createPromiseCapability();
