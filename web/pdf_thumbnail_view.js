@@ -39,6 +39,9 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {function} checkSetImageDisabled
  * @property {IL10n} l10n - Localization service.
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  */
 
 class TempImageFactory {
@@ -87,6 +90,7 @@ class PDFThumbnailView {
     renderingQueue,
     checkSetImageDisabled,
     l10n,
+    pageColors,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;
@@ -97,6 +101,7 @@ class PDFThumbnailView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
+    this.pageColors = pageColors || null;
 
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -320,6 +325,7 @@ class PDFThumbnailView {
       transform,
       viewport: drawViewport,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
+      pageColors: this.pageColors,
     };
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
