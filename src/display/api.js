@@ -513,6 +513,12 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     }
   );
 
+  // Release the TypedArray data, when it exists, since it's no longer needed
+  // on the main-thread *after* it's been sent to the worker-thread.
+  if (source.data) {
+    source.data = null;
+  }
+
   if (worker.destroyed) {
     throw new Error("Worker was destroyed");
   }
@@ -953,8 +959,8 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<TypedArray>} A promise that is resolved with a
-   *   {TypedArray} that has the raw data from the PDF.
+   * @returns {Promise<Uint8Array>} A promise that is resolved with a
+   *   {Uint8Array} that has the raw data from the PDF.
    */
   getData() {
     return this._transport.getData();
