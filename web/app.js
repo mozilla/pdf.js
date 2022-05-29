@@ -1770,7 +1770,7 @@ const PDFViewerApplication = {
   forceRendering() {
     this.pdfRenderingQueue.printing = !!this.printService;
     this.pdfRenderingQueue.isThumbnailViewEnabled =
-      this.pdfSidebar.isThumbnailViewVisible;
+      this.pdfSidebar.visibleView === SidebarView.THUMBS;
     this.pdfRenderingQueue.renderHighestPriority();
   },
 
@@ -2266,7 +2266,7 @@ function webViewerPageRendered({ pageNumber, error }) {
   }
 
   // Use the rendered page to set the corresponding thumbnail image.
-  if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
+  if (PDFViewerApplication.pdfSidebar.visibleView === SidebarView.THUMBS) {
     const pageView = PDFViewerApplication.pdfViewer.getPageView(
       /* index = */ pageNumber - 1
     );
@@ -2343,21 +2343,19 @@ function webViewerPresentationModeChanged(evt) {
   PDFViewerApplication.pdfViewer.presentationModeState = evt.state;
 }
 
-function webViewerSidebarViewChanged(evt) {
+function webViewerSidebarViewChanged({ view }) {
   PDFViewerApplication.pdfRenderingQueue.isThumbnailViewEnabled =
-    PDFViewerApplication.pdfSidebar.isThumbnailViewVisible;
+    view === SidebarView.THUMBS;
 
   if (PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    PDFViewerApplication.store?.set("sidebarView", evt.view).catch(() => {
+    PDFViewerApplication.store?.set("sidebarView", view).catch(() => {
       // Unable to write to storage.
     });
   }
 }
 
-function webViewerUpdateViewarea(evt) {
-  const location = evt.location;
-
+function webViewerUpdateViewarea({ location }) {
   if (PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
     PDFViewerApplication.store
@@ -2592,7 +2590,7 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
   PDFViewerApplication.toolbar.setPageNumber(pageNumber, pageLabel);
   PDFViewerApplication.secondaryToolbar.setPageNumber(pageNumber);
 
-  if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
+  if (PDFViewerApplication.pdfSidebar.visibleView === SidebarView.THUMBS) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
   }
 }
