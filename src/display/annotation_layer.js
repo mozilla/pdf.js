@@ -22,6 +22,7 @@ import {
   AnnotationBorderStyleType,
   AnnotationType,
   assert,
+  LINE_FACTOR,
   shadow,
   unreachable,
   Util,
@@ -37,6 +38,7 @@ import { ColorConverters } from "../shared/scripting_utils.js";
 import { XfaLayer } from "./xfa_layer.js";
 
 const DEFAULT_TAB_INDEX = 1000;
+const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 
 function getRectDims(rect) {
@@ -271,12 +273,12 @@ class AnnotationElement {
           break;
       }
 
-      const borderColor = data.borderColor || data.color || null;
+      const borderColor = data.borderColor || null;
       if (borderColor) {
         container.style.borderColor = Util.makeHexColor(
-          data.color[0] | 0,
-          data.color[1] | 0,
-          data.color[2] | 0
+          borderColor[0] | 0,
+          borderColor[1] | 0,
+          borderColor[2] | 0
         );
       } else {
         // Transparent (invisible) border, so do not draw it at all.
@@ -561,36 +563,29 @@ class AnnotationElement {
 
 class LinkAnnotationElement extends AnnotationElement {
   constructor(parameters, options = null) {
-    const isRenderable = !!(
-      parameters.data.url ||
-      parameters.data.dest ||
-      parameters.data.action ||
-      parameters.data.isTooltipOnly ||
-      parameters.data.resetForm ||
-      (parameters.data.actions &&
-        (parameters.data.actions.Action ||
-          parameters.data.actions["Mouse Up"] ||
-          parameters.data.actions["Mouse Down"]))
-    );
     super(parameters, {
-      isRenderable,
+      isRenderable: true,
       ignoreBorder: !!options?.ignoreBorder,
       createQuadrilaterals: true,
     });
+    this.isTooltipOnly = parameters.data.isTooltipOnly;
   }
 
   render() {
     const { data, linkService } = this;
     const link = document.createElement("a");
+    let isBound = false;
 
     if (data.url) {
       linkService.addLinkAttributes(link, data.url, data.newWindow);
+      isBound = true;
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
+      isBound = true;
     } else if (data.dest) {
       this._bindLink(link, data.dest);
+      isBound = true;
     } else {
-      let hasClickAction = false;
       if (
         data.actions &&
         (data.actions.Action ||
@@ -599,14 +594,16 @@ class LinkAnnotationElement extends AnnotationElement {
         this.enableScripting &&
         this.hasJSActions
       ) {
-        hasClickAction = true;
         this._bindJSAction(link, data);
+        isBound = true;
       }
 
       if (data.resetForm) {
         this._bindResetFormAction(link, data.resetForm);
-      } else if (!hasClickAction) {
+        isBound = true;
+      } else if (this.isTooltipOnly && !isBound) {
         this._bindLink(link, "");
+        isBound = true;
       }
     }
 
@@ -621,7 +618,10 @@ class LinkAnnotationElement extends AnnotationElement {
     }
 
     this.container.className = "linkAnnotation";
-    this.container.appendChild(link);
+    if (isBound) {
+      this.container.appendChild(link);
+    }
+
     return this.container;
   }
 
@@ -897,6 +897,53 @@ class WidgetAnnotationElement extends AnnotationElement {
         ? "transparent"
         : Util.makeHexColor(color[0], color[1], color[2]);
   }
+
+  /**
+   * Apply text styles to the text in the element.
+   *
+   * @private
+   * @param {HTMLDivElement} element
+   * @memberof TextWidgetAnnotationElement
+   */
+  _setTextStyle(element) {
+    const TEXT_ALIGNMENT = ["left", "center", "right"];
+    const { fontColor } = this.data.defaultAppearanceData;
+    const fontSize =
+      this.data.defaultAppearanceData.fontSize || DEFAULT_FONT_SIZE;
+
+    const style = element.style;
+
+    // TODO: If the font-size is zero, calculate it based on the height and
+    //       width of the element.
+    // Not setting `style.fontSize` will use the default font-size for now.
+
+    // We don't use the font, as specified in the PDF document, for the <input>
+    // element. Hence using the original `fontSize` could look bad, which is why
+    // it's instead based on the field height.
+    // If the height is "big" then it could lead to a too big font size
+    // so in this case use the one we've in the pdf (hence the min).
+    if (this.data.multiLine) {
+      const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
+      const numberOfLines = Math.round(height / (LINE_FACTOR * fontSize)) || 1;
+      const lineHeight = height / numberOfLines;
+      style.fontSize = `${Math.min(
+        fontSize,
+        Math.round(lineHeight / LINE_FACTOR)
+      )}px`;
+    } else {
+      const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
+      style.fontSize = `${Math.min(
+        fontSize,
+        Math.round(height / LINE_FACTOR)
+      )}px`;
+    }
+
+    style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
+
+    if (this.data.textAlignment !== null) {
+      style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
+    }
+  }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
@@ -944,10 +991,16 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       if (this.data.multiLine) {
         element = document.createElement("textarea");
         element.textContent = textContent;
+        if (this.data.doNotScroll) {
+          element.style.overflowY = "hidden";
+        }
       } else {
         element = document.createElement("input");
         element.type = "text";
         element.setAttribute("value", textContent);
+        if (this.data.doNotScroll) {
+          element.style.overflowX = "hidden";
+        }
       }
       GetElementsByNameSet.add(element);
       element.disabled = this.data.readOnly;
@@ -1180,32 +1233,6 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.container.appendChild(element);
     return this.container;
-  }
-
-  /**
-   * Apply text styles to the text in the element.
-   *
-   * @private
-   * @param {HTMLDivElement} element
-   * @memberof TextWidgetAnnotationElement
-   */
-  _setTextStyle(element) {
-    const TEXT_ALIGNMENT = ["left", "center", "right"];
-    const { fontSize, fontColor } = this.data.defaultAppearanceData;
-    const style = element.style;
-
-    // TODO: If the font-size is zero, calculate it based on the height and
-    //       width of the element.
-    // Not setting `style.fontSize` will use the default font-size for now.
-    if (fontSize) {
-      style.fontSize = `${fontSize}px`;
-    }
-
-    style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
-
-    if (this.data.textAlignment !== null) {
-      style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
-    }
   }
 }
 
@@ -1445,10 +1472,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       value: this.data.fieldValue,
     });
 
-    let { fontSize } = this.data.defaultAppearanceData;
-    if (!fontSize) {
-      fontSize = 9;
-    }
+    const fontSize =
+      this.data.defaultAppearanceData.fontSize || DEFAULT_FONT_SIZE;
     const fontSizeStyle = `calc(${fontSize}px * var(--zoom-factor))`;
 
     const selectElement = document.createElement("select");
@@ -1457,8 +1482,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     selectElement.name = this.data.fieldName;
     selectElement.setAttribute("id", id);
     selectElement.tabIndex = DEFAULT_TAB_INDEX;
-
-    selectElement.style.fontSize = `${fontSize}px`;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
@@ -1645,6 +1668,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       });
     }
 
+    if (this.data.combo) {
+      this._setTextStyle(selectElement);
+    } else {
+      // Just use the default font size...
+      // it's a bit hard to guess what is a good size.
+    }
     this._setBackgroundColor(selectElement);
     this._setDefaultPropertiesFromJS(selectElement);
 
@@ -2542,7 +2571,9 @@ class AnnotationLayer {
       }
 
       const { firstChild } = element;
-      if (firstChild.nodeName === "CANVAS") {
+      if (!firstChild) {
+        element.appendChild(canvas);
+      } else if (firstChild.nodeName === "CANVAS") {
         element.replaceChild(canvas, firstChild);
       } else {
         element.insertBefore(canvas, firstChild);

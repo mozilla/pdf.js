@@ -40,6 +40,9 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IL10n} l10n - Localization service.
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  */
 
 /**
@@ -49,11 +52,36 @@ class PDFThumbnailViewer {
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
-  constructor({ container, eventBus, linkService, renderingQueue, l10n }) {
+  constructor({
+    container,
+    eventBus,
+    linkService,
+    renderingQueue,
+    l10n,
+    pageColors,
+  }) {
     this.container = container;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
     this.l10n = l10n;
+    this.pageColors = pageColors || null;
+
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      if (
+        this.pageColors &&
+        !(
+          CSS.supports("color", this.pageColors.background) &&
+          CSS.supports("color", this.pageColors.foreground)
+        )
+      ) {
+        if (this.pageColors.background || this.pageColors.foreground) {
+          Window["ngxConsole"].warn(
+            "PDFThumbnailViewer: Ignoring `pageColors`-option, since the browser doesn't support the values used."
+          );
+        }
+        this.pageColors = null;
+      }
+    }
 
     this.scroll = watchScroll(this.container, this._scrollUpdated.bind(this));
     this._resetView();
@@ -93,7 +121,7 @@ class PDFThumbnailViewer {
     const thumbnailView = this._thumbnails[pageNumber - 1];
 
     if (!thumbnailView) {
-      Window['ngxConsole'].error('scrollThumbnailIntoView: Invalid "pageNumber" parameter.');
+      Window["ngxConsole"].error('scrollThumbnailIntoView: Invalid "pageNumber" parameter.');
       return;
     }
 
@@ -185,56 +213,55 @@ class PDFThumbnailViewer {
     }
 
     this.pdfDocument = pdfDocument;
-  }
-
-  async renderThumbnails() {
-    if (!this.pdfDocument) {
+    if (!pdfDocument) {
       return;
     }
     if (this.initialized) {
       return;
     }
     this.initialized = true;
-    const pdfDocument = this.pdfDocument;
     const firstPagePromise = pdfDocument.getPage(1);
     const optionalContentConfigPromise = pdfDocument.getOptionalContentConfig();
-    try {
-      const firstPdfPage = await firstPagePromise;
-      this._optionalContentConfigPromise = optionalContentConfigPromise;
 
-      const pagesCount = pdfDocument.numPages;
-      const viewport = firstPdfPage.getViewport({ scale: 1 });
-      const checkSetImageDisabled = () => {
-        return this._setImageDisabled;
-      };
+    firstPagePromise
+      .then(firstPdfPage => {
+        this._optionalContentConfigPromise = optionalContentConfigPromise;
 
-      for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-        const thumbnail = new PDFThumbnailView({
-          container: this.container,
-          id: pageNum,
-          defaultViewport: viewport.clone(),
-          optionalContentConfigPromise,
-          linkService: this.linkService,
-          renderingQueue: this.renderingQueue,
-          checkSetImageDisabled,
-          l10n: this.l10n,
-        });
-        this._thumbnails.push(thumbnail);
-      }
-      // Set the first `pdfPage` immediately, since it's already loaded,
-      // rather than having to repeat the `PDFDocumentProxy.getPage` call in
-      // the `this.#ensurePdfPageLoaded` method before rendering can start.
-      const firstThumbnailView = this._thumbnails[0];
-      if (firstThumbnailView) {
-        firstThumbnailView.setPdfPage(firstPdfPage);
-      }
+        const pagesCount = pdfDocument.numPages;
+        const viewport = firstPdfPage.getViewport({ scale: 1 });
+        const checkSetImageDisabled = () => {
+          return this._setImageDisabled;
+        };
 
-      // Ensure that the current thumbnail is always highlighted on load.
-      const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
-      thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
-    } catch (reason) {
-      Window["ngxConsole"].error("Unable to initialize thumbnail viewer", reason);
-    }
+        for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+          const thumbnail = new PDFThumbnailView({
+            container: this.container,
+            id: pageNum,
+            defaultViewport: viewport.clone(),
+            optionalContentConfigPromise,
+            linkService: this.linkService,
+            renderingQueue: this.renderingQueue,
+            checkSetImageDisabled,
+            l10n: this.l10n,
+            pageColors: this.pageColors,
+          });
+          this._thumbnails.push(thumbnail);
+        }
+        // Set the first `pdfPage` immediately, since it's already loaded,
+        // rather than having to repeat the `PDFDocumentProxy.getPage` call in
+        // the `this.#ensurePdfPageLoaded` method before rendering can start.
+        const firstThumbnailView = this._thumbnails[0];
+        if (firstThumbnailView) {
+          firstThumbnailView.setPdfPage(firstPdfPage);
+        }
+
+        // Ensure that the current thumbnail is always highlighted on load.
+        const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
+        thumbnailView.div.classList.add(THUMBNAIL_SELECTED_CLASS);
+      })
+      .catch(reason => {
+        Window["ngxConsole"].error("Unable to initialize thumbnail viewer", reason);
+      });
   }
 
   /**
@@ -259,7 +286,7 @@ class PDFThumbnailViewer {
       !(Array.isArray(labels) && this.pdfDocument.numPages === labels.length)
     ) {
       this._pageLabels = null;
-      Window['ngxConsole'].error("PDFThumbnailViewer_setPageLabels: Invalid page labels.");
+      Window["ngxConsole"].error("PDFThumbnailViewer_setPageLabels: Invalid page labels.");
     } else {
       this._pageLabels = labels;
     }
@@ -284,7 +311,7 @@ class PDFThumbnailViewer {
       }
       return pdfPage;
     } catch (reason) {
-      Window['ngxConsole'].error("Unable to get page for thumb view", reason);
+      Window["ngxConsole"].error("Unable to get page for thumb view", reason);
       return null; // Page error -- there is nothing that can be done.
     }
   }

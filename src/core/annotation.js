@@ -25,6 +25,7 @@ import {
   getModificationDate,
   info,
   isAscii,
+  LINE_FACTOR,
   OPS,
   RenderingIntentFlag,
   shadow,
@@ -34,9 +35,14 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { collectActions, getInheritableProperty } from "./core_utils.js";
+import {
+  collectActions,
+  getInheritableProperty,
+  numberToString,
+} from "./core_utils.js";
 import {
   createDefaultAppearance,
+  getPdfColor,
   parseDefaultAppearance,
 } from "./default_appearance.js";
 import { Dict, isName, Name, Ref, RefSet } from "./primitives.js";
@@ -50,11 +56,6 @@ import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
 import { writeDict } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
-
-// Represent the percentage of the height of a single-line field over
-// the font size.
-// Acrobat seems to use this value.
-const LINE_FACTOR = 1.35;
 
 class AnnotationFactory {
   /**
@@ -669,6 +670,27 @@ class Annotation {
     } else {
       this.borderColor = this.backgroundColor = null;
     }
+  }
+
+  getBorderAndBackgroundAppearances() {
+    if (!this.backgroundColor && !this.borderColor) {
+      return "";
+    }
+    const width = this.data.rect[2] - this.data.rect[0];
+    const height = this.data.rect[3] - this.data.rect[1];
+    const rect = `0 0 ${width} ${height} re`;
+
+    let str = "";
+    if (this.backgroundColor) {
+      str = `${getPdfColor(this.backgroundColor)} ${rect} f `;
+    }
+
+    if (this.borderColor) {
+      const borderWidth = this.borderStyle.width || 1;
+      str += `${borderWidth} w ${getPdfColor(this.borderColor)} ${rect} S `;
+    }
+
+    return str;
   }
 
   /**
@@ -1632,7 +1654,13 @@ class WidgetAnnotation extends Annotation {
       descent = 0;
     }
 
-    const vPadding = defaultPadding + Math.abs(descent) * fontSize;
+    // Take into account the space we have to compute the default vertical
+    // padding.
+    const defaultVPadding = Math.min(
+      Math.floor((totalHeight - fontSize) / 2),
+      defaultPadding
+    );
+    const vPadding = defaultVPadding + Math.abs(descent) * fontSize;
     const alignment = this.data.textAlignment;
 
     if (this.data.multiLine) {
@@ -1663,10 +1691,13 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
+    // Empty or it has a trailing whitespace.
+    const colors = this.getBorderAndBackgroundAppearances();
+
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
       return (
-        "/Tx BMC q BT " +
+        `/Tx BMC q ${colors}BT ` +
         defaultAppearance +
         ` 1 0 0 1 ${hPadding} ${vPadding} Tm (${escapeString(
           encodedString
@@ -1685,7 +1716,7 @@ class WidgetAnnotation extends Annotation {
       vPadding
     );
     return (
-      "/Tx BMC q BT " +
+      `/Tx BMC q ${colors}BT ` +
       defaultAppearance +
       ` 1 0 0 1 0 0 Tm ${renderedText}` +
       " ET Q EMC"
@@ -1813,8 +1844,8 @@ class WidgetAnnotation extends Annotation {
     } else {
       shift = hPadding;
     }
-    shift = shift.toFixed(2);
-    vPadding = vPadding.toFixed(2);
+    shift = numberToString(shift);
+    vPadding = numberToString(vPadding);
 
     return `${shift} ${vPadding} Td (${escapeString(text)}) Tj`;
   }
@@ -1909,19 +1940,22 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
       this.data.maxLen !== null;
+    this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
   }
 
   _getCombAppearance(defaultAppearance, font, text, width, hPadding, vPadding) {
-    const combWidth = (width / this.data.maxLen).toFixed(2);
+    const combWidth = numberToString(width / this.data.maxLen);
     const buf = [];
     const positions = font.getCharPositions(text);
     for (const [start, end] of positions) {
       buf.push(`(${escapeString(text.substring(start, end))}) Tj`);
     }
 
+    // Empty or it has a trailing whitespace.
+    const colors = this.getBorderAndBackgroundAppearances();
     const renderedComb = buf.join(` ${combWidth} 0 Td `);
     return (
-      "/Tx BMC q BT " +
+      `/Tx BMC q ${colors}BT ` +
       defaultAppearance +
       ` 1 0 0 1 ${hPadding} ${vPadding} Tm ${renderedComb}` +
       " ET Q EMC"
@@ -1961,8 +1995,12 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     const renderedText = buf.join("\n");
+
+    // Empty or it has a trailing whitespace.
+    const colors = this.getBorderAndBackgroundAppearances();
+
     return (
-      "/Tx BMC q BT " +
+      `/Tx BMC q ${colors}BT ` +
       defaultAppearance +
       ` 1 0 0 1 0 ${height} Tm ${renderedText}` +
       " ET Q EMC"
@@ -2318,8 +2356,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     // Values to center the glyph in the bbox.
-    const xShift = (width - metrics.width) / 2;
-    const yShift = (height - metrics.height) / 2;
+    const xShift = numberToString((width - metrics.width) / 2);
+    const yShift = numberToString((height - metrics.height) / 2);
 
     const appearance = `q BT /PdfJsZaDb ${fontSize} Tf 0 g ${xShift} ${yShift} Td (${char}) Tj ET Q`;
 
@@ -2769,6 +2807,9 @@ class LinkAnnotation extends Annotation {
     if (quadPoints) {
       this.data.quadPoints = quadPoints;
     }
+
+    // The color entry for a link annotation is the color of the border.
+    this.data.borderColor = this.data.borderColor || this.data.color;
 
     Catalog.parseDestDictionary({
       destDict: params.dict,

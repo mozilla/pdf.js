@@ -230,7 +230,7 @@ function createWebpackConfig(
   }
 
   // Required to expose e.g., the `window` object.
-  output.globalObject = "this";
+  output.globalObject = "globalThis";
 
   if (skipBabel) {
     if (fs.existsSync("babel.config.js")) {
@@ -2130,7 +2130,7 @@ function packageBowerJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     dependencies: {
-      dommatrix: "^1.0.1",
+      dommatrix: "^1.0.3",
       "web-streams-polyfill": "^3.2.1",
     },
     peerDependencies: {

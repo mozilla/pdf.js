@@ -362,24 +362,26 @@ select {
   position: absolute;
   top: 0;
   left: 0;
-  width: var(--progressBar-percent);
+  width: 100%;
+  transform: scaleX(var(--progressBar-percent));
+  transform-origin: 0 0;
   height: 100%;
   background-color: var(--progressBar-color);
   overflow: hidden;
-  transition: width 200ms;
+  transition: transform 200ms;
 }
 
 @keyframes progressIndeterminate {
   0% {
-    left: -142px;
+    transform: translateX(-142px);
   }
   100% {
-    left: 0;
+    transform: translateX(0);
   }
 }
 
 #loadingBar .progress.indeterminate {
-  width: 100%;
+  transform: none;
   background-color: var(--progressBar-indeterminate-bg-color);
   transition: none;
 }
