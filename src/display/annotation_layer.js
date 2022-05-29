@@ -563,36 +563,29 @@ class AnnotationElement {
 
 class LinkAnnotationElement extends AnnotationElement {
   constructor(parameters, options = null) {
-    const isRenderable = !!(
-      parameters.data.url ||
-      parameters.data.dest ||
-      parameters.data.action ||
-      parameters.data.isTooltipOnly ||
-      parameters.data.resetForm ||
-      (parameters.data.actions &&
-        (parameters.data.actions.Action ||
-          parameters.data.actions["Mouse Up"] ||
-          parameters.data.actions["Mouse Down"]))
-    );
     super(parameters, {
-      isRenderable,
+      isRenderable: true,
       ignoreBorder: !!options?.ignoreBorder,
       createQuadrilaterals: true,
     });
+    this.isTooltipOnly = parameters.data.isTooltipOnly;
   }
 
   render() {
     const { data, linkService } = this;
     const link = document.createElement("a");
+    let isBound = false;
 
     if (data.url) {
       linkService.addLinkAttributes(link, data.url, data.newWindow);
+      isBound = true;
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
+      isBound = true;
     } else if (data.dest) {
       this._bindLink(link, data.dest);
+      isBound = true;
     } else {
-      let hasClickAction = false;
       if (
         data.actions &&
         (data.actions.Action ||
@@ -601,14 +594,16 @@ class LinkAnnotationElement extends AnnotationElement {
         this.enableScripting &&
         this.hasJSActions
       ) {
-        hasClickAction = true;
         this._bindJSAction(link, data);
+        isBound = true;
       }
 
       if (data.resetForm) {
         this._bindResetFormAction(link, data.resetForm);
-      } else if (!hasClickAction) {
+        isBound = true;
+      } else if (this.isTooltipOnly && !isBound) {
         this._bindLink(link, "");
+        isBound = true;
       }
     }
 
@@ -623,7 +618,10 @@ class LinkAnnotationElement extends AnnotationElement {
     }
 
     this.container.className = "linkAnnotation";
-    this.container.appendChild(link);
+    if (isBound) {
+      this.container.appendChild(link);
+    }
+
     return this.container;
   }
 
@@ -2528,7 +2526,9 @@ class AnnotationLayer {
       }
 
       const { firstChild } = element;
-      if (firstChild.nodeName === "CANVAS") {
+      if (!firstChild) {
+        element.appendChild(canvas);
+      } else if (firstChild.nodeName === "CANVAS") {
         element.replaceChild(canvas, firstChild);
       } else {
         element.insertBefore(canvas, firstChild);
