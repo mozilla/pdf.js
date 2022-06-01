@@ -13,9 +13,15 @@
  * limitations under the License.
  */
 
-import { AnnotationEditorType, Util } from "../../shared/util.js";
+import {
+  AnnotationEditorType,
+  assert,
+  LINE_FACTOR,
+  Util,
+} from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
+import { PixelsPerInch } from "../display_utils.js";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -33,14 +39,36 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _l10nPromise;
 
+  static _internalPadding = 0;
+
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
     this.#color = params.color || "CanvasText";
     this.#fontSize = params.fontSize || 10;
   }
 
-  static setL10n(l10n) {
+  static initialize(l10n) {
     this._l10nPromise = l10n.get("freetext_default_content");
+    const style = getComputedStyle(document.documentElement);
+
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
+    ) {
+      const lineHeight = parseFloat(
+        style.getPropertyValue("--freetext-line-height"),
+        10
+      );
+      assert(
+        lineHeight === LINE_FACTOR,
+        "Update the CSS variable to agree with the constant."
+      );
+    }
+
+    this._internalPadding = parseFloat(
+      style.getPropertyValue("--freetext-padding"),
+      10
+    );
   }
 
   /** @inheritdoc */
@@ -60,6 +88,16 @@ class FreeTextEditor extends AnnotationEditor {
     editor.#contentHTML = this.#contentHTML;
 
     return editor;
+  }
+
+  /** @inheritdoc */
+  getInitialTranslation() {
+    // The start of the base line is where the user clicked.
+    return [
+      -FreeTextEditor._internalPadding * this.parent.zoomFactor,
+      -(FreeTextEditor._internalPadding + this.#fontSize) *
+        this.parent.zoomFactor,
+    ];
   }
 
   /** @inheritdoc */
@@ -174,7 +212,6 @@ class FreeTextEditor extends AnnotationEditor {
 
     const { style } = this.editorDiv;
     style.fontSize = `calc(${this.#fontSize}px * var(--zoom-factor))`;
-    style.minHeight = `calc(${1.5 * this.#fontSize}px * var(--zoom-factor))`;
     style.color = this.#color;
 
     this.div.appendChild(this.editorDiv);
@@ -200,21 +237,21 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
-    const rect = this.div.getBoundingClientRect();
+    const rect = this.editorDiv.getBoundingClientRect();
+    const padding = FreeTextEditor._internalPadding * this.parent.zoomFactor;
     const [x1, y1] = Util.applyTransform(
-      [this.x, this.y + rect.height],
+      [this.x + padding, this.y + padding + rect.height],
       this.parent.inverseViewportTransform
     );
 
     const [x2, y2] = Util.applyTransform(
-      [this.x + rect.width, this.y],
+      [this.x + padding + rect.width, this.y + padding],
       this.parent.inverseViewportTransform
     );
-
     return {
       annotationType: AnnotationEditorType.FREETEXT,
       color: [0, 0, 0],
-      fontSize: this.#fontSize,
+      fontSize: this.#fontSize / PixelsPerInch.PDF_TO_CSS_UNITS,
       value: this.#content,
       pageIndex: this.parent.pageIndex,
       rect: [x1, y1, x2, y2],
