@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { AnnotationEditor } from "./editor/editor.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { objectFromMap } from "../shared/util.js";
 
@@ -60,6 +61,14 @@ class AnnotationStorage {
    */
   getRawValue(key) {
     return this._storage.get(key);
+  }
+
+  /**
+   * Remove a value from the storage.
+   * @param {string} key
+   */
+  removeKey(key) {
+    this._storage.delete(key);
   }
 
   /**
@@ -123,7 +132,19 @@ class AnnotationStorage {
    * @ignore
    */
   get serializable() {
-    return this._storage.size > 0 ? this._storage : null;
+    if (this._storage.size === 0) {
+      return null;
+    }
+
+    const clone = new Map();
+    for (const [key, value] of this._storage) {
+      if (value instanceof AnnotationEditor) {
+        clone.set(key, value.serialize());
+      } else {
+        clone.set(key, value);
+      }
+    }
+    return clone;
   }
 
   /**
