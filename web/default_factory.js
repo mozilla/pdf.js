@@ -21,6 +21,8 @@
 /** @typedef {import("./interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationEditorLayerFactory} IPDFAnnotationEditorLayerFactory */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
@@ -29,6 +31,7 @@
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 
+import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -83,6 +86,32 @@ class DefaultAnnotationLayerFactory {
       fieldObjectsPromise,
       mouseState,
       annotationCanvasMap,
+    });
+  }
+}
+
+/**
+ * @implements IPDFAnnotationEditorLayerFactory
+ */
+class DefaultAnnotationEditorLayerFactory {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPageProxy} pdfPage
+   * @param {IL10n} l10n
+   * @param {AnnotationStorage} [annotationStorage]
+   * @returns {AnnotationEditorLayerBuilder}
+   */
+  createAnnotationEditorLayerBuilder(
+    pageDiv,
+    pdfPage,
+    l10n,
+    annotationStorage = null
+  ) {
+    return new AnnotationEditorLayerBuilder({
+      pageDiv,
+      pdfPage,
+      l10n,
+      annotationStorage,
     });
   }
 }
@@ -161,6 +190,7 @@ class DefaultXfaLayerFactory {
 }
 
 export {
+  DefaultAnnotationEditorLayerFactory,
   DefaultAnnotationLayerFactory,
   DefaultStructTreeLayerFactory,
   DefaultTextLayerFactory,

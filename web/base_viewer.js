@@ -22,6 +22,8 @@
 /** @typedef {import("./interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationEditorLayerFactory} IPDFAnnotationEditorLayerFactory */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
@@ -30,6 +32,8 @@
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 
 import {
+  AnnotationEditorType,
+  AnnotationEditorUIManager,
   AnnotationMode,
   createPromiseCapability,
   PermissionFlag,
@@ -61,6 +65,7 @@ import {
   VERTICAL_PADDING,
   watchScroll,
 } from "./ui_utils.js";
+import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
@@ -104,6 +109,8 @@ const PagesCountLimit = {
  *   being rendered. The constants from {@link AnnotationMode} should be used;
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
+ * @property {boolean} [annotationEditorEnabled] - Enables the creation and
+ *   editing of new Annotations.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
@@ -194,12 +201,17 @@ class PDFPageViewBuffer {
  * Simple viewer control to display PDF content/pages.
  *
  * @implements {IPDFAnnotationLayerFactory}
+ * @implements {IPDFAnnotationEditorLayerFactory}
  * @implements {IPDFStructTreeLayerFactory}
  * @implements {IPDFTextLayerFactory}
  * @implements {IPDFXfaLayerFactory}
  */
 class BaseViewer {
   #buffer = null;
+
+  #annotationEditorMode = AnnotationEditorType.NONE;
+
+  #annotationEditorUIManager = null;
 
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
@@ -267,6 +279,10 @@ class BaseViewer {
     this.l10n = options.l10n || NullL10n;
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
+
+    if (options.annotationEditorEnabled === true) {
+      this.#annotationEditorUIManager = new AnnotationEditorUIManager();
+    }
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       if (
@@ -699,6 +715,9 @@ class BaseViewer {
         const annotationLayerFactory =
           this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
+        const annotationEditorLayerFactory = this.#annotationEditorUIManager
+          ? this
+          : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
@@ -714,6 +733,7 @@ class BaseViewer {
             annotationLayerFactory,
             annotationMode: this.#annotationMode,
             xfaLayerFactory,
+            annotationEditorLayerFactory,
             textHighlighterFactory: this,
             structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
@@ -1659,6 +1679,30 @@ class BaseViewer {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPageProxy} pdfPage
+   * @param {IL10n} l10n
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
+   * @returns {AnnotationEditorLayerBuilder}
+   */
+  createAnnotationEditorLayerBuilder(
+    pageDiv,
+    pdfPage,
+    l10n,
+    annotationStorage = null
+  ) {
+    return new AnnotationEditorLayerBuilder({
+      uiManager: this.#annotationEditorUIManager,
+      pageDiv,
+      pdfPage,
+      annotationStorage:
+        annotationStorage || this.pdfDocument?.annotationStorage,
+      l10n,
+    });
+  }
+
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPageProxy} pdfPage
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
    * @returns {XfaLayerBuilder}
@@ -2071,6 +2115,36 @@ class BaseViewer {
 
       docStyle.setProperty("--viewer-container-height", `${height}px`);
     }
+  }
+
+  get annotationEditorMode() {
+    return this.#annotationEditorMode;
+  }
+
+  /**
+   * @param {number} mode - Annotation Editor mode (None, FreeText, Ink, ...)
+   */
+  set annotationEditorMode(mode) {
+    if (!this.#annotationEditorUIManager) {
+      throw new Error(`The AnnotationEditor is not enabled.`);
+    }
+
+    if (this.#annotationEditorMode === mode) {
+      return;
+    }
+
+    if (!Object.values(AnnotationEditorType).includes(mode)) {
+      throw new Error(`Invalid AnnotationEditor mode: ${mode}`);
+    }
+
+    // If the mode is the same as before, it means that this mode is disabled
+    // and consequently the mode is NONE.
+    this.#annotationEditorMode = mode;
+    this.eventBus.dispatch("annotationeditormodechanged", {
+      source: this,
+      mode,
+    });
+    this.#annotationEditorUIManager.updateMode(mode);
   }
 }
 
