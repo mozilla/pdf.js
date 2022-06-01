@@ -16,6 +16,7 @@
 import {
   AnnotationActionEventType,
   AnnotationBorderStyleType,
+  AnnotationEditorType,
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationReplyType,
@@ -24,12 +25,14 @@ import {
   escapeString,
   getModificationDate,
   isAscii,
+  LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   OPS,
   RenderingIntentFlag,
   shadow,
   stringToPDFString,
   stringToUTF16BEString,
+  stringToUTF8String,
   unreachable,
   Util,
   warn,
@@ -45,6 +48,7 @@ import {
   parseDefaultAppearance,
 } from "./default_appearance.js";
 import { Dict, isName, Name, Ref, RefSet } from "./primitives.js";
+import { writeDict, writeObject } from "./writer.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
@@ -53,7 +57,6 @@ import { FileSpec } from "./file_spec.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { StringStream } from "./stream.js";
-import { writeDict } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
 
 class AnnotationFactory {
@@ -236,6 +239,49 @@ class AnnotationFactory {
       warn(`_getPageIndex: "${ex}".`);
       return -1;
     }
+  }
+
+  static async saveNewAnnotations(evaluator, task, annotations) {
+    const xref = evaluator.xref;
+    let baseFontRef;
+    const results = [];
+    const dependencies = [];
+    const promises = [];
+    for (const annotation of annotations) {
+      switch (annotation.annotationType) {
+        case AnnotationEditorType.FREETEXT:
+          if (!baseFontRef) {
+            const baseFont = new Dict(xref);
+            baseFont.set("BaseFont", Name.get("Helvetica"));
+            baseFont.set("Type", Name.get("Font"));
+            baseFont.set("Subtype", Name.get("Type1"));
+            baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
+            const buffer = [];
+            baseFontRef = xref.getNewRef();
+            writeObject(baseFontRef, baseFont, buffer, null);
+            dependencies.push({ ref: baseFontRef, data: buffer.join("") });
+          }
+          promises.push(
+            FreeTextAnnotation.createNewAnnotation(
+              xref,
+              evaluator,
+              task,
+              annotation,
+              baseFontRef,
+              results,
+              dependencies
+            )
+          );
+          break;
+      }
+    }
+
+    await Promise.all(promises);
+
+    return {
+      annotations: results,
+      dependencies,
+    };
   }
 }
 
@@ -1617,7 +1663,12 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
-    const font = await this._getFontData(evaluator, task);
+    const font = await WidgetAnnotation._getFontData(
+      evaluator,
+      task,
+      this.data.defaultAppearanceData,
+      this._fieldResources.mergedResources
+    );
     const [defaultAppearance, fontSize] = this._computeFontSize(
       totalHeight - defaultPadding,
       totalWidth - 2 * hPadding,
@@ -1700,7 +1751,7 @@ class WidgetAnnotation extends Annotation {
     );
   }
 
-  async _getFontData(evaluator, task) {
+  static async _getFontData(evaluator, task, appearanceData, resources) {
     const operatorList = new OperatorList();
     const initialState = {
       font: null,
@@ -1709,9 +1760,9 @@ class WidgetAnnotation extends Annotation {
       },
     };
 
-    const { fontName, fontSize } = this.data.defaultAppearanceData;
+    const { fontName, fontSize } = appearanceData;
     await evaluator.handleSetFont(
-      this._fieldResources.mergedResources,
+      resources,
       [fontName && Name.get(fontName), fontSize],
       /* fontRef = */ null,
       operatorList,
@@ -2640,7 +2691,12 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       );
     }
 
-    const font = await this._getFontData(evaluator, task);
+    const font = await WidgetAnnotation._getFontData(
+      evaluator,
+      task,
+      this.data.defaultAppearanceData,
+      this._fieldResources.mergedResources
+    );
 
     let defaultAppearance;
     let { fontSize } = this.data.defaultAppearanceData;
@@ -2870,6 +2926,129 @@ class FreeTextAnnotation extends MarkupAnnotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.FREETEXT;
+  }
+
+  static async createNewAnnotation(
+    xref,
+    evaluator,
+    task,
+    annotation,
+    baseFontRef,
+    results,
+    dependencies
+  ) {
+    const { color, fontSize, rect, user, value } = annotation;
+    const freetextRef = xref.getNewRef();
+    const freetext = new Dict(xref);
+    freetext.set("Type", Name.get("Annot"));
+    freetext.set("Subtype", Name.get("FreeText"));
+    freetext.set("CreationDate", `D:${getModificationDate()}`);
+    freetext.set("Rect", rect);
+    const da = `/Helv ${fontSize} Tf ${getPdfColor(color)}`;
+    freetext.set("DA", da);
+    freetext.set("Contents", value);
+    freetext.set("F", 4);
+    freetext.set("Border", [0, 0, 0]);
+    freetext.set("Rotate", 0);
+
+    if (user) {
+      freetext.set("T", stringToUTF8String(user));
+    }
+
+    const resources = new Dict(xref);
+    const font = new Dict(xref);
+    font.set("Helv", baseFontRef);
+    resources.set("Font", font);
+
+    const helv = await WidgetAnnotation._getFontData(
+      evaluator,
+      task,
+      {
+        fontName: "Helvetica",
+        fontSize,
+      },
+      resources
+    );
+
+    const [x1, y1, x2, y2] = rect;
+    const w = x2 - x1;
+    const h = y2 - y1;
+
+    const lines = value.split("\n");
+    const scale = fontSize / 1000;
+    let totalWidth = -Infinity;
+    const encodedLines = [];
+    for (let line of lines) {
+      line = helv.encodeString(line).join("");
+      encodedLines.push(line);
+      let lineWidth = 0;
+      const glyphs = helv.charsToGlyphs(line);
+      for (const glyph of glyphs) {
+        lineWidth += glyph.width * scale;
+      }
+      totalWidth = Math.max(totalWidth, lineWidth);
+    }
+
+    let hscale = 1;
+    if (totalWidth > w) {
+      hscale = w / totalWidth;
+    }
+    let vscale = 1;
+    const lineHeight = LINE_FACTOR * fontSize;
+    const lineDescent = LINE_DESCENT_FACTOR * fontSize;
+    const totalHeight = lineHeight * lines.length;
+    if (totalHeight > h) {
+      vscale = h / totalHeight;
+    }
+    const fscale = Math.min(hscale, vscale);
+    const newFontSize = fontSize * fscale;
+    const buffer = [
+      "q",
+      `0 0 ${numberToString(w)} ${numberToString(h)} re W n`,
+      `BT`,
+      `1 0 0 1 0 ${numberToString(h + lineDescent)} Tm 0 Tc ${getPdfColor(
+        color
+      )}`,
+      `/Helv ${numberToString(newFontSize)} Tf`,
+    ];
+
+    const vShift = numberToString(lineHeight);
+    for (const line of encodedLines) {
+      buffer.push(`0 -${vShift} Td (${escapeString(line)}) Tj`);
+    }
+    buffer.push("ET", "Q");
+    const appearance = buffer.join("\n");
+
+    const appearanceStreamDict = new Dict(xref);
+    appearanceStreamDict.set("FormType", 1);
+    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.set("BBox", [0, 0, w, h]);
+    appearanceStreamDict.set("Length", appearance.length);
+    appearanceStreamDict.set("Resources", resources);
+
+    const ap = new StringStream(appearance);
+    ap.dict = appearanceStreamDict;
+
+    buffer.length = 0;
+    const apRef = xref.getNewRef();
+    let transform = xref.encrypt
+      ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
+      : null;
+    writeObject(apRef, ap, buffer, transform);
+    dependencies.push({ ref: apRef, data: buffer.join("") });
+
+    const n = new Dict(xref);
+    n.set("N", apRef);
+    freetext.set("AP", n);
+
+    buffer.length = 0;
+    transform = xref.encrypt
+      ? xref.encrypt.createCipherTransform(freetextRef.num, freetextRef.gen)
+      : null;
+    writeObject(freetextRef, freetext, buffer, transform);
+
+    results.push({ ref: freetextRef, data: buffer.join("") });
   }
 }
 

@@ -88,7 +88,7 @@ class XRefMock {
 
   getNewRef() {
     if (this._newRefNum === null) {
-      this._newRefNum = Object.keys(this._map).length;
+      this._newRefNum = Object.keys(this._map).length || 1;
     }
     return Ref.get(this._newRefNum++, 0);
   }

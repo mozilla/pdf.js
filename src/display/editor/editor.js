@@ -141,6 +141,14 @@ class AnnotationEditor {
   }
 
   /**
+   * Get the translation used to position this editor when it's created.
+   * @returns {Array<number>}
+   */
+  getInitialTranslation() {
+    return [0, 0];
+  }
+
+  /**
    * Render this editor in a div.
    * @returns {HTMLDivElement}
    */
@@ -150,6 +158,11 @@ class AnnotationEditor {
     this.div.setAttribute("id", this.id);
     this.div.draggable = true;
     this.div.tabIndex = 100;
+
+    const [tx, ty] = this.getInitialTranslation();
+    this.x = Math.round(this.x + tx);
+    this.y = Math.round(this.y + ty);
+
     this.div.style.left = `${this.x}px`;
     this.div.style.top = `${this.y}px`;
 
