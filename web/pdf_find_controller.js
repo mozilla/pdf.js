@@ -965,8 +965,6 @@ class PDFFindController {
 
       // Avoid the UI being in a pending state when the findbar is re-opened.
       this._updateUIState(FindState.FOUND);
-
-      this._highlightMatches = false;
       this._updateAllPages(); // Wipe out any previously highlighted matches.
     });
   }
