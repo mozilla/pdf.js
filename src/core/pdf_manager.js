@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { createValidAbsoluteUrl, unreachable, warn } from "../shared/util.js";
+import {
+  createValidAbsoluteUrl,
+  shadow,
+  unreachable,
+  warn,
+} from "../shared/util.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
 import { MissingDataException } from "./core_utils.js";
 import { PDFDocument } from "./document.js";
@@ -46,7 +51,8 @@ class BasePdfManager {
   }
 
   get docBaseUrl() {
-    return this._docBaseUrl;
+    const catalog = this.pdfDocument.catalog;
+    return shadow(this, "docBaseUrl", catalog.baseUrl || this._docBaseUrl);
   }
 
   onLoadedStream() {
@@ -115,12 +121,21 @@ class BasePdfManager {
 }
 
 class LocalPdfManager extends BasePdfManager {
-  constructor(docId, data, password, evaluatorOptions, enableXfa, docBaseUrl) {
+  constructor(
+    docId,
+    data,
+    password,
+    msgHandler,
+    evaluatorOptions,
+    enableXfa,
+    docBaseUrl
+  ) {
     super();
 
     this._docId = docId;
     this._password = password;
     this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
+    this.msgHandler = msgHandler;
     this.evaluatorOptions = evaluatorOptions;
     this.enableXfa = enableXfa;
 

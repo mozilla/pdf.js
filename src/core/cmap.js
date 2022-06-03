@@ -16,11 +16,11 @@
 import {
   CMapCompressionType,
   FormatError,
-  isString,
   unreachable,
   warn,
 } from "../shared/util.js";
-import { EOF, isCmd, isName, isStream } from "./primitives.js";
+import { Cmd, EOF, isCmd, Name } from "./primitives.js";
+import { BaseStream } from "./base_stream.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
@@ -766,7 +766,7 @@ const CMapFactory = (function CMapFactoryClosure() {
   }
 
   function expectString(obj) {
-    if (!isString(obj)) {
+    if (typeof obj !== "string") {
       throw new FormatError("Malformed CMap: expected string.");
     }
   }
@@ -811,7 +811,7 @@ const CMapFactory = (function CMapFactoryClosure() {
       expectString(obj);
       const high = strToInt(obj);
       obj = lexer.getObj();
-      if (Number.isInteger(obj) || isString(obj)) {
+      if (Number.isInteger(obj) || typeof obj === "string") {
         const dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
         cMap.mapBfRange(low, high, dstLow);
       } else if (isCmd(obj, "[")) {
@@ -877,12 +877,12 @@ const CMapFactory = (function CMapFactoryClosure() {
       if (isCmd(obj, "endcodespacerange")) {
         return;
       }
-      if (!isString(obj)) {
+      if (typeof obj !== "string") {
         break;
       }
       const low = strToInt(obj);
       obj = lexer.getObj();
-      if (!isString(obj)) {
+      if (typeof obj !== "string") {
         break;
       }
       const high = strToInt(obj);
@@ -900,7 +900,7 @@ const CMapFactory = (function CMapFactoryClosure() {
 
   function parseCMapName(cMap, lexer) {
     const obj = lexer.getObj();
-    if (isName(obj) && isString(obj.name)) {
+    if (obj instanceof Name) {
       cMap.name = obj.name;
     }
   }
@@ -912,19 +912,19 @@ const CMapFactory = (function CMapFactoryClosure() {
         const obj = lexer.getObj();
         if (obj === EOF) {
           break;
-        } else if (isName(obj)) {
+        } else if (obj instanceof Name) {
           if (obj.name === "WMode") {
             parseWMode(cMap, lexer);
           } else if (obj.name === "CMapName") {
             parseCMapName(cMap, lexer);
           }
           previous = obj;
-        } else if (isCmd(obj)) {
+        } else if (obj instanceof Cmd) {
           switch (obj.cmd) {
             case "endcmap":
               break objLoop;
             case "usecmap":
-              if (isName(previous)) {
+              if (previous instanceof Name) {
                 embeddedUseCMap = previous.name;
               }
               break;
@@ -1023,9 +1023,9 @@ const CMapFactory = (function CMapFactoryClosure() {
       const fetchBuiltInCMap = params.fetchBuiltInCMap;
       const useCMap = params.useCMap;
 
-      if (isName(encoding)) {
+      if (encoding instanceof Name) {
         return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
-      } else if (isStream(encoding)) {
+      } else if (encoding instanceof BaseStream) {
         const parsedCMap = await parseCMap(
           /* cMap = */ new CMap(),
           /* lexer = */ new Lexer(encoding),

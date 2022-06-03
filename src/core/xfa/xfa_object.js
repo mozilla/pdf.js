@@ -440,7 +440,7 @@ class XFAObject {
 
   /**
    * Update the node with properties coming from a prototype and apply
-   * this function recursivly to all children.
+   * this function recursively to all children.
    */
   [$resolvePrototypes](ids, ancestors = new Set()) {
     for (const child of this[_children]) {

@@ -1,4 +1,4 @@
-/* Copyright 2012 Mozilla Foundation
+/* Copyright 2022 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-/*
- NOTE: This file is created as a helper to assist with JSDoc html files.
-       It is not for use in the executable code.
-*/
+import { clearPrimitiveCaches } from "./primitives.js";
+import { clearUnicodeCaches } from "./unicode.js";
 
-/**
- * Represents the eventual result of an asynchronous operation.
- * @external Promise
- * @see {@link http://promisesaplus.com/ Promise/A+}
- */
+function clearGlobalCaches() {
+  clearPrimitiveCaches();
+  clearUnicodeCaches();
+}
+
+export { clearGlobalCaches };

@@ -14,34 +14,22 @@
  */
 
 import {
-  assert,
-  BaseException,
-  isString,
-  removeNullCharacters,
-  shadow,
-  stringToBytes,
-  Util,
-  warn,
-} from "../shared/util.js";
-import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
   BaseStandardFontDataFactory,
   BaseSVGFactory,
 } from "./base_factory.js";
+import { BaseException, stringToBytes, Util, warn } from "../shared/util.js";
 
-const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-const PixelsPerInch = {
-  CSS: 96.0,
-  PDF: 72.0,
+class PixelsPerInch {
+  static CSS = 96.0;
 
-  /** @type {number} */
-  get PDF_TO_CSS_UNITS() {
-    return shadow(this, "PDF_TO_CSS_UNITS", this.CSS / this.PDF);
-  },
-};
+  static PDF = 72.0;
+
+  static PDF_TO_CSS_UNITS = this.CSS / this.PDF;
+}
 
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {
@@ -49,6 +37,9 @@ class DOMCanvasFactory extends BaseCanvasFactory {
     this._document = ownerDocument;
   }
 
+  /**
+   * @ignore
+   */
   _createCanvas(width, height) {
     const canvas = this._document.createElement("canvas");
     canvas.width = width;
@@ -103,6 +94,9 @@ async function fetchData(url, asTypedArray = false) {
 }
 
 class DOMCMapReaderFactory extends BaseCMapReaderFactory {
+  /**
+   * @ignore
+   */
   _fetchData(url, compressionType) {
     return fetchData(url, /* asTypedArray = */ this.isCompressed).then(data => {
       return { cMapData: data, compressionType };
@@ -111,12 +105,18 @@ class DOMCMapReaderFactory extends BaseCMapReaderFactory {
 }
 
 class DOMStandardFontDataFactory extends BaseStandardFontDataFactory {
+  /**
+   * @ignore
+   */
   _fetchData(url) {
     return fetchData(url, /* asTypedArray = */ true);
   }
 }
 
 class DOMSVGFactory extends BaseSVGFactory {
+  /**
+   * @ignore
+   */
   _createSVG(type) {
     return document.createElementNS(SVG_NS, type);
   }
@@ -316,70 +316,6 @@ class RenderingCancelledException extends BaseException {
   }
 }
 
-const LinkTarget = {
-  NONE: 0, // Default value.
-  SELF: 1,
-  BLANK: 2,
-  PARENT: 3,
-  TOP: 4,
-};
-
-/**
- * @typedef ExternalLinkParameters
- * @typedef {Object} ExternalLinkParameters
- * @property {string} url - An absolute URL.
- * @property {LinkTarget} [target] - The link target. The default value is
- *   `LinkTarget.NONE`.
- * @property {string} [rel] - The link relationship. The default value is
- *   `DEFAULT_LINK_REL`.
- * @property {boolean} [enabled] - Whether the link should be enabled. The
- *   default value is true.
- */
-
-/**
- * Adds various attributes (href, title, target, rel) to hyperlinks.
- * @param {HTMLAnchorElement} link - The link element.
- * @param {ExternalLinkParameters} params
- */
-function addLinkAttributes(link, { url, target, rel, enabled = true } = {}) {
-  assert(
-    url && typeof url === "string",
-    'addLinkAttributes: A valid "url" parameter must provided.'
-  );
-
-  const urlNullRemoved = removeNullCharacters(url);
-  if (enabled) {
-    link.href = link.title = urlNullRemoved;
-  } else {
-    link.href = "";
-    link.title = `Disabled: ${urlNullRemoved}`;
-    link.onclick = () => {
-      return false;
-    };
-  }
-
-  let targetStr = ""; // LinkTarget.NONE
-  switch (target) {
-    case LinkTarget.NONE:
-      break;
-    case LinkTarget.SELF:
-      targetStr = "_self";
-      break;
-    case LinkTarget.BLANK:
-      targetStr = "_blank";
-      break;
-    case LinkTarget.PARENT:
-      targetStr = "_parent";
-      break;
-    case LinkTarget.TOP:
-      targetStr = "_top";
-      break;
-  }
-  link.target = targetStr;
-
-  link.rel = typeof rel === "string" ? rel : DEFAULT_LINK_REL;
-}
-
 function isDataScheme(url) {
   const ii = url.length;
   let i = 0;
@@ -552,7 +488,7 @@ class PDFDateString {
    * @returns {Date|null}
    */
   static toDateObject(input) {
-    if (!input || !isString(input)) {
+    if (!input || typeof input !== "string") {
       return null;
     }
 
@@ -632,7 +568,6 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
 }
 
 export {
-  addLinkAttributes,
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
@@ -644,7 +579,6 @@ export {
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
-  LinkTarget,
   loadScript,
   PageViewport,
   PDFDateString,

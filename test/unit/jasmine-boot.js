@@ -68,6 +68,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/document_spec.js",
       "pdfjs-test/unit/encodings_spec.js",
       "pdfjs-test/unit/evaluator_spec.js",
+      "pdfjs-test/unit/event_utils_spec.js",
       "pdfjs-test/unit/function_spec.js",
       "pdfjs-test/unit/fetch_stream_spec.js",
       "pdfjs-test/unit/message_handler_spec.js",

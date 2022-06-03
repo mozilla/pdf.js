@@ -14,14 +14,14 @@
  */
 
 import { DecodeStream } from "./decode_stream.js";
+import { Dict } from "./primitives.js";
 import { FormatError } from "../shared/util.js";
-import { isDict } from "./primitives.js";
 
 class PredictorStream extends DecodeStream {
   constructor(str, maybeLength, params) {
     super(maybeLength);
 
-    if (!isDict(params)) {
+    if (!(params instanceof Dict)) {
       return str; // no prediction
     }
     const predictor = (this.predictor = params.get("Predictor") || 1);
@@ -43,7 +43,7 @@ class PredictorStream extends DecodeStream {
     this.dict = str.dict;
 
     const colors = (this.colors = params.get("Colors") || 1);
-    const bits = (this.bits = params.get("BitsPerComponent") || 8);
+    const bits = (this.bits = params.get("BPC", "BitsPerComponent") || 8);
     const columns = (this.columns = params.get("Columns") || 1);
 
     this.pixBytes = (colors * bits + 7) >> 3;

@@ -261,10 +261,9 @@ describe("evaluator", function () {
         "(bug 1443140)",
       async function () {
         const NUM_INVALID_OPS = 25;
-        const tempArr = new Array(NUM_INVALID_OPS + 1);
 
         // Non-path operators, should be ignored.
-        const invalidMoveText = tempArr.join("10 Td\n");
+        const invalidMoveText = "10 Td\n".repeat(NUM_INVALID_OPS);
         const moveTextStream = new StringStream(invalidMoveText);
         const result = await runOperatorListCheck(
           partialEvaluator,
@@ -275,7 +274,7 @@ describe("evaluator", function () {
         expect(result.fnArray).toEqual([]);
 
         // Path operators, should throw error.
-        const invalidLineTo = tempArr.join("20 l\n");
+        const invalidLineTo = "20 l\n".repeat(NUM_INVALID_OPS);
         const lineToStream = new StringStream(invalidLineTo);
 
         try {

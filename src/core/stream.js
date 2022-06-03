@@ -45,24 +45,20 @@ class Stream extends BaseStream {
     return this.bytes[this.pos++];
   }
 
-  getBytes(length, forceClamped = false) {
+  getBytes(length) {
     const bytes = this.bytes;
     const pos = this.pos;
     const strEnd = this.end;
 
     if (!length) {
-      const subarray = bytes.subarray(pos, strEnd);
-      // `this.bytes` is always a `Uint8Array` here.
-      return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
+      return bytes.subarray(pos, strEnd);
     }
     let end = pos + length;
     if (end > strEnd) {
       end = strEnd;
     }
     this.pos = end;
-    const subarray = bytes.subarray(pos, end);
-    // `this.bytes` is always a `Uint8Array` here.
-    return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
+    return bytes.subarray(pos, end);
   }
 
   getByteRange(begin, end) {

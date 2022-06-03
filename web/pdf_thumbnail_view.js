@@ -13,9 +13,14 @@
  * limitations under the License.
  */
 
-import { getOutputScale } from "./ui_utils.js";
+/** @typedef {import("./interfaces").IL10n} IL10n */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
+
+import { OutputScale, RenderingStates } from "./ui_utils.js";
 import { RenderingCancelledException } from "pdfjs-lib";
-import { RenderingStates } from "./pdf_rendering_queue.js";
 
 const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
 const MAX_NUM_SCALING_STEPS = 3;
@@ -34,6 +39,9 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {function} checkSetImageDisabled
  * @property {IL10n} l10n - Localization service.
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  */
 
 class TempImageFactory {
@@ -46,13 +54,6 @@ class TempImageFactory {
 
     // Since this is a temporary canvas, we need to fill it with a white
     // background ourselves. `_getPageDrawContext` uses CSS rules for this.
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      tempCanvas.mozOpaque = true;
-    }
-
     const ctx = tempCanvas.getContext("2d", { alpha: false });
     ctx.save();
     ctx.fillStyle = "rgb(255, 255, 255)";
@@ -89,6 +90,7 @@ class PDFThumbnailView {
     renderingQueue,
     checkSetImageDisabled,
     l10n,
+    pageColors,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;
@@ -99,6 +101,7 @@ class PDFThumbnailView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
+    this.pageColors = pageColors || null;
 
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
@@ -220,15 +223,8 @@ class PDFThumbnailView {
     // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
     // until rendering/image conversion is complete, to avoid display issues.
     const canvas = document.createElement("canvas");
-
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = getOutputScale(ctx);
+    const outputScale = new OutputScale();
 
     canvas.width = (upscaleFactor * this.canvasWidth * outputScale.sx) | 0;
     canvas.height = (upscaleFactor * this.canvasHeight * outputScale.sy) | 0;
@@ -329,6 +325,7 @@ class PDFThumbnailView {
       transform,
       viewport: drawViewport,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
+      pageColors: this.pageColors,
     };
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;

@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-import { isDict, isStream } from "./primitives.js";
 import { stringToPDFString, warn } from "../shared/util.js";
+import { BaseStream } from "./base_stream.js";
+import { Dict } from "./primitives.js";
 
 function pickPlatformItem(dict) {
   // Look for the filename in this order:
@@ -42,7 +43,7 @@ function pickPlatformItem(dict) {
  */
 class FileSpec {
   constructor(root, xref) {
-    if (!root || !isDict(root)) {
+    if (!(root instanceof Dict)) {
       return;
     }
     this.xref = xref;
@@ -84,7 +85,7 @@ class FileSpec {
     let content = null;
     if (this.contentRef) {
       const fileObj = this.xref.fetchIfRef(this.contentRef);
-      if (fileObj && isStream(fileObj)) {
+      if (fileObj instanceof BaseStream) {
         content = fileObj.getBytes();
       } else {
         warn(

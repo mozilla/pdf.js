@@ -14,16 +14,17 @@
  */
 
 import {
-  getDingbatsGlyphsUnicode,
-  getGlyphsUnicode,
-} from "../../src/core/glyphlist.js";
-import {
+  getCharUnicodeCategory,
   getNormalizedUnicodes,
   getUnicodeForGlyph,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
   reverseIfRtl,
 } from "../../src/core/unicode.js";
+import {
+  getDingbatsGlyphsUnicode,
+  getGlyphsUnicode,
+} from "../../src/core/glyphlist.js";
 
 describe("unicode", function () {
   describe("mapSpecialUnicodeValues", function () {
@@ -39,6 +40,78 @@ describe("unicode", function () {
       expect(mapSpecialUnicodeValues(0xf8e9)).toEqual(0x00a9);
       // Private Use Area characters
       expect(mapSpecialUnicodeValues(0xffff)).toEqual(0);
+    });
+  });
+
+  describe("getCharUnicodeCategory", function () {
+    it("should correctly determine the character category", function () {
+      const tests = {
+        // Whitespace
+        " ": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+        "\t": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+        "\u2001": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+        "\uFEFF": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: true,
+        },
+
+        // Diacritic
+        "\u0302": {
+          isZeroWidthDiacritic: true,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+        "\u0344": {
+          isZeroWidthDiacritic: true,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+        "\u0361": {
+          isZeroWidthDiacritic: true,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+
+        // Invisible format mark
+        "\u200B": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
+        "\u200D": {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: true,
+          isWhitespace: false,
+        },
+
+        // No whitespace or diacritic or invisible format mark
+        a: {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+        1: {
+          isZeroWidthDiacritic: false,
+          isInvisibleFormatMark: false,
+          isWhitespace: false,
+        },
+      };
+      for (const [character, expectation] of Object.entries(tests)) {
+        expect(getCharUnicodeCategory(character)).toEqual(expectation);
+      }
     });
   });
 

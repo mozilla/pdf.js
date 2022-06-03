@@ -16,7 +16,7 @@
 import {
   assert,
   bytesToString,
-  IsEvalSupportedCached,
+  FeatureTest,
   shadow,
   string32,
   unreachable,
@@ -350,7 +350,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       this._document.body.appendChild(div);
 
       isFontReady(loadTestFontId, () => {
-        this._document.body.removeChild(div);
+        div.remove();
         request.complete();
       });
       /** Hack end */
@@ -455,7 +455,7 @@ class FontFaceObject {
     }
 
     // If we can, compile cmds into JS for MAXIMUM SPEED...
-    if (this.isEvalSupported && IsEvalSupportedCached.value) {
+    if (this.isEvalSupported && FeatureTest.isEvalSupported) {
       const jsBuf = [];
       for (const current of cmds) {
         const args = current.args !== undefined ? current.args.join(",") : "";

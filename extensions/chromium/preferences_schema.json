@@ -186,13 +186,14 @@
     },
     "scrollModeOnLoad": {
       "title": "Scroll mode on load",
-      "description": "Controls how the viewer scrolls upon load.\n -1 = Default (uses the last position if available/enabled).\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
+      "description": "Controls how the viewer scrolls upon load.\n -1 = Default (uses the last position if available/enabled).\n 3 = Page scrolling.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
       "type": "integer",
       "enum": [
         -1,
         0,
         1,
-        2
+        2,
+        3
       ],
       "default": -1
     },
@@ -207,6 +208,16 @@
         2
       ],
       "default": -1
+    },
+    "pageColorsBackground": {
+      "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",
+      "type": "string",
+      "default": "Canvas"
+    },
+    "pageColorsForeground": {
+      "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",
+      "type": "string",
+      "default": "CanvasText"
     }
   }
 }

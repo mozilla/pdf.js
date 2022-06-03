@@ -23,7 +23,12 @@ const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
 
-const LOADINGBAR_END_OFFSET_VAR = "--loadingBar-end-offset";
+const RenderingStates = {
+  INITIAL: 0,
+  RUNNING: 1,
+  PAUSED: 2,
+  FINISHED: 3,
+};
 
 const PresentationModeState = {
   UNKNOWN: 0,
@@ -71,24 +76,29 @@ const SpreadMode = {
 const AutoPrintRegExp = /\bprint\s*\(/;
 
 /**
- * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
- * @returns {Object} The object with horizontal (sx) and vertical (sy)
- *                   scales. The scaled property is set to false if scaling is
- *                   not required, true otherwise.
+ * Scale factors for the canvas, necessary with HiDPI displays.
  */
-function getOutputScale(ctx) {
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const backingStoreRatio =
-    ctx.webkitBackingStorePixelRatio ||
-    ctx.mozBackingStorePixelRatio ||
-    ctx.backingStorePixelRatio ||
-    1;
-  const pixelRatio = devicePixelRatio / backingStoreRatio;
-  return {
-    sx: pixelRatio,
-    sy: pixelRatio,
-    scaled: pixelRatio !== 1,
-  };
+class OutputScale {
+  constructor() {
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    /**
+     * @type {number} Horizontal scale.
+     */
+    this.sx = pixelRatio;
+
+    /**
+     * @type {number} Vertical scale.
+     */
+    this.sy = pixelRatio;
+  }
+
+  /**
+   * @type {boolean} Returns `true` when scaling is required, `false` otherwise.
+   */
+  get scaled() {
+    return this.sx !== 1 || this.sy !== 1;
+  }
 }
 
 /**
@@ -187,13 +197,28 @@ function watchScroll(viewAreaElement, callback) {
  */
 function parseQueryString(query) {
   const params = new Map();
-  for (const part of query.split("&")) {
-    const param = part.split("="),
-      key = param[0].toLowerCase(),
-      value = param.length > 1 ? param[1] : "";
-    params.set(decodeURIComponent(key), decodeURIComponent(value));
+  for (const [key, value] of new URLSearchParams(query)) {
+    params.set(key.toLowerCase(), value);
   }
   return params;
+}
+
+const NullCharactersRegExp = /\x00/g;
+const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
+
+/**
+ * @param {string} str
+ * @param {boolean} [replaceInvisible]
+ */
+function removeNullCharacters(str, replaceInvisible = false) {
+  if (typeof str !== "string") {
+    console.error(`The argument must be a string.`);
+    return str;
+  }
+  if (replaceInvisible) {
+    str = str.replace(InvisibleCharactersRegExp, " ");
+  }
+  return str.replace(NullCharactersRegExp, "");
 }
 
 /**
@@ -205,8 +230,8 @@ function parseQueryString(query) {
  * @returns {number} Index of the first array element to pass the test,
  *                   or |items.length| if no such element exists.
  */
-function binarySearchFirstItem(items, condition) {
-  let minIndex = 0;
+function binarySearchFirstItem(items, condition, start = 0) {
+  let minIndex = start;
   let maxIndex = items.length - 1;
 
   if (maxIndex < 0 || !condition(items[maxIndex])) {
@@ -635,63 +660,6 @@ function isPortraitOrientation(size) {
   return size.width <= size.height;
 }
 
-const WaitOnType = {
-  EVENT: "event",
-  TIMEOUT: "timeout",
-};
-
-/**
- * @typedef {Object} WaitOnEventOrTimeoutParameters
- * @property {Object} target - The event target, can for example be:
- *   `window`, `document`, a DOM element, or an {EventBus} instance.
- * @property {string} name - The name of the event.
- * @property {number} delay - The delay, in milliseconds, after which the
- *   timeout occurs (if the event wasn't already dispatched).
- */
-
-/**
- * Allows waiting for an event or a timeout, whichever occurs first.
- * Can be used to ensure that an action always occurs, even when an event
- * arrives late or not at all.
- *
- * @param {WaitOnEventOrTimeoutParameters}
- * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
- */
-function waitOnEventOrTimeout({ target, name, delay = 0 }) {
-  return new Promise(function (resolve, reject) {
-    if (
-      typeof target !== "object" ||
-      !(name && typeof name === "string") ||
-      !(Number.isInteger(delay) && delay >= 0)
-    ) {
-      throw new Error("waitOnEventOrTimeout - invalid parameters.");
-    }
-
-    function handler(type) {
-      if (target instanceof EventBus) {
-        target._off(name, eventHandler);
-      } else {
-        target.removeEventListener(name, eventHandler);
-      }
-
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      resolve(type);
-    }
-
-    const eventHandler = handler.bind(null, WaitOnType.EVENT);
-    if (target instanceof EventBus) {
-      target._on(name, eventHandler);
-    } else {
-      target.addEventListener(name, eventHandler);
-    }
-
-    const timeoutHandler = handler.bind(null, WaitOnType.TIMEOUT);
-    const timeout = setTimeout(timeoutHandler, delay);
-  });
-}
-
 /**
  * Promise that is resolved when DOM window becomes visible.
  */
@@ -709,135 +677,28 @@ const animationStarted = new Promise(function (resolve) {
   window.requestAnimationFrame(resolve);
 });
 
-/**
- * Simple event bus for an application. Listeners are attached using the `on`
- * and `off` methods. To raise an event, the `dispatch` method shall be used.
- */
-class EventBus {
-  constructor() {
-    this._listeners = Object.create(null);
-  }
-
-  /**
-   * @param {string} eventName
-   * @param {function} listener
-   * @param {Object} [options]
-   */
-  on(eventName, listener, options = null) {
-    this._on(eventName, listener, {
-      external: true,
-      once: options?.once,
-    });
-  }
-
-  /**
-   * @param {string} eventName
-   * @param {function} listener
-   * @param {Object} [options]
-   */
-  off(eventName, listener, options = null) {
-    this._off(eventName, listener, {
-      external: true,
-      once: options?.once,
-    });
-  }
-
-  /**
-   * @param {string} eventName
-   * @param {Object} data
-   */
-  dispatch(eventName, data) {
-    const eventListeners = this._listeners[eventName];
-    if (!eventListeners || eventListeners.length === 0) {
-      return;
-    }
-    let externalListeners;
-    // Making copy of the listeners array in case if it will be modified
-    // during dispatch.
-    for (const { listener, external, once } of eventListeners.slice(0)) {
-      if (once) {
-        this._off(eventName, listener);
-      }
-      if (external) {
-        (externalListeners ||= []).push(listener);
-        continue;
-      }
-      listener(data);
-    }
-    // Dispatch any "external" listeners *after* the internal ones, to give the
-    // viewer components time to handle events and update their state first.
-    if (externalListeners) {
-      for (const listener of externalListeners) {
-        listener(data);
-      }
-      externalListeners = null;
-    }
-  }
-
-  /**
-   * @ignore
-   */
-  _on(eventName, listener, options = null) {
-    const eventListeners = (this._listeners[eventName] ||= []);
-    eventListeners.push({
-      listener,
-      external: options?.external === true,
-      once: options?.once === true,
-    });
-  }
-
-  /**
-   * @ignore
-   */
-  _off(eventName, listener, options = null) {
-    const eventListeners = this._listeners[eventName];
-    if (!eventListeners) {
-      return;
-    }
-    for (let i = 0, ii = eventListeners.length; i < ii; i++) {
-      if (eventListeners[i].listener === listener) {
-        eventListeners.splice(i, 1);
-        return;
-      }
-    }
-  }
-}
-
-/**
- * NOTE: Only used to support various PDF viewer tests in `mozilla-central`.
- */
-class AutomationEventBus extends EventBus {
-  dispatch(eventName, data) {
-    if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL")) {
-      throw new Error("Not implemented: AutomationEventBus.dispatch");
-    }
-    super.dispatch(eventName, data);
-
-    const details = Object.create(null);
-    if (data) {
-      for (const key in data) {
-        const value = data[key];
-        if (key === "source") {
-          if (value === window || value === document) {
-            return; // No need to re-dispatch (already) global events.
-          }
-          continue; // Ignore the `source` property.
-        }
-        details[key] = value;
-      }
-    }
-    const event = document.createEvent("CustomEvent");
-    event.initCustomEvent(eventName, true, true, details);
-    document.dispatchEvent(event);
-  }
-}
+const docStyle =
+  typeof PDFJSDev !== "undefined" &&
+  PDFJSDev.test("LIB") &&
+  typeof document === "undefined"
+    ? null
+    : document.documentElement.style;
 
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
 
 class ProgressBar {
-  constructor(id, { height, width, units } = {}) {
+  constructor(id) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      arguments.length > 1
+    ) {
+      throw new Error(
+        "ProgressBar no longer accepts any additional options, " +
+          "please use CSS rules to modify its appearance instead."
+      );
+    }
     this.visible = true;
 
     // Fetch the sub-elements for later.
@@ -845,26 +706,17 @@ class ProgressBar {
     // Get the loading bar element, so it can be resized to fit the viewer.
     this.bar = this.div.parentNode;
 
-    // Get options, with sensible defaults.
-    this.height = height || 100;
-    this.width = width || 100;
-    this.units = units || "%";
-
-    // Initialize heights.
-    this.div.style.height = this.height + this.units;
     this.percent = 0;
   }
 
-  _updateBar() {
+  #updateBar() {
     if (this._indeterminate) {
       this.div.classList.add("indeterminate");
-      this.div.style.width = this.width + this.units;
       return;
     }
-
     this.div.classList.remove("indeterminate");
-    const progressSize = (this.width * this._percent) / 100;
-    this.div.style.width = progressSize + this.units;
+
+    docStyle.setProperty("--progressBar-percent", `${this._percent}%`);
   }
 
   get percent() {
@@ -874,7 +726,7 @@ class ProgressBar {
   set percent(val) {
     this._indeterminate = isNaN(val);
     this._percent = clamp(val, 0, 100);
-    this._updateBar();
+    this.#updateBar();
   }
 
   setWidth(viewer) {
@@ -884,8 +736,7 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      const doc = document.documentElement;
-      doc.style.setProperty(LOADINGBAR_END_OFFSET_VAR, `${scrollbarWidth}px`);
+      docStyle.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
     }
   }
 
@@ -991,16 +842,14 @@ export {
   apiPageLayoutToViewerModes,
   apiPageModeToSidebarView,
   approximateFraction,
-  AutomationEventBus,
   AutoPrintRegExp,
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
-  EventBus,
+  docStyle,
   getActiveOrFocusedElement,
-  getOutputScale,
   getPageSizeInches,
   getVisibleElements,
   isPortraitOrientation,
@@ -1013,10 +862,13 @@ export {
   noContextMenuHandler,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
+  OutputScale,
   parseQueryString,
   PresentationModeState,
   ProgressBar,
+  removeNullCharacters,
   RendererType,
+  RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -1026,7 +878,5 @@ export {
   TextLayerMode,
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
-  waitOnEventOrTimeout,
-  WaitOnType,
   watchScroll,
 };

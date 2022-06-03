@@ -26,6 +26,7 @@ import {
   AnnotationFlag,
   AnnotationType,
   OPS,
+  RenderingIntentFlag,
   stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
@@ -413,10 +414,13 @@ describe("annotation", function () {
 
   describe("AnnotationBorderStyle", function () {
     it("should set and get a valid width", function () {
-      const borderStyle = new AnnotationBorderStyle();
-      borderStyle.setWidth(3);
+      const borderStyleInt = new AnnotationBorderStyle();
+      borderStyleInt.setWidth(3);
+      const borderStyleNum = new AnnotationBorderStyle();
+      borderStyleNum.setWidth(2.5);
 
-      expect(borderStyle.width).toEqual(3);
+      expect(borderStyleInt.width).toEqual(3);
+      expect(borderStyleNum.width).toEqual(2.5);
     });
 
     it("should not set and get an invalid width", function () {
@@ -1610,7 +1614,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2.00 2.00 Td (test\\\\print) Tj ET Q EMC"
+          " 2 3.04 Td (test\\\\print) Tj ET Q EMC"
       );
     });
 
@@ -1646,7 +1650,7 @@ describe("annotation", function () {
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm" +
-          ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
+          ` 2 2 Td (${utf16String}) Tj ET Q EMC`
       );
     });
 
@@ -1680,6 +1684,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -1694,6 +1699,7 @@ describe("annotation", function () {
         [0, 0, 32, 10],
         [32, 0, 0, 10, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -1726,8 +1732,8 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 8 Tf 0 g 1 0 0 1 0 0 Tm" +
-          " 2.00 2.00 Td (test \\(print\\)) Tj ET Q EMC"
+        "/Tx BMC q BT /Helv 5.92 Tf 0 g 1 0 0 1 0 0 Tm" +
+          " 2 3.23 Td (test \\(print\\)) Tj ET Q EMC"
       );
     });
 
@@ -1762,8 +1768,8 @@ describe("annotation", function () {
       const utf16String =
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Goth 8 Tf 0 g 1 0 0 1 0 0 Tm" +
-          ` 2.00 2.00 Td (${utf16String}) Tj ET Q EMC`
+        "/Tx BMC q BT /Goth 3.5 Tf 0 g 1 0 0 1 0 0 Tm" +
+          ` 2 2 Td (${utf16String}) Tj ET Q EMC`
       );
     });
 
@@ -1826,13 +1832,13 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm " +
-          "2.00 -5.00 Td (a aa aaa ) Tj\n" +
-          "0.00 -5.00 Td (aaaa aaaaa ) Tj\n" +
-          "0.00 -5.00 Td (aaaaaa ) Tj\n" +
-          "0.00 -5.00 Td (pneumonoultr) Tj\n" +
-          "0.00 -5.00 Td (amicroscopi) Tj\n" +
-          "0.00 -5.00 Td (csilicovolca) Tj\n" +
-          "0.00 -5.00 Td (noconiosis) Tj ET Q EMC"
+          "2 -5 Td (a aa aaa ) Tj\n" +
+          "0 -5 Td (aaaa aaaaa ) Tj\n" +
+          "0 -5 Td (aaaaaa ) Tj\n" +
+          "0 -5 Td (pneumonoultr) Tj\n" +
+          "0 -5 Td (amicroscopi) Tj\n" +
+          "0 -5 Td (csilicovolca) Tj\n" +
+          "0 -5 Td (noconiosis) Tj ET Q EMC"
       );
     });
 
@@ -1867,8 +1873,8 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 10 Tm " +
-          "2.00 -5.00 Td (\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f) Tj\n" +
-          "0.00 -5.00 Td (\x4e\x16\x75\x4c\x30\x6e) Tj ET Q EMC"
+          "2 -5 Td (\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f) Tj\n" +
+          "0 -5 Td (\x4e\x16\x75\x4c\x30\x6e) Tj ET Q EMC"
       );
     });
 
@@ -1885,25 +1891,25 @@ describe("annotation", function () {
       partialEvaluator.xref = xref;
       const expectedAppearance =
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 10 Tm " +
-        "2.00 -5.00 Td " +
+        "2 -5 Td " +
         "(Lorem ipsum dolor sit amet, consectetur adipiscing elit.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Aliquam vitae felis ac lectus bibendum ultricies quis non) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "( diam.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Morbi id porttitor quam, a iaculis dui.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Pellentesque habitant morbi tristique senectus et netus ) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(et malesuada fames ac turpis egestas.) Tj\n" +
-        "0.00 -5.00 Td () Tj\n" +
-        "0.00 -5.00 Td () Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td () Tj\n" +
+        "0 -5 Td () Tj\n" +
+        "0 -5 Td " +
         "(Nulla consectetur, ligula in tincidunt placerat, velit ) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(augue consectetur orci, sed mattis libero nunc ut massa.) Tj\n" +
-        "0.00 -5.00 Td " +
+        "0 -5 Td " +
         "(Etiam facilisis tempus interdum.) Tj ET Q EMC";
 
       const annotation = await AnnotationFactory.create(
@@ -1960,11 +1966,11 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 2 Tm" +
-          " (a) Tj 8.00 0 Td (a) Tj 8.00 0 Td (\\() Tj" +
-          " 8.00 0 Td (a) Tj 8.00 0 Td (a) Tj" +
-          " 8.00 0 Td (\\)) Tj 8.00 0 Td (a) Tj" +
-          " 8.00 0 Td (\\\\) Tj ET Q EMC"
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 2 3.035 Tm" +
+          " (a) Tj 8 0 Td (a) Tj 8 0 Td (\\() Tj" +
+          " 8 0 Td (a) Tj 8 0 Td (a) Tj" +
+          " 8 0 Td (\\)) Tj 8 0 Td (a) Tj" +
+          " 8 0 Td (\\\\) Tj ET Q EMC"
       );
     });
 
@@ -2001,10 +2007,10 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 2 2 Tm" +
-          " (\x30\x53) Tj 8.00 0 Td (\x30\x93) Tj 8.00 0 Td (\x30\x6b) Tj" +
-          " 8.00 0 Td (\x30\x61) Tj 8.00 0 Td (\x30\x6f) Tj" +
-          " 8.00 0 Td (\x4e\x16) Tj 8.00 0 Td (\x75\x4c) Tj" +
-          " 8.00 0 Td (\x30\x6e) Tj ET Q EMC"
+          " (\x30\x53) Tj 8 0 Td (\x30\x93) Tj 8 0 Td (\x30\x6b) Tj" +
+          " 8 0 Td (\x30\x61) Tj 8 0 Td (\x30\x6f) Tj" +
+          " 8 0 Td (\x4e\x16) Tj 8 0 Td (\x75\x4c) Tj" +
+          " 8 0 Td (\x30\x6e) Tj ET Q EMC"
       );
     });
 
@@ -2044,9 +2050,9 @@ describe("annotation", function () {
           "/V (hello world) /AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 77 /Subtype /Form /Resources " +
+        "2 0 obj\n<< /Length 74 /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (hello world) Tj " +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.04 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -2175,9 +2181,9 @@ describe("annotation", function () {
           `/V (\xfe\xff${utf16String}) /AP << /N 2 0 R>> /M (date)>>\nendobj\n`
       );
       expect(newData.data).toEqual(
-        "2 0 obj\n<< /Length 82 /Subtype /Form /Resources " +
+        "2 0 obj\n<< /Length 76 /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /BBox [0 0 32 10]>> stream\n" +
-          `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (${utf16String}) Tj ` +
+          `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2 2 Td (${utf16String}) Tj ` +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -2319,6 +2325,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         checkboxEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2335,6 +2342,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[3][0][0].unicode).toEqual("4");
     });
@@ -2378,6 +2386,7 @@ describe("annotation", function () {
       let operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2392,6 +2401,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2402,6 +2412,7 @@ describe("annotation", function () {
       operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2416,6 +2427,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -2464,6 +2476,7 @@ describe("annotation", function () {
         const operatorList = await annotation.getOperatorList(
           partialEvaluator,
           task,
+          RenderingIntentFlag.PRINT,
           false,
           annotationStorage
         );
@@ -2478,6 +2491,7 @@ describe("annotation", function () {
           [0, 0, 0, 0],
           [0, 0, 0, 0, 0, 0],
           [1, 0, 0, 1, 0, 0],
+          false,
         ]);
         expect(operatorList.argsArray[1]).toEqual(
           new Uint8ClampedArray([26, 51, 76])
@@ -2524,6 +2538,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2538,6 +2553,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2727,6 +2743,7 @@ describe("annotation", function () {
       let operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2741,6 +2758,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([26, 51, 76])
@@ -2751,6 +2769,7 @@ describe("annotation", function () {
       operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2765,6 +2784,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -2811,6 +2831,7 @@ describe("annotation", function () {
       const operatorList = await annotation.getOperatorList(
         partialEvaluator,
         task,
+        RenderingIntentFlag.PRINT,
         false,
         annotationStorage
       );
@@ -2825,6 +2846,7 @@ describe("annotation", function () {
         [0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
         [1, 0, 0, 1, 0, 0],
+        false,
       ]);
       expect(operatorList.argsArray[1]).toEqual(
         new Uint8ClampedArray([76, 51, 26])
@@ -3354,8 +3376,111 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2.00 2.00 Td (a value) Tj ET Q EMC"
+        [
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "ET Q EMC",
+        ].join("\n")
+      );
+    });
+
+    it("should render choice with multiple selections but one is visible for printing", async function () {
+      choiceWidgetDict.set("Ff", AnnotationFieldFlag.MULTISELECT);
+      choiceWidgetDict.set("Opt", [
+        ["A", "a"],
+        ["B", "b"],
+        ["C", "c"],
+        ["D", "d"],
+      ]);
+      choiceWidgetDict.set("V", ["A"]);
+
+      const choiceWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: ["A", "C"] });
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(appearance).toEqual(
+        [
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2 -5.88 Td (a) Tj",
+          "0 -6.75 Td (b) Tj",
+          "ET Q EMC",
+        ].join("\n")
+      );
+    });
+
+    it("should render choice with multiple selections for printing", async function () {
+      choiceWidgetDict.set("Ff", AnnotationFieldFlag.MULTISELECT);
+      choiceWidgetDict.set("Opt", [
+        ["A", "a"],
+        ["B", "b"],
+        ["C", "c"],
+        ["D", "d"],
+      ]);
+      choiceWidgetDict.set("V", ["A"]);
+
+      const choiceWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: ["B", "C"] });
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(appearance).toEqual(
+        [
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "1 -3.5 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2 -5.88 Td (b) Tj",
+          "0 -6.75 Td (c) Tj",
+          "ET Q EMC",
+        ].join("\n")
       );
     });
 
@@ -3366,6 +3491,7 @@ describe("annotation", function () {
       const choiceWidgetRef = Ref.get(123, 0);
       const xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
       ]);
       partialEvaluator.xref = xref;
       const task = new WorkerTask("test save");
@@ -3387,7 +3513,7 @@ describe("annotation", function () {
       expect(data.length).toEqual(2);
       const [oldData, newData] = data;
       expect(oldData.ref).toEqual(Ref.get(123, 0));
-      expect(newData.ref).toEqual(Ref.get(1, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
 
       oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
       expect(oldData.data).toEqual(
@@ -3395,14 +3521,93 @@ describe("annotation", function () {
           "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
           "<< /Font << /Helv 314 0 R>>>> " +
           "/Rect [0 0 32 10] /Opt [(A) (B) (C)] /V (C) " +
-          "/AP << /N 1 0 R>> /M (date)>>\nendobj\n"
+          "/AP << /N 2 0 R>> /M (date)>>\nendobj\n"
       );
       expect(newData.data).toEqual(
-        "1 0 obj\n" +
-          "<< /Length 67 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
-          "/BBox [0 0 32 10]>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2.00 2.00 Td (C) Tj ET Q EMC\n" +
-          "endstream\nendobj\n"
+        [
+          "2 0 obj",
+          "<< /Length 133 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10]>> stream",
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2 -5.88 Td (C) Tj",
+          "ET Q EMC",
+          "endstream",
+          "endobj\n",
+        ].join("\n")
+      );
+    });
+
+    it("should save choice with multiple selections", async function () {
+      choiceWidgetDict.set("Ff", AnnotationFieldFlag.MULTISELECT);
+      choiceWidgetDict.set("Opt", [
+        ["A", "a"],
+        ["B", "b"],
+        ["C", "c"],
+        ["D", "d"],
+      ]);
+      choiceWidgetDict.set("V", ["A"]);
+
+      const choiceWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      const task = new WorkerTask("test save");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: ["B", "C"] });
+
+      const data = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+
+      expect(data.length).toEqual(2);
+      const [oldData, newData] = data;
+      expect(oldData.ref).toEqual(Ref.get(123, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
+
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(oldData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] /Ff 2097152 /Opt " +
+          "[[(A) (a)] [(B) (b)] [(C) (c)] [(D) (d)]] /V [(B) (C)] /AP " +
+          "<< /N 2 0 R>> /M (date)>>\nendobj\n"
+      );
+      expect(newData.data).toEqual(
+        [
+          "2 0 obj",
+          "<< /Length 171 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10]>> stream",
+          "/Tx BMC q",
+          "1 1 32 10 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 3.25 32 6.75 re f",
+          "1 -3.5 32 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 10 Tm",
+          "2 -5.88 Td (b) Tj",
+          "0 -6.75 Td (c) Tj",
+          "ET Q EMC",
+          "endstream",
+          "endobj\n",
+        ].join("\n")
       );
     });
   });
@@ -3413,6 +3618,7 @@ describe("annotation", function () {
       lineDict.set("Type", Name.get("Annot"));
       lineDict.set("Subtype", Name.get("Line"));
       lineDict.set("L", [1, 2, 3, 4]);
+      lineDict.set("LE", ["Square", "Circle"]);
 
       const lineRef = Ref.get(122, 0);
       const xref = new XRefMock([{ ref: lineRef, data: lineDict }]);
@@ -3425,6 +3631,28 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.LINE);
       expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+      expect(data.lineEndings).toEqual(["None", "None"]);
+    });
+
+    it("should set the line endings", async function () {
+      const lineDict = new Dict();
+      lineDict.set("Type", Name.get("Annot"));
+      lineDict.set("Subtype", Name.get("Line"));
+      lineDict.set("L", [1, 2, 3, 4]);
+      lineDict.set("LE", [Name.get("Square"), Name.get("Circle")]);
+
+      const lineRef = Ref.get(122, 0);
+      const xref = new XRefMock([{ ref: lineRef, data: lineDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        lineRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.LINE);
+      expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+      expect(data.lineEndings).toEqual(["Square", "Circle"]);
     });
   });
 

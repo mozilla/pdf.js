@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+:root {
+  --progressBar-percent: 0%;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -191,32 +195,34 @@ canvas {
   height: 0.6rem;
   background-color: rgba(51, 51, 51, 1);
   border-bottom: 1px solid rgba(51, 51, 51, 1);
-  margin-top: 5rem;
 }
 
 #loadingBar .progress {
   position: absolute;
   left: 0;
-  width: 0;
+  width: 100%;
+  transform: scaleX(var(--progressBar-percent));
+  transform-origin: 0 0;
   height: 100%;
   background-color: rgba(221, 221, 221, 1);
   overflow: hidden;
-  transition: width 200ms;
+  transition: transform 200ms;
 }
 
 @keyframes progressIndeterminate {
   0% {
-    left: 0;
+    transform: translateX(0%);
   }
   50% {
-    left: 100%;
+    transform: translateX(100%);
   }
   100% {
-    left: 100%;
+    transform: translateX(100%);
   }
 }
 
 #loadingBar .progress.indeterminate {
+  transform: none;
   background-color: rgba(153, 153, 153, 1);
   transition: none;
 }

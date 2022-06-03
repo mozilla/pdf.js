@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 
-import {
-  isValidRotation,
-  parseQueryString,
-  PresentationModeState,
-  waitOnEventOrTimeout,
-} from "./ui_utils.js";
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+
+import { isValidRotation, parseQueryString } from "./ui_utils.js";
+import { waitOnEventOrTimeout } from "./event_utils.js";
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
@@ -66,13 +65,8 @@ class PDFHistory {
     this.reset();
 
     this._boundEvents = null;
-    this._isViewerInPresentationMode = false;
-    // Ensure that we don't miss either a 'presentationmodechanged' or a
-    // 'pagesinit' event, by registering the listeners immediately.
-    this.eventBus._on("presentationmodechanged", evt => {
-      this._isViewerInPresentationMode =
-        evt.state !== PresentationModeState.NORMAL;
-    });
+    // Ensure that we don't miss a "pagesinit" event,
+    // by registering the listener immediately.
     this.eventBus._on("pagesinit", () => {
       this._isPagesLoaded = false;
 
@@ -563,9 +557,7 @@ class PDFHistory {
     }
 
     this._position = {
-      hash: this._isViewerInPresentationMode
-        ? `page=${location.pageNumber}`
-        : location.pdfOpenParams.substring(1),
+      hash: location.pdfOpenParams.substring(1),
       page: this.linkService.page,
       first: location.pageNumber,
       rotation: location.rotation,

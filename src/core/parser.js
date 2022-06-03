@@ -18,20 +18,10 @@ import {
   bytesToString,
   FormatError,
   info,
-  isNum,
   StreamType,
   warn,
 } from "../shared/util.js";
-import {
-  Cmd,
-  Dict,
-  EOF,
-  isCmd,
-  isDict,
-  isName,
-  Name,
-  Ref,
-} from "./primitives.js";
+import { Cmd, Dict, EOF, isCmd, Name, Ref } from "./primitives.js";
 import {
   isWhiteSpace,
   MissingDataException,
@@ -137,7 +127,7 @@ class Parser {
         case "<<": // dictionary or stream
           const dict = new Dict(this.xref);
           while (!isCmd(this.buf1, ">>") && this.buf1 !== EOF) {
-            if (!isName(this.buf1)) {
+            if (!(this.buf1 instanceof Name)) {
               info("Malformed dictionary: key must be a name object");
               this.shift();
               continue;
@@ -166,8 +156,7 @@ class Parser {
           }
           this.shift();
           return dict;
-        default:
-          // simple object
+        default: // simple object
           return buf1;
       }
     }
@@ -498,7 +487,7 @@ class Parser {
     const dict = new Dict(this.xref);
     let dictLength;
     while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
-      if (!isName(this.buf1)) {
+      if (!(this.buf1 instanceof Name)) {
         throw new FormatError("Dictionary key must be a name object");
       }
       const key = this.buf1.name;
@@ -513,13 +502,13 @@ class Parser {
     }
 
     // Extract the name of the first (i.e. the current) image filter.
-    const filter = dict.get("Filter", "F");
+    const filter = dict.get("F", "Filter");
     let filterName;
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       filterName = filter.name;
     } else if (Array.isArray(filter)) {
       const filterZero = this.xref.fetchIfRef(filter[0]);
-      if (isName(filterZero)) {
+      if (filterZero instanceof Name) {
         filterName = filterZero.name;
       }
     }
@@ -527,14 +516,21 @@ class Parser {
     // Parse image stream.
     const startPos = stream.pos;
     let length;
-    if (filterName === "DCTDecode" || filterName === "DCT") {
-      length = this.findDCTDecodeInlineStreamEnd(stream);
-    } else if (filterName === "ASCII85Decode" || filterName === "A85") {
-      length = this.findASCII85DecodeInlineStreamEnd(stream);
-    } else if (filterName === "ASCIIHexDecode" || filterName === "AHx") {
-      length = this.findASCIIHexDecodeInlineStreamEnd(stream);
-    } else {
-      length = this.findDefaultInlineStreamEnd(stream);
+    switch (filterName) {
+      case "DCT":
+      case "DCTDecode":
+        length = this.findDCTDecodeInlineStreamEnd(stream);
+        break;
+      case "A85":
+      case "ASCII85Decode":
+        length = this.findASCII85DecodeInlineStreamEnd(stream);
+        break;
+      case "AHx":
+      case "ASCIIHexDecode":
+        length = this.findASCIIHexDecodeInlineStreamEnd(stream);
+        break;
+      default:
+        length = this.findDefaultInlineStreamEnd(stream);
     }
     let imageStream = stream.makeSubStream(startPos, length, dict);
 
@@ -625,7 +621,7 @@ class Parser {
     // Get the length.
     let length = dict.get("Length");
     if (!Number.isInteger(length)) {
-      info(`Bad length "${length}" in stream`);
+      info(`Bad length "${length && length.toString()}" in stream.`);
       length = 0;
     }
 
@@ -694,15 +690,12 @@ class Parser {
   }
 
   filter(stream, dict, length) {
-    let filter = dict.get("Filter", "F");
-    let params = dict.get("DecodeParms", "DP");
+    let filter = dict.get("F", "Filter");
+    let params = dict.get("DP", "DecodeParms");
 
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       if (Array.isArray(params)) {
-        warn(
-          "/DecodeParms should not contain an Array, " +
-            "when /Filter contains a Name."
-        );
+        warn("/DecodeParms should not be an Array, when /Filter is a Name.");
       }
       return this.makeFilter(stream, filter.name, length, params);
     }
@@ -713,7 +706,7 @@ class Parser {
       const paramsArray = params;
       for (let i = 0, ii = filterArray.length; i < ii; ++i) {
         filter = this.xref.fetchIfRef(filterArray[i]);
-        if (!isName(filter)) {
+        if (!(filter instanceof Name)) {
           throw new FormatError(`Bad filter name "${filter}"`);
         }
 
@@ -737,62 +730,63 @@ class Parser {
       warn(`Empty "${name}" stream.`);
       return new NullStream();
     }
+    const xrefStats = this.xref.stats;
 
     try {
-      const xrefStreamStats = this.xref.stats.streamTypes;
-      if (name === "FlateDecode" || name === "Fl") {
-        xrefStreamStats[StreamType.FLATE] = true;
-        if (params) {
-          return new PredictorStream(
-            new FlateStream(stream, maybeLength),
-            maybeLength,
-            params
-          );
-        }
-        return new FlateStream(stream, maybeLength);
-      }
-      if (name === "LZWDecode" || name === "LZW") {
-        xrefStreamStats[StreamType.LZW] = true;
-        let earlyChange = 1;
-        if (params) {
-          if (params.has("EarlyChange")) {
-            earlyChange = params.get("EarlyChange");
+      switch (name) {
+        case "Fl":
+        case "FlateDecode":
+          xrefStats.addStreamType(StreamType.FLATE);
+          if (params) {
+            return new PredictorStream(
+              new FlateStream(stream, maybeLength),
+              maybeLength,
+              params
+            );
           }
-          return new PredictorStream(
-            new LZWStream(stream, maybeLength, earlyChange),
-            maybeLength,
-            params
-          );
-        }
-        return new LZWStream(stream, maybeLength, earlyChange);
-      }
-      if (name === "DCTDecode" || name === "DCT") {
-        xrefStreamStats[StreamType.DCT] = true;
-        return new JpegStream(stream, maybeLength, params);
-      }
-      if (name === "JPXDecode" || name === "JPX") {
-        xrefStreamStats[StreamType.JPX] = true;
-        return new JpxStream(stream, maybeLength, params);
-      }
-      if (name === "ASCII85Decode" || name === "A85") {
-        xrefStreamStats[StreamType.A85] = true;
-        return new Ascii85Stream(stream, maybeLength);
-      }
-      if (name === "ASCIIHexDecode" || name === "AHx") {
-        xrefStreamStats[StreamType.AHX] = true;
-        return new AsciiHexStream(stream, maybeLength);
-      }
-      if (name === "CCITTFaxDecode" || name === "CCF") {
-        xrefStreamStats[StreamType.CCF] = true;
-        return new CCITTFaxStream(stream, maybeLength, params);
-      }
-      if (name === "RunLengthDecode" || name === "RL") {
-        xrefStreamStats[StreamType.RLX] = true;
-        return new RunLengthStream(stream, maybeLength);
-      }
-      if (name === "JBIG2Decode") {
-        xrefStreamStats[StreamType.JBIG] = true;
-        return new Jbig2Stream(stream, maybeLength, params);
+          return new FlateStream(stream, maybeLength);
+        case "LZW":
+        case "LZWDecode":
+          xrefStats.addStreamType(StreamType.LZW);
+          let earlyChange = 1;
+          if (params) {
+            if (params.has("EarlyChange")) {
+              earlyChange = params.get("EarlyChange");
+            }
+            return new PredictorStream(
+              new LZWStream(stream, maybeLength, earlyChange),
+              maybeLength,
+              params
+            );
+          }
+          return new LZWStream(stream, maybeLength, earlyChange);
+        case "DCT":
+        case "DCTDecode":
+          xrefStats.addStreamType(StreamType.DCT);
+          return new JpegStream(stream, maybeLength, params);
+        case "JPX":
+        case "JPXDecode":
+          xrefStats.addStreamType(StreamType.JPX);
+          return new JpxStream(stream, maybeLength, params);
+        case "A85":
+        case "ASCII85Decode":
+          xrefStats.addStreamType(StreamType.A85);
+          return new Ascii85Stream(stream, maybeLength);
+        case "AHx":
+        case "ASCIIHexDecode":
+          xrefStats.addStreamType(StreamType.AHX);
+          return new AsciiHexStream(stream, maybeLength);
+        case "CCF":
+        case "CCITTFaxDecode":
+          xrefStats.addStreamType(StreamType.CCF);
+          return new CCITTFaxStream(stream, maybeLength, params);
+        case "RL":
+        case "RunLengthDecode":
+          xrefStats.addStreamType(StreamType.RLX);
+          return new RunLengthStream(stream, maybeLength);
+        case "JBIG2Decode":
+          xrefStats.addStreamType(StreamType.JBIG);
+          return new Jbig2Stream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);
       return stream;
@@ -903,14 +897,17 @@ class Lexer {
       ch = this.nextChar();
     }
     if (ch < /* '0' = */ 0x30 || ch > /* '9' = */ 0x39) {
-      if (
-        divideBy === 10 &&
-        sign === 0 &&
-        (isWhiteSpace(ch) || ch === /* EOF = */ -1)
-      ) {
+      if (isWhiteSpace(ch) || ch === /* EOF = */ -1) {
         // This is consistent with Adobe Reader (fixes issue9252.pdf).
-        warn("Lexer.getNumber - treating a single decimal point as zero.");
-        return 0;
+        if (divideBy === 10 && sign === 0) {
+          warn("Lexer.getNumber - treating a single decimal point as zero.");
+          return 0;
+        }
+        // This is consistent with Adobe Reader (fixes bug1753983.pdf).
+        if (divideBy === 0 && sign === -1) {
+          warn("Lexer.getNumber - treating a single minus sign as zero.");
+          return 0;
+        }
       }
       throw new FormatError(
         `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`
@@ -1393,8 +1390,8 @@ class Linearization {
         Number.isInteger(obj1) &&
         Number.isInteger(obj2) &&
         isCmd(obj3, "obj") &&
-        isDict(linDict) &&
-        isNum((obj = linDict.get("Linearized"))) &&
+        linDict instanceof Dict &&
+        typeof (obj = linDict.get("Linearized")) === "number" &&
         obj > 0
       )
     ) {

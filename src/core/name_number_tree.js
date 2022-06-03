@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { Dict, RefSet } from "./primitives.js";
 import { FormatError, unreachable, warn } from "../shared/util.js";
-import { isDict, RefSet } from "./primitives.js";
 
 /**
  * A NameTree/NumberTree is like a Dict but has some advantageous properties,
@@ -43,13 +43,15 @@ class NameOrNumberTree {
     const queue = [this.root];
     while (queue.length > 0) {
       const obj = xref.fetchIfRef(queue.shift());
-      if (!isDict(obj)) {
+      if (!(obj instanceof Dict)) {
         continue;
       }
       if (obj.has("Kids")) {
         const kids = obj.get("Kids");
-        for (let i = 0, ii = kids.length; i < ii; i++) {
-          const kid = kids[i];
+        if (!Array.isArray(kids)) {
+          continue;
+        }
+        for (const kid of kids) {
           if (processed.has(kid)) {
             throw new FormatError(`Duplicate entry in "${this._type}" tree.`);
           }
@@ -103,7 +105,7 @@ class NameOrNumberTree {
         } else if (key > xref.fetchIfRef(limits[1])) {
           l = m + 1;
         } else {
-          kidsOrEntries = xref.fetchIfRef(kids[m]);
+          kidsOrEntries = kid;
           break;
         }
       }

@@ -13,8 +13,20 @@
  * limitations under the License.
  */
 
-import { warn } from "../shared/util.js";
+/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
+
 import { XfaText } from "./xfa_text.js";
+
+/**
+ * @typedef {Object} XfaLayerParameters
+ * @property {PageViewport} viewport
+ * @property {HTMLDivElement} div
+ * @property {Object} xfaHtml
+ * @property {AnnotationStorage} [annotationStorage]
+ * @property {IPDFLinkService} linkService
+ * @property {string} [intent] - (default value is 'display').
+ */
 
 class XfaLayer {
   static setupStorage(html, id, element, storage, intent) {
@@ -121,15 +133,7 @@ class XfaLayer {
     }
 
     if (isHTMLAnchorElement) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-        !linkService.addLinkAttributes
-      ) {
-        warn(
-          "XfaLayer.setAttribute - missing `addLinkAttributes`-method on the `linkService`-instance."
-        );
-      }
-      linkService.addLinkAttributes?.(
+      linkService.addLinkAttributes(
         html,
         attributes.href,
         attributes.newWindow
@@ -143,10 +147,15 @@ class XfaLayer {
     }
   }
 
+  /**
+   * Render the XFA layer.
+   *
+   * @param {XfaLayerParameters} parameters
+   */
   static render(parameters) {
     const storage = parameters.annotationStorage;
     const linkService = parameters.linkService;
-    const root = parameters.xfa;
+    const root = parameters.xfaHtml;
     const intent = parameters.intent || "display";
     const rootHtml = document.createElement(root.name);
     if (root.attributes) {
@@ -252,11 +261,9 @@ class XfaLayer {
   }
 
   /**
-   * Update the xfa layer.
+   * Update the XFA layer.
    *
-   * @public
    * @param {XfaLayerParameters} parameters
-   * @memberof XfaLayer
    */
   static update(parameters) {
     const transform = `matrix(${parameters.viewport.transform.join(",")})`;

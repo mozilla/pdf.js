@@ -14,8 +14,8 @@
  */
 
 import { assert, shadow, unreachable } from "../shared/util.js";
-import { BaseStream } from "./base_stream.js";
 
+const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
 
 const Name = (function NameClosure() {
@@ -24,6 +24,13 @@ const Name = (function NameClosure() {
   // eslint-disable-next-line no-shadow
   class Name {
     constructor(name) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        typeof name !== "string"
+      ) {
+        unreachable('Name: The "name" must be a string.');
+      }
       this.name = name;
     }
 
@@ -47,6 +54,13 @@ const Cmd = (function CmdClosure() {
   // eslint-disable-next-line no-shadow
   class Cmd {
     constructor(cmd) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        typeof cmd !== "string"
+      ) {
+        unreachable('Cmd: The "cmd" must be a string.');
+      }
       this.cmd = cmd;
     }
 
@@ -90,8 +104,22 @@ class Dict {
   get(key1, key2, key3) {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.get: Expected keys to be ordered by length.");
+      }
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.get: Expected keys to be ordered by length.");
+        }
         value = this._map[key3];
       }
     }
@@ -105,8 +133,22 @@ class Dict {
   async getAsync(key1, key2, key3) {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.getAsync: Expected keys to be ordered by length.");
+      }
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.getAsync: Expected keys to be ordered by length.");
+        }
         value = this._map[key3];
       }
     }
@@ -120,8 +162,22 @@ class Dict {
   getArray(key1, key2, key3) {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
+      if (
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        key2.length < key1.length
+      ) {
+        unreachable("Dict.getArray: Expected keys to be ordered by length.");
+      }
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          key3.length < key2.length
+        ) {
+          unreachable("Dict.getArray: Expected keys to be ordered by length.");
+        }
         value = this._map[key3];
       }
     }
@@ -156,11 +212,14 @@ class Dict {
 
   set(key, value) {
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")) &&
-      value === undefined
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || TESTING")
     ) {
-      unreachable('Dict.set: The "value" cannot be undefined.');
+      if (typeof key !== "string") {
+        unreachable('Dict.set: The "key" must be a string.');
+      } else if (value === undefined) {
+        unreachable('Dict.set: The "value" cannot be undefined.');
+      }
     }
     this._map[key] = value;
   }
@@ -291,10 +350,8 @@ class RefSet {
     this._set.delete(ref.toString());
   }
 
-  forEach(callback) {
-    for (const ref of this._set.values()) {
-      callback(ref);
-    }
+  [Symbol.iterator]() {
+    return this._set.values();
   }
 
   clear() {
@@ -327,10 +384,8 @@ class RefSetCache {
     this._map.set(ref.toString(), this.get(aliasRef));
   }
 
-  forEach(callback) {
-    for (const value of this._map.values()) {
-      callback(value);
-    }
+  [Symbol.iterator]() {
+    return this._map.values();
   }
 
   clear() {
@@ -352,10 +407,6 @@ function isDict(v, type) {
   );
 }
 
-function isRef(v) {
-  return v instanceof Ref;
-}
-
 function isRefsEqual(v1, v2) {
   if (
     typeof PDFJSDev === "undefined" ||
@@ -369,10 +420,6 @@ function isRefsEqual(v1, v2) {
   return v1.num === v2.num && v1.gen === v2.gen;
 }
 
-function isStream(v) {
-  return v instanceof BaseStream;
-}
-
 function clearPrimitiveCaches() {
   Cmd._clearCache();
   Name._clearCache();
@@ -380,6 +427,7 @@ function clearPrimitiveCaches() {
 }
 
 export {
+  CIRCULAR_REF,
   clearPrimitiveCaches,
   Cmd,
   Dict,
@@ -387,9 +435,7 @@ export {
   isCmd,
   isDict,
   isName,
-  isRef,
   isRefsEqual,
-  isStream,
   Name,
   Ref,
   RefSet,

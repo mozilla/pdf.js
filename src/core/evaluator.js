@@ -24,8 +24,6 @@ import {
   IDENTITY_MATRIX,
   info,
   isArrayEqual,
-  isNum,
-  isString,
   OPS,
   shadow,
   stringToPDFString,
@@ -35,18 +33,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { CMapFactory, IdentityCMap } from "./cmap.js";
-import {
-  Cmd,
-  Dict,
-  EOF,
-  isDict,
-  isName,
-  isRef,
-  isStream,
-  Name,
-  Ref,
-  RefSet,
-} from "./primitives.js";
+import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import { ErrorFont, Font } from "./fonts.js";
 import { FontFlags, getFontType } from "./fonts_utils.js";
 import {
@@ -88,7 +75,7 @@ import { DecodeStream } from "./decode_stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
-import { MurmurHash3_64 } from "./murmurhash3.js";
+import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
 
@@ -135,7 +122,7 @@ function normalizeBlendMode(value, parsingArray = false) {
     return "source-over";
   }
 
-  if (!isName(value)) {
+  if (!(value instanceof Name)) {
     if (parsingArray) {
       return null;
     }
@@ -181,6 +168,16 @@ function normalizeBlendMode(value, parsingArray = false) {
   }
   warn(`Unsupported blend mode: ${value.name}`);
   return "source-over";
+}
+
+function incrementCachedImageMaskCount(data) {
+  if (
+    data.fn === OPS.paintImageMaskXObject &&
+    data.args[0] &&
+    data.args[0].count > 0
+  ) {
+    data.args[0].count++;
+  }
 }
 
 // Trying to minimize Date.now() usage and check every 100 time.
@@ -340,7 +337,7 @@ class PartialEvaluator {
             continue;
           }
         }
-        if (!isStream(xObject)) {
+        if (!(xObject instanceof BaseStream)) {
           continue;
         }
         if (xObject.dict.objId) {
@@ -365,9 +362,9 @@ class PartialEvaluator {
     // When no blend modes exist, there's no need re-fetch/re-parse any of the
     // processed `Ref`s again for subsequent pages. This helps reduce redundant
     // `XRef.fetch` calls for some documents (e.g. issue6961.pdf).
-    processed.forEach(ref => {
+    for (const ref of processed) {
       nonBlendModesSet.put(ref);
-    });
+    }
     return false;
   }
 
@@ -449,7 +446,7 @@ class PartialEvaluator {
     if (!data) {
       return null;
     }
-    // Cache the "raw" standard font data, to avoid fetching it repeateadly
+    // Cache the "raw" standard font data, to avoid fetching it repeatedly
     // (see e.g. issue 11399).
     this.standardFontDataCache.set(name, data);
 
@@ -553,7 +550,7 @@ class PartialEvaluator {
   }
 
   _sendImgData(objId, imgData, cacheGlobally = false) {
-    const transfers = imgData ? [imgData.data.buffer] : null;
+    const transfers = imgData ? [imgData.bitmap || imgData.data.buffer] : null;
 
     if (this.parsingType3Font || cacheGlobally) {
       return this.handler.send(
@@ -580,17 +577,22 @@ class PartialEvaluator {
   }) {
     const dict = image.dict;
     const imageRef = dict.objId;
-    const w = dict.get("Width", "W");
-    const h = dict.get("Height", "H");
+    const w = dict.get("W", "Width");
+    const h = dict.get("H", "Height");
 
-    if (!(w && isNum(w)) || !(h && isNum(h))) {
+    if (!(w && typeof w === "number") || !(h && typeof h === "number")) {
       warn("Image dimensions are missing, or not numbers.");
       return;
     }
     const maxImageSize = this.options.maxImageSize;
     if (maxImageSize !== -1 && w * h > maxImageSize) {
-      warn("Image exceeded maximum allowed size and was removed.");
-      return;
+      const msg = "Image exceeded maximum allowed size and was removed.";
+
+      if (this.options.ignoreErrors) {
+        warn(msg);
+        return;
+      }
+      throw new Error(msg);
     }
 
     let optionalContent;
@@ -600,12 +602,8 @@ class PartialEvaluator {
         resources
       );
     }
-    if (optionalContent !== undefined) {
-      operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
-    }
 
-    const imageMask = dict.get("ImageMask", "IM") || false;
-    const interpolate = dict.get("Interpolate", "I");
+    const imageMask = dict.get("IM", "ImageMask") || false;
     let imgData, args;
     if (imageMask) {
       // This depends on a tmpCanvas being filled with the
@@ -613,42 +611,98 @@ class PartialEvaluator {
       // data can't be done here. Instead of creating a
       // complete PDFImage, only read the information needed
       // for later.
+      const interpolate = dict.get("I", "Interpolate");
+      const bitStrideLength = (w + 7) >> 3;
+      const imgArray = image.getBytes(bitStrideLength * h);
+      const decode = dict.getArray("D", "Decode");
 
-      const width = dict.get("Width", "W");
-      const height = dict.get("Height", "H");
-      const bitStrideLength = (width + 7) >> 3;
-      const imgArray = image.getBytes(
-        bitStrideLength * height,
-        /* forceClamped = */ true
-      );
-      const decode = dict.getArray("Decode", "D");
+      if (this.parsingType3Font) {
+        imgData = PDFImage.createRawMask({
+          imgArray,
+          width: w,
+          height: h,
+          imageIsFromDecodeStream: image instanceof DecodeStream,
+          inverseDecode: !!decode && decode[0] > 0,
+          interpolate,
+        });
+
+        imgData.cached = !!cacheKey;
+        args = [imgData];
+
+        operatorList.addImageOps(
+          OPS.paintImageMaskXObject,
+          args,
+          optionalContent
+        );
+
+        if (cacheKey) {
+          localImageCache.set(cacheKey, imageRef, {
+            fn: OPS.paintImageMaskXObject,
+            args,
+            optionalContent,
+          });
+        }
+        return;
+      }
 
       imgData = PDFImage.createMask({
         imgArray,
-        width,
-        height,
+        width: w,
+        height: h,
         imageIsFromDecodeStream: image instanceof DecodeStream,
         inverseDecode: !!decode && decode[0] > 0,
         interpolate,
       });
-      imgData.cached = !!cacheKey;
-      args = [imgData];
 
-      operatorList.addOp(OPS.paintImageMaskXObject, args);
+      if (imgData.isSingleOpaquePixel) {
+        // Handles special case of mainly LaTeX documents which use image
+        // masks to draw lines with the current fill style.
+        operatorList.addImageOps(
+          OPS.paintSolidColorImageMask,
+          [],
+          optionalContent
+        );
+
+        if (cacheKey) {
+          localImageCache.set(cacheKey, imageRef, {
+            fn: OPS.paintSolidColorImageMask,
+            args: [],
+            optionalContent,
+          });
+        }
+        return;
+      }
+
+      const objId = `mask_${this.idFactory.createObjId()}`;
+      operatorList.addDependency(objId);
+      this._sendImgData(objId, imgData);
+
+      args = [
+        {
+          data: objId,
+          width: imgData.width,
+          height: imgData.height,
+          interpolate: imgData.interpolate,
+          count: 1,
+        },
+      ];
+      operatorList.addImageOps(
+        OPS.paintImageMaskXObject,
+        args,
+        optionalContent
+      );
+
       if (cacheKey) {
         localImageCache.set(cacheKey, imageRef, {
           fn: OPS.paintImageMaskXObject,
           args,
+          optionalContent,
         });
-      }
-
-      if (optionalContent !== undefined) {
-        operatorList.addOp(OPS.endMarkedContent, []);
       }
       return;
     }
 
-    const softMask = dict.get("SMask", "SM") || false;
+    const softMask = dict.get("SM", "SMask") || false;
     const mask = dict.get("Mask") || false;
 
     const SMALL_IMAGE_DIMENSIONS = 200;
@@ -665,11 +719,11 @@ class PartialEvaluator {
       // We force the use of RGBA_32BPP images here, because we can't handle
       // any other kind.
       imgData = imageObj.createImageData(/* forceRGBA = */ true);
-      operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
-
-      if (optionalContent !== undefined) {
-        operatorList.addOp(OPS.endMarkedContent, []);
-      }
+      operatorList.addImageOps(
+        OPS.paintInlineImageXObject,
+        [imgData],
+        optionalContent
+      );
       return;
     }
 
@@ -717,11 +771,13 @@ class PartialEvaluator {
         return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
       });
 
-    operatorList.addOp(OPS.paintImageXObject, args);
+    operatorList.addImageOps(OPS.paintImageXObject, args, optionalContent);
+
     if (cacheKey) {
       localImageCache.set(cacheKey, imageRef, {
         fn: OPS.paintImageXObject,
         args,
+        optionalContent,
       });
 
       if (imageRef) {
@@ -733,14 +789,11 @@ class PartialEvaluator {
             objId,
             fn: OPS.paintImageXObject,
             args,
+            optionalContent,
             byteSize: 0, // Temporary entry, note `addByteSize` above.
           });
         }
       }
-    }
-
-    if (optionalContent !== undefined) {
-      operatorList.addOp(OPS.endMarkedContent, []);
     }
   }
 
@@ -1047,7 +1100,7 @@ class PartialEvaluator {
             gStateObj.push([key, false]);
             break;
           }
-          if (isDict(value)) {
+          if (value instanceof Dict) {
             isSimpleGState = false;
 
             promise = promise.then(() => {
@@ -1123,7 +1176,7 @@ class PartialEvaluator {
     let fontRef;
     if (font) {
       // Loading by ref.
-      if (!isRef(font)) {
+      if (!(font instanceof Ref)) {
         throw new FormatError('The "font" object should be a reference.');
       }
       fontRef = font;
@@ -1158,12 +1211,16 @@ class PartialEvaluator {
       }
     }
 
+    if (this.parsingType3Font && this.type3FontRefs.has(fontRef)) {
+      return errorFont();
+    }
+
     if (this.fontCache.has(fontRef)) {
       return this.fontCache.get(fontRef);
     }
 
     font = xref.fetchIfRef(fontRef);
-    if (!isDict(font)) {
+    if (!(font instanceof Dict)) {
       return errorFont();
     }
 
@@ -1185,13 +1242,13 @@ class PartialEvaluator {
     }
     const { descriptor, hash } = preEvaluatedFont;
 
-    const fontRefIsRef = isRef(fontRef);
+    const fontRefIsRef = fontRef instanceof Ref;
     let fontID;
     if (fontRefIsRef) {
       fontID = `f${fontRef.toString()}`;
     }
 
-    if (hash && isDict(descriptor)) {
+    if (hash && descriptor instanceof Dict) {
       if (!descriptor.fontAliases) {
         descriptor.fontAliases = Object.create(null);
       }
@@ -1251,8 +1308,7 @@ class PartialEvaluator {
     this.translateFont(preEvaluatedFont)
       .then(translatedFont => {
         if (translatedFont.fontType !== undefined) {
-          const xrefFontStats = xref.stats.fontTypes;
-          xrefFontStats[translatedFont.fontType] = true;
+          xref.stats.addFontType(translatedFont.fontType);
         }
 
         fontCapability.resolve(
@@ -1280,8 +1336,9 @@ class PartialEvaluator {
             preEvaluatedFont.type,
             subtype && subtype.name
           );
-          const xrefFontStats = xref.stats.fontTypes;
-          xrefFontStats[fontType] = true;
+          if (fontType !== undefined) {
+            xref.stats.addFontType(fontType);
+          }
         } catch (ex) {}
 
         fontCapability.resolve(
@@ -1303,6 +1360,7 @@ class PartialEvaluator {
     if (!args) {
       args = [];
     }
+    let minMax;
     if (
       lastIndex < 0 ||
       operatorList.fnArray[lastIndex] !== OPS.constructPath
@@ -1319,7 +1377,8 @@ class PartialEvaluator {
         operatorList.addOp(OPS.save, null);
       }
 
-      operatorList.addOp(OPS.constructPath, [[fn], args]);
+      minMax = [Infinity, -Infinity, Infinity, -Infinity];
+      operatorList.addOp(OPS.constructPath, [[fn], args, minMax]);
 
       if (parsingText) {
         operatorList.addOp(OPS.restore, null);
@@ -1328,6 +1387,28 @@ class PartialEvaluator {
       const opArgs = operatorList.argsArray[lastIndex];
       opArgs[0].push(fn);
       Array.prototype.push.apply(opArgs[1], args);
+      minMax = opArgs[2];
+    }
+
+    // Compute min/max in the worker instead of the main thread.
+    // If the current matrix (when drawing) is a scaling one
+    // then min/max can be easily computed in using those values.
+    // Only rectangle, lineTo and moveTo are handled here since
+    // Bezier stuff requires to have the starting point.
+    switch (fn) {
+      case OPS.rectangle:
+        minMax[0] = Math.min(minMax[0], args[0], args[0] + args[2]);
+        minMax[1] = Math.max(minMax[1], args[0], args[0] + args[2]);
+        minMax[2] = Math.min(minMax[2], args[1], args[1] + args[3]);
+        minMax[3] = Math.max(minMax[3], args[1], args[1] + args[3]);
+        break;
+      case OPS.moveTo:
+      case OPS.lineTo:
+        minMax[0] = Math.min(minMax[0], args[0]);
+        minMax[1] = Math.max(minMax[1], args[0]);
+        minMax[2] = Math.min(minMax[2], args[1]);
+        minMax[3] = Math.max(minMax[3], args[1]);
+        break;
     }
   }
 
@@ -1419,7 +1500,7 @@ class PartialEvaluator {
 
       const pattern = this.xref.fetchIfRef(rawPattern);
       if (pattern) {
-        const dict = isStream(pattern) ? pattern.dict : pattern;
+        const dict = pattern instanceof BaseStream ? pattern.dict : pattern;
         const typeNum = dict.get("PatternType");
 
         if (typeNum === PatternType.TILING) {
@@ -1460,7 +1541,7 @@ class PartialEvaluator {
     }
     const length = array.length;
     const operator = this.xref.fetchIfRef(array[0]);
-    if (length < 2 || !isName(operator)) {
+    if (length < 2 || !(operator instanceof Name)) {
       warn("Invalid visibility expression");
       return;
     }
@@ -1482,7 +1563,7 @@ class PartialEvaluator {
         currentResult.push(nestedResult);
         // Recursively parse a subarray.
         this._parseVisibilityExpression(object, nestingCounter, nestedResult);
-      } else if (isRef(raw)) {
+      } else if (raw instanceof Ref) {
         // Reference to an OCG dictionary.
         currentResult.push(raw.toString());
       }
@@ -1491,10 +1572,10 @@ class PartialEvaluator {
 
   async parseMarkedContentProps(contentProperties, resources) {
     let optionalContent;
-    if (isName(contentProperties)) {
+    if (contentProperties instanceof Name) {
       const properties = resources.get("Properties");
       optionalContent = properties.get(contentProperties.name);
-    } else if (isDict(contentProperties)) {
+    } else if (contentProperties instanceof Dict) {
       optionalContent = contentProperties;
     } else {
       throw new FormatError("Optional content properties malformed.");
@@ -1522,7 +1603,7 @@ class PartialEvaluator {
       const optionalContentGroups = optionalContent.get("OCGs");
       if (
         Array.isArray(optionalContentGroups) ||
-        isDict(optionalContentGroups)
+        optionalContentGroups instanceof Dict
       ) {
         const groupIds = [];
         if (Array.isArray(optionalContentGroups)) {
@@ -1537,12 +1618,13 @@ class PartialEvaluator {
         return {
           type: optionalContentType,
           ids: groupIds,
-          policy: isName(optionalContent.get("P"))
-            ? optionalContent.get("P").name
-            : null,
+          policy:
+            optionalContent.get("P") instanceof Name
+              ? optionalContent.get("P").name
+              : null,
           expression: null,
         };
-      } else if (isRef(optionalContentGroups)) {
+      } else if (optionalContentGroups instanceof Ref) {
         return {
           type: optionalContentType,
           id: optionalContentGroups.toString(),
@@ -1626,7 +1708,13 @@ class PartialEvaluator {
             if (isValidName) {
               const localImage = localImageCache.getByName(name);
               if (localImage) {
-                operatorList.addOp(localImage.fn, localImage.args);
+                operatorList.addImageOps(
+                  localImage.fn,
+                  localImage.args,
+                  localImage.optionalContent
+                );
+
+                incrementCachedImageMaskCount(localImage);
                 args = null;
                 continue;
               }
@@ -1642,8 +1730,13 @@ class PartialEvaluator {
                 if (xobj instanceof Ref) {
                   const localImage = localImageCache.getByRef(xobj);
                   if (localImage) {
-                    operatorList.addOp(localImage.fn, localImage.args);
+                    operatorList.addImageOps(
+                      localImage.fn,
+                      localImage.args,
+                      localImage.optionalContent
+                    );
 
+                    incrementCachedImageMaskCount(localImage);
                     resolveXObject();
                     return;
                   }
@@ -1654,7 +1747,11 @@ class PartialEvaluator {
                   );
                   if (globalImage) {
                     operatorList.addDependency(globalImage.objId);
-                    operatorList.addOp(globalImage.fn, globalImage.args);
+                    operatorList.addImageOps(
+                      globalImage.fn,
+                      globalImage.args,
+                      globalImage.optionalContent
+                    );
 
                     resolveXObject();
                     return;
@@ -1663,12 +1760,12 @@ class PartialEvaluator {
                   xobj = xref.fetch(xobj);
                 }
 
-                if (!isStream(xobj)) {
+                if (!(xobj instanceof BaseStream)) {
                   throw new FormatError("XObject should be a stream");
                 }
 
                 const type = xobj.dict.get("Subtype");
-                if (!isName(type)) {
+                if (!(type instanceof Name)) {
                   throw new FormatError("XObject should have a Name subtype");
                 }
 
@@ -1759,7 +1856,13 @@ class PartialEvaluator {
             if (cacheKey) {
               const localImage = localImageCache.getByName(cacheKey);
               if (localImage) {
-                operatorList.addOp(localImage.fn, localImage.args);
+                operatorList.addImageOps(
+                  localImage.fn,
+                  localImage.args,
+                  localImage.optionalContent
+                );
+
+                incrementCachedImageMaskCount(localImage);
                 args = null;
                 continue;
               }
@@ -1794,12 +1897,12 @@ class PartialEvaluator {
             var state = stateManager.state;
             for (i = 0; i < arrLength; ++i) {
               const arrItem = arr[i];
-              if (isString(arrItem)) {
+              if (typeof arrItem === "string") {
                 Array.prototype.push.apply(
                   combinedGlyphs,
                   self.handleText(arrItem, state)
                 );
-              } else if (isNum(arrItem)) {
+              } else if (typeof arrItem === "number") {
                 combinedGlyphs.push(arrItem);
               }
             }
@@ -2068,7 +2171,7 @@ class PartialEvaluator {
             // but doing so is meaningless without knowing the semantics.
             continue;
           case OPS.beginMarkedContentProps:
-            if (!isName(args[0])) {
+            if (!(args[0] instanceof Name)) {
               warn(`Expected name for beginMarkedContentProps arg0=${args[0]}`);
               continue;
             }
@@ -2162,19 +2265,17 @@ class PartialEvaluator {
     task,
     resources,
     stateManager = null,
-    normalizeWhitespace = false,
     combineTextItems = false,
     includeMarkedContent = false,
     sink,
     seenStyles = new Set(),
+    viewBox,
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
     resources = resources || Dict.empty;
     stateManager = stateManager || new StateManager(new TextState());
 
-    const WhitespaceRegexp = /\s/g;
-    const DiacriticRegExp = new RegExp("^\\p{Mn}$", "u");
     const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
@@ -2196,16 +2297,61 @@ class PartialEvaluator {
       spaceInFlowMax: 0,
       trackingSpaceMin: Infinity,
       negativeSpaceMax: -Infinity,
+      notASpace: -Infinity,
       transform: null,
       fontName: null,
       hasEOL: false,
     };
+
+    // Use a circular buffer (length === 2) to save the last chars in the
+    // text stream.
+    // This implementation of the circular buffer is using a fixed array
+    // and the position of the next element:
+    // function addElement(x) {
+    //   buffer[pos] = x;
+    //   pos = (pos + 1) % buffer.length;
+    // }
+    // It's a way faster than:
+    // function addElement(x) {
+    //   buffer.push(x);
+    //   buffer.shift();
+    // }
+    //
+    // It's useful to know when we need to add a whitespace in the
+    // text chunk.
+    const twoLastChars = [" ", " "];
+    let twoLastCharsPos = 0;
+
+    /**
+     * Save the last char.
+     * @param {string} char
+     * @returns {boolean} true when the two last chars before adding the new one
+     * are a non-whitespace followed by a whitespace.
+     */
+    function saveLastChar(char) {
+      const nextPos = (twoLastCharsPos + 1) % 2;
+      const ret =
+        twoLastChars[twoLastCharsPos] !== " " && twoLastChars[nextPos] === " ";
+      twoLastChars[twoLastCharsPos] = char;
+      twoLastCharsPos = nextPos;
+
+      return ret;
+    }
+
+    function resetLastChars() {
+      twoLastChars[0] = twoLastChars[1] = " ";
+      twoLastCharsPos = 0;
+    }
 
     // Used in addFakeSpaces.
 
     // A white <= fontSize * TRACKING_SPACE_FACTOR is a tracking space
     // so it doesn't count as a space.
     const TRACKING_SPACE_FACTOR = 0.1;
+
+    // When a white <= fontSize * NOT_A_SPACE_FACTOR, there is no space
+    // even if one is present in the text stream.
+    const NOT_A_SPACE_FACTOR = 0.03;
 
     // A negative white < fontSize * NEGATIVE_SPACE_FACTOR induces
     // a break (a new chunk of text is created).
@@ -2308,6 +2454,7 @@ class PartialEvaluator {
 
       textContentItem.trackingSpaceMin =
         textState.fontSize * TRACKING_SPACE_FACTOR;
+      textContentItem.notASpace = textState.fontSize * NOT_A_SPACE_FACTOR;
       textContentItem.negativeSpaceMax =
         textState.fontSize * NEGATIVE_SPACE_FACTOR;
       textContentItem.spaceInFlowMin =
@@ -2349,34 +2496,16 @@ class PartialEvaluator {
       textContentItem.textAdvanceScale = scaleFactor;
     }
 
-    function replaceWhitespace(str) {
-      // Replaces all whitespaces with standard spaces (0x20), to avoid
-      // alignment issues between the textLayer and the canvas if the text
-      // contains e.g. tabs (fixes issue6612.pdf).
-      const ii = str.length;
-      let i = 0,
-        code;
-      while (i < ii && (code = str.charCodeAt(i)) >= 0x20 && code <= 0x7f) {
-        i++;
-      }
-      return i < ii ? str.replace(WhitespaceRegexp, " ") : str;
-    }
-
     function runBidiTransform(textChunk) {
       const text = textChunk.str.join("");
       const bidiResult = bidi(text, -1, textChunk.vertical);
-      const str = normalizeWhitespace
-        ? replaceWhitespace(bidiResult.str)
-        : bidiResult.str;
-      const rawStr = normalizeWhitespace
-        ? textChunk.rawStr.map((tup) => [replaceWhitespace(tup[0]), tup[1]])
-        : textChunk.rawStr.slice();
+
       return {
-        str,
-        rawStr,
+        str: bidiResult.str,
+        rawStr: textChunk.rawStr,
         dir: bidiResult.dir,
-        width: textChunk.totalWidth,
-        height: textChunk.totalHeight,
+        width: Math.abs(textChunk.totalWidth),
+        height: Math.abs(textChunk.totalHeight),
         transform: textChunk.transform,
         fontName: textChunk.fontName,
         hasEOL: textChunk.hasEOL,
@@ -2407,28 +2536,48 @@ class PartialEvaluator {
         });
     }
 
+    function applyInverseRotation(x, y, matrix) {
+      const scale = Math.hypot(matrix[0], matrix[1]);
+      return [
+        (matrix[0] * x + matrix[1] * y) / scale,
+        (matrix[2] * x + matrix[3] * y) / scale,
+      ];
+    }
+
     function compareWithLastPosition() {
+      const currentTransform = getCurrentTextTransform();
+      let posX = currentTransform[4];
+      let posY = currentTransform[5];
+
+      const shiftedX = posX - viewBox[0];
+      const shiftedY = posY - viewBox[1];
+
+      if (
+        shiftedX < 0 ||
+        shiftedX > viewBox[2] ||
+        shiftedY < 0 ||
+        shiftedY > viewBox[3]
+      ) {
+        return false;
+      }
+
       if (
         !combineTextItems ||
         !textState.font ||
         !textContentItem.prevTransform
       ) {
-        return;
+        return true;
       }
 
-      const currentTransform = getCurrentTextTransform();
-      let posX = currentTransform[4];
-      let posY = currentTransform[5];
       let lastPosX = textContentItem.prevTransform[4];
       let lastPosY = textContentItem.prevTransform[5];
 
       if (lastPosX === posX && lastPosY === posY) {
-        return;
+        return true;
       }
 
-      let rotate = 0;
+      let rotate = -1;
       // Take into account the rotation is the current transform.
-      // Only rotations with an angle of 0, 90, 180 or 270 are considered.
       if (
         currentTransform[0] &&
         currentTransform[1] === 0 &&
@@ -2440,59 +2589,90 @@ class PartialEvaluator {
         currentTransform[0] === 0 &&
         currentTransform[3] === 0
       ) {
-        rotate += currentTransform[1] > 0 ? 90 : 270;
+        rotate = currentTransform[1] > 0 ? 90 : 270;
       }
 
-      if (rotate !== 0) {
-        switch (rotate) {
-          case 90:
-            [posX, posY] = [posY, posX];
-            [lastPosX, lastPosY] = [lastPosY, lastPosX];
-            break;
-          case 180:
-            [posX, posY, lastPosX, lastPosY] = [
-              -posX,
-              -posY,
-              -lastPosX,
-              -lastPosY,
-            ];
-            break;
-          case 270:
-            [posX, posY] = [-posY, -posX];
-            [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
-            break;
-        }
+      switch (rotate) {
+        case 0:
+          break;
+        case 90:
+          [posX, posY] = [posY, posX];
+          [lastPosX, lastPosY] = [lastPosY, lastPosX];
+          break;
+        case 180:
+          [posX, posY, lastPosX, lastPosY] = [
+            -posX,
+            -posY,
+            -lastPosX,
+            -lastPosY,
+          ];
+          break;
+        case 270:
+          [posX, posY] = [-posY, -posX];
+          [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
+          break;
+        default:
+          // This is not a 0, 90, 180, 270 rotation so:
+          //  - remove the scale factor from the matrix to get a rotation matrix
+          //  - apply the inverse (which is the transposed) to the positions
+          // and we can then compare positions of the glyphes to detect
+          // a whitespace.
+          [posX, posY] = applyInverseRotation(posX, posY, currentTransform);
+          [lastPosX, lastPosY] = applyInverseRotation(
+            lastPosX,
+            lastPosY,
+            textContentItem.prevTransform
+          );
       }
 
       if (textState.font.vertical) {
         const advanceY = (lastPosY - posY) / textContentItem.textAdvanceScale;
         const advanceX = posX - lastPosX;
-        if (advanceY < textContentItem.negativeSpaceMax) {
+
+        // When the total height of the current chunk is negative
+        // then we're writing from bottom to top.
+        const textOrientation = Math.sign(textContentItem.height);
+        if (advanceY < textOrientation * textContentItem.negativeSpaceMax) {
           if (
             Math.abs(advanceX) >
             0.5 * textContentItem.width /* not the same column */
           ) {
             appendEOL();
-            return;
+            return true;
           }
 
+          resetLastChars();
           flushTextContentItem();
-          return;
+          return true;
         }
 
-        if (Math.abs(advanceX) > textContentItem.height) {
+        if (Math.abs(advanceX) > textContentItem.width) {
           appendEOL();
-          return;
+          return true;
         }
-        if (advanceY <= textContentItem.trackingSpaceMin) {
+
+        if (advanceY <= textOrientation * textContentItem.notASpace) {
+          // The real spacing between 2 consecutive chars is thin enough to be
+          // considered a non-space.
+          resetLastChars();
+        }
+
+        if (advanceY <= textOrientation * textContentItem.trackingSpaceMin) {
           textContentItem.height += advanceY;
-        } else if (!addFakeSpaces(advanceY, textContentItem.prevTransform)) {
+        } else if (
+          !addFakeSpaces(
+            advanceY,
+            textContentItem.prevTransform,
+            textOrientation
+          )
+        ) {
           if (textContentItem.str.length === 0) {
+            resetLastChars();
             textContent.items.push({
               str: " ",
               dir: "ltr",
               width: 0,
-              height: advanceY,
+              height: Math.abs(advanceY),
               transform: textContentItem.prevTransform,
               fontName: textContentItem.fontName,
               hasEOL: false,
@@ -2502,36 +2682,53 @@ class PartialEvaluator {
           }
         }
 
-        return;
+        return true;
       }
 
       const advanceX = (posX - lastPosX) / textContentItem.textAdvanceScale;
       const advanceY = posY - lastPosY;
-      if (advanceX < textContentItem.negativeSpaceMax) {
+
+      // When the total width of the current chunk is negative
+      // then we're writing from right to left.
+      const textOrientation = Math.sign(textContentItem.width);
+      if (advanceX < textOrientation * textContentItem.negativeSpaceMax) {
         if (
           Math.abs(advanceY) >
           0.5 * textContentItem.height /* not the same line */
         ) {
           appendEOL();
-          return;
+          return true;
         }
+
+        // We're moving back so in case the last char was a whitespace
+        // we cancel it: it doesn't make sense to insert it.
+        resetLastChars();
         flushTextContentItem();
-        return;
+        return true;
       }
 
       if (Math.abs(advanceY) > textContentItem.height) {
         appendEOL();
-        return;
+        return true;
       }
 
-      if (advanceX <= textContentItem.trackingSpaceMin) {
+      if (advanceX <= textOrientation * textContentItem.notASpace) {
+        // The real spacing between 2 consecutive chars is thin enough to be
+        // considered a non-space.
+        resetLastChars();
+      }
+
+      if (advanceX <= textOrientation * textContentItem.trackingSpaceMin) {
         textContentItem.width += advanceX;
-      } else if (!addFakeSpaces(advanceX, textContentItem.prevTransform)) {
+      } else if (
+        !addFakeSpaces(advanceX, textContentItem.prevTransform, textOrientation)
+      ) {
         if (textContentItem.str.length === 0) {
+          resetLastChars();
           textContent.items.push({
             str: " ",
             dir: "ltr",
-            width: advanceX,
+            width: Math.abs(advanceX),
             height: 0,
             transform: textContentItem.prevTransform,
             fontName: textContentItem.fontName,
@@ -2541,6 +2738,8 @@ class PartialEvaluator {
           textContentItem.width += advanceX;
         }
       }
+
+      return true;
     }
 
     function buildTextContentItem({ chars, extraSpacing }) {
@@ -2564,8 +2763,12 @@ class PartialEvaluator {
 
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
+
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
+        if (glyph.isInvisibleFormatMark) {
+          continue;
+        }
         let charSpacing =
           textState.charSpacing + (i + 1 === ii ? extraSpacing : 0);
 
@@ -2575,14 +2778,7 @@ class PartialEvaluator {
         }
         let scaledDim = glyphWidth * scale;
 
-        let glyphUnicode = glyph.unicode;
-        if (
-          glyphUnicode === " " &&
-          (i === 0 ||
-            i + 1 === ii ||
-            glyphs[i - 1].unicode === " " ||
-            glyphs[i + 1].unicode === " ")
-        ) {
+        if (glyph.isWhitespace) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
           // it will be done (if required) in next call to
@@ -2598,15 +2794,19 @@ class PartialEvaluator {
             charSpacing += -scaledDim + textState.wordSpacing;
             textState.translateTextMatrix(0, -charSpacing);
           }
+          saveLastChar(" ");
           continue;
         }
 
-        compareWithLastPosition();
+        if (!compareWithLastPosition()) {
+          // The glyph is not in page so just skip it.
+          continue;
+        }
 
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
-        if (DiacriticRegExp.test(glyph.unicode)) {
+        if (glyph.isZeroWidthDiacritic) {
           scaledDim = 0;
         }
 
@@ -2625,8 +2825,17 @@ class PartialEvaluator {
           textChunk.prevTransform = getCurrentTextTransform();
         }
 
+        let glyphUnicode = glyph.unicode;
         glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
         glyphUnicode = reverseIfRtl(glyphUnicode);
+        if (saveLastChar(glyphUnicode)) {
+          // The two last chars are a non-whitespace followed by a whitespace
+          // and then this non-whitespace, so we insert a whitespace here.
+          // Replaces all whitespaces with standard spaces (0x20), to avoid
+          // alignment issues between the textLayer and the canvas if the text
+          // contains e.g. tabs (fixes issue6612.pdf).
+          textChunk.str.push(" ");
+        }
         textChunk.str.push(glyphUnicode);
         textChunk.rawStr.push([glyphUnicode, !font.vertical ? textChunk.width : textChunk.height]);
 
@@ -2644,6 +2853,7 @@ class PartialEvaluator {
     }
 
     function appendEOL() {
+      resetLastChars();
       if (textContentItem.initialized) {
         textContentItem.hasEOL = true;
         flushTextContentItem();
@@ -2660,13 +2870,14 @@ class PartialEvaluator {
       }
     }
 
-    function addFakeSpaces(width, transf) {
+    function addFakeSpaces(width, transf, textOrientation) {
       const font = textState.font;
       if (
-        textContentItem.spaceInFlowMin <= width &&
-        width <= textContentItem.spaceInFlowMax
+        textOrientation * textContentItem.spaceInFlowMin <= width &&
+        width <= textOrientation * textContentItem.spaceInFlowMax
       ) {
         if (textContentItem.initialized) {
+          resetLastChars();
           textContentItem.str.push(" ");
           textContentItem.rawStr.push([" ", (!font.vertical ? textContentItem.width : textContentItem.height) + width]);
         }
@@ -2682,13 +2893,14 @@ class PartialEvaluator {
       }
 
       flushTextContentItem();
+      resetLastChars();
       textContent.items.push({
         str: " ",
         // TODO: check if using the orientation from last chunk is
         // better or not.
         dir: "ltr",
-        width,
-        height,
+        width: Math.abs(width),
+        height: Math.abs(height),
         transform: transf || getCurrentTextTransform(),
         fontName,
         hasEOL: false,
@@ -2950,12 +3162,12 @@ class PartialEvaluator {
                   xobj = xref.fetch(xobj);
                 }
 
-                if (!isStream(xobj)) {
+                if (!(xobj instanceof BaseStream)) {
                   throw new FormatError("XObject should be a stream");
                 }
 
                 const type = xobj.dict.get("Subtype");
-                if (!isName(type)) {
+                if (!(type instanceof Name)) {
                   throw new FormatError("XObject should have a Name subtype");
                 }
 
@@ -3005,11 +3217,11 @@ class PartialEvaluator {
                     task,
                     resources: xobj.dict.get("Resources") || resources,
                     stateManager: xObjStateManager,
-                    normalizeWhitespace,
                     combineTextItems,
                     includeMarkedContent,
                     sink: sinkWrapper,
                     seenStyles,
+                    viewBox,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
@@ -3091,7 +3303,7 @@ class PartialEvaluator {
             if (includeMarkedContent) {
               textContent.items.push({
                 type: "beginMarkedContent",
-                tag: isName(args[0]) ? args[0].name : null,
+                tag: args[0] instanceof Name ? args[0].name : null,
               });
             }
             break;
@@ -3099,7 +3311,7 @@ class PartialEvaluator {
             if (includeMarkedContent) {
               flushTextContentItem();
               let mcid = null;
-              if (isDict(args[1])) {
+              if (args[1] instanceof Dict) {
                 mcid = args[1].get("MCID");
               }
               textContent.items.push({
@@ -3107,7 +3319,7 @@ class PartialEvaluator {
                 id: Number.isInteger(mcid)
                   ? `${self.idFactory.getPageObjId()}_mcid${mcid}`
                   : null,
-                tag: isName(args[0]) ? args[0].name : null,
+                tag: args[0] instanceof Name ? args[0].name : null,
               });
             }
             break;
@@ -3163,7 +3375,7 @@ class PartialEvaluator {
     if (properties.composite) {
       // CIDSystemInfo helps to match CID to glyphs
       const cidSystemInfo = dict.get("CIDSystemInfo");
-      if (isDict(cidSystemInfo)) {
+      if (cidSystemInfo instanceof Dict) {
         properties.cidSystemInfo = {
           registry: stringToPDFString(cidSystemInfo.get("Registry")),
           ordering: stringToPDFString(cidSystemInfo.get("Ordering")),
@@ -3188,20 +3400,19 @@ class PartialEvaluator {
     let encoding;
     if (dict.has("Encoding")) {
       encoding = dict.get("Encoding");
-      if (isDict(encoding)) {
+      if (encoding instanceof Dict) {
         baseEncodingName = encoding.get("BaseEncoding");
-        baseEncodingName = isName(baseEncodingName)
-          ? baseEncodingName.name
-          : null;
+        baseEncodingName =
+          baseEncodingName instanceof Name ? baseEncodingName.name : null;
         // Load the differences between the base and original
         if (encoding.has("Differences")) {
           const diffEncoding = encoding.get("Differences");
           let index = 0;
           for (let j = 0, jj = diffEncoding.length; j < jj; j++) {
             const data = xref.fetchIfRef(diffEncoding[j]);
-            if (isNum(data)) {
+            if (typeof data === "number") {
               index = data;
-            } else if (isName(data)) {
+            } else if (data instanceof Name) {
               differences[index++] = data.name;
             } else {
               throw new FormatError(
@@ -3210,10 +3421,15 @@ class PartialEvaluator {
             }
           }
         }
-      } else if (isName(encoding)) {
+      } else if (encoding instanceof Name) {
         baseEncodingName = encoding.name;
       } else {
-        throw new FormatError("Encoding is not a Name nor a Dict");
+        const msg = "Encoding is not a Name nor a Dict";
+
+        if (!this.options.ignoreErrors) {
+          throw new FormatError(msg);
+        }
+        warn(msg);
       }
       // According to table 114 if the encoding is a named encoding it must be
       // one of these predefined encodings.
@@ -3346,8 +3562,7 @@ class PartialEvaluator {
               }
             }
             break;
-          default:
-            // 'uniXXXX'/'uXXXX{XX}' glyphs
+          default: // 'uniXXXX'/'uXXXX{XX}' glyphs
             const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
             if (unicode !== -1) {
               code = unicode;
@@ -3462,7 +3677,7 @@ class PartialEvaluator {
     if (!cmapObj) {
       return Promise.resolve(null);
     }
-    if (isName(cmapObj)) {
+    if (cmapObj instanceof Name) {
       return CMapFactory.create({
         encoding: cmapObj,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
@@ -3473,7 +3688,7 @@ class PartialEvaluator {
         }
         return new ToUnicodeMap(cmap.getMap());
       });
-    } else if (isStream(cmapObj)) {
+    } else if (cmapObj instanceof BaseStream) {
       return CMapFactory.create({
         encoding: cmapObj,
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
@@ -3614,7 +3829,7 @@ class PartialEvaluator {
       } else {
         // Trying get the BaseFont metrics (see comment above).
         const baseFontName = dict.get("BaseFont");
-        if (isName(baseFontName)) {
+        if (baseFontName instanceof Name) {
           const metrics = this.getBaseFontMetrics(baseFontName.name);
 
           glyphsWidths = this.buildCharCodeToWidth(metrics.widths, properties);
@@ -3678,7 +3893,7 @@ class PartialEvaluator {
     }
     const glyphWidths = Metrics[lookupName];
 
-    if (isNum(glyphWidths)) {
+    if (typeof glyphWidths === "number") {
       defaultWidth = glyphWidths;
       monospace = true;
     } else {
@@ -3712,7 +3927,7 @@ class PartialEvaluator {
   preEvaluateFont(dict) {
     const baseDict = dict;
     let type = dict.get("Subtype");
-    if (!isName(type)) {
+    if (!(type instanceof Name)) {
       throw new FormatError("invalid font Subtype");
     }
 
@@ -3733,7 +3948,7 @@ class PartialEvaluator {
         throw new FormatError("Descendant font is not a dictionary.");
       }
       type = dict.get("Subtype");
-      if (!isName(type)) {
+      if (!(type instanceof Name)) {
         throw new FormatError("invalid font Subtype");
       }
       composite = true;
@@ -3746,15 +3961,15 @@ class PartialEvaluator {
       hash = new MurmurHash3_64();
 
       const encoding = baseDict.getRaw("Encoding");
-      if (isName(encoding)) {
+      if (encoding instanceof Name) {
         hash.update(encoding.name);
-      } else if (isRef(encoding)) {
+      } else if (encoding instanceof Ref) {
         hash.update(encoding.toString());
-      } else if (isDict(encoding)) {
+      } else if (encoding instanceof Dict) {
         for (const entry of encoding.getRawValues()) {
-          if (isName(entry)) {
+          if (entry instanceof Name) {
             hash.update(entry.name);
-          } else if (isRef(entry)) {
+          } else if (entry instanceof Ref) {
             hash.update(entry.toString());
           } else if (Array.isArray(entry)) {
             // 'Differences' array (fixes bug1157493.pdf).
@@ -3763,9 +3978,12 @@ class PartialEvaluator {
 
             for (let j = 0; j < diffLength; j++) {
               const diffEntry = entry[j];
-              if (isName(diffEntry)) {
+              if (diffEntry instanceof Name) {
                 diffBuf[j] = diffEntry.name;
-              } else if (isNum(diffEntry) || isRef(diffEntry)) {
+              } else if (
+                typeof diffEntry === "number" ||
+                diffEntry instanceof Ref
+              ) {
                 diffBuf[j] = diffEntry.toString();
               }
             }
@@ -3777,7 +3995,7 @@ class PartialEvaluator {
       hash.update(`${firstChar}-${lastChar}`); // Fixes issue10665_reduced.pdf
 
       toUnicode = dict.get("ToUnicode") || baseDict.get("ToUnicode");
-      if (isStream(toUnicode)) {
+      if (toUnicode instanceof BaseStream) {
         const stream = toUnicode.str || toUnicode;
         const uint8array = stream.buffer
           ? new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength)
@@ -3787,7 +4005,7 @@ class PartialEvaluator {
               stream.end - stream.start
             );
         hash.update(uint8array);
-      } else if (isName(toUnicode)) {
+      } else if (toUnicode instanceof Name) {
         hash.update(toUnicode.name);
       }
 
@@ -3795,7 +4013,7 @@ class PartialEvaluator {
       if (Array.isArray(widths)) {
         const widthsBuf = [];
         for (const entry of widths) {
-          if (isNum(entry) || isRef(entry)) {
+          if (typeof entry === "number" || entry instanceof Ref) {
             widthsBuf.push(entry.toString());
           }
         }
@@ -3809,12 +4027,12 @@ class PartialEvaluator {
         if (Array.isArray(compositeWidths)) {
           const widthsBuf = [];
           for (const entry of compositeWidths) {
-            if (isNum(entry) || isRef(entry)) {
+            if (typeof entry === "number" || entry instanceof Ref) {
               widthsBuf.push(entry.toString());
             } else if (Array.isArray(entry)) {
               const subWidthsBuf = [];
               for (const element of entry) {
-                if (isNum(element) || isRef(element)) {
+                if (typeof element === "number" || element instanceof Ref) {
                   subWidthsBuf.push(element.toString());
                 }
               }
@@ -3875,7 +4093,7 @@ class PartialEvaluator {
         // FontDescriptor was not required.
         // This case is here for compatibility.
         let baseFontName = dict.get("BaseFont");
-        if (!isName(baseFontName)) {
+        if (!(baseFontName instanceof Name)) {
           throw new FormatError("Base font is not specified");
         }
 
@@ -3947,10 +4165,10 @@ class PartialEvaluator {
     let fontName = descriptor.get("FontName");
     let baseFont = dict.get("BaseFont");
     // Some bad PDFs have a string as the font name.
-    if (isString(fontName)) {
+    if (typeof fontName === "string") {
       fontName = Name.get(fontName);
     }
-    if (isString(baseFont)) {
+    if (typeof baseFont === "string") {
       baseFont = Name.get(baseFont);
     }
 
@@ -3971,7 +4189,7 @@ class PartialEvaluator {
     }
     fontName = fontName || baseFont;
 
-    if (!isName(fontName)) {
+    if (!(fontName instanceof Name)) {
       throw new FormatError("invalid font name");
     }
 
@@ -4055,7 +4273,7 @@ class PartialEvaluator {
 
     if (composite) {
       const cidEncoding = baseDict.get("Encoding");
-      if (isName(cidEncoding)) {
+      if (cidEncoding instanceof Name) {
         properties.cidEncoding = cidEncoding.name;
       }
       const cMap = await CMapFactory.create({
@@ -4181,6 +4399,12 @@ class TranslatedFont {
     // make sense to only be able to render a Type3 glyph partially.
     const type3Evaluator = evaluator.clone({ ignoreErrors: false });
     type3Evaluator.parsingType3Font = true;
+    // Prevent circular references in Type3 fonts.
+    const type3FontRefs = new RefSet(evaluator.type3FontRefs);
+    if (this.dict.objId && !type3FontRefs.has(this.dict.objId)) {
+      type3FontRefs.put(this.dict.objId);
+    }
+    type3Evaluator.type3FontRefs = type3FontRefs;
 
     const translatedFont = this.font,
       type3Dependencies = this.type3Dependencies;
@@ -4249,21 +4473,30 @@ class TranslatedFont {
         "Type3 glyph shall start with the d1 operator."
       );
     }
-    if (isEmptyBBox) {
+    const charBBox = Util.normalizeRect(operatorList.argsArray[0].slice(2)),
+      width = charBBox[2] - charBBox[0],
+      height = charBBox[3] - charBBox[1];
+
+    if (width === 0 || height === 0) {
+      // Skip the d1 operator when its bounds are bogus (fixes issue14953.pdf).
+      operatorList.fnArray.splice(0, 1);
+      operatorList.argsArray.splice(0, 1);
+    } else if (isEmptyBBox) {
       if (!this._bbox) {
         this._bbox = [Infinity, Infinity, -Infinity, -Infinity];
       }
-      const charBBox = Util.normalizeRect(operatorList.argsArray[0].slice(2));
-
       this._bbox[0] = Math.min(this._bbox[0], charBBox[0]);
       this._bbox[1] = Math.min(this._bbox[1], charBBox[1]);
       this._bbox[2] = Math.max(this._bbox[2], charBBox[2]);
       this._bbox[3] = Math.max(this._bbox[3], charBBox[3]);
     }
-    let i = 1,
+
+    let i = 0,
       ii = operatorList.length;
     while (i < ii) {
       switch (operatorList.fnArray[i]) {
+        case OPS.setCharWidthAndBounds:
+          break; // Handled above.
         case OPS.setStrokeColorSpace:
         case OPS.setFillColorSpace:
         case OPS.setStrokeColor:
@@ -4539,7 +4772,7 @@ class EvaluatorPreprocessor {
   }
 
   static get MAX_INVALID_PATH_OPS() {
-    return shadow(this, "MAX_INVALID_PATH_OPS", 20);
+    return shadow(this, "MAX_INVALID_PATH_OPS", 10);
   }
 
   constructor(stream, xref, stateManager = new StateManager()) {
@@ -4551,6 +4784,7 @@ class EvaluatorPreprocessor {
     });
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
+    this._isPathOp = false;
     this._numInvalidPathOPS = 0;
   }
 
@@ -4596,6 +4830,13 @@ class EvaluatorPreprocessor {
         const numArgs = opSpec.numArgs;
         let argsLength = args !== null ? args.length : 0;
 
+        // If the *previous* command wasn't a path operator, reset the heuristic
+        // used with incomplete path operators below (fixes issue14917.pdf).
+        if (!this._isPathOp) {
+          this._numInvalidPathOPS = 0;
+        }
+        this._isPathOp = fn >= OPS.moveTo && fn <= OPS.endPath;
+
         if (!opSpec.variableArgs) {
           // Postscript commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
           if (argsLength !== numArgs) {
@@ -4623,8 +4864,7 @@ class EvaluatorPreprocessor {
             // used to error, rather than just warn, once a number of invalid
             // path operators have been encountered (fixes bug1443140.pdf).
             if (
-              fn >= OPS.moveTo &&
-              fn <= OPS.endPath && // Path operator
+              this._isPathOp &&
               ++this._numInvalidPathOPS >
                 EvaluatorPreprocessor.MAX_INVALID_PATH_OPS
             ) {

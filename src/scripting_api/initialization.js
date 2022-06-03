@@ -120,8 +120,8 @@ function initSandbox(params) {
       }
 
       const wrapped = new Proxy(field, proxyHandler);
-      doc._addField(name, wrapped);
       const _object = { obj: field, wrapped };
+      doc._addField(name, _object);
       for (const object of objs) {
         appObjects[object.id] = _object;
       }

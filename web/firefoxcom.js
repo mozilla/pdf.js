@@ -116,13 +116,11 @@ class DownloadManager {
       new Blob([data], { type: contentType })
     );
 
-    FirefoxCom.requestAsync("download", {
+    FirefoxCom.request("download", {
       blobUrl,
       originalUrl: blobUrl,
       filename,
       isAttachment: true,
-    }).then(error => {
-      URL.revokeObjectURL(blobUrl);
     });
   }
 
@@ -158,21 +156,13 @@ class DownloadManager {
     return false;
   }
 
-  download(blob, url, filename, sourceEventType = "download") {
+  download(blob, url, filename) {
     const blobUrl = URL.createObjectURL(blob);
 
-    FirefoxCom.requestAsync("download", {
+    FirefoxCom.request("download", {
       blobUrl,
       originalUrl: url,
       filename,
-      sourceEventType,
-    }).then(error => {
-      if (error) {
-        // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
-        // that attempting to fallback and re-download would be helpful here.
-        console.error("`ChromeActions.download` failed.");
-      }
-      URL.revokeObjectURL(blobUrl);
     });
   }
 }
@@ -218,6 +208,7 @@ class MozL10n {
     "findcasesensitivitychange",
     "findentirewordchange",
     "findbarclose",
+    "finddiacriticmatchingchange",
   ];
   const findLen = "find".length;
 
@@ -238,6 +229,7 @@ class MozL10n {
       entireWord: !!detail.entireWord,
       highlightAll: !!detail.highlightAll,
       findPrevious: !!detail.findPrevious,
+      matchDiacritics: !!detail.matchDiacritics,
     });
   };
 
@@ -273,7 +265,7 @@ class MozL10n {
     if (!PDFViewerApplication.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+    PDFViewerApplication.eventBus.dispatch("download", { source: window });
   };
 
   window.addEventListener("save", handleEvent);
@@ -380,10 +372,6 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.requestSync("initPassiveLoading", null);
   }
 
-  static async fallback(data) {
-    return FirefoxCom.requestAsync("fallback", data);
-  }
-
   static reportTelemetry(data) {
     FirefoxCom.request("reportTelemetry", JSON.stringify(data));
   }
@@ -439,7 +427,7 @@ document.mozL10n.setExternalLocalizerServices({
   },
 
   getStrings(key) {
-    return FirefoxCom.requestSync("getStrings", key);
+    return FirefoxCom.requestSync("getStrings", null);
   },
 });
 

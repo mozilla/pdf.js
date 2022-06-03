@@ -14,7 +14,6 @@
  */
 
 import {
-  assert,
   ImageKind,
   OPS,
   RenderingIntentFlag,
@@ -33,31 +32,6 @@ function addState(parentState, pattern, checkFn, iterateFn, processFn) {
     iterateFn,
     processFn,
   };
-}
-
-function handlePaintSolidColorImageMask(iFirstSave, count, fnArray, argsArray) {
-  // Handles special case of mainly LaTeX documents which use image masks to
-  // draw lines with the current fill style.
-  // 'count' groups of (save, transform, paintImageMaskXObject, restore)+
-  // have been found at iFirstSave.
-  const iFirstPIMXO = iFirstSave + 2;
-  let i;
-  for (i = 0; i < count; i++) {
-    const arg = argsArray[iFirstPIMXO + 4 * i];
-    const imageMask = arg.length === 1 && arg[0];
-    if (
-      imageMask &&
-      imageMask.width === 1 &&
-      imageMask.height === 1 &&
-      (!imageMask.data.length ||
-        (imageMask.data.length === 1 && imageMask.data[0] === 0))
-    ) {
-      fnArray[iFirstPIMXO + 4 * i] = OPS.paintSolidColorImageMask;
-      continue;
-    }
-    break;
-  }
-  return count - i;
 }
 
 const InitialState = [];
@@ -134,7 +108,7 @@ addState(
     }
     const imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
     const imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-    const imgData = new Uint8ClampedArray(imgWidth * imgHeight * 4);
+    const imgData = new Uint8Array(imgWidth * imgHeight * 4);
     const imgRowSize = imgWidth << 2;
     for (let q = 0; q < count; q++) {
       const data = argsArray[iFirstPIIXO + (q << 2)][0].data;
@@ -216,12 +190,6 @@ addState(
     // At this point, i is the index of the first op past the last valid
     // quartet.
     let count = Math.floor((i - iFirstSave) / 4);
-    count = handlePaintSolidColorImageMask(
-      iFirstSave,
-      count,
-      fnArray,
-      argsArray
-    );
     if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
       return i - ((i - iFirstSave) % 4);
     }
@@ -287,6 +255,8 @@ addState(
           data: maskParams.data,
           width: maskParams.width,
           height: maskParams.height,
+          interpolate: maskParams.interpolate,
+          count: maskParams.count,
           transform: transformArgs,
         });
       }
@@ -651,6 +621,18 @@ class OperatorList {
     }
   }
 
+  addImageOps(fn, args, optionalContent) {
+    if (optionalContent !== undefined) {
+      this.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+    }
+
+    this.addOp(fn, args);
+
+    if (optionalContent !== undefined) {
+      this.addOp(OPS.endMarkedContent, []);
+    }
+  }
+
   addDependency(dependency) {
     if (this.dependencies.has(dependency)) {
       return;
@@ -695,17 +677,11 @@ class OperatorList {
         case OPS.paintInlineImageXObjectGroup:
         case OPS.paintImageMaskXObject:
           const arg = argsArray[i][0]; // First parameter in imgData.
-
           if (
-            typeof PDFJSDev === "undefined" ||
-            PDFJSDev.test("!PRODUCTION || TESTING")
+            !arg.cached &&
+            arg.data &&
+            arg.data.buffer instanceof ArrayBuffer
           ) {
-            assert(
-              arg.data instanceof Uint8ClampedArray,
-              'OperatorList._transfers: Unsupported "arg.data" type.'
-            );
-          }
-          if (!arg.cached) {
             transfers.push(arg.data.buffer);
           }
           break;

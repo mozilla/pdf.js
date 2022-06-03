@@ -21,6 +21,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { isNodeJS } from "../shared/is_node.js";
 
 const PathType = {
   FILL: "Fill",
@@ -29,7 +30,7 @@ const PathType = {
 };
 
 function applyBoundingBox(ctx, bbox) {
-  if (!bbox || typeof Path2D === "undefined") {
+  if (!bbox || isNodeJS) {
     return;
   }
   const width = bbox[2] - bbox[0];
@@ -563,7 +564,7 @@ class TilingPattern {
     let adjustedY0 = y0;
     let adjustedX1 = x1;
     let adjustedY1 = y1;
-    // Some bounding boxes have negative x0/y0 cordinates which will cause the
+    // Some bounding boxes have negative x0/y0 coordinates which will cause the
     // some of the drawing to be off of the canvas. To avoid this shift the
     // bounding box over.
     if (x0 < 0) {
@@ -576,6 +577,10 @@ class TilingPattern {
     }
     tmpCtx.translate(-(dimx.scale * adjustedX0), -(dimy.scale * adjustedY0));
     graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
+
+    // To match CanvasGraphics beginDrawing we must save the context here or
+    // else we end up with unbalanced save/restores.
+    tmpCtx.save();
 
     this.clipBbox(graphics, adjustedX0, adjustedY0, adjustedX1, adjustedY1);
 
@@ -615,6 +620,12 @@ class TilingPattern {
     const bboxWidth = x1 - x0;
     const bboxHeight = y1 - y0;
     graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
+    graphics.current.updateRectMinMax(graphics.ctx.mozCurrentTransform, [
+      x0,
+      y0,
+      x1,
+      y1,
+    ]);
     graphics.clip();
     graphics.endPath();
   }

@@ -1,0 +1,14 @@
+/*#if TRUE*/
+div {
+  margin: 0;
+  /*#if FALSE*/
+  padding: 0;
+  /*#endif*/
+}
+/*#endif*/
+
+/*#if FALSE*/
+p {
+  margin: 0;
+}
+/*#endif*/

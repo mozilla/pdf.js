@@ -80,7 +80,7 @@ const TOKEN = {
   string: 22,
   this: 23,
   times: 24,
-  identifier: 25, // in main statments too
+  identifier: 25, // in main statements too
 
   /* Main statements */
   break: 26,

@@ -21,7 +21,7 @@ import {
   isValidFetchUrl,
   PDFDateString,
 } from "../../src/display/display_utils.js";
-import { createObjectURL } from "../../src/shared/util.js";
+import { bytesToString } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 
 describe("display_utils", function () {
@@ -320,7 +320,9 @@ describe("display_utils", function () {
         pending("Blob in not supported in Node.js.");
       }
       const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      const blobUrl = createObjectURL(typedArray, "application/pdf");
+      const blobUrl = URL.createObjectURL(
+        new Blob([typedArray], { type: "application/pdf" })
+      );
       // Sanity check to ensure that a "blob:" URL was returned.
       expect(blobUrl.startsWith("blob:")).toEqual(true);
 
@@ -328,12 +330,9 @@ describe("display_utils", function () {
     });
 
     it('gets fallback filename from query string appended to "data:" URL', function () {
-      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      const dataUrl = createObjectURL(
-        typedArray,
-        "application/pdf",
-        /* forceDataSchema = */ true
-      );
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]),
+        str = bytesToString(typedArray);
+      const dataUrl = `data:application/pdf;base64,${btoa(str)}`;
       // Sanity check to ensure that a "data:" URL was returned.
       expect(dataUrl.startsWith("data:")).toEqual(true);
 

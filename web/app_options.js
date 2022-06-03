@@ -15,28 +15,21 @@
 
 const compatibilityParams = Object.create(null);
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const userAgent =
-    (typeof navigator !== "undefined" && navigator.userAgent) || "";
-  const platform =
-    (typeof navigator !== "undefined" && navigator.platform) || "";
-  const maxTouchPoints =
-    (typeof navigator !== "undefined" && navigator.maxTouchPoints) || 1;
+  if (
+    typeof PDFJSDev !== "undefined" &&
+    PDFJSDev.test("LIB") &&
+    typeof navigator === "undefined"
+  ) {
+    globalThis.navigator = Object.create(null);
+  }
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 1;
 
   const isAndroid = /Android/.test(userAgent);
   const isIOS =
     /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
     (platform === "MacIntel" && maxTouchPoints > 1);
-  const isIOSChrome = /CriOS/.test(userAgent);
-
-  // Disables URL.createObjectURL() usage in some environments.
-  // Support: Chrome on iOS
-  (function checkOnBlobSupport() {
-    // Sometimes Chrome on iOS loses data created with createObjectURL(),
-    // see issue 8081.
-    if (isIOSChrome) {
-      compatibilityParams.disableCreateObjectURL = true;
-    }
-  })();
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS
@@ -135,6 +128,16 @@ const defaultOptions = {
     value: 16777216,
     compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
+  },
+  pageColorsBackground: {
+    /** @type {string} */
+    value: "Canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  pageColorsForeground: {
+    /** @type {string} */
+    value: "CanvasText",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   pdfBugEnabled: {
     /** @type {boolean} */
@@ -289,7 +292,7 @@ if (
   };
   defaultOptions.locale = {
     /** @type {string} */
-    value: typeof navigator !== "undefined" ? navigator.language : "en-US",
+    value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
   defaultOptions.sandboxBundleSrc = {

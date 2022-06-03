@@ -20,7 +20,6 @@ import {
   FontType,
   FormatError,
   info,
-  isNum,
   shadow,
   string32,
   warn,
@@ -34,6 +33,12 @@ import {
   recoverGlyphName,
   SEAC_ANALYSIS_ENABLED,
 } from "./fonts_utils.js";
+import {
+  getCharUnicodeCategory,
+  getUnicodeForGlyph,
+  getUnicodeRangeFor,
+  mapSpecialUnicodeValues,
+} from "./unicode.js";
 import { getDingbatsGlyphsUnicode, getGlyphsUnicode } from "./glyphlist.js";
 import {
   getEncoding,
@@ -50,14 +55,10 @@ import {
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
 } from "./standard_fonts.js";
-import {
-  getUnicodeForGlyph,
-  getUnicodeRangeFor,
-  mapSpecialUnicodeValues,
-} from "./unicode.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { CFFFont } from "./cff_font.js";
 import { FontRendererFactory } from "./font_renderer.js";
+import { getFontBasicMetrics } from "./metrics.js";
 import { GlyfTable } from "./glyf.js";
 import { IdentityCMap } from "./cmap.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
@@ -212,6 +213,11 @@ class Glyph {
     this.operatorListId = operatorListId;
     this.isSpace = isSpace;
     this.isInFont = isInFont;
+
+    const category = getCharUnicodeCategory(unicode);
+    this.isWhitespace = category.isWhitespace;
+    this.isZeroWidthDiacritic = category.isZeroWidthDiacritic;
+    this.isInvisibleFormatMark = category.isInvisibleFormatMark;
   }
 
   matchesForCache(
@@ -1068,6 +1074,21 @@ class Font {
     );
 
     fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
+
+    const fontBasicMetricsMap = getFontBasicMetrics();
+    const metrics = fontBasicMetricsMap[fontName];
+    if (metrics) {
+      if (isNaN(this.ascent)) {
+        this.ascent = metrics.ascent / PDF_GLYPH_SPACE_UNITS;
+      }
+      if (isNaN(this.descent)) {
+        this.descent = metrics.descent / PDF_GLYPH_SPACE_UNITS;
+      }
+      if (isNaN(this.capHeight)) {
+        this.capHeight = metrics.capHeight / PDF_GLYPH_SPACE_UNITS;
+      }
+    }
+
     this.bold = fontName.search(/bold/gi) !== -1;
     this.italic =
       fontName.search(/oblique/gi) !== -1 || fontName.search(/italic/gi) !== -1;
@@ -1478,14 +1499,14 @@ class Font {
       }
 
       const format = file.getUint16();
-      file.skip(2 + 2); // length + language
-
       let hasShortCmap = false;
       const mappings = [];
       let j, glyphId;
 
       // TODO(mack): refactor this cmap subtable reading logic out
       if (format === 0) {
+        file.skip(2 + 2); // length + language
+
         for (j = 0; j < 256; j++) {
           const index = file.getByte();
           if (!index) {
@@ -1498,6 +1519,8 @@ class Font {
         }
         hasShortCmap = true;
       } else if (format === 2) {
+        file.skip(2 + 2); // length + language
+
         const subHeaderKeys = [];
         let maxSubHeaderKey = 0;
         // Read subHeaderKeys. If subHeaderKeys[i] === 0, then i is a
@@ -1547,6 +1570,8 @@ class Font {
           }
         }
       } else if (format === 4) {
+        file.skip(2 + 2); // length + language
+
         // re-creating the table in format 4 since the encoding
         // might be changed
         const segCount = file.getUint16() >> 1;
@@ -1609,6 +1634,8 @@ class Font {
           }
         }
       } else if (format === 6) {
+        file.skip(2 + 2); // length + language
+
         // Format 6 is a 2-bytes dense mapping, which means the font data
         // lives glue together even if they are pretty far in the unicode
         // table. (This looks weird, so I can have missed something), this
@@ -1625,6 +1652,26 @@ class Font {
             charCode,
             glyphId,
           });
+        }
+      } else if (format === 12) {
+        file.skip(2 + 4 + 4); // reserved + length + language
+
+        const nGroups = file.getInt32() >>> 0;
+        for (j = 0; j < nGroups; j++) {
+          const startCharCode = file.getInt32() >>> 0;
+          const endCharCode = file.getInt32() >>> 0;
+          let glyphCode = file.getInt32() >>> 0;
+
+          for (
+            let charCode = startCharCode;
+            charCode <= endCharCode;
+            charCode++
+          ) {
+            mappings.push({
+              charCode,
+              glyphId: glyphCode++,
+            });
+          }
         }
       } else {
         warn("cmap table has unsupported format: " + format);
@@ -1959,6 +2006,20 @@ class Font {
       locaEntries.sort((a, b) => {
         return a.index - b.index;
       });
+      // Calculate the endOffset of the "first" glyph correctly when there are
+      // *multiple* empty ones at the start of the data (fixes issue14618.pdf).
+      for (i = 0; i < numGlyphs; i++) {
+        const { offset, endOffset } = locaEntries[i];
+        if (offset !== 0 || endOffset !== 0) {
+          break;
+        }
+        const nextOffset = locaEntries[i + 1].offset;
+        if (nextOffset === 0) {
+          continue;
+        }
+        locaEntries[i].endOffset = nextOffset;
+        break;
+      }
 
       const missingGlyphs = Object.create(null);
       let writeOffset = 0;
@@ -3162,7 +3223,9 @@ class Font {
       }
     }
     width = this.widths[widthCode];
-    width = isNum(width) ? width : this.defaultWidth;
+    if (typeof width !== "number") {
+      width = this.defaultWidth;
+    }
     const vmetric = this.vmetrics && this.vmetrics[widthCode];
 
     let unicode = this.toUnicode.get(charcode) || charcode;

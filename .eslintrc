@@ -20,7 +20,7 @@
 
   "env": {
     "browser": true,
-    "es2021": true,
+    "es2022": true,
     "worker": true,
     "amd": true,
   },
@@ -50,6 +50,7 @@
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-dom-node-remove": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
@@ -71,6 +72,7 @@
     "no-inner-declarations": ["error", "functions"],
     "no-invalid-regexp": "error",
     "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
     "no-obj-calls": "error",
     "no-promise-executor-return": "error",
     "no-regex-spaces": "error",
@@ -175,6 +177,18 @@
       {
         "selector": "CallExpression[callee.name='assert'][arguments.length!=2]",
         "message": "`assert()` must always be invoked with two arguments.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isCmd'][arguments.length<2]",
+        "message": "Use `instanceof Cmd` rather than `isCmd()` with one argument.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isDict'][arguments.length<2]",
+        "message": "Use `instanceof Dict` rather than `isDict()` with one argument.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isName'][arguments.length<2]",
+        "message": "Use `instanceof Name` rather than `isName()` with one argument.",
       },
       {
         "selector": "NewExpression[callee.name='Cmd']",

@@ -20,7 +20,6 @@ import {
   SpreadMode,
 } from "./ui_utils.js";
 
-const DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 const DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
 const ACTIVE_SELECTOR = "pdfPresentationMode";
 const CONTROLS_SELECTOR = "pdfPresentationModeControls";
@@ -42,6 +41,10 @@ const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
  */
 
 class PDFPresentationMode {
+  #state = PresentationModeState.UNKNOWN;
+
+  #args = null;
+
   /**
    * @param {PDFPresentationModeOptions} options
    */
@@ -50,8 +53,6 @@ class PDFPresentationMode {
     this.pdfViewer = pdfViewer;
     this.eventBus = eventBus;
 
-    this.active = false;
-    this.args = null;
     this.contextMenuOpen = false;
     this.mouseScrollTimeStamp = 0;
     this.mouseScrollDelta = 0;
@@ -60,52 +61,58 @@ class PDFPresentationMode {
 
   /**
    * Request the browser to enter fullscreen mode.
-   * @returns {boolean} Indicating if the request was successful.
+   * @returns {Promise<boolean>} Indicating if the request was successful.
    */
-  request() {
-    if (this.switchInProgress || this.active || !this.pdfViewer.pagesCount) {
+  async request() {
+    const { container, pdfViewer } = this;
+
+    if (this.active || !pdfViewer.pagesCount || !container.requestFullscreen) {
       return false;
     }
-    this._addFullscreenChangeListeners();
-    this._setSwitchInProgress();
-    this._notifyStateChange();
+    this.#addFullscreenChangeListeners();
+    this.#notifyStateChange(PresentationModeState.CHANGING);
 
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      if (this.container.requestFullscreen) {
-        this.container.requestFullscreen();
-      } else {
-        return false;
-      }
-    } else {
-      if (this.container.requestFullscreen) {
-        this.container.requestFullscreen();
-      } else if (this.container.mozRequestFullScreen) {
-        this.container.mozRequestFullScreen();
-      } else if (this.container.webkitRequestFullscreen) {
-        this.container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-      } else {
-        return false;
-      }
-    }
+    const promise = container.requestFullscreen();
 
-    this.args = {
-      pageNumber: this.pdfViewer.currentPageNumber,
-      scaleValue: this.pdfViewer.currentScaleValue,
-      scrollMode: this.pdfViewer.scrollMode,
-      spreadMode: this.pdfViewer.spreadMode,
+    this.#args = {
+      pageNumber: pdfViewer.currentPageNumber,
+      scaleValue: pdfViewer.currentScaleValue,
+      scrollMode: pdfViewer.scrollMode,
+      spreadMode: null,
     };
 
-    return true;
+    if (
+      pdfViewer.spreadMode !== SpreadMode.NONE &&
+      !(pdfViewer.pageViewsReady && pdfViewer.hasEqualPageSizes)
+    ) {
+      console.warn(
+        "Ignoring Spread modes when entering PresentationMode, " +
+          "since the document may contain varying page sizes."
+      );
+      this.#args.spreadMode = pdfViewer.spreadMode;
+    }
+
+    try {
+      await promise;
+      return true;
+    } catch (reason) {
+      this.#removeFullscreenChangeListeners();
+      this.#notifyStateChange(PresentationModeState.NORMAL);
+    }
+    return false;
   }
 
-  /**
-   * @private
-   */
-  _mouseWheel(evt) {
+  get active() {
+    return (
+      this.#state === PresentationModeState.CHANGING ||
+      this.#state === PresentationModeState.FULLSCREEN
+    );
+  }
+
+  #mouseWheel(evt) {
     if (!this.active) {
       return;
     }
-
     evt.preventDefault();
 
     const delta = normalizeWheelEventDelta(evt);
@@ -124,13 +131,13 @@ class PDFPresentationMode {
       (this.mouseScrollDelta > 0 && delta < 0) ||
       (this.mouseScrollDelta < 0 && delta > 0)
     ) {
-      this._resetMouseScrollState();
+      this.#resetMouseScrollState();
     }
     this.mouseScrollDelta += delta;
 
     if (Math.abs(this.mouseScrollDelta) >= PAGE_SWITCH_THRESHOLD) {
       const totalDelta = this.mouseScrollDelta;
-      this._resetMouseScrollState();
+      this.#resetMouseScrollState();
       const success =
         totalDelta > 0
           ? this.pdfViewer.previousPage()
@@ -141,83 +148,29 @@ class PDFPresentationMode {
     }
   }
 
-  get isFullscreen() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      return !!document.fullscreenElement;
-    }
-    return !!(
-      document.fullscreenElement ||
-      document.mozFullScreen ||
-      document.webkitIsFullScreen
-    );
+  #notifyStateChange(state) {
+    this.#state = state;
+
+    this.eventBus.dispatch("presentationmodechanged", { source: this, state });
   }
 
-  /**
-   * @private
-   */
-  _notifyStateChange() {
-    let state = PresentationModeState.NORMAL;
-    if (this.switchInProgress) {
-      state = PresentationModeState.CHANGING;
-    } else if (this.active) {
-      state = PresentationModeState.FULLSCREEN;
-    }
-    this.eventBus.dispatch("presentationmodechanged", {
-      source: this,
-      state,
-    });
-  }
-
-  /**
-   * Used to initialize a timeout when requesting Presentation Mode,
-   * i.e. when the browser is requested to enter fullscreen mode.
-   * This timeout is used to prevent the current page from being scrolled
-   * partially, or completely, out of view when entering Presentation Mode.
-   * NOTE: This issue seems limited to certain zoom levels (e.g. page-width).
-   *
-   * @private
-   */
-  _setSwitchInProgress() {
-    if (this.switchInProgress) {
-      clearTimeout(this.switchInProgress);
-    }
-    this.switchInProgress = setTimeout(() => {
-      this._removeFullscreenChangeListeners();
-      delete this.switchInProgress;
-      this._notifyStateChange();
-    }, DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
-  }
-
-  /**
-   * @private
-   */
-  _resetSwitchInProgress() {
-    if (this.switchInProgress) {
-      clearTimeout(this.switchInProgress);
-      delete this.switchInProgress;
-    }
-  }
-
-  /**
-   * @private
-   */
-  _enter() {
-    this.active = true;
-    this._resetSwitchInProgress();
-    this._notifyStateChange();
+  #enter() {
+    this.#notifyStateChange(PresentationModeState.FULLSCREEN);
     this.container.classList.add(ACTIVE_SELECTOR);
 
     // Ensure that the correct page is scrolled into view when entering
     // Presentation Mode, by waiting until fullscreen mode in enabled.
     setTimeout(() => {
       this.pdfViewer.scrollMode = ScrollMode.PAGE;
-      this.pdfViewer.spreadMode = SpreadMode.NONE;
-      this.pdfViewer.currentPageNumber = this.args.pageNumber;
+      if (this.#args.spreadMode !== null) {
+        this.pdfViewer.spreadMode = SpreadMode.NONE;
+      }
+      this.pdfViewer.currentPageNumber = this.#args.pageNumber;
       this.pdfViewer.currentScaleValue = "page-fit";
     }, 0);
 
-    this._addWindowListeners();
-    this._showControls();
+    this.#addWindowListeners();
+    this.#showControls();
     this.contextMenuOpen = false;
 
     // Text selection is disabled in Presentation Mode, thus it's not possible
@@ -226,37 +179,32 @@ class PDFPresentationMode {
     window.getSelection().removeAllRanges();
   }
 
-  /**
-   * @private
-   */
-  _exit() {
+  #exit() {
     const pageNumber = this.pdfViewer.currentPageNumber;
     this.container.classList.remove(ACTIVE_SELECTOR);
 
     // Ensure that the correct page is scrolled into view when exiting
     // Presentation Mode, by waiting until fullscreen mode is disabled.
     setTimeout(() => {
-      this.active = false;
-      this._removeFullscreenChangeListeners();
-      this._notifyStateChange();
+      this.#removeFullscreenChangeListeners();
+      this.#notifyStateChange(PresentationModeState.NORMAL);
 
-      this.pdfViewer.scrollMode = this.args.scrollMode;
-      this.pdfViewer.spreadMode = this.args.spreadMode;
-      this.pdfViewer.currentScaleValue = this.args.scaleValue;
+      this.pdfViewer.scrollMode = this.#args.scrollMode;
+      if (this.#args.spreadMode !== null) {
+        this.pdfViewer.spreadMode = this.#args.spreadMode;
+      }
+      this.pdfViewer.currentScaleValue = this.#args.scaleValue;
       this.pdfViewer.currentPageNumber = pageNumber;
-      this.args = null;
+      this.#args = null;
     }, 0);
 
-    this._removeWindowListeners();
-    this._hideControls();
-    this._resetMouseScrollState();
+    this.#removeWindowListeners();
+    this.#hideControls();
+    this.#resetMouseScrollState();
     this.contextMenuOpen = false;
   }
 
-  /**
-   * @private
-   */
-  _mouseDown(evt) {
+  #mouseDown(evt) {
     if (this.contextMenuOpen) {
       this.contextMenuOpen = false;
       evt.preventDefault();
@@ -280,17 +228,11 @@ class PDFPresentationMode {
     }
   }
 
-  /**
-   * @private
-   */
-  _contextMenu() {
+  #contextMenu() {
     this.contextMenuOpen = true;
   }
 
-  /**
-   * @private
-   */
-  _showControls() {
+  #showControls() {
     if (this.controlsTimeout) {
       clearTimeout(this.controlsTimeout);
     } else {
@@ -302,10 +244,7 @@ class PDFPresentationMode {
     }, DELAY_BEFORE_HIDING_CONTROLS);
   }
 
-  /**
-   * @private
-   */
-  _hideControls() {
+  #hideControls() {
     if (!this.controlsTimeout) {
       return;
     }
@@ -316,18 +255,13 @@ class PDFPresentationMode {
 
   /**
    * Resets the properties used for tracking mouse scrolling events.
-   *
-   * @private
    */
-  _resetMouseScrollState() {
+  #resetMouseScrollState() {
     this.mouseScrollTimeStamp = 0;
     this.mouseScrollDelta = 0;
   }
 
-  /**
-   * @private
-   */
-  _touchSwipe(evt) {
+  #touchSwipe(evt) {
     if (!this.active) {
       return;
     }
@@ -387,16 +321,13 @@ class PDFPresentationMode {
     }
   }
 
-  /**
-   * @private
-   */
-  _addWindowListeners() {
-    this.showControlsBind = this._showControls.bind(this);
-    this.mouseDownBind = this._mouseDown.bind(this);
-    this.mouseWheelBind = this._mouseWheel.bind(this);
-    this.resetMouseScrollStateBind = this._resetMouseScrollState.bind(this);
-    this.contextMenuBind = this._contextMenu.bind(this);
-    this.touchSwipeBind = this._touchSwipe.bind(this);
+  #addWindowListeners() {
+    this.showControlsBind = this.#showControls.bind(this);
+    this.mouseDownBind = this.#mouseDown.bind(this);
+    this.mouseWheelBind = this.#mouseWheel.bind(this);
+    this.resetMouseScrollStateBind = this.#resetMouseScrollState.bind(this);
+    this.contextMenuBind = this.#contextMenu.bind(this);
+    this.touchSwipeBind = this.#touchSwipe.bind(this);
 
     window.addEventListener("mousemove", this.showControlsBind);
     window.addEventListener("mousedown", this.mouseDownBind);
@@ -408,10 +339,7 @@ class PDFPresentationMode {
     window.addEventListener("touchend", this.touchSwipeBind);
   }
 
-  /**
-   * @private
-   */
-  _removeWindowListeners() {
+  #removeWindowListeners() {
     window.removeEventListener("mousemove", this.showControlsBind);
     window.removeEventListener("mousedown", this.mouseDownBind);
     window.removeEventListener("wheel", this.mouseWheelBind, {
@@ -431,49 +359,21 @@ class PDFPresentationMode {
     delete this.touchSwipeBind;
   }
 
-  /**
-   * @private
-   */
-  _fullscreenChange() {
-    if (this.isFullscreen) {
-      this._enter();
+  #fullscreenChange() {
+    if (/* isFullscreen = */ document.fullscreenElement) {
+      this.#enter();
     } else {
-      this._exit();
+      this.#exit();
     }
   }
 
-  /**
-   * @private
-   */
-  _addFullscreenChangeListeners() {
-    this.fullscreenChangeBind = this._fullscreenChange.bind(this);
-
+  #addFullscreenChangeListeners() {
+    this.fullscreenChangeBind = this.#fullscreenChange.bind(this);
     window.addEventListener("fullscreenchange", this.fullscreenChangeBind);
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      window.addEventListener("mozfullscreenchange", this.fullscreenChangeBind);
-      window.addEventListener(
-        "webkitfullscreenchange",
-        this.fullscreenChangeBind
-      );
-    }
   }
 
-  /**
-   * @private
-   */
-  _removeFullscreenChangeListeners() {
+  #removeFullscreenChangeListeners() {
     window.removeEventListener("fullscreenchange", this.fullscreenChangeBind);
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      window.removeEventListener(
-        "mozfullscreenchange",
-        this.fullscreenChangeBind
-      );
-      window.removeEventListener(
-        "webkitfullscreenchange",
-        this.fullscreenChangeBind
-      );
-    }
-
     delete this.fullscreenChangeBind;
   }
 }

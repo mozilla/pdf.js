@@ -13,7 +13,22 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
+/** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./interfaces").IL10n} IL10n */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
+/** @typedef {import("./interfaces").IL10n} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
+// eslint-disable-next-line max-len
+/** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
 import {
   AnnotationMode,
@@ -25,14 +40,15 @@ import {
 import {
   approximateFraction,
   DEFAULT_SCALE,
-  getOutputScale,
+  docStyle,
+  OutputScale,
   RendererType,
+  RenderingStates,
   roundToDivide,
   TextLayerMode,
 } from "./ui_utils.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
-import { RenderingStates } from "./pdf_rendering_queue.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -67,6 +83,9 @@ import { RenderingStates } from "./pdf_rendering_queue.js";
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use -1 for no limit. The default value
  *   is 4096 * 4096 (16 mega-pixels).
+ * @property {Object} [pageColors] - Overwrites background and foreground colors
+ *   with user defined ones in order to improve readability in high contrast
+ *   mode.
  * @property {IL10n} l10n - Localization service.
  */
 
@@ -76,6 +95,8 @@ const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
  * @implements {IRenderableView}
  */
 class PDFPageView {
+  #annotationMode = AnnotationMode.ENABLE_FORMS;
+
   /**
    * @param {PDFPageViewOptions} options
    */
@@ -96,11 +117,12 @@ class PDFPageView {
       options.optionalContentConfigPromise || null;
     this.hasRestrictedScaling = false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
-    this._annotationMode =
+    this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.maxCanvasPixels = options.maxCanvasPixels || MAX_CANVAS_PIXELS;
+    this.pageColors = options.pageColors || null;
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
@@ -122,6 +144,8 @@ class PDFPageView {
     this.resume = null;
     this._renderError = null;
     this._isStandalone = !this.renderingQueue?.hasViewer();
+
+    this._annotationCanvasMap = null;
 
     this.annotationLayer = null;
     this.textLayer = null;
@@ -257,7 +281,7 @@ class PDFPageView {
         case xfaLayerNode:
           continue;
       }
-      div.removeChild(node);
+      node.remove();
     }
     div.removeAttribute("data-loaded");
 
@@ -289,7 +313,10 @@ class PDFPageView {
     }
 
     this.loadingIconDiv = document.createElement("div");
-    this.loadingIconDiv.className = "loadingIcon";
+    this.loadingIconDiv.className = "loadingIcon notVisible";
+    if (this._isStandalone) {
+      this.toggleLoadingIconSpinner(/* viewVisible = */ true);
+    }
     this.loadingIconDiv.setAttribute("role", "img");
     this.l10n.get("loading").then(msg => {
       this.loadingIconDiv?.setAttribute("aria-label", msg);
@@ -298,23 +325,6 @@ class PDFPageView {
   }
 
   update({ scale = 0, rotation = null, optionalContentConfigPromise = null }) {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("GENERIC") &&
-      typeof arguments[0] !== "object"
-    ) {
-      console.error(
-        "PDFPageView.update called with separate parameters, please use an object instead."
-      );
-
-      this.update({
-        scale: arguments[0],
-        rotation: arguments[1],
-        optionalContentConfigPromise: arguments[2],
-      });
-      return;
-    }
-
     this.scale = scale || this.scale;
     if (typeof rotation === "number") {
       this.rotation = rotation; // The rotation may be zero.
@@ -322,16 +332,16 @@ class PDFPageView {
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
     }
-    if (this._isStandalone) {
-      const doc = document.documentElement;
-      doc.style.setProperty("--zoom-factor", this.scale);
-    }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = this.viewport.clone({
       scale: this.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
       rotation: totalRotation,
     });
+
+    if (this._isStandalone) {
+      docStyle.setProperty("--zoom-factor", this.scale);
+    }
 
     if (this.svg) {
       this.cssTransform({
@@ -418,6 +428,7 @@ class PDFPageView {
     ) {
       this.annotationLayer.cancel();
       this.annotationLayer = null;
+      this._annotationCanvasMap = null;
     }
     if (this.xfaLayer && (!keepXfaLayer || !this.xfaLayer.div)) {
       this.xfaLayer.cancel();
@@ -523,6 +534,13 @@ class PDFPageView {
     return this.viewport.convertToPdfPoint(x, y);
   }
 
+  /**
+   * @ignore
+   */
+  toggleLoadingIconSpinner(viewVisible = false) {
+    this.loadingIconDiv?.classList.toggle("notVisible", !viewVisible);
+  }
+
   draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
@@ -534,7 +552,7 @@ class PDFPageView {
       this.renderingState = RenderingStates.FINISHED;
 
       if (this.loadingIconDiv) {
-        div.removeChild(this.loadingIconDiv);
+        this.loadingIconDiv.remove();
         delete this.loadingIconDiv;
       }
       return Promise.reject(new Error("pdfPage is not loaded"));
@@ -580,6 +598,27 @@ class PDFPageView {
     }
     this.textLayer = textLayer;
 
+    if (
+      this.#annotationMode !== AnnotationMode.DISABLE &&
+      this.annotationLayerFactory
+    ) {
+      this._annotationCanvasMap ||= new Map();
+      this.annotationLayer ||=
+        this.annotationLayerFactory.createAnnotationLayerBuilder(
+          div,
+          pdfPage,
+          /* annotationStorage = */ null,
+          this.imageResourcesPath,
+          this.#annotationMode === AnnotationMode.ENABLE_FORMS,
+          this.l10n,
+          /* enableScripting = */ null,
+          /* hasJSActionsPromise = */ null,
+          /* mouseState = */ null,
+          /* fieldObjectsPromise = */ null,
+          /* annotationCanvasMap */ this._annotationCanvasMap
+        );
+    }
+
     if (this.xfaLayer?.div) {
       // The xfa layer needs to stay on top.
       div.appendChild(this.xfaLayer.div);
@@ -617,7 +656,7 @@ class PDFPageView {
       this.renderingState = RenderingStates.FINISHED;
 
       if (this.loadingIconDiv) {
-        div.removeChild(this.loadingIconDiv);
+        this.loadingIconDiv.remove();
         delete this.loadingIconDiv;
       }
       this._resetZoomLayer(/* removeFromDOM = */ true);
@@ -647,11 +686,14 @@ class PDFPageView {
         return finishPaintTask(null).then(() => {
           if (textLayer) {
             const readableStream = pdfPage.streamTextContent({
-              normalizeWhitespace: true,
               includeMarkedContent: true,
             });
             textLayer.setTextContentStream(readableStream);
             textLayer.render();
+          }
+
+          if (this.annotationLayer) {
+            this._renderAnnotationLayer();
           }
         });
       },
@@ -659,28 +701,6 @@ class PDFPageView {
         return finishPaintTask(reason);
       }
     );
-
-    if (
-      this._annotationMode !== AnnotationMode.DISABLE &&
-      this.annotationLayerFactory
-    ) {
-      if (!this.annotationLayer) {
-        this.annotationLayer =
-          this.annotationLayerFactory.createAnnotationLayerBuilder(
-            div,
-            pdfPage,
-            /* annotationStorage = */ null,
-            this.imageResourcesPath,
-            this._annotationMode === AnnotationMode.ENABLE_FORMS,
-            this.l10n,
-            /* enableScripting = */ null,
-            /* hasJSActionsPromise = */ null,
-            /* mouseState = */ null,
-            /* fieldObjectsPromise = */ null
-          );
-      }
-      this._renderAnnotationLayer();
-    }
 
     if (this.xfaLayerFactory) {
       if (!this.xfaLayer) {
@@ -763,16 +783,8 @@ class PDFPageView {
     canvasWrapper.appendChild(canvas);
     this.canvas = canvas;
 
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("MOZCENTRAL || GENERIC")
-    ) {
-      canvas.mozOpaque = true;
-    }
-
     const ctx = canvas.getContext("2d", { alpha: false });
-    const outputScale = getOutputScale(ctx);
-    this.outputScale = outputScale;
+    const outputScale = (this.outputScale = new OutputScale());
 
     if (this.useOnlyCssZoom) {
       const actualSizeViewport = viewport.clone({
@@ -782,7 +794,6 @@ class PDFPageView {
       // of the page.
       outputScale.sx *= actualSizeViewport.width / viewport.width;
       outputScale.sy *= actualSizeViewport.height / viewport.height;
-      outputScale.scaled = true;
     }
 
     if (this.maxCanvasPixels > 0) {
@@ -791,7 +802,6 @@ class PDFPageView {
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
         outputScale.sy = maxScale;
-        outputScale.scaled = true;
         this.hasRestrictedScaling = true;
       } else {
         this.hasRestrictedScaling = false;
@@ -804,19 +814,22 @@ class PDFPageView {
     canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
     canvas.style.width = roundToDivide(viewport.width, sfx[1]) + "px";
     canvas.style.height = roundToDivide(viewport.height, sfy[1]) + "px";
+
     // Add the viewport so it's known what it was originally drawn with.
     this.paintedViewportMap.set(canvas, viewport);
 
     // Rendering area
-    const transform = !outputScale.scaled
-      ? null
-      : [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
+    const transform = outputScale.scaled
+      ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
+      : null;
     const renderContext = {
       canvasContext: ctx,
       transform,
       viewport: this.viewport,
-      annotationMode: this._annotationMode,
+      annotationMode: this.#annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
+      annotationCanvasMap: this._annotationCanvasMap,
+      pageColors: this.pageColors,
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
@@ -871,15 +884,11 @@ class PDFPageView {
     });
     const promise = pdfPage
       .getOperatorList({
-        annotationMode: this._annotationMode,
+        annotationMode: this.#annotationMode,
       })
       .then(opList => {
         ensureNotCancelled();
-        const svgGfx = new SVGGraphics(
-          pdfPage.commonObjs,
-          pdfPage.objs,
-          /* forceDataSchema = */ compatibilityParams.disableCreateObjectURL
-        );
+        const svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
         return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
           ensureNotCancelled();
           this.svg = svg;
