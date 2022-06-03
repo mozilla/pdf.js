@@ -2502,7 +2502,7 @@ class PartialEvaluator {
 
       return {
         str: bidiResult.str,
-        rawStr: textChunk.rawStr,
+        rawStr: textChunk.rawStr.map(tup => [...tup]),
         dir: bidiResult.dir,
         width: Math.abs(textChunk.totalWidth),
         height: Math.abs(textChunk.totalHeight),
@@ -2837,7 +2837,10 @@ class PartialEvaluator {
           textChunk.str.push(" ");
         }
         textChunk.str.push(glyphUnicode);
-        textChunk.rawStr.push([glyphUnicode, !font.vertical ? textChunk.width : textChunk.height]);
+        textChunk.rawStr.push([
+          glyphUnicode,
+          !font.vertical ? textChunk.width : textChunk.height,
+        ]);
 
         if (charSpacing) {
           if (!font.vertical) {
@@ -2879,7 +2882,11 @@ class PartialEvaluator {
         if (textContentItem.initialized) {
           resetLastChars();
           textContentItem.str.push(" ");
-          textContentItem.rawStr.push([" ", (!font.vertical ? textContentItem.width : textContentItem.height) + width]);
+          textContentItem.rawStr.push([
+            " ",
+            (!font.vertical ? textContentItem.width : textContentItem.height) +
+              width,
+          ]);
         }
         return false;
       }
@@ -2919,11 +2926,17 @@ class PartialEvaluator {
       if (!textContentItem.vertical) {
         textContentItem.totalWidth +=
           textContentItem.width * textContentItem.textAdvanceScale;
-        textContentItem.rawStr = textContentItem.rawStr.map(tup => [tup[0], tup[1] * textContentItem.textAdvanceScale]);
+        textContentItem.rawStr = textContentItem.rawStr.map(tup => [
+          tup[0],
+          tup[1] * textContentItem.textAdvanceScale,
+        ]);
       } else {
         textContentItem.totalHeight +=
           textContentItem.height * textContentItem.textAdvanceScale;
-        textContentItem.rawStr = textContentItem.rawStr.map(tup => [tup[0], tup[1] * textContentItem.textAdvanceScale]);
+        textContentItem.rawStr = textContentItem.rawStr.map(tup => [
+          tup[0],
+          tup[1] * textContentItem.textAdvanceScale,
+        ]);
       }
 
       textContent.items.push(runBidiTransform(textContentItem));
