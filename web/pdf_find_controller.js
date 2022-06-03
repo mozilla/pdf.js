@@ -347,7 +347,7 @@ class PDFFindController {
    * Set a reference to the PDF document in order to search it.
    * Note that searching is not possible if this method is not called.
    *
-   * @param {PDFDocumentProxy} pdfDocument - The PDF document to search.
+   * @param {?PDFDocumentProxy} pdfDocument - The PDF document to search.
    */
   setDocument(pdfDocument) {
     if (this._pdfDocument) {

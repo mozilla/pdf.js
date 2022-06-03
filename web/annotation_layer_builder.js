@@ -32,7 +32,7 @@ import { NullL10n } from "./l10n_utils.js";
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
  * @property {IPDFLinkService} linkService
- * @property {IDownloadManager} downloadManager
+ * @property {?IDownloadManager} downloadManager
  * @property {IL10n} l10n - Localization service.
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]

@@ -25,7 +25,7 @@
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
-/** @typedef {import("./interfaces").IL10n} IPDFXfaLayerFactory */
+/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
@@ -60,8 +60,8 @@ import { NullL10n } from "./l10n_utils.js";
  * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise] -
  *   A promise that is resolved with an {@link OptionalContentConfig} instance.
  *   The default value is `null`.
- * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
- * @property {IPDFTextLayerFactory} textLayerFactory
+ * @property {?PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {?IPDFTextLayerFactory} textLayerFactory
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created, and if the improved text selection
  *   behaviour is enabled. The constants from {TextLayerMode} should be used.
@@ -72,7 +72,7 @@ import { NullL10n } from "./l10n_utils.js";
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
- * @property {IPDFXfaLayerFactory} xfaLayerFactory
+ * @property {?IPDFXfaLayerFactory} xfaLayerFactory
  * @property {IPDFStructTreeLayerFactory} structTreeLayerFactory
  * @property {Object} [textHighlighterFactory]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly

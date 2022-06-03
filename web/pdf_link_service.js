@@ -506,9 +506,6 @@ class PDFLinkService {
     this.#pagesRefCache.set(refStr, pageNum);
   }
 
-  /**
-   * @ignore
-   */
   _cachedPageNumber(pageRef) {
     if (!pageRef) {
       return null;
