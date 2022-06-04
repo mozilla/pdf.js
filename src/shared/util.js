@@ -55,7 +55,7 @@ const AnnotationEditorPrefix = "pdfjs_internal_editor_";
 
 const AnnotationEditorType = {
   NONE: 0,
-  FREETEXT: 1,
+  FREETEXT: 3,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.

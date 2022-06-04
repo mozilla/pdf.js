@@ -69,6 +69,10 @@ class AnnotationStorage {
    */
   removeKey(key) {
     this._storage.delete(key);
+
+    if (this._storage.size === 0) {
+      this.resetModified();
+    }
   }
 
   /**
