@@ -44,6 +44,15 @@ class OverlayManager {
     ) {
       const dialogPolyfill = require("dialog-polyfill/dist/dialog-polyfill.js");
       dialogPolyfill.registerDialog(dialog);
+
+      if (!this._dialogPolyfillCSS) {
+        this._dialogPolyfillCSS = true;
+
+        const style = document.createElement("style");
+        style.textContent = PDFJSDev.eval("DIALOG_POLYFILL_CSS");
+
+        document.head.insertBefore(style, document.head.firstElementChild);
+      }
     }
 
     dialog.addEventListener("cancel", evt => {
