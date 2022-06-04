@@ -23,6 +23,7 @@
 import { AnnotationEditorType, Util } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
+import { InkEditor } from "./ink.js";
 import { PixelsPerInch } from "../display_utils.js";
 
 /**
@@ -298,6 +299,8 @@ class AnnotationEditorLayer {
     switch (this.#uiManager.getMode()) {
       case AnnotationEditorType.FREETEXT:
         return new FreeTextEditor(params);
+      case AnnotationEditorType.INK:
+        return new InkEditor(params);
     }
     return null;
   }
