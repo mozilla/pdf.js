@@ -96,6 +96,7 @@ function getViewerConfiguration() {
       editorModeButtons: document.getElementById("editorModeButtons"),
       editorNoneButton: document.getElementById("editorNone"),
       editorFreeTextButton: document.getElementById("editorFreeText"),
+      editorInkButton: document.getElementById("editorInk"),
       presentationModeButton: document.getElementById("presentationMode"),
       download: document.getElementById("download"),
       viewBookmark: document.getElementById("viewBookmark"),

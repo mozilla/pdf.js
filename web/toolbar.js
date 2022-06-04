@@ -84,6 +84,11 @@ class Toolbar {
         eventName: "switchannotationeditormode",
         eventDetails: { mode: AnnotationEditorType.FREETEXT },
       },
+      {
+        element: options.editorInkButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: { mode: AnnotationEditorType.INK },
+      },
     ];
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({ element: options.openFile, eventName: "openfile" });
@@ -99,6 +104,7 @@ class Toolbar {
       zoomOut: options.zoomOut,
       editorNoneButton: options.editorNoneButton,
       editorFreeTextButton: options.editorFreeTextButton,
+      editorInkButton: options.editorInkButton,
     };
 
     this._wasLocalized = false;
@@ -201,11 +207,16 @@ class Toolbar {
     this.#bindEditorToolsListener(options);
   }
 
-  #bindEditorToolsListener({ editorNoneButton, editorFreeTextButton }) {
+  #bindEditorToolsListener({
+    editorNoneButton,
+    editorFreeTextButton,
+    editorInkButton,
+  }) {
     this.eventBus._on("annotationeditormodechanged", evt => {
       const editorButtons = [
         [AnnotationEditorType.NONE, editorNoneButton],
         [AnnotationEditorType.FREETEXT, editorFreeTextButton],
+        [AnnotationEditorType.INK, editorInkButton],
       ];
 
       for (const [mode, button] of editorButtons) {
@@ -276,10 +287,12 @@ class Toolbar {
   }
 
   updateEditorModeButtonsState(disabled = false) {
-    const { editorNoneButton, editorFreeTextButton } = this.items;
+    const { editorNoneButton, editorFreeTextButton, editorInkButton } =
+      this.items;
 
     editorNoneButton.disabled = disabled;
     editorFreeTextButton.disabled = disabled;
+    editorInkButton.disabled = disabled;
   }
 
   /**
