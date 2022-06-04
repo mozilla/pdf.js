@@ -1003,6 +1003,11 @@ const PDFViewerApplication = {
           } else if (reason instanceof UnexpectedResponseException) {
             key = "unexpected_response_error";
           }
+          // #1401 modified by ngx-extended-pdf-viewer
+          if (PDFViewerApplication.onError) {
+            PDFViewerApplication.onError(reason);
+          }
+          // end of modification
           return this.l10n.get(key).then(msg => {
             this._documentError(msg, { message: reason?.message });
             throw reason;
@@ -1400,6 +1405,11 @@ const PDFViewerApplication = {
         this._initializeAutoPrint(pdfDocument, openActionPromise);
       },
       reason => {
+        // #1401 modified by ngx-extended-pdf-viewer
+        if (PDFViewerApplication.onError) {
+          PDFViewerApplication.onError(reason);
+        }
+        // end of modification
         this.l10n.get("loading_error").then(msg => {
           this._documentError(msg, { message: reason?.message });
         });
@@ -2195,6 +2205,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         throw new Error("file origin does not match viewer's");
       }
     } catch (ex) {
+      // #1401 modified by ngx-extended-pdf-viewer
+      if (PDFViewerApplication.onError) {
+        PDFViewerApplication.onError(ex);
+      }
+      // end of modification
       PDFViewerApplication.l10n.get("loading_error").then(msg => {
         PDFViewerApplication._documentError(msg, { message: ex?.message });
       });
@@ -2338,6 +2353,11 @@ function webViewerInitialized() {
       throw new Error("Not implemented: webViewerInitialized");
     }
   } catch (reason) {
+    // #1401 modified by ngx-extended-pdf-viewer
+    if (PDFViewerApplication.onError) {
+      PDFViewerApplication.onError(reason);
+    }
+    // end of modification
     PDFViewerApplication.l10n.get("loading_error").then(msg => {
       PDFViewerApplication._documentError(msg, reason);
     });
