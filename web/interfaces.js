@@ -19,6 +19,8 @@
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_layer_builder").AnnotationLayerBuilder} AnnotationLayerBuilder */
+// eslint-disable-next-line max-len
+/** @typedef {import("./annotation_editor_layer_builder").AnnotationEditorLayerBuilder} AnnotationEditorLayerBuilder */
 /** @typedef {import("./event_utils").EventBus} EventBus */
 // eslint-disable-next-line max-len
 /** @typedef {import("./struct_tree_builder").StructTreeLayerBuilder} StructTreeLayerBuilder */
@@ -211,6 +213,26 @@ class IPDFAnnotationLayerFactory {
 /**
  * @interface
  */
+class IPDFAnnotationEditorLayerFactory {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPageProxy} pdfPage
+   * @param {IL10n} l10n
+   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
+   * @returns {AnnotationEditorLayerBuilder}
+   */
+  createAnnotationEditorLayerBuilder(
+    pageDiv,
+    pdfPage,
+    l10n = undefined,
+    annotationStorage = null
+  ) {}
+}
+
+/**
+ * @interface
+ */
 class IPDFXfaLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
@@ -307,6 +329,7 @@ class IL10n {
 export {
   IDownloadManager,
   IL10n,
+  IPDFAnnotationEditorLayerFactory,
   IPDFAnnotationLayerFactory,
   IPDFLinkService,
   IPDFStructTreeLayerFactory,

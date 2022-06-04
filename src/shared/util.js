@@ -51,6 +51,13 @@ const AnnotationMode = {
   ENABLE_STORAGE: 3,
 };
 
+const AnnotationEditorPrefix = "pdfjs_internal_editor_";
+
+const AnnotationEditorType = {
+  NONE: 0,
+  FREETEXT: 1,
+};
+
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
 const PermissionFlag = {
   PRINT: 0x04,
@@ -1135,6 +1142,8 @@ export {
   AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
+  AnnotationEditorPrefix,
+  AnnotationEditorType,
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationMarkedState,

@@ -22,6 +22,7 @@ import {
   MIN_SCALE,
   noContextMenuHandler,
 } from "./ui_utils.js";
+import { AnnotationEditorType } from "pdfjs-lib";
 
 const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
 
@@ -43,6 +44,9 @@ const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
  * @property {HTMLButtonElement} openFile - Button to open a new document.
  * @property {HTMLButtonElement} presentationModeButton - Button to switch to
  *   presentation mode.
+ * @property {HTMLButtonElement} editorNoneButton - Button to disable editing.
+ * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to Free
+ *   Text edition.
  * @property {HTMLButtonElement} download - Button to download the document.
  * @property {HTMLAnchorElement} viewBookmark - Button to obtain a bookmark link
  *   to the current location in the document.
@@ -70,6 +74,16 @@ class Toolbar {
       },
       { element: options.download, eventName: "download" },
       { element: options.viewBookmark, eventName: null },
+      {
+        element: options.editorNoneButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: { mode: AnnotationEditorType.NONE },
+      },
+      {
+        element: options.editorFreeTextButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: { mode: AnnotationEditorType.FREETEXT },
+      },
     ];
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.buttons.push({ element: options.openFile, eventName: "openfile" });
@@ -89,7 +103,7 @@ class Toolbar {
     this.reset();
 
     // Bind the event listeners for click and various other actions.
-    this._bindListeners();
+    this._bindListeners(options);
   }
 
   setPageNumber(pageNumber, pageLabel) {
@@ -121,15 +135,21 @@ class Toolbar {
     this.updateLoadingIndicatorState();
   }
 
-  _bindListeners() {
+  _bindListeners(options) {
     const { pageNumber, scaleSelect } = this.items;
     const self = this;
 
     // The buttons within the toolbar.
-    for (const { element, eventName } of this.buttons) {
+    for (const { element, eventName, eventDetails } of this.buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          this.eventBus.dispatch(eventName, { source: this });
+          const details = { source: this };
+          if (eventDetails) {
+            for (const property in eventDetails) {
+              details[property] = eventDetails[property];
+            }
+          }
+          this.eventBus.dispatch(eventName, details);
         }
       });
     }
@@ -173,6 +193,23 @@ class Toolbar {
       this._wasLocalized = true;
       this.#adjustScaleWidth();
       this._updateUIState(true);
+    });
+
+    this.#bindEditorToolsListener(options);
+  }
+
+  #bindEditorToolsListener({ editorNoneButton, editorFreeTextButton }) {
+    this.eventBus._on("annotationeditormodechanged", evt => {
+      const editorButtons = [
+        [AnnotationEditorType.NONE, editorNoneButton],
+        [AnnotationEditorType.FREETEXT, editorFreeTextButton],
+      ];
+
+      for (const [mode, button] of editorButtons) {
+        const checked = mode === evt.mode;
+        button.classList.toggle("toggled", checked);
+        button.setAttribute("aria-checked", checked);
+      }
     });
   }
 

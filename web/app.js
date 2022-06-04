@@ -525,6 +525,7 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
+      annotationEditorEnabled: AppOptions.get("annotationEditorEnabled"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
@@ -558,6 +559,10 @@ const PDFViewerApplication = {
 
     if (!this.supportsIntegratedFind) {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
+    }
+
+    if (AppOptions.get("annotationEditorEnabled")) {
+      document.getElementById("editorModeButtons").classList.remove("hidden");
     }
 
     this.pdfDocumentProperties = new PDFDocumentProperties(
@@ -1878,6 +1883,10 @@ const PDFViewerApplication = {
     eventBus._on("namedaction", webViewerNamedAction);
     eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
     eventBus._on("presentationmode", webViewerPresentationMode);
+    eventBus._on(
+      "switchannotationeditormode",
+      webViewerSwitchAnnotationEditorMode
+    );
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -2458,6 +2467,13 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
 function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
+}
+function webViewerSwitchAnnotationEditorMode(evt) {
+  if (evt.toggle) {
+    PDFViewerApplication.pdfViewer.annotionEditorEnabled = true;
+  } else {
+    PDFViewerApplication.pdfViewer.annotationEditorMode = evt.mode;
+  }
 }
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();

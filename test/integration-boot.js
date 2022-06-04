@@ -30,6 +30,7 @@ async function runTests(results) {
       "annotation_spec.js",
       "accessibility_spec.js",
       "find_spec.js",
+      "freetext_editor_spec.js",
     ],
   });
 
