@@ -85,6 +85,10 @@ const PagesCountLimit = {
   PAUSE_EAGER_PAGE_INIT: 250,
 };
 
+function isValidAnnotationEditorMode(mode) {
+  return Object.values(AnnotationEditorType).includes(mode);
+}
+
 /**
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
@@ -2122,28 +2126,24 @@ class BaseViewer {
   }
 
   /**
-   * @param {number} mode - Annotation Editor mode (None, FreeText, Ink, ...)
+   * @param {number} mode - AnnotationEditor mode (None, FreeText, Ink, ...)
    */
   set annotationEditorMode(mode) {
     if (!this.#annotationEditorUIManager) {
       throw new Error(`The AnnotationEditor is not enabled.`);
     }
-
     if (this.#annotationEditorMode === mode) {
-      return;
+      return; // The AnnotationEditor mode didn't change.
     }
-
-    if (!Object.values(AnnotationEditorType).includes(mode)) {
+    if (!isValidAnnotationEditorMode(mode)) {
       throw new Error(`Invalid AnnotationEditor mode: ${mode}`);
     }
-
-    // If the mode is the same as before, it means that this mode is disabled
-    // and consequently the mode is NONE.
     this.#annotationEditorMode = mode;
     this.eventBus.dispatch("annotationeditormodechanged", {
       source: this,
       mode,
     });
+
     this.#annotationEditorUIManager.updateMode(mode);
   }
 }
