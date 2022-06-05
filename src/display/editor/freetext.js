@@ -203,12 +203,12 @@ class FreeTextEditor extends AnnotationEditor {
     const rect = this.div.getBoundingClientRect();
     const [x1, y1] = Util.applyTransform(
       [this.x, this.y + rect.height],
-      this.parent.viewport.inverseTransform
+      this.parent.inverseViewportTransform
     );
 
     const [x2, y2] = Util.applyTransform(
       [this.x + rect.width, this.y],
-      this.parent.viewport.inverseTransform
+      this.parent.inverseViewportTransform
     );
 
     return {
