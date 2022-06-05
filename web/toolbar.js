@@ -97,6 +97,8 @@ class Toolbar {
       next: options.next,
       zoomIn: options.zoomIn,
       zoomOut: options.zoomOut,
+      editorNoneButton: options.editorNoneButton,
+      editorFreeTextButton: options.editorFreeTextButton,
     };
 
     this._wasLocalized = false;
@@ -133,6 +135,7 @@ class Toolbar {
     this.pageScale = DEFAULT_SCALE;
     this._updateUIState(true);
     this.updateLoadingIndicatorState();
+    this.updateEditorModeButtonsState();
   }
 
   _bindListeners(options) {
@@ -267,9 +270,16 @@ class Toolbar {
   }
 
   updateLoadingIndicatorState(loading = false) {
-    const pageNumberInput = this.items.pageNumber;
+    const { pageNumber } = this.items;
 
-    pageNumberInput.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
+    pageNumber.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
+  }
+
+  updateEditorModeButtonsState(disabled = false) {
+    const { editorNoneButton, editorFreeTextButton } = this.items;
+
+    editorNoneButton.disabled = disabled;
+    editorFreeTextButton.disabled = disabled;
   }
 
   /**

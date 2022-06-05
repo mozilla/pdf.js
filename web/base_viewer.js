@@ -362,6 +362,13 @@ class BaseViewer {
   /**
    * @type {boolean}
    */
+  get enableAnnotationEditor() {
+    return !!this.#annotationEditorUIManager;
+  }
+
+  /**
+   * @type {boolean}
+   */
   get enableScripting() {
     return !!this._scriptingManager;
   }
@@ -719,9 +726,8 @@ class BaseViewer {
         const annotationLayerFactory =
           this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
-        const annotationEditorLayerFactory = this.#annotationEditorUIManager
-          ? this
-          : null;
+        const annotationEditorLayerFactory =
+          this.#annotationEditorUIManager && !isPureXfa ? this : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
