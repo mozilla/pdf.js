@@ -3132,10 +3132,9 @@ class CanvasGraphics {
 
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
-    for (let i = 0, ii = images.length; i < ii; i++) {
-      const image = images[i];
-      const width = image.width,
-        height = image.height;
+
+    for (const image of images) {
+      const { data, width, height, transform } = image;
 
       const maskCanvas = this.cachedCanvases.getCanvas(
         "maskCanvas",
@@ -3146,7 +3145,8 @@ class CanvasGraphics {
       const maskCtx = maskCanvas.context;
       maskCtx.save();
 
-      putBinaryImageMask(maskCtx, image);
+      const img = this.getObject(data, image);
+      putBinaryImageMask(maskCtx, img);
 
       maskCtx.globalCompositeOperation = "source-in";
 
@@ -3163,7 +3163,7 @@ class CanvasGraphics {
       maskCtx.restore();
 
       ctx.save();
-      ctx.transform.apply(ctx, image.transform);
+      ctx.transform.apply(ctx, transform);
       ctx.scale(1, -1);
       drawImageAtIntegerCoords(
         ctx,
