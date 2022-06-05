@@ -142,11 +142,8 @@ class AnnotationStorage {
 
     const clone = new Map();
     for (const [key, value] of this._storage) {
-      if (value instanceof AnnotationEditor) {
-        clone.set(key, value.serialize());
-      } else {
-        clone.set(key, value);
-      }
+      const val = value instanceof AnnotationEditor ? value.serialize() : value;
+      clone.set(key, val);
     }
     return clone;
   }
@@ -159,7 +156,8 @@ class AnnotationStorage {
     const hash = new MurmurHash3_64();
 
     for (const [key, value] of this._storage) {
-      hash.update(`${key}:${JSON.stringify(value)}`);
+      const val = value instanceof AnnotationEditor ? value.serialize() : value;
+      hash.update(`${key}:${JSON.stringify(val)}`);
     }
     return hash.hexdigest();
   }
