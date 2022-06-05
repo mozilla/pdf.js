@@ -561,10 +561,6 @@ const PDFViewerApplication = {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
     }
 
-    if (AppOptions.get("annotationEditorEnabled")) {
-      document.getElementById("editorModeButtons").classList.remove("hidden");
-    }
-
     this.pdfDocumentProperties = new PDFDocumentProperties(
       appConfig.documentProperties,
       this.overlayManager,
@@ -1195,6 +1191,11 @@ const PDFViewerApplication = {
 
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
+
+    if (pdfDocument.isPureXfa) {
+      console.warn("Warning: XFA-editing is not implemented.");
+      this.toolbar.updateEditorModeButtonsState(/* disabled = */ true);
+    }
 
     let baseDocumentUrl;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -2235,6 +2236,10 @@ function webViewerInitialized() {
 
   if (PDFViewerApplication.supportsIntegratedFind) {
     appConfig.toolbar.viewFind.classList.add("hidden");
+  }
+
+  if (PDFViewerApplication.pdfViewer.enableAnnotationEditor) {
+    appConfig.toolbar.editorModeButtons.classList.remove("hidden");
   }
 
   appConfig.mainContainer.addEventListener(
