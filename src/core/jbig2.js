@@ -1473,8 +1473,7 @@ function processSegment(segment, visitor) {
       break;
     default:
       throw new Jbig2Error(
-        `segment type ${header.typeName}(${header.type})` +
-          " is not implemented"
+        `segment type ${header.typeName}(${header.type}) is not implemented`
       );
   }
   const callbackName = "on" + header.typeName;
@@ -1500,6 +1499,9 @@ function parseJbig2Chunks(chunks) {
 }
 
 function parseJbig2(data) {
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("IMAGE_DECODERS")) {
+    throw new Error("Not implemented: parseJbig2");
+  }
   const end = data.length;
   let position = 0;
 
@@ -2560,6 +2562,9 @@ class Jbig2Image {
   }
 
   parse(data) {
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("IMAGE_DECODERS")) {
+      throw new Error("Not implemented: Jbig2Image.parse");
+    }
     const { imgData, width, height } = parseJbig2(data);
     this.width = width;
     this.height = height;
