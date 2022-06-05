@@ -190,6 +190,8 @@ function createWebpackConfig(
     DEFAULT_PREFERENCES: defaultPreferencesDir
       ? getDefaultPreferences(defaultPreferencesDir)
       : {},
+    DIALOG_POLYFILL_CSS:
+      defines.GENERIC && !defines.SKIP_BABEL ? getDialogPolyfillCSS() : "",
   });
   const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
@@ -734,6 +736,12 @@ function getDefaultPreferences(dir) {
     "web/app_options.js");
 
   return AppOptions.getAll(OptionKind.PREFERENCE);
+}
+
+function getDialogPolyfillCSS() {
+  return fs
+    .readFileSync("node_modules/dialog-polyfill/dist/dialog-polyfill.css")
+    .toString();
 }
 
 gulp.task("locale", function () {
@@ -1519,6 +1527,8 @@ function buildLib(defines, dir) {
     DEFAULT_PREFERENCES: getDefaultPreferences(
       defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
     ),
+    DIALOG_POLYFILL_CSS:
+      defines.GENERIC && !defines.SKIP_BABEL ? getDialogPolyfillCSS() : "",
   });
 
   const inputStream = merge([
