@@ -29,11 +29,24 @@ const GenericCom = {};
 
 class GenericPreferences extends BasePreferences {
   async _writeToStorage(prefObj) {
-    localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
+    // #1313 modified by ngx-extended-pdf-viewer
+    try {
+      localStorage.setItem("pdfjs.preferences", JSON.stringify(prefObj));
+    } catch (safariSecurityException) {
+      // localStorage is not available on Safari
+    }
+    // #1313 end of modification by ngx-extended-pdf-viewer
   }
 
   async _readFromStorage(prefObj) {
-    return JSON.parse(localStorage.getItem("pdfjs.preferences"));
+    // #1313 modified by ngx-extended-pdf-viewer
+    try {
+      return JSON.parse(localStorage.getItem("pdfjs.preferences"));
+    } catch (safariSecurityException) {
+      // localStorage is not available on Safari
+      return {};
+    }
+    // #1313 end of modification by ngx-extended-pdf-viewer
   }
 }
 
