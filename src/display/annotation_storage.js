@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { AnnotationEditor } from "./editor/editor.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { objectFromMap } from "../shared/util.js";
 
@@ -93,6 +94,18 @@ class AnnotationStorage {
   }
 
   /**
+   * Remove a value from the storage.
+   * @param {string} key
+   */
+  removeKey(key) {
+    this._storage.delete(key);
+
+    if (this._storage.size === 0) {
+      this.resetModified();
+    }
+  }
+
+  /**
    * Set the value for a given key
    *
    * @public
@@ -128,19 +141,21 @@ class AnnotationStorage {
     if (modified) {
       this._setModified();
       // #718 modified by ngx-extended-pdf-viewer
-      if (fieldname || radioButtonField) {
-        if (window.setFormValue) {
-          if (value.items) {
-            window.setFormValue(fieldname, value.items);
-          } else if (value.emitMessage === false) {
-            // ignore this field
-          } else if (value.radioValue) {
-            window.setFormValue(fieldname, value.radioValue);
-          } else if (value.exportValue) { // #1183 modified by ngx-extended-pdf-viewer
-            window.setFormValue(fieldname, value.exportValue);
-          } else {
-            for (const val of Object.values(value)) {
-              window.setFormValue(fieldname, val);
+      if (fieldname?.constructor.name !== "FreeTextEditor") {
+        if (fieldname || radioButtonField) {
+          if (window.setFormValue) {
+            if (value.items) {
+              window.setFormValue(fieldname, value.items);
+            } else if (value.emitMessage === false) {
+              // ignore this field
+            } else if (value.radioValue) {
+              window.setFormValue(fieldname, value.radioValue);
+            } else if (value.exportValue) { // #1183 modified by ngx-extended-pdf-viewer
+              window.setFormValue(fieldname, value.exportValue);
+            } else {
+              for (const val of Object.values(value)) {
+                window.setFormValue(fieldname, val);
+              }
             }
           }
         }
@@ -183,7 +198,16 @@ class AnnotationStorage {
    * @ignore
    */
   get serializable() {
-    return this._storage.size > 0 ? this._storage : null;
+    if (this._storage.size === 0) {
+      return null;
+    }
+
+    const clone = new Map();
+    for (const [key, value] of this._storage) {
+      const val = value instanceof AnnotationEditor ? value.serialize() : value;
+      clone.set(key, val);
+    }
+    return clone;
   }
 
   /**
@@ -194,7 +218,8 @@ class AnnotationStorage {
     const hash = new MurmurHash3_64();
 
     for (const [key, value] of this._storage) {
-      hash.update(`${key}:${JSON.stringify(value)}`);
+      const val = value instanceof AnnotationEditor ? value.serialize() : value;
+      hash.update(`${key}:${JSON.stringify(val)}`);
     }
     return hash.hexdigest();
   }

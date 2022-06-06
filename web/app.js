@@ -534,6 +534,7 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
+      annotationEditorEnabled: AppOptions.get("annotationEditorEnabled"),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       removePageBorders: AppOptions.get("removePageBorders"), // #194
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
@@ -1248,6 +1249,11 @@ const PDFViewerApplication = {
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
 
+    if (pdfDocument.isPureXfa) {
+      console.warn("Warning: XFA-editing is not implemented.");
+      this.toolbar.updateEditorModeButtonsState(/* disabled = */ true);
+    }
+
     let baseDocumentUrl;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       baseDocumentUrl = null;
@@ -1960,6 +1966,10 @@ const PDFViewerApplication = {
     eventBus._on("namedaction", webViewerNamedAction);
     eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
     eventBus._on("presentationmode", webViewerPresentationMode);
+    eventBus._on(
+      "switchannotationeditormode",
+      webViewerSwitchAnnotationEditorMode
+    );
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -2329,6 +2339,10 @@ function webViewerInitialized() {
     appConfig.toolbar.viewFind.classList.add("hidden");
   }
 
+  if (PDFViewerApplication.pdfViewer.enableAnnotationEditor) {
+    appConfig.toolbar.editorModeButtons.classList.remove("hidden");
+  }
+
   appConfig.mainContainer.addEventListener(
     "transitionend",
     function (evt) {
@@ -2578,6 +2592,13 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
 function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
+}
+function webViewerSwitchAnnotationEditorMode(evt) {
+  if (evt.toggle) {
+    PDFViewerApplication.pdfViewer.annotionEditorEnabled = true;
+  } else {
+    PDFViewerApplication.pdfViewer.annotationEditorMode = evt.mode;
+  }
 }
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();

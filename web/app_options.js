@@ -53,6 +53,11 @@ const OptionKind = {
  *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
+  annotationEditorEnabled: {
+    /** @type {boolean} */
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   annotationMode: {
     /** @type {number} */
     value: 2,

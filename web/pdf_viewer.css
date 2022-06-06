@@ -15,6 +15,7 @@
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
 @import url(xfa_layer_builder.css);
+@import url(annotation_editor_layer_builder.css);
 
 :root {
   --viewer-container-height: 0;
