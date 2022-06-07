@@ -1363,6 +1363,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
+    data.required = this.hasFieldFlag(AnnotationFieldFlag.REQUIRED);
     data.hidden = this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN);
   }
 
