@@ -17,6 +17,16 @@
   --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
 }
 
+@media (forced-colors: active) {
+  .annotationLayer .textWidgetAnnotation input:required,
+  .annotationLayer .textWidgetAnnotation textarea:required,
+  .annotationLayer .choiceWidgetAnnotation select:required,
+  .annotationLayer .buttonWidgetAnnotation.checkBox input:required,
+  .annotationLayer .buttonWidgetAnnotation.radioButton input:required {
+    outline: 1.5px solid selectedItem;
+  }
+}
+
 .annotationLayer section {
   position: absolute;
   text-align: initial;
@@ -64,6 +74,14 @@
   margin: 0;
   vertical-align: top;
   width: 100%;
+}
+
+.annotationLayer .textWidgetAnnotation input:required,
+.annotationLayer .textWidgetAnnotation textarea:required,
+.annotationLayer .choiceWidgetAnnotation select:required,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:required,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:required {
+  outline: 1.5px solid red;
 }
 
 .annotationLayer .choiceWidgetAnnotation select option {
@@ -116,7 +134,7 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
 .annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
 .annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
-  background-color: rgba(0, 0, 0, 1);
+  background-color: CanvasText;
   content: "";
   display: block;
   position: absolute;

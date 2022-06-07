@@ -6553,5 +6553,12 @@
       "link": true,
       "type": "eq",
       "annotations": true
+   },
+   { "id": "bug1724918",
+      "file": "pdfs/bug1724918.pdf",
+      "md5": "ab30269570c8ff2c9f8eb73fb376a081",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
    }
 ]
