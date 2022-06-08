@@ -20,6 +20,16 @@ import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";
 
+function writeObject(ref, obj, buffer, transform) {
+  buffer.push(`${ref.num} ${ref.gen} obj\n`);
+  if (obj instanceof Dict) {
+    writeDict(obj, buffer, transform);
+  } else if (obj instanceof BaseStream) {
+    writeStream(obj, buffer, transform);
+  }
+  buffer.push("\nendobj\n");
+}
+
 function writeDict(dict, buffer, transform) {
   buffer.push("<<");
   for (const key of dict.getKeys()) {
@@ -328,4 +338,4 @@ function incrementalUpdate({
   return array;
 }
 
-export { incrementalUpdate, writeDict };
+export { incrementalUpdate, writeDict, writeObject };

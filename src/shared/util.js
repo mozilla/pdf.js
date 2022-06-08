@@ -21,6 +21,7 @@ const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 // Represent the percentage of the height of a single-line field over
 // the font size. Acrobat seems to use this value.
 const LINE_FACTOR = 1.35;
+const LINE_DESCENT_FACTOR = 0.35;
 
 /**
  * Refer to the `WorkerTransport.getRenderingIntent`-method in the API, to see
@@ -1175,6 +1176,7 @@ export {
   isArrayBuffer,
   isArrayEqual,
   isAscii,
+  LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   MissingPDFException,
   objectFromMap,
