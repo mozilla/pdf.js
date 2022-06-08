@@ -817,8 +817,8 @@ function createOS2Table(properties, charstrings, override) {
     string16(properties.capHeight) + // sCapHeight
     string16(0) + // usDefaultChar
     string16(firstCharIndex || properties.firstChar) + // usBreakChar
-    "\x00\x03"
-  ); // usMaxContext
+    "\x00\x03" // usMaxContext
+  );
 }
 
 function createPostTable(properties) {
@@ -832,8 +832,8 @@ function createPostTable(properties) {
     "\x00\x00\x00\x00" + // minMemType42
     "\x00\x00\x00\x00" + // maxMemType42
     "\x00\x00\x00\x00" + // minMemType1
-    "\x00\x00\x00\x00"
-  ); // maxMemType1
+    "\x00\x00\x00\x00" // maxMemType1
+  );
 }
 
 function createPostscriptName(name) {
@@ -904,6 +904,15 @@ function createNameTable(name, proto) {
 
   nameTable += strings.join("") + stringsUnicode.join("");
   return nameTable;
+}
+
+function createGaspTable() {
+  return (
+    "\x00\x01" + // version
+    "\x00\x01" + // numRanges
+    "\xff\xff" + // rangeMaxPPEM
+    "\x00\x0c" // rangeGaspBehavior: GASP_SYMMETRIC_GRIDFIT + GASP_SYMMETRIC_SMOOTHING
+  );
 }
 
 /**
@@ -1258,6 +1267,7 @@ class Font {
       "name",
       "post",
       "loca",
+      "gasp",
       "glyf",
       "fpgm",
       "prep",
@@ -2999,6 +3009,18 @@ class Font {
       const namePrototype = readNameTable(tables.name);
       tables.name.data = createNameTable(name, namePrototype);
       this.psName = namePrototype[0][6] || null;
+    }
+
+    // Re-create a basic 'gasp' table, see bug 1769884, when either the hinting
+    // data is invalid or when *some* of the hinting tables are missing.
+    if (
+      !tables.gasp &&
+      !(hintsValid && tables.fpgm && tables.prep && tables["cvt "])
+    ) {
+      tables.gasp = {
+        tag: "gasp",
+        data: createGaspTable(),
+      };
     }
 
     const builder = new OpenTypeFileBuilder(header.version);
