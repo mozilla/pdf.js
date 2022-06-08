@@ -80,6 +80,14 @@ if (
     ).ReadableStream;
   })();
 
+  // Support: Firefox<90, Chrome<92, Safari<15.4, Node.js<16.6.0
+  (function checkArrayAt() {
+    if (Array.prototype.at) {
+      return;
+    }
+    require("core-js/es/array/at.js");
+  })();
+
   // Support: Firefox<94, Chrome<98, Safari<15.4, Node.js<17.0.0
   (function checkStructuredClone() {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
