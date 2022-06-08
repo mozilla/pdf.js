@@ -16,6 +16,8 @@
 :root {
   --focus-outline: solid 2px red;
   --hover-outline: dashed 2px blue;
+  --freetext-line-height: 1.35;
+  --freetext-padding: 2px;
 }
 
 .annotationEditorLayer {
@@ -31,7 +33,7 @@
   position: absolute;
   background: transparent;
   border-radius: 3px;
-  padding: 5px;
+  padding: calc(var(--freetext-padding) * var(--zoom-factor));
   resize: none;
   width: auto;
   height: auto;
@@ -42,10 +44,11 @@
   border: none;
   top: 0;
   left: 0;
-  min-height: 15px;
   overflow: visible;
   white-space: nowrap;
   resize: none;
+  font: 10px sans-serif;
+  line-height: var(--freetext-line-height);
 }
 
 .annotationEditorLayer .freeTextEditor .overlay {

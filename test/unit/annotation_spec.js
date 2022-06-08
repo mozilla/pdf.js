@@ -22,6 +22,7 @@ import {
 } from "../../src/core/annotation.js";
 import {
   AnnotationBorderStyleType,
+  AnnotationEditorType,
   AnnotationFieldFlag,
   AnnotationFlag,
   AnnotationType,
@@ -3855,6 +3856,61 @@ describe("annotation", function () {
         expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
       }
     );
+  });
+
+  describe("FreeTextAnnotation", () => {
+    it("should create an new FreeText annotation", async () => {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test FreeText creation");
+      const data = await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            rect: [12, 34, 56, 78],
+            fontSize: 10,
+            color: [0, 0, 0],
+            value: "Hello PDF.js World!",
+          },
+        ]
+      );
+
+      const base = data.annotations[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "2 0 obj\n" +
+          "<< /Type /Annot /Subtype /FreeText /CreationDate (date) " +
+          "/Rect [12 34 56 78] /DA (/Helv 10 Tf 0 g) /Contents (Hello PDF.js World!) " +
+          "/F 4 /Border [0 0 0] /Rotate 0 /AP << /N 3 0 R>>>>\n" +
+          "endobj\n"
+      );
+
+      const font = data.dependencies[0].data;
+      expect(font).toEqual(
+        "1 0 obj\n" +
+          "<< /BaseFont /Helvetica /Type /Font /Subtype /Type1 /Encoding " +
+          "/WinAnsiEncoding>>\n" +
+          "endobj\n"
+      );
+
+      const appearance = data.dependencies[1].data;
+      expect(appearance).toEqual(
+        "3 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] " +
+          "/Length 101 /Resources << /Font << /Helv 1 0 R>>>>>> stream\n" +
+          "q\n" +
+          "0 0 44 44 re W n\n" +
+          "BT\n" +
+          "1 0 0 1 0 47.5 Tm 0 Tc 0 g\n" +
+          "/Helv 10 Tf\n" +
+          "0 -13.5 Td (Hello PDF.js World!) Tj\n" +
+          "ET\n" +
+          "Q\n" +
+          "endstream\n" +
+          "\n" +
+          "endobj\n"
+      );
+    });
   });
 
   describe("InkAnnotation", function () {

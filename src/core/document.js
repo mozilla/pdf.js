@@ -55,6 +55,7 @@ import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
 import { StructTreePage } from "./struct_tree.js";
+import { writeObject } from "./writer.js";
 import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
 
@@ -259,6 +260,60 @@ class Page {
         ? { bbox: this.xfaFactory.getBoundingBox(this.pageIndex) }
         : null
     );
+  }
+
+  async saveNewAnnotations(handler, task, annotations) {
+    if (this.xfaFactory) {
+      throw new Error("XFA: Cannot save new annotations.");
+    }
+
+    const partialEvaluator = new PartialEvaluator({
+      xref: this.xref,
+      handler,
+      pageIndex: this.pageIndex,
+      idFactory: this._localIdFactory,
+      fontCache: this.fontCache,
+      builtInCMapCache: this.builtInCMapCache,
+      standardFontDataCache: this.standardFontDataCache,
+      globalImageCache: this.globalImageCache,
+      options: this.evaluatorOptions,
+    });
+
+    const pageDict = this.pageDict;
+    const annotationsArray = this.annotations.slice();
+    const newData = await AnnotationFactory.saveNewAnnotations(
+      partialEvaluator,
+      task,
+      annotations
+    );
+
+    for (const { ref } of newData.annotations) {
+      annotationsArray.push(ref);
+    }
+
+    const savedDict = pageDict.get("Annots");
+    pageDict.set("Annots", annotationsArray);
+    const buffer = [];
+
+    let transform = null;
+    if (this.xref.encrypt) {
+      transform = this.xref.encrypt.createCipherTransform(
+        this.ref.num,
+        this.ref.gen
+      );
+    }
+
+    writeObject(this.ref, pageDict, buffer, transform);
+    if (savedDict) {
+      pageDict.set("Annots", savedDict);
+    }
+
+    const objects = newData.dependencies;
+    objects.push(
+      { ref: this.ref, data: buffer.join("") },
+      ...newData.annotations
+    );
+    return objects;
   }
 
   save(handler, task, annotationStorage) {
