@@ -393,12 +393,15 @@ function createSandboxExternal(defines) {
     saveComments: false,
     defines,
   };
-  return gulp.src("./src/pdf.sandbox.external.js").pipe(
-    transform("utf8", content => {
-      content = preprocessor2.preprocessPDFJSCode(ctx, content);
-      return `${licenseHeader}\n${content}`;
-    })
-  );
+  return gulp
+    .src("./src/pdf.sandbox.external.js")
+    .pipe(
+      transform("utf8", content => {
+        content = preprocessor2.preprocessPDFJSCode(ctx, content);
+        return `${licenseHeader}\n${content}`;
+      })
+    )
+    .pipe(rename("pdf.sandbox.external.jsm"));
 }
 
 function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
