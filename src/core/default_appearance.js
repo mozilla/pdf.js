@@ -82,21 +82,24 @@ function parseDefaultAppearance(str) {
   return new DefaultAppearanceEvaluator(str).parse();
 }
 
-function getPdfColor(color) {
+function getPdfColor(color, isFill) {
   if (color[0] === color[1] && color[1] === color[2]) {
     const gray = color[0] / 255;
-    return `${numberToString(gray)} g`;
+    return `${numberToString(gray)} ${isFill ? "g" : "G"}`;
   }
   return (
     Array.from(color)
       .map(c => numberToString(c / 255))
-      .join(" ") + " rg"
+      .join(" ") + ` ${isFill ? "rg" : "RG"}`
   );
 }
 
 // Create default appearance string from some information.
 function createDefaultAppearance({ fontSize, fontName, fontColor }) {
-  return `/${escapePDFName(fontName)} ${fontSize} Tf ${getPdfColor(fontColor)}`;
+  return `/${escapePDFName(fontName)} ${fontSize} Tf ${getPdfColor(
+    fontColor,
+    /* isFill */ true
+  )}`;
 }
 
 export { createDefaultAppearance, getPdfColor, parseDefaultAppearance };
