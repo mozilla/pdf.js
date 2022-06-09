@@ -18,7 +18,7 @@ jobs:
         run: npm install -g gulp-cli
 
       - name: Install other dependencies
-        run: npm install
+        run: npm install -f
 
       - name: Run tests
         run: gulp ci-test
