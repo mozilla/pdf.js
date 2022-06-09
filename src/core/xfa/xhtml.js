@@ -500,7 +500,7 @@ class P extends XhtmlObject {
 
   [$text]() {
     const siblings = this[$getParent]()[$getChildren]();
-    if (siblings[siblings.length - 1] === this) {
+    if (siblings.at(-1) === this) {
       return super[$text]();
     }
     return super[$text]() + "\n";

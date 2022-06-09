@@ -910,7 +910,7 @@ class Border extends XFAObject {
     if (!this[$extra]) {
       const edges = this.edge.children.slice();
       if (edges.length < 4) {
-        const defaultEdge = edges[edges.length - 1] || new Edge({});
+        const defaultEdge = edges.at(-1) || new Edge({});
         for (let i = edges.length; i < 4; i++) {
           edges.push(defaultEdge);
         }
@@ -950,7 +950,7 @@ class Border extends XFAObject {
     if (this.corner.children.some(node => node.radius !== 0)) {
       const cornerStyles = this.corner.children.map(node => node[$toStyle]());
       if (cornerStyles.length === 2 || cornerStyles.length === 3) {
-        const last = cornerStyles[cornerStyles.length - 1];
+        const last = cornerStyles.at(-1);
         for (let i = cornerStyles.length; i < 4; i++) {
           cornerStyles.push(last);
         }

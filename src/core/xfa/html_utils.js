@@ -562,7 +562,7 @@ function isPrintOnly(node) {
 
 function getCurrentPara(node) {
   const stack = node[$getTemplateRoot]()[$extra].paraStack;
-  return stack.length ? stack[stack.length - 1] : null;
+  return stack.length ? stack.at(-1) : null;
 }
 
 function setPara(node, nodeStyle, value) {

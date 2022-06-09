@@ -588,7 +588,7 @@ function getVisibleElements({
   }
 
   const first = visible[0],
-    last = visible[visible.length - 1];
+    last = visible.at(-1);
 
   if (sortByVisibility) {
     visible.sort(function (a, b) {

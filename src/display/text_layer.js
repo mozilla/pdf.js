@@ -488,7 +488,7 @@ function expandBoundsLTR(width, bounds) {
         affectedBoundary.x2 > boundary.x2 ? affectedBoundary : boundary;
       if (lastBoundary === useBoundary) {
         // Merging with previous.
-        changedHorizon[changedHorizon.length - 1].end = horizonPart.end;
+        changedHorizon.at(-1).end = horizonPart.end;
       } else {
         changedHorizon.push({
           start: horizonPart.start,
@@ -507,7 +507,7 @@ function expandBoundsLTR(width, bounds) {
       });
     }
     if (boundary.y2 < horizon[j].end) {
-      changedHorizon[changedHorizon.length - 1].end = boundary.y2;
+      changedHorizon.at(-1).end = boundary.y2;
       changedHorizon.push({
         start: boundary.y2,
         end: horizon[j].end,

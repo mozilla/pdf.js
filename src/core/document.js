@@ -1045,7 +1045,7 @@ class PDFDocument {
     const pdfFonts = [];
     const initialState = {
       get font() {
-        return pdfFonts[pdfFonts.length - 1];
+        return pdfFonts.at(-1);
       },
       set font(font) {
         pdfFonts.push(font);

@@ -1166,7 +1166,7 @@ const PostScriptCompiler = (function PostScriptCompilerClosure() {
               i += 6;
               break;
             }
-            ast1 = stack[stack.length - 1];
+            ast1 = stack.at(-1);
             if (ast1.type === "literal" || ast1.type === "var") {
               // we don't have to save into intermediate variable a literal or
               // variable.
