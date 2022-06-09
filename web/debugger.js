@@ -117,7 +117,7 @@ const FontInspector = (function FontInspectorClosure() {
         download.href = url[1];
       } else if (fontObj.data) {
         download.href = URL.createObjectURL(
-          new Blob([fontObj.data], { type: fontObj.mimeType })
+          new Blob([fontObj.data], { type: fontObj.mimetype })
         );
       }
       download.textContent = "Download";
