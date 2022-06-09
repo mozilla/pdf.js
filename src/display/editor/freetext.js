@@ -107,9 +107,8 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     if (!this.isAttachedToDOM) {
-      // At some point this editor has been removed and
-      // we're rebuilting it, hence we must add it to its
-      // parent.
+      // At some point this editor was removed and we're rebuilting it,
+      // hence we must add it to its parent.
       this.parent.add(this);
     }
   }
@@ -131,7 +130,7 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   onceAdded() {
     if (this.width) {
-      // The editor has been created in using ctrl+c.
+      // The editor was created in using ctrl+c.
       this.div.focus();
       return;
     }
@@ -226,7 +225,7 @@ class FreeTextEditor extends AnnotationEditor {
     bindEvents(this, this.div, ["dblclick"]);
 
     if (this.width) {
-      // This editor has been created in using copy (ctrl+c).
+      // This editor was created in using copy (ctrl+c).
       this.setAt(this.x + this.width, this.y + this.height);
       // eslint-disable-next-line no-unsanitized/property
       this.editorDiv.innerHTML = this.#contentHTML;
