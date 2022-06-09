@@ -354,7 +354,7 @@ class SimpleExprParser {
           return [tok, this.getNode()];
         case TOKEN.leftParen:
           if (this.last === OPERAND) {
-            const lastOperand = this.operands[this.operands.length - 1];
+            const lastOperand = this.operands.at(-1);
             if (!(lastOperand instanceof AstIdentifier)) {
               return [tok, this.getNode()];
             }
@@ -525,7 +525,7 @@ class SimpleExprParser {
 
   flushWithOperator(op) {
     while (true) {
-      const top = this.operators[this.operators.length - 1];
+      const top = this.operators.at(-1);
       if (top) {
         if (top.id >= 0 && SimpleExprParser.checkPrecedence(top, op)) {
           this.operators.pop();

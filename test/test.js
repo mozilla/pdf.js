@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
+/* eslint-disable no-var, unicorn/prefer-at */
 
 "use strict";
 

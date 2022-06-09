@@ -3066,7 +3066,7 @@ class PartialEvaluator {
               }
             }
 
-            const item = elements[elements.length - 1];
+            const item = elements.at(-1);
             if (typeof item === "string") {
               showSpacedTextBuffer.push(item);
             }

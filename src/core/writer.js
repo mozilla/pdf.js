@@ -249,7 +249,7 @@ function incrementalUpdate({
   const refForXrefTable = xrefInfo.newRef;
 
   let buffer, baseOffset;
-  const lastByte = originalData[originalData.length - 1];
+  const lastByte = originalData.at(-1);
   if (lastByte === /* \n */ 0x0a || lastByte === /* \r */ 0x0d) {
     buffer = [];
     baseOffset = originalData.length;

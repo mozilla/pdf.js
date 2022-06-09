@@ -257,7 +257,7 @@ function generateBezier(points, parameters, leftTangent, rightTangent) {
     ux;
 
   const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
+  const lastPoint = points.at(-1);
 
   // Bezier curve ctl pts
   const bezCurve = [firstPoint, null, null, lastPoint];
