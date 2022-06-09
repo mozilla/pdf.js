@@ -2706,7 +2706,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       let lineWidth = -1;
       let value;
       for (const { displayValue } of this.data.options) {
-        const width = this._getTextWidth(displayValue);
+        const width = this._getTextWidth(displayValue, font);
         if (width > lineWidth) {
           lineWidth = width;
           value = displayValue;
