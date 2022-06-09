@@ -2410,13 +2410,13 @@ class AnnotationLayer {
       if (!data) {
         continue;
       }
-      const { width, height } = getRectDims(data.rect);
-      if (width <= 0 || height <= 0) {
-        continue;
-      }
       if (data.annotationType === AnnotationType.POPUP) {
         popupAnnotations.push(data);
         continue;
+      }
+      const { width, height } = getRectDims(data.rect);
+      if (width <= 0 || height <= 0) {
+        continue; // Ignore empty annotations.
       }
       sortedAnnotations.push(data);
     }
