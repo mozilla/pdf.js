@@ -2474,11 +2474,7 @@ function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
 function webViewerSwitchAnnotationEditorMode(evt) {
-  if (evt.toggle) {
-    PDFViewerApplication.pdfViewer.annotionEditorEnabled = true;
-  } else {
-    PDFViewerApplication.pdfViewer.annotationEditorMode = evt.mode;
-  }
+  PDFViewerApplication.pdfViewer.annotationEditorMode = evt.mode;
 }
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();

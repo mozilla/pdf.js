@@ -38,6 +38,12 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       compatibilityParams.maxCanvasPixels = 5242880;
     }
   })();
+
+  (function checkResizeObserver() {
+    if (typeof ResizeObserver === "undefined") {
+      compatibilityParams.annotationEditorEnabled = false;
+    }
+  })();
 }
 
 const OptionKind = {
@@ -308,6 +314,9 @@ if (
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
   };
+
+  defaultOptions.annotationEditorEnabled.compatibility =
+    compatibilityParams.annotationEditorEnabled;
 
   defaultOptions.renderer.kind += OptionKind.PREFERENCE;
 } else if (PDFJSDev.test("CHROME")) {
