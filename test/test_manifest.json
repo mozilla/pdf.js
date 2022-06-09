@@ -4951,6 +4951,13 @@
        "type": "eq",
        "forms": true
     },
+    {  "id": "issue15012",
+       "file": "pdfs/issue15012.pdf",
+       "md5": "cc5e89507262cb3ec6862f68cb3eefd1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "gesamt",
       "file": "pdfs/gesamt.pdf",
       "md5": "743aaa6f46ed0a42864f079d632d942e",
