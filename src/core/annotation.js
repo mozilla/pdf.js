@@ -273,6 +273,17 @@ class AnnotationFactory {
             )
           );
           break;
+        case AnnotationEditorType.INK:
+          promises.push(
+            InkAnnotation.createNewAnnotation(
+              xref,
+              evaluator,
+              task,
+              annotation,
+              results,
+              dependencies
+            )
+          );
       }
     }
 
@@ -720,12 +731,18 @@ class Annotation {
 
     let str = "";
     if (this.backgroundColor) {
-      str = `${getPdfColor(this.backgroundColor)} ${rect} f `;
+      str = `${getPdfColor(
+        this.backgroundColor,
+        /* isFill */ true
+      )} ${rect} f `;
     }
 
     if (this.borderColor) {
       const borderWidth = this.borderStyle.width || 1;
-      str += `${borderWidth} w ${getPdfColor(this.borderColor)} ${rect} S `;
+      str += `${borderWidth} w ${getPdfColor(
+        this.borderColor,
+        /* isFill */ false
+      )} ${rect} S `;
     }
 
     return str;
@@ -2945,7 +2962,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
     freetext.set("Subtype", Name.get("FreeText"));
     freetext.set("CreationDate", `D:${getModificationDate()}`);
     freetext.set("Rect", rect);
-    const da = `/Helv ${fontSize} Tf ${getPdfColor(color)}`;
+    const da = `/Helv ${fontSize} Tf ${getPdfColor(color, /* isFill */ true)}`;
     freetext.set("DA", da);
     freetext.set("Contents", value);
     freetext.set("F", 4);
@@ -3008,7 +3025,8 @@ class FreeTextAnnotation extends MarkupAnnotation {
       `0 0 ${numberToString(w)} ${numberToString(h)} re W n`,
       `BT`,
       `1 0 0 1 0 ${numberToString(h + lineDescent)} Tm 0 Tc ${getPdfColor(
-        color
+        color,
+        /* isFill */ true
       )}`,
       `/Helv ${numberToString(newFontSize)} Tf`,
     ];
@@ -3411,6 +3429,85 @@ class InkAnnotation extends MarkupAnnotation {
         },
       });
     }
+  }
+
+  static async createNewAnnotation(
+    xref,
+    evaluator,
+    task,
+    annotation,
+    results,
+    others
+  ) {
+    const inkRef = xref.getNewRef();
+    const ink = new Dict(xref);
+    ink.set("Type", Name.get("Annot"));
+    ink.set("Subtype", Name.get("Ink"));
+    ink.set("CreationDate", `D:${getModificationDate()}`);
+    ink.set("Rect", annotation.rect);
+    ink.set(
+      "InkList",
+      annotation.paths.map(p => p.points)
+    );
+    ink.set("F", 4);
+    ink.set("Border", [0, 0, 0]);
+    ink.set("Rotate", 0);
+
+    const [x1, y1, x2, y2] = annotation.rect;
+    const w = x2 - x1;
+    const h = y2 - y1;
+
+    const appearanceBuffer = [
+      `${annotation.thickness} w`,
+      `${getPdfColor(annotation.color, /* isFill */ false)}`,
+    ];
+    const buffer = [];
+    for (const { bezier } of annotation.paths) {
+      buffer.length = 0;
+      buffer.push(
+        `${numberToString(bezier[0])} ${numberToString(bezier[1])} m`
+      );
+      for (let i = 2, ii = bezier.length; i < ii; i += 6) {
+        const curve = bezier
+          .slice(i, i + 6)
+          .map(numberToString)
+          .join(" ");
+        buffer.push(`${curve} c`);
+      }
+      buffer.push("S");
+      appearanceBuffer.push(buffer.join("\n"));
+    }
+    const appearance = appearanceBuffer.join("\n");
+
+    const appearanceStreamDict = new Dict(xref);
+    appearanceStreamDict.set("FormType", 1);
+    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.set("BBox", [0, 0, w, h]);
+    appearanceStreamDict.set("Length", appearance.length);
+
+    const ap = new StringStream(appearance);
+    ap.dict = appearanceStreamDict;
+
+    buffer.length = 0;
+    const apRef = xref.getNewRef();
+    let transform = xref.encrypt
+      ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
+      : null;
+    writeObject(apRef, ap, buffer, transform);
+    others.push({ ref: apRef, data: buffer.join("") });
+
+    const n = new Dict(xref);
+    n.set("N", apRef);
+    ink.set("AP", n);
+
+    buffer.length = 0;
+    transform = xref.encrypt
+      ? xref.encrypt.createCipherTransform(inkRef.num, inkRef.gen)
+      : null;
+    writeObject(inkRef, ink, buffer, transform);
+
+    results.push({ ref: inkRef, data: buffer.join("") });
   }
 }
 
