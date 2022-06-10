@@ -229,7 +229,7 @@ window.onload = function () {
         /^ {2}IMAGE[^:]*\((\d+\.?\d*)x(\d+\.?\d*)x(\d+\.?\d*)\): (.*)$/
       );
       if (match) {
-        const item = gTestItems[gTestItems.length - 1];
+        const item = gTestItems.at(-1);
         item.images.push({
           width: parseFloat(match[1]),
           height: parseFloat(match[2]),

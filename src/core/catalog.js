@@ -1212,7 +1212,7 @@ class Catalog {
     }
 
     while (queue.length > 0) {
-      const queueItem = queue[queue.length - 1];
+      const queueItem = queue.at(-1);
       const { currentNode, posInKids } = queueItem;
 
       let kids = currentNode.getRaw("Kids");

@@ -389,7 +389,7 @@ if (
       if (opListElement.fn === "save") {
         opTree.push({ fnId: 92, fn: "group", items: [] });
         tmp.push(opTree);
-        opTree = opTree[opTree.length - 1].items;
+        opTree = opTree.at(-1).items;
         continue;
       }
 
