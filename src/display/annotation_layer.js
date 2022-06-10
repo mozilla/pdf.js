@@ -1461,6 +1461,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     selectElement.setAttribute("id", id);
     selectElement.tabIndex = DEFAULT_TAB_INDEX;
 
+    let addAnEmptyEntry = this.data.combo && this.data.options.length > 0;
+
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
       selectElement.size = this.data.options.length;
@@ -1486,8 +1488,25 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
       if (storedData.value.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
+        addAnEmptyEntry = false;
       }
       selectElement.appendChild(optionElement);
+    }
+
+    let removeEmptyEntry = null;
+    if (addAnEmptyEntry) {
+      const noneOptionElement = document.createElement("option");
+      noneOptionElement.value = " ";
+      noneOptionElement.setAttribute("hidden", true);
+      noneOptionElement.setAttribute("selected", true);
+      selectElement.insertBefore(noneOptionElement, selectElement.firstChild);
+
+      removeEmptyEntry = () => {
+        noneOptionElement.remove();
+        selectElement.removeEventListener("input", removeEmptyEntry);
+        removeEmptyEntry = null;
+      };
+      selectElement.addEventListener("input", removeEmptyEntry);
     }
 
     const getValue = (event, isExport) => {
@@ -1514,6 +1533,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.addEventListener("updatefromsandbox", jsEvent => {
         const actions = {
           value(event) {
+            removeEmptyEntry?.();
             const value = event.detail.value;
             const values = new Set(Array.isArray(value) ? value : [value]);
             for (const option of selectElement.options) {
