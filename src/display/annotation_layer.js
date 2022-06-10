@@ -343,11 +343,7 @@ class AnnotationElement {
         }
       },
       required: event => {
-        if (event.detail.required) {
-          event.target.setAttribute("required", "");
-        } else {
-          event.target.removeAttribute("required");
-        }
+        this._setRequired(event.target, event.detail.required);
       },
       bgColor: event => {
         setColor("bgColor", "backgroundColor", event);
@@ -944,6 +940,15 @@ class WidgetAnnotationElement extends AnnotationElement {
       style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
     }
   }
+
+  _setRequired(element, isRequired) {
+    if (isRequired) {
+      element.setAttribute("required", true);
+    } else {
+      element.removeAttribute("required");
+    }
+    element.setAttribute("aria-required", isRequired);
+  }
 }
 
 class TextWidgetAnnotationElement extends WidgetAnnotationElement {
@@ -1009,6 +1014,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
       elementData.userValue = textContent;
       element.setAttribute("id", id);
+
+      this._setRequired(element, this.data.required);
 
       element.addEventListener("input", event => {
         storage.setValue(id, this.data.fieldName, { // #718 modified by ngx-extended-pdf-viewer
@@ -1259,6 +1266,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     const element = document.createElement("input");
     GetElementsByNameSet.add(element);
     element.disabled = data.readOnly;
+    this._setRequired(element, this.data.required);
     element.type = "checkbox";
     element.name = data.fieldName;
     if (value) {
@@ -1359,6 +1367,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     const element = document.createElement("input");
     GetElementsByNameSet.add(element);
     element.disabled = data.readOnly;
+    this._setRequired(element, this.data.required);
     element.type = "radio";
     element.name = data.fieldName;
     if (value) {
@@ -1479,9 +1488,12 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const selectElement = document.createElement("select");
     GetElementsByNameSet.add(selectElement);
     selectElement.disabled = this.data.readOnly;
+    this._setRequired(selectElement, this.data.required);
     selectElement.name = this.data.fieldName;
     selectElement.setAttribute("id", id);
     selectElement.tabIndex = DEFAULT_TAB_INDEX;
+
+    let addAnEmptyEntry = this.data.combo && this.data.options.length > 0;
 
     if (!this.data.combo) {
       // List boxes have a size and (optionally) multiple selection.
@@ -1508,8 +1520,25 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       }
       if (storedData.value.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
+        addAnEmptyEntry = false;
       }
       selectElement.appendChild(optionElement);
+    }
+
+    let removeEmptyEntry = null;
+    if (addAnEmptyEntry) {
+      const noneOptionElement = document.createElement("option");
+      noneOptionElement.value = " ";
+      noneOptionElement.setAttribute("hidden", true);
+      noneOptionElement.setAttribute("selected", true);
+      selectElement.insertBefore(noneOptionElement, selectElement.firstChild);
+
+      removeEmptyEntry = () => {
+        noneOptionElement.remove();
+        selectElement.removeEventListener("input", removeEmptyEntry);
+        removeEmptyEntry = null;
+      };
+      selectElement.addEventListener("input", removeEmptyEntry);
     }
 
     const getValue = (event, isExport) => {
@@ -1537,6 +1566,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         const fieldName = this.data.fieldName; // #868 modified by ngx-extended-pdf-viewer
         const actions = {
           value(event) {
+            removeEmptyEntry?.();
             const value = event.detail.value;
             const values = new Set(Array.isArray(value) ? value : [value]);
             for (const option of selectElement.options) {
@@ -2439,13 +2469,13 @@ class AnnotationLayer {
       if (!data) {
         continue;
       }
-      const { width, height } = getRectDims(data.rect);
-      if (width <= 0 || height <= 0) {
-        continue;
-      }
       if (data.annotationType === AnnotationType.POPUP) {
         popupAnnotations.push(data);
         continue;
+      }
+      const { width, height } = getRectDims(data.rect);
+      if (width <= 0 || height <= 0) {
+        continue; // Ignore empty annotations.
       }
       sortedAnnotations.push(data);
     }

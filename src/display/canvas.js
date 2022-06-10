@@ -1470,7 +1470,7 @@ class CanvasGraphics {
     }
   }
 
-  endDrawing() {
+  #restoreInitialState() {
     // Finishing all opened operations such as SMask group painting.
     while (this.stateStack.length || this.inSMaskMode) {
       this.restore();
@@ -1486,6 +1486,10 @@ class CanvasGraphics {
       this.ctx.restore();
       this.transparentCanvas = null;
     }
+  }
+
+  endDrawing() {
+    this.#restoreInitialState();
 
     this.cachedCanvases.clear();
     this.cachedPatterns.clear();
@@ -3021,19 +3025,24 @@ class CanvasGraphics {
     }
   }
 
-  beginAnnotations() {
+  beginAnnotations() {}
+
+  endAnnotations() {}
+
+  beginAnnotation(id, rect, transform, matrix, hasOwnCanvas) {
+    // The annotations are drawn just after the page content.
+    // The page content drawing can potentially have set a transform,
+    // a clipping path, whatever...
+    // So in order to have something clean, we restore the initial state.
+    this.#restoreInitialState();
+    resetCtxToDefault(this.ctx, this.foregroundColor);
+
+    this.ctx.save();
     this.save();
+
     if (this.baseTransform) {
       this.ctx.setTransform.apply(this.ctx, this.baseTransform);
     }
-  }
-
-  endAnnotations() {
-    this.restore();
-  }
-
-  beginAnnotation(id, rect, transform, matrix, hasOwnCanvas) {
-    this.save();
 
     if (Array.isArray(rect) && rect.length === 4) {
       const width = rect[2] - rect[0];
@@ -3071,8 +3080,8 @@ class CanvasGraphics {
         this.annotationCanvasMap.set(id, canvas);
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
-        this.ctx.setTransform(scaleX, 0, 0, -scaleY, 0, height * scaleY);
         addContextCurrentTransform(this.ctx);
+        this.ctx.setTransform(scaleX, 0, 0, -scaleY, 0, height * scaleY);
 
         resetCtxToDefault(this.ctx, this.foregroundColor);
       } else {
@@ -3099,7 +3108,6 @@ class CanvasGraphics {
       delete this.annotationCanvas.savedCtx;
       delete this.annotationCanvas;
     }
-    this.restore();
   }
 
   paintImageMaskXObject(img) {

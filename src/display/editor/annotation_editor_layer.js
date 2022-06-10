@@ -23,6 +23,7 @@
 import { AnnotationEditorType, Util } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
+import { InkEditor } from "./ink.js";
 import { PixelsPerInch } from "../display_utils.js";
 
 /**
@@ -46,7 +47,7 @@ class AnnotationEditorLayer {
 
   #uiManager;
 
-  static _l10nInitialized = false;
+  static _initialized = false;
 
   static _keyboardManager = new KeyboardManager([
     [["ctrl+a", "mac+meta+a"], AnnotationEditorLayer.prototype.selectAll],
@@ -73,9 +74,9 @@ class AnnotationEditorLayer {
    * @param {AnnotationEditorLayerOptions} options
    */
   constructor(options) {
-    if (!AnnotationEditorLayer._l10nInitialized) {
-      AnnotationEditorLayer._l10nInitialized = true;
-      FreeTextEditor.setL10n(options.l10n);
+    if (!AnnotationEditorLayer._initialized) {
+      AnnotationEditorLayer._initialized = true;
+      FreeTextEditor.initialize(options.l10n);
     }
     this.#uiManager = options.uiManager;
     this.annotationStorage = options.annotationStorage;
@@ -298,6 +299,8 @@ class AnnotationEditorLayer {
     switch (this.#uiManager.getMode()) {
       case AnnotationEditorType.FREETEXT:
         return new FreeTextEditor(params);
+      case AnnotationEditorType.INK:
+        return new InkEditor(params);
     }
     return null;
   }

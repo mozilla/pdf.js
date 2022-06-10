@@ -204,6 +204,10 @@ function* getContainedChildren(node) {
   }
 }
 
+function isRequired(node) {
+  return node.validate && node.validate.nullTest === "error";
+}
+
 function setTabIndex(node) {
   while (node) {
     if (!node.traversal) {
@@ -1368,11 +1372,17 @@ class CheckButton extends XFAObject {
         xfaOn: exportedValue.on,
         xfaOff: exportedValue.off,
         "aria-label": ariaLabel(field),
+        "aria-required": false,
       },
     };
 
     if (groupId) {
       input.attributes.name = groupId;
+    }
+
+    if (isRequired(field)) {
+      input.attributes["aria-required"] = true;
+      input.attributes.required = true;
     }
 
     return HTMLResult.success({
@@ -1465,7 +1475,13 @@ class ChoiceList extends XFAObject {
       dataId: (field[$data] && field[$data][$uid]) || field[$uid],
       style,
       "aria-label": ariaLabel(field),
+      "aria-required": false,
     };
+
+    if (isRequired(field)) {
+      selectAttributes["aria-required"] = true;
+      selectAttributes.required = true;
+    }
 
     if (this.open === "multiSelect") {
       selectAttributes.multiple = true;
@@ -1704,8 +1720,14 @@ class DateTimeEdit extends XFAObject {
         class: ["xfaTextfield"],
         style,
         "aria-label": ariaLabel(field),
+        "aria-required": false,
       },
     };
+
+    if (isRequired(field)) {
+      html.attributes["aria-required"] = true;
+      html.attributes.required = true;
+    }
 
     return HTMLResult.success({
       name: "label",
@@ -3859,8 +3881,14 @@ class NumericEdit extends XFAObject {
         class: ["xfaTextfield"],
         style,
         "aria-label": ariaLabel(field),
+        "aria-required": false,
       },
     };
+
+    if (isRequired(field)) {
+      html.attributes["aria-required"] = true;
+      html.attributes.required = true;
+    }
 
     return HTMLResult.success({
       name: "label",
@@ -5833,6 +5861,7 @@ class TextEdit extends XFAObject {
           class: ["xfaTextfield"],
           style,
           "aria-label": ariaLabel(field),
+          "aria-required": false,
         },
       };
     } else {
@@ -5845,8 +5874,14 @@ class TextEdit extends XFAObject {
           class: ["xfaTextfield"],
           style,
           "aria-label": ariaLabel(field),
+          "aria-required": false,
         },
       };
+    }
+
+    if (isRequired(field)) {
+      html.attributes["aria-required"] = true;
+      html.attributes.required = true;
     }
 
     return HTMLResult.success({
