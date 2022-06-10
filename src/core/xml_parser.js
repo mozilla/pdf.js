@@ -494,7 +494,7 @@ class SimpleXMLParser extends XMLParserBase {
 
   onEndElement(name) {
     this._currentFragment = this._stack.pop() || [];
-    const lastElement = this._currentFragment[this._currentFragment.length - 1];
+    const lastElement = this._currentFragment.at(-1);
     if (!lastElement) {
       return null;
     }

@@ -515,7 +515,7 @@ function getRanges(glyphs, numGlyphs) {
 
 function createCmapTable(glyphs, numGlyphs) {
   const ranges = getRanges(glyphs, numGlyphs);
-  const numTables = ranges[ranges.length - 1][1] > 0xffff ? 2 : 1;
+  const numTables = ranges.at(-1)[1] > 0xffff ? 2 : 1;
   let cmap =
     "\x00\x00" + // version
     string16(numTables) + // numTables
@@ -2291,7 +2291,7 @@ class Font {
           // CALL
           if (!inFDEF && !inELSE) {
             // collecting information about which functions are used
-            funcId = stack[stack.length - 1];
+            funcId = stack.at(-1);
             if (isNaN(funcId)) {
               info("TT: CALL empty stack (or invalid entry).");
             } else {
@@ -2374,7 +2374,7 @@ class Font {
         } else if (op === 0x1c) {
           // JMPR
           if (!inFDEF && !inELSE) {
-            const offset = stack[stack.length - 1];
+            const offset = stack.at(-1);
             // only jumping forward to prevent infinite loop
             if (offset > 0) {
               i += offset - 1;
