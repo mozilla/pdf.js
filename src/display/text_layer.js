@@ -27,8 +27,8 @@ import {
  *   render (the object is returned by the page's `getTextContent` method).
  * @property {ReadableStream} [textContentStream] - Text content stream to
  *   render (the stream is returned by the page's `streamTextContent` method).
- * @property {DocumentFragment} container - The DOM node that will contain the
- *   text runs.
+ * @property {DocumentFragment | HTMLElement} container - The DOM node that
+ *   will contain the text runs.
  * @property {import("./display_utils").PageViewport} viewport - The target
  *   viewport to properly layout the text runs.
  * @property {Array<HTMLElement>} [textDivs] - HTML elements that correspond to
