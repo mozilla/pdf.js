@@ -857,4 +857,4 @@ function renderTextLayer(renderParameters) {
   return task;
 }
 
-export { renderTextLayer };
+export { renderTextLayer, TextLayerRenderTask };
