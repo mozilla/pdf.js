@@ -2976,10 +2976,6 @@ class CanvasGraphics {
     }
   }
 
-  beginAnnotations() {}
-
-  endAnnotations() {}
-
   beginAnnotation(id, rect, transform, matrix, hasOwnCanvas) {
     // The annotations are drawn just after the page content.
     // The page content drawing can potentially have set a transform,

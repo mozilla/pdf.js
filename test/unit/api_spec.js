@@ -2443,15 +2443,15 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const opListAnnotEnable = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE,
       });
-      expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(150);
-      expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(150);
+      expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(140);
+      expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(140);
       expect(opListAnnotEnable.lastChunk).toEqual(true);
 
       const opListAnnotEnableForms = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE_FORMS,
       });
-      expect(opListAnnotEnableForms.fnArray.length).toBeGreaterThan(40);
-      expect(opListAnnotEnableForms.argsArray.length).toBeGreaterThan(40);
+      expect(opListAnnotEnableForms.fnArray.length).toBeGreaterThan(30);
+      expect(opListAnnotEnableForms.argsArray.length).toBeGreaterThan(30);
       expect(opListAnnotEnableForms.lastChunk).toEqual(true);
 
       const opListAnnotEnableStorage = await pdfPage.getOperatorList({
