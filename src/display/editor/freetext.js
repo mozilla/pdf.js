@@ -56,8 +56,7 @@ class FreeTextEditor extends AnnotationEditor {
       PDFJSDev.test("!PRODUCTION || TESTING")
     ) {
       const lineHeight = parseFloat(
-        style.getPropertyValue("--freetext-line-height"),
-        10
+        style.getPropertyValue("--freetext-line-height")
       );
       assert(
         lineHeight === LINE_FACTOR,
@@ -66,8 +65,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     this._internalPadding = parseFloat(
-      style.getPropertyValue("--freetext-padding"),
-      10
+      style.getPropertyValue("--freetext-padding")
     );
   }
 
