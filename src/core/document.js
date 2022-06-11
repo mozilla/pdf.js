@@ -19,7 +19,6 @@ import {
   info,
   InvalidPDFException,
   isArrayEqual,
-  OPS,
   PageActionEventType,
   RenderingIntentFlag,
   shadow,
@@ -467,11 +466,9 @@ class Page {
         }
 
         return Promise.all(opListPromises).then(function (opLists) {
-          pageOpList.addOp(OPS.beginAnnotations, []);
           for (const opList of opLists) {
             pageOpList.addOpList(opList);
           }
-          pageOpList.addOp(OPS.endAnnotations, []);
           pageOpList.flush(true);
           return { length: pageOpList.totalLength };
         });
