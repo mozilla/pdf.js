@@ -353,7 +353,7 @@ class InkEditor extends AnnotationEditor {
   #createCanvas() {
     this.canvas = document.createElement("canvas");
     this.canvas.className = "inkEditorCanvas";
-    this.div.appendChild(this.canvas);
+    this.div.append(this.canvas);
     this.ctx = this.canvas.getContext("2d");
   }
 

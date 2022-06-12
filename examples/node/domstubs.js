@@ -100,6 +100,15 @@ DOMElement.prototype = {
     this.setAttribute(name, value);
   },
 
+  append: function DOMElement_append(...elements) {
+    const childNodes = this.childNodes;
+    for (const element of elements) {
+      if (!childNodes.includes(element)) {
+        childNodes.push(element);
+      }
+    }
+  },
+
   appendChild: function DOMElement_appendChild(element) {
     const childNodes = this.childNodes;
     if (!childNodes.includes(element)) {

@@ -169,7 +169,7 @@ class XfaLayer {
     const stack = [[root, -1, rootHtml]];
 
     const rootDiv = parameters.div;
-    rootDiv.appendChild(rootHtml);
+    rootDiv.append(rootHtml);
 
     if (parameters.viewport) {
       const transform = `matrix(${parameters.viewport.transform.join(",")})`;
@@ -200,7 +200,7 @@ class XfaLayer {
       if (name === "#text") {
         const node = document.createTextNode(child.value);
         textDivs.push(node);
-        html.appendChild(node);
+        html.append(node);
         continue;
       }
 
@@ -211,7 +211,7 @@ class XfaLayer {
         childHtml = document.createElement(name);
       }
 
-      html.appendChild(childHtml);
+      html.append(childHtml);
       if (child.attributes) {
         this.setAttributes({
           html: childHtml,
@@ -229,7 +229,7 @@ class XfaLayer {
         if (XfaText.shouldBuildText(name)) {
           textDivs.push(node);
         }
-        childHtml.appendChild(node);
+        childHtml.append(node);
       }
     }
 

@@ -778,7 +778,7 @@ if (
       current.tspan.setAttributeNS(null, "y", pf(-current.y));
 
       current.txtElement = this.svgFactory.createElement("svg:text");
-      current.txtElement.appendChild(current.tspan);
+      current.txtElement.append(current.tspan);
     }
 
     beginText() {
@@ -959,10 +959,10 @@ if (
         `${pm(textMatrix)} scale(${pf(textHScale)}, -1)`
       );
       current.txtElement.setAttributeNS(XML_NS, "xml:space", "preserve");
-      current.txtElement.appendChild(current.tspan);
-      current.txtgrp.appendChild(current.txtElement);
+      current.txtElement.append(current.tspan);
+      current.txtgrp.append(current.txtElement);
 
-      this._ensureTransformGroup().appendChild(current.txtElement);
+      this._ensureTransformGroup().append(current.txtElement);
     }
 
     setLeadingMoveText(x, y) {
@@ -980,7 +980,7 @@ if (
       if (!this.cssStyle) {
         this.cssStyle = this.svgFactory.createElement("svg:style");
         this.cssStyle.setAttributeNS(null, "type", "text/css");
-        this.defs.appendChild(this.cssStyle);
+        this.defs.append(this.cssStyle);
       }
 
       const url = createObjectURL(
@@ -1115,7 +1115,7 @@ if (
       if (this.current.fillAlpha < 1) {
         rect.setAttributeNS(null, "fill-opacity", this.current.fillAlpha);
       }
-      this._ensureTransformGroup().appendChild(rect);
+      this._ensureTransformGroup().append(rect);
     }
 
     /**
@@ -1179,8 +1179,8 @@ if (
       this.current.fillColor = fillColor;
       this.current.strokeColor = strokeColor;
 
-      tiling.appendChild(bbox.childNodes[0]);
-      this.defs.appendChild(tiling);
+      tiling.append(bbox.childNodes[0]);
+      this.defs.append(tiling);
       return `url(#${tilingId})`;
     }
 
@@ -1231,9 +1231,9 @@ if (
             const stop = this.svgFactory.createElement("svg:stop");
             stop.setAttributeNS(null, "offset", colorStop[0]);
             stop.setAttributeNS(null, "stop-color", colorStop[1]);
-            gradient.appendChild(stop);
+            gradient.append(stop);
           }
-          this.defs.appendChild(gradient);
+          this.defs.append(gradient);
           return `url(#${shadingId})`;
         case "Mesh":
           warn("Unimplemented pattern Mesh");
@@ -1354,7 +1354,7 @@ if (
         d = current.path.getAttributeNS(null, "d") + d;
       } else {
         current.path = this.svgFactory.createElement("svg:path");
-        this._ensureTransformGroup().appendChild(current.path);
+        this._ensureTransformGroup().append(current.path);
       }
 
       current.path.setAttributeNS(null, "d", d);
@@ -1394,8 +1394,8 @@ if (
         clipElement.setAttributeNS(null, "clip-rule", "nonzero");
       }
       this.pendingClip = null;
-      clipPath.appendChild(clipElement);
-      this.defs.appendChild(clipPath);
+      clipPath.append(clipElement);
+      this.defs.append(clipPath);
 
       if (current.activeClipUrl) {
         // The previous clipping group content can go out of order -- resetting
@@ -1583,7 +1583,7 @@ if (
       rect.setAttributeNS(null, "height", "1px");
       rect.setAttributeNS(null, "fill", this.current.fillColor);
 
-      this._ensureTransformGroup().appendChild(rect);
+      this._ensureTransformGroup().append(rect);
     }
 
     paintImageXObject(objId) {
@@ -1622,9 +1622,9 @@ if (
         `scale(${pf(1 / width)} ${pf(-1 / height)})`
       );
       if (mask) {
-        mask.appendChild(imgEl);
+        mask.append(imgEl);
       } else {
-        this._ensureTransformGroup().appendChild(imgEl);
+        this._ensureTransformGroup().append(imgEl);
       }
     }
 
@@ -1646,8 +1646,8 @@ if (
       rect.setAttributeNS(null, "fill", fillColor);
       rect.setAttributeNS(null, "mask", `url(#${current.maskId})`);
 
-      this.defs.appendChild(mask);
-      this._ensureTransformGroup().appendChild(rect);
+      this.defs.append(mask);
+      this._ensureTransformGroup().append(rect);
 
       this.paintInlineImageXObject(imgData, mask);
     }
@@ -1689,14 +1689,14 @@ if (
 
       // Create the definitions element.
       const definitions = this.svgFactory.createElement("svg:defs");
-      svg.appendChild(definitions);
+      svg.append(definitions);
       this.defs = definitions;
 
       // Create the root group element, which acts a container for all other
       // groups and applies the viewport transform.
       const rootGroup = this.svgFactory.createElement("svg:g");
       rootGroup.setAttributeNS(null, "transform", pm(viewport.transform));
-      svg.appendChild(rootGroup);
+      svg.append(rootGroup);
 
       // For the construction of the SVG image we are only interested in the
       // root group, so we expose it as the entry point of the SVG image for
@@ -1713,7 +1713,7 @@ if (
       if (!this.current.clipGroup) {
         const clipGroup = this.svgFactory.createElement("svg:g");
         clipGroup.setAttributeNS(null, "clip-path", this.current.activeClipUrl);
-        this.svg.appendChild(clipGroup);
+        this.svg.append(clipGroup);
         this.current.clipGroup = clipGroup;
       }
       return this.current.clipGroup;
@@ -1727,9 +1727,9 @@ if (
         this.tgrp = this.svgFactory.createElement("svg:g");
         this.tgrp.setAttributeNS(null, "transform", pm(this.transformMatrix));
         if (this.current.activeClipUrl) {
-          this._ensureClipGroup().appendChild(this.tgrp);
+          this._ensureClipGroup().append(this.tgrp);
         } else {
-          this.svg.appendChild(this.tgrp);
+          this.svg.append(this.tgrp);
         }
       }
       return this.tgrp;

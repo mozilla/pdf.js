@@ -192,10 +192,10 @@ class Rasterize {
     foreignObject.setAttribute("height", `${viewport.height}px`);
 
     const style = document.createElement("style");
-    foreignObject.appendChild(style);
+    foreignObject.append(style);
 
     const div = document.createElement("div");
-    foreignObject.appendChild(div);
+    foreignObject.append(div);
 
     return { svg, foreignObject, style, div };
   }
@@ -238,8 +238,8 @@ class Rasterize {
 
       // Inline SVG images from text annotations.
       await inlineImages(div);
-      foreignObject.appendChild(div);
-      svg.appendChild(foreignObject);
+      foreignObject.append(div);
+      svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
     } catch (reason) {
@@ -268,7 +268,7 @@ class Rasterize {
       await task.promise;
 
       task.expandTextDivs(true);
-      svg.appendChild(foreignObject);
+      svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
     } catch (reason) {
@@ -302,7 +302,7 @@ class Rasterize {
 
       // Some unsupported type of images (e.g. tiff) lead to errors.
       await inlineImages(div, /* silentErrors = */ true);
-      svg.appendChild(foreignObject);
+      svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
     } catch (reason) {
@@ -468,7 +468,7 @@ class Driver {
           xfaStyleElement = document.createElement("style");
           document.documentElement
             .getElementsByTagName("head")[0]
-            .appendChild(xfaStyleElement);
+            .append(xfaStyleElement);
         }
 
         const loadingTask = getDocument({

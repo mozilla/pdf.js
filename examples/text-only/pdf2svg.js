@@ -43,7 +43,7 @@ function buildSVG(viewport, textContent) {
     text.setAttribute("transform", "matrix(" + tx.join(" ") + ")");
     text.setAttribute("font-family", style.fontFamily);
     text.textContent = textItem.str;
-    svg.appendChild(text);
+    svg.append(text);
   });
   return svg;
 }
@@ -57,7 +57,7 @@ async function pageLoaded() {
   const textContent = await page.getTextContent();
   // building SVG and adding that to the DOM
   const svg = buildSVG(viewport, textContent);
-  document.getElementById("pageContainer").appendChild(svg);
+  document.getElementById("pageContainer").append(svg);
   // Release page resources.
   page.cleanup();
 }
