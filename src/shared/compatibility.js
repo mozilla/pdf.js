@@ -55,21 +55,6 @@ if (
     );
   })();
 
-  // Provides support for *recent* additions to the Promise specification,
-  // however basic Promise support is assumed to be available natively.
-  // Support: Firefox<71, Chrome<76, Safari<13, Node.js<12.9.0
-  (function checkPromise() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
-      // The current image decoders are synchronous, hence `Promise` shouldn't
-      // need to be polyfilled for the IMAGE_DECODERS build target.
-      return;
-    }
-    if (globalThis.Promise.allSettled) {
-      return;
-    }
-    globalThis.Promise = require("core-js/es/promise/index.js");
-  })();
-
   // Support: Node.js
   (function checkReadableStream() {
     if (globalThis.ReadableStream || !isNodeJS) {
