@@ -2559,9 +2559,9 @@ class AnnotationLayer {
       if (!firstChild) {
         element.append(canvas);
       } else if (firstChild.nodeName === "CANVAS") {
-        element.replaceChild(canvas, firstChild);
+        firstChild.replaceWith(canvas);
       } else {
-        element.insertBefore(canvas, firstChild);
+        firstChild.before(canvas);
       }
     }
     annotationCanvasMap.clear();

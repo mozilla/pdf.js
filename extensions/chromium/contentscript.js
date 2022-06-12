@@ -133,7 +133,7 @@ function updateEmbedElement(elem) {
   elem.type = "text/html";
   elem.src = getEmbeddedViewerURL(elem.src);
   if (parentNode) {
-    parentNode.insertBefore(elem, nextSibling);
+    nextSibling.before(elem);
   }
 }
 
