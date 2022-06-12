@@ -49,6 +49,8 @@
     "unicorn/no-new-buffer": "error",
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-useless-spread": "error",
+    "unicorn/prefer-array-flat": "error",
+    "unicorn/prefer-array-flat-map": "error",
     "unicorn/prefer-at": "error",
     "unicorn/prefer-date-now": "error",
     "unicorn/prefer-dom-node-append": "error",

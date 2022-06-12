@@ -254,7 +254,7 @@ function searchNode(
     if (isFinite(index)) {
       root = nodes.filter(node => index < node.length).map(node => node[index]);
     } else {
-      root = nodes.reduce((acc, node) => acc.concat(node), []);
+      root = nodes.flat();
     }
   }
 
