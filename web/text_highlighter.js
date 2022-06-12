@@ -176,7 +176,7 @@ class TextHighlighter {
       let div = textDivs[divIdx];
       if (div.nodeType === Node.TEXT_NODE) {
         const span = document.createElement("span");
-        div.parentNode.insertBefore(span, div);
+        div.before(span);
         span.append(div);
         textDivs[divIdx] = span;
         div = span;

@@ -87,7 +87,7 @@ class BaseTreeViewer {
         this._toggleTreeItem(div, shouldShowAll);
       }
     };
-    div.insertBefore(toggler, div.firstChild);
+    div.prepend(toggler);
   }
 
   /**
