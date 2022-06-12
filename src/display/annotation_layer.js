@@ -448,7 +448,7 @@ class AnnotationElement {
       trigger = document.createElement("div");
       trigger.style.height = container.style.height;
       trigger.style.width = container.style.width;
-      container.appendChild(trigger);
+      container.append(trigger);
     }
 
     const popupElement = new PopupElement({
@@ -466,7 +466,7 @@ class AnnotationElement {
     // Position the popup next to the annotation's container.
     popup.style.left = container.style.width;
 
-    container.appendChild(popup);
+    container.append(popup);
   }
 
   /**
@@ -607,7 +607,7 @@ class LinkAnnotationElement extends AnnotationElement {
       return this._renderQuadrilaterals("linkAnnotation").map(
         (quadrilateral, index) => {
           const linkElement = index === 0 ? link : link.cloneNode();
-          quadrilateral.appendChild(linkElement);
+          quadrilateral.append(linkElement);
           return quadrilateral;
         }
       );
@@ -615,7 +615,7 @@ class LinkAnnotationElement extends AnnotationElement {
 
     this.container.className = "linkAnnotation";
     if (isBound) {
-      this.container.appendChild(link);
+      this.container.append(link);
     }
 
     return this.container;
@@ -828,7 +828,7 @@ class TextAnnotationElement extends AnnotationElement {
       this._createPopup(image, this.data);
     }
 
-    this.container.appendChild(image);
+    this.container.append(image);
     return this.container;
   }
 }
@@ -1234,7 +1234,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     this._setBackgroundColor(element);
     this._setDefaultPropertiesFromJS(element);
 
-    this.container.appendChild(element);
+    this.container.append(element);
     return this.container;
   }
 }
@@ -1319,7 +1319,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     this._setBackgroundColor(element);
     this._setDefaultPropertiesFromJS(element);
 
-    this.container.appendChild(element);
+    this.container.append(element);
     return this.container;
   }
 }
@@ -1408,7 +1408,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     this._setBackgroundColor(element);
     this._setDefaultPropertiesFromJS(element);
 
-    this.container.appendChild(element);
+    this.container.append(element);
     return this.container;
   }
 }
@@ -1490,7 +1490,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         optionElement.setAttribute("selected", true);
         addAnEmptyEntry = false;
       }
-      selectElement.appendChild(optionElement);
+      selectElement.append(optionElement);
     }
 
     let removeEmptyEntry = null;
@@ -1595,7 +1595,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               const optionElement = document.createElement("option");
               optionElement.textContent = displayValue;
               optionElement.value = exportValue;
-              selectElement.appendChild(optionElement);
+              selectElement.append(optionElement);
             }
             if (selectElement.options.length > 0) {
               selectElement.options[0].selected = true;
@@ -1668,7 +1668,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     this._setBackgroundColor(selectElement);
     this._setDefaultPropertiesFromJS(selectElement);
 
-    this.container.appendChild(selectElement);
+    this.container.append(selectElement);
     return this.container;
   }
 }
@@ -1734,7 +1734,7 @@ class PopupAnnotationElement extends AnnotationElement {
     this.container.style.left = `${popupLeft}px`;
     this.container.style.top = `${popupTop}px`;
 
-    this.container.appendChild(popup.render());
+    this.container.append(popup.render());
     return this.container;
   }
 }
@@ -1781,7 +1781,7 @@ class PopupElement {
     const title = document.createElement("h1");
     title.dir = this.titleObj.dir;
     title.textContent = this.titleObj.str;
-    popup.appendChild(title);
+    popup.append(title);
 
     // The modification date is shown in the popup instead of the creation
     // date if it is available and can be parsed correctly, which is
@@ -1796,7 +1796,7 @@ class PopupElement {
         date: dateObject.toLocaleDateString(),
         time: dateObject.toLocaleTimeString(),
       });
-      popup.appendChild(modificationDate);
+      popup.append(modificationDate);
     }
 
     if (
@@ -1811,7 +1811,7 @@ class PopupElement {
       popup.lastChild.className = "richText popupContent";
     } else {
       const contents = this._formatContents(this.contentsObj);
-      popup.appendChild(contents);
+      popup.append(contents);
     }
 
     if (!Array.isArray(this.trigger)) {
@@ -1826,7 +1826,7 @@ class PopupElement {
     }
     popup.addEventListener("click", this._hide.bind(this, true));
 
-    wrapper.appendChild(popup);
+    wrapper.append(popup);
     return wrapper;
   }
 
@@ -1845,9 +1845,9 @@ class PopupElement {
     const lines = str.split(/(?:\r\n?|\n)/);
     for (let i = 0, ii = lines.length; i < ii; ++i) {
       const line = lines[i];
-      p.appendChild(document.createTextNode(line));
+      p.append(document.createTextNode(line));
       if (i < ii - 1) {
-        p.appendChild(document.createElement("br"));
+        p.append(document.createElement("br"));
       }
     }
     return p;
@@ -1957,7 +1957,7 @@ class LineAnnotationElement extends AnnotationElement {
     line.setAttribute("stroke", "transparent");
     line.setAttribute("fill", "transparent");
 
-    svg.appendChild(line);
+    svg.append(line);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the line instead
@@ -2004,7 +2004,7 @@ class SquareAnnotationElement extends AnnotationElement {
     square.setAttribute("stroke", "transparent");
     square.setAttribute("fill", "transparent");
 
-    svg.appendChild(square);
+    svg.append(square);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the square instead
@@ -2051,7 +2051,7 @@ class CircleAnnotationElement extends AnnotationElement {
     circle.setAttribute("stroke", "transparent");
     circle.setAttribute("fill", "transparent");
 
-    svg.appendChild(circle);
+    svg.append(circle);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the circle instead
@@ -2106,7 +2106,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     polyline.setAttribute("stroke", "transparent");
     polyline.setAttribute("fill", "transparent");
 
-    svg.appendChild(polyline);
+    svg.append(polyline);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the polyline
@@ -2199,7 +2199,7 @@ class InkAnnotationElement extends AnnotationElement {
       // instead of to the entire container (which is the default).
       this._createPopup(polyline, data);
 
-      svg.appendChild(polyline);
+      svg.append(polyline);
     }
 
     this.container.append(svg);
@@ -2376,7 +2376,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
       this._createPopup(trigger, this.data);
     }
 
-    this.container.appendChild(trigger);
+    this.container.append(trigger);
     return this.container;
   }
 
@@ -2471,7 +2471,7 @@ class AnnotationLayer {
         }
         if (Array.isArray(rendered)) {
           for (const renderedElement of rendered) {
-            div.appendChild(renderedElement);
+            div.append(renderedElement);
           }
         } else {
           if (element instanceof PopupAnnotationElement) {
@@ -2479,7 +2479,7 @@ class AnnotationLayer {
             // annotation elements to prevent interfering with mouse events.
             div.prepend(rendered);
           } else {
-            div.appendChild(rendered);
+            div.append(rendered);
           }
         }
       }
@@ -2557,7 +2557,7 @@ class AnnotationLayer {
 
       const { firstChild } = element;
       if (!firstChild) {
-        element.appendChild(canvas);
+        element.append(canvas);
       } else if (firstChild.nodeName === "CANVAS") {
         element.replaceChild(canvas, firstChild);
       } else {

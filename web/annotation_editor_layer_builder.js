@@ -94,7 +94,7 @@ class AnnotationEditorLayerBuilder {
 
     this.annotationEditorLayer.render(parameters);
 
-    this.pageDiv.appendChild(this.div);
+    this.pageDiv.append(this.div);
   }
 
   cancel() {

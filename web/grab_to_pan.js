@@ -153,7 +153,7 @@ class GrabToPan {
       this.element.scrollLeft = scrollLeft;
     }
     if (!this.overlay.parentNode) {
-      document.body.appendChild(this.overlay);
+      document.body.append(this.overlay);
     }
   }
 

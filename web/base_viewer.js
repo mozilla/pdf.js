@@ -941,7 +941,7 @@ class BaseViewer {
     if (this._spreadMode === SpreadMode.NONE && !this.isInPresentationMode) {
       // Finally, append the new page to the viewer.
       const pageView = this._pages[pageNumber - 1];
-      viewer.appendChild(pageView.div);
+      viewer.append(pageView.div);
 
       state.pages.push(pageView);
     } else {
@@ -969,7 +969,7 @@ class BaseViewer {
       if (this.isInPresentationMode) {
         const dummyPage = document.createElement("div");
         dummyPage.className = "dummyPage";
-        spread.appendChild(dummyPage);
+        spread.append(dummyPage);
       }
 
       for (const i of pageIndexSet) {
@@ -977,11 +977,11 @@ class BaseViewer {
         if (!pageView) {
           continue;
         }
-        spread.appendChild(pageView.div);
+        spread.append(pageView.div);
 
         state.pages.push(pageView);
       }
-      viewer.appendChild(spread);
+      viewer.append(spread);
     }
 
     state.scrollDown = pageNumber >= state.previousPageNumber;
@@ -1925,7 +1925,7 @@ class BaseViewer {
 
       if (this._spreadMode === SpreadMode.NONE) {
         for (const pageView of this._pages) {
-          viewer.appendChild(pageView.div);
+          viewer.append(pageView.div);
         }
       } else {
         const parity = this._spreadMode - 1;
@@ -1934,12 +1934,12 @@ class BaseViewer {
           if (spread === null) {
             spread = document.createElement("div");
             spread.className = "spread";
-            viewer.appendChild(spread);
+            viewer.append(spread);
           } else if (i % 2 === parity) {
             spread = spread.cloneNode(false);
-            viewer.appendChild(spread);
+            viewer.append(spread);
           }
-          spread.appendChild(pages[i].div);
+          spread.append(pages[i].div);
         }
       }
     }
