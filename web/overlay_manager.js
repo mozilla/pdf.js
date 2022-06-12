@@ -51,7 +51,7 @@ class OverlayManager {
         const style = document.createElement("style");
         style.textContent = PDFJSDev.eval("DIALOG_POLYFILL_CSS");
 
-        document.head.insertBefore(style, document.head.firstElementChild);
+        document.head.prepend(style);
       }
     }
 
