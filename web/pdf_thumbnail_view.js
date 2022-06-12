@@ -148,9 +148,9 @@ class PDFThumbnailView {
     ring.style.height = this.canvasHeight + borderAdjustment + "px";
     this.ring = ring;
 
-    div.appendChild(ring);
-    anchor.appendChild(div);
-    container.appendChild(anchor);
+    div.append(ring);
+    anchor.append(div);
+    container.append(anchor);
   }
 
   setPdfPage(pdfPage) {
@@ -257,7 +257,7 @@ class PDFThumbnailView {
     this.image = image;
 
     this.div.setAttribute("data-loaded", true);
-    this.ring.appendChild(image);
+    this.ring.append(image);
 
     // Zeroing the width and height causes Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.

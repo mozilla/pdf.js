@@ -25,7 +25,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
   for (const xfaPage of xfaHtml.children) {
     const page = document.createElement("div");
     page.className = "xfaPrintedPage";
-    printContainer.appendChild(page);
+    printContainer.append(page);
 
     const builder = new XfaLayerBuilder({
       pageDiv: page,

@@ -658,7 +658,7 @@ class TextLayerRenderTask {
           if (items[i].id !== null) {
             this._container.setAttribute("id", `${items[i].id}`);
           }
-          parent.appendChild(this._container);
+          parent.append(this._container);
         } else if (items[i].type === "endMarkedContent") {
           this._container = this._container.parentNode;
         }
@@ -710,12 +710,12 @@ class TextLayerRenderTask {
     }
 
     if (textDivProperties.hasText) {
-      this._container.appendChild(textDiv);
+      this._container.append(textDiv);
     }
     if (textDivProperties.hasEOL) {
       const br = document.createElement("br");
       br.setAttribute("role", "presentation");
-      this._container.appendChild(br);
+      this._container.append(br);
     }
   }
 

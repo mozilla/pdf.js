@@ -160,7 +160,7 @@ function updateObjectElement(elem) {
   if (!iframe || !iframe.__inserted_by_pdfjs) {
     iframe = createFullSizeIframe();
     elem.textContent = "";
-    elem.appendChild(iframe);
+    elem.append(iframe);
     iframe.__inserted_by_pdfjs = true;
   }
   iframe.src = getEmbeddedViewerURL(elem.data);

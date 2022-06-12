@@ -232,7 +232,7 @@ class AnnotationEditorLayer {
     editor.parent = this;
     if (editor.div && editor.isAttachedToDOM) {
       editor.div.remove();
-      this.div.appendChild(editor.div);
+      this.div.append(editor.div);
     }
   }
 
@@ -248,7 +248,7 @@ class AnnotationEditorLayer {
 
     if (!editor.isAttachedToDOM) {
       const div = editor.render();
-      this.div.appendChild(div);
+      this.div.append(div);
       editor.isAttachedToDOM = true;
     }
 

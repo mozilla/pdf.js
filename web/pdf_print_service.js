@@ -110,7 +110,7 @@ PDFPrintService.prototype = {
     const pageSize = this.pagesOverview[0];
     this.pageStyleSheet.textContent =
       "@page { size: " + pageSize.width + "pt " + pageSize.height + "pt;}";
-    body.appendChild(this.pageStyleSheet);
+    body.append(this.pageStyleSheet);
   },
 
   destroy() {
@@ -184,8 +184,8 @@ PDFPrintService.prototype = {
 
     const wrapper = document.createElement("div");
     wrapper.className = "printedPage";
-    wrapper.appendChild(img);
-    this.printContainer.appendChild(wrapper);
+    wrapper.append(img);
+    this.printContainer.append(wrapper);
 
     return new Promise(function (resolve, reject) {
       img.onload = resolve;

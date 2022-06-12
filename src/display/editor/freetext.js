@@ -211,11 +211,11 @@ class FreeTextEditor extends AnnotationEditor {
     style.fontSize = `calc(${this.#fontSize}px * var(--zoom-factor))`;
     style.color = this.#color;
 
-    this.div.appendChild(this.editorDiv);
+    this.div.append(this.editorDiv);
 
     this.overlayDiv = document.createElement("div");
     this.overlayDiv.classList.add("overlay", "enabled");
-    this.div.appendChild(this.overlayDiv);
+    this.div.append(this.overlayDiv);
 
     // TODO: implement paste callback.
     // The goal is to sanitize and have something suitable for this
