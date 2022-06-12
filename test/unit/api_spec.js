@@ -1326,7 +1326,7 @@ describe("api", function () {
             charLimit: null,
             comb: false,
             editable: true,
-            hidden: false,
+            display: 0,
             name: "Text1",
             rect: [24.1789, 719.66, 432.22, 741.66],
             actions: null,
@@ -1345,7 +1345,7 @@ describe("api", function () {
             editable: true,
             name: "Button1",
             rect: [455.436, 719.678, 527.436, 739.678],
-            hidden: false,
+            display: 0,
             actions: {
               Action: [
                 `this.getField("Text1").value = this.info.authors.join("::");`,

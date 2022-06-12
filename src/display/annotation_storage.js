@@ -21,6 +21,8 @@ import { objectFromMap } from "../shared/util.js";
  * Key/value storage for annotation data in forms.
  */
 class AnnotationStorage {
+  #frozen;
+
   constructor() {
     this._storage = new Map();
     this._modified = false;
@@ -31,6 +33,7 @@ class AnnotationStorage {
     // can have undesirable effects.
     this.onSetModified = null;
     this.onResetModified = null;
+    this.#frozen = null;
   }
 
   /**
@@ -152,6 +155,20 @@ class AnnotationStorage {
    * PLEASE NOTE: Only intended for usage within the API itself.
    * @ignore
    */
+  get frozen() {
+    if (this.#frozen) {
+      const results = this.#frozen;
+      this.#frozen = null;
+      return results;
+    }
+
+    return this.serializable;
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
   get hash() {
     const hash = new MurmurHash3_64();
 
@@ -160,6 +177,22 @@ class AnnotationStorage {
       hash.update(`${key}:${JSON.stringify(val)}`);
     }
     return hash.hexdigest();
+  }
+
+  freeze() {
+    if (this._storage.size === 0) {
+      this.#frozen = null;
+      return;
+    }
+
+    const clone = (this.#frozen = new Map());
+    for (const [key, value] of this._storage) {
+      const val =
+        value instanceof AnnotationEditor
+          ? value.serialize()
+          : Object.assign({}, value);
+      clone.set(key, val);
+    }
   }
 }
 

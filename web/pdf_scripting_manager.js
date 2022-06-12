@@ -216,7 +216,7 @@ class PDFScriptingManager {
   }
 
   async dispatchWillPrint(detail) {
-    return this._scripting?.dispatchEventInSandbox({
+    return this._scripting?.dispatchAsyncEventInSandbox({
       id: "doc",
       name: "WillPrint",
     });

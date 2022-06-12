@@ -254,6 +254,7 @@ const PDFViewerApplication = {
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
   _PDFBug: null,
+  _willPrintPromise: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -1781,9 +1782,14 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
-    // Given that the "beforeprint" browser event is synchronous, we
-    // unfortunately cannot await the scripting event dispatching here.
-    this.pdfScriptingManager.dispatchWillPrint();
+    this._willPrintPromise = this.pdfScriptingManager
+      .dispatchWillPrint()
+      .then(() => {
+        // DidPrint action can change the storage, so we must freeze it.
+        // When pages will be rendered for printing, they must use this
+        // frozen storage.
+        this.pdfDocument?.annotationStorage.freeze();
+      });
 
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
@@ -1821,6 +1827,7 @@ const PDFViewerApplication = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
+      this._willPrintPromise,
       this.l10n
     );
     this.printService = printService;
@@ -1834,9 +1841,14 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
-    // Given that the "afterprint" browser event is synchronous, we
-    // unfortunately cannot await the scripting event dispatching here.
-    this.pdfScriptingManager.dispatchDidPrint();
+    if (this._willPrintPromise) {
+      // Ensure that DidPrint is ran after WillPrint and the frozen
+      // storage has been created.
+      this._willPrintPromise.then(() => {
+        this.pdfScriptingManager.dispatchDidPrint();
+      });
+      this._willPrintPromise = null;
+    }
 
     if (this.printService) {
       this.printService.destroy();

@@ -43,14 +43,14 @@ class Field extends PDFObject {
     this.editable = data.editable;
     this.exportValues = data.exportValues;
     this.fileSelect = data.fileSelect;
-    this.hidden = data.hidden;
+    this.hidden = data.display === 1;
     this.highlight = data.highlight;
     this.lineWidth = data.lineWidth;
     this.multiline = data.multiline;
     this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
     this.password = data.password;
-    this.print = data.print;
+    this.print = data.display === 0 || data.display === 3;
     this.radiosInUnison = data.radiosInUnison;
     this.readonly = data.readonly;
     this.rect = data.rect;

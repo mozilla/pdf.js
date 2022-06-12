@@ -1811,16 +1811,22 @@ class PDFPageProxy {
       );
     }
 
+    let annotationStorage = null;
+    if (renderingIntent & RenderingIntentFlag.ANNOTATIONS_STORAGE) {
+      if (renderingIntent & RenderingIntentFlag.PRINT) {
+        annotationStorage = this._transport.annotationStorage.frozen;
+      } else {
+        annotationStorage = this._transport.annotationStorage.serializable;
+      }
+    }
+
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
       {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         cacheKey,
-        annotationStorage:
-          renderingIntent & RenderingIntentFlag.ANNOTATIONS_STORAGE
-            ? this._transport.annotationStorage.serializable
-            : null,
+        annotationStorage,
       }
     );
     const reader = readableStream.getReader();
