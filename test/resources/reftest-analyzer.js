@@ -79,7 +79,7 @@ window.onload = function () {
     r.setAttribute("y", (gMagZoom * -gMagHeight) / 2);
     r.setAttribute("width", gMagZoom * gMagWidth);
     r.setAttribute("height", gMagZoom * gMagHeight);
-    mag.appendChild(r);
+    mag.append(r);
     mag.setAttribute(
       "transform",
       "translate(" +
@@ -124,8 +124,7 @@ window.onload = function () {
         p2.setAttribute("stroke-width", "1px");
         p2.setAttribute("fill", "#888");
 
-        mag.appendChild(p1);
-        mag.appendChild(p2);
+        mag.append(p1, p2);
         gMagPixPaths[x][y] = [p1, p2];
       }
     }
@@ -251,7 +250,7 @@ window.onload = function () {
     const table = document.getElementById("itemtable");
     table.textContent = ""; // Remove any table contents from the DOM.
     const tbody = document.createElement("tbody");
-    table.appendChild(tbody);
+    table.append(tbody);
 
     for (const i in gTestItems) {
       const item = gTestItems[i];
@@ -276,8 +275,8 @@ window.onload = function () {
         text += "S";
         rowclass += " skip";
       }
-      td.appendChild(document.createTextNode(text));
-      tr.appendChild(td);
+      td.append(document.createTextNode(text));
+      tr.append(td);
 
       td = document.createElement("td");
       td.id = "url" + i;
@@ -290,14 +289,14 @@ window.onload = function () {
         a.id = i;
         a.className = "image";
         a.href = "#";
-        a.appendChild(text);
-        td.appendChild(a);
+        a.append(text);
+        td.append(a);
       } else {
-        td.appendChild(text);
+        td.append(text);
       }
-      tr.appendChild(td);
+      tr.append(td);
       tr.className = rowclass;
-      tbody.appendChild(tr);
+      tbody.append(tr);
     }
 
     // Bind an event handler to each image link
@@ -481,8 +480,8 @@ window.onload = function () {
           p2.setAttribute("fill", color2);
           if (color1 !== color2) {
             gFlashingPixels.push(p1, p2);
-            p1.parentNode.appendChild(p1);
-            p2.parentNode.appendChild(p2);
+            p1.parentNode.append(p1);
+            p2.parentNode.append(p2);
           }
           if (i === 0 && j === 0) {
             centerPixelColor1 = color1;

@@ -212,7 +212,7 @@ function webViewerLoad() {
       link.rel = "stylesheet";
       link.href = "../build/dev-css/viewer.css";
 
-      document.head.appendChild(link);
+      document.head.append(link);
     }
 
     Promise.all([
