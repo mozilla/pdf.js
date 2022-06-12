@@ -627,7 +627,7 @@ class PDFPageView {
 
     if (lastDivBeforeTextDiv) {
       // The annotation layer needs to stay on top.
-      div.insertBefore(canvasWrapper, lastDivBeforeTextDiv);
+      lastDivBeforeTextDiv.before(canvasWrapper);
     } else {
       div.append(canvasWrapper);
     }
@@ -640,7 +640,7 @@ class PDFPageView {
       textLayerDiv.style.height = canvasWrapper.style.height;
       if (lastDivBeforeTextDiv) {
         // The annotation layer needs to stay on top.
-        div.insertBefore(textLayerDiv, lastDivBeforeTextDiv);
+        lastDivBeforeTextDiv.before(textLayerDiv);
       } else {
         div.append(textLayerDiv);
       }
