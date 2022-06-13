@@ -14,12 +14,14 @@
  */
 
 import {
+  AnnotationEditorParamsType,
   AnnotationEditorType,
   assert,
   LINE_FACTOR,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
+import { getRGB } from "../display_utils.js";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -41,10 +43,14 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _internalPadding = 0;
 
+  static _defaultFontSize = 10;
+
+  static _defaultColor = "CanvasText";
+
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
-    this.#color = params.color || "CanvasText";
-    this.#fontSize = params.fontSize || 10;
+    this.#color = params.color || FreeTextEditor._defaultColor;
+    this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
   }
 
   static initialize(l10n) {
@@ -89,6 +95,94 @@ class FreeTextEditor extends AnnotationEditor {
     return editor;
   }
 
+  static updateDefaultParams(type, value) {
+    switch (type) {
+      case AnnotationEditorParamsType.FREETEXT_SIZE:
+        FreeTextEditor._defaultFontSize = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_COLOR:
+        FreeTextEditor._defaultColor = value;
+        break;
+    }
+  }
+
+  /** @inheritdoc */
+  updateParams(type, value) {
+    switch (type) {
+      case AnnotationEditorParamsType.FREETEXT_SIZE:
+        this.#updateFontSize(value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_COLOR:
+        this.#updateColor(value);
+        break;
+    }
+  }
+
+  static get defaultPropertiesToUpdate() {
+    return [
+      [
+        AnnotationEditorParamsType.FREETEXT_SIZE,
+        FreeTextEditor._defaultFontSize,
+      ],
+      [AnnotationEditorParamsType.FREETEXT_COLOR, FreeTextEditor._defaultColor],
+    ];
+  }
+
+  /** @inheritdoc */
+  get propertiesToUpdate() {
+    return [
+      [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],
+      [AnnotationEditorParamsType.FREETEXT_COLOR, this.#color],
+    ];
+  }
+
+  /**
+   * Update the font size and make this action as undoable.
+   * @param {number} fontSize
+   */
+  #updateFontSize(fontSize) {
+    const setFontsize = size => {
+      this.editorDiv.style.fontSize = `calc(${size}px * var(--scale-factor))`;
+      this.translate(0, -(size - this.#fontSize) * this.parent.scaleFactor);
+      this.#fontSize = size;
+    };
+    const savedFontsize = this.#fontSize;
+    this.parent.addCommands({
+      cmd: () => {
+        setFontsize(fontSize);
+      },
+      undo: () => {
+        setFontsize(savedFontsize);
+      },
+      mustExec: true,
+      type: AnnotationEditorParamsType.FREETEXT_SIZE,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  /**
+   * Update the color and make this action undoable.
+   * @param {string} color
+   */
+  #updateColor(color) {
+    const savedColor = this.#color;
+    this.parent.addCommands({
+      cmd: () => {
+        this.#color = color;
+        this.editorDiv.style.color = color;
+      },
+      undo: () => {
+        this.#color = savedColor;
+        this.editorDiv.style.color = savedColor;
+      },
+      mustExec: true,
+      type: AnnotationEditorParamsType.FREETEXT_COLOR,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
   /** @inheritdoc */
   getInitialTranslation() {
     // The start of the base line is where the user clicked.
@@ -116,6 +210,7 @@ class FreeTextEditor extends AnnotationEditor {
   enableEditMode() {
     super.enableEditMode();
     this.overlayDiv.classList.remove("enabled");
+    this.editorDiv.contentEditable = true;
     this.div.draggable = false;
   }
 
@@ -123,6 +218,7 @@ class FreeTextEditor extends AnnotationEditor {
   disableEditMode() {
     super.disableEditMode();
     this.overlayDiv.classList.add("enabled");
+    this.editorDiv.contentEditable = false;
     this.div.draggable = true;
   }
 
@@ -223,7 +319,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
 
     const { style } = this.editorDiv;
-    style.fontSize = `${this.#fontSize}%`;
+    style.fontSize = `calc(${this.#fontSize}px * var(--scale-factor))`;
     style.color = this.#color;
 
     this.div.append(this.editorDiv);
@@ -248,6 +344,7 @@ class FreeTextEditor extends AnnotationEditor {
       );
       // eslint-disable-next-line no-unsanitized/property
       this.editorDiv.innerHTML = this.#contentHTML;
+      this.div.draggable = true;
     }
 
     return this.div;
@@ -258,9 +355,12 @@ class FreeTextEditor extends AnnotationEditor {
     const padding = FreeTextEditor._internalPadding * this.parent.scaleFactor;
     const rect = this.getRect(padding, padding);
 
+    // We don't use this.#color directly because it can be CanvasText.
+    const color = getRGB(getComputedStyle(this.editorDiv).color);
+
     return {
       annotationType: AnnotationEditorType.FREETEXT,
-      color: [0, 0, 0],
+      color,
       fontSize: this.#fontSize,
       value: this.#content,
       pageIndex: this.parent.pageIndex,

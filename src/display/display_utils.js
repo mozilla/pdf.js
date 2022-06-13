@@ -567,6 +567,28 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
   });
 }
 
+function getRGB(color) {
+  if (color.startsWith("#")) {
+    const colorRGB = parseInt(color.slice(1), 16);
+    return [
+      (colorRGB & 0xff0000) >> 16,
+      (colorRGB & 0x00ff00) >> 8,
+      colorRGB & 0x0000ff,
+    ];
+  }
+
+  if (color.startsWith("rgb(")) {
+    // getComputedStyle(...).color returns a `rgb(R, G, B)` color.
+    return color
+      .slice(/* "rgb(".length */ 4, -1) // Strip out "rgb(" and ")".
+      .split(",")
+      .map(x => parseInt(x));
+  }
+
+  warn(`Not a valid color format: "${color}"`);
+  return [0, 0, 0];
+}
+
 export {
   deprecated,
   DOMCanvasFactory,
@@ -575,6 +597,7 @@ export {
   DOMSVGFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getRGB,
   getXfaPageViewport,
   isDataScheme,
   isPdfFile,
