@@ -215,7 +215,7 @@ class Rasterize {
       div.className = "annotationLayer";
 
       const [common, overrides] = await this.annotationStylePromise;
-      style.textContent = `${common}\n${overrides}`;
+      style.textContent = `:root { --scale-factor: ${viewport.scale} } ${common}\n${overrides}`;
 
       const annotationViewport = viewport.clone({ dontFlip: true });
       const annotationImageMap = await convertCanvasesToImages(
@@ -234,6 +234,7 @@ class Rasterize {
         renderForms,
         annotationCanvasMap: annotationImageMap,
       };
+      AnnotationLayer.setDimensions(div, annotationViewport);
       AnnotationLayer.render(parameters);
 
       // Inline SVG images from text annotations.
