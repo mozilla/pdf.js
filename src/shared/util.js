@@ -60,6 +60,13 @@ const AnnotationEditorType = {
   INK: 15,
 };
 
+const AnnotationEditorParamsType = {
+  FREETEXT_SIZE: 0,
+  FREETEXT_COLOR: 1,
+  INK_COLOR: 2,
+  INK_THICKNESS: 3,
+};
+
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
 const PermissionFlag = {
   PRINT: 0x04,
@@ -1146,6 +1153,7 @@ export {
   AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
+  AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
   AnnotationFieldFlag,

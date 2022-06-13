@@ -26,6 +26,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { getRGB, PixelsPerInch } from "./display_utils.js";
 import {
   getShadingPattern,
   PathType,
@@ -33,7 +34,6 @@ import {
 } from "./pattern_helper.js";
 import { applyMaskImageData } from "../shared/image_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
-import { PixelsPerInch } from "./display_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -1326,10 +1326,7 @@ class CanvasGraphics {
         // Then for every color in the pdf, if its rounded luminance is the
         // same as the background one then it's replaced by the new
         // background color else by the foreground one.
-        const cB = parseInt(defaultBg.slice(1), 16);
-        const rB = (cB && 0xff0000) >> 16;
-        const gB = (cB && 0x00ff00) >> 8;
-        const bB = cB && 0x0000ff;
+        const [rB, gB, bB] = getRGB(defaultBg);
         const newComp = x => {
           x /= 255;
           return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;

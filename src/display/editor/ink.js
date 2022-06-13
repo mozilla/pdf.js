@@ -13,9 +13,14 @@
  * limitations under the License.
  */
 
-import { AnnotationEditorType, Util } from "../../shared/util.js";
+import {
+  AnnotationEditorParamsType,
+  AnnotationEditorType,
+  Util,
+} from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { fitCurve } from "./fit_curve/fit_curve.js";
+import { getRGB } from "../display_utils.js";
 
 /**
  * Basic draw editor in order to generate an Ink annotation.
@@ -43,10 +48,14 @@ class InkEditor extends AnnotationEditor {
 
   #realHeight = 0;
 
+  static _defaultThickness = 1;
+
+  static _defaultColor = "CanvasText";
+
   constructor(params) {
     super({ ...params, name: "inkEditor" });
-    this.color = params.color || "CanvasText";
-    this.thickness = params.thickness || 1;
+    this.color = params.color || InkEditor._defaultColor;
+    this.thickness = params.thickness || InkEditor._defaultThickness;
     this.paths = [];
     this.bezierPath2D = [];
     this.currentPath = [];
@@ -87,6 +96,88 @@ class InkEditor extends AnnotationEditor {
     editor.#realHeight = this.#realHeight;
 
     return editor;
+  }
+
+  static updateDefaultParams(type, value) {
+    switch (type) {
+      case AnnotationEditorParamsType.INK_THICKNESS:
+        InkEditor._defaultThickness = value;
+        break;
+      case AnnotationEditorParamsType.INK_COLOR:
+        InkEditor._defaultColor = value;
+        break;
+    }
+  }
+
+  /** @inheritdoc */
+  updateParams(type, value) {
+    switch (type) {
+      case AnnotationEditorParamsType.INK_THICKNESS:
+        this.#updateThickness(value);
+        break;
+      case AnnotationEditorParamsType.INK_COLOR:
+        this.#updateColor(value);
+        break;
+    }
+  }
+
+  static get defaultPropertiesToUpdate() {
+    return [
+      [AnnotationEditorParamsType.INK_THICKNESS, InkEditor._defaultThickness],
+      [AnnotationEditorParamsType.INK_COLOR, InkEditor._defaultColor],
+    ];
+  }
+
+  /** @inheritdoc */
+  get propertiesToUpdate() {
+    return [
+      [AnnotationEditorParamsType.INK_THICKNESS, this.thickness],
+      [AnnotationEditorParamsType.INK_COLOR, this.color],
+    ];
+  }
+
+  /**
+   * Update the thickness and make this action undoable.
+   * @param {number} thickness
+   */
+  #updateThickness(thickness) {
+    const savedThickness = this.thickness;
+    this.parent.addCommands({
+      cmd: () => {
+        this.thickness = thickness;
+        this.#fitToContent();
+      },
+      undo: () => {
+        this.thickness = savedThickness;
+        this.#fitToContent();
+      },
+      mustExec: true,
+      type: AnnotationEditorParamsType.INK_THICKNESS,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  /**
+   * Update the color and make this action undoable.
+   * @param {string} color
+   */
+  #updateColor(color) {
+    const savedColor = this.color;
+    this.parent.addCommands({
+      cmd: () => {
+        this.color = color;
+        this.#redraw();
+      },
+      undo: () => {
+        this.color = savedColor;
+        this.#redraw();
+      },
+      mustExec: true,
+      type: AnnotationEditorParamsType.INK_COLOR,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
   }
 
   /** @inheritdoc */
@@ -186,7 +277,7 @@ class InkEditor extends AnnotationEditor {
     this.ctx.lineWidth =
       (this.thickness * this.parent.scaleFactor) / this.scaleFactor;
     this.ctx.lineCap = "round";
-    this.ctx.lineJoin = "miter";
+    this.ctx.lineJoin = "round";
     this.ctx.miterLimit = 10;
     this.ctx.strokeStyle = this.color;
   }
@@ -263,7 +354,7 @@ class InkEditor extends AnnotationEditor {
       }
     };
 
-    this.parent.addCommands(cmd, undo, true);
+    this.parent.addCommands({ cmd, undo, mustExec: true });
   }
 
   /**
@@ -755,9 +846,12 @@ class InkEditor extends AnnotationEditor {
     const height =
       this.rotation % 180 === 0 ? rect[3] - rect[1] : rect[2] - rect[0];
 
+    // We don't use this.color directly because it can be CanvasText.
+    const color = getRGB(this.ctx.strokeStyle);
+
     return {
       annotationType: AnnotationEditorType.INK,
-      color: [0, 0, 0],
+      color,
       thickness: this.thickness,
       paths: this.#serializePaths(
         this.scaleFactor / this.parent.scaleFactor,
