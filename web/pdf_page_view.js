@@ -377,7 +377,7 @@ class PDFPageView {
     });
 
     if (this._isStandalone) {
-      docStyle.setProperty("--zoom-factor", this.scale);
+      docStyle.setProperty("--scale-factor", this.viewport.scale);
     }
 
     if (this.svg) {

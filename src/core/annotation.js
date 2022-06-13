@@ -432,6 +432,7 @@ class Annotation {
     this.setAppearance(dict);
     this.setBorderAndBackgroundColors(dict.get("MK"));
 
+    this._hasOwnCanvas = false;
     this._streams = [];
     if (this.appearance) {
       this._streams.push(this.appearance);
@@ -450,7 +451,6 @@ class Annotation {
       modificationDate: this.modificationDate,
       rect: this.rectangle,
       subtype: params.subtype,
-      hasOwnCanvas: false,
     };
 
     if (params.collectFields) {
@@ -849,7 +849,7 @@ class Annotation {
     const data = this.data;
     let appearance = this.appearance;
     const isUsingOwnCanvas =
-      data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
+      this._hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
     if (!appearance) {
       if (!isUsingOwnCanvas) {
         return Promise.resolve(new OperatorList());
@@ -2163,7 +2163,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     } else if (this.data.radioButton) {
       this._processRadioButton(params);
     } else if (this.data.pushButton) {
-      this.data.hasOwnCanvas = true;
+      this._hasOwnCanvas = true;
       this._processPushButton(params);
     } else {
       warn("Invalid field flags for button widget annotation");

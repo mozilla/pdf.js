@@ -24,7 +24,6 @@ import { AnnotationEditorType, Util } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
-import { PixelsPerInch } from "../display_utils.js";
 
 /**
  * @typedef {Object} AnnotationEditorLayerOptions
@@ -491,14 +490,6 @@ class AnnotationEditorLayer {
    */
   get scaleFactor() {
     return this.viewport.scale;
-  }
-
-  /**
-   * Get the zoom factor.
-   * @returns {number}
-   */
-  get zoomFactor() {
-    return this.viewport.scale / PixelsPerInch.PDF_TO_CSS_UNITS;
   }
 }
 

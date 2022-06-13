@@ -27,9 +27,30 @@
   }
 }
 
+[data-annotation-rotation="90"] {
+  transform: rotate(90deg) translateY(-100%);
+}
+[data-annotation-rotation="180"] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+[data-annotation-rotation="270"] {
+  transform: rotate(270deg) translateX(-100%);
+}
+
+.annotationLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: calc(100px * var(--scale-factor));
+  pointer-events: none;
+  transform-origin: 0 0;
+}
+
 .annotationLayer section {
   position: absolute;
   text-align: initial;
+  pointer-events: auto;
+  box-sizing: border-box;
 }
 
 .annotationLayer .linkAnnotation > a,
@@ -43,10 +64,8 @@
 }
 
 .annotationLayer .buttonWidgetAnnotation.pushButton > canvas {
-  position: relative;
-  top: 0;
-  left: 0;
-  z-index: -1;
+  width: 100%;
+  height: 100%;
 }
 
 .annotationLayer .linkAnnotation > a:hover,
@@ -59,6 +78,8 @@
 .annotationLayer .textAnnotation img {
   position: absolute;
   cursor: pointer;
+  width: 100%;
+  height: 100%;
 }
 
 .annotationLayer .textWidgetAnnotation input,
@@ -69,7 +90,7 @@
   background-image: var(--annotation-unfocused-field-background);
   border: 1px solid transparent;
   box-sizing: border-box;
-  font: 9px sans-serif;
+  font: 9% sans-serif;
   height: 100%;
   margin: 0;
   vertical-align: top;
@@ -186,27 +207,31 @@
 
 .annotationLayer .popupWrapper {
   position: absolute;
-  width: 20em;
+  font-size: calc(9px * var(--scale-factor));
+  width: 100%;
+  min-width: calc(180px * var(--scale-factor));
+  pointer-events: none;
 }
 
 .annotationLayer .popup {
   position: absolute;
   z-index: 200;
-  max-width: 20em;
+  max-width: calc(180px * var(--scale-factor));
   background-color: rgba(255, 255, 153, 1);
-  box-shadow: 0 2px 5px rgba(136, 136, 136, 1);
-  border-radius: 2px;
-  padding: 6px;
-  margin-left: 5px;
+  box-shadow: 0 calc(2px * var(--scale-factor)) calc(5px * var(--scale-factor))
+    rgba(136, 136, 136, 1);
+  border-radius: calc(2px * var(--scale-factor));
+  padding: calc(6px * var(--scale-factor));
+  margin-left: calc(5px * var(--scale-factor));
   cursor: pointer;
   font: message-box;
-  font-size: 9px;
   white-space: normal;
   word-wrap: break-word;
+  pointer-events: auto;
 }
 
 .annotationLayer .popup > * {
-  font-size: 9px;
+  font-size: calc(9px * var(--scale-factor));
 }
 
 .annotationLayer .popup h1 {
@@ -215,17 +240,18 @@
 
 .annotationLayer .popupDate {
   display: inline-block;
-  margin-left: 5px;
+  margin-left: calc(5px * var(--scale-factor));
 }
 
 .annotationLayer .popupContent {
   border-top: 1px solid rgba(51, 51, 51, 1);
-  margin-top: 2px;
-  padding-top: 2px;
+  margin-top: calc(2px * var(--scale-factor));
+  padding-top: calc(2px * var(--scale-factor));
 }
 
 .annotationLayer .richText > * {
   white-space: pre-wrap;
+  font-size: calc(9px * var(--scale-factor));
 }
 
 .annotationLayer .highlightAnnotation,
@@ -243,4 +269,10 @@
 .annotationLayer .stampAnnotation,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
+}
+
+.annotationLayer section svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
 }
