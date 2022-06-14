@@ -6,4 +6,4 @@ RUN  npm install -g gulp
 RUN npm install -g http-server
 #RUN gulp generic
 EXPOSE 8080
-CMD ["http-server", "build/generic"]
+CMD "http-server ./build/generic -d false -i false -c-1"
