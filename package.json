@@ -68,7 +68,7 @@
     "test": "gulp npm-test",
     "start": "gulp server",
     "generic": "gulp generic",
-    "server": "http-server ./build/generic -d false -i false"
+    "server": "http-server build/generic -d false -i false -c-1"
   },
   "repository": {
     "type": "git",

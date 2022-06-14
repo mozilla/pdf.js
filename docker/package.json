@@ -1,0 +1,15 @@
+{
+  "name": "pdf.js",
+  "version": "2.0.0",
+  "devDependencies": {
+    "http-server": "^0.12.3"
+  },
+  "scripts": {
+    "server": "http-server build/generic -d false -i false -c-1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/pdf.js.git"
+  },
+  "license": "Apache-2.0"
+}
