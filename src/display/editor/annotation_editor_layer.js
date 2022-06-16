@@ -43,6 +43,8 @@ import { PixelsPerInch } from "../display_utils.js";
 class AnnotationEditorLayer {
   #boundClick;
 
+  #boundMouseover;
+
   #editors = new Map();
 
   #uiManager;
@@ -83,6 +85,7 @@ class AnnotationEditorLayer {
     this.pageIndex = options.pageIndex;
     this.div = options.div;
     this.#boundClick = this.click.bind(this);
+    this.#boundMouseover = this.mouseover.bind(this);
 
     for (const editor of this.#uiManager.getEditors(options.pageIndex)) {
       this.add(editor);
@@ -92,12 +95,44 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * The mode has changed: it must be updated.
+   * @param {number} mode
+   */
+  updateMode(mode) {
+    if (mode === AnnotationEditorType.INK) {
+      // We want to have the ink editor covering all of the page without having
+      // to click to create it: it must be here when we start to draw.
+      this.div.addEventListener("mouseover", this.#boundMouseover);
+      this.div.removeEventListener("click", this.#boundClick);
+    } else {
+      this.div.removeEventListener("mouseover", this.#boundMouseover);
+    }
+  }
+
+  /**
+   * Mouseover callback.
+   * @param {MouseEvent} event
+   */
+  mouseover(event) {
+    if (event.target === this.div && event.buttons === 0) {
+      // The div is the target so there is no ink editor, hence we can
+      // create a new one.
+      // event.buttons === 0 is here to avoid adding a new ink editor
+      // when we drop an editor.
+      const editor = this.#createAndAddNewEditor(event);
+      editor.setInBackground();
+    }
+  }
+
+  /**
    * Add some commands into the CommandManager (undo/redo stuff).
    * @param {function} cmd
    * @param {function} undo
+   * @param {boolean} mustExec - If true the command is executed after having
+   *   been added.
    */
-  addCommands(cmd, undo) {
-    this.#uiManager.addCommands(cmd, undo);
+  addCommands(cmd, undo, mustExec) {
+    this.#uiManager.addCommands(cmd, undo, mustExec);
   }
 
   /**
@@ -178,6 +213,17 @@ class AnnotationEditorLayer {
    * @param {AnnotationEditor} editor
    */
   setActiveEditor(editor) {
+    const currentActive = this.#uiManager.getActive();
+    if (currentActive === editor) {
+      return;
+    }
+
+    this.#uiManager.setActiveEditor(editor);
+
+    if (currentActive && currentActive !== editor) {
+      currentActive.commitOrRemove();
+    }
+
     if (editor) {
       this.unselectAll();
       this.div.removeEventListener("click", this.#boundClick);
@@ -185,7 +231,6 @@ class AnnotationEditorLayer {
       this.#uiManager.allowClick = false;
       this.div.addEventListener("click", this.#boundClick);
     }
-    this.#uiManager.setActiveEditor(editor);
   }
 
   attach(editor) {
@@ -212,7 +257,6 @@ class AnnotationEditorLayer {
     if (this.#uiManager.isActive(editor) || this.#editors.size === 0) {
       this.setActiveEditor(null);
       this.#uiManager.allowClick = true;
-      this.div.focus();
     }
   }
 
@@ -279,7 +323,22 @@ class AnnotationEditorLayer {
       editor.remove();
     };
 
-    this.addCommands(cmd, undo);
+    this.addCommands(cmd, undo, true);
+  }
+
+  /**
+   * Add a new editor and make this addition undoable.
+   * @param {AnnotationEditor} editor
+   */
+  addUndoableEditor(editor) {
+    const cmd = () => {
+      this.addOrRebuild(editor);
+    };
+    const undo = () => {
+      editor.remove();
+    };
+
+    this.addCommands(cmd, undo, false);
   }
 
   /**
@@ -306,6 +365,26 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Create and add a new editor.
+   * @param {MouseEvent} event
+   * @returns {AnnotationEditor}
+   */
+  #createAndAddNewEditor(event) {
+    const id = this.getNextId();
+    const editor = this.#createNewEditor({
+      parent: this,
+      id,
+      x: event.offsetX,
+      y: event.offsetY,
+    });
+    if (editor) {
+      this.add(editor);
+    }
+
+    return editor;
+  }
+
+  /**
    * Mouseclick callback.
    * @param {MouseEvent} event
    * @returns {undefined}
@@ -316,16 +395,7 @@ class AnnotationEditorLayer {
       return;
     }
 
-    const id = this.getNextId();
-    const editor = this.#createNewEditor({
-      parent: this,
-      id,
-      x: event.offsetX,
-      y: event.offsetY,
-    });
-    if (editor) {
-      this.addANewEditor(editor);
-    }
+    this.#createAndAddNewEditor(event);
   }
 
   /**

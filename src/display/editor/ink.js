@@ -21,11 +21,11 @@ import { fitCurve } from "./fit_curve/fit_curve.js";
  * Basic draw editor in order to generate an Ink annotation.
  */
 class InkEditor extends AnnotationEditor {
-  #aspectRatio;
+  #aspectRatio = 0;
 
-  #baseHeight;
+  #baseHeight = 0;
 
-  #baseWidth;
+  #baseWidth = 0;
 
   #boundCanvasMousemove;
 
@@ -35,9 +35,9 @@ class InkEditor extends AnnotationEditor {
 
   #boundCanvasMousedown;
 
-  #disableEditing;
+  #disableEditing = false;
 
-  #observer;
+  #observer = null;
 
   constructor(params) {
     super({ ...params, name: "inkEditor" });
@@ -48,10 +48,6 @@ class InkEditor extends AnnotationEditor {
     this.currentPath = [];
     this.scaleFactor = 1;
     this.translationX = this.translationY = 0;
-    this.#baseWidth = this.#baseHeight = 0;
-    this.#aspectRatio = 0;
-    this.#disableEditing = false;
-    this.#observer = null;
     this.x = 0;
     this.y = 0;
 
@@ -113,8 +109,6 @@ class InkEditor extends AnnotationEditor {
       return;
     }
 
-    super.remove();
-
     // Destroy the canvas.
     this.canvas.width = this.canvas.heigth = 0;
     this.canvas.remove();
@@ -122,11 +116,13 @@ class InkEditor extends AnnotationEditor {
 
     this.#observer.disconnect();
     this.#observer = null;
+
+    super.remove();
   }
 
   /** @inheritdoc */
   enableEditMode() {
-    if (this.#disableEditing) {
+    if (this.#disableEditing || this.canvas === null) {
       return;
     }
 
@@ -145,7 +141,7 @@ class InkEditor extends AnnotationEditor {
 
     super.disableEditMode();
     this.canvas.style.cursor = "auto";
-    this.div.draggable = true;
+    this.div.draggable = !this.isEmpty();
     this.div.classList.remove("editing");
 
     this.canvas.removeEventListener("mousedown", this.#boundCanvasMousedown);
@@ -154,6 +150,7 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   onceAdded() {
+    this.div.draggable = !this.isEmpty();
     this.div.focus();
   }
 
@@ -238,11 +235,15 @@ class InkEditor extends AnnotationEditor {
       if (this.paths.length === 0) {
         this.remove();
       } else {
+        if (!this.canvas) {
+          this.#createCanvas();
+          this.#createObserver();
+        }
         this.#fitToContent();
       }
     };
 
-    this.parent.addCommands(cmd, undo);
+    this.parent.addCommands(cmd, undo, true);
   }
 
   /**
@@ -273,7 +274,11 @@ class InkEditor extends AnnotationEditor {
     if (this.#disableEditing) {
       return;
     }
+
     this.disableEditMode();
+
+    // This editor must be on top of the main ink editor.
+    this.setInForeground();
 
     this.#disableEditing = true;
     this.div.classList.add("disabled");
@@ -296,6 +301,10 @@ class InkEditor extends AnnotationEditor {
     if (!this.isInEditMode() || this.#disableEditing) {
       return;
     }
+
+    // We want to draw on top of any other editors.
+    // Since it's the last child, there's no need to give it a higher z-index.
+    this.setInForeground();
 
     event.stopPropagation();
 
@@ -324,6 +333,10 @@ class InkEditor extends AnnotationEditor {
     if (this.isInEditMode() && this.currentPath.length !== 0) {
       event.stopPropagation();
       this.#endDrawing(event);
+
+      // Since the ink editor covers all of the page and we want to be able
+      // to select another editor, we just put this one in the background.
+      this.setInBackground();
     }
   }
 
@@ -334,6 +347,7 @@ class InkEditor extends AnnotationEditor {
    */
   canvasMouseleave(event) {
     this.#endDrawing(event);
+    this.setInBackground();
   }
 
   /**
