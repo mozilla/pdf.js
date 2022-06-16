@@ -926,18 +926,13 @@ class PDFPageView {
 
   paintOnSvg(wrapper) {
     if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("MOZCENTRAL || CHROME")
+      !(
+        typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")
+      )
     ) {
-      // Return a mock object, to prevent errors such as e.g.
-      // "TypeError: paintTask.promise is undefined".
-      return {
-        promise: Promise.reject(new Error("SVG rendering is not supported.")),
-        onRenderContinue(cont) {},
-        cancel() {},
-      };
+      throw new Error("Not implemented: paintOnSvg");
     }
-
     let cancelled = false;
     const ensureNotCancelled = () => {
       if (cancelled) {

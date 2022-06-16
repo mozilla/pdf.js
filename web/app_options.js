@@ -160,11 +160,6 @@ const defaultOptions = {
     value: 150,
     kind: OptionKind.VIEWER,
   },
-  renderer: {
-    /** @type {string} */
-    value: "canvas",
-    kind: OptionKind.VIEWER,
-  },
   sidebarViewOnLoad: {
     /** @type {number} */
     value: -1,
@@ -306,6 +301,11 @@ if (
     value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
+  defaultOptions.renderer = {
+    /** @type {string} */
+    value: "canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
@@ -317,8 +317,6 @@ if (
 
   defaultOptions.annotationEditorEnabled.compatibility =
     compatibilityParams.annotationEditorEnabled;
-
-  defaultOptions.renderer.kind += OptionKind.PREFERENCE;
 } else if (PDFJSDev.test("CHROME")) {
   defaultOptions.disableTelemetry = {
     /** @type {boolean} */
