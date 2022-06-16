@@ -137,7 +137,6 @@ const defaultOptions = {
   maxCanvasPixels: {
     /** @type {number} */
     value: 16777216,
-    compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
   },
   pageColorsBackground: {
@@ -314,9 +313,6 @@ if (
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
   };
-
-  defaultOptions.annotationEditorEnabled.compatibility =
-    compatibilityParams.annotationEditorEnabled;
 } else if (PDFJSDev.test("CHROME")) {
   defaultOptions.disableTelemetry = {
     /** @type {boolean} */
@@ -344,7 +340,7 @@ class AppOptions {
     }
     const defaultOption = defaultOptions[name];
     if (defaultOption !== undefined) {
-      return defaultOption.compatibility ?? defaultOption.value;
+      return compatibilityParams[name] ?? defaultOption.value;
     }
     return undefined;
   }
@@ -376,7 +372,7 @@ class AppOptions {
       options[name] =
         userOption !== undefined
           ? userOption
-          : defaultOption.compatibility ?? defaultOption.value;
+          : compatibilityParams[name] ?? defaultOption.value;
     }
     return options;
   }
