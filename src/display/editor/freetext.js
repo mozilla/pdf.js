@@ -33,6 +33,8 @@ class FreeTextEditor extends AnnotationEditor {
 
   #contentHTML = "";
 
+  #hasAlreadyBeenCommitted = false;
+
   #fontSize;
 
   static _freeTextDefaultContent = "";
@@ -168,6 +170,13 @@ class FreeTextEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   commit() {
+    if (!this.#hasAlreadyBeenCommitted) {
+      // This editor has something and it's the first time
+      // it's commited so we can it in the undo/redo stack.
+      this.#hasAlreadyBeenCommitted = true;
+      this.parent.addUndoableEditor(this);
+    }
+
     this.disableEditMode();
     this.#contentHTML = this.editorDiv.innerHTML;
     this.#content = this.#extractText().trimEnd();
