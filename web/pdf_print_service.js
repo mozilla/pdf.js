@@ -136,7 +136,7 @@ PDFPrintService.prototype = {
       );
     }, this);
     if (!hasEqualPageSizes) {
-      Window['ngxConsole'].warn(
+      Window["ngxConsole"].warn(
         "Not all pages have the same size. The printed " +
           "result may be incorrect!"
       );
@@ -279,7 +279,20 @@ PDFPrintService.prototype = {
         }
         print.call(window);
         // Delay promise resolution in case print() was not synchronous.
-        setTimeout(resolve, 20); // Tidy-up.
+        // modified by ngx-extended-pdf-viewer #83
+        const isIOS = navigator.platform && [
+          "iPad Simulator",
+          "iPhone Simulator",
+          "iPod Simulator",
+          "iPad",
+          "iPhone",
+          "iPod"
+        ].includes(navigator.platform)
+        // iPad on iOS 13 detection
+        || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+
+        setTimeout(resolve, isIOS ? 1500 : 20); // Tidy-up.
+        // end of modification by ngx-extended-pdf-viewer
       }, 0);
     });
   },
@@ -301,7 +314,7 @@ window.printPDF = function () {
     return;
   }
   if (activeService) {
-    Window['ngxConsole'].warn("Ignored window.printPDF() because of a pending print job.");
+    Window["ngxConsole"].warn("Ignored window.printPDF() because of a pending print job.");
     return;
   }
   ensureOverlay().then(function () {
@@ -314,7 +327,7 @@ window.printPDF = function () {
     dispatchEvent("beforeprint");
   } finally {
     if (!activeService) {
-      Window['ngxConsole'].error("Expected print service to be initialized.");
+      Window["ngxConsole"].error("Expected print service to be initialized.");
       ensureOverlay().then(function () {
         if (overlayManager.active === dialog) {
           overlayManager.close(dialog);
@@ -327,9 +340,7 @@ window.printPDF = function () {
       .renderPages()
       .then(function () {
         // #643 modified by ngx-extended-pdf-viewer
-        const progressIndicator = document.getElementById(
-          "printServiceOverlay"
-        );
+        const progressIndicator = document.getElementById("printServiceDialog");
         if (progressIndicator) {
           progressIndicator.classList.add("hidden");
         }
