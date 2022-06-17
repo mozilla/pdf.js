@@ -74,11 +74,6 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  defaultUrl: {
-    /** @type {string} */
-    value: "compressed.tracemonkey-pldi-09.pdf",
-    kind: OptionKind.VIEWER,
-  },
   defaultZoomValue: {
     /** @type {string} */
     value: "",
@@ -296,6 +291,11 @@ if (
   typeof PDFJSDev === "undefined" ||
   PDFJSDev.test("!PRODUCTION || GENERIC")
 ) {
+  defaultOptions.defaultUrl = {
+    /** @type {string} */
+    value: "compressed.tracemonkey-pldi-09.pdf",
+    kind: OptionKind.VIEWER,
+  };
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
     value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
@@ -320,6 +320,11 @@ if (
 
   defaultOptions.renderer.kind += OptionKind.PREFERENCE;
 } else if (PDFJSDev.test("CHROME")) {
+  defaultOptions.defaultUrl = {
+    /** @type {string} */
+    value: "",
+    kind: OptionKind.VIEWER,
+  };
   defaultOptions.disableTelemetry = {
     /** @type {boolean} */
     value: false,
