@@ -309,7 +309,7 @@ class AnnotationElement {
     return shadow(this, "_commonActions", {
       display: event => {
         const hidden = event.detail.display % 2 === 1;
-        event.target.style.visibility = hidden ? "hidden" : "visible";
+        this.container.style.visibility = hidden ? "hidden" : "visible";
         this.annotationStorage.setValue(this.data.id, {
           hidden,
           print: event.detail.display === 0 || event.detail.display === 3,
@@ -321,7 +321,7 @@ class AnnotationElement {
         });
       },
       hidden: event => {
-        event.target.style.visibility = event.detail.hidden
+        this.container.style.visibility = event.detail.hidden
           ? "hidden"
           : "visible";
         this.annotationStorage.setValue(this.data.id, {
@@ -570,6 +570,7 @@ class LinkAnnotationElement extends AnnotationElement {
   render() {
     const { data, linkService } = this;
     const link = document.createElement("a");
+    link.setAttribute("id", data.id);
     let isBound = false;
 
     if (data.url) {
@@ -1429,7 +1430,14 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
       container.title = this.data.alternativeText;
     }
 
-    this._setDefaultPropertiesFromJS(container);
+    if (this.enableScripting && this.hasJSActions) {
+      const linkElement = container.lastChild;
+      this._setDefaultPropertiesFromJS(linkElement);
+
+      linkElement.addEventListener("updatefromsandbox", jsEvent => {
+        this._dispatchEventFromSandbox({}, jsEvent);
+      });
+    }
 
     return container;
   }
