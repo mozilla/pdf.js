@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-const { closePages, loadAndWait } = require("./test_utils.js");
+const {
+  closePages,
+  getSelector,
+  getQuerySelector,
+  loadAndWait,
+} = require("./test_utils.js");
 
 describe("Annotation highlight", () => {
   describe("annotation-highlight.pdf", () => {
@@ -108,18 +113,14 @@ describe("Text widget", () => {
       const base = "hello world";
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.type("#\\32 5R", base);
-          await page.waitForFunction(
-            `document.querySelector("#\\\\32 4R").value !== ""`
-          );
-          await page.waitForFunction(
-            `document.querySelector("#\\\\32 6R").value !== ""`
-          );
+          await page.type(getSelector("25R"), base);
+          await page.waitForFunction(`${getQuerySelector("24R")}.value !== ""`);
+          await page.waitForFunction(`${getQuerySelector("26R")}.value !== ""`);
 
-          let text = await page.$eval("#\\32 4R", el => el.value);
+          let text = await page.$eval(getSelector("24R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual(base);
 
-          text = await page.$eval("#\\32 6R", el => el.value);
+          text = await page.$eval(getSelector("26R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual(base);
         })
       );
@@ -145,15 +146,15 @@ describe("Annotation and storage", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Text field.
-          await page.type("#\\36 4R", text1);
+          await page.type(getSelector("64R"), text1);
           // Checkbox.
           await page.click("[data-annotation-id='65R']");
           // Radio.
           await page.click("[data-annotation-id='67R']");
 
           for (const [pageNumber, textId, checkId, radio1Id, radio2Id] of [
-            [2, "#\\31 8R", "#\\31 9R", "#\\32 1R", "#\\32 0R"],
-            [5, "#\\32 3R", "#\\32 4R", "#\\32 2R", "#\\32 5R"],
+            [2, "18R", "19R", "21R", "20R"],
+            [5, "23R", "24R", "22R", "25R"],
           ]) {
             await page.evaluate(n => {
               window.document
@@ -162,34 +163,37 @@ describe("Annotation and storage", () => {
             }, pageNumber);
 
             // Need to wait to have a displayed text input.
-            await page.waitForSelector(textId, {
+            await page.waitForSelector(getSelector(textId), {
               timeout: 0,
             });
 
-            const text = await page.$eval(textId, el => el.value);
+            const text = await page.$eval(getSelector(textId), el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(text1);
 
-            let checked = await page.$eval(checkId, el => el.checked);
+            let checked = await page.$eval(
+              getSelector(checkId),
+              el => el.checked
+            );
             expect(checked).toEqual(true);
 
-            checked = await page.$eval(radio1Id, el => el.checked);
+            checked = await page.$eval(getSelector(radio1Id), el => el.checked);
             expect(checked).toEqual(false);
 
-            checked = await page.$eval(radio2Id, el => el.checked);
+            checked = await page.$eval(getSelector(radio2Id), el => el.checked);
             expect(checked).toEqual(false);
           }
 
           // Change data on page 5 and check that other pages changed.
           // Text field.
-          await page.type("#\\32 3R", text2);
+          await page.type(getSelector("23R"), text2);
           // Checkbox.
           await page.click("[data-annotation-id='24R']");
           // Radio.
           await page.click("[data-annotation-id='25R']");
 
           for (const [pageNumber, textId, checkId, radio1Id, radio2Id] of [
-            [1, "#\\36 4R", "#\\36 5R", "#\\36 7R", "#\\36 8R"],
-            [2, "#\\31 8R", "#\\31 9R", "#\\32 1R", "#\\32 0R"],
+            [1, "64R", "65R", "67R", "68R"],
+            [2, "18R", "19R", "21R", "20R"],
           ]) {
             await page.evaluate(n => {
               window.document
@@ -198,22 +202,25 @@ describe("Annotation and storage", () => {
             }, pageNumber);
 
             // Need to wait to have a displayed text input.
-            await page.waitForSelector(textId, {
+            await page.waitForSelector(getSelector(textId), {
               timeout: 0,
             });
 
-            const text = await page.$eval(textId, el => el.value);
+            const text = await page.$eval(getSelector(textId), el => el.value);
             expect(text)
               .withContext(`In ${browserName}`)
               .toEqual(text2 + text1);
 
-            let checked = await page.$eval(checkId, el => el.checked);
+            let checked = await page.$eval(
+              getSelector(checkId),
+              el => el.checked
+            );
             expect(checked).toEqual(false);
 
-            checked = await page.$eval(radio1Id, el => el.checked);
+            checked = await page.$eval(getSelector(radio1Id), el => el.checked);
             expect(checked).toEqual(false);
 
-            checked = await page.$eval(radio2Id, el => el.checked);
+            checked = await page.$eval(getSelector(radio2Id), el => el.checked);
             expect(checked).toEqual(false);
           }
         })
@@ -238,8 +245,8 @@ describe("ResetForm action", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const base = "hello world";
-          for (let i = 3; i <= 7; i++) {
-            await page.type(`#\\36 ${i}R`, base);
+          for (let i = 63; i <= 67; i++) {
+            await page.type(getSelector(`${i}R`), base);
           }
 
           const selectors = [69, 71, 75].map(
@@ -249,36 +256,34 @@ describe("ResetForm action", () => {
             await page.click(selector);
           }
 
-          await page.select("#\\37 8R", "b");
-          await page.select("#\\38 1R", "f");
+          await page.select(getSelector("78R"), "b");
+          await page.select(getSelector("81R"), "f");
 
           await page.click("[data-annotation-id='82R']");
-          await page.waitForFunction(
-            `document.querySelector("#\\\\36 3R").value === ""`
-          );
+          await page.waitForFunction(`${getQuerySelector("63R")}.value === ""`);
 
-          for (let i = 3; i <= 8; i++) {
-            const text = await page.$eval(`#\\36 ${i}R`, el => el.value);
+          for (let i = 63; i <= 68; i++) {
+            const text = await page.$eval(getSelector(`${i}R`), el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual("");
           }
 
           const ids = [69, 71, 72, 73, 74, 75, 76, 77];
           for (const id of ids) {
             const checked = await page.$eval(
-              `#\\3${Math.floor(id / 10)} ${id % 10}R`,
+              getSelector(`${id}R`),
               el => el.checked
             );
             expect(checked).withContext(`In ${browserName}`).toEqual(false);
           }
 
           let selected = await page.$eval(
-            `#\\37 8R [value="a"]`,
+            `${getSelector("78R")} [value="a"]`,
             el => el.selected
           );
           expect(selected).withContext(`In ${browserName}`).toEqual(true);
 
           selected = await page.$eval(
-            `#\\38 1R [value="d"]`,
+            `${getSelector("81R")} [value="d"]`,
             el => el.selected
           );
           expect(selected).withContext(`In ${browserName}`).toEqual(true);
@@ -290,8 +295,8 @@ describe("ResetForm action", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const base = "hello world";
-          for (let i = 3; i <= 8; i++) {
-            await page.type(`#\\36 ${i}R`, base);
+          for (let i = 63; i <= 68; i++) {
+            await page.type(getSelector(`${i}R`), base);
           }
 
           const selectors = [69, 71, 72, 73, 75].map(
@@ -301,24 +306,22 @@ describe("ResetForm action", () => {
             await page.click(selector);
           }
 
-          await page.select("#\\37 8R", "b");
-          await page.select("#\\38 1R", "f");
+          await page.select(getSelector("78R"), "b");
+          await page.select(getSelector("81R"), "f");
 
           await page.click("[data-annotation-id='84R']");
-          await page.waitForFunction(
-            `document.querySelector("#\\\\36 3R").value === ""`
-          );
+          await page.waitForFunction(`${getQuerySelector("63R")}.value === ""`);
 
-          for (let i = 3; i <= 8; i++) {
+          for (let i = 63; i <= 68; i++) {
             const expected = (i - 3) % 2 === 0 ? "" : base;
-            const text = await page.$eval(`#\\36 ${i}R`, el => el.value);
+            const text = await page.$eval(getSelector(`${i}R`), el => el.value);
             expect(text).withContext(`In ${browserName}`).toEqual(expected);
           }
 
           let ids = [69, 72, 73, 74, 76, 77];
           for (const id of ids) {
             const checked = await page.$eval(
-              `#\\3${Math.floor(id / 10)} ${id % 10}R`,
+              getSelector(`${id}R`),
               el => el.checked
             );
             expect(checked)
@@ -329,20 +332,20 @@ describe("ResetForm action", () => {
           ids = [71, 75];
           for (const id of ids) {
             const checked = await page.$eval(
-              `#\\3${Math.floor(id / 10)} ${id % 10}R`,
+              getSelector(`${id}R`),
               el => el.checked
             );
             expect(checked).withContext(`In ${browserName}`).toEqual(true);
           }
 
           let selected = await page.$eval(
-            `#\\37 8R [value="a"]`,
+            `${getSelector("78R")} [value="a"]`,
             el => el.selected
           );
           expect(selected).withContext(`In ${browserName}`).toEqual(true);
 
           selected = await page.$eval(
-            `#\\38 1R [value="f"]`,
+            `${getSelector("81R")} [value="f"]`,
             el => el.selected
           );
           expect(selected).withContext(`In ${browserName}`).toEqual(true);
