@@ -1507,7 +1507,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       noneOptionElement.value = " ";
       noneOptionElement.setAttribute("hidden", true);
       noneOptionElement.setAttribute("selected", true);
-      selectElement.insertBefore(noneOptionElement, selectElement.firstChild);
+      selectElement.prepend(noneOptionElement);
 
       removeEmptyEntry = () => {
         noneOptionElement.remove();
@@ -1581,13 +1581,16 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
           },
           insert(event) {
             const { index, displayValue, exportValue } = event.detail.insert;
+            const selectChild = selectElement.children[index];
             const optionElement = document.createElement("option");
             optionElement.textContent = displayValue;
             optionElement.value = exportValue;
-            selectElement.insertBefore(
-              optionElement,
-              selectElement.children[index]
-            );
+
+            if (selectChild) {
+              selectChild.before(optionElement);
+            } else {
+              selectElement.append(optionElement);
+            }
             storage.setValue(id, {
               value: getValue(event, /* isExport */ true),
               items: getItems(event),
