@@ -58,3 +58,18 @@ exports.clearInput = async (page, selector) => {
   await page.keyboard.up("Control");
   await page.keyboard.press("Backspace");
 };
+
+function getSelector(id) {
+  return `[data-element-id="${id}"]`;
+}
+exports.getSelector = getSelector;
+
+function getQuerySelector(id) {
+  return `document.querySelector('${getSelector(id)}')`;
+}
+exports.getQuerySelector = getQuerySelector;
+
+function getComputedStyleSelector(id) {
+  return `getComputedStyle(${getQuerySelector(id)})`;
+}
+exports.getComputedStyleSelector = getComputedStyleSelector;
