@@ -1336,4 +1336,56 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in issue15053.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue15053.pdf", "#\\34 4R");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a button and text field with a border are hidden", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let visibility = await page.$eval(
+            "[data-annotation-id='35R']",
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility)
+            .withContext(`In ${browserName}`)
+            .toEqual("visible");
+
+          visibility = await page.$eval(
+            "[data-annotation-id='51R']",
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility)
+            .withContext(`In ${browserName}`)
+            .toEqual("visible");
+
+          await page.click("#\\34 4R");
+
+          visibility = await page.$eval(
+            "[data-annotation-id='35R']",
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
+
+          visibility = await page.$eval(
+            "[data-annotation-id='51R']",
+            el => getComputedStyle(el).visibility
+          );
+          expect(visibility).withContext(`In ${browserName}`).toEqual("hidden");
+        })
+      );
+    });
+  });
 });
