@@ -137,7 +137,6 @@ const defaultOptions = {
   maxCanvasPixels: {
     /** @type {number} */
     value: 16777216,
-    compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
   },
   pageColorsBackground: {
@@ -158,11 +157,6 @@ const defaultOptions = {
   printResolution: {
     /** @type {number} */
     value: 150,
-    kind: OptionKind.VIEWER,
-  },
-  renderer: {
-    /** @type {string} */
-    value: "canvas",
     kind: OptionKind.VIEWER,
   },
   sidebarViewOnLoad: {
@@ -306,6 +300,11 @@ if (
     value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
+  defaultOptions.renderer = {
+    /** @type {string} */
+    value: "canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
@@ -314,11 +313,6 @@ if (
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
   };
-
-  defaultOptions.annotationEditorEnabled.compatibility =
-    compatibilityParams.annotationEditorEnabled;
-
-  defaultOptions.renderer.kind += OptionKind.PREFERENCE;
 } else if (PDFJSDev.test("CHROME")) {
   defaultOptions.disableTelemetry = {
     /** @type {boolean} */
@@ -346,7 +340,7 @@ class AppOptions {
     }
     const defaultOption = defaultOptions[name];
     if (defaultOption !== undefined) {
-      return defaultOption.compatibility ?? defaultOption.value;
+      return compatibilityParams[name] ?? defaultOption.value;
     }
     return undefined;
   }
@@ -378,7 +372,7 @@ class AppOptions {
       options[name] =
         userOption !== undefined
           ? userOption
-          : defaultOption.compatibility ?? defaultOption.value;
+          : compatibilityParams[name] ?? defaultOption.value;
     }
     return options;
   }
