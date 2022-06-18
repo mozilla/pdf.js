@@ -522,7 +522,9 @@ class AnnotationElement {
           const exportValue =
             typeof exportValues === "string" ? exportValues : null;
 
-          const domElement = document.getElementById(id);
+          const domElement = document.querySelector(
+            `[data-element-id="${id}"]`
+          );
           if (domElement && !GetElementsByNameSet.has(domElement)) {
             warn(`_getElementsByName - element not allowed: ${id}`);
             continue;
@@ -570,7 +572,7 @@ class LinkAnnotationElement extends AnnotationElement {
   render() {
     const { data, linkService } = this;
     const link = document.createElement("a");
-    link.setAttribute("id", data.id);
+    link.setAttribute("data-element-id", data.id);
     let isBound = false;
 
     if (data.url) {
@@ -775,8 +777,12 @@ class LinkAnnotationElement extends AnnotationElement {
           default:
             continue;
         }
-        const domElement = document.getElementById(id);
-        if (!domElement || !GetElementsByNameSet.has(domElement)) {
+
+        const domElement = document.querySelector(`[data-element-id="${id}"]`);
+        if (!domElement) {
+          continue;
+        } else if (!GetElementsByNameSet.has(domElement)) {
+          warn(`_bindResetFormAction - element not allowed: ${id}`);
           continue;
         }
         domElement.dispatchEvent(new Event("resetform"));
@@ -989,7 +995,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       });
       const textContent = storedData.formattedValue || storedData.value || "";
       const elementData = {
-        userValue: null,
+        userValue: textContent,
         formattedValue: null,
         valueOnFocus: "",
       };
@@ -1009,12 +1015,11 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         }
       }
       GetElementsByNameSet.add(element);
+      element.setAttribute("data-element-id", id);
+
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
       element.tabIndex = DEFAULT_TAB_INDEX;
-
-      elementData.userValue = textContent;
-      element.setAttribute("id", id);
 
       this._setRequired(element, this.data.required);
 
@@ -1262,6 +1267,8 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const element = document.createElement("input");
     GetElementsByNameSet.add(element);
+    element.setAttribute("data-element-id", id);
+
     element.disabled = data.readOnly;
     this._setRequired(element, this.data.required);
     element.type = "checkbox";
@@ -1269,7 +1276,6 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
     if (value) {
       element.setAttribute("checked", true);
     }
-    element.setAttribute("id", id);
     element.setAttribute("exportValue", data.exportValue);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
@@ -1346,6 +1352,8 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const element = document.createElement("input");
     GetElementsByNameSet.add(element);
+    element.setAttribute("data-element-id", id);
+
     element.disabled = data.readOnly;
     this._setRequired(element, this.data.required);
     element.type = "radio";
@@ -1353,7 +1361,6 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     if (value) {
       element.setAttribute("checked", true);
     }
-    element.setAttribute("id", id);
     element.tabIndex = DEFAULT_TAB_INDEX;
 
     element.addEventListener("change", event => {
@@ -1463,10 +1470,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
     const selectElement = document.createElement("select");
     GetElementsByNameSet.add(selectElement);
+    selectElement.setAttribute("data-element-id", id);
+
     selectElement.disabled = this.data.readOnly;
     this._setRequired(selectElement, this.data.required);
     selectElement.name = this.data.fieldName;
-    selectElement.setAttribute("id", id);
     selectElement.tabIndex = DEFAULT_TAB_INDEX;
 
     let addAnEmptyEntry = this.data.combo && this.data.options.length > 0;

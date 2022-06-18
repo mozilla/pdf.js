@@ -351,7 +351,9 @@ class PDFScriptingManager {
 
     const ids = siblings ? [id, ...siblings] : [id];
     for (const elementId of ids) {
-      const element = document.getElementById(elementId);
+      const element = document.querySelector(
+        `[data-element-id="${elementId}"]`
+      );
       if (element) {
         element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
       } else {
