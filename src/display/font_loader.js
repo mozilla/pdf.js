@@ -58,7 +58,7 @@ class BaseFontLoader {
       styleElement.id = `PDFJS_FONT_STYLE_TAG_${this.docId}`;
       this._document.documentElement
         .getElementsByTagName("head")[0]
-        .appendChild(styleElement);
+        .append(styleElement);
     }
     const styleSheet = styleElement.sheet;
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
@@ -345,9 +345,9 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
         const span = this._document.createElement("span");
         span.textContent = "Hi";
         span.style.fontFamily = name;
-        div.appendChild(span);
+        div.append(span);
       }
-      this._document.body.appendChild(div);
+      this._document.body.append(div);
 
       isFontReady(loadTestFontId, () => {
         div.remove();

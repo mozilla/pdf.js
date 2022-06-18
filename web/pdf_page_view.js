@@ -171,7 +171,7 @@ class PDFPageView {
     });
     this.div = div;
 
-    container?.appendChild(div);
+    container?.append(div);
   }
 
   setPdfPage(pdfPage) {
@@ -360,7 +360,7 @@ class PDFPageView {
     this.l10n.get("loading").then(msg => {
       this.loadingIconDiv?.setAttribute("aria-label", msg);
     });
-    div.appendChild(this.loadingIconDiv);
+    div.append(this.loadingIconDiv);
   }
 
   update({ scale = 0, rotation = null, optionalContentConfigPromise = null }) {
@@ -629,9 +629,9 @@ class PDFPageView {
 
     if (lastDivBeforeTextDiv) {
       // The annotation layer needs to stay on top.
-      div.insertBefore(canvasWrapper, lastDivBeforeTextDiv);
+      lastDivBeforeTextDiv.before(canvasWrapper);
     } else {
-      div.appendChild(canvasWrapper);
+      div.append(canvasWrapper);
     }
 
     let textLayer = null;
@@ -642,9 +642,9 @@ class PDFPageView {
       textLayerDiv.style.height = canvasWrapper.style.height;
       if (lastDivBeforeTextDiv) {
         // The annotation layer needs to stay on top.
-        div.insertBefore(textLayerDiv, lastDivBeforeTextDiv);
+        lastDivBeforeTextDiv.before(textLayerDiv);
       } else {
-        div.appendChild(textLayerDiv);
+        div.append(textLayerDiv);
       }
 
       textLayer = this.textLayerFactory.createTextLayerBuilder(
@@ -681,7 +681,7 @@ class PDFPageView {
 
     if (this.xfaLayer?.div) {
       // The xfa layer needs to stay on top.
-      div.appendChild(this.xfaLayer.div);
+      div.append(this.xfaLayer.div);
     }
 
     let renderContinueCallback = null;
@@ -808,7 +808,7 @@ class PDFPageView {
           }
           const treeDom = this.structTreeLayer.render(tree);
           treeDom.classList.add("structTree");
-          this.canvas.appendChild(treeDom);
+          this.canvas.append(treeDom);
         });
       };
       this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
@@ -852,7 +852,7 @@ class PDFPageView {
       }
     };
 
-    canvasWrapper.appendChild(canvas);
+    canvasWrapper.append(canvas);
     this.canvas = canvas;
 
     const ctx = canvas.getContext("2d", { alpha: false });
@@ -978,18 +978,13 @@ class PDFPageView {
 
   paintOnSvg(wrapper) {
     if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("MOZCENTRAL || CHROME")
+      !(
+        typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")
+      )
     ) {
-      // Return a mock object, to prevent errors such as e.g.
-      // "TypeError: paintTask.promise is undefined".
-      return {
-        promise: Promise.reject(new Error("SVG rendering is not supported.")),
-        onRenderContinue(cont) {},
-        cancel() {},
-      };
+      throw new Error("Not implemented: paintOnSvg");
     }
-
     let cancelled = false;
     const ensureNotCancelled = () => {
       if (cancelled) {
@@ -1019,7 +1014,7 @@ class PDFPageView {
           svg.style.width = wrapper.style.width;
           svg.style.height = wrapper.style.height;
           this.renderingState = RenderingStates.FINISHED;
-          wrapper.appendChild(svg);
+          wrapper.append(svg);
         });
       });
 

@@ -52,14 +52,12 @@ if (!HTMLCollection.prototype[Symbol.iterator]) {
 // end of modification
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  var defaultUrl; // eslint-disable-line no-var
-
   (function rewriteUrlClosure() {
     // Run this code outside DOMContentLoaded to make sure that the URL
     // is rewritten as soon as possible.
     const queryString = document.location.search.slice(1);
     const m = /(^|&)file=([^&]*)/.exec(queryString);
-    defaultUrl = m ? decodeURIComponent(m[2]) : "";
+    const defaultUrl = m ? decodeURIComponent(m[2]) : "";
 
     // Example: chrome-extension://.../http://example.com/file.pdf
     const humanReadableUrl = "/" + defaultUrl + location.hash;
@@ -68,6 +66,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
       // eslint-disable-next-line no-undef
       chrome.runtime.sendMessage("showPageAction");
     }
+
+    AppOptions.set("defaultUrl", defaultUrl);
   })();
 }
 
@@ -245,7 +245,7 @@ function webViewerLoad() {
       link.rel = "stylesheet";
       link.href = "../build/dev-css/viewer.css";
 
-      document.head.appendChild(link);
+      document.head.append(link);
     }
 
     Promise.all([
@@ -255,10 +255,6 @@ function webViewerLoad() {
       PDFViewerApplication.run(config);
     });
   } else {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-      AppOptions.set("defaultUrl", defaultUrl);
-    }
-
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       // Give custom implementations of the default viewer a simpler way to
       // set various `AppOptions`, by dispatching an event once all viewer

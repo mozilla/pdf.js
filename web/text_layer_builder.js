@@ -73,7 +73,7 @@ class TextLayerBuilder {
     if (!this.enhanceTextSelection) {
       const endOfContent = document.createElement("div");
       endOfContent.className = "endOfContent";
-      this.textLayerDiv.appendChild(endOfContent);
+      this.textLayerDiv.append(endOfContent);
     }
 
     this.eventBus.dispatch("textlayerrendered", {
@@ -111,7 +111,7 @@ class TextLayerBuilder {
     });
     this.textLayerRenderTask.promise.then(
       () => {
-        this.textLayerDiv.appendChild(textLayerFrag);
+        this.textLayerDiv.append(textLayerFrag);
         this._finishRendering();
         this.highlighter?.enable();
       },

@@ -474,7 +474,7 @@ function loadScript(src, removeScriptElement = false) {
       Window['ngxConsole'].log(error);
       reject(new Error(`Cannot load script at: ${script.src}`));
     };
-    (document.head || document.documentElement).appendChild(script);
+    (document.head || document.documentElement).append(script);
   });
 }
 

@@ -337,7 +337,9 @@ const OPS = {
   paintFormXObjectEnd: 75,
   beginGroup: 76,
   endGroup: 77,
+  /** @deprecated unused */
   beginAnnotations: 78,
+  /** @deprecated unused */
   endAnnotations: 79,
   beginAnnotation: 80,
   endAnnotation: 81,

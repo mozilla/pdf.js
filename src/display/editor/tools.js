@@ -63,8 +63,9 @@ class CommandManager {
    * Add a new couple of commands to be used in case of redo/undo.
    * @param {function} cmd
    * @param {function} undo
+   * @param {boolean} mustExec
    */
-  add(cmd, undo) {
+  add(cmd, undo, mustExec) {
     const save = [cmd, undo];
     const next = (this.#position + 1) % this.#maxSize;
     if (next !== this.#start) {
@@ -79,7 +80,10 @@ class CommandManager {
       this.#position = this.#commands.length - 1;
     }
     this.#setCommands(save);
-    cmd();
+
+    if (mustExec) {
+      cmd();
+    }
   }
 
   /**
@@ -316,6 +320,9 @@ class AnnotationEditorUIManager {
       this.#disableAll();
     } else {
       this.#enableAll();
+      for (const layer of this.#allLayers) {
+        layer.updateMode(mode);
+      }
     }
   }
 
@@ -409,9 +416,10 @@ class AnnotationEditorUIManager {
    * Add a command to execute (cmd) and another one to undo it.
    * @param {function} cmd
    * @param {function} undo
+   * @param {boolean} mustExec
    */
-  addCommands(cmd, undo) {
-    this.#commandManager.add(cmd, undo);
+  addCommands(cmd, undo, mustExec) {
+    this.#commandManager.add(cmd, undo, mustExec);
   }
 
   /**
@@ -460,7 +468,7 @@ class AnnotationEditorUIManager {
         }
       };
 
-      this.addCommands(cmd, undo);
+      this.addCommands(cmd, undo, true);
     } else {
       if (!this.#activeEditor) {
         return;
@@ -474,7 +482,7 @@ class AnnotationEditorUIManager {
       };
     }
 
-    this.addCommands(cmd, undo);
+    this.addCommands(cmd, undo, true);
   }
 
   /**
@@ -501,7 +509,7 @@ class AnnotationEditorUIManager {
         layer.addOrRebuild(editor);
       };
 
-      this.addCommands(cmd, undo);
+      this.addCommands(cmd, undo, true);
     }
   }
 
@@ -522,7 +530,7 @@ class AnnotationEditorUIManager {
       editor.remove();
     };
 
-    this.addCommands(cmd, undo);
+    this.addCommands(cmd, undo, true);
   }
 
   /**

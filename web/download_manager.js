@@ -38,7 +38,7 @@ function download(blobUrl, filename) {
   }
   // <a> must be in the document for recent Firefox versions,
   // otherwise .click() is ignored.
-  (document.body || document.documentElement).appendChild(a);
+  (document.body || document.documentElement).append(a);
   a.click();
   a.remove();
 }

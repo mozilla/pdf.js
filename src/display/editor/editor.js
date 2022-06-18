@@ -54,6 +54,20 @@ class AnnotationEditor {
   }
 
   /**
+   * This editor will be behind the others.
+   */
+  setInBackground() {
+    this.div.classList.add("background");
+  }
+
+  /**
+   * This editor will be in the foreground.
+   */
+  setInForeground() {
+    this.div.classList.remove("background");
+  }
+
+  /**
    * onfocus callback.
    */
   focusin(/* event */) {
@@ -81,12 +95,16 @@ class AnnotationEditor {
 
     event.preventDefault();
 
+    this.commitOrRemove();
+    this.parent.setActiveEditor(null);
+  }
+
+  commitOrRemove() {
     if (this.isEmpty()) {
       this.remove();
     } else {
       this.commit();
     }
-    this.parent.setActiveEditor(null);
   }
 
   /**
@@ -156,7 +174,6 @@ class AnnotationEditor {
     this.div = document.createElement("div");
     this.div.className = this.name;
     this.div.setAttribute("id", this.id);
-    this.div.draggable = true;
     this.div.tabIndex = 100;
 
     const [tx, ty] = this.getInitialTranslation();

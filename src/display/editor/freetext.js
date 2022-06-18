@@ -33,6 +33,8 @@ class FreeTextEditor extends AnnotationEditor {
 
   #contentHTML = "";
 
+  #hasAlreadyBeenCommitted = false;
+
   #fontSize;
 
   static _freeTextDefaultContent = "";
@@ -56,8 +58,7 @@ class FreeTextEditor extends AnnotationEditor {
       PDFJSDev.test("!PRODUCTION || TESTING")
     ) {
       const lineHeight = parseFloat(
-        style.getPropertyValue("--freetext-line-height"),
-        10
+        style.getPropertyValue("--freetext-line-height")
       );
       assert(
         lineHeight === LINE_FACTOR,
@@ -66,8 +67,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     this._internalPadding = parseFloat(
-      style.getPropertyValue("--freetext-padding"),
-      10
+      style.getPropertyValue("--freetext-padding")
     );
   }
 
@@ -170,6 +170,13 @@ class FreeTextEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   commit() {
+    if (!this.#hasAlreadyBeenCommitted) {
+      // This editor has something and it's the first time
+      // it's commited so we can it in the undo/redo stack.
+      this.#hasAlreadyBeenCommitted = true;
+      this.parent.addUndoableEditor(this);
+    }
+
     this.disableEditMode();
     this.#contentHTML = this.editorDiv.innerHTML;
     this.#content = this.#extractText().trimEnd();
@@ -213,11 +220,11 @@ class FreeTextEditor extends AnnotationEditor {
     style.fontSize = `calc(${this.#fontSize}px * var(--zoom-factor))`;
     style.color = this.#color;
 
-    this.div.appendChild(this.editorDiv);
+    this.div.append(this.editorDiv);
 
     this.overlayDiv = document.createElement("div");
     this.overlayDiv.classList.add("overlay", "enabled");
-    this.div.appendChild(this.overlayDiv);
+    this.div.append(this.overlayDiv);
 
     // TODO: implement paste callback.
     // The goal is to sanitize and have something suitable for this

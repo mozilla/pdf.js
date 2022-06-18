@@ -100,7 +100,7 @@ function parseExpression(expr, dotDotAllowed, noExpr = true) {
         warn("XFA - Invalid index in SOM expression");
         return null;
       }
-      parsed[parsed.length - 1].index = parseIndex(match[0]);
+      parsed.at(-1).index = parseIndex(match[0]);
       pos += match[0].length + 1;
       continue;
     }
@@ -254,7 +254,7 @@ function searchNode(
     if (isFinite(index)) {
       root = nodes.filter(node => index < node.length).map(node => node[index]);
     } else {
-      root = nodes.reduce((acc, node) => acc.concat(node), []);
+      root = nodes.flat();
     }
   }
 

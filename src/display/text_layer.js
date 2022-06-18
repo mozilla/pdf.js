@@ -488,7 +488,7 @@ function expandBoundsLTR(width, bounds) {
         affectedBoundary.x2 > boundary.x2 ? affectedBoundary : boundary;
       if (lastBoundary === useBoundary) {
         // Merging with previous.
-        changedHorizon[changedHorizon.length - 1].end = horizonPart.end;
+        changedHorizon.at(-1).end = horizonPart.end;
       } else {
         changedHorizon.push({
           start: horizonPart.start,
@@ -507,7 +507,7 @@ function expandBoundsLTR(width, bounds) {
       });
     }
     if (boundary.y2 < horizon[j].end) {
-      changedHorizon[changedHorizon.length - 1].end = boundary.y2;
+      changedHorizon.at(-1).end = boundary.y2;
       changedHorizon.push({
         start: boundary.y2,
         end: horizon[j].end,
@@ -658,7 +658,7 @@ class TextLayerRenderTask {
           if (items[i].id !== null) {
             this._container.setAttribute("id", `${items[i].id}`);
           }
-          parent.appendChild(this._container);
+          parent.append(this._container);
         } else if (items[i].type === "endMarkedContent") {
           this._container = this._container.parentNode;
         }
@@ -713,12 +713,12 @@ class TextLayerRenderTask {
     }
 
     if (textDivProperties.hasText) {
-      this._container.appendChild(textDiv);
+      this._container.append(textDiv);
     }
     if (textDivProperties.hasEOL) {
       const br = document.createElement("br");
       br.setAttribute("role", "presentation");
-      this._container.appendChild(br);
+      this._container.append(br);
     }
   }
 
@@ -860,4 +860,4 @@ function renderTextLayer(renderParameters) {
   return task;
 }
 
-export { renderTextLayer };
+export { renderTextLayer, TextLayerRenderTask };

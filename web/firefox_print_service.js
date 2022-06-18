@@ -40,8 +40,8 @@ function composePage(
 
   const canvasWrapper = document.createElement("div");
   canvasWrapper.className = "printedPage";
-  canvasWrapper.appendChild(canvas);
-  printContainer.appendChild(canvasWrapper);
+  canvasWrapper.append(canvas);
+  printContainer.append(canvasWrapper);
 
   // A callback for a given page may be executed multiple times for different
   // print operations (think of changing the print settings in the browser).
