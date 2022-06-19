@@ -41,6 +41,7 @@
   position: absolute;
   top: 0;
   left: 0;
+  overflow: hidden;
   font-size: calc(100px * var(--scale-factor));
   pointer-events: none;
   transform-origin: 0 0;
