@@ -220,10 +220,11 @@ function postprocessNode(ctx, node) {
           case "BlockStatement":
             // Block statements inside a block are moved to the parent one.
             const subChildren = node.body[subExpressionIndex].body;
-            Array.prototype.splice.apply(
-              node.body,
-              [subExpressionIndex, 1].concat(subChildren)
-            );
+            Array.prototype.splice.apply(node.body, [
+              subExpressionIndex,
+              1,
+              ...subChildren,
+            ]);
             subExpressionIndex += Math.max(subChildren.length - 1, 0);
             continue;
           case "ReturnStatement":

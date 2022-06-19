@@ -1663,13 +1663,13 @@ class SimpleSegmentVisitor {
       this.symbols = symbols = {};
     }
 
-    let inputSymbols = [];
-    for (let i = 0, ii = referredSegments.length; i < ii; i++) {
-      const referredSymbols = symbols[referredSegments[i]];
+    const inputSymbols = [];
+    for (const referredSegment of referredSegments) {
+      const referredSymbols = symbols[referredSegment];
       // referredSymbols is undefined when we have a reference to a Tables
       // segment instead of a SymbolDictionary.
       if (referredSymbols) {
-        inputSymbols = inputSymbols.concat(referredSymbols);
+        inputSymbols.push(...referredSymbols);
       }
     }
 
@@ -1696,13 +1696,13 @@ class SimpleSegmentVisitor {
 
     // Combines exported symbols from all referred segments
     const symbols = this.symbols;
-    let inputSymbols = [];
-    for (let i = 0, ii = referredSegments.length; i < ii; i++) {
-      const referredSymbols = symbols[referredSegments[i]];
+    const inputSymbols = [];
+    for (const referredSegment of referredSegments) {
+      const referredSymbols = symbols[referredSegment];
       // referredSymbols is undefined when we have a reference to a Tables
       // segment instead of a SymbolDictionary.
       if (referredSymbols) {
-        inputSymbols = inputSymbols.concat(referredSymbols);
+        inputSymbols.push(...referredSymbols);
       }
     }
     const symbolCodeLength = log2(inputSymbols.length);

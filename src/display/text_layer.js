@@ -547,10 +547,7 @@ function expandBoundsLTR(width, bounds) {
       }
     }
 
-    Array.prototype.splice.apply(
-      horizon,
-      [i, j - i + 1].concat(changedHorizon)
-    );
+    Array.prototype.splice.apply(horizon, [i, j - i + 1, ...changedHorizon]);
   }
 
   // Set new x2 for all unset boundaries.
