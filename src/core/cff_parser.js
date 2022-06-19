@@ -1387,7 +1387,7 @@ class CFFCompiler {
     const output = {
       data: [],
       length: 0,
-      add: function CFFCompiler_add(data) {
+      add(data) {
         this.data = this.data.concat(data);
         this.length = this.data.length;
       },
@@ -1680,7 +1680,7 @@ class CFFCompiler {
   }
 
   compileDict(dict, offsetTracker) {
-    let out = [];
+    const out = [];
     // The dictionary keys must be in a certain order.
     const order = dict.order;
     for (let i = 0; i < order.length; ++i) {
@@ -1708,7 +1708,7 @@ class CFFCompiler {
         switch (type) {
           case "num":
           case "sid":
-            out = out.concat(this.encodeNumber(value));
+            out.push(...this.encodeNumber(value));
             break;
           case "offset":
             // For offsets we just insert a 32bit integer so we don't have to
@@ -1720,20 +1720,20 @@ class CFFCompiler {
             if (!offsetTracker.isTracking(name)) {
               offsetTracker.track(name, out.length);
             }
-            out = out.concat([0x1d, 0, 0, 0, 0]);
+            out.push(0x1d, 0, 0, 0, 0);
             break;
           case "array":
           case "delta":
-            out = out.concat(this.encodeNumber(value));
+            out.push(...this.encodeNumber(value));
             for (let k = 1, kk = values.length; k < kk; ++k) {
-              out = out.concat(this.encodeNumber(values[k]));
+              out.push(...this.encodeNumber(values[k]));
             }
             break;
           default:
             throw new FormatError(`Unknown data type of ${type}`);
         }
       }
-      out = out.concat(dict.opcodes[key]);
+      out.push(...dict.opcodes[key]);
     }
     return out;
   }
