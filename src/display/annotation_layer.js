@@ -2506,18 +2506,19 @@ class AnnotationLayer {
     div.hidden = false;
   }
 
-  static setDimensions(div, viewport) {
-    const { width, height, rotation } = viewport;
+  /**
+   * @param {HTMLDivElement} div
+   * @param {PageViewport} viewport
+   */
+  static setDimensions(div, { width, height, rotation }) {
     const { style } = div;
 
-    if (rotation === 0 || rotation === 180) {
-      style.width = `${width}px`;
-      style.height = `${height}px`;
-    } else {
-      style.width = `${height}px`;
-      style.height = `${width}px`;
-    }
+    const flipOrientation = rotation % 180 !== 0,
+      intWidth = Math.floor(width) + "px",
+      intHeight = Math.floor(height) + "px";
 
+    style.width = flipOrientation ? intHeight : intWidth;
+    style.height = flipOrientation ? intWidth : intHeight;
     div.setAttribute("data-annotation-rotation", rotation);
   }
 
