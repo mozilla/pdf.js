@@ -776,7 +776,7 @@ class ProgressBar {
       this.bar.classList.add("hidden");
     }
 
-    document.body.classList.remove("loadingInProgress");
+    document.querySelector(".body").classList.remove("loadingInProgress");
   }
 
   show() {
