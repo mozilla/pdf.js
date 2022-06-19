@@ -313,11 +313,6 @@ class BaseViewer {
       this.viewer.classList.add("removePageBorders");
     }
     this.updateContainerHeightCss();
-    // Defer the dispatching of this event, to give other viewer components
-    // time to initialize *and* register 'baseviewerinit' event listeners.
-    Promise.resolve().then(() => {
-      this.eventBus.dispatch("baseviewerinit", { source: this });
-    });
   }
 
   get pagesCount() {
@@ -1208,7 +1203,10 @@ class BaseViewer {
       return;
     }
 
-    docStyle.setProperty("--zoom-factor", newScale);
+    docStyle.setProperty(
+      "--scale-factor",
+      newScale * PixelsPerInch.PDF_TO_CSS_UNITS
+    );
 
     const updateArgs = { scale: newScale };
     for (const pageView of this._pages) {

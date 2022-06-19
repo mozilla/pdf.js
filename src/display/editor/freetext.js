@@ -21,7 +21,6 @@ import {
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
-import { PixelsPerInch } from "../display_utils.js";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -94,9 +93,9 @@ class FreeTextEditor extends AnnotationEditor {
   getInitialTranslation() {
     // The start of the base line is where the user clicked.
     return [
-      -FreeTextEditor._internalPadding * this.parent.zoomFactor,
+      -FreeTextEditor._internalPadding * this.parent.scaleFactor,
       -(FreeTextEditor._internalPadding + this.#fontSize) *
-        this.parent.zoomFactor,
+        this.parent.scaleFactor,
     ];
   }
 
@@ -217,7 +216,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
 
     const { style } = this.editorDiv;
-    style.fontSize = `calc(${this.#fontSize}px * var(--zoom-factor))`;
+    style.fontSize = `${this.#fontSize}%`;
     style.color = this.#color;
 
     this.div.append(this.editorDiv);
@@ -244,7 +243,7 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   serialize() {
     const rect = this.editorDiv.getBoundingClientRect();
-    const padding = FreeTextEditor._internalPadding * this.parent.zoomFactor;
+    const padding = FreeTextEditor._internalPadding * this.parent.scaleFactor;
     const [x1, y1] = Util.applyTransform(
       [this.x + padding, this.y + padding + rect.height],
       this.parent.inverseViewportTransform
@@ -257,7 +256,7 @@ class FreeTextEditor extends AnnotationEditor {
     return {
       annotationType: AnnotationEditorType.FREETEXT,
       color: [0, 0, 0],
-      fontSize: this.#fontSize / PixelsPerInch.PDF_TO_CSS_UNITS,
+      fontSize: this.#fontSize,
       value: this.#content,
       pageIndex: this.parent.pageIndex,
       rect: [x1, y1, x2, y2],

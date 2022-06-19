@@ -27,13 +27,14 @@
   position: absolute;
   top: 0;
   left: 0;
+  font-size: calc(100px * var(--scale-factor));
 }
 
 .annotationEditorLayer .freeTextEditor {
   position: absolute;
   background: transparent;
   border-radius: 3px;
-  padding: calc(var(--freetext-padding) * var(--zoom-factor));
+  padding: calc(var(--freetext-padding) * var(--scale-factor));
   resize: none;
   width: auto;
   height: auto;
