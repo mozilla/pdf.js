@@ -51,6 +51,7 @@
   text-align: initial;
   pointer-events: auto;
   box-sizing: border-box;
+  transform-origin: 0 0;
 }
 
 .annotationLayer .linkAnnotation > a,
