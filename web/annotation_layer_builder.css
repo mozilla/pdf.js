@@ -41,7 +41,6 @@
   position: absolute;
   top: 0;
   left: 0;
-  font-size: calc(100px * var(--scale-factor));
   pointer-events: none;
   transform-origin: 0 0;
 }
@@ -90,7 +89,7 @@
   background-image: var(--annotation-unfocused-field-background);
   border: 1px solid transparent;
   box-sizing: border-box;
-  font: 9% sans-serif;
+  font: calc(9px * var(--scale-factor)) sans-serif;
   height: 100%;
   margin: 0;
   vertical-align: top;
