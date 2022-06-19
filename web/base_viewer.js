@@ -1048,7 +1048,10 @@ class BaseViewer {
       return;
     }
 
-    docStyle.setProperty("--zoom-factor", newScale);
+    docStyle.setProperty(
+      "--scale-factor",
+      newScale * PixelsPerInch.PDF_TO_CSS_UNITS
+    );
 
     const updateArgs = { scale: newScale };
     for (const pageView of this._pages) {

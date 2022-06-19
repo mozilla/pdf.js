@@ -1425,7 +1425,7 @@ class ChoiceList extends XFAObject {
     const field = ui[$getParent]();
     const fontSize = (field.font && field.font.size) || 10;
     const optionStyle = {
-      fontSize: `calc(${fontSize}px * var(--zoom-factor))`,
+      fontSize: `calc(${fontSize}px * var(--scale-factor))`,
     };
     const children = [];
 
