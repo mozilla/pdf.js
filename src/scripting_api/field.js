@@ -57,7 +57,6 @@ class Field extends PDFObject {
     this.required = data.required;
     this.richText = data.richText;
     this.richValue = data.richValue;
-    this.rotation = data.rotation;
     this.style = data.style;
     this.submitName = data.submitName;
     this.textFont = data.textFont;
@@ -84,6 +83,7 @@ class Field extends PDFObject {
     this._kidIds = data.kidIds || null;
     this._fieldType = getFieldType(this._actions);
     this._siblings = data.siblings || null;
+    this._rotation = data.rotation || 0;
 
     this._globalEval = data.globalEval;
     this._appObjects = data.appObjects;
@@ -186,6 +186,22 @@ class Field extends PDFObject {
 
   set page(_) {
     throw new Error("field.page is read-only");
+  }
+
+  get rotation() {
+    return this._rotation;
+  }
+
+  set rotation(angle) {
+    angle = Math.floor(angle);
+    if (angle % 90 !== 0) {
+      throw new Error("Invalid rotation: must be a multiple of 90");
+    }
+    angle %= 360;
+    if (angle < 0) {
+      angle += 360;
+    }
+    this._rotation = angle;
   }
 
   get textColor() {

@@ -2058,6 +2058,52 @@ describe("annotation", function () {
       );
     });
 
+    it("should save rotated text", async function () {
+      const textWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, {
+        value: "hello world",
+        rotation: 90,
+      });
+
+      const data = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(data.length).toEqual(2);
+      const [oldData, newData] = data;
+      expect(oldData.ref).toEqual(Ref.get(123, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
+
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(oldData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Tx /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> /Rect [0 0 32 10] " +
+          "/V (hello world) /AP << /N 2 0 R>> /M (date) /MK << /R 90>>>>\nendobj\n"
+      );
+      expect(newData.data).toEqual(
+        "2 0 obj\n<< /Length 74 /Subtype /Form /Resources " +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Matrix [0 1 -1 0 32 0]>> stream\n" +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.04 Td (hello world) Tj " +
+          "ET Q EMC\nendstream\nendobj\n"
+      );
+    });
+
     it("should get field object for usage in JS sandbox", async function () {
       const textWidgetRef = Ref.get(123, 0);
       const xDictRef = Ref.get(141, 0);
@@ -2600,6 +2646,57 @@ describe("annotation", function () {
           "<< /Type /Annot /Subtype /Widget /FT /Btn " +
           "/AP << /N << /Checked 314 0 R /Off 271 0 R>>>> " +
           "/V /Checked /AS /Checked /M (date)>>\nendobj\n"
+      );
+
+      annotationStorage.set(annotation.data.id, { value: false });
+
+      const data = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(data).toEqual(null);
+    });
+
+    it("should save rotated checkboxes", async function () {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Checked", Ref.get(314, 0));
+      normalAppearanceDict.set("Off", Ref.get(271, 0));
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("V", Name.get("Off"));
+
+      const buttonWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: true, rotation: 180 });
+
+      const [oldData] = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(oldData.ref).toEqual(Ref.get(123, 0));
+      expect(oldData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Btn " +
+          "/AP << /N << /Checked 314 0 R /Off 271 0 R>>>> " +
+          "/V /Checked /AS /Checked /M (date) /MK << /R 180>>>>\nendobj\n"
       );
 
       annotationStorage.set(annotation.data.id, { value: false });
@@ -3481,6 +3578,67 @@ describe("annotation", function () {
           "2 -5.88 Td (b) Tj",
           "0 -6.75 Td (c) Tj",
           "ET Q EMC",
+        ].join("\n")
+      );
+    });
+
+    it("should save rotated choice", async function () {
+      choiceWidgetDict.set("Opt", ["A", "B", "C"]);
+      choiceWidgetDict.set("V", "A");
+
+      const choiceWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict },
+        fontRefObj,
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        choiceWidgetRef,
+        pdfManagerMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: "C", rotation: 270 });
+
+      const data = await annotation.save(
+        partialEvaluator,
+        task,
+        annotationStorage
+      );
+      expect(data.length).toEqual(2);
+      const [oldData, newData] = data;
+      expect(oldData.ref).toEqual(Ref.get(123, 0));
+      expect(newData.ref).toEqual(Ref.get(2, 0));
+
+      oldData.data = oldData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(oldData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Ch /DA (/Helv 5 Tf) /DR " +
+          "<< /Font << /Helv 314 0 R>>>> " +
+          "/Rect [0 0 32 10] /Opt [(A) (B) (C)] /V (C) " +
+          "/AP << /N 2 0 R>> /M (date) /MK << /R 270>>>>\nendobj\n"
+      );
+      expect(newData.data).toEqual(
+        [
+          "2 0 obj",
+          "<< /Length 170 /Subtype /Form /Resources << /Font << /Helv 314 0 R>>>> " +
+            "/BBox [0 0 32 10] /Matrix [0 -1 1 0 0 10]>> stream",
+          "/Tx BMC q",
+          "1 1 10 32 re W n",
+          "0.600006 0.756866 0.854904 rg",
+          "1 11.75 10 6.75 re f",
+          "BT",
+          "/Helv 5 Tf",
+          "1 0 0 1 0 32 Tm",
+          "2 -5.88 Td (A) Tj",
+          "0 -6.75 Td (B) Tj",
+          "0 -6.75 Td (C) Tj",
+          "ET Q EMC",
+          "endstream",
+          "endobj\n",
         ].join("\n")
       );
     });

@@ -264,10 +264,37 @@ class AnnotationElement {
 
     container.style.left = `${(100 * (rect[0] - pageLLx)) / pageWidth}%`;
     container.style.top = `${(100 * (rect[1] - pageLLy)) / pageHeight}%`;
-    container.style.width = `${(100 * width) / pageWidth}%`;
-    container.style.height = `${(100 * height) / pageHeight}%`;
+
+    const { rotation } = data;
+    if (data.hasOwnCanvas || rotation === 0) {
+      container.style.width = `${(100 * width) / pageWidth}%`;
+      container.style.height = `${(100 * height) / pageHeight}%`;
+    } else {
+      this.setRotation(rotation, container);
+    }
 
     return container;
+  }
+
+  setRotation(angle, container = this.container) {
+    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { width, height } = getRectDims(this.data.rect);
+
+    let elementWidth, elementHeight;
+    if (angle % 180 === 0) {
+      elementWidth = (100 * width) / pageWidth;
+      elementHeight = (100 * height) / pageHeight;
+    } else {
+      elementWidth = (100 * height) / pageWidth;
+      elementHeight = (100 * width) / pageHeight;
+    }
+
+    container.style.width = `${elementWidth}%`;
+    container.style.height = `${elementHeight}%`;
+
+    container.setAttribute("data-annotation-rotation", (360 - angle) % 360);
   }
 
   get _commonActions() {
@@ -334,6 +361,13 @@ class AnnotationElement {
       },
       strokeColor: event => {
         setColor("strokeColor", "borderColor", event);
+      },
+      rotation: event => {
+        const angle = event.detail.rotation;
+        this.setRotation(angle);
+        this.annotationStorage.setValue(this.data.id, {
+          rotation: angle,
+        });
       },
     });
   }

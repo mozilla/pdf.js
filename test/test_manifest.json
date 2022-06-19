@@ -6583,5 +6583,44 @@
       "rounds": 1,
       "type": "eq",
       "annotations": true
+   },
+   { "id": "bug1675139",
+      "file": "pdfs/bug1675139.pdf",
+      "md5": "052c2c3dcc7ef4d4ac622282cb0fb17a",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
+   },
+   { "id": "bug1675139-print",
+      "file": "pdfs/bug1675139.pdf",
+      "md5": "052c2c3dcc7ef4d4ac622282cb0fb17a",
+      "rounds": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "42R": {
+           "value": "pi/2"
+         },
+         "46R": {
+            "value": "3*pi/2",
+            "rotation": 180
+         },
+         "47R": {
+            "value": "0*pi/2"
+         },
+         "45R": {
+            "value": "pi"
+         },
+         "55R": {
+            "value": "C",
+            "rotation": 90
+         },
+         "52R": {
+            "value": "Yes"
+         },
+         "56R": {
+            "rotation": 270
+         }
+      }
    }
 ]
