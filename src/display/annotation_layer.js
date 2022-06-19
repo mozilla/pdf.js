@@ -197,7 +197,11 @@ class AnnotationElement {
       page = this.page,
       viewport = this.viewport;
     const container = document.createElement("section");
-    let { width, height } = getRectDims(data.rect);
+    const { width, height } = getRectDims(data.rect);
+
+    const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
 
     container.setAttribute("data-annotation-id", data.id);
 
@@ -210,41 +214,13 @@ class AnnotationElement {
       page.view[3] - data.rect[3] + page.view[1],
     ]);
 
-    if (data.hasOwnCanvas) {
-      const transform = viewport.transform.slice();
-      const [scaleX, scaleY] = Util.singularValueDecompose2dScale(transform);
-      width = Math.ceil(width * scaleX);
-      height = Math.ceil(height * scaleY);
-      rect[0] *= scaleX;
-      rect[1] *= scaleY;
-      // Reset the scale part of the transform matrix (which must be diagonal
-      // or anti-diagonal) in order to avoid to rescale the canvas.
-      // The canvas for the annotation is correctly scaled when it is drawn
-      // (see `beginAnnotation` in canvas.js).
-      for (let i = 0; i < 4; i++) {
-        transform[i] = Math.sign(transform[i]);
-      }
-      container.style.transform = `matrix(${transform.join(",")})`;
-    } else {
-      container.style.transform = `matrix(${viewport.transform.join(",")})`;
-    }
-
-    container.style.transformOrigin = `${-rect[0]}px ${-rect[1]}px`;
-
     if (!ignoreBorder && data.borderStyle.width > 0) {
       container.style.borderWidth = `${data.borderStyle.width}px`;
-      if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
-        // Underline styles only have a bottom border, so we do not need
-        // to adjust for all borders. This yields a similar result as
-        // Adobe Acrobat/Reader.
-        width -= 2 * data.borderStyle.width;
-        height -= 2 * data.borderStyle.width;
-      }
 
       const horizontalRadius = data.borderStyle.horizontalCornerRadius;
       const verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
-        const radius = `${horizontalRadius}px / ${verticalRadius}px`;
+        const radius = `calc(${horizontalRadius}px * var(--scale-factor)) / calc(${verticalRadius}px * var(--scale-factor))`;
         container.style.borderRadius = radius;
       }
 
@@ -286,15 +262,11 @@ class AnnotationElement {
       }
     }
 
-    container.style.left = `${rect[0]}px`;
-    container.style.top = `${rect[1]}px`;
+    container.style.left = `${(100 * (rect[0] - pageLLx)) / pageWidth}%`;
+    container.style.top = `${(100 * (rect[1] - pageLLy)) / pageHeight}%`;
+    container.style.width = `${(100 * width) / pageWidth}%`;
+    container.style.height = `${(100 * height) / pageHeight}%`;
 
-    if (data.hasOwnCanvas) {
-      container.style.width = container.style.height = "auto";
-    } else {
-      container.style.width = `${width}px`;
-      container.style.height = `${height}px`;
-    }
     return container;
   }
 
@@ -464,7 +436,7 @@ class AnnotationElement {
     const popup = popupElement.render();
 
     // Position the popup next to the annotation's container.
-    popup.style.left = container.style.width;
+    popup.style.left = "100%";
 
     container.append(popup);
   }
@@ -820,8 +792,6 @@ class TextAnnotationElement extends AnnotationElement {
     this.container.className = "textAnnotation";
 
     const image = document.createElement("img");
-    image.style.height = this.container.style.height;
-    image.style.width = this.container.style.width;
     image.src =
       this.imageResourcesPath +
       "annotation-" +
@@ -925,21 +895,20 @@ class WidgetAnnotationElement extends AnnotationElement {
     // it's instead based on the field height.
     // If the height is "big" then it could lead to a too big font size
     // so in this case use the one we've in the pdf (hence the min).
+    let computedFontSize;
     if (this.data.multiLine) {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
       const numberOfLines = Math.round(height / (LINE_FACTOR * fontSize)) || 1;
       const lineHeight = height / numberOfLines;
-      style.fontSize = `${Math.min(
+      computedFontSize = Math.min(
         fontSize,
         Math.round(lineHeight / LINE_FACTOR)
-      )}px`;
+      );
     } else {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
-      style.fontSize = `${Math.min(
-        fontSize,
-        Math.round(height / LINE_FACTOR)
-      )}px`;
+      computedFontSize = Math.min(fontSize, Math.round(height / LINE_FACTOR));
     }
+    style.fontSize = `${computedFontSize}%`;
 
     style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
 
@@ -1227,7 +1196,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         const combWidth = fieldWidth / this.data.maxLen;
 
         element.classList.add("comb");
-        element.style.letterSpacing = `calc(${combWidth}px - 1ch)`;
+        element.style.letterSpacing = `calc(${combWidth}px * var(--scale-factor) - 1ch)`;
       }
     } else {
       element = document.createElement("div");
@@ -1464,10 +1433,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       value: this.data.fieldValue,
     });
 
-    const fontSize =
-      this.data.defaultAppearanceData.fontSize || DEFAULT_FONT_SIZE;
-    const fontSizeStyle = `calc(${fontSize}px * var(--zoom-factor))`;
-
     const selectElement = document.createElement("select");
     GetElementsByNameSet.add(selectElement);
     selectElement.setAttribute("data-element-id", id);
@@ -1499,9 +1464,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       const optionElement = document.createElement("option");
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
-      if (this.data.combo) {
-        optionElement.style.fontSize = fontSizeStyle;
-      }
       if (storedData.value.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
         addAnEmptyEntry = false;
@@ -1749,9 +1711,12 @@ class PopupAnnotationElement extends AnnotationElement {
       rect[0] + this.data.parentRect[2] - this.data.parentRect[0];
     const popupTop = rect[1];
 
-    this.container.style.transformOrigin = `${-popupLeft}px ${-popupTop}px`;
-    this.container.style.left = `${popupLeft}px`;
-    this.container.style.top = `${popupTop}px`;
+    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+
+    this.container.style.left = `${(100 * (popupLeft - pageLLx)) / pageWidth}%`;
+    this.container.style.top = `${(100 * (popupTop - pageLLy)) / pageHeight}%`;
 
     this.container.append(popup.render());
     return this.container;
@@ -1961,7 +1926,11 @@ class LineAnnotationElement extends AnnotationElement {
     // trigger the popup, not the entire container.
     const data = this.data;
     const { width, height } = getRectDims(data.rect);
-    const svg = this.svgFactory.create(width, height);
+    const svg = this.svgFactory.create(
+      width,
+      height,
+      /* skipDimensions = */ true
+    );
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
@@ -2006,7 +1975,11 @@ class SquareAnnotationElement extends AnnotationElement {
     // popup, not the entire container.
     const data = this.data;
     const { width, height } = getRectDims(data.rect);
-    const svg = this.svgFactory.create(width, height);
+    const svg = this.svgFactory.create(
+      width,
+      height,
+      /* skipDimensions = */ true
+    );
 
     // The browser draws half of the borders inside the square and half of
     // the borders outside the square by default. This behavior cannot be
@@ -2053,7 +2026,11 @@ class CircleAnnotationElement extends AnnotationElement {
     // popup, not the entire container.
     const data = this.data;
     const { width, height } = getRectDims(data.rect);
-    const svg = this.svgFactory.create(width, height);
+    const svg = this.svgFactory.create(
+      width,
+      height,
+      /* skipDimensions = */ true
+    );
 
     // The browser draws half of the borders inside the circle and half of
     // the borders outside the circle by default. This behavior cannot be
@@ -2103,7 +2080,11 @@ class PolylineAnnotationElement extends AnnotationElement {
     // popup, not the entire container.
     const data = this.data;
     const { width, height } = getRectDims(data.rect);
-    const svg = this.svgFactory.create(width, height);
+    const svg = this.svgFactory.create(
+      width,
+      height,
+      /* skipDimensions = */ true
+    );
 
     // Convert the vertices array to a single points string that the SVG
     // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
@@ -2191,7 +2172,11 @@ class InkAnnotationElement extends AnnotationElement {
     // trigger for the popup.
     const data = this.data;
     const { width, height } = getRectDims(data.rect);
-    const svg = this.svgFactory.create(width, height);
+    const svg = this.svgFactory.create(
+      width,
+      height,
+      /* skipDimensions = */ true
+    );
 
     for (const inkList of data.inkLists) {
       // Convert the ink list to a single points string that the SVG
@@ -2515,53 +2500,25 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
-    const { page, viewport, annotations, annotationCanvasMap, div } =
-      parameters;
-    const transform = viewport.transform;
-    const matrix = `matrix(${transform.join(",")})`;
-
-    let scale, ownMatrix;
-    for (const data of annotations) {
-      const elements = div.querySelectorAll(
-        `[data-annotation-id="${data.id}"]`
-      );
-      if (elements) {
-        for (const element of elements) {
-          if (data.hasOwnCanvas) {
-            const rect = Util.normalizeRect([
-              data.rect[0],
-              page.view[3] - data.rect[1] + page.view[1],
-              data.rect[2],
-              page.view[3] - data.rect[3] + page.view[1],
-            ]);
-
-            if (!ownMatrix) {
-              // When an annotation has its own canvas, then
-              // the scale has been already applied to the canvas,
-              // so we musn't scale it twice.
-              scale = Math.abs(transform[0] || transform[1]);
-              const ownTransform = transform.slice();
-              for (let i = 0; i < 4; i++) {
-                ownTransform[i] = Math.sign(ownTransform[i]);
-              }
-              ownMatrix = `matrix(${ownTransform.join(",")})`;
-            }
-
-            const left = rect[0] * scale;
-            const top = rect[1] * scale;
-            element.style.left = `${left}px`;
-            element.style.top = `${top}px`;
-            element.style.transformOrigin = `${-left}px ${-top}px`;
-            element.style.transform = ownMatrix;
-          } else {
-            element.style.transform = matrix;
-          }
-        }
-      }
-    }
+    const { annotationCanvasMap, div } = parameters;
 
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
     div.hidden = false;
+  }
+
+  static setDimensions(div, viewport) {
+    const { width, height, rotation } = viewport;
+    const { style } = div;
+
+    if (rotation === 0 || rotation === 180) {
+      style.width = `${width}px`;
+      style.height = `${height}px`;
+    } else {
+      style.width = `${height}px`;
+      style.height = `${width}px`;
+    }
+
+    div.setAttribute("data-annotation-rotation", rotation);
   }
 
   static #setAnnotationCanvasMap(div, annotationCanvasMap) {

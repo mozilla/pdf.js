@@ -17,6 +17,13 @@
 
 .annotationLayer {
   position: absolute;
+  font-size: calc(100px * var(--scale-factor));
+}
+
+.annotationLayer .buttonWidgetAnnotation.pushButton > img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
 }
 
 .annotationLayer .buttonWidgetAnnotation.checkBox input,

@@ -42,7 +42,7 @@ describe("Editor", () => {
           });
 
           const data = "Hello PDF.js World !!";
-          await page.mouse.click(rect.x + 10, rect.y + 10);
+          await page.mouse.click(rect.x + 100, rect.y + 100);
           await page.type(`${editorPrefix}0 .internal`, data);
 
           const editorRect = await page.$eval(`${editorPrefix}0`, el => {
@@ -151,7 +151,7 @@ describe("Editor", () => {
           });
 
           const data = "Hello PDF.js World !!";
-          await page.mouse.click(rect.x + 10, rect.y + 10);
+          await page.mouse.click(rect.x + 100, rect.y + 100);
           await page.type(`${editorPrefix}5 .internal`, data);
 
           const editorRect = await page.$eval(`${editorPrefix}5`, el => {
