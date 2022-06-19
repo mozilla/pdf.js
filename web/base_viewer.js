@@ -323,11 +323,6 @@ class BaseViewer {
       this.viewer.classList.add("removePageBorders");
     }
     this.updateContainerHeightCss();
-    // Defer the dispatching of this event, to give other viewer components
-    // time to initialize *and* register 'baseviewerinit' event listeners.
-    Promise.resolve().then(() => {
-      this.eventBus.dispatch("baseviewerinit", { source: this });
-    });
   }
 
   get pagesCount() {
