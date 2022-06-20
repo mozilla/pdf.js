@@ -205,6 +205,11 @@
   appearance: none;
 }
 
+.annotationLayer .popupTriggerArea {
+  height: 100%;
+  width: 100%;
+}
+
 .annotationLayer .popupWrapper {
   position: absolute;
   font-size: calc(9px * var(--scale-factor));
