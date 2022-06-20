@@ -113,7 +113,11 @@ class AnnotationEditorLayer {
    * @param {MouseEvent} event
    */
   mouseover(event) {
-    if (event.target === this.div && event.buttons === 0) {
+    if (
+      event.target === this.div &&
+      event.buttons === 0 &&
+      !this.#uiManager.hasActive()
+    ) {
       // The div is the target so there is no ink editor, hence we can
       // create a new one.
       // event.buttons === 0 is here to avoid adding a new ink editor
