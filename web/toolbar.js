@@ -141,7 +141,9 @@ class Toolbar {
     this.pageScale = DEFAULT_SCALE;
     this._updateUIState(true);
     this.updateLoadingIndicatorState();
-    this.updateEditorModeButtonsState();
+
+    // Reset the Editor buttons too, since they're document specific.
+    this.eventBus.dispatch("toolbarreset", { source: this });
   }
 
   _bindListeners(options) {
@@ -212,7 +214,7 @@ class Toolbar {
     editorFreeTextButton,
     editorInkButton,
   }) {
-    this.eventBus._on("annotationeditormodechanged", evt => {
+    const editorModeChanged = (evt, disableButtons = false) => {
       const editorButtons = [
         [AnnotationEditorType.NONE, editorNoneButton],
         [AnnotationEditorType.FREETEXT, editorFreeTextButton],
@@ -223,6 +225,17 @@ class Toolbar {
         const checked = mode === evt.mode;
         button.classList.toggle("toggled", checked);
         button.setAttribute("aria-checked", checked);
+        button.disabled = disableButtons;
+      }
+    };
+    this.eventBus._on("annotationeditormodechanged", editorModeChanged);
+
+    this.eventBus._on("toolbarreset", evt => {
+      if (evt.source === this) {
+        editorModeChanged(
+          { mode: AnnotationEditorType.NONE },
+          /* disableButtons = */ true
+        );
       }
     });
   }
@@ -284,15 +297,6 @@ class Toolbar {
     const { pageNumber } = this.items;
 
     pageNumber.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
-  }
-
-  updateEditorModeButtonsState(disabled = false) {
-    const { editorNoneButton, editorFreeTextButton, editorInkButton } =
-      this.items;
-
-    editorNoneButton.disabled = disabled;
-    editorFreeTextButton.disabled = disabled;
-    editorInkButton.disabled = disabled;
   }
 
   /**

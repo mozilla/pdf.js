@@ -93,7 +93,6 @@ function getViewerConfiguration() {
           ? document.getElementById("openFile")
           : null,
       print: document.getElementById("print"),
-      editorModeButtons: document.getElementById("editorModeButtons"),
       editorNoneButton: document.getElementById("editorNone"),
       editorFreeTextButton: document.getElementById("editorFreeText"),
       editorInkButton: document.getElementById("editorInk"),
