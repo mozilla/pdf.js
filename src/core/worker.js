@@ -629,11 +629,7 @@ class WorkerMessageHandler {
               return stream.bytes;
             }
           } else {
-            for (const ref of refs) {
-              newRefs = ref
-                .filter(x => x !== null)
-                .reduce((a, b) => a.concat(b), newRefs);
-            }
+            newRefs = refs.flat(2);
 
             if (newRefs.length === 0) {
               // No new refs so just return the initial bytes
