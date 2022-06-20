@@ -907,7 +907,7 @@ class WidgetAnnotationElement extends AnnotationElement {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
       computedFontSize = Math.min(fontSize, Math.round(height / LINE_FACTOR));
     }
-    style.fontSize = `${computedFontSize}%`;
+    style.fontSize = `calc(${computedFontSize}px * var(--scale-factor))`;
 
     style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
 
