@@ -349,7 +349,9 @@ class Page {
         );
       }
 
-      return Promise.all(newRefsPromises);
+      return Promise.all(newRefsPromises).then(function (newRefs) {
+        return newRefs.filter(newRef => !!newRef);
+      });
     });
   }
 
