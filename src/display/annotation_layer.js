@@ -418,8 +418,7 @@ class AnnotationElement {
     // If no trigger element is specified, create it.
     if (!trigger) {
       trigger = document.createElement("div");
-      trigger.style.height = container.style.height;
-      trigger.style.width = container.style.width;
+      trigger.className = "popupTriggerArea";
       container.append(trigger);
     }
 
