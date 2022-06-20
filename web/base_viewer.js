@@ -219,8 +219,6 @@ class BaseViewer {
 
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
-  #previousAnnotationMode = null;
-
   #enablePermissions = false;
 
   #previousContainerHeight = 0;
@@ -275,6 +273,9 @@ class BaseViewer {
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
+    this.#annotationEditorMode = options.annotationEditorEnabled
+      ? AnnotationEditorType.NONE
+      : null;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
@@ -283,10 +284,6 @@ class BaseViewer {
     this.l10n = options.l10n || NullL10n;
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
-
-    if (options.annotationEditorEnabled === true) {
-      this.#annotationEditorUIManager = new AnnotationEditorUIManager();
-    }
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       if (
@@ -352,13 +349,6 @@ class BaseViewer {
    */
   get renderForms() {
     return this.#annotationMode === AnnotationMode.ENABLE_FORMS;
-  }
-
-  /**
-   * @type {boolean}
-   */
-  get enableAnnotationEditor() {
-    return !!this.#annotationEditorUIManager;
   }
 
   /**
@@ -553,25 +543,35 @@ class BaseViewer {
 
   /**
    * Currently only *some* permissions are supported.
+   * @returns {Object}
    */
   #initializePermissions(permissions) {
+    const params = {
+      annotationEditorMode: this.#annotationEditorMode,
+      annotationMode: this.#annotationMode,
+      textLayerMode: this.textLayerMode,
+    };
     if (!permissions) {
-      return;
+      return params;
     }
 
     if (!permissions.includes(PermissionFlag.COPY)) {
       this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
     }
 
+    if (!permissions.includes(PermissionFlag.MODIFY_CONTENTS)) {
+      params.annotationEditorMode = null;
+    }
+
     if (
       !permissions.includes(PermissionFlag.MODIFY_ANNOTATIONS) &&
-      !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS)
+      !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS) &&
+      this.#annotationMode === AnnotationMode.ENABLE_FORMS
     ) {
-      if (this.#annotationMode === AnnotationMode.ENABLE_FORMS) {
-        this.#previousAnnotationMode = this.#annotationMode; // Allow resetting.
-        this.#annotationMode = AnnotationMode.ENABLE;
-      }
+      params.annotationMode = AnnotationMode.ENABLE;
     }
+
+    return params;
   }
 
   #onePageRenderedOrForceFetch() {
@@ -706,7 +706,23 @@ class BaseViewer {
         }
         this._firstPageCapability.resolve(firstPdfPage);
         this._optionalContentConfigPromise = optionalContentConfigPromise;
-        this.#initializePermissions(permissions);
+
+        const { annotationEditorMode, annotationMode, textLayerMode } =
+          this.#initializePermissions(permissions);
+
+        if (annotationEditorMode !== null) {
+          if (isPureXfa) {
+            console.warn("Warning: XFA-editing is not implemented.");
+          } else {
+            // Ensure that the Editor buttons, in the toolbar, are updated.
+            this.eventBus.dispatch("annotationeditormodechanged", {
+              source: this,
+              mode: annotationEditorMode,
+            });
+
+            this.#annotationEditorUIManager = new AnnotationEditorUIManager();
+          }
+        }
 
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
@@ -715,14 +731,13 @@ class BaseViewer {
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
         });
         const textLayerFactory =
-          this.textLayerMode !== TextLayerMode.DISABLE && !isPureXfa
-            ? this
-            : null;
+          textLayerMode !== TextLayerMode.DISABLE && !isPureXfa ? this : null;
         const annotationLayerFactory =
-          this.#annotationMode !== AnnotationMode.DISABLE ? this : null;
+          annotationMode !== AnnotationMode.DISABLE ? this : null;
         const xfaLayerFactory = isPureXfa ? this : null;
-        const annotationEditorLayerFactory =
-          this.#annotationEditorUIManager && !isPureXfa ? this : null;
+        const annotationEditorLayerFactory = this.#annotationEditorUIManager
+          ? this
+          : null;
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
@@ -734,9 +749,9 @@ class BaseViewer {
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerFactory,
-            textLayerMode: this.textLayerMode,
+            textLayerMode,
             annotationLayerFactory,
-            annotationMode: this.#annotationMode,
+            annotationMode,
             xfaLayerFactory,
             annotationEditorLayerFactory,
             textHighlighterFactory: this,
@@ -868,6 +883,10 @@ class BaseViewer {
   }
 
   _resetView() {
+    if (this.#annotationEditorMode !== null) {
+      this.#annotationEditorMode = AnnotationEditorType.NONE;
+    }
+    this.#annotationEditorUIManager = null;
     this._pages = [];
     this._currentPageNumber = 1;
     this._currentScale = UNKNOWN_SCALE;
@@ -913,11 +932,6 @@ class BaseViewer {
     this.viewer.removeAttribute("lang");
     // Reset all PDF document permissions.
     this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
-
-    if (this.#previousAnnotationMode !== null) {
-      this.#annotationMode = this.#previousAnnotationMode;
-      this.#previousAnnotationMode = null;
-    }
   }
 
   #ensurePageViewVisible() {
@@ -2125,6 +2139,9 @@ class BaseViewer {
     }
   }
 
+  /**
+   * @type {number | null}
+   */
   get annotationEditorMode() {
     return this.#annotationEditorMode;
   }
@@ -2141,6 +2158,9 @@ class BaseViewer {
     }
     if (!isValidAnnotationEditorMode(mode)) {
       throw new Error(`Invalid AnnotationEditor mode: ${mode}`);
+    }
+    if (!this.pdfDocument) {
+      return;
     }
     this.#annotationEditorMode = mode;
     this.eventBus.dispatch("annotationeditormodechanged", {
