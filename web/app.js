@@ -506,6 +506,7 @@ const PDFViewerApplication = {
 
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
+    const annotationEditorEnabled = AppOptions.get("annotationEditorEnabled");
     const pageColors = {
       background: AppOptions.get("pageColorsBackground"),
       foreground: AppOptions.get("pageColorsForeground"),
@@ -529,7 +530,7 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
-      annotationEditorEnabled: AppOptions.get("annotationEditorEnabled"),
+      annotationEditorEnabled,
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
       useOnlyCssZoom: AppOptions.get("useOnlyCssZoom"),
@@ -563,6 +564,15 @@ const PDFViewerApplication = {
 
     if (!this.supportsIntegratedFind) {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
+    }
+
+    if (annotationEditorEnabled) {
+      for (const element of [
+        document.getElementById("editorModeButtons"),
+        document.getElementById("editorModeSeparator"),
+      ]) {
+        element.classList.remove("hidden");
+      }
     }
 
     this.pdfDocumentProperties = new PDFDocumentProperties(
@@ -1195,11 +1205,6 @@ const PDFViewerApplication = {
 
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
-
-    if (pdfDocument.isPureXfa) {
-      console.warn("Warning: XFA-editing is not implemented.");
-      this.toolbar.updateEditorModeButtonsState(/* disabled = */ true);
-    }
 
     let baseDocumentUrl;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -2240,10 +2245,6 @@ function webViewerInitialized() {
 
   if (PDFViewerApplication.supportsIntegratedFind) {
     appConfig.toolbar.viewFind.classList.add("hidden");
-  }
-
-  if (PDFViewerApplication.pdfViewer.enableAnnotationEditor) {
-    appConfig.toolbar.editorModeButtons.classList.remove("hidden");
   }
 
   appConfig.mainContainer.addEventListener(
