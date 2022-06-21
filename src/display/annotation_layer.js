@@ -273,9 +273,12 @@ class AnnotationElement {
   get _commonActions() {
     const setColor = (jsName, styleName, event) => {
       const color = event.detail[jsName];
-      event.target.style[styleName] = ColorConverters[`${color[0]}_HTML`](
-        color.slice(1)
-      );
+      const colorArray = color.slice(1);
+      event.target.style[styleName] =
+        ColorConverters[`${color[0]}_HTML`](colorArray);
+      this.annotationStorage.setValue(this.data.id, {
+        [styleName]: ColorConverters[`${color[0]}_rgb`](colorArray),
+      });
     };
 
     return shadow(this, "_commonActions", {
@@ -283,13 +286,13 @@ class AnnotationElement {
         const hidden = event.detail.display % 2 === 1;
         this.container.style.visibility = hidden ? "hidden" : "visible";
         this.annotationStorage.setValue(this.data.id, {
-          hidden,
-          print: event.detail.display === 0 || event.detail.display === 3,
+          noView: hidden,
+          noPrint: event.detail.display === 1 || event.detail.display === 2,
         });
       },
       print: event => {
         this.annotationStorage.setValue(this.data.id, {
-          print: event.detail.print,
+          noPrint: !event.detail.print,
         });
       },
       hidden: event => {
@@ -297,7 +300,8 @@ class AnnotationElement {
           ? "hidden"
           : "visible";
         this.annotationStorage.setValue(this.data.id, {
-          hidden: event.detail.hidden,
+          noPrint: event.detail.hidden,
+          noView: event.detail.hidden,
         });
       },
       focus: event => {

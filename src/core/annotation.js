@@ -493,10 +493,7 @@ class Annotation {
    * @private
    */
   _isViewable(flags) {
-    return (
-      !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
-      !this._hasFlag(flags, AnnotationFlag.NOVIEW)
-    );
+    return !this._hasFlag(flags, AnnotationFlag.INVISIBLE);
   }
 
   /**
@@ -505,26 +502,19 @@ class Annotation {
   _isPrintable(flags) {
     return (
       this._hasFlag(flags, AnnotationFlag.PRINT) &&
+      !this._hasFlag(flags, AnnotationFlag.HIDDEN) &&
       !this._hasFlag(flags, AnnotationFlag.INVISIBLE)
     );
   }
 
   /**
-   * Check if the annotation must be displayed by taking into account
-   * the value found in the annotationStorage which may have been set
-   * through JS.
-   *
-   * @public
-   * @memberof Annotation
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * Check if the annotation must be displayed.
+   * We don't take into account a value we could have in the
+   * annotationStorage because this value could be changed in
+   * the future and we must be able to eventually display it.
    */
-  mustBeViewed(annotationStorage) {
-    const storageEntry =
-      annotationStorage && annotationStorage.get(this.data.id);
-    if (storageEntry && storageEntry.hidden !== undefined) {
-      return !storageEntry.hidden;
-    }
-    return this.viewable && !this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
+  mustBeViewed() {
+    return this.viewable;
   }
 
   /**
@@ -539,9 +529,11 @@ class Annotation {
   mustBePrinted(annotationStorage) {
     const storageEntry =
       annotationStorage && annotationStorage.get(this.data.id);
-    if (storageEntry && storageEntry.print !== undefined) {
-      return storageEntry.print;
+
+    if (storageEntry && storageEntry.noPrint !== undefined) {
+      return !storageEntry.noPrint;
     }
+
     return this.printable;
   }
 
@@ -721,26 +713,42 @@ class Annotation {
     }
   }
 
-  getBorderAndBackgroundAppearances() {
-    if (!this.backgroundColor && !this.borderColor) {
+  getBorderAndBackgroundAppearances(annotationStorage) {
+    const storageEntry =
+      annotationStorage && annotationStorage.get(this.data.id);
+    let backgroundColor =
+      (storageEntry && storageEntry.backgroundColor) || this.backgroundColor;
+    let borderColor =
+      (storageEntry && storageEntry.borderColor) || this.borderColor;
+
+    if (backgroundColor && backgroundColor[0] === null) {
+      // Transparent.
+      backgroundColor = null;
+    }
+    if (borderColor && borderColor[0] === null) {
+      // Transparent.
+      borderColor = null;
+    }
+
+    if (!backgroundColor && !borderColor) {
       return "";
     }
     const width = this.data.rect[2] - this.data.rect[0];
     const height = this.data.rect[3] - this.data.rect[1];
-    const rect = `0 0 ${width} ${height} re`;
+    const rect = `0 0 ${numberToString(width)} ${numberToString(height)} re`;
 
     let str = "";
-    if (this.backgroundColor) {
+    if (backgroundColor) {
       str = `${getPdfColor(
         this.backgroundColor,
         /* isFill */ true
       )} ${rect} f `;
     }
 
-    if (this.borderColor) {
+    if (borderColor) {
       const borderWidth = this.borderStyle.width || 1;
       str += `${borderWidth} w ${getPdfColor(
-        this.borderColor,
+        borderColor,
         /* isFill */ false
       )} ${rect} S `;
     }
@@ -1427,7 +1435,28 @@ class WidgetAnnotation extends Annotation {
 
     data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
     data.required = this.hasFieldFlag(AnnotationFieldFlag.REQUIRED);
-    data.hidden = this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN);
+
+    const print = this._hasFlag(data.annotationFlags, AnnotationFlag.PRINT);
+    const hidden = this._hasFlag(data.annotationFlags, AnnotationFlag.HIDDEN);
+    const noView = this._hasFlag(data.annotationFlags, AnnotationFlag.NOVIEW);
+
+    if (hidden) {
+      // display.hidden.
+      data.display = 1;
+      data.hidden = true;
+    } else if (print && !noView) {
+      // display.visible.
+      data.display = 0;
+      data.hidden = false;
+    } else if (print) {
+      // display.noView.
+      data.display = 3;
+      data.hidden = true;
+    } else {
+      // display.noPrint.
+      data.display = 2;
+      data.hidden = false;
+    }
   }
 
   /**
@@ -1639,15 +1668,27 @@ class WidgetAnnotation extends Annotation {
       : undefined;
     let value =
       storageEntry && (storageEntry.formattedValue || storageEntry.value);
+
+    // Empty or it has a trailing whitespace.
+    const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
+    const hasColorDefined =
+      storageEntry &&
+      (storageEntry.borderColor || storageEntry.backgroundColor);
+    const defaultEmptyAppearance =
+      hasColorDefined && `/Tx BMC q ${colors}Q EMC`;
+
     if (value === undefined) {
+      // The field value hasn't been changed by the user.
       if (!this._hasValueFromXFA || this.appearance) {
         // The annotation hasn't been rendered so use the appearance.
-        return null;
+        return !this.data.fieldValue && hasColorDefined
+          ? defaultEmptyAppearance
+          : null;
       }
       // The annotation has its value in XFA datasets but not in the V field.
       value = this.data.fieldValue;
       if (!value) {
-        return "";
+        return hasColorDefined ? defaultEmptyAppearance : "";
       }
     }
 
@@ -1657,7 +1698,7 @@ class WidgetAnnotation extends Annotation {
 
     if (value === "") {
       // the field is empty: nothing to render
-      return "";
+      return hasColorDefined ? defaultEmptyAppearance : "";
     }
 
     let lineCount = -1;
@@ -1719,7 +1760,8 @@ class WidgetAnnotation extends Annotation {
         totalHeight,
         alignment,
         hPadding,
-        vPadding
+        vPadding,
+        colors
       );
     }
 
@@ -1733,12 +1775,10 @@ class WidgetAnnotation extends Annotation {
         encodedString,
         totalWidth,
         hPadding,
-        vPadding
+        vPadding,
+        colors
       );
     }
-
-    // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances();
 
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
@@ -1989,7 +2029,15 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
   }
 
-  _getCombAppearance(defaultAppearance, font, text, width, hPadding, vPadding) {
+  _getCombAppearance(
+    defaultAppearance,
+    font,
+    text,
+    width,
+    hPadding,
+    vPadding,
+    colors
+  ) {
     const combWidth = numberToString(width / this.data.maxLen);
     const buf = [];
     const positions = font.getCharPositions(text);
@@ -1997,8 +2045,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       buf.push(`(${escapeString(text.substring(start, end))}) Tj`);
     }
 
-    // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances();
     const renderedComb = buf.join(` ${combWidth} 0 Td `);
     return (
       `/Tx BMC q ${colors}BT ` +
@@ -2017,7 +2063,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     height,
     alignment,
     hPadding,
-    vPadding
+    vPadding,
+    colors
   ) {
     const lines = text.split(/\r\n?|\n/);
     const buf = [];
@@ -2041,10 +2088,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     const renderedText = buf.join("\n");
-
-    // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances();
-
     return (
       `/Tx BMC q ${colors}BT ` +
       defaultAppearance +
@@ -2130,7 +2173,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       charLimit: this.data.maxLen,
       comb: this.data.comb,
       editable: !this.data.readOnly,
-      hidden: this.data.hidden,
+      display: this.data.display,
       name: this.data.fieldName,
       rect: this.data.rect,
       actions: this.data.actions,
@@ -2574,7 +2617,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       editable: !this.data.readOnly,
       name: this.data.fieldName,
       rect: this.data.rect,
-      hidden: this.data.hidden,
+      display: this.data.display,
       actions: this.data.actions,
       page: this.data.pageIndex,
       strokeColor: this.data.borderColor,
@@ -2656,7 +2699,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       rect: this.data.rect,
       numItems: this.data.fieldValue.length,
       multipleSelection: this.data.multiSelect,
-      hidden: this.data.hidden,
+      display: this.data.display,
       actions: this.data.actions,
       items: this.data.options,
       page: this.data.pageIndex,

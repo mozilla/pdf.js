@@ -294,6 +294,10 @@ class FirefoxScripting {
     FirefoxCom.request("dispatchEventInSandbox", event);
   }
 
+  static async dispatchAsyncEventInSandbox(event) {
+    return FirefoxCom.requestAsync("dispatchAsyncEventInSandbox", event);
+  }
+
   static async destroySandbox() {
     FirefoxCom.request("destroySandbox", null);
   }

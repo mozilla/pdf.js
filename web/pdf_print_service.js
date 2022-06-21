@@ -63,6 +63,7 @@ function PDFPrintService(
   printContainer,
   printResolution,
   optionalContentConfigPromise = null,
+  willPrintPromise = null,
   l10n
 ) {
   this.pdfDocument = pdfDocument;
@@ -71,6 +72,7 @@ function PDFPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+  this._willPrintPromise = willPrintPromise || Promise.resolve();
   this.l10n = l10n;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
@@ -143,31 +145,32 @@ PDFPrintService.prototype = {
       getXfaHtmlForPrinting(this.printContainer, this.pdfDocument);
       return Promise.resolve();
     }
-
-    const pageCount = this.pagesOverview.length;
-    const renderNextPage = (resolve, reject) => {
-      this.throwIfInactive();
-      if (++this.currentPage >= pageCount) {
-        renderProgress(pageCount, pageCount, this.l10n);
-        resolve();
-        return;
-      }
-      const index = this.currentPage;
-      renderProgress(index, pageCount, this.l10n);
-      renderPage(
-        this,
-        this.pdfDocument,
-        /* pageNumber = */ index + 1,
-        this.pagesOverview[index],
-        this._printResolution,
-        this._optionalContentConfigPromise
-      )
-        .then(this.useRenderedPage.bind(this))
-        .then(function () {
-          renderNextPage(resolve, reject);
-        }, reject);
-    };
-    return new Promise(renderNextPage);
+    return this._willPrintPromise.then(() => {
+      const pageCount = this.pagesOverview.length;
+      const renderNextPage = (resolve, reject) => {
+        this.throwIfInactive();
+        if (++this.currentPage >= pageCount) {
+          renderProgress(pageCount, pageCount, this.l10n);
+          resolve();
+          return;
+        }
+        const index = this.currentPage;
+        renderProgress(index, pageCount, this.l10n);
+        renderPage(
+          this,
+          this.pdfDocument,
+          /* pageNumber = */ index + 1,
+          this.pagesOverview[index],
+          this._printResolution,
+          this._optionalContentConfigPromise
+        )
+          .then(this.useRenderedPage.bind(this))
+          .then(function () {
+            renderNextPage(resolve, reject);
+          }, reject);
+      };
+      return new Promise(renderNextPage);
+    });
   },
 
   useRenderedPage() {
@@ -359,6 +362,7 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
+    willPrintPromise,
     l10n
   ) {
     if (activeService) {
@@ -370,6 +374,7 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
+      willPrintPromise,
       l10n
     );
     return activeService;

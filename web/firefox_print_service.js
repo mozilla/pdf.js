@@ -29,7 +29,8 @@ function composePage(
   size,
   printContainer,
   printResolution,
-  optionalContentConfigPromise
+  optionalContentConfigPromise,
+  willPrintPromise
 ) {
   const canvas = document.createElement("canvas");
 
@@ -61,8 +62,11 @@ function composePage(
     ctx.restore();
 
     let thisRenderTask = null;
-    pdfDocument
-      .getPage(pageNumber)
+    // Get a page after the WillPrint action has ran.
+    willPrintPromise
+      .then(() => {
+        return pdfDocument.getPage(pageNumber);
+      })
       .then(function (pdfPage) {
         if (currentRenderTask) {
           currentRenderTask.cancel();
@@ -114,7 +118,8 @@ function FirefoxPrintService(
   pagesOverview,
   printContainer,
   printResolution,
-  optionalContentConfigPromise = null
+  optionalContentConfigPromise = null,
+  willPrintPromise = null
 ) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
@@ -122,6 +127,7 @@ function FirefoxPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+  this._willPrintPromise = willPrintPromise || Promise.resolve();
 }
 
 FirefoxPrintService.prototype = {
@@ -132,6 +138,7 @@ FirefoxPrintService.prototype = {
       printContainer,
       _printResolution,
       _optionalContentConfigPromise,
+      _willPrintPromise,
     } = this;
 
     const body = document.querySelector("body");
@@ -149,7 +156,8 @@ FirefoxPrintService.prototype = {
         pagesOverview[i],
         printContainer,
         _printResolution,
-        _optionalContentConfigPromise
+        _optionalContentConfigPromise,
+        _willPrintPromise
       );
     }
   },
@@ -175,14 +183,16 @@ PDFPrintServiceFactory.instance = {
     pagesOverview,
     printContainer,
     printResolution,
-    optionalContentConfigPromise
+    optionalContentConfigPromise,
+    willPrintPromise
   ) {
     return new FirefoxPrintService(
       pdfDocument,
       pagesOverview,
       printContainer,
       printResolution,
-      optionalContentConfigPromise
+      optionalContentConfigPromise,
+      willPrintPromise
     );
   },
 };
