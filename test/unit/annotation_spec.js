@@ -4186,6 +4186,58 @@ describe("annotation", function () {
           "endobj\n"
       );
     });
+
+    it("should render an added Ink annotation for printing", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test Ink printing");
+      const inkAnnotation = (
+        await AnnotationFactory.printNewAnnotations(partialEvaluator, task, [
+          {
+            annotationType: AnnotationEditorType.INK,
+            rect: [12, 34, 56, 78],
+            thickness: 1,
+            color: [0, 0, 0],
+            paths: [
+              {
+                bezier: [1, 2, 3, 4, 5, 6, 7, 8],
+                // Useless in the printing case.
+                points: [1, 2, 3, 4, 5, 6, 7, 8],
+              },
+            ],
+          },
+        ])
+      )[0];
+
+      const operatorList = await inkAnnotation.getOperatorList(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        false,
+        null
+      );
+
+      expect(operatorList.argsArray.length).toEqual(6);
+      expect(operatorList.fnArray).toEqual([
+        OPS.beginAnnotation,
+        OPS.setLineWidth,
+        OPS.setStrokeRGBColor,
+        OPS.constructPath,
+        OPS.stroke,
+        OPS.endAnnotation,
+      ]);
+
+      // Linewidth.
+      expect(operatorList.argsArray[1]).toEqual([1]);
+      // Color.
+      expect(operatorList.argsArray[2]).toEqual(
+        new Uint8ClampedArray([0, 0, 0])
+      );
+      // Path.
+      expect(operatorList.argsArray[3][0]).toEqual([OPS.moveTo, OPS.curveTo]);
+      expect(operatorList.argsArray[3][1]).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+      // Min-max.
+      expect(operatorList.argsArray[3][2]).toEqual([1, 1, 2, 2]);
+    });
   });
 
   describe("HightlightAnnotation", function () {
