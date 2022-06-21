@@ -295,6 +295,27 @@ class AnnotationFactory {
       dependencies,
     };
   }
+
+  static async printNewAnnotations(evaluator, task, annotations) {
+    if (!annotations) {
+      return null;
+    }
+
+    const xref = evaluator.xref;
+    const promises = [];
+    for (const annotation of annotations) {
+      switch (annotation.annotationType) {
+        case AnnotationEditorType.FREETEXT:
+          break;
+        case AnnotationEditorType.INK:
+          promises.push(
+            InkAnnotation.createNewPrintAnnotation(annotation, xref)
+          );
+      }
+    }
+
+    return Promise.all(promises);
+  }
 }
 
 function getRgbColor(color, defaultColor = new Uint8ClampedArray(3)) {
@@ -3621,15 +3642,7 @@ class InkAnnotation extends MarkupAnnotation {
     }
   }
 
-  static async createNewAnnotation(
-    xref,
-    evaluator,
-    task,
-    annotation,
-    results,
-    others
-  ) {
-    const inkRef = xref.getNewRef();
+  static createInkDict(annotation, xref, { apRef, ap }) {
     const ink = new Dict(xref);
     ink.set("Type", Name.get("Annot"));
     ink.set("Subtype", Name.get("Ink"));
@@ -3643,6 +3656,19 @@ class InkAnnotation extends MarkupAnnotation {
     ink.set("Border", [0, 0, 0]);
     ink.set("Rotate", 0);
 
+    const n = new Dict(xref);
+    ink.set("AP", n);
+
+    if (apRef) {
+      n.set("N", apRef);
+    } else {
+      n.set("N", ap);
+    }
+
+    return ink;
+  }
+
+  static createNewAppearanceStream(annotation, xref) {
     const [x1, y1, x2, y2] = annotation.rect;
     const w = x2 - x1;
     const h = y2 - y1;
@@ -3679,17 +3705,28 @@ class InkAnnotation extends MarkupAnnotation {
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;
 
-    buffer.length = 0;
+    return ap;
+  }
+
+  static async createNewAnnotation(
+    xref,
+    evaluator,
+    task,
+    annotation,
+    results,
+    others
+  ) {
+    const inkRef = xref.getNewRef();
     const apRef = xref.getNewRef();
+    const ink = this.createInkDict(annotation, xref, { apRef });
+    const ap = this.createNewAppearanceStream(annotation, xref);
+
+    const buffer = [];
     let transform = xref.encrypt
       ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
       : null;
     writeObject(apRef, ap, buffer, transform);
     others.push({ ref: apRef, data: buffer.join("") });
-
-    const n = new Dict(xref);
-    n.set("N", apRef);
-    ink.set("AP", n);
 
     buffer.length = 0;
     transform = xref.encrypt
@@ -3698,6 +3735,16 @@ class InkAnnotation extends MarkupAnnotation {
     writeObject(inkRef, ink, buffer, transform);
 
     results.push({ ref: inkRef, data: buffer.join("") });
+  }
+
+  static async createNewPrintAnnotation(annotation, xref) {
+    const ap = this.createNewAppearanceStream(annotation, xref);
+    const ink = this.createInkDict(annotation, xref, { ap });
+
+    return new InkAnnotation({
+      dict: ink,
+      xref,
+    });
   }
 }
 

@@ -33,6 +33,7 @@ import {
 import {
   collectActions,
   getInheritableProperty,
+  getNewAnnotationsMap,
   isWhiteSpace,
   MissingDataException,
   validateCSSFont,
@@ -312,6 +313,8 @@ class Page {
       { ref: this.ref, data: buffer.join("") },
       ...newData.annotations
     );
+
+    this.xref.resetNewRef();
     return objects;
   }
 
@@ -397,6 +400,21 @@ class Page {
       options: this.evaluatorOptions,
     });
 
+    const newAnnotationsByPage = !this.xfaFactory
+      ? getNewAnnotationsMap(annotationStorage)
+      : null;
+
+    let newAnnotationsPromise = Promise.resolve(null);
+    if (newAnnotationsByPage) {
+      const newAnnotations = newAnnotationsByPage.get(this.pageIndex);
+      if (newAnnotations) {
+        newAnnotationsPromise = AnnotationFactory.printNewAnnotations(
+          partialEvaluator,
+          task,
+          newAnnotations
+        );
+      }
+    }
     const dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
     const pageListPromise = dataPromises.then(([contentStream]) => {
       const opList = new OperatorList(intent, sink);
@@ -424,58 +442,63 @@ class Page {
 
     // Fetch the page's annotations and add their operator lists to the
     // page's operator list to render them.
-    return Promise.all([pageListPromise, this._parsedAnnotations]).then(
-      function ([pageOpList, annotations]) {
-        if (
-          annotations.length === 0 ||
-          intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
-        ) {
-          pageOpList.flush(true);
-          return { length: pageOpList.totalLength };
-        }
-        const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
-          intentAny = !!(intent & RenderingIntentFlag.ANY),
-          intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
-          intentPrint = !!(intent & RenderingIntentFlag.PRINT);
-
-        // Collect the operator list promises for the annotations. Each promise
-        // is resolved with the complete operator list for a single annotation.
-        const opListPromises = [];
-        for (const annotation of annotations) {
-          if (
-            intentAny ||
-            (intentDisplay && annotation.mustBeViewed(annotationStorage)) ||
-            (intentPrint && annotation.mustBePrinted(annotationStorage))
-          ) {
-            opListPromises.push(
-              annotation
-                .getOperatorList(
-                  partialEvaluator,
-                  task,
-                  intent,
-                  renderForms,
-                  annotationStorage
-                )
-                .catch(function (reason) {
-                  warn(
-                    "getOperatorList - ignoring annotation data during " +
-                      `"${task.name}" task: "${reason}".`
-                  );
-                  return null;
-                })
-            );
-          }
-        }
-
-        return Promise.all(opListPromises).then(function (opLists) {
-          for (const opList of opLists) {
-            pageOpList.addOpList(opList);
-          }
-          pageOpList.flush(true);
-          return { length: pageOpList.totalLength };
-        });
+    return Promise.all([
+      pageListPromise,
+      this._parsedAnnotations,
+      newAnnotationsPromise,
+    ]).then(function ([pageOpList, annotations, newAnnotations]) {
+      if (newAnnotations) {
+        annotations = annotations.concat(newAnnotations);
       }
-    );
+      if (
+        annotations.length === 0 ||
+        intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
+      ) {
+        pageOpList.flush(true);
+        return { length: pageOpList.totalLength };
+      }
+      const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
+        intentAny = !!(intent & RenderingIntentFlag.ANY),
+        intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
+        intentPrint = !!(intent & RenderingIntentFlag.PRINT);
+
+      // Collect the operator list promises for the annotations. Each promise
+      // is resolved with the complete operator list for a single annotation.
+      const opListPromises = [];
+      for (const annotation of annotations) {
+        if (
+          intentAny ||
+          (intentDisplay && annotation.mustBeViewed(annotationStorage)) ||
+          (intentPrint && annotation.mustBePrinted(annotationStorage))
+        ) {
+          opListPromises.push(
+            annotation
+              .getOperatorList(
+                partialEvaluator,
+                task,
+                intent,
+                renderForms,
+                annotationStorage
+              )
+              .catch(function (reason) {
+                warn(
+                  "getOperatorList - ignoring annotation data during " +
+                    `"${task.name}" task: "${reason}".`
+                );
+                return null;
+              })
+          );
+        }
+      }
+
+      return Promise.all(opListPromises).then(function (opLists) {
+        for (const opList of opLists) {
+          pageOpList.addOpList(opList);
+        }
+        pageOpList.flush(true);
+        return { length: pageOpList.totalLength };
+      });
+    });
   }
 
   extractTextContent({
