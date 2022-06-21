@@ -596,7 +596,7 @@ class BaseViewer {
   }
 
   /**
-   * @param {PDFDocumentProxy} pdfDocument
+   * @param {?PDFDocumentProxy} pdfDocument
    */
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
