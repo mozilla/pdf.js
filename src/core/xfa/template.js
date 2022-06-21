@@ -5658,7 +5658,7 @@ class Template extends XFAObject {
             // We must stop the contentAreas filling and go to the next page.
             targetPageArea = target;
           } else if (target instanceof ContentArea) {
-            const index = contentAreas.findIndex(e => e === target);
+            const index = contentAreas.indexOf(target);
             if (index !== -1) {
               if (index > currentIndex) {
                 // In the next loop iteration `i` will be incremented, note the
@@ -5671,9 +5671,7 @@ class Template extends XFAObject {
               }
             } else {
               targetPageArea = target[$getParent]();
-              startIndex = targetPageArea.contentArea.children.findIndex(
-                e => e === target
-              );
+              startIndex = targetPageArea.contentArea.children.indexOf(target);
             }
           }
           continue;
