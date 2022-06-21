@@ -263,40 +263,43 @@ See https://github.com/adobe-type-tools/cmap-resources
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
-                <div id="editorModeButtons" class="splitToolbarButton toggled hidden" role="radiogroup">
-                  <button id="editorNone" class="toolbarButton toggled" title="Disable Annotation Editing" role="radio" aria-checked="true" tabindex="31" data-l10n-id="editor_none">
-                    <span data-l10n-id="editor_none_label">Disable Editing</span>
-                  </button>
-                  <button id="editorFreeText" class="toolbarButton" title="Add FreeText Annotation" role="radio" aria-checked="false" tabindex="32" data-l10n-id="editor_free_text">
-                    <span data-l10n-id="editor_free_text_label">FreeText Annotation</span>
-                  </button>
-                  <button id="editorInk" class="toolbarButton" title="Add Ink Annotation" role="radio" aria-checked="false" tabindex="33" data-l10n-id="editor_ink">
-                    <span data-l10n-id="editor_ink_label">Ink Annotation</span>
-                  </button>
-                </div>
-
-                <button id="presentationMode" class="toolbarButton hiddenLargeView" title="Switch to Presentation Mode" tabindex="43" data-l10n-id="presentation_mode">
+                <button id="presentationMode" class="toolbarButton hiddenLargeView" title="Switch to Presentation Mode" tabindex="31" data-l10n-id="presentation_mode">
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
                 </button>
 
 <!--#if GENERIC-->
-                <button id="openFile" class="toolbarButton hiddenLargeView" title="Open File" tabindex="44" data-l10n-id="open_file">
+                <button id="openFile" class="toolbarButton hiddenLargeView" title="Open File" tabindex="32" data-l10n-id="open_file">
                   <span data-l10n-id="open_file_label">Open</span>
                 </button>
 <!--#endif-->
 
-                <button id="print" class="toolbarButton hiddenMediumView" title="Print" tabindex="45" data-l10n-id="print">
+                <button id="print" class="toolbarButton hiddenMediumView" title="Print" tabindex="33" data-l10n-id="print">
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton hiddenMediumView" title="Download" tabindex="46" data-l10n-id="download">
+                <button id="download" class="toolbarButton hiddenMediumView" title="Download" tabindex="34" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
-                <a href="#" id="viewBookmark" class="toolbarButton hiddenSmallView" title="Current view (copy or open in new window)" tabindex="47" data-l10n-id="bookmark">
+                <a href="#" id="viewBookmark" class="toolbarButton hiddenSmallView" title="Current view (copy or open in new window)" tabindex="35" data-l10n-id="bookmark">
                   <span data-l10n-id="bookmark_label">Current View</span>
                 </a>
 
                 <div class="verticalToolbarSeparator hiddenSmallView"></div>
+
+                <div id="editorModeButtons" class="splitToolbarButton toggled hidden" role="radiogroup">
+                  <button id="editorNone" class="toolbarButton toggled" disabled="disabled" title="Disable Annotation Editing" role="radio" aria-checked="true" tabindex="36" data-l10n-id="editor_none">
+                    <span data-l10n-id="editor_none_label">Disable Editing</span>
+                  </button>
+                  <button id="editorFreeText" class="toolbarButton" disabled="disabled" title="Add FreeText Annotation" role="radio" aria-checked="false" tabindex="37" data-l10n-id="editor_free_text">
+                    <span data-l10n-id="editor_free_text_label">FreeText Annotation</span>
+                  </button>
+                  <button id="editorInk" class="toolbarButton" disabled="disabled" title="Add Ink Annotation" role="radio" aria-checked="false" tabindex="38" data-l10n-id="editor_ink">
+                    <span data-l10n-id="editor_ink_label">Ink Annotation</span>
+                  </button>
+                </div>
+
+                <!-- Should be visible when the "editorModeButtons" are visible. -->
+                <div id="editorModeSeparator" class="verticalToolbarSeparator hidden"></div>
 
                 <button id="secondaryToolbarToggle" class="toolbarButton" title="Tools" tabindex="48" data-l10n-id="tools" aria-expanded="false" aria-controls="secondaryToolbar">
                   <span data-l10n-id="tools_label">Tools</span>
