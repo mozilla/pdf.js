@@ -1401,4 +1401,47 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in bug1675139.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1675139.pdf", getSelector("48R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that data-annotation-rotation is correc", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let base = 0;
+
+          while (base !== 360) {
+            for (const [ref, angle] of [
+              [47, 0],
+              [42, 90],
+              [45, 180],
+              [46, 270],
+            ]) {
+              const rotation = await page.$eval(
+                `[data-annotation-id='${ref}R']`,
+                el => parseInt(el.getAttribute("data-annotation-rotation") || 0)
+              );
+              expect(rotation)
+                .withContext(`In ${browserName}`)
+                .toEqual((360 + ((360 - (base + angle)) % 360)) % 360);
+            }
+            base += 90;
+            await page.click(getSelector("48R"));
+          }
+        })
+      );
+    });
+  });
 });
