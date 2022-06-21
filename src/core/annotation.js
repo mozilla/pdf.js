@@ -24,6 +24,7 @@ import {
   assert,
   escapeString,
   getModificationDate,
+  IDENTITY_MATRIX,
   isAscii,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
@@ -430,9 +431,11 @@ class Annotation {
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
-    this.setBorderAndBackgroundColors(dict.get("MK"));
 
-    this._hasOwnCanvas = false;
+    const MK = dict.get("MK");
+    this.setBorderAndBackgroundColors(MK);
+    this.setRotation(MK);
+
     this._streams = [];
     if (this.appearance) {
       this._streams.push(this.appearance);
@@ -445,12 +448,14 @@ class Annotation {
       color: this.color,
       backgroundColor: this.backgroundColor,
       borderColor: this.borderColor,
+      rotation: this.rotation,
       contentsObj: this._contents,
       hasAppearance: !!this.appearance,
       id: params.id,
       modificationDate: this.modificationDate,
       rect: this.rectangle,
       subtype: params.subtype,
+      hasOwnCanvas: false,
     };
 
     if (params.collectFields) {
@@ -704,6 +709,22 @@ class Annotation {
     }
   }
 
+  setRotation(mk) {
+    this.rotation = 0;
+    if (mk instanceof Dict) {
+      let angle = mk.get("R") || 0;
+      if (Number.isInteger(angle) && angle !== 0) {
+        angle %= 360;
+        if (angle < 0) {
+          angle += 360;
+        }
+        if (angle % 90 === 0) {
+          this.rotation = angle;
+        }
+      }
+    }
+  }
+
   /**
    * Set the color for background and border if any.
    * The default values are transparent.
@@ -719,33 +740,6 @@ class Annotation {
     } else {
       this.borderColor = this.backgroundColor = null;
     }
-  }
-
-  getBorderAndBackgroundAppearances() {
-    if (!this.backgroundColor && !this.borderColor) {
-      return "";
-    }
-    const width = this.data.rect[2] - this.data.rect[0];
-    const height = this.data.rect[3] - this.data.rect[1];
-    const rect = `0 0 ${width} ${height} re`;
-
-    let str = "";
-    if (this.backgroundColor) {
-      str = `${getPdfColor(
-        this.backgroundColor,
-        /* isFill */ true
-      )} ${rect} f `;
-    }
-
-    if (this.borderColor) {
-      const borderWidth = this.borderStyle.width || 1;
-      str += `${borderWidth} w ${getPdfColor(
-        this.borderColor,
-        /* isFill */ false
-      )} ${rect} S `;
-    }
-
-    return str;
   }
 
   /**
@@ -849,7 +843,7 @@ class Annotation {
     const data = this.data;
     let appearance = this.appearance;
     const isUsingOwnCanvas =
-      this._hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
+      this.data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
     if (!appearance) {
       if (!isUsingOwnCanvas) {
         return Promise.resolve(new OperatorList());
@@ -918,6 +912,7 @@ class Annotation {
         type: "",
         kidIds: this.data.kidIds,
         page: this.data.pageIndex,
+        rotation: this.rotation,
       };
     }
     return null;
@@ -1466,6 +1461,72 @@ class WidgetAnnotation extends Annotation {
     return !!(this.data.fieldFlags & flag);
   }
 
+  getRotationMatrix(annotationStorage) {
+    const storageEntry = annotationStorage
+      ? annotationStorage.get(this.data.id)
+      : undefined;
+    let rotation = storageEntry && storageEntry.rotation;
+    if (rotation === undefined) {
+      rotation = this.rotation;
+    }
+
+    if (rotation === 0) {
+      return IDENTITY_MATRIX;
+    }
+
+    const width = this.data.rect[2] - this.data.rect[0];
+    const height = this.data.rect[3] - this.data.rect[1];
+
+    switch (rotation) {
+      case 90:
+        return [0, 1, -1, 0, width, 0];
+      case 180:
+        return [-1, 0, 0, -1, width, height];
+      case 270:
+        return [0, -1, 1, 0, 0, height];
+      default:
+        throw new Error("Invalid rotation");
+    }
+  }
+
+  getBorderAndBackgroundAppearances(annotationStorage) {
+    const storageEntry = annotationStorage
+      ? annotationStorage.get(this.data.id)
+      : undefined;
+    let rotation = storageEntry && storageEntry.rotation;
+    if (rotation === undefined) {
+      rotation = this.rotation;
+    }
+
+    if (!this.backgroundColor && !this.borderColor) {
+      return "";
+    }
+    const width = this.data.rect[2] - this.data.rect[0];
+    const height = this.data.rect[3] - this.data.rect[1];
+    const rect =
+      rotation === 0 || rotation === 180
+        ? `0 0 ${width} ${height} re`
+        : `0 0 ${height} ${width} re`;
+
+    let str = "";
+    if (this.backgroundColor) {
+      str = `${getPdfColor(
+        this.backgroundColor,
+        /* isFill */ true
+      )} ${rect} f `;
+    }
+
+    if (this.borderColor) {
+      const borderWidth = this.borderStyle.width || 1;
+      str += `${borderWidth} w ${getPdfColor(
+        this.borderColor,
+        /* isFill */ false
+      )} ${rect} S `;
+    }
+
+    return str;
+  }
+
   getOperatorList(evaluator, task, intent, renderForms, annotationStorage) {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
@@ -1516,7 +1577,7 @@ class WidgetAnnotation extends Annotation {
           this.data.id,
           this.data.rect,
           transform,
-          matrix,
+          this.getRotationMatrix(annotationStorage),
         ]);
 
         const stream = new StringStream(content);
@@ -1535,13 +1596,34 @@ class WidgetAnnotation extends Annotation {
     );
   }
 
+  _getMKDict(rotation) {
+    const mk = new Dict(null);
+    if (rotation) {
+      mk.set("R", rotation);
+    }
+    if (this.borderColor) {
+      mk.set(
+        "BC",
+        Array.from(this.borderColor).map(c => c / 255)
+      );
+    }
+    if (this.backgroundColor) {
+      mk.set(
+        "BG",
+        Array.from(this.backgroundColor).map(c => c / 255)
+      );
+    }
+    return mk.size > 0 ? mk : null;
+  }
+
   async save(evaluator, task, annotationStorage) {
     const storageEntry = annotationStorage
       ? annotationStorage.get(this.data.id)
       : undefined;
     let value = storageEntry && storageEntry.value;
+    let rotation = storageEntry && storageEntry.rotation;
     if (value === this.data.fieldValue || value === undefined) {
-      if (!this._hasValueFromXFA) {
+      if (!this._hasValueFromXFA && rotation === undefined) {
         return null;
       }
       value = value || this.data.fieldValue;
@@ -1549,6 +1631,7 @@ class WidgetAnnotation extends Annotation {
 
     // Value can be an array (with choice list and multiple selections)
     if (
+      rotation === undefined &&
       !this._hasValueFromXFA &&
       Array.isArray(value) &&
       Array.isArray(this.data.fieldValue) &&
@@ -1556,6 +1639,10 @@ class WidgetAnnotation extends Annotation {
       value.every((x, i) => x === this.data.fieldValue[i])
     ) {
       return null;
+    }
+
+    if (rotation === undefined) {
+      rotation = this.rotation;
     }
 
     let appearance = await this._getAppearance(
@@ -1606,11 +1693,22 @@ class WidgetAnnotation extends Annotation {
     dict.set("AP", AP);
     dict.set("M", `D:${getModificationDate()}`);
 
+    const maybeMK = this._getMKDict(rotation);
+    if (maybeMK) {
+      dict.set("MK", maybeMK);
+    }
+
     const appearanceDict = new Dict(xref);
     appearanceDict.set("Length", appearance.length);
     appearanceDict.set("Subtype", Name.get("Form"));
     appearanceDict.set("Resources", this._getSaveFieldResources(xref));
     appearanceDict.set("BBox", bbox);
+
+    const rotationMatrix = this.getRotationMatrix(annotationStorage);
+    if (rotationMatrix !== IDENTITY_MATRIX) {
+      // The matrix isn't the identity one.
+      appearanceDict.set("Matrix", rotationMatrix);
+    }
 
     const bufferOriginal = [`${this.ref.num} ${this.ref.gen} obj\n`];
     writeDict(dict, bufferOriginal, originalTransform);
@@ -1637,18 +1735,30 @@ class WidgetAnnotation extends Annotation {
     const storageEntry = annotationStorage
       ? annotationStorage.get(this.data.id)
       : undefined;
-    let value =
-      storageEntry && (storageEntry.formattedValue || storageEntry.value);
-    if (value === undefined) {
+
+    let value, rotation;
+    if (storageEntry) {
+      value = storageEntry.formattedValue || storageEntry.value;
+      rotation = storageEntry.rotation;
+    }
+
+    if (rotation === undefined && value === undefined) {
       if (!this._hasValueFromXFA || this.appearance) {
         // The annotation hasn't been rendered so use the appearance.
         return null;
       }
+    }
+
+    if (value === undefined) {
       // The annotation has its value in XFA datasets but not in the V field.
       value = this.data.fieldValue;
       if (!value) {
         return "";
       }
+    }
+
+    if (Array.isArray(value) && value.length === 1) {
+      value = value[0];
     }
 
     assert(typeof value === "string", "Expected `value` to be a string.");
@@ -1660,6 +1770,10 @@ class WidgetAnnotation extends Annotation {
       return "";
     }
 
+    if (rotation === undefined) {
+      rotation = this.rotation;
+    }
+
     let lineCount = -1;
     if (this.data.multiLine) {
       lineCount = value.split(/\r\n|\r|\n/).length;
@@ -1667,8 +1781,12 @@ class WidgetAnnotation extends Annotation {
 
     const defaultPadding = 2;
     const hPadding = defaultPadding;
-    const totalHeight = this.data.rect[3] - this.data.rect[1];
-    const totalWidth = this.data.rect[2] - this.data.rect[0];
+    let totalHeight = this.data.rect[3] - this.data.rect[1];
+    let totalWidth = this.data.rect[2] - this.data.rect[0];
+
+    if (rotation === 90 || rotation === 270) {
+      [totalWidth, totalHeight] = [totalHeight, totalWidth];
+    }
 
     if (!this._defaultAppearance) {
       // The DA is required and must be a string.
@@ -1719,7 +1837,8 @@ class WidgetAnnotation extends Annotation {
         totalHeight,
         alignment,
         hPadding,
-        vPadding
+        vPadding,
+        annotationStorage
       );
     }
 
@@ -1733,12 +1852,13 @@ class WidgetAnnotation extends Annotation {
         encodedString,
         totalWidth,
         hPadding,
-        vPadding
+        vPadding,
+        annotationStorage
       );
     }
 
     // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances();
+    const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
 
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
@@ -1989,7 +2109,15 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
   }
 
-  _getCombAppearance(defaultAppearance, font, text, width, hPadding, vPadding) {
+  _getCombAppearance(
+    defaultAppearance,
+    font,
+    text,
+    width,
+    hPadding,
+    vPadding,
+    annotationStorage
+  ) {
     const combWidth = numberToString(width / this.data.maxLen);
     const buf = [];
     const positions = font.getCharPositions(text);
@@ -1998,7 +2126,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances();
+    const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
     const renderedComb = buf.join(` ${combWidth} 0 Td `);
     return (
       `/Tx BMC q ${colors}BT ` +
@@ -2017,7 +2145,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     height,
     alignment,
     hPadding,
-    vPadding
+    vPadding,
+    annotationStorage
   ) {
     const lines = text.split(/\r\n?|\n/);
     const buf = [];
@@ -2043,7 +2172,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     const renderedText = buf.join("\n");
 
     // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances();
+    const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
 
     return (
       `/Tx BMC q ${colors}BT ` +
@@ -2137,6 +2266,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       page: this.data.pageIndex,
       strokeColor: this.data.borderColor,
       fillColor: this.data.backgroundColor,
+      rotation: this.rotation,
       type: "text",
     };
   }
@@ -2163,7 +2293,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     } else if (this.data.radioButton) {
       this._processRadioButton(params);
     } else if (this.data.pushButton) {
-      this._hasOwnCanvas = true;
+      this.data.hasOwnCanvas = true;
       this._processPushButton(params);
     } else {
       warn("Invalid field flags for button widget annotation");
@@ -2188,24 +2318,26 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     let value = null;
+    let rotation = null;
     if (annotationStorage) {
       const storageEntry = annotationStorage.get(this.data.id);
       value = storageEntry ? storageEntry.value : null;
+      rotation = storageEntry ? storageEntry.rotation : null;
     }
 
-    if (value === null) {
+    if (value === null && this.appearance) {
       // Nothing in the annotationStorage.
-      if (this.appearance) {
-        // But we've a default appearance so use it.
-        return super.getOperatorList(
-          evaluator,
-          task,
-          intent,
-          renderForms,
-          annotationStorage
-        );
-      }
+      // But we've a default appearance so use it.
+      return super.getOperatorList(
+        evaluator,
+        task,
+        intent,
+        renderForms,
+        annotationStorage
+      );
+    }
 
+    if (value === null || value === undefined) {
       // There is no default appearance so use the one derived
       // from the field value.
       if (this.data.checkBox) {
@@ -2220,6 +2352,15 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       : this.uncheckedAppearance;
     if (appearance) {
       const savedAppearance = this.appearance;
+      const savedMatrix = appearance.dict.getArray("Matrix") || IDENTITY_MATRIX;
+
+      if (rotation) {
+        appearance.dict.set(
+          "Matrix",
+          this.getRotationMatrix(annotationStorage)
+        );
+      }
+
       this.appearance = appearance;
       const operatorList = super.getOperatorList(
         evaluator,
@@ -2229,6 +2370,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         annotationStorage
       );
       this.appearance = savedAppearance;
+      appearance.dict.set("Matrix", savedMatrix);
       return operatorList;
     }
 
@@ -2254,19 +2396,30 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
     const storageEntry = annotationStorage.get(this.data.id);
-    const value = storageEntry && storageEntry.value;
-    if (value === undefined) {
-      return null;
-    }
+    let rotation = storageEntry && storageEntry.rotation;
+    let value = storageEntry && storageEntry.value;
 
-    const defaultValue = this.data.fieldValue === this.data.exportValue;
-    if (defaultValue === value) {
-      return null;
+    if (rotation === undefined) {
+      if (value === undefined) {
+        return null;
+      }
+
+      const defaultValue = this.data.fieldValue === this.data.exportValue;
+      if (defaultValue === value) {
+        return null;
+      }
     }
 
     const dict = evaluator.xref.fetchIfRef(this.ref);
     if (!(dict instanceof Dict)) {
       return null;
+    }
+
+    if (rotation === undefined) {
+      rotation = this.rotation;
+    }
+    if (value === undefined) {
+      value = this.data.fieldValue === this.data.exportValue;
     }
 
     const xfa = {
@@ -2278,6 +2431,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     dict.set("V", name);
     dict.set("AS", name);
     dict.set("M", `D:${getModificationDate()}`);
+
+    const maybeMK = this._getMKDict(rotation);
+    if (maybeMK) {
+      dict.set("MK", maybeMK);
+    }
 
     const encrypt = evaluator.xref.encrypt;
     let originalTransform = null;
@@ -2300,19 +2458,31 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return null;
     }
     const storageEntry = annotationStorage.get(this.data.id);
-    const value = storageEntry && storageEntry.value;
-    if (value === undefined) {
-      return null;
-    }
+    let rotation = storageEntry && storageEntry.rotation;
+    let value = storageEntry && storageEntry.value;
 
-    const defaultValue = this.data.fieldValue === this.data.buttonValue;
-    if (defaultValue === value) {
-      return null;
+    if (rotation === undefined) {
+      if (value === undefined) {
+        return null;
+      }
+
+      const defaultValue = this.data.fieldValue === this.data.buttonValue;
+      if (defaultValue === value) {
+        return null;
+      }
     }
 
     const dict = evaluator.xref.fetchIfRef(this.ref);
     if (!(dict instanceof Dict)) {
       return null;
+    }
+
+    if (value === undefined) {
+      value = this.data.fieldValue === this.data.buttonValue;
+    }
+
+    if (rotation === undefined) {
+      rotation = this.rotation;
     }
 
     const xfa = {
@@ -2345,6 +2515,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     dict.set("AS", name);
     dict.set("M", `D:${getModificationDate()}`);
+
+    const maybeMK = this._getMKDict(rotation);
+    if (maybeMK) {
+      dict.set("MK", maybeMK);
+    }
 
     let originalTransform = null;
     if (encrypt) {
@@ -2579,6 +2754,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       page: this.data.pageIndex,
       strokeColor: this.data.borderColor,
       fillColor: this.data.backgroundColor,
+      rotation: this.rotation,
       type,
     };
   }
@@ -2662,6 +2838,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       page: this.data.pageIndex,
       strokeColor: this.data.borderColor,
       fillColor: this.data.backgroundColor,
+      rotation: this.rotation,
       type,
     };
   }
@@ -2674,21 +2851,34 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     if (!annotationStorage) {
       return null;
     }
+
     const storageEntry = annotationStorage.get(this.data.id);
-    let exportedValue = storageEntry && storageEntry.value;
-    if (exportedValue === undefined) {
+    if (!storageEntry) {
+      return null;
+    }
+
+    const rotation = storageEntry.rotation;
+    let exportedValue = storageEntry.value;
+    if (rotation === undefined && exportedValue === undefined) {
       // The annotation hasn't been rendered so use the appearance
       return null;
     }
 
-    if (!Array.isArray(exportedValue)) {
+    if (exportedValue === undefined) {
+      exportedValue = this.data.fieldValue;
+    } else if (!Array.isArray(exportedValue)) {
       exportedValue = [exportedValue];
     }
 
     const defaultPadding = 2;
     const hPadding = defaultPadding;
-    const totalHeight = this.data.rect[3] - this.data.rect[1];
-    const totalWidth = this.data.rect[2] - this.data.rect[0];
+    let totalHeight = this.data.rect[3] - this.data.rect[1];
+    let totalWidth = this.data.rect[2] - this.data.rect[0];
+
+    if (rotation === 90 || rotation === 270) {
+      [totalWidth, totalHeight] = [totalHeight, totalWidth];
+    }
+
     const lineCount = this.data.options.length;
     const valueIndices = [];
     for (let i = 0; i < lineCount; i++) {
