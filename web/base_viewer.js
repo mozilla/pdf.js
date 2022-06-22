@@ -197,7 +197,6 @@ class PDFPageViewBuffer {
  * @implements {IPDFStructTreeLayerFactory}
  * @implements {IPDFTextLayerFactory}
  * @implements {IPDFXfaLayerFactory}
- * @property {PDFPageView} _pages
  */
 class BaseViewer {
   #buffer = null;
@@ -844,6 +843,7 @@ class BaseViewer {
   }
 
   _resetView() {
+    /** @type {PDFPageView[]} */
     this._pages = [];
     this._currentPageNumber = 1;
     this._currentScale = UNKNOWN_SCALE;
