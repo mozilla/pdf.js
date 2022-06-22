@@ -265,12 +265,10 @@ class AnnotationFactory {
           promises.push(
             FreeTextAnnotation.createNewAnnotation(
               xref,
-              evaluator,
-              task,
               annotation,
-              baseFontRef,
               results,
-              dependencies
+              dependencies,
+              { evaluator, task, baseFontRef }
             )
           );
           break;
@@ -278,8 +276,6 @@ class AnnotationFactory {
           promises.push(
             InkAnnotation.createNewAnnotation(
               xref,
-              evaluator,
-              task,
               annotation,
               results,
               dependencies
@@ -306,11 +302,18 @@ class AnnotationFactory {
     for (const annotation of annotations) {
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
+          promises.push(
+            FreeTextAnnotation.createNewPrintAnnotation(xref, annotation, {
+              evaluator,
+              task,
+            })
+          );
           break;
         case AnnotationEditorType.INK:
           promises.push(
-            InkAnnotation.createNewPrintAnnotation(annotation, xref)
+            InkAnnotation.createNewPrintAnnotation(xref, annotation)
           );
+          break;
       }
     }
 
@@ -1355,6 +1358,44 @@ class MarkupAnnotation extends Annotation {
     // This method is only called if there is no appearance for the annotation,
     // so `this.appearance` is not pushed yet in the `Annotation` constructor.
     this._streams.push(this.appearance, appearanceStream);
+  }
+
+  static async createNewAnnotation(
+    xref,
+    annotation,
+    results,
+    dependencies,
+    params
+  ) {
+    const annotationRef = xref.getNewRef();
+    const apRef = xref.getNewRef();
+    const annotationDict = this.createNewDict(annotation, xref, { apRef });
+    const ap = await this.createNewAppearanceStream(annotation, xref, params);
+
+    const buffer = [];
+    let transform = xref.encrypt
+      ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
+      : null;
+    writeObject(apRef, ap, buffer, transform);
+    dependencies.push({ ref: apRef, data: buffer.join("") });
+
+    buffer.length = 0;
+    transform = xref.encrypt
+      ? xref.encrypt.createCipherTransform(annotationRef.num, annotationRef.gen)
+      : null;
+    writeObject(annotationRef, annotationDict, buffer, transform);
+
+    results.push({ ref: annotationRef, data: buffer.join("") });
+  }
+
+  static async createNewPrintAnnotation(xref, annotation, params) {
+    const ap = await this.createNewAppearanceStream(annotation, xref, params);
+    const annotationDict = this.createNewDict(annotation, xref, { ap });
+
+    return new this.prototype.constructor({
+      dict: annotationDict,
+      xref,
+    });
   }
 }
 
@@ -3157,17 +3198,8 @@ class FreeTextAnnotation extends MarkupAnnotation {
     this.data.annotationType = AnnotationType.FREETEXT;
   }
 
-  static async createNewAnnotation(
-    xref,
-    evaluator,
-    task,
-    annotation,
-    baseFontRef,
-    results,
-    dependencies
-  ) {
+  static createNewDict(annotation, xref, { apRef, ap }) {
     const { color, fontSize, rect, user, value } = annotation;
-    const freetextRef = xref.getNewRef();
     const freetext = new Dict(xref);
     freetext.set("Type", Name.get("Annot"));
     freetext.set("Subtype", Name.get("FreeText"));
@@ -3184,9 +3216,35 @@ class FreeTextAnnotation extends MarkupAnnotation {
       freetext.set("T", stringToUTF8String(user));
     }
 
+    const n = new Dict(xref);
+    freetext.set("AP", n);
+
+    if (apRef) {
+      n.set("N", apRef);
+    } else {
+      n.set("N", ap);
+    }
+
+    return freetext;
+  }
+
+  static async createNewAppearanceStream(annotation, xref, params) {
+    const { baseFontRef, evaluator, task } = params;
+    const { color, fontSize, rect, value } = annotation;
+
     const resources = new Dict(xref);
     const font = new Dict(xref);
-    font.set("Helv", baseFontRef);
+
+    if (baseFontRef) {
+      font.set("Helv", baseFontRef);
+    } else {
+      const baseFont = new Dict(xref);
+      baseFont.set("BaseFont", Name.get("Helvetica"));
+      baseFont.set("Type", Name.get("Font"));
+      baseFont.set("Subtype", Name.get("Type1"));
+      baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
+      font.set("Helv", baseFont);
+    }
     resources.set("Font", font);
 
     const helv = await WidgetAnnotation._getFontData(
@@ -3260,25 +3318,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;
 
-    buffer.length = 0;
-    const apRef = xref.getNewRef();
-    let transform = xref.encrypt
-      ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
-      : null;
-    writeObject(apRef, ap, buffer, transform);
-    dependencies.push({ ref: apRef, data: buffer.join("") });
-
-    const n = new Dict(xref);
-    n.set("N", apRef);
-    freetext.set("AP", n);
-
-    buffer.length = 0;
-    transform = xref.encrypt
-      ? xref.encrypt.createCipherTransform(freetextRef.num, freetextRef.gen)
-      : null;
-    writeObject(freetextRef, freetext, buffer, transform);
-
-    results.push({ ref: freetextRef, data: buffer.join("") });
+    return ap;
   }
 }
 
@@ -3642,7 +3682,7 @@ class InkAnnotation extends MarkupAnnotation {
     }
   }
 
-  static createInkDict(annotation, xref, { apRef, ap }) {
+  static createNewDict(annotation, xref, { apRef, ap }) {
     const ink = new Dict(xref);
     ink.set("Type", Name.get("Annot"));
     ink.set("Subtype", Name.get("Ink"));
@@ -3668,7 +3708,7 @@ class InkAnnotation extends MarkupAnnotation {
     return ink;
   }
 
-  static createNewAppearanceStream(annotation, xref) {
+  static async createNewAppearanceStream(annotation, xref, params) {
     const [x1, y1, x2, y2] = annotation.rect;
     const w = x2 - x1;
     const h = y2 - y1;
@@ -3706,45 +3746,6 @@ class InkAnnotation extends MarkupAnnotation {
     ap.dict = appearanceStreamDict;
 
     return ap;
-  }
-
-  static async createNewAnnotation(
-    xref,
-    evaluator,
-    task,
-    annotation,
-    results,
-    others
-  ) {
-    const inkRef = xref.getNewRef();
-    const apRef = xref.getNewRef();
-    const ink = this.createInkDict(annotation, xref, { apRef });
-    const ap = this.createNewAppearanceStream(annotation, xref);
-
-    const buffer = [];
-    let transform = xref.encrypt
-      ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
-      : null;
-    writeObject(apRef, ap, buffer, transform);
-    others.push({ ref: apRef, data: buffer.join("") });
-
-    buffer.length = 0;
-    transform = xref.encrypt
-      ? xref.encrypt.createCipherTransform(inkRef.num, inkRef.gen)
-      : null;
-    writeObject(inkRef, ink, buffer, transform);
-
-    results.push({ ref: inkRef, data: buffer.join("") });
-  }
-
-  static async createNewPrintAnnotation(annotation, xref) {
-    const ap = this.createNewAppearanceStream(annotation, xref);
-    const ink = this.createInkDict(annotation, xref, { ap });
-
-    return new InkAnnotation({
-      dict: ink,
-      xref,
-    });
   }
 }
 
