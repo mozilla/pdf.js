@@ -4069,6 +4069,50 @@ describe("annotation", function () {
           "endobj\n"
       );
     });
+
+    it("should render an added FreeText annotation for printing", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test FreeText printing");
+      const freetextAnnotation = (
+        await AnnotationFactory.printNewAnnotations(partialEvaluator, task, [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            rect: [12, 34, 56, 78],
+            fontSize: 10,
+            color: [0, 0, 0],
+            value: "A",
+          },
+        ])
+      )[0];
+
+      const operatorList = await freetextAnnotation.getOperatorList(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        false,
+        null
+      );
+
+      expect(operatorList.fnArray.length).toEqual(16);
+      expect(operatorList.fnArray).toEqual([
+        OPS.beginAnnotation,
+        OPS.save,
+        OPS.constructPath,
+        OPS.clip,
+        OPS.endPath,
+        OPS.beginText,
+        OPS.setTextMatrix,
+        OPS.setCharSpacing,
+        OPS.setFillRGBColor,
+        OPS.dependency,
+        OPS.setFont,
+        OPS.moveText,
+        OPS.showText,
+        OPS.endText,
+        OPS.restore,
+        OPS.endAnnotation,
+      ]);
+    });
   });
 
   describe("InkAnnotation", function () {
