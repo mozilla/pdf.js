@@ -197,6 +197,7 @@ class PDFPageViewBuffer {
  * @implements {IPDFStructTreeLayerFactory}
  * @implements {IPDFTextLayerFactory}
  * @implements {IPDFXfaLayerFactory}
+ * @property {PDFPageView} _pages
  */
 class BaseViewer {
   #buffer = null;
@@ -963,6 +964,20 @@ class BaseViewer {
       return;
     }
     this.update();
+  }
+
+  /**
+   * @typedef {Object} ScrollIntoViewPageSpot
+   * @property {number} top - Top offset
+   * @property {number} left - Left offset
+   */
+
+  /**
+   * @param {PDFPageView} pageView - the scroll target
+   * @param {?ScrollIntoViewPageSpot} [pageSpot] - the optional offset
+   */
+  scrollIntoView(pageView, pageSpot = null) {
+    this.#scrollIntoView(pageView, pageSpot);
   }
 
   #scrollIntoView(pageView, pageSpot = null) {
