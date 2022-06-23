@@ -314,7 +314,6 @@ class Page {
       ...newData.annotations
     );
 
-    this.xref.resetNewRef();
     return objects;
   }
 
