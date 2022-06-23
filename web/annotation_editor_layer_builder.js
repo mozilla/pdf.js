@@ -66,8 +66,9 @@ class AnnotationEditorLayerBuilder {
       return;
     }
 
+    const clonedViewport = viewport.clone({ dontFlip: true });
     if (this.div) {
-      this.annotationEditorLayer.update({ viewport: viewport.clone() });
+      this.annotationEditorLayer.update({ viewport: clonedViewport });
       this.show();
       return;
     }
@@ -86,7 +87,7 @@ class AnnotationEditorLayerBuilder {
     });
 
     const parameters = {
-      viewport: viewport.clone(),
+      viewport: clonedViewport,
       div: this.div,
       annotations: null,
       intent,
