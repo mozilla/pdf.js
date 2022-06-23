@@ -6638,8 +6638,7 @@
           "fontSize": 10,
           "value": "Hello World",
           "pageIndex": 0,
-          "rect": [67.5, 543, 119, 556.5],
-          "orderIndex": 0
+          "rect": [67.5, 543, 119, 556.5]
         },
         "pdfjs_internal_editor_1": {
           "annotationType": 15,
@@ -6662,8 +6661,7 @@
               ]
           }],
           "pageIndex": 0,
-          "rect": [71.5, 534.5, 115, 562],
-          "orderIndex": 1
+          "rect": [71.5, 534.5, 115, 562]
         }
       }
    }

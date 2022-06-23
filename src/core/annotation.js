@@ -245,9 +245,9 @@ class AnnotationFactory {
   static async saveNewAnnotations(evaluator, task, annotations) {
     const xref = evaluator.xref;
     let baseFontRef;
-    const results = [];
     const dependencies = [];
     const promises = [];
+
     for (const annotation of annotations) {
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
@@ -266,7 +266,6 @@ class AnnotationFactory {
             FreeTextAnnotation.createNewAnnotation(
               xref,
               annotation,
-              results,
               dependencies,
               { evaluator, task, baseFontRef }
             )
@@ -274,20 +273,13 @@ class AnnotationFactory {
           break;
         case AnnotationEditorType.INK:
           promises.push(
-            InkAnnotation.createNewAnnotation(
-              xref,
-              annotation,
-              results,
-              dependencies
-            )
+            InkAnnotation.createNewAnnotation(xref, annotation, dependencies)
           );
       }
     }
 
-    await Promise.all(promises);
-
     return {
-      annotations: results,
+      annotations: await Promise.all(promises),
       dependencies,
     };
   }
@@ -1360,13 +1352,7 @@ class MarkupAnnotation extends Annotation {
     this._streams.push(this.appearance, appearanceStream);
   }
 
-  static async createNewAnnotation(
-    xref,
-    annotation,
-    results,
-    dependencies,
-    params
-  ) {
+  static async createNewAnnotation(xref, annotation, dependencies, params) {
     const annotationRef = xref.getNewRef();
     const apRef = xref.getNewRef();
     const annotationDict = this.createNewDict(annotation, xref, { apRef });
@@ -1385,7 +1371,7 @@ class MarkupAnnotation extends Annotation {
       : null;
     writeObject(annotationRef, annotationDict, buffer, transform);
 
-    results.push({ ref: annotationRef, data: buffer.join("") });
+    return { ref: annotationRef, data: buffer.join("") };
   }
 
   static async createNewPrintAnnotation(xref, annotation, params) {
