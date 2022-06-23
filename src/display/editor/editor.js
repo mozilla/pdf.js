@@ -16,8 +16,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
-import { unreachable, Util } from "../../shared/util.js";
 import { bindEvents } from "./tools.js";
+import { unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -47,8 +47,11 @@ class AnnotationEditor {
     this.pageIndex = parameters.parent.pageIndex;
     this.name = parameters.name;
     this.div = null;
-    this.x = Math.round(parameters.x);
-    this.y = Math.round(parameters.y);
+
+    const [width, height] = this.parent.viewportBaseDimensions;
+    this.x = parameters.x / width;
+    this.y = parameters.y / height;
+    this.rotation = this.parent.viewport.rotation;
 
     this.isAttachedToDOM = false;
   }
@@ -108,20 +111,13 @@ class AnnotationEditor {
   }
 
   /**
-   * Get the pointer coordinates in order to correctly translate the
-   * div in case of drag-and-drop.
-   * @param {MouseEvent} event
-   */
-  mousedown(event) {
-    this.mouseX = event.offsetX;
-    this.mouseY = event.offsetY;
-  }
-
-  /**
    * We use drag-and-drop in order to move an editor on a page.
    * @param {DragEvent} event
    */
   dragstart(event) {
+    const rect = this.parent.div.getBoundingClientRect();
+    this.startX = event.clientX - rect.x;
+    this.startY = event.clientY - rect.y;
     event.dataTransfer.setData("text/plain", this.id);
     event.dataTransfer.effectAllowed = "move";
   }
@@ -130,22 +126,53 @@ class AnnotationEditor {
    * Set the editor position within its parent.
    * @param {number} x
    * @param {number} y
+   * @param {number} tx - x-translation in screen coordinates.
+   * @param {number} ty - y-translation in screen coordinates.
    */
-  setAt(x, y) {
-    this.x = Math.round(x);
-    this.y = Math.round(y);
+  setAt(x, y, tx, ty) {
+    const [width, height] = this.parent.viewportBaseDimensions;
+    [tx, ty] = this.screenToPageTranslation(tx, ty);
 
-    this.div.style.left = `${this.x}px`;
-    this.div.style.top = `${this.y}px`;
+    this.x = (x + tx) / width;
+    this.y = (y + ty) / height;
+
+    this.div.style.left = `${100 * this.x}%`;
+    this.div.style.top = `${100 * this.y}%`;
   }
 
   /**
    * Translate the editor position within its parent.
+   * @param {number} x - x-translation in screen coordinates.
+   * @param {number} y - y-translation in screen coordinates.
+   */
+  translate(x, y) {
+    const [width, height] = this.parent.viewportBaseDimensions;
+    [x, y] = this.screenToPageTranslation(x, y);
+
+    this.x += x / width;
+    this.y += y / height;
+
+    this.div.style.left = `${100 * this.x}%`;
+    this.div.style.top = `${100 * this.y}%`;
+  }
+
+  /**
+   * Convert a screen translation into a page one.
    * @param {number} x
    * @param {number} y
    */
-  translate(x, y) {
-    this.setAt(this.x + x, this.y + y);
+  screenToPageTranslation(x, y) {
+    const { rotation } = this.parent.viewport;
+    switch (rotation) {
+      case 90:
+        return [y, -x];
+      case 180:
+        return [-x, -y];
+      case 270:
+        return [-y, x];
+      default:
+        return [x, y];
+    }
   }
 
   /**
@@ -154,8 +181,9 @@ class AnnotationEditor {
    * @param {number} height
    */
   setDims(width, height) {
-    this.div.style.width = `${width}px`;
-    this.div.style.height = `${height}px`;
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    this.div.style.width = `${(100 * width) / parentWidth}%`;
+    this.div.style.height = `${(100 * height) / parentHeight}%`;
   }
 
   /**
@@ -172,53 +200,67 @@ class AnnotationEditor {
    */
   render() {
     this.div = document.createElement("div");
+    this.div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
     this.div.className = this.name;
     this.div.setAttribute("id", this.id);
     this.div.tabIndex = 100;
 
     const [tx, ty] = this.getInitialTranslation();
-    this.x = Math.round(this.x + tx);
-    this.y = Math.round(this.y + ty);
+    this.translate(tx, ty);
 
-    this.div.style.left = `${this.x}px`;
-    this.div.style.top = `${this.y}px`;
-
-    bindEvents(this, this.div, [
-      "dragstart",
-      "focusin",
-      "focusout",
-      "mousedown",
-    ]);
+    bindEvents(this, this.div, ["dragstart", "focusin", "focusout"]);
 
     return this.div;
+  }
+
+  getRect(tx, ty) {
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const [pageWidth, pageHeight] = this.parent.pageDimensions;
+    const shiftX = (pageWidth * tx) / parentWidth;
+    const shiftY = (pageHeight * ty) / parentHeight;
+    const x = this.x * pageWidth;
+    const y = this.y * pageHeight;
+    const width = this.width * pageWidth;
+    const height = this.height * pageHeight;
+
+    switch (this.rotation) {
+      case 0:
+        return [
+          x + shiftX,
+          pageHeight - y - shiftY - height,
+          x + shiftX + width,
+          pageHeight - y - shiftY,
+        ];
+      case 90:
+        return [
+          x + shiftY,
+          pageHeight - y + shiftX,
+          x + shiftY + height,
+          pageHeight - y + shiftX + width,
+        ];
+      case 180:
+        return [
+          x - shiftX - width,
+          pageHeight - y + shiftY,
+          x - shiftX,
+          pageHeight - y + shiftY + height,
+        ];
+      case 270:
+        return [
+          x - shiftY - height,
+          pageHeight - y - shiftX - width,
+          x - shiftY,
+          pageHeight - y - shiftX,
+        ];
+      default:
+        throw new Error("Invalid rotation");
+    }
   }
 
   /**
    * Executed once this editor has been rendered.
    */
   onceAdded() {}
-
-  /**
-   * Apply the current transform (zoom) to this editor.
-   * @param {Array<number>} transform
-   */
-  transform(transform) {
-    const { style } = this.div;
-    const width = parseFloat(style.width);
-    const height = parseFloat(style.height);
-
-    const [x1, y1] = Util.applyTransform([this.x, this.y], transform);
-
-    if (!Number.isNaN(width)) {
-      const [x2] = Util.applyTransform([this.x + width, 0], transform);
-      this.div.style.width = `${x2 - x1}px`;
-    }
-    if (!Number.isNaN(height)) {
-      const [, y2] = Util.applyTransform([0, this.y + height], transform);
-      this.div.style.height = `${y2 - y1}px`;
-    }
-    this.setAt(x1, y1);
-  }
 
   /**
    * Check if the editor contains something.

@@ -4027,6 +4027,7 @@ describe("annotation", function () {
           {
             annotationType: AnnotationEditorType.FREETEXT,
             rect: [12, 34, 56, 78],
+            rotation: 0,
             fontSize: 10,
             color: [0, 0, 0],
             value: "Hello PDF.js World!",
@@ -4078,6 +4079,7 @@ describe("annotation", function () {
           {
             annotationType: AnnotationEditorType.FREETEXT,
             rect: [12, 34, 56, 78],
+            rotation: 0,
             fontSize: 10,
             color: [0, 0, 0],
             value: "A",
@@ -4181,6 +4183,7 @@ describe("annotation", function () {
           {
             annotationType: AnnotationEditorType.INK,
             rect: [12, 34, 56, 78],
+            rotation: 0,
             thickness: 1,
             color: [0, 0, 0],
             paths: [
@@ -4239,6 +4242,7 @@ describe("annotation", function () {
           {
             annotationType: AnnotationEditorType.INK,
             rect: [12, 34, 56, 78],
+            rotation: 0,
             thickness: 1,
             color: [0, 0, 0],
             paths: [

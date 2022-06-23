@@ -17,7 +17,6 @@ import {
   AnnotationEditorType,
   assert,
   LINE_FACTOR,
-  Util,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
@@ -72,11 +71,12 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   copy() {
+    const [width, height] = this.parent.viewportBaseDimensions;
     const editor = new FreeTextEditor({
       parent: this.parent,
       id: this.parent.getNextId(),
-      x: this.x,
-      y: this.y,
+      x: this.x * width,
+      y: this.y * height,
     });
 
     editor.width = this.width;
@@ -180,9 +180,10 @@ class FreeTextEditor extends AnnotationEditor {
     this.#contentHTML = this.editorDiv.innerHTML;
     this.#content = this.#extractText().trimEnd();
 
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
     const style = getComputedStyle(this.div);
-    this.width = parseFloat(style.width);
-    this.height = parseFloat(style.height);
+    this.width = parseFloat(style.width) / parentWidth;
+    this.height = parseFloat(style.height) / parentHeight;
   }
 
   /** @inheritdoc */
@@ -203,6 +204,12 @@ class FreeTextEditor extends AnnotationEditor {
   render() {
     if (this.div) {
       return this.div;
+    }
+
+    let baseX, baseY;
+    if (this.width) {
+      baseX = this.x;
+      baseY = this.y;
     }
 
     super.render();
@@ -232,7 +239,13 @@ class FreeTextEditor extends AnnotationEditor {
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
-      this.setAt(this.x + this.width, this.y + this.height);
+      const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+      this.setAt(
+        baseX * parentWidth,
+        baseY * parentHeight,
+        this.width * parentWidth,
+        this.height * parentHeight
+      );
       // eslint-disable-next-line no-unsanitized/property
       this.editorDiv.innerHTML = this.#contentHTML;
     }
@@ -242,24 +255,17 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
-    const rect = this.editorDiv.getBoundingClientRect();
     const padding = FreeTextEditor._internalPadding * this.parent.scaleFactor;
-    const [x1, y1] = Util.applyTransform(
-      [this.x + padding, this.y + padding + rect.height],
-      this.parent.inverseViewportTransform
-    );
+    const rect = this.getRect(padding, padding);
 
-    const [x2, y2] = Util.applyTransform(
-      [this.x + padding + rect.width, this.y + padding],
-      this.parent.inverseViewportTransform
-    );
     return {
       annotationType: AnnotationEditorType.FREETEXT,
       color: [0, 0, 0],
       fontSize: this.#fontSize,
       value: this.#content,
       pageIndex: this.parent.pageIndex,
-      rect: [x1, y1, x2, y2],
+      rect,
+      rotation: this.rotation,
     };
   }
 }

@@ -20,8 +20,8 @@
 /** @typedef {import("../annotation_storage.js").AnnotationStorage} AnnotationStorage */
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
 
-import { AnnotationEditorType, Util } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
+import { AnnotationEditorType } from "../../shared/util.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 
@@ -106,6 +106,7 @@ class AnnotationEditorLayer {
     } else {
       this.div.removeEventListener("mouseover", this.#boundMouseover);
     }
+    this.setActiveEditor(null);
   }
 
   /**
@@ -273,6 +274,11 @@ class AnnotationEditorLayer {
     if (editor.parent === this) {
       return;
     }
+
+    if (this.#uiManager.isActive(editor)) {
+      editor.parent.setActiveEditor(null);
+    }
+
     this.attach(editor);
     editor.pageIndex = this.pageIndex;
     editor.parent.detach(editor);
@@ -419,10 +425,10 @@ class AnnotationEditorLayer {
     this.#changeParent(editor);
 
     const rect = this.div.getBoundingClientRect();
-    editor.setAt(
-      event.clientX - rect.x - editor.mouseX,
-      event.clientY - rect.y - editor.mouseY
-    );
+    const endX = event.clientX - rect.x;
+    const endY = event.clientY - rect.y;
+
+    editor.translate(endX - editor.startX, endY - editor.startY);
   }
 
   /**
@@ -463,11 +469,9 @@ class AnnotationEditorLayer {
    */
   render(parameters) {
     this.viewport = parameters.viewport;
-    this.inverseViewportTransform = Util.inverseTransform(
-      this.viewport.transform
-    );
     bindEvents(this, this.div, ["dragover", "drop", "keydown"]);
     this.div.addEventListener("click", this.#boundClick);
+    this.setDimensions();
   }
 
   /**
@@ -475,17 +479,9 @@ class AnnotationEditorLayer {
    * @param {Object} parameters
    */
   update(parameters) {
-    const transform = Util.transform(
-      parameters.viewport.transform,
-      this.inverseViewportTransform
-    );
+    this.setActiveEditor(null);
     this.viewport = parameters.viewport;
-    this.inverseViewportTransform = Util.inverseTransform(
-      this.viewport.transform
-    );
-    for (const editor of this.#editors.values()) {
-      editor.transform(transform);
-    }
+    this.setDimensions();
   }
 
   /**
@@ -494,6 +490,38 @@ class AnnotationEditorLayer {
    */
   get scaleFactor() {
     return this.viewport.scale;
+  }
+
+  /**
+   * Get page dimensions.
+   * @returns {Object} dimensions.
+   */
+  get pageDimensions() {
+    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
+    const width = pageURx - pageLLx;
+    const height = pageURy - pageLLy;
+
+    return [width, height];
+  }
+
+  get viewportBaseDimensions() {
+    const { width, height, rotation } = this.viewport;
+    return rotation % 180 === 0 ? [width, height] : [height, width];
+  }
+
+  /**
+   * Set the dimensions of the main div.
+   */
+  setDimensions() {
+    const { width, height, rotation } = this.viewport;
+
+    const flipOrientation = rotation % 180 !== 0,
+      widthStr = Math.floor(width) + "px",
+      heightStr = Math.floor(height) + "px";
+
+    this.div.style.width = flipOrientation ? heightStr : widthStr;
+    this.div.style.height = flipOrientation ? widthStr : heightStr;
+    this.div.setAttribute("data-main-rotation", rotation);
   }
 }
 
