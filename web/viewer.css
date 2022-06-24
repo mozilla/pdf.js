@@ -1156,11 +1156,15 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   cursor: pointer;
 }
 
-#layersView .treeItem > a > * {
+#layersView .treeItem > a * {
   cursor: pointer;
 }
 #layersView .treeItem > a > label {
   padding-inline-start: 4px;
+}
+#layersView .treeItem > a > label > input {
+  float: inline-start;
+  margin-top: 1px;
 }
 
 .treeItemToggler {

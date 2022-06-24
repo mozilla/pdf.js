@@ -153,14 +153,13 @@ class PDFLayerViewer extends BaseTreeViewer {
           const input = document.createElement("input");
           this._bindLink(element, { groupId, input });
           input.type = "checkbox";
-          input.id = groupId;
           input.checked = group.visible;
 
           const label = document.createElement("label");
-          label.setAttribute("for", groupId);
           label.textContent = this._normalizeTextContent(group.name);
 
-          element.append(input, label);
+          label.append(input);
+          element.append(label);
           layersCount++;
         }
 
