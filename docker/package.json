@@ -5,7 +5,7 @@
     "http-server": "^0.12.3"
   },
   "scripts": {
-    "server": "http-server build/generic -d false -i false -c-1"
+    "server": "http-server build/generic"
   },
   "repository": {
     "type": "git",
