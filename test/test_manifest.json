@@ -6561,6 +6561,16 @@
         }
       }
    },
+   {  "id": "bug1737260-oc",
+      "file": "pdfs/bug1737260.pdf",
+      "md5": "8bd4f810d30972764b07ae141a4afbc4",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "optionalContent": {
+        "191R": false
+      }
+   },
    { "id": "bug1737260",
       "file": "pdfs/bug1737260.pdf",
       "md5": "8bd4f810d30972764b07ae141a4afbc4",
