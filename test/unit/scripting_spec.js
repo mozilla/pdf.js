@@ -120,6 +120,7 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toEqual(true);
       expect(send_queue.get(refId)).toEqual({
         id: refId,
+        siblings: null,
         value: expected,
         formattedValue: null,
       });
@@ -369,6 +370,7 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toEqual(true);
       expect(send_queue.get(refId)).toEqual({
         id: refId,
+        siblings: null,
         value: "hell",
         selRange: [4, 4],
       });
@@ -406,6 +408,7 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toEqual(true);
       expect(send_queue.get(refId)).toEqual({
         id: refId,
+        siblings: null,
         value: "hella",
         selRange: [5, 5],
       });
@@ -479,6 +482,7 @@ describe("Scripting", function () {
       expect(send_queue.has(refId1)).toEqual(true);
       expect(send_queue.get(refId1)).toEqual({
         id: refId1,
+        siblings: null,
         value: "world",
         formattedValue: null,
       });
@@ -800,6 +804,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value: "123456.789",
           formattedValue: null,
         });
@@ -979,6 +984,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value: "321",
           formattedValue: null,
         });
@@ -1077,6 +1083,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toEqual(true);
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
+          siblings: null,
           value: 1,
           formattedValue: null,
         });
@@ -1090,6 +1097,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toEqual(true);
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
+          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -1103,6 +1111,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toEqual(true);
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
+          siblings: null,
           value: 6,
           formattedValue: null,
         });
@@ -1178,6 +1187,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value: "3F?",
           selRange: [3, 3],
         });
@@ -1206,6 +1216,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value: "3F?0",
           formattedValue: null,
         });
@@ -1266,6 +1277,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -1326,6 +1338,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -1386,6 +1399,7 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toEqual(true);
         expect(send_queue.get(refId)).toEqual({
           id: refId,
+          siblings: null,
           value,
           selRange: [i, i],
         });
