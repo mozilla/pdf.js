@@ -38,6 +38,10 @@ import {
   warn,
 } from "../shared/util.js";
 import {
+  AnnotationStorage,
+  PrintAnnotationStorage,
+} from "./annotation_storage.js";
+import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
@@ -49,7 +53,6 @@ import {
   StatTimer,
 } from "./display_utils.js";
 import { FontFaceObject, FontLoader } from "./font_loader.js";
-import { AnnotationStorage } from "./annotation_storage.js";
 import { CanvasGraphics } from "./canvas.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { isNodeJS } from "../shared/is_node.js";
@@ -1181,6 +1184,7 @@ class PDFDocumentProxy {
  *   states set.
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
  *   annotation ids with canvases used to render them.
+ * @property {PrintAnnotationStorage} [printAnnotationStorage]
  */
 
 /**
@@ -1201,6 +1205,7 @@ class PDFDocumentProxy {
  *      (as above) but where interactive form elements are updated with data
  *      from the {@link AnnotationStorage}-instance; useful e.g. for printing.
  *   The default value is `AnnotationMode.ENABLE`.
+ * @property {PrintAnnotationStorage} [printAnnotationStorage]
  */
 
 /**
@@ -1399,6 +1404,7 @@ class PDFPageProxy {
     optionalContentConfigPromise = null,
     annotationCanvasMap = null,
     pageColors = null,
+    printAnnotationStorage = null,
   }) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       if (arguments[0]?.renderInteractiveForms !== undefined) {
@@ -1433,7 +1439,8 @@ class PDFPageProxy {
 
     const intentArgs = this._transport.getRenderingIntent(
       intent,
-      annotationMode
+      annotationMode,
+      printAnnotationStorage
     );
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
@@ -1560,6 +1567,7 @@ class PDFPageProxy {
   getOperatorList({
     intent = "display",
     annotationMode = AnnotationMode.ENABLE,
+    printAnnotationStorage = null,
   } = {}) {
     function operatorListChanged() {
       if (intentState.operatorList.lastChunk) {
@@ -1572,6 +1580,7 @@ class PDFPageProxy {
     const intentArgs = this._transport.getRenderingIntent(
       intent,
       annotationMode,
+      printAnnotationStorage,
       /* isOpList = */ true
     );
     let intentState = this._intentStates.get(intentArgs.cacheKey);
@@ -1800,7 +1809,7 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _pumpOperatorList({ renderingIntent, cacheKey }) {
+  _pumpOperatorList({ renderingIntent, cacheKey, annotationStorageMap }) {
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || TESTING")
@@ -1817,10 +1826,7 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         cacheKey,
-        annotationStorage:
-          renderingIntent & RenderingIntentFlag.ANNOTATIONS_STORAGE
-            ? this._transport.annotationStorage.serializable
-            : null,
+        annotationStorage: annotationStorageMap,
       }
     );
     const reader = readableStream.getReader();
@@ -2406,10 +2412,11 @@ class WorkerTransport {
   getRenderingIntent(
     intent,
     annotationMode = AnnotationMode.ENABLE,
+    printAnnotationStorage = null,
     isOpList = false
   ) {
     let renderingIntent = RenderingIntentFlag.DISPLAY; // Default value.
-    let annotationHash = "";
+    let annotationMap = null;
 
     switch (intent) {
       case "any":
@@ -2436,7 +2443,13 @@ class WorkerTransport {
       case AnnotationMode.ENABLE_STORAGE:
         renderingIntent += RenderingIntentFlag.ANNOTATIONS_STORAGE;
 
-        annotationHash = this.annotationStorage.hash;
+        const annotationStorage =
+          renderingIntent & RenderingIntentFlag.PRINT &&
+          printAnnotationStorage instanceof PrintAnnotationStorage
+            ? printAnnotationStorage
+            : this.annotationStorage;
+
+        annotationMap = annotationStorage.serializable;
         break;
       default:
         warn(`getRenderingIntent - invalid annotationMode: ${annotationMode}`);
@@ -2448,7 +2461,10 @@ class WorkerTransport {
 
     return {
       renderingIntent,
-      cacheKey: `${renderingIntent}_${annotationHash}`,
+      cacheKey: `${renderingIntent}_${AnnotationStorage.getHash(
+        annotationMap
+      )}`,
+      annotationStorageMap: annotationMap,
     };
   }
 

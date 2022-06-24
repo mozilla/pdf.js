@@ -48,6 +48,7 @@ import {
   RenderingCancelledException,
   StatTimer,
 } from "../../src/display/display_utils.js";
+import { AnnotationStorage } from "../../src/display/annotation_storage.js";
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
@@ -2825,6 +2826,75 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
 
       await loadingTask.destroy();
       firstImgData = null;
+    });
+
+    it("render for printing, with `printAnnotationStorage` set", async function () {
+      async function getPrintData(printAnnotationStorage = null) {
+        const canvasAndCtx = CanvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvasContext: canvasAndCtx.context,
+          canvasFactory: CanvasFactory,
+          viewport,
+          intent: "print",
+          annotationMode: AnnotationMode.ENABLE_STORAGE,
+          printAnnotationStorage,
+        });
+
+        await renderTask.promise;
+        const printData = canvasAndCtx.canvas.toDataURL();
+        CanvasFactory.destroy(canvasAndCtx);
+
+        return printData;
+      }
+
+      const loadingTask = getDocument(
+        buildGetDocumentParams("annotation-tx.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      // Update the contents of the form-field.
+      const { annotationStorage } = pdfDoc;
+      annotationStorage.setValue("22R", { value: "Hello World" });
+
+      // Render for printing, with default parameters.
+      const printOriginalData = await getPrintData();
+
+      // Get the *frozen* print-storage for use during printing.
+      const printAnnotationStorage = annotationStorage.print;
+      // Update the contents of the form-field again.
+      annotationStorage.setValue("22R", { value: "Printing again..." });
+
+      const annotationHash = AnnotationStorage.getHash(
+        annotationStorage.serializable
+      );
+      const printAnnotationHash = AnnotationStorage.getHash(
+        printAnnotationStorage.serializable
+      );
+      // Sanity check to ensure that the print-storage didn't change,
+      // after the form-field was updated.
+      expect(printAnnotationHash).not.toEqual(annotationHash);
+
+      // Render for printing again, after updating the form-field,
+      // with default parameters.
+      const printAgainData = await getPrintData();
+
+      // Render for printing again, after updating the form-field,
+      // with `printAnnotationStorage` set.
+      const printStorageData = await getPrintData(printAnnotationStorage);
+
+      // Ensure that printing again, with default parameters,
+      // actually uses the "new" form-field data.
+      expect(printAgainData).not.toEqual(printOriginalData);
+      // Finally ensure that printing, with `printAnnotationStorage` set,
+      // still uses the "previous" form-field data.
+      expect(printStorageData).toEqual(printOriginalData);
+
+      await loadingTask.destroy();
     });
   });
 

@@ -254,6 +254,7 @@ const PDFViewerApplication = {
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
   _PDFBug: null,
+  _printAnnotationStoragePromise: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -1790,9 +1791,14 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
-    // Given that the "beforeprint" browser event is synchronous, we
-    // unfortunately cannot await the scripting event dispatching here.
-    this.pdfScriptingManager.dispatchWillPrint();
+    this._printAnnotationStoragePromise = this.pdfScriptingManager
+      .dispatchWillPrint()
+      .catch(() => {
+        /* Avoid breaking printing; ignoring errors. */
+      })
+      .then(() => {
+        return this.pdfDocument?.annotationStorage.print;
+      });
 
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
@@ -1830,6 +1836,7 @@ const PDFViewerApplication = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
+      this._printAnnotationStoragePromise,
       this.l10n
     );
     this.printService = printService;
@@ -1843,9 +1850,12 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
-    // Given that the "afterprint" browser event is synchronous, we
-    // unfortunately cannot await the scripting event dispatching here.
-    this.pdfScriptingManager.dispatchDidPrint();
+    if (this._printAnnotationStoragePromise) {
+      this._printAnnotationStoragePromise.then(() => {
+        this.pdfScriptingManager.dispatchDidPrint();
+      });
+      this._printAnnotationStoragePromise = null;
+    }
 
     if (this.printService) {
       this.printService.destroy();

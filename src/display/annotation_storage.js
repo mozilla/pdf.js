@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { objectFromMap, unreachable } from "../shared/util.js";
 import { AnnotationEditor } from "./editor/editor.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
-import { objectFromMap } from "../shared/util.js";
 
 /**
  * Key/value storage for annotation data in forms.
@@ -98,7 +98,7 @@ class AnnotationStorage {
       this._storage.set(key, value);
     }
     if (modified) {
-      this._setModified();
+      this.#setModified();
     }
   }
 
@@ -110,10 +110,7 @@ class AnnotationStorage {
     return this._storage.size;
   }
 
-  /**
-   * @private
-   */
-  _setModified() {
+  #setModified() {
     if (!this._modified) {
       this._modified = true;
       if (typeof this.onSetModified === "function") {
@@ -132,6 +129,13 @@ class AnnotationStorage {
   }
 
   /**
+   * @returns {PrintAnnotationStorage}
+   */
+  get print() {
+    return new PrintAnnotationStorage(this);
+  }
+
+  /**
    * PLEASE NOTE: Only intended for usage within the API itself.
    * @ignore
    */
@@ -139,11 +143,10 @@ class AnnotationStorage {
     if (this._storage.size === 0) {
       return null;
     }
-
     const clone = new Map();
-    for (const [key, value] of this._storage) {
-      const val = value instanceof AnnotationEditor ? value.serialize() : value;
-      clone.set(key, val);
+
+    for (const [key, val] of this._storage) {
+      clone.set(key, val instanceof AnnotationEditor ? val.serialize() : val);
     }
     return clone;
   }
@@ -152,15 +155,48 @@ class AnnotationStorage {
    * PLEASE NOTE: Only intended for usage within the API itself.
    * @ignore
    */
-  get hash() {
+  static getHash(map) {
+    if (!map) {
+      return "";
+    }
     const hash = new MurmurHash3_64();
 
-    for (const [key, value] of this._storage) {
-      const val = value instanceof AnnotationEditor ? value.serialize() : value;
+    for (const [key, val] of map) {
       hash.update(`${key}:${JSON.stringify(val)}`);
     }
     return hash.hexdigest();
   }
 }
 
-export { AnnotationStorage };
+/**
+ * A special `AnnotationStorage` for use during printing, where the serializable
+ * data is *frozen* upon initialization, to prevent scripting from modifying its
+ * contents. (Necessary since printing is triggered synchronously in browsers.)
+ */
+class PrintAnnotationStorage extends AnnotationStorage {
+  #serializable = null;
+
+  constructor(parent) {
+    super();
+    // Create a *copy* of the data, since Objects are passed by reference in JS.
+    this.#serializable = structuredClone(parent.serializable);
+  }
+
+  /**
+   * @returns {PrintAnnotationStorage}
+   */
+  // eslint-disable-next-line getter-return
+  get print() {
+    unreachable("Should not call PrintAnnotationStorage.print");
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get serializable() {
+    return this.#serializable;
+  }
+}
+
+export { AnnotationStorage, PrintAnnotationStorage };
