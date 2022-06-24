@@ -447,6 +447,7 @@ class Annotation {
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
+    this.setOptionalContent(dict);
 
     const MK = dict.get("MK");
     this.setBorderAndBackgroundColors(MK);
@@ -842,6 +843,17 @@ class Annotation {
     this.appearance = normalAppearanceState.get(as.name);
   }
 
+  setOptionalContent(dict) {
+    this.oc = null;
+
+    const oc = dict.get("OC");
+    if (oc instanceof Name) {
+      warn("setOptionalContent: Support for /Name-entry is not implemented.");
+    } else if (oc instanceof Dict) {
+      this.oc = oc;
+    }
+  }
+
   loadResources(keys, appearance) {
     return appearance.dict.getAsync("Resources").then(resources => {
       if (!resources) {
@@ -855,21 +867,27 @@ class Annotation {
     });
   }
 
-  getOperatorList(evaluator, task, intent, renderForms, annotationStorage) {
+  async getOperatorList(
+    evaluator,
+    task,
+    intent,
+    renderForms,
+    annotationStorage
+  ) {
     const data = this.data;
     let appearance = this.appearance;
     const isUsingOwnCanvas =
       this.data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
     if (!appearance) {
       if (!isUsingOwnCanvas) {
-        return Promise.resolve(new OperatorList());
+        return new OperatorList();
       }
       appearance = new StringStream("");
       appearance.dict = new Dict();
     }
 
     const appearanceDict = appearance.dict;
-    const resourcesPromise = this.loadResources(
+    const resources = await this.loadResources(
       ["ExtGState", "ColorSpace", "Pattern", "Shading", "XObject", "Font"],
       appearance
     );
@@ -877,30 +895,41 @@ class Annotation {
     const matrix = appearanceDict.getArray("Matrix") || [1, 0, 0, 1, 0, 0];
     const transform = getTransformMatrix(data.rect, bbox, matrix);
 
-    return resourcesPromise.then(resources => {
-      const opList = new OperatorList();
-      opList.addOp(OPS.beginAnnotation, [
-        data.id,
-        data.rect,
-        transform,
-        matrix,
-        isUsingOwnCanvas,
-      ]);
+    const opList = new OperatorList();
 
-      return evaluator
-        .getOperatorList({
-          stream: appearance,
-          task,
-          resources,
-          operatorList: opList,
-          fallbackFontDict: this._fallbackFontDict,
-        })
-        .then(() => {
-          opList.addOp(OPS.endAnnotation, []);
-          this.reset();
-          return opList;
-        });
+    let optionalContent;
+    if (this.oc) {
+      optionalContent = await evaluator.parseMarkedContentProps(
+        this.oc,
+        /* resources = */ null
+      );
+    }
+    if (optionalContent !== undefined) {
+      opList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+    }
+
+    opList.addOp(OPS.beginAnnotation, [
+      data.id,
+      data.rect,
+      transform,
+      matrix,
+      isUsingOwnCanvas,
+    ]);
+
+    await evaluator.getOperatorList({
+      stream: appearance,
+      task,
+      resources,
+      operatorList: opList,
+      fallbackFontDict: this._fallbackFontDict,
     });
+    opList.addOp(OPS.endAnnotation, []);
+
+    if (optionalContent !== undefined) {
+      opList.addOp(OPS.endMarkedContent, []);
+    }
+    this.reset();
+    return opList;
   }
 
   async save(evaluator, task, annotationStorage) {
@@ -1575,11 +1604,17 @@ class WidgetAnnotation extends Annotation {
     return str;
   }
 
-  getOperatorList(evaluator, task, intent, renderForms, annotationStorage) {
+  async getOperatorList(
+    evaluator,
+    task,
+    intent,
+    renderForms,
+    annotationStorage
+  ) {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
     if (renderForms && !(this instanceof SignatureWidgetAnnotation)) {
-      return Promise.resolve(new OperatorList());
+      return new OperatorList();
     }
 
     if (!this._hasText) {
@@ -1592,56 +1627,69 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
-    return this._getAppearance(evaluator, task, annotationStorage).then(
-      content => {
-        if (this.appearance && content === null) {
-          return super.getOperatorList(
-            evaluator,
-            task,
-            intent,
-            renderForms,
-            annotationStorage
-          );
-        }
-
-        const operatorList = new OperatorList();
-
-        // Even if there is an appearance stream, ignore it. This is the
-        // behaviour used by Adobe Reader.
-        if (!this._defaultAppearance || content === null) {
-          return operatorList;
-        }
-
-        const matrix = [1, 0, 0, 1, 0, 0];
-        const bbox = [
-          0,
-          0,
-          this.data.rect[2] - this.data.rect[0],
-          this.data.rect[3] - this.data.rect[1],
-        ];
-
-        const transform = getTransformMatrix(this.data.rect, bbox, matrix);
-        operatorList.addOp(OPS.beginAnnotation, [
-          this.data.id,
-          this.data.rect,
-          transform,
-          this.getRotationMatrix(annotationStorage),
-        ]);
-
-        const stream = new StringStream(content);
-        return evaluator
-          .getOperatorList({
-            stream,
-            task,
-            resources: this._fieldResources.mergedResources,
-            operatorList,
-          })
-          .then(function () {
-            operatorList.addOp(OPS.endAnnotation, []);
-            return operatorList;
-          });
-      }
+    const content = await this._getAppearance(
+      evaluator,
+      task,
+      annotationStorage
     );
+    if (this.appearance && content === null) {
+      return super.getOperatorList(
+        evaluator,
+        task,
+        intent,
+        renderForms,
+        annotationStorage
+      );
+    }
+
+    const operatorList = new OperatorList();
+
+    // Even if there is an appearance stream, ignore it. This is the
+    // behaviour used by Adobe Reader.
+    if (!this._defaultAppearance || content === null) {
+      return operatorList;
+    }
+
+    const matrix = [1, 0, 0, 1, 0, 0];
+    const bbox = [
+      0,
+      0,
+      this.data.rect[2] - this.data.rect[0],
+      this.data.rect[3] - this.data.rect[1],
+    ];
+    const transform = getTransformMatrix(this.data.rect, bbox, matrix);
+
+    let optionalContent;
+    if (this.oc) {
+      optionalContent = await evaluator.parseMarkedContentProps(
+        this.oc,
+        /* resources = */ null
+      );
+    }
+    if (optionalContent !== undefined) {
+      operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+    }
+
+    operatorList.addOp(OPS.beginAnnotation, [
+      this.data.id,
+      this.data.rect,
+      transform,
+      this.getRotationMatrix(annotationStorage),
+    ]);
+
+    const stream = new StringStream(content);
+    await evaluator.getOperatorList({
+      stream,
+      task,
+      resources: this._fieldResources.mergedResources,
+      operatorList,
+    });
+    operatorList.addOp(OPS.endAnnotation, []);
+
+    if (optionalContent !== undefined) {
+      operatorList.addOp(OPS.endMarkedContent, []);
+    }
+    return operatorList;
   }
 
   _getMKDict(rotation) {
