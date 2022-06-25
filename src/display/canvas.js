@@ -1127,12 +1127,9 @@ function genericComposeSMask(
   const chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
   for (let row = 0; row < height; row += chunkSize) {
     const chunkHeight = Math.min(chunkSize, height - row);
-    const maskData = maskCtx.getImageData(
-      layerOffsetX - maskOffsetX,
-      row + (layerOffsetY - maskOffsetY),
-      width,
-      chunkHeight
-    );
+    const maskX = Math.max(0, layerOffsetX - maskOffsetX);
+    const maskY = Math.max(0, row + (layerOffsetY - maskOffsetY));
+    const maskData = maskCtx.getImageData(maskX, maskY, width, chunkHeight);
     const layerData = layerCtx.getImageData(
       layerOffsetX,
       row + layerOffsetY,
