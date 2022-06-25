@@ -34,6 +34,7 @@ const CMAP_URL = "/build/generic/web/cmaps/";
 const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
+const VIEWER_CSS = "../build/components/pdf_viewer.css";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -160,10 +161,7 @@ class Rasterize {
    * styles are inserted via XHR. Therefore, we load and combine them here.
    */
   static get annotationStylePromise() {
-    const styles = [
-      "../web/annotation_layer_builder.css",
-      "./annotation_layer_builder_overrides.css",
-    ];
+    const styles = [VIEWER_CSS, "./annotation_layer_builder_overrides.css"];
     return shadow(this, "annotationStylePromise", loadStyles(styles));
   }
 
@@ -173,10 +171,7 @@ class Rasterize {
   }
 
   static get xfaStylePromise() {
-    const styles = [
-      "../web/xfa_layer_builder.css",
-      "./xfa_layer_builder_overrides.css",
-    ];
+    const styles = [VIEWER_CSS, "./xfa_layer_builder_overrides.css"];
     return shadow(this, "xfaStylePromise", loadStyles(styles));
   }
 
@@ -215,7 +210,9 @@ class Rasterize {
       div.className = "annotationLayer";
 
       const [common, overrides] = await this.annotationStylePromise;
-      style.textContent = `:root { --scale-factor: ${viewport.scale} } ${common}\n${overrides}`;
+      style.textContent =
+        `${common}\n${overrides}\n` +
+        `:root { --scale-factor: ${viewport.scale} }`;
 
       const annotationViewport = viewport.clone({ dontFlip: true });
       const annotationImageMap = await convertCanvasesToImages(
@@ -256,8 +253,8 @@ class Rasterize {
       // Items are transformed to have 1px font size.
       svg.setAttribute("font-size", 1);
 
-      const [cssRules] = await this.textStylePromise;
-      style.textContent = cssRules;
+      const [overrides] = await this.textStylePromise;
+      style.textContent = overrides;
 
       // Rendering text layer as HTML.
       const task = renderTextLayer({
@@ -289,7 +286,7 @@ class Rasterize {
       const { svg, foreignObject, style, div } = this.createContainer(viewport);
 
       const [common, overrides] = await this.xfaStylePromise;
-      style.textContent = `${fontRules}\n${common}\n${overrides}`;
+      style.textContent = `${common}\n${overrides}\n${fontRules}`;
 
       // Rendering XFA layer as HTML.
       XfaLayer.render({
