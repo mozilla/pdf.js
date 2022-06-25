@@ -1413,7 +1413,7 @@ describe("Interaction", () => {
       await closePages(pages);
     });
 
-    it("must check that data-annotation-rotation is correct", async () => {
+    it("must check that data-main-rotation is correct", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.waitForFunction(
@@ -1431,7 +1431,7 @@ describe("Interaction", () => {
             ]) {
               const rotation = await page.$eval(
                 `[data-annotation-id='${ref}R']`,
-                el => parseInt(el.getAttribute("data-annotation-rotation") || 0)
+                el => parseInt(el.getAttribute("data-main-rotation") || 0)
               );
               expect(rotation)
                 .withContext(`In ${browserName}`)

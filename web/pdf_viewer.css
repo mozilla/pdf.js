@@ -35,6 +35,16 @@
   }
 }
 
+[data-main-rotation="90"] {
+  transform: rotate(90deg) translateY(-100%);
+}
+[data-main-rotation="180"] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+[data-main-rotation="270"] {
+  transform: rotate(270deg) translateX(-100%);
+}
+
 .pdfViewer {
   padding-bottom: var(--pdfViewer-padding-bottom);
 }

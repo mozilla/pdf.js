@@ -39,6 +39,10 @@ class InkEditor extends AnnotationEditor {
 
   #observer = null;
 
+  #realWidth = 0;
+
+  #realHeight = 0;
+
   constructor(params) {
     super({ ...params, name: "inkEditor" });
     this.color = params.color || "CanvasText";
@@ -79,6 +83,8 @@ class InkEditor extends AnnotationEditor {
     editor.#baseWidth = this.#baseWidth;
     editor.#baseHeight = this.#baseHeight;
     editor.#disableEditing = this.#disableEditing;
+    editor.#realWidth = this.#realWidth;
+    editor.#realHeight = this.#realHeight;
 
     return editor;
   }
@@ -135,7 +141,7 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   disableEditMode() {
-    if (!this.isInEditMode()) {
+    if (!this.isInEditMode() || this.canvas === null) {
       return;
     }
 
@@ -157,6 +163,20 @@ class InkEditor extends AnnotationEditor {
   /** @inheritdoc */
   isEmpty() {
     return this.paths.length === 0;
+  }
+
+  #getInitialBBox() {
+    const { width, height, rotation } = this.parent.viewport;
+    switch (rotation) {
+      case 90:
+        return [0, width, width, height];
+      case 180:
+        return [width, height, width, height];
+      case 270:
+        return [height, 0, width, height];
+      default:
+        return [0, 0, width, height];
+    }
   }
 
   /**
@@ -257,9 +277,10 @@ class InkEditor extends AnnotationEditor {
       return;
     }
 
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
     const { ctx, height, width } = this;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, width * parentWidth, height * parentHeight);
     this.#updateTransform();
     for (const path of this.bezierPath2D) {
       ctx.stroke(path);
@@ -390,15 +411,30 @@ class InkEditor extends AnnotationEditor {
       return this.div;
     }
 
-    super.render();
-    this.#createCanvas();
+    let baseX, baseY;
+    if (this.width) {
+      baseX = this.x;
+      baseY = this.y;
+    }
 
+    super.render();
     this.div.classList.add("editing");
+    const [x, y, w, h] = this.#getInitialBBox();
+    this.setAt(x, y, 0, 0);
+    this.setDims(w, h);
+
+    this.#createCanvas();
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
-      this.setAt(this.x + this.width, this.y + this.height);
-      this.setDims(this.width, this.height);
+      const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+      this.setAt(
+        baseX * parentWidth,
+        baseY * parentHeight,
+        this.width * parentWidth,
+        this.height * parentHeight
+      );
+      this.setDims(this.width * parentWidth, this.height * parentHeight);
       this.#setCanvasDims();
       this.#redraw();
       this.div.classList.add("disabled");
@@ -410,8 +446,9 @@ class InkEditor extends AnnotationEditor {
   }
 
   #setCanvasDims() {
-    this.canvas.width = this.width;
-    this.canvas.height = this.height;
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    this.canvas.width = this.width * parentWidth;
+    this.canvas.height = this.height * parentHeight;
     this.#updateTransform();
   }
 
@@ -423,19 +460,28 @@ class InkEditor extends AnnotationEditor {
    * @returns
    */
   setDimensions(width, height) {
-    if (this.width === width && this.height === height) {
+    const roundedWidth = Math.round(width);
+    const roundedHeight = Math.round(height);
+    if (
+      this.#realWidth === roundedWidth &&
+      this.#realHeight === roundedHeight
+    ) {
       return;
     }
+
+    this.#realWidth = roundedWidth;
+    this.#realHeight = roundedHeight;
 
     this.canvas.style.visibility = "hidden";
 
     if (this.#aspectRatio) {
       height = Math.ceil(width / this.#aspectRatio);
-      this.div.style.height = `${height}px`;
+      this.setDims(width, height);
     }
 
-    this.width = width;
-    this.height = height;
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    this.width = width / parentWidth;
+    this.height = height / parentHeight;
 
     if (this.#disableEditing) {
       const padding = this.#getPadding();
@@ -682,8 +728,9 @@ class InkEditor extends AnnotationEditor {
     const width = Math.ceil(padding + this.#baseWidth * this.scaleFactor);
     const height = Math.ceil(padding + this.#baseHeight * this.scaleFactor);
 
-    this.width = width;
-    this.height = height;
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    this.width = width / parentWidth;
+    this.height = height / parentHeight;
 
     this.#aspectRatio = width / height;
 
@@ -704,16 +751,9 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
-    const rect = this.div.getBoundingClientRect();
-    const [x1, y1] = Util.applyTransform(
-      [this.x, this.y + rect.height],
-      this.parent.inverseViewportTransform
-    );
-
-    const [x2, y2] = Util.applyTransform(
-      [this.x + rect.width, this.y],
-      this.parent.inverseViewportTransform
-    );
+    const rect = this.getRect(0, 0);
+    const height =
+      this.rotation % 180 === 0 ? rect[3] - rect[1] : rect[2] - rect[0];
 
     return {
       annotationType: AnnotationEditorType.INK,
@@ -723,10 +763,11 @@ class InkEditor extends AnnotationEditor {
         this.scaleFactor / this.parent.scaleFactor,
         this.translationX,
         this.translationY,
-        y2 - y1
+        height
       ),
       pageIndex: this.parent.pageIndex,
-      rect: [x1, y1, x2, y2],
+      rect,
+      rotation: this.rotation,
     };
   }
 }
