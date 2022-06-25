@@ -78,7 +78,9 @@ describe("api", function () {
   }
 
   function mergeText(items) {
-    return items.map(chunk => chunk.str + (chunk.hasEOL ? "\n" : "")).join("");
+    return items
+      .map(chunk => (chunk.str ?? "") + (chunk.hasEOL ? "\n" : ""))
+      .join("");
   }
 
   describe("getDocument", function () {
@@ -2271,6 +2273,28 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const text = mergeText(items);
 
       expect(/win aisle/.test(text)).toEqual(false);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with or without includeMarkedContent, and compare (issue 15094)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("pdf.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(568);
+      let { items } = await pdfPage.getTextContent({
+        includeMarkedContent: false,
+      });
+      const textWithoutMC = mergeText(items);
+      ({ items } = await pdfPage.getTextContent({
+        includeMarkedContent: true,
+      }));
+      const textWithMC = mergeText(items);
+
+      expect(textWithoutMC).toEqual(textWithMC);
 
       await loadingTask.destroy();
     });
