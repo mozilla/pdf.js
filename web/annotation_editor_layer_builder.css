@@ -20,14 +20,23 @@
   --freetext-padding: 2px;
 }
 
+[data-editor-rotation="90"] {
+  transform: rotate(90deg);
+}
+[data-editor-rotation="180"] {
+  transform: rotate(180deg);
+}
+[data-editor-rotation="270"] {
+  transform: rotate(270deg);
+}
+
 .annotationEditorLayer {
   background: transparent;
-  width: 100%;
-  height: 100%;
   position: absolute;
   top: 0;
   left: 0;
   font-size: calc(100px * var(--scale-factor));
+  transform-origin: 0 0;
 }
 
 .annotationEditorLayer .freeTextEditor {
@@ -38,6 +47,7 @@
   resize: none;
   width: auto;
   height: auto;
+  transform-origin: 0 0;
 }
 
 .annotationEditorLayer .freeTextEditor .internal {
@@ -100,6 +110,7 @@
   width: 100%;
   height: 100%;
   z-index: 1;
+  transform-origin: 0 0;
 }
 
 .annotationEditorLayer .background {

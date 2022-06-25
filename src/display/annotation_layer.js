@@ -294,7 +294,7 @@ class AnnotationElement {
     container.style.width = `${elementWidth}%`;
     container.style.height = `${elementHeight}%`;
 
-    container.setAttribute("data-annotation-rotation", (360 - angle) % 360);
+    container.setAttribute("data-main-rotation", (360 - angle) % 360);
   }
 
   get _commonActions() {
@@ -2552,7 +2552,7 @@ class AnnotationLayer {
 
     style.width = flipOrientation ? heightStr : widthStr;
     style.height = flipOrientation ? widthStr : heightStr;
-    div.setAttribute("data-annotation-rotation", rotation);
+    div.setAttribute("data-main-rotation", rotation);
   }
 
   static #setAnnotationCanvasMap(div, annotationCanvasMap) {

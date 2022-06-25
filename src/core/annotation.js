@@ -1538,6 +1538,19 @@ class WidgetAnnotation extends Annotation {
     return !!(this.data.fieldFlags & flag);
   }
 
+  static _getRotationMatrix(rotation, width, height) {
+    switch (rotation) {
+      case 90:
+        return [0, 1, -1, 0, width, 0];
+      case 180:
+        return [-1, 0, 0, -1, width, height];
+      case 270:
+        return [0, -1, 1, 0, 0, height];
+      default:
+        throw new Error("Invalid rotation");
+    }
+  }
+
   getRotationMatrix(annotationStorage) {
     const storageEntry = annotationStorage
       ? annotationStorage.get(this.data.id)
@@ -1554,16 +1567,7 @@ class WidgetAnnotation extends Annotation {
     const width = this.data.rect[2] - this.data.rect[0];
     const height = this.data.rect[3] - this.data.rect[1];
 
-    switch (rotation) {
-      case 90:
-        return [0, 1, -1, 0, width, 0];
-      case 180:
-        return [-1, 0, 0, -1, width, height];
-      case 270:
-        return [0, -1, 1, 0, 0, height];
-      default:
-        throw new Error("Invalid rotation");
-    }
+    return WidgetAnnotation._getRotationMatrix(rotation, width, height);
   }
 
   getBorderAndBackgroundAppearances(annotationStorage) {
@@ -3233,7 +3237,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
-    const { color, fontSize, rect, user, value } = annotation;
+    const { color, fontSize, rect, rotation, user, value } = annotation;
     const freetext = new Dict(xref);
     freetext.set("Type", Name.get("Annot"));
     freetext.set("Subtype", Name.get("FreeText"));
@@ -3244,7 +3248,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
     freetext.set("Contents", value);
     freetext.set("F", 4);
     freetext.set("Border", [0, 0, 0]);
-    freetext.set("Rotate", 0);
+    freetext.set("Rotate", rotation);
 
     if (user) {
       freetext.set("T", stringToUTF8String(user));
@@ -3264,7 +3268,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
 
   static async createNewAppearanceStream(annotation, xref, params) {
     const { baseFontRef, evaluator, task } = params;
-    const { color, fontSize, rect, value } = annotation;
+    const { color, fontSize, rect, rotation, value } = annotation;
 
     const resources = new Dict(xref);
     const font = new Dict(xref);
@@ -3292,8 +3296,12 @@ class FreeTextAnnotation extends MarkupAnnotation {
     );
 
     const [x1, y1, x2, y2] = rect;
-    const w = x2 - x1;
-    const h = y2 - y1;
+    let w = x2 - x1;
+    let h = y2 - y1;
+
+    if (rotation % 180 !== 0) {
+      [w, h] = [h, w];
+    }
 
     const lines = value.split("\n");
     const scale = fontSize / 1000;
@@ -3348,6 +3356,11 @@ class FreeTextAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("BBox", [0, 0, w, h]);
     appearanceStreamDict.set("Length", appearance.length);
     appearanceStreamDict.set("Resources", resources);
+
+    if (rotation) {
+      const matrix = WidgetAnnotation._getRotationMatrix(rotation, w, h);
+      appearanceStreamDict.set("Matrix", matrix);
+    }
 
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;
@@ -3717,18 +3730,19 @@ class InkAnnotation extends MarkupAnnotation {
   }
 
   static createNewDict(annotation, xref, { apRef, ap }) {
+    const { paths, rect, rotation } = annotation;
     const ink = new Dict(xref);
     ink.set("Type", Name.get("Annot"));
     ink.set("Subtype", Name.get("Ink"));
     ink.set("CreationDate", `D:${getModificationDate()}`);
-    ink.set("Rect", annotation.rect);
+    ink.set("Rect", rect);
     ink.set(
       "InkList",
-      annotation.paths.map(p => p.points)
+      paths.map(p => p.points)
     );
     ink.set("F", 4);
     ink.set("Border", [0, 0, 0]);
-    ink.set("Rotate", 0);
+    ink.set("Rotate", rotation);
 
     const n = new Dict(xref);
     ink.set("AP", n);
@@ -3743,16 +3757,21 @@ class InkAnnotation extends MarkupAnnotation {
   }
 
   static async createNewAppearanceStream(annotation, xref, params) {
-    const [x1, y1, x2, y2] = annotation.rect;
-    const w = x2 - x1;
-    const h = y2 - y1;
+    const { color, rect, rotation, paths, thickness } = annotation;
+    const [x1, y1, x2, y2] = rect;
+    let w = x2 - x1;
+    let h = y2 - y1;
+
+    if (rotation % 180 !== 0) {
+      [w, h] = [h, w];
+    }
 
     const appearanceBuffer = [
-      `${annotation.thickness} w`,
-      `${getPdfColor(annotation.color, /* isFill */ false)}`,
+      `${thickness} w`,
+      `${getPdfColor(color, /* isFill */ false)}`,
     ];
     const buffer = [];
-    for (const { bezier } of annotation.paths) {
+    for (const { bezier } of paths) {
       buffer.length = 0;
       buffer.push(
         `${numberToString(bezier[0])} ${numberToString(bezier[1])} m`
@@ -3775,6 +3794,11 @@ class InkAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("Type", Name.get("XObject"));
     appearanceStreamDict.set("BBox", [0, 0, w, h]);
     appearanceStreamDict.set("Length", appearance.length);
+
+    if (rotation) {
+      const matrix = WidgetAnnotation._getRotationMatrix(rotation, w, h);
+      appearanceStreamDict.set("Matrix", matrix);
+    }
 
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;

@@ -27,16 +27,6 @@
   }
 }
 
-[data-annotation-rotation="90"] {
-  transform: rotate(90deg) translateY(-100%);
-}
-[data-annotation-rotation="180"] {
-  transform: rotate(180deg) translate(-100%, -100%);
-}
-[data-annotation-rotation="270"] {
-  transform: rotate(270deg) translateX(-100%);
-}
-
 .annotationLayer {
   position: absolute;
   top: 0;
