@@ -3290,6 +3290,7 @@ class PartialEvaluator {
             );
             return;
           case OPS.beginMarkedContent:
+            flushTextContentItem();
             if (includeMarkedContent) {
               textContent.items.push({
                 type: "beginMarkedContent",
@@ -3298,8 +3299,8 @@ class PartialEvaluator {
             }
             break;
           case OPS.beginMarkedContentProps:
+            flushTextContentItem();
             if (includeMarkedContent) {
-              flushTextContentItem();
               let mcid = null;
               if (args[1] instanceof Dict) {
                 mcid = args[1].get("MCID");
@@ -3314,8 +3315,8 @@ class PartialEvaluator {
             }
             break;
           case OPS.endMarkedContent:
+            flushTextContentItem();
             if (includeMarkedContent) {
-              flushTextContentItem();
               textContent.items.push({
                 type: "endMarkedContent",
               });
