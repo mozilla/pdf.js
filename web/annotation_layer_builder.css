@@ -27,21 +27,10 @@
   }
 }
 
-[data-annotation-rotation="90"] {
-  transform: rotate(90deg) translateY(-100%);
-}
-[data-annotation-rotation="180"] {
-  transform: rotate(180deg) translate(-100%, -100%);
-}
-[data-annotation-rotation="270"] {
-  transform: rotate(270deg) translateX(-100%);
-}
-
 .annotationLayer {
   position: absolute;
   top: 0;
   left: 0;
-  font-size: calc(100px * var(--scale-factor));
   pointer-events: none;
   transform-origin: 0 0;
 }
@@ -51,6 +40,7 @@
   text-align: initial;
   pointer-events: auto;
   box-sizing: border-box;
+  transform-origin: 0 0;
 }
 
 .annotationLayer .linkAnnotation > a,
@@ -90,7 +80,7 @@
   background-image: var(--annotation-unfocused-field-background);
   border: 1px solid transparent;
   box-sizing: border-box;
-  font: 9% sans-serif;
+  font: calc(9px * var(--scale-factor)) sans-serif;
   height: 100%;
   margin: 0;
   vertical-align: top;
@@ -203,6 +193,11 @@
 .annotationLayer .buttonWidgetAnnotation.checkBox input,
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
   appearance: none;
+}
+
+.annotationLayer .popupTriggerArea {
+  height: 100%;
+  width: 100%;
 }
 
 .annotationLayer .popupWrapper {

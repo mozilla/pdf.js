@@ -14,6 +14,7 @@
  */
 
 import {
+  AnnotationEditorPrefix,
   assert,
   BaseException,
   FontType,
@@ -548,6 +549,27 @@ function numberToString(value) {
   return value.toFixed(2);
 }
 
+function getNewAnnotationsMap(annotationStorage) {
+  if (!annotationStorage) {
+    return null;
+  }
+  const newAnnotationsByPage = new Map();
+  // The concept of page in a XFA is very different, so
+  // editing is just not implemented.
+  for (const [key, value] of annotationStorage) {
+    if (!key.startsWith(AnnotationEditorPrefix)) {
+      continue;
+    }
+    let annotations = newAnnotationsByPage.get(value.pageIndex);
+    if (!annotations) {
+      annotations = [];
+      newAnnotationsByPage.set(value.pageIndex, annotations);
+    }
+    annotations.push(value);
+  }
+  return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
+}
+
 export {
   collectActions,
   DocStats,
@@ -556,6 +578,7 @@ export {
   getArrayLookupTableFactory,
   getInheritableProperty,
   getLookupTableFactory,
+  getNewAnnotationsMap,
   isWhiteSpace,
   log2,
   MissingDataException,

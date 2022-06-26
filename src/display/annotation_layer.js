@@ -264,10 +264,37 @@ class AnnotationElement {
 
     container.style.left = `${(100 * (rect[0] - pageLLx)) / pageWidth}%`;
     container.style.top = `${(100 * (rect[1] - pageLLy)) / pageHeight}%`;
-    container.style.width = `${(100 * width) / pageWidth}%`;
-    container.style.height = `${(100 * height) / pageHeight}%`;
+
+    const { rotation } = data;
+    if (data.hasOwnCanvas || rotation === 0) {
+      container.style.width = `${(100 * width) / pageWidth}%`;
+      container.style.height = `${(100 * height) / pageHeight}%`;
+    } else {
+      this.setRotation(rotation, container);
+    }
 
     return container;
+  }
+
+  setRotation(angle, container = this.container) {
+    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { width, height } = getRectDims(this.data.rect);
+
+    let elementWidth, elementHeight;
+    if (angle % 180 === 0) {
+      elementWidth = (100 * width) / pageWidth;
+      elementHeight = (100 * height) / pageHeight;
+    } else {
+      elementWidth = (100 * height) / pageWidth;
+      elementHeight = (100 * width) / pageHeight;
+    }
+
+    container.style.width = `${elementWidth}%`;
+    container.style.height = `${elementHeight}%`;
+
+    container.setAttribute("data-main-rotation", (360 - angle) % 360);
   }
 
   get _commonActions() {
@@ -334,6 +361,13 @@ class AnnotationElement {
       },
       strokeColor: event => {
         setColor("strokeColor", "borderColor", event);
+      },
+      rotation: event => {
+        const angle = event.detail.rotation;
+        this.setRotation(angle);
+        this.annotationStorage.setValue(this.data.id, {
+          rotation: angle,
+        });
       },
     });
   }
@@ -418,8 +452,7 @@ class AnnotationElement {
     // If no trigger element is specified, create it.
     if (!trigger) {
       trigger = document.createElement("div");
-      trigger.style.height = container.style.height;
-      trigger.style.width = container.style.width;
+      trigger.className = "popupTriggerArea";
       container.append(trigger);
     }
 
@@ -908,7 +941,7 @@ class WidgetAnnotationElement extends AnnotationElement {
       const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
       computedFontSize = Math.min(fontSize, Math.round(height / LINE_FACTOR));
     }
-    style.fontSize = `${computedFontSize}%`;
+    style.fontSize = `calc(${computedFontSize}px * var(--scale-factor))`;
 
     style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
 
@@ -2551,19 +2584,20 @@ class AnnotationLayer {
     div.hidden = false;
   }
 
-  static setDimensions(div, viewport) {
-    const { width, height, rotation } = viewport;
+  /**
+   * @param {HTMLDivElement} div
+   * @param {PageViewport} viewport
+   */
+  static setDimensions(div, { width, height, rotation }) {
     const { style } = div;
 
-    if (rotation === 0 || rotation === 180) {
-      style.width = `${width}px`;
-      style.height = `${height}px`;
-    } else {
-      style.width = `${height}px`;
-      style.height = `${width}px`;
-    }
+    const flipOrientation = rotation % 180 !== 0,
+      widthStr = Math.floor(width) + "px",
+      heightStr = Math.floor(height) + "px";
 
-    div.setAttribute("data-annotation-rotation", rotation);
+    style.width = flipOrientation ? heightStr : widthStr;
+    style.height = flipOrientation ? widthStr : heightStr;
+    div.setAttribute("data-main-rotation", rotation);
   }
 
   static #setAnnotationCanvasMap(div, annotationCanvasMap) {

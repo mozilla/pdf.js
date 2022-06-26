@@ -571,6 +571,14 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * Check if there is an active editor.
+   * @returns {boolean}
+   */
+  hasActive() {
+    return this.#activeEditor !== null;
+  }
+
+  /**
    * Get the current editor mode.
    * @returns {number}
    */

@@ -255,6 +255,7 @@ const PDFViewerApplication = {
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
   _PDFBug: null,
+  _printAnnotationStoragePromise: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -515,6 +516,7 @@ const PDFViewerApplication = {
 
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
+    const annotationEditorEnabled = AppOptions.get("annotationEditorEnabled");
     const pageColors = {
       background: AppOptions.get("pageColorsBackground"),
       foreground: AppOptions.get("pageColorsForeground"),
@@ -538,7 +540,7 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
-      annotationEditorEnabled: AppOptions.get("annotationEditorEnabled"),
+      annotationEditorEnabled,
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       removePageBorders: AppOptions.get("removePageBorders"), // #194
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
@@ -576,6 +578,15 @@ const PDFViewerApplication = {
 
     if (!this.supportsIntegratedFind) {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
+    }
+
+    if (annotationEditorEnabled) {
+      for (const element of [
+        document.getElementById("editorModeButtons"),
+        document.getElementById("editorModeSeparator"),
+      ]) {
+        element.classList.remove("hidden");
+      }
     }
 
     this.pdfDocumentProperties = new PDFDocumentProperties(
@@ -1253,11 +1264,6 @@ const PDFViewerApplication = {
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
 
-    if (pdfDocument.isPureXfa) {
-      console.warn("Warning: XFA-editing is not implemented.");
-      this.toolbar.updateEditorModeButtonsState(/* disabled = */ true);
-    }
-
     let baseDocumentUrl;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       baseDocumentUrl = null;
@@ -1866,9 +1872,14 @@ const PDFViewerApplication = {
   },
 
   beforePrint() {
-    // Given that the "beforeprint" browser event is synchronous, we
-    // unfortunately cannot await the scripting event dispatching here.
-    this.pdfScriptingManager.dispatchWillPrint();
+    this._printAnnotationStoragePromise = this.pdfScriptingManager
+      .dispatchWillPrint()
+      .catch(() => {
+        /* Avoid breaking printing; ignoring errors. */
+      })
+      .then(() => {
+        return this.pdfDocument?.annotationStorage.print;
+      });
 
     if (this.printService) {
       // There is no way to suppress beforePrint/afterPrint events,
@@ -1906,8 +1917,10 @@ const PDFViewerApplication = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
+      this._printAnnotationStoragePromise,
       this.l10n,
       this.pdfViewer.eventBus // #588 modified by ngx-extended-pdf-viewer
+
     );
     this.printService = printService;
     this.forceRendering();
@@ -1920,9 +1933,12 @@ const PDFViewerApplication = {
   },
 
   afterPrint() {
-    // Given that the "afterprint" browser event is synchronous, we
-    // unfortunately cannot await the scripting event dispatching here.
-    this.pdfScriptingManager.dispatchDidPrint();
+    if (this._printAnnotationStoragePromise) {
+      this._printAnnotationStoragePromise.then(() => {
+        this.pdfScriptingManager.dispatchDidPrint();
+      });
+      this._printAnnotationStoragePromise = null;
+    }
 
     if (this.printService) {
       this.printService.destroy();
@@ -2341,10 +2357,6 @@ function webViewerInitialized() {
 
   if (PDFViewerApplication.supportsIntegratedFind) {
     appConfig.toolbar.viewFind.classList.add("hidden");
-  }
-
-  if (PDFViewerApplication.pdfViewer.enableAnnotationEditor) {
-    appConfig.toolbar.editorModeButtons.classList.remove("hidden");
   }
 
   appConfig.mainContainer.addEventListener(

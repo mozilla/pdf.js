@@ -30,7 +30,8 @@ function renderPage(
   pageNumber,
   size,
   printResolution,
-  optionalContentConfigPromise
+  optionalContentConfigPromise,
+  printAnnotationStoragePromise
 ) {
   const scratchCanvas = activeService.scratchCanvas;
 
@@ -60,7 +61,10 @@ function renderPage(
   ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
   ctx.restore();
 
-  return pdfDocument.getPage(pageNumber).then(function (pdfPage) {
+  return Promise.all([
+    pdfDocument.getPage(pageNumber),
+    printAnnotationStoragePromise,
+  ]).then(function ([pdfPage, printAnnotationStorage]) {
     const renderContext = {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
@@ -69,6 +73,7 @@ function renderPage(
       annotationMode: AnnotationMode.ENABLE_STORAGE,
       optionalContentConfigPromise,
       background: PDFViewerApplicationOptions.get("pdfBackgroundColor"),
+      printAnnotationStorage,
     };
     return pdfPage.render(renderContext).promise;
   });
@@ -99,6 +104,7 @@ function PDFPrintService(
   printContainer,
   printResolution,
   optionalContentConfigPromise = null,
+  printAnnotationStoragePromise = null,
   l10n,
   eventBus // #588 modified by ngx-extended-pdf-viewer
 ) {
@@ -108,6 +114,8 @@ function PDFPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+  this._printAnnotationStoragePromise =
+    printAnnotationStoragePromise || Promise.resolve();
   this.l10n = l10n;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
@@ -233,7 +241,8 @@ PDFPrintService.prototype = {
         /* pageNumber = */ index + 1,
         this.pagesOverview[index],
         this._printResolution,
-        this._optionalContentConfigPromise
+        this._optionalContentConfigPromise,
+        this._printAnnotationStoragePromise
       )
         .then(this.useRenderedPage.bind(this))
         .then(function () {
@@ -463,6 +472,7 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
+    printAnnotationStoragePromise,
     l10n,
     eventBus // #588 modified by ngx-extended-pdf-viewer
   ) {
@@ -475,8 +485,9 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
+      printAnnotationStoragePromise,
       l10n,
-      eventBus // #588 modified by ngx-extended-pdf-viewer
+      eventBus // #588 modified by ngx-extended-pdf-viewer       
     );
     return activeService;
   },

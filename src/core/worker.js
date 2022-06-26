@@ -15,7 +15,6 @@
 
 import {
   AbortException,
-  AnnotationEditorPrefix,
   arrayByteLength,
   arraysToBytes,
   createPromiseCapability,
@@ -33,6 +32,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { Dict, Ref } from "./primitives.js";
+import { getNewAnnotationsMap, XRefParseException } from "./core_utils.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
@@ -41,7 +41,6 @@ import { incrementalUpdate } from "./writer.js";
 // end of modification
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
-import { XRefParseException } from "./core_utils.js";
 
 // modified by ngx-extended-pdf-viewer #358
 // (several not-so-old browsers don't implement Promise.allSettled())
@@ -592,22 +591,9 @@ class WorkerMessageHandler {
       function ({ isPureXfa, numPages, annotationStorage, filename }) {
         pdfManager.requestLoadedStream();
 
-        const newAnnotationsByPage = new Map();
-        if (!isPureXfa) {
-          // The concept of page in a XFA is very different, so
-          // editing is just not implemented.
-          for (const [key, value] of annotationStorage) {
-            if (!key.startsWith(AnnotationEditorPrefix)) {
-              continue;
-            }
-            let annotations = newAnnotationsByPage.get(value.pageIndex);
-            if (!annotations) {
-              annotations = [];
-              newAnnotationsByPage.set(value.pageIndex, annotations);
-            }
-            annotations.push(value);
-          }
-        }
+        const newAnnotationsByPage = !isPureXfa
+          ? getNewAnnotationsMap(annotationStorage)
+          : null;
 
         const promises = [
           pdfManager.onLoadedStream(),
@@ -617,17 +603,19 @@ class WorkerMessageHandler {
           pdfManager.ensureDoc("startXRef"),
         ];
 
-        for (const [pageIndex, annotations] of newAnnotationsByPage) {
-          promises.push(
-            pdfManager.getPage(pageIndex).then(page => {
-              const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
-              return page
-                .saveNewAnnotations(handler, task, annotations)
-                .finally(function () {
-                  finishWorkerTask(task);
-                });
-            })
-          );
+        if (newAnnotationsByPage) {
+          for (const [pageIndex, annotations] of newAnnotationsByPage) {
+            promises.push(
+              pdfManager.getPage(pageIndex).then(page => {
+                const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
+                return page
+                  .saveNewAnnotations(handler, task, annotations)
+                  .finally(function () {
+                    finishWorkerTask(task);
+                  });
+              })
+            );
+          }
         }
 
         if (isPureXfa) {
@@ -663,11 +651,7 @@ class WorkerMessageHandler {
               return stream.bytes;
             }
           } else {
-            for (const ref of refs) {
-              newRefs = ref
-                .filter(x => x !== null)
-                .reduce((a, b) => a.concat(b), newRefs);
-            }
+            newRefs = refs.flat(2);
 
             if (newRefs.length === 0) {
               // No new refs so just return the initial bytes
