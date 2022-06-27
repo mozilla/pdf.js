@@ -99,7 +99,10 @@ const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
 class PDFPageView {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
-  #useThumbnailCanvas = true;
+  #useThumbnailCanvas = {
+    initialOptionalContent: true,
+    regularAnnotations: true,
+  };
 
   /**
    * @param {PDFPageViewOptions} options
@@ -190,14 +193,15 @@ class PDFPageView {
       const { optionalContentConfigPromise } = options;
       if (optionalContentConfigPromise) {
         // Ensure that the thumbnails always display the *initial* document
-        // state.
+        // state, for documents with optional content.
         optionalContentConfigPromise.then(optionalContentConfig => {
           if (
             optionalContentConfigPromise !== this._optionalContentConfigPromise
           ) {
             return;
           }
-          this.#useThumbnailCanvas = optionalContentConfig.hasInitialVisibility;
+          this.#useThumbnailCanvas.initialOptionalContent =
+            optionalContentConfig.hasInitialVisibility;
         });
       }
     }
@@ -408,14 +412,16 @@ class PDFPageView {
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
 
-      // Ensure that the thumbnails always display the *initial* document state.
+      // Ensure that the thumbnails always display the *initial* document state,
+      // for documents with optional content.
       optionalContentConfigPromise.then(optionalContentConfig => {
         if (
           optionalContentConfigPromise !== this._optionalContentConfigPromise
         ) {
           return;
         }
-        this.#useThumbnailCanvas = optionalContentConfig.hasInitialVisibility;
+        this.#useThumbnailCanvas.initialOptionalContent =
+          optionalContentConfig.hasInitialVisibility;
       });
     }
 
@@ -772,6 +778,10 @@ class PDFPageView {
       }
       this._resetZoomLayer(/* removeFromDOM = */ true);
 
+      // Ensure that the thumbnails won't become partially (or fully) blank,
+      // for documents that contain interactive form elements.
+      this.#useThumbnailCanvas.regularAnnotations = !paintTask.separateAnnots;
+
       this.eventBus.dispatch("pagerendered", {
         source: this,
         pageNumber: this.id,
@@ -887,6 +897,9 @@ class PDFPageView {
       },
       cancel() {
         renderTask.cancel();
+      },
+      get separateAnnots() {
+        return renderTask.separateAnnots;
       },
     };
 
@@ -1029,6 +1042,9 @@ class PDFPageView {
       cancel() {
         cancelled = true;
       },
+      get separateAnnots() {
+        return false;
+      },
     };
   }
 
@@ -1050,7 +1066,9 @@ class PDFPageView {
    * @ignore
    */
   get thumbnailCanvas() {
-    return this.#useThumbnailCanvas ? this.canvas : null;
+    const { initialOptionalContent, regularAnnotations } =
+      this.#useThumbnailCanvas;
+    return initialOptionalContent && regularAnnotations ? this.canvas : null;
   }
 }
 

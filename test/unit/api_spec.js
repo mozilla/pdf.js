@@ -501,6 +501,7 @@ describe("api", function () {
       expect(opList.fnArray.length).toEqual(0);
       expect(opList.argsArray.length).toEqual(0);
       expect(opList.lastChunk).toEqual(true);
+      expect(opList.separateAnnots).toEqual(null);
 
       await loadingTask.destroy();
     });
@@ -521,6 +522,7 @@ describe("api", function () {
       expect(opList.fnArray.length).toEqual(0);
       expect(opList.argsArray.length).toEqual(0);
       expect(opList.lastChunk).toEqual(true);
+      expect(opList.separateAnnots).toEqual(null);
 
       await loadingTask.destroy();
     });
@@ -588,6 +590,7 @@ describe("api", function () {
       expect(opList.fnArray.length).toBeGreaterThan(5);
       expect(opList.argsArray.length).toBeGreaterThan(5);
       expect(opList.lastChunk).toEqual(true);
+      expect(opList.separateAnnots).toEqual(null);
 
       try {
         await pdfDocument2.getPage(1);
@@ -631,6 +634,7 @@ describe("api", function () {
         expect(opList.fnArray.length).toBeGreaterThan(5);
         expect(opList.argsArray.length).toBeGreaterThan(5);
         expect(opList.lastChunk).toEqual(true);
+        expect(opList.separateAnnots).toEqual(null);
       }
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
@@ -2402,6 +2406,10 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(operatorList.fnArray.length).toBeGreaterThan(100);
       expect(operatorList.argsArray.length).toBeGreaterThan(100);
       expect(operatorList.lastChunk).toEqual(true);
+      expect(operatorList.separateAnnots).toEqual({
+        form: false,
+        canvas: false,
+      });
     });
 
     it("gets operatorList with JPEG image (issue 4888)", async function () {
@@ -2442,6 +2450,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
               expect(opList.fnArray.length).toBeGreaterThan(100);
               expect(opList.argsArray.length).toBeGreaterThan(100);
               expect(opList.lastChunk).toEqual(true);
+              expect(opList.separateAnnots).toEqual(null);
 
               return loadingTask1.destroy();
             });
@@ -2454,6 +2463,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
               expect(opList.fnArray.length).toEqual(0);
               expect(opList.argsArray.length).toEqual(0);
               expect(opList.lastChunk).toEqual(true);
+              expect(opList.separateAnnots).toEqual(null);
 
               return loadingTask2.destroy();
             });
@@ -2475,6 +2485,10 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(operatorList.fnArray.length).toBeGreaterThan(20);
       expect(operatorList.argsArray.length).toBeGreaterThan(20);
       expect(operatorList.lastChunk).toEqual(true);
+      expect(operatorList.separateAnnots).toEqual({
+        form: false,
+        canvas: false,
+      });
 
       // The `getOperatorList` method, similar to the `render` method,
       // is supposed to include any existing Annotation-operatorLists.
@@ -2498,6 +2512,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(opListAnnotDisable.fnArray.length).toEqual(0);
       expect(opListAnnotDisable.argsArray.length).toEqual(0);
       expect(opListAnnotDisable.lastChunk).toEqual(true);
+      expect(opListAnnotDisable.separateAnnots).toEqual(null);
 
       const opListAnnotEnable = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE,
@@ -2505,6 +2520,10 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(140);
       expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(140);
       expect(opListAnnotEnable.lastChunk).toEqual(true);
+      expect(opListAnnotEnable.separateAnnots).toEqual({
+        form: false,
+        canvas: true,
+      });
 
       let firstAnnotIndex = opListAnnotEnable.fnArray.indexOf(
         OPS.beginAnnotation
@@ -2518,6 +2537,10 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(opListAnnotEnableForms.fnArray.length).toBeGreaterThan(30);
       expect(opListAnnotEnableForms.argsArray.length).toBeGreaterThan(30);
       expect(opListAnnotEnableForms.lastChunk).toEqual(true);
+      expect(opListAnnotEnableForms.separateAnnots).toEqual({
+        form: true,
+        canvas: true,
+      });
 
       firstAnnotIndex = opListAnnotEnableForms.fnArray.indexOf(
         OPS.beginAnnotation
@@ -2531,6 +2554,10 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(opListAnnotEnableStorage.fnArray.length).toBeGreaterThan(170);
       expect(opListAnnotEnableStorage.argsArray.length).toBeGreaterThan(170);
       expect(opListAnnotEnableStorage.lastChunk).toEqual(true);
+      expect(opListAnnotEnableStorage.separateAnnots).toEqual({
+        form: false,
+        canvas: true,
+      });
 
       firstAnnotIndex = opListAnnotEnableStorage.fnArray.indexOf(
         OPS.beginAnnotation
@@ -2635,8 +2662,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(renderTask instanceof RenderTask).toEqual(true);
 
       await renderTask.promise;
-      const stats = pdfPage.stats;
+      expect(renderTask.separateAnnots).toEqual(false);
 
+      const { stats } = pdfPage;
       expect(stats instanceof StatTimer).toEqual(true);
       expect(stats.times.length).toEqual(3);
 
@@ -2719,6 +2747,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(reRenderTask instanceof RenderTask).toEqual(true);
 
       await reRenderTask.promise;
+      expect(reRenderTask.separateAnnots).toEqual(false);
 
       CanvasFactory.destroy(canvasAndCtx);
     });
@@ -2785,8 +2814,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(renderTask instanceof RenderTask).toEqual(true);
 
       await renderTask.promise;
-      await pdfDoc.cleanup();
+      expect(renderTask.separateAnnots).toEqual(false);
 
+      await pdfDoc.cleanup();
       expect(true).toEqual(true);
 
       CanvasFactory.destroy(canvasAndCtx);
@@ -2831,6 +2861,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         );
       }
       await renderTask.promise;
+      expect(renderTask.separateAnnots).toEqual(false);
 
       CanvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
@@ -2918,6 +2949,8 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         });
 
         await renderTask.promise;
+        expect(renderTask.separateAnnots).toEqual(false);
+
         const printData = canvasAndCtx.canvas.toDataURL();
         CanvasFactory.destroy(canvasAndCtx);
 
@@ -3002,6 +3035,8 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         viewport,
       });
       await renderTask.promise;
+      expect(renderTask.separateAnnots).toEqual(false);
+
       const data = canvasAndCtx.canvas.toDataURL();
       CanvasFactory.destroy(canvasAndCtx);
       return data;
