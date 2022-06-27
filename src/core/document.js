@@ -455,7 +455,7 @@ class Page {
         annotations.length === 0 ||
         intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
       ) {
-        pageOpList.flush(true);
+        pageOpList.flush(/* lastChunk = */ true);
         return { length: pageOpList.totalLength };
       }
       const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
@@ -493,10 +493,23 @@ class Page {
       }
 
       return Promise.all(opListPromises).then(function (opLists) {
-        for (const opList of opLists) {
+        let form = false,
+          canvas = false;
+
+        for (const { opList, separateForm, separateCanvas } of opLists) {
           pageOpList.addOpList(opList);
+
+          if (separateForm) {
+            form = separateForm;
+          }
+          if (separateCanvas) {
+            canvas = separateCanvas;
+          }
         }
-        pageOpList.flush(true);
+        pageOpList.flush(
+          /* lastChunk = */ true,
+          /* separateAnnots = */ { form, canvas }
+        );
         return { length: pageOpList.totalLength };
       });
     });

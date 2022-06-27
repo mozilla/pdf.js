@@ -881,7 +881,11 @@ class Annotation {
     );
     if (!appearance) {
       if (!isUsingOwnCanvas) {
-        return new OperatorList();
+        return {
+          opList: new OperatorList(),
+          separateForm: false,
+          separateCanvas: false,
+        };
       }
       appearance = new StringStream("");
       appearance.dict = new Dict();
@@ -930,7 +934,7 @@ class Annotation {
       opList.addOp(OPS.endMarkedContent, []);
     }
     this.reset();
-    return opList;
+    return { opList, separateForm: false, separateCanvas: isUsingOwnCanvas };
   }
 
   async save(evaluator, task, annotationStorage) {
@@ -1619,7 +1623,11 @@ class WidgetAnnotation extends Annotation {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
     if (renderForms && !(this instanceof SignatureWidgetAnnotation)) {
-      return new OperatorList();
+      return {
+        opList: new OperatorList(),
+        separateForm: true,
+        separateCanvas: false,
+      };
     }
 
     if (!this._hasText) {
@@ -1647,12 +1655,12 @@ class WidgetAnnotation extends Annotation {
       );
     }
 
-    const operatorList = new OperatorList();
+    const opList = new OperatorList();
 
     // Even if there is an appearance stream, ignore it. This is the
     // behaviour used by Adobe Reader.
     if (!this._defaultAppearance || content === null) {
-      return operatorList;
+      return { opList, separateForm: false, separateCanvas: false };
     }
 
     const matrix = [1, 0, 0, 1, 0, 0];
@@ -1672,10 +1680,10 @@ class WidgetAnnotation extends Annotation {
       );
     }
     if (optionalContent !== undefined) {
-      operatorList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
+      opList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
 
-    operatorList.addOp(OPS.beginAnnotation, [
+    opList.addOp(OPS.beginAnnotation, [
       this.data.id,
       this.data.rect,
       transform,
@@ -1688,14 +1696,14 @@ class WidgetAnnotation extends Annotation {
       stream,
       task,
       resources: this._fieldResources.mergedResources,
-      operatorList,
+      operatorList: opList,
     });
-    operatorList.addOp(OPS.endAnnotation, []);
+    opList.addOp(OPS.endAnnotation, []);
 
     if (optionalContent !== undefined) {
-      operatorList.addOp(OPS.endMarkedContent, []);
+      opList.addOp(OPS.endMarkedContent, []);
     }
-    return operatorList;
+    return { opList, separateForm: false, separateCanvas: false };
   }
 
   _getMKDict(rotation) {
@@ -2477,7 +2485,11 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     // No appearance
-    return new OperatorList();
+    return {
+      opList: new OperatorList(),
+      separateForm: false,
+      separateCanvas: false,
+    };
   }
 
   async save(evaluator, task, annotationStorage) {
