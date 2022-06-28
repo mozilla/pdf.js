@@ -78,6 +78,8 @@ class AnnotationEditorLayer {
     if (!AnnotationEditorLayer._initialized) {
       AnnotationEditorLayer._initialized = true;
       FreeTextEditor.initialize(options.l10n);
+
+      options.uiManager.registerEditorTypes([FreeTextEditor, InkEditor]);
     }
     this.#uiManager = options.uiManager;
     this.annotationStorage = options.annotationStorage;
@@ -98,14 +100,22 @@ class AnnotationEditorLayer {
    * @param {number} mode
    */
   updateMode(mode) {
-    if (mode === AnnotationEditorType.INK) {
-      // We want to have the ink editor covering all of the page without having
-      // to click to create it: it must be here when we start to draw.
-      this.div.addEventListener("mouseover", this.#boundMouseover);
-      this.div.removeEventListener("click", this.#boundClick);
-    } else {
-      this.div.removeEventListener("mouseover", this.#boundMouseover);
+    switch (mode) {
+      case AnnotationEditorType.INK:
+        // We want to have the ink editor covering all of the page without
+        // having to click to create it: it must be here when we start to draw.
+        this.div.addEventListener("mouseover", this.#boundMouseover);
+        this.div.removeEventListener("click", this.#boundClick);
+        break;
+      case AnnotationEditorType.FREETEXT:
+        this.div.removeEventListener("mouseover", this.#boundMouseover);
+        this.div.addEventListener("click", this.#boundClick);
+        break;
+      default:
+        this.div.removeEventListener("mouseover", this.#boundMouseover);
+        this.div.removeEventListener("click", this.#boundClick);
     }
+
     this.setActiveEditor(null);
   }
 
@@ -130,13 +140,10 @@ class AnnotationEditorLayer {
 
   /**
    * Add some commands into the CommandManager (undo/redo stuff).
-   * @param {function} cmd
-   * @param {function} undo
-   * @param {boolean} mustExec - If true the command is executed after having
-   *   been added.
+   * @param {Object} params
    */
-  addCommands(cmd, undo, mustExec) {
-    this.#uiManager.addCommands(cmd, undo, mustExec);
+  addCommands(params) {
+    this.#uiManager.addCommands(params);
   }
 
   /**
@@ -232,7 +239,10 @@ class AnnotationEditorLayer {
       this.unselectAll();
       this.div.removeEventListener("click", this.#boundClick);
     } else {
-      this.#uiManager.allowClick = false;
+      // When in Ink mode, setting the editor to null allows the
+      // user to have to make one click in order to start drawing.
+      this.#uiManager.allowClick =
+        this.#uiManager.getMode() === AnnotationEditorType.INK;
       this.div.addEventListener("click", this.#boundClick);
     }
   }
@@ -332,7 +342,7 @@ class AnnotationEditorLayer {
       editor.remove();
     };
 
-    this.addCommands(cmd, undo, true);
+    this.addCommands({ cmd, undo, mustExec: true });
   }
 
   /**
@@ -347,7 +357,7 @@ class AnnotationEditorLayer {
       editor.remove();
     };
 
-    this.addCommands(cmd, undo, false);
+    this.addCommands({ cmd, undo, mustExec: false });
   }
 
   /**

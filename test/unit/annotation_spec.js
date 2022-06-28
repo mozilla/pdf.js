@@ -4217,8 +4217,8 @@ describe("annotation", function () {
       const appearance = data.dependencies[0].data;
       expect(appearance).toEqual(
         "2 0 obj\n" +
-          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] /Length 121>> stream\n" +
-          "1 w\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] /Length 129>> stream\n" +
+          "1 w 1 J 1 j\n" +
           "0 G\n" +
           "10 11 m\n" +
           "12 13 14 15 16 17 c\n" +
@@ -4243,8 +4243,8 @@ describe("annotation", function () {
             annotationType: AnnotationEditorType.INK,
             rect: [12, 34, 56, 78],
             rotation: 0,
-            thickness: 1,
-            color: [0, 0, 0],
+            thickness: 3,
+            color: [0, 255, 0],
             paths: [
               {
                 bezier: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -4264,10 +4264,12 @@ describe("annotation", function () {
         null
       );
 
-      expect(operatorList.argsArray.length).toEqual(6);
+      expect(operatorList.argsArray.length).toEqual(8);
       expect(operatorList.fnArray).toEqual([
         OPS.beginAnnotation,
         OPS.setLineWidth,
+        OPS.setLineCap,
+        OPS.setLineJoin,
         OPS.setStrokeRGBColor,
         OPS.constructPath,
         OPS.stroke,
@@ -4275,16 +4277,20 @@ describe("annotation", function () {
       ]);
 
       // Linewidth.
-      expect(operatorList.argsArray[1]).toEqual([1]);
+      expect(operatorList.argsArray[1]).toEqual([3]);
+      // LineCap.
+      expect(operatorList.argsArray[2]).toEqual([1]);
+      // LineJoin.
+      expect(operatorList.argsArray[3]).toEqual([1]);
       // Color.
-      expect(operatorList.argsArray[2]).toEqual(
-        new Uint8ClampedArray([0, 0, 0])
+      expect(operatorList.argsArray[4]).toEqual(
+        new Uint8ClampedArray([0, 255, 0])
       );
       // Path.
-      expect(operatorList.argsArray[3][0]).toEqual([OPS.moveTo, OPS.curveTo]);
-      expect(operatorList.argsArray[3][1]).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+      expect(operatorList.argsArray[5][0]).toEqual([OPS.moveTo, OPS.curveTo]);
+      expect(operatorList.argsArray[5][1]).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
       // Min-max.
-      expect(operatorList.argsArray[3][2]).toEqual([1, 1, 2, 2]);
+      expect(operatorList.argsArray[5][2]).toEqual([1, 1, 2, 2]);
     });
   });
 

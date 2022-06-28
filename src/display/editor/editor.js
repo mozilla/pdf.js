@@ -372,6 +372,21 @@ class AnnotationEditor {
       this.div.classList.remove("selectedEditor");
     }
   }
+
+  /**
+   * Update some parameters which have been changed through the UI.
+   * @param {number} type
+   * @param {*} value
+   */
+  updateParams(type, value) {}
+
+  /**
+   * Get some properties to update in the UI.
+   * @returns {Object}
+   */
+  get propertiesToUpdate() {
+    return {};
+  }
 }
 
 export { AnnotationEditor };

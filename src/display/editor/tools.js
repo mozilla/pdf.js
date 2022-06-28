@@ -64,9 +64,36 @@ class CommandManager {
    * @param {function} cmd
    * @param {function} undo
    * @param {boolean} mustExec
+   * @param {number} type
+   * @param {boolean} overwriteIfSameType
+   * @param {boolean} keepUndo
    */
-  add(cmd, undo, mustExec) {
-    const save = [cmd, undo];
+  add({
+    cmd,
+    undo,
+    mustExec,
+    type = NaN,
+    overwriteIfSameType = false,
+    keepUndo = false,
+  }) {
+    const save = { cmd, undo, type };
+    if (
+      overwriteIfSameType &&
+      !isNaN(this.#position) &&
+      this.#commands[this.#position].type === type
+    ) {
+      // For example when we change a color we don't want to
+      // be able to undo all the steps, hence we only want to
+      // keep the last undoable action in this sequence of actions.
+      if (keepUndo) {
+        save.undo = this.#commands[this.#position].undo;
+      }
+      this.#commands[this.#position] = save;
+      if (mustExec) {
+        cmd();
+      }
+      return;
+    }
     const next = (this.#position + 1) % this.#maxSize;
     if (next !== this.#start) {
       if (this.#start < next) {
@@ -94,7 +121,7 @@ class CommandManager {
       // Nothing to undo.
       return;
     }
-    this.#commands[this.#position][1]();
+    this.#commands[this.#position].undo();
     if (this.#position === this.#start) {
       this.#position = NaN;
     } else {
@@ -108,7 +135,7 @@ class CommandManager {
   redo() {
     if (isNaN(this.#position)) {
       if (this.#start < this.#commands.length) {
-        this.#commands[this.#start][0]();
+        this.#commands[this.#start].cmd();
         this.#position = this.#start;
       }
       return;
@@ -116,7 +143,7 @@ class CommandManager {
 
     const next = (this.#position + 1) % this.#maxSize;
     if (next !== this.#start && next < this.#commands.length) {
-      this.#commands[next][0]();
+      this.#commands[next].cmd();
       this.#position = next;
     }
   }
@@ -273,6 +300,10 @@ class AnnotationEditorUIManager {
 
   #commandManager = new CommandManager();
 
+  #editorTypes = null;
+
+  #eventBus = null;
+
   #idManager = new IdManager();
 
   #isAllSelected = false;
@@ -280,6 +311,26 @@ class AnnotationEditorUIManager {
   #isEnabled = false;
 
   #mode = AnnotationEditorType.NONE;
+
+  #previousActiveEditor = null;
+
+  constructor(eventBus) {
+    this.#eventBus = eventBus;
+  }
+
+  #dispatchUpdateUI(details) {
+    this.#eventBus?.dispatch("annotationeditorparamschanged", {
+      source: this,
+      details,
+    });
+  }
+
+  registerEditorTypes(types) {
+    this.#editorTypes = types;
+    for (const editorType of this.#editorTypes) {
+      this.#dispatchUpdateUI(editorType.defaultPropertiesToUpdate);
+    }
+  }
 
   /**
    * Get an id.
@@ -323,6 +374,21 @@ class AnnotationEditorUIManager {
       for (const layer of this.#allLayers) {
         layer.updateMode(mode);
       }
+    }
+  }
+
+  /**
+   * Update a parameter in the current editor or globally.
+   * @param {number} type
+   * @param {*} value
+   */
+  updateParams(type, value) {
+    (this.#activeEditor || this.#previousActiveEditor)?.updateParams(
+      type,
+      value
+    );
+    for (const editorType of this.#editorTypes) {
+      editorType.updateDefaultParams(type, value);
     }
   }
 
@@ -395,7 +461,24 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditor} editor
    */
   setActiveEditor(editor) {
+    if (this.#activeEditor === editor) {
+      return;
+    }
+
+    this.#previousActiveEditor = this.#activeEditor;
+
     this.#activeEditor = editor;
+    if (editor) {
+      this.#dispatchUpdateUI(editor.propertiesToUpdate);
+    } else {
+      if (this.#previousActiveEditor) {
+        this.#dispatchUpdateUI(this.#previousActiveEditor.propertiesToUpdate);
+      } else {
+        for (const editorType of this.#editorTypes) {
+          this.#dispatchUpdateUI(editorType.defaultPropertiesToUpdate);
+        }
+      }
+    }
   }
 
   /**
@@ -414,12 +497,10 @@ class AnnotationEditorUIManager {
 
   /**
    * Add a command to execute (cmd) and another one to undo it.
-   * @param {function} cmd
-   * @param {function} undo
-   * @param {boolean} mustExec
+   * @param {Object} params
    */
-  addCommands(cmd, undo, mustExec) {
-    this.#commandManager.add(cmd, undo, mustExec);
+  addCommands(params) {
+    this.#commandManager.add(params);
   }
 
   /**
@@ -468,7 +549,7 @@ class AnnotationEditorUIManager {
         }
       };
 
-      this.addCommands(cmd, undo, true);
+      this.addCommands({ cmd, undo, mustExec: true });
     } else {
       if (!this.#activeEditor) {
         return;
@@ -482,7 +563,7 @@ class AnnotationEditorUIManager {
       };
     }
 
-    this.addCommands(cmd, undo, true);
+    this.addCommands({ cmd, undo, mustExec: true });
   }
 
   /**
@@ -509,7 +590,7 @@ class AnnotationEditorUIManager {
         layer.addOrRebuild(editor);
       };
 
-      this.addCommands(cmd, undo, true);
+      this.addCommands({ cmd, undo, mustExec: true });
     }
   }
 
@@ -530,7 +611,7 @@ class AnnotationEditorUIManager {
       editor.remove();
     };
 
-    this.addCommands(cmd, undo, true);
+    this.addCommands({ cmd, undo, mustExec: true });
   }
 
   /**
