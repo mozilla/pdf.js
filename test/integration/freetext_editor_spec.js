@@ -197,5 +197,59 @@ describe("Editor", () => {
         })
       );
     });
+
+    it("must check that aria-owns is correct", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const [adobeComRect, oldAriaOwns] = await page.$eval(
+            ".textLayer",
+            el => {
+              for (const span of el.querySelectorAll(
+                `span[role="presentation"]`
+              )) {
+                if (span.innerText.includes("adobe.com")) {
+                  span.setAttribute("pdfjs", true);
+                  const { x, y, width, height } = span.getBoundingClientRect();
+                  return [
+                    { x, y, width, height },
+                    span.getAttribute("aria-owns"),
+                  ];
+                }
+              }
+              return null;
+            }
+          );
+
+          expect(oldAriaOwns).withContext(`In ${browserName}`).toEqual(null);
+
+          const data = "Hello PDF.js World !!";
+          await page.mouse.click(
+            adobeComRect.x + adobeComRect.width + 10,
+            adobeComRect.y + adobeComRect.height / 2
+          );
+          await page.type(`${editorPrefix}5 .internal`, data);
+
+          const editorRect = await page.$eval(`${editorPrefix}5`, el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x, y, width, height };
+          });
+
+          // Commit.
+          await page.mouse.click(
+            editorRect.x,
+            editorRect.y + 2 * editorRect.height
+          );
+
+          const ariaOwns = await page.$eval(".textLayer", el => {
+            const span = el.querySelector(`span[pdfjs="true"]`);
+            return span?.getAttribute("aria-owns") || null;
+          });
+
+          expect(ariaOwns)
+            .withContext(`In ${browserName}`)
+            .toEqual(`${editorPrefix}5-editor`.slice(1));
+        })
+      );
+    });
   });
 });
