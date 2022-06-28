@@ -720,7 +720,9 @@ class BaseViewer {
               mode: annotationEditorMode,
             });
 
-            this.#annotationEditorUIManager = new AnnotationEditorUIManager();
+            this.#annotationEditorUIManager = new AnnotationEditorUIManager(
+              this.eventBus
+            );
           }
         }
 
@@ -2169,6 +2171,14 @@ class BaseViewer {
     });
 
     this.#annotationEditorUIManager.updateMode(mode);
+  }
+
+  // eslint-disable-next-line accessor-pairs
+  set annotationEditorParams({ type, value }) {
+    if (!this.#annotationEditorUIManager) {
+      throw new Error(`The AnnotationEditor is not enabled.`);
+    }
+    this.#annotationEditorUIManager.updateParams(type, value);
   }
 }
 

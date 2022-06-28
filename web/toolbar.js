@@ -104,7 +104,9 @@ class Toolbar {
       zoomOut: options.zoomOut,
       editorNoneButton: options.editorNoneButton,
       editorFreeTextButton: options.editorFreeTextButton,
+      editorFreeTextParamsToolbar: options.editorFreeTextParamsToolbar,
       editorInkButton: options.editorInkButton,
+      editorInkParamsToolbar: options.editorInkParamsToolbar,
     };
 
     this._wasLocalized = false;
@@ -212,20 +214,33 @@ class Toolbar {
   #bindEditorToolsListener({
     editorNoneButton,
     editorFreeTextButton,
+    editorFreeTextParamsToolbar,
     editorInkButton,
+    editorInkParamsToolbar,
   }) {
     const editorModeChanged = (evt, disableButtons = false) => {
       const editorButtons = [
-        [AnnotationEditorType.NONE, editorNoneButton],
-        [AnnotationEditorType.FREETEXT, editorFreeTextButton],
-        [AnnotationEditorType.INK, editorInkButton],
+        { mode: AnnotationEditorType.NONE, button: editorNoneButton },
+        {
+          mode: AnnotationEditorType.FREETEXT,
+          button: editorFreeTextButton,
+          toolbar: editorFreeTextParamsToolbar,
+        },
+        {
+          mode: AnnotationEditorType.INK,
+          button: editorInkButton,
+          toolbar: editorInkParamsToolbar,
+        },
       ];
 
-      for (const [mode, button] of editorButtons) {
+      for (const { mode, button, toolbar } of editorButtons) {
         const checked = mode === evt.mode;
         button.classList.toggle("toggled", checked);
         button.setAttribute("aria-checked", checked);
         button.disabled = disableButtons;
+        if (toolbar) {
+          toolbar.classList.toggle("hidden", !checked);
+        }
       }
     };
     this.eventBus._on("annotationeditormodechanged", editorModeChanged);

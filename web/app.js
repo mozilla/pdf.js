@@ -56,6 +56,7 @@ import {
 } from "pdfjs-lib";
 import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
+import { AnnotationEditorParams } from "./annotation_editor_params.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
@@ -237,6 +238,8 @@ const PDFViewerApplication = {
   eventBus: null,
   /** @type {IL10n} */
   l10n: null,
+  /** @type {AnnotationEditorParams} */
+  annotationEditorParams: null,
   isInitialViewSet: false,
   downloadComplete: false,
   isViewerEmbedded: window.parent !== window,
@@ -568,6 +571,10 @@ const PDFViewerApplication = {
     }
 
     if (annotationEditorEnabled) {
+      this.annotationEditorParams = new AnnotationEditorParams(
+        appConfig.annotationEditorParams,
+        eventBus
+      );
       for (const element of [
         document.getElementById("editorModeButtons"),
         document.getElementById("editorModeSeparator"),
@@ -1907,6 +1914,10 @@ const PDFViewerApplication = {
       "switchannotationeditormode",
       webViewerSwitchAnnotationEditorMode
     );
+    eventBus._on(
+      "switchannotationeditorparams",
+      webViewerSwitchAnnotationEditorParams
+    );
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -2490,6 +2501,9 @@ function webViewerPresentationMode() {
 }
 function webViewerSwitchAnnotationEditorMode(evt) {
   PDFViewerApplication.pdfViewer.annotationEditorMode = evt.mode;
+}
+function webViewerSwitchAnnotationEditorParams(evt) {
+  PDFViewerApplication.pdfViewer.annotationEditorParams = evt;
 }
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();
