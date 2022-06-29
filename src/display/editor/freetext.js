@@ -209,6 +209,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   enableEditMode() {
+    this.parent.updateToolbar(AnnotationEditorType.FREETEXT);
     super.enableEditMode();
     this.overlayDiv.classList.remove("enabled");
     this.editorDiv.contentEditable = true;
