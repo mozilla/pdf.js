@@ -22,6 +22,7 @@
   --pdfViewer-padding-bottom: 0;
   --page-margin: 1px auto -8px;
   --page-border: 9px solid transparent;
+  --page-border-image: url(images/shadow.png) 9 9 repeat;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --scale-factor: 1;
 }
@@ -29,9 +30,10 @@
 @media screen and (forced-colors: active) {
   :root {
     --pdfViewer-padding-bottom: 9px;
-    --page-margin: 9px auto 0;
-    --page-border: none;
-    --spreadHorizontalWrapped-margin-LR: 4.5px;
+    --page-margin: 8px auto -1px;
+    --page-border: 1px solid CanvasText;
+    --page-border-image: none;
+    --spreadHorizontalWrapped-margin-LR: 3.5px;
   }
 }
 
@@ -61,8 +63,8 @@
   position: relative;
   overflow: visible;
   border: var(--page-border);
+  border-image: var(--page-border-image);
   background-clip: content-box;
-  border-image: url(images/shadow.png) 9 9 repeat;
   background-color: rgba(255, 255, 255, 1);
 }
 
