@@ -67,6 +67,7 @@ import {
 } from "./ui_utils.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
+import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
@@ -84,6 +85,9 @@ const PagesCountLimit = {
   FORCE_LAZY_PAGE_INIT: 7500,
   PAUSE_EAGER_PAGE_INIT: 250,
 };
+
+const ANNOTATION_EDITOR_MODE =
+  compatibilityParams.annotationEditorMode ?? AnnotationEditorType.DISABLE;
 
 function isValidAnnotationEditorMode(mode) {
   return (
@@ -278,7 +282,7 @@ class BaseViewer {
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.#annotationEditorMode =
-      options.annotationEditorMode ?? AnnotationEditorType.DISABLE;
+      options.annotationEditorMode ?? ANNOTATION_EDITOR_MODE;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
