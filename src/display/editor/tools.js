@@ -319,7 +319,7 @@ class AnnotationEditorUIManager {
   }
 
   #dispatchUpdateUI(details) {
-    this.#eventBus?.dispatch("annotationeditorparamschanged", {
+    this.#eventBus.dispatch("annotationeditorparamschanged", {
       source: this,
       details,
     });
@@ -375,6 +375,21 @@ class AnnotationEditorUIManager {
         layer.updateMode(mode);
       }
     }
+  }
+
+  /**
+   * Update the toolbar if it's required to reflect the tool currently used.
+   * @param {number} mode
+   * @returns {undefined}
+   */
+  updateToolbar(mode) {
+    if (mode === this.#mode) {
+      return;
+    }
+    this.#eventBus.dispatch("switchannotationeditormode", {
+      source: this,
+      mode,
+    });
   }
 
   /**
