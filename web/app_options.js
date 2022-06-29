@@ -39,9 +39,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
   })();
 
+  // Support: Safari<13.1
   (function checkResizeObserver() {
     if (typeof ResizeObserver === "undefined") {
-      compatibilityParams.annotationEditorEnabled = false;
+      compatibilityParams.annotationEditorMode = -1;
     }
   })();
 }
