@@ -47,6 +47,7 @@
   resize: none;
   width: auto;
   height: auto;
+  z-index: 1;
   transform-origin: 0 0;
 }
 

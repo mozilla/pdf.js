@@ -96,6 +96,15 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Update the toolbar if it's required to reflect the tool currently used.
+   * @param {number} mode
+   * @returns {undefined}
+   */
+  updateToolbar(mode) {
+    this.#uiManager.updateToolbar(mode);
+  }
+
+  /**
    * The mode has changed: it must be updated.
    * @param {number} mode
    */
