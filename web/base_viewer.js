@@ -86,7 +86,10 @@ const PagesCountLimit = {
 };
 
 function isValidAnnotationEditorMode(mode) {
-  return Object.values(AnnotationEditorType).includes(mode);
+  return (
+    Object.values(AnnotationEditorType).includes(mode) &&
+    mode !== AnnotationEditorType.DISABLE
+  );
 }
 
 /**
@@ -113,8 +116,9 @@ function isValidAnnotationEditorMode(mode) {
  *   being rendered. The constants from {@link AnnotationMode} should be used;
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
- * @property {boolean} [annotationEditorEnabled] - Enables the creation and
- *   editing of new Annotations.
+ * @property {boolean} [annotationEditorMode] - Enables the creation and editing
+ *   of new Annotations. The constants from {@link AnnotationEditorType} should
+ *   be used. The default value is `AnnotationEditorType.DISABLE`.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
@@ -213,7 +217,7 @@ class PDFPageViewBuffer {
 class BaseViewer {
   #buffer = null;
 
-  #annotationEditorMode = AnnotationEditorType.NONE;
+  #annotationEditorMode = AnnotationEditorType.DISABLE;
 
   #annotationEditorUIManager = null;
 
@@ -273,9 +277,8 @@ class BaseViewer {
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
-    this.#annotationEditorMode = options.annotationEditorEnabled
-      ? AnnotationEditorType.NONE
-      : null;
+    this.#annotationEditorMode =
+      options.annotationEditorMode ?? AnnotationEditorType.DISABLE;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
@@ -560,7 +563,7 @@ class BaseViewer {
     }
 
     if (!permissions.includes(PermissionFlag.MODIFY_CONTENTS)) {
-      params.annotationEditorMode = null;
+      params.annotationEditorMode = AnnotationEditorType.DISABLE;
     }
 
     if (
@@ -710,19 +713,26 @@ class BaseViewer {
         const { annotationEditorMode, annotationMode, textLayerMode } =
           this.#initializePermissions(permissions);
 
-        if (annotationEditorMode !== null) {
+        if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+          const mode = annotationEditorMode;
+
           if (isPureXfa) {
             console.warn("Warning: XFA-editing is not implemented.");
-          } else {
+          } else if (isValidAnnotationEditorMode(mode)) {
             // Ensure that the Editor buttons, in the toolbar, are updated.
             this.eventBus.dispatch("annotationeditormodechanged", {
               source: this,
-              mode: annotationEditorMode,
+              mode,
             });
 
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.eventBus
             );
+            if (mode !== AnnotationEditorType.NONE) {
+              this.#annotationEditorUIManager.updateMode(mode);
+            }
+          } else {
+            console.error(`Invalid AnnotationEditor mode: ${mode}`);
           }
         }
 
@@ -885,9 +895,6 @@ class BaseViewer {
   }
 
   _resetView() {
-    if (this.#annotationEditorMode !== null) {
-      this.#annotationEditorMode = AnnotationEditorType.NONE;
-    }
     this.#annotationEditorUIManager = null;
     this._pages = [];
     this._currentPageNumber = 1;
@@ -2142,7 +2149,7 @@ class BaseViewer {
   }
 
   /**
-   * @type {number | null}
+   * @type {number}
    */
   get annotationEditorMode() {
     return this.#annotationEditorMode;

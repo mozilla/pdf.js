@@ -160,9 +160,9 @@
       ],
       "default": 2
     },
-    "annotationEditorEnabled": {
-      "type": "boolean",
-      "default": false
+    "annotationEditorMode": {
+      "type": "integer",
+      "default": -1
     },
     "enablePermissions": {
       "type": "boolean",
