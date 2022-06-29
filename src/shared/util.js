@@ -55,9 +55,17 @@ const AnnotationMode = {
 const AnnotationEditorPrefix = "pdfjs_internal_editor_";
 
 const AnnotationEditorType = {
+  DISABLE: -1,
   NONE: 0,
   FREETEXT: 3,
   INK: 15,
+};
+
+const AnnotationEditorParamsType = {
+  FREETEXT_SIZE: 0,
+  FREETEXT_COLOR: 1,
+  INK_COLOR: 2,
+  INK_THICKNESS: 3,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
@@ -1159,6 +1167,7 @@ export {
   AbortException,
   AnnotationActionEventType,
   AnnotationBorderStyleType,
+  AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
   AnnotationFieldFlag,

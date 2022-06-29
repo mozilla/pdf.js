@@ -23,6 +23,7 @@
 /** @typedef {import("./display/text_layer").TextLayerRenderTask} TextLayerRenderTask */
 
 import {
+  AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationMode,
   CMapCompressionType,
@@ -110,6 +111,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
 
 export {
   AnnotationEditorLayer,
+  AnnotationEditorParamsType,
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationLayer,

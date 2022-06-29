@@ -35,9 +35,8 @@ import {
   SpreadMode,
   TextLayerMode,
 } from "./ui_utils.js";
-import { AppOptions, OptionKind } from "./app_options.js";
-import { AutomationEventBus, EventBus } from "./event_utils.js";
 import {
+  AnnotationEditorType,
   build,
   createPromiseCapability,
   getDocument,
@@ -55,8 +54,11 @@ import {
   UNSUPPORTED_FEATURES,
   version,
 } from "pdfjs-lib";
+import { AppOptions, OptionKind } from "./app_options.js";
+import { AutomationEventBus, EventBus } from "./event_utils.js";
 import { CursorTool, PDFCursorTools } from "./pdf_cursor_tools.js";
 import { LinkTarget, PDFLinkService } from "./pdf_link_service.js";
+import { AnnotationEditorParams } from "./annotation_editor_params.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "./pdf_attachment_viewer.js";
@@ -238,6 +240,8 @@ const PDFViewerApplication = {
   eventBus: null,
   /** @type {IL10n} */
   l10n: null,
+  /** @type {AnnotationEditorParams} */
+  annotationEditorParams: null,
   isInitialViewSet: false,
   downloadComplete: false,
   isViewerEmbedded: window.parent !== window,
@@ -516,7 +520,7 @@ const PDFViewerApplication = {
 
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
-    const annotationEditorEnabled = AppOptions.get("annotationEditorEnabled");
+    const annotationEditorMode = AppOptions.get("annotationEditorMode");
     const pageColors = {
       background: AppOptions.get("pageColorsBackground"),
       foreground: AppOptions.get("pageColorsForeground"),
@@ -540,7 +544,7 @@ const PDFViewerApplication = {
       l10n: this.l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
       annotationMode: AppOptions.get("annotationMode"),
-      annotationEditorEnabled,
+      annotationEditorMode,
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       removePageBorders: AppOptions.get("removePageBorders"), // #194
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
@@ -580,7 +584,11 @@ const PDFViewerApplication = {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
     }
 
-    if (annotationEditorEnabled) {
+    if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+      this.annotationEditorParams = new AnnotationEditorParams(
+        appConfig.annotationEditorParams,
+        eventBus
+      );
       for (const element of [
         document.getElementById("editorModeButtons"),
         document.getElementById("editorModeSeparator"),
@@ -1990,6 +1998,10 @@ const PDFViewerApplication = {
       "switchannotationeditormode",
       webViewerSwitchAnnotationEditorMode
     );
+    eventBus._on(
+      "switchannotationeditorparams",
+      webViewerSwitchAnnotationEditorParams
+    );
     eventBus._on("print", webViewerPrint);
     eventBus._on("download", webViewerDownload);
     eventBus._on("firstpage", webViewerFirstPage);
@@ -2611,6 +2623,9 @@ function webViewerPresentationMode() {
 }
 function webViewerSwitchAnnotationEditorMode(evt) {
   PDFViewerApplication.pdfViewer.annotationEditorMode = evt.mode;
+}
+function webViewerSwitchAnnotationEditorParams(evt) {
+  PDFViewerApplication.pdfViewer.annotationEditorParams = evt;
 }
 function webViewerPrint() {
   PDFViewerApplication.triggerPrinting();

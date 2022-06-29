@@ -335,7 +335,8 @@ select {
 
 #toolbarContainer,
 .findbar,
-.secondaryToolbar {
+.secondaryToolbar,
+.editorParamsToolbar {
   position: relative;
   height: 32px;
   background-color: var(--toolbar-bg-color);
@@ -415,7 +416,8 @@ select {
 }
 
 .findbar,
-.secondaryToolbar {
+.secondaryToolbar,
+.editorParamsToolbar {
   top: 32px;
   position: absolute;
   z-index: 10000;
@@ -487,12 +489,57 @@ select {
   background-color: rgba(255, 102, 102, 1);
 }
 
-.secondaryToolbar {
+.secondaryToolbar,
+.editorParamsToolbar {
   padding: 6px 0 10px;
   inset-inline-end: 4px;
   height: auto;
   z-index: 30000;
   background-color: var(--doorhanger-bg-color);
+}
+
+.editorParamsToolbarContainer {
+  width: 220px;
+  margin-bottom: -4px;
+}
+
+.editorParamsToolbarContainer > .editorParamsSetter {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 10px;
+}
+
+.editorParamsToolbarContainer .editorParamsLabel {
+  padding-inline-end: 10px;
+  flex: none;
+  color: var(--main-color);
+}
+
+.editorParamsToolbarContainer .editorParamsColor {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.editorParamsToolbarContainer .editorParamsSlider {
+  background-color: transparent;
+  width: 90px;
+  flex: 0 1 0;
+}
+
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-progress {
+  background-color: black;
+}
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-track,
+.editorParamsToolbarContainer
+  .editorParamsSlider::-webkit-slider-runnable-track {
+  background-color: black;
+}
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-thumb,
+.editorParamsToolbarContainer .editorParamsSlider::-webkit-slider-thumb {
+  background-color: white;
 }
 
 #secondaryToolbarButtonContainer {
@@ -501,6 +548,16 @@ select {
   max-height: calc(var(--viewer-container-height) - 40px);
   overflow-y: auto;
   margin-bottom: -4px;
+}
+
+#editorInkParamsToolbar {
+  inset-inline-end: 40px;
+  background-color: var(--toolbar-bg-color);
+}
+
+#editorFreeTextParamsToolbar {
+  inset-inline-end: 68px;
+  background-color: var(--toolbar-bg-color);
 }
 
 .doorHanger,

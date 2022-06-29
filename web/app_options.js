@@ -39,9 +39,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
   })();
 
+  // Support: Safari<13.1
   (function checkResizeObserver() {
     if (typeof ResizeObserver === "undefined") {
-      compatibilityParams.annotationEditorEnabled = false;
+      compatibilityParams.annotationEditorMode = -1;
     }
   })();
 }
@@ -59,11 +60,12 @@ const OptionKind = {
  *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
-  annotationEditorEnabled: {
+  annotationEditorMode: {
     /** @type {boolean} */
     value:
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING"),
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
+        ? 0
+        : -1,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   annotationMode: {

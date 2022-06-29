@@ -94,6 +94,7 @@ describe("Editor", () => {
           const content = await page.$eval(`${editorPrefix}0`, el =>
             el.innerText.trimEnd()
           );
+
           let pastedContent = await page.$eval(`${editorPrefix}2`, el =>
             el.innerText.trimEnd()
           );

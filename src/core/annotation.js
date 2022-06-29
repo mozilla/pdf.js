@@ -3790,7 +3790,7 @@ class InkAnnotation extends MarkupAnnotation {
     }
 
     const appearanceBuffer = [
-      `${thickness} w`,
+      `${thickness} w 1 J 1 j`,
       `${getPdfColor(color, /* isFill */ false)}`,
     ];
     const buffer = [];
