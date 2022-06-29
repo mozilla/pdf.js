@@ -20,7 +20,6 @@ import {
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { fitCurve } from "./fit_curve/fit_curve.js";
-import { getRGB } from "../display_utils.js";
 
 /**
  * Basic draw editor in order to generate an Ink annotation.
@@ -48,13 +47,16 @@ class InkEditor extends AnnotationEditor {
 
   #realHeight = 0;
 
-  static _defaultThickness = 1;
+  static _defaultColor = null;
 
-  static _defaultColor = "CanvasText";
+  static _defaultThickness = 1;
 
   constructor(params) {
     super({ ...params, name: "inkEditor" });
-    this.color = params.color || InkEditor._defaultColor;
+    this.color =
+      params.color ||
+      InkEditor._defaultColor ||
+      AnnotationEditor._defaultLineColor;
     this.thickness = params.thickness || InkEditor._defaultThickness;
     this.paths = [];
     this.bezierPath2D = [];
@@ -124,7 +126,10 @@ class InkEditor extends AnnotationEditor {
   static get defaultPropertiesToUpdate() {
     return [
       [AnnotationEditorParamsType.INK_THICKNESS, InkEditor._defaultThickness],
-      [AnnotationEditorParamsType.INK_COLOR, InkEditor._defaultColor],
+      [
+        AnnotationEditorParamsType.INK_COLOR,
+        InkEditor._defaultColor || AnnotationEditor._defaultLineColor,
+      ],
     ];
   }
 
@@ -846,8 +851,7 @@ class InkEditor extends AnnotationEditor {
     const height =
       this.rotation % 180 === 0 ? rect[3] - rect[1] : rect[2] - rect[0];
 
-    // We don't use this.color directly because it can be CanvasText.
-    const color = getRGB(this.ctx.strokeStyle);
+    const color = AnnotationEditor._colorManager.convert(this.ctx.strokeStyle);
 
     return {
       annotationType: AnnotationEditorType.INK,
