@@ -589,12 +589,25 @@ function getRGB(color) {
   return [0, 0, 0];
 }
 
+function getColorValues(colors) {
+  const span = document.createElement("span");
+  span.style.visibility = "hidden";
+  document.body.append(span);
+  for (const name of colors.keys()) {
+    span.style.color = name;
+    const computedColor = window.getComputedStyle(span).color;
+    colors.set(name, getRGB(computedColor));
+  }
+  span.remove();
+}
+
 export {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
   DOMStandardFontDataFactory,
   DOMSVGFactory,
+  getColorValues,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getRGB,
