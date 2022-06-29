@@ -145,6 +145,7 @@ class FreeTextEditor extends AnnotationEditor {
       this.editorDiv.style.fontSize = `calc(${size}px * var(--scale-factor))`;
       this.translate(0, -(size - this.#fontSize) * this.parent.scaleFactor);
       this.#fontSize = size;
+      this.#setEditorDimensions();
     };
     const savedFontsize = this.#fontSize;
     this.parent.addCommands({
@@ -260,6 +261,14 @@ class FreeTextEditor extends AnnotationEditor {
     return buffer.join("\n");
   }
 
+  #setEditorDimensions() {
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const rect = this.div.getBoundingClientRect();
+
+    this.width = rect.width / parentWidth;
+    this.height = rect.height / parentHeight;
+  }
+
   /**
    * Commit the content we have in this editor.
    * @returns {undefined}
@@ -276,10 +285,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.#contentHTML = this.editorDiv.innerHTML;
     this.#content = this.#extractText().trimEnd();
 
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
-    const style = getComputedStyle(this.div);
-    this.width = parseFloat(style.width) / parentWidth;
-    this.height = parseFloat(style.height) / parentHeight;
+    this.#setEditorDimensions();
   }
 
   /** @inheritdoc */
