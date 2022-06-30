@@ -16,8 +16,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
-import { bindEvents } from "./tools.js";
-import { unreachable } from "../../shared/util.js";
+import { bindEvents, ColorManager } from "./tools.js";
+import { shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -32,6 +32,8 @@ import { unreachable } from "../../shared/util.js";
  */
 class AnnotationEditor {
   #isInEditMode = false;
+
+  static _colorManager = new ColorManager();
 
   /**
    * @param {AnnotationEditorParameters} parameters
@@ -54,6 +56,14 @@ class AnnotationEditor {
     this.rotation = this.parent.viewport.rotation;
 
     this.isAttachedToDOM = false;
+  }
+
+  static get _defaultLineColor() {
+    return shadow(
+      this,
+      "_defaultLineColor",
+      this._colorManager.getHexCode("CanvasText")
+    );
   }
 
   /**

@@ -20,6 +20,13 @@
   --freetext-padding: 2px;
 }
 
+@media (forced-colors: active) {
+  :root {
+    --focus-outline: solid 3px ButtonText;
+    --hover-outline: dashed 3px ButtonText;
+  }
+}
+
 [data-editor-rotation="90"] {
   transform: rotate(90deg);
 }
