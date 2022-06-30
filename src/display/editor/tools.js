@@ -21,7 +21,9 @@ import {
   AnnotationEditorPrefix,
   AnnotationEditorType,
   shadow,
+  Util,
 } from "../../shared/util.js";
+import { getColorValues, getRGB } from "../display_utils.js";
 
 function bindEvents(obj, element, names) {
   for (const name of names) {
@@ -276,6 +278,67 @@ class ClipboardManager {
    */
   paste() {
     return this.element?.copy() || null;
+  }
+}
+
+class ColorManager {
+  static _colorsMapping = new Map([
+    ["CanvasText", [0, 0, 0]],
+    ["Canvas", [255, 255, 255]],
+  ]);
+
+  get _colors() {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("LIB") &&
+      typeof document === "undefined"
+    ) {
+      return shadow(this, "_colors", ColorManager._colorsMapping);
+    }
+
+    const colors = new Map([
+      ["CanvasText", null],
+      ["Canvas", null],
+    ]);
+    getColorValues(colors);
+    return shadow(this, "_colors", colors);
+  }
+
+  /**
+   * In High Contrast Mode, the color on the screen is not always the
+   * real color used in the pdf.
+   * For example in some cases white can appear to be black but when saving
+   * we want to have white.
+   * @param {string} color
+   * @returns {Array<number>}
+   */
+  convert(color) {
+    const rgb = getRGB(color);
+    if (!window.matchMedia("(forced-colors: active)").matches) {
+      return rgb;
+    }
+
+    for (const [name, RGB] of this._colors) {
+      if (RGB.every((x, i) => x === rgb[i])) {
+        return ColorManager._colorsMapping.get(name);
+      }
+    }
+    return rgb;
+  }
+
+  /**
+   * An input element must have its color value as a hex string
+   * and not as color name.
+   * So this function converts a name into an hex string.
+   * @param {string} name
+   * @returns {string}
+   */
+  getHexCode(name) {
+    const rgb = this._colors.get(name);
+    if (!rgb) {
+      return name;
+    }
+    return Util.makeHexColor(...rgb);
   }
 }
 
@@ -683,4 +746,4 @@ class AnnotationEditorUIManager {
   }
 }
 
-export { AnnotationEditorUIManager, bindEvents, KeyboardManager };
+export { AnnotationEditorUIManager, bindEvents, ColorManager, KeyboardManager };

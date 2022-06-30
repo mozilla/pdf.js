@@ -21,7 +21,6 @@ import {
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
-import { getRGB } from "../display_utils.js";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -43,13 +42,16 @@ class FreeTextEditor extends AnnotationEditor {
 
   static _internalPadding = 0;
 
-  static _defaultFontSize = 10;
+  static _defaultColor = null;
 
-  static _defaultColor = "CanvasText";
+  static _defaultFontSize = 10;
 
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
-    this.#color = params.color || FreeTextEditor._defaultColor;
+    this.#color =
+      params.color ||
+      FreeTextEditor._defaultColor ||
+      AnnotationEditor._defaultLineColor;
     this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
   }
 
@@ -124,7 +126,10 @@ class FreeTextEditor extends AnnotationEditor {
         AnnotationEditorParamsType.FREETEXT_SIZE,
         FreeTextEditor._defaultFontSize,
       ],
-      [AnnotationEditorParamsType.FREETEXT_COLOR, FreeTextEditor._defaultColor],
+      [
+        AnnotationEditorParamsType.FREETEXT_COLOR,
+        FreeTextEditor._defaultColor || AnnotationEditor._defaultLineColor,
+      ],
     ];
   }
 
@@ -362,8 +367,9 @@ class FreeTextEditor extends AnnotationEditor {
     const padding = FreeTextEditor._internalPadding * this.parent.scaleFactor;
     const rect = this.getRect(padding, padding);
 
-    // We don't use this.#color directly because it can be CanvasText.
-    const color = getRGB(getComputedStyle(this.editorDiv).color);
+    const color = AnnotationEditor._colorManager.convert(
+      getComputedStyle(this.editorDiv).color
+    );
 
     return {
       annotationType: AnnotationEditorType.FREETEXT,
