@@ -384,13 +384,13 @@ select {
   }
 }
 
-#loadingBar .progress.indeterminate {
+#loadingBar.indeterminate .progress {
   transform: none;
   background-color: var(--progressBar-indeterminate-bg-color);
   transition: none;
 }
 
-#loadingBar .progress.indeterminate .glimmer {
+#loadingBar.indeterminate .progress .glimmer {
   position: absolute;
   top: 0;
   left: 0;

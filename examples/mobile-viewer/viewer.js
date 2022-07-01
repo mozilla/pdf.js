@@ -161,7 +161,7 @@ const PDFViewerApplication = {
   },
 
   get loadingBar() {
-    const bar = new pdfjsViewer.ProgressBar("#loadingBar");
+    const bar = new pdfjsViewer.ProgressBar("loadingBar");
 
     return pdfjsLib.shadow(this, "loadingBar", bar);
   },
