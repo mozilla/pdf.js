@@ -270,7 +270,7 @@ select {
   right: 0;
   bottom: 0;
   left: 0;
-  min-width: 320px;
+  min-width: 350px;
 }
 
 #sidebarContent {
@@ -1481,7 +1481,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 770px) {
+@media all and (max-width: 820px) {
   #outerContainer .hiddenLargeView {
     display: none;
   }
@@ -1490,7 +1490,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 700px) {
+@media all and (max-width: 750px) {
   #outerContainer .hiddenMediumView {
     display: none;
   }
@@ -1499,7 +1499,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 640px) {
+@media all and (max-width: 690px) {
   .hiddenSmallView,
   .hiddenSmallView * {
     display: none;
@@ -1515,7 +1515,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 535px) {
+@media all and (max-width: 560px) {
   #scaleSelectContainer {
     display: none;
   }
