@@ -38,7 +38,7 @@ import { ColorConverters } from "../shared/scripting_utils.js";
 import { XfaLayer } from "./xfa_layer.js";
 
 const DEFAULT_TAB_INDEX = 1000;
-const UNRENDERED_ANNOTATIONS = [AnnotationType.TEXT, AnnotationType.HIGHLIGHT];
+const UNRENDERED_ANNOTATIONS = [AnnotationType.TEXT, AnnotationType.HIGHLIGHT, AnnotationType.UNDERLINE, AnnotationType.STRIKEOUT];
 const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 
