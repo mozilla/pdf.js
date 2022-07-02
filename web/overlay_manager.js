@@ -93,6 +93,7 @@ class OverlayManager {
     }
     this.#active = dialog;
     dialog.showModal();
+    dialog.classList.remove("hidden"); // #1434 remove "hidden" class when opening the dialog for the second time
   }
 
   /**
