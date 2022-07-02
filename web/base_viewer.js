@@ -2156,7 +2156,9 @@ class BaseViewer {
    * @type {number}
    */
   get annotationEditorMode() {
-    return this.#annotationEditorMode;
+    return this.#annotationEditorUIManager
+      ? this.#annotationEditorMode
+      : AnnotationEditorType.DISABLE;
   }
 
   /**
