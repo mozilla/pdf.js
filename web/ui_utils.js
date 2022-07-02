@@ -689,6 +689,12 @@ function clamp(v, min, max) {
 }
 
 class ProgressBar {
+  #classList = null;
+
+  #percent = 0;
+
+  #visible = true;
+
   constructor(id) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
@@ -699,34 +705,24 @@ class ProgressBar {
           "please use CSS rules to modify its appearance instead."
       );
     }
-    this.visible = true;
-
-    // Fetch the sub-elements for later.
-    this.div = document.querySelector(id + " .progress");
-    // Get the loading bar element, so it can be resized to fit the viewer.
-    this.bar = this.div.parentNode;
-
-    this.percent = 0;
-  }
-
-  #updateBar() {
-    if (this._indeterminate) {
-      this.div.classList.add("indeterminate");
-      return;
-    }
-    this.div.classList.remove("indeterminate");
-
-    docStyle.setProperty("--progressBar-percent", `${this._percent}%`);
+    const bar = document.getElementById(id);
+    this.#classList = bar.classList;
   }
 
   get percent() {
-    return this._percent;
+    return this.#percent;
   }
 
   set percent(val) {
-    this._indeterminate = isNaN(val);
-    this._percent = clamp(val, 0, 100);
-    this.#updateBar();
+    this.#percent = clamp(val, 0, 100);
+
+    if (isNaN(val)) {
+      this.#classList.add("indeterminate");
+      return;
+    }
+    this.#classList.remove("indeterminate");
+
+    docStyle.setProperty("--progressBar-percent", `${this.#percent}%`);
   }
 
   setWidth(viewer) {
@@ -741,19 +737,19 @@ class ProgressBar {
   }
 
   hide() {
-    if (!this.visible) {
+    if (!this.#visible) {
       return;
     }
-    this.visible = false;
-    this.bar.classList.add("hidden");
+    this.#visible = false;
+    this.#classList.add("hidden");
   }
 
   show() {
-    if (this.visible) {
+    if (this.#visible) {
       return;
     }
-    this.visible = true;
-    this.bar.classList.remove("hidden");
+    this.#visible = true;
+    this.#classList.remove("hidden");
   }
 }
 
