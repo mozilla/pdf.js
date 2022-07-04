@@ -1390,6 +1390,7 @@ class BaseViewer {
     this.eventBus.dispatch("updateviewarea", {
       source: this,
       location: this._location,
+      visiblePages: visible,
     });
   }
 
