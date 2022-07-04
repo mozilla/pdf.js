@@ -2400,8 +2400,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     this.container.className = "fileAttachmentAnnotation";
 
     const trigger = document.createElement("div");
-    trigger.style.height = this.container.style.height;
-    trigger.style.width = this.container.style.width;
+    trigger.className = "popupTriggerArea";
     trigger.addEventListener("dblclick", this._download.bind(this));
 
     if (
