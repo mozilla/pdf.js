@@ -117,14 +117,11 @@ class AnnotationLayerBuilder {
     if (this.div) {
       // If an annotationLayer already exists, refresh its children's
       // transformation matrices.
-      AnnotationLayer.setDimensions(this.div, viewport);
       AnnotationLayer.update(parameters);
     } else {
       // Create an annotation layer div and render the annotations
       // if there is at least one annotation.
       this.div = document.createElement("div");
-      AnnotationLayer.setDimensions(this.div, viewport);
-
       this.div.className = "annotationLayer";
       this.pageDiv.append(this.div);
       parameters.div = this.div;

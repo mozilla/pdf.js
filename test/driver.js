@@ -231,7 +231,6 @@ class Rasterize {
         renderForms,
         annotationCanvasMap: annotationImageMap,
       };
-      AnnotationLayer.setDimensions(div, annotationViewport);
       AnnotationLayer.render(parameters);
 
       // Inline SVG images from text annotations.

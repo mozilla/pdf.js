@@ -2457,12 +2457,16 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static render(parameters) {
+    const { annotations, div, viewport } = parameters;
+
+    this.#setDimensions(div, viewport);
+
     const sortedAnnotations = [],
       popupAnnotations = [];
     // Ensure that Popup annotations are handled last, since they're dependant
     // upon the parent annotation having already been rendered (please refer to
     // the `PopupAnnotationElement.render` method); fixes issue 11362.
-    for (const data of parameters.annotations) {
+    for (const data of annotations) {
       if (!data) {
         continue;
       }
@@ -2480,14 +2484,12 @@ class AnnotationLayer {
       sortedAnnotations.push(...popupAnnotations);
     }
 
-    const div = parameters.div;
-
     for (const data of sortedAnnotations) {
       const element = AnnotationElementFactory.create({
         data,
         layer: div,
         page: parameters.page,
-        viewport: parameters.viewport,
+        viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
         imageResourcesPath: parameters.imageResourcesPath || "",
@@ -2532,8 +2534,9 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
-    const { annotationCanvasMap, div } = parameters;
+    const { annotationCanvasMap, div, viewport } = parameters;
 
+    this.#setDimensions(div, viewport);
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
     div.hidden = false;
   }
@@ -2542,7 +2545,7 @@ class AnnotationLayer {
    * @param {HTMLDivElement} div
    * @param {PageViewport} viewport
    */
-  static setDimensions(div, { width, height, rotation }) {
+  static #setDimensions(div, { width, height, rotation }) {
     const { style } = div;
 
     const flipOrientation = rotation % 180 !== 0,
