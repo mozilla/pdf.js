@@ -218,9 +218,25 @@ class AnnotationEditor {
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, this.div, ["dragstart", "focusin", "focusout"]);
+    bindEvents(this, this.div, [
+      "dragstart",
+      "focusin",
+      "focusout",
+      "mousedown",
+    ]);
 
     return this.div;
+  }
+
+  /**
+   * Onmousedown callback.
+   * @param {MouseEvent} event
+   */
+  mousedown(event) {
+    if (event.button !== 0) {
+      // Avoid to focus this editor because of a non-left click.
+      event.preventDefault();
+    }
   }
 
   getRect(tx, ty) {
@@ -362,6 +378,11 @@ class AnnotationEditor {
    * @returns {undefined}
    */
   remove() {
+    if (!this.isEmpty()) {
+      // The editor is removed but it can be back at some point thanks to
+      // undo/redo so we must commit it before.
+      this.commit();
+    }
     this.parent.remove(this);
   }
 
