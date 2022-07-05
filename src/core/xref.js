@@ -795,7 +795,8 @@ class XRef {
     const obj3 = parser.getObj();
 
     if (obj1 !== num || obj2 !== gen || !(obj3 instanceof Cmd)) {
-      throw new XRefEntryException(`Bad (uncompressed) XRef entry: ${ref}`);
+      warn(`Bad (uncompressed) XRef entry: ${ref}`);
+      return null;
     }
     if (obj3.cmd !== "obj") {
       // some bad PDFs use "obj1234" and really mean 1234

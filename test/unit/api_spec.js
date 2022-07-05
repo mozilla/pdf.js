@@ -589,16 +589,6 @@ describe("api", function () {
       expect(opList.argsArray.length).toBeGreaterThan(5);
       expect(opList.lastChunk).toEqual(true);
 
-      try {
-        await pdfDocument2.getPage(1);
-
-        // Shouldn't get here.
-        expect(false).toEqual(true);
-      } catch (reason) {
-        expect(reason instanceof UnknownErrorException).toEqual(true);
-        expect(reason.message).toEqual("Bad (uncompressed) XRef entry: 3R");
-      }
-
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
 
