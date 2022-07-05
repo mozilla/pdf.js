@@ -640,6 +640,10 @@ class BaseViewer {
       if (this._scriptingManager) {
         this._scriptingManager.setDocument(null);
       }
+      if (this.#annotationEditorUIManager) {
+        this.#annotationEditorUIManager.destroy();
+        this.#annotationEditorUIManager = null;
+      }
     }
 
     this.pdfDocument = pdfDocument;
@@ -899,7 +903,6 @@ class BaseViewer {
   }
 
   _resetView() {
-    this.#annotationEditorUIManager = null;
     this._pages = [];
     this._currentPageNumber = 1;
     this._currentScale = UNKNOWN_SCALE;

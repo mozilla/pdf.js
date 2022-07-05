@@ -211,8 +211,12 @@ class InkEditor extends AnnotationEditor {
       return;
     }
 
+    if (!this.isEmpty()) {
+      this.commit();
+    }
+
     // Destroy the canvas.
-    this.canvas.width = this.canvas.heigth = 0;
+    this.canvas.width = this.canvas.height = 0;
     this.canvas.remove();
     this.canvas = null;
 
@@ -258,7 +262,10 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   isEmpty() {
-    return this.paths.length === 0;
+    return (
+      this.paths.length === 0 ||
+      (this.paths.length === 1 && this.paths[0].length === 0)
+    );
   }
 
   #getInitialBBox() {
@@ -415,7 +422,7 @@ class InkEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   canvasMousedown(event) {
-    if (!this.isInEditMode() || this.#disableEditing) {
+    if (event.button !== 0 || !this.isInEditMode() || this.#disableEditing) {
       return;
     }
 
@@ -447,6 +454,9 @@ class InkEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   canvasMouseup(event) {
+    if (event.button !== 0) {
+      return;
+    }
     if (this.isInEditMode() && this.currentPath.length !== 0) {
       event.stopPropagation();
       this.#endDrawing(event);

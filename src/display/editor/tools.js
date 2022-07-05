@@ -150,6 +150,26 @@ class CommandManager {
     }
   }
 
+  /**
+   * Check if there is something to undo.
+   * @returns {boolean}
+   */
+  hasSomethingToUndo() {
+    return !isNaN(this.#position);
+  }
+
+  /**
+   * Check if there is something to redo.
+   * @returns {boolean}
+   */
+  hasSomethingToRedo() {
+    if (isNaN(this.#position) && this.#start < this.#commands.length) {
+      return true;
+    }
+    const next = (this.#position + 1) % this.#maxSize;
+    return next !== this.#start && next < this.#commands.length;
+  }
+
   #setCommands(cmds) {
     if (this.#commands.length < this.#maxSize) {
       this.#commands.push(cmds);
@@ -166,6 +186,10 @@ class CommandManager {
       }
     }
     this.#commands[this.#position] = cmds;
+  }
+
+  destroy() {
+    this.#commands = null;
   }
 }
 
@@ -279,6 +303,18 @@ class ClipboardManager {
   paste() {
     return this.element?.copy() || null;
   }
+
+  /**
+   * Check if the clipboard is empty.
+   * @returns {boolean}
+   */
+  isEmpty() {
+    return this.element === null;
+  }
+
+  destroy() {
+    this.element = null;
+  }
 }
 
 class ColorManager {
@@ -355,7 +391,7 @@ class AnnotationEditorUIManager {
 
   #allEditors = new Map();
 
-  #allLayers = new Set();
+  #allLayers = new Map();
 
   #allowClick = true;
 
@@ -377,8 +413,69 @@ class AnnotationEditorUIManager {
 
   #previousActiveEditor = null;
 
+  #boundOnEditingAction = this.onEditingAction.bind(this);
+
+  #previousStates = {
+    isEditing: false,
+    isEmpty: true,
+    hasEmptyClipboard: true,
+    hasSomethingToUndo: false,
+    hasSomethingToRedo: false,
+    hasSelectedEditor: false,
+  };
+
   constructor(eventBus) {
     this.#eventBus = eventBus;
+    this.#eventBus._on("editingaction", this.#boundOnEditingAction);
+  }
+
+  destroy() {
+    this.#eventBus._off("editingaction", this.#boundOnEditingAction);
+    for (const layer of this.#allLayers.values()) {
+      layer.destroy();
+    }
+    this.#allLayers.clear();
+    for (const editor of this.#allEditors.values()) {
+      editor.destroy();
+    }
+    this.#allEditors.clear();
+    this.#activeEditor = null;
+    this.#clipboardManager.destroy();
+    this.#commandManager.destroy();
+  }
+
+  /**
+   * Execute an action for a given name.
+   * For example, the user can click on the "Undo" entry in the context menu
+   * and it'll trigger the undo action.
+   * @param {Object} details
+   */
+  onEditingAction(details) {
+    if (
+      ["undo", "redo", "cut", "copy", "paste", "delete", "selectAll"].includes(
+        details.name
+      )
+    ) {
+      this[details.name]();
+    }
+  }
+
+  /**
+   * Update the different possible states of this manager, e.g. is the clipboard
+   * empty or is there something to undo, ...
+   * @param {Object} details
+   */
+  #dispatchUpdateStates(details) {
+    const hasChanged = Object.entries(details).some(
+      ([key, value]) => this.#previousStates[key] !== value
+    );
+
+    if (hasChanged) {
+      this.#eventBus.dispatch("annotationeditorstateschanged", {
+        source: this,
+        details: Object.assign(this.#previousStates, details),
+      });
+    }
   }
 
   #dispatchUpdateUI(details) {
@@ -386,6 +483,29 @@ class AnnotationEditorUIManager {
       source: this,
       details,
     });
+  }
+
+  /**
+   * Set the editing state.
+   * It can be useful to temporarily disable it when the user is editing a
+   * FreeText annotation.
+   * @param {boolean} isEditing
+   */
+  setEditingState(isEditing) {
+    if (isEditing) {
+      this.#dispatchUpdateStates({
+        isEditing: this.#mode !== AnnotationEditorType.NONE,
+        isEmpty: this.#isEmpty(),
+        hasSomethingToUndo: this.#commandManager.hasSomethingToUndo(),
+        hasSomethingToRedo: this.#commandManager.hasSomethingToRedo(),
+        hasSelectedEditor: false,
+        hasEmptyClipboard: this.#clipboardManager.isEmpty(),
+      });
+    } else {
+      this.#dispatchUpdateStates({
+        isEditing: false,
+      });
+    }
   }
 
   registerEditorTypes(types) {
@@ -408,7 +528,7 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditorLayer} layer
    */
   addLayer(layer) {
-    this.#allLayers.add(layer);
+    this.#allLayers.set(layer.pageIndex, layer);
     if (this.#isEnabled) {
       layer.enable();
     } else {
@@ -421,7 +541,7 @@ class AnnotationEditorUIManager {
    * @param {AnnotationEditorLayer} layer
    */
   removeLayer(layer) {
-    this.#allLayers.delete(layer);
+    this.#allLayers.delete(layer.pageIndex);
   }
 
   /**
@@ -431,10 +551,12 @@ class AnnotationEditorUIManager {
   updateMode(mode) {
     this.#mode = mode;
     if (mode === AnnotationEditorType.NONE) {
+      this.setEditingState(false);
       this.#disableAll();
     } else {
+      this.setEditingState(true);
       this.#enableAll();
-      for (const layer of this.#allLayers) {
+      for (const layer of this.#allLayers.values()) {
         layer.updateMode(mode);
       }
     }
@@ -476,7 +598,7 @@ class AnnotationEditorUIManager {
   #enableAll() {
     if (!this.#isEnabled) {
       this.#isEnabled = true;
-      for (const layer of this.#allLayers) {
+      for (const layer of this.#allLayers.values()) {
         layer.enable();
       }
     }
@@ -488,7 +610,7 @@ class AnnotationEditorUIManager {
   #disableAll() {
     if (this.#isEnabled) {
       this.#isEnabled = false;
-      for (const layer of this.#allLayers) {
+      for (const layer of this.#allLayers.values()) {
         layer.disable();
       }
     }
@@ -535,6 +657,19 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * Add an editor to the layer it belongs to or add it to the global map.
+   * @param {AnnotationEditor} editor
+   */
+  #addEditorToLayer(editor) {
+    const layer = this.#allLayers.get(editor.pageIndex);
+    if (layer) {
+      layer.addOrRebuild(editor);
+    } else {
+      this.addEditor(editor);
+    }
+  }
+
+  /**
    * Set the given editor as the active one.
    * @param {AnnotationEditor} editor
    */
@@ -548,7 +683,9 @@ class AnnotationEditorUIManager {
     this.#activeEditor = editor;
     if (editor) {
       this.#dispatchUpdateUI(editor.propertiesToUpdate);
+      this.#dispatchUpdateStates({ hasSelectedEditor: true });
     } else {
+      this.#dispatchUpdateStates({ hasSelectedEditor: false });
       if (this.#previousActiveEditor) {
         this.#dispatchUpdateUI(this.#previousActiveEditor.propertiesToUpdate);
       } else {
@@ -564,6 +701,11 @@ class AnnotationEditorUIManager {
    */
   undo() {
     this.#commandManager.undo();
+    this.#dispatchUpdateStates({
+      hasSomethingToUndo: this.#commandManager.hasSomethingToUndo(),
+      hasSomethingToRedo: true,
+      isEmpty: this.#isEmpty(),
+    });
   }
 
   /**
@@ -571,6 +713,11 @@ class AnnotationEditorUIManager {
    */
   redo() {
     this.#commandManager.redo();
+    this.#dispatchUpdateStates({
+      hasSomethingToUndo: true,
+      hasSomethingToRedo: this.#commandManager.hasSomethingToRedo(),
+      isEmpty: this.#isEmpty(),
+    });
   }
 
   /**
@@ -579,6 +726,25 @@ class AnnotationEditorUIManager {
    */
   addCommands(params) {
     this.#commandManager.add(params);
+    this.#dispatchUpdateStates({
+      hasSomethingToUndo: true,
+      hasSomethingToRedo: false,
+      isEmpty: this.#isEmpty(),
+    });
+  }
+
+  #isEmpty() {
+    if (this.#allEditors.size === 0) {
+      return true;
+    }
+
+    if (this.#allEditors.size === 1) {
+      for (const editor of this.#allEditors.values()) {
+        return editor.isEmpty();
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -608,10 +774,9 @@ class AnnotationEditorUIManager {
   }
 
   /**
-   * Suppress some editors from the given layer.
-   * @param {AnnotationEditorLayer} layer
+   * Delete the current editor or all.
    */
-  suppress(layer) {
+  delete() {
     let cmd, undo;
     if (this.#isAllSelected) {
       const editors = Array.from(this.#allEditors.values());
@@ -623,7 +788,7 @@ class AnnotationEditorUIManager {
 
       undo = () => {
         for (const editor of editors) {
-          layer.addOrRebuild(editor);
+          this.#addEditorToLayer(editor);
         }
       };
 
@@ -637,7 +802,7 @@ class AnnotationEditorUIManager {
         editor.remove();
       };
       undo = () => {
-        layer.addOrRebuild(editor);
+        this.#addEditorToLayer(editor);
       };
     }
 
@@ -650,14 +815,14 @@ class AnnotationEditorUIManager {
   copy() {
     if (this.#activeEditor) {
       this.#clipboardManager.copy(this.#activeEditor);
+      this.#dispatchUpdateStates({ hasEmptyClipboard: false });
     }
   }
 
   /**
    * Cut the selected editor.
-   * @param {AnnotationEditorLayer}
    */
-  cut(layer) {
+  cut() {
     if (this.#activeEditor) {
       this.#clipboardManager.copy(this.#activeEditor);
       const editor = this.#activeEditor;
@@ -665,7 +830,7 @@ class AnnotationEditorUIManager {
         editor.remove();
       };
       const undo = () => {
-        layer.addOrRebuild(editor);
+        this.#addEditorToLayer(editor);
       };
 
       this.addCommands({ cmd, undo, mustExec: true });
@@ -674,16 +839,16 @@ class AnnotationEditorUIManager {
 
   /**
    * Paste a previously copied editor.
-   * @param {AnnotationEditorLayer}
    * @returns {undefined}
    */
-  paste(layer) {
+  paste() {
     const editor = this.#clipboardManager.paste();
     if (!editor) {
       return;
     }
+    // TODO: paste in the current visible layer.
     const cmd = () => {
-      layer.addOrRebuild(editor);
+      this.#addEditorToLayer(editor);
     };
     const undo = () => {
       editor.remove();
@@ -700,6 +865,7 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       editor.select();
     }
+    this.#dispatchUpdateStates({ hasSelectedEditor: true });
   }
 
   /**
@@ -707,9 +873,11 @@ class AnnotationEditorUIManager {
    */
   unselectAll() {
     this.#isAllSelected = false;
+
     for (const editor of this.#allEditors.values()) {
       editor.unselect();
     }
+    this.#dispatchUpdateStates({ hasSelectedEditor: this.hasActive() });
   }
 
   /**
