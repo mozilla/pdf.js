@@ -214,6 +214,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   enableEditMode() {
+    this.parent.setEditingState(false);
     this.parent.updateToolbar(AnnotationEditorType.FREETEXT);
     super.enableEditMode();
     this.overlayDiv.classList.remove("enabled");
@@ -223,6 +224,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   disableEditMode() {
+    this.parent.setEditingState(true);
     super.disableEditMode();
     this.overlayDiv.classList.add("enabled");
     this.editorDiv.contentEditable = false;
@@ -243,6 +245,12 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   isEmpty() {
     return this.editorDiv.innerText.trim() === "";
+  }
+
+  /** @inheritdoc */
+  remove() {
+    this.parent.setEditingState(true);
+    super.remove();
   }
 
   /**
@@ -282,7 +290,7 @@ class FreeTextEditor extends AnnotationEditor {
   commit() {
     if (!this.#hasAlreadyBeenCommitted) {
       // This editor has something and it's the first time
-      // it's commited so we can it in the undo/redo stack.
+      // it's commited so we can add it in the undo/redo stack.
       this.#hasAlreadyBeenCommitted = true;
       this.parent.addUndoableEditor(this);
     }
