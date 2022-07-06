@@ -231,11 +231,15 @@ function createWebpackConfig(
     );
   }
 
+  const experiments =
+    output.library?.type === "module" ? { outputModule: true } : undefined;
+
   // Required to expose e.g., the `window` object.
   output.globalObject = "globalThis";
 
   return {
     mode: "none",
+    experiments,
     output,
     performance: {
       hints: false, // Disable messages about larger file sizes.
@@ -246,6 +250,7 @@ function createWebpackConfig(
         pdfjs: path.join(__dirname, "src"),
         "pdfjs-web": path.join(__dirname, "web"),
         "pdfjs-lib": path.join(__dirname, "web/pdfjs"),
+        "pdfjs-fitCurve": path.join(__dirname, "src/display/editor/fit_curve"),
       },
     },
     devtool: enableSourceMaps ? "source-map" : undefined,
@@ -509,6 +514,26 @@ function createImageDecodersBundle(defines) {
     .pipe(replaceWebpackRequire())
     .pipe(replaceNonWebpackImport())
     .pipe(replaceJSRootName(imageDecodersAMDName, "pdfjsImageDecoders"));
+}
+
+function createFitCurveBundle(defines) {
+  const fitCurveOutputName = "fit_curve.js";
+
+  const fitCurveFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: fitCurveOutputName,
+      library: {
+        type: "module",
+      },
+    },
+    {
+      disableVersionInfo: true,
+    }
+  );
+  return gulp
+    .src("src/display/editor/fit_curve.js")
+    .pipe(webpack2Stream(fitCurveFileConfig));
 }
 
 function createCMapBundle() {
@@ -1503,6 +1528,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     defines: bundleDefines,
     map: {
       "pdfjs-lib": "../pdf",
+      "pdfjs-fitCurve": "./fit_curve",
     },
   };
   const licenseHeaderLibre = fs
@@ -1643,54 +1669,90 @@ function setTestEnv(done) {
   done();
 }
 
+gulp.task("dev-fitCurve", function createDevFitCurve() {
+  console.log();
+  console.log("### Building development fitCurve");
+
+  const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+  const fitCurveDir = BUILD_DIR + "dev-fitCurve/";
+
+  rimraf.sync(fitCurveDir);
+
+  return createFitCurveBundle(defines).pipe(gulp.dest(fitCurveDir));
+});
+
 gulp.task(
   "test",
-  gulp.series(setTestEnv, "generic", "components", function runTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit"),
-      createTestSource("browser"),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit"),
+        createTestSource("browser"),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "bottest",
-  gulp.series(setTestEnv, "generic", "components", function runBotTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
-      createTestSource("browser", { bot: true }),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runBotTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit", { bot: true }),
+        createTestSource("font", { bot: true }),
+        createTestSource("browser", { bot: true }),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "xfatest",
-  gulp.series(setTestEnv, "generic", "components", function runXfaTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit"),
-      createTestSource("browser", { xfaOnly: true }),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runXfaTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit"),
+        createTestSource("browser", { xfaOnly: true }),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "botxfatest",
-  gulp.series(setTestEnv, "generic", "components", function runBotXfaTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
-      createTestSource("browser", { bot: true, xfaOnly: true }),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runBotXfaTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit", { bot: true }),
+        createTestSource("font", { bot: true }),
+        createTestSource("browser", { bot: true, xfaOnly: true }),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
@@ -1717,7 +1779,7 @@ gulp.task(
 
 gulp.task(
   "unittest",
-  gulp.series(setTestEnv, "generic", function runUnitTest() {
+  gulp.series(setTestEnv, "generic", "dev-fitCurve", function runUnitTest() {
     return createTestSource("unit");
   })
 );
@@ -1973,6 +2035,13 @@ gulp.task(
         ["web/*.css", "web/images/*"],
         { ignoreInitial: false },
         gulp.series("dev-css")
+      );
+    },
+    function watchDevFitCurve() {
+      gulp.watch(
+        ["src/display/editor/*"],
+        { ignoreInitial: false },
+        gulp.series("dev-fitCurve")
       );
     },
     function watchDevSandbox() {
