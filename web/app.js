@@ -516,10 +516,14 @@ const PDFViewerApplication = {
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
     const annotationEditorMode = AppOptions.get("annotationEditorMode");
-    const pageColors = {
-      background: AppOptions.get("pageColorsBackground"),
-      foreground: AppOptions.get("pageColorsForeground"),
-    };
+    const pageColors =
+      AppOptions.get("forcePageColors") ||
+      window.matchMedia("(forced-colors: active)").matches
+        ? {
+            background: AppOptions.get("pageColorsBackground"),
+            foreground: AppOptions.get("pageColorsForeground"),
+          }
+        : null;
 
     this.pdfViewer = new PDFViewer({
       container,
