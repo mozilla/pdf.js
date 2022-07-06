@@ -19,7 +19,7 @@ import {
   Util,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
-import { fitCurve } from "./fit_curve/fit_curve.js";
+import { fitCurve } from "fit-curve";
 
 /**
  * Basic draw editor in order to generate an Ink annotation.
