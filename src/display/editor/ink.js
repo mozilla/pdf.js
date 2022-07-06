@@ -47,6 +47,9 @@ class InkEditor extends AnnotationEditor {
 
   #realHeight = 0;
 
+  // Modification schen  (x1, y1, x2, y2)
+  #currentDrawingRegion = {x1: 109, y1: 919, x2: 680, y2: 950};
+
   static _defaultColor = null;
 
   static _defaultThickness = 1;
@@ -293,6 +296,10 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #startDrawing(x, y) {
+    console.log(x, y);
+    if (!this.#insideRegion(x, y, this.#currentDrawingRegion)) {
+      return;
+    }
     this.currentPath.push([x, y]);
     this.#setStroke();
     this.ctx.beginPath();
@@ -305,9 +312,24 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #draw(x, y) {
+    if (!this.#insideRegion(x, y, this.#currentDrawingRegion)) {
+      this.#endDrawing({offsetX: x, offsetY: y});
+      return;
+    }
     this.currentPath.push([x, y]);
     this.ctx.lineTo(x, y);
     this.ctx.stroke();
+  }
+
+  // returns true if inside currentRegion
+  #insideRegion(x, y, region) {
+    if (x < region.x1 || x > region.x2) {
+      return false;
+    }
+    if (y < region.y1 || y > region.y2) {
+      return false;
+    }
+    return true;
   }
 
   /**
