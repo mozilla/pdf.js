@@ -1331,9 +1331,10 @@ class BaseViewer {
     const pageNumber = firstPage.id;
     const currentPageView = this._pages[pageNumber - 1];
     const container = this.container;
+    const yPos = container.scrollTop - firstPage.y;
     const topLeft = currentPageView.getPagePoint(
       container.scrollLeft - firstPage.x,
-      container.scrollTop - firstPage.y
+      yPos
     );
     const intLeft = Math.round(topLeft[0]);
     const intTop = Math.round(topLeft[1]);
@@ -1350,6 +1351,7 @@ class BaseViewer {
       left: intLeft,
       rotation: this._pagesRotation,
       pdfOpenParams,
+      yPos,
     };
   }
 
