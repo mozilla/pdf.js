@@ -226,7 +226,7 @@ select {
 }
 
 #sidebarContent {
-  top: 32px;
+  top: 0;
   bottom: 0;
   inset-inline-start: 0;
   overflow: auto;
@@ -503,12 +503,12 @@ select {
 }
 
 #editorInkParamsToolbar {
-  inset-inline-end: 40px;
+  inset-inline-end: 134px;
   background-color: var(--toolbar-bg-color);
 }
 
 #editorFreeTextParamsToolbar {
-  inset-inline-end: 68px;
+  inset-inline-end: 164px;
   background-color: var(--toolbar-bg-color);
 }
 
