@@ -18,6 +18,7 @@
   --hover-outline: dashed 2px blue;
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  --editorInk-editing-cursor: url(images/toolbarButton-editorInk.svg) 0 16;
 }
 
 @media (forced-colors: active) {
@@ -119,6 +120,7 @@
   height: 100%;
   z-index: 1;
   transform-origin: 0 0;
+  cursor: auto;
 }
 
 .annotationEditorLayer .background {
@@ -132,6 +134,7 @@
 
 .annotationEditorLayer .inkEditor.editing {
   resize: none;
+  cursor: var(--editorInk-editing-cursor), pointer;
 }
 
 .annotationEditorLayer .inkEditor .inkEditorCanvas {
