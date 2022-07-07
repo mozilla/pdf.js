@@ -580,7 +580,10 @@ class InkEditor extends AnnotationEditor {
 
     this.canvas.style.visibility = "hidden";
 
-    if (this.#aspectRatio) {
+    if (
+      this.#aspectRatio &&
+      Math.abs(this.#aspectRatio - width / height) > 1e-2
+    ) {
       height = Math.ceil(width / this.#aspectRatio);
       this.setDims(width, height);
     }
@@ -847,6 +850,9 @@ class InkEditor extends AnnotationEditor {
     this.translationY = -bbox[1];
     this.#setCanvasDims();
     this.#redraw();
+
+    this.#realWidth = width;
+    this.#realHeight = height;
 
     this.setDims(width, height);
     this.translate(
