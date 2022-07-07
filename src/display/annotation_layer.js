@@ -190,7 +190,7 @@ class AnnotationElement {
    * @private
    * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
-   * @returns {HTMLSectionElement}
+   * @returns {HTMLElement} A section element.
    */
   _createContainer(ignoreBorder = false) {
     const data = this.data,
@@ -410,7 +410,7 @@ class AnnotationElement {
    * @private
    * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
-   * @returns {Array<HTMLSectionElement>}
+   * @returns {Array<HTMLElement>} An array of section elements.
    */
   _createQuadrilaterals(ignoreBorder = false) {
     if (!this.data.quadPoints) {
@@ -480,7 +480,7 @@ class AnnotationElement {
    * @private
    * @param {string} className
    * @memberof AnnotationElement
-   * @returns {Array<HTMLSectionElement>}
+   * @returns {Array<HTMLElement>} An array of section elements.
    */
   _renderQuadrilaterals(className) {
     if (
@@ -501,7 +501,8 @@ class AnnotationElement {
    *
    * @public
    * @memberof AnnotationElement
-   * @returns {HTMLSectionElement|Array<HTMLSectionElement>}
+   * @returns {HTMLElement|Array<HTMLElement>} A section element or
+   *   an array of section elements.
    */
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
