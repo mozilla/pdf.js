@@ -665,7 +665,7 @@ const PDFViewerApplication = {
   },
 
   run(config) {
-    this.initialize(config).then(webViewerInitialized);
+    return this.initialize(config).then(webViewerInitialized);
   },
 
   get initialized() {

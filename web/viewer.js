@@ -15,6 +15,7 @@
 
 import { AppOptions } from "./app_options.js";
 import { PDFViewerApplication } from "./app.js";
+import { init } from "./scholarly/scholarly.js";
 
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsVersion =
@@ -228,7 +229,7 @@ function webViewerLoad() {
       import("pdfjs-web/genericcom.js"),
       import("pdfjs-web/pdf_print_service.js"),
     ]).then(function ([genericCom, pdfPrintService]) {
-      PDFViewerApplication.run(config);
+      PDFViewerApplication.run(config).then(() => init(PDFViewerApplication));
     });
   } else {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
@@ -252,7 +253,7 @@ function webViewerLoad() {
       }
     }
 
-    PDFViewerApplication.run(config);
+    PDFViewerApplication.run(config).then(() => init(PDFViewerApplication));
   }
 }
 
