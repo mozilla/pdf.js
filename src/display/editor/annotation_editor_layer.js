@@ -62,10 +62,16 @@ class AnnotationEditorLayer {
     ],
     [
       [
+        "Backspace",
+        "alt+Backspace",
         "ctrl+Backspace",
+        "shift+Backspace",
         "mac+Backspace",
-        "mac+ctrl+Backspace",
         "mac+alt+Backspace",
+        "mac+ctrl+Backspace",
+        "Delete",
+        "ctrl+Delete",
+        "shift+Delete",
       ],
       AnnotationEditorLayer.prototype.delete,
     ],
