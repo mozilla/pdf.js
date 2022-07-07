@@ -21,6 +21,7 @@
     "display_svg_spec.js",
     "display_utils_spec.js",
     "document_spec.js",
+    "editor_spec.js",
     "encodings_spec.js",
     "evaluator_spec.js",
     "event_utils_spec.js",
