@@ -233,7 +233,6 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.enableEditMode();
-    this.canvas.style.cursor = "pointer";
     this.div.draggable = false;
     this.canvas.addEventListener("mousedown", this.#boundCanvasMousedown);
     this.canvas.addEventListener("mouseup", this.#boundCanvasMouseup);
@@ -246,7 +245,6 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.disableEditMode();
-    this.canvas.style.cursor = "auto";
     this.div.draggable = !this.isEmpty();
     this.div.classList.remove("editing");
 
