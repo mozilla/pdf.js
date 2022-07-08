@@ -132,10 +132,12 @@ class Page {
     // For robustness: The spec states that a \Resources entry has to be
     // present, but can be empty. Some documents still omit it; in this case
     // we return an empty dictionary.
+    const resources = this._getInheritableProperty("Resources");
+
     return shadow(
       this,
       "resources",
-      this._getInheritableProperty("Resources") || Dict.empty
+      resources instanceof Dict ? resources : Dict.empty
     );
   }
 
