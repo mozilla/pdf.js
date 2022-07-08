@@ -40,6 +40,7 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IL10n} l10n - Localization service.
+ * @property {number} [thumbnailWidth] - Width of thubmnails
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -49,6 +50,8 @@ const THUMBNAIL_SELECTED_CLASS = "selected";
  * Viewer control to display thumbnails for pages in a PDF document.
  */
 class PDFThumbnailViewer {
+  #thumbnailWidth;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -59,12 +62,14 @@ class PDFThumbnailViewer {
     renderingQueue,
     l10n,
     pageColors,
+    thumbnailWidth,
   }) {
     this.container = container;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
     this.l10n = l10n;
     this.pageColors = pageColors || null;
+    this.#thumbnailWidth = thumbnailWidth;
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       if (
@@ -239,6 +244,7 @@ class PDFThumbnailViewer {
             checkSetImageDisabled,
             l10n: this.l10n,
             pageColors: this.pageColors,
+            thumbnailWidth: this.#thumbnailWidth,
           });
           this._thumbnails.push(thumbnail);
         }

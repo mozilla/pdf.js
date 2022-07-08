@@ -39,6 +39,7 @@ const THUMBNAIL_WIDTH = 98; // px
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {function} checkSetImageDisabled
  * @property {IL10n} l10n - Localization service.
+ * @property {number} [thumbnailWidth] - Width of thubmnails
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -91,6 +92,7 @@ class PDFThumbnailView {
     checkSetImageDisabled,
     l10n,
     pageColors,
+    thumbnailWidth,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;
@@ -119,7 +121,7 @@ class PDFThumbnailView {
       pageHeight = this.viewport.height,
       pageRatio = pageWidth / pageHeight;
 
-    this.canvasWidth = THUMBNAIL_WIDTH;
+    this.canvasWidth = thumbnailWidth ?? THUMBNAIL_WIDTH;
     this.canvasHeight = (this.canvasWidth / pageRatio) | 0;
     this.scale = this.canvasWidth / pageWidth;
 
