@@ -673,6 +673,38 @@ describe("api", function () {
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
+
+    it("creates pdf doc from PDF file with bad /Resources entry", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue15150.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(1);
+
+      const page = await pdfDocument.getPage(1);
+      expect(page instanceof PDFPageProxy).toEqual(true);
+
+      const opList = await page.getOperatorList();
+      expect(opList.fnArray).toEqual([
+        OPS.setLineWidth,
+        OPS.setStrokeRGBColor,
+        OPS.constructPath,
+        OPS.closeStroke,
+      ]);
+      expect(opList.argsArray).toEqual([
+        [0.5],
+        new Uint8ClampedArray([255, 0, 0]),
+        [
+          [OPS.moveTo, OPS.lineTo],
+          [0, 9.75, 0.5, 9.75],
+          [0, 0.5, 9.75, 9.75],
+        ],
+        null,
+      ]);
+      expect(opList.lastChunk).toEqual(true);
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("PDFWorker", function () {
