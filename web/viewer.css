@@ -1225,7 +1225,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   position: absolute;
   right: 0;
   z-index: 1000;
-  padding: 3px 6px;
+  padding: 6px 6px 3px;
 }
 
 #errorMessageLeft {
