@@ -435,9 +435,6 @@ class AnnotationEditorUIManager {
       layer.destroy();
     }
     this.#allLayers.clear();
-    for (const editor of this.#allEditors.values()) {
-      editor.destroy();
-    }
     this.#allEditors.clear();
     this.#activeEditor = null;
     this.#clipboardManager.destroy();
