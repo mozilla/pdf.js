@@ -62,12 +62,18 @@ class AnnotationEditorLayer {
     ],
     [
       [
+        "Backspace",
+        "alt+Backspace",
         "ctrl+Backspace",
+        "shift+Backspace",
         "mac+Backspace",
-        "mac+ctrl+Backspace",
         "mac+alt+Backspace",
+        "mac+ctrl+Backspace",
+        "Delete",
+        "ctrl+Delete",
+        "shift+Delete",
       ],
-      AnnotationEditorLayer.prototype.suppress,
+      AnnotationEditorLayer.prototype.delete,
     ],
   ]);
 
@@ -129,6 +135,14 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Set the editing state.
+   * @param {boolean} isEditing
+   */
+  setEditingState(isEditing) {
+    this.#uiManager.setEditingState(isEditing);
+  }
+
+  /**
    * Mouseover callback.
    * @param {MouseEvent} event
    */
@@ -173,8 +187,8 @@ class AnnotationEditorLayer {
    * Suppress the selected editor or all editors.
    * @returns {undefined}
    */
-  suppress() {
-    this.#uiManager.suppress();
+  delete() {
+    this.#uiManager.delete();
   }
 
   /**
@@ -188,7 +202,7 @@ class AnnotationEditorLayer {
    * Cut the selected editor.
    */
   cut() {
-    this.#uiManager.cut(this);
+    this.#uiManager.cut();
   }
 
   /**
@@ -196,7 +210,7 @@ class AnnotationEditorLayer {
    * @returns {undefined}
    */
   paste() {
-    this.#uiManager.paste(this);
+    this.#uiManager.paste();
   }
 
   /**

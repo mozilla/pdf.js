@@ -19,7 +19,7 @@ import {
   Util,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
-import { fitCurve } from "./fit_curve/fit_curve.js";
+import { fitCurve } from "pdfjs-fitCurve";
 
 /**
  * Basic draw editor in order to generate an Ink annotation.
@@ -211,8 +211,12 @@ class InkEditor extends AnnotationEditor {
       return;
     }
 
+    if (!this.isEmpty()) {
+      this.commit();
+    }
+
     // Destroy the canvas.
-    this.canvas.width = this.canvas.heigth = 0;
+    this.canvas.width = this.canvas.height = 0;
     this.canvas.remove();
     this.canvas = null;
 
@@ -229,7 +233,6 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.enableEditMode();
-    this.canvas.style.cursor = "pointer";
     this.div.draggable = false;
     this.canvas.addEventListener("mousedown", this.#boundCanvasMousedown);
     this.canvas.addEventListener("mouseup", this.#boundCanvasMouseup);
@@ -242,7 +245,6 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.disableEditMode();
-    this.canvas.style.cursor = "auto";
     this.div.draggable = !this.isEmpty();
     this.div.classList.remove("editing");
 
@@ -258,7 +260,10 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   isEmpty() {
-    return this.paths.length === 0;
+    return (
+      this.paths.length === 0 ||
+      (this.paths.length === 1 && this.paths[0].length === 0)
+    );
   }
 
   #getInitialBBox() {
@@ -415,7 +420,7 @@ class InkEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   canvasMousedown(event) {
-    if (!this.isInEditMode() || this.#disableEditing) {
+    if (event.button !== 0 || !this.isInEditMode() || this.#disableEditing) {
       return;
     }
 
@@ -447,6 +452,9 @@ class InkEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   canvasMouseup(event) {
+    if (event.button !== 0) {
+      return;
+    }
     if (this.isInEditMode() && this.currentPath.length !== 0) {
       event.stopPropagation();
       this.#endDrawing(event);
@@ -570,7 +578,10 @@ class InkEditor extends AnnotationEditor {
 
     this.canvas.style.visibility = "hidden";
 
-    if (this.#aspectRatio) {
+    if (
+      this.#aspectRatio &&
+      Math.abs(this.#aspectRatio - width / height) > 1e-2
+    ) {
       height = Math.ceil(width / this.#aspectRatio);
       this.setDims(width, height);
     }
@@ -838,6 +849,9 @@ class InkEditor extends AnnotationEditor {
     this.#setCanvasDims();
     this.#redraw();
 
+    this.#realWidth = width;
+    this.#realHeight = height;
+
     this.setDims(width, height);
     this.translate(
       prevTranslationX - this.translationX,
@@ -870,4 +884,4 @@ class InkEditor extends AnnotationEditor {
   }
 }
 
-export { InkEditor };
+export { fitCurve, InkEditor };

@@ -82,7 +82,7 @@ const DEFAULT_L10N_STRINGS = {
   web_fonts_disabled:
     "Web fonts are disabled: unable to use embedded PDF fonts.",
 
-  freetext_default_content: "Enter text…",
+  free_text_default_content: "Enter text…",
 };
 
 function getL10nFallback(key, args) {

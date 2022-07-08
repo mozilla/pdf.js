@@ -121,7 +121,7 @@ function isValidAnnotationEditorMode(mode) {
  *   being rendered. The constants from {@link AnnotationMode} should be used;
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
- * @property {boolean} [annotationEditorMode] - Enables the creation and editing
+ * @property {number} [annotationEditorMode] - Enables the creation and editing
  *   of new Annotations. The constants from {@link AnnotationEditorType} should
  *   be used. The default value is `AnnotationEditorType.DISABLE`.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
@@ -788,6 +788,10 @@ class BaseViewer {
       if (this._scriptingManager) {
         this._scriptingManager.setDocument(null);
       }
+      if (this.#annotationEditorUIManager) {
+        this.#annotationEditorUIManager.destroy();
+        this.#annotationEditorUIManager = null;
+      }
     }
 
     this.pdfDocument = pdfDocument;
@@ -1036,7 +1040,6 @@ class BaseViewer {
   }
 
   _resetView() {
-    this.#annotationEditorUIManager = null;
     this._pages = [];
     this._currentPageNumber = 1;
     this._currentScale = UNKNOWN_SCALE;
@@ -2276,7 +2279,9 @@ class BaseViewer {
    * @type {number}
    */
   get annotationEditorMode() {
-    return this.#annotationEditorMode;
+    return this.#annotationEditorUIManager
+      ? this.#annotationEditorMode
+      : AnnotationEditorType.DISABLE;
   }
 
   /**

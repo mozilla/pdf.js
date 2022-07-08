@@ -190,7 +190,7 @@ class AnnotationElement {
    * @private
    * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
-   * @returns {HTMLSectionElement}
+   * @returns {HTMLElement} A section element.
    */
   _createContainer(ignoreBorder = false) {
     const data = this.data,
@@ -410,7 +410,7 @@ class AnnotationElement {
    * @private
    * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
-   * @returns {Array<HTMLSectionElement>}
+   * @returns {Array<HTMLElement>} An array of section elements.
    */
   _createQuadrilaterals(ignoreBorder = false) {
     if (!this.data.quadPoints) {
@@ -480,7 +480,7 @@ class AnnotationElement {
    * @private
    * @param {string} className
    * @memberof AnnotationElement
-   * @returns {Array<HTMLSectionElement>}
+   * @returns {Array<HTMLElement>} An array of section elements.
    */
   _renderQuadrilaterals(className) {
     if (
@@ -501,7 +501,8 @@ class AnnotationElement {
    *
    * @public
    * @memberof AnnotationElement
-   * @returns {HTMLSectionElement|Array<HTMLSectionElement>}
+   * @returns {HTMLElement|Array<HTMLElement>} A section element or
+   *   an array of section elements.
    */
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
@@ -1471,8 +1472,8 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
       container.title = this.data.alternativeText;
     }
 
-    if (this.enableScripting && this.hasJSActions) {
-      const linkElement = container.lastChild;
+    const linkElement = container.lastChild;
+    if (this.enableScripting && this.hasJSActions && linkElement) {
       this._setDefaultPropertiesFromJS(linkElement);
 
       linkElement.addEventListener("updatefromsandbox", jsEvent => {
@@ -2439,8 +2440,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     this.container.className = "fileAttachmentAnnotation";
 
     const trigger = document.createElement("div");
-    trigger.style.height = this.container.style.height;
-    trigger.style.width = this.container.style.width;
+    trigger.className = "popupTriggerArea";
     trigger.addEventListener("dblclick", this._download.bind(this));
 
     if (
@@ -2497,12 +2497,16 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static render(parameters) {
+    const { annotations, div, viewport } = parameters;
+
+    this.#setDimensions(div, viewport);
+
     const sortedAnnotations = [],
       popupAnnotations = [];
     // Ensure that Popup annotations are handled last, since they're dependant
     // upon the parent annotation having already been rendered (please refer to
     // the `PopupAnnotationElement.render` method); fixes issue 11362.
-    for (const data of parameters.annotations) {
+    for (const data of annotations) {
       if (!data) {
         continue;
       }
@@ -2526,14 +2530,12 @@ class AnnotationLayer {
     }
     // #958 end of modification by ngx-extended-pdf-viewer
 
-    const div = parameters.div;
-
     for (const data of sortedAnnotations) {
       const element = AnnotationElementFactory.create({
         data,
         layer: div,
         page: parameters.page,
-        viewport: parameters.viewport,
+        viewport,
         linkService: parameters.linkService,
         downloadManager: parameters.downloadManager,
         imageResourcesPath: parameters.imageResourcesPath || "",
@@ -2578,8 +2580,9 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
-    const { annotationCanvasMap, div } = parameters;
+    const { annotationCanvasMap, div, viewport } = parameters;
 
+    this.#setDimensions(div, viewport);
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
     div.hidden = false;
   }
@@ -2588,7 +2591,7 @@ class AnnotationLayer {
    * @param {HTMLDivElement} div
    * @param {PageViewport} viewport
    */
-  static setDimensions(div, { width, height, rotation }) {
+  static #setDimensions(div, { width, height, rotation }) {
     const { style } = div;
 
     const flipOrientation = rotation % 180 !== 0,

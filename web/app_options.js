@@ -138,6 +138,11 @@ const defaultOptions = {
     value: 16777216,
     kind: OptionKind.VIEWER,
   },
+  forcePageColors: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   pageColorsBackground: {
     /** @type {string} */
     value: "Canvas",

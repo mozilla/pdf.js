@@ -19,6 +19,7 @@ import {
   ScrollMode,
   SpreadMode,
 } from "./ui_utils.js";
+import { AnnotationEditorType } from "pdfjs-lib";
 
 const DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
 const ACTIVE_SELECTOR = "pdfPresentationMode";
@@ -79,6 +80,7 @@ class PDFPresentationMode {
       scaleValue: pdfViewer.currentScaleValue,
       scrollMode: pdfViewer.scrollMode,
       spreadMode: null,
+      annotationEditorMode: null,
     };
 
     if (
@@ -90,6 +92,9 @@ class PDFPresentationMode {
           "since the document may contain varying page sizes."
       );
       this.#args.spreadMode = pdfViewer.spreadMode;
+    }
+    if (pdfViewer.annotationEditorMode !== AnnotationEditorType.DISABLE) {
+      this.#args.annotationEditorMode = pdfViewer.annotationEditorMode;
     }
 
     try {
@@ -167,6 +172,10 @@ class PDFPresentationMode {
       }
       this.pdfViewer.currentPageNumber = this.#args.pageNumber;
       this.pdfViewer.currentScaleValue = "page-fit";
+
+      if (this.#args.annotationEditorMode !== null) {
+        this.pdfViewer.annotationEditorMode = AnnotationEditorType.NONE;
+      }
     }, 0);
 
     this.#addWindowListeners();
@@ -195,6 +204,10 @@ class PDFPresentationMode {
       }
       this.pdfViewer.currentScaleValue = this.#args.scaleValue;
       this.pdfViewer.currentPageNumber = pageNumber;
+
+      if (this.#args.annotationEditorMode !== null) {
+        this.pdfViewer.annotationEditorMode = this.#args.annotationEditorMode;
+      }
       this.#args = null;
     }, 0);
 

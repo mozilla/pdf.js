@@ -187,6 +187,10 @@ class DefaultExternalServices {
   static get isInAutomation() {
     return shadow(this, "isInAutomation", false);
   }
+
+  static updateEditorStates(data) {
+    throw new Error("Not implemented: updateEditorStates");
+  }
 }
 
 const PDFViewerApplication = {
@@ -521,10 +525,14 @@ const PDFViewerApplication = {
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
     const annotationEditorMode = AppOptions.get("annotationEditorMode");
-    const pageColors = {
-      background: AppOptions.get("pageColorsBackground"),
-      foreground: AppOptions.get("pageColorsForeground"),
-    };
+    const pageColors =
+      AppOptions.get("forcePageColors") ||
+      window.matchMedia("(forced-colors: active)").matches
+        ? {
+            background: AppOptions.get("pageColorsBackground"),
+            foreground: AppOptions.get("pageColorsForeground"),
+          }
+        : null;
 
     this.pdfViewer = new PDFViewer({
       container,
@@ -742,7 +750,7 @@ const PDFViewerApplication = {
   /* ngx-extended-pdf-viewer is opened, it still references the old viewer. */
   /** The bug fix solves this problem.                                      */
   initializeLoadingBar() {
-    const bar = new ProgressBar("#loadingBar");
+    const bar = new ProgressBar("loadingBar");
     bar.hide();
     return shadow(this, "loadingBar", bar);
   },
@@ -1217,31 +1225,33 @@ const PDFViewerApplication = {
     // that we discard some of the loaded data. This can cause the loading
     // bar to move backwards. So prevent this by only updating the bar if it
     // increases.
-    if (percent > this.loadingBar.percent || isNaN(percent)) {
-      this.loadingBar.percent = percent;
-
-      // When disableAutoFetch is enabled, it's not uncommon for the entire file
-      // to never be fetched (depends on e.g. the file structure). In this case
-      // the loading bar will not be completely filled, nor will it be hidden.
-      // To prevent displaying a partially filled loading bar permanently, we
-      // hide it when no data has been loaded during a certain amount of time.
-      const disableAutoFetch = this.pdfDocument
-        ? this.pdfDocument.loadingParams.disableAutoFetch
-        : AppOptions.get("disableAutoFetch");
-
-      if (disableAutoFetch && percent) {
-        if (this.disableAutoFetchLoadingBarTimeout) {
-          clearTimeout(this.disableAutoFetchLoadingBarTimeout);
-          this.disableAutoFetchLoadingBarTimeout = null;
-        }
-        this.loadingBar.show();
-
-        this.disableAutoFetchLoadingBarTimeout = setTimeout(() => {
-          this.loadingBar.hide();
-          this.disableAutoFetchLoadingBarTimeout = null;
-        }, DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
-      }
+    if (percent <= this.loadingBar.percent) {
+      return;
     }
+    this.loadingBar.percent = percent;
+
+    // When disableAutoFetch is enabled, it's not uncommon for the entire file
+    // to never be fetched (depends on e.g. the file structure). In this case
+    // the loading bar will not be completely filled, nor will it be hidden.
+    // To prevent displaying a partially filled loading bar permanently, we
+    // hide it when no data has been loaded during a certain amount of time.
+    const disableAutoFetch =
+      this.pdfDocument?.loadingParams.disableAutoFetch ??
+      AppOptions.get("disableAutoFetch");
+
+    if (!disableAutoFetch || isNaN(percent)) {
+      return;
+    }
+    if (this.disableAutoFetchLoadingBarTimeout) {
+      clearTimeout(this.disableAutoFetchLoadingBarTimeout);
+      this.disableAutoFetchLoadingBarTimeout = null;
+    }
+    this.loadingBar.show();
+
+    this.disableAutoFetchLoadingBarTimeout = setTimeout(() => {
+      this.loadingBar.hide();
+      this.disableAutoFetchLoadingBarTimeout = null;
+    }, DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
   },
 
   load(pdfDocument) {
@@ -2034,6 +2044,12 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", webViewerFileInputChange);
       eventBus._on("openfile", webViewerOpenFile);
+    }
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      eventBus._on(
+        "annotationeditorstateschanged",
+        webViewerAnnotationEditorStatesChanged
+      );
     }
   },
 
@@ -3239,6 +3255,10 @@ function beforeUnload(evt) {
   evt.preventDefault();
   evt.returnValue = "";
   return false;
+}
+
+function webViewerAnnotationEditorStatesChanged(data) {
+  PDFViewerApplication.externalServices.updateEditorStates(data);
 }
 
 /* Abstract factory for the print service. */
