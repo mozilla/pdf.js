@@ -1,11 +1,9 @@
 name: CI
 on: [push, pull_request]
-permissions:
-  contents: read
 
 jobs:
-  test:
-    name: Test
+  build-generic:
+    name: Build Generic
     runs-on: ubuntu-latest
 
     steps:
@@ -24,4 +22,11 @@ jobs:
         run: npm install -f
 
       - name: Run tests
-        run: gulp ci-test
+        run: gulp generic
+
+      - name: Upload
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: scholarly-pdf.js
+          path: ./build/generic/
