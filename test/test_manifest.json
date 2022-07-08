@@ -6837,5 +6837,15 @@
          "rotation": 270
        }
      }
+   },
+   { "id": "bug1778692",
+   "file": "pdfs/bug1778692.pdf",
+   "md5": "8855414caaa04fbbdfad1545d1c8a8ae",
+   "rounds": 1,
+   "link": true,
+   "firstPage": 2,
+   "lastPage": 2,
+   "type": "eq",
+   "annotations": true
    }
 ]
