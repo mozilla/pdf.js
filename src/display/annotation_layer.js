@@ -1440,8 +1440,8 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
       container.title = this.data.alternativeText;
     }
 
-    if (this.enableScripting && this.hasJSActions) {
-      const linkElement = container.lastChild;
+    const linkElement = container.lastChild;
+    if (this.enableScripting && this.hasJSActions && linkElement) {
       this._setDefaultPropertiesFromJS(linkElement);
 
       linkElement.addEventListener("updatefromsandbox", jsEvent => {
