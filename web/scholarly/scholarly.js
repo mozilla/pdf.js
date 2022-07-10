@@ -5,6 +5,8 @@ var stickyNotes = [];
 // the mouse down event for creating highlights
 let es;
 
+let tool;
+
 export function init(app) {
   app.eventBus.on("pagerendered", function(event) {
     let canvas = event.source.canvas;
@@ -17,7 +19,7 @@ export function init(app) {
     let highlightSelected = true;
 
     if (highlightSelected) {
-      createHighlight(canvas, event.page);
+      createHighlight(canvas, event.pageNumber);
     }
 
     let stickyNoteSelected = false;
@@ -45,7 +47,7 @@ function createHighlight(canvas, page) {
     let color = { r: 0, g: 255, b: 90 };
     renderRect(canvas, relX, relY, relW, relH, color);
 
-    highlights.push( {page: page, relPos: { x: relX, y: relY }, relSize: { width: relW, height: relH }, color: color } );
+    highlights.push( { page, relPos: { x: relX, y: relY }, relSize: { width: relW, height: relH }, color } );
   })
 }
 
@@ -62,7 +64,7 @@ function createStickyNote(canvas) {
  */
 function drawAnnotations(event) {
   highlights.forEach(element => {
-    if (element.page === event.page) {
+    if (element.page === event.pageNumber) {
       renderHighlight(event.source.canvas, element.relPos, element.relSize, element.color, "Fritz", "abc");
     }
   });
@@ -109,7 +111,8 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
   let r = color.r;
   let g = color.g;
   let b = color.b;
-  ctx.fillStyle = "rgba(0, 255, 90, 0.2)";
+
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.2)`;
   ctx.fillRect(absX, absY, absW, absH);
 }
 
