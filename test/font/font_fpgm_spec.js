@@ -31,7 +31,9 @@ describe("font_fpgm", function () {
 
       verifyTtxOutput(output);
       expect(
-        /(ENDF\[ \]|SVTCA\[0\])\s*<\/assembly>\s*<\/fpgm>/.test(output)
+        /(ENDF\[ \]|SVTCA\[0\])\s*\/\*.*\*\/\s*<\/assembly>\s*<\/fpgm>/.test(
+          output
+        )
       ).toEqual(true);
     });
   });
