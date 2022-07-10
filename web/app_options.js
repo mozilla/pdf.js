@@ -62,10 +62,7 @@ const OptionKind = {
 const defaultOptions = {
   annotationEditorMode: {
     /** @type {boolean} */
-    value:
-      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
-        ? 0
-        : -1,
+    value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   annotationMode: {
@@ -190,7 +187,7 @@ const defaultOptions = {
   },
   viewerCssTheme: {
     /** @type {number} */
-    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
+    value: 1,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   viewOnLoad: {

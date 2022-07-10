@@ -116,54 +116,6 @@
   --dir-factor: -1;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --main-color: rgba(249, 249, 250, 1);
-    --body-bg-color: rgba(42, 42, 46, 1);
-    /*#if !MOZCENTRAL*/
-    --errorWrapper-bg-color: rgba(169, 14, 14, 1);
-    /*#endif*/
-    --progressBar-color: rgba(0, 96, 223, 1);
-    --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
-    --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
-    --scrollbar-color: rgba(121, 121, 123, 1);
-    --scrollbar-bg-color: rgba(35, 35, 39, 1);
-    --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
-    --toolbar-icon-hover-bg-color: rgba(255, 255, 255, 1);
-
-    --sidebar-narrow-bg-color: rgba(42, 42, 46, 0.9);
-    --sidebar-toolbar-bg-color: rgba(50, 50, 52, 1);
-    --toolbar-bg-color: rgba(56, 56, 61, 1);
-    --toolbar-border-color: rgba(12, 12, 13, 1);
-    --button-hover-color: rgba(102, 102, 103, 1);
-    --toggled-btn-color: rgba(255, 255, 255, 1);
-    --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
-    --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
-    --dropdown-btn-bg-color: rgba(74, 74, 79, 1);
-    --separator-color: rgba(0, 0, 0, 0.3);
-    --field-color: rgba(250, 250, 250, 1);
-    --field-bg-color: rgba(64, 64, 68, 1);
-    --field-border-color: rgba(115, 115, 115, 1);
-    --treeitem-color: rgba(255, 255, 255, 0.8);
-    --treeitem-hover-color: rgba(255, 255, 255, 0.9);
-    --treeitem-selected-color: rgba(255, 255, 255, 0.9);
-    --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
-    --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
-    --doorhanger-bg-color: rgba(74, 74, 79, 1);
-    --doorhanger-border-color: rgba(39, 39, 43, 1);
-    --doorhanger-hover-color: rgba(249, 249, 250, 1);
-    --doorhanger-hover-bg-color: rgba(93, 94, 98, 1);
-    --doorhanger-separator-color: rgba(92, 92, 97, 1);
-    --dialog-button-bg-color: rgba(92, 92, 97, 1);
-    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
-
-    /* This image is used in <input> elements, which unfortunately means that
-     * the `mask-image` approach used with all of the other images doesn't work
-     * here; hence why we still have two versions of this particular image. */
-    --loading-icon: url(images/loading-dark.svg);
-  }
-}
-
 @media screen and (forced-colors: active) {
   :root {
     --button-hover-color: Highlight;
@@ -274,7 +226,7 @@ select {
 }
 
 #sidebarContent {
-  top: 32px;
+  top: 0;
   bottom: 0;
   inset-inline-start: 0;
   overflow: auto;
@@ -551,12 +503,12 @@ select {
 }
 
 #editorInkParamsToolbar {
-  inset-inline-end: 40px;
+  inset-inline-end: 134px;
   background-color: var(--toolbar-bg-color);
 }
 
 #editorFreeTextParamsToolbar {
-  inset-inline-end: 68px;
+  inset-inline-end: 164px;
   background-color: var(--toolbar-bg-color);
 }
 
@@ -1273,7 +1225,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   position: absolute;
   right: 0;
   z-index: 1000;
-  padding: 3px 6px;
+  padding: 6px 6px 3px;
 }
 
 #errorMessageLeft {
