@@ -17,7 +17,7 @@ export function init(app) {
     let highlightSelected = true;
 
     if (highlightSelected) {
-      createHighlight(canvas);
+      createHighlight(canvas, event.page);
     }
 
     let stickyNoteSelected = false;
@@ -27,7 +27,7 @@ export function init(app) {
   });
 }
 
-function createHighlight(canvas) {
+function createHighlight(canvas, page) {
   canvas.parentElement.parentElement.addEventListener("mousedown", (e) => {
     es = e;
     startDrag(e);
@@ -42,9 +42,10 @@ function createHighlight(canvas) {
     let relY = (es.y - bb.top) / bb.height;
     let relW = (ee.x - es.x) / bb.width;
     let relH = (ee.y - es.y) / bb.height;
-    renderRect(canvas, relX, relY, relW, relH);
+    let color = { r: 0, g: 255, b: 90 };
+    renderRect(canvas, relX, relY, relW, relH, color);
 
-    highlights.push( {page: es.page, relPos: { x: relX, y: relY }, relSize: { width: relW, height: relH }, color: { r: 0, g: 255, b: 90 } } );
+    highlights.push( {page: page, relPos: { x: relX, y: relY }, relSize: { width: relW, height: relH }, color: color } );
   })
 }
 
