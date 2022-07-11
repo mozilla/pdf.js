@@ -21,6 +21,11 @@ import {
 import { AnnotationEditor } from "./editor.js";
 import { fitCurve } from "pdfjs-fitCurve";
 
+// The dimensions of the resizer is 15x15:
+// https://searchfox.org/mozilla-central/rev/1ce190047b9556c3c10ab4de70a0e61d893e2954/toolkit/content/minimal-xul.css#136-137
+// so each dimension must be greater than RESIZER_SIZE.
+const RESIZER_SIZE = 16;
+
 /**
  * Basic draw editor in order to generate an Ink annotation.
  */
@@ -840,6 +845,14 @@ class InkEditor extends AnnotationEditor {
     this.height = height / parentHeight;
 
     this.#aspectRatio = width / height;
+    const { style } = this.div;
+    if (this.#aspectRatio >= 1) {
+      style.minHeight = `${RESIZER_SIZE}px`;
+      style.minWidth = `${Math.round(this.#aspectRatio * RESIZER_SIZE)}px`;
+    } else {
+      style.minWidth = `${RESIZER_SIZE}px`;
+      style.minHeight = `${Math.round(RESIZER_SIZE / this.#aspectRatio)}px`;
+    }
 
     const prevTranslationX = this.translationX;
     const prevTranslationY = this.translationY;
