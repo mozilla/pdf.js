@@ -1,5 +1,5 @@
 let modes;
-let activeMode = null;
+let activeMode = 'none';
 
 export function initUI() {
   modes = {
@@ -25,10 +25,20 @@ export function initUI() {
   modes.highlight.input.value = '#FFFF00';
 }
 
+/**
+ * Returns either 'none', 'stickyNote' or 'highlight'.
+ * Will never return null.
+ * @returns {string}
+ */
 export function getMode() {
   return activeMode;
 }
 
+/**
+ * Returns the color of the currently selected tool in RGB hex format.
+ * If no tool is selected, this function returns '#000000'.
+ * @returns {string}
+ */
 export function getColor() {
   return modes[activeMode]?.input?.value ?? '#000000'
 }
