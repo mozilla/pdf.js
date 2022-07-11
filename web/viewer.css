@@ -848,6 +848,14 @@ select {
   mask-image: var(--toolbarButton-editorFreeText-icon);
 }
 
+#editorScholarlyEraser::before {
+  mask-image: var(--toolbarButton-openFile-icon);
+}
+
+#scholarlyExitViewer::before {
+  mask-image: var(--toolbarButton-viewLayers-icon);
+}
+
 #editorInk::before {
   mask-image: var(--toolbarButton-editorInk-icon);
 }

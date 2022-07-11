@@ -13,6 +13,9 @@ export function initUI() {
       toolbar: document.getElementById("editorScholarlyHighlightToolbar"),
       input: document.getElementById("editorScholarlyHighlightColor"),
     },
+    eraser: {
+      button: document.getElementById("editorScholarlyEraser")
+    },
     none: {
       button: document.getElementById("editorNone")
     }
@@ -23,6 +26,20 @@ export function initUI() {
   }
   modes.stickyNote.input.value = '#FF0000';
   modes.highlight.input.value = '#FFFF00';
+
+  initExitButton();
+}
+
+function initExitButton() {
+  let btn = document.getElementById("scholarlyExitViewer");
+  btn.addEventListener("click", () => {
+    let f = window.parent?.pdfViewerEvent;
+    if(f != null) {
+      f('exit');
+    } else {
+      console.warn("Failed to call window.pdfViewerEvent of parent window");
+    }
+  });
 }
 
 /**
