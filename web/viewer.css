@@ -502,12 +502,12 @@ select {
   margin-bottom: -4px;
 }
 
-#editorInkParamsToolbar {
+#editorScholarlyHighlightToolbar {
   inset-inline-end: 134px;
   background-color: var(--toolbar-bg-color);
 }
 
-#editorFreeTextParamsToolbar {
+#editorScholarlyStickyNoteToolbar {
   inset-inline-end: 164px;
   background-color: var(--toolbar-bg-color);
 }
@@ -844,7 +844,23 @@ select {
   mask-image: var(--toolbarButton-editorFreeText-icon);
 }
 
+#editorScholarlyStickyNote::before {
+  mask-image: var(--toolbarButton-editorFreeText-icon);
+}
+
+#editorScholarlyEraser::before {
+  mask-image: var(--toolbarButton-openFile-icon);
+}
+
+#scholarlyExitViewer::before {
+  mask-image: var(--toolbarButton-viewLayers-icon);
+}
+
 #editorInk::before {
+  mask-image: var(--toolbarButton-editorInk-icon);
+}
+
+#editorScholarlyHighlight::before {
   mask-image: var(--toolbarButton-editorInk-icon);
 }
 

@@ -148,6 +148,28 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </div>  <!-- findbar -->
 
+
+        <!-- Scholarly -->
+        <div class="editorParamsToolbar hidden doorHangerRight" id="editorScholarlyStickyNoteToolbar">
+          <div class="editorParamsToolbarContainer">
+            <div class="editorParamsSetter">
+              <label for="editorScholarlyStickyNoteColor" class="editorParamsLabel" data-l10n-id="editor_free_text_font_color">Color</label>
+              <input type="color" id="editorScholarlyStickyNoteColor" class="editorParamsColor" tabindex="100">
+            </div>
+          </div>
+        </div>
+        <div class="editorParamsToolbar hidden doorHangerRight" id="editorScholarlyHighlightToolbar">
+          <div class="editorParamsToolbarContainer">
+            <div class="editorParamsSetter">
+              <label for="editorScholarlyHighlightColor" class="editorParamsLabel" data-l10n-id="editor_ink_line_color">Color</label>
+              <input type="color" id="editorScholarlyHighlightColor" class="editorParamsColor" tabindex="102">
+            </div>
+          </div>
+        </div>
+        <!-- /Scholarly -->
+
+
+
         <div class="editorParamsToolbar hidden doorHangerRight" id="editorFreeTextParamsToolbar">
           <div class="editorParamsToolbarContainer">
             <div class="editorParamsSetter">
@@ -270,6 +292,9 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
+                <button id="scholarlyExitViewer" class="toolbarButton" title="Close" tabindex="11" >
+                  <span>Close</span>
+                </button>
                 <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="11" data-l10n-id="toggle_sidebar" aria-expanded="false" aria-controls="sidebarContainer">
                   <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
@@ -294,13 +319,26 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <button id="editorNone" class="toolbarButton toggled" disabled="disabled" title="Disable Annotation Editing" role="radio" aria-checked="true" tabindex="36" data-l10n-id="editor_none">
                     <span data-l10n-id="editor_none_label">Disable Editing</span>
                   </button>
-                  <button id="editorFreeText" class="toolbarButton" disabled="disabled" title="Add FreeText Annotation" role="radio" aria-checked="false" tabindex="37" data-l10n-id="editor_free_text">
+
+                  <button id="editorFreeText" class="toolbarButton hidden" disabled="disabled" title="Add FreeText Annotation" role="radio" aria-checked="false" tabindex="37" data-l10n-id="editor_free_text">
                     <span data-l10n-id="editor_free_text_label">FreeText Annotation</span>
                   </button>
-                  <button id="editorInk" class="toolbarButton" disabled="disabled" title="Add Ink Annotation" role="radio" aria-checked="false" tabindex="38" data-l10n-id="editor_ink">
+                  <button id="editorInk" class="toolbarButton hidden" disabled="disabled" title="Add Ink Annotation" role="radio" aria-checked="false" tabindex="38" data-l10n-id="editor_ink">
                     <span data-l10n-id="editor_ink_label">Ink Annotation</span>
                   </button>
+
+                  <button id="editorScholarlyEraser" class="toolbarButton" title="Sticky Note" role="radio" aria-checked="false" tabindex="37" data-l10n-id="open_file">
+                    <span data-l10n-id="open_file_label">Eraser</span>
+                  </button>
+                  <button id="editorScholarlyStickyNote" class="toolbarButton" title="Sticky Note" role="radio" aria-checked="false" tabindex="37" data-l10n-id="editor_free_text">
+                    <span data-l10n-id="editor_free_text_label">Sticky Note</span>
+                  </button>
+                  <button id="editorScholarlyHighlight" class="toolbarButton" title="Highlight" role="radio" aria-checked="false" tabindex="38" data-l10n-id="editor_ink">
+                    <span data-l10n-id="editor_ink_label">Highlight</span>
+                  </button>
                 </div>
+
+
 
                 <div class="verticalToolbarSeparator hiddenSmallView"></div>
 
