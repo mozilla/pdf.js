@@ -1,5 +1,8 @@
+import {initUI} from "./ui.js";
+
 export function init(app) {
   console.log("scholarly initialized:", app);
+  initUI();
 
   app.eventBus.on("pagerendered", function(event) {
     console.log("scholarly page rendered:", event);
