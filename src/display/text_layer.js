@@ -18,6 +18,7 @@ import {
   createPromiseCapability,
   Util,
 } from "../shared/util.js";
+import { deprecated } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -569,6 +570,11 @@ class TextLayerRenderTask {
     textContentItemsStr,
     enhanceTextSelection,
   }) {
+    if (enhanceTextSelection) {
+      deprecated(
+        "The `enhanceTextSelection` functionality will be removed in the future."
+      );
+    }
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;

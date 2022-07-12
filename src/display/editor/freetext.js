@@ -372,6 +372,10 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
+    if (this.isEmpty()) {
+      return null;
+    }
+
     const padding = FreeTextEditor._internalPadding * this.parent.scaleFactor;
     const rect = this.getRect(padding, padding);
 
