@@ -779,7 +779,9 @@ class AnnotationEditorUIManager {
       const editors = Array.from(this.#allEditors.values());
       cmd = () => {
         for (const editor of editors) {
-          editor.remove();
+          if (!editor.isEmpty()) {
+            editor.remove();
+          }
         }
       };
 
