@@ -42,9 +42,9 @@ import { InkEditor } from "./ink.js";
 class AnnotationEditorLayer {
   #boundClick;
 
-  #boundMouseover;
-
   #editors = new Map();
+
+  #isCleaningUp = false;
 
   #uiManager;
 
@@ -92,7 +92,6 @@ class AnnotationEditorLayer {
     this.pageIndex = options.pageIndex;
     this.div = options.div;
     this.#boundClick = this.click.bind(this);
-    this.#boundMouseover = this.mouseover.bind(this);
 
     for (const editor of this.#uiManager.getEditors(options.pageIndex)) {
       this.add(editor);
@@ -114,24 +113,36 @@ class AnnotationEditorLayer {
    * The mode has changed: it must be updated.
    * @param {number} mode
    */
-  updateMode(mode) {
-    switch (mode) {
-      case AnnotationEditorType.INK:
-        // We want to have the ink editor covering all of the page without
-        // having to click to create it: it must be here when we start to draw.
-        this.div.addEventListener("mouseover", this.#boundMouseover);
-        this.div.removeEventListener("click", this.#boundClick);
-        break;
-      case AnnotationEditorType.FREETEXT:
-        this.div.removeEventListener("mouseover", this.#boundMouseover);
-        this.div.addEventListener("click", this.#boundClick);
-        break;
-      default:
-        this.div.removeEventListener("mouseover", this.#boundMouseover);
-        this.div.removeEventListener("click", this.#boundClick);
+  updateMode(mode = this.#uiManager.getMode()) {
+    this.#cleanup();
+    if (mode === AnnotationEditorType.INK) {
+      // We always want to an ink editor ready to draw in.
+      this.addInkEditorIfNeeded(false);
+    }
+    this.setActiveEditor(null);
+  }
+
+  addInkEditorIfNeeded(isCommitting) {
+    if (
+      !isCommitting &&
+      this.#uiManager.getMode() !== AnnotationEditorType.INK
+    ) {
+      return;
     }
 
-    this.setActiveEditor(null);
+    if (!isCommitting) {
+      // We're removing an editor but an empty one can already exist so in this
+      // case we don't need to create a new one.
+      for (const editor of this.#editors.values()) {
+        if (editor.isEmpty()) {
+          editor.setInBackground();
+          return;
+        }
+      }
+    }
+
+    const editor = this.#createAndAddNewEditor({ offsetX: 0, offsetY: 0 });
+    editor.setInBackground();
   }
 
   /**
@@ -140,25 +151,6 @@ class AnnotationEditorLayer {
    */
   setEditingState(isEditing) {
     this.#uiManager.setEditingState(isEditing);
-  }
-
-  /**
-   * Mouseover callback.
-   * @param {MouseEvent} event
-   */
-  mouseover(event) {
-    if (
-      event.target === this.div &&
-      event.buttons === 0 &&
-      !this.#uiManager.hasActive()
-    ) {
-      // The div is the target so there is no ink editor, hence we can
-      // create a new one.
-      // event.buttons === 0 is here to avoid adding a new ink editor
-      // when we drop an editor.
-      const editor = this.#createAndAddNewEditor(event);
-      editor.setInBackground();
-    }
   }
 
   /**
@@ -258,14 +250,12 @@ class AnnotationEditorLayer {
       currentActive.commitOrRemove();
     }
 
+    this.#uiManager.allowClick =
+      this.#uiManager.getMode() === AnnotationEditorType.INK;
     if (editor) {
       this.unselectAll();
       this.div.removeEventListener("click", this.#boundClick);
     } else {
-      // When in Ink mode, setting the editor to null allows the
-      // user to have to make one click in order to start drawing.
-      this.#uiManager.allowClick =
-        this.#uiManager.getMode() === AnnotationEditorType.INK;
       this.div.addEventListener("click", this.#boundClick);
     }
   }
@@ -294,6 +284,10 @@ class AnnotationEditorLayer {
     if (this.#uiManager.isActive(editor) || this.#editors.size === 0) {
       this.setActiveEditor(null);
       this.#uiManager.allowClick = true;
+    }
+
+    if (!this.#isCleaningUp) {
+      this.addInkEditorIfNeeded(/* isCommitting = */ false);
     }
   }
 
@@ -496,6 +490,19 @@ class AnnotationEditorLayer {
     this.#uiManager.removeLayer(this);
   }
 
+  #cleanup() {
+    // When we're cleaning up, some editors are removed but we don't want
+    // to add a new one which will induce an addition in this.#editors, hence
+    // an infinite loop.
+    this.#isCleaningUp = true;
+    for (const editor of this.#editors.values()) {
+      if (editor.isEmpty()) {
+        editor.remove();
+      }
+    }
+    this.#isCleaningUp = false;
+  }
+
   /**
    * Render the main editor.
    * @param {Object} parameters
@@ -505,6 +512,7 @@ class AnnotationEditorLayer {
     bindEvents(this, this.div, ["dragover", "drop", "keydown"]);
     this.div.addEventListener("click", this.#boundClick);
     this.setDimensions();
+    this.updateMode();
   }
 
   /**
@@ -515,6 +523,7 @@ class AnnotationEditorLayer {
     this.setActiveEditor(null);
     this.viewport = parameters.viewport;
     this.setDimensions();
+    this.updateMode();
   }
 
   /**
