@@ -6,9 +6,9 @@ let es;
 export function init(app) {
   initUI();
 
-  app.eventBus.on("pagerendered", function(event) {
+  app.eventBus.on("pagerendered", function (event) {
     let canvas = event.source.canvas;
-    if(event.cssTransform) {
+    if (event.cssTransform) {
       return;
     }
 
@@ -40,7 +40,8 @@ function createHighlight(canvas, page) {
     preview.style.top = (e.y - bb.top) + "px";
     preview.style.backgroundColor = getColor();
     preview.style.opacity = "0.2";
-    canvas.parentElement.parentElement.querySelector(".annotationEditorLayer").appendChild(preview);
+    canvas.parentElement.parentElement.querySelector(
+      ".annotationEditorLayer").appendChild(preview);
   })
 
   canvas.parentElement.parentElement.addEventListener("mousemove", (e) => {
@@ -85,17 +86,26 @@ function createHighlight(canvas, page) {
     let relH = (ee.y - es.y) / bb.height;
     let color = getColor();
     renderRect(canvas, relX, relY, relW, relH, color);
-    highlights.push( { page, relPos: { x: relX, y: relY }, relSize: { width: relW, height: relH }, color } );
+    highlights.push({
+      page,
+      relPos: {x: relX, y: relY},
+      relSize: {width: relW, height: relH},
+      color
+    });
 
-    let highlightSendFormat = {type: "highlight", color, startPosition: { x: relX, y: relY }, endPosition: { x: relX + relW, y: relY + relH }};
+    let highlightSendFormat = {
+      type: "highlight",
+      color,
+      startPosition: {x: relX, y: relY},
+      endPosition: {x: relX + relW, y: relY + relH}
+    };
     sendEvent("createHighlight", highlightSendFormat);
 
     preview = null;
-    canvas.parentElement.parentElement.querySelector(".annotationEditorLayer").innerHTML = "";
+    canvas.parentElement.parentElement.querySelector(
+      ".annotationEditorLayer").innerHTML = "";
   })
 }
-
-
 
 function createStickyNote(canvas) {
   canvas.parentElement.parentElement.addEventListener("click", (e) => {
@@ -111,7 +121,8 @@ function createStickyNote(canvas) {
 function drawAnnotations(event) {
   highlights.forEach(element => {
     if (element.page === event.pageNumber) {
-      renderHighlight(event.source.canvas, element.relPos, element.relSize, element.color, "Fritz", "abc");
+      renderHighlight(event.source.canvas, element.relPos, element.relSize,
+        element.color, "Fritz", "abc");
     }
   });
 }
@@ -160,7 +171,8 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
  * @param event the mouse down event
  */
 function disableSelect(event) {
-  event.preventDefault();}
+  event.preventDefault();
+}
 
 function startDrag(event) {
   window.addEventListener('mouseup', onDragEnd);
@@ -182,7 +194,8 @@ function onDragEnd() {
  * @param userName the username of the annotation creator
  * @param profilePictureURL the profile picture of the annotation creator
  */
-function renderStickyNote(canvas, relPos, content, color, userName, profilePictureURL) {
+function renderStickyNote(canvas, relPos, content, color, userName,
+  profilePictureURL) {
 
 }
 
@@ -196,6 +209,7 @@ function renderStickyNote(canvas, relPos, content, color, userName, profilePictu
  * @param userName the username of the annotation creator
  * @param profilePictureURL the profile picture of the annotation creator
  */
-function renderHighlight(canvas, relPos, relSize, color, userName, profilePictureURL) {
+function renderHighlight(canvas, relPos, relSize, color, userName,
+  profilePictureURL) {
   renderRect(canvas, relPos.x, relPos.y, relSize.width, relSize.height, color);
 }
