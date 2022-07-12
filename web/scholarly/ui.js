@@ -33,13 +33,27 @@ export function initUI() {
 function initExitButton() {
   let btn = document.getElementById("scholarlyExitViewer");
   btn.addEventListener("click", () => {
-    let f = window.parent?.pdfViewerEvent;
-    if(f != null) {
-      f('exit');
-    } else {
-      console.warn("Failed to call window.pdfViewerEvent of parent window");
-    }
+    sendEvent("exit");
   });
+}
+
+export function sendEvent(name, arg) {
+  let f = window.parent?.pdfViewerEvent;
+  if(f != null) {
+    f(name, arg);
+  } else {
+    console.warn("Failed to call window.pdfViewerEvent of parent window");
+  }
+}
+
+/**
+ * 'annotations' argument in RESTapi format
+ *
+ * @param name
+ * @param arg
+ */
+export function receiveEvent(name, arg) {
+
 }
 
 /**

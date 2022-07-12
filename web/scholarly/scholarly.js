@@ -1,4 +1,4 @@
-import {getColor, getMode, initUI} from "./ui.js";
+import {getColor, getMode, initUI, sendEvent} from "./ui.js";
 
 var highlights = [];
 let es;
@@ -87,10 +87,15 @@ function createHighlight(canvas, page) {
     renderRect(canvas, relX, relY, relW, relH, color);
     highlights.push( { page, relPos: { x: relX, y: relY }, relSize: { width: relW, height: relH }, color } );
 
+    let highlightSendFormat = {type: "highlight", color, startPosition: { x: relX, y: relY }, endPosition: { x: relX + relW, y: relY + relH }};
+    sendEvent("createHighlight", highlightSendFormat);
+
     preview = null;
     canvas.parentElement.parentElement.querySelector(".annotationEditorLayer").innerHTML = "";
   })
 }
+
+
 
 function createStickyNote(canvas) {
   canvas.parentElement.parentElement.addEventListener("click", (e) => {
