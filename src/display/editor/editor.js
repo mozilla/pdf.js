@@ -16,8 +16,12 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
+import {
+  AnnotationEditorPrefix,
+  shadow,
+  unreachable,
+} from "../../shared/util.js";
 import { bindEvents, ColorManager } from "./tools.js";
-import { shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -109,7 +113,10 @@ class AnnotationEditor {
     event.preventDefault();
 
     this.commitOrRemove();
-    this.parent.setActiveEditor(null);
+
+    if (!target?.id?.startsWith(AnnotationEditorPrefix)) {
+      this.parent.setActiveEditor(null);
+    }
   }
 
   commitOrRemove() {
