@@ -43,8 +43,6 @@ function createHighlight(canvas, page) {
       return;
     }
 
-    console.log('1');
-
     es = e;
     startDrag(e);
     disableSelect(e);
@@ -69,8 +67,6 @@ function createHighlight(canvas, page) {
     if (getMode() !== "highlight" || preview == null) {
       return;
     }
-
-    console.log('2');
 
     let bb = canvas.getBoundingClientRect();
     let endRelX = (e.x - bb.left) / bb.width;
@@ -99,8 +95,6 @@ function createHighlight(canvas, page) {
     if (getMode() !== "highlight") {
       return;
     }
-
-    console.log('3');
 
     onDragEnd();
     let bb = canvas.getBoundingClientRect();
