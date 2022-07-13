@@ -1,5 +1,6 @@
 import {getColor, getMode, initUI, sendEvent} from "./ui.js";
 
+var listeners = new Map();
 var highlights = [];
 let es;
 
@@ -12,9 +13,24 @@ export function init(app) {
       return;
     }
 
+    updateListeners(event);
     drawAnnotations(event);
     createHighlight(canvas, event.pageNumber);
   });
+}
+
+function updateListeners(e) {
+  let p = listeners.get(e.pageNumber);
+
+  if (p === undefined) {
+    return;
+  }
+
+  let canvas = e.source.canvas;
+
+  canvas.parentElement.parentElement.removeEventListener("mousedown", p.mouseDownListener);
+  canvas.parentElement.parentElement.removeEventListener("mousemove", p.mouseMoveListener);
+  canvas.parentElement.parentElement.removeEventListener("mouseup", p.mouseUpListener);
 }
 
 function createHighlight(canvas, page) {
@@ -22,10 +38,12 @@ function createHighlight(canvas, page) {
   let relX;
   let relY;
 
-  canvas.parentElement.parentElement.addEventListener("mousedown", (e) => {
+  function mouseDownListener(e) {
     if (getMode() !== "highlight") {
       return;
     }
+
+    console.log('1');
 
     es = e;
     startDrag(e);
@@ -45,12 +63,14 @@ function createHighlight(canvas, page) {
       canvas.parentElement.parentElement.querySelector(
         ".annotationEditorLayer").appendChild(preview);
     }
-  })
+  }
 
-  canvas.parentElement.parentElement.addEventListener("mousemove", (e) => {
+  function mouseMoveListener(e) {
     if (getMode() !== "highlight" || preview == null) {
       return;
     }
+
+    console.log('2');
 
     let bb = canvas.getBoundingClientRect();
     let endRelX = (e.x - bb.left) / bb.width;
@@ -73,20 +93,21 @@ function createHighlight(canvas, page) {
     } else {
       preview.style.top = (relY * bb.height) + "px";
     }
+  }
 
-  })
-
-  canvas.parentElement.parentElement.addEventListener("mouseup", (ee) => {
+  function mouseUpListener(e) {
     if (getMode() !== "highlight") {
       return;
     }
+
+    console.log('3');
 
     onDragEnd();
     let bb = canvas.getBoundingClientRect();
     let relX = (es.x - bb.left) / bb.width;
     let relY = (es.y - bb.top) / bb.height;
-    let relW = (ee.x - es.x) / bb.width;
-    let relH = (ee.y - es.y) / bb.height;
+    let relW = (e.x - es.x) / bb.width;
+    let relH = (e.y - es.y) / bb.height;
     let color = getColor();
     renderRect(canvas, relX, relY, relW, relH, color);
     highlights.push({
@@ -110,7 +131,15 @@ function createHighlight(canvas, page) {
       canvas.parentElement.parentElement.querySelector(
         ".annotationEditorLayer").innerHTML = "";
     }
-  })
+  }
+
+  canvas.parentElement.parentElement.addEventListener("mousedown", mouseDownListener);
+
+  canvas.parentElement.parentElement.addEventListener("mousemove", mouseMoveListener);
+
+  canvas.parentElement.parentElement.addEventListener("mouseup", mouseUpListener);
+
+  listeners.set(page, {mouseDownListener, mouseMoveListener, mouseUpListener});
 }
 
 function createStickyNote(canvas) {
