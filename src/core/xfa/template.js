@@ -457,7 +457,7 @@ class Arc extends XFAObject {
   }
 
   [$toHTML]() {
-    const edge = this.edge ? this.edge : new Edge({});
+    const edge = this.edge || new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
     if (this.fill && this.fill.presence === "visible") {
@@ -3650,7 +3650,7 @@ class Line extends XFAObject {
 
   [$toHTML]() {
     const parent = this[$getParent]()[$getParent]();
-    const edge = this.edge ? this.edge : new Edge({});
+    const edge = this.edge || new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
     const thickness = edge.presence === "visible" ? edge.thickness : 0;
