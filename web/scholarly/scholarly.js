@@ -40,8 +40,11 @@ function createHighlight(canvas, page) {
     preview.style.top = (e.y - bb.top) + "px";
     preview.style.backgroundColor = getColor();
     preview.style.opacity = "0.2";
-    canvas.parentElement.parentElement.querySelector(
-      ".annotationEditorLayer").appendChild(preview);
+
+    if (canvas.parentElement.parentElement != null) {
+      canvas.parentElement.parentElement.querySelector(
+        ".annotationEditorLayer").appendChild(preview);
+    }
   })
 
   canvas.parentElement.parentElement.addEventListener("mousemove", (e) => {
@@ -102,8 +105,11 @@ function createHighlight(canvas, page) {
     sendEvent("createHighlight", highlightSendFormat);
 
     preview = null;
-    canvas.parentElement.parentElement.querySelector(
-      ".annotationEditorLayer").innerHTML = "";
+
+    if (canvas.parentElement.parentElement != null) {
+      canvas.parentElement.parentElement.querySelector(
+        ".annotationEditorLayer").innerHTML = "";
+    }
   })
 }
 
