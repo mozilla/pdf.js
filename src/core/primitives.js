@@ -35,9 +35,8 @@ const Name = (function NameClosure() {
     }
 
     static get(name) {
-      const nameValue = nameCache[name];
       // eslint-disable-next-line no-restricted-syntax
-      return nameValue ? nameValue : (nameCache[name] = new Name(name));
+      return nameCache[name] || (nameCache[name] = new Name(name));
     }
 
     static _clearCache() {
@@ -65,9 +64,8 @@ const Cmd = (function CmdClosure() {
     }
 
     static get(cmd) {
-      const cmdValue = cmdCache[cmd];
       // eslint-disable-next-line no-restricted-syntax
-      return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
+      return cmdCache[cmd] || (cmdCache[cmd] = new Cmd(cmd));
     }
 
     static _clearCache() {
@@ -310,9 +308,8 @@ const Ref = (function RefClosure() {
 
     static get(num, gen) {
       const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
-      const refValue = refCache[key];
       // eslint-disable-next-line no-restricted-syntax
-      return refValue ? refValue : (refCache[key] = new Ref(num, gen));
+      return refCache[key] || (refCache[key] = new Ref(num, gen));
     }
 
     static _clearCache() {

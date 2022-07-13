@@ -1267,7 +1267,7 @@ class Font {
 
       // Read the table associated data
       const previousPosition = file.pos;
-      file.pos = file.start ? file.start : 0;
+      file.pos = file.start || 0;
       file.skip(offset);
       const data = file.getBytes(length);
       file.pos = previousPosition;
@@ -1405,7 +1405,7 @@ class Font {
         };
       }
       let segment;
-      let start = (file.start ? file.start : 0) + cmap.offset;
+      let start = (file.start || 0) + cmap.offset;
       file.pos = start;
 
       file.skip(2); // version
@@ -1717,7 +1717,7 @@ class Font {
         return;
       }
 
-      file.pos = (file.start ? file.start : 0) + header.offset;
+      file.pos = (file.start || 0) + header.offset;
       file.pos += 4; // version
       file.pos += 2; // ascent
       file.pos += 2; // descent
@@ -2081,7 +2081,7 @@ class Font {
     }
 
     function readPostScriptTable(post, propertiesObj, maxpNumGlyphs) {
-      const start = (font.start ? font.start : 0) + post.offset;
+      const start = (font.start || 0) + post.offset;
       font.pos = start;
 
       const length = post.length,
@@ -2151,7 +2151,7 @@ class Font {
     }
 
     function readNameTable(nameTable) {
-      const start = (font.start ? font.start : 0) + nameTable.offset;
+      const start = (font.start || 0) + nameTable.offset;
       font.pos = start;
 
       const names = [[], []];

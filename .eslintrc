@@ -46,8 +46,8 @@
     }],
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-push-push": "error",
-    "unicorn/no-new-buffer": "error",
     "unicorn/no-instanceof-array": "error",
+    "unicorn/no-new-buffer": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-array-flat": "error",
     "unicorn/prefer-array-flat-map": "error",
@@ -56,6 +56,7 @@
     "unicorn/prefer-date-now": "error",
     "unicorn/prefer-dom-node-append": "error",
     "unicorn/prefer-dom-node-remove": "error",
+    "unicorn/prefer-logical-operator-over-ternary": "error",
     "unicorn/prefer-modern-dom-apis": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 
