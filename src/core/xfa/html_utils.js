@@ -247,7 +247,7 @@ function layoutNode(node, availableSpace) {
       }
     }
 
-    const maxWidth = (!node.w ? availableSpace.width : node.w) - marginH;
+    const maxWidth = (node.w || availableSpace.width) - marginH;
     const fontFinder = node[$globalData].fontFinder;
     if (
       node.value.exData &&
