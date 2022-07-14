@@ -1,3 +1,5 @@
+import {initFilter} from "./filter.js";
+
 let modes;
 let activeMode = 'none';
 
@@ -28,6 +30,7 @@ export function initUI() {
   modes.highlight.input.value = '#FFFF00';
 
   initExitButton();
+  initFilter();
 }
 
 function initExitButton() {

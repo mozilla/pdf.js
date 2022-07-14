@@ -1488,3 +1488,24 @@ dialog :link {
     display: none;
   }
 }
+
+
+#scholarlyFilterContainer::before {
+  position:absolute;
+  left: 2px;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  content: url(images/filter.svg);
+  opacity: var(--toolbar-icon-opacity);
+  pointer-events: none;
+}
+
+#scholarlyFilter {
+  appearance: none;
+  padding-left: 25px;
+}
+
+#scholarlyFilter > option {
+  color: rgba(0, 0, 0, 0.4);
+}
