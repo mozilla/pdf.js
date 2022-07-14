@@ -2,6 +2,7 @@ import {getColor, getMode, initUI, sendEvent} from "./ui.js";
 
 var listeners = new Map();
 var highlights = [];
+var stickyNotes = [];
 let es;
 
 export function init(app) {
@@ -16,6 +17,7 @@ export function init(app) {
     updateListeners(event);
     drawAnnotations(event);
     createHighlight(canvas, event.pageNumber);
+    createStickyNote(canvas, event.pageNumber);
   });
 }
 
@@ -128,19 +130,91 @@ function createHighlight(canvas, page) {
   }
 
   canvas.parentElement.parentElement.addEventListener("mousedown", mouseDownListener);
-
   canvas.parentElement.parentElement.addEventListener("mousemove", mouseMoveListener);
-
   canvas.parentElement.parentElement.addEventListener("mouseup", mouseUpListener);
 
   listeners.set(page, {mouseDownListener, mouseMoveListener, mouseUpListener});
 }
 
-function createStickyNote(canvas) {
+function createStickyNote(canvas, page) {
   canvas.parentElement.parentElement.addEventListener("click", (e) => {
-    onClick(e, canvas);
+    if (getMode() !== "stickyNote") {
+      return;
+    }
+
+    let bb = canvas.getBoundingClientRect();
+    let relX = (e.x - bb.left) / bb.width;
+    let relY = (e.y - bb.top) / bb.height;
+    let color = getColor();
+
+    var styles = `
+    .stickynote-wrapper {
+      --color-bg: ` + color + `;
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .stickynote-content {
+      background-color: var(--color-bg);
+      padding: 1em 2em 1em 1em;
+      border-radius: 0 1em 1em 1em;
+      color: rgba(0, 0, 0, 80%);
+      margin-right: 0.3em;
+    }
+
+    .stickynote-wrapper > img {
+      width: 3em;
+      height: 3em;
+      border-radius: 100%;
+      overflow: hidden;
+    }
+
+    .stickynote-content > svg {
+      position: absolute;
+      top: 5px;
+      right: 3.3em;
+      cursor: pointer;
+    }
+    `
+
+    let page = canvas.parentElement.parentElement;
+    let span = document.createElement("span");
+    let profilePicture = "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
+
+    span.innerHTML = '<div class="stickynote-wrapper">\n'
+      + '  <div class="stickynote-content">\n'
+      + '      <svg style="width:24px;height:24px" viewBox="0 0 24 24">\n'
+      + '        <path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" />\n'
+      + '      </svg>\n'
+      + '    This is super usefull information!\n'
+      + '  </div>\n'
+      + '  \n'
+      + '  <img src=' + profilePicture + ' />\n'
+      + '</div>\n'
+
+    var styleSheet = document.createElement("style");
+    styleSheet.innerText = styles;
+
+    span.style.position = "absolute";
+    span.style.top = (e.y - bb.top) + "px";
+    span.style.left = (e.x - bb.left) + "px";
+    span.appendChild(styleSheet);
+    page.appendChild(span);
+    span.contentEditable = true;
+
+    let content = span.innerText;
+    stickyNotes.push({
+      page,
+      relPos: {x: relX, y: relY},
+      color,
+      content
+    });
   })
 }
+
 
 /**
  * Draws the existing annotations at their corresponding positions.
@@ -154,22 +228,6 @@ function drawAnnotations(event) {
         element.color, "Fritz", "abc");
     }
   });
-}
-
-function onClick(e, canvas) {
-  let bb = canvas.getBoundingClientRect();
-  let relX = (e.x - bb.left) / bb.width;
-  let relY = (e.y - bb.top) / bb.height;
-  renderRect(canvas, relX, relY, 0.1, 0.1);
-
-  let page = canvas.parentElement.parentElement;
-  let span = document.createElement("span");
-  span.style.position = "absolute";
-  span.style.top = (e.y - bb.top) + "px";
-  span.style.left = (e.x - bb.left) + "px";
-  span.setAttribute("type", "text");
-  span.setAttribute("value", "Hello World!");
-  page.appendChild(span);
 }
 
 /**
@@ -192,6 +250,10 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
   ctx.fillStyle = color;
   ctx.globalAlpha = 0.2;
   ctx.fillRect(absX, absY, absW, absH);
+}
+
+function renderStickyNote(canvas, relX, relY, color, content, profilePictureURL) {
+
 }
 
 /**
