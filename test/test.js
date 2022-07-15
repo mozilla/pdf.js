@@ -962,6 +962,8 @@ async function startBrowser(browserName, startUrl = "") {
       "print.printer_PDF.print_to_filename": printFile,
       // Enable OffscreenCanvas
       "gfx.offscreencanvas.enabled": true,
+      // Disable gpu acceleration
+      "gfx.canvas.accelerated": false,
     };
   }
 
