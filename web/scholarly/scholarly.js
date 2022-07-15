@@ -1,4 +1,5 @@
 import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
+import {getFilter} from "./filter";
 
 var listeners = new Map();
 var highlights = [];
@@ -7,6 +8,11 @@ let es;
 let profilePictureURL = "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
 let stickyNoteCounter = 1;
 let stickyNoteId = 1;
+
+//  { id: 1, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000",
+//      startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" },
+//  { id: 2, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000",
+//      content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
 
 export function init(app) {
   initUI();
@@ -17,11 +23,25 @@ export function init(app) {
       return;
     }
 
+    initAnnotations();
     updateListeners(event);
     drawAnnotations(event);
     createHighlight(canvas, event.pageNumber);
     createStickyNote(canvas, event.pageNumber);
   });
+}
+
+function initAnnotations() {
+  // Loads the existing annotations into the highlights / stickyNotes array.
+  for (let i = 0; i < window.scholarlyAnnotations.length; i++) {
+    let annotation = window.scholarlyAnnotations[i];
+
+    if (annotation.type === "highlight") {
+      highlights.push({})
+    } else if (annotation.type === "stickyNote") {
+
+    }
+  }
 }
 
 function updateListeners(e) {
@@ -109,6 +129,10 @@ function createHighlight(canvas, page) {
     let relH = (e.y - es.y) / bb.height;
     let color = getColor();
     renderRect(canvas, relX, relY, relW, relH, color);
+
+    //  { id: 1, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000",
+    //      startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" }
+
     highlights.push({
       page,
       relPos: {x: relX, y: relY},
@@ -155,6 +179,9 @@ function createStickyNote(canvas, page) {
     let color = getColor();
     let content = null;
 
+    //  { id: 2, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000",
+    //      content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
+
     stickyNotes.push({
       stickyNoteId,
       page,
@@ -171,18 +198,42 @@ function createStickyNote(canvas, page) {
 }
 
 function drawAnnotations(event) {
-  highlights.forEach(element => {
+  if (getFilter() == null) {
+    return;
+  }
+
+  for (let i = 0; i < highlights.length; i++) {
+    let element = highlights[i]
+
+    if (getFilter().empty() && element.collectionId != null) {
+      continue;
+    }
+
+    if (!getFilter().includes(element.collectionId)) {
+      continue;
+    }
+
     if (element.page === event.pageNumber) {
       renderHighlight(event.source.canvas, element.relPos, element.relSize,
         element.color, "Fritz", "abc");
     }
-  });
+  }
 
-  stickyNotes.forEach(element => {
+  for (let i = 0; i < stickyNotes.length; i++) {
+    let element = stickyNotes[i];
+
+    if (getFilter().empty() && element.collectionId != null) {
+      continue;
+    }
+
+    if (!getFilter().includes(element.collectionId)) {
+      continue;
+    }
+
     if (element.page === event.pageNumber) {
       renderStickyNote(element.stickyNoteId, event.source.canvas, element.relPos, element.content, element.color, "Fritz", profilePictureURL);
     }
-  });
+  }
 }
 
 function renderRect(canvas, relX, relY, relW, relH, color) {
@@ -290,14 +341,6 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
       }
     }
   });
-}
-
-function changeToEdit() {
-
-}
-
-function changeToDisplay() {
-
 }
 
 function disableSelect(event) {

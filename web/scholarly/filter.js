@@ -7,7 +7,8 @@ window.scholarlyCollections = [
 ]
 
 window.scholarlyAnnotations = [
-  {}
+  { id: 1, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" },
+  { id: 2, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
 ]
 
 const SELECT = document.getElementById("scholarlyFilter");
@@ -24,7 +25,7 @@ export function initFilter() {
 }
 
 // Returns an array of collection IDs (numbers) which are filtered.
-// Returns all collections if all annotations should be displayed.
+// (Returns all collections if all annotations should be displayed.)
 // Returns an empty array if only full-scope annotations should be displayed.
 // Returns null if no annotations should be displayed.
 export function getFilter() {
