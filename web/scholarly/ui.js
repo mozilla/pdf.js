@@ -68,6 +68,10 @@ export function getMode() {
   return activeMode;
 }
 
+export function setMode(mode) {
+  onButtonClick(mode);
+}
+
 /**
  * Returns the color of the currently selected tool in RGB hex format.
  * If no tool is selected, this function returns '#000000'.

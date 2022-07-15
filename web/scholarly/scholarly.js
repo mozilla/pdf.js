@@ -1,4 +1,4 @@
-import {getColor, getMode, initUI, sendEvent} from "./ui.js";
+import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
 
 var listeners = new Map();
 var highlights = [];
@@ -164,8 +164,9 @@ function createStickyNote(canvas, page) {
     });
 
     renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePictureURL)
-
     stickyNoteId++;
+
+    setMode('none');
   })
 }
 
@@ -205,7 +206,7 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
   let idSpanDisplay = "noteDisplay" + stickyNoteCounter;
   stickyNoteCounter++;
 
-  let spanEdit = document.createElement("span");
+  let spanEdit = document.createElement("div");
   spanEdit.innerHTML =
     `<div class="stickynote-wrapper" id="${idSpanEdit}">\n`
     + `  <div class="stickynote-content" style="background-color: ${color}"'>\n`
@@ -219,14 +220,15 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
   spanEdit.style.position = "absolute";
   spanEdit.style.top = (relY * bb.height) + "px";
   spanEdit.style.left = (relX * bb.width) + "px";
-  spanEdit.style.backgroundColor = color;
+  //spanEdit.style.backgroundColor = color;
   canvas.parentElement.parentElement.appendChild(spanEdit);
 
-  let spanDisplay = document.createElement("span");
-  spanDisplay = document.createElement("span");
+  let spanDisplay = document.createElement("div");
+  spanDisplay.setAttribute("id", idSpanDisplay);
+  spanDisplay.setAttribute("class", "stickynote-wrapper");
+
   spanDisplay.innerHTML =
-    `<div class="stickynote-wrapper" style="top: 200px" id="${idSpanDisplay}">\n`
-    + `  <div class="stickynote-content style="background-color: ${color}">\n`
+    `  <div class="stickynote-content" style="background-color: ${color}">\n`
     + `    <div style="top: 6px" id="${idDelete}">\n`
     + '      <svg style="width:20px;height:20px" viewBox="0 0 24 24">\n'
     + '        <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />\n'
@@ -242,11 +244,10 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
     + '    </p>\n'
     + '  </div>\n'
     + '  <img src=' + profilePictureURL + ' />\n'
-    + '</div>'
   spanDisplay.style.position = "absolute";
   spanDisplay.style.top = (relY * bb.height) + "px";
   spanDisplay.style.left = (relX * bb.width) + "px";
-  spanDisplay.style.backgroundColor = color;
+  //spanDisplay.style.backgroundColor = color;
   canvas.parentElement.parentElement.appendChild(spanDisplay);
 
   console.log("ID: " + stickyNoteId);

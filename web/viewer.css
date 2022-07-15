@@ -1546,13 +1546,14 @@ dialog :link {
 
 */
 
-stickynote-wrapper {
+.stickynote-wrapper {
   position: absolute;
   top: 0px;
   left: 0px;
   display: flex;
   flex-direction: row;
   max-width: 30em;
+  min-height: 5em;
 }
 
 .stickynote-content {
@@ -1573,11 +1574,12 @@ stickynote-wrapper {
   min-height: 3em;
   border-radius: 100%;
   overflow: hidden;
+
 }
 
 .stickynote-content > div {
   position: absolute;
-  right: 0.25em;
+  right: 3.5em;
   cursor: pointer;
   color: black;
   opacity: 40%;
