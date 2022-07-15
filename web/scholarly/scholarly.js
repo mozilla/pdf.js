@@ -5,6 +5,8 @@ var highlights = [];
 var stickyNotes = [];
 let es;
 let profilePictureURL = "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
+let stickyNoteCounter = 1;
+let stickyNoteId = 1;
 
 export function init(app) {
   initUI();
@@ -143,18 +145,27 @@ function createStickyNote(canvas, page) {
       return;
     }
 
+    if (e.y < page.y || e.y > page.y + page.height) {
+      return;
+    }
+
     let bb = canvas.getBoundingClientRect();
     let relX = (e.x - bb.left) / bb.width;
     let relY = (e.y - bb.top) / bb.height;
     let color = getColor();
-    let content = "Enter text..."
-    renderNote(canvas, relX, relY, color, content, profilePictureURL)
+    let content = null;
+
     stickyNotes.push({
+      stickyNoteId,
       page,
       relPos: {x: relX, y: relY},
       color,
       content
     });
+
+    renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePictureURL)
+
+    stickyNoteId++;
   })
 }
 
@@ -166,11 +177,9 @@ function drawAnnotations(event) {
     }
   });
 
-
-
   stickyNotes.forEach(element => {
     if (element.page === event.pageNumber) {
-      renderStickyNote(event.source.canvas, element.relPos, element.content, element.color, "Fritz", profilePictureURL);
+      renderStickyNote(element.stickyNoteId, event.source.canvas, element.relPos, element.content, element.color, "Fritz", profilePictureURL);
     }
   });
 }
@@ -188,20 +197,18 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
   ctx.fillRect(absX, absY, absW, absH);
 }
 
-let counter = 1;
-
-function renderNote(canvas, relX, relY, color, content, profilePictureURL) {
-  let idSave = "StickyNoteSave" + counter;
-  let idDelete = "StickyNoteDelete" + counter;
-  let idEdit = "StickyNoteEdit" + counter;
-  let idSpanEdit = "noteEdit" + counter;
-  let idSpanDisplay = "noteDisplay" + counter;
-  counter++;
+function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePictureURL) {
+  let idSave = "StickyNoteSave" + stickyNoteCounter;
+  let idDelete = "StickyNoteDelete" + stickyNoteCounter;
+  let idEdit = "StickyNoteEdit" + stickyNoteCounter;
+  let idSpanEdit = "noteEdit" + stickyNoteCounter;
+  let idSpanDisplay = "noteDisplay" + stickyNoteCounter;
+  stickyNoteCounter++;
 
   let spanEdit = document.createElement("span");
   spanEdit.innerHTML =
     `<div class="stickynote-wrapper" id="${idSpanEdit}">\n`
-    + `  <div class="stickynote-content" style="background-color: ${getColor()}"'>\n`
+    + `  <div class="stickynote-content" style="background-color: ${color}"'>\n`
     + '    <textarea placeholder="Add a sticky note"></textarea>\n'
     + `    <button id="${idSave}" >Save</button>\n`
     + '  </div>\n'
@@ -212,14 +219,14 @@ function renderNote(canvas, relX, relY, color, content, profilePictureURL) {
   spanEdit.style.position = "absolute";
   spanEdit.style.top = (relY * bb.height) + "px";
   spanEdit.style.left = (relX * bb.width) + "px";
-  spanEdit.style.backgroundColor = getColor();
+  spanEdit.style.backgroundColor = color;
   canvas.parentElement.parentElement.appendChild(spanEdit);
 
   let spanDisplay = document.createElement("span");
   spanDisplay = document.createElement("span");
   spanDisplay.innerHTML =
     `<div class="stickynote-wrapper" style="top: 200px" id="${idSpanDisplay}">\n`
-    + '  <div class="stickynote-content">\n'
+    + `  <div class="stickynote-content style="background-color: ${color}">\n`
     + `    <div style="top: 6px" id="${idDelete}">\n`
     + '      <svg style="width:20px;height:20px" viewBox="0 0 24 24">\n'
     + '        <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />\n'
@@ -239,11 +246,29 @@ function renderNote(canvas, relX, relY, color, content, profilePictureURL) {
   spanDisplay.style.position = "absolute";
   spanDisplay.style.top = (relY * bb.height) + "px";
   spanDisplay.style.left = (relX * bb.width) + "px";
-  spanDisplay.style.backgroundColor = getColor();
+  spanDisplay.style.backgroundColor = color;
   canvas.parentElement.parentElement.appendChild(spanDisplay);
-  spanDisplay.hidden = true;
+
+  console.log("ID: " + stickyNoteId);
+  console.log("CONTENT: " + content);
+  if (content == null) {
+    spanDisplay.hidden = true;
+  } else {
+    spanEdit.hidden = true;
+    document.querySelector(`.stickynote-wrapper#${idSpanEdit} > div > textarea`).value = content;
+    document.querySelector(`.stickynote-wrapper#${idSpanDisplay} > div > p`).innerText = content;
+  }
+
 
   document.getElementById(idDelete).addEventListener("click", (e) => {
+    canvas.parentElement.parentElement.removeChild(spanDisplay);
+    canvas.parentElement.parentElement.removeChild(spanEdit);
+
+    for (var i = 0; i < stickyNotes.length; i++) {
+      if (stickyNotes[i].stickyNoteId == stickyNoteId) {
+        stickyNotes.splice(i, 1);
+      }
+    }
   });
 
   document.getElementById(idEdit).addEventListener("click", (e) => {
@@ -257,6 +282,12 @@ function renderNote(canvas, relX, relY, color, content, profilePictureURL) {
     spanEdit.hidden = true;
     spanDisplay.hidden = false;
     paragraph.innerText = textField.value;
+
+    for (var i = 0; i < stickyNotes.length; i++) {
+      if (stickyNotes[i].stickyNoteId == stickyNoteId) {
+        stickyNotes[i].content = textField.value;
+      }
+    }
   });
 }
 
@@ -282,9 +313,9 @@ function onDragEnd() {
   window.removeEventListener('selectstart', disableSelect);
 }
 
-function renderStickyNote(canvas, relPos, content, color, userName,
+function renderStickyNote(stickyNoteId, canvas, relPos, content, color, userName,
   profilePictureURL) {
-  renderNote(canvas, relPos.x, relPos.y, color, content, profilePictureURL);
+  renderNote(stickyNoteId, canvas, relPos.x, relPos.y, color, content, profilePictureURL);
 }
 
 function renderHighlight(canvas, relPos, relSize, color, userName,
