@@ -339,7 +339,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code = code && stringToPDFString(code);
+      code = code && stringToPDFString(code).replace(/\u0000/g, "");
       if (code) {
         list.push(code);
       }
