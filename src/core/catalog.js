@@ -982,7 +982,8 @@ class Catalog {
       if (javaScript === null) {
         javaScript = new Map();
       }
-      javaScript.set(name, stringToPDFString(js));
+      js = stringToPDFString(js).replace(/\u0000/g, "");
+      javaScript.set(name, js);
     }
 
     if (obj instanceof Dict && obj.has("JavaScript")) {
