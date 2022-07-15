@@ -1509,3 +1509,98 @@ dialog :link {
 #scholarlyFilter > option {
   color: rgba(0, 0, 0, 0.4);
 }
+
+/*
+
+.stickynote-wrapper {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  display: flex;
+  flex-direction: row;
+}
+
+.stickynote-content {
+  min-width: 12em;
+  padding: 1em 2em 1em 1em;
+  border-radius: 0 1em 1em 1em;
+  color: rgba(0, 0, 0, 80%);
+  margin-right: 0.3em;
+}
+
+.stickynote-wrapper > img {
+  width: 3em;
+  height: 3em;
+  min-width: 3em;
+  min-height: 3em;
+  border-radius: 100%;
+  overflow: hidden;
+}
+
+.stickynote-content > div {
+  position: absolute;
+  top: 5px;
+  right: 3.3em;
+  cursor: pointer;
+}
+
+*/
+
+stickynote-wrapper {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  display: flex;
+  flex-direction: row;
+  max-width: 30em;
+}
+
+.stickynote-content {
+  border-radius: 0 0.6em 0.6em 0.6em;
+  min-width: 12em;
+  min-height: 4em;
+  color: rgba(0, 0, 0, 80%);
+  margin-right: 0.3em;
+  display: flex;
+  flex-direction: column;
+
+}
+
+.stickynote-wrapper > img {
+  width: 3em;
+  height: 3em;
+  min-width: 3em;
+  min-height: 3em;
+  border-radius: 100%;
+  overflow: hidden;
+}
+
+.stickynote-content > div {
+  position: absolute;
+  right: 0.25em;
+  cursor: pointer;
+  color: black;
+  opacity: 40%;
+}
+
+.stickynote-content > div:hover {
+  opacity: 70%;
+}
+
+.stickynote-content > textarea {
+  background-color: transparent;
+  margin: 0.5em 0.5em 0 0.5em;
+  border: none;
+}
+
+.stickynote-content > button {
+  margin: 0.5em;
+  width: 4em;
+  margin-left: auto;
+}
+
+.stickynote-content > p {
+  padding: 0.5em 1.5em 0.5em 0.5em;
+  margin: 0;
+}
+

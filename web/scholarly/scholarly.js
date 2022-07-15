@@ -4,6 +4,7 @@ var listeners = new Map();
 var highlights = [];
 var stickyNotes = [];
 let es;
+let profilePictureURL = "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
 
 export function init(app) {
   initUI();
@@ -146,66 +147,8 @@ function createStickyNote(canvas, page) {
     let relX = (e.x - bb.left) / bb.width;
     let relY = (e.y - bb.top) / bb.height;
     let color = getColor();
-
-    var styles = `
-    .stickynote-wrapper {
-      --color-bg: ` + color + `;
-      position: absolute;
-      top: 0px;
-      left: 0px;
-      display: flex;
-      flex-direction: row;
-    }
-
-    .stickynote-content {
-      background-color: var(--color-bg);
-      padding: 1em 2em 1em 1em;
-      border-radius: 0 1em 1em 1em;
-      color: rgba(0, 0, 0, 80%);
-      margin-right: 0.3em;
-    }
-
-    .stickynote-wrapper > img {
-      width: 3em;
-      height: 3em;
-      border-radius: 100%;
-      overflow: hidden;
-    }
-
-    .stickynote-content > svg {
-      position: absolute;
-      top: 5px;
-      right: 3.3em;
-      cursor: pointer;
-    }
-    `
-
-    let page = canvas.parentElement.parentElement;
-    let span = document.createElement("span");
-    let profilePicture = "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
-
-    span.innerHTML = '<div class="stickynote-wrapper">\n'
-      + '  <div class="stickynote-content">\n'
-      + '      <svg style="width:24px;height:24px" viewBox="0 0 24 24">\n'
-      + '        <path fill="currentColor" d="M12,16A2,2 0 0,1 14,18A2,2 0 0,1 12,20A2,2 0 0,1 10,18A2,2 0 0,1 12,16M12,10A2,2 0 0,1 14,12A2,2 0 0,1 12,14A2,2 0 0,1 10,12A2,2 0 0,1 12,10M12,4A2,2 0 0,1 14,6A2,2 0 0,1 12,8A2,2 0 0,1 10,6A2,2 0 0,1 12,4Z" />\n'
-      + '      </svg>\n'
-      + '    This is super usefull information!\n'
-      + '  </div>\n'
-      + '  \n'
-      + '  <img src=' + profilePicture + ' />\n'
-      + '</div>\n'
-
-    var styleSheet = document.createElement("style");
-    styleSheet.innerText = styles;
-
-    span.style.position = "absolute";
-    span.style.top = (e.y - bb.top) + "px";
-    span.style.left = (e.x - bb.left) + "px";
-    span.appendChild(styleSheet);
-    page.appendChild(span);
-    span.contentEditable = true;
-
-    let content = span.innerText;
+    let content = "Enter text..."
+    renderNote(canvas, relX, relY, color, content, profilePictureURL)
     stickyNotes.push({
       page,
       relPos: {x: relX, y: relY},
@@ -215,12 +158,6 @@ function createStickyNote(canvas, page) {
   })
 }
 
-
-/**
- * Draws the existing annotations at their corresponding positions.
- *
- * @param event the page render event
- */
 function drawAnnotations(event) {
   highlights.forEach(element => {
     if (element.page === event.pageNumber) {
@@ -228,17 +165,16 @@ function drawAnnotations(event) {
         element.color, "Fritz", "abc");
     }
   });
+
+
+
+  stickyNotes.forEach(element => {
+    if (element.page === event.pageNumber) {
+      renderStickyNote(event.source.canvas, element.relPos, element.content, element.color, "Fritz", profilePictureURL);
+    }
+  });
 }
 
-/**
- * Draws a colored rectangle at the given position.
- *
- * @param canvas the canvas on which to draw
- * @param relX the relative x position
- * @param relY the relative y position
- * @param relW the relative width of the rectangle
- * @param relH the relative height of the rectangle
- */
 function renderRect(canvas, relX, relY, relW, relH, color) {
   let ctx = canvas.getContext('2d');
 
@@ -252,15 +188,86 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
   ctx.fillRect(absX, absY, absW, absH);
 }
 
-function renderStickyNote(canvas, relX, relY, color, content, profilePictureURL) {
+let counter = 1;
+
+function renderNote(canvas, relX, relY, color, content, profilePictureURL) {
+  let idSave = "StickyNoteSave" + counter;
+  let idDelete = "StickyNoteDelete" + counter;
+  let idEdit = "StickyNoteEdit" + counter;
+  let idSpanEdit = "noteEdit" + counter;
+  let idSpanDisplay = "noteDisplay" + counter;
+  counter++;
+
+  let spanEdit = document.createElement("span");
+  spanEdit.innerHTML =
+    `<div class="stickynote-wrapper" id="${idSpanEdit}">\n`
+    + `  <div class="stickynote-content" style="background-color: ${getColor()}"'>\n`
+    + '    <textarea placeholder="Add a sticky note"></textarea>\n'
+    + `    <button id="${idSave}" >Save</button>\n`
+    + '  </div>\n'
+    + '\n'
+    + '  <img src=' + profilePictureURL + ' />\n'
+    + '</div>'
+  let bb = canvas.getBoundingClientRect();
+  spanEdit.style.position = "absolute";
+  spanEdit.style.top = (relY * bb.height) + "px";
+  spanEdit.style.left = (relX * bb.width) + "px";
+  spanEdit.style.backgroundColor = getColor();
+  canvas.parentElement.parentElement.appendChild(spanEdit);
+
+  let spanDisplay = document.createElement("span");
+  spanDisplay = document.createElement("span");
+  spanDisplay.innerHTML =
+    `<div class="stickynote-wrapper" style="top: 200px" id="${idSpanDisplay}">\n`
+    + '  <div class="stickynote-content">\n'
+    + `    <div style="top: 6px" id="${idDelete}">\n`
+    + '      <svg style="width:20px;height:20px" viewBox="0 0 24 24">\n'
+    + '        <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />\n'
+    + '      </svg>\n'
+    + '    </div>\n'
+    + `    <div style="top: 30px" id="${idEdit}">\n`
+    + '      <svg style="width:20px;height:20px" viewBox="0 0 24 24">\n'
+    + '        <path fill="currentColor" d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />\n'
+    + '      </svg>\n'
+    + '    </div>\n'
+    + '    <p>\n'
+    + `${content}`
+    + '    </p>\n'
+    + '  </div>\n'
+    + '  <img src=' + profilePictureURL + ' />\n'
+    + '</div>'
+  spanDisplay.style.position = "absolute";
+  spanDisplay.style.top = (relY * bb.height) + "px";
+  spanDisplay.style.left = (relX * bb.width) + "px";
+  spanDisplay.style.backgroundColor = getColor();
+  canvas.parentElement.parentElement.appendChild(spanDisplay);
+  spanDisplay.hidden = true;
+
+  document.getElementById(idDelete).addEventListener("click", (e) => {
+  });
+
+  document.getElementById(idEdit).addEventListener("click", (e) => {
+    spanDisplay.hidden = true;
+    spanEdit.hidden = false;
+  });
+
+  document.getElementById(idSave).addEventListener("click", (e) => {
+    let textField = document.querySelector(`.stickynote-wrapper#${idSpanEdit} > div > textarea`);
+    let paragraph = document.querySelector(`.stickynote-wrapper#${idSpanDisplay} > div > p`);
+    spanEdit.hidden = true;
+    spanDisplay.hidden = false;
+    paragraph.innerText = textField.value;
+  });
+}
+
+function changeToEdit() {
 
 }
 
-/**
- * Prevents text from being selected while drawing a rectangle.
- *
- * @param event the mouse down event
- */
+function changeToDisplay() {
+
+}
+
 function disableSelect(event) {
   event.preventDefault();
 }
@@ -275,31 +282,11 @@ function onDragEnd() {
   window.removeEventListener('selectstart', disableSelect);
 }
 
-/**
- * Renders a sticky note.
- *
- * @param canvas the canvas on which to draw
- * @param relPos the relative position of the annotation on the PDF file
- * @param content the textual content
- * @param color the color of the rectangle
- * @param userName the username of the annotation creator
- * @param profilePictureURL the profile picture of the annotation creator
- */
 function renderStickyNote(canvas, relPos, content, color, userName,
   profilePictureURL) {
-
+  renderNote(canvas, relPos.x, relPos.y, color, content, profilePictureURL);
 }
 
-/**
- * Renders a highlight.
- *
- * @param canvas the canvas on which to draw
- * @param relPos the relative position of the annotation on the PDF file
- * @param relSize the relative size of the rectangle
- * @param color the color of the rectangle
- * @param userName the username of the annotation creator
- * @param profilePictureURL the profile picture of the annotation creator
- */
 function renderHighlight(canvas, relPos, relSize, color, userName,
   profilePictureURL) {
   renderRect(canvas, relPos.x, relPos.y, relSize.width, relSize.height, color);
