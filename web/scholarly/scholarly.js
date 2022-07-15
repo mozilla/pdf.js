@@ -1,5 +1,4 @@
 import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
-import {getFilter} from "./filter.js";
 
 var listeners = new Map();
 var highlights = [];
@@ -39,8 +38,12 @@ function initAnnotations() {
         collectionId: null,
         page: annotation.startPosition.page,
         relPos: {x: annotation.startPosition.x, y: annotation.startPosition.y},
-        relSize: {width: Math.abs(annotation.startPosition.x - annotation.endPosition.x),
-                  height: Math.abs(annotation.startPosition.y - annotation.endPosition.y)},
+        relSize: {
+          width: Math.abs(
+            annotation.startPosition.x - annotation.endPosition.x),
+          height: Math.abs(
+            annotation.startPosition.y - annotation.endPosition.y)
+        },
         color: annotation.color
       });
     } else if (annotation.type === "stickyNote") {
@@ -69,10 +72,14 @@ function updateListeners(e) {
 
   let canvas = e.source.canvas;
 
-  canvas.parentElement.parentElement.removeEventListener("mousedown", p.mouseDownListener);
-  canvas.parentElement.parentElement.removeEventListener("mousemove", p.mouseMoveListener);
-  canvas.parentElement.parentElement.removeEventListener("mouseup", p.mouseUpListener);
-  canvas.parentElement.parentElement.removeEventListener("click", p.mouseClickListener);
+  canvas.parentElement.parentElement.removeEventListener("mousedown",
+    p.mouseDownListener);
+  canvas.parentElement.parentElement.removeEventListener("mousemove",
+    p.mouseMoveListener);
+  canvas.parentElement.parentElement.removeEventListener("mouseup",
+    p.mouseUpListener);
+  canvas.parentElement.parentElement.removeEventListener("click",
+    p.mouseClickListener);
 }
 
 function createHighlight(canvas, page) {
@@ -174,9 +181,12 @@ function createHighlight(canvas, page) {
     }
   }
 
-  canvas.parentElement.parentElement.addEventListener("mousedown", mouseDownListener);
-  canvas.parentElement.parentElement.addEventListener("mousemove", mouseMoveListener);
-  canvas.parentElement.parentElement.addEventListener("mouseup", mouseUpListener);
+  canvas.parentElement.parentElement.addEventListener("mousedown",
+    mouseDownListener);
+  canvas.parentElement.parentElement.addEventListener("mousemove",
+    mouseMoveListener);
+  canvas.parentElement.parentElement.addEventListener("mouseup",
+    mouseUpListener);
   listeners.set(page, {mouseDownListener, mouseMoveListener, mouseUpListener});
 }
 
@@ -208,12 +218,15 @@ function createStickyNote(canvas, page) {
       content
     });
 
-    renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePictureURL)
+    renderNote(stickyNoteId, canvas, relX, relY, color, content,
+      profilePictureURL)
     stickyNoteId++;
 
     setMode('none');
   }
-  canvas.parentElement.parentElement.addEventListener("click", mouseClickListener);
+
+  canvas.parentElement.parentElement.addEventListener("click",
+    mouseClickListener);
 
   let pageListeners = listeners.get(page);
   let md = pageListeners.mouseDownListener();
@@ -228,7 +241,6 @@ function drawAnnotations(event) {
     //return;
   }
    */
-
 
   for (let i = 0; i < highlights.length; i++) {
     let element = highlights[i];
@@ -265,7 +277,9 @@ function drawAnnotations(event) {
      */
 
     if (element.page === event.pageNumber) {
-      renderStickyNote(element.stickyNoteId, event.source.canvas, element.relPos, element.content, element.color, "Fritz", profilePictureURL);
+      renderStickyNote(element.stickyNoteId, event.source.canvas,
+        element.relPos, element.content, element.color, "Fritz",
+        profilePictureURL);
     }
   }
 }
@@ -283,7 +297,8 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
   ctx.fillRect(absX, absY, absW, absH);
 }
 
-function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePictureURL) {
+function renderNote(stickyNoteId, canvas, relX, relY, color, content,
+  profilePictureURL) {
   let idSave = "StickyNoteSave" + stickyNoteCounter;
   let idDelete = "StickyNoteDelete" + stickyNoteCounter;
   let idEdit = "StickyNoteEdit" + stickyNoteCounter;
@@ -305,7 +320,6 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
   spanEdit.style.position = "absolute";
   spanEdit.style.top = (relY * bb.height) + "px";
   spanEdit.style.left = (relX * bb.width) + "px";
-  //spanEdit.style.backgroundColor = color;
   canvas.parentElement.parentElement.appendChild(spanEdit);
 
   let spanDisplay = document.createElement("div");
@@ -332,17 +346,17 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
   spanDisplay.style.position = "absolute";
   spanDisplay.style.top = (relY * bb.height) + "px";
   spanDisplay.style.left = (relX * bb.width) + "px";
-  //spanDisplay.style.backgroundColor = color;
   canvas.parentElement.parentElement.appendChild(spanDisplay);
 
   if (content == null) {
     spanDisplay.hidden = true;
   } else {
     spanEdit.hidden = true;
-    document.querySelector(`.stickynote-wrapper#${idSpanEdit} > div > textarea`).value = content;
-    document.querySelector(`.stickynote-wrapper#${idSpanDisplay} > div > p`).innerText = content;
+    document.querySelector(
+      `.stickynote-wrapper#${idSpanEdit} > div > textarea`).value = content;
+    document.querySelector(
+      `.stickynote-wrapper#${idSpanDisplay} > div > p`).innerText = content;
   }
-
 
   document.getElementById(idDelete).addEventListener("click", (e) => {
     canvas.parentElement.parentElement.removeChild(spanDisplay);
@@ -361,8 +375,10 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content, profilePic
   });
 
   document.getElementById(idSave).addEventListener("click", (e) => {
-    let textField = document.querySelector(`.stickynote-wrapper#${idSpanEdit} > div > textarea`);
-    let paragraph = document.querySelector(`.stickynote-wrapper#${idSpanDisplay} > div > p`);
+    let textField = document.querySelector(
+      `.stickynote-wrapper#${idSpanEdit} > div > textarea`);
+    let paragraph = document.querySelector(
+      `.stickynote-wrapper#${idSpanDisplay} > div > p`);
     spanEdit.hidden = true;
     spanDisplay.hidden = false;
     paragraph.innerText = textField.value;
@@ -389,9 +405,11 @@ function onDragEnd() {
   window.removeEventListener('selectstart', disableSelect);
 }
 
-function renderStickyNote(stickyNoteId, canvas, relPos, content, color, userName,
+function renderStickyNote(stickyNoteId, canvas, relPos, content, color,
+  userName,
   profilePictureURL) {
-  renderNote(stickyNoteId, canvas, relPos.x, relPos.y, color, content, profilePictureURL);
+  renderNote(stickyNoteId, canvas, relPos.x, relPos.y, color, content,
+    profilePictureURL);
 }
 
 function renderHighlight(canvas, relPos, relSize, color, userName,
