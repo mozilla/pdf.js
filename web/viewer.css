@@ -1564,7 +1564,6 @@ dialog :link {
   margin-right: 0.3em;
   display: flex;
   flex-direction: column;
-
 }
 
 .stickynote-wrapper > img {
@@ -1581,7 +1580,7 @@ dialog :link {
   position: absolute;
   right: 3.5em;
   cursor: pointer;
-  color: black;
+  color: currentColor;
   opacity: 40%;
 }
 
@@ -1593,6 +1592,8 @@ dialog :link {
   background-color: transparent;
   margin: 0.5em 0.5em 0 0.5em;
   border: none;
+  max-width: 23em;
+  min-width: 10em;
 }
 
 .stickynote-content > button {

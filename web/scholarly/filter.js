@@ -29,7 +29,7 @@ export function initFilter() {
 // Returns an empty array if only full-scope annotations should be displayed.
 // Returns null if no annotations should be displayed.
 export function getFilter() {
-  return [...this.filter];
+  return [...filter];
 }
 
 // run when an option is selected

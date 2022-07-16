@@ -1,10 +1,11 @@
 import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
+import {getTextColor, removeEyeCancer} from "./color_utils.js";
+import {getFilter} from "./filter.js";
 
 var listeners = new Map();
 var highlights = [];
 var stickyNotes = [];
 let es;
-let profilePictureURL = "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
 let stickyNoteCounter = 1;
 let stickyNoteId = 1;
 
@@ -17,7 +18,7 @@ export function init(app) {
       return;
     }
 
-    //initAnnotations();
+    initAnnotations();
     updateListeners(event);
     drawAnnotations(event);
     createHighlight(canvas, event.pageNumber);
@@ -25,16 +26,19 @@ export function init(app) {
   });
 }
 
+function getProfilePicture(userId) {
+  return window.scholarlyUsers?.get(userId)?.profilePicture ?? "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
+}
+
 function initAnnotations() {
   // Loads the existing annotations into the highlights / stickyNotes array.
-  for (let i = 0; i < window.scholarlyAnnotations.length; i++) {
-    let annotation = window.scholarlyAnnotations[i];
-
+  for (let annotation of window.scholarlyAnnotations) {
     if (annotation.type === "highlight") {
       //  collectionId: 1, color: "#ff0000",
       //      startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" }
 
       highlights.push({
+        id: annotation.id,
         collectionId: null,
         page: annotation.startPosition.page,
         relPos: {x: annotation.startPosition.x, y: annotation.startPosition.y},
@@ -51,6 +55,8 @@ function initAnnotations() {
       //      content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
 
       stickyNotes.push({
+        id: annotation.id,
+        ownerId: annotation.ownerId,
         collectionId: null,
         stickyNoteId,
         page: annotation.position.page,
@@ -61,6 +67,20 @@ function initAnnotations() {
       stickyNoteId++;
     }
   }
+}
+
+/**
+ * Called every time an annotation is created.
+ *
+ * @param annotation
+ * @param callback
+ */
+function sendAnnotation(annotation, callback = null) {
+  sendEvent("newAnnotation", [ annotation, callback ]);
+}
+
+function deleteAnnotation(id) {
+  sendEvent("deleteAnnotation", id);
 }
 
 function updateListeners(e) {
@@ -90,6 +110,10 @@ function createHighlight(canvas, page) {
   function mouseDownListener(e) {
     if (getMode() !== "highlight") {
       return;
+    }
+
+    if (e === undefined) {
+      console.log("UNDEFINED");
     }
 
     es = e;
@@ -157,21 +181,23 @@ function createHighlight(canvas, page) {
     //  collectionId: 1, color: "#ff0000",
     //      startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" }
 
-    highlights.push({
+    let highlight = {
       collectionId: null,
       page,
       relPos: {x: relX, y: relY},
       relSize: {width: relW, height: relH},
       color
-    });
-
-    let highlightSendFormat = {
-      type: "highlight",
-      color,
-      startPosition: {x: relX, y: relY},
-      endPosition: {x: relX + relW, y: relY + relH}
     };
-    sendEvent("createHighlight", highlightSendFormat);
+    highlights.push(highlight);
+
+    sendAnnotation({
+      collectionId: null,
+      color,
+      page,
+      startPosition: {x: relX, y: relY},
+      endPosition: {x: relX + relW, y: relY + relH},
+      type: "highlight",
+    }, (id) => highlight.id = id);
 
     preview = null;
 
@@ -210,6 +236,7 @@ function createStickyNote(canvas, page) {
     //      content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
 
     stickyNotes.push({
+      ownerId: window.scholarlyUserId,
       collectionId: null,
       stickyNoteId,
       page,
@@ -219,7 +246,7 @@ function createStickyNote(canvas, page) {
     });
 
     renderNote(stickyNoteId, canvas, relX, relY, color, content,
-      profilePictureURL)
+      getProfilePicture(window.scholarlyUserId));
     stickyNoteId++;
 
     setMode('none');
@@ -229,57 +256,44 @@ function createStickyNote(canvas, page) {
     mouseClickListener);
 
   let pageListeners = listeners.get(page);
-  let md = pageListeners.mouseDownListener();
-  let mm = pageListeners.mouseMoveListener();
-  let mu = pageListeners.mouseUpListener();
+  let md = pageListeners.mouseDownListener;
+  let mm = pageListeners.mouseMoveListener;
+  let mu = pageListeners.mouseUpListener;
   listeners.set(page, {md, mm, mu, mouseClickListener});
 }
 
 function drawAnnotations(event) {
-  /*
   if (getFilter() == null) {
-    //return;
+    return;
   }
-   */
 
-  for (let i = 0; i < highlights.length; i++) {
-    let element = highlights[i];
-
-    /*
-    if (getFilter().empty() && element.collectionId != null) {
-      //continue;
-    }
-
-    if (!getFilter().includes(element.collectionId)) {
+  for (let element of highlights) {
+    if (getFilter().length === 0 && element.collectionId != null) {
       continue;
     }
 
-     */
+    if (element.collectionId != null && !getFilter().includes(element.collectionId)) {
+      continue;
+    }
 
     if (element.page === event.pageNumber) {
       renderHighlight(event.source.canvas, element.relPos, element.relSize,
-        element.color, "Fritz", "abc");
+        element.color);
     }
   }
 
-  for (let i = 0; i < stickyNotes.length; i++) {
-    let element = stickyNotes[i];
-
-    /*
-    if (getFilter().empty() && element.collectionId != null) {
-      //continue;
-    }
-
-    if (!getFilter().includes(element.collectionId)) {
+  for (let element of stickyNotes) {
+    if (getFilter().length === 0 && element.collectionId != null) {
       continue;
     }
 
-     */
+    if (element.collectionId != null && !getFilter().includes(element.collectionId)) {
+      continue;
+    }
 
     if (element.page === event.pageNumber) {
       renderStickyNote(element.stickyNoteId, event.source.canvas,
-        element.relPos, element.content, element.color, "Fritz",
-        profilePictureURL);
+        element.relPos, element.content, element.color, getProfilePicture(element.ownerId));
     }
   }
 }
@@ -299,6 +313,8 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
 
 function renderNote(stickyNoteId, canvas, relX, relY, color, content,
   profilePictureURL) {
+  color = removeEyeCancer(color);
+  let textColor = getTextColor(color);
   let idSave = "StickyNoteSave" + stickyNoteCounter;
   let idDelete = "StickyNoteDelete" + stickyNoteCounter;
   let idEdit = "StickyNoteEdit" + stickyNoteCounter;
@@ -310,11 +326,11 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
   spanEdit.innerHTML =
     `<div class="stickynote-wrapper" id="${idSpanEdit}">\n`
     + `  <div class="stickynote-content" style="background-color: ${color}"'>\n`
-    + '    <textarea placeholder="Add a sticky note"></textarea>\n'
+    + `    <textarea placeholder="Add a sticky note" style="color: ${textColor}"></textarea>\n`
     + `    <button id="${idSave}" >Save</button>\n`
     + '  </div>\n'
     + '\n'
-    + '  <img src=' + profilePictureURL + ' />\n'
+    + '  <img src="' + profilePictureURL + '" referrerpolicy="no-referrer"/>\n'
     + '</div>'
   let bb = canvas.getBoundingClientRect();
   spanEdit.style.position = "absolute";
@@ -327,7 +343,7 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
   spanDisplay.setAttribute("class", "stickynote-wrapper");
 
   spanDisplay.innerHTML =
-    `  <div class="stickynote-content" style="background-color: ${color}">\n`
+    `  <div class="stickynote-content" style="background-color: ${color}; color: ${textColor}">\n`
     + `    <div style="top: 6px" id="${idDelete}">\n`
     + '      <svg style="width:20px;height:20px" viewBox="0 0 24 24">\n'
     + '        <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />\n'
@@ -342,7 +358,7 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
     + `${content}`
     + '    </p>\n'
     + '  </div>\n'
-    + '  <img src=' + profilePictureURL + ' />\n'
+    + '  <img src="' + profilePictureURL + '" referrerpolicy="no-referrer" />\n'
   spanDisplay.style.position = "absolute";
   spanDisplay.style.top = (relY * bb.height) + "px";
   spanDisplay.style.left = (relX * bb.width) + "px";
@@ -362,11 +378,15 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
     canvas.parentElement.parentElement.removeChild(spanDisplay);
     canvas.parentElement.parentElement.removeChild(spanEdit);
 
+    let stickyNote = stickyNotes.find(s => stickyNoteId === s.stickyNoteId);
+
     for (var i = 0; i < stickyNotes.length; i++) {
       if (stickyNotes[i].stickyNoteId == stickyNoteId) {
         stickyNotes.splice(i, 1);
       }
     }
+
+    deleteAnnotation(stickyNote.id);
   });
 
   document.getElementById(idEdit).addEventListener("click", (e) => {
@@ -383,11 +403,17 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
     spanDisplay.hidden = false;
     paragraph.innerText = textField.value;
 
-    for (var i = 0; i < stickyNotes.length; i++) {
-      if (stickyNotes[i].stickyNoteId == stickyNoteId) {
-        stickyNotes[i].content = textField.value;
-      }
-    }
+    let stickyNote = stickyNotes.find(s => s.stickyNoteId === stickyNoteId);
+    stickyNote.content = textField.value;
+
+    sendAnnotation({
+      collectionId: stickyNote.collectionId,
+      content: stickyNote.content,
+      color: stickyNote.color,
+      page: stickyNote.page,
+      position: { x: stickyNote.relPos.x, y: stickyNote.relPos.y },
+      type: "stickyNote"
+    }, (id) => stickyNote.id = id);
   });
 }
 
@@ -406,13 +432,11 @@ function onDragEnd() {
 }
 
 function renderStickyNote(stickyNoteId, canvas, relPos, content, color,
-  userName,
   profilePictureURL) {
   renderNote(stickyNoteId, canvas, relPos.x, relPos.y, color, content,
     profilePictureURL);
 }
 
-function renderHighlight(canvas, relPos, relSize, color, userName,
-  profilePictureURL) {
+function renderHighlight(canvas, relPos, relSize, color) {
   renderRect(canvas, relPos.x, relPos.y, relSize.width, relSize.height, color);
 }
