@@ -366,13 +366,10 @@ const getB = (function getBClosure() {
     }
     return lut;
   }
-  const cache = [];
+  const cache = Object.create(null);
 
   return function (count) {
-    if (!cache[count]) {
-      cache[count] = buildB(count);
-    }
-    return cache[count];
+    return (cache[count] ||= buildB(count));
   };
 })();
 

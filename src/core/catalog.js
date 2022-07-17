@@ -985,12 +985,8 @@ class Catalog {
       } else if (typeof js !== "string") {
         return;
       }
-
-      if (javaScript === null) {
-        javaScript = new Map();
-      }
       js = stringToPDFString(js).replaceAll("\x00", "");
-      javaScript.set(name, js);
+      (javaScript ||= new Map()).set(name, js);
     }
 
     if (obj instanceof Dict && obj.has("JavaScript")) {

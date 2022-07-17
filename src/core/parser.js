@@ -896,7 +896,7 @@ class Lexer {
       throw new FormatError(msg);
     }
 
-    sign = sign || 1;
+    sign ||= 1;
     let baseValue = ch - 0x30; // '0'
     let powerValue = 0;
     let powerValueSign = 1;
