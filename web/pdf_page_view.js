@@ -344,7 +344,11 @@ class PDFPageView {
       }
       this._resetZoomLayer();
     }
-    if (this.svg) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this.svg
+    ) {
       this.paintedViewportMap.delete(this.svg);
       delete this.svg;
     }
@@ -380,7 +384,11 @@ class PDFPageView {
       docStyle.setProperty("--scale-factor", this.viewport.scale);
     }
 
-    if (this.svg) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this.svg
+    ) {
       this.cssTransform({
         target: this.svg,
         redrawAnnotationLayer: true,
@@ -733,6 +741,8 @@ class PDFPageView {
     };
 
     const paintTask =
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
       this.renderer === RendererType.SVG
         ? this.paintOnSvg(canvasWrapper)
         : this.paintOnCanvas(canvasWrapper);
