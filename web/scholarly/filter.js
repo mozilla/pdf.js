@@ -1,18 +1,6 @@
-window.scholarlyCollections = [
-  {name: "Collection 1", id: 1},
-  {name: "Collection 2", id: 2},
-  {name: "Collection 3", id: 3},
-  {name: "Collection 4", id: 4},
-  {name: "Collection 5", id: 5},
-]
-
-window.scholarlyAnnotations = [
-  //{ id: 1, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" },
-  //{ id: 2, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
-]
-
 let SELECT;
 let ALL_OPTION;
+let NOTHING_OPTION;
 let HIDDEN_OPTION;
 
 const options = new Map();
@@ -21,7 +9,9 @@ let filter = [];
 export function initFilter() {
   SELECT = document.getElementById("scholarlyFilter");
   ALL_OPTION = document.getElementById("scholarlyFilterAll");
+  NOTHING_OPTION = document.getElementById("scholarlyFilterNothing");
   HIDDEN_OPTION = document.getElementById("scholarlyDisplayOption");
+  filter = window.scholarlyCollections.map(col => col.id);
 
   createOptions();
   updateFilter();
@@ -33,15 +23,37 @@ export function initFilter() {
 // Returns an empty array if only full-scope annotations should be displayed.
 // Returns null if no annotations should be displayed.
 export function getFilter() {
-  return [...filter];
+  return filter != null ? [...filter] : null;
+}
+
+// returns true or false, indicating if an annotation with the given
+// collectionId should be shown or not.
+export function shouldShow(collectionId) {
+  // all annotations are hidden
+  if (filter == null) {
+    return false;
+  }
+
+  // otherwise, show full-scope annotations
+  if (collectionId == null) {
+    return true;
+  }
+
+  // only show if it's active
+  return filter.includes(collectionId);
 }
 
 // run when an option is selected
 function onSelect() {
   if (SELECT.value === 'all') {
-    filter = [];
+    filter = window.scholarlyCollections.map(col => col.id);
+  } else if (SELECT.value === 'nothing') {
+    filter = null;
   } else {
     let colID = parseInt(SELECT.value);
+    if(filter == null) {
+      filter = [];
+    }
     if (filter.includes(colID)) {
       filter = filter.filter(id => id !== colID);
     } else {
@@ -65,15 +77,24 @@ function createOptions() {
 
 function updateFilter() {
   // set color of options to show if they are selected or not
-  for(let [colID, option] of options.entries()) {
-    option.style.color = filter.includes(colID) ? 'black' : 'gray';
+  for (let [colID, option] of options.entries()) {
+    option.style.color = filter?.includes(colID) ? 'black' : 'gray';
   }
 
-  if(filter.length === 0) {
+  if (filter == null) {
+    ALL_OPTION.style.color = 'gray';
+    NOTHING_OPTION.style.color = 'black';
+
+    HIDDEN_OPTION.innerHTML = 'Hide Annotations'
+  } else if (filter.length === window.scholarlyCollections.length) {
     ALL_OPTION.style.color = 'black';
+    NOTHING_OPTION.style.color = 'gray';
+
     HIDDEN_OPTION.innerHTML = 'All Collections'
   } else {
     ALL_OPTION.style.color = 'gray';
+    NOTHING_OPTION.style.color = 'gray';
+
     HIDDEN_OPTION.innerHTML = `${filter.length} Selected`
   }
 }
