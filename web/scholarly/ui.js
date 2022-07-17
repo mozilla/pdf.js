@@ -2,6 +2,7 @@ import {initFilter} from "./filter.js";
 
 let modes;
 let activeMode = 'none';
+let handlers = [];
 
 export function initUI() {
   modes = {
@@ -72,6 +73,15 @@ export function setMode(mode) {
   onButtonClick(mode);
 }
 
+export function onModeChange(listener) {
+  handlers.push(listener);
+}
+
+function _setMode(mode) {
+  activeMode = mode;
+  handlers.forEach(h => h(mode));
+}
+
 /**
  * Returns the color of the currently selected tool in RGB hex format.
  * If no tool is selected, this function returns '#000000'.
@@ -86,7 +96,7 @@ function onButtonClick(id) {
     if (id === t) {
       elements.button.classList.add("toggled");
       elements.toolbar?.classList?.remove("hidden");
-      activeMode = id;
+      _setMode(id);
     } else {
       elements.button.classList.remove("toggled");
       elements.toolbar?.classList?.add("hidden");

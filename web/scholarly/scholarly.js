@@ -1,4 +1,11 @@
-import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
+import {
+  getColor,
+  getMode,
+  initUI,
+  onModeChange,
+  sendEvent,
+  setMode
+} from "./ui.js";
 import {getTextColor, removeEyeCancer} from "./color_utils.js";
 import {getFilter, shouldShow} from "./filter.js";
 
@@ -48,6 +55,46 @@ export function init(app) {
     createHighlight(page);
     createStickyNote(page);
     initializedPages.add(page);
+  });
+
+  handleModeChange();
+}
+
+export function handleModeChange() {
+  let activeStyle = null;
+  const styleElements = {};
+  const preventDefault = e => e.preventDefault();
+  const makeStyleElement = mode => {
+    let css = `* { cursor: url(images/cursors/${mode}.png) 0 24, crosshair !important }`;
+    let element = document.createElement('style');
+    element.type = 'text/css';
+    element.appendChild(document.createTextNode(css))
+    return element;
+  };
+  const clearStyle = () => {
+    let style = styleElements?.[activeStyle];
+    activeStyle = null;
+    if (style != null) {
+      document.head.removeChild(style);
+    }
+  }
+  const setStyle = mode => {
+    activeStyle = mode;
+    document.head.appendChild(styleElements[mode]);
+  }
+
+  ['eraser', 'highlight', 'stickyNote'].forEach(
+    s => styleElements[s] = makeStyleElement(s));
+
+  onModeChange((mode) => {
+    if (mode === 'none') {
+      clearStyle();
+      window.removeEventListener("selectstart", preventDefault)
+    } else {
+      clearStyle();
+      setStyle(mode);
+      window.addEventListener("selectstart", preventDefault)
+    }
   });
 }
 
@@ -117,7 +164,6 @@ function createHighlight(page) {
 
     es = e;
     startDrag(e);
-    disableSelect(e);
 
     let {canvasElement, pageElement} = pages.get(page);
     let bb = canvasElement.getBoundingClientRect();
@@ -274,7 +320,8 @@ function drawAnnotations(event) {
 
     if (element.page === event.pageNumber) {
       renderStickyNote(element.stickyNoteId, event.pageNumber,
-        element.relPos, element.content, element.color, getProfilePictureURL(element.ownerId));
+        element.relPos, element.content, element.color,
+        getProfilePictureURL(element.ownerId));
     }
   }
 }
@@ -393,18 +440,12 @@ function renderNote(stickyNoteId, page, relX, relY, color, content,
   });
 }
 
-function disableSelect(event) {
-  event.preventDefault();
-}
-
 function startDrag() {
   window.addEventListener('mouseup', onDragEnd);
-  window.addEventListener('selectstart', disableSelect);
 }
 
 function onDragEnd() {
   window.removeEventListener('mouseup', onDragEnd);
-  window.removeEventListener('selectstart', disableSelect);
 }
 
 function renderStickyNote(stickyNoteId, page, relPos, content, color,

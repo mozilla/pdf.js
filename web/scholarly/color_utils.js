@@ -14,9 +14,10 @@ export function removeEyeCancer(backgroundColor) {
   let [h, s, l] = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
   s *= 0.75;
-  l *= 1.25;
+  l = Math.min(1, 1.25 * l);
 
   let [r, g, b] = hslToRgb(h, s, l);
+  console.warn(`converted ${backgroundColor} to ${rgbToHex(r, g, b)}`)
   return rgbToHex(r, g, b);
 }
 
