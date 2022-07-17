@@ -74,7 +74,7 @@ export function handleModeChange() {
   const styleElements = {};
   const preventDefault = e => e.preventDefault();
   const makeStyleElement = mode => {
-    let css = `* { cursor: url(images/cursors/${mode}.png) 0 24, crosshair !important }`;
+    let css = `* { cursor: url(/${mode}.png) 0 24, crosshair !important }`;
     let element = document.createElement('style');
     element.type = 'text/css';
     element.appendChild(document.createTextNode(css))
