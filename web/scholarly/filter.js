@@ -7,18 +7,22 @@ window.scholarlyCollections = [
 ]
 
 window.scholarlyAnnotations = [
-  { id: 1, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" },
-  { id: 2, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
+  //{ id: 1, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" },
+  //{ id: 2, ownerId: 1, entryId: 1, collectionId: 1, color: "#ff0000", content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
 ]
 
-const SELECT = document.getElementById("scholarlyFilter");
-const ALL_OPTION = document.getElementById("scholarlyFilterAll");
-const HIDDEN_OPTION = document.getElementById("scholarlyDisplayOption");
+let SELECT;
+let ALL_OPTION;
+let HIDDEN_OPTION;
 
 const options = new Map();
 let filter = [];
 
 export function initFilter() {
+  SELECT = document.getElementById("scholarlyFilter");
+  ALL_OPTION = document.getElementById("scholarlyFilterAll");
+  HIDDEN_OPTION = document.getElementById("scholarlyDisplayOption");
+
   createOptions();
   updateFilter();
   SELECT.addEventListener("input", onSelect)

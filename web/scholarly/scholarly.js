@@ -2,12 +2,14 @@ import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
 import {getTextColor, removeEyeCancer} from "./color_utils.js";
 import {getFilter} from "./filter.js";
 
-var listeners = new Map();
 var highlights = [];
 var stickyNotes = [];
 let es;
 let stickyNoteCounter = 1;
 let stickyNoteId = 1;
+
+let initializedPages = new Set();
+let pages = new Map();
 
 export function init(app) {
   initUI();
@@ -17,12 +19,13 @@ export function init(app) {
     if (event.cssTransform) {
       return;
     }
+    pages.set(event.pageNumber, { canvasElement: canvas, pageElement: canvas.parentElement.parentElement });
 
     initAnnotations();
-    updateListeners(event);
     drawAnnotations(event);
-    createHighlight(canvas, event.pageNumber);
-    createStickyNote(canvas, event.pageNumber);
+    createHighlight(event.pageNumber);
+    createStickyNote(event.pageNumber);
+    initializedPages.add(event.pageNumber);
   });
 }
 
@@ -34,13 +37,10 @@ function initAnnotations() {
   // Loads the existing annotations into the highlights / stickyNotes array.
   for (let annotation of window.scholarlyAnnotations) {
     if (annotation.type === "highlight") {
-      //  collectionId: 1, color: "#ff0000",
-      //      startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" }
-
       highlights.push({
         id: annotation.id,
         collectionId: null,
-        page: annotation.startPosition.page,
+        page: annotation.page,
         relPos: {x: annotation.startPosition.x, y: annotation.startPosition.y},
         relSize: {
           width: Math.abs(
@@ -51,20 +51,19 @@ function initAnnotations() {
         color: annotation.color
       });
     } else if (annotation.type === "stickyNote") {
-      //  { collectionId: 1, color: "#ff0000",
-      //      content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
-
       stickyNotes.push({
         id: annotation.id,
         ownerId: annotation.ownerId,
         collectionId: null,
         stickyNoteId,
-        page: annotation.position.page,
+        page: annotation.page,
         relPos: {x: annotation.position.x, y: annotation.position.y},
         color: annotation.color,
         content: annotation.content
       });
       stickyNoteId++;
+    } else {
+      console.error(`unknown annotation type "${annotation.type}"`);
     }
   }
 }
@@ -83,26 +82,7 @@ function deleteAnnotation(id) {
   sendEvent("deleteAnnotation", id);
 }
 
-function updateListeners(e) {
-  let p = listeners.get(e.pageNumber);
-
-  if (p === undefined) {
-    return;
-  }
-
-  let canvas = e.source.canvas;
-
-  canvas.parentElement.parentElement.removeEventListener("mousedown",
-    p.mouseDownListener);
-  canvas.parentElement.parentElement.removeEventListener("mousemove",
-    p.mouseMoveListener);
-  canvas.parentElement.parentElement.removeEventListener("mouseup",
-    p.mouseUpListener);
-  canvas.parentElement.parentElement.removeEventListener("click",
-    p.mouseClickListener);
-}
-
-function createHighlight(canvas, page) {
+function createHighlight(page) {
   let preview;
   let relX;
   let relY;
@@ -120,7 +100,8 @@ function createHighlight(canvas, page) {
     startDrag(e);
     disableSelect(e);
 
-    let bb = canvas.getBoundingClientRect();
+    let {canvasElement, pageElement} = pages.get(page);
+    let bb = canvasElement.getBoundingClientRect();
     relX = (e.x - bb.left) / bb.width;
     relY = (e.y - bb.top) / bb.height;
     preview = document.createElement("div");
@@ -130,9 +111,8 @@ function createHighlight(canvas, page) {
     preview.style.backgroundColor = getColor();
     preview.style.opacity = "0.2";
 
-    if (canvas.parentElement.parentElement != null) {
-      canvas.parentElement.parentElement.querySelector(
-        ".annotationEditorLayer").appendChild(preview);
+    if (pageElement != null) {
+      pageElement.querySelector(".annotationEditorLayer").appendChild(preview);
     }
   }
 
@@ -141,7 +121,8 @@ function createHighlight(canvas, page) {
       return;
     }
 
-    let bb = canvas.getBoundingClientRect();
+    let {canvasElement, pageElement} = pages.get(page);
+    let bb = canvasElement.getBoundingClientRect();
     let endRelX = (e.x - bb.left) / bb.width;
     let endRelY = (e.y - bb.top) / bb.height;
     let relWidth = endRelX - relX;
@@ -170,16 +151,14 @@ function createHighlight(canvas, page) {
     }
 
     onDragEnd();
-    let bb = canvas.getBoundingClientRect();
+    let {canvasElement, pageElement} = pages.get(page);
+    let bb = canvasElement.getBoundingClientRect();
     let relX = (es.x - bb.left) / bb.width;
     let relY = (es.y - bb.top) / bb.height;
     let relW = (e.x - es.x) / bb.width;
     let relH = (e.y - es.y) / bb.height;
     let color = getColor();
-    renderRect(canvas, relX, relY, relW, relH, color);
-
-    //  collectionId: 1, color: "#ff0000",
-    //      startPosition: { page: 1, x: 0, y: 0 }, endPosition: { page: 1, x: 100, y: 100 }, type: "highlight" }
+    renderRect(canvasElement, relX, relY, relW, relH, color);
 
     let highlight = {
       collectionId: null,
@@ -201,22 +180,20 @@ function createHighlight(canvas, page) {
 
     preview = null;
 
-    if (canvas.parentElement.parentElement != null) {
-      canvas.parentElement.parentElement.querySelector(
-        ".annotationEditorLayer").innerHTML = "";
+    if (pageElement != null) {
+      pageElement.querySelector(".annotationEditorLayer").innerHTML = "";
     }
   }
 
-  canvas.parentElement.parentElement.addEventListener("mousedown",
-    mouseDownListener);
-  canvas.parentElement.parentElement.addEventListener("mousemove",
-    mouseMoveListener);
-  canvas.parentElement.parentElement.addEventListener("mouseup",
-    mouseUpListener);
-  listeners.set(page, {mouseDownListener, mouseMoveListener, mouseUpListener});
+  if(!initializedPages.has(page)) {
+    let pageElement = pages.get(page).pageElement;
+    pageElement.addEventListener("mousedown", mouseDownListener);
+    pageElement.addEventListener("mousemove", mouseMoveListener);
+    pageElement.addEventListener("mouseup", mouseUpListener);
+  }
 }
 
-function createStickyNote(canvas, page) {
+function createStickyNote(page) {
   function mouseClickListener(e) {
     if (getMode() !== "stickyNote") {
       return;
@@ -226,14 +203,12 @@ function createStickyNote(canvas, page) {
       return;
     }
 
-    let bb = canvas.getBoundingClientRect();
+    let {canvasElement} = pages.get(page);
+    let bb = canvasElement.getBoundingClientRect();
     let relX = (e.x - bb.left) / bb.width;
     let relY = (e.y - bb.top) / bb.height;
     let color = getColor();
     let content = null;
-
-    //  { collectionId: 1, color: "#ff0000",
-    //      content: "Hello World!", position: { page: 1, x: 150, y: 150}, type: "stickyNote"  },
 
     stickyNotes.push({
       ownerId: window.scholarlyUserId,
@@ -245,21 +220,15 @@ function createStickyNote(canvas, page) {
       content
     });
 
-    renderNote(stickyNoteId, canvas, relX, relY, color, content,
+    renderNote(stickyNoteId, page, relX, relY, color, content,
       getProfilePicture(window.scholarlyUserId));
     stickyNoteId++;
 
     setMode('none');
   }
 
-  canvas.parentElement.parentElement.addEventListener("click",
-    mouseClickListener);
-
-  let pageListeners = listeners.get(page);
-  let md = pageListeners.mouseDownListener;
-  let mm = pageListeners.mouseMoveListener;
-  let mu = pageListeners.mouseUpListener;
-  listeners.set(page, {md, mm, mu, mouseClickListener});
+  let {pageElement} = pages.get(page);
+  pageElement.addEventListener("click", mouseClickListener);
 }
 
 function drawAnnotations(event) {
@@ -277,7 +246,7 @@ function drawAnnotations(event) {
     }
 
     if (element.page === event.pageNumber) {
-      renderHighlight(event.source.canvas, element.relPos, element.relSize,
+      renderHighlight(event.pageNumber, element.relPos, element.relSize,
         element.color);
     }
   }
@@ -292,7 +261,7 @@ function drawAnnotations(event) {
     }
 
     if (element.page === event.pageNumber) {
-      renderStickyNote(element.stickyNoteId, event.source.canvas,
+      renderStickyNote(element.stickyNoteId, event.pageNumber,
         element.relPos, element.content, element.color, getProfilePicture(element.ownerId));
     }
   }
@@ -311,8 +280,9 @@ function renderRect(canvas, relX, relY, relW, relH, color) {
   ctx.fillRect(absX, absY, absW, absH);
 }
 
-function renderNote(stickyNoteId, canvas, relX, relY, color, content,
+function renderNote(stickyNoteId, page, relX, relY, color, content,
   profilePictureURL) {
+  let {canvasElement, pageElement} = pages.get(page);
   color = removeEyeCancer(color);
   let textColor = getTextColor(color);
   let idSave = "StickyNoteSave" + stickyNoteCounter;
@@ -332,11 +302,11 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
     + '\n'
     + '  <img src="' + profilePictureURL + '" referrerpolicy="no-referrer"/>\n'
     + '</div>'
-  let bb = canvas.getBoundingClientRect();
+  let bb = canvasElement.getBoundingClientRect();
   spanEdit.style.position = "absolute";
   spanEdit.style.top = (relY * bb.height) + "px";
   spanEdit.style.left = (relX * bb.width) + "px";
-  canvas.parentElement.parentElement.appendChild(spanEdit);
+  pageElement.appendChild(spanEdit);
 
   let spanDisplay = document.createElement("div");
   spanDisplay.setAttribute("id", idSpanDisplay);
@@ -362,7 +332,7 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
   spanDisplay.style.position = "absolute";
   spanDisplay.style.top = (relY * bb.height) + "px";
   spanDisplay.style.left = (relX * bb.width) + "px";
-  canvas.parentElement.parentElement.appendChild(spanDisplay);
+  pageElement.appendChild(spanDisplay);
 
   if (content == null) {
     spanDisplay.hidden = true;
@@ -375,13 +345,13 @@ function renderNote(stickyNoteId, canvas, relX, relY, color, content,
   }
 
   document.getElementById(idDelete).addEventListener("click", (e) => {
-    canvas.parentElement.parentElement.removeChild(spanDisplay);
-    canvas.parentElement.parentElement.removeChild(spanEdit);
+    pageElement.removeChild(spanDisplay);
+    pageElement.removeChild(spanEdit);
 
     let stickyNote = stickyNotes.find(s => stickyNoteId === s.stickyNoteId);
 
     for (var i = 0; i < stickyNotes.length; i++) {
-      if (stickyNotes[i].stickyNoteId == stickyNoteId) {
+      if (stickyNotes[i].stickyNoteId === stickyNoteId) {
         stickyNotes.splice(i, 1);
       }
     }
@@ -431,12 +401,13 @@ function onDragEnd() {
   window.removeEventListener('selectstart', disableSelect);
 }
 
-function renderStickyNote(stickyNoteId, canvas, relPos, content, color,
+function renderStickyNote(stickyNoteId, page, relPos, content, color,
   profilePictureURL) {
-  renderNote(stickyNoteId, canvas, relPos.x, relPos.y, color, content,
+  renderNote(stickyNoteId, page, relPos.x, relPos.y, color, content,
     profilePictureURL);
 }
 
-function renderHighlight(canvas, relPos, relSize, color) {
-  renderRect(canvas, relPos.x, relPos.y, relSize.width, relSize.height, color);
+function renderHighlight(page, relPos, relSize, color) {
+  let {canvasElement} = pages.get(page);
+  renderRect(canvasElement, relPos.x, relPos.y, relSize.width, relSize.height, color);
 }
