@@ -95,8 +95,8 @@ limitations under the License.
       url: CRX_BASE_URL + "*:*",
     },
     function (tabsFromLastSession) {
-      for (var i = 0; i < tabsFromLastSession.length; ++i) {
-        chrome.tabs.reload(tabsFromLastSession[i].id);
+      for (const { id } of tabsFromLastSession) {
+        chrome.tabs.reload(id);
       }
     }
   );

@@ -54,8 +54,7 @@ function isPdfDownloadable(details) {
  * @returns {undefined|{name: string, value: string}} The header, if found.
  */
 function getHeaderFromHeaders(headers, headerName) {
-  for (var i = 0; i < headers.length; ++i) {
-    var header = headers[i];
+  for (const header of headers) {
     if (header.name.toLowerCase() === headerName) {
       return header;
     }
