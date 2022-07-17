@@ -1,6 +1,7 @@
 import {getColor, getMode, initUI, sendEvent, setMode} from "./ui.js";
 import {getTextColor, removeEyeCancer} from "./color_utils.js";
 import {getFilter} from "./filter.js";
+import {getProfilePictureURL} from "./profile_pictures.js";
 
 var highlights = [];
 var stickyNotes = [];
@@ -15,22 +16,28 @@ export function init(app) {
   initUI();
 
   app.eventBus.on("pagerendered", function (event) {
-    let canvas = event.source.canvas;
     if (event.cssTransform) {
       return;
     }
-    pages.set(event.pageNumber, { canvasElement: canvas, pageElement: canvas.parentElement.parentElement });
+
+    let page = event.pageNumber;
+    let canvas = event.source.canvas;
+    pages.set(page, {
+      canvasElement: canvas,
+      pageElement: canvas.parentElement.parentElement
+    });
 
     initAnnotations();
     drawAnnotations(event);
-    createHighlight(event.pageNumber);
-    createStickyNote(event.pageNumber);
-    initializedPages.add(event.pageNumber);
+    createHighlight(page);
+    createStickyNote(page);
+    initializedPages.add(page);
   });
 }
 
 function getProfilePicture(userId) {
-  return window.scholarlyUsers?.get(userId)?.profilePicture ?? "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
+  return window.scholarlyUsers?.get(userId)?.profilePicture
+    ?? "https://lh3.googleusercontent.com/a/AItbvmlrh0nzdNs8foIotTu6O-3JN6XvLvLRuKyYosp3=s96-c";
 }
 
 function initAnnotations() {
@@ -75,7 +82,7 @@ function initAnnotations() {
  * @param callback
  */
 function sendAnnotation(annotation, callback = null) {
-  sendEvent("newAnnotation", [ annotation, callback ]);
+  sendEvent("newAnnotation", [annotation, callback]);
 }
 
 function deleteAnnotation(id) {
@@ -185,7 +192,7 @@ function createHighlight(page) {
     }
   }
 
-  if(!initializedPages.has(page)) {
+  if (!initializedPages.has(page)) {
     let pageElement = pages.get(page).pageElement;
     pageElement.addEventListener("mousedown", mouseDownListener);
     pageElement.addEventListener("mousemove", mouseMoveListener);
@@ -210,18 +217,23 @@ function createStickyNote(page) {
     let color = getColor();
     let content = null;
 
+    let thisStickyNoteId = stickyNoteId;
+    stickyNoteId++;
+
     stickyNotes.push({
       ownerId: window.scholarlyUserId,
       collectionId: null,
-      stickyNoteId,
+      stickyNoteId: thisStickyNoteId,
       page,
       relPos: {x: relX, y: relY},
       color,
       content
     });
 
-    renderNote(stickyNoteId, page, relX, relY, color, content,
-      getProfilePicture(window.scholarlyUserId));
+    getProfilePictureURL(window.scholarlyUserId)
+    .then(url => renderNote(thisStickyNoteId, page, relX, relY, color, content,
+      url))
+
     stickyNoteId++;
 
     setMode('none');
@@ -241,7 +253,8 @@ function drawAnnotations(event) {
       continue;
     }
 
-    if (element.collectionId != null && !getFilter().includes(element.collectionId)) {
+    if (element.collectionId != null && !getFilter().includes(
+      element.collectionId)) {
       continue;
     }
 
@@ -256,13 +269,16 @@ function drawAnnotations(event) {
       continue;
     }
 
-    if (element.collectionId != null && !getFilter().includes(element.collectionId)) {
+    if (element.collectionId != null && !getFilter().includes(
+      element.collectionId)) {
       continue;
     }
 
     if (element.page === event.pageNumber) {
-      renderStickyNote(element.stickyNoteId, event.pageNumber,
-        element.relPos, element.content, element.color, getProfilePicture(element.ownerId));
+      getProfilePictureURL(element.ownerId).then(url => {
+        renderStickyNote(element.stickyNoteId, event.pageNumber,
+          element.relPos, element.content, element.color, url);
+      })
     }
   }
 }
@@ -381,7 +397,7 @@ function renderNote(stickyNoteId, page, relX, relY, color, content,
       content: stickyNote.content,
       color: stickyNote.color,
       page: stickyNote.page,
-      position: { x: stickyNote.relPos.x, y: stickyNote.relPos.y },
+      position: {x: stickyNote.relPos.x, y: stickyNote.relPos.y},
       type: "stickyNote"
     }, (id) => stickyNote.id = id);
   });
@@ -409,5 +425,6 @@ function renderStickyNote(stickyNoteId, page, relPos, content, color,
 
 function renderHighlight(page, relPos, relSize, color) {
   let {canvasElement} = pages.get(page);
-  renderRect(canvasElement, relPos.x, relPos.y, relSize.width, relSize.height, color);
+  renderRect(canvasElement, relPos.x, relPos.y, relSize.width, relSize.height,
+    color);
 }
