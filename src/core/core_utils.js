@@ -137,10 +137,7 @@ function getInheritableProperty({
       if (stopWhenFound) {
         return value;
       }
-      if (!values) {
-        values = [];
-      }
-      values.push(value);
+      (values ||= []).push(value);
     }
     dict = dict.get("Parent");
   }
@@ -322,7 +319,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code = code && stringToPDFString(code).replaceAll("\x00", "");
+      code &&= stringToPDFString(code).replaceAll("\x00", "");
       if (code) {
         list.push(code);
       }

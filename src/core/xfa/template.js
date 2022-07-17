@@ -5573,8 +5573,7 @@ class Template extends XFAObject {
       const flush = index => {
         const html = root[$flushHTML]();
         if (html) {
-          hasSomething =
-            hasSomething || (html.children && html.children.length !== 0);
+          hasSomething ||= !!html.children && html.children.length !== 0;
           htmlContentAreas[index].children.push(html);
         }
       };
@@ -5597,9 +5596,8 @@ class Template extends XFAObject {
         const html = root[$toHTML](space);
         if (html.success) {
           if (html.html) {
-            hasSomething =
-              hasSomething ||
-              (html.html.children && html.html.children.length !== 0);
+            hasSomething ||=
+              !!html.html.children && html.html.children.length !== 0;
             htmlContentAreas[i].children.push(html.html);
           } else if (!hasSomething && mainHtml.children.length > 1) {
             mainHtml.children.pop();

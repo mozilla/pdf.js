@@ -107,10 +107,7 @@ class XFAParser extends XMLParserBase {
             nsAttrs = attributeObj[$nsAttributes] = Object.create(null);
           }
           const [ns, attrName] = [name.slice(0, i), name.slice(i + 1)];
-          let attrs = nsAttrs[ns];
-          if (!attrs) {
-            attrs = nsAttrs[ns] = Object.create(null);
-          }
+          const attrs = (nsAttrs[ns] ||= Object.create(null));
           attrs[attrName] = value;
         }
       }
