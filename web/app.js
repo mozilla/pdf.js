@@ -1795,10 +1795,17 @@ const PDFViewerApplication = {
     this.pdfViewer.cleanup();
     this.pdfThumbnailViewer.cleanup();
 
-    // We don't want to remove fonts used by active page SVGs.
-    this.pdfDocument.cleanup(
-      /* keepLoadedFonts = */ this.pdfViewer.renderer === RendererType.SVG
-    );
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
+    ) {
+      // We don't want to remove fonts used by active page SVGs.
+      this.pdfDocument.cleanup(
+        /* keepLoadedFonts = */ this.pdfViewer.renderer === RendererType.SVG
+      );
+    } else {
+      this.pdfDocument.cleanup();
+    }
   },
 
   forceRendering() {
