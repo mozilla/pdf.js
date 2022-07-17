@@ -7,7 +7,7 @@ import {
   setMode
 } from "./ui.js";
 import {getTextColor, removeEyeCancer} from "./color_utils.js";
-import {getFilter, shouldShow} from "./filter.js";
+import {getFilter, onFilterChange, shouldShow} from "./filter.js";
 
 window.scholarlyCollections = [
   {name: "Collection 1", id: 1},
@@ -35,8 +35,8 @@ let initializedPages = new Set();
 let pages = new Map();
 
 export function init(app) {
-  initUI();
   sendEvent("initialized");
+  initUI();
   initAnnotations();
 
   app.eventBus.on("pagerendered", function (event) {
@@ -48,7 +48,8 @@ export function init(app) {
     let canvas = event.source.canvas;
     pages.set(page, {
       canvasElement: canvas,
-      pageElement: canvas.parentElement.parentElement
+      pageElement: canvas.parentElement.parentElement,
+      source: event.source
     });
 
     drawAnnotations(event);
@@ -58,6 +59,14 @@ export function init(app) {
   });
 
   handleModeChange();
+  onFilterChange(async () => {
+    let s = pages.get(1).source;
+    s.reset();
+    s.draw();
+    let viewerContainer = document.getElementById("viewerContainer");
+    viewerContainer.scrollTop += 1;
+    viewerContainer.scrollTop -= 1;
+  });
 }
 
 export function handleModeChange() {
@@ -402,11 +411,13 @@ function renderNote(stickyNoteId, page, relX, relY, color, content,
   }
 
   document.getElementById(idDelete).addEventListener("click", () => {
+    console.error(stickyNotes);
+    console.error("to remove:", stickyNoteId);
     let stickyNote = stickyNotes.find(s => stickyNoteId === s.stickyNoteId);
     deleteAnnotation(stickyNote.id, () => {
       pageElement.removeChild(spanDisplay);
       pageElement.removeChild(spanEdit);
-      stickyNotes = stickyNotes.filter(s => s.stickyNoteId === stickyNoteId);
+      stickyNotes = stickyNotes.filter(s => s.stickyNoteId !== stickyNoteId);
     });
   });
 

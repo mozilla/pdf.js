@@ -5,6 +5,7 @@ let HIDDEN_OPTION;
 
 const options = new Map();
 let filter = [];
+let handlers = [];
 
 export function initFilter() {
   SELECT = document.getElementById("scholarlyFilter");
@@ -24,6 +25,10 @@ export function initFilter() {
 // Returns null if no annotations should be displayed.
 export function getFilter() {
   return filter != null ? [...filter] : null;
+}
+
+export function onFilterChange(handler) {
+  handlers.push(handler);
 }
 
 // returns true or false, indicating if an annotation with the given
@@ -62,6 +67,7 @@ function onSelect() {
   }
   updateFilter();
   SELECT.value = "null";
+  handlers.forEach(h => h());
 }
 
 // creates an <option> for every collection in the dropdown
