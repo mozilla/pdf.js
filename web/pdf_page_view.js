@@ -412,7 +412,7 @@ class PDFPageView {
 
     if (this.canvas) {
       if (
-        this.useOnlyCssZoom ||
+      this.useOnlyCssZoom ||
         (this.hasRestrictedScaling && isScalingRestricted)
       ) {
         this.cssTransform({

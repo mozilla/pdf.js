@@ -132,7 +132,7 @@ const defaultOptions = {
   },
   maxCanvasPixels: {
     /** @type {number} */
-    value: 16777216,
+    value: Number.MAX_VALUE,
     kind: OptionKind.VIEWER,
   },
   forcePageColors: {

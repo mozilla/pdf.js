@@ -383,7 +383,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <span data-l10n-id="zoom_in_label">Zoom In</span>
                    </button>
                 </div>
-                <span id="scaleSelectContainer" class="dropdownToolbarButton">
+                <span id="scaleSelectContainer" class="dropdownToolbarButton" hidden>
                   <select id="scaleSelect" title="Zoom" tabindex="23" data-l10n-id="zoom">
                     <option id="pageAutoOption" title="" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
                     <option id="pageActualOption" title="" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
@@ -398,6 +398,19 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <option title="" value="2" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 200 }'>200%</option>
                     <option title="" value="3" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 300 }'>300%</option>
                     <option title="" value="4" data-l10n-id="page_scale_percent" data-l10n-args='{ "scale": 400 }'>400%</option>
+                  </select>
+                </span>
+                <span id="scholarlyFilterContainer" class="dropdownToolbarButton">
+                  <select id="scholarlyFilter" title="Filter" tabindex="23">
+                    <option id="scholarlyDisplayOption" hidden value="null">
+                      <!--Set by JS-->
+                    </option>
+                    <option id="scholarlyFilterNothing" value="nothing">
+                      Hide Annotations
+                    </option>
+                    <option id="scholarlyFilterAll" value="all">
+                      All Collections
+                    </option>
                   </select>
                 </span>
               </div>
