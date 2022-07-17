@@ -782,8 +782,7 @@ gulp.task("locale", function () {
   subfolders.sort();
   let viewerOutput = "";
   const locales = [];
-  for (let i = 0; i < subfolders.length; i++) {
-    const locale = subfolders[i];
+  for (const locale of subfolders) {
     const dirPath = L10N_DIR + locale;
     if (!checkDir(dirPath)) {
       continue;

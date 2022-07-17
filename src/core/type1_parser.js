@@ -576,7 +576,7 @@ const Type1Parser = (function Type1ParserClosure() {
           privateData,
         },
       };
-      let token, length, data, lenIV, encoded;
+      let token, length, data, lenIV;
       while ((token = this.getToken()) !== null) {
         if (token !== "/") {
           continue;
@@ -604,7 +604,7 @@ const Type1Parser = (function Type1ParserClosure() {
               this.getToken(); // read in 'RD' or '-|'
               data = length > 0 ? stream.getBytes(length) : new Uint8Array(0);
               lenIV = program.properties.privateData.lenIV;
-              encoded = this.readCharStrings(data, lenIV);
+              const encoded = this.readCharStrings(data, lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'ND' or '|-'
               if (token === "noaccess") {
@@ -629,7 +629,7 @@ const Type1Parser = (function Type1ParserClosure() {
               this.getToken(); // read in 'RD' or '-|'
               data = length > 0 ? stream.getBytes(length) : new Uint8Array(0);
               lenIV = program.properties.privateData.lenIV;
-              encoded = this.readCharStrings(data, lenIV);
+              const encoded = this.readCharStrings(data, lenIV);
               this.nextChar();
               token = this.getToken(); // read in 'NP' or '|'
               if (token === "noaccess") {
@@ -675,9 +675,7 @@ const Type1Parser = (function Type1ParserClosure() {
         }
       }
 
-      for (let i = 0; i < charstrings.length; i++) {
-        const glyph = charstrings[i].glyph;
-        encoded = charstrings[i].encoded;
+      for (const { encoded, glyph } of charstrings) {
         const charString = new Type1CharString();
         const error = charString.convert(
           encoded,
