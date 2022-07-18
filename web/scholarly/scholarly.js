@@ -57,17 +57,74 @@ export function init(app) {
     drawAnnotations(event);
     createHighlight(page);
     createStickyNote(page);
+    initEraser(page);
     initializedPages.add(page);
   });
 
   handleModeChange();
-  onFilterChange(async () => {
-    let s = pages.get(1).source;
+  onFilterChange(() => rerenderPages(initializedPages));
+}
+
+async function rerenderPages(rerenderPages) {
+  for (const page of rerenderPages) {
+    let s = pages.get(page).source;
     s.reset();
     s.draw();
-    let viewerContainer = document.getElementById("viewerContainer");
-    viewerContainer.scrollTop += 1;
-    viewerContainer.scrollTop -= 1;
+  }
+
+  let viewerContainer = document.getElementById("viewerContainer");
+  viewerContainer.scrollTop += 2;
+  setTimeout(() => {
+    viewerContainer.scrollTop -= 2;
+  }, 10);
+}
+
+function initEraser(page) {
+  if (initializedPages.has(page)) {
+    return;
+  }
+
+  let {pageElement} = pages.get(page);
+  pageElement.addEventListener("click", (e) => {
+    if (getMode() !== 'eraser') {
+      return;
+    }
+
+    let {canvasElement} = pages.get(page);
+    let bb = canvasElement.getBoundingClientRect();
+    let relX = (e.x - bb.left) / bb.width;
+    let relY = (e.y - bb.top) / bb.height;
+
+    const wasClicked = (highlight) => {
+      if (highlight.page !== page) {
+        return false;
+      }
+
+      let startX = highlight.relPos.x, startY = highlight.relPos.y;
+      if (highlight.relSize.width < 0) {
+        startX += highlight.relSize.width;
+      }
+      if (highlight.relSize.height < 0) {
+        startY += highlight.relSize.height;
+      }
+      if(relX < startX || relY < startY) {
+        return false;
+      }
+
+      let endX = startX + Math.abs(highlight.relSize.width);
+      let endY = startY + Math.abs(highlight.relSize.height);
+      return !(relX > endX || relY > endY);
+    }
+
+    let clicked = highlights.filter(wasClicked)[0]
+
+    if (clicked != null) {
+      console.log("erasing a highlight", clicked);
+      deleteAnnotation(clicked.id, () => {
+        highlights = highlights.filter(h => h.id !== clicked.id);
+        rerenderPages([page]);
+      });
+    }
   });
 }
 
