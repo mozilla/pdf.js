@@ -1,4 +1,5 @@
-import {initFilter} from "./filter.js";
+import {getFilter, initFilter, onFilterChange} from "./filter.js";
+import {initScope} from "./scope.js";
 
 let modes;
 let activeMode = 'none';
@@ -32,6 +33,23 @@ export function initUI() {
 
   initExitButton();
   initFilter();
+  initScope();
+
+  onFilterChange(() => {
+    if(getFilter() == null) {
+      setMode('none');
+      [...Object.entries(modes)]
+        .filter(([k, _]) => k !== 'none')
+        .forEach(([_, v]) => {
+          v.button.setAttribute("disabled", "true");
+        });
+    } else {
+      [...Object.entries(modes)]
+      .forEach(([_, v]) => {
+        v.button.removeAttribute("disabled");
+      });
+    }
+  })
 }
 
 function initExitButton() {

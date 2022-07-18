@@ -1607,3 +1607,7 @@ dialog :link {
   margin: 0;
 }
 
+#scholarlyScope {
+  appearance: none;
+  width: 150px !important;;
+}

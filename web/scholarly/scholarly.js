@@ -8,10 +8,12 @@ import {
 } from "./ui.js";
 import {getTextColor, removeEyeCancer} from "./color_utils.js";
 import {getFilter, onFilterChange, shouldShow} from "./filter.js";
+import {getScope} from "./scope.js";
 
 window.scholarlyCollections = [
   {name: "Collection 1", id: 1},
   {name: "Collection 2", id: 2},
+  {name: "Collection 3", id: 3},
 ];
 window.scholarlyAnnotations = [{
   type: 'highlight',
@@ -19,7 +21,7 @@ window.scholarlyAnnotations = [{
   endPosition: {x: 0.7, y: 0.7},
   page: 1,
   color: '#FFFF00',
-  collectionId: null,
+  collectionId: 2,
   ownerId: 1
 }];
 window.scholarlyUsers = new Map();
@@ -113,7 +115,7 @@ function initAnnotations() {
     if (annotation.type === "highlight") {
       highlights.push({
         id: annotation.id,
-        collectionId: null,
+        collectionId: annotation.collectionId,
         page: annotation.page,
         relPos: {x: annotation.startPosition.x, y: annotation.startPosition.y},
         relSize: {
@@ -128,7 +130,7 @@ function initAnnotations() {
       stickyNotes.push({
         id: annotation.id,
         ownerId: annotation.ownerId,
-        collectionId: null,
+        collectionId: annotation.collectionId,
         stickyNoteId,
         page: annotation.page,
         relPos: {x: annotation.position.x, y: annotation.position.y},
@@ -233,7 +235,7 @@ function createHighlight(page) {
     renderRect(canvasElement, relX, relY, relW, relH, color);
 
     let highlight = {
-      collectionId: null,
+      collectionId: getScope(),
       page,
       relPos: {x: relX, y: relY},
       relSize: {width: relW, height: relH},
@@ -242,7 +244,7 @@ function createHighlight(page) {
     highlights.push(highlight);
 
     sendAnnotation(false, {
-      collectionId: null,
+      collectionId: getScope(),
       color,
       page,
       startPosition: {x: relX, y: relY},
@@ -286,7 +288,7 @@ function createStickyNote(page) {
 
     stickyNotes.push({
       ownerId: window.scholarlyUserId,
-      collectionId: null,
+      collectionId: getScope(),
       stickyNoteId: thisStickyNoteId,
       page,
       relPos: {x: relX, y: relY},

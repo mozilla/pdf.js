@@ -56,7 +56,7 @@ function onSelect() {
     filter = null;
   } else {
     let colID = parseInt(SELECT.value);
-    if(filter == null) {
+    if (filter == null) {
       filter = [];
     }
     if (filter.includes(colID)) {
@@ -96,7 +96,11 @@ function updateFilter() {
     ALL_OPTION.style.color = 'black';
     NOTHING_OPTION.style.color = 'gray';
 
-    HIDDEN_OPTION.innerHTML = 'All Collections'
+    HIDDEN_OPTION.innerHTML = 'All Annotations'
+  } else if (filter.length === 0) {
+    ALL_OPTION.style.color = 'gray';
+    NOTHING_OPTION.style.color = 'gray';
+    HIDDEN_OPTION.innerHTML = 'Only Full-Scope'
   } else {
     ALL_OPTION.style.color = 'gray';
     NOTHING_OPTION.style.color = 'gray';
