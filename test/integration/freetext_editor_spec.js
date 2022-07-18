@@ -95,7 +95,7 @@ describe("Editor", () => {
             el.innerText.trimEnd()
           );
 
-          let pastedContent = await page.$eval(`${editorPrefix}2`, el =>
+          let pastedContent = await page.$eval(`${editorPrefix}1`, el =>
             el.innerText.trimEnd()
           );
 
@@ -111,7 +111,7 @@ describe("Editor", () => {
           await page.keyboard.press("v");
           await page.keyboard.up("Control");
 
-          pastedContent = await page.$eval(`${editorPrefix}4`, el =>
+          pastedContent = await page.$eval(`${editorPrefix}2`, el =>
             el.innerText.trimEnd()
           );
           expect(pastedContent)
@@ -132,7 +132,7 @@ describe("Editor", () => {
           await page.keyboard.press("Backspace");
           await page.keyboard.up("Control");
 
-          for (const n of [0, 2, 4]) {
+          for (const n of [0, 1, 2]) {
             const hasEditor = await page.evaluate(sel => {
               return !!document.querySelector(sel);
             }, `${editorPrefix}${n}`);
@@ -153,9 +153,9 @@ describe("Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.type(`${editorPrefix}5 .internal`, data);
+          await page.type(`${editorPrefix}3 .internal`, data);
 
-          const editorRect = await page.$eval(`${editorPrefix}5`, el => {
+          const editorRect = await page.$eval(`${editorPrefix}3`, el => {
             const { x, y, width, height } = el.getBoundingClientRect();
             return { x, y, width, height };
           });
@@ -181,7 +181,7 @@ describe("Editor", () => {
 
           let hasEditor = await page.evaluate(sel => {
             return !!document.querySelector(sel);
-          }, `${editorPrefix}7`);
+          }, `${editorPrefix}4`);
 
           expect(hasEditor).withContext(`In ${browserName}`).toEqual(true);
 
@@ -191,7 +191,7 @@ describe("Editor", () => {
 
           hasEditor = await page.evaluate(sel => {
             return !!document.querySelector(sel);
-          }, `${editorPrefix}7`);
+          }, `${editorPrefix}4`);
 
           expect(hasEditor).withContext(`In ${browserName}`).toEqual(false);
         })

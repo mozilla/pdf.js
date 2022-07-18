@@ -13,11 +13,15 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
+
 import {
   AnnotationEditorParamsType,
   AnnotationEditorType,
   assert,
   LINE_FACTOR,
+  Util,
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { bindEvents } from "./tools.js";
@@ -75,26 +79,6 @@ class FreeTextEditor extends AnnotationEditor {
     this._internalPadding = parseFloat(
       style.getPropertyValue("--freetext-padding")
     );
-  }
-
-  /** @inheritdoc */
-  copy() {
-    const [width, height] = this.parent.viewportBaseDimensions;
-    const editor = new FreeTextEditor({
-      parent: this.parent,
-      id: this.parent.getNextId(),
-      x: this.x * width,
-      y: this.y * height,
-    });
-
-    editor.width = this.width;
-    editor.height = this.height;
-    editor.#color = this.#color;
-    editor.#fontSize = this.#fontSize;
-    editor.#content = this.#content;
-    editor.#contentHTML = this.#contentHTML;
-
-    return editor;
   }
 
   static updateDefaultParams(type, value) {
@@ -368,6 +352,21 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     return this.div;
+  }
+
+  /** @inheritdoc */
+  static deserialize(data, parent) {
+    const editor = super.deserialize(data, parent);
+
+    editor.#fontSize = data.fontSize;
+    editor.#color = Util.makeHexColor(...data.color);
+    editor.#content = data.value;
+    editor.#contentHTML = data.value
+      .split("\n")
+      .map(line => `<div>${line}</div>`)
+      .join("");
+
+    return editor;
   }
 
   /** @inheritdoc */
