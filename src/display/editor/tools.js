@@ -284,16 +284,25 @@ class KeyboardManager {
  * It has to be used as a singleton.
  */
 class ClipboardManager {
-  constructor() {
-    this.element = null;
-  }
+  #elements = null;
 
   /**
    * Copy an element.
-   * @param {AnnotationEditor} element
+   * @param {AnnotationEditor|Array<AnnotationEditor>} element
    */
   copy(element) {
-    this.element = element.copy();
+    if (!element) {
+      return;
+    }
+    if (Array.isArray(element)) {
+      this.#elements = element.map(el => el.serialize());
+    } else {
+      this.#elements = [element.serialize()];
+    }
+    this.#elements = this.#elements.filter(el => !!el);
+    if (this.#elements.length === 0) {
+      this.#elements = null;
+    }
   }
 
   /**
@@ -301,7 +310,7 @@ class ClipboardManager {
    * @returns {AnnotationEditor|null}
    */
   paste() {
-    return this.element?.copy() || null;
+    return this.#elements;
   }
 
   /**
@@ -309,11 +318,11 @@ class ClipboardManager {
    * @returns {boolean}
    */
   isEmpty() {
-    return this.element === null;
+    return this.#elements === null;
   }
 
   destroy() {
-    this.element = null;
+    this.#elements = null;
   }
 }
 
@@ -399,6 +408,8 @@ class AnnotationEditorUIManager {
 
   #commandManager = new CommandManager();
 
+  #currentPageIndex = 0;
+
   #editorTypes = null;
 
   #eventBus = null;
@@ -415,6 +426,8 @@ class AnnotationEditorUIManager {
 
   #boundOnEditingAction = this.onEditingAction.bind(this);
 
+  #boundOnPageChanging = this.onPageChanging.bind(this);
+
   #previousStates = {
     isEditing: false,
     isEmpty: true,
@@ -427,10 +440,12 @@ class AnnotationEditorUIManager {
   constructor(eventBus) {
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
+    this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
   }
 
   destroy() {
     this.#eventBus._off("editingaction", this.#boundOnEditingAction);
+    this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
     for (const layer of this.#allLayers.values()) {
       layer.destroy();
     }
@@ -439,6 +454,10 @@ class AnnotationEditorUIManager {
     this.#activeEditor = null;
     this.#clipboardManager.destroy();
     this.#commandManager.destroy();
+  }
+
+  onPageChanging({ pageNumber }) {
+    this.#currentPageIndex = pageNumber - 1;
   }
 
   /**
@@ -841,18 +860,21 @@ class AnnotationEditorUIManager {
    * @returns {undefined}
    */
   paste() {
-    const editor = this.#clipboardManager.paste();
-    if (!editor) {
+    if (this.#clipboardManager.isEmpty()) {
       return;
     }
-    // TODO: paste in the current visible layer.
+
+    const layer = this.#allLayers.get(this.#currentPageIndex);
+    const newEditors = this.#clipboardManager
+      .paste()
+      .map(data => layer.deserialize(data));
+
     const cmd = () => {
-      this.#addEditorToLayer(editor);
+      newEditors.map(editor => this.#addEditorToLayer(editor));
     };
     const undo = () => {
-      editor.remove();
+      newEditors.map(editor => editor.remove());
     };
-
     this.addCommands({ cmd, undo, mustExec: true });
   }
 
