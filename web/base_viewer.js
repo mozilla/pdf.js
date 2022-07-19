@@ -734,6 +734,7 @@ class BaseViewer {
             });
 
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
+              this.container,
               this.eventBus
             );
             if (mode !== AnnotationEditorType.NONE) {

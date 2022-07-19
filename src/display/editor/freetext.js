@@ -23,13 +23,15 @@ import {
   LINE_FACTOR,
   Util,
 } from "../../shared/util.js";
+import { bindEvents, KeyboardManager } from "./tools.js";
 import { AnnotationEditor } from "./editor.js";
-import { bindEvents } from "./tools.js";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
  */
 class FreeTextEditor extends AnnotationEditor {
+  #boundEditorDivKeydown = this.editorDivKeydown.bind(this);
+
   #color;
 
   #content = "";
@@ -49,6 +51,13 @@ class FreeTextEditor extends AnnotationEditor {
   static _defaultColor = null;
 
   static _defaultFontSize = 10;
+
+  static _keyboardManager = new KeyboardManager([
+    [
+      ["ctrl+Enter", "mac+meta+Enter", "Escape", "mac+Escape"],
+      FreeTextEditor.prototype.commitOrRemove,
+    ],
+  ]);
 
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
@@ -210,6 +219,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = true;
     this.div.draggable = false;
     this.div.removeAttribute("tabIndex");
+    this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown);
   }
 
   /** @inheritdoc */
@@ -220,6 +230,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.contentEditable = false;
     this.div.draggable = true;
     this.div.tabIndex = 0;
+    this.editorDiv.removeEventListener("keydown", this.#boundEditorDivKeydown);
   }
 
   /** @inheritdoc */
@@ -311,11 +322,15 @@ class FreeTextEditor extends AnnotationEditor {
    * onkeydown callback.
    * @param {MouseEvent} event
    */
-  keyup(event) {
-    if (event.key === "Enter") {
+  keydown(event) {
+    if (event.target === this.div && event.key === "Enter") {
       this.enableEditMode();
       this.editorDiv.focus();
     }
+  }
+
+  editorDivKeydown(event) {
+    FreeTextEditor._keyboardManager.exec(this, event);
   }
 
   /** @inheritdoc */
@@ -376,7 +391,7 @@ class FreeTextEditor extends AnnotationEditor {
     // TODO: implement paste callback.
     // The goal is to sanitize and have something suitable for this
     // editor.
-    bindEvents(this, this.div, ["dblclick", "keyup"]);
+    bindEvents(this, this.div, ["dblclick", "keydown"]);
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
