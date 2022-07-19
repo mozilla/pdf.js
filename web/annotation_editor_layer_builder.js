@@ -77,6 +77,7 @@ class AnnotationEditorLayerBuilder {
     this.div = document.createElement("div");
     this.div.className = "annotationEditorLayer";
     this.div.tabIndex = 0;
+    this.pageDiv.append(this.div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({
       uiManager: this.#uiManager,
@@ -84,6 +85,7 @@ class AnnotationEditorLayerBuilder {
       annotationStorage: this.annotationStorage,
       pageIndex: this.pdfPage._pageIndex,
       l10n: this.l10n,
+      viewport: clonedViewport,
     });
 
     const parameters = {
@@ -94,12 +96,11 @@ class AnnotationEditorLayerBuilder {
     };
 
     this.annotationEditorLayer.render(parameters);
-
-    this.pageDiv.append(this.div);
   }
 
   cancel() {
     this._cancelled = true;
+    this.destroy();
   }
 
   hide() {
@@ -121,8 +122,8 @@ class AnnotationEditorLayerBuilder {
       return;
     }
     this.pageDiv = null;
-    this.div.remove();
     this.annotationEditorLayer.destroy();
+    this.div.remove();
   }
 }
 

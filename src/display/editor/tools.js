@@ -426,6 +426,8 @@ class AnnotationEditorUIManager {
 
   #boundOnPageChanging = this.onPageChanging.bind(this);
 
+  #boundOnTextLayerRendered = this.onTextLayerRendered.bind(this);
+
   #previousStates = {
     isEditing: false,
     isEmpty: true,
@@ -439,11 +441,13 @@ class AnnotationEditorUIManager {
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
     this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
+    this.#eventBus._on("textlayerrendered", this.#boundOnTextLayerRendered);
   }
 
   destroy() {
     this.#eventBus._off("editingaction", this.#boundOnEditingAction);
     this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
+    this.#eventBus._off("textlayerrendered", this.#boundOnTextLayerRendered);
     for (const layer of this.#allLayers.values()) {
       layer.destroy();
     }
@@ -456,6 +460,12 @@ class AnnotationEditorUIManager {
 
   onPageChanging({ pageNumber }) {
     this.#currentPageIndex = pageNumber - 1;
+  }
+
+  onTextLayerRendered({ pageNumber }) {
+    const pageIndex = pageNumber - 1;
+    const layer = this.#allLayers.get(pageIndex);
+    layer?.onTextLayerRendered();
   }
 
   /**

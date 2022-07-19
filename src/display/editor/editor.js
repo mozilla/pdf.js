@@ -220,7 +220,7 @@ class AnnotationEditor {
     this.div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
     this.div.className = this.name;
     this.div.setAttribute("id", this.id);
-    this.div.tabIndex = 100;
+    this.div.tabIndex = 0;
 
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
@@ -455,11 +455,38 @@ class AnnotationEditor {
   updateParams(type, value) {}
 
   /**
+   * When the user disables the editing mode some editors can change some of
+   * their properties.
+   */
+  disableEditing() {}
+
+  /**
+   * When the user enables the editing mode some editors can change some of
+   * their properties.
+   */
+  enableEditing() {}
+
+  /**
+   * Get the id to use in aria-owns when a link is done in the text layer.
+   * @returns {string}
+   */
+  getIdForTextLayer() {
+    return this.id;
+  }
+
+  /**
    * Get some properties to update in the UI.
    * @returns {Object}
    */
   get propertiesToUpdate() {
     return {};
+  }
+
+  /**
+   * Get the div which really contains the displayed content.
+   */
+  get contentDiv() {
+    return this.div;
   }
 }
 

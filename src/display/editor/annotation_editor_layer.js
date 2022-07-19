@@ -20,8 +20,9 @@
 /** @typedef {import("../annotation_storage.js").AnnotationStorage} AnnotationStorage */
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
 
+import { AnnotationEditorType, shadow } from "../../shared/util.js";
 import { bindEvents, KeyboardManager } from "./tools.js";
-import { AnnotationEditorType } from "../../shared/util.js";
+import { binarySearchFirstItem } from "../display_utils.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 
@@ -50,7 +51,13 @@ class AnnotationEditorLayer {
 
   #isCleaningUp = false;
 
+  #textLayerMap = new WeakMap();
+
+  #textNodes = new Map();
+
   #uiManager;
+
+  #waitingEditors = new Set();
 
   static _initialized = false;
 
@@ -88,6 +95,7 @@ class AnnotationEditorLayer {
     if (!AnnotationEditorLayer._initialized) {
       AnnotationEditorLayer._initialized = true;
       FreeTextEditor.initialize(options.l10n);
+      InkEditor.initialize(options.l10n);
 
       options.uiManager.registerEditorTypes([FreeTextEditor, InkEditor]);
     }
@@ -98,11 +106,40 @@ class AnnotationEditorLayer {
     this.#boundClick = this.click.bind(this);
     this.#boundMousedown = this.mousedown.bind(this);
 
-    for (const editor of this.#uiManager.getEditors(options.pageIndex)) {
-      this.add(editor);
+    this.#uiManager.addLayer(this);
+  }
+
+  get textLayerElements() {
+    // When zooming the text layer is removed from the DOM and sometimes
+    // it's rebuilt hence the nodes are no longer valid.
+
+    const textLayer = this.div.parentNode
+      .getElementsByClassName("textLayer")
+      .item(0);
+
+    if (!textLayer) {
+      return shadow(this, "textLayerElements", null);
     }
 
-    this.#uiManager.addLayer(this);
+    let textChildren = this.#textLayerMap.get(textLayer);
+    if (textChildren) {
+      return textChildren;
+    }
+
+    textChildren = textLayer.querySelectorAll(`span[role="presentation"]`);
+    if (textChildren.length === 0) {
+      return shadow(this, "textLayerElements", null);
+    }
+
+    textChildren = Array.from(textChildren);
+    textChildren.sort(AnnotationEditorLayer.#compareElementPositions);
+    this.#textLayerMap.set(textLayer, textChildren);
+
+    return textChildren;
+  }
+
+  get #hasTextLayer() {
+    return !!this.div.parentNode.querySelector(".textLayer .endOfContent");
   }
 
   /**
@@ -230,6 +267,9 @@ class AnnotationEditorLayer {
    */
   enable() {
     this.div.style.pointerEvents = "auto";
+    for (const editor of this.#editors.values()) {
+      editor.enableEditing();
+    }
   }
 
   /**
@@ -237,6 +277,9 @@ class AnnotationEditorLayer {
    */
   disable() {
     this.div.style.pointerEvents = "none";
+    for (const editor of this.#editors.values()) {
+      editor.disableEditing();
+    }
   }
 
   /**
@@ -276,6 +319,7 @@ class AnnotationEditorLayer {
 
   detach(editor) {
     this.#editors.delete(editor.id);
+    this.removePointerInTextLayer(editor);
   }
 
   /**
@@ -311,16 +355,157 @@ class AnnotationEditorLayer {
     }
 
     if (this.#uiManager.isActive(editor)) {
-      editor.parent.setActiveEditor(null);
+      editor.parent?.setActiveEditor(null);
     }
 
     this.attach(editor);
     editor.pageIndex = this.pageIndex;
-    editor.parent.detach(editor);
+    editor.parent?.detach(editor);
     editor.parent = this;
     if (editor.div && editor.isAttachedToDOM) {
       editor.div.remove();
       this.div.append(editor.div);
+    }
+  }
+
+  /**
+   * Compare the positions of two elements, it must correspond to
+   * the visual ordering.
+   *
+   * @param {HTMLElement} e1
+   * @param {HTMLElement} e2
+   * @returns {number}
+   */
+  static #compareElementPositions(e1, e2) {
+    const rect1 = e1.getBoundingClientRect();
+    const rect2 = e2.getBoundingClientRect();
+
+    if (rect1.y + rect1.height <= rect2.y) {
+      return -1;
+    }
+
+    if (rect2.y + rect2.height <= rect1.y) {
+      return +1;
+    }
+
+    const centerX1 = rect1.x + rect1.width / 2;
+    const centerX2 = rect2.x + rect2.width / 2;
+
+    return centerX1 - centerX2;
+  }
+
+  /**
+   * Function called when the text layer has finished rendering.
+   */
+  onTextLayerRendered() {
+    this.#textNodes.clear();
+    for (const editor of this.#waitingEditors) {
+      if (editor.isAttachedToDOM) {
+        this.addPointerInTextLayer(editor);
+      }
+    }
+    this.#waitingEditors.clear();
+  }
+
+  /**
+   * Remove an aria-owns id from a node in the text layer.
+   * @param {AnnotationEditor} editor
+   */
+  removePointerInTextLayer(editor) {
+    if (!this.#hasTextLayer) {
+      this.#waitingEditors.delete(editor);
+      return;
+    }
+
+    const { id } = editor;
+    const node = this.#textNodes.get(id);
+    if (!node) {
+      return;
+    }
+
+    this.#textNodes.delete(id);
+    let owns = node.getAttribute("aria-owns");
+    if (owns?.includes(id)) {
+      owns = owns
+        .split(" ")
+        .filter(x => x !== id)
+        .join(" ");
+      if (owns) {
+        node.setAttribute("aria-owns", owns);
+      } else {
+        node.removeAttribute("aria-owns");
+        node.setAttribute("role", "presentation");
+      }
+    }
+  }
+
+  /**
+   * Find the text node which is the nearest and add an aria-owns attribute
+   * in order to correctly position this editor in the text flow.
+   * @param {AnnotationEditor} editor
+   */
+  addPointerInTextLayer(editor) {
+    if (!this.#hasTextLayer) {
+      // The text layer needs to be there, so we postpone the association.
+      this.#waitingEditors.add(editor);
+      return;
+    }
+
+    this.removePointerInTextLayer(editor);
+
+    const children = this.textLayerElements;
+    if (!children) {
+      return;
+    }
+    const { contentDiv } = editor;
+    const id = editor.getIdForTextLayer();
+
+    const index = binarySearchFirstItem(
+      children,
+      node =>
+        AnnotationEditorLayer.#compareElementPositions(contentDiv, node) < 0
+    );
+    const node = children[Math.max(0, index - 1)];
+    const owns = node.getAttribute("aria-owns");
+    if (!owns?.includes(id)) {
+      node.setAttribute("aria-owns", owns ? `${owns} ${id}` : id);
+    }
+    node.removeAttribute("role");
+
+    this.#textNodes.set(id, node);
+  }
+
+  /**
+   * Move a div in the DOM in order to respect the visual order.
+   * @param {HTMLDivElement} div
+   */
+  moveDivInDOM(editor) {
+    this.addPointerInTextLayer(editor);
+
+    const { div, contentDiv } = editor;
+    if (!this.div.hasChildNodes()) {
+      this.div.append(div);
+      return;
+    }
+
+    const children = Array.from(this.div.childNodes).filter(
+      node => node !== div
+    );
+
+    if (children.length === 0) {
+      return;
+    }
+
+    const index = binarySearchFirstItem(
+      children,
+      node =>
+        AnnotationEditorLayer.#compareElementPositions(contentDiv, node) < 0
+    );
+
+    if (index === 0) {
+      children[0].before(div);
+    } else {
+      children[index - 1].after(div);
     }
   }
 
@@ -340,6 +525,7 @@ class AnnotationEditorLayer {
       editor.isAttachedToDOM = true;
     }
 
+    this.moveDivInDOM(editor);
     editor.onceAdded();
   }
 
@@ -493,6 +679,8 @@ class AnnotationEditorLayer {
     const endY = event.clientY - rect.y;
 
     editor.translate(endX - editor.startX, endY - editor.startY);
+    this.moveDivInDOM(editor);
+    editor.div.focus();
   }
 
   /**
@@ -517,13 +705,20 @@ class AnnotationEditorLayer {
    * Destroy the main editor.
    */
   destroy() {
+    if (this.#uiManager.getActive()?.parent === this) {
+      this.#uiManager.setActiveEditor(null);
+    }
+
     for (const editor of this.#editors.values()) {
+      this.removePointerInTextLayer(editor);
       editor.isAttachedToDOM = false;
       editor.div.remove();
       editor.parent = null;
-      this.div = null;
     }
+    this.#textNodes.clear();
+    this.div = null;
     this.#editors.clear();
+    this.#waitingEditors.clear();
     this.#uiManager.removeLayer(this);
   }
 
@@ -548,6 +743,9 @@ class AnnotationEditorLayer {
     this.viewport = parameters.viewport;
     bindEvents(this, this.div, ["dragover", "drop", "keydown"]);
     this.setDimensions();
+    for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
+      this.add(editor);
+    }
     this.updateMode();
   }
 

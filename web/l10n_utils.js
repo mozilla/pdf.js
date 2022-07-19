@@ -83,6 +83,9 @@ const DEFAULT_L10N_STRINGS = {
     "Web fonts are disabled: unable to use embedded PDF fonts.",
 
   free_text_default_content: "Enter text…",
+  editor_free_text_aria_label: "FreeText Editor",
+  editor_ink_aria_label: "Ink Editor",
+  editor_ink_canvas_aria_label: "User-created image",
 };
 
 function getL10nFallback(key, args) {

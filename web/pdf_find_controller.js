@@ -17,9 +17,9 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
-import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
-import { createPromiseCapability } from "pdfjs-lib";
+import { binarySearchFirstItem, createPromiseCapability } from "pdfjs-lib";
 import { getCharacterType } from "./pdf_find_utils.js";
+import { scrollIntoView } from "./ui_utils.js";
 
 const FindState = {
   FOUND: 0,
