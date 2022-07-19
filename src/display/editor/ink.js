@@ -36,13 +36,13 @@ class InkEditor extends AnnotationEditor {
 
   #baseWidth = 0;
 
-  #boundCanvasMousemove;
+  #boundCanvasPointermove = this.canvasPointermove.bind(this);
 
-  #boundCanvasMouseleave;
+  #boundCanvasPointerleave = this.canvasPointerleave.bind(this);
 
-  #boundCanvasMouseup;
+  #boundCanvasPointerup = this.canvasPointerup.bind(this);
 
-  #boundCanvasMousedown;
+  #boundCanvasPointerdown = this.canvasPointerdown.bind(this);
 
   #disableEditing = false;
 
@@ -71,11 +71,6 @@ class InkEditor extends AnnotationEditor {
     this.translationX = this.translationY = 0;
     this.x = 0;
     this.y = 0;
-
-    this.#boundCanvasMousemove = this.canvasMousemove.bind(this);
-    this.#boundCanvasMouseleave = this.canvasMouseleave.bind(this);
-    this.#boundCanvasMouseup = this.canvasMouseup.bind(this);
-    this.#boundCanvasMousedown = this.canvasMousedown.bind(this);
   }
 
   static initialize(l10n) {
@@ -230,8 +225,8 @@ class InkEditor extends AnnotationEditor {
 
     super.enableEditMode();
     this.div.draggable = false;
-    this.canvas.addEventListener("mousedown", this.#boundCanvasMousedown);
-    this.canvas.addEventListener("mouseup", this.#boundCanvasMouseup);
+    this.canvas.addEventListener("pointerdown", this.#boundCanvasPointerdown);
+    this.canvas.addEventListener("pointerup", this.#boundCanvasPointerup);
   }
 
   /** @inheritdoc */
@@ -244,8 +239,11 @@ class InkEditor extends AnnotationEditor {
     this.div.draggable = !this.isEmpty();
     this.div.classList.remove("editing");
 
-    this.canvas.removeEventListener("mousedown", this.#boundCanvasMousedown);
-    this.canvas.removeEventListener("mouseup", this.#boundCanvasMouseup);
+    this.canvas.removeEventListener(
+      "pointerdown",
+      this.#boundCanvasPointerdown
+    );
+    this.canvas.removeEventListener("pointerup", this.#boundCanvasPointerup);
   }
 
   /** @inheritdoc */
@@ -393,7 +391,6 @@ class InkEditor extends AnnotationEditor {
 
   /**
    * Commit the curves we have in this editor.
-   * @returns {undefined}
    */
   commit() {
     if (this.#disableEditing) {
@@ -428,11 +425,10 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * onmousedown callback for the canvas we're drawing on.
-   * @param {MouseEvent} event
-   * @returns {undefined}
+   * onpointerdown callback for the canvas we're drawing on.
+   * @param {PointerEvent} event
    */
-  canvasMousedown(event) {
+  canvasPointerdown(event) {
     if (event.button !== 0 || !this.isInEditMode() || this.#disableEditing) {
       return;
     }
@@ -441,30 +437,32 @@ class InkEditor extends AnnotationEditor {
     // Since it's the last child, there's no need to give it a higher z-index.
     this.setInForeground();
 
+    if (event.type !== "mouse") {
+      this.div.focus();
+    }
+
     event.stopPropagation();
 
-    this.canvas.addEventListener("mouseleave", this.#boundCanvasMouseleave);
-    this.canvas.addEventListener("mousemove", this.#boundCanvasMousemove);
+    this.canvas.addEventListener("pointerleave", this.#boundCanvasPointerleave);
+    this.canvas.addEventListener("pointermove", this.#boundCanvasPointermove);
 
     this.#startDrawing(event.offsetX, event.offsetY);
   }
 
   /**
-   * onmousemove callback for the canvas we're drawing on.
-   * @param {MouseEvent} event
-   * @returns {undefined}
+   * onpointermove callback for the canvas we're drawing on.
+   * @param {PointerEvent} event
    */
-  canvasMousemove(event) {
+  canvasPointermove(event) {
     event.stopPropagation();
     this.#draw(event.offsetX, event.offsetY);
   }
 
   /**
-   * onmouseup callback for the canvas we're drawing on.
-   * @param {MouseEvent} event
-   * @returns {undefined}
+   * onpointerup callback for the canvas we're drawing on.
+   * @param {PointerEvent} event
    */
-  canvasMouseup(event) {
+  canvasPointerup(event) {
     if (event.button !== 0) {
       return;
     }
@@ -479,24 +477,29 @@ class InkEditor extends AnnotationEditor {
   }
 
   /**
-   * onmouseleave callback for the canvas we're drawing on.
-   * @param {MouseEvent} event
-   * @returns {undefined}
+   * onpointerleave callback for the canvas we're drawing on.
+   * @param {PointerEvent} event
    */
-  canvasMouseleave(event) {
+  canvasPointerleave(event) {
     this.#endDrawing(event);
     this.setInBackground();
   }
 
   /**
    * End the drawing.
-   * @param {MouseEvent} event
+   * @param {PointerEvent} event
    */
   #endDrawing(event) {
     this.#stopDrawing(event.offsetX, event.offsetY);
 
-    this.canvas.removeEventListener("mouseleave", this.#boundCanvasMouseleave);
-    this.canvas.removeEventListener("mousemove", this.#boundCanvasMousemove);
+    this.canvas.removeEventListener(
+      "pointerleave",
+      this.#boundCanvasPointerleave
+    );
+    this.canvas.removeEventListener(
+      "pointermove",
+      this.#boundCanvasPointermove
+    );
   }
 
   /**
