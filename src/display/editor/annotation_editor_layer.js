@@ -409,6 +409,21 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Create a new editor
+   * @param {Object} data
+   * @returns {AnnotationEditor}
+   */
+  deserialize(data) {
+    switch (data.annotationType) {
+      case AnnotationEditorType.FREETEXT:
+        return FreeTextEditor.deserialize(data, this);
+      case AnnotationEditorType.INK:
+        return InkEditor.deserialize(data, this);
+    }
+    return null;
+  }
+
+  /**
    * Create and add a new editor.
    * @param {MouseEvent} event
    * @returns {AnnotationEditor}

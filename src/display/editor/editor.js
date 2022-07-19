@@ -290,6 +290,26 @@ class AnnotationEditor {
     }
   }
 
+  getRectInCurrentCoords(rect, pageHeight) {
+    const [x1, y1, x2, y2] = rect;
+
+    const width = x2 - x1;
+    const height = y2 - y1;
+
+    switch (this.rotation) {
+      case 0:
+        return [x1, pageHeight - y2, width, height];
+      case 90:
+        return [x1, pageHeight - y1, height, width];
+      case 180:
+        return [x2, pageHeight - y1, width, height];
+      case 270:
+        return [x2, pageHeight - y2, height, width];
+      default:
+        throw new Error("Invalid rotation");
+    }
+  }
+
   /**
    * Executed once this editor has been rendered.
    */
@@ -337,18 +357,6 @@ class AnnotationEditor {
   }
 
   /**
-   * Copy the elements of an editor in order to be able to build
-   * a new one from these data.
-   * It's used on ctrl+c action.
-   *
-   * To implement in subclasses.
-   * @returns {AnnotationEditor}
-   */
-  copy() {
-    unreachable("An editor must be copyable");
-  }
-
-  /**
    * Check if this editor needs to be rebuilt or not.
    * @returns {boolean}
    */
@@ -376,6 +384,34 @@ class AnnotationEditor {
    */
   serialize() {
     unreachable("An editor must be serializable");
+  }
+
+  /**
+   * Deserialize the editor.
+   * The result of the deserialization is a new editor.
+   *
+   * @param {Object} data
+   * @param {AnnotationEditorLayer} parent
+   * @returns {AnnotationEditor}
+   */
+  static deserialize(data, parent) {
+    const editor = new this.prototype.constructor({
+      parent,
+      id: parent.getNextId(),
+    });
+    editor.rotation = data.rotation;
+
+    const [pageWidth, pageHeight] = parent.pageDimensions;
+    const [x, y, width, height] = editor.getRectInCurrentCoords(
+      data.rect,
+      pageHeight
+    );
+    editor.x = x / pageWidth;
+    editor.y = y / pageHeight;
+    editor.width = width / pageWidth;
+    editor.height = height / pageHeight;
+
+    return editor;
   }
 
   /**
