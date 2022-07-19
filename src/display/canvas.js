@@ -2211,8 +2211,7 @@ class CanvasGraphics {
 
     ctx.save();
     ctx.beginPath();
-    for (let i = 0; i < paths.length; i++) {
-      const path = paths[i];
+    for (const path of paths) {
       ctx.setTransform.apply(ctx, path.transform);
       ctx.translate(path.x, path.y);
       path.addToPath(ctx, path.fontSize);

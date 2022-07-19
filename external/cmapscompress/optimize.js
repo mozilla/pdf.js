@@ -196,13 +196,13 @@ exports.optimizeCMap = function (data) {
             i++;
             data.body.splice(i, 0, newItem);
           }
-          for (let j = 0; j < subitems.length; j++) {
-            const code = subitems[j].code;
+          for (const subitem of subitems) {
+            const { code } = subitem;
             let q = 0;
             while (q < groups.length && groups[q] <= code) {
               q++;
             }
-            buckets[q].push(subitems[j]);
+            buckets[q].push(subitem);
           }
         }
       }
