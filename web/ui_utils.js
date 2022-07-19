@@ -48,10 +48,13 @@ const SidebarView = {
   LAYERS: 4,
 };
 
-const RendererType = {
-  CANVAS: "canvas",
-  SVG: "svg",
-};
+const RendererType =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
+    ? {
+        CANVAS: "canvas",
+        SVG: "svg",
+      }
+    : null;
 
 const TextLayerMode = {
   DISABLE: 0,
