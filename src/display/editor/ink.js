@@ -76,34 +76,6 @@ class InkEditor extends AnnotationEditor {
     this.#boundCanvasMousedown = this.canvasMousedown.bind(this);
   }
 
-  /** @inheritdoc */
-  copy() {
-    const editor = new InkEditor({
-      parent: this.parent,
-      id: this.parent.getNextId(),
-    });
-
-    editor.x = this.x;
-    editor.y = this.y;
-    editor.width = this.width;
-    editor.height = this.height;
-    editor.color = this.color;
-    editor.thickness = this.thickness;
-    editor.paths = this.paths.slice();
-    editor.bezierPath2D = this.bezierPath2D.slice();
-    editor.scaleFactor = this.scaleFactor;
-    editor.translationX = this.translationX;
-    editor.translationY = this.translationY;
-    editor.#aspectRatio = this.#aspectRatio;
-    editor.#baseWidth = this.#baseWidth;
-    editor.#baseHeight = this.#baseHeight;
-    editor.#disableEditing = this.#disableEditing;
-    editor.#realWidth = this.#realWidth;
-    editor.#realHeight = this.#realHeight;
-
-    return editor;
-  }
-
   static updateDefaultParams(type, value) {
     switch (type) {
       case AnnotationEditorParamsType.INK_THICKNESS:
@@ -351,7 +323,7 @@ class InkEditor extends AnnotationEditor {
       const xy = [x, y];
       bezier = [[xy, xy.slice(), xy.slice(), xy]];
     }
-    const path2D = this.#buildPath2D(bezier);
+    const path2D = InkEditor.#buildPath2D(bezier);
     this.currentPath.length = 0;
 
     const cmd = () => {
@@ -543,7 +515,6 @@ class InkEditor extends AnnotationEditor {
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
-      this.#isCanvasInitialized = true;
       const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
       this.setAt(
         baseX * parentWidth,
@@ -551,9 +522,11 @@ class InkEditor extends AnnotationEditor {
         this.width * parentWidth,
         this.height * parentHeight
       );
-      this.setDims(this.width * parentWidth, this.height * parentHeight);
+      this.#isCanvasInitialized = true;
       this.#setCanvasDims();
+      this.setDims(this.width * parentWidth, this.height * parentHeight);
       this.#redraw();
+      this.#setMinDims();
       this.div.classList.add("disabled");
     } else {
       this.div.classList.add("editing");
@@ -570,8 +543,8 @@ class InkEditor extends AnnotationEditor {
       return;
     }
     const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
-    this.canvas.width = this.width * parentWidth;
-    this.canvas.height = this.height * parentHeight;
+    this.canvas.width = Math.ceil(this.width * parentWidth);
+    this.canvas.height = Math.ceil(this.height * parentHeight);
     this.#updateTransform();
   }
 
@@ -610,16 +583,20 @@ class InkEditor extends AnnotationEditor {
     this.height = height / parentHeight;
 
     if (this.#disableEditing) {
-      const padding = this.#getPadding();
-      const scaleFactorW = (width - padding) / this.#baseWidth;
-      const scaleFactorH = (height - padding) / this.#baseHeight;
-      this.scaleFactor = Math.min(scaleFactorW, scaleFactorH);
+      this.#setScaleFactor(width, height);
     }
 
     this.#setCanvasDims();
     this.#redraw();
 
     this.canvas.style.visibility = "visible";
+  }
+
+  #setScaleFactor(width, height) {
+    const padding = this.#getPadding();
+    const scaleFactorW = (width - padding) / this.#baseWidth;
+    const scaleFactorH = (height - padding) / this.#baseHeight;
+    this.scaleFactor = Math.min(scaleFactorW, scaleFactorH);
   }
 
   /**
@@ -642,7 +619,7 @@ class InkEditor extends AnnotationEditor {
    * @param {Arra<Array<number>} bezier
    * @returns {Path2D}
    */
-  #buildPath2D(bezier) {
+  static #buildPath2D(bezier) {
     const path2D = new Path2D();
     for (let i = 0, ii = bezier.length; i < ii; i++) {
       const [first, control1, control2, second] = bezier[i];
@@ -859,14 +836,7 @@ class InkEditor extends AnnotationEditor {
     this.height = height / parentHeight;
 
     this.#aspectRatio = width / height;
-    const { style } = this.div;
-    if (this.#aspectRatio >= 1) {
-      style.minHeight = `${RESIZER_SIZE}px`;
-      style.minWidth = `${Math.round(this.#aspectRatio * RESIZER_SIZE)}px`;
-    } else {
-      style.minWidth = `${RESIZER_SIZE}px`;
-      style.minHeight = `${Math.round(RESIZER_SIZE / this.#aspectRatio)}px`;
-    }
+    this.#setMinDims();
 
     const prevTranslationX = this.translationX;
     const prevTranslationY = this.translationY;
@@ -884,6 +854,68 @@ class InkEditor extends AnnotationEditor {
       prevTranslationX - this.translationX,
       prevTranslationY - this.translationY
     );
+  }
+
+  #setMinDims() {
+    const { style } = this.div;
+    if (this.#aspectRatio >= 1) {
+      style.minHeight = `${RESIZER_SIZE}px`;
+      style.minWidth = `${Math.round(this.#aspectRatio * RESIZER_SIZE)}px`;
+    } else {
+      style.minWidth = `${RESIZER_SIZE}px`;
+      style.minHeight = `${Math.round(RESIZER_SIZE / this.#aspectRatio)}px`;
+    }
+  }
+
+  /** @inheritdoc */
+  static deserialize(data, parent) {
+    const editor = super.deserialize(data, parent);
+
+    editor.thickness = data.thickness;
+    editor.color = Util.makeHexColor(...data.color);
+
+    const [pageWidth, pageHeight] = parent.pageDimensions;
+    const width = editor.width * pageWidth;
+    const height = editor.height * pageHeight;
+    const scaleFactor = parent.scaleFactor;
+    const padding = data.thickness / 2;
+
+    editor.#aspectRatio = width / height;
+    editor.#disableEditing = true;
+    editor.#realWidth = Math.round(width);
+    editor.#realHeight = Math.round(height);
+
+    for (const { bezier } of data.paths) {
+      const path = [];
+      editor.paths.push(path);
+      let p0 = scaleFactor * (bezier[0] - padding);
+      let p1 = scaleFactor * (height - bezier[1] - padding);
+      for (let i = 2, ii = bezier.length; i < ii; i += 6) {
+        const p10 = scaleFactor * (bezier[i] - padding);
+        const p11 = scaleFactor * (height - bezier[i + 1] - padding);
+        const p20 = scaleFactor * (bezier[i + 2] - padding);
+        const p21 = scaleFactor * (height - bezier[i + 3] - padding);
+        const p30 = scaleFactor * (bezier[i + 4] - padding);
+        const p31 = scaleFactor * (height - bezier[i + 5] - padding);
+        path.push([
+          [p0, p1],
+          [p10, p11],
+          [p20, p21],
+          [p30, p31],
+        ]);
+        p0 = p30;
+        p1 = p31;
+      }
+      const path2D = this.#buildPath2D(path);
+      editor.bezierPath2D.push(path2D);
+    }
+
+    const bbox = editor.#getBbox();
+    editor.#baseWidth = bbox[2] - bbox[0];
+    editor.#baseHeight = bbox[3] - bbox[1];
+    editor.#setScaleFactor(width, height);
+
+    return editor;
   }
 
   /** @inheritdoc */
