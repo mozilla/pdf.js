@@ -154,11 +154,11 @@ class InkEditor extends AnnotationEditor {
     this.parent.addCommands({
       cmd: () => {
         this.thickness = thickness;
-        this.#fitToContent();
+        this.#fitToContent(/* thicknessChanged = */ true);
       },
       undo: () => {
         this.thickness = savedThickness;
-        this.#fitToContent();
+        this.#fitToContent(/* thicknessChanged = */ true);
       },
       mustExec: true,
       type: AnnotationEditorParamsType.INK_THICKNESS,
@@ -828,7 +828,9 @@ class InkEditor extends AnnotationEditor {
    * @returns {number}
    */
   #getPadding() {
-    return Math.ceil(this.thickness * this.parent.scaleFactor);
+    return this.#disableEditing
+      ? Math.ceil(this.thickness * this.parent.scaleFactor)
+      : 0;
   }
 
   /**
@@ -836,7 +838,7 @@ class InkEditor extends AnnotationEditor {
    * the bounding box of the contents.
    * @returns {undefined}
    */
-  #fitToContent() {
+  #fitToContent(thicknessChanged = false) {
     if (this.isEmpty()) {
       return;
     }
@@ -848,8 +850,8 @@ class InkEditor extends AnnotationEditor {
 
     const bbox = this.#getBbox();
     const padding = this.#getPadding();
-    this.#baseWidth = bbox[2] - bbox[0];
-    this.#baseHeight = bbox[3] - bbox[1];
+    this.#baseWidth = Math.max(RESIZER_SIZE, bbox[2] - bbox[0]);
+    this.#baseHeight = Math.max(RESIZER_SIZE, bbox[3] - bbox[1]);
 
     const width = Math.ceil(padding + this.#baseWidth * this.scaleFactor);
     const height = Math.ceil(padding + this.#baseHeight * this.scaleFactor);
@@ -880,9 +882,12 @@ class InkEditor extends AnnotationEditor {
     this.#realHeight = height;
 
     this.setDims(width, height);
+    const unscaledPadding = thicknessChanged
+      ? 0
+      : padding / this.scaleFactor / 2;
     this.translate(
-      prevTranslationX - this.translationX,
-      prevTranslationY - this.translationY
+      prevTranslationX - this.translationX - unscaledPadding,
+      prevTranslationY - this.translationY - unscaledPadding
     );
   }
 
