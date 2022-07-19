@@ -261,12 +261,12 @@ class KeyboardManager {
 
   /**
    * Execute a callback, if any, for a given keyboard event.
-   * The page is used as `this` in the callback.
-   * @param {AnnotationEditorLayer} page.
+   * The self is used as `this` in the callback.
+   * @param {Object} self.
    * @param {KeyboardEvent} event
    * @returns
    */
-  exec(page, event) {
+  exec(self, event) {
     if (!this.allKeys.has(event.key)) {
       return;
     }
@@ -274,7 +274,7 @@ class KeyboardManager {
     if (!callback) {
       return;
     }
-    callback.bind(page)();
+    callback.bind(self)();
     event.preventDefault();
   }
 }
@@ -422,6 +422,8 @@ class AnnotationEditorUIManager {
 
   #previousActiveEditor = null;
 
+  #boundKeydown = this.keydown.bind(this);
+
   #boundOnEditingAction = this.onEditingAction.bind(this);
 
   #boundOnPageChanging = this.onPageChanging.bind(this);
@@ -437,7 +439,37 @@ class AnnotationEditorUIManager {
     hasSelectedEditor: false,
   };
 
-  constructor(eventBus) {
+  #container = null;
+
+  static _keyboardManager = new KeyboardManager([
+    [["ctrl+a", "mac+meta+a"], AnnotationEditorUIManager.prototype.selectAll],
+    [["ctrl+c", "mac+meta+c"], AnnotationEditorUIManager.prototype.copy],
+    [["ctrl+v", "mac+meta+v"], AnnotationEditorUIManager.prototype.paste],
+    [["ctrl+x", "mac+meta+x"], AnnotationEditorUIManager.prototype.cut],
+    [["ctrl+z", "mac+meta+z"], AnnotationEditorUIManager.prototype.undo],
+    [
+      ["ctrl+y", "ctrl+shift+Z", "mac+meta+shift+Z"],
+      AnnotationEditorUIManager.prototype.redo,
+    ],
+    [
+      [
+        "Backspace",
+        "alt+Backspace",
+        "ctrl+Backspace",
+        "shift+Backspace",
+        "mac+Backspace",
+        "mac+alt+Backspace",
+        "mac+ctrl+Backspace",
+        "Delete",
+        "ctrl+Delete",
+        "shift+Delete",
+      ],
+      AnnotationEditorUIManager.prototype.delete,
+    ],
+  ]);
+
+  constructor(container, eventBus) {
+    this.#container = container;
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
     this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
@@ -445,6 +477,7 @@ class AnnotationEditorUIManager {
   }
 
   destroy() {
+    this.#removeKeyboardManager();
     this.#eventBus._off("editingaction", this.#boundOnEditingAction);
     this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
     this.#eventBus._off("textlayerrendered", this.#boundOnTextLayerRendered);
@@ -466,6 +499,26 @@ class AnnotationEditorUIManager {
     const pageIndex = pageNumber - 1;
     const layer = this.#allLayers.get(pageIndex);
     layer?.onTextLayerRendered();
+  }
+
+  #addKeyboardManager() {
+    // The keyboard events are caught at the container level in order to be able
+    // to execute some callbacks even if the current page doesn't have focus.
+    this.#container.addEventListener("keydown", this.#boundKeydown);
+  }
+
+  #removeKeyboardManager() {
+    this.#container.removeEventListener("keydown", this.#boundKeydown);
+  }
+
+  /**
+   * Keydown callback.
+   * @param {KeyboardEvent} event
+   */
+  keydown(event) {
+    if (!this.getActive()?.shouldGetKeyboardEvents()) {
+      AnnotationEditorUIManager._keyboardManager.exec(this, event);
+    }
   }
 
   /**
@@ -517,6 +570,7 @@ class AnnotationEditorUIManager {
    */
   setEditingState(isEditing) {
     if (isEditing) {
+      this.#addKeyboardManager();
       this.#dispatchUpdateStates({
         isEditing: this.#mode !== AnnotationEditorType.NONE,
         isEmpty: this.#isEmpty(),
@@ -526,6 +580,7 @@ class AnnotationEditorUIManager {
         hasEmptyClipboard: this.#clipboardManager.isEmpty(),
       });
     } else {
+      this.#removeKeyboardManager();
       this.#dispatchUpdateStates({
         isEditing: false,
       });
