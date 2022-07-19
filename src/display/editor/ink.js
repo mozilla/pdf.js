@@ -58,6 +58,8 @@ class InkEditor extends AnnotationEditor {
 
   static _defaultThickness = 1;
 
+  static _l10nPromise;
+
   constructor(params) {
     super({ ...params, name: "inkEditor" });
     this.color = params.color || null;
@@ -74,6 +76,15 @@ class InkEditor extends AnnotationEditor {
     this.#boundCanvasMouseleave = this.canvasMouseleave.bind(this);
     this.#boundCanvasMouseup = this.canvasMouseup.bind(this);
     this.#boundCanvasMousedown = this.canvasMousedown.bind(this);
+  }
+
+  static initialize(l10n) {
+    this._l10nPromise = new Map(
+      ["editor_ink_canvas_aria_label", "editor_ink_aria_label"].map(str => [
+        str,
+        l10n.get(str),
+      ])
+    );
   }
 
   static updateDefaultParams(type, value) {
@@ -390,6 +401,10 @@ class InkEditor extends AnnotationEditor {
     this.#fitToContent();
 
     this.parent.addInkEditorIfNeeded(/* isCommitting = */ true);
+
+    // When commiting, the position of this editor is changed, hence we must
+    // move it to the right position in the DOM.
+    this.parent.moveDivInDOM(this);
   }
 
   /** @inheritdoc */
@@ -477,6 +492,10 @@ class InkEditor extends AnnotationEditor {
     this.canvas = document.createElement("canvas");
     this.canvas.width = this.canvas.height = 0;
     this.canvas.className = "inkEditorCanvas";
+
+    InkEditor._l10nPromise
+      .get("editor_ink_canvas_aria_label")
+      .then(msg => this.canvas?.setAttribute("aria-label", msg));
     this.div.append(this.canvas);
     this.ctx = this.canvas.getContext("2d");
   }
@@ -507,6 +526,11 @@ class InkEditor extends AnnotationEditor {
     }
 
     super.render();
+
+    InkEditor._l10nPromise
+      .get("editor_ink_aria_label")
+      .then(msg => this.div?.setAttribute("aria-label", msg));
+
     const [x, y, w, h] = this.#getInitialBBox();
     this.setAt(x, y, 0, 0);
     this.setDims(w, h);

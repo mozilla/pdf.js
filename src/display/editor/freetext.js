@@ -60,7 +60,13 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   static initialize(l10n) {
-    this._l10nPromise = l10n.get("free_text_default_content");
+    this._l10nPromise = new Map(
+      ["free_text_default_content", "editor_free_text_aria_label"].map(str => [
+        str,
+        l10n.get(str),
+      ])
+    );
+
     const style = getComputedStyle(document.documentElement);
 
     if (
@@ -117,7 +123,6 @@ class FreeTextEditor extends AnnotationEditor {
     ];
   }
 
-  /** @inheritdoc */
   get propertiesToUpdate() {
     return [
       [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],
@@ -204,6 +209,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.remove("enabled");
     this.editorDiv.contentEditable = true;
     this.div.draggable = false;
+    this.div.removeAttribute("tabIndex");
   }
 
   /** @inheritdoc */
@@ -213,6 +219,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.add("enabled");
     this.editorDiv.contentEditable = false;
     this.div.draggable = true;
+    this.div.tabIndex = 0;
   }
 
   /** @inheritdoc */
@@ -300,6 +307,34 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.focus();
   }
 
+  /**
+   * onkeydown callback.
+   * @param {MouseEvent} event
+   */
+  keyup(event) {
+    if (event.key === "Enter") {
+      this.enableEditMode();
+      this.editorDiv.focus();
+    }
+  }
+
+  /** @inheritdoc */
+  disableEditing() {
+    this.editorDiv.setAttribute("role", "comment");
+    this.editorDiv.removeAttribute("aria-multiline");
+  }
+
+  /** @inheritdoc */
+  enableEditing() {
+    this.editorDiv.setAttribute("role", "textbox");
+    this.editorDiv.setAttribute("aria-multiline", true);
+  }
+
+  /** @inheritdoc */
+  getIdForTextLayer() {
+    return this.editorDiv.id;
+  }
+
   /** @inheritdoc */
   render() {
     if (this.div) {
@@ -314,12 +349,18 @@ class FreeTextEditor extends AnnotationEditor {
 
     super.render();
     this.editorDiv = document.createElement("div");
-    this.editorDiv.tabIndex = 0;
     this.editorDiv.className = "internal";
 
-    FreeTextEditor._l10nPromise.then(msg =>
-      this.editorDiv.setAttribute("default-content", msg)
-    );
+    this.editorDiv.setAttribute("id", `${this.id}-editor`);
+    this.enableEditing();
+
+    FreeTextEditor._l10nPromise
+      .get("editor_free_text_aria_label")
+      .then(msg => this.editorDiv?.setAttribute("aria-label", msg));
+
+    FreeTextEditor._l10nPromise
+      .get("free_text_default_content")
+      .then(msg => this.editorDiv?.setAttribute("default-content", msg));
     this.editorDiv.contentEditable = true;
 
     const { style } = this.editorDiv;
@@ -335,7 +376,7 @@ class FreeTextEditor extends AnnotationEditor {
     // TODO: implement paste callback.
     // The goal is to sanitize and have something suitable for this
     // editor.
-    bindEvents(this, this.div, ["dblclick"]);
+    bindEvents(this, this.div, ["dblclick", "keyup"]);
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
@@ -352,6 +393,10 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     return this.div;
+  }
+
+  get contentDiv() {
+    return this.editorDiv;
   }
 
   /** @inheritdoc */
