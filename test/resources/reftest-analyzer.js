@@ -301,8 +301,8 @@ window.onload = function () {
 
     // Bind an event handler to each image link
     const images = document.getElementsByClassName("image");
-    for (let i = 0; i < images.length; i++) {
-      images[i].addEventListener(
+    for (const image of images) {
+      image.addEventListener(
         "click",
         function (e) {
           showImages(e.target.id);
@@ -407,9 +407,9 @@ window.onload = function () {
   function flashPixels(on) {
     const stroke = on ? "#FF0000" : "#CCC";
     const strokeWidth = on ? "2px" : "1px";
-    for (let i = 0; i < gFlashingPixels.length; i++) {
-      gFlashingPixels[i].setAttribute("stroke", stroke);
-      gFlashingPixels[i].setAttribute("stroke-width", strokeWidth);
+    for (const pixel of gFlashingPixels) {
+      pixel.setAttribute("stroke", stroke);
+      pixel.setAttribute("stroke-width", strokeWidth);
     }
   }
 

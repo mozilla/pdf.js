@@ -263,8 +263,8 @@ class WorkerMessageHandler {
           // There may be a chance that `newPdfManager` is not initialized for
           // the first few runs of `readchunk` block of code. Be sure to send
           // all cached chunks, if any, to chunked_stream via pdf_manager.
-          for (let i = 0; i < cachedChunks.length; i++) {
-            newPdfManager.sendProgressiveData(cachedChunks[i]);
+          for (const chunk of cachedChunks) {
+            newPdfManager.sendProgressiveData(chunk);
           }
 
           cachedChunks = [];

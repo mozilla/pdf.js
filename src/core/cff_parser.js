@@ -1682,9 +1682,7 @@ class CFFCompiler {
   compileDict(dict, offsetTracker) {
     const out = [];
     // The dictionary keys must be in a certain order.
-    const order = dict.order;
-    for (let i = 0; i < order.length; ++i) {
-      const key = order[i];
+    for (const key of dict.order) {
       if (!(key in dict.values)) {
         continue;
       }
