@@ -223,7 +223,6 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.remove("enabled");
     this.editorDiv.contentEditable = true;
     this.div.draggable = false;
-    this.div.removeAttribute("tabIndex");
     this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown);
     this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus);
     this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur);
@@ -236,17 +235,27 @@ class FreeTextEditor extends AnnotationEditor {
     this.overlayDiv.classList.add("enabled");
     this.editorDiv.contentEditable = false;
     this.div.draggable = true;
-    this.div.tabIndex = 0;
     this.editorDiv.removeEventListener("keydown", this.#boundEditorDivKeydown);
     this.editorDiv.removeEventListener("focus", this.#boundEditorDivFocus);
     this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
+
+    // In case the blur callback hasn't been called.
+    this.isEditing = false;
+  }
+
+  /** @inheritdoc */
+  focusin(event) {
+    super.focusin(event);
+    if (event.target !== this.editorDiv) {
+      this.editorDiv.focus();
+    }
   }
 
   /** @inheritdoc */
   onceAdded() {
     if (this.width) {
       // The editor was created in using ctrl+c.
-      this.div.focus();
+      this.parent.setActiveEditor(this);
       return;
     }
     this.enableEditMode();
@@ -330,7 +339,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /**
    * onkeydown callback.
-   * @param {MouseEvent} event
+   * @param {KeyboardEvent} event
    */
   keydown(event) {
     if (event.target === this.div && event.key === "Enter") {
@@ -423,6 +432,10 @@ class FreeTextEditor extends AnnotationEditor {
       // eslint-disable-next-line no-unsanitized/property
       this.editorDiv.innerHTML = this.#contentHTML;
       this.div.draggable = true;
+      this.editorDiv.contentEditable = false;
+    } else {
+      this.div.draggable = false;
+      this.editorDiv.contentEditable = true;
     }
 
     return this.div;
