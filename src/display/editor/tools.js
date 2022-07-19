@@ -393,8 +393,6 @@ class AnnotationEditorUIManager {
 
   #allLayers = new Map();
 
-  #allowClick = true;
-
   #clipboardManager = new ClipboardManager();
 
   #commandManager = new CommandManager();
@@ -745,29 +743,12 @@ class AnnotationEditorUIManager {
   }
 
   /**
-   * When set to true a click on the current layer will trigger
-   * an editor creation.
-   * @return {boolean}
-   */
-  get allowClick() {
-    return this.#allowClick;
-  }
-
-  /**
-   * @param {boolean} allow
-   */
-  set allowClick(allow) {
-    this.#allowClick = allow;
-  }
-
-  /**
    * Unselect the current editor.
    */
   unselect() {
     if (this.#activeEditor) {
       this.#activeEditor.parent.setActiveEditor(null);
     }
-    this.#allowClick = true;
   }
 
   /**

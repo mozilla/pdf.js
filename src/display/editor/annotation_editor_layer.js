@@ -40,7 +40,11 @@ import { InkEditor } from "./ink.js";
  * Manage all the different editors on a page.
  */
 class AnnotationEditorLayer {
+  #allowClick = false;
+
   #boundClick;
+
+  #boundMousedown;
 
   #editors = new Map();
 
@@ -92,6 +96,7 @@ class AnnotationEditorLayer {
     this.pageIndex = options.pageIndex;
     this.div = options.div;
     this.#boundClick = this.click.bind(this);
+    this.#boundMousedown = this.mousedown.bind(this);
 
     for (const editor of this.#uiManager.getEditors(options.pageIndex)) {
       this.add(editor);
@@ -103,7 +108,6 @@ class AnnotationEditorLayer {
   /**
    * Update the toolbar if it's required to reflect the tool currently used.
    * @param {number} mode
-   * @returns {undefined}
    */
   updateToolbar(mode) {
     this.#uiManager.updateToolbar(mode);
@@ -118,6 +122,9 @@ class AnnotationEditorLayer {
     if (mode === AnnotationEditorType.INK) {
       // We always want to an ink editor ready to draw in.
       this.addInkEditorIfNeeded(false);
+      this.disableClick();
+    } else {
+      this.enableClick();
     }
     this.setActiveEditor(null);
   }
@@ -177,7 +184,6 @@ class AnnotationEditorLayer {
 
   /**
    * Suppress the selected editor or all editors.
-   * @returns {undefined}
    */
   delete() {
     this.#uiManager.delete();
@@ -199,7 +205,6 @@ class AnnotationEditorLayer {
 
   /**
    * Paste a previously copied editor.
-   * @returns {undefined}
    */
   paste() {
     this.#uiManager.paste();
@@ -250,14 +255,19 @@ class AnnotationEditorLayer {
       currentActive.commitOrRemove();
     }
 
-    this.#uiManager.allowClick =
-      this.#uiManager.getMode() === AnnotationEditorType.INK;
     if (editor) {
       this.unselectAll();
-      this.div.removeEventListener("click", this.#boundClick);
-    } else {
-      this.div.addEventListener("click", this.#boundClick);
     }
+  }
+
+  enableClick() {
+    this.div.addEventListener("mousedown", this.#boundMousedown);
+    this.div.addEventListener("click", this.#boundClick);
+  }
+
+  disableClick() {
+    this.div.removeEventListener("mousedown", this.#boundMousedown);
+    this.div.removeEventListener("click", this.#boundClick);
   }
 
   attach(editor) {
@@ -283,7 +293,6 @@ class AnnotationEditorLayer {
     editor.isAttachedToDOM = false;
     if (this.#uiManager.isActive(editor) || this.#editors.size === 0) {
       this.setActiveEditor(null);
-      this.#uiManager.allowClick = true;
     }
 
     if (!this.#isCleaningUp) {
@@ -295,7 +304,6 @@ class AnnotationEditorLayer {
    * An editor can have a different parent, for example after having
    * being dragged and droped from a page to another.
    * @param {AnnotationEditor} editor
-   * @returns {undefined}
    */
   #changeParent(editor) {
     if (editor.parent === this) {
@@ -423,11 +431,14 @@ class AnnotationEditorLayer {
   /**
    * Mouseclick callback.
    * @param {MouseEvent} event
-   * @returns {undefined}
    */
   click(event) {
-    if (!this.#uiManager.allowClick) {
-      this.#uiManager.allowClick = true;
+    if (event.target !== this.div) {
+      return;
+    }
+
+    if (!this.#allowClick) {
+      this.#allowClick = true;
       return;
     }
 
@@ -435,9 +446,20 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Mousedown callback.
+   * @param {MouseEvent} event
+   */
+  mousedown(event) {
+    if (event.target !== this.div) {
+      return;
+    }
+
+    this.#allowClick = !this.#uiManager.hasActive();
+  }
+
+  /**
    * Drag callback.
    * @param {DragEvent} event
-   * @returns {undefined}
    */
   drop(event) {
     const id = event.dataTransfer.getData("text/plain");
@@ -510,7 +532,6 @@ class AnnotationEditorLayer {
   render(parameters) {
     this.viewport = parameters.viewport;
     bindEvents(this, this.div, ["dragover", "drop", "keydown"]);
-    this.div.addEventListener("click", this.#boundClick);
     this.setDimensions();
     this.updateMode();
   }
