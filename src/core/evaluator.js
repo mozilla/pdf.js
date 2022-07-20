@@ -3373,9 +3373,16 @@ class PartialEvaluator {
         };
       }
 
-      const cidToGidMap = dict.get("CIDToGIDMap");
-      if (cidToGidMap instanceof BaseStream) {
-        cidToGidBytes = cidToGidMap.getBytes();
+      try {
+        const cidToGidMap = dict.get("CIDToGIDMap");
+        if (cidToGidMap instanceof BaseStream) {
+          cidToGidBytes = cidToGidMap.getBytes();
+        }
+      } catch (ex) {
+        if (!this.options.ignoreErrors) {
+          throw ex;
+        }
+        warn(`extractDataStructures - ignoring CIDToGIDMap data: "${ex}".`);
       }
     }
 

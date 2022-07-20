@@ -4980,6 +4980,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue15139",
+       "file": "pdfs/issue15139.pdf",
+       "md5": "0f2beb6a788d1e47bb9af737f6670493",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "gesamt",
       "file": "pdfs/gesamt.pdf",
       "md5": "743aaa6f46ed0a42864f079d632d942e",
