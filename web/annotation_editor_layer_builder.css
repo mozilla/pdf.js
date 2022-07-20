@@ -123,10 +123,6 @@
   cursor: auto;
 }
 
-.annotationEditorLayer .background {
-  z-index: 0;
-}
-
 .annotationEditorLayer .inkEditor:focus {
   outline: var(--focus-outline);
   resize: both;
