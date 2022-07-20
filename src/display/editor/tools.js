@@ -786,6 +786,7 @@ class AnnotationEditorUIManager {
   delete() {
     let cmd, undo;
     if (this.#isAllSelected) {
+      this.#previousActiveEditor = this.#activeEditor = null;
       const editors = Array.from(this.#allEditors.values());
       cmd = () => {
         for (const editor of editors) {
@@ -807,6 +808,7 @@ class AnnotationEditorUIManager {
         return;
       }
       const editor = this.#activeEditor;
+      this.#previousActiveEditor = this.#activeEditor = null;
       cmd = () => {
         editor.remove();
       };
@@ -834,15 +836,7 @@ class AnnotationEditorUIManager {
   cut() {
     if (this.#activeEditor) {
       this.#clipboardManager.copy(this.#activeEditor);
-      const editor = this.#activeEditor;
-      const cmd = () => {
-        editor.remove();
-      };
-      const undo = () => {
-        this.#addEditorToLayer(editor);
-      };
-
-      this.addCommands({ cmd, undo, mustExec: true });
+      this.delete();
     }
   }
 
