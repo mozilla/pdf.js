@@ -21,8 +21,8 @@
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
 
 import { AnnotationEditorType, shadow } from "../../shared/util.js";
-import { bindEvents, KeyboardManager } from "./tools.js";
 import { binarySearchFirstItem } from "../display_utils.js";
+import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 
@@ -60,33 +60,6 @@ class AnnotationEditorLayer {
   #waitingEditors = new Set();
 
   static _initialized = false;
-
-  static _keyboardManager = new KeyboardManager([
-    [["ctrl+a", "mac+meta+a"], AnnotationEditorLayer.prototype.selectAll],
-    [["ctrl+c", "mac+meta+c"], AnnotationEditorLayer.prototype.copy],
-    [["ctrl+v", "mac+meta+v"], AnnotationEditorLayer.prototype.paste],
-    [["ctrl+x", "mac+meta+x"], AnnotationEditorLayer.prototype.cut],
-    [["ctrl+z", "mac+meta+z"], AnnotationEditorLayer.prototype.undo],
-    [
-      ["ctrl+y", "ctrl+shift+Z", "mac+meta+shift+Z"],
-      AnnotationEditorLayer.prototype.redo,
-    ],
-    [
-      [
-        "Backspace",
-        "alt+Backspace",
-        "ctrl+Backspace",
-        "shift+Backspace",
-        "mac+Backspace",
-        "mac+alt+Backspace",
-        "mac+ctrl+Backspace",
-        "Delete",
-        "ctrl+Delete",
-        "shift+Delete",
-      ],
-      AnnotationEditorLayer.prototype.delete,
-    ],
-  ]);
 
   /**
    * @param {AnnotationEditorLayerOptions} options
@@ -206,62 +179,6 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Undo the last command.
-   */
-  undo() {
-    this.#uiManager.undo();
-  }
-
-  /**
-   * Redo the last command.
-   */
-  redo() {
-    this.#uiManager.redo();
-  }
-
-  /**
-   * Suppress the selected editor or all editors.
-   */
-  delete() {
-    this.#uiManager.delete();
-  }
-
-  /**
-   * Copy the selected editor.
-   */
-  copy() {
-    this.#uiManager.copy();
-  }
-
-  /**
-   * Cut the selected editor.
-   */
-  cut() {
-    this.#uiManager.cut();
-  }
-
-  /**
-   * Paste a previously copied editor.
-   */
-  paste() {
-    this.#uiManager.paste();
-  }
-
-  /**
-   * Select all the editors.
-   */
-  selectAll() {
-    this.#uiManager.selectAll();
-  }
-
-  /**
-   * Unselect all the editors.
-   */
-  unselectAll() {
-    this.#uiManager.unselectAll();
-  }
-
-  /**
    * Enable pointer events on the main div in order to enable
    * editor creation.
    */
@@ -299,7 +216,7 @@ class AnnotationEditorLayer {
     }
 
     if (editor) {
-      this.unselectAll();
+      this.#uiManager.unselectAll();
     }
   }
 
@@ -692,16 +609,6 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Keydown callback.
-   * @param {KeyboardEvent} event
-   */
-  keydown(event) {
-    if (!this.#uiManager.getActive()?.shouldGetKeyboardEvents()) {
-      AnnotationEditorLayer._keyboardManager.exec(this, event);
-    }
-  }
-
-  /**
    * Destroy the main editor.
    */
   destroy() {
@@ -741,7 +648,7 @@ class AnnotationEditorLayer {
    */
   render(parameters) {
     this.viewport = parameters.viewport;
-    bindEvents(this, this.div, ["dragover", "drop", "keydown"]);
+    bindEvents(this, this.div, ["dragover", "drop"]);
     this.setDimensions();
     for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
       this.add(editor);
