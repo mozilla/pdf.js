@@ -37,7 +37,11 @@ import { bindEvents, ColorManager } from "./tools.js";
 class AnnotationEditor {
   #isInEditMode = false;
 
+  #zIndex = AnnotationEditor._zIndex++;
+
   static _colorManager = new ColorManager();
+
+  static _zIndex = 1;
 
   /**
    * @param {AnnotationEditorParameters} parameters
@@ -74,14 +78,14 @@ class AnnotationEditor {
    * This editor will be behind the others.
    */
   setInBackground() {
-    this.div.classList.add("background");
+    this.div.style.zIndex = 0;
   }
 
   /**
    * This editor will be in the foreground.
    */
   setInForeground() {
-    this.div.classList.remove("background");
+    this.div.style.zIndex = this.#zIndex;
   }
 
   /**
@@ -221,6 +225,8 @@ class AnnotationEditor {
     this.div.className = this.name;
     this.div.setAttribute("id", this.id);
     this.div.tabIndex = 0;
+
+    this.setInForeground();
 
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
