@@ -938,7 +938,9 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       editor.unselect();
     }
-    this.#dispatchUpdateStates({ hasSelectedEditor: this.hasActive() });
+    this.#dispatchUpdateStates({
+      hasSelectedEditor: this.#activeEditor !== null,
+    });
   }
 
   /**
@@ -956,14 +958,6 @@ class AnnotationEditorUIManager {
    */
   getActive() {
     return this.#activeEditor;
-  }
-
-  /**
-   * Check if there is an active editor.
-   * @returns {boolean}
-   */
-  hasActive() {
-    return this.#activeEditor !== null;
   }
 
   /**
