@@ -572,7 +572,8 @@ class AnnotationEditorLayer {
       return;
     }
 
-    this.#allowClick = !this.#uiManager.hasActive();
+    const editor = this.#uiManager.getActive();
+    this.#allowClick = !editor || editor.isEmpty();
   }
 
   /**
