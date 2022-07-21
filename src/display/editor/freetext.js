@@ -30,6 +30,10 @@ import { AnnotationEditor } from "./editor.js";
  * Basic text editor in order to create a FreeTex annotation.
  */
 class FreeTextEditor extends AnnotationEditor {
+  #boundEditorDivBlur = this.editorDivBlur.bind(this);
+
+  #boundEditorDivFocus = this.editorDivFocus.bind(this);
+
   #boundEditorDivKeydown = this.editorDivKeydown.bind(this);
 
   #color;
@@ -199,6 +203,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   rebuild() {
+    super.rebuild();
     if (this.div === null) {
       return;
     }
@@ -220,6 +225,8 @@ class FreeTextEditor extends AnnotationEditor {
     this.div.draggable = false;
     this.div.removeAttribute("tabIndex");
     this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown);
+    this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus);
+    this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur);
   }
 
   /** @inheritdoc */
@@ -231,6 +238,8 @@ class FreeTextEditor extends AnnotationEditor {
     this.div.draggable = true;
     this.div.tabIndex = 0;
     this.editorDiv.removeEventListener("keydown", this.#boundEditorDivKeydown);
+    this.editorDiv.removeEventListener("focus", this.#boundEditorDivFocus);
+    this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
   }
 
   /** @inheritdoc */
@@ -251,6 +260,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   remove() {
+    this.isEditing = false;
     this.parent.setEditingState(true);
     super.remove();
   }
@@ -331,6 +341,14 @@ class FreeTextEditor extends AnnotationEditor {
 
   editorDivKeydown(event) {
     FreeTextEditor._keyboardManager.exec(this, event);
+  }
+
+  editorDivFocus(event) {
+    this.isEditing = true;
+  }
+
+  editorDivBlur(event) {
+    this.isEditing = false;
   }
 
   /** @inheritdoc */
