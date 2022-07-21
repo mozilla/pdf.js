@@ -136,7 +136,7 @@ class AnnotationEditorLayer {
     } else {
       this.enableClick();
     }
-    this.setActiveEditor(null);
+    this.#uiManager.unselectAll();
   }
 
   addInkEditorIfNeeded(isCommitting) {
@@ -210,14 +210,6 @@ class AnnotationEditorLayer {
     }
 
     this.#uiManager.setActiveEditor(editor);
-
-    if (currentActive && currentActive !== editor) {
-      currentActive.commitOrRemove();
-    }
-
-    if (editor) {
-      this.#uiManager.unselectAll();
-    }
   }
 
   enableClick() {
@@ -250,11 +242,19 @@ class AnnotationEditorLayer {
     this.#uiManager.removeEditor(editor);
     this.detach(editor);
     this.annotationStorage.removeKey(editor.id);
-    editor.div.remove();
-    editor.isAttachedToDOM = false;
-    if (this.#uiManager.isActive(editor) || this.#editors.size === 0) {
-      this.setActiveEditor(null);
-    }
+    editor.div.style.display = "none";
+    setTimeout(() => {
+      // When the div is removed from DOM the focus can move on the
+      // document.body, so we just slightly postpone the removal in
+      // order to let an element potentially grab the focus before
+      // the body.
+      editor.div.style.display = "";
+      editor.div.remove();
+      editor.isAttachedToDOM = false;
+      if (document.activeElement === document.body) {
+        this.#uiManager.focusMainContainer();
+      }
+    }, 0);
 
     if (!this.#isCleaningUp) {
       this.addInkEditorIfNeeded(/* isCommitting = */ false);
@@ -269,10 +269,6 @@ class AnnotationEditorLayer {
   #changeParent(editor) {
     if (editor.parent === this) {
       return;
-    }
-
-    if (this.#uiManager.isActive(editor)) {
-      editor.parent?.setActiveEditor(null);
     }
 
     this.attach(editor);
@@ -547,6 +543,42 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Set the last selected editor.
+   * @param {AnnotationEditor} editor
+   */
+  setSelected(editor) {
+    this.#uiManager.setSelected(editor);
+  }
+
+  /**
+   * Check if the editor is selected.
+   * @param {AnnotationEditor} editor
+   */
+  isSelected(editor) {
+    return this.#uiManager.isSelected(editor);
+  }
+
+  /**
+   * Unselect an editor.
+   * @param {AnnotationEditor} editor
+   */
+  unselect(editor) {
+    this.#uiManager.unselect(editor);
+  }
+
+  get isMultipleSelection() {
+    return this.#uiManager.isMultipleSelection;
+  }
+
+  /**
+   * An editor just got a mousedown with ctrl key pressed.
+   * @param {boolean}} isMultiple
+   */
+  set isMultipleSelection(isMultiple) {
+    this.#uiManager.isMultipleSelection = isMultiple;
+  }
+
+  /**
    * Mouseclick callback.
    * @param {MouseEvent} event
    */
@@ -662,7 +694,6 @@ class AnnotationEditorLayer {
    * @param {Object} parameters
    */
   update(parameters) {
-    this.setActiveEditor(null);
     this.viewport = parameters.viewport;
     this.setDimensions();
     this.updateMode();
