@@ -123,8 +123,16 @@ class InkEditor extends AnnotationEditor {
   /** @inheritdoc */
   get propertiesToUpdate() {
     return [
-      [AnnotationEditorParamsType.INK_THICKNESS, this.thickness],
-      [AnnotationEditorParamsType.INK_COLOR, this.color],
+      [
+        AnnotationEditorParamsType.INK_THICKNESS,
+        this.thickness || InkEditor._defaultThickness,
+      ],
+      [
+        AnnotationEditorParamsType.INK_COLOR,
+        this.color ||
+          InkEditor._defaultColor ||
+          AnnotationEditor._defaultLineColor,
+      ],
     ];
   }
 
@@ -174,6 +182,7 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   rebuild() {
+    super.rebuild();
     if (this.div === null) {
       return;
     }
@@ -284,6 +293,7 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #startDrawing(x, y) {
+    this.isEditing = true;
     if (!this.#isCanvasInitialized) {
       this.#isCanvasInitialized = true;
       this.#setCanvasDims();
@@ -390,6 +400,7 @@ class InkEditor extends AnnotationEditor {
       return;
     }
 
+    this.isEditing = false;
     this.disableEditMode();
 
     // This editor must be on top of the main ink editor.
@@ -408,8 +419,8 @@ class InkEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  focusin(/* event */) {
-    super.focusin();
+  focusin(event) {
+    super.focusin(event);
     this.enableEditMode();
   }
 

@@ -252,4 +252,176 @@ describe("Editor", () => {
       );
     });
   });
+
+  describe("FreeText (multiselection)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    function getSelected(page) {
+      return page.evaluate(prefix => {
+        const elements = document.querySelectorAll(".selectedEditor");
+        const results = [];
+        for (const element of elements) {
+          results.push(parseInt(element.id.slice(prefix.length)));
+        }
+        results.sort();
+        return results;
+      }, editorPrefix.slice(1));
+    }
+
+    it("must select/unselect several editors and check copy, paste and delete operations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const editorCenters = [];
+          for (let i = 0; i < 4; i++) {
+            const data = `FreeText ${i}`;
+            await page.mouse.click(
+              rect.x + (i + 1) * 100,
+              rect.y + (i + 1) * 100
+            );
+            await page.type(`${editorPrefix}${i} .internal`, data);
+
+            const editorRect = await page.$eval(`${editorPrefix}${i}`, el => {
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return {
+                x,
+                y,
+                width,
+                height,
+              };
+            });
+            editorCenters.push({
+              x: editorRect.x + editorRect.width / 2,
+              y: editorRect.y + editorRect.height / 2,
+            });
+
+            // Commit.
+            await page.mouse.click(
+              editorRect.x,
+              editorRect.y + 2 * editorRect.height
+            );
+          }
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 1, 2, 3]);
+
+          await page.keyboard.down("Control");
+          await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
+
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 2, 3]);
+
+          await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
+
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 3]);
+
+          await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
+          await page.keyboard.up("Control");
+
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 1, 3]);
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("c");
+          await page.keyboard.up("Control");
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("v");
+          await page.keyboard.up("Control");
+
+          // 0,1,3 are unselected and new pasted editors are selected.
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([4, 5, 6]);
+
+          // No ctrl here, hence all are unselected and 2 is selected.
+          await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([2]);
+
+          await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([1]);
+
+          await page.keyboard.down("Control");
+
+          await page.mouse.click(editorCenters[3].x, editorCenters[3].y);
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([1, 3]);
+
+          await page.keyboard.up("Control");
+
+          // Delete 1 and 3.
+          await page.keyboard.press("Backspace");
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 2, 4, 5, 6]);
+
+          // Create an empty editor.
+          await page.mouse.click(rect.x + 700, rect.y + 100);
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([7]);
+
+          // Set the focus to 2 and check that only 2 is selected.
+          await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([2]);
+
+          // Create an empty editor.
+          await page.mouse.click(rect.x + 700, rect.y + 100);
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([8]);
+          // Dismiss it.
+          await page.keyboard.press("Escape");
+
+          // Select all.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+
+          // Check that all the editors are correctly selected (and the focus
+          // didn't move to the body when the empty editor was removed).
+          expect(await getSelected(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 2, 4, 5, 6]);
+        })
+      );
+    });
+  });
 });
