@@ -54,21 +54,27 @@ class IdManager {
 class CommandManager {
   #commands = [];
 
-  #maxSize = 100;
+  #maxSize;
 
-  // When the position is NaN, it means the buffer is empty.
-  #position = NaN;
+  #position = -1;
 
-  #start = 0;
+  constructor(maxSize = 128) {
+    this.#maxSize = maxSize;
+  }
+
+  /**
+   * @typedef {Object} addOptions
+   * @property {function} cmd
+   * @property {function} undo
+   * @property {boolean} mustExec
+   * @property {number} type
+   * @property {boolean} overwriteIfSameType
+   * @property {boolean} keepUndo
+   */
 
   /**
    * Add a new couple of commands to be used in case of redo/undo.
-   * @param {function} cmd
-   * @param {function} undo
-   * @param {boolean} mustExec
-   * @param {number} type
-   * @param {boolean} overwriteIfSameType
-   * @param {boolean} keepUndo
+   * @param {addOptions} options
    */
   add({
     cmd,
@@ -78,12 +84,18 @@ class CommandManager {
     overwriteIfSameType = false,
     keepUndo = false,
   }) {
+    if (mustExec) {
+      cmd();
+    }
+
     const save = { cmd, undo, type };
-    if (
-      overwriteIfSameType &&
-      !isNaN(this.#position) &&
-      this.#commands[this.#position].type === type
-    ) {
+    if (this.#position === -1) {
+      this.#position = 0;
+      this.#commands.push(save);
+      return;
+    }
+
+    if (overwriteIfSameType && this.#commands[this.#position].type === type) {
       // For example when we change a color we don't want to
       // be able to undo all the steps, hence we only want to
       // keep the last undoable action in this sequence of actions.
@@ -91,62 +103,41 @@ class CommandManager {
         save.undo = this.#commands[this.#position].undo;
       }
       this.#commands[this.#position] = save;
-      if (mustExec) {
-        cmd();
-      }
       return;
     }
-    const next = (this.#position + 1) % this.#maxSize;
-    if (next !== this.#start) {
-      if (this.#start < next) {
-        this.#commands = this.#commands.slice(this.#start, next);
-      } else {
-        this.#commands = this.#commands
-          .slice(this.#start)
-          .concat(this.#commands.slice(0, next));
-      }
-      this.#start = 0;
-      this.#position = this.#commands.length - 1;
-    }
-    this.#setCommands(save);
 
-    if (mustExec) {
-      cmd();
+    const next = this.#position + 1;
+    if (next === this.#maxSize) {
+      this.#commands.splice(0, 1);
+    } else {
+      this.#position = next;
+      if (next < this.#commands.length) {
+        this.#commands.splice(next);
+      }
     }
+
+    this.#commands.push(save);
   }
 
   /**
    * Undo the last command.
    */
   undo() {
-    if (isNaN(this.#position)) {
+    if (this.#position === -1) {
       // Nothing to undo.
       return;
     }
     this.#commands[this.#position].undo();
-    if (this.#position === this.#start) {
-      this.#position = NaN;
-    } else {
-      this.#position = (this.#maxSize + this.#position - 1) % this.#maxSize;
-    }
+    this.#position -= 1;
   }
 
   /**
    * Redo the last command.
    */
   redo() {
-    if (isNaN(this.#position)) {
-      if (this.#start < this.#commands.length) {
-        this.#commands[this.#start].cmd();
-        this.#position = this.#start;
-      }
-      return;
-    }
-
-    const next = (this.#position + 1) % this.#maxSize;
-    if (next !== this.#start && next < this.#commands.length) {
-      this.#commands[next].cmd();
-      this.#position = next;
+    if (this.#position < this.#commands.length - 1) {
+      this.#position += 1;
+      this.#commands[this.#position].cmd();
     }
   }
 
@@ -155,7 +146,7 @@ class CommandManager {
    * @returns {boolean}
    */
   hasSomethingToUndo() {
-    return !isNaN(this.#position);
+    return this.#position !== -1;
   }
 
   /**
@@ -163,29 +154,7 @@ class CommandManager {
    * @returns {boolean}
    */
   hasSomethingToRedo() {
-    if (isNaN(this.#position) && this.#start < this.#commands.length) {
-      return true;
-    }
-    const next = (this.#position + 1) % this.#maxSize;
-    return next !== this.#start && next < this.#commands.length;
-  }
-
-  #setCommands(cmds) {
-    if (this.#commands.length < this.#maxSize) {
-      this.#commands.push(cmds);
-      this.#position = isNaN(this.#position) ? 0 : this.#position + 1;
-      return;
-    }
-
-    if (isNaN(this.#position)) {
-      this.#position = this.#start;
-    } else {
-      this.#position = (this.#position + 1) % this.#maxSize;
-      if (this.#position === this.#start) {
-        this.#start = (this.#start + 1) % this.#maxSize;
-      }
-    }
-    this.#commands[this.#position] = cmds;
+    return this.#position < this.#commands.length - 1;
   }
 
   destroy() {
@@ -969,4 +938,10 @@ class AnnotationEditorUIManager {
   }
 }
 
-export { AnnotationEditorUIManager, bindEvents, ColorManager, KeyboardManager };
+export {
+  AnnotationEditorUIManager,
+  bindEvents,
+  ColorManager,
+  CommandManager,
+  KeyboardManager,
+};
