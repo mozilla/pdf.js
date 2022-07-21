@@ -80,7 +80,6 @@ import { NullL10n } from "./l10n_utils.js";
  * @property {Object} [textHighlighterFactory]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
- * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
  *   value is `false`.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
@@ -139,7 +138,12 @@ class PDFPageView {
         this.eventBus
       );
     this.structTreeLayerFactory = options.structTreeLayerFactory;
-    this.renderer = options.renderer || RendererType.CANVAS;
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
+    ) {
+      this.renderer = options.renderer || RendererType.CANVAS;
+    }
     this.l10n = options.l10n || NullL10n;
 
     this.paintTask = null;
