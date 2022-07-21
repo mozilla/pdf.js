@@ -377,19 +377,19 @@ class AnnotationEditorUIManager {
 
   #currentPageIndex = 0;
 
+  #isMultipleSelection = false;
+
   #editorTypes = null;
 
   #eventBus = null;
 
   #idManager = new IdManager();
 
-  #isAllSelected = false;
-
   #isEnabled = false;
 
   #mode = AnnotationEditorType.NONE;
 
-  #previousActiveEditor = null;
+  #selectedEditors = new Set();
 
   #boundKeydown = this.keydown.bind(this);
 
@@ -435,6 +435,7 @@ class AnnotationEditorUIManager {
       ],
       AnnotationEditorUIManager.prototype.delete,
     ],
+    [["Escape"], AnnotationEditorUIManager.prototype.unselectAll],
   ]);
 
   constructor(container, eventBus) {
@@ -456,6 +457,7 @@ class AnnotationEditorUIManager {
     this.#allLayers.clear();
     this.#allEditors.clear();
     this.#activeEditor = null;
+    this.#selectedEditors.clear();
     this.#clipboardManager.destroy();
     this.#commandManager.destroy();
   }
@@ -468,6 +470,10 @@ class AnnotationEditorUIManager {
     const pageIndex = pageNumber - 1;
     const layer = this.#allLayers.get(pageIndex);
     layer?.onTextLayerRendered();
+  }
+
+  focusMainContainer() {
+    this.#container.focus();
   }
 
   #addKeyboardManager() {
@@ -631,10 +637,10 @@ class AnnotationEditorUIManager {
    * @param {*} value
    */
   updateParams(type, value) {
-    (this.#activeEditor || this.#previousActiveEditor)?.updateParams(
-      type,
-      value
-    );
+    for (const editor of this.#selectedEditors) {
+      editor.updateParams(type, value);
+    }
+
     for (const editorType of this.#editorTypes) {
       editorType.updateDefaultParams(type, value);
     }
@@ -656,6 +662,7 @@ class AnnotationEditorUIManager {
    * Disable all the layers.
    */
   #disableAll() {
+    this.unselectAll();
     if (this.#isEnabled) {
       this.#isEnabled = false;
       for (const layer of this.#allLayers.values()) {
@@ -702,6 +709,9 @@ class AnnotationEditorUIManager {
    */
   removeEditor(editor) {
     this.#allEditors.delete(editor.id);
+    if (this.hasSelection) {
+      this.#selectedEditors.delete(editor);
+    }
   }
 
   /**
@@ -726,22 +736,78 @@ class AnnotationEditorUIManager {
       return;
     }
 
-    this.#previousActiveEditor = this.#activeEditor;
-
     this.#activeEditor = editor;
     if (editor) {
       this.#dispatchUpdateUI(editor.propertiesToUpdate);
-      this.#dispatchUpdateStates({ hasSelectedEditor: true });
-    } else {
-      this.#dispatchUpdateStates({ hasSelectedEditor: false });
-      if (this.#previousActiveEditor) {
-        this.#dispatchUpdateUI(this.#previousActiveEditor.propertiesToUpdate);
-      } else {
-        for (const editorType of this.#editorTypes) {
-          this.#dispatchUpdateUI(editorType.defaultPropertiesToUpdate);
-        }
-      }
     }
+  }
+
+  /**
+   * Set the last selected editor.
+   * @param {AnnotationEditor} editor
+   */
+  setSelected(editor) {
+    if (!this.#isMultipleSelection) {
+      if (this.#selectedEditors.has(editor)) {
+        if (this.#selectedEditors.size > 1) {
+          for (const ed of this.#selectedEditors) {
+            if (ed !== editor) {
+              ed.unselect();
+            }
+          }
+          this.#selectedEditors.clear();
+          this.#selectedEditors.add(editor);
+          this.#dispatchUpdateUI(editor.propertiesToUpdate);
+        }
+        return;
+      }
+
+      for (const ed of this.#selectedEditors) {
+        ed.unselect();
+      }
+      this.#selectedEditors.clear();
+    }
+    this.#selectedEditors.add(editor);
+    this.#dispatchUpdateUI(editor.propertiesToUpdate);
+    this.#dispatchUpdateStates({
+      hasSelectedEditor: this.hasSelection,
+    });
+  }
+
+  /**
+   * Check if the editor is selected.
+   * @param {AnnotationEditor} editor
+   */
+  isSelected(editor) {
+    return this.#selectedEditors.has(editor);
+  }
+
+  /**
+   * Unselect an editor.
+   * @param {AnnotationEditor} editor
+   */
+  unselect(editor) {
+    editor.unselect();
+    this.#selectedEditors.delete(editor);
+    this.#dispatchUpdateStates({
+      hasSelectedEditor: this.hasSelection,
+    });
+  }
+
+  get hasSelection() {
+    return this.#selectedEditors.size !== 0;
+  }
+
+  get isMultipleSelection() {
+    return this.#isMultipleSelection;
+  }
+
+  /**
+   * An editor just got a mousedown with ctrl key pressed.
+   * @param {boolean} isMultiple
+   */
+  set isMultipleSelection(isMultiple) {
+    this.#isMultipleSelection = isMultiple;
   }
 
   /**
@@ -796,50 +862,24 @@ class AnnotationEditorUIManager {
   }
 
   /**
-   * Unselect the current editor.
-   */
-  unselect() {
-    if (this.#activeEditor) {
-      this.#activeEditor.parent.setActiveEditor(null);
-    }
-  }
-
-  /**
    * Delete the current editor or all.
    */
   delete() {
-    let cmd, undo;
-    if (this.#isAllSelected) {
-      this.#previousActiveEditor = this.#activeEditor = null;
-      const editors = Array.from(this.#allEditors.values());
-      cmd = () => {
-        for (const editor of editors) {
-          if (!editor.isEmpty()) {
-            editor.remove();
-          }
-        }
-      };
-
-      undo = () => {
-        for (const editor of editors) {
-          this.#addEditorToLayer(editor);
-        }
-      };
-
-      this.addCommands({ cmd, undo, mustExec: true });
-    } else {
-      if (!this.#activeEditor) {
-        return;
-      }
-      const editor = this.#activeEditor;
-      this.#previousActiveEditor = this.#activeEditor = null;
-      cmd = () => {
-        editor.remove();
-      };
-      undo = () => {
-        this.#addEditorToLayer(editor);
-      };
+    if (!this.hasSelection) {
+      return;
     }
+
+    const editors = [...this.#selectedEditors];
+    const cmd = () => {
+      for (const editor of editors) {
+        editor.remove();
+      }
+    };
+    const undo = () => {
+      for (const editor of editors) {
+        this.#addEditorToLayer(editor);
+      }
+    };
 
     this.addCommands({ cmd, undo, mustExec: true });
   }
@@ -848,8 +888,8 @@ class AnnotationEditorUIManager {
    * Copy the selected editor.
    */
   copy() {
-    if (this.#activeEditor) {
-      this.#clipboardManager.copy(this.#activeEditor);
+    if (this.hasSelection) {
+      this.#clipboardManager.copy([...this.#selectedEditors]);
       this.#dispatchUpdateStates({ hasEmptyClipboard: false });
     }
   }
@@ -858,10 +898,8 @@ class AnnotationEditorUIManager {
    * Cut the selected editor.
    */
   cut() {
-    if (this.#activeEditor) {
-      this.#clipboardManager.copy(this.#activeEditor);
-      this.delete();
-    }
+    this.copy();
+    this.delete();
   }
 
   /**
@@ -873,42 +911,63 @@ class AnnotationEditorUIManager {
       return;
     }
 
+    this.unselectAll();
+
     const layer = this.#allLayers.get(this.#currentPageIndex);
     const newEditors = this.#clipboardManager
       .paste()
       .map(data => layer.deserialize(data));
 
     const cmd = () => {
-      newEditors.map(editor => this.#addEditorToLayer(editor));
+      for (const editor of newEditors) {
+        this.#addEditorToLayer(editor);
+      }
+      this.#selectEditors(newEditors);
     };
     const undo = () => {
-      newEditors.map(editor => editor.remove());
+      for (const editor of newEditors) {
+        editor.remove();
+      }
     };
     this.addCommands({ cmd, undo, mustExec: true });
   }
 
   /**
-   * Select all the editors.
+   * Select the editors.
+   * @param {Array<AnnotationEditor>} editors
    */
-  selectAll() {
-    this.#isAllSelected = true;
-    for (const editor of this.#allEditors.values()) {
+  #selectEditors(editors) {
+    this.#selectedEditors.clear();
+    for (const editor of editors) {
+      if (editor.isEmpty()) {
+        continue;
+      }
+      this.#selectedEditors.add(editor);
       editor.select();
     }
     this.#dispatchUpdateStates({ hasSelectedEditor: true });
   }
 
   /**
-   * Unselect all the editors.
+   * Select all the editors.
+   */
+  selectAll() {
+    for (const editor of this.#selectedEditors) {
+      editor.commit();
+    }
+    this.#selectEditors(this.#allEditors.values());
+  }
+
+  /**
+   * Unselect all the selected editors.
    */
   unselectAll() {
-    this.#isAllSelected = false;
-
-    for (const editor of this.#allEditors.values()) {
+    for (const editor of this.#selectedEditors) {
       editor.unselect();
     }
+    this.#selectedEditors.clear();
     this.#dispatchUpdateStates({
-      hasSelectedEditor: this.#activeEditor !== null,
+      hasSelectedEditor: false,
     });
   }
 

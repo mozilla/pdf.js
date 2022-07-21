@@ -16,12 +16,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
-import {
-  AnnotationEditorPrefix,
-  shadow,
-  unreachable,
-} from "../../shared/util.js";
 import { bindEvents, ColorManager } from "./tools.js";
+import { shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -35,7 +31,19 @@ import { bindEvents, ColorManager } from "./tools.js";
  * Base class for editors.
  */
 class AnnotationEditor {
+  #boundFocusin = this.focusin.bind(this);
+
+  #boundFocusout = this.focusout.bind(this);
+
+  #isEditing = false;
+
+  #isFocused = false;
+
   #isInEditMode = false;
+
+  #wasSelected = false;
+
+  #wasFocused = false;
 
   #zIndex = AnnotationEditor._zIndex++;
 
@@ -88,17 +96,32 @@ class AnnotationEditor {
     this.div.style.zIndex = this.#zIndex;
   }
 
+  #select() {
+    if (this.#wasSelected) {
+      this.parent.unselect(this);
+      this.unselect();
+      this.#wasSelected = true;
+    } else {
+      this.parent.setSelected(this);
+      this.select();
+    }
+  }
+
   /**
    * onfocus callback.
    */
-  focusin(/* event */) {
-    this.parent.setActiveEditor(this);
+  focusin(event) {
+    this.#isFocused =
+      event.target === this.div ||
+      !!event.relatedTarget?.closest(`#${this.id}`);
+    if (event.target === this.div) {
+      this.#select();
+    }
   }
 
   /**
    * onblur callback.
    * @param {FocusEvent} event
-   * @returns {undefined}
    */
   focusout(event) {
     if (!this.isAttachedToDOM) {
@@ -116,10 +139,14 @@ class AnnotationEditor {
 
     event.preventDefault();
 
-    this.commitOrRemove();
-
-    if (!target?.id?.startsWith(AnnotationEditorPrefix)) {
-      this.parent.setActiveEditor(null);
+    this.#isFocused = false;
+    if (!this.parent.isMultipleSelection) {
+      this.commitOrRemove();
+      if (target?.closest(".annotationEditorLayer")) {
+        // We only unselect the element when another editor (or its parent)
+        // is grabbing the focus.
+        this.parent.unselect(this);
+      }
     }
   }
 
@@ -228,15 +255,13 @@ class AnnotationEditor {
 
     this.setInForeground();
 
+    this.div.addEventListener("focusin", this.#boundFocusin);
+    this.div.addEventListener("focusout", this.#boundFocusout);
+
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, this.div, [
-      "dragstart",
-      "focusin",
-      "focusout",
-      "mousedown",
-    ]);
+    bindEvents(this, this.div, ["dragstart", "mousedown", "mouseup"]);
 
     return this.div;
   }
@@ -250,6 +275,23 @@ class AnnotationEditor {
       // Avoid to focus this editor because of a non-left click.
       event.preventDefault();
     }
+
+    const isMultipleSelection = (this.parent.isMultipleSelection =
+      event.ctrlKey || event.shiftKey);
+    this.#wasSelected = isMultipleSelection && this.parent.isSelected(this);
+    this.#wasFocused = this.#isFocused;
+  }
+
+  /**
+   * Onmouseup callback.
+   * @param {MouseEvent} event
+   */
+  mouseup(event) {
+    if (this.#wasFocused) {
+      this.#select();
+    }
+    this.parent.isMultipleSelection = false;
+    this.#wasFocused = false;
   }
 
   getRect(tx, ty) {
@@ -331,7 +373,6 @@ class AnnotationEditor {
 
   /**
    * Enable edit mode.
-   * @returns {undefined}
    */
   enableEditMode() {
     this.#isInEditMode = true;
@@ -339,7 +380,6 @@ class AnnotationEditor {
 
   /**
    * Disable edit mode.
-   * @returns {undefined}
    */
   disableEditMode() {
     this.#isInEditMode = false;
@@ -374,10 +414,9 @@ class AnnotationEditor {
    * Rebuild the editor in case it has been removed on undo.
    *
    * To implement in subclasses.
-   * @returns {undefined}
    */
   rebuild() {
-    unreachable("An editor must be rebuildable");
+    this.div?.addEventListener("focusin", this.#boundFocusin);
   }
 
   /**
@@ -386,7 +425,6 @@ class AnnotationEditor {
    * new annotation to add to the pdf document.
    *
    * To implement in subclasses.
-   * @returns {undefined}
    */
   serialize() {
     unreachable("An editor must be serializable");
@@ -423,10 +461,11 @@ class AnnotationEditor {
   /**
    * Remove this editor.
    * It's used on ctrl+backspace action.
-   *
-   * @returns {undefined}
    */
   remove() {
+    this.div.removeEventListener("focusin", this.#boundFocusin);
+    this.div.removeEventListener("focusout", this.#boundFocusout);
+
     if (!this.isEmpty()) {
       // The editor is removed but it can be back at some point thanks to
       // undo/redo so we must commit it before.
@@ -439,18 +478,14 @@ class AnnotationEditor {
    * Select this editor.
    */
   select() {
-    if (this.div) {
-      this.div.classList.add("selectedEditor");
-    }
+    this.div?.classList.add("selectedEditor");
   }
 
   /**
    * Unselect this editor.
    */
   unselect() {
-    if (this.div) {
-      this.div.classList.remove("selectedEditor");
-    }
+    this.div?.classList.remove("selectedEditor");
   }
 
   /**
@@ -493,6 +528,29 @@ class AnnotationEditor {
    */
   get contentDiv() {
     return this.div;
+  }
+
+  /**
+   * If true then the editor is currently edited.
+   * @type {boolean}
+   */
+  get isEditing() {
+    return this.#isEditing;
+  }
+
+  /**
+   * When set to true, it means that this editor is currently edited.
+   * @param {boolean} value
+   */
+  set isEditing(value) {
+    this.#isEditing = value;
+    if (value) {
+      this.select();
+      this.parent.setSelected(this);
+      this.parent.setActiveEditor(this);
+    } else {
+      this.parent.setActiveEditor(null);
+    }
   }
 }
 
