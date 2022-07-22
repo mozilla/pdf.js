@@ -31,6 +31,7 @@ async function runTests(results) {
       "accessibility_spec.js",
       "find_spec.js",
       "freetext_editor_spec.js",
+      "ink_editor_spec.js",
     ],
   });
 
