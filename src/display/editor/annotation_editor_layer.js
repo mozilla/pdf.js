@@ -43,9 +43,9 @@ import { InkEditor } from "./ink.js";
 class AnnotationEditorLayer {
   #allowClick = false;
 
-  #boundClick;
+  #boundPointerup = this.pointerup.bind(this);
 
-  #boundMousedown;
+  #boundPointerdown = this.pointerdown.bind(this);
 
   #editors = new Map();
 
@@ -76,8 +76,6 @@ class AnnotationEditorLayer {
     this.annotationStorage = options.annotationStorage;
     this.pageIndex = options.pageIndex;
     this.div = options.div;
-    this.#boundClick = this.click.bind(this);
-    this.#boundMousedown = this.mousedown.bind(this);
 
     this.#uiManager.addLayer(this);
   }
@@ -213,13 +211,13 @@ class AnnotationEditorLayer {
   }
 
   enableClick() {
-    this.div.addEventListener("mousedown", this.#boundMousedown);
-    this.div.addEventListener("click", this.#boundClick);
+    this.div.addEventListener("pointerdown", this.#boundPointerdown);
+    this.div.addEventListener("pointerup", this.#boundPointerup);
   }
 
   disableClick() {
-    this.div.removeEventListener("mousedown", this.#boundMousedown);
-    this.div.removeEventListener("click", this.#boundClick);
+    this.div.removeEventListener("pointerdown", this.#boundPointerdown);
+    this.div.removeEventListener("pointerup", this.#boundPointerup);
   }
 
   attach(editor) {
@@ -524,7 +522,7 @@ class AnnotationEditorLayer {
 
   /**
    * Create and add a new editor.
-   * @param {MouseEvent} event
+   * @param {PointerEvent} event
    * @returns {AnnotationEditor}
    */
   #createAndAddNewEditor(event) {
@@ -579,10 +577,10 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Mouseclick callback.
-   * @param {MouseEvent} event
+   * Pointerup callback.
+   * @param {PointerEvent} event
    */
-  click(event) {
+  pointerup(event) {
     if (event.target !== this.div) {
       return;
     }
@@ -596,10 +594,10 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Mousedown callback.
-   * @param {MouseEvent} event
+   * Pointerdown callback.
+   * @param {PointerEvent} event
    */
-  mousedown(event) {
+  pointerdown(event) {
     if (event.target !== this.div) {
       return;
     }

@@ -62,6 +62,7 @@
   height: auto;
   z-index: 1;
   transform-origin: 0 0;
+  touch-action: none;
 }
 
 .annotationEditorLayer .freeTextEditor .internal {
@@ -135,4 +136,5 @@
   left: 0;
   width: 100%;
   height: 100%;
+  touch-action: none;
 }

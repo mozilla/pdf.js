@@ -251,7 +251,7 @@ class AnnotationEditor {
     this.div.setAttribute("data-editor-rotation", (360 - this.rotation) % 360);
     this.div.className = this.name;
     this.div.setAttribute("id", this.id);
-    this.div.tabIndex = 0;
+    this.div.setAttribute("tabIndex", 0);
 
     this.setInForeground();
 
@@ -261,16 +261,16 @@ class AnnotationEditor {
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, this.div, ["dragstart", "mousedown", "mouseup"]);
+    bindEvents(this, this.div, ["dragstart", "pointerdown", "pointerup"]);
 
     return this.div;
   }
 
   /**
-   * Onmousedown callback.
-   * @param {MouseEvent} event
+   * Onpointerdown callback.
+   * @param {PointerEvent} event
    */
-  mousedown(event) {
+  pointerdown(event) {
     if (event.button !== 0) {
       // Avoid to focus this editor because of a non-left click.
       event.preventDefault();
@@ -284,9 +284,9 @@ class AnnotationEditor {
 
   /**
    * Onmouseup callback.
-   * @param {MouseEvent} event
+   * @param {PointerEvent} event
    */
-  mouseup(event) {
+  pointerup(event) {
     if (this.#wasFocused) {
       this.#select();
     }
