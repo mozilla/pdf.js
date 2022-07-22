@@ -1351,7 +1351,7 @@ class BaseViewer {
       left: intLeft,
       rotation: this._pagesRotation,
       pdfOpenParams,
-      yPos,
+      scaledYPos: (this._currentScale ?? 1) * PixelsPerInch.PDF_TO_CSS_UNITS,
     };
   }
 
