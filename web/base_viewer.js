@@ -1330,12 +1330,10 @@ class BaseViewer {
 
     const pageNumber = firstPage.id;
     const currentPageView = this._pages[pageNumber - 1];
-    const container = this.container;
-    const yPos = container.scrollTop - firstPage.y;
-    const topLeft = currentPageView.getPagePoint(
-      container.scrollLeft - firstPage.x,
-      yPos
-    );
+    const x = this.scroll.lastX;
+    const y = this.scroll.lastY;
+    const yPos = y - firstPage.y;
+    const topLeft = currentPageView.getPagePoint(x - firstPage.x, yPos);
     const intLeft = Math.round(topLeft[0]);
     const intTop = Math.round(topLeft[1]);
 
