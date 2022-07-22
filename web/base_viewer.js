@@ -1353,7 +1353,7 @@ class BaseViewer {
       rotation: this._pagesRotation,
       pdfOpenParams,
       viewportScale,
-      scaledYPos: yPos * viewportScale,
+      unscaledYPos: Math.ceil(yPos / viewportScale),
     };
   }
 
