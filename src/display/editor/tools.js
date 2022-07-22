@@ -709,9 +709,7 @@ class AnnotationEditorUIManager {
    */
   removeEditor(editor) {
     this.#allEditors.delete(editor.id);
-    if (this.hasSelection) {
-      this.#selectedEditors.delete(editor);
-    }
+    this.unselect(editor);
   }
 
   /**
@@ -962,6 +960,15 @@ class AnnotationEditorUIManager {
    * Unselect all the selected editors.
    */
   unselectAll() {
+    if (this.#activeEditor) {
+      // An editor is being edited so just commit it.
+      this.#activeEditor.commitOrRemove();
+      return;
+    }
+
+    if (this.#selectEditors.size === 0) {
+      return;
+    }
     for (const editor of this.#selectedEditors) {
       editor.unselect();
     }

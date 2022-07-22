@@ -13,9 +13,12 @@
  * limitations under the License.
  */
 
-const { closePages, loadAndWait } = require("./test_utils.js");
-
-const editorPrefix = "#pdfjs_internal_editor_";
+const {
+  closePages,
+  editorPrefix,
+  getSelectedEditors,
+  loadAndWait,
+} = require("./test_utils.js");
 
 describe("Editor", () => {
   describe("FreeText", () => {
@@ -264,18 +267,6 @@ describe("Editor", () => {
       await closePages(pages);
     });
 
-    function getSelected(page) {
-      return page.evaluate(prefix => {
-        const elements = document.querySelectorAll(".selectedEditor");
-        const results = [];
-        for (const element of elements) {
-          results.push(parseInt(element.id.slice(prefix.length)));
-        }
-        results.sort();
-        return results;
-      }, editorPrefix.slice(1));
-    }
-
     it("must select/unselect several editors and check copy, paste and delete operations", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -322,27 +313,27 @@ describe("Editor", () => {
           await page.keyboard.press("a");
           await page.keyboard.up("Control");
 
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 1, 2, 3]);
 
           await page.keyboard.down("Control");
           await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
 
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 2, 3]);
 
           await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
 
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 3]);
 
           await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
           await page.keyboard.up("Control");
 
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 1, 3]);
 
@@ -355,25 +346,25 @@ describe("Editor", () => {
           await page.keyboard.up("Control");
 
           // 0,1,3 are unselected and new pasted editors are selected.
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([4, 5, 6]);
 
           // No ctrl here, hence all are unselected and 2 is selected.
           await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([2]);
 
           await page.mouse.click(editorCenters[1].x, editorCenters[1].y);
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([1]);
 
           await page.keyboard.down("Control");
 
           await page.mouse.click(editorCenters[3].x, editorCenters[3].y);
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([1, 3]);
 
@@ -386,25 +377,25 @@ describe("Editor", () => {
           await page.keyboard.press("a");
           await page.keyboard.up("Control");
 
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 2, 4, 5, 6]);
 
           // Create an empty editor.
           await page.mouse.click(rect.x + 700, rect.y + 100);
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([7]);
 
           // Set the focus to 2 and check that only 2 is selected.
           await page.mouse.click(editorCenters[2].x, editorCenters[2].y);
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([2]);
 
           // Create an empty editor.
           await page.mouse.click(rect.x + 700, rect.y + 100);
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([8]);
           // Dismiss it.
@@ -417,7 +408,7 @@ describe("Editor", () => {
 
           // Check that all the editors are correctly selected (and the focus
           // didn't move to the body when the empty editor was removed).
-          expect(await getSelected(page))
+          expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
             .toEqual([0, 2, 4, 5, 6]);
         })
