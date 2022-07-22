@@ -1344,6 +1344,9 @@ class BaseViewer {
       pdfOpenParams += `&zoom=${normalizedScaleValue},${intLeft},${intTop}`;
     }
 
+    const viewportScale =
+      (this._currentScale ?? 1) * PixelsPerInch.PDF_TO_CSS_UNITS;
+
     this._location = {
       pageNumber,
       scale: normalizedScaleValue,
@@ -1351,7 +1354,8 @@ class BaseViewer {
       left: intLeft,
       rotation: this._pagesRotation,
       pdfOpenParams,
-      scaledYPos: (this._currentScale ?? 1) * PixelsPerInch.PDF_TO_CSS_UNITS,
+      viewportScale,
+      scaledYPos: yPos * viewportScale,
     };
   }
 
