@@ -281,6 +281,14 @@ class PDFPageView {
         case xfaLayerNode:
           continue;
       }
+      if (
+        annotationLayerNode &&
+        (node.classList?.contains("processedOverlayContainer") ||
+          node.classList?.contains("pageOverlayContainer"))
+      ) {
+        continue;
+      }
+      // remove
       node.remove();
     }
     div.removeAttribute("data-loaded");
