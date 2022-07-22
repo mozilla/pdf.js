@@ -377,8 +377,6 @@ class AnnotationEditorUIManager {
 
   #currentPageIndex = 0;
 
-  #isMultipleSelection = false;
-
   #editorTypes = null;
 
   #eventBus = null;
@@ -741,34 +739,43 @@ class AnnotationEditorUIManager {
   }
 
   /**
+   * Add or remove an editor the current selection.
+   * @param {AnnotationEditor} editor
+   */
+  toggleSelected(editor) {
+    if (this.#selectedEditors.has(editor)) {
+      this.#selectedEditors.delete(editor);
+      editor.unselect();
+      this.#dispatchUpdateStates({
+        hasSelectedEditor: this.hasSelection,
+      });
+      return;
+    }
+    this.#selectedEditors.add(editor);
+    editor.select();
+    this.#dispatchUpdateUI(editor.propertiesToUpdate);
+    this.#dispatchUpdateStates({
+      hasSelectedEditor: true,
+    });
+  }
+
+  /**
    * Set the last selected editor.
    * @param {AnnotationEditor} editor
    */
   setSelected(editor) {
-    if (!this.#isMultipleSelection) {
-      if (this.#selectedEditors.has(editor)) {
-        if (this.#selectedEditors.size > 1) {
-          for (const ed of this.#selectedEditors) {
-            if (ed !== editor) {
-              ed.unselect();
-            }
-          }
-          this.#selectedEditors.clear();
-          this.#selectedEditors.add(editor);
-          this.#dispatchUpdateUI(editor.propertiesToUpdate);
-        }
-        return;
-      }
-
-      for (const ed of this.#selectedEditors) {
+    for (const ed of this.#selectedEditors) {
+      if (ed !== editor) {
         ed.unselect();
       }
-      this.#selectedEditors.clear();
     }
+    this.#selectedEditors.clear();
+
     this.#selectedEditors.add(editor);
+    editor.select();
     this.#dispatchUpdateUI(editor.propertiesToUpdate);
     this.#dispatchUpdateStates({
-      hasSelectedEditor: this.hasSelection,
+      hasSelectedEditor: true,
     });
   }
 
@@ -794,18 +801,6 @@ class AnnotationEditorUIManager {
 
   get hasSelection() {
     return this.#selectedEditors.size !== 0;
-  }
-
-  get isMultipleSelection() {
-    return this.#isMultipleSelection;
-  }
-
-  /**
-   * An editor just got a mousedown with ctrl key pressed.
-   * @param {boolean} isMultiple
-   */
-  set isMultipleSelection(isMultiple) {
-    this.#isMultipleSelection = isMultiple;
   }
 
   /**
@@ -863,6 +858,11 @@ class AnnotationEditorUIManager {
    * Delete the current editor or all.
    */
   delete() {
+    if (this.#activeEditor) {
+      // An editor is being edited so just commit it.
+      this.#activeEditor.commitOrRemove();
+    }
+
     if (!this.hasSelection) {
       return;
     }
@@ -886,8 +886,22 @@ class AnnotationEditorUIManager {
    * Copy the selected editor.
    */
   copy() {
+    if (this.#activeEditor) {
+      // An editor is being edited so just commit it.
+      this.#activeEditor.commitOrRemove();
+    }
     if (this.hasSelection) {
-      this.#clipboardManager.copy([...this.#selectedEditors]);
+      const editors = [];
+      for (const editor of this.#selectedEditors) {
+        if (!editor.isEmpty()) {
+          editors.push(editor);
+        }
+      }
+      if (editors.length === 0) {
+        return;
+      }
+
+      this.#clipboardManager.copy(editors);
       this.#dispatchUpdateStates({ hasEmptyClipboard: false });
     }
   }

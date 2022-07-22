@@ -35,15 +35,11 @@ class AnnotationEditor {
 
   #boundFocusout = this.focusout.bind(this);
 
+  #hasBeenSelected = false;
+
   #isEditing = false;
 
-  #isFocused = false;
-
   #isInEditMode = false;
-
-  #wasSelected = false;
-
-  #wasFocused = false;
 
   #zIndex = AnnotationEditor._zIndex++;
 
@@ -96,26 +92,14 @@ class AnnotationEditor {
     this.div.style.zIndex = this.#zIndex;
   }
 
-  #select() {
-    if (this.#wasSelected) {
-      this.parent.unselect(this);
-      this.unselect();
-      this.#wasSelected = true;
-    } else {
-      this.parent.setSelected(this);
-      this.select();
-    }
-  }
-
   /**
    * onfocus callback.
    */
   focusin(event) {
-    this.#isFocused =
-      event.target === this.div ||
-      !!event.relatedTarget?.closest(`#${this.id}`);
-    if (event.target === this.div) {
-      this.#select();
+    if (!this.#hasBeenSelected) {
+      this.parent.setSelected(this);
+    } else {
+      this.#hasBeenSelected = false;
     }
   }
 
@@ -139,14 +123,8 @@ class AnnotationEditor {
 
     event.preventDefault();
 
-    this.#isFocused = false;
     if (!this.parent.isMultipleSelection) {
       this.commitOrRemove();
-      if (target?.closest(".annotationEditorLayer")) {
-        // We only unselect the element when another editor (or its parent)
-        // is grabbing the focus.
-        this.parent.unselect(this);
-      }
     }
   }
 
@@ -261,7 +239,7 @@ class AnnotationEditor {
     const [tx, ty] = this.getInitialTranslation();
     this.translate(tx, ty);
 
-    bindEvents(this, this.div, ["dragstart", "pointerdown", "pointerup"]);
+    bindEvents(this, this.div, ["dragstart", "pointerdown"]);
 
     return this.div;
   }
@@ -276,22 +254,13 @@ class AnnotationEditor {
       event.preventDefault();
     }
 
-    const isMultipleSelection = (this.parent.isMultipleSelection =
-      event.ctrlKey || event.shiftKey);
-    this.#wasSelected = isMultipleSelection && this.parent.isSelected(this);
-    this.#wasFocused = this.#isFocused;
-  }
-
-  /**
-   * Onmouseup callback.
-   * @param {PointerEvent} event
-   */
-  pointerup(event) {
-    if (this.#wasFocused) {
-      this.#select();
+    if (event.ctrlKey || event.shiftKey) {
+      this.parent.toggleSelected(this);
+    } else {
+      this.parent.setSelected(this);
     }
-    this.parent.isMultipleSelection = false;
-    this.#wasFocused = false;
+
+    this.#hasBeenSelected = true;
   }
 
   getRect(tx, ty) {
@@ -545,7 +514,6 @@ class AnnotationEditor {
   set isEditing(value) {
     this.#isEditing = value;
     if (value) {
-      this.select();
       this.parent.setSelected(this);
       this.parent.setActiveEditor(this);
     } else {

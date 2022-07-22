@@ -549,6 +549,14 @@ class AnnotationEditorLayer {
   }
 
   /**
+   * Add or remove an editor the current selection.
+   * @param {AnnotationEditor} editor
+   */
+  toggleSelected(editor) {
+    this.#uiManager.toggleSelected(editor);
+  }
+
+  /**
    * Check if the editor is selected.
    * @param {AnnotationEditor} editor
    */
@@ -562,18 +570,6 @@ class AnnotationEditorLayer {
    */
   unselect(editor) {
     this.#uiManager.unselect(editor);
-  }
-
-  get isMultipleSelection() {
-    return this.#uiManager.isMultipleSelection;
-  }
-
-  /**
-   * An editor just got a mousedown with ctrl key pressed.
-   * @param {boolean}} isMultiple
-   */
-  set isMultipleSelection(isMultiple) {
-    this.#uiManager.isMultipleSelection = isMultiple;
   }
 
   /**
