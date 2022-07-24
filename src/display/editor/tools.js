@@ -433,7 +433,7 @@ class AnnotationEditorUIManager {
       ],
       AnnotationEditorUIManager.prototype.delete,
     ],
-    [["Escape"], AnnotationEditorUIManager.prototype.unselectAll],
+    [["Escape", "mac+Escape"], AnnotationEditorUIManager.prototype.unselectAll],
   ]);
 
   constructor(container, eventBus) {
