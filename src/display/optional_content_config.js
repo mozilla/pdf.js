@@ -44,7 +44,11 @@ class OptionalContentGroup {
 }
 
 class OptionalContentConfig {
+  #cachedHasInitialVisibility = true;
+
   #groups = new Map();
+
+  #initialVisibility = null;
 
   #order = null;
 
@@ -77,6 +81,12 @@ class OptionalContentConfig {
 
     for (const off of data.off) {
       this.#groups.get(off)._setVisible(INTERNAL, false);
+    }
+
+    // The following code must always run *last* in the constructor.
+    this.#initialVisibility = new Map();
+    for (const [id, group] of this.#groups) {
+      this.#initialVisibility.set(id, group.visible);
     }
   }
 
@@ -195,6 +205,21 @@ class OptionalContentConfig {
       return;
     }
     this.#groups.get(id)._setVisible(INTERNAL, !!visible);
+
+    this.#cachedHasInitialVisibility = null;
+  }
+
+  get hasInitialVisibility() {
+    if (this.#cachedHasInitialVisibility !== null) {
+      return this.#cachedHasInitialVisibility;
+    }
+    for (const [id, group] of this.#groups) {
+      const visible = this.#initialVisibility.get(id);
+      if (group.visible !== visible) {
+        return (this.#cachedHasInitialVisibility = false);
+      }
+    }
+    return (this.#cachedHasInitialVisibility = true);
   }
 
   getOrder() {
