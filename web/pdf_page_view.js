@@ -153,7 +153,12 @@ class PDFPageView {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
     this._renderError = null;
-    this._isStandalone = !this.renderingQueue?.hasViewer();
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
+    ) {
+      this._isStandalone = !this.renderingQueue?.hasViewer();
+    }
 
     this._annotationCanvasMap = null;
 
@@ -177,7 +182,11 @@ class PDFPageView {
 
     container?.append(div);
 
-    if (this._isStandalone) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this._isStandalone
+    ) {
       const { optionalContentConfigPromise } = options;
       if (optionalContentConfigPromise) {
         // Ensure that the thumbnails always display the *initial* document
@@ -377,7 +386,11 @@ class PDFPageView {
 
     this.loadingIconDiv = document.createElement("div");
     this.loadingIconDiv.className = "loadingIcon notVisible";
-    if (this._isStandalone) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this._isStandalone
+    ) {
       this.toggleLoadingIconSpinner(/* viewVisible = */ true);
     }
     this.loadingIconDiv.setAttribute("role", "img");
@@ -412,7 +425,11 @@ class PDFPageView {
       rotation: totalRotation,
     });
 
-    if (this._isStandalone) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this._isStandalone
+    ) {
       docStyle.setProperty("--scale-factor", this.viewport.scale);
     }
 
