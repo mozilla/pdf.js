@@ -37,7 +37,6 @@ const THUMBNAIL_WIDTH = 98; // px
  *   The default value is `null`.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
- * @property {function} checkSetImageDisabled
  * @property {IL10n} l10n - Localization service.
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
@@ -88,7 +87,6 @@ class PDFThumbnailView {
     optionalContentConfigPromise,
     linkService,
     renderingQueue,
-    checkSetImageDisabled,
     l10n,
     pageColors,
   }) {
@@ -109,11 +107,6 @@ class PDFThumbnailView {
     this.renderTask = null;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
-    this._checkSetImageDisabled =
-      checkSetImageDisabled ||
-      function () {
-        return false;
-      };
 
     const pageWidth = this.viewport.width,
       pageHeight = this.viewport.height,
@@ -356,13 +349,10 @@ class PDFThumbnailView {
   }
 
   setImage(pageView) {
-    if (this._checkSetImageDisabled()) {
-      return;
-    }
     if (this.renderingState !== RenderingStates.INITIAL) {
       return;
     }
-    const { canvas, pdfPage } = pageView;
+    const { thumbnailCanvas: canvas, pdfPage } = pageView;
     if (!canvas) {
       return;
     }
