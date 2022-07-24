@@ -30,6 +30,7 @@ class AnnotationEditorParams {
     editorFreeTextColor,
     editorInkColor,
     editorInkThickness,
+    editorInkOpacity,
   }) {
     editorFreeTextFontSize.addEventListener("input", evt => {
       this.eventBus.dispatch("switchannotationeditorparams", {
@@ -59,6 +60,13 @@ class AnnotationEditorParams {
         value: editorInkThickness.valueAsNumber,
       });
     });
+    editorInkOpacity.addEventListener("input", evt => {
+      this.eventBus.dispatch("switchannotationeditorparams", {
+        source: this,
+        type: AnnotationEditorParamsType.INK_OPACITY,
+        value: editorInkOpacity.valueAsNumber,
+      });
+    });
 
     this.eventBus._on("annotationeditorparamschanged", evt => {
       for (const [type, value] of evt.details) {
@@ -74,6 +82,9 @@ class AnnotationEditorParams {
             break;
           case AnnotationEditorParamsType.INK_THICKNESS:
             editorInkThickness.value = value;
+            break;
+          case AnnotationEditorParamsType.INK_OPACITY:
+            editorInkOpacity.value = value;
             break;
         }
       }

@@ -20,6 +20,7 @@ import {
 } from "../../shared/util.js";
 import { AnnotationEditor } from "./editor.js";
 import { fitCurve } from "pdfjs-fitCurve";
+import { opacityToHex } from "./tools.js";
 
 // The dimensions of the resizer is 15x15:
 // https://searchfox.org/mozilla-central/rev/1ce190047b9556c3c10ab4de70a0e61d893e2954/toolkit/content/minimal-xul.css#136-137
@@ -48,13 +49,19 @@ class InkEditor extends AnnotationEditor {
 
   #isCanvasInitialized = false;
 
+  #lastPoint = null;
+
   #observer = null;
 
   #realWidth = 0;
 
   #realHeight = 0;
 
+  #requestFrameCallback = null;
+
   static _defaultColor = null;
+
+  static _defaultOpacity = 1;
 
   static _defaultThickness = 1;
 
@@ -64,6 +71,7 @@ class InkEditor extends AnnotationEditor {
     super({ ...params, name: "inkEditor" });
     this.color = params.color || null;
     this.thickness = params.thickness || null;
+    this.opacity = params.opacity || null;
     this.paths = [];
     this.bezierPath2D = [];
     this.currentPath = [];
@@ -90,6 +98,9 @@ class InkEditor extends AnnotationEditor {
       case AnnotationEditorParamsType.INK_COLOR:
         InkEditor._defaultColor = value;
         break;
+      case AnnotationEditorParamsType.INK_OPACITY:
+        InkEditor._defaultOpacity = value / 100;
+        break;
     }
   }
 
@@ -102,6 +113,9 @@ class InkEditor extends AnnotationEditor {
       case AnnotationEditorParamsType.INK_COLOR:
         this.#updateColor(value);
         break;
+      case AnnotationEditorParamsType.INK_OPACITY:
+        this.#updateOpacity(value);
+        break;
     }
   }
 
@@ -111,6 +125,10 @@ class InkEditor extends AnnotationEditor {
       [
         AnnotationEditorParamsType.INK_COLOR,
         InkEditor._defaultColor || AnnotationEditor._defaultLineColor,
+      ],
+      [
+        AnnotationEditorParamsType.INK_OPACITY,
+        Math.round(InkEditor._defaultOpacity * 100),
       ],
     ];
   }
@@ -127,6 +145,10 @@ class InkEditor extends AnnotationEditor {
         this.color ||
           InkEditor._defaultColor ||
           AnnotationEditor._defaultLineColor,
+      ],
+      [
+        AnnotationEditorParamsType.INK_OPACITY,
+        Math.round(100 * (this.opacity ?? InkEditor._defaultOpacity)),
       ],
     ];
   }
@@ -170,6 +192,29 @@ class InkEditor extends AnnotationEditor {
       },
       mustExec: true,
       type: AnnotationEditorParamsType.INK_COLOR,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  /**
+   * Update the opacity and make this action undoable.
+   * @param {number} opacity
+   */
+  #updateOpacity(opacity) {
+    opacity /= 100;
+    const savedOpacity = this.opacity;
+    this.parent.addCommands({
+      cmd: () => {
+        this.opacity = opacity;
+        this.#redraw();
+      },
+      undo: () => {
+        this.opacity = savedOpacity;
+        this.#redraw();
+      },
+      mustExec: true,
+      type: AnnotationEditorParamsType.INK_OPACITY,
       overwriteIfSameType: true,
       keepUndo: true,
     });
@@ -282,7 +327,7 @@ class InkEditor extends AnnotationEditor {
     this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
     this.ctx.miterLimit = 10;
-    this.ctx.strokeStyle = this.color;
+    this.ctx.strokeStyle = `${this.color}${opacityToHex(this.opacity)}`;
   }
 
   /**
@@ -298,11 +343,35 @@ class InkEditor extends AnnotationEditor {
       this.thickness ||= InkEditor._defaultThickness;
       this.color ||=
         InkEditor._defaultColor || AnnotationEditor._defaultLineColor;
+      this.opacity ??= InkEditor._defaultOpacity;
     }
     this.currentPath.push([x, y]);
+    this.#lastPoint = null;
     this.#setStroke();
     this.ctx.beginPath();
     this.ctx.moveTo(x, y);
+
+    this.#requestFrameCallback = () => {
+      if (!this.#requestFrameCallback) {
+        return;
+      }
+
+      if (this.#lastPoint) {
+        if (this.isEmpty()) {
+          this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        } else {
+          this.#redraw();
+        }
+
+        this.ctx.lineTo(...this.#lastPoint);
+        this.#lastPoint = null;
+        this.ctx.stroke();
+      }
+
+      window.requestAnimationFrame(this.#requestFrameCallback);
+    };
+    window.requestAnimationFrame(this.#requestFrameCallback);
   }
 
   /**
@@ -311,9 +380,12 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #draw(x, y) {
+    const [lastX, lastY] = this.currentPath.at(-1);
+    if (x === lastX && y === lastY) {
+      return;
+    }
     this.currentPath.push([x, y]);
-    this.ctx.lineTo(x, y);
-    this.ctx.stroke();
+    this.#lastPoint = [x, y];
   }
 
   /**
@@ -322,20 +394,22 @@ class InkEditor extends AnnotationEditor {
    * @param {number} y
    */
   #stopDrawing(x, y) {
+    this.ctx.closePath();
+    this.#requestFrameCallback = null;
+
     x = Math.min(Math.max(x, 0), this.canvas.width);
     y = Math.min(Math.max(y, 0), this.canvas.height);
 
-    this.currentPath.push([x, y]);
+    const [lastX, lastY] = this.currentPath.at(-1);
+    if (x !== lastX || y !== lastY) {
+      this.currentPath.push([x, y]);
+    }
 
     // Interpolate the path entered by the user with some
     // Bezier's curves in order to have a smoother path and
     // to reduce the data size used to draw it in the PDF.
     let bezier;
-    if (
-      this.currentPath.length !== 2 ||
-      this.currentPath[0][0] !== x ||
-      this.currentPath[0][1] !== y
-    ) {
+    if (this.currentPath.length !== 1) {
       bezier = fitCurve(this.currentPath, 30, null);
     } else {
       // We have only one point finally.
@@ -372,17 +446,15 @@ class InkEditor extends AnnotationEditor {
    * Redraw all the paths.
    */
   #redraw() {
-    this.#setStroke();
-
     if (this.isEmpty()) {
       this.#updateTransform();
       return;
     }
+    this.#setStroke();
 
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
-    const { ctx, height, width } = this;
+    const { canvas, ctx } = this;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, width * parentWidth, height * parentHeight);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     this.#updateTransform();
     for (const path of this.bezierPath2D) {
       ctx.stroke(path);
@@ -919,6 +991,7 @@ class InkEditor extends AnnotationEditor {
 
     editor.thickness = data.thickness;
     editor.color = Util.makeHexColor(...data.color);
+    editor.opacity = data.opacity;
 
     const [pageWidth, pageHeight] = parent.pageDimensions;
     const width = editor.width * pageWidth;
@@ -980,6 +1053,7 @@ class InkEditor extends AnnotationEditor {
       annotationType: AnnotationEditorType.INK,
       color,
       thickness: this.thickness,
+      opacity: this.opacity,
       paths: this.#serializePaths(
         this.scaleFactor / this.parent.scaleFactor,
         this.translationX,

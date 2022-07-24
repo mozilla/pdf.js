@@ -30,6 +30,18 @@ function bindEvents(obj, element, names) {
     element.addEventListener(name, obj[name].bind(obj));
   }
 }
+
+/**
+ * Convert a number between 0 and 100 into an hex number between 0 and 255.
+ * @param {number} opacity
+ * @return {string}
+ */
+function opacityToHex(opacity) {
+  return Math.round(Math.min(255, Math.max(1, 255 * opacity)))
+    .toString(16)
+    .padStart(2, "0");
+}
+
 /**
  * Class to create some unique ids for the different editors.
  */
@@ -1025,4 +1037,5 @@ export {
   ColorManager,
   CommandManager,
   KeyboardManager,
+  opacityToHex,
 };
