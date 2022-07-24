@@ -13,13 +13,33 @@
  * limitations under the License.
  */
 
-import { objectFromMap, warn } from "../shared/util.js";
+import { objectFromMap, unreachable, warn } from "../shared/util.js";
+
+const INTERNAL = Symbol("INTERNAL");
 
 class OptionalContentGroup {
+  #visible = true;
+
   constructor(name, intent) {
-    this.visible = true;
     this.name = name;
     this.intent = intent;
+  }
+
+  /**
+   * @type {boolean}
+   */
+  get visible() {
+    return this.#visible;
+  }
+
+  /**
+   * @ignore
+   */
+  _setVisible(internal, visible) {
+    if (internal !== INTERNAL) {
+      unreachable("Internal method `_setVisible` called.");
+    }
+    this.#visible = visible;
   }
 }
 
@@ -46,17 +66,17 @@ class OptionalContentConfig {
     }
 
     if (data.baseState === "OFF") {
-      for (const group of this.#groups) {
-        group.visible = false;
+      for (const group of this.#groups.values()) {
+        group._setVisible(INTERNAL, false);
       }
     }
 
     for (const on of data.on) {
-      this.#groups.get(on).visible = true;
+      this.#groups.get(on)._setVisible(INTERNAL, true);
     }
 
     for (const off of data.off) {
-      this.#groups.get(off).visible = false;
+      this.#groups.get(off)._setVisible(INTERNAL, false);
     }
   }
 
@@ -174,7 +194,7 @@ class OptionalContentConfig {
       warn(`Optional content group not found: ${id}`);
       return;
     }
-    this.#groups.get(id).visible = !!visible;
+    this.#groups.get(id)._setVisible(INTERNAL, !!visible);
   }
 
   getOrder() {
