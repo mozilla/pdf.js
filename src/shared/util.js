@@ -62,10 +62,12 @@ const AnnotationEditorType = {
 };
 
 const AnnotationEditorParamsType = {
-  FREETEXT_SIZE: 0,
-  FREETEXT_COLOR: 1,
-  INK_COLOR: 2,
-  INK_THICKNESS: 3,
+  FREETEXT_SIZE: 1,
+  FREETEXT_COLOR: 2,
+  FREETEXT_OPACITY: 3,
+  INK_COLOR: 11,
+  INK_THICKNESS: 12,
+  INK_OPACITY: 13,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.

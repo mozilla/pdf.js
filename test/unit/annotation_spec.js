@@ -4185,6 +4185,7 @@ describe("annotation", function () {
             rect: [12, 34, 56, 78],
             rotation: 0,
             thickness: 1,
+            opacity: 1,
             color: [0, 0, 0],
             paths: [
               {
@@ -4234,6 +4235,70 @@ describe("annotation", function () {
       );
     });
 
+    it("should create a new Ink annotation with some transparency", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test Ink creation");
+      const data = await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.INK,
+            rect: [12, 34, 56, 78],
+            rotation: 0,
+            thickness: 1,
+            opacity: 0.12,
+            color: [0, 0, 0],
+            paths: [
+              {
+                bezier: [
+                  10, 11, 12, 13, 14, 15, 16, 17, 22, 23, 24, 25, 26, 27,
+                ],
+                points: [1, 2, 3, 4, 5, 6, 7, 8],
+              },
+              {
+                bezier: [
+                  910, 911, 912, 913, 914, 915, 916, 917, 922, 923, 924, 925,
+                  926, 927,
+                ],
+                points: [91, 92, 93, 94, 95, 96, 97, 98],
+              },
+            ],
+          },
+        ]
+      );
+
+      const base = data.annotations[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "1 0 obj\n" +
+          "<< /Type /Annot /Subtype /Ink /CreationDate (date) /Rect [12 34 56 78] " +
+          "/InkList [[1 2 3 4 5 6 7 8] [91 92 93 94 95 96 97 98]] /F 4 /Border [0 0 0] " +
+          "/Rotate 0 /AP << /N 2 0 R>>>>\n" +
+          "endobj\n"
+      );
+
+      const appearance = data.dependencies[0].data;
+      expect(appearance).toEqual(
+        "2 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [0 0 44 44] /Length 136 /Resources " +
+          "<< /ExtGState << /R0 << /CA 0.12 /Type /ExtGState>>>>>>>> stream\n" +
+          "1 w 1 J 1 j\n" +
+          "0 G\n" +
+          "/R0 gs\n" +
+          "10 11 m\n" +
+          "12 13 14 15 16 17 c\n" +
+          "22 23 24 25 26 27 c\n" +
+          "S\n" +
+          "910 911 m\n" +
+          "912 913 914 915 916 917 c\n" +
+          "922 923 924 925 926 927 c\n" +
+          "S\n" +
+          "endstream\n" +
+          "\n" +
+          "endobj\n"
+      );
+    });
+
     it("should render an added Ink annotation for printing", async function () {
       partialEvaluator.xref = new XRefMock();
       const task = new WorkerTask("test Ink printing");
@@ -4244,6 +4309,7 @@ describe("annotation", function () {
             rect: [12, 34, 56, 78],
             rotation: 0,
             thickness: 3,
+            opacity: 1,
             color: [0, 255, 0],
             paths: [
               {

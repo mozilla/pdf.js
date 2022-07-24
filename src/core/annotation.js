@@ -3757,7 +3757,7 @@ class InkAnnotation extends MarkupAnnotation {
   }
 
   static async createNewAppearanceStream(annotation, xref, params) {
-    const { color, rect, rotation, paths, thickness } = annotation;
+    const { color, rect, rotation, paths, thickness, opacity } = annotation;
     const [x1, y1, x2, y2] = rect;
     let w = x2 - x1;
     let h = y2 - y1;
@@ -3770,6 +3770,11 @@ class InkAnnotation extends MarkupAnnotation {
       `${thickness} w 1 J 1 j`,
       `${getPdfColor(color, /* isFill */ false)}`,
     ];
+
+    if (opacity !== 1) {
+      appearanceBuffer.push("/R0 gs");
+    }
+
     const buffer = [];
     for (const { bezier } of paths) {
       buffer.length = 0;
@@ -3798,6 +3803,17 @@ class InkAnnotation extends MarkupAnnotation {
     if (rotation) {
       const matrix = WidgetAnnotation._getRotationMatrix(rotation, w, h);
       appearanceStreamDict.set("Matrix", matrix);
+    }
+
+    if (opacity !== 1) {
+      const resources = new Dict(xref);
+      const extGState = new Dict(xref);
+      const r0 = new Dict(xref);
+      r0.set("CA", opacity);
+      r0.set("Type", Name.get("ExtGState"));
+      extGState.set("R0", r0);
+      resources.set("ExtGState", extGState);
+      appearanceStreamDict.set("Resources", resources);
     }
 
     const ap = new StringStream(appearance);
