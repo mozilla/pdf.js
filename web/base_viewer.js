@@ -71,7 +71,7 @@ import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
-const DEFAULT_CACHE_SIZE = 10;
+const DEFAULT_CACHE_SIZE = 20;
 const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const PagesCountLimit = {

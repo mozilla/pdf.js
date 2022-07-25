@@ -292,6 +292,11 @@ class PDFPageView {
       node.remove();
     }
     div.removeAttribute("data-loaded");
+    this.eventBus.dispatch("pagereset", {
+      source: this,
+      pageNumber: this.id,
+      keepAnnotationLayer,
+    });
 
     if (annotationLayerNode) {
       // Hide the annotation layer until all elements are resized
