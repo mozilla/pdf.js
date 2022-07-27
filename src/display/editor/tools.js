@@ -244,6 +244,7 @@ class KeyboardManager {
       return;
     }
     callback.bind(self)();
+    event.stopPropagation();
     event.preventDefault();
   }
 }
