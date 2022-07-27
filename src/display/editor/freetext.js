@@ -267,7 +267,6 @@ class FreeTextEditor extends AnnotationEditor {
   onceAdded() {
     if (this.width) {
       // The editor was created in using ctrl+c.
-      this.parent.setActiveEditor(this);
       return;
     }
     this.enableEditMode();
