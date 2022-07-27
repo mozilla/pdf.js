@@ -197,6 +197,7 @@ class PDFScriptingManager {
     Promise.resolve().then(() => {
       if (pdfDocument === this._pdfDocument) {
         this._ready = true;
+        this._eventBus.dispatch("scriptingready", { source: this });
       }
     });
   }
