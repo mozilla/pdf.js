@@ -21,8 +21,8 @@
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
 
 import { AnnotationEditorType, shadow } from "../../shared/util.js";
+import { bindEvents, KeyboardManager } from "./tools.js";
 import { binarySearchFirstItem } from "../display_utils.js";
-import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 
@@ -577,6 +577,12 @@ class AnnotationEditorLayer {
    * @param {PointerEvent} event
    */
   pointerup(event) {
+    const isMac = KeyboardManager.platform.isMac;
+    if (event.button !== 0 || (event.ctrlKey && isMac)) {
+      // Don't create an editor on right click.
+      return;
+    }
+
     if (event.target !== this.div) {
       return;
     }
@@ -594,6 +600,12 @@ class AnnotationEditorLayer {
    * @param {PointerEvent} event
    */
   pointerdown(event) {
+    const isMac = KeyboardManager.platform.isMac;
+    if (event.button !== 0 || (event.ctrlKey && isMac)) {
+      // Do nothing on right click.
+      return;
+    }
+
     if (event.target !== this.div) {
       return;
     }

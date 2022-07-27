@@ -24,7 +24,7 @@ describe("Editor", () => {
     let pages;
 
     beforeAll(async () => {
-      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+      pages = await loadAndWait("aboutstacks.pdf", ".annotationEditorLayer");
     });
 
     afterAll(async () => {
@@ -60,7 +60,7 @@ describe("Editor", () => {
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
-            .toEqual([0, 2, 3]);
+            .toEqual([0, 1, 2]);
 
           await page.keyboard.press("Backspace");
 

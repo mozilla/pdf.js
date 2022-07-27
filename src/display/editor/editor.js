@@ -253,6 +253,7 @@ class AnnotationEditor {
     if (event.button !== 0 || (event.ctrlKey && isMac)) {
       // Avoid to focus this editor because of a non-left click.
       event.preventDefault();
+      return;
     }
 
     if (
