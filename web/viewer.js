@@ -202,6 +202,7 @@ function getViewerConfiguration() {
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),
       editorInkColor: document.getElementById("editorInkColor"),
       editorInkThickness: document.getElementById("editorInkThickness"),
+      editorInkOpacity: document.getElementById("editorInkOpacity"),
     },
     errorWrapper,
     printContainer: document.getElementById("printContainer"),
