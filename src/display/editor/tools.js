@@ -66,6 +66,8 @@ class IdManager {
 class CommandManager {
   #commands = [];
 
+  #locked = false;
+
   #maxSize;
 
   #position = -1;
@@ -98,6 +100,10 @@ class CommandManager {
   }) {
     if (mustExec) {
       cmd();
+    }
+
+    if (this.#locked) {
+      return;
     }
 
     const save = { cmd, undo, type };
@@ -139,7 +145,12 @@ class CommandManager {
       // Nothing to undo.
       return;
     }
+
+    // Avoid to insert something during the undo execution.
+    this.#locked = true;
     this.#commands[this.#position].undo();
+    this.#locked = false;
+
     this.#position -= 1;
   }
 
@@ -149,7 +160,11 @@ class CommandManager {
   redo() {
     if (this.#position < this.#commands.length - 1) {
       this.#position += 1;
+
+      // Avoid to insert something during the redo execution.
+      this.#locked = true;
       this.#commands[this.#position].cmd();
+      this.#locked = false;
     }
   }
 

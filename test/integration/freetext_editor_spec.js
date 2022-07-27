@@ -197,6 +197,28 @@ describe("Editor", () => {
           }, `${editorPrefix}4`);
 
           expect(hasEditor).withContext(`In ${browserName}`).toEqual(false);
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("v");
+            await page.keyboard.up("Control");
+          }
+
+          let length = await page.evaluate(sel => {
+            return document.querySelectorAll(sel).length;
+          }, `${editorPrefix}5, ${editorPrefix}6`);
+          expect(length).withContext(`In ${browserName}`).toEqual(2);
+
+          for (let i = 0; i < 2; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("z");
+            await page.keyboard.up("Control");
+          }
+
+          length = await page.evaluate(sel => {
+            return document.querySelectorAll(sel).length;
+          }, `${editorPrefix}5, ${editorPrefix}6`);
+          expect(length).withContext(`In ${browserName}`).toEqual(0);
         })
       );
     });
@@ -230,7 +252,7 @@ describe("Editor", () => {
             stacksRect.x + stacksRect.width + 1,
             stacksRect.y + stacksRect.height / 2
           );
-          await page.type(`${editorPrefix}5 .internal`, data);
+          await page.type(`${editorPrefix}7 .internal`, data);
 
           // Commit.
           await page.keyboard.press("Escape");
@@ -242,7 +264,7 @@ describe("Editor", () => {
 
           expect(ariaOwns)
             .withContext(`In ${browserName}`)
-            .toEqual(`${editorPrefix}5-editor`.slice(1));
+            .toEqual(`${editorPrefix}7-editor`.slice(1));
         })
       );
     });
@@ -265,9 +287,9 @@ describe("Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
-          await page.type(`${editorPrefix}6 .internal`, data);
+          await page.type(`${editorPrefix}8 .internal`, data);
 
-          const editorRect = await page.$eval(`${editorPrefix}6`, el => {
+          const editorRect = await page.$eval(`${editorPrefix}8`, el => {
             const { x, y, width, height } = el.getBoundingClientRect();
             return { x, y, width, height };
           });
@@ -277,7 +299,7 @@ describe("Editor", () => {
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
-            .toEqual([6]);
+            .toEqual([8]);
 
           await page.keyboard.press("Escape");
           expect(await getSelectedEditors(page))
@@ -291,7 +313,7 @@ describe("Editor", () => {
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
-            .toEqual([6]);
+            .toEqual([8]);
 
           // Escape.
           await page.keyboard.press("Escape");
