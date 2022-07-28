@@ -108,6 +108,11 @@ class CommandManager {
 
     const save = { cmd, undo, type };
     if (this.#position === -1) {
+      if (this.#commands.length > 0) {
+        // All the commands have been undone and then a new one is added
+        // hence we clear the queue.
+        this.#commands.length = 0;
+      }
       this.#position = 0;
       this.#commands.push(save);
       return;
