@@ -6677,6 +6677,7 @@
           "annotationType": 15,
           "color": [255, 0, 0],
           "thickness": 3,
+          "opacity": 1,
           "paths": [{
               "bezier": [
                 1.5, 25.727771084724367, 2.8040804485100495, 27.031851533234402,
@@ -6760,6 +6761,7 @@
          "annotationType": 15,
          "color": [0, 0, 0],
          "thickness": 1,
+         "opacity": 1,
          "paths": [
            {
              "bezier": [
@@ -6783,6 +6785,7 @@
          "annotationType": 15,
          "color": [0, 0, 0],
          "thickness": 1,
+         "opacity": 1,
          "paths": [
            {
              "bezier": [
@@ -6808,6 +6811,7 @@
          "annotationType": 15,
          "color": [0, 0, 0],
          "thickness": 1,
+         "opacity": 1,
          "paths": [
            {
              "bezier": [
@@ -6831,6 +6835,7 @@
          "annotationType": 15,
          "color": [0, 0, 0],
          "thickness": 1,
+         "opacity": 1,
          "paths": [
            {
              "bezier": [
