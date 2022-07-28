@@ -17,6 +17,8 @@
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
+// eslint-disable-next-line max-len
+/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 import { renderTextLayer } from "pdfjs-lib";
 
@@ -32,6 +34,7 @@ const EXPAND_DIVS_TIMEOUT = 300; // ms
  *   highlighting text from the find controller.
  * @property {boolean} enhanceTextSelection - Option to turn on improved
  *   text selection.
+ * @property {TextAccessibilityManager} [accessibilityManager]
  */
 
 /**
@@ -47,6 +50,7 @@ class TextLayerBuilder {
     viewport,
     highlighter = null,
     enhanceTextSelection = false,
+    accessibilityManager = null,
   }) {
     this.textLayerDiv = textLayerDiv;
     this.eventBus = eventBus;
@@ -60,6 +64,7 @@ class TextLayerBuilder {
     this.textLayerRenderTask = null;
     this.highlighter = highlighter;
     this.enhanceTextSelection = enhanceTextSelection;
+    this.accessibilityManager = accessibilityManager;
 
     this._bindMouse();
   }
@@ -97,6 +102,7 @@ class TextLayerBuilder {
 
     this.textDivs.length = 0;
     this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
+    this.accessibilityManager?.setTextMapping(this.textDivs);
 
     const textLayerFrag = document.createDocumentFragment();
     this.textLayerRenderTask = renderTextLayer({
@@ -114,6 +120,7 @@ class TextLayerBuilder {
         this.textLayerDiv.append(textLayerFrag);
         this._finishRendering();
         this.highlighter?.enable();
+        this.accessibilityManager?.enable();
       },
       function (reason) {
         // Cancelled or failed to render text layer; skipping errors.
@@ -130,6 +137,7 @@ class TextLayerBuilder {
       this.textLayerRenderTask = null;
     }
     this.highlighter?.disable();
+    this.accessibilityManager?.disable();
   }
 
   setTextContentStream(readableStream) {
