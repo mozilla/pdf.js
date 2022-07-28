@@ -19,6 +19,8 @@
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
+// eslint-disable-next-line max-len
+/** @typedef {import("./textaccessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 import { AnnotationLayer } from "pdfjs-lib";
 import { NullL10n } from "./l10n_utils.js";
@@ -40,6 +42,7 @@ import { NullL10n } from "./l10n_utils.js";
  *   [fieldObjectsPromise]
  * @property {Object} [mouseState]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
+ * @property {TextAccessibilityManager} accessibilityManager
  */
 
 class AnnotationLayerBuilder {
@@ -60,6 +63,7 @@ class AnnotationLayerBuilder {
     fieldObjectsPromise = null,
     mouseState = null,
     annotationCanvasMap = null,
+    accessibilityManager = null,
   }) {
     this.pageDiv = pageDiv;
     this.pdfPage = pdfPage;
@@ -74,6 +78,7 @@ class AnnotationLayerBuilder {
     this._fieldObjectsPromise = fieldObjectsPromise;
     this._mouseState = mouseState;
     this._annotationCanvasMap = annotationCanvasMap;
+    this._accessibilityManager = accessibilityManager;
 
     this.div = null;
     this._cancelled = false;
@@ -112,6 +117,7 @@ class AnnotationLayerBuilder {
       fieldObjects,
       mouseState: this._mouseState,
       annotationCanvasMap: this._annotationCanvasMap,
+      accessibilityManager: this._accessibilityManager,
     };
 
     if (this.div) {

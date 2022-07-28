@@ -66,4 +66,44 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("Annotation", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait(
+        "tracemonkey_a11y.pdf",
+        ".textLayer .endOfContent"
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    function getSpans(page) {
+      return page.evaluate(() => {
+        const elements = document.querySelectorAll(
+          `.textLayer span[aria-owns]:not([role="presentation"])`
+        );
+        const results = [];
+        for (const element of elements) {
+          results.push(element.innerText);
+        }
+        return results;
+      });
+    }
+
+    it("must check that some spans are linked to some annotations thanks to aria-owns", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const spanContents = await getSpans(page);
+
+          expect(spanContents)
+            .withContext(`In ${browserName}`)
+            .toEqual(["Languages", "@intel.com", "Abstract", "Introduction"]);
+        })
+      );
+    });
+  });
 });

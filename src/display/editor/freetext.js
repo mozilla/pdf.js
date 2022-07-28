@@ -386,11 +386,6 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  getIdForTextLayer() {
-    return this.editorDiv.id;
-  }
-
-  /** @inheritdoc */
   render() {
     if (this.div) {
       return this.div;
