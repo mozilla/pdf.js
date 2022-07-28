@@ -876,8 +876,9 @@ class Annotation {
   ) {
     const data = this.data;
     let appearance = this.appearance;
-    const isUsingOwnCanvas =
-      this.data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY;
+    const isUsingOwnCanvas = !!(
+      this.data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY
+    );
     if (!appearance) {
       if (!isUsingOwnCanvas) {
         return new OperatorList();
@@ -1679,6 +1680,7 @@ class WidgetAnnotation extends Annotation {
       this.data.rect,
       transform,
       this.getRotationMatrix(annotationStorage),
+      /* isUsingOwnCanvas = */ false,
     ]);
 
     const stream = new StringStream(content);
