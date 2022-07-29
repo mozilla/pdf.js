@@ -275,7 +275,7 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   isEmpty() {
-    return this.editorDiv.innerText.trim() === "";
+    return !this.editorDiv || this.editorDiv.innerText.trim() === "";
   }
 
   /** @inheritdoc */
@@ -320,6 +320,7 @@ class FreeTextEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   commit() {
+    super.commit();
     if (!this.#hasAlreadyBeenCommitted) {
       // This editor has something and it's the first time
       // it's commited so we can add it in the undo/redo stack.
