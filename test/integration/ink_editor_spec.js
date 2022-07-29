@@ -74,5 +74,65 @@ describe("Editor", () => {
         })
       );
     });
+
+    it("must draw, undo/redo and check that the editor don't move", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+
+          await page.keyboard.press("Backspace");
+
+          const rect = await page.$eval(".annotationEditorLayer", el => {
+            // With Chrome something is wrong when serializing a DomRect,
+            // hence we extract the values and just return them.
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          const xStart = rect.x + 300;
+          const yStart = rect.y + 300;
+          await page.mouse.move(xStart, yStart);
+          await page.mouse.down();
+          await page.mouse.move(xStart + 50, yStart + 50);
+          await page.mouse.up();
+
+          await page.keyboard.press("Escape");
+
+          const rectBefore = await page.$eval(".inkEditor canvas", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          for (let i = 0; i < 30; i++) {
+            await page.keyboard.down("Control");
+            await page.keyboard.press("z");
+            await page.keyboard.up("Control");
+
+            await page.waitForTimeout(10);
+
+            await page.keyboard.down("Control");
+            await page.keyboard.press("y");
+            await page.keyboard.up("Control");
+
+            await page.waitForTimeout(10);
+          }
+
+          const rectAfter = await page.$eval(".inkEditor canvas", el => {
+            const { x, y } = el.getBoundingClientRect();
+            return { x, y };
+          });
+
+          expect(Math.round(rectBefore.x))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(rectAfter.x));
+
+          expect(Math.round(rectBefore.y))
+            .withContext(`In ${browserName}`)
+            .toEqual(Math.round(rectAfter.y));
+        })
+      );
+    });
   });
 });
