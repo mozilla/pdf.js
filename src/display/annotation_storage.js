@@ -102,6 +102,15 @@ class AnnotationStorage {
     }
   }
 
+  /**
+   * Check if the storage contains the given key.
+   * @param {string} key
+   * @returns {boolean}
+   */
+  has(key) {
+    return this._storage.has(key);
+  }
+
   getAll() {
     return this._storage.size > 0 ? objectFromMap(this._storage) : null;
   }

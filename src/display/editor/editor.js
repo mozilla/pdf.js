@@ -137,6 +137,13 @@ class AnnotationEditor {
   }
 
   /**
+   * Commit the data contained in this editor.
+   */
+  commit() {
+    this.parent.addToAnnotationStorage(this);
+  }
+
+  /**
    * We use drag-and-drop in order to move an editor on a page.
    * @param {DragEvent} event
    */
