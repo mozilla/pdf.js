@@ -1857,14 +1857,14 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
         return new CipherTransform(
           buildCipherConstructor(
             this.cf,
-            this.stmf,
+            this.strf,
             num,
             gen,
             this.encryptionKey
           ),
           buildCipherConstructor(
             this.cf,
-            this.strf,
+            this.stmf,
             num,
             gen,
             this.encryptionKey
