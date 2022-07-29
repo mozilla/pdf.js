@@ -162,11 +162,11 @@ class InkEditor extends AnnotationEditor {
     this.parent.addCommands({
       cmd: () => {
         this.thickness = thickness;
-        this.#fitToContent(/* thicknessChanged = */ true);
+        this.#fitToContent();
       },
       undo: () => {
         this.thickness = savedThickness;
-        this.#fitToContent(/* thicknessChanged = */ true);
+        this.#fitToContent();
       },
       mustExec: true,
       type: AnnotationEditorParamsType.INK_THICKNESS,
@@ -478,7 +478,7 @@ class InkEditor extends AnnotationEditor {
     this.#disableEditing = true;
     this.div.classList.add("disabled");
 
-    this.#fitToContent();
+    this.#fitToContent(/* firstTime = */ true);
 
     this.parent.addInkEditorIfNeeded(/* isCommitting = */ true);
 
@@ -928,7 +928,7 @@ class InkEditor extends AnnotationEditor {
    * the bounding box of the contents.
    * @returns {undefined}
    */
-  #fitToContent(thicknessChanged = false) {
+  #fitToContent(firstTime = false) {
     if (this.isEmpty()) {
       return;
     }
@@ -965,9 +965,7 @@ class InkEditor extends AnnotationEditor {
     this.#realHeight = height;
 
     this.setDims(width, height);
-    const unscaledPadding = thicknessChanged
-      ? 0
-      : padding / this.scaleFactor / 2;
+    const unscaledPadding = firstTime ? padding / this.scaleFactor / 2 : 0;
     this.translate(
       prevTranslationX - this.translationX - unscaledPadding,
       prevTranslationY - this.translationY - unscaledPadding
