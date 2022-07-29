@@ -32,7 +32,7 @@ import { InkEditor } from "./ink.js";
  * @property {HTMLDivElement} div
  * @property {AnnotationEditorUIManager} uiManager
  * @property {boolean} enabled
- * @property {AnnotationStorage} annotationStorag
+ * @property {AnnotationStorage} annotationStorage
  * @property {number} pageIndex
  * @property {IL10n} l10n
  */
@@ -426,7 +426,7 @@ class AnnotationEditorLayer {
    */
   add(editor) {
     this.#changeParent(editor);
-    this.annotationStorage.setValue(editor.id, editor);
+    this.addToAnnotationStorage(editor);
     this.#uiManager.addEditor(editor);
     this.attach(editor);
 
@@ -438,6 +438,16 @@ class AnnotationEditorLayer {
 
     this.moveDivInDOM(editor);
     editor.onceAdded();
+  }
+
+  /**
+   * Add an editor in the annotation storage.
+   * @param {AnnotationEditor} editor
+   */
+  addToAnnotationStorage(editor) {
+    if (!editor.isEmpty() && !this.annotationStorage.has(editor.id)) {
+      this.annotationStorage.setValue(editor.id, editor);
+    }
   }
 
   /**
