@@ -469,6 +469,8 @@ class InkEditor extends AnnotationEditor {
       return;
     }
 
+    super.commit();
+
     this.isEditing = false;
     this.disableEditMode();
 
@@ -572,6 +574,8 @@ class InkEditor extends AnnotationEditor {
       "pointermove",
       this.#boundCanvasPointermove
     );
+
+    this.parent.addToAnnotationStorage(this);
   }
 
   /**
