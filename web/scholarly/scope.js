@@ -15,12 +15,16 @@ export function initScope() {
 
   onFilterChange(() => {
     SELECT.value = "full";
+    onSelect();
     if(getFilter() == null) {
       SELECT.setAttribute('disabled', 'true');
     } else {
       SELECT.removeAttribute('disabled');
     }
   });
+
+  SELECT.value = window.scholarlyCurrentCollection ?? "full";
+  onSelect();
 }
 
 function onSelect() {
