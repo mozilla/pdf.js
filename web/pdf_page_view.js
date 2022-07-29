@@ -133,10 +133,10 @@ class PDFPageView {
     this.annotationEditorLayerFactory = options.annotationEditorLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
     this.textHighlighter =
-      options.textHighlighterFactory?.createTextHighlighter(
-        this.id - 1,
-        this.eventBus
-      );
+      options.textHighlighterFactory?.createTextHighlighter({
+        pageIndex: this.id - 1,
+        eventBus: this.eventBus,
+      });
     this.structTreeLayerFactory = options.structTreeLayerFactory;
     if (
       typeof PDFJSDev === "undefined" ||
@@ -657,14 +657,15 @@ class PDFPageView {
         div.append(textLayerDiv);
       }
 
-      textLayer = this.textLayerFactory.createTextLayerBuilder(
+      textLayer = this.textLayerFactory.createTextLayerBuilder({
         textLayerDiv,
-        this.id - 1,
-        this.viewport,
-        this.textLayerMode === TextLayerMode.ENABLE_ENHANCE,
-        this.eventBus,
-        this.textHighlighter
-      );
+        pageIndex: this.id - 1,
+        viewport: this.viewport,
+        enhanceTextSelection:
+          this.textLayerMode === TextLayerMode.ENABLE_ENHANCE,
+        eventBus: this.eventBus,
+        highlighter: this.textHighlighter,
+      });
     }
     this.textLayer = textLayer;
 
@@ -674,19 +675,14 @@ class PDFPageView {
     ) {
       this._annotationCanvasMap ||= new Map();
       this.annotationLayer ||=
-        this.annotationLayerFactory.createAnnotationLayerBuilder(
-          div,
+        this.annotationLayerFactory.createAnnotationLayerBuilder({
+          pageDiv: div,
           pdfPage,
-          /* annotationStorage = */ null,
-          this.imageResourcesPath,
-          this.#annotationMode === AnnotationMode.ENABLE_FORMS,
-          this.l10n,
-          /* enableScripting = */ null,
-          /* hasJSActionsPromise = */ null,
-          /* mouseState = */ null,
-          /* fieldObjectsPromise = */ null,
-          /* annotationCanvasMap */ this._annotationCanvasMap
-        );
+          imageResourcesPath: this.imageResourcesPath,
+          renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
+          l10n: this.l10n,
+          annotationCanvasMap: this._annotationCanvasMap,
+        });
     }
 
     if (this.xfaLayer?.div) {
@@ -769,10 +765,11 @@ class PDFPageView {
               if (this.annotationEditorLayerFactory) {
                 this.annotationEditorLayer ||=
                   this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
-                    div,
-                    pdfPage,
-                    this.l10n,
-                    /* annotationStorage = */ null
+                    {
+                      pageDiv: div,
+                      pdfPage,
+                      l10n: this.l10n,
+                    }
                   );
                 this._renderAnnotationEditorLayer();
               }
@@ -787,11 +784,10 @@ class PDFPageView {
 
     if (this.xfaLayerFactory) {
       if (!this.xfaLayer) {
-        this.xfaLayer = this.xfaLayerFactory.createXfaLayerBuilder(
-          div,
+        this.xfaLayer = this.xfaLayerFactory.createXfaLayerBuilder({
+          pageDiv: div,
           pdfPage,
-          /* annotationStorage = */ null
-        );
+        });
       }
       this._renderXfaLayer();
     }
@@ -825,7 +821,7 @@ class PDFPageView {
       };
       this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
       this.structTreeLayer =
-        this.structTreeLayerFactory.createStructTreeLayerBuilder(pdfPage);
+        this.structTreeLayerFactory.createStructTreeLayerBuilder({ pdfPage });
     }
 
     div.setAttribute("data-loaded", true);
