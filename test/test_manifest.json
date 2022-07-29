@@ -6868,5 +6868,12 @@
    "lastPage": 2,
    "type": "eq",
    "annotations": true
+   },
+   { "id": "bug1782186",
+   "file": "pdfs/bug1782186.pdf",
+   "password": "Hello",
+   "md5": "8505033d63625dfd77e90a3722b0c316",
+   "rounds": 1,
+   "type": "eq"
    }
 ]
