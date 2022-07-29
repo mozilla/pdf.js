@@ -1632,22 +1632,27 @@ class BaseViewer {
   }
 
   /**
-   * @param {HTMLDivElement} textLayerDiv
-   * @param {number} pageIndex
-   * @param {PageViewport} viewport
-   * @param {boolean} enhanceTextSelection
-   * @param {EventBus} eventBus
-   * @param {TextHighlighter} highlighter
+   * @typedef {Object} CreateTextLayerBuilderParameters
+   * @property {HTMLDivElement} textLayerDiv
+   * @property {number} pageIndex
+   * @property {PageViewport} viewport
+   * @property {boolean} [enhanceTextSelection]
+   * @property {EventBus} eventBus
+   * @property {TextHighlighter} highlighter
+   */
+
+  /**
+   * @param {CreateTextLayerBuilderParameters}
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder(
+  createTextLayerBuilder({
     textLayerDiv,
     pageIndex,
     viewport,
     enhanceTextSelection = false,
     eventBus,
-    highlighter
-  ) {
+    highlighter,
+  }) {
     return new TextLayerBuilder({
       textLayerDiv,
       eventBus,
@@ -1661,11 +1666,16 @@ class BaseViewer {
   }
 
   /**
-   * @param {number} pageIndex
-   * @param {EventBus} eventBus
+   * @typedef {Object} CreateTextHighlighterParameters
+   * @property {number} pageIndex
+   * @property {EventBus} eventBus
+   */
+
+  /**
+   * @param {CreateTextHighlighterParameters}
    * @returns {TextHighlighter}
    */
-  createTextHighlighter(pageIndex, eventBus) {
+  createTextHighlighter({ pageIndex, eventBus }) {
     return new TextHighlighter({
       eventBus,
       pageIndex,
@@ -1674,101 +1684,123 @@ class BaseViewer {
   }
 
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * @typedef {Object} CreateAnnotationLayerBuilderParameters
+   * @property {HTMLDivElement} pageDiv
+   * @property {PDFPageProxy} pdfPage
+   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
-   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   * @property {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
-   * @param {boolean} renderForms
-   * @param {IL10n} l10n
-   * @param {boolean} [enableScripting]
-   * @param {Promise<boolean>} [hasJSActionsPromise]
-   * @param {Object} [mouseState]
-   * @param {Promise<Object<string, Array<Object>> | null>}
+   * @property {boolean} renderForms
+   * @property {IL10n} l10n
+   * @property {boolean} [enableScripting]
+   * @property {Promise<boolean>} [hasJSActionsPromise]
+   * @property {Object} [mouseState]
+   * @property {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
-   * @param {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
+   * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
+   *   annotation ids with canvases used to render them.
+   */
+
+  /**
+   * @param {CreateAnnotationLayerBuilderParameters}
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(
+  createAnnotationLayerBuilder({
     pageDiv,
     pdfPage,
-    annotationStorage = null,
+    annotationStorage = this.pdfDocument?.annotationStorage,
     imageResourcesPath = "",
     renderForms = true,
     l10n = NullL10n,
-    enableScripting = null,
-    hasJSActionsPromise = null,
-    mouseState = null,
-    fieldObjectsPromise = null,
-    annotationCanvasMap = null
-  ) {
+    enableScripting = this.enableScripting,
+    hasJSActionsPromise = this.pdfDocument?.hasJSActions(),
+    mouseState = this._scriptingManager?.mouseState,
+    fieldObjectsPromise = this.pdfDocument?.getFieldObjects(),
+    annotationCanvasMap = null,
+  }) {
     return new AnnotationLayerBuilder({
       pageDiv,
       pdfPage,
-      annotationStorage:
-        annotationStorage || this.pdfDocument?.annotationStorage,
+      annotationStorage,
       imageResourcesPath,
       renderForms,
       linkService: this.linkService,
       downloadManager: this.downloadManager,
       l10n,
-      enableScripting: enableScripting ?? this.enableScripting,
-      hasJSActionsPromise:
-        hasJSActionsPromise || this.pdfDocument?.hasJSActions(),
-      fieldObjectsPromise:
-        fieldObjectsPromise || this.pdfDocument?.getFieldObjects(),
-      mouseState: mouseState || this._scriptingManager?.mouseState,
+      enableScripting,
+      hasJSActionsPromise,
+      mouseState,
+      fieldObjectsPromise,
       annotationCanvasMap,
     });
   }
 
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {IL10n} l10n
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * @typedef {Object} CreateAnnotationEditorLayerBuilderParameters
+   * @property {AnnotationEditorUIManager} [uiManager]
+   * @property {HTMLDivElement} pageDiv
+   * @property {PDFPageProxy} pdfPage
+   * @property {IL10n} l10n
+   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
+   */
+
+  /**
+   * @param {CreateAnnotationEditorLayerBuilderParameters}
    * @returns {AnnotationEditorLayerBuilder}
    */
-  createAnnotationEditorLayerBuilder(
+  createAnnotationEditorLayerBuilder({
+    uiManager = this.#annotationEditorUIManager,
     pageDiv,
     pdfPage,
     l10n,
-    annotationStorage = null
-  ) {
+    annotationStorage = this.pdfDocument?.annotationStorage,
+  }) {
     return new AnnotationEditorLayerBuilder({
-      uiManager: this.#annotationEditorUIManager,
+      uiManager,
       pageDiv,
       pdfPage,
-      annotationStorage:
-        annotationStorage || this.pdfDocument?.annotationStorage,
+      annotationStorage,
       l10n,
     });
   }
 
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * @typedef {Object} CreateXfaLayerBuilderParameters
+   * @property {HTMLDivElement} pageDiv
+   * @property {PDFPageProxy} pdfPage
+   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
+   */
+
+  /**
+   * @param {CreateXfaLayerBuilderParameters}
    * @returns {XfaLayerBuilder}
    */
-  createXfaLayerBuilder(pageDiv, pdfPage, annotationStorage = null) {
+  createXfaLayerBuilder({
+    pageDiv,
+    pdfPage,
+    annotationStorage = this.pdfDocument?.annotationStorage,
+  }) {
     return new XfaLayerBuilder({
       pageDiv,
       pdfPage,
-      annotationStorage:
-        annotationStorage || this.pdfDocument?.annotationStorage,
+      annotationStorage,
       linkService: this.linkService,
     });
   }
 
   /**
-   * @param {PDFPageProxy} pdfPage
+   * @typedef {Object} CreateStructTreeLayerBuilderParameters
+   * @property {PDFPageProxy} pdfPage
+   */
+
+  /**
+   * @param {CreateStructTreeLayerBuilderParameters}
    * @returns {StructTreeLayerBuilder}
    */
-  createStructTreeLayerBuilder(pdfPage) {
+  createStructTreeLayerBuilder({ pdfPage }) {
     return new StructTreeLayerBuilder({
       pdfPage,
     });

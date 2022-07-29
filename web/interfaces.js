@@ -155,22 +155,27 @@ class IRenderableView {
  */
 class IPDFTextLayerFactory {
   /**
-   * @param {HTMLDivElement} textLayerDiv
-   * @param {number} pageIndex
-   * @param {PageViewport} viewport
-   * @param {boolean} enhanceTextSelection
-   * @param {EventBus} eventBus
-   * @param {TextHighlighter} highlighter
+   * @typedef {Object} CreateTextLayerBuilderParameters
+   * @property {HTMLDivElement} textLayerDiv
+   * @property {number} pageIndex
+   * @property {PageViewport} viewport
+   * @property {boolean} [enhanceTextSelection]
+   * @property {EventBus} eventBus
+   * @property {TextHighlighter} highlighter
+   */
+
+  /**
+   * @param {CreateTextLayerBuilderParameters}
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder(
+  createTextLayerBuilder({
     textLayerDiv,
     pageIndex,
     viewport,
     enhanceTextSelection = false,
     eventBus,
-    highlighter
-  ) {}
+    highlighter,
+  }) {}
 }
 
 /**
@@ -178,24 +183,29 @@ class IPDFTextLayerFactory {
  */
 class IPDFAnnotationLayerFactory {
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * @typedef {Object} CreateAnnotationLayerBuilderParameters
+   * @property {HTMLDivElement} pageDiv
+   * @property {PDFPageProxy} pdfPage
+   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
-   * @param {string} [imageResourcesPath] - Path for image resources, mainly
+   * @property {string} [imageResourcesPath] - Path for image resources, mainly
    *   for annotation icons. Include trailing slash.
-   * @param {boolean} renderForms
-   * @param {IL10n} l10n
-   * @param {boolean} [enableScripting]
-   * @param {Promise<boolean>} [hasJSActionsPromise]
-   * @param {Object} [mouseState]
-   * @param {Promise<Object<string, Array<Object>> | null>}
+   * @property {boolean} renderForms
+   * @property {IL10n} l10n
+   * @property {boolean} [enableScripting]
+   * @property {Promise<boolean>} [hasJSActionsPromise]
+   * @property {Object} [mouseState]
+   * @property {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
-   * @param {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
+   * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
    *   annotation ids with canvases used to render them.
+   */
+
+  /**
+   * @param {CreateAnnotationLayerBuilderParameters}
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(
+  createAnnotationLayerBuilder({
     pageDiv,
     pdfPage,
     annotationStorage = null,
@@ -206,8 +216,8 @@ class IPDFAnnotationLayerFactory {
     hasJSActionsPromise = null,
     mouseState = null,
     fieldObjectsPromise = null,
-    annotationCanvasMap = null
-  ) {}
+    annotationCanvasMap = null,
+  }) {}
 }
 
 /**
@@ -215,19 +225,26 @@ class IPDFAnnotationLayerFactory {
  */
 class IPDFAnnotationEditorLayerFactory {
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {IL10n} l10n
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * @typedef {Object} CreateAnnotationEditorLayerBuilderParameters
+   * @property {AnnotationEditorUIManager} [uiManager]
+   * @property {HTMLDivElement} pageDiv
+   * @property {PDFPageProxy} pdfPage
+   * @property {IL10n} l10n
+   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    *   data in forms.
+   */
+
+  /**
+   * @param {CreateAnnotationEditorLayerBuilderParameters}
    * @returns {AnnotationEditorLayerBuilder}
    */
-  createAnnotationEditorLayerBuilder(
+  createAnnotationEditorLayerBuilder({
+    uiManager = null,
     pageDiv,
     pdfPage,
-    l10n = undefined,
-    annotationStorage = null
-  ) {}
+    l10n,
+    annotationStorage = null,
+  }) {}
 }
 
 /**
@@ -235,18 +252,18 @@ class IPDFAnnotationEditorLayerFactory {
  */
 class IPDFXfaLayerFactory {
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPageProxy} pdfPage
-   * @param {AnnotationStorage} [annotationStorage]
-   * @param {Object} [xfaHtml]
+   * @typedef {Object} CreateXfaLayerBuilderParameters
+   * @property {HTMLDivElement} pageDiv
+   * @property {PDFPageProxy} pdfPage
+   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
+   *   data in forms.
+   */
+
+  /**
+   * @param {CreateXfaLayerBuilderParameters}
    * @returns {XfaLayerBuilder}
    */
-  createXfaLayerBuilder(
-    pageDiv,
-    pdfPage,
-    annotationStorage = null,
-    xfaHtml = null
-  ) {}
+  createXfaLayerBuilder({ pageDiv, pdfPage, annotationStorage = null }) {}
 }
 
 /**
@@ -254,10 +271,15 @@ class IPDFXfaLayerFactory {
  */
 class IPDFStructTreeLayerFactory {
   /**
-   * @param {PDFPageProxy} pdfPage
+   * @typedef {Object} CreateStructTreeLayerBuilderParameters
+   * @property {PDFPageProxy} pdfPage
+   */
+
+  /**
+   * @param {CreateStructTreeLayerBuilderParameters}
    * @returns {StructTreeLayerBuilder}
    */
-  createStructTreeLayerBuilder(pdfPage) {}
+  createStructTreeLayerBuilder({ pdfPage }) {}
 }
 
 /**
