@@ -1856,6 +1856,7 @@ class BaseViewer {
       return Promise.resolve(null);
     }
     if (!this._optionalContentConfigPromise) {
+      console.error("optionalContentConfigPromise: Not initialized yet.");
       // Prevent issues if the getter is accessed *before* the `onePageRendered`
       // promise has resolved; won't (normally) happen in the default viewer.
       return this.pdfDocument.getOptionalContentConfig();
