@@ -99,6 +99,8 @@ const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
 class PDFPageView {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
+  #useThumbnailCanvas = true;
+
   /**
    * @param {PDFPageViewOptions} options
    */
@@ -151,7 +153,12 @@ class PDFPageView {
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
     this._renderError = null;
-    this._isStandalone = !this.renderingQueue?.hasViewer();
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("!PRODUCTION || GENERIC")
+    ) {
+      this._isStandalone = !this.renderingQueue?.hasViewer();
+    }
 
     this._annotationCanvasMap = null;
 
@@ -174,6 +181,26 @@ class PDFPageView {
     this.div = div;
 
     container?.append(div);
+
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this._isStandalone
+    ) {
+      const { optionalContentConfigPromise } = options;
+      if (optionalContentConfigPromise) {
+        // Ensure that the thumbnails always display the *initial* document
+        // state.
+        optionalContentConfigPromise.then(optionalContentConfig => {
+          if (
+            optionalContentConfigPromise !== this._optionalContentConfigPromise
+          ) {
+            return;
+          }
+          this.#useThumbnailCanvas = optionalContentConfig.hasInitialVisibility;
+        });
+      }
+    }
   }
 
   setPdfPage(pdfPage) {
@@ -359,7 +386,11 @@ class PDFPageView {
 
     this.loadingIconDiv = document.createElement("div");
     this.loadingIconDiv.className = "loadingIcon notVisible";
-    if (this._isStandalone) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this._isStandalone
+    ) {
       this.toggleLoadingIconSpinner(/* viewVisible = */ true);
     }
     this.loadingIconDiv.setAttribute("role", "img");
@@ -376,6 +407,16 @@ class PDFPageView {
     }
     if (optionalContentConfigPromise instanceof Promise) {
       this._optionalContentConfigPromise = optionalContentConfigPromise;
+
+      // Ensure that the thumbnails always display the *initial* document state.
+      optionalContentConfigPromise.then(optionalContentConfig => {
+        if (
+          optionalContentConfigPromise !== this._optionalContentConfigPromise
+        ) {
+          return;
+        }
+        this.#useThumbnailCanvas = optionalContentConfig.hasInitialVisibility;
+      });
     }
 
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
@@ -384,7 +425,11 @@ class PDFPageView {
       rotation: totalRotation,
     });
 
-    if (this._isStandalone) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      this._isStandalone
+    ) {
       docStyle.setProperty("--scale-factor", this.viewport.scale);
     }
 
@@ -998,6 +1043,14 @@ class PDFPageView {
     } else {
       this.div.removeAttribute("data-page-label");
     }
+  }
+
+  /**
+   * For use by the `PDFThumbnailView.setImage`-method.
+   * @ignore
+   */
+  get thumbnailCanvas() {
+    return this.#useThumbnailCanvas ? this.canvas : null;
   }
 }
 
