@@ -352,12 +352,16 @@ class PDFThumbnailView {
     if (this.renderingState !== RenderingStates.INITIAL) {
       return;
     }
-    const { thumbnailCanvas: canvas, pdfPage } = pageView;
+    const { thumbnailCanvas: canvas, pdfPage, scale } = pageView;
     if (!canvas) {
       return;
     }
     if (!this.pdfPage) {
       this.setPdfPage(pdfPage);
+    }
+    if (scale < this.scale) {
+      // Avoid upscaling the image, since that makes the thumbnail look blurry.
+      return;
     }
     this.renderingState = RenderingStates.FINISHED;
     this._convertCanvasToImage(canvas);
