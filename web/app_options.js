@@ -38,13 +38,6 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       compatibilityParams.maxCanvasPixels = 5242880;
     }
   })();
-
-  // Support: Safari<13.1
-  (function checkResizeObserver() {
-    if (typeof ResizeObserver === "undefined") {
-      compatibilityParams.annotationEditorMode = -1;
-    }
-  })();
 }
 
 const OptionKind = {
