@@ -84,7 +84,7 @@ const AUTOPREFIXER_CONFIG = {
     "last 2 versions",
     "Chrome >= 76",
     "Firefox ESR",
-    "Safari >= 13",
+    "Safari >= 13.1",
     "> 1%",
     "not IE > 0",
     "not dead",
