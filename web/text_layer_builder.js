@@ -61,7 +61,9 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.enhanceTextSelection = enhanceTextSelection;
 
-    this._bindMouse();
+    if (!enhanceTextSelection) {
+      this._bindMouse();
+    }
   }
 
   /**
