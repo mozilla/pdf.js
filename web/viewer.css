@@ -424,7 +424,6 @@ select {
   height: auto;
   padding: 0 4px;
   margin: 4px 2px;
-  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -532,13 +531,18 @@ select {
 .editorParamsToolbarContainer .editorParamsSlider::-moz-range-progress {
   background-color: black;
 }
-.editorParamsToolbarContainer .editorParamsSlider::-moz-range-track,
-.editorParamsToolbarContainer
-  .editorParamsSlider::-webkit-slider-runnable-track {
+
+/*#if !MOZCENTRAL*/
+.editorParamsToolbarContainer .editorParamsSlider::-webkit-slider-runnable-track,
+/*#endif*/
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-track {
   background-color: black;
 }
-.editorParamsToolbarContainer .editorParamsSlider::-moz-range-thumb,
-.editorParamsToolbarContainer .editorParamsSlider::-webkit-slider-thumb {
+
+/*#if !MOZCENTRAL*/
+.editorParamsToolbarContainer .editorParamsSlider::-webkit-slider-thumb,
+/*#endif*/
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-thumb {
   background-color: white;
 }
 
