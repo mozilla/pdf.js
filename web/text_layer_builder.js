@@ -20,7 +20,7 @@
 
 import { renderTextLayer } from "pdfjs-lib";
 
-const EXPAND_DIVS_TIMEOUT = 300; // ms
+const EXPAND_DIVS_TIMEOUT = 200; // ms
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -68,6 +68,7 @@ class TextLayerBuilder {
    * @private
    */
   _finishRendering() {
+    this.textLayerRenderTask.expandTextDivs(true);
     this.renderingDone = true;
 
     if (!this.enhanceTextSelection) {
@@ -195,6 +196,9 @@ class TextLayerBuilder {
     div.addEventListener("mouseup", () => {
       if (this.enhanceTextSelection && this.textLayerRenderTask) {
         if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+          if (expandDivsTimer) {
+            clearTimeout(expandDivsTimer);
+          }
           expandDivsTimer = setTimeout(() => {
             if (this.textLayerRenderTask) {
               this.textLayerRenderTask.expandTextDivs(false);
