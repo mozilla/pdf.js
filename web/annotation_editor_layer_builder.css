@@ -18,7 +18,11 @@
   --hover-outline: dashed 2px blue;
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  /*#if COMPONENTS*/
+  --editorInk-editing-cursor: pointer;
+  /*#else*/
   --editorInk-editing-cursor: url(images/toolbarButton-editorInk.svg) 0 16;
+  /*#endif*/
 }
 
 @media (forced-colors: active) {
