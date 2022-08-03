@@ -4101,6 +4101,35 @@ describe("annotation", function () {
         OPS.endAnnotation,
       ]);
     });
+
+    it("should extract the text from a FreeText annotation", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test FreeText text extraction");
+      const freetextAnnotation = (
+        await AnnotationFactory.printNewAnnotations(partialEvaluator, task, [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            rect: [12, 34, 56, 78],
+            rotation: 0,
+            fontSize: 10,
+            color: [0, 0, 0],
+            value: "Hello PDF.js\nWorld !",
+          },
+        ])
+      )[0];
+
+      await freetextAnnotation.extractTextContent(partialEvaluator, task, [
+        -Infinity,
+        -Infinity,
+        Infinity,
+        Infinity,
+      ]);
+
+      expect(freetextAnnotation.data.textContent).toEqual([
+        "Hello PDF.js",
+        "World !",
+      ]);
+    });
   });
 
   describe("InkAnnotation", function () {
