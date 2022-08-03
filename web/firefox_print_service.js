@@ -128,7 +128,7 @@ function FirefoxPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
-  this._optionalContentConfigPromise =
+  this._printAnnotationStoragePromise =
     printAnnotationStoragePromise || Promise.resolve();
 }
 
