@@ -63,6 +63,8 @@ class FreeTextEditor extends AnnotationEditor {
     ],
   ]);
 
+  static _type = "freetext";
+
   constructor(params) {
     super({ ...params, name: "freeTextEditor" });
     this.#color =

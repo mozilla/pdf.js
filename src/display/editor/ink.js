@@ -67,6 +67,8 @@ class InkEditor extends AnnotationEditor {
 
   static _l10nPromise;
 
+  static _type = "ink";
+
   constructor(params) {
     super({ ...params, name: "inkEditor" });
     this.color = params.color || null;
