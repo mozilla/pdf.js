@@ -973,10 +973,27 @@ class PDFDocumentProxy {
 
   /**
    * @returns {Promise<Uint8Array>} A promise that is resolved with a
-   *   {Uint8Array} that has the raw data from the PDF.
+   *   {Uint8Array} containing the raw data of the PDF document.
    */
   getData() {
     return this._transport.getData();
+  }
+
+  /**
+   * @returns {Promise<Uint8Array>} A promise that is resolved with a
+   *   {Uint8Array} containing the full data of the saved document.
+   */
+  saveDocument() {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this._transport.annotationStorage.size <= 0
+    ) {
+      deprecated(
+        "saveDocument called while `annotationStorage` is empty, " +
+          "please use the getData-method instead."
+      );
+    }
+    return this._transport.saveDocument();
   }
 
   /**
@@ -1024,23 +1041,6 @@ class PDFDocumentProxy {
    */
   get loadingTask() {
     return this._transport.loadingTask;
-  }
-
-  /**
-   * @returns {Promise<Uint8Array>} A promise that is resolved with a
-   *   {Uint8Array} containing the full data of the saved document.
-   */
-  saveDocument() {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._transport.annotationStorage.size <= 0
-    ) {
-      deprecated(
-        "saveDocument called while `annotationStorage` is empty, " +
-          "please use the getData-method instead."
-      );
-    }
-    return this._transport.saveDocument();
   }
 
   /**
@@ -2911,6 +2911,19 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
+  saveDocument() {
+    return this.messageHandler
+      .sendWithPromise("SaveDocument", {
+        isPureXfa: !!this._htmlForXfa,
+        numPages: this._numPages,
+        annotationStorage: this.annotationStorage.serializable,
+        filename: this._fullReader?.filename ?? null,
+      })
+      .finally(() => {
+        this.annotationStorage.resetModified();
+      });
+  }
+
   getPage(pageNumber) {
     if (
       !Number.isInteger(pageNumber) ||
@@ -2969,19 +2982,6 @@ class WorkerTransport {
       pageIndex,
       intent,
     });
-  }
-
-  saveDocument() {
-    return this.messageHandler
-      .sendWithPromise("SaveDocument", {
-        isPureXfa: !!this._htmlForXfa,
-        numPages: this._numPages,
-        annotationStorage: this.annotationStorage.serializable,
-        filename: this._fullReader?.filename ?? null,
-      })
-      .finally(() => {
-        this.annotationStorage.resetModified();
-      });
   }
 
   getFieldObjects() {
