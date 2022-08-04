@@ -699,15 +699,6 @@ class ProgressBar {
   #visible = true;
 
   constructor(id) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      arguments.length > 1
-    ) {
-      throw new Error(
-        "ProgressBar no longer accepts any additional options, " +
-          "please use CSS rules to modify its appearance instead."
-      );
-    }
     const bar = document.getElementById(id);
     this.#classList = bar.classList;
   }
