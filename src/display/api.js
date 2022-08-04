@@ -710,28 +710,6 @@ class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
-
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      Object.defineProperty(this, "fingerprint", {
-        get() {
-          deprecated(
-            "`PDFDocumentProxy.fingerprint`, " +
-              "please use `PDFDocumentProxy.fingerprints` instead."
-          );
-          return this.fingerprints[0];
-        },
-      });
-
-      Object.defineProperty(this, "getStats", {
-        value: async () => {
-          deprecated(
-            "`PDFDocumentProxy.getStats`, " +
-              "please use the `PDFDocumentProxy.stats`-getter instead."
-          );
-          return this.stats || { streamTypes: {}, fontTypes: {} };
-        },
-      });
-    }
   }
 
   /**
@@ -984,15 +962,6 @@ class PDFDocumentProxy {
    *   {Uint8Array} containing the full data of the saved document.
    */
   saveDocument() {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._transport.annotationStorage.size <= 0
-    ) {
-      deprecated(
-        "saveDocument called while `annotationStorage` is empty, " +
-          "please use the getData-method instead."
-      );
-    }
     return this._transport.saveDocument();
   }
 
@@ -1172,8 +1141,6 @@ class PDFDocumentProxy {
  *   The default value is `AnnotationMode.ENABLE`.
  * @property {Array<any>} [transform] - Additional transform, applied just
  *   before viewport transform.
- * @property {Object} [imageLayer] - An object that has `beginLayout`,
- *   `endLayout` and `appendImage` functions.
  * @property {Object} [canvasFactory] - The factory instance that will be used
  *   when creating canvases. The default value is {new DOMCanvasFactory()}.
  * @property {Object | string} [background] - Background to use for the canvas.
@@ -1343,34 +1310,6 @@ class PDFPageProxy {
         intentArgs.renderingIntent
       );
       this._annotationPromises.set(intentArgs.cacheKey, promise);
-
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        promise = promise.then(annotations => {
-          for (const annotation of annotations) {
-            if (annotation.titleObj !== undefined) {
-              Object.defineProperty(annotation, "title", {
-                get() {
-                  deprecated(
-                    "`title`-property on annotation, please use `titleObj` instead."
-                  );
-                  return annotation.titleObj.str;
-                },
-              });
-            }
-            if (annotation.contentsObj !== undefined) {
-              Object.defineProperty(annotation, "contents", {
-                get() {
-                  deprecated(
-                    "`contents`-property on annotation, please use `contentsObj` instead."
-                  );
-                  return annotation.contentsObj.str;
-                },
-              });
-            }
-          }
-          return annotations;
-        });
-      }
     }
     return promise;
   }
@@ -1408,7 +1347,6 @@ class PDFPageProxy {
     intent = "display",
     annotationMode = AnnotationMode.ENABLE,
     transform = null,
-    imageLayer = null,
     canvasFactory = null,
     background = null,
     optionalContentConfigPromise = null,
@@ -1416,33 +1354,6 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
   }) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-      if (arguments[0]?.renderInteractiveForms !== undefined) {
-        deprecated(
-          "render no longer accepts the `renderInteractiveForms`-option, " +
-            "please use the `annotationMode`-option instead."
-        );
-        if (
-          arguments[0].renderInteractiveForms === true &&
-          annotationMode === AnnotationMode.ENABLE
-        ) {
-          annotationMode = AnnotationMode.ENABLE_FORMS;
-        }
-      }
-      if (arguments[0]?.includeAnnotationStorage !== undefined) {
-        deprecated(
-          "render no longer accepts the `includeAnnotationStorage`-option, " +
-            "please use the `annotationMode`-option instead."
-        );
-        if (
-          arguments[0].includeAnnotationStorage === true &&
-          annotationMode === AnnotationMode.ENABLE
-        ) {
-          annotationMode = AnnotationMode.ENABLE_STORAGE;
-        }
-      }
-    }
-
     if (this._stats) {
       this._stats.time("Overall");
     }
@@ -1529,7 +1440,6 @@ class PDFPageProxy {
         canvasContext,
         viewport,
         transform,
-        imageLayer,
         background,
       },
       objs: this.objs,
@@ -2360,14 +2270,6 @@ class PDFWorker {
     return shadow(this, "_setupFakeWorkerGlobal", loader());
   }
 }
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
-  PDFWorker.getWorkerSrc = function () {
-    deprecated(
-      "`PDFWorker.getWorkerSrc()`, please use `PDFWorker.workerSrc` instead."
-    );
-    return this.workerSrc;
-  };
-}
 
 /**
  * For internal use only.
@@ -2912,6 +2814,12 @@ class WorkerTransport {
   }
 
   saveDocument() {
+    if (this.annotationStorage.size <= 0) {
+      warn(
+        "saveDocument called while `annotationStorage` is empty, " +
+          "please use the getData-method instead."
+      );
+    }
     return this.messageHandler
       .sendWithPromise("SaveDocument", {
         isPureXfa: !!this._htmlForXfa,
@@ -3332,15 +3240,13 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { canvasContext, viewport, transform, imageLayer, background } =
-      this.params;
+    const { canvasContext, viewport, transform, background } = this.params;
 
     this.gfx = new CanvasGraphics(
       canvasContext,
       this.commonObjs,
       this.objs,
       this.canvasFactory,
-      imageLayer,
       optionalContentConfig,
       this.annotationCanvasMap,
       this.pageColors
