@@ -271,3 +271,18 @@
   width: 100%;
   height: 100%;
 }
+
+.annotationLayer .annotationTextContent {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+}
+
+.annotationLayer .annotationTextContent span {
+  width: 100%;
+  display: inline-block;
+}
