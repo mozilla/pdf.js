@@ -32,6 +32,11 @@ describe("Editor", () => {
       await closePages(pages);
     });
 
+    const countStorageEntries = async page =>
+      page.evaluate(
+        () => window.PDFViewerApplication.pdfDocument.annotationStorage.size
+      );
+
     it("must write a string in a FreeText editor", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -64,6 +69,10 @@ describe("Editor", () => {
             editorRect.y + 2 * editorRect.height
           );
 
+          expect(await countStorageEntries(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(1);
+
           const content = await page.$eval(`${editorPrefix}0`, el =>
             el.innerText.trimEnd()
           );
@@ -94,6 +103,10 @@ describe("Editor", () => {
           await page.keyboard.press("v");
           await page.keyboard.up("Control");
 
+          expect(await countStorageEntries(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(2);
+
           const content = await page.$eval(`${editorPrefix}0`, el =>
             el.innerText.trimEnd()
           );
@@ -113,6 +126,10 @@ describe("Editor", () => {
           await page.keyboard.down("Control");
           await page.keyboard.press("v");
           await page.keyboard.up("Control");
+
+          expect(await countStorageEntries(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(3);
 
           pastedContent = await page.$eval(`${editorPrefix}2`, el =>
             el.innerText.trimEnd()
@@ -142,6 +159,10 @@ describe("Editor", () => {
 
             expect(hasEditor).withContext(`In ${browserName}`).toEqual(false);
           }
+
+          expect(await countStorageEntries(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
         })
       );
     });
