@@ -426,7 +426,6 @@ class AnnotationEditorLayer {
    */
   add(editor) {
     this.#changeParent(editor);
-    this.addToAnnotationStorage(editor);
     this.#uiManager.addEditor(editor);
     this.attach(editor);
 
@@ -438,6 +437,7 @@ class AnnotationEditorLayer {
 
     this.moveDivInDOM(editor);
     editor.onceAdded();
+    this.addToAnnotationStorage(editor);
   }
 
   /**
