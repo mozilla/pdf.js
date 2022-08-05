@@ -641,6 +641,16 @@ function binarySearchFirstItem(items, condition, start = 0) {
   return minIndex; /* === maxIndex */
 }
 
+function getCurrentTransform(ctx) {
+  const { a, b, c, d, e, f } = ctx.getTransform();
+  return [a, b, c, d, e, f];
+}
+
+function getCurrentTransformInverse(ctx) {
+  const { a, b, c, d, e, f } = ctx.getTransform().invertSelf();
+  return [a, b, c, d, e, f];
+}
+
 export {
   binarySearchFirstItem,
   deprecated,
@@ -649,6 +659,8 @@ export {
   DOMStandardFontDataFactory,
   DOMSVGFactory,
   getColorValues,
+  getCurrentTransform,
+  getCurrentTransformInverse,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getRGB,
