@@ -351,7 +351,7 @@ const Type1CharString = (function Type1CharStringClosure() {
           );
         }
       }
-      this.output.push.apply(this.output, command);
+      this.output.push(...command);
       if (keepStack) {
         this.stack.splice(start, howManyArgs);
       } else {

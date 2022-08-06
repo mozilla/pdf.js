@@ -475,6 +475,7 @@ class FontFaceObject {
         if (current.cmd === "scale") {
           current.args = [size, -size];
         }
+        // eslint-disable-next-line prefer-spread
         c[current.cmd].apply(c, current.args);
       }
     });
