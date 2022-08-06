@@ -128,9 +128,9 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         ownerBBox[1],
       ]);
 
-      tmpCtx.transform.apply(tmpCtx, owner.baseTransform);
+      tmpCtx.transform(...owner.baseTransform);
       if (this.matrix) {
-        tmpCtx.transform.apply(tmpCtx, this.matrix);
+        tmpCtx.transform(...this.matrix);
       }
       applyBoundingBox(tmpCtx, this._bbox);
 
@@ -428,9 +428,9 @@ class MeshShadingPattern extends BaseShadingPattern {
     );
 
     if (pathType !== PathType.SHADING) {
-      ctx.setTransform.apply(ctx, owner.baseTransform);
+      ctx.setTransform(...owner.baseTransform);
       if (this.matrix) {
-        ctx.transform.apply(ctx, this.matrix);
+        ctx.transform(...this.matrix);
       }
     }
 
