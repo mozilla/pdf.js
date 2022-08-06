@@ -1359,17 +1359,17 @@ class CanvasGraphics {
       this.ctx.save();
       // The transform can be applied before rendering, transferring it to
       // the new canvas.
-      this.ctx.transform.apply(this.ctx, this.compositeCtx.mozCurrentTransform);
+      this.ctx.transform(...this.compositeCtx.mozCurrentTransform);
     }
 
     this.ctx.save();
     resetCtxToDefault(this.ctx, this.foregroundColor);
     if (transform) {
-      this.ctx.transform.apply(this.ctx, transform);
+      this.ctx.transform(...transform);
       this.outputScaleX = transform[0];
       this.outputScaleY = transform[0];
     }
-    this.ctx.transform.apply(this.ctx, viewport.transform);
+    this.ctx.transform(...viewport.transform);
     this.viewportScale = viewport.scale;
 
     this.baseTransform = this.ctx.mozCurrentTransform.slice();
@@ -1414,6 +1414,7 @@ class CanvasGraphics {
       fnId = fnArray[i];
 
       if (fnId !== OPS.dependency) {
+        // eslint-disable-next-line prefer-spread
         this[fnId].apply(this, argsArray[i]);
       } else {
         for (const depObjId of argsArray[i]) {
@@ -1645,7 +1646,7 @@ class CanvasGraphics {
     const offsetX = Math.min(cord1[0], cord2[0]);
     const offsetY = Math.min(cord1[1], cord2[1]);
     fillCtx.translate(-offsetX, -offsetY);
-    fillCtx.transform.apply(fillCtx, maskToCanvas);
+    fillCtx.transform(...maskToCanvas);
 
     if (!scaled) {
       // Pre-scale if needed to improve image smoothing.
@@ -1835,7 +1836,7 @@ class CanvasGraphics {
     this.suspendedCtx = this.ctx;
     this.ctx = scratchCanvas.context;
     const ctx = this.ctx;
-    ctx.setTransform.apply(ctx, this.suspendedCtx.mozCurrentTransform);
+    ctx.setTransform(...this.suspendedCtx.mozCurrentTransform);
     copyCtxState(this.suspendedCtx, ctx);
     mirrorContextOperations(ctx, this.suspendedCtx);
 
@@ -2212,7 +2213,7 @@ class CanvasGraphics {
     ctx.save();
     ctx.beginPath();
     for (const path of paths) {
-      ctx.setTransform.apply(ctx, path.transform);
+      ctx.setTransform(...path.transform);
       ctx.translate(path.x, path.y);
       path.addToPath(ctx, path.fontSize);
     }
@@ -2349,7 +2350,7 @@ class CanvasGraphics {
       ctx.beginPath();
       addToPath(ctx, fontSize);
       if (patternTransform) {
-        ctx.setTransform.apply(ctx, patternTransform);
+        ctx.setTransform(...patternTransform);
       }
       if (
         fillStrokeMode === TextRenderingMode.FILL ||
@@ -2443,7 +2444,7 @@ class CanvasGraphics {
       !current.patternFill;
 
     ctx.save();
-    ctx.transform.apply(ctx, current.textMatrix);
+    ctx.transform(...current.textMatrix);
     ctx.translate(current.x, current.y + current.textRise);
 
     if (fontDirection > 0) {
@@ -2606,7 +2607,7 @@ class CanvasGraphics {
     this._cachedGetSinglePixelWidth = null;
 
     ctx.save();
-    ctx.transform.apply(ctx, current.textMatrix);
+    ctx.transform(...current.textMatrix);
     ctx.translate(current.x, current.y);
 
     ctx.scale(textHScale, fontDirection);
@@ -2630,7 +2631,7 @@ class CanvasGraphics {
         this.processingType3 = glyph;
         this.save();
         ctx.scale(fontSize, fontSize);
-        ctx.transform.apply(ctx, fontMatrix);
+        ctx.transform(...fontMatrix);
         this.executeOperatorList(operatorList);
         this.restore();
       }
@@ -2786,7 +2787,7 @@ class CanvasGraphics {
     this.baseTransformStack.push(this.baseTransform);
 
     if (Array.isArray(matrix) && matrix.length === 6) {
-      this.transform.apply(this, matrix);
+      this.transform(...matrix);
     }
 
     this.baseTransform = this.ctx.mozCurrentTransform;
@@ -2848,7 +2849,7 @@ class CanvasGraphics {
 
     const currentTransform = currentCtx.mozCurrentTransform;
     if (group.matrix) {
-      currentCtx.transform.apply(currentCtx, group.matrix);
+      currentCtx.transform(...group.matrix);
     }
     if (!group.bbox) {
       throw new Error("Bounding box is required.");
@@ -2904,7 +2905,7 @@ class CanvasGraphics {
     // we have to translate the group ctx.
     groupCtx.scale(1 / scaleX, 1 / scaleY);
     groupCtx.translate(-offsetX, -offsetY);
-    groupCtx.transform.apply(groupCtx, currentTransform);
+    groupCtx.transform(...currentTransform);
 
     if (group.smask) {
       // Saving state and cached mask to be used in setGState.
@@ -2961,7 +2962,7 @@ class CanvasGraphics {
       const currentMtx = this.ctx.mozCurrentTransform;
       this.restore();
       this.ctx.save();
-      this.ctx.setTransform.apply(this.ctx, currentMtx);
+      this.ctx.setTransform(...currentMtx);
       const dirtyBox = Util.getAxialAlignedBoundingBox(
         [0, 0, groupCtx.canvas.width, groupCtx.canvas.height],
         currentMtx
@@ -2984,7 +2985,7 @@ class CanvasGraphics {
     this.save();
 
     if (this.baseTransform) {
-      this.ctx.setTransform.apply(this.ctx, this.baseTransform);
+      this.ctx.setTransform(...this.baseTransform);
     }
 
     if (Array.isArray(rect) && rect.length === 4) {
@@ -3038,8 +3039,8 @@ class CanvasGraphics {
       this.ctx.canvas.height
     );
 
-    this.transform.apply(this, transform);
-    this.transform.apply(this, matrix);
+    this.transform(...transform);
+    this.transform(...matrix);
   }
 
   endAnnotation() {
@@ -3160,7 +3161,7 @@ class CanvasGraphics {
       maskCtx.restore();
 
       ctx.save();
-      ctx.transform.apply(ctx, transform);
+      ctx.transform(...transform);
       ctx.scale(1, -1);
       drawImageAtIntegerCoords(
         ctx,
@@ -3298,10 +3299,9 @@ class CanvasGraphics {
     const tmpCtx = tmpCanvas.context;
     putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
 
-    for (let i = 0, ii = map.length; i < ii; i++) {
-      const entry = map[i];
+    for (const entry of map) {
       ctx.save();
-      ctx.transform.apply(ctx, entry.transform);
+      ctx.transform(...entry.transform);
       ctx.scale(1, -1);
       drawImageAtIntegerCoords(
         ctx,
