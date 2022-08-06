@@ -139,6 +139,7 @@
     "no-useless-escape": "error",
     "no-useless-return": "error",
     "prefer-promise-reject-errors": "error",
+    "prefer-spread": "error",
     "wrap-iife": ["error", "any"],
     "yoda": ["error", "never", {
       "exceptRange": true,
