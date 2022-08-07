@@ -40,8 +40,6 @@ class FreeTextEditor extends AnnotationEditor {
 
   #content = "";
 
-  #contentHTML = "";
-
   #hasAlreadyBeenCommitted = false;
 
   #fontSize;
@@ -333,7 +331,6 @@ class FreeTextEditor extends AnnotationEditor {
     }
 
     this.disableEditMode();
-    this.#contentHTML = this.editorDiv.innerHTML;
     this.#content = this.#extractText().trimEnd();
 
     this.#setEditorDimensions();
@@ -445,8 +442,15 @@ class FreeTextEditor extends AnnotationEditor {
         this.width * parentWidth,
         this.height * parentHeight
       );
-      // eslint-disable-next-line no-unsanitized/property
-      this.editorDiv.innerHTML = this.#contentHTML;
+
+      for (const line of this.#content.split("\n")) {
+        const div = document.createElement("div");
+        div.append(
+          line ? document.createTextNode(line) : document.createElement("br")
+        );
+        this.editorDiv.append(div);
+      }
+
       this.div.draggable = true;
       this.editorDiv.contentEditable = false;
     } else {
@@ -468,10 +472,6 @@ class FreeTextEditor extends AnnotationEditor {
     editor.#fontSize = data.fontSize;
     editor.#color = Util.makeHexColor(...data.color);
     editor.#content = data.value;
-    editor.#contentHTML = data.value
-      .split("\n")
-      .map(line => `<div>${line}</div>`)
-      .join("");
 
     return editor;
   }
