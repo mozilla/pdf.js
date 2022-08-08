@@ -6882,5 +6882,14 @@
    "md5": "8505033d63625dfd77e90a3722b0c316",
    "rounds": 1,
    "type": "eq"
+   },
+   {  "id": "issue15289",
+      "file": "pdfs/issue15289.pdf",
+      "md5": "f3d20aee398e052ac3dce7cc030f50de",
+      "link": true,
+      "rounds": 1,
+      "firstPage": 1,
+      "lastPage": 1,
+      "type": "eq"
    }
 ]
