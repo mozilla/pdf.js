@@ -1864,10 +1864,9 @@ class CFFCompiler {
     // First 2 bytes contains the number of objects contained into this index
     const count = objects.length;
 
-    // If there is no object, just create an index. This technically
-    // should just be [0, 0] but OTS has an issue with that.
+    // If there is no object, just create an index.
     if (count === 0) {
-      return [0, 0, 0];
+      return [0, 0];
     }
 
     const data = [(count >> 8) & 0xff, count & 0xff];
