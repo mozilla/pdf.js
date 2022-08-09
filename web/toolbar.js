@@ -111,10 +111,10 @@ class Toolbar {
       editorInkParamsToolbar: options.editorInkParamsToolbar,
     };
 
-    this.reset();
-
     // Bind the event listeners for click and various other actions.
     this.#bindListeners(options);
+
+    this.reset();
   }
 
   setPageNumber(pageNumber, pageLabel) {
