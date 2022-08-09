@@ -244,7 +244,6 @@ class Toolbar {
       }
     };
     this.eventBus._on("annotationeditormodechanged", editorModeChanged);
-
     this.eventBus._on("toolbarreset", evt => {
       if (evt.source === this) {
         editorModeChanged(

@@ -727,12 +727,6 @@ class BaseViewer {
           if (isPureXfa) {
             console.warn("Warning: XFA-editing is not implemented.");
           } else if (isValidAnnotationEditorMode(mode)) {
-            // Ensure that the Editor buttons, in the toolbar, are updated.
-            this.eventBus.dispatch("annotationeditormodechanged", {
-              source: this,
-              mode,
-            });
-
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
               this.eventBus
@@ -815,6 +809,14 @@ class BaseViewer {
           }
           if (this._scriptingManager) {
             this._scriptingManager.setDocument(pdfDocument); // Enable scripting.
+          }
+
+          if (this.#annotationEditorUIManager) {
+            // Ensure that the Editor buttons, in the toolbar, are updated.
+            this.eventBus.dispatch("annotationeditormodechanged", {
+              source: this,
+              mode: this.#annotationEditorMode,
+            });
           }
 
           // In addition to 'disableAutoFetch' being set, also attempt to reduce
