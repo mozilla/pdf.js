@@ -152,14 +152,14 @@ class SecondaryToolbar {
     this.eventBus = eventBus;
     this.opened = false;
 
-    this.reset();
-
     // Bind the event listeners for click, cursor tool, and scroll/spread mode
     // actions.
     this.#bindClickListeners();
     this.#bindCursorToolsListener(options);
     this.#bindScrollModeListener(options);
     this.#bindSpreadModeListener(options);
+
+    this.reset();
   }
 
   /**
