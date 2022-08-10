@@ -1034,8 +1034,8 @@ class InkEditor extends AnnotationEditor {
     }
 
     const bbox = editor.#getBbox();
-    editor.#baseWidth = bbox[2] - bbox[0];
-    editor.#baseHeight = bbox[3] - bbox[1];
+    editor.#baseWidth = Math.max(RESIZER_SIZE, bbox[2] - bbox[0]);
+    editor.#baseHeight = Math.max(RESIZER_SIZE, bbox[3] - bbox[1]);
     editor.#setScaleFactor(width, height);
 
     return editor;
