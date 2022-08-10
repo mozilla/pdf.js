@@ -49,6 +49,8 @@ class AnnotationEditorLayer {
 
   #editors = new Map();
 
+  #hadPointerDown = false;
+
   #isCleaningUp = false;
 
   #textLayerMap = new WeakMap();
@@ -597,6 +599,15 @@ class AnnotationEditorLayer {
       return;
     }
 
+    if (!this.#hadPointerDown) {
+      // It can happen when the user starts a drag inside a text editor
+      // and then releases the mouse button outside of it. In such a case
+      // we don't want to create a new editor, hence we check that a pointerdown
+      // occured on this div previously.
+      return;
+    }
+    this.#hadPointerDown = false;
+
     if (!this.#allowClick) {
       this.#allowClick = true;
       return;
@@ -619,6 +630,8 @@ class AnnotationEditorLayer {
     if (event.target !== this.div) {
       return;
     }
+
+    this.#hadPointerDown = true;
 
     const editor = this.#uiManager.getActive();
     this.#allowClick = !editor || editor.isEmpty();
