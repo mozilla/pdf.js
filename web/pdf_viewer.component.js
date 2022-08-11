@@ -24,7 +24,13 @@ import {
   PDFLinkService,
   SimpleLinkService,
 } from "./pdf_link_service.js";
-import { parseQueryString, ProgressBar } from "./ui_utils.js";
+import {
+  parseQueryString,
+  ProgressBar,
+  RenderingStates,
+  ScrollMode,
+  SpreadMode,
+} from "./ui_utils.js";
 import { PDFSinglePageViewer, PDFViewer } from "./pdf_viewer.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { DownloadManager } from "./download_manager.js";
@@ -64,7 +70,10 @@ export {
   PDFSinglePageViewer,
   PDFViewer,
   ProgressBar,
+  RenderingStates,
+  ScrollMode,
   SimpleLinkService,
+  SpreadMode,
   StructTreeLayerBuilder,
   TextLayerBuilder,
   XfaLayerBuilder,
