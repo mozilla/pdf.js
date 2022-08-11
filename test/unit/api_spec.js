@@ -170,15 +170,43 @@ describe("api", function () {
       expect(true).toEqual(true);
     });
 
-    it("creates pdf doc from typed array", async function () {
+    it("creates pdf doc from TypedArray", async function () {
       const typedArrayPdf = await DefaultFileReaderFactory.fetch({
         path: TEST_PDFS_PATH + basicApiFileName,
       });
 
       // Sanity check to make sure that we fetched the entire PDF file.
+      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
       expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
       const loadingTask = getDocument(typedArrayPdf);
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const progressReportedCapability = createPromiseCapability();
+      loadingTask.onProgress = function (data) {
+        progressReportedCapability.resolve(data);
+      };
+
+      const data = await Promise.all([
+        loadingTask.promise,
+        progressReportedCapability.promise,
+      ]);
+      expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+      expect(data[1].loaded / data[1].total).toEqual(1);
+
+      await loadingTask.destroy();
+    });
+
+    it("creates pdf doc from ArrayBuffer", async function () {
+      const { buffer: arrayBufferPdf } = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + basicApiFileName,
+      });
+
+      // Sanity check to make sure that we fetched the entire PDF file.
+      expect(arrayBufferPdf instanceof ArrayBuffer).toEqual(true);
+      expect(arrayBufferPdf.byteLength).toEqual(basicApiFileLength);
+
+      const loadingTask = getDocument(arrayBufferPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
       const progressReportedCapability = createPromiseCapability();
@@ -441,7 +469,7 @@ describe("api", function () {
       }
     );
 
-    it("creates pdf doc from empty typed array", async function () {
+    it("creates pdf doc from empty TypedArray", async function () {
       const loadingTask = getDocument(new Uint8Array(0));
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
