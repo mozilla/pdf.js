@@ -534,10 +534,15 @@ describe("Interaction", () => {
                 page,
                 getSelector(refOpen),
                 async () => {
+                  const sel = getSelector(refOpen);
+                  await page.waitForSelector(sel, {
+                    timeout: 0,
+                  });
+
                   await page.evaluate(selector => {
                     const element = window.document.querySelector(selector);
                     element.scrollIntoView();
-                  }, getSelector(refOpen));
+                  }, sel);
                 },
                 false
               );
