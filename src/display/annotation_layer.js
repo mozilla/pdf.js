@@ -1944,6 +1944,7 @@ class FreeTextAnnotationElement extends AnnotationElement {
     if (this.textContent) {
       const content = document.createElement("div");
       content.className = "annotationTextContent";
+      content.setAttribute("role", "comment");
       for (const line of this.textContent) {
         const lineSpan = document.createElement("span");
         lineSpan.textContent = line;
