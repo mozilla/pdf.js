@@ -30,6 +30,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
+// eslint-disable-next-line max-len
+/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 import {
   AnnotationEditorType,
@@ -1637,6 +1639,7 @@ class BaseViewer {
    * @property {boolean} [enhanceTextSelection]
    * @property {EventBus} eventBus
    * @property {TextHighlighter} highlighter
+   * @property {TextAccessibilityManager} [accessibilityManager]
    */
 
   /**
@@ -1650,6 +1653,7 @@ class BaseViewer {
     enhanceTextSelection = false,
     eventBus,
     highlighter,
+    accessibilityManager = null,
   }) {
     return new TextLayerBuilder({
       textLayerDiv,
@@ -1660,6 +1664,7 @@ class BaseViewer {
         ? false
         : enhanceTextSelection,
       highlighter,
+      accessibilityManager,
     });
   }
 
@@ -1698,6 +1703,7 @@ class BaseViewer {
    *   [fieldObjectsPromise]
    * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
    *   annotation ids with canvases used to render them.
+   * @property {TextAccessibilityManager} [accessibilityManager]
    */
 
   /**
@@ -1716,6 +1722,7 @@ class BaseViewer {
     mouseState = this._scriptingManager?.mouseState,
     fieldObjectsPromise = this.pdfDocument?.getFieldObjects(),
     annotationCanvasMap = null,
+    accessibilityManager = null,
   }) {
     return new AnnotationLayerBuilder({
       pageDiv,
@@ -1731,6 +1738,7 @@ class BaseViewer {
       mouseState,
       fieldObjectsPromise,
       annotationCanvasMap,
+      accessibilityManager,
     });
   }
 
@@ -1741,6 +1749,7 @@ class BaseViewer {
    * @property {PDFPageProxy} pdfPage
    * @property {IL10n} l10n
    * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
+   * @property {TextAccessibilityManager} [accessibilityManager]
    *   data in forms.
    */
 
@@ -1752,6 +1761,7 @@ class BaseViewer {
     uiManager = this.#annotationEditorUIManager,
     pageDiv,
     pdfPage,
+    accessibilityManager = null,
     l10n,
     annotationStorage = this.pdfDocument?.annotationStorage,
   }) {
@@ -1760,6 +1770,7 @@ class BaseViewer {
       pageDiv,
       pdfPage,
       annotationStorage,
+      accessibilityManager,
       l10n,
     });
   }

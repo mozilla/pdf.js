@@ -21,6 +21,8 @@
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("../annotation_storage.js").AnnotationStorage} AnnotationStorage */
+// eslint-disable-next-line max-len
+/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 
 import { AnnotationEditorLayer } from "pdfjs-lib";
@@ -31,6 +33,7 @@ import { NullL10n } from "./l10n_utils.js";
  * @property {number} mode - Editor mode
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPageProxy} pdfPage
+ * @property {TextAccessibilityManager} accessibilityManager
  * @property {AnnotationStorage} annotationStorage
  * @property {IL10n} l10n - Localization service.
  * @property {AnnotationEditorUIManager} uiManager
@@ -46,6 +49,7 @@ class AnnotationEditorLayerBuilder {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
     this.annotationStorage = options.annotationStorage || null;
+    this.accessibilityManager = options.accessibilityManager;
     this.l10n = options.l10n || NullL10n;
     this.annotationEditorLayer = null;
     this.div = null;
@@ -83,6 +87,7 @@ class AnnotationEditorLayerBuilder {
       uiManager: this.#uiManager,
       div: this.div,
       annotationStorage: this.annotationStorage,
+      accessibilityManager: this.accessibilityManager,
       pageIndex: this.pdfPage._pageIndex,
       l10n: this.l10n,
       viewport: clonedViewport,

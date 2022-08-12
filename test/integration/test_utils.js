@@ -73,19 +73,17 @@ function getComputedStyleSelector(id) {
   return `getComputedStyle(${getQuerySelector(id)})`;
 }
 exports.getComputedStyleSelector = getComputedStyleSelector;
-
-const editorPrefix = "#pdfjs_internal_editor_";
-exports.editorPrefix = editorPrefix;
+exports.getEditorSelector = n => `#pdfjs_internal_editor_${n}`;
 
 function getSelectedEditors(page) {
-  return page.evaluate(prefix => {
+  return page.evaluate(() => {
     const elements = document.querySelectorAll(".selectedEditor");
     const results = [];
     for (const { id } of elements) {
-      results.push(parseInt(id.slice(prefix.length)));
+      results.push(parseInt(id.split("_").at(-1)));
     }
     results.sort();
     return results;
-  }, editorPrefix.slice(1));
+  });
 }
 exports.getSelectedEditors = getSelectedEditors;
