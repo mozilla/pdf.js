@@ -97,6 +97,13 @@ class TextAccessibilityManager {
       // we restore them.
       const textChildren = this.#textChildren;
       for (const [id, nodeIndex] of this.#textNodes) {
+        const element = document.getElementById(id);
+        if (!element) {
+          // If the page was *fully* reset the element no longer exists, and it
+          // will be re-inserted later (i.e. when the annotationLayer renders).
+          this.#textNodes.delete(id);
+          continue;
+        }
         this.#addIdToAriaOwns(id, textChildren[nodeIndex]);
       }
     }
