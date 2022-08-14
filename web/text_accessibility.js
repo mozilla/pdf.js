@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { binarySearchFirstItem } from "pdfjs-lib";
+import { binarySearchFirstItem } from "./ui_utils.js";
 
 /**
  * This class aims to provide some methods:
