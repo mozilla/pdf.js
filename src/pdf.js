@@ -41,7 +41,15 @@ import {
   VerbosityLevel,
 } from "./shared/util.js";
 import {
-  binarySearchFirstItem,
+  build,
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFWorker,
+  setPDFNetworkStreamFactory,
+  version,
+} from "./display/api.js";
+import {
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -52,15 +60,6 @@ import {
   PixelsPerInch,
   RenderingCancelledException,
 } from "./display/display_utils.js";
-import {
-  build,
-  getDocument,
-  LoopbackPort,
-  PDFDataRangeTransport,
-  PDFWorker,
-  setPDFNetworkStreamFactory,
-  version,
-} from "./display/api.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
@@ -117,7 +116,6 @@ export {
   AnnotationEditorUIManager,
   AnnotationLayer,
   AnnotationMode,
-  binarySearchFirstItem,
   build,
   CMapCompressionType,
   createPromiseCapability,
