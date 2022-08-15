@@ -2120,11 +2120,10 @@ class PDFWorker {
     // Right now, the requirement is, that an Uint8Array is still an
     // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
     if (
-      typeof Worker !== "undefined" &&
       !PDFWorkerUtil.isWorkerDisabled &&
       !PDFWorker._mainThreadWorkerMessageHandler
     ) {
-      let workerSrc = PDFWorker.workerSrc;
+      let { workerSrc } = PDFWorker;
 
       try {
         // Wraps workerSrc path into blob URL, if the former does not belong
@@ -2299,7 +2298,10 @@ class PDFWorker {
     if (GlobalWorkerOptions.workerSrc) {
       return GlobalWorkerOptions.workerSrc;
     }
-    if (PDFWorkerUtil.fallbackWorkerSrc !== null) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      PDFWorkerUtil.fallbackWorkerSrc !== null
+    ) {
       if (!isNodeJS) {
         deprecated('No "GlobalWorkerOptions.workerSrc" specified.');
       }
