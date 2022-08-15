@@ -2004,6 +2004,27 @@ const PDFViewerApplication = {
   bindWindowEvents() {
     const { eventBus, _boundEvents } = this;
 
+    function addWindowResolutionChange(evt = null) {
+      if (evt) {
+        webViewerResolutionChange(evt);
+      }
+      const mediaQueryList = window.matchMedia(
+        `(resolution: ${window.devicePixelRatio || 1}dppx)`
+      );
+      mediaQueryList.addEventListener("change", addWindowResolutionChange, {
+        once: true,
+      });
+
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        return;
+      }
+      _boundEvents.removeWindowResolutionChange ||= function () {
+        mediaQueryList.removeEventListener("change", addWindowResolutionChange);
+        _boundEvents.removeWindowResolutionChange = null;
+      };
+    }
+    addWindowResolutionChange();
+
     _boundEvents.windowResize = () => {
       eventBus.dispatch("resize", { source: window });
     };
@@ -2123,6 +2144,7 @@ const PDFViewerApplication = {
       _boundEvents.windowUpdateFromSandbox
     );
 
+    _boundEvents.removeWindowResolutionChange?.();
     _boundEvents.windowResize = null;
     _boundEvents.windowHashChange = null;
     _boundEvents.windowBeforePrint = null;
@@ -2687,6 +2709,10 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
   if (PDFViewerApplication.pdfSidebar.visibleView === SidebarView.THUMBS) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(pageNumber);
   }
+}
+
+function webViewerResolutionChange(evt) {
+  PDFViewerApplication.pdfViewer.refresh();
 }
 
 function webViewerVisibilityChange(evt) {
