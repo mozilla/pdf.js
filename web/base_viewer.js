@@ -2247,6 +2247,17 @@ class BaseViewer {
     }
     this.#annotationEditorUIManager.updateParams(type, value);
   }
+
+  refresh() {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const updateArgs = {};
+    for (const pageView of this._pages) {
+      pageView.update(updateArgs);
+    }
+    this.update();
+  }
 }
 
 export { BaseViewer, PagesCountLimit, PDFPageViewBuffer };
