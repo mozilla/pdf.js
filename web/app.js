@@ -2514,7 +2514,12 @@ function webViewerSpreadModeChanged(evt) {
 }
 
 function webViewerResize() {
-  const { pdfDocument, pdfViewer } = PDFViewerApplication;
+  const { pdfDocument, pdfViewer, pdfRenderingQueue } = PDFViewerApplication;
+
+  if (pdfRenderingQueue.printing && window.matchMedia("print").matches) {
+    // Work-around issue 15324 by ignoring "resize" events during printing.
+    return;
+  }
   pdfViewer.updateContainerHeightCss();
 
   if (!pdfDocument) {
