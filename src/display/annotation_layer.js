@@ -401,7 +401,13 @@ class AnnotationElement {
     for (const [actionName, detail] of Object.entries(storedData)) {
       const action = commonActions[actionName];
       if (action) {
-        action({ detail, target: element });
+        const eventProxy = {
+          detail: {
+            [actionName]: detail,
+          },
+          target: element,
+        };
+        action(eventProxy);
         // The action has been consumed: no need to keep it.
         delete storedData[actionName];
       }
