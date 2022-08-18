@@ -1454,7 +1454,7 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.textAlignment).toEqual(null);
-      expect(data.maxLen).toEqual(null);
+      expect(data.maxLen).toEqual(0);
       expect(data.readOnly).toEqual(false);
       expect(data.hidden).toEqual(false);
       expect(data.multiLine).toEqual(false);
@@ -1478,7 +1478,7 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.textAlignment).toEqual(null);
-      expect(data.maxLen).toEqual(null);
+      expect(data.maxLen).toEqual(0);
       expect(data.readOnly).toEqual(false);
       expect(data.hidden).toEqual(false);
       expect(data.multiLine).toEqual(false);
