@@ -29,7 +29,6 @@ class Field extends PDFObject {
     this.buttonScaleHow = data.buttonScaleHow;
     this.ButtonScaleWhen = data.buttonScaleWhen;
     this.calcOrderIndex = data.calcOrderIndex;
-    this.charLimit = data.charLimit;
     this.comb = data.comb;
     this.commitOnSelChange = data.commitOnSelChange;
     this.currentValueIndices = data.currentValueIndices;
@@ -69,6 +68,7 @@ class Field extends PDFObject {
     this._browseForFileToSubmit = data.browseForFileToSubmit || null;
     this._buttonCaption = null;
     this._buttonIcon = null;
+    this._charLimit = data.charLimit;
     this._children = null;
     this._currentValueIndices = data.currentValueIndices || 0;
     this._document = data.doc;
@@ -149,6 +149,17 @@ class Field extends PDFObject {
 
   set bgColor(color) {
     this.fillColor = color;
+  }
+
+  get charLimit() {
+    return this._charLimit;
+  }
+
+  set charLimit(limit) {
+    if (typeof limit !== "number") {
+      throw new Error("Invalid argument value");
+    }
+    this._charLimit = Math.max(0, Math.floor(limit));
   }
 
   get numItems() {
