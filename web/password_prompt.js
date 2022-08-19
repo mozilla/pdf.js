@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { PasswordResponses } from "pdfjs-lib";
+import { createPromiseCapability, PasswordResponses } from "pdfjs-lib";
 
 /**
  * @typedef {Object} PasswordPromptOptions
@@ -28,6 +28,8 @@ import { PasswordResponses } from "pdfjs-lib";
  */
 
 class PasswordPrompt {
+  #activeCapability = null;
+
   #updateCallback = null;
 
   #reason = null;
@@ -64,7 +66,17 @@ class PasswordPrompt {
   }
 
   async open() {
-    await this.overlayManager.open(this.dialog);
+    if (this.#activeCapability) {
+      await this.#activeCapability.promise;
+    }
+    this.#activeCapability = createPromiseCapability();
+
+    try {
+      await this.overlayManager.open(this.dialog);
+    } catch (ex) {
+      this.#activeCapability = null;
+      throw ex;
+    }
 
     const passwordIncorrect =
       this.#reason === PasswordResponses.INCORRECT_PASSWORD;
@@ -92,6 +104,7 @@ class PasswordPrompt {
 
   #cancel() {
     this.#invokeCallback(new Error("PasswordPrompt cancelled."));
+    this.#activeCapability.resolve();
   }
 
   #invokeCallback(password) {
@@ -105,7 +118,10 @@ class PasswordPrompt {
     this.#updateCallback = null;
   }
 
-  setUpdateCallback(updateCallback, reason) {
+  async setUpdateCallback(updateCallback, reason) {
+    if (this.#activeCapability) {
+      await this.#activeCapability.promise;
+    }
     this.#updateCallback = updateCallback;
     this.#reason = reason;
   }
