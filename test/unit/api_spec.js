@@ -1390,7 +1390,7 @@ describe("api", function () {
             defaultValue: "",
             multiline: false,
             password: false,
-            charLimit: null,
+            charLimit: 0,
             comb: false,
             editable: true,
             hidden: false,
