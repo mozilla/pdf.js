@@ -2255,7 +2255,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     // Determine the maximum length of text in the field.
     let maximumLength = getInheritableProperty({ dict, key: "MaxLen" });
     if (!Number.isInteger(maximumLength) || maximumLength < 0) {
-      maximumLength = null;
+      maximumLength = 0;
     }
     this.data.maxLen = maximumLength;
 
@@ -2266,7 +2266,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       !this.hasFieldFlag(AnnotationFieldFlag.MULTILINE) &&
       !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
       !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
-      this.data.maxLen !== null;
+      this.data.maxLen !== 0;
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
   }
 
