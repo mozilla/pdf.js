@@ -3,7 +3,6 @@
   "devDependencies": {
     "@babel/core": "^7.18.10",
     "@babel/plugin-transform-modules-commonjs": "^7.18.6",
-    "@babel/plugin-transform-runtime": "^7.18.10",
     "@babel/preset-env": "^7.18.10",
     "@babel/runtime": "^7.18.9",
     "@javascript-obfuscator/escodegen": "2.3.0",
