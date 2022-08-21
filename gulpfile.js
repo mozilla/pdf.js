@@ -78,18 +78,22 @@ const builder = require("./external/builder/builder.js");
 const CONFIG_FILE = "pdfjs.config";
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
+const ENV_TARGETS = [
+  "last 2 versions",
+  "Chrome >= 76",
+  "Firefox ESR",
+  "Safari >= 13.1",
+  "> 1%",
+  "not IE > 0",
+  "not dead",
+];
+
 // Default Autoprefixer config used for generic, components, minified-pre
 const AUTOPREFIXER_CONFIG = {
-  overrideBrowserslist: [
-    "last 2 versions",
-    "Chrome >= 76",
-    "Firefox ESR",
-    "Safari >= 13.1",
-    "> 1%",
-    "not IE > 0",
-    "not dead",
-  ],
+  overrideBrowserslist: ENV_TARGETS,
 };
+// Default Babel targets used for generic, components, minified-pre
+const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const DEFINES = Object.freeze({
   PRODUCTION: true,
@@ -213,16 +217,7 @@ function createWebpackConfig(
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
-  const babelPlugins = [
-    "@babel/plugin-transform-modules-commonjs",
-    [
-      "@babel/plugin-transform-runtime",
-      {
-        helpers: false,
-        regenerator: true,
-      },
-    ],
-  ];
+  const babelPlugins = ["@babel/plugin-transform-modules-commonjs"];
 
   const plugins = [];
   if (!disableLicenseHeader) {
@@ -262,6 +257,7 @@ function createWebpackConfig(
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
             plugins: babelPlugins,
+            targets: BABEL_TARGETS,
           },
         },
         {
@@ -1493,15 +1489,9 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
       presets: skipBabel ? undefined : ["@babel/preset-env"],
       plugins: [
         "@babel/plugin-transform-modules-commonjs",
-        [
-          "@babel/plugin-transform-runtime",
-          {
-            helpers: false,
-            regenerator: true,
-          },
-        ],
         babelPluginReplaceNonWebpackImports,
       ],
+      targets: BABEL_TARGETS,
     }).code;
     const removeCjsSrc =
       /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
