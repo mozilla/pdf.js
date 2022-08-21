@@ -156,7 +156,13 @@
     },
     "annotationEditorMode": {
       "type": "integer",
-      "default": -1
+      "enum": [
+        -1,
+        0,
+        3,
+        15
+      ],
+      "default": 0
     },
     "enablePermissions": {
       "type": "boolean",
