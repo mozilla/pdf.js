@@ -53,7 +53,7 @@ class PasswordPrompt {
 
     // Attach the event listeners.
     this.submitButton.addEventListener("click", this.#verify.bind(this));
-    this.cancelButton.addEventListener("click", this.#cancel.bind(this));
+    this.cancelButton.addEventListener("click", this.close.bind(this));
     this.input.addEventListener("keydown", e => {
       if (e.keyCode === /* Enter = */ 13) {
         this.#verify();
