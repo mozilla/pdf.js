@@ -49,6 +49,7 @@
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-new-buffer": "error",
     "unicorn/no-useless-spread": "error",
+    "unicorn/prefer-array-find": "error",
     "unicorn/prefer-array-flat": "error",
     "unicorn/prefer-array-flat-map": "error",
     "unicorn/prefer-array-index-of": "error",
