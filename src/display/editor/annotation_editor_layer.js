@@ -207,7 +207,7 @@ class AnnotationEditorLayer {
 
     this.#uiManager.removeEditor(editor);
     this.detach(editor);
-    this.annotationStorage.removeKey(editor.id);
+    this.annotationStorage.remove(editor.id);
     editor.div.style.display = "none";
     setTimeout(() => {
       // When the div is removed from DOM the focus can move on the

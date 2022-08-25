@@ -262,6 +262,8 @@ const PDFViewerApplication = {
   _wheelUnusedTicks: 0,
   _idleCallbacks: new Set(),
   _PDFBug: null,
+  _hasAnnotationEditors: false,
+  _title: document.title,
   _printAnnotationStoragePromise: null,
 
   // Called once when the document is loaded.
@@ -788,12 +790,14 @@ const PDFViewerApplication = {
     this.setTitle(title);
   },
 
-  setTitle(title) {
+  setTitle(title = this._title) {
+    this._title = title;
+
     if (this.isViewerEmbedded) {
       // Embedded PDF viewers should not be changing their parent page's title.
       return;
     }
-    document.title = title;
+    document.title = `${this._hasAnnotationEditors ? "* " : ""}${title}`;
   },
 
   get _docFilename() {
@@ -880,10 +884,12 @@ const PDFViewerApplication = {
     this._contentLength = null;
     this._saveInProgress = false;
     this._docStats = null;
+    this._hasAnnotationEditors = false;
 
     this._cancelIdleCallbacks();
     promises.push(this.pdfScriptingManager.destroyPromise);
 
+    this.setTitle();
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
     this.pdfAttachmentViewer.reset();
@@ -1045,12 +1051,10 @@ const PDFViewerApplication = {
       this._saveInProgress = false;
     }
 
-    if (this.pdfDocument?.annotationStorage.hasAnnotationEditors) {
+    if (this._hasAnnotationEditors) {
       this.externalServices.reportTelemetry({
         type: "editing",
-        data: {
-          type: "save",
-        },
+        data: { type: "save" },
       });
     }
   },
@@ -1582,7 +1586,7 @@ const PDFViewerApplication = {
     }
     if (pdfTitle) {
       this.setTitle(
-        `${pdfTitle} - ${this._contentDispositionFilename || document.title}`
+        `${pdfTitle} - ${this._contentDispositionFilename || this._title}`
       );
     } else if (this._contentDispositionFilename) {
       this.setTitle(this._contentDispositionFilename);
@@ -1744,10 +1748,15 @@ const PDFViewerApplication = {
       }
     };
     annotationStorage.onAnnotationEditor = typeStr => {
-      this.externalServices.reportTelemetry({
-        type: "editing",
-        data: { type: typeStr },
-      });
+      this._hasAnnotationEditors = !!typeStr;
+      this.setTitle();
+
+      if (typeStr) {
+        this.externalServices.reportTelemetry({
+          type: "editing",
+          data: { type: typeStr },
+        });
+      }
     };
   },
 
@@ -1888,12 +1897,10 @@ const PDFViewerApplication = {
       type: "print",
     });
 
-    if (this.pdfDocument?.annotationStorage.hasAnnotationEditors) {
+    if (this._hasAnnotationEditors) {
       this.externalServices.reportTelemetry({
         type: "editing",
-        data: {
-          type: "print",
-        },
+        data: { type: "print" },
       });
     }
   },
