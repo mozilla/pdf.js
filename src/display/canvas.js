@@ -14,6 +14,13 @@
  */
 
 import {
+  deprecated,
+  getCurrentTransform,
+  getCurrentTransformInverse,
+  getRGB,
+  PixelsPerInch,
+} from "./display_utils.js";
+import {
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -26,12 +33,6 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import {
-  getCurrentTransform,
-  getCurrentTransformInverse,
-  getRGB,
-  PixelsPerInch,
-} from "./display_utils.js";
 import {
   getShadingPattern,
   PathType,
@@ -1184,6 +1185,9 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (this.imageLayer) {
+      deprecated(
+        "The `imageLayer` functionality will be removed in the future."
+      );
       this.imageLayer.beginLayout();
     }
   }
