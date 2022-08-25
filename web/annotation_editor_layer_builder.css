@@ -14,7 +14,7 @@
  */
 
 :root {
-  --focus-outline: solid 2px red;
+  --focus-outline: solid 2px blue;
   --hover-outline: dashed 2px blue;
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
