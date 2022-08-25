@@ -44,7 +44,6 @@ const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
  * @property {HTMLButtonElement} openFile - Button to open a new document.
  * @property {HTMLButtonElement} presentationModeButton - Button to switch to
  *   presentation mode.
- * @property {HTMLButtonElement} editorNoneButton - Button to disable editing.
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
@@ -77,19 +76,28 @@ class Toolbar {
       { element: options.download, eventName: "download" },
       { element: options.viewBookmark, eventName: null },
       {
-        element: options.editorNoneButton,
-        eventName: "switchannotationeditormode",
-        eventDetails: { mode: AnnotationEditorType.NONE },
-      },
-      {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",
-        eventDetails: { mode: AnnotationEditorType.FREETEXT },
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorFreeTextButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.FREETEXT;
+          },
+        },
       },
       {
         element: options.editorInkButton,
         eventName: "switchannotationeditormode",
-        eventDetails: { mode: AnnotationEditorType.INK },
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorInkButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.INK;
+          },
+        },
       },
     ];
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -104,11 +112,6 @@ class Toolbar {
       next: options.next,
       zoomIn: options.zoomIn,
       zoomOut: options.zoomOut,
-      editorNoneButton: options.editorNoneButton,
-      editorFreeTextButton: options.editorFreeTextButton,
-      editorFreeTextParamsToolbar: options.editorFreeTextParamsToolbar,
-      editorInkButton: options.editorInkButton,
-      editorInkParamsToolbar: options.editorInkParamsToolbar,
     };
 
     // Bind the event listeners for click and various other actions.
@@ -213,7 +216,6 @@ class Toolbar {
   }
 
   #bindEditorToolsListener({
-    editorNoneButton,
     editorFreeTextButton,
     editorFreeTextParamsToolbar,
     editorInkButton,
@@ -221,7 +223,6 @@ class Toolbar {
   }) {
     const editorModeChanged = (evt, disableButtons = false) => {
       const editorButtons = [
-        { mode: AnnotationEditorType.NONE, button: editorNoneButton },
         {
           mode: AnnotationEditorType.FREETEXT,
           button: editorFreeTextButton,
@@ -239,9 +240,7 @@ class Toolbar {
         button.classList.toggle("toggled", checked);
         button.setAttribute("aria-checked", checked);
         button.disabled = disableButtons;
-        if (toolbar) {
-          toolbar.classList.toggle("hidden", !checked);
-        }
+        toolbar?.classList.toggle("hidden", !checked);
       }
     };
     this.eventBus._on("annotationeditormodechanged", editorModeChanged);
