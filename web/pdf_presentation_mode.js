@@ -99,6 +99,7 @@ class PDFPresentationMode {
 
     try {
       await promise;
+      pdfViewer.focus(); // Fixes bug 1787456.
       return true;
     } catch (reason) {
       this.#removeFullscreenChangeListeners();
