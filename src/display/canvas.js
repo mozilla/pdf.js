@@ -14,6 +14,13 @@
  */
 
 import {
+  deprecated,
+  getCurrentTransform,
+  getCurrentTransformInverse,
+  getRGB,
+  PixelsPerInch,
+} from "./display_utils.js";
+import {
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -26,12 +33,6 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import {
-  getCurrentTransform,
-  getCurrentTransformInverse,
-  getRGB,
-  PixelsPerInch,
-} from "./display_utils.js";
 import {
   getShadingPattern,
   PathType,
@@ -1184,6 +1185,9 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (this.imageLayer) {
+      deprecated(
+        "The `imageLayer` functionality will be removed in the future."
+      );
       this.imageLayer.beginLayout();
     }
   }
@@ -3067,11 +3071,14 @@ class CanvasGraphics {
     );
 
     if (this.imageLayer) {
-      const position = this.getCanvasPosition(0, -height);
+      const [left, top] = Util.applyTransform(
+        [0, -height],
+        getCurrentTransform(this.ctx)
+      );
       this.imageLayer.appendImage({
         imgData,
-        left: position[0],
-        top: position[1],
+        left,
+        top,
         width: rWidth,
         height: rHeight,
       });
@@ -3109,11 +3116,14 @@ class CanvasGraphics {
         1
       );
       if (this.imageLayer) {
-        const position = this.getCanvasPosition(entry.x, entry.y);
+        const [left, top] = Util.applyTransform(
+          [entry.x, entry.y],
+          getCurrentTransform(this.ctx)
+        );
         this.imageLayer.appendImage({
           imgData,
-          left: position[0],
-          top: position[1],
+          left,
+          top,
           width: w,
           height: h,
         });
@@ -3307,14 +3317,6 @@ class CanvasGraphics {
       ctx.setLineDash(savedDashes);
       ctx.lineDashOffset = savedDashOffset;
     }
-  }
-
-  getCanvasPosition(x, y) {
-    const transform = getCurrentTransform(this.ctx);
-    return [
-      transform[0] * x + transform[2] * y + transform[4],
-      transform[1] * x + transform[3] * y + transform[5],
-    ];
   }
 
   isContentVisible() {
