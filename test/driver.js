@@ -244,7 +244,7 @@ class Rasterize {
     }
   }
 
-  static async textLayer(ctx, viewport, textContent, enhanceTextSelection) {
+  static async textLayer(ctx, viewport, textContent) {
     try {
       const { svg, foreignObject, style, div } = this.createContainer(viewport);
       div.className = "textLayer";
@@ -260,11 +260,8 @@ class Rasterize {
         textContent,
         container: div,
         viewport,
-        enhanceTextSelection,
       });
       await task.promise;
-
-      task.expandTextDivs(true);
       svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
@@ -674,7 +671,6 @@ class Driver {
                 textLayerCanvas.height
               );
               textLayerContext.scale(outputScale, outputScale);
-              const enhanceText = !!task.enhance;
               // The text builder will draw its content on the test canvas
               initPromise = page
                 .getTextContent({
@@ -684,8 +680,7 @@ class Driver {
                   return Rasterize.textLayer(
                     textLayerContext,
                     viewport,
-                    textContent,
-                    enhanceText
+                    textContent
                   );
                 });
             } else {
