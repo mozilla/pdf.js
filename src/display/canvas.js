@@ -14,13 +14,6 @@
  */
 
 import {
-  deprecated,
-  getCurrentTransform,
-  getCurrentTransformInverse,
-  getRGB,
-  PixelsPerInch,
-} from "./display_utils.js";
-import {
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
@@ -33,6 +26,12 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import {
+  getCurrentTransform,
+  getCurrentTransformInverse,
+  getRGB,
+  PixelsPerInch,
+} from "./display_utils.js";
 import {
   getShadingPattern,
   PathType,
@@ -1024,7 +1023,6 @@ class CanvasGraphics {
     commonObjs,
     objs,
     canvasFactory,
-    imageLayer,
     optionalContentConfig,
     annotationCanvasMap,
     pageColors
@@ -1042,7 +1040,6 @@ class CanvasGraphics {
     this.commonObjs = commonObjs;
     this.objs = objs;
     this.canvasFactory = canvasFactory;
-    this.imageLayer = imageLayer;
     this.groupStack = [];
     this.processingType3 = null;
     // Patterns are painted relative to the initial page/form transform, see
@@ -1183,13 +1180,6 @@ class CanvasGraphics {
     this.viewportScale = viewport.scale;
 
     this.baseTransform = getCurrentTransform(this.ctx);
-
-    if (this.imageLayer) {
-      deprecated(
-        "The `imageLayer` functionality will be removed in the future."
-      );
-      this.imageLayer.beginLayout();
-    }
   }
 
   executeOperatorList(
@@ -1300,10 +1290,6 @@ class CanvasGraphics {
       cache.clear();
     }
     this._cachedBitmapsMap.clear();
-
-    if (this.imageLayer) {
-      this.imageLayer.endLayout();
-    }
   }
 
   _scaleImage(img, inverseTransform) {
@@ -3057,7 +3043,7 @@ class CanvasGraphics {
       imgData.interpolate
     );
 
-    const [rWidth, rHeight] = drawImageAtIntegerCoords(
+    drawImageAtIntegerCoords(
       ctx,
       scaled.img,
       0,
@@ -3069,20 +3055,6 @@ class CanvasGraphics {
       width,
       height
     );
-
-    if (this.imageLayer) {
-      const [left, top] = Util.applyTransform(
-        [0, -height],
-        getCurrentTransform(this.ctx)
-      );
-      this.imageLayer.appendImage({
-        imgData,
-        left,
-        top,
-        width: rWidth,
-        height: rHeight,
-      });
-    }
     this.compose();
     this.restore();
   }
@@ -3115,19 +3087,6 @@ class CanvasGraphics {
         1,
         1
       );
-      if (this.imageLayer) {
-        const [left, top] = Util.applyTransform(
-          [entry.x, entry.y],
-          getCurrentTransform(this.ctx)
-        );
-        this.imageLayer.appendImage({
-          imgData,
-          left,
-          top,
-          width: w,
-          height: h,
-        });
-      }
       ctx.restore();
     }
     this.compose();
