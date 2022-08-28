@@ -168,7 +168,6 @@ class DefaultTextLayerFactory {
    * @property {HTMLDivElement} textLayerDiv
    * @property {number} pageIndex
    * @property {PageViewport} viewport
-   * @property {boolean} [enhanceTextSelection]
    * @property {EventBus} eventBus
    * @property {TextHighlighter} highlighter
    * @property {TextAccessibilityManager} [accessibilityManager]
@@ -182,7 +181,6 @@ class DefaultTextLayerFactory {
     textLayerDiv,
     pageIndex,
     viewport,
-    enhanceTextSelection = false,
     eventBus,
     highlighter,
     accessibilityManager = null,
@@ -191,7 +189,6 @@ class DefaultTextLayerFactory {
       textLayerDiv,
       pageIndex,
       viewport,
-      enhanceTextSelection,
       eventBus,
       highlighter,
       accessibilityManager,
