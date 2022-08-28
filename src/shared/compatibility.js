@@ -23,7 +23,7 @@ if (
 ) {
   globalThis._pdfjsCompatibilityChecked = true;
 
-  // Support: Node.js
+  // Support: Node.js<16.0.0
   (function checkNodeBtoa() {
     if (globalThis.btoa || !isNodeJS) {
       return;
@@ -34,7 +34,7 @@ if (
     };
   })();
 
-  // Support: Node.js
+  // Support: Node.js<16.0.0
   (function checkNodeAtob() {
     if (globalThis.atob || !isNodeJS) {
       return;
