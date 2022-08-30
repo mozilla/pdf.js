@@ -1535,11 +1535,37 @@ describe("api", function () {
       expect(outline.length).toEqual(6);
 
       expect(outline[4]).toEqual({
+        action: null,
         dest: "Händel -- Halle🎆lujah",
         url: null,
         unsafeUrl: undefined,
         newWindow: undefined,
         title: "Händel -- Halle🎆lujah",
+        color: new Uint8ClampedArray([0, 0, 0]),
+        count: undefined,
+        bold: false,
+        italic: false,
+        items: [],
+      });
+
+      await loadingTask.destroy();
+    });
+
+    it("gets outline, with named-actions (issue 15367)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue15367.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const outline = await pdfDoc.getOutline();
+
+      expect(Array.isArray(outline)).toEqual(true);
+      expect(outline.length).toEqual(4);
+
+      expect(outline[1]).toEqual({
+        action: "PrevPage",
+        dest: null,
+        url: null,
+        unsafeUrl: undefined,
+        newWindow: undefined,
+        title: "Previous Page",
         color: new Uint8ClampedArray([0, 0, 0]),
         count: undefined,
         bold: false,

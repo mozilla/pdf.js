@@ -109,11 +109,19 @@ class PDFOutlineViewer extends BaseTreeViewer {
   /**
    * @private
    */
-  _bindLink(element, { url, newWindow, dest }) {
+  _bindLink(element, { url, newWindow, action, dest }) {
     const { linkService } = this;
 
     if (url) {
       linkService.addLinkAttributes(element, url, newWindow);
+      return;
+    }
+    if (action) {
+      element.href = linkService.getAnchorUrl("");
+      element.onclick = () => {
+        linkService.executeNamedAction(action);
+        return false;
+      };
       return;
     }
 
