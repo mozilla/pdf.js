@@ -302,7 +302,7 @@ class Catalog {
         throw new FormatError("Invalid outline item encountered.");
       }
 
-      const data = { url: null, dest: null };
+      const data = { url: null, dest: null, action: null };
       Catalog.parseDestDictionary({
         destDict: outlineDict,
         resultObj: data,
@@ -324,6 +324,7 @@ class Catalog {
       }
 
       const outlineItem = {
+        action: data.action,
         dest: data.dest,
         url: data.url,
         unsafeUrl: data.unsafeUrl,
