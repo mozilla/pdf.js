@@ -597,6 +597,9 @@ class LinkAnnotationElement extends AnnotationElement {
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
       isBound = true;
+    } else if (data.setOCGState) {
+      this.#bindSetOCGState(link, data.setOCGState);
+      isBound = true;
     } else if (data.dest) {
       this._bindLink(link, data.dest);
       isBound = true;
@@ -673,6 +676,20 @@ class LinkAnnotationElement extends AnnotationElement {
     link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.linkService.executeNamedAction(action);
+      return false;
+    };
+    link.className = "internalLink";
+  }
+
+  /**
+   * Bind SetOCGState actions to the link element.
+   * @param {Object} link
+   * @param {Object} action
+   */
+  #bindSetOCGState(link, action) {
+    link.href = this.linkService.getAnchorUrl("");
+    link.onclick = () => {
+      this.linkService.executeSetOCGState(action);
       return false;
     };
     link.className = "internalLink";

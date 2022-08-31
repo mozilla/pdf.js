@@ -1540,6 +1540,7 @@ describe("api", function () {
         url: null,
         unsafeUrl: undefined,
         newWindow: undefined,
+        setOCGState: undefined,
         title: "Händel -- Halle🎆lujah",
         color: new Uint8ClampedArray([0, 0, 0]),
         count: undefined,
@@ -1565,7 +1566,34 @@ describe("api", function () {
         url: null,
         unsafeUrl: undefined,
         newWindow: undefined,
+        setOCGState: undefined,
         title: "Previous Page",
+        color: new Uint8ClampedArray([0, 0, 0]),
+        count: undefined,
+        bold: false,
+        italic: false,
+        items: [],
+      });
+
+      await loadingTask.destroy();
+    });
+
+    it("gets outline, with SetOCGState-actions (issue 15372)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue15372.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const outline = await pdfDoc.getOutline();
+
+      expect(Array.isArray(outline)).toEqual(true);
+      expect(outline.length).toEqual(1);
+
+      expect(outline[0]).toEqual({
+        action: null,
+        dest: null,
+        url: null,
+        unsafeUrl: undefined,
+        newWindow: undefined,
+        setOCGState: { state: ["OFF", "ON", "50R"], preserveRB: false },
+        title: "Display Layer",
         color: new Uint8ClampedArray([0, 0, 0]),
         count: undefined,
         bold: false,
