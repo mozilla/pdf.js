@@ -107,6 +107,30 @@ class OutputScale {
 }
 
 /**
+ * get the closest scrollable parent element
+ */
+function getScrollParent(element) {
+  const overflowRegex = /(auto|scroll)/;
+  const isScrollProperty = value => value && value.test(overflowRegex);
+  const body = document.body;
+  if (!element || element === body) {
+    return body;
+  }
+
+  const computedStyle = getComputedStyle(element);
+  const isScrollElement = [
+    computedStyle.overflow,
+    computedStyle["overflow-x"],
+    computedStyle["overflow-y"],
+  ].some(isScrollProperty);
+
+  if (isScrollElement) {
+    return element;
+  }
+  return getScrollParent(element.parentElement);
+}
+
+/**
  * Scrolls specified element into view of its parent.
  * @param {Object} element - The element to be visible.
  * @param {Object} spot - An object with optional top and left properties,
@@ -119,7 +143,7 @@ function scrollIntoView(element, spot, scrollMatches = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
-  let parent = element.offsetParent;
+  let parent = getScrollParent(element);
   if (!parent) {
     console.error("offsetParent is not set -- cannot scroll");
     return;
