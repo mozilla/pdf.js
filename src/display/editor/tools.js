@@ -658,6 +658,10 @@ class AnnotationEditorUIManager {
    * @param {*} value
    */
   updateParams(type, value) {
+    if (!this.#editorTypes) {
+      return;
+    }
+
     for (const editor of this.#selectedEditors) {
       editor.updateParams(type, value);
     }
