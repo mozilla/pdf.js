@@ -580,11 +580,7 @@ class AnnotationEditorUIManager {
    * @param {Object} details
    */
   onEditingAction(details) {
-    if (
-      ["undo", "redo", "cut", "copy", "paste", "delete", "selectAll"].includes(
-        details.name
-      )
-    ) {
+    if (["undo", "redo", "delete", "selectAll"].includes(details.name)) {
       this[details.name]();
     }
   }
