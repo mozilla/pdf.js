@@ -20,8 +20,11 @@
   --freetext-padding: 2px;
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
+  --editorFreeText-editing-cursor: text;
   /*#else*/
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16;
+  --editorFreeText-editing-cursor: url(images/toolbarButton-editorFreeText.svg)
+    8 16;
   /*#endif*/
 }
 
@@ -49,6 +52,15 @@
   left: 0;
   font-size: calc(100px * var(--scale-factor));
   transform-origin: 0 0;
+  cursor: auto;
+}
+
+.annotationEditorLayer.freeTextEditing {
+  cursor: var(--editorFreeText-editing-cursor), text;
+}
+
+.annotationEditorLayer.inkEditing {
+  cursor: var(--editorInk-editing-cursor), pointer;
 }
 
 .annotationEditorLayer .selectedEditor {
@@ -67,6 +79,7 @@
   z-index: 1;
   transform-origin: 0 0;
   touch-action: none;
+  cursor: auto;
 }
 
 .annotationEditorLayer .freeTextEditor .internal {
@@ -131,7 +144,7 @@
 
 .annotationEditorLayer .inkEditor.editing {
   resize: none;
-  cursor: var(--editorInk-editing-cursor), pointer;
+  cursor: inherit;
 }
 
 .annotationEditorLayer .inkEditor .inkEditorCanvas {
