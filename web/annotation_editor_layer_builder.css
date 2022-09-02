@@ -21,7 +21,7 @@
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
   /*#else*/
-  --editorInk-editing-cursor: url(images/toolbarButton-editorInk.svg) 0 16;
+  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16;
   /*#endif*/
 }
 
