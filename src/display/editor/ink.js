@@ -85,7 +85,7 @@ class InkEditor extends AnnotationEditor {
 
   static initialize(l10n) {
     this._l10nPromise = new Map(
-      ["editor_ink_canvas_aria_label", "editor_ink_aria_label"].map(str => [
+      ["editor_ink_canvas_aria_label", "editor_ink2_aria_label"].map(str => [
         str,
         l10n.get(str),
       ])
@@ -623,7 +623,7 @@ class InkEditor extends AnnotationEditor {
     super.render();
 
     InkEditor._l10nPromise
-      .get("editor_ink_aria_label")
+      .get("editor_ink2_aria_label")
       .then(msg => this.div?.setAttribute("aria-label", msg));
 
     const [x, y, w, h] = this.#getInitialBBox();
