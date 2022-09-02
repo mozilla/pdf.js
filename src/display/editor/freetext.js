@@ -230,6 +230,7 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.addEventListener("keydown", this.#boundEditorDivKeydown);
     this.editorDiv.addEventListener("focus", this.#boundEditorDivFocus);
     this.editorDiv.addEventListener("blur", this.#boundEditorDivBlur);
+    this.parent.div.classList.remove("freeTextEditing");
   }
 
   /** @inheritdoc */
@@ -254,6 +255,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     // In case the blur callback hasn't been called.
     this.isEditing = false;
+    this.parent.div.classList.add("freeTextEditing");
   }
 
   /** @inheritdoc */
@@ -283,6 +285,7 @@ class FreeTextEditor extends AnnotationEditor {
   remove() {
     this.isEditing = false;
     this.parent.setEditingState(true);
+    this.parent.div.classList.add("freeTextEditing");
     super.remove();
   }
 

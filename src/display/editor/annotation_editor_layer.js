@@ -103,6 +103,12 @@ class AnnotationEditorLayer {
       this.enableClick();
     }
     this.#uiManager.unselectAll();
+
+    this.div.classList.toggle(
+      "freeTextEditing",
+      mode === AnnotationEditorType.FREETEXT
+    );
+    this.div.classList.toggle("inkEditing", mode === AnnotationEditorType.INK);
   }
 
   addInkEditorIfNeeded(isCommitting) {
