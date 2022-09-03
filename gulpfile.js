@@ -1803,9 +1803,8 @@ gulp.task(
     "generic",
     "types",
     function createTypesTest() {
-      const [packageJsonSrc] = packageBowerJson();
       return merge([
-        packageJsonSrc.pipe(gulp.dest(TYPESTEST_DIR)),
+        packageJson().pipe(gulp.dest(TYPESTEST_DIR)),
         gulp
           .src([
             GENERIC_DIR + "build/pdf.js",
@@ -2148,7 +2147,7 @@ gulp.task(
   )
 );
 
-function packageBowerJson() {
+function packageJson() {
   const VERSION = getVersionJSON().version;
 
   const DIST_NAME = "pdfjs-dist";
@@ -2195,18 +2194,10 @@ function packageBowerJson() {
     },
   };
 
-  const bowerManifest = {
-    name: DIST_NAME,
-    version: VERSION,
-    main: ["build/pdf.js", "build/pdf.worker.js"],
-    ignore: [],
-    keywords: DIST_KEYWORDS,
-  };
-
-  return [
-    createStringSource("package.json", JSON.stringify(npmManifest, null, 2)),
-    createStringSource("bower.json", JSON.stringify(bowerManifest, null, 2)),
-  ];
+  return createStringSource(
+    "package.json",
+    JSON.stringify(npmManifest, null, 2)
+  );
 }
 
 gulp.task(
@@ -2234,12 +2225,8 @@ gulp.task(
       console.log("### Overwriting all files");
       rimraf.sync(path.join(DIST_DIR, "*"));
 
-      // Rebuilding manifests
-      const [packageJsonSrc, bowerJsonSrc] = packageBowerJson();
-
       return merge([
-        packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
-        bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),
+        packageJson().pipe(gulp.dest(DIST_DIR)),
         vfs
           .src("external/dist/**/*", { base: "external/dist", stripBOM: false })
           .pipe(gulp.dest(DIST_DIR)),
