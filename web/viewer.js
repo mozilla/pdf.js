@@ -107,23 +107,19 @@ function getViewerConfiguration() {
       ),
       editorInkButton: document.getElementById("editorInk"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
-      presentationModeButton: document.getElementById("presentationMode"),
       download: document.getElementById("download"),
-      viewBookmark: document.getElementById("viewBookmark"),
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
       toggleButton: document.getElementById("secondaryToolbarToggle"),
-      presentationModeButton: document.getElementById(
-        "secondaryPresentationMode"
-      ),
+      presentationModeButton: document.getElementById("presentationMode"),
       openFileButton:
         typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
           ? document.getElementById("secondaryOpenFile")
           : null,
       printButton: document.getElementById("secondaryPrint"),
       downloadButton: document.getElementById("secondaryDownload"),
-      viewBookmarkButton: document.getElementById("secondaryViewBookmark"),
+      viewBookmarkButton: document.getElementById("viewBookmark"),
       firstPageButton: document.getElementById("firstPage"),
       lastPageButton: document.getElementById("lastPage"),
       pageRotateCwButton: document.getElementById("pageRotateCw"),

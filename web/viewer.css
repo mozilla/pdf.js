@@ -882,8 +882,7 @@ select {
   mask-image: var(--toolbarButton-zoomIn-icon);
 }
 
-#presentationMode::before,
-#secondaryPresentationMode::before {
+#presentationMode::before {
   mask-image: var(--toolbarButton-presentationMode-icon);
 }
 
@@ -922,8 +921,7 @@ a.secondaryToolbarButton[href="#"] {
   pointer-events: none;
 }
 
-#viewBookmark::before,
-#secondaryViewBookmark::before {
+#viewBookmark::before {
   mask-image: var(--toolbarButton-bookmark-icon);
 }
 

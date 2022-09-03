@@ -811,9 +811,7 @@ const PDFViewerApplication = {
    */
   _hideViewBookmark() {
     // URL does not reflect proper document location - hiding some buttons.
-    const { toolbar, secondaryToolbar } = this.appConfig;
-    toolbar.viewBookmark.hidden = true;
-    secondaryToolbar.viewBookmarkButton.hidden = true;
+    this.appConfig.secondaryToolbar.viewBookmarkButton.hidden = true;
   },
 
   /**
@@ -2337,7 +2335,6 @@ function webViewerInitialized() {
   }
 
   if (!PDFViewerApplication.supportsFullscreen) {
-    appConfig.toolbar.presentationModeButton.classList.add("hidden");
     appConfig.secondaryToolbar.presentationModeButton.classList.add("hidden");
   }
 
@@ -2490,7 +2487,6 @@ function webViewerUpdateViewarea({ location }) {
   const href = PDFViewerApplication.pdfLinkService.getAnchorUrl(
     location.pdfOpenParams
   );
-  PDFViewerApplication.appConfig.toolbar.viewBookmark.href = href;
   PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href =
     href;
 
