@@ -109,7 +109,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
   /**
    * @private
    */
-  _bindLink(element, { url, newWindow, action, dest }) {
+  _bindLink(element, { url, newWindow, action, dest, setOCGState }) {
     const { linkService } = this;
 
     if (url) {
@@ -120,6 +120,14 @@ class PDFOutlineViewer extends BaseTreeViewer {
       element.href = linkService.getAnchorUrl("");
       element.onclick = () => {
         linkService.executeNamedAction(action);
+        return false;
+      };
+      return;
+    }
+    if (setOCGState) {
+      element.href = linkService.getAnchorUrl("");
+      element.onclick = () => {
+        linkService.executeSetOCGState(setOCGState);
         return false;
       };
       return;

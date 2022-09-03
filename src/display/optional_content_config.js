@@ -14,6 +14,7 @@
  */
 
 import { objectFromMap, unreachable, warn } from "../shared/util.js";
+import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 
 const INTERNAL = Symbol("INTERNAL");
 
@@ -44,11 +45,11 @@ class OptionalContentGroup {
 }
 
 class OptionalContentConfig {
-  #cachedHasInitialVisibility = true;
+  #cachedGetHash = null;
 
   #groups = new Map();
 
-  #initialVisibility = null;
+  #initialHash = null;
 
   #order = null;
 
@@ -84,10 +85,7 @@ class OptionalContentConfig {
     }
 
     // The following code must always run *last* in the constructor.
-    this.#initialVisibility = new Map();
-    for (const [id, group] of this.#groups) {
-      this.#initialVisibility.set(id, group.visible);
-    }
+    this.#initialHash = this.getHash();
   }
 
   #evaluateVisibilityExpression(array) {
@@ -206,20 +204,11 @@ class OptionalContentConfig {
     }
     this.#groups.get(id)._setVisible(INTERNAL, !!visible);
 
-    this.#cachedHasInitialVisibility = null;
+    this.#cachedGetHash = null;
   }
 
   get hasInitialVisibility() {
-    if (this.#cachedHasInitialVisibility !== null) {
-      return this.#cachedHasInitialVisibility;
-    }
-    for (const [id, group] of this.#groups) {
-      const visible = this.#initialVisibility.get(id);
-      if (group.visible !== visible) {
-        return (this.#cachedHasInitialVisibility = false);
-      }
-    }
-    return (this.#cachedHasInitialVisibility = true);
+    return this.getHash() === this.#initialHash;
   }
 
   getOrder() {
@@ -238,6 +227,18 @@ class OptionalContentConfig {
 
   getGroup(id) {
     return this.#groups.get(id) || null;
+  }
+
+  getHash() {
+    if (this.#cachedGetHash !== null) {
+      return this.#cachedGetHash;
+    }
+    const hash = new MurmurHash3_64();
+
+    for (const [id, group] of this.#groups) {
+      hash.update(`${id}:${group.visible}`);
+    }
+    return (this.#cachedGetHash = hash.hexdigest());
   }
 }
 
