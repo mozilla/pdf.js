@@ -2860,6 +2860,14 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue15352",
+       "file": "pdfs/issue15352.pdf",
+       "md5": "d0edf452a85821acf41cbfa0a6f2f2ac",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "text"
+    },
     {  "id": "issue6962",
        "file": "pdfs/issue6962.pdf",
        "md5": "d40e871ecca68baf93114bd28c782148",
