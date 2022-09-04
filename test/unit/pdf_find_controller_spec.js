@@ -626,4 +626,25 @@ describe("pdf_find_controller", function () {
       pageMatchesLength: [[8]],
     });
   });
+
+  it("performs a search in a text containing an ideographic at the end of a line", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "issue15340.pdf"
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "検知機構",
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[29]],
+      pageMatchesLength: [[4]],
+    });
+  });
 });
