@@ -45,9 +45,7 @@ const ChromeCom = {
     };
     if (!chrome.runtime) {
       console.error("chrome.runtime is undefined.");
-      if (callback) {
-        callback();
-      }
+      callback?.();
     } else if (callback) {
       chrome.runtime.sendMessage(message, callback);
     } else {

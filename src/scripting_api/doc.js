@@ -950,10 +950,9 @@ class Doc extends PDFObject {
   }
 
   getPrintParams() {
-    if (!this._printParams) {
-      this._printParams = new PrintParams({ lastPage: this._numPages - 1 });
-    }
-    return this._printParams;
+    return (this._printParams ||= new PrintParams({
+      lastPage: this._numPages - 1,
+    }));
   }
 
   getSound() {

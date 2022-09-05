@@ -105,9 +105,7 @@ class PDFDataTransportStream {
   }
 
   _onProgressiveDone() {
-    if (this._fullRequestReader) {
-      this._fullRequestReader.progressiveDone();
-    }
+    this._fullRequestReader?.progressiveDone();
     this._progressiveDone = true;
   }
 
@@ -144,9 +142,8 @@ class PDFDataTransportStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequestReader) {
-      this._fullRequestReader.cancel(reason);
-    }
+    this._fullRequestReader?.cancel(reason);
+
     for (const reader of this._rangeReaders.slice(0)) {
       reader.cancel(reason);
     }
