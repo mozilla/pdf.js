@@ -402,9 +402,7 @@ class FontFaceObject {
       );
     }
 
-    if (this.fontRegistry) {
-      this.fontRegistry.registerFont(this);
-    }
+    this.fontRegistry?.registerFont(this);
     return nativeFontFace;
   }
 
@@ -426,9 +424,7 @@ class FontFaceObject {
       rule = `@font-face {font-family:"${this.cssFontInfo.fontFamily}";${css}src:${url}}`;
     }
 
-    if (this.fontRegistry) {
-      this.fontRegistry.registerFont(this, url);
-    }
+    this.fontRegistry?.registerFont(this, url);
     return rule;
   }
 

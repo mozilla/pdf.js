@@ -95,9 +95,8 @@ class PDFNodeStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequestReader) {
-      this._fullRequestReader.cancel(reason);
-    }
+    this._fullRequestReader?.cancel(reason);
+
     for (const reader of this._rangeRequestReaders.slice(0)) {
       reader.cancel(reason);
     }
@@ -252,9 +251,8 @@ class BaseRangeReader {
       return this.read();
     }
     this._loaded += chunk.length;
-    if (this.onProgress) {
-      this.onProgress({ loaded: this._loaded });
-    }
+    this.onProgress?.({ loaded: this._loaded });
+
     // Ensure that `read()` method returns ArrayBuffer.
     const buffer = new Uint8Array(chunk).buffer;
     return { value: buffer, done: false };
