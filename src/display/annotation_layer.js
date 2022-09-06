@@ -380,9 +380,7 @@ class AnnotationElement {
     const commonActions = this._commonActions;
     for (const name of Object.keys(jsEvent.detail)) {
       const action = actions[name] || commonActions[name];
-      if (action) {
-        action(jsEvent);
-      }
+      action?.(jsEvent);
     }
   }
 
@@ -752,9 +750,7 @@ class LinkAnnotationElement extends AnnotationElement {
     }
 
     link.onclick = () => {
-      if (otherClickAction) {
-        otherClickAction();
-      }
+      otherClickAction?.();
 
       const {
         fields: resetFormFields,

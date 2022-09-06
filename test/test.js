@@ -854,9 +854,7 @@ function unitTestPostHandler(req, res) {
       var onCancel = null,
         ttxTimeout = 10000;
       var timeoutId = setTimeout(function () {
-        if (onCancel) {
-          onCancel("TTX timeout");
-        }
+        onCancel?.("TTX timeout");
       }, ttxTimeout);
       translateFont(
         body,
@@ -1002,9 +1000,7 @@ function startBrowsers(initSessionCallback, makeStartUrl = null) {
     session.browserPromise = startBrowser(browserName, startUrl)
       .then(function (browser) {
         session.browser = browser;
-        if (initSessionCallback) {
-          initSessionCallback(session);
-        }
+        initSessionCallback?.(session);
       })
       .catch(function (ex) {
         console.log(`Error while starting ${browserName}: ${ex.message}`);
@@ -1050,10 +1046,7 @@ async function closeSession(browser) {
         const rimraf = require("rimraf");
         rimraf.sync(tempDir);
       }
-
-      if (onAllSessionsClosed) {
-        onAllSessionsClosed();
-      }
+      onAllSessionsClosed?.();
     }
   }
 }
