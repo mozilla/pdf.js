@@ -93,4 +93,15 @@ if (
     }
     require("core-js/web/structured-clone.js");
   })();
+
+  // Support: Safari
+  (function checkRequestIdleCallback() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
+      return;
+    }
+    if (typeof window === "undefined" || window.requestIdleCallback) {
+      return;
+    }
+    require("../../external/polyfill/window.polyfill.js");
+  })();
 }
