@@ -88,9 +88,8 @@ class PDFFetchStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequestReader) {
-      this._fullRequestReader.cancel(reason);
-    }
+    this._fullRequestReader?.cancel(reason);
+
     for (const reader of this._rangeRequestReaders.slice(0)) {
       reader.cancel(reason);
     }
@@ -202,9 +201,7 @@ class PDFFetchStreamReader {
   }
 
   cancel(reason) {
-    if (this._reader) {
-      this._reader.cancel(reason);
-    }
+    this._reader?.cancel(reason);
     this._abortController.abort();
   }
 }
@@ -256,17 +253,14 @@ class PDFFetchStreamRangeReader {
       return { value, done };
     }
     this._loaded += value.byteLength;
-    if (this.onProgress) {
-      this.onProgress({ loaded: this._loaded });
-    }
+    this.onProgress?.({ loaded: this._loaded });
+
     const buffer = new Uint8Array(value).buffer;
     return { value: buffer, done: false };
   }
 
   cancel(reason) {
-    if (this._reader) {
-      this._reader.cancel(reason);
-    }
+    this._reader?.cancel(reason);
     this._abortController.abort();
   }
 }

@@ -100,16 +100,12 @@ class App extends PDFObject {
     const timeout = Object.create(null);
     const id = { callbackId, interval };
     this._timeoutIds.set(timeout, id);
-    if (this._timeoutIdsRegistry) {
-      this._timeoutIdsRegistry.register(timeout, id);
-    }
+    this._timeoutIdsRegistry?.register(timeout, id);
     return timeout;
   }
 
   _unregisterTimeout(timeout) {
-    if (this._timeoutIdsRegistry) {
-      this._timeoutIdsRegistry.unregister(timeout);
-    }
+    this._timeoutIdsRegistry?.unregister(timeout);
 
     const data = this._timeoutIds.get(timeout);
     if (!data) {

@@ -1543,9 +1543,7 @@ if (
     }
 
     eoFill() {
-      if (this.current.element) {
-        this.current.element.setAttributeNS(null, "fill-rule", "evenodd");
-      }
+      this.current.element?.setAttributeNS(null, "fill-rule", "evenodd");
       this.fill();
     }
 
@@ -1557,9 +1555,7 @@ if (
     }
 
     eoFillStroke() {
-      if (this.current.element) {
-        this.current.element.setAttributeNS(null, "fill-rule", "evenodd");
-      }
+      this.current.element?.setAttributeNS(null, "fill-rule", "evenodd");
       this.fillStroke();
     }
 
