@@ -977,6 +977,7 @@ a.secondaryToolbarButton[href="#"] {
   white-space: normal;
   border-radius: 0;
   box-sizing: border-box;
+  display: inline-block;
 }
 .secondaryToolbarButton > span {
   padding-inline-end: 4px;
@@ -1454,8 +1455,7 @@ dialog :link {
 }
 
 .visibleLargeView,
-.visibleMediumView,
-.visibleSmallView {
+.visibleMediumView {
   display: none;
 }
 
@@ -1500,9 +1500,6 @@ dialog :link {
   .hiddenSmallView,
   .hiddenSmallView * {
     display: none;
-  }
-  .visibleSmallView {
-    display: inherit;
   }
   .toolbarButtonSpacer {
     width: 0;
