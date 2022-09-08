@@ -613,7 +613,8 @@ const PDFViewerApplication = {
 
     this.secondaryToolbar = new SecondaryToolbar(
       appConfig.secondaryToolbar,
-      eventBus
+      eventBus,
+      this.externalServices
     );
 
     if (this.supportsFullscreen) {
@@ -2910,6 +2911,10 @@ function webViewerKeyDown(evt) {
       case 80: // p
         PDFViewerApplication.requestPresentationMode();
         handled = true;
+        PDFViewerApplication.externalServices.reportTelemetry({
+          type: "buttons",
+          data: { id: "presentationModeKeyboard" },
+        });
         break;
       case 71: // g
         // focuses input#pageNumber field
