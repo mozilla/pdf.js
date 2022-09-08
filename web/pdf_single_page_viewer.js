@@ -14,11 +14,9 @@
  */
 
 import { ScrollMode, SpreadMode } from "./ui_utils.js";
-import { BaseViewer } from "./base_viewer.js";
+import { PDFViewer } from "./base_viewer.js";
 
-class PDFViewer extends BaseViewer {}
-
-class PDFSinglePageViewer extends BaseViewer {
+class PDFSinglePageViewer extends PDFViewer {
   _resetView() {
     super._resetView();
     this._scrollMode = ScrollMode.PAGE;
@@ -36,4 +34,4 @@ class PDFSinglePageViewer extends BaseViewer {
   _updateSpreadMode() {}
 }
 
-export { PDFSinglePageViewer, PDFViewer };
+export { PDFSinglePageViewer };

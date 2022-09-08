@@ -15,7 +15,7 @@
 
 import { PDFPageViewBuffer } from "../../web/base_viewer.js";
 
-describe("BaseViewer", function () {
+describe("PDFViewer", function () {
   describe("PDFPageViewBuffer", function () {
     function createViewsMap(startId, endId) {
       const map = new Map();
