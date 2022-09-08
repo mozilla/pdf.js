@@ -14,7 +14,7 @@
  */
 
 import { ScrollMode, SpreadMode } from "./ui_utils.js";
-import { PDFViewer } from "./base_viewer.js";
+import { PDFViewer } from "./pdf_viewer.js";
 
 class PDFSinglePageViewer extends PDFViewer {
   _resetView() {
