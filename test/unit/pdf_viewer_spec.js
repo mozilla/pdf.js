@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { PDFPageViewBuffer } from "../../web/base_viewer.js";
+import { PDFPageViewBuffer } from "../../web/pdf_viewer.js";
 
 describe("PDFViewer", function () {
   describe("PDFPageViewBuffer", function () {
