@@ -42,13 +42,9 @@ const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
  * @property {HTMLButtonElement} zoomOut - Button to zoom out the pages.
  * @property {HTMLButtonElement} viewFind - Button to open find bar.
  * @property {HTMLButtonElement} openFile - Button to open a new document.
- * @property {HTMLButtonElement} presentationModeButton - Button to switch to
- *   presentation mode.
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
- * @property {HTMLAnchorElement} viewBookmark - Button to obtain a bookmark link
- *   to the current location in the document.
  */
 
 class Toolbar {
@@ -69,12 +65,7 @@ class Toolbar {
       { element: options.zoomIn, eventName: "zoomin" },
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
-      {
-        element: options.presentationModeButton,
-        eventName: "presentationmode",
-      },
       { element: options.download, eventName: "download" },
-      { element: options.viewBookmark, eventName: null },
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",
