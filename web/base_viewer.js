@@ -216,7 +216,7 @@ class PDFPageViewBuffer {
  * @implements {IPDFTextLayerFactory}
  * @implements {IPDFXfaLayerFactory}
  */
-class BaseViewer {
+class PDFViewer {
   #buffer = null;
 
   #annotationEditorMode = AnnotationEditorType.DISABLE;
@@ -237,9 +237,6 @@ class BaseViewer {
    * @param {PDFViewerOptions} options
    */
   constructor(options) {
-    if (this.constructor === BaseViewer) {
-      throw new Error("Cannot initialize BaseViewer.");
-    }
     const viewerVersion =
       typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_VERSION") : null;
     if (version !== viewerVersion) {
@@ -305,7 +302,7 @@ class BaseViewer {
       ) {
         if (this.pageColors.background || this.pageColors.foreground) {
           console.warn(
-            "BaseViewer: Ignoring `pageColors`-option, since the browser doesn't support the values used."
+            "PDFViewer: Ignoring `pageColors`-option, since the browser doesn't support the values used."
           );
         }
         this.pageColors = null;
@@ -2249,4 +2246,4 @@ class BaseViewer {
   }
 }
 
-export { BaseViewer, PagesCountLimit, PDFPageViewBuffer };
+export { PagesCountLimit, PDFPageViewBuffer, PDFViewer };
