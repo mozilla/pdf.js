@@ -194,7 +194,11 @@ See https://github.com/adobe-type-tools/cmap-resources
               <span data-l10n-id="download_label">Download</span>
             </button>
 
+<!--#if GENERIC-->
             <div class="horizontalToolbarSeparator visibleLargeView"></div>
+<!--#else-->
+<!--        <div class="horizontalToolbarSeparator visibleMediumView"></div>-->
+<!--#endif-->
 
             <button id="presentationMode" class="secondaryToolbarButton" title="Switch to Presentation Mode" tabindex="54" data-l10n-id="presentation_mode">
               <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
