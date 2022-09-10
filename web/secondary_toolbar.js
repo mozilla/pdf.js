@@ -15,7 +15,7 @@
 
 import { ScrollMode, SpreadMode } from "./ui_utils.js";
 import { CursorTool } from "./pdf_cursor_tools.js";
-import { PagesCountLimit } from "./base_viewer.js";
+import { PagesCountLimit } from "./pdf_viewer.js";
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
