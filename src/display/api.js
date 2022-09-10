@@ -2010,6 +2010,10 @@ class PDFWorker {
       // and ready to accept messages.
     });
     this._readyCapability.resolve();
+    // Send global setting, e.g. verbosity level.
+    this._messageHandler.send("configure", {
+      verbosity: this.verbosity,
+    });
   }
 
   _initialize() {
