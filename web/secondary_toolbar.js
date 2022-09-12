@@ -51,7 +51,7 @@ class SecondaryToolbar {
    * @param {SecondaryToolbarOptions} options
    * @param {EventBus} eventBus
    */
-  constructor(options, eventBus) {
+  constructor(options, eventBus, externalServices) {
     this.toolbar = options.toolbar;
     this.toggleButton = options.toggleButton;
     this.buttons = [
@@ -150,6 +150,7 @@ class SecondaryToolbar {
     };
 
     this.eventBus = eventBus;
+    this.externalServices = externalServices;
     this.opened = false;
 
     // Bind the event listeners for click, cursor tool, and scroll/spread mode
@@ -212,6 +213,10 @@ class SecondaryToolbar {
         if (close) {
           this.close();
         }
+        this.externalServices.reportTelemetry({
+          type: "buttons",
+          data: { id: element.id },
+        });
       });
     }
   }
