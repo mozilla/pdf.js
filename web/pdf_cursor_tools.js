@@ -133,8 +133,10 @@ class PDFCursorTools {
         case PresentationModeState.NORMAL: {
           const previouslyActive = this.activeBeforePresentationMode;
 
-          this.activeBeforePresentationMode = null;
-          this.switchTool(previouslyActive);
+          if (previouslyActive !== null) {
+            this.activeBeforePresentationMode = null;
+            this.switchTool(previouslyActive);
+          }
           break;
         }
       }
