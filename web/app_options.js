@@ -54,11 +54,8 @@ const OptionKind = {
  */
 const defaultOptions = {
   annotationEditorMode: {
-    /** @type {boolean} */
-    value:
-      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
-        ? 0
-        : -1,
+    /** @type {number} */
+    value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   annotationMode: {

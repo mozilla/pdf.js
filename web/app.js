@@ -585,11 +585,12 @@ const PDFViewerApplication = {
         appConfig.annotationEditorParams,
         eventBus
       );
+    } else {
       for (const element of [
         document.getElementById("editorModeButtons"),
         document.getElementById("editorModeSeparator"),
       ]) {
-        element.classList.remove("hidden");
+        element.hidden = true;
       }
     }
 
