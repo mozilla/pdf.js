@@ -69,18 +69,6 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME || GENERIC")) {
 }
 
 function getViewerConfiguration() {
-  let errorWrapper = null;
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-    errorWrapper = {
-      container: document.getElementById("errorWrapper"),
-      errorMessage: document.getElementById("errorMessage"),
-      closeButton: document.getElementById("errorClose"),
-      errorMoreInfo: document.getElementById("errorMoreInfo"),
-      moreInfoButton: document.getElementById("errorShowMore"),
-      lessInfoButton: document.getElementById("errorShowLess"),
-    };
-  }
-
   return {
     appContainer: document.body,
     mainContainer: document.getElementById("viewerContainer"),
@@ -207,7 +195,17 @@ function getViewerConfiguration() {
       editorInkThickness: document.getElementById("editorInkThickness"),
       editorInkOpacity: document.getElementById("editorInkOpacity"),
     },
-    errorWrapper,
+    errorWrapper:
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
+        ? {
+            container: document.getElementById("errorWrapper"),
+            errorMessage: document.getElementById("errorMessage"),
+            closeButton: document.getElementById("errorClose"),
+            errorMoreInfo: document.getElementById("errorMoreInfo"),
+            moreInfoButton: document.getElementById("errorShowMore"),
+            lessInfoButton: document.getElementById("errorShowLess"),
+          }
+        : null,
     printContainer: document.getElementById("printContainer"),
     openFileInput:
       typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
