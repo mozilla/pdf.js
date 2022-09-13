@@ -797,7 +797,9 @@ const PDFViewerApplication = {
       // Embedded PDF viewers should not be changing their parent page's title.
       return;
     }
-    document.title = `${this._hasAnnotationEditors ? "* " : ""}${title}`;
+    const editorIndicator =
+      this._hasAnnotationEditors && !this.pdfRenderingQueue.printing;
+    document.title = `${editorIndicator ? "* " : ""}${title}`;
   },
 
   get _docFilename() {
@@ -1844,6 +1846,8 @@ const PDFViewerApplication = {
     );
     this.printService = printService;
     this.forceRendering();
+    // Disable the editor-indicator during printing (fixes bug 1790552).
+    this.setTitle();
 
     printService.layout();
 
@@ -1874,6 +1878,8 @@ const PDFViewerApplication = {
       this.pdfDocument?.annotationStorage.resetModified();
     }
     this.forceRendering();
+    // Re-enable the editor-indicator after printing (fixes bug 1790552).
+    this.setTitle();
   },
 
   rotatePages(delta) {
