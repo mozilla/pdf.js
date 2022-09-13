@@ -121,7 +121,7 @@ function isValidAnnotationEditorMode(mode) {
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {number} [annotationEditorMode] - Enables the creation and editing
  *   of new Annotations. The constants from {@link AnnotationEditorType} should
- *   be used. The default value is `AnnotationEditorType.DISABLE`.
+ *   be used. The default value is `AnnotationEditorType.NONE`.
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   mainly for annotation icons. Include trailing slash.
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
@@ -219,7 +219,7 @@ class PDFPageViewBuffer {
 class PDFViewer {
   #buffer = null;
 
-  #annotationEditorMode = AnnotationEditorType.DISABLE;
+  #annotationEditorMode = AnnotationEditorType.NONE;
 
   #annotationEditorUIManager = null;
 
@@ -277,7 +277,7 @@ class PDFViewer {
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.#annotationEditorMode =
-      options.annotationEditorMode ?? AnnotationEditorType.DISABLE;
+      options.annotationEditorMode ?? AnnotationEditorType.NONE;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     if (
