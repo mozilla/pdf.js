@@ -45,11 +45,18 @@
   --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
   --toolbar-bg-color: rgba(249, 249, 250, 1);
   --toolbar-border-color: rgba(204, 204, 204, 1);
+  --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
+  --toolbar-border-bottom: none;
+  --toolbarSidebar-box-shadow: inset calc(-1px * var(--dir-factor)) 0 0
+      rgba(0, 0, 0, 0.25),
+    0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+  --toolbarSidebar-border-bottom: none;
   --button-hover-color: rgba(221, 222, 223, 1);
   --toggled-btn-color: rgba(0, 0, 0, 1);
   --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
   --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
   --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
+  --dropdown-btn-border: none;
   --separator-color: rgba(0, 0, 0, 0.3);
   --field-color: rgba(6, 6, 6, 1);
   --field-bg-color: rgba(255, 255, 255, 1);
@@ -170,6 +177,9 @@
     --toolbar-icon-opacity: 1;
     --toolbar-icon-bg-color: ButtonText;
     --toolbar-icon-hover-bg-color: ButtonFace;
+    --toolbar-border-color: CanvasText;
+    --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
+    --toolbar-box-shadow: none;
     --toggled-btn-color: HighlightText;
     --toggled-btn-bg-color: LinkText;
     --doorhanger-hover-color: ButtonFace;
@@ -178,7 +188,13 @@
     --dialog-button-border: 1px solid Highlight;
     --dialog-button-hover-bg-color: Highlight;
     --dialog-button-hover-color: ButtonFace;
+    --dropdown-btn-border: 1px solid ButtonText;
     --field-border-color: ButtonText;
+    --main-color: CanvasText;
+    --separator-color: GrayText;
+    --doorhanger-separator-color: GrayText;
+    --toolbarSidebar-box-shadow: none;
+    --toolbarSidebar-border-bottom: 1px solid var(--toolbar-border-color);
   }
 }
 
@@ -195,14 +211,6 @@ body {
 
 body {
   background-color: var(--body-bg-color);
-}
-
-body,
-input,
-button,
-select {
-  font: message-box;
-  outline: none;
   scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
 }
 
@@ -248,6 +256,7 @@ select {
   width: var(--sidebar-width);
   visibility: hidden;
   z-index: 100;
+  font: message-box;
   border-top: 1px solid rgba(51, 51, 51, 1);
   border-inline-end: var(--doorhanger-border-color-whcm);
   transition-property: inset-inline-start;
@@ -308,6 +317,26 @@ select {
   right: 0;
   z-index: 9999;
   cursor: default;
+  font: message-box;
+}
+
+.toolbar input,
+.toolbar button,
+.toolbar select,
+.secondaryToolbar input,
+.secondaryToolbar button,
+.secondaryToolbar select,
+.editorParamsToolbar input,
+.editorParamsToolbar button,
+.editorParamsToolbar select,
+.findbar input,
+.findbar button,
+.findbar select,
+#sidebarContainer input,
+#sidebarContainer button,
+#sidebarContainer select {
+  outline: none;
+  font: message-box;
 }
 
 #toolbarContainer {
@@ -318,8 +347,8 @@ select {
   width: 100%;
   height: 32px;
   background-color: var(--sidebar-toolbar-bg-color);
-  box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25),
-    0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--toolbarSidebar-box-shadow);
+  border-bottom: var(--toolbarSidebar-border-bottom);
 }
 
 #sidebarResizer {
@@ -339,7 +368,8 @@ select {
   position: relative;
   height: 32px;
   background-color: var(--toolbar-bg-color);
-  box-shadow: 0 1px 0 var(--toolbar-border-color);
+  box-shadow: var(--toolbar-box-shadow);
+  border-bottom: var(--toolbar-border-bottom);
 }
 
 #toolbarViewer {
@@ -423,6 +453,7 @@ select {
   height: auto;
   padding: 0 4px;
   margin: 4px 2px;
+  font: message-box;
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -770,6 +801,7 @@ select {
   padding: 0;
   overflow: hidden;
   background-color: var(--dropdown-btn-bg-color);
+  border: var(--dropdown-btn-border);
 }
 .dropdownToolbarButton::after {
   top: 6px;
@@ -1308,6 +1340,7 @@ dialog {
   padding: 15px;
   border-spacing: 4px;
   color: var(--main-color);
+  font: message-box;
   font-size: 12px;
   line-height: 14px;
   background-color: var(--doorhanger-bg-color);
