@@ -2171,14 +2171,6 @@ function packageJson() {
       dommatrix: "^1.0.3",
       "web-streams-polyfill": "^3.2.1",
     },
-    peerDependencies: {
-      "worker-loader": "^3.0.8", // Used in `external/dist/webpack.js`.
-    },
-    peerDependenciesMeta: {
-      "worker-loader": {
-        optional: true,
-      },
-    },
     browser: {
       canvas: false,
       fs: false,

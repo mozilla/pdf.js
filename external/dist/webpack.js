@@ -16,10 +16,11 @@
 "use strict";
 
 const pdfjs = require("./build/pdf.js");
-const PdfjsWorker = require("worker-loader?esModule=false&filename=[name].[contenthash].js!./build/pdf.worker.js");
 
 if (typeof window !== "undefined" && "Worker" in window) {
-  pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();
+  pdfjs.GlobalWorkerOptions.workerPort = new Worker(
+    new URL("./build/pdf.worker.js", import.meta.url)
+  );
 }
 
 module.exports = pdfjs;
