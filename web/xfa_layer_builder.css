@@ -15,12 +15,20 @@
 
 :root {
   --xfa-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+  --xfa-focus-outline: auto;
 }
 
 @media (forced-colors: active) {
+  :root {
+    --xfa-focus-outline: 2px solid CanvasText;
+  }
   .xfaLayer *:required {
     outline: 1.5px solid selectedItem;
   }
+}
+
+.xfaLayer {
+  background-color: transparent;
 }
 
 .xfaLayer .highlight {
@@ -196,13 +204,13 @@
 .xfaSelect:focus {
   background-image: none;
   background-color: transparent;
-  outline: auto;
+  outline: var(--xfa-focus-outline);
   outline-offset: -1px;
 }
 
 .xfaCheckbox:focus,
 .xfaRadio:focus {
-  outline: auto;
+  outline: var(--xfa-focus-outline);
 }
 
 .xfaTextfield,
