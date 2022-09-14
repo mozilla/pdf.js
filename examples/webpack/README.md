@@ -28,10 +28,7 @@ otherwise the build is not guaranteed to work correctly.
 
 If you are getting the `Setting up fake worker` warning, make sure you are
 importing `pdfjs-dist/webpack` which is the zero-configuration method for
-Webpack users. You will need to install
-[worker-loader](https://github.com/webpack-contrib/worker-loader) (version 3.0.0 or higher is required), as a
-dependency in your project in order to use `pdfjs-dist/webpack` (configuring
-`worker-loader` is not necessary; just installing it is sufficient).
+Webpack users. Installing `worker-loader` is no longer necessary.
 
     import * as pdfjsLib from 'pdfjs-dist/webpack';
 
