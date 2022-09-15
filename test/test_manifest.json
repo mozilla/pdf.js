@@ -1827,6 +1827,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue15443",
+       "file": "pdfs/issue15443.pdf",
+       "md5": "95a9e28b3f2754aa310f3379e01d781d",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue5946",
        "file": "pdfs/issue5946.pdf",
        "md5": "1217a3c8e2ee4ceb96d85a2f27e437b4",
