@@ -66,7 +66,6 @@ const pdfViewer = new pdfjsViewer.PDFViewer({
   linkService: pdfLinkService,
   findController: pdfFindController,
   scriptingManager: pdfScriptingManager,
-  enableScripting: true, // Only necessary in PDF.js version 2.10.377 and below.
 });
 pdfLinkService.setViewer(pdfViewer);
 pdfScriptingManager.setViewer(pdfViewer);
