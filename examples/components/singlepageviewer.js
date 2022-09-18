@@ -66,7 +66,6 @@ const pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
   linkService: pdfLinkService,
   findController: pdfFindController,
   scriptingManager: pdfScriptingManager,
-  enableScripting: true, // Only necessary in PDF.js version 2.10.377 and below.
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
 pdfScriptingManager.setViewer(pdfSinglePageViewer);
