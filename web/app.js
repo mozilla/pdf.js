@@ -2469,7 +2469,10 @@ function webViewerUpdateViewarea({ location }) {
 }
 
 function webViewerScrollModeChanged(evt) {
-  if (PDFViewerApplication.isInitialViewSet) {
+  if (
+    PDFViewerApplication.isInitialViewSet &&
+    !PDFViewerApplication.pdfViewer.isInPresentationMode
+  ) {
     // Only update the storage when the document has been loaded *and* rendered.
     PDFViewerApplication.store?.set("scrollMode", evt.mode).catch(() => {
       // Unable to write to storage.
@@ -2478,7 +2481,10 @@ function webViewerScrollModeChanged(evt) {
 }
 
 function webViewerSpreadModeChanged(evt) {
-  if (PDFViewerApplication.isInitialViewSet) {
+  if (
+    PDFViewerApplication.isInitialViewSet &&
+    !PDFViewerApplication.pdfViewer.isInPresentationMode
+  ) {
     // Only update the storage when the document has been loaded *and* rendered.
     PDFViewerApplication.store?.set("spreadMode", evt.mode).catch(() => {
       // Unable to write to storage.
