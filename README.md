@@ -39,8 +39,6 @@ PDF.js is built into version 19+ of Firefox.
 
 #### Chrome
 
-+ The official extension for Chrome can be installed from the [Chrome Web Store](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm).
-*This extension is maintained by [@Rob--W](https://github.com/Rob--W).*
 + Build Your Own - Get the code as explained below and issue `gulp chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
 directory `build/chromium`.
