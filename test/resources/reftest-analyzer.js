@@ -214,9 +214,9 @@ window.onload = function () {
         const extra = match[4];
 
         gTestItems.push({
-          pass: !state.match(/FAIL$/),
+          pass: !state.endsWith("FAIL"),
           // only one of the following three should ever be true
-          unexpected: !!state.match(/^TEST-UNEXPECTED/),
+          unexpected: state.startsWith("TEST-UNEXPECTED"),
           random: random === "(EXPECTED RANDOM)",
           skip: extra === " (SKIP)",
           url,
