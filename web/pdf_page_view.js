@@ -269,7 +269,7 @@ class PDFPageView {
     let error = null;
     try {
       const result = await this.xfaLayer.render(this.viewport, "display");
-      if (this.textHighlighter) {
+      if (result?.textDivs && this.textHighlighter) {
         this._buildXfaTextContentItems(result.textDivs);
       }
     } catch (ex) {
