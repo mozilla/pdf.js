@@ -152,6 +152,10 @@ class DefaultExternalServices {
 
   static reportTelemetry(data) {}
 
+  static print() {
+    window.print();
+  }
+
   static createDownloadManager(options) {
     throw new Error("Not implemented: createDownloadManager");
   }
@@ -1897,7 +1901,7 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       return;
     }
-    window.print();
+    this.externalServices.print();
   },
 
   bindEvents() {

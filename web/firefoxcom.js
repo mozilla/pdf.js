@@ -402,6 +402,10 @@ class FirefoxExternalServices extends DefaultExternalServices {
     FirefoxCom.request("updateEditorStates", data);
   }
 
+  static print() {
+    FirefoxCom.request("print", null);
+  }
+
   static createL10n(options) {
     const mozL10n = document.mozL10n;
     // TODO refactor mozL10n.setExternalLocalizerServices
