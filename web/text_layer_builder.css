@@ -21,7 +21,7 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
-  opacity: 0.2;
+  opacity: 0.25;
   line-height: 1;
   text-size-adjust: none;
   forced-color-adjust: none;
@@ -71,7 +71,10 @@
 }
 
 .textLayer ::selection {
-  background: rgba(0, 0, 255, 1);
+  /*#if !MOZCENTRAL*/
+  background: blue;
+  /*#endif*/
+  background: AccentColor;
 }
 
 /* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
