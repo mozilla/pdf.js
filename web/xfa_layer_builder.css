@@ -58,10 +58,6 @@
   background-color: rgba(203, 223, 203, 1);
 }
 
-.xfaLayer ::selection {
-  background: rgba(0, 0, 255, 1);
-}
-
 .xfaPage {
   overflow: hidden;
   position: relative;
