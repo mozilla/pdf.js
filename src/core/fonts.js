@@ -1119,17 +1119,16 @@ class Font {
       }
     }
 
-    this.bold = fontName.search(/bold/gi) !== -1;
-    this.italic =
-      fontName.search(/oblique/gi) !== -1 || fontName.search(/italic/gi) !== -1;
+    this.bold = /bold/gi.test(fontName);
+    this.italic = /oblique|italic/gi.test(fontName);
 
     // Use 'name' instead of 'fontName' here because the original
     // name ArialBlack for example will be replaced by Helvetica.
-    this.black = name.search(/Black/g) !== -1;
+    this.black = /Black/g.test(name);
 
     // Use 'name' instead of 'fontName' here because the original
     // name ArialNarrow for example will be replaced by Helvetica.
-    const isNarrow = name.search(/Narrow/g) !== -1;
+    const isNarrow = /Narrow/g.test(name);
 
     // if at least one width is present, remeasure all chars when exists
     this.remeasure =
