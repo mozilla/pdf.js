@@ -59,6 +59,7 @@
     "unicorn/prefer-dom-node-remove": "error",
     "unicorn/prefer-logical-operator-over-ternary": "error",
     "unicorn/prefer-modern-dom-apis": "error",
+    "unicorn/prefer-regexp-test": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
