@@ -449,7 +449,7 @@ body {
 .editorParamsToolbar {
   top: 32px;
   position: absolute;
-  z-index: 10000;
+  z-index: 30000;
   height: auto;
   padding: 0 4px;
   margin: 4px 2px;
@@ -523,7 +523,6 @@ body {
   padding: 6px 0 10px;
   inset-inline-end: 4px;
   height: auto;
-  z-index: 30000;
   background-color: var(--doorhanger-bg-color);
 }
 
