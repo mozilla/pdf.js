@@ -22,8 +22,10 @@ describe("FormCalc expression parser", function () {
   describe("FormCalc lexer", function () {
     it("should lex numbers", function () {
       const lexer = new Lexer(
-        "12 1.2345 .7 .12345 1e-2 1.2E+3 1e2 1.2E3 nan 12. 2.e3 infinity 99999999999999999 123456789.012345678 9e99999"
+        "1 7 12 1.2345 .7 .12345 1e-2 1.2E+3 1e2 1.2E3 nan 12. 2.e3 infinity 99999999999999999 123456789.012345678 9e99999"
       );
+      expect(lexer.next()).toEqual(new Token(TOKEN.number, 1));
+      expect(lexer.next()).toEqual(new Token(TOKEN.number, 7));
       expect(lexer.next()).toEqual(new Token(TOKEN.number, 12));
       expect(lexer.next()).toEqual(new Token(TOKEN.number, 1.2345));
       expect(lexer.next()).toEqual(new Token(TOKEN.number, 0.7));
