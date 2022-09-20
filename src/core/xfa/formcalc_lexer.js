@@ -240,7 +240,7 @@ class Lexer {
   getNumber(first) {
     const match = this.data.substring(this.pos).match(numberPattern);
     if (!match) {
-      return first - 0x30 /* = 0 */;
+      return new Token(first - 0x30 /* = 0 */);
     }
     const number = parseFloat(
       this.data.substring(this.pos - 1, this.pos + match[0].length)
