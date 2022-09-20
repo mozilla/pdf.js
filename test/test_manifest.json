@@ -6896,5 +6896,12 @@
       "firstPage": 1,
       "lastPage": 1,
       "type": "eq"
+   },
+   {  "id": "bug1791583",
+      "file": "pdfs/bug1791583.pdf",
+      "md5": "1ff6badc865c9a5e9a0dc0b7131ffe28",
+      "link": true,
+      "rounds": 1,
+      "type": "eq"
    }
 ]
