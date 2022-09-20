@@ -29,8 +29,8 @@ class SandboxSupportBase {
   }
 
   destroy() {
-    this.commFunc = null;
-    this.timeoutIds.forEach(([_, id]) => this.win.clearTimeout(id));
+    this.commFun = null;
+    this.timeoutIds.forEach((_, id) => this.win.clearTimeout(id));
     this.timeoutIds = null;
   }
 
