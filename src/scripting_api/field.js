@@ -457,9 +457,9 @@ class Field extends PDFObject {
       return;
     }
     if (!(cTrigger in this._actions)) {
-      this._actions[cTrigger] = [];
+      this._actions.set(cTrigger, []);
     }
-    this._actions[cTrigger].push(cScript);
+    this._actions.get(cTrigger).push(cScript);
   }
 
   setFocus() {
