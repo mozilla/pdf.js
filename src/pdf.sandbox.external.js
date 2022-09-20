@@ -30,7 +30,9 @@ class SandboxSupportBase {
 
   destroy() {
     this.commFun = null;
-    this.timeoutIds.forEach(([_, id]) => this.win.clearTimeout(id));
+    for (const id of this.timeoutIds.values()) {
+      this.win.clearTimeout(id);
+    }
     this.timeoutIds = null;
   }
 
@@ -88,9 +90,9 @@ class SandboxSupportBase {
         }, nMilliseconds);
         this.timeoutIds.set(callbackId, id);
       },
-      clearTimeout: id => {
-        this.win.clearTimeout(this.timeoutIds.get(id));
-        this.timeoutIds.delete(id);
+      clearTimeout: callbackId => {
+        this.win.clearTimeout(this.timeoutIds.get(callbackId));
+        this.timeoutIds.delete(callbackId);
       },
       setInterval: (callbackId, nMilliseconds) => {
         if (
@@ -107,9 +109,9 @@ class SandboxSupportBase {
         }, nMilliseconds);
         this.timeoutIds.set(callbackId, id);
       },
-      clearInterval: id => {
-        this.win.clearInterval(this.timeoutIds.get(id));
-        this.timeoutIds.delete(id);
+      clearInterval: callbackId => {
+        this.win.clearInterval(this.timeoutIds.get(callbackId));
+        this.timeoutIds.delete(callbackId);
       },
       alert: cMsg => {
         if (typeof cMsg !== "string") {
