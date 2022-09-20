@@ -998,7 +998,7 @@ class AnnotationEditorUIManager {
       return;
     }
 
-    if (this.#selectEditors.size === 0) {
+    if (this.#selectedEditors.size === 0) {
       return;
     }
     for (const editor of this.#selectedEditors) {
