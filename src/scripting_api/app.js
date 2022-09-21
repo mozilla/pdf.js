@@ -66,7 +66,6 @@ class App extends PDFObject {
     this._timeoutCallbackId = 0;
     this._globalEval = data.globalEval;
     this._externalCall = data.externalCall;
-    this._document = data._document;
   }
 
   // This function is called thanks to the proxy
