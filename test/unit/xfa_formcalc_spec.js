@@ -266,7 +266,9 @@ describe("FormCalc expression parser", function () {
 
     it("should parse basic expression with dots", function () {
       const parser = new Parser("a.b.c.#d..e.f..g.*");
-      expect(parser.parse().dump()[0]).toEqual({
+      const exprlist = parser.parse();
+      expect(exprlist.expressions[0].isDotExpression()).toEqual(true);
+      expect(exprlist.dump()[0]).toEqual({
         operator: ".",
         left: { id: "a" },
         right: {
@@ -726,6 +728,13 @@ endfunc
         "if (foo == 1) then a = 1 elseif (foo == 2) then a = 2 end"
       );
       expect(() => parser.parse()).toThrow(new Error(Errors.if));
+    });
+
+    it("should parse som predicate", () => {
+      const parser = new Parser("a.b <= 3");
+      const expr = parser.parse().expressions[0];
+      expect(expr.isSomPredicate()).toEqual(true);
+      expect(expr.left.isSomPredicate()).toEqual(true);
     });
   });
 });
