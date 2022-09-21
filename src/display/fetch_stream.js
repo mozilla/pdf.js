@@ -190,12 +190,11 @@ class PDFFetchStreamReader {
       return { value, done };
     }
     this._loaded += value.byteLength;
-    if (this.onProgress) {
-      this.onProgress({
-        loaded: this._loaded,
-        total: this._contentLength,
-      });
-    }
+    this.onProgress?.({
+      loaded: this._loaded,
+      total: this._contentLength,
+    });
+
     const buffer = new Uint8Array(value).buffer;
     return { value: buffer, done: false };
   }
