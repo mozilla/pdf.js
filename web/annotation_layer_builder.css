@@ -135,6 +135,12 @@
 .annotationLayer .buttonWidgetAnnotation.radioButton input:hover {
   border: 2px solid var(--input-hover-border-color);
 }
+.annotationLayer .textWidgetAnnotation input:hover,
+.annotationLayer .textWidgetAnnotation textarea:hover,
+.annotationLayer .choiceWidgetAnnotation select:hover,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:hover {
+  border-radius: 2px;
+}
 
 .annotationLayer .textWidgetAnnotation input:focus,
 .annotationLayer .textWidgetAnnotation textarea:focus,
