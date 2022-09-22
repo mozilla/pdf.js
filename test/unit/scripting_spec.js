@@ -608,14 +608,23 @@ describe("Scripting", function () {
       it("should parse a date with a format", async () => {
         const check = async (date, format, expected) => {
           const value = await myeval(
-            `AFParseDateEx("${date}", "${format}").toISOString()`
+            `AFParseDateEx("${date}", "${format}").toISOString().replace(/T.*$/, "")`
           );
-          expect(value).toEqual(new Date(expected).toISOString());
+          expect(value).toEqual(
+            new Date(expected).toISOString().replace(/T.*$/, "")
+          );
         };
 
         await check("05", "dd", "2000/01/05");
         await check("12", "mm", "2000/12/01");
         await check("2022", "yyyy", "2022/01/01");
+        await check("a1$9bbbb21", "dd/mm/yyyy", "2021/09/01");
+
+        // The following test isn't working as expected because
+        // the quickjs date parser has been replaced by the browser one
+        // and the date "1.9.2021" is valid in Chrome but not in Firefox.
+        // The supported date format is not specified...
+        // await check("1.9.2021", "dd/mm/yyyy", "2021/09/01");
       });
     });
 
