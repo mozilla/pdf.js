@@ -523,9 +523,7 @@ class PostScriptStack {
   }
 
   constructor(initialStack) {
-    this.stack = !initialStack
-      ? []
-      : Array.prototype.slice.call(initialStack, 0);
+    this.stack = initialStack ? Array.from(initialStack) : [];
   }
 
   push(value) {
@@ -1201,10 +1199,7 @@ class PostScriptCompiler {
           if (j === 0) {
             break; // just skipping -- there are nothing to rotate
           }
-          Array.prototype.push.apply(
-            stack,
-            stack.splice(stack.length - n, n - j)
-          );
+          stack.push(...stack.splice(stack.length - n, n - j));
           break;
         default:
           return null; // unsupported operator
