@@ -419,7 +419,7 @@ describe("function", function () {
         for (const { input, output } of samples) {
           const out = new Float32Array(output.length);
           fn(input, 0, out, 0);
-          expect(Array.prototype.slice.call(out, 0)).toEqual(output);
+          expect(Array.from(out)).toEqual(output);
         }
       }
     }
