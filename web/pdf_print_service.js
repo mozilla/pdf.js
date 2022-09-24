@@ -314,14 +314,8 @@ window.addEventListener(
     ) {
       window.print();
 
-      // The (browser) print dialog cannot be prevented from being shown in
-      // IE11.
       event.preventDefault();
-      if (event.stopImmediatePropagation) {
-        event.stopImmediatePropagation();
-      } else {
-        event.stopPropagation();
-      }
+      event.stopImmediatePropagation();
     }
   },
   true
@@ -331,7 +325,7 @@ if ("onbeforeprint" in window) {
   // Do not propagate before/afterprint events when they are not triggered
   // from within this polyfill. (FF / Chrome 63+).
   const stopPropagationIfNeeded = function (event) {
-    if (event.detail !== "custom" && event.stopImmediatePropagation) {
+    if (event.detail !== "custom") {
       event.stopImmediatePropagation();
     }
   };
