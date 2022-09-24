@@ -163,12 +163,11 @@ class BaseFullReader {
       return this.read();
     }
     this._loaded += chunk.length;
-    if (this.onProgress) {
-      this.onProgress({
-        loaded: this._loaded,
-        total: this._contentLength,
-      });
-    }
+    this.onProgress?.({
+      loaded: this._loaded,
+      total: this._contentLength,
+    });
+
     // Ensure that `read()` method returns ArrayBuffer.
     const buffer = new Uint8Array(chunk).buffer;
     return { value: buffer, done: false };
