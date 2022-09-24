@@ -71,7 +71,7 @@
   --doorhanger-hover-color: rgba(12, 12, 13, 1);
   --doorhanger-hover-bg-color: rgba(237, 237, 237, 1);
   --doorhanger-separator-color: rgba(222, 222, 222, 1);
-  --dialog-button-border: 0 none;
+  --dialog-button-border: none;
   --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
   --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
 
@@ -700,10 +700,11 @@ body {
 .toolbarButton,
 .secondaryToolbarButton,
 .dialogButton {
-  border: 0 none;
+  border: none;
   background: none;
   width: 28px;
   height: 28px;
+  outline: none;
 }
 
 .dialogButton:hover,
@@ -1096,7 +1097,7 @@ a.secondaryToolbarButton[href="#"] {
   color: var(--field-color);
   font-size: 12px;
   line-height: 16px;
-  outline-style: none;
+  outline: none;
 }
 
 .toolbarField[type="checkbox"] {
