@@ -320,6 +320,10 @@ body {
   font: message-box;
 }
 
+/*#if !MOZCENTRAL*/
+#errorWrapper,
+#errorWrapper button,
+/*#endif*/
 .toolbar input,
 .toolbar button,
 .toolbar select,
