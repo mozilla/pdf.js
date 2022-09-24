@@ -37,16 +37,18 @@ Before downloading PDF.js please take a moment to understand the different layer
 
 ## Download
 
+Please refer to [this wiki page](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support) for information about supported browsers.
+
 <div class="row">
   <div class="col-md-4">
-    <h3>Prebuilt</h3>
+    <h3>Prebuilt (modern browsers)</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
     <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
   </div>
   <div class="col-md-4">
-    <h3>Prebuilt (for older browsers)</h3>
+    <h3>Prebuilt (older browsers)</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
