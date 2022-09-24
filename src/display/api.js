@@ -1853,34 +1853,33 @@ class PDFPageProxy {
 }
 
 class LoopbackPort {
-  constructor() {
-    this._listeners = [];
-    this._deferred = Promise.resolve();
-  }
+  #listeners = [];
+
+  #deferred = Promise.resolve();
 
   postMessage(obj, transfers) {
     const event = {
       data: structuredClone(obj, transfers),
     };
 
-    this._deferred.then(() => {
-      for (const listener of this._listeners) {
+    this.#deferred.then(() => {
+      for (const listener of this.#listeners) {
         listener.call(this, event);
       }
     });
   }
 
   addEventListener(name, listener) {
-    this._listeners.push(listener);
+    this.#listeners.push(listener);
   }
 
   removeEventListener(name, listener) {
-    const i = this._listeners.indexOf(listener);
-    this._listeners.splice(i, 1);
+    const i = this.#listeners.indexOf(listener);
+    this.#listeners.splice(i, 1);
   }
 
   terminate() {
-    this._listeners.length = 0;
+    this.#listeners.length = 0;
   }
 }
 
