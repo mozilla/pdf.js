@@ -25,7 +25,7 @@ Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mo
 
 Please note that the "Modern browsers" version assumes native support for
 features such as optional chaining, nullish coalescing,
-and private `class` fields/methods.
+and private `class` fields/methods; please also see [this wiki page](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support).
 
 + Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
 
