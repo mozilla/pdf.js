@@ -43,7 +43,6 @@ import {
 import {
   build,
   getDocument,
-  LoopbackPort,
   PDFDataRangeTransport,
   PDFWorker,
   setPDFNetworkStreamFactory,
@@ -128,7 +127,6 @@ export {
   InvalidPDFException,
   isPdfFile,
   loadScript,
-  LoopbackPort,
   MissingPDFException,
   OPS,
   PasswordResponses,
