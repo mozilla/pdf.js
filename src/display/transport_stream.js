@@ -92,15 +92,12 @@ class PDFDataTransportStream {
   _onProgress(evt) {
     if (evt.total === undefined) {
       // Reporting to first range reader, if it exists.
-      const firstReader = this._rangeReaders[0];
-      if (firstReader?.onProgress) {
-        firstReader.onProgress({ loaded: evt.loaded });
-      }
+      this._rangeReaders[0]?.onProgress?.({ loaded: evt.loaded });
     } else {
-      const fullReader = this._fullRequestReader;
-      if (fullReader?.onProgress) {
-        fullReader.onProgress({ loaded: evt.loaded, total: evt.total });
-      }
+      this._fullRequestReader?.onProgress?.({
+        loaded: evt.loaded,
+        total: evt.total,
+      });
     }
   }
 
