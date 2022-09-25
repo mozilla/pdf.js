@@ -167,10 +167,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   FontLoader = class GenericFontLoader extends BaseFontLoader {
     constructor(params) {
       super(params);
-      this.loadingContext = {
-        requests: [],
-        nextRequestId: 0,
-      };
+      this.loadingRequests = [];
       this.loadTestFontId = 0;
     }
 
@@ -201,20 +198,19 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
         request.done = true;
 
         // Sending all completed requests in order of how they were queued.
-        while (context.requests.length > 0 && context.requests[0].done) {
-          const otherRequest = context.requests.shift();
+        while (loadingRequests.length > 0 && loadingRequests[0].done) {
+          const otherRequest = loadingRequests.shift();
           setTimeout(otherRequest.callback, 0);
         }
       }
 
-      const context = this.loadingContext;
+      const { loadingRequests } = this;
       const request = {
-        id: `pdfjs-font-loading-${context.nextRequestId++}`,
         done: false,
         complete: completeRequest,
         callback,
       };
-      context.requests.push(request);
+      loadingRequests.push(request);
       return request;
     }
 
