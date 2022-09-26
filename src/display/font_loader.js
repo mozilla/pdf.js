@@ -114,7 +114,7 @@ class FontLoader {
       }
       await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
-        this._prepareFontLoadEvent([font], request);
+        this._prepareFontLoadEvent(font, request);
       });
       // The font was, asynchronously, loaded.
     }
@@ -218,7 +218,7 @@ class FontLoader {
     return shadow(this, "_loadTestFont", testFont);
   }
 
-  _prepareFontLoadEvent(fonts, request) {
+  _prepareFontLoadEvent(font, request) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Not implemented: _prepareFontLoadEvent");
     }
@@ -299,19 +299,13 @@ class FontLoader {
     const rule = `@font-face {font-family:"${loadTestFontId}";src:${url}}`;
     this.insertRule(rule);
 
-    const names = [];
-    for (const font of fonts) {
-      names.push(font.loadedName);
-    }
-    names.push(loadTestFontId);
-
     const div = this._document.createElement("div");
     div.style.visibility = "hidden";
     div.style.width = div.style.height = "10px";
     div.style.position = "absolute";
     div.style.top = div.style.left = "0px";
 
-    for (const name of names) {
+    for (const name of [font.loadedName, loadTestFontId]) {
       const span = this._document.createElement("span");
       span.textContent = "Hi";
       span.style.fontFamily = name;
