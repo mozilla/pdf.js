@@ -18,6 +18,8 @@ import { PDFObject } from "./pdf_object.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
 
+const DOC_EXTERNAL = false;
+
 class InfoProxyHandler {
   static get(obj, prop) {
     return obj[prop.toLowerCase()];
@@ -272,7 +274,10 @@ class Doc extends PDFObject {
   }
 
   get external() {
-    return true;
+    // According to the specification this should be `true` in non-Acrobat
+    // applications, however we ignore that to avoid bothering users with
+    // an `alert`-dialog on document load (see issue 15509).
+    return DOC_EXTERNAL;
   }
 
   set external(_) {
