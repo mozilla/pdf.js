@@ -114,7 +114,7 @@ class FontLoader {
       }
       await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
-        this._prepareFontLoadEvent([rule], [font], request);
+        this._prepareFontLoadEvent([font], request);
       });
       // The font was, asynchronously, loaded.
     }
@@ -218,7 +218,7 @@ class FontLoader {
     return shadow(this, "_loadTestFont", testFont);
   }
 
-  _prepareFontLoadEvent(rules, fonts, request) {
+  _prepareFontLoadEvent(fonts, request) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Not implemented: _prepareFontLoadEvent");
     }
@@ -252,9 +252,8 @@ class FontLoader {
 
     let called = 0;
     function isFontReady(name, callback) {
-      called++;
       // With setTimeout clamping this gives the font ~100ms to load.
-      if (called > 30) {
+      if (++called > 30) {
         warn("Load test font never loaded.");
         callback();
         return;
