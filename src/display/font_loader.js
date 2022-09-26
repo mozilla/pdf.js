@@ -112,6 +112,9 @@ class FontLoader {
       if (this.isSyncFontLoadingSupported) {
         return; // The font was, synchronously, loaded.
       }
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Not implemented: async font loading");
+      }
       await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
         this._prepareFontLoadEvent(font, request);
