@@ -1979,13 +1979,6 @@ const PDFViewerApplication = {
       const mediaQueryList = window.matchMedia(
         `(resolution: ${window.devicePixelRatio || 1}dppx)`
       );
-      if (
-        typeof PDFJSDev !== "undefined" &&
-        PDFJSDev.test("GENERIC && !SKIP_BABEL") &&
-        typeof mediaQueryList.addEventListener !== "function"
-      ) {
-        return; // Not supported in Safari<14.
-      }
       mediaQueryList.addEventListener("change", addWindowResolutionChange, {
         once: true,
       });
