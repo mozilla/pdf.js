@@ -2417,6 +2417,23 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
+    // TODO: Change this to a `text` reference test instead.
+    //       Currently that doesn't work, since the `XMLSerializer` fails on
+    //       the ASCII "control characters" found in the text-content.
+    it("gets text content with non-standard ligatures (issue issue15516)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue15516_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(text).toEqual("ffi fi ffl ff fl \x07 \x08 Ý");
+
+      await loadingTask.destroy();
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 
