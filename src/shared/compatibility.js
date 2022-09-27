@@ -50,9 +50,7 @@ if (
     if (globalThis.DOMMatrix || !isNodeJS) {
       return;
     }
-    globalThis.DOMMatrix = __non_webpack_require__(
-      "dommatrix/dist/dommatrix.js"
-    );
+    globalThis.DOMMatrix = __non_webpack_require__("canvas").DOMMatrix;
   })();
 
   // Support: Node.js

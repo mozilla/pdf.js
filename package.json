@@ -14,7 +14,6 @@
     "core-js": "^3.25.1",
     "cross-env": "^7.0.3",
     "dialog-polyfill": "^0.5.6",
-    "dommatrix": "^1.0.3",
     "es-module-shims": "1.4.7",
     "eslint": "^8.23.1",
     "eslint-config-prettier": "^8.5.0",
