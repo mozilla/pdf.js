@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { AnnotationEditorType } from "pdfjs-lib";
 import { GrabToPan } from "./grab_to_pan.js";
 import { PresentationModeState } from "./ui_utils.js";
 
@@ -41,6 +42,7 @@ class PDFCursorTools {
 
     this.active = CursorTool.SELECT;
     this.activeBeforePresentationMode = null;
+    this.activeBeforeEditingMode = null;
 
     this.handTool = new GrabToPan({
       element: this.container,
@@ -138,6 +140,25 @@ class PDFCursorTools {
             this.switchTool(previouslyActive);
           }
           break;
+        }
+      }
+    });
+
+    this.eventBus._on("annotationeditormodechanged", evt => {
+      if (evt.mode !== AnnotationEditorType.NONE) {
+        if (this.activeBeforeEditingMode !== null) {
+          // We're switching from a tool to an other.
+          return;
+        }
+        const previouslyActive = this.active;
+
+        this.switchTool(CursorTool.SELECT);
+        this.activeBeforeEditingMode = previouslyActive;
+      } else {
+        const previouslyActive = this.activeBeforeEditingMode;
+        if (previouslyActive !== null) {
+          this.activeBeforeEditingMode = null;
+          this.switchTool(previouslyActive);
         }
       }
     });
