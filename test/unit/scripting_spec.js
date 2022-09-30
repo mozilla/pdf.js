@@ -1035,7 +1035,7 @@ describe("Scripting", function () {
       });
     });
 
-    describe("ASSimple_Calculate", function () {
+    describe("AFSimple_Calculate", function () {
       it("should compute the sum of several fields", async () => {
         const refIds = [0, 1, 2, 3].map(_ => getId());
         const data = {
@@ -1427,6 +1427,22 @@ describe("Scripting", function () {
 
         value = await myeval(`eMailValidate("foo bar")`);
         expect(value).toEqual(false);
+      });
+    });
+
+    describe("AFExactMatch", function () {
+      it("should check matching between regexs and a string", async () => {
+        let value = await myeval(`AFExactMatch(/\\d+/, "123")`);
+        expect(value).toEqual(true);
+
+        value = await myeval(`AFExactMatch(/\\d+/, "foo")`);
+        expect(value).toEqual(0);
+
+        value = await myeval(`AFExactMatch([/\\d+/, /[fo]*/], "foo")`);
+        expect(value).toEqual(2);
+
+        value = await myeval(`AFExactMatch([/\\d+/, /[fo]*/], "bar")`);
+        expect(value).toEqual(0);
       });
     });
   });

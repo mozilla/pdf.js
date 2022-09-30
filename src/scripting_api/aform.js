@@ -683,6 +683,14 @@ class AForm {
   eMailValidate(str) {
     return this._emailRegex.test(str);
   }
+
+  AFExactMatch(rePatterns, str) {
+    if (rePatterns instanceof RegExp) {
+      return str.match(rePatterns)?.[0] === str || 0;
+    }
+
+    return rePatterns.findIndex(re => str.match(re)?.[0] === str) + 1;
+  }
 }
 
 export { AForm };
