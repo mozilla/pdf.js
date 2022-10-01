@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 
-import "./compatibility.js";
+// Skip compatibility checks for modern builds and if we already ran the module.
+if (
+  typeof PDFJSDev !== "undefined" &&
+  !PDFJSDev.test("SKIP_BABEL") &&
+  !globalThis._pdfjsCompatibilityChecked
+) {
+  globalThis._pdfjsCompatibilityChecked = true;
+  require("./compatibility.js");
+}
 
 const IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
