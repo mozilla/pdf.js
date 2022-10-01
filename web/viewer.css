@@ -28,9 +28,6 @@
 
   --main-color: rgba(12, 12, 13, 1);
   --body-bg-color: rgba(237, 237, 240, 1);
-  /*#if !MOZCENTRAL*/
-  --errorWrapper-bg-color: rgba(255, 110, 110, 1);
-  /*#endif*/
   --progressBar-percent: 0%;
   --progressBar-end-offset: 0;
   --progressBar-color: rgba(10, 132, 255, 1);
@@ -126,9 +123,6 @@
   :root {
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
-    /*#if !MOZCENTRAL*/
-    --errorWrapper-bg-color: rgba(169, 14, 14, 1);
-    /*#endif*/
     --progressBar-color: rgba(0, 96, 223, 1);
     --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
     --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
@@ -320,10 +314,6 @@ body {
   font: message-box;
 }
 
-/*#if !MOZCENTRAL*/
-#errorWrapper,
-#errorWrapper button,
-/*#endif*/
 .toolbar input,
 .toolbar button,
 .toolbar select,
@@ -1291,37 +1281,6 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   border-radius: 2px;
   color: var(--treeitem-hover-color);
 }
-
-/*#if !MOZCENTRAL*/
-#errorWrapper {
-  background-color: var(--errorWrapper-bg-color);
-  color: var(--main-color);
-  left: 0;
-  position: absolute;
-  right: 0;
-  z-index: 1000;
-  padding: 3px 6px;
-}
-
-#errorMessageLeft {
-  float: left;
-}
-#errorMessageRight {
-  float: right;
-}
-
-#errorSpacer {
-  clear: both;
-}
-#errorMoreInfo {
-  background-color: var(--field-bg-color);
-  color: var(--field-color);
-  border: 1px solid var(--field-border-color);
-  padding: 3px;
-  margin: 3px;
-  width: 98%;
-}
-/*#endif*/
 
 .dialogButton {
   width: auto;
