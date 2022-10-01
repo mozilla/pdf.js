@@ -112,9 +112,12 @@ class FontLoader {
       if (this.isSyncFontLoadingSupported) {
         return; // The font was, synchronously, loaded.
       }
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Not implemented: async font loading");
+      }
       await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
-        this._prepareFontLoadEvent([rule], [font], request);
+        this._prepareFontLoadEvent(font, request);
       });
       // The font was, asynchronously, loaded.
     }
@@ -218,7 +221,7 @@ class FontLoader {
     return shadow(this, "_loadTestFont", testFont);
   }
 
-  _prepareFontLoadEvent(rules, fonts, request) {
+  _prepareFontLoadEvent(font, request) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Not implemented: _prepareFontLoadEvent");
     }
@@ -252,9 +255,8 @@ class FontLoader {
 
     let called = 0;
     function isFontReady(name, callback) {
-      called++;
       // With setTimeout clamping this gives the font ~100ms to load.
-      if (called > 30) {
+      if (++called > 30) {
         warn("Load test font never loaded.");
         callback();
         return;
@@ -300,19 +302,13 @@ class FontLoader {
     const rule = `@font-face {font-family:"${loadTestFontId}";src:${url}}`;
     this.insertRule(rule);
 
-    const names = [];
-    for (const font of fonts) {
-      names.push(font.loadedName);
-    }
-    names.push(loadTestFontId);
-
     const div = this._document.createElement("div");
     div.style.visibility = "hidden";
     div.style.width = div.style.height = "10px";
     div.style.position = "absolute";
     div.style.top = div.style.left = "0px";
 
-    for (const name of names) {
+    for (const name of [font.loadedName, loadTestFontId]) {
       const span = this._document.createElement("span");
       span.textContent = "Hi";
       span.style.fontFamily = name;
