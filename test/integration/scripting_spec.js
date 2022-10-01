@@ -51,6 +51,7 @@ describe("Interaction", () => {
           await page.waitForFunction(
             "window.PDFViewerApplication.scriptingReady === true"
           );
+          await page.waitForFunction(`window.document.activeElement !== null`);
 
           // The document has an open action in order to give the focus to 401R.
           const id = await page.evaluate(() => {
