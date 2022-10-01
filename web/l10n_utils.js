@@ -38,8 +38,6 @@ const DEFAULT_L10N_STRINGS = {
   document_properties_linearized_yes: "Yes",
   document_properties_linearized_no: "No",
 
-  print_progress_percent: "{{progress}}%",
-
   additional_layers: "Additional Layers",
   page_landmark: "Page {{page}}",
   thumb_page_title: "Page {{page}}",
@@ -83,6 +81,9 @@ const DEFAULT_L10N_STRINGS = {
   editor_ink2_aria_label: "Draw Editor",
   editor_ink_canvas_aria_label: "User-created image",
 };
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+  DEFAULT_L10N_STRINGS.print_progress_percent = "{{progress}}%";
+}
 
 function getL10nFallback(key, args) {
   switch (key) {

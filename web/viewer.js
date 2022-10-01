@@ -195,17 +195,6 @@ function getViewerConfiguration() {
       editorInkThickness: document.getElementById("editorInkThickness"),
       editorInkOpacity: document.getElementById("editorInkOpacity"),
     },
-    errorWrapper:
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
-        ? {
-            container: document.getElementById("errorWrapper"),
-            errorMessage: document.getElementById("errorMessage"),
-            closeButton: document.getElementById("errorClose"),
-            errorMoreInfo: document.getElementById("errorMoreInfo"),
-            moreInfoButton: document.getElementById("errorShowMore"),
-            lessInfoButton: document.getElementById("errorShowLess"),
-          }
-        : null,
     printContainer: document.getElementById("printContainer"),
     openFileInput:
       typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
