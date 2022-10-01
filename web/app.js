@@ -23,7 +23,6 @@ import {
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
-  noContextMenuHandler,
   normalizeWheelEventDirection,
   parseQueryString,
   ProgressBar,
@@ -826,11 +825,6 @@ const PDFViewerApplication = {
     this._unblockDocumentLoadEvent();
     this._hideViewBookmark();
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      const { container } = this.appConfig.errorWrapper;
-      container.hidden = true;
-    }
-
     if (!this.pdfLoadingTask) {
       return;
     }
@@ -1114,47 +1108,10 @@ const PDFViewerApplication = {
       }
     }
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      const errorWrapperConfig = this.appConfig.errorWrapper;
-      const errorWrapper = errorWrapperConfig.container;
-      errorWrapper.hidden = false;
-
-      const errorMessage = errorWrapperConfig.errorMessage;
-      errorMessage.textContent = message;
-
-      const closeButton = errorWrapperConfig.closeButton;
-      closeButton.onclick = function () {
-        errorWrapper.hidden = true;
-      };
-
-      const errorMoreInfo = errorWrapperConfig.errorMoreInfo;
-      const moreInfoButton = errorWrapperConfig.moreInfoButton;
-      const lessInfoButton = errorWrapperConfig.lessInfoButton;
-      moreInfoButton.onclick = function () {
-        errorMoreInfo.hidden = false;
-        moreInfoButton.hidden = true;
-        lessInfoButton.hidden = false;
-        errorMoreInfo.style.height = errorMoreInfo.scrollHeight + "px";
-      };
-      lessInfoButton.onclick = function () {
-        errorMoreInfo.hidden = true;
-        moreInfoButton.hidden = false;
-        lessInfoButton.hidden = true;
-      };
-      moreInfoButton.oncontextmenu = noContextMenuHandler;
-      lessInfoButton.oncontextmenu = noContextMenuHandler;
-      closeButton.oncontextmenu = noContextMenuHandler;
-      moreInfoButton.hidden = false;
-      lessInfoButton.hidden = true;
-      Promise.all(moreInfoText).then(parts => {
-        errorMoreInfo.value = parts.join("\n");
-      });
-    } else {
-      Promise.all(moreInfoText).then(parts => {
-        console.error(message + "\n" + parts.join("\n"));
-      });
-      this.fallback();
-    }
+    Promise.all(moreInfoText).then(parts => {
+      console.error(`${message}\n${parts.join("\n")}`);
+    });
+    this.fallback();
   },
 
   progress(level) {
