@@ -40,10 +40,6 @@ const DEFAULT_L10N_STRINGS = {
 
   print_progress_percent: "{{progress}}%",
 
-  "toggle_sidebar.title": "Toggle Sidebar",
-  "toggle_sidebar_notification2.title":
-    "Toggle Sidebar (document contains outline/attachments/layers)",
-
   additional_layers: "Additional Layers",
   page_landmark: "Page {{page}}",
   thumb_page_title: "Page {{page}}",
