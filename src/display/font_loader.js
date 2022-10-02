@@ -25,12 +25,10 @@ import {
 
 class FontLoader {
   constructor({
-    docId,
     onUnsupportedFeature,
     ownerDocument = globalThis.document,
     styleElement = null, // For testing only.
   }) {
-    this.docId = docId;
     this._onUnsupportedFeature = onUnsupportedFeature;
     this._document = ownerDocument;
 
@@ -52,15 +50,13 @@ class FontLoader {
   }
 
   insertRule(rule) {
-    let styleElement = this.styleElement;
-    if (!styleElement) {
-      styleElement = this.styleElement = this._document.createElement("style");
-      styleElement.id = `PDFJS_FONT_STYLE_TAG_${this.docId}`;
+    if (!this.styleElement) {
+      this.styleElement = this._document.createElement("style");
       this._document.documentElement
         .getElementsByTagName("head")[0]
-        .append(styleElement);
+        .append(this.styleElement);
     }
-    const styleSheet = styleElement.sheet;
+    const styleSheet = this.styleElement.sheet;
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
   }
 

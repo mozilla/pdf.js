@@ -2281,7 +2281,6 @@ class WorkerTransport {
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader({
-      docId: loadingTask.docId,
       onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
       ownerDocument: params.ownerDocument,
       styleElement: params.styleElement,
