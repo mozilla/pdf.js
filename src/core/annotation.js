@@ -80,15 +80,19 @@ class AnnotationFactory {
       // Only necessary to prevent the `pdfManager.docBaseUrl`-getter, used
       // with certain Annotations, from throwing and thus breaking parsing:
       pdfManager.ensureCatalog("baseUrl"),
+      // Only necessary in the `Catalog.parseDestDictionary`-method,
+      // when parsing "GoToE" actions:
+      pdfManager.ensureCatalog("attachments"),
       pdfManager.ensureDoc("xfaDatasets"),
       collectFields ? this._getPageIndex(xref, ref, pdfManager) : -1,
-    ]).then(([acroForm, baseUrl, xfaDatasets, pageIndex]) =>
+    ]).then(([acroForm, baseUrl, attachments, xfaDatasets, pageIndex]) =>
       pdfManager.ensure(this, "_create", [
         xref,
         ref,
         pdfManager,
         idFactory,
         acroForm,
+        attachments,
         xfaDatasets,
         collectFields,
         pageIndex,
@@ -105,6 +109,7 @@ class AnnotationFactory {
     pdfManager,
     idFactory,
     acroForm,
+    attachments = null,
     xfaDatasets,
     collectFields,
     pageIndex = -1
@@ -130,6 +135,7 @@ class AnnotationFactory {
       id,
       pdfManager,
       acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      attachments,
       xfaDatasets,
       collectFields,
       pageIndex,
@@ -2893,6 +2899,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       destDict: params.dict,
       resultObj: this.data,
       docBaseUrl: params.pdfManager.docBaseUrl,
+      docAttachments: params.attachments,
     });
   }
 
@@ -3221,6 +3228,7 @@ class LinkAnnotation extends Annotation {
       destDict: params.dict,
       resultObj: this.data,
       docBaseUrl: params.pdfManager.docBaseUrl,
+      docAttachments: params.attachments,
     });
   }
 }
