@@ -37,8 +37,8 @@ function writeData(dest, offset, data) {
     }
   } else {
     // treating everything else as array
-    for (let i = 0, ii = data.length; i < ii; i++) {
-      dest[offset++] = data[i] & 0xff;
+    for (const num of data) {
+      dest[offset++] = num & 0xff;
     }
   }
 }

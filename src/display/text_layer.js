@@ -214,8 +214,8 @@ function render(task) {
   }
 
   if (!task._textContentStream) {
-    for (let i = 0; i < textDivsLength; i++) {
-      task._layoutText(textDivs[i]);
+    for (const textDiv of textDivs) {
+      task._layoutText(textDiv);
     }
   }
 
@@ -304,26 +304,26 @@ class TextLayerRenderTask {
    * @private
    */
   _processItems(items, styleCache) {
-    for (let i = 0, len = items.length; i < len; i++) {
-      if (items[i].str === undefined) {
+    for (const item of items) {
+      if (item.str === undefined) {
         if (
-          items[i].type === "beginMarkedContentProps" ||
-          items[i].type === "beginMarkedContent"
+          item.type === "beginMarkedContentProps" ||
+          item.type === "beginMarkedContent"
         ) {
           const parent = this._container;
           this._container = document.createElement("span");
           this._container.classList.add("markedContent");
-          if (items[i].id !== null) {
-            this._container.setAttribute("id", `${items[i].id}`);
+          if (item.id !== null) {
+            this._container.setAttribute("id", `${item.id}`);
           }
           parent.append(this._container);
-        } else if (items[i].type === "endMarkedContent") {
+        } else if (item.type === "endMarkedContent") {
           this._container = this._container.parentNode;
         }
         continue;
       }
-      this._textContentItemsStr.push(items[i].str);
-      appendText(this, items[i], styleCache, this._layoutTextCtx);
+      this._textContentItemsStr.push(item.str);
+      appendText(this, item, styleCache, this._layoutTextCtx);
     }
   }
 

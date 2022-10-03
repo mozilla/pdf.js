@@ -551,14 +551,14 @@ class XRef {
       }
     }
     // reading XRef streams
-    for (let i = 0, ii = xrefStms.length; i < ii; ++i) {
-      this.startXRefQueue.push(xrefStms[i]);
+    for (const xrefStm of xrefStms) {
+      this.startXRefQueue.push(xrefStm);
       this.readXRef(/* recoveryMode */ true);
     }
     // finding main trailer
     let trailerDict;
-    for (let i = 0, ii = trailers.length; i < ii; ++i) {
-      stream.pos = trailers[i];
+    for (const trailer of trailers) {
+      stream.pos = trailer;
       const parser = new Parser({
         lexer: new Lexer(stream),
         xref: this,

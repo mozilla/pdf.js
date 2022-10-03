@@ -844,8 +844,7 @@ function copyCtxState(sourceCtx, destCtx) {
     "globalCompositeOperation",
     "font",
   ];
-  for (let i = 0, ii = properties.length; i < ii; i++) {
-    const property = properties[i];
+  for (const property of properties) {
     if (sourceCtx[property] !== undefined) {
       destCtx[property] = sourceCtx[property];
     }
@@ -1538,11 +1537,7 @@ class CanvasGraphics {
   }
 
   setGState(states) {
-    for (let i = 0, ii = states.length; i < ii; i++) {
-      const state = states[i];
-      const key = state[0];
-      const value = state[1];
-
+    for (const [key, value] of states) {
       switch (key) {
         case "LW":
           this.setLineWidth(value);
@@ -1569,11 +1564,11 @@ class CanvasGraphics {
           this.setFont(value[0], value[1]);
           break;
         case "CA":
-          this.current.strokeAlpha = state[1];
+          this.current.strokeAlpha = value;
           break;
         case "ca":
-          this.current.fillAlpha = state[1];
-          this.ctx.globalAlpha = state[1];
+          this.current.fillAlpha = value;
+          this.ctx.globalAlpha = value;
           break;
         case "BM":
           this.ctx.globalCompositeOperation = value;

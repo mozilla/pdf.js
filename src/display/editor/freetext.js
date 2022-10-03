@@ -299,8 +299,7 @@ class FreeTextEditor extends AnnotationEditor {
       return this.editorDiv.innerText;
     }
     const buffer = [];
-    for (let i = 0, ii = divs.length; i < ii; i++) {
-      const div = divs[i];
+    for (const div of divs) {
       const first = div.firstChild;
       if (first?.nodeName === "#text") {
         buffer.push(first.data);

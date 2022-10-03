@@ -774,8 +774,7 @@ class JpegImage {
     function prepareComponents(frame) {
       const mcusPerLine = Math.ceil(frame.samplesPerLine / 8 / frame.maxH);
       const mcusPerColumn = Math.ceil(frame.scanLines / 8 / frame.maxV);
-      for (let i = 0, ii = frame.components.length; i < ii; i++) {
-        const component = frame.components[i];
+      for (const component of frame.components) {
         const blocksPerLine = Math.ceil(
           (Math.ceil(frame.samplesPerLine / 8) * component.h) / frame.maxH
         );
@@ -1080,9 +1079,7 @@ class JpegImage {
     this.jfif = jfif;
     this.adobe = adobe;
     this.components = [];
-    for (let i = 0, ii = frame.components.length; i < ii; i++) {
-      const component = frame.components[i];
-
+    for (const component of frame.components) {
       // Prevent errors when DQT markers are placed after SOF{n} markers,
       // by assigning the `quantizationTable` entry after the entire image
       // has been parsed (fixes issue7406.pdf).
@@ -1391,11 +1388,9 @@ class JpegImage {
     const data = this._getLinearizedBlockData(width, height, isSourcePDF);
 
     if (this.numComponents === 1 && forceRGB) {
-      const dataLength = data.length;
-      const rgbData = new Uint8ClampedArray(dataLength * 3);
+      const rgbData = new Uint8ClampedArray(data.length * 3);
       let offset = 0;
-      for (let i = 0; i < dataLength; i++) {
-        const grayColor = data[i];
+      for (const grayColor of data) {
         rgbData[offset++] = grayColor;
         rgbData[offset++] = grayColor;
         rgbData[offset++] = grayColor;
