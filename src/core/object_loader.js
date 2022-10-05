@@ -71,8 +71,8 @@ class ObjectLoader {
     this.refSet = new RefSet();
     // Setup the initial nodes to visit.
     const nodesToVisit = [];
-    for (let i = 0, ii = keys.length; i < ii; i++) {
-      const rawValue = dict.getRaw(keys[i]);
+    for (const key of keys) {
+      const rawValue = dict.getRaw(key);
       // Skip nodes that are guaranteed to be empty.
       if (rawValue !== undefined) {
         nodesToVisit.push(rawValue);

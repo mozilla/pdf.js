@@ -291,8 +291,8 @@ class Type1Font {
 
   getType2Charstrings(type1Charstrings) {
     const type2Charstrings = [];
-    for (let i = 0, ii = type1Charstrings.length; i < ii; i++) {
-      type2Charstrings.push(type1Charstrings[i].charstring);
+    for (const type1Charstring of type1Charstrings) {
+      type2Charstrings.push(type1Charstring.charstring);
     }
     return type2Charstrings;
   }

@@ -1407,8 +1407,8 @@ class PDFDocument {
 
     function hexString(hash) {
       const buf = [];
-      for (let i = 0, ii = hash.length; i < ii; i++) {
-        const hex = hash[i].toString(16);
+      for (const num of hash) {
+        const hex = num.toString(16);
         buf.push(hex.padStart(2, "0"));
       }
       return buf.join("");
