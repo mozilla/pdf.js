@@ -1343,8 +1343,7 @@ class Catalog {
 
           const kidPromises = [];
           let found = false;
-          for (let i = 0, ii = kids.length; i < ii; i++) {
-            const kid = kids[i];
+          for (const kid of kids) {
             if (!(kid instanceof Ref)) {
               throw new FormatError("Kid must be a reference.");
             }

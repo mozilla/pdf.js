@@ -112,8 +112,8 @@ const deferred = Promise.resolve();
 function normalizeBlendMode(value, parsingArray = false) {
   if (Array.isArray(value)) {
     // Use the first *supported* BM value in the Array (fixes issue11279.pdf).
-    for (let i = 0, ii = value.length; i < ii; i++) {
-      const maybeBM = normalizeBlendMode(value[i], /* parsingArray = */ true);
+    for (const val of value) {
+      const maybeBM = normalizeBlendMode(val, /* parsingArray = */ true);
       if (maybeBM) {
         return maybeBM;
       }
@@ -1056,10 +1056,8 @@ class PartialEvaluator {
     let isSimpleGState = true;
     // This array holds the converted/processed state data.
     const gStateObj = [];
-    const gStateKeys = gState.getKeys();
     let promise = Promise.resolve();
-    for (let i = 0, ii = gStateKeys.length; i < ii; i++) {
-      const key = gStateKeys[i];
+    for (const key of gState.getKeys()) {
       const value = gState.get(key);
       switch (key) {
         case "Type":
@@ -3419,8 +3417,8 @@ class PartialEvaluator {
         if (encoding.has("Differences")) {
           const diffEncoding = encoding.get("Differences");
           let index = 0;
-          for (let j = 0, jj = diffEncoding.length; j < jj; j++) {
-            const data = xref.fetchIfRef(diffEncoding[j]);
+          for (const entry of diffEncoding) {
+            const data = xref.fetchIfRef(entry);
             if (typeof data === "number") {
               index = data;
             } else if (data instanceof Name) {
@@ -4150,8 +4148,8 @@ class PartialEvaluator {
             if (widths) {
               const glyphWidths = [];
               let j = firstChar;
-              for (let i = 0, ii = widths.length; i < ii; i++) {
-                glyphWidths[j++] = this.xref.fetchIfRef(widths[i]);
+              for (const width of widths) {
+                glyphWidths[j++] = this.xref.fetchIfRef(width);
               }
               newProperties.widths = glyphWidths;
             } else {
