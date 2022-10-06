@@ -410,6 +410,7 @@ class WorkerMessageHandler {
         disableFontFace: data.disableFontFace,
         ignoreErrors: data.ignoreErrors,
         isEvalSupported: data.isEvalSupported,
+        isOffscreenCanvasSupported: data.isOffscreenCanvasSupported,
         fontExtraProperties: data.fontExtraProperties,
         useSystemFonts: data.useSystemFonts,
         cMapUrl: data.cMapUrl,

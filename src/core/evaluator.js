@@ -84,6 +84,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   disableFontFace: false,
   ignoreErrors: false,
   isEvalSupported: true,
+  isOffscreenCanvasSupported: true,
   fontExtraProperties: false,
   useSystemFonts: true,
   cMapUrl: null,
@@ -652,6 +653,7 @@ class PartialEvaluator {
         imageIsFromDecodeStream: image instanceof DecodeStream,
         inverseDecode: !!decode && decode[0] > 0,
         interpolate,
+        isOffscreenCanvasSupported: this.options.isOffscreenCanvasSupported,
       });
 
       if (imgData.isSingleOpaquePixel) {
