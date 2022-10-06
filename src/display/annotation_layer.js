@@ -595,6 +595,9 @@ class LinkAnnotationElement extends AnnotationElement {
     } else if (data.action) {
       this._bindNamedAction(link, data.action);
       isBound = true;
+    } else if (data.attachment) {
+      this._bindAttachment(link, data.attachment);
+      isBound = true;
     } else if (data.setOCGState) {
       this.#bindSetOCGState(link, data.setOCGState);
       isBound = true;
@@ -674,6 +677,24 @@ class LinkAnnotationElement extends AnnotationElement {
     link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.linkService.executeNamedAction(action);
+      return false;
+    };
+    link.className = "internalLink";
+  }
+
+  /**
+   * Bind attachments to the link element.
+   * @param {Object} link
+   * @param {Object} attachment
+   */
+  _bindAttachment(link, attachment) {
+    link.href = this.linkService.getAnchorUrl("");
+    link.onclick = () => {
+      this.downloadManager?.openOrDownloadData(
+        this.container,
+        attachment.content,
+        attachment.filename
+      );
       return false;
     };
     link.className = "internalLink";

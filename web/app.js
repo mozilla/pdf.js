@@ -636,6 +636,7 @@ const PDFViewerApplication = {
       container: appConfig.sidebar.outlineView,
       eventBus,
       linkService: pdfLinkService,
+      downloadManager,
     });
 
     this.pdfAttachmentViewer = new PDFAttachmentViewer({
