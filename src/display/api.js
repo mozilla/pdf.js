@@ -189,6 +189,10 @@ function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
  * @property {boolean} [isEvalSupported] - Determines if we can evaluate strings
  *   as JavaScript. Primarily used to improve performance of font rendering, and
  *   when parsing PDF functions. The default value is `true`.
+ * @property {boolean} [isOffscreenCanvasSupported] - Determines if we can use
+ *   `OffscreenCanvas` in the worker. Primarily used to improve performance of
+ *   image conversion/rendering.
+ *   The default value is `true` in web environments and `false` in Node.js.
  * @property {boolean} [disableFontFace] - By default fonts are converted to
  *   OpenType fonts and loaded via the Font Loading API or `@font-face` rules.
  *   If disabled, fonts will be rendered using a built-in font renderer that
@@ -365,6 +369,9 @@ function getDocument(src) {
   if (typeof params.isEvalSupported !== "boolean") {
     params.isEvalSupported = true;
   }
+  if (typeof params.isOffscreenCanvasSupported !== "boolean") {
+    params.isOffscreenCanvasSupported = !isNodeJS;
+  }
   if (typeof params.disableFontFace !== "boolean") {
     params.disableFontFace = isNodeJS;
   }
@@ -516,6 +523,7 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       docBaseUrl: source.docBaseUrl,
       ignoreErrors: source.ignoreErrors,
       isEvalSupported: source.isEvalSupported,
+      isOffscreenCanvasSupported: source.isOffscreenCanvasSupported,
       fontExtraProperties: source.fontExtraProperties,
       enableXfa: source.enableXfa,
       useSystemFonts: source.useSystemFonts,
