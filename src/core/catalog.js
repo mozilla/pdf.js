@@ -307,6 +307,7 @@ class Catalog {
         destDict: outlineDict,
         resultObj: data,
         docBaseUrl: this.pdfManager.docBaseUrl,
+        docAttachments: this.attachments,
       });
       const title = outlineDict.get("Title");
       const flags = outlineDict.get("F") || 0;
@@ -325,6 +326,7 @@ class Catalog {
 
       const outlineItem = {
         action: data.action,
+        attachment: data.attachment,
         dest: data.dest,
         url: data.url,
         unsafeUrl: data.unsafeUrl,
@@ -1412,6 +1414,8 @@ class Catalog {
    *   properties will be placed.
    * @property {string} [docBaseUrl] - The document base URL that is used when
    *   attempting to recover valid absolute URLs from relative ones.
+   * @property {Object} [docAttachments] - The document attachments (may not
+   *   exist in most PDF documents).
    */
 
   /**
@@ -1430,6 +1434,7 @@ class Catalog {
       return;
     }
     const docBaseUrl = params.docBaseUrl || null;
+    const docAttachments = params.docAttachments || null;
 
     let action = destDict.get("A"),
       url,
@@ -1523,6 +1528,26 @@ class Catalog {
           const newWindow = action.get("NewWindow");
           if (typeof newWindow === "boolean") {
             resultObj.newWindow = newWindow;
+          }
+          break;
+
+        case "GoToE":
+          const target = action.get("T");
+          let attachment;
+
+          if (docAttachments && target instanceof Dict) {
+            const relationship = target.get("R");
+            const name = target.get("N");
+
+            if (isName(relationship, "C") && typeof name === "string") {
+              attachment = docAttachments[stringToPDFString(name)];
+            }
+          }
+
+          if (attachment) {
+            resultObj.attachment = attachment;
+          } else {
+            warn(`parseDestDictionary - unimplemented "GoToE" action.`);
           }
           break;
 

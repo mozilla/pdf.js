@@ -15,6 +15,7 @@
 
 import {
   AnnotationMode,
+  AnnotationType,
   createPromiseCapability,
   FontType,
   ImageKind,
@@ -1536,6 +1537,7 @@ describe("api", function () {
 
       expect(outline[4]).toEqual({
         action: null,
+        attachment: undefined,
         dest: "Händel -- Halle🎆lujah",
         url: null,
         unsafeUrl: undefined,
@@ -1562,6 +1564,7 @@ describe("api", function () {
 
       expect(outline[1]).toEqual({
         action: "PrevPage",
+        attachment: undefined,
         dest: null,
         url: null,
         unsafeUrl: undefined,
@@ -1588,6 +1591,7 @@ describe("api", function () {
 
       expect(outline[0]).toEqual({
         action: null,
+        attachment: undefined,
         dest: null,
         url: null,
         unsafeUrl: undefined,
@@ -2153,6 +2157,23 @@ describe("api", function () {
         docBaseUrlLoadingTask.destroy(),
         invalidDocBaseUrlLoadingTask.destroy(),
       ]);
+    });
+
+    it("gets annotations containing GoToE action (issue 8844)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue8844.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const annotations = await pdfPage.getAnnotations();
+
+      expect(annotations.length).toEqual(1);
+      expect(annotations[0].annotationType).toEqual(AnnotationType.LINK);
+
+      const { filename, content } = annotations[0].attachment;
+      expect(filename).toEqual("man.pdf");
+      expect(content instanceof Uint8Array).toEqual(true);
+      expect(content.length).toEqual(4508);
+
+      await loadingTask.destroy();
     });
 
     it("gets text content", async function () {
