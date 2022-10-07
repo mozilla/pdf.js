@@ -857,20 +857,6 @@ class Util {
     ];
   }
 
-  // Apply a generic 3d matrix M on a 3-vector v:
-  //   | a b c |   | X |
-  //   | d e f | x | Y |
-  //   | g h i |   | Z |
-  // M is assumed to be serialized as [a,b,c,d,e,f,g,h,i],
-  // with v as [X,Y,Z]
-  static apply3dTransform(m, v) {
-    return [
-      m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
-      m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
-      m[6] * v[0] + m[7] * v[1] + m[8] * v[2],
-    ];
-  }
-
   // This calculation uses Singular Value Decomposition.
   // The SVD can be represented with formula A = USV. We are interested in the
   // matrix S here because it represents the scale values.
