@@ -356,6 +356,7 @@ class PDFImage {
     imageIsFromDecodeStream,
     inverseDecode,
     interpolate,
+    isOffscreenCanvasSupported = true,
   }) {
     const isSingleOpaquePixel =
       width === 1 &&
@@ -366,7 +367,7 @@ class PDFImage {
       return { isSingleOpaquePixel };
     }
 
-    if (FeatureTest.isOffscreenCanvasSupported) {
+    if (isOffscreenCanvasSupported && FeatureTest.isOffscreenCanvasSupported) {
       const canvas = new OffscreenCanvas(width, height);
       const ctx = canvas.getContext("2d");
       const imgData = ctx.createImageData(width, height);

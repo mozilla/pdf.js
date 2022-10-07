@@ -495,6 +495,15 @@ if (
       }
     }
 
+    getObject(data, fallback = null) {
+      if (typeof data === "string") {
+        return data.startsWith("g_")
+          ? this.commonObjs.get(data)
+          : this.objs.get(data);
+      }
+      return fallback;
+    }
+
     save() {
       this.transformStack.push(this.transformMatrix);
       const old = this.current;
@@ -1586,9 +1595,7 @@ if (
     }
 
     paintImageXObject(objId) {
-      const imgData = objId.startsWith("g_")
-        ? this.commonObjs.get(objId)
-        : this.objs.get(objId);
+      const imgData = this.getObject(objId);
       if (!imgData) {
         warn(`Dependent image with object ID ${objId} is not ready yet`);
         return;
@@ -1627,7 +1634,15 @@ if (
       }
     }
 
-    paintImageMaskXObject(imgData) {
+    paintImageMaskXObject(img) {
+      const imgData = this.getObject(img.data, img);
+      if (imgData.bitmap) {
+        warn(
+          "paintImageMaskXObject: ImageBitmap support is not implemented, " +
+            "ensure that the `isOffscreenCanvasSupported` API parameter is disabled."
+        );
+        return;
+      }
       const current = this.current;
       const width = imgData.width;
       const height = imgData.height;
