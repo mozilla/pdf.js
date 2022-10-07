@@ -219,6 +219,10 @@
   background-image: var(--xfa-unfocused-field-background);
 }
 
+.xfaSelect {
+  padding-inline: 2px;
+}
+
 .xfaTop > .xfaTextfield,
 .xfaTop > .xfaSelect,
 .xfaBottom > .xfaTextfield,
