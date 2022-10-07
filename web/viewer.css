@@ -20,8 +20,7 @@
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
-  --scale-select-container-width: 140px;
-  --scale-select-overflow: 22px;
+  --scale-select-width: 140px;
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
@@ -791,29 +790,27 @@ body {
 }
 
 .dropdownToolbarButton {
-  width: var(--scale-select-container-width);
+  width: var(--scale-select-width);
   padding: 0;
-  overflow: hidden;
   background-color: var(--dropdown-btn-bg-color);
   border: var(--dropdown-btn-border);
 }
 .dropdownToolbarButton::after {
   top: 6px;
-  inset-inline-end: 7px;
+  inset-inline-end: 6px;
   pointer-events: none;
   mask-image: var(--toolbarButton-menuArrow-icon);
 }
 
 .dropdownToolbarButton > select {
-  width: calc(
-    var(--scale-select-container-width) + var(--scale-select-overflow)
-  );
+  appearance: none;
+  width: inherit;
   height: 28px;
   font-size: 12px;
   color: var(--main-color);
   margin: 0;
   padding: 1px 0 2px;
-  padding-inline-start: 4px;
+  padding-inline-start: 6px;
   border: none;
   background-color: var(--dropdown-btn-bg-color);
 }
