@@ -22,6 +22,32 @@ import { Stream } from "./stream.js";
 // buffer.
 const emptyBuffer = new Uint8Array(0);
 
+function makeLengthBigEnough(startLength, minLength) {
+  // Compute the first power of two that is as big as minLength.
+
+  if (!minLength) {
+    return startLength;
+  }
+
+  // This function is a bit tricky but always faster than:
+  // while (startLength < minLength) startLength *= 2;
+  // The bigger the ratio is, the faster the tricky version is compared the
+  // while loop.
+
+  // If minLength / startLength is exactly a power of two then we don't have
+  // to take the next power of two, it's why we remove 1 / startLength from
+  // it.
+  const ratio = (minLength - 1) / startLength;
+  if (ratio < 0x100000000) {
+    // Math.clz32 only works as expected with 32-bits integers.
+    // 32 - Math.clz32(n) is the number of digits of n in base 2.
+    // If a number has n digits in base 2 then it's lower than
+    // 2**n, hence the next power of two is 2**n.
+    return startLength * 2 ** (32 - Math.clz32(ratio));
+  }
+  return startLength * 2 ** (64 - Math.clz32(ratio / 0x100000000));
+}
+
 // Super class for the decoding streams.
 class DecodeStream extends BaseStream {
   constructor(maybeMinBufferLength) {
@@ -32,13 +58,7 @@ class DecodeStream extends BaseStream {
     this.bufferLength = 0;
     this.eof = false;
     this.buffer = emptyBuffer;
-    this.minBufferLength = 512;
-    if (maybeMinBufferLength) {
-      // Compute the first power of two that is as big as maybeMinBufferLength.
-      while (this.minBufferLength < maybeMinBufferLength) {
-        this.minBufferLength *= 2;
-      }
-    }
+    this.minBufferLength = makeLengthBigEnough(512, maybeMinBufferLength);
   }
 
   get isEmpty() {
@@ -53,10 +73,7 @@ class DecodeStream extends BaseStream {
     if (requested <= buffer.byteLength) {
       return buffer;
     }
-    let size = this.minBufferLength;
-    while (size < requested) {
-      size *= 2;
-    }
+    const size = makeLengthBigEnough(this.minBufferLength, requested);
     const buffer2 = new Uint8Array(size);
     buffer2.set(buffer);
     return (this.buffer = buffer2);
