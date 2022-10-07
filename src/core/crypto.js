@@ -1304,15 +1304,11 @@ const PDF20 = (function PDF20Closure() {
       e = cipher.encrypt(k1, k.subarray(16, 32));
       // Now we have to take the first 16 bytes of an unsigned big endian
       // integer and compute the remainder modulo 3. That is a fairly large
-      // number and JavaScript isn't going to handle that well, so we're using
-      // a trick that allows us to perform modulo math byte by byte.
-      let remainder = 0;
-      for (let z = 0; z < 16; z++) {
-        remainder *= 256 % 3;
-        remainder %= 3;
-        remainder += (e[z] >>> 0) % 3;
-        remainder %= 3;
-      }
+      // number and JavaScript isn't going to handle that well.
+      // The number is e0 + 256 * e1 + 256^2 * e2... and 256 % 3 === 1, hence
+      // the powers of 256 are === 1 modulo 3 and finally the number modulo 3
+      // is equal to the remainder modulo 3 of the sum of the e_n.
+      const remainder = e.slice(0, 16).reduce((a, b) => a + b, 0) % 3;
       if (remainder === 0) {
         k = calculateSHA256(e, 0, e.length);
       } else if (remainder === 1) {
