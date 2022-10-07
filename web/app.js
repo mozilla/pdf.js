@@ -1057,7 +1057,7 @@ const PDFViewerApplication = {
   },
 
   /**
-   * Show the error box; used for errors affecting loading and/or parsing of
+   * Report the error; used for errors affecting loading and/or parsing of
    * the entire PDF document.
    */
   _documentError(message, moreInfo = null) {
@@ -1073,45 +1073,30 @@ const PDFViewerApplication = {
   },
 
   /**
-   * Show the error box; used for errors affecting e.g. only a single page.
-   *
+   * Report the error; used for errors affecting e.g. only a single page.
    * @param {string} message - A message that is human readable.
    * @param {Object} [moreInfo] - Further information about the error that is
-   *                              more technical.  Should have a 'message' and
+   *                              more technical. Should have a 'message' and
    *                              optionally a 'stack' property.
    */
   _otherError(message, moreInfo = null) {
-    const moreInfoText = [
-      this.l10n.get("error_version_info", {
-        version: version || "?",
-        build: build || "?",
-      }),
-    ];
+    const moreInfoText = [`PDF.js v${version || "?"} (build: ${build || "?"})`];
     if (moreInfo) {
-      moreInfoText.push(
-        this.l10n.get("error_message", { message: moreInfo.message })
-      );
+      moreInfoText.push(`Message: ${moreInfo.message}`);
+
       if (moreInfo.stack) {
-        moreInfoText.push(
-          this.l10n.get("error_stack", { stack: moreInfo.stack })
-        );
+        moreInfoText.push(`Stack: ${moreInfo.stack}`);
       } else {
         if (moreInfo.filename) {
-          moreInfoText.push(
-            this.l10n.get("error_file", { file: moreInfo.filename })
-          );
+          moreInfoText.push(`File: ${moreInfo.filename}`);
         }
         if (moreInfo.lineNumber) {
-          moreInfoText.push(
-            this.l10n.get("error_line", { line: moreInfo.lineNumber })
-          );
+          moreInfoText.push(`Line: ${moreInfo.lineNumber}`);
         }
       }
     }
 
-    Promise.all(moreInfoText).then(parts => {
-      console.error(`${message}\n${parts.join("\n")}`);
-    });
+    console.error(`${message}\n\n${moreInfoText.join("\n")}`);
     this.fallback();
   },
 
@@ -1481,7 +1466,7 @@ const PDFViewerApplication = {
     console.log(
       `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
         `${(info.Producer || "-").trim()} / ${(info.Creator || "-").trim()}] ` +
-        `(PDF.js: ${version || "-"})`
+        `(PDF.js: ${version || "?"} [${build || "?"}])`
     );
     let pdfTitle = info.Title;
 
