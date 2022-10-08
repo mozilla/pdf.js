@@ -271,7 +271,6 @@ const VerbosityLevel = {
 const CMapCompressionType = {
   NONE: 0,
   BINARY: 1,
-  STREAM: 2,
 };
 
 // All the possible operations for an operator list.
