@@ -278,6 +278,8 @@ const CMapCompressionType = {
 const OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
   // 0's.
+  // PLEASE NOTE: We purposely keep any removed operators commented out, since
+  //              re-numbering the list would risk breaking third-party users.
   dependency: 1,
   setLineWidth: 2,
   setLineCap: 3,
@@ -355,14 +357,11 @@ const OPS = {
   paintFormXObjectEnd: 75,
   beginGroup: 76,
   endGroup: 77,
-  /** @deprecated unused */
-  beginAnnotations: 78,
-  /** @deprecated unused */
-  endAnnotations: 79,
+  // beginAnnotations: 78,
+  // endAnnotations: 79,
   beginAnnotation: 80,
   endAnnotation: 81,
-  /** @deprecated unused */
-  paintJpegXObject: 82,
+  // paintJpegXObject: 82,
   paintImageMaskXObject: 83,
   paintImageMaskXObjectGroup: 84,
   paintImageXObject: 85,
@@ -375,15 +374,11 @@ const OPS = {
 };
 
 const UNSUPPORTED_FEATURES = {
-  /** @deprecated unused */
-  unknown: "unknown",
   forms: "forms",
   javaScript: "javaScript",
   signatures: "signatures",
   smask: "smask",
   shadingPattern: "shadingPattern",
-  /** @deprecated unused */
-  font: "font",
   errorTilingPattern: "errorTilingPattern",
   errorExtGState: "errorExtGState",
   errorXObject: "errorXObject",
