@@ -405,19 +405,7 @@ class WorkerMessageHandler {
 
       ensureNotTerminated();
 
-      const evaluatorOptions = {
-        maxImageSize: data.maxImageSize,
-        disableFontFace: data.disableFontFace,
-        ignoreErrors: data.ignoreErrors,
-        isEvalSupported: data.isEvalSupported,
-        isOffscreenCanvasSupported: data.isOffscreenCanvasSupported,
-        fontExtraProperties: data.fontExtraProperties,
-        useSystemFonts: data.useSystemFonts,
-        cMapUrl: data.cMapUrl,
-        standardFontDataUrl: data.standardFontDataUrl,
-      };
-
-      getPdfManager(data, evaluatorOptions, data.enableXfa)
+      getPdfManager(data, data.evaluatorOptions, data.enableXfa)
         .then(function (newPdfManager) {
           if (terminated) {
             // We were in a process of setting up the manager, but it got
