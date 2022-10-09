@@ -517,19 +517,21 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
         rangeChunkSize: source.rangeChunkSize,
         length: source.length,
       },
-      maxImageSize: source.maxImageSize,
-      disableFontFace: source.disableFontFace,
       docBaseUrl: source.docBaseUrl,
-      ignoreErrors: source.ignoreErrors,
-      isEvalSupported: source.isEvalSupported,
-      isOffscreenCanvasSupported: source.isOffscreenCanvasSupported,
-      fontExtraProperties: source.fontExtraProperties,
       enableXfa: source.enableXfa,
-      useSystemFonts: source.useSystemFonts,
-      cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
-      standardFontDataUrl: source.useWorkerFetch
-        ? source.standardFontDataUrl
-        : null,
+      evaluatorOptions: {
+        maxImageSize: source.maxImageSize,
+        disableFontFace: source.disableFontFace,
+        ignoreErrors: source.ignoreErrors,
+        isEvalSupported: source.isEvalSupported,
+        isOffscreenCanvasSupported: source.isOffscreenCanvasSupported,
+        fontExtraProperties: source.fontExtraProperties,
+        useSystemFonts: source.useSystemFonts,
+        cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
+        standardFontDataUrl: source.useWorkerFetch
+          ? source.standardFontDataUrl
+          : null,
+      },
     }
   );
 
