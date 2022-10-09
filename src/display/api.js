@@ -503,20 +503,18 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   const workerId = await worker.messageHandler.sendWithPromise(
     "GetDocRequest",
+    // Only send the required properties, and *not* the entire `source` object.
     {
       docId,
       apiVersion:
         typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
           ? PDFJSDev.eval("BUNDLE_VERSION")
           : null,
-      // Only send the required properties, and *not* the entire object.
-      source: {
-        data: source.data,
-        password: source.password,
-        disableAutoFetch: source.disableAutoFetch,
-        rangeChunkSize: source.rangeChunkSize,
-        length: source.length,
-      },
+      data: source.data,
+      password: source.password,
+      disableAutoFetch: source.disableAutoFetch,
+      rangeChunkSize: source.rangeChunkSize,
+      length: source.length,
       docBaseUrl: source.docBaseUrl,
       enableXfa: source.enableXfa,
       evaluatorOptions: {
