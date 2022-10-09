@@ -503,34 +503,33 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   const workerId = await worker.messageHandler.sendWithPromise(
     "GetDocRequest",
+    // Only send the required properties, and *not* the entire `source` object.
     {
       docId,
       apiVersion:
         typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
           ? PDFJSDev.eval("BUNDLE_VERSION")
           : null,
-      // Only send the required properties, and *not* the entire object.
-      source: {
-        data: source.data,
-        url: source.url,
-        password: source.password,
-        disableAutoFetch: source.disableAutoFetch,
-        rangeChunkSize: source.rangeChunkSize,
-        length: source.length,
-      },
-      maxImageSize: source.maxImageSize,
-      disableFontFace: source.disableFontFace,
+      data: source.data,
+      password: source.password,
+      disableAutoFetch: source.disableAutoFetch,
+      rangeChunkSize: source.rangeChunkSize,
+      length: source.length,
       docBaseUrl: source.docBaseUrl,
-      ignoreErrors: source.ignoreErrors,
-      isEvalSupported: source.isEvalSupported,
-      isOffscreenCanvasSupported: source.isOffscreenCanvasSupported,
-      fontExtraProperties: source.fontExtraProperties,
       enableXfa: source.enableXfa,
-      useSystemFonts: source.useSystemFonts,
-      cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
-      standardFontDataUrl: source.useWorkerFetch
-        ? source.standardFontDataUrl
-        : null,
+      evaluatorOptions: {
+        maxImageSize: source.maxImageSize,
+        disableFontFace: source.disableFontFace,
+        ignoreErrors: source.ignoreErrors,
+        isEvalSupported: source.isEvalSupported,
+        isOffscreenCanvasSupported: source.isOffscreenCanvasSupported,
+        fontExtraProperties: source.fontExtraProperties,
+        useSystemFonts: source.useSystemFonts,
+        cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
+        standardFontDataUrl: source.useWorkerFetch
+          ? source.standardFontDataUrl
+          : null,
+      },
     }
   );
 
