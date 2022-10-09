@@ -512,7 +512,6 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
       // Only send the required properties, and *not* the entire object.
       source: {
         data: source.data,
-        url: source.url,
         password: source.password,
         disableAutoFetch: source.disableAutoFetch,
         rangeChunkSize: source.rangeChunkSize,
