@@ -1012,9 +1012,7 @@ const CMapFactory = (function CMapFactoryClosure() {
       const lexer = new Lexer(new Stream(cMapData));
       return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
     }
-    throw new Error(
-      "TODO: Only BINARY/NONE CMap compression is currently supported."
-    );
+    throw new Error(`Invalid CMap "compressionType" value: ${compressionType}`);
   }
 
   return {
