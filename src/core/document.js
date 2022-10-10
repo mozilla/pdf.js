@@ -486,7 +486,11 @@ class Page {
                   "getOperatorList - ignoring annotation data during " +
                     `"${task.name}" task: "${reason}".`
                 );
-                return null;
+                return {
+                  opList: null,
+                  separateForm: false,
+                  separateCanvas: false,
+                };
               })
           );
         }

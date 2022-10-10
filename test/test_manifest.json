@@ -646,6 +646,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue15557",
+       "file": "pdfs/issue15557.pdf",
+       "md5": "5f024a42acf27f3eadc4c7418e8f4e42",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "hmm-pdf",
        "file": "pdfs/hmm.pdf",
        "md5": "e08467e60101ee5f4a59716e86db6dc9",
