@@ -900,19 +900,19 @@ class PDFDocument {
     }
     stream.moveStart();
 
+    // Skip over the "%PDF-" prefix, since it was found above.
+    stream.skip(PDF_HEADER_SIGNATURE.length);
     // Read the PDF format version.
-    const MAX_PDF_VERSION_LENGTH = 12;
     let version = "",
       ch;
-    while ((ch = stream.getByte()) > /* Space = */ 0x20) {
-      if (version.length >= MAX_PDF_VERSION_LENGTH) {
-        break;
-      }
+    while (
+      (ch = stream.getByte()) > /* Space = */ 0x20 &&
+      version.length < /* MAX_PDF_VERSION_LENGTH = */ 7
+    ) {
       version += String.fromCharCode(ch);
     }
     if (!this._version) {
-      // Remove the "%PDF-" prefix.
-      this._version = version.substring(5);
+      this._version = version;
     }
   }
 
