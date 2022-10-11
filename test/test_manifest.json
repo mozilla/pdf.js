@@ -653,6 +653,14 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "issue15559",
+       "file": "pdfs/issue15559.pdf",
+       "md5": "b937f2e32925aef8c1740f357f2a6282",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "hmm-pdf",
        "file": "pdfs/hmm.pdf",
        "md5": "e08467e60101ee5f4a59716e86db6dc9",
