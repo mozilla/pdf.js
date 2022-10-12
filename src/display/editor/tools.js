@@ -637,6 +637,9 @@ class AnnotationEditorUIManager {
   }
 
   registerEditorTypes(types) {
+    if (this.#editorTypes) {
+      return;
+    }
     this.#editorTypes = types;
     for (const editorType of this.#editorTypes) {
       this.#dispatchUpdateUI(editorType.defaultPropertiesToUpdate);
