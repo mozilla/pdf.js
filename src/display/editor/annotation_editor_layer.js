@@ -69,9 +69,9 @@ class AnnotationEditorLayer {
       AnnotationEditorLayer._initialized = true;
       FreeTextEditor.initialize(options.l10n);
       InkEditor.initialize(options.l10n);
-
-      options.uiManager.registerEditorTypes([FreeTextEditor, InkEditor]);
     }
+    options.uiManager.registerEditorTypes([FreeTextEditor, InkEditor]);
+
     this.#uiManager = options.uiManager;
     this.annotationStorage = options.annotationStorage;
     this.pageIndex = options.pageIndex;
