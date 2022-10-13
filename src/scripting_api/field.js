@@ -76,6 +76,7 @@ class Field extends PDFObject {
     this._fillColor = data.fillColor || ["T"];
     this._isChoice = Array.isArray(data.items);
     this._items = data.items || [];
+    this._hasValue = data.hasOwnProperty("value");
     this._page = data.page || 0;
     this._strokeColor = data.strokeColor || ["G", 0];
     this._textColor = data.textColor || ["G", 0];
@@ -393,15 +394,32 @@ class Field extends PDFObject {
   }
 
   getArray() {
+    // Gets the array of terminal child fields (that is, fields that can have
+    // a value for this Field object, the parent field).
     if (this._kidIds) {
-      return this._kidIds.map(id => this._appObjects[id].wrapped);
+      const array = [];
+      const fillArrayWithKids = kidIds => {
+        for (const id of kidIds) {
+          const obj = this._appObjects[id];
+          if (!obj) {
+            continue;
+          }
+          if (obj.obj._hasValue) {
+            array.push(obj.wrapped);
+          }
+          if (obj.obj._kidIds) {
+            fillArrayWithKids(obj.obj._kidIds);
+          }
+        }
+      };
+      fillArrayWithKids(this._kidIds);
+      return array;
     }
 
     if (this._children === null) {
-      this._children = this._document.obj
-        ._getChildren(this._fieldPath)
-        .map(child => child.wrapped);
+      this._children = this._document.obj._getTerminalChildren(this._fieldPath);
     }
+
     return this._children;
   }
 
