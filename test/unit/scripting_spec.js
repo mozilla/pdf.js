@@ -200,7 +200,7 @@ describe("Scripting", function () {
       value = await myeval(
         `this.getField("A.B.C.D").getArray().map((x) => x.value)`
       );
-      expect(value).toEqual([5, 7]);
+      expect(value).toEqual([4, 5, 6, 7]);
     });
   });
 
@@ -1037,7 +1037,7 @@ describe("Scripting", function () {
 
     describe("AFSimple_Calculate", function () {
       it("should compute the sum of several fields", async () => {
-        const refIds = [0, 1, 2, 3].map(_ => getId());
+        const refIds = [0, 1, 2, 3, 4].map(_ => getId());
         const data = {
           objects: {
             field1: [
@@ -1076,9 +1076,21 @@ describe("Scripting", function () {
                 type: "text",
               },
             ],
+            field5: [
+              {
+                id: refIds[4],
+                value: "",
+                actions: {
+                  Calculate: [
+                    `AFSimple_Calculate("SUM", "field1, field2, field3, unknown");`,
+                  ],
+                },
+                type: "text",
+              },
+            ],
           },
           appInfo: { language: "en-US", platform: "Linux x86_64" },
-          calculationOrder: [refIds[3]],
+          calculationOrder: [refIds[3], refIds[4]],
           dispatchEventName: "_dispatchMe",
         };
 
@@ -1122,6 +1134,98 @@ describe("Scripting", function () {
           id: refIds[3],
           siblings: null,
           value: 6,
+          formattedValue: null,
+        });
+
+        expect(send_queue.has(refIds[4])).toEqual(true);
+        expect(send_queue.get(refIds[4])).toEqual({
+          id: refIds[4],
+          siblings: null,
+          value: 6,
+          formattedValue: null,
+        });
+      });
+
+      it("should compute the sum of several fields in fields tree", async () => {
+        const refIds = [0, 1, 2, 3, 4, 5].map(_ => getId());
+        const data = {
+          objects: {
+            field1: [
+              {
+                id: refIds[0],
+                kidIds: [refIds[1], refIds[2]],
+              },
+            ],
+            "field1.field2": [
+              {
+                id: refIds[1],
+                kidIds: [refIds[3]],
+              },
+            ],
+            "field1.field3": [
+              {
+                id: refIds[2],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            "field1.field2.field4": [
+              {
+                id: refIds[3],
+                kidIds: [refIds[4]],
+              },
+            ],
+            "field1.field2.field4.field5": [
+              {
+                id: refIds[4],
+                value: "",
+                actions: {},
+                type: "text",
+              },
+            ],
+            field6: [
+              {
+                id: refIds[5],
+                value: "",
+                actions: {
+                  Calculate: [`AFSimple_Calculate("SUM", "field1");`],
+                },
+                type: "text",
+              },
+            ],
+          },
+          appInfo: { language: "en-US", platform: "Linux x86_64" },
+          calculationOrder: [refIds[5]],
+          dispatchEventName: "_dispatchMe",
+        };
+
+        sandbox.createSandbox(data);
+        await sandbox.dispatchEventInSandbox({
+          id: refIds[2],
+          value: "123",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refIds[5])).toEqual(true);
+        expect(send_queue.get(refIds[5])).toEqual({
+          id: refIds[5],
+          siblings: null,
+          value: 123,
+          formattedValue: null,
+        });
+
+        await sandbox.dispatchEventInSandbox({
+          id: refIds[4],
+          value: "456",
+          name: "Keystroke",
+          willCommit: true,
+        });
+        expect(send_queue.has(refIds[5])).toEqual(true);
+        expect(send_queue.get(refIds[5])).toEqual({
+          id: refIds[5],
+          siblings: null,
+          value: 579,
           formattedValue: null,
         });
       });
