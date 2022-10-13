@@ -889,6 +889,24 @@ class Doc extends PDFObject {
     return children;
   }
 
+  _getTerminalChildren(fieldName) {
+    // Get all the descendants which have a value.
+    const children = [];
+    const len = fieldName.length;
+    for (const [name, field] of this._fields.entries()) {
+      if (name.startsWith(fieldName)) {
+        const finalPart = name.slice(len);
+        if (
+          field.obj._hasValue &&
+          (finalPart === "" || finalPart.startsWith("."))
+        ) {
+          children.push(field.wrapped);
+        }
+      }
+    }
+    return children;
+  }
+
   getIcon() {
     /* Not implemented */
   }
