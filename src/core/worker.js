@@ -27,7 +27,6 @@ import {
   stringToPDFString,
   UnexpectedResponseException,
   UnknownErrorException,
-  UNSUPPORTED_FEATURES,
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
@@ -728,12 +727,6 @@ class WorkerMessageHandler {
               if (task.terminated) {
                 return; // ignoring errors from the terminated thread
               }
-              // For compatibility with older behavior, generating unknown
-              // unsupported feature notification on errors.
-              handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.errorOperatorList,
-              });
-
               sink.error(reason);
 
               // TODO: Should `reason` be re-thrown here (currently that casues
