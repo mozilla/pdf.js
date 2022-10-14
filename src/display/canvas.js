@@ -1368,11 +1368,12 @@ class CanvasGraphics {
       // In case we've a pattern fill we just keep the scaled version of
       // the image.
       // Only the scaling part matters, the translation part is just used
-      // to compute offsets.
+      // to compute offsets (but not when filling patterns see #15573).
       // TODO: handle the case of a pattern fill if it's possible.
-      const withoutTranslation = currentTransform.slice(0, 4);
       cacheKey = JSON.stringify(
-        isPatternFill ? withoutTranslation : [withoutTranslation, fillColor]
+        isPatternFill
+          ? currentTransform
+          : [currentTransform.slice(0, 4), fillColor]
       );
 
       cache = this._cachedBitmapsMap.get(mainKey);
