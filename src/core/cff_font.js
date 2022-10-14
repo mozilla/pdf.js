@@ -48,11 +48,23 @@ class CFFFont {
   getGlyphMapping() {
     const cff = this.cff;
     const properties = this.properties;
+    const { cidToGidMap, cMap } = properties;
     const charsets = cff.charset.charset;
     let charCodeToGlyphId;
     let glyphId;
 
     if (properties.composite) {
+      let invCidToGidMap;
+      if (cidToGidMap && cidToGidMap.length > 0) {
+        invCidToGidMap = Object.create(null);
+        for (let i = 0, ii = cidToGidMap.length; i < ii; i++) {
+          const gid = cidToGidMap[i];
+          if (gid !== undefined) {
+            invCidToGidMap[gid] = i;
+          }
+        }
+      }
+
       charCodeToGlyphId = Object.create(null);
       let charCode;
       if (cff.isCIDFont) {
@@ -60,14 +72,25 @@ class CFFFont {
         // to map CIDs to GIDs.
         for (glyphId = 0; glyphId < charsets.length; glyphId++) {
           const cid = charsets[glyphId];
-          charCode = properties.cMap.charCodeOf(cid);
+          charCode = cMap.charCodeOf(cid);
+
+          if (invCidToGidMap && invCidToGidMap[charCode] !== undefined) {
+            // According to the PDF specification, see Table 117, it's not clear
+            // that a /CIDToGIDMap should be used with any non-TrueType fonts,
+            // however it's necessary to do so in order to fix issue 15559.
+            //
+            // It seems, in the CFF-case, that the /CIDToGIDMap needs to be used
+            // "inverted" compared to the TrueType-case. Here it thus seem to be
+            // a charCode mapping, rather than the normal CID to GID mapping.
+            charCode = invCidToGidMap[charCode];
+          }
           charCodeToGlyphId[charCode] = glyphId;
         }
       } else {
         // If it is NOT actually a CID font then CIDs should be mapped
         // directly to GIDs.
         for (glyphId = 0; glyphId < cff.charStrings.count; glyphId++) {
-          charCode = properties.cMap.charCodeOf(glyphId);
+          charCode = cMap.charCodeOf(glyphId);
           charCodeToGlyphId[charCode] = glyphId;
         }
       }
