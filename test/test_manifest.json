@@ -6926,5 +6926,11 @@
       "link": true,
       "rounds": 1,
       "type": "eq"
+   },
+   {  "id": "bug1795263",
+      "file": "pdfs/bug1795263.pdf",
+      "md5": "af708acbb22c6c9d268240dcf4a39809",
+      "rounds": 1,
+      "type": "eq"
    }
 ]
