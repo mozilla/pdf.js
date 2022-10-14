@@ -2997,11 +2997,11 @@ class WorkerTransport {
   }
 
   async startCleanup(keepLoadedFonts = false) {
-    await this.messageHandler.sendWithPromise("Cleanup", null);
-
     if (this.destroyed) {
       return; // No need to manually clean-up when destruction has started.
     }
+    await this.messageHandler.sendWithPromise("Cleanup", null);
+
     for (const page of this.#pageCache.values()) {
       const cleanupSuccessful = page.cleanup();
 
