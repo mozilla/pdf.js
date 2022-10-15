@@ -37,6 +37,7 @@ import {
   getNewAnnotationsMap,
   isWhiteSpace,
   MissingDataException,
+  PDF_VERSION_REGEXP,
   validateCSSFont,
   XRefEntryException,
   XRefParseException,
@@ -712,8 +713,6 @@ const FINGERPRINT_FIRST_BYTES = 1024;
 const EMPTY_FINGERPRINT =
   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
-const PDF_HEADER_VERSION_REGEXP = /^[1-9]\.\d$/;
-
 function find(stream, signature, limit = 1024, backwards = false) {
   if (
     typeof PDFJSDev === "undefined" ||
@@ -818,14 +817,6 @@ class PDFDocument {
   parse(recoveryMode) {
     this.xref.parse(recoveryMode);
     this.catalog = new Catalog(this.pdfManager, this.xref);
-
-    // The `checkHeader` method is called before this method and parses the
-    // version from the header. The specification states in section 7.5.2
-    // that the version from the catalog, if present, should overwrite the
-    // version from the header.
-    if (this.catalog.version) {
-      this._version = this.catalog.version;
-    }
   }
 
   get linearization() {
@@ -911,8 +902,11 @@ class PDFDocument {
     ) {
       version += String.fromCharCode(ch);
     }
-    if (!this._version) {
+
+    if (PDF_VERSION_REGEXP.test(version)) {
       this._version = version;
+    } else {
+      warn(`Invalid PDF header version: ${version}`);
     }
   }
 
@@ -1260,6 +1254,14 @@ class PDFDocument {
       : null;
   }
 
+  /**
+   * The specification states in section 7.5.2 that the version from
+   * the catalog, if present, should overwrite the version from the header.
+   */
+  get version() {
+    return this.catalog.version || this._version;
+  }
+
   get formInfo() {
     const formInfo = {
       hasFields: false,
@@ -1307,17 +1309,8 @@ class PDFDocument {
   }
 
   get documentInfo() {
-    let version = this._version;
-    if (
-      typeof version !== "string" ||
-      !PDF_HEADER_VERSION_REGEXP.test(version)
-    ) {
-      warn(`Invalid PDF header version number: ${version}`);
-      version = null;
-    }
-
     const docInfo = {
-      PDFFormatVersion: version,
+      PDFFormatVersion: this.version,
       Language: this.catalog.lang,
       EncryptFilterName: this.xref.encrypt
         ? this.xref.encrypt.filterName
