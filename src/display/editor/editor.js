@@ -219,6 +219,24 @@ class AnnotationEditor {
     this.div.style.height = `${(100 * height) / parentHeight}%`;
   }
 
+  fixDims() {
+    const { style } = this.div;
+    const { height, width } = style;
+    const widthPercent = width.endsWith("%");
+    const heightPercent = height.endsWith("%");
+    if (widthPercent && heightPercent) {
+      return;
+    }
+
+    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    if (!widthPercent) {
+      style.width = `${(100 * parseFloat(width)) / parentWidth}%`;
+    }
+    if (!heightPercent) {
+      style.height = `${(100 * parseFloat(height)) / parentHeight}%`;
+    }
+  }
+
   /**
    * Get the translation used to position this editor when it's created.
    * @returns {Array<number>}
