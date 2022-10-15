@@ -16,6 +16,7 @@
 import {
   collectActions,
   MissingDataException,
+  PDF_VERSION_REGEXP,
   recoverJsURL,
   toRomanNumerals,
   XRefEntryException,
@@ -84,11 +85,13 @@ class Catalog {
 
   get version() {
     const version = this._catDict.get("Version");
-    return shadow(
-      this,
-      "version",
-      version instanceof Name ? version.name : null
-    );
+    if (version instanceof Name) {
+      if (PDF_VERSION_REGEXP.test(version.name)) {
+        return shadow(this, "version", version.name);
+      }
+      warn(`Invalid PDF catalog version: ${version.name}`);
+    }
+    return shadow(this, "version", null);
   }
 
   get lang() {
