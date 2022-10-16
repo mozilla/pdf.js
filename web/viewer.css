@@ -977,8 +977,8 @@ a.secondaryToolbarButton[href="#"] {
 .pdfSidebarNotification::after {
   position: absolute;
   display: inline-block;
-  top: 1px;
-  inset-inline-start: 17px;
+  top: 2px;
+  inset-inline-end: 2px;
   /* Create a filled circle, with a diameter of 9 pixels, using only CSS: */
   content: "";
   background-color: rgba(112, 219, 85, 1);
