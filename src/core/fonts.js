@@ -3225,6 +3225,12 @@ class Font {
    * @private
    */
   _charToGlyph(charcode, isSpace = false) {
+    let glyph = this._glyphCache[charcode];
+    // All `Glyph`-properties, except `isSpace` in multi-byte strings,
+    // depend indirectly on the `charcode`.
+    if (glyph && glyph.isSpace === isSpace) {
+      return glyph;
+    }
     let fontCharCode, width, operatorListId;
 
     let widthCode = charcode;
@@ -3289,24 +3295,18 @@ class Font {
       }
     }
 
-    let glyph = this._glyphCache[charcode];
-    // All `Glyph`-properties, except `isSpace` in multi-byte strings,
-    // depend indirectly on the `charcode`.
-    if (!glyph || glyph.isSpace !== isSpace) {
-      glyph = new Glyph(
-        charcode,
-        fontChar,
-        unicode,
-        accent,
-        width,
-        vmetric,
-        operatorListId,
-        isSpace,
-        isInFont
-      );
-      this._glyphCache[charcode] = glyph;
-    }
-    return glyph;
+    glyph = new Glyph(
+      charcode,
+      fontChar,
+      unicode,
+      accent,
+      width,
+      vmetric,
+      operatorListId,
+      isSpace,
+      isInFont
+    );
+    return (this._glyphCache[charcode] = glyph);
   }
 
   charsToGlyphs(chars) {
