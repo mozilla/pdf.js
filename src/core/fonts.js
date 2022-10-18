@@ -218,30 +218,6 @@ class Glyph {
     this.isZeroWidthDiacritic = category.isZeroWidthDiacritic;
     this.isInvisibleFormatMark = category.isInvisibleFormatMark;
   }
-
-  matchesForCache(
-    originalCharCode,
-    fontChar,
-    unicode,
-    accent,
-    width,
-    vmetric,
-    operatorListId,
-    isSpace,
-    isInFont
-  ) {
-    return (
-      this.originalCharCode === originalCharCode &&
-      this.fontChar === fontChar &&
-      this.unicode === unicode &&
-      this.accent === accent &&
-      this.width === width &&
-      this.vmetric === vmetric &&
-      this.operatorListId === operatorListId &&
-      this.isSpace === isSpace &&
-      this.isInFont === isInFont
-    );
-  }
 }
 
 function int16(b0, b1) {
@@ -3314,20 +3290,9 @@ class Font {
     }
 
     let glyph = this._glyphCache[charcode];
-    if (
-      !glyph ||
-      !glyph.matchesForCache(
-        charcode,
-        fontChar,
-        unicode,
-        accent,
-        width,
-        vmetric,
-        operatorListId,
-        isSpace,
-        isInFont
-      )
-    ) {
+    // All `Glyph`-properties, except `isSpace` in multi-byte strings,
+    // depend indirectly on the `charcode`.
+    if (!glyph || glyph.isSpace !== isSpace) {
       glyph = new Glyph(
         charcode,
         fontChar,
