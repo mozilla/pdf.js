@@ -305,12 +305,7 @@ class FreeTextEditor extends AnnotationEditor {
     }
     const buffer = [];
     for (const div of divs) {
-      const first = div.firstChild;
-      if (first?.nodeName === "#text") {
-        buffer.push(first.data);
-      } else {
-        buffer.push("");
-      }
+      buffer.push(div.innerText.replace(/\r\n?|\n/, ""));
     }
     return buffer.join("\n");
   }

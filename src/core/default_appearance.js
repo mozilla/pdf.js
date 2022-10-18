@@ -13,11 +13,16 @@
  * limitations under the License.
  */
 
-import { escapePDFName, numberToString } from "./core_utils.js";
-import { OPS, warn } from "../shared/util.js";
+import { Dict, Name } from "./primitives.js";
+import {
+  escapePDFName,
+  getRotationMatrix,
+  numberToString,
+  stringToUTF16HexString,
+} from "./core_utils.js";
+import { LINE_DESCENT_FACTOR, LINE_FACTOR, OPS, warn } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
-import { Name } from "./primitives.js";
 import { StringStream } from "./stream.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
@@ -101,4 +106,250 @@ function createDefaultAppearance({ fontSize, fontName, fontColor }) {
   )}`;
 }
 
-export { createDefaultAppearance, getPdfColor, parseDefaultAppearance };
+class FakeUnicodeFont {
+  constructor(xref, fontFamily) {
+    this.xref = xref;
+    this.widths = null;
+    this.firstChar = Infinity;
+    this.lastChar = -Infinity;
+    this.fontFamily = fontFamily;
+
+    const canvas = new OffscreenCanvas(1, 1);
+    this.ctxMeasure = canvas.getContext("2d");
+
+    if (!FakeUnicodeFont._fontNameId) {
+      FakeUnicodeFont._fontNameId = 1;
+    }
+    this.fontName = Name.get(
+      `InvalidPDFjsFont_${fontFamily}_${FakeUnicodeFont._fontNameId++}`
+    );
+  }
+
+  get toUnicodeRef() {
+    if (!FakeUnicodeFont._toUnicodeRef) {
+      const toUnicode = `/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CIDSystemInfo
+<< /Registry (Adobe)
+/Ordering (UCS) /Supplement 0 >> def
+/CMapName /Adobe-Identity-UCS def
+/CMapType 2 def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+1 beginbfrange
+<0000> <FFFF> <0000>
+endbfrange
+endcmap CMapName currentdict /CMap defineresource pop end end`;
+      const toUnicodeStream = (FakeUnicodeFont.toUnicodeStream =
+        new StringStream(toUnicode));
+      const toUnicodeDict = new Dict(this.xref);
+      toUnicodeStream.dict = toUnicodeDict;
+      toUnicodeDict.set("Length", toUnicode.length);
+      FakeUnicodeFont._toUnicodeRef =
+        this.xref.getNewPersistentRef(toUnicodeStream);
+    }
+
+    return FakeUnicodeFont._toUnicodeRef;
+  }
+
+  get fontDescriptorRef() {
+    if (!FakeUnicodeFont._fontDescriptorRef) {
+      const fontDescriptor = new Dict(this.xref);
+      fontDescriptor.set("Type", Name.get("FontDescriptor"));
+      fontDescriptor.set("FontName", this.fontName);
+      fontDescriptor.set("FontFamily", "MyriadPro Regular");
+      fontDescriptor.set("FontBBox", [0, 0, 0, 0]);
+      fontDescriptor.set("FontStretch", Name.get("Normal"));
+      fontDescriptor.set("FontWeight", 400);
+      fontDescriptor.set("ItalicAngle", 0);
+
+      FakeUnicodeFont._fontDescriptorRef =
+        this.xref.getNewPersistentRef(fontDescriptor);
+    }
+
+    return FakeUnicodeFont._fontDescriptorRef;
+  }
+
+  get descendantFontRef() {
+    const descendantFont = new Dict(this.xref);
+    descendantFont.set("BaseFont", this.fontName);
+    descendantFont.set("Type", Name.get("Font"));
+    descendantFont.set("Subtype", Name.get("CIDFontType0"));
+    descendantFont.set("CIDToGIDMap", Name.get("Identity"));
+    descendantFont.set("FirstChar", this.firstChar);
+    descendantFont.set("LastChar", this.lastChar);
+    descendantFont.set("FontDescriptor", this.fontDescriptorRef);
+    descendantFont.set("DW", 1000);
+
+    const widths = [];
+    const chars = [...this.widths.entries()].sort();
+    let currentChar = null;
+    let currentWidths = null;
+    for (const [char, width] of chars) {
+      if (!currentChar) {
+        currentChar = char;
+        currentWidths = [width];
+        continue;
+      }
+      if (char === currentChar + currentWidths.length) {
+        currentWidths.push(width);
+      } else {
+        widths.push(currentChar, currentWidths);
+        currentChar = char;
+        currentWidths = [width];
+      }
+    }
+
+    if (currentChar) {
+      widths.push(currentChar, currentWidths);
+    }
+
+    descendantFont.set("W", widths);
+
+    const cidSystemInfo = new Dict(this.xref);
+    cidSystemInfo.set("Ordering", "Identity");
+    cidSystemInfo.set("Registry", "Adobe");
+    cidSystemInfo.set("Supplement", 0);
+    descendantFont.set("CIDSystemInfo", cidSystemInfo);
+
+    return this.xref.getNewPersistentRef(descendantFont);
+  }
+
+  get baseFontRef() {
+    const baseFont = new Dict(this.xref);
+    baseFont.set("BaseFont", this.fontName);
+    baseFont.set("Type", Name.get("Font"));
+    baseFont.set("Subtype", Name.get("Type0"));
+    baseFont.set("Encoding", Name.get("Identity-H"));
+    baseFont.set("DescendantFonts", [this.descendantFontRef]);
+    baseFont.set("ToUnicode", this.toUnicodeRef);
+
+    return this.xref.getNewPersistentRef(baseFont);
+  }
+
+  get resources() {
+    const resources = new Dict(this.xref);
+    const font = new Dict(this.xref);
+    font.set(this.fontName.name, this.baseFontRef);
+    resources.set("Font", font);
+
+    return resources;
+  }
+
+  _createContext() {
+    this.widths = new Map();
+    this.ctxMeasure.font = `1000px ${this.fontFamily}`;
+
+    return this.ctxMeasure;
+  }
+
+  createFontResources(text) {
+    const ctx = this._createContext();
+    for (const line of text.split(/\r\n?|\n/)) {
+      for (const char of line.split("")) {
+        const code = char.charCodeAt(0);
+        if (this.widths.has(code)) {
+          continue;
+        }
+        const metrics = ctx.measureText(char);
+        const width = Math.ceil(metrics.width);
+        this.widths.set(code, width);
+        this.firstChar = Math.min(code, this.firstChar);
+        this.lastChar = Math.max(code, this.lastChar);
+      }
+    }
+
+    return this.resources;
+  }
+
+  createAppearance(text, rect, rotation, fontSize, bgColor) {
+    const ctx = this._createContext();
+    const lines = [];
+    let maxWidth = -Infinity;
+    for (const line of text.split(/\r\n?|\n/)) {
+      lines.push(line);
+      // The line width isn't the sum of the char widths, because in some
+      // languages, like arabic, it'd be wrong because of ligatures.
+      const lineWidth = ctx.measureText(line).width;
+      maxWidth = Math.max(maxWidth, lineWidth);
+      for (const char of line.split("")) {
+        const code = char.charCodeAt(0);
+        let width = this.widths.get(code);
+        if (width === undefined) {
+          const metrics = ctx.measureText(char);
+          width = Math.ceil(metrics.width);
+          this.widths.set(code, width);
+          this.firstChar = Math.min(code, this.firstChar);
+          this.lastChar = Math.max(code, this.lastChar);
+        }
+      }
+    }
+    maxWidth *= fontSize / 1000;
+
+    const [x1, y1, x2, y2] = rect;
+    let w = x2 - x1;
+    let h = y2 - y1;
+
+    if (rotation % 180 !== 0) {
+      [w, h] = [h, w];
+    }
+
+    let hscale = 1;
+    if (maxWidth > w) {
+      hscale = w / maxWidth;
+    }
+    let vscale = 1;
+    const lineHeight = LINE_FACTOR * fontSize;
+    const lineDescent = LINE_DESCENT_FACTOR * fontSize;
+    const maxHeight = lineHeight * lines.length;
+    if (maxHeight > h) {
+      vscale = h / maxHeight;
+    }
+    const fscale = Math.min(hscale, vscale);
+    const newFontSize = fontSize * fscale;
+
+    const buffer = [
+      "q",
+      `0 0 ${numberToString(w)} ${numberToString(h)} re W n`,
+      `BT`,
+      `1 0 0 1 0 ${numberToString(h + lineDescent)} Tm 0 Tc ${getPdfColor(
+        bgColor,
+        /* isFill */ true
+      )}`,
+      `/${this.fontName.name} ${numberToString(newFontSize)} Tf`,
+    ];
+
+    const vShift = numberToString(lineHeight);
+    for (const line of lines) {
+      buffer.push(`0 -${vShift} Td <${stringToUTF16HexString(line)}> Tj`);
+    }
+    buffer.push("ET", "Q");
+    const appearance = buffer.join("\n");
+
+    const appearanceStreamDict = new Dict(this.xref);
+    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.set("BBox", [0, 0, w, h]);
+    appearanceStreamDict.set("Length", appearance.length);
+    appearanceStreamDict.set("Resources", this.resources);
+
+    if (rotation) {
+      const matrix = getRotationMatrix(rotation, w, h);
+      appearanceStreamDict.set("Matrix", matrix);
+    }
+
+    const ap = new StringStream(appearance);
+    ap.dict = appearanceStreamDict;
+
+    return ap;
+  }
+}
+
+export {
+  createDefaultAppearance,
+  FakeUnicodeFont,
+  getPdfColor,
+  parseDefaultAppearance,
+};

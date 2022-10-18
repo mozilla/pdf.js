@@ -78,7 +78,8 @@ class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
     this.stats = new DocStats({ send: () => {} });
-    this._newRefNum = null;
+    this._newTemporaryRefNum = null;
+    this._newPersistentRefNum = null;
     this.stream = new NullStream();
 
     for (const key in array) {
@@ -87,15 +88,24 @@ class XRefMock {
     }
   }
 
-  getNewRef() {
-    if (this._newRefNum === null) {
-      this._newRefNum = Object.keys(this._map).length || 1;
+  getNewPersistentRef(obj) {
+    if (this._newPersistentRefNum === null) {
+      this._newPersistentRefNum = Object.keys(this._map).length || 1;
     }
-    return Ref.get(this._newRefNum++, 0);
+    const ref = Ref.get(this._newPersistentRefNum++, 0);
+    this._map[ref.toString()] = obj;
+    return ref;
   }
 
-  resetNewRef() {
-    this.newRef = null;
+  getNewTemporaryRef() {
+    if (this._newTemporaryRefNum === null) {
+      this._newTemporaryRefNum = Object.keys(this._map).length || 1;
+    }
+    return Ref.get(this._newTemporaryRefNum++, 0);
+  }
+
+  resetNewTemporaryRef() {
+    this._newTemporaryRefNum = null;
   }
 
   fetch(ref) {

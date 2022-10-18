@@ -6973,5 +6973,225 @@
       "rounds": 1,
       "type": "eq",
       "print": true
+   },
+   {  "id": "ascii_print_textfields",
+      "file": "pdfs/textfields.pdf",
+      "md5": "5f743ca838ff9b7a286dbe52002860b7",
+      "rounds": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "32R": {
+            "value": "Hello World"
+         },
+         "35R": {
+            "value": "Hello World"
+         },
+         "38R": {
+            "value": "Hello World"
+         },
+         "34R": {
+            "value": "Hello World"
+         },
+         "37R": {
+            "value": "Hello World"
+         },
+         "40R": {
+            "value": "Hello World"
+         },
+         "33R": {
+            "value": "Hello World\nDlrow Olleh\nHello World"
+         },
+         "36R": {
+            "value": "Hello World\nDlrow Olleh\nHello World"
+         },
+         "39R": {
+            "value": "Hello World\nDlrow Olleh\nHello World"
+         }
+      }
+   },
+   {  "id": "arabic_print_textfields",
+      "file": "pdfs/textfields.pdf",
+      "md5": "5f743ca838ff9b7a286dbe52002860b7",
+      "rounds": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "32R": {
+            "value": "مرحبا بالعالم"
+         },
+         "35R": {
+            "value": "مرحبا بالعالم"
+         },
+         "38R": {
+            "value": "مرحبا بالعالم"
+         },
+         "34R": {
+            "value": "مرحبا بالعالم"
+         },
+         "37R": {
+            "value": "مرحبا بالعالم"
+         },
+         "40R": {
+            "value": "مرحبا بالعالم"
+         },
+         "33R": {
+            "value": "مرحبا بالعالم\nملاعلاب ابحرم\nمرحبا بالعالم"
+         },
+         "36R": {
+            "value": "مرحبا بالعالم\nملاعلاب ابحرم\nمرحبا بالعالم"
+         },
+         "39R": {
+            "value": "مرحبا بالعالم\nملاعلاب ابحرم\nمرحبا بالعالم"
+         }
+      }
+   },
+   {  "id": "ascii_save_print_textfields",
+      "file": "pdfs/textfields.pdf",
+      "md5": "5f743ca838ff9b7a286dbe52002860b7",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "32R": {
+            "value": "Hello World"
+         },
+         "35R": {
+            "value": "Hello World"
+         },
+         "38R": {
+            "value": "Hello World"
+         },
+         "34R": {
+            "value": "Hello World"
+         },
+         "37R": {
+            "value": "Hello World"
+         },
+         "40R": {
+            "value": "Hello World"
+         },
+         "33R": {
+            "value": "Hello World\nDlrow Olleh\nHello World"
+         },
+         "36R": {
+            "value": "Hello World\nDlrow Olleh\nHello World"
+         },
+         "39R": {
+            "value": "Hello World\nDlrow Olleh\nHello World"
+         }
+      }
+   },
+   {  "id": "arabic_save_print_textfields",
+      "file": "pdfs/textfields.pdf",
+      "md5": "5f743ca838ff9b7a286dbe52002860b7",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "32R": {
+            "value": "مرحبا بالعالم"
+         },
+         "35R": {
+            "value": "مرحبا بالعالم"
+         },
+         "38R": {
+            "value": "مرحبا بالعالم"
+         },
+         "34R": {
+            "value": "مرحبا بالعالم"
+         },
+         "37R": {
+            "value": "مرحبا بالعالم"
+         },
+         "40R": {
+            "value": "مرحبا بالعالم"
+         },
+         "33R": {
+            "value": "مرحبا بالعالم\nملاعلاب ابحرم\nمرحبا بالعالم"
+         },
+         "36R": {
+            "value": "مرحبا بالعالم\nملاعلاب ابحرم\nمرحبا بالعالم"
+         },
+         "39R": {
+            "value": "مرحبا بالعالم\nملاعلاب ابحرم\nمرحبا بالعالم"
+         }
+      }
+   },
+   {  "id": "freetext_no_appearance",
+      "file": "pdfs/freetext_no_appearance.pdf",
+      "md5": "1dc519c06f1dc6f6e594f168080dcde9",
+      "rounds": 1,
+      "type": "eq"
+   },
+   {  "id": "freetext_print_no_appearance",
+      "file": "pdfs/freetext_no_appearance.pdf",
+      "md5": "1dc519c06f1dc6f6e594f168080dcde9",
+      "rounds": 1,
+      "type": "eq",
+      "print": true
+   },
+   {
+      "id": "tracemonkey-multi-lang-editors",
+      "file": "pdfs/tracemonkey.pdf",
+      "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+      "rounds": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "pdfjs_internal_editor_0": {
+            "annotationType": 3,
+            "color": [255, 0, 0],
+            "fontSize": 10,
+            "value": "Hello World",
+            "pageIndex": 0,
+            "rect": [67.5, 143, 119, 156.5],
+            "rotation": 0
+         },
+         "pdfjs_internal_editor_1": {
+            "annotationType": 3,
+            "color": [0, 255, 0],
+            "fontSize": 10,
+            "value": "مرحبا بالعالم",
+            "pageIndex": 0,
+            "rect": [67.5, 243, 119, 256.5],
+            "rotation": 0
+         },
+         "pdfjs_internal_editor_2": {
+            "annotationType": 3,
+            "color": [0, 0, 255],
+            "fontSize": 10,
+            "value": "你好世界",
+            "pageIndex": 0,
+            "rect": [67.5, 343, 119, 356.5],
+            "rotation": 0
+         },
+         "pdfjs_internal_editor_3": {
+            "annotationType": 3,
+            "color": [255, 0, 255],
+            "fontSize": 10,
+            "value": "Hello World 你好世界 مرحبا بالعالم",
+            "pageIndex": 0,
+            "rect": [67.5, 443, 222, 456.5],
+            "rotation": 0
+         }
+      }
+   },
+   {
+      "id": "issue12233-arabic-print",
+      "file": "pdfs/issue12233.pdf",
+      "md5": "6099fc695fe018ce444752929d86f9c8",
+      "link": true,
+      "rounds": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "23R": {
+            "value": "مرحبا بالعالم"
+         }
+      }
    }
 ]

@@ -46,7 +46,7 @@ function writeStream(stream, buffer, transform) {
   if (transform !== null) {
     string = transform.encryptString(string);
   }
-  buffer.push(string, "\nendstream\n");
+  buffer.push(string, "\nendstream");
 }
 
 function writeArray(array, buffer, transform) {
@@ -150,54 +150,58 @@ function writeXFADataForAcroform(str, newRefs) {
   return buffer.join("");
 }
 
-function updateXFA({
-  xfaData,
-  xfaDatasetsRef,
-  hasXfaDatasetsEntry,
-  acroFormRef,
-  acroForm,
-  newRefs,
+function updateAcroform({
   xref,
-  xrefInfo,
+  acroForm,
+  acroFormRef,
+  hasXfa,
+  hasXfaDatasetsEntry,
+  xfaDatasetsRef,
+  needAppearances,
+  newRefs,
 }) {
-  if (xref === null) {
+  if (hasXfa && !hasXfaDatasetsEntry && !xfaDatasetsRef) {
+    warn("XFA - Cannot save it");
+  }
+
+  if (!needAppearances && (!hasXfa || !xfaDatasetsRef)) {
     return;
   }
 
-  if (!hasXfaDatasetsEntry) {
-    if (!acroFormRef) {
-      warn("XFA - Cannot save it");
-      return;
-    }
+  // Clone the acroForm.
+  const dict = new Dict(xref);
+  for (const key of acroForm.getKeys()) {
+    dict.set(key, acroForm.getRaw(key));
+  }
 
+  if (hasXfa && !hasXfaDatasetsEntry) {
     // We've a XFA array which doesn't contain a datasets entry.
     // So we'll update the AcroForm dictionary to have an XFA containing
     // the datasets.
-    const oldXfa = acroForm.get("XFA");
-    const newXfa = oldXfa.slice();
+    const newXfa = acroForm.get("XFA").slice();
     newXfa.splice(2, 0, "datasets");
     newXfa.splice(3, 0, xfaDatasetsRef);
 
-    acroForm.set("XFA", newXfa);
-
-    const encrypt = xref.encrypt;
-    let transform = null;
-    if (encrypt) {
-      transform = encrypt.createCipherTransform(
-        acroFormRef.num,
-        acroFormRef.gen
-      );
-    }
-
-    const buffer = [`${acroFormRef.num} ${acroFormRef.gen} obj\n`];
-    writeDict(acroForm, buffer, transform);
-    buffer.push("\n");
-
-    acroForm.set("XFA", oldXfa);
-
-    newRefs.push({ ref: acroFormRef, data: buffer.join("") });
+    dict.set("XFA", newXfa);
   }
 
+  if (needAppearances) {
+    dict.set("NeedAppearances", true);
+  }
+
+  const encrypt = xref.encrypt;
+  let transform = null;
+  if (encrypt) {
+    transform = encrypt.createCipherTransform(acroFormRef.num, acroFormRef.gen);
+  }
+
+  const buffer = [];
+  writeObject(acroFormRef, dict, buffer, transform);
+
+  newRefs.push({ ref: acroFormRef, data: buffer.join("") });
+}
+
+function updateXFA({ xfaData, xfaDatasetsRef, newRefs, xref }) {
   if (xfaData === null) {
     const datasets = xref.fetchIfRef(xfaDatasetsRef);
     xfaData = writeXFADataForAcroform(datasets.getString(), newRefs);
@@ -228,20 +232,28 @@ function incrementalUpdate({
   hasXfa = false,
   xfaDatasetsRef = null,
   hasXfaDatasetsEntry = false,
+  needAppearances,
   acroFormRef = null,
   acroForm = null,
   xfaData = null,
 }) {
+  updateAcroform({
+    xref,
+    acroForm,
+    acroFormRef,
+    hasXfa,
+    hasXfaDatasetsEntry,
+    xfaDatasetsRef,
+    needAppearances,
+    newRefs,
+  });
+
   if (hasXfa) {
     updateXFA({
       xfaData,
       xfaDatasetsRef,
-      hasXfaDatasetsEntry,
-      acroFormRef,
-      acroForm,
       newRefs,
       xref,
-      xrefInfo,
     });
   }
 
