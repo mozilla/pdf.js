@@ -556,8 +556,15 @@ class XRef {
       this.readXRef(/* recoveryMode */ true);
     }
     // finding main trailer
-    let trailerDict;
-    for (const trailer of trailers) {
+    let trailerDict, trailerError;
+    for (const trailer of [...trailers, "generationFallback", ...trailers]) {
+      if (trailer === "generationFallback") {
+        if (!trailerError) {
+          break; // No need to fallback if there were no validation errors.
+        }
+        this._generationFallback = true;
+        continue;
+      }
       stream.pos = trailer;
       const parser = new Parser({
         lexer: new Lexer(stream),
@@ -590,6 +597,7 @@ class XRef {
         }
         // The top-level /Pages dictionary isn't obviously corrupt.
       } catch (ex) {
+        trailerError = ex;
         continue;
       }
       // taking the first one with 'ID'
@@ -780,7 +788,17 @@ class XRef {
     const gen = ref.gen;
     let num = ref.num;
     if (xrefEntry.gen !== gen) {
-      throw new XRefEntryException(`Inconsistent generation in XRef: ${ref}`);
+      const msg = `Inconsistent generation in XRef: ${ref}`;
+      // Try falling back to a *previous* generation (fixes issue15577.pdf).
+      if (this._generationFallback && xrefEntry.gen < gen) {
+        warn(msg);
+        return this.fetchUncompressed(
+          Ref.get(num, xrefEntry.gen),
+          xrefEntry,
+          suppressEncryption
+        );
+      }
+      throw new XRefEntryException(msg);
     }
     const stream = this.stream.makeSubStream(
       xrefEntry.offset + this.stream.start
