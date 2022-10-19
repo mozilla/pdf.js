@@ -591,10 +591,6 @@ class XRef {
         if (!(pagesDict instanceof Dict)) {
           continue;
         }
-        const pagesCount = pagesDict.get("Count");
-        if (!Number.isInteger(pagesCount)) {
-          continue;
-        }
         // The top-level /Pages dictionary isn't obviously corrupt.
       } catch (ex) {
         trailerError = ex;
