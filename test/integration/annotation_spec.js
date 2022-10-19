@@ -95,6 +95,31 @@ describe("Checkbox annotation", () => {
       );
     });
   });
+
+  describe("issue15597.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue15597.pdf", "[data-annotation-id='7R']");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the checkbox", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const selector = "[data-annotation-id='7R']";
+          await page.click(selector);
+          await page.waitForFunction(
+            `document.querySelector("${selector} > :first-child").checked`
+          );
+          expect(true).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+  });
 });
 
 describe("Text widget", () => {
