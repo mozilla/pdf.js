@@ -1748,6 +1748,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue9105_other",
+       "file": "pdfs/issue9105_other.pdf",
+       "md5": "4c8b9c2cceb9c5d621e1d50b3dc38efc",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue269_1",
        "file": "pdfs/issue269_1.pdf",
        "md5": "ab932f697b4d2e2bf700de15a8efea9c",
