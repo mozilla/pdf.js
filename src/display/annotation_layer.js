@@ -974,17 +974,26 @@ class WidgetAnnotationElement extends AnnotationElement {
     // If the height is "big" then it could lead to a too big font size
     // so in this case use the one we've in the pdf (hence the min).
     let computedFontSize;
+    const BORDER_SIZE = 2;
+    const roundToOneDecimal = x => Math.round(10 * x) / 10;
     if (this.data.multiLine) {
-      const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
+      const height = Math.abs(
+        this.data.rect[3] - this.data.rect[1] - BORDER_SIZE
+      );
       const numberOfLines = Math.round(height / (LINE_FACTOR * fontSize)) || 1;
       const lineHeight = height / numberOfLines;
       computedFontSize = Math.min(
         fontSize,
-        Math.round(lineHeight / LINE_FACTOR)
+        roundToOneDecimal(lineHeight / LINE_FACTOR)
       );
     } else {
-      const height = Math.abs(this.data.rect[3] - this.data.rect[1]);
-      computedFontSize = Math.min(fontSize, Math.round(height / LINE_FACTOR));
+      const height = Math.abs(
+        this.data.rect[3] - this.data.rect[1] - BORDER_SIZE
+      );
+      computedFontSize = Math.min(
+        fontSize,
+        roundToOneDecimal(height / LINE_FACTOR)
+      );
     }
     style.fontSize = `calc(${computedFontSize}px * var(--scale-factor))`;
 
