@@ -551,7 +551,8 @@ class AnnotationElement {
     // Fallback to a regular DOM lookup, to ensure that the standalone
     // viewer components won't break.
     for (const domElement of document.getElementsByName(name)) {
-      const { id, exportValue } = domElement;
+      const { exportValue } = domElement;
+      const id = domElement.getAttribute("data-element-id");
       if (id === skipId) {
         continue;
       }
