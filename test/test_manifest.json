@@ -603,6 +603,12 @@
        "lastPage": 4,
        "type": "text"
     },
+    {  "id": "issue15594",
+       "file": "pdfs/issue15594_reduced.pdf",
+       "md5": "6820808944a2a84c72d00a0e1476227b",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "rotated-text",
        "file": "pdfs/rotated.pdf",
        "md5": "aed187f53e969ccdcbab0bb4c59f9e46",
