@@ -738,6 +738,33 @@ describe("api", function () {
 
       await loadingTask.destroy();
     });
+
+    it("creates pdf doc from PDF file, with incomplete trailer", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue15590.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(1);
+
+      const jsActions = await pdfDocument.getJSActions();
+      expect(jsActions).toEqual({
+        OpenAction: ["func=function(){app.alert(1)};func();"],
+      });
+
+      try {
+        await pdfDocument.getPage(1);
+
+        // Shouldn't get here.
+        expect(false).toEqual(true);
+      } catch (reason) {
+        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason.message).toEqual(
+          "Page dictionary kids object is not an array."
+        );
+      }
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("PDFWorker", function () {
