@@ -582,6 +582,7 @@ class XRef {
         continue;
       }
       // Do some basic validation of the trailer/root dictionary candidate.
+      let validPagesDict = false;
       try {
         const rootDict = dict.get("Root");
         if (!(rootDict instanceof Dict)) {
@@ -591,13 +592,17 @@ class XRef {
         if (!(pagesDict instanceof Dict)) {
           continue;
         }
+        const pagesCount = pagesDict.get("Count");
+        if (Number.isInteger(pagesCount)) {
+          validPagesDict = true;
+        }
         // The top-level /Pages dictionary isn't obviously corrupt.
       } catch (ex) {
         trailerError = ex;
         continue;
       }
       // taking the first one with 'ID'
-      if (dict.has("ID")) {
+      if (validPagesDict && dict.has("ID")) {
         return dict;
       }
       // The current dictionary is a candidate, but continue searching.

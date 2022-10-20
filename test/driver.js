@@ -553,11 +553,7 @@ class Driver {
     if (!task.pdfDoc) {
       return task.firstPage || 1;
     }
-    let lastPageNumber = task.lastPage || 0;
-    if (!lastPageNumber || lastPageNumber > task.pdfDoc.numPages) {
-      lastPageNumber = task.pdfDoc.numPages;
-    }
-    return lastPageNumber;
+    return task.lastPage || task.pdfDoc.numPages;
   }
 
   _nextPage(task, loadError) {
