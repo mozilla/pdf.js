@@ -897,21 +897,15 @@ class Lexer {
       ch = this.nextChar();
     }
     if (ch < /* '0' = */ 0x30 || ch > /* '9' = */ 0x39) {
+      const msg = `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`;
+
       if (isWhiteSpace(ch) || ch === /* EOF = */ -1) {
-        // This is consistent with Adobe Reader (fixes issue9252.pdf).
-        if (divideBy === 10 && sign === 0) {
-          warn("Lexer.getNumber - treating a single decimal point as zero.");
-          return 0;
-        }
-        // This is consistent with Adobe Reader (fixes bug1753983.pdf).
-        if (divideBy === 0 && sign === -1) {
-          warn("Lexer.getNumber - treating a single minus sign as zero.");
-          return 0;
-        }
+        // This is consistent with Adobe Reader (fixes issue9252.pdf,
+        // issue15604.pdf, bug1753983.pdf).
+        info(`Lexer.getNumber - "${msg}".`);
+        return 0;
       }
-      throw new FormatError(
-        `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`
-      );
+      throw new FormatError(msg);
     }
 
     sign = sign || 1;
