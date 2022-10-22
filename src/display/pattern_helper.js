@@ -19,7 +19,6 @@ import {
   shadow,
   unreachable,
   Util,
-  warn,
 } from "../shared/util.js";
 import { getCurrentTransform } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
@@ -140,13 +139,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
 
       pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
       const domMatrix = new DOMMatrix(inverse);
-      try {
-        pattern.setTransform(domMatrix);
-      } catch (ex) {
-        // Avoid rendering breaking completely in Firefox 78 ESR,
-        // and in Node.js (see issue 13724).
-        warn(`RadialAxialShadingPattern.getPattern: "${ex?.message}".`);
-      }
+      pattern.setTransform(domMatrix);
     } else {
       // Shading fills are applied relative to the current matrix which is also
       // how canvas gradients work, so there's no need to do anything special
@@ -680,13 +673,8 @@ class TilingPattern {
     );
 
     const pattern = ctx.createPattern(temporaryPatternCanvas.canvas, "repeat");
-    try {
-      pattern.setTransform(domMatrix);
-    } catch (ex) {
-      // Avoid rendering breaking completely in Firefox 78 ESR,
-      // and in Node.js (see issue 13724).
-      warn(`TilingPattern.getPattern: "${ex?.message}".`);
-    }
+    pattern.setTransform(domMatrix);
+
     return pattern;
   }
 }
