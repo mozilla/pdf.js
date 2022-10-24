@@ -126,6 +126,8 @@ class AnnotationFactory {
     let subtype = dict.get("Subtype");
     subtype = subtype instanceof Name ? subtype.name : null;
 
+    const acroFormDict = acroForm instanceof Dict ? acroForm : Dict.empty;
+
     // Return the right annotation object based on the subtype and field type.
     const parameters = {
       xref,
@@ -134,10 +136,12 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
-      acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      acroForm: acroFormDict,
       attachments,
       xfaDatasets,
       collectFields,
+      needAppearances:
+        !collectFields && acroFormDict.get("NeedAppearances") === true,
       pageIndex,
     };
 
@@ -508,6 +512,7 @@ class Annotation {
     }
 
     this._fallbackFontDict = null;
+    this._needAppearances = false;
   }
 
   /**
@@ -1483,6 +1488,7 @@ class WidgetAnnotation extends Annotation {
     const dict = params.dict;
     const data = this.data;
     this.ref = params.ref;
+    this._needAppearances = params.needAppearances;
 
     data.annotationType = AnnotationType.WIDGET;
     if (data.fieldName === undefined) {
@@ -1534,6 +1540,12 @@ class WidgetAnnotation extends Annotation {
     data.defaultAppearanceData = parseDefaultAppearance(
       this._defaultAppearance
     );
+
+    data.hasAppearance =
+      (this._needAppearances &&
+        data.fieldValue !== undefined &&
+        data.fieldValue !== null) ||
+      data.hasAppearance;
 
     const fieldType = getInheritableProperty({ dict, key: "FT" });
     data.fieldType = fieldType instanceof Name ? fieldType.name : null;
@@ -1909,18 +1921,25 @@ class WidgetAnnotation extends Annotation {
       rotation = storageEntry.rotation;
     }
 
-    if (rotation === undefined && value === undefined) {
+    if (
+      rotation === undefined &&
+      value === undefined &&
+      !this._needAppearances
+    ) {
       if (!this._hasValueFromXFA || this.appearance) {
         // The annotation hasn't been rendered so use the appearance.
         return null;
       }
     }
 
+    // Empty or it has a trailing whitespace.
+    const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
+
     if (value === undefined) {
       // The annotation has its value in XFA datasets but not in the V field.
       value = this.data.fieldValue;
       if (!value) {
-        return "";
+        return `/Tx BMC q ${colors}Q EMC`;
       }
     }
 
@@ -1934,7 +1953,7 @@ class WidgetAnnotation extends Annotation {
 
     if (value === "") {
       // the field is empty: nothing to render
-      return "";
+      return `/Tx BMC q ${colors}Q EMC`;
     }
 
     if (rotation === undefined) {
@@ -2023,9 +2042,6 @@ class WidgetAnnotation extends Annotation {
         annotationStorage
       );
     }
-
-    // Empty or it has a trailing whitespace.
-    const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
 
     if (alignment === 0 || alignment > 2) {
       // Left alignment: nothing to do
@@ -3020,18 +3036,21 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       return super._getAppearance(evaluator, task, annotationStorage);
     }
 
-    if (!annotationStorage) {
-      return null;
+    let exportedValue, rotation;
+    const storageEntry = annotationStorage
+      ? annotationStorage.get(this.data.id)
+      : undefined;
+
+    if (storageEntry) {
+      rotation = storageEntry.rotation;
+      exportedValue = storageEntry.value;
     }
 
-    const storageEntry = annotationStorage.get(this.data.id);
-    if (!storageEntry) {
-      return null;
-    }
-
-    const rotation = storageEntry.rotation;
-    let exportedValue = storageEntry.value;
-    if (rotation === undefined && exportedValue === undefined) {
+    if (
+      rotation === undefined &&
+      exportedValue === undefined &&
+      !this._needAppearances
+    ) {
       // The annotation hasn't been rendered so use the appearance
       return null;
     }

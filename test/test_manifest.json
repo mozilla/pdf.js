@@ -6960,5 +6960,12 @@
       "md5": "af708acbb22c6c9d268240dcf4a39809",
       "rounds": 1,
       "type": "eq"
+   },
+   {  "id": "bug1796741-print",
+      "file": "pdfs/bug1796741.pdf",
+      "md5": "d5167d1b0d1b840c9aa258b98ce4fa62",
+      "rounds": 1,
+      "type": "eq",
+      "print": true
    }
 ]
