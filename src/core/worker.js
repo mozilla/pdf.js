@@ -398,8 +398,7 @@ class WorkerMessageHandler {
             onFailure(reason);
             return;
           }
-          pdfManager.requestLoadedStream();
-          pdfManager.onLoadedStream().then(function () {
+          pdfManager.requestLoadedStream().then(function () {
             ensureNotTerminated();
 
             loadDocument(true).then(onSuccess, onFailure);
@@ -521,8 +520,7 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetData", function wphSetupGetData(data) {
-      pdfManager.requestLoadedStream();
-      return pdfManager.onLoadedStream().then(function (stream) {
+      return pdfManager.requestLoadedStream().then(function (stream) {
         return stream.bytes;
       });
     });
@@ -559,19 +557,17 @@ class WorkerMessageHandler {
     handler.on(
       "SaveDocument",
       function ({ isPureXfa, numPages, annotationStorage, filename }) {
-        pdfManager.requestLoadedStream();
-
-        const newAnnotationsByPage = !isPureXfa
-          ? getNewAnnotationsMap(annotationStorage)
-          : null;
-
         const promises = [
-          pdfManager.onLoadedStream(),
+          pdfManager.requestLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
           pdfManager.ensureCatalog("acroFormRef"),
           pdfManager.ensureDoc("xref"),
           pdfManager.ensureDoc("startXRef"),
         ];
+
+        const newAnnotationsByPage = !isPureXfa
+          ? getNewAnnotationsMap(annotationStorage)
+          : null;
 
         if (newAnnotationsByPage) {
           for (const [pageIndex, annotations] of newAnnotationsByPage) {
