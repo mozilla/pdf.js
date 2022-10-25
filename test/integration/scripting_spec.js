@@ -24,6 +24,9 @@ const {
 
 describe("Interaction", () => {
   async function actAndWaitForInput(page, selector, action, clear = true) {
+    await page.waitForSelector(selector, {
+      timeout: 0,
+    });
     if (clear) {
       await clearInput(page, selector);
     }
@@ -1430,13 +1433,18 @@ describe("Interaction", () => {
               [45, 180],
               [46, 270],
             ]) {
-              const rotation = await page.$eval(
+              await page.waitForFunction(
+                (sel, b, a) => {
+                  const el = document.querySelector(sel);
+                  const rotation =
+                    parseInt(el.getAttribute("data-main-rotation")) || 0;
+                  return rotation === (360 + ((360 - (b + a)) % 360)) % 360;
+                },
+                {},
                 `[data-annotation-id='${ref}R']`,
-                el => parseInt(el.getAttribute("data-main-rotation") || 0)
+                base,
+                angle
               );
-              expect(rotation)
-                .withContext(`In ${browserName}`)
-                .toEqual((360 + ((360 - (base + angle)) % 360)) % 360);
             }
             base += 90;
             await page.click(getSelector("48R"));
