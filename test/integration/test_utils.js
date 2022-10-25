@@ -87,3 +87,16 @@ function getSelectedEditors(page) {
   });
 }
 exports.getSelectedEditors = getSelectedEditors;
+
+async function waitForEvent(page, eventName, timeout = 30000) {
+  await Promise.race([
+    // add event listener and wait for event to fire before returning
+    page.evaluate(name => {
+      return new Promise(resolve => {
+        document.addEventListener(name, resolve, { once: true });
+      });
+    }, eventName),
+    page.waitForTimeout(timeout),
+  ]);
+}
+exports.waitForEvent = waitForEvent;
