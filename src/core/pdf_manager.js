@@ -156,7 +156,9 @@ class LocalPdfManager extends BasePdfManager {
     return Promise.resolve();
   }
 
-  requestLoadedStream() {}
+  requestLoadedStream() {
+    return this._loadedStreamPromise;
+  }
 
   onLoadedStream() {
     return this._loadedStreamPromise;
@@ -213,7 +215,7 @@ class NetworkPdfManager extends BasePdfManager {
   }
 
   requestLoadedStream() {
-    this.streamManager.requestAllChunks();
+    return this.streamManager.requestAllChunks();
   }
 
   sendProgressiveData(chunk) {
