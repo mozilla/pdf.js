@@ -282,10 +282,6 @@ class ChunkedStreamManager {
     this._loadedStreamCapability = createPromiseCapability();
   }
 
-  onLoadedStream() {
-    return this._loadedStreamCapability.promise;
-  }
-
   sendRequest(begin, end) {
     const rangeReader = this.pdfNetworkStream.getRangeReader(begin, end);
     if (!rangeReader.isStreamingSupported) {
@@ -327,9 +323,11 @@ class ChunkedStreamManager {
    * Get all the chunks that are not yet loaded and group them into
    * contiguous ranges to load in as few requests as possible.
    */
-  requestAllChunks() {
-    const missingChunks = this.stream.getMissingChunks();
-    this._requestChunks(missingChunks);
+  requestAllChunks(noFetch = false) {
+    if (!noFetch) {
+      const missingChunks = this.stream.getMissingChunks();
+      this._requestChunks(missingChunks);
+    }
     return this._loadedStreamCapability.promise;
   }
 
