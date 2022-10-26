@@ -224,6 +224,8 @@ function render(task) {
 }
 
 class TextLayerRenderTask {
+  #initialContainer = null;
+
   constructor({
     textContent,
     textContentStream,
@@ -235,6 +237,7 @@ class TextLayerRenderTask {
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;
+    this.#initialContainer = container;
     this._document = container.ownerDocument;
     this._viewport = viewport;
     this._textDivs = textDivs || [];
@@ -318,7 +321,13 @@ class TextLayerRenderTask {
           }
           parent.append(this._container);
         } else if (item.type === "endMarkedContent") {
-          this._container = this._container.parentNode;
+          const parent = this._container.parentNode;
+          if (!parent || this._container === this.#initialContainer) {
+            // Handle unbalanced beginMarkedContent/endMarkedContent operators
+            // (fixes issue15629.pdf).
+            continue;
+          }
+          this._container = parent;
         }
         continue;
       }
