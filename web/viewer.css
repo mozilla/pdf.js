@@ -318,6 +318,7 @@ body {
 .toolbar select,
 .secondaryToolbar input,
 .secondaryToolbar button,
+.secondaryToolbar a,
 .secondaryToolbar select,
 .editorParamsToolbar input,
 .editorParamsToolbar button,
@@ -935,7 +936,7 @@ body {
 }
 
 a.secondaryToolbarButton {
-  padding-top: 6px;
+  padding-top: 5px;
   text-decoration: none;
 }
 a.toolbarButton[href="#"],
