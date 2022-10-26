@@ -2263,6 +2263,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue15629",
+       "file": "pdfs/issue15629.pdf",
+       "md5": "689771b7f5c86c783c56aa8dedab0057",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "glyph_accent",
        "file": "pdfs/glyph_accent.pdf",
        "md5": "1526e4edaa3ec439ebf156d0a0b385aa",
