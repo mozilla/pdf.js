@@ -2283,12 +2283,16 @@ class PartialEvaluator {
     sink,
     seenStyles = new Set(),
     viewBox,
+    markedContentData = null,
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
     resources = resources || Dict.empty;
     stateManager = stateManager || new StateManager(new TextState());
 
+    if (includeMarkedContent) {
+      markedContentData = markedContentData || { level: 0 };
+    }
     const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
@@ -3225,6 +3229,7 @@ class PartialEvaluator {
                     sink: sinkWrapper,
                     seenStyles,
                     viewBox,
+                    markedContentData,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
@@ -3305,6 +3310,8 @@ class PartialEvaluator {
           case OPS.beginMarkedContent:
             flushTextContentItem();
             if (includeMarkedContent) {
+              markedContentData.level++;
+
               textContent.items.push({
                 type: "beginMarkedContent",
                 tag: args[0] instanceof Name ? args[0].name : null,
@@ -3314,6 +3321,8 @@ class PartialEvaluator {
           case OPS.beginMarkedContentProps:
             flushTextContentItem();
             if (includeMarkedContent) {
+              markedContentData.level++;
+
               let mcid = null;
               if (args[1] instanceof Dict) {
                 mcid = args[1].get("MCID");
@@ -3330,6 +3339,13 @@ class PartialEvaluator {
           case OPS.endMarkedContent:
             flushTextContentItem();
             if (includeMarkedContent) {
+              if (markedContentData.level === 0) {
+                // Handle unbalanced beginMarkedContent/endMarkedContent
+                // operators (fixes issue15629.pdf).
+                break;
+              }
+              markedContentData.level--;
+
               textContent.items.push({
                 type: "endMarkedContent",
               });
