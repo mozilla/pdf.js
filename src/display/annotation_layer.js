@@ -1191,7 +1191,10 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           let commitKey = -1;
           if (event.key === "Escape") {
             commitKey = 0;
-          } else if (event.key === "Enter") {
+          } else if (event.key === "Enter" && !this.data.multiLine) {
+            // When we've a multiline field, "Enter" key is a key as the other
+            // hence we don't commit the data (Acrobat behaves the same way)
+            // (see issue #15627).
             commitKey = 2;
           } else if (event.key === "Tab") {
             commitKey = 3;
