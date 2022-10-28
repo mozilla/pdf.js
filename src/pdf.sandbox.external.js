@@ -81,6 +81,13 @@ class SandboxSupportBase {
         ) {
           return;
         }
+
+        if (callbackId === 0) {
+          // This callbackId corresponds to the one used for userActivation.
+          // So here, we cancel the last userActivation.
+          this.win.clearTimeout(this.timeoutIds.get(callbackId));
+        }
+
         const id = this.win.setTimeout(() => {
           this.timeoutIds.delete(callbackId);
           this.callSandboxFunction("timeoutCb", {
