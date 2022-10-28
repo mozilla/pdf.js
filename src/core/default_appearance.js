@@ -88,9 +88,8 @@ function getPdfColor(color, isFill) {
     return `${numberToString(gray)} ${isFill ? "g" : "G"}`;
   }
   return (
-    Array.from(color)
-      .map(c => numberToString(c / 255))
-      .join(" ") + ` ${isFill ? "rg" : "RG"}`
+    Array.from(color, c => numberToString(c / 255)).join(" ") +
+    ` ${isFill ? "rg" : "RG"}`
   );
 }
 
