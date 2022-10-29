@@ -55,10 +55,6 @@ class BasePdfManager {
     return shadow(this, "docBaseUrl", catalog.baseUrl || this._docBaseUrl);
   }
 
-  onLoadedStream() {
-    unreachable("Abstract method `onLoadedStream` called");
-  }
-
   ensureDoc(prop, args) {
     return this.ensure(this.pdfDocument, prop, args);
   }
@@ -103,7 +99,7 @@ class BasePdfManager {
     unreachable("Abstract method `requestRange` called");
   }
 
-  requestLoadedStream() {
+  requestLoadedStream(noFetch = false) {
     unreachable("Abstract method `requestLoadedStream` called");
   }
 
@@ -156,11 +152,7 @@ class LocalPdfManager extends BasePdfManager {
     return Promise.resolve();
   }
 
-  requestLoadedStream() {
-    return this._loadedStreamPromise;
-  }
-
-  onLoadedStream() {
+  requestLoadedStream(noFetch = false) {
     return this._loadedStreamPromise;
   }
 
@@ -214,16 +206,12 @@ class NetworkPdfManager extends BasePdfManager {
     return this.streamManager.requestRange(begin, end);
   }
 
-  requestLoadedStream() {
-    return this.streamManager.requestAllChunks();
+  requestLoadedStream(noFetch = false) {
+    return this.streamManager.requestAllChunks(noFetch);
   }
 
   sendProgressiveData(chunk) {
     this.streamManager.onReceiveData({ chunk });
-  }
-
-  onLoadedStream() {
-    return this.streamManager.onLoadedStream();
   }
 
   terminate(reason) {

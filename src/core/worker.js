@@ -420,7 +420,7 @@ class WorkerMessageHandler {
           }
           pdfManager = newPdfManager;
 
-          pdfManager.onLoadedStream().then(function (stream) {
+          pdfManager.requestLoadedStream(/* noFetch = */ true).then(stream => {
             handler.send("DataLoaded", { length: stream.bytes.byteLength });
           });
         })
