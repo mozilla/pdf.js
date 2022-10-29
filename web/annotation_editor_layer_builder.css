@@ -18,13 +18,11 @@
   --hover-outline: dashed 2px blue;
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  --editorFreeText-editing-cursor: text;
   /*#if COMPONENTS*/
   --editorInk-editing-cursor: pointer;
-  --editorFreeText-editing-cursor: text;
   /*#else*/
-  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16;
-  --editorFreeText-editing-cursor: url(images/toolbarButton-editorFreeText.svg)
-    8 16;
+  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
   /*#endif*/
 }
 
@@ -57,11 +55,11 @@
 }
 
 .annotationEditorLayer.freeTextEditing {
-  cursor: var(--editorFreeText-editing-cursor), text;
+  cursor: var(--editorFreeText-editing-cursor);
 }
 
 .annotationEditorLayer.inkEditing {
-  cursor: var(--editorInk-editing-cursor), pointer;
+  cursor: var(--editorInk-editing-cursor);
 }
 
 .annotationEditorLayer .selectedEditor {
