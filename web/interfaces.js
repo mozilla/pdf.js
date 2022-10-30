@@ -64,6 +64,11 @@ class IPDFLinkService {
   /**
    * @type {boolean}
    */
+  get isInPresentationMode() {}
+
+  /**
+   * @type {boolean}
+   */
   get externalLinkEnabled() {}
 
   /**

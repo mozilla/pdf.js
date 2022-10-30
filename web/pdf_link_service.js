@@ -173,6 +173,13 @@ class PDFLinkService {
     this.pdfViewer.pagesRotation = value;
   }
 
+  /**
+   * @type {boolean}
+   */
+  get isInPresentationMode() {
+    return this.pdfViewer.isInPresentationMode;
+  }
+
   #goToDestinationHelper(rawDest, namedDest = null, explicitDest) {
     // Dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
     const destRef = explicitDest[0];
@@ -672,6 +679,13 @@ class SimpleLinkService {
    * @param {number} value
    */
   set rotation(value) {}
+
+  /**
+   * @type {boolean}
+   */
+  get isInPresentationMode() {
+    return false;
+  }
 
   /**
    * @param {string|Array} dest - The named, or explicit, PDF destination.
