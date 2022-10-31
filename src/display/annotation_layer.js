@@ -645,6 +645,10 @@ class LinkAnnotationElement extends AnnotationElement {
     return this.container;
   }
 
+  #setInternalLink() {
+    this.container.setAttribute("data-internal-link", "");
+  }
+
   /**
    * Bind internal links to the link element.
    *
@@ -662,7 +666,7 @@ class LinkAnnotationElement extends AnnotationElement {
       return false;
     };
     if (destination || destination === /* isTooltipOnly = */ "") {
-      link.className = "internalLink";
+      this.#setInternalLink();
     }
   }
 
@@ -680,7 +684,7 @@ class LinkAnnotationElement extends AnnotationElement {
       this.linkService.executeNamedAction(action);
       return false;
     };
-    link.className = "internalLink";
+    this.#setInternalLink();
   }
 
   /**
@@ -698,7 +702,7 @@ class LinkAnnotationElement extends AnnotationElement {
       );
       return false;
     };
-    link.className = "internalLink";
+    this.#setInternalLink();
   }
 
   /**
@@ -712,7 +716,7 @@ class LinkAnnotationElement extends AnnotationElement {
       this.linkService.executeSetOCGState(action);
       return false;
     };
-    link.className = "internalLink";
+    this.#setInternalLink();
   }
 
   /**
@@ -750,7 +754,7 @@ class LinkAnnotationElement extends AnnotationElement {
     if (!link.onclick) {
       link.onclick = () => false;
     }
-    link.className = "internalLink";
+    this.#setInternalLink();
   }
 
   _bindResetFormAction(link, resetForm) {
@@ -758,7 +762,7 @@ class LinkAnnotationElement extends AnnotationElement {
     if (!otherClickAction) {
       link.href = this.linkService.getAnchorUrl("");
     }
-    link.className = "internalLink";
+    this.#setInternalLink();
 
     if (!this._fieldObjects) {
       warn(

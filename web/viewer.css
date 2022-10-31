@@ -222,8 +222,8 @@ body {
   user-select: none;
 }
 
-.pdfPresentationMode:fullscreen a:not(.internalLink) {
-  display: none;
+.pdfPresentationMode:fullscreen section:not([data-internal-link]) {
+  pointer-events: none;
 }
 
 .pdfPresentationMode:fullscreen .textLayer span {
