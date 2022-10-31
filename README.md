@@ -52,7 +52,7 @@ To get a local copy of the current code, clone it using git:
 
 Next, install Node.js via the [official package](https://nodejs.org) or via
 [nvm](https://github.com/creationix/nvm). You need to install the gulp package
-globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
+globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/tree/master/docs/getting-started)):
 
     $ npm install -g gulp-cli
 
