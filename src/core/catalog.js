@@ -1191,6 +1191,8 @@ class Catalog {
    * @returns {Promise<Map>}
    */
   async getAllPageDicts(recoveryMode = false) {
+    const { ignoreErrors } = this.pdfManager.evaluatorOptions;
+
     const queue = [{ currentNode: this.toplevelPagesDict, posInKids: 0 }];
     const visitedNodes = new RefSet();
 
@@ -1214,6 +1216,11 @@ class Catalog {
     function addPageError(error) {
       if (error instanceof XRefEntryException && !recoveryMode) {
         throw error;
+      }
+      if (recoveryMode && ignoreErrors && pageIndex === 0) {
+        // Ensure that the viewer will always load (fixes issue15590.pdf).
+        warn(`getAllPageDicts - Skipping invalid first page: "${error}".`);
+        error = Dict.empty;
       }
 
       map.set(pageIndex++, [error, null]);
