@@ -257,6 +257,10 @@ let PDFViewerApplication = {
       let enabled = hashParams['pdfbug'].split(',');
       waitOn.push(loadAndEnablePDFBug(enabled));
     }
+    if (params.has("canPrint")) {
+      AppOptions.set("canPrint", params.get("canPrint"));
+
+    }
     // It is not possible to change locale for the (various) extension builds.
     if ((typeof PDFJSDev === 'undefined' ||
          PDFJSDev.test('!PRODUCTION || GENERIC')) && 'locale' in hashParams) {
