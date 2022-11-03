@@ -183,14 +183,10 @@ function getViewerConfiguration() {
   };
 }
 
-<<<<<<< Updated upstream
-=======
 function enablePrinting() {
   document.getElementById("print")
 }
 
-
->>>>>>> Stashed changes
 function webViewerLoad() {
   let config = getViewerConfiguration();
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
@@ -208,15 +204,11 @@ function webViewerLoad() {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
       pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
     }
-<<<<<<< Updated upstream
+    enablePrinting();
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
     pdfjsWebApp.PDFViewerApplication.run(config);
-=======
-    enablePrinting();
-    PDFViewerApplication.run(config);
->>>>>>> Stashed changes
   }
 }
 
