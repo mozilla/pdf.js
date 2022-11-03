@@ -51,11 +51,6 @@ import {
   getStdFontMap,
   getSymbolsFonts,
 } from "./standard_fonts.js";
-import {
-  getNormalizedUnicodes,
-  getUnicodeForGlyph,
-  reverseIfRtl,
-} from "./unicode.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
@@ -75,6 +70,7 @@ import { DecodeStream } from "./decode_stream.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
+import { getUnicodeForGlyph } from "./unicode.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -2293,7 +2289,6 @@ class PartialEvaluator {
     if (includeMarkedContent) {
       markedContentData = markedContentData || { level: 0 };
     }
-    const NormalizedUnicodes = getNormalizedUnicodes();
 
     const textContent = {
       items: [],
@@ -2839,9 +2834,7 @@ class PartialEvaluator {
           textChunk.prevTransform = getCurrentTextTransform();
         }
 
-        let glyphUnicode = glyph.unicode;
-        glyphUnicode = NormalizedUnicodes[glyphUnicode] || glyphUnicode;
-        glyphUnicode = reverseIfRtl(glyphUnicode);
+        const glyphUnicode = glyph.normalizedUnicode;
         if (saveLastChar(glyphUnicode)) {
           // The two last chars are a non-whitespace followed by a whitespace
           // and then this non-whitespace, so we insert a whitespace here.
