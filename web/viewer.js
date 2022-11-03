@@ -183,8 +183,10 @@ function getViewerConfiguration() {
   };
 }
 
-function enablePrinting() {
-  document.getElementById("print")
+function enablePrintingIfCanPrint() {
+  if(pdfjsWebAppOptions.canPrint) {
+    document.getElementById("print").classList.remove("hidden");
+  }
 }
 
 function webViewerLoad() {
@@ -204,7 +206,7 @@ function webViewerLoad() {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
       pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
     }
-    enablePrinting();
+    enablePrintingIfCanPrint();
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
