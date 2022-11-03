@@ -112,11 +112,23 @@
   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+
+  --toolbar-visibility: inherit;
+  --viewerContainer-top: 32px;
 }
 
 :root:dir(rtl) {
   --dir-factor: -1;
 }
+
+/*#if MOZCENTRAL*/
+@media only screen and (hover: none) {
+  :root {
+    --toolbar-visibility: none;
+    --viewerContainer-top: 0px;
+  }
+}
+/*#endif*/
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -255,6 +267,7 @@ body {
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
+  display: var(--toolbar-visibility);
 }
 
 #outerContainer.sidebarMoving #sidebarContainer,
@@ -288,7 +301,7 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  top: 32px;
+  top: var(--viewerContainer-top);
   right: 0;
   bottom: 0;
   left: 0;
@@ -311,6 +324,7 @@ body {
   z-index: 9999;
   cursor: default;
   font: message-box;
+  display: var(--toolbar-visibility);
 }
 
 .toolbar input,
