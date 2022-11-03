@@ -503,7 +503,7 @@ class XRef {
         // Find the next "obj" string, rather than "endobj", to ensure that
         // we won't skip over a new 'obj' operator in corrupt files where
         // 'endobj' operators are missing (fixes issue9105_reduced.pdf).
-        while (startPos < buffer.length) {
+        while (startPos < length) {
           const endPos = startPos + skipUntil(buffer, startPos, objBytes) + 4;
           contentLength = endPos - position;
 
@@ -545,7 +545,29 @@ class XRef {
         (token.length === 7 || /\s/.test(token[7]))
       ) {
         trailers.push(position);
-        position += skipUntil(buffer, position, startxrefBytes);
+
+        const contentLength = skipUntil(buffer, position, startxrefBytes);
+        // Attempt to handle (some) corrupt documents, where no 'startxref'
+        // operators are present (fixes issue15590.pdf).
+        if (position + contentLength >= length) {
+          const endPos = position + skipUntil(buffer, position, objBytes) + 4;
+
+          const checkPos = Math.max(endPos - CHECK_CONTENT_LENGTH, position);
+          const tokenStr = bytesToString(buffer.subarray(checkPos, endPos));
+
+          // Find the first "obj" occurrence after the 'trailer' operator.
+          const objToken = nestedObjRegExp.exec(tokenStr);
+
+          if (objToken && objToken[1]) {
+            warn(
+              'indexObjects: Found first "obj" after "trailer", ' +
+                'caused by missing "startxref" -- trying to recover.'
+            );
+            position = endPos - objToken[1].length;
+            continue;
+          }
+        }
+        position += contentLength;
       } else {
         position += token.length + 1;
       }

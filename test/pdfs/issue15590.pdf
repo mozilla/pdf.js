@@ -1,0 +1,23 @@
+%PDF-1.7
+
+trailer
+<<
+/Root 1 0 R
+>>
+
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+/OpenAction 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/S /JavaScript
+/JS(func=function(){app.alert(1)};func();)
+>>
+endobj
+
+%%EOF
