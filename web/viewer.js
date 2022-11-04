@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 /* globals chrome */
-
+import {
+  parseQueryString
+} from './ui_utils';
 'use strict';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
@@ -184,7 +186,8 @@ function getViewerConfiguration() {
 }
 
 function enablePrintingIfCanPrint() {
-  if(pdfjsWebAppOptions.canPrint) {
+  let params = document.location.search;
+  if(params.includes("canPrint=true")) {
     document.getElementById("print").classList.remove("hidden");
   }
 }

@@ -215,11 +215,6 @@ const defaultOptions = {
             '../src/worker_loader.js' : '../build/pdf.worker.js'),
     kind: OptionKind.WORKER,
   },
-  canPrint: {
-    /** @type {boolean} */
-    value: false,
-    kind: OptionKind.API,
-  },
 };
 if (typeof PDFJSDev === 'undefined' ||
     PDFJSDev.test('!PRODUCTION || GENERIC')) {
