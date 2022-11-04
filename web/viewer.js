@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 /* globals chrome */
-import {
-  parseQueryString
-} from './ui_utils';
+
+import { MCOptions } from './mc_options';
+
 'use strict';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
@@ -185,9 +185,13 @@ function getViewerConfiguration() {
   };
 }
 
+function setMCOptions() {
+  let canPrint = new URL(location.href).searchParams.get('canPrint');
+  MCOptions.set("canPrint", canPrint=="true");
+}
+
 function enablePrintingIfCanPrint() {
-  let params = document.location.search;
-  if(params.includes("canPrint=true")) {
+  if(MCOptions.get("canPrint")) {
     document.getElementById("print").classList.remove("hidden");
   }
 }
@@ -209,6 +213,7 @@ function webViewerLoad() {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
       pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
     }
+    setMCOptions();
     enablePrintingIfCanPrint();
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
