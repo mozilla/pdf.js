@@ -498,7 +498,7 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
   return null;
 }
 
-function shadow(obj, prop, value) {
+function shadow(obj, prop, value, nonSerializable = false) {
   if (
     typeof PDFJSDev === "undefined" ||
     PDFJSDev.test("!PRODUCTION || TESTING")
@@ -510,7 +510,7 @@ function shadow(obj, prop, value) {
   }
   Object.defineProperty(obj, prop, {
     value,
-    enumerable: true,
+    enumerable: !nonSerializable,
     configurable: true,
     writable: false,
   });
