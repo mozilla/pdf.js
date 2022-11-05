@@ -2775,7 +2775,9 @@ class PartialEvaluator {
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
-        if (glyph.isInvisibleFormatMark) {
+        const { category } = glyph;
+
+        if (category.isInvisibleFormatMark) {
           continue;
         }
         let charSpacing =
@@ -2787,7 +2789,7 @@ class PartialEvaluator {
         }
         let scaledDim = glyphWidth * scale;
 
-        if (glyph.isWhitespace) {
+        if (category.isWhitespace) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
           // it will be done (if required) in next call to
@@ -2815,7 +2817,7 @@ class PartialEvaluator {
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
-        if (glyph.isZeroWidthDiacritic) {
+        if (category.isZeroWidthDiacritic) {
           scaledDim = 0;
         }
 
