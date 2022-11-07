@@ -126,7 +126,8 @@ function scrollIntoView(element, spot, scrollMatches = false) {
       parent.clientWidth === parent.scrollWidth) ||
     (scrollMatches &&
       (parent.classList.contains("markedContent") ||
-        getComputedStyle(parent).overflow === "hidden"))
+        getComputedStyle(parent).overflow === "hidden" ||
+        !parent.classList.contains("pdfViewerContainer")))
   ) {
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
