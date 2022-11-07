@@ -14,7 +14,8 @@ class MCOptions {
     }
 
     static get(name) {
-        let defaultOption = defaultOptions[name], MCUserOption = McUserOptions[name];
+        let defaultOption = defaultOptions[name];
+        let MCUserOption = McUserOptions[name];
         if (MCUserOption !== undefined) {
             return MCUserOption;
         }

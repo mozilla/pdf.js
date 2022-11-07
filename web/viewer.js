@@ -187,12 +187,12 @@ function getViewerConfiguration() {
 
 function setMCOptions() {
   let canPrint = new URL(location.href).searchParams.get('canPrint');
-  MCOptions.set("canPrint", canPrint=="true");
+  MCOptions.set('canPrint', canPrint === 'true');
 }
 
 function enablePrintingIfCanPrint() {
-  if(MCOptions.get("canPrint")) {
-    document.getElementById("print").classList.remove("hidden");
+  if (MCOptions.get('canPrint')) {
+    document.getElementById('print').classList.remove('hidden');
   }
 }
 
