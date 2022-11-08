@@ -838,7 +838,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
-  content: url(images/toolbarButton-print.png);
 }
 
 .toolbarButton.openFile::before,
@@ -1643,7 +1642,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .toolbarButton.print::before,
   .secondaryToolbarButton.print::before {
-    content: url(images/toolbarButton-print@2x.png);
   }
 
   .toolbarButton.openFile::before,
