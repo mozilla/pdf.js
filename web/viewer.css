@@ -1802,8 +1802,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     position: relative;
     top: 0;
     left: 0;
-    width: 1px;
-    height: 1px;
     overflow: visible;
     page-break-after: always;
     page-break-inside: avoid;
@@ -1944,7 +1942,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 @media print {
-  body {
+  .disablePrint {
     display: none !important;
   }
 }

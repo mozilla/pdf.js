@@ -16,6 +16,7 @@
 import { CSS_UNITS, NullL10n } from './ui_utils';
 import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
 import { URL } from 'pdfjs-lib';
+import {MCOptions} from "./mc_options";
 
 let activeService = null;
 let overlayManager = null;
@@ -204,7 +205,9 @@ PDFPrintService.prototype = {
 
 let print = window.print;
 window.print = function print() {
-  return; // Dont allow printing of Basic MC Refence PDF
+  if (!MCOptions.get('canPrint')) {
+    return; // Dont allow printing of Basic MC Refence PDF
+  }
   if (activeService) {
     console.warn('Ignored window.print() because of a pending print job.');
     return;
