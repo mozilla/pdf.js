@@ -2244,7 +2244,7 @@ page 1 / 3`);
       const pdfPage = await pdfDoc.getPage(1);
       const { items, styles } = await pdfPage.getTextContent();
       expect(items.length).toEqual(1);
-      // Font name will a random object id.
+      // Font name will be a random object id.
       const fontName = items[0].fontName;
       expect(Object.keys(styles)).toEqual([fontName]);
 
@@ -2265,6 +2265,11 @@ page 1 / 3`);
         descent: isNodeJS ? NaN : -0.217,
         vertical: false,
       });
+
+      // Wait for font data to be loaded so we can check that the font names
+      // match.
+      await pdfPage.getOperatorList();
+      expect(pdfPage.commonObjs.has(fontName)).toEqual(true);
 
       await loadingTask.destroy();
     });
