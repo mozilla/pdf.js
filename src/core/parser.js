@@ -35,33 +35,12 @@ import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
 import { LZWStream } from "./lzw_stream.js";
+import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { NullStream } from "./stream.js";
 import { PredictorStream } from "./predictor_stream.js";
 import { RunLengthStream } from "./run_length_stream.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
-const MAX_ADLER32_LENGTH = 5552;
-
-function computeAdler32(bytes) {
-  const bytesLength = bytes.length;
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
-    assert(
-      bytesLength < MAX_ADLER32_LENGTH,
-      'computeAdler32: Unsupported "bytes" length.'
-    );
-  }
-  let a = 1,
-    b = 0;
-  for (let i = 0; i < bytesLength; ++i) {
-    // No modulo required in the loop if `bytesLength < 5552`.
-    a += bytes[i] & 0xff;
-    b += a;
-  }
-  return (b % 65521 << 16) | a % 65521;
-}
 
 class Parser {
   constructor({ lexer, xref, allowStreams = false, recoveryMode = false }) {
@@ -532,24 +511,21 @@ class Parser {
       default:
         length = this.findDefaultInlineStreamEnd(stream);
     }
-    let imageStream = stream.makeSubStream(startPos, length, dict);
 
-    // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their
-    // adler32 checksum.
+    // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their hash.
     let cacheKey;
-    if (length < MAX_LENGTH_TO_CACHE && dictLength < MAX_ADLER32_LENGTH) {
-      const imageBytes = imageStream.getBytes();
-      imageStream.reset();
-
+    if (length < MAX_LENGTH_TO_CACHE && dictLength > 0) {
       const initialStreamPos = stream.pos;
       // Set the stream position to the beginning of the dictionary data...
       stream.pos = lexer.beginInlineImagePos;
-      // ... and fetch the bytes of the *entire* dictionary.
-      const dictBytes = stream.getBytes(dictLength);
+      // ... and fetch the bytes of the dictionary *and* the inline image.
+      const inlineBytes = stream.getBytes(dictLength + length);
       // Finally, don't forget to reset the stream position.
       stream.pos = initialStreamPos;
 
-      cacheKey = computeAdler32(imageBytes) + "_" + computeAdler32(dictBytes);
+      const hash = new MurmurHash3_64();
+      hash.update(inlineBytes);
+      cacheKey = hash.hexdigest();
 
       const cacheEntry = this.imageCache[cacheKey];
       if (cacheEntry !== undefined) {
@@ -561,6 +537,7 @@ class Parser {
       }
     }
 
+    let imageStream = stream.makeSubStream(startPos, length, dict);
     if (cipherTransform) {
       imageStream = cipherTransform.createStream(imageStream, length);
     }

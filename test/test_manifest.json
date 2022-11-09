@@ -1782,6 +1782,12 @@
        "type": "eq",
        "about": "Optional marked content."
     },
+    {  "id": "bug1799927",
+       "file": "pdfs/bug1799927.pdf",
+       "md5": "e6ad013c24e58e5b40c3bae50f04c8e8",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue11144_reduced",
        "file": "pdfs/issue11144_reduced.pdf",
        "md5": "09e3e771ebd6867558074e900adb54b9",
