@@ -458,6 +458,8 @@ const PDFViewerApplication = {
     const findController = new PDFFindController({
       linkService: pdfLinkService,
       eventBus,
+      updateMatchesCountOnProgress:
+        typeof PDFJSDev === "undefined" || !PDFJSDev.test("GECKOVIEW"),
     });
     this.findController = findController;
 
