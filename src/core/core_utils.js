@@ -572,6 +572,43 @@ function getNewAnnotationsMap(annotationStorage) {
   return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
 }
 
+function stringToUTF16HexString(str) {
+  const buf = [];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    buf.push(
+      ((char >> 8) & 0xff).toString(16).padStart(2, "0"),
+      (char & 0xff).toString(16).padStart(2, "0")
+    );
+  }
+  return buf.join("");
+}
+
+function stringToUTF16String(str) {
+  const buf = [];
+  for (let i = 0, ii = str.length; i < ii; i++) {
+    const char = str.charCodeAt(i);
+    buf.push(
+      String.fromCharCode((char >> 8) & 0xff),
+      String.fromCharCode(char & 0xff)
+    );
+  }
+  return buf.join("");
+}
+
+function getRotationMatrix(rotation, width, height) {
+  switch (rotation) {
+    case 90:
+      return [0, 1, -1, 0, width, 0];
+    case 180:
+      return [-1, 0, 0, -1, width, height];
+    case 270:
+      return [0, -1, 1, 0, 0, height];
+    default:
+      throw new Error("Invalid rotation");
+  }
+}
+
 export {
   collectActions,
   DocStats,
@@ -581,6 +618,7 @@ export {
   getInheritableProperty,
   getLookupTableFactory,
   getNewAnnotationsMap,
+  getRotationMatrix,
   isWhiteSpace,
   log2,
   MissingDataException,
@@ -592,6 +630,8 @@ export {
   readUint16,
   readUint32,
   recoverJsURL,
+  stringToUTF16HexString,
+  stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
   XRefEntryException,

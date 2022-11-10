@@ -479,7 +479,30 @@ class Driver {
           enableXfa: task.enableXfa,
           styleElement: xfaStyleElement,
         });
-        loadingTask.promise.then(
+        let promise = loadingTask.promise;
+
+        if (task.save) {
+          if (!task.annotationStorage) {
+            promise = Promise.reject(
+              new Error("Missing `annotationStorage` entry.")
+            );
+          } else {
+            promise = loadingTask.promise.then(async doc => {
+              for (const [key, value] of Object.entries(
+                task.annotationStorage
+              )) {
+                doc.annotationStorage.setValue(key, value);
+              }
+              const data = await doc.saveDocument();
+              await loadingTask.destroy();
+              delete task.annotationStorage;
+
+              return getDocument(data).promise;
+            });
+          }
+        }
+
+        promise.then(
           async doc => {
             if (task.enableXfa) {
               task.fontRules = "";

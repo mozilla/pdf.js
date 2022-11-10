@@ -625,6 +625,11 @@ class WorkerMessageHandler {
             }
           }
 
+          const needAppearances =
+            acroFormRef &&
+            acroForm instanceof Dict &&
+            newRefs.some(ref => ref.needAppearances);
+
           const xfa = (acroForm instanceof Dict && acroForm.get("XFA")) || null;
           let xfaDatasetsRef = null;
           let hasXfaDatasetsEntry = false;
@@ -632,15 +637,13 @@ class WorkerMessageHandler {
             for (let i = 0, ii = xfa.length; i < ii; i += 2) {
               if (xfa[i] === "datasets") {
                 xfaDatasetsRef = xfa[i + 1];
-                acroFormRef = null;
                 hasXfaDatasetsEntry = true;
               }
             }
             if (xfaDatasetsRef === null) {
-              xfaDatasetsRef = xref.getNewRef();
+              xfaDatasetsRef = xref.getNewTemporaryRef();
             }
           } else if (xfa) {
-            acroFormRef = null;
             // TODO: Support XFA streams.
             warn("Unsupported XFA type.");
           }
@@ -661,7 +664,7 @@ class WorkerMessageHandler {
             newXrefInfo = {
               rootRef: xref.trailer.getRaw("Root") || null,
               encryptRef: xref.trailer.getRaw("Encrypt") || null,
-              newRef: xref.getNewRef(),
+              newRef: xref.getNewTemporaryRef(),
               infoRef: xref.trailer.getRaw("Info") || null,
               info: infoObj,
               fileIds: xref.trailer.get("ID") || null,
@@ -669,20 +672,24 @@ class WorkerMessageHandler {
               filename,
             };
           }
-          xref.resetNewRef();
 
-          return incrementalUpdate({
-            originalData: stream.bytes,
-            xrefInfo: newXrefInfo,
-            newRefs,
-            xref,
-            hasXfa: !!xfa,
-            xfaDatasetsRef,
-            hasXfaDatasetsEntry,
-            acroFormRef,
-            acroForm,
-            xfaData,
-          });
+          try {
+            return incrementalUpdate({
+              originalData: stream.bytes,
+              xrefInfo: newXrefInfo,
+              newRefs,
+              xref,
+              hasXfa: !!xfa,
+              xfaDatasetsRef,
+              hasXfaDatasetsEntry,
+              needAppearances,
+              acroFormRef,
+              acroForm,
+              xfaData,
+            });
+          } finally {
+            xref.resetNewTemporaryRef();
+          }
         });
       }
     );
