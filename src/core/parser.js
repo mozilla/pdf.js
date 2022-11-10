@@ -480,8 +480,9 @@ class Parser {
     const lexer = this.lexer;
     const stream = lexer.stream;
 
-    // Parse dictionary.
-    const dict = new Dict(this.xref);
+    // Parse dictionary, but initialize it lazily to improve performance with
+    // cached inline images (see issue 2618).
+    const dictMap = Object.create(null);
     let dictLength;
     while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
       if (!(this.buf1 instanceof Name)) {
@@ -492,14 +493,14 @@ class Parser {
       if (this.buf1 === EOF) {
         break;
       }
-      dict.set(key, this.getObj(cipherTransform));
+      dictMap[key] = this.getObj(cipherTransform);
     }
     if (lexer.beginInlineImagePos !== -1) {
       dictLength = stream.pos - lexer.beginInlineImagePos;
     }
 
     // Extract the name of the first (i.e. the current) image filter.
-    const filter = dict.get("F", "Filter");
+    const filter = this.xref.fetchIfRef(dictMap.F || dictMap.Filter);
     let filterName;
     if (filter instanceof Name) {
       filterName = filter.name;
@@ -552,6 +553,10 @@ class Parser {
       }
     }
 
+    const dict = new Dict(this.xref);
+    for (const key in dictMap) {
+      dict.set(key, dictMap[key]);
+    }
     let imageStream = stream.makeSubStream(startPos, length, dict);
     if (cipherTransform) {
       imageStream = cipherTransform.createStream(imageStream, length);
