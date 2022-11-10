@@ -40,27 +40,23 @@ import { PredictorStream } from "./predictor_stream.js";
 import { RunLengthStream } from "./run_length_stream.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
-const MAX_ADLER32_LENGTH = 5552;
 
-function computeAdler32(bytes) {
-  const bytesLength = bytes.length;
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
-    assert(
-      bytesLength < MAX_ADLER32_LENGTH,
-      'computeAdler32: Unsupported "bytes" length.'
-    );
+function getInlineImageCacheKey(bytes) {
+  const strBuf = [],
+    ii = bytes.length;
+  let i = 0;
+  while (i < ii - 1) {
+    strBuf.push((bytes[i++] << 8) | bytes[i++]);
   }
-  let a = 1,
-    b = 0;
-  for (let i = 0; i < bytesLength; ++i) {
-    // No modulo required in the loop if `bytesLength < 5552`.
-    a += bytes[i] & 0xff;
-    b += a;
+  // Handle an odd number of elements.
+  if (i < ii) {
+    strBuf.push(bytes[i]);
   }
-  return (b % 65521 << 16) | a % 65521;
+  // We purposely include the "raw" length in the cacheKey, to prevent any
+  // possible issues with hash collisions in the inline image cache.
+  // Here we also assume that `strBuf` is never larger than 8192 elements,
+  // please refer to the `bytesToString` implementation.
+  return ii + "_" + String.fromCharCode.apply(null, strBuf);
 }
 
 class Parser {
@@ -71,6 +67,7 @@ class Parser {
     this.recoveryMode = recoveryMode;
 
     this.imageCache = Object.create(null);
+    this._imageId = 0;
     this.refill();
   }
 
@@ -483,8 +480,9 @@ class Parser {
     const lexer = this.lexer;
     const stream = lexer.stream;
 
-    // Parse dictionary.
-    const dict = new Dict(this.xref);
+    // Parse dictionary, but initialize it lazily to improve performance with
+    // cached inline images (see issue 2618).
+    const dictMap = Object.create(null);
     let dictLength;
     while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
       if (!(this.buf1 instanceof Name)) {
@@ -495,14 +493,14 @@ class Parser {
       if (this.buf1 === EOF) {
         break;
       }
-      dict.set(key, this.getObj(cipherTransform));
+      dictMap[key] = this.getObj(cipherTransform);
     }
     if (lexer.beginInlineImagePos !== -1) {
       dictLength = stream.pos - lexer.beginInlineImagePos;
     }
 
     // Extract the name of the first (i.e. the current) image filter.
-    const filter = dict.get("F", "Filter");
+    const filter = this.xref.fetchIfRef(dictMap.F || dictMap.Filter);
     let filterName;
     if (filter instanceof Name) {
       filterName = filter.name;
@@ -532,24 +530,18 @@ class Parser {
       default:
         length = this.findDefaultInlineStreamEnd(stream);
     }
-    let imageStream = stream.makeSubStream(startPos, length, dict);
 
     // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their
-    // adler32 checksum.
+    // stringified content, to prevent possible hash collisions.
     let cacheKey;
-    if (length < MAX_LENGTH_TO_CACHE && dictLength < MAX_ADLER32_LENGTH) {
-      const imageBytes = imageStream.getBytes();
-      imageStream.reset();
-
+    if (length < MAX_LENGTH_TO_CACHE && dictLength > 0) {
       const initialStreamPos = stream.pos;
       // Set the stream position to the beginning of the dictionary data...
       stream.pos = lexer.beginInlineImagePos;
-      // ... and fetch the bytes of the *entire* dictionary.
-      const dictBytes = stream.getBytes(dictLength);
+      // ... and fetch the bytes of the dictionary *and* the inline image.
+      cacheKey = getInlineImageCacheKey(stream.getBytes(dictLength + length));
       // Finally, don't forget to reset the stream position.
       stream.pos = initialStreamPos;
-
-      cacheKey = computeAdler32(imageBytes) + "_" + computeAdler32(dictBytes);
 
       const cacheEntry = this.imageCache[cacheKey];
       if (cacheEntry !== undefined) {
@@ -561,6 +553,11 @@ class Parser {
       }
     }
 
+    const dict = new Dict(this.xref);
+    for (const key in dictMap) {
+      dict.set(key, dictMap[key]);
+    }
+    let imageStream = stream.makeSubStream(startPos, length, dict);
     if (cipherTransform) {
       imageStream = cipherTransform.createStream(imageStream, length);
     }
@@ -568,7 +565,7 @@ class Parser {
     imageStream = this.filter(imageStream, dict, length);
     imageStream.dict = dict;
     if (cacheKey !== undefined) {
-      imageStream.cacheKey = `inline_${length}_${cacheKey}`;
+      imageStream.cacheKey = `inline_img_${++this._imageId}`;
       this.imageCache[cacheKey] = imageStream;
     }
 

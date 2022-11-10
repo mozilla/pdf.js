@@ -5921,6 +5921,12 @@
        "annotations": true,
        "type": "eq"
     },
+    {  "id": "bug1799927",
+       "file": "pdfs/bug1799927.pdf",
+       "md5": "e6ad013c24e58e5b40c3bae50f04c8e8",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "annotation-line-without-appearance-empty-Rect",
        "file": "pdfs/annotation-line-without-appearance-empty-Rect.pdf",
        "md5": "65f2d3ef80acfea637718c3fc66043b7",
