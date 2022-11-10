@@ -93,6 +93,7 @@ const EXPORT_DATA_PROPERTIES = [
   "fallbackName",
   "fontMatrix",
   "fontType",
+  "isInvalidPDFjsFont",
   "isType3Font",
   "italic",
   "loadedName",
@@ -952,13 +953,17 @@ class Font {
     this.type = type;
     this.subtype = subtype;
 
-    let fallbackName = "sans-serif";
-    if (this.isMonospace) {
-      fallbackName = "monospace";
+    const matches = name.match(/^InvalidPDFjsFont_(.*)_\d+$/);
+    this.isInvalidPDFjsFont = !!matches;
+    if (this.isInvalidPDFjsFont) {
+      this.fallbackName = matches[1];
+    } else if (this.isMonospace) {
+      this.fallbackName = "monospace";
     } else if (this.isSerifFont) {
-      fallbackName = "serif";
+      this.fallbackName = "serif";
+    } else {
+      this.fallbackName = "sans-serif";
     }
-    this.fallbackName = fallbackName;
 
     this.differences = properties.differences;
     this.widths = properties.widths;

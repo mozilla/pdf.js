@@ -66,6 +66,9 @@ describe("document", function () {
           }
           return value;
         },
+        get evaluatorOptions() {
+          return { isOffscreenCanvasSupported: false };
+        },
       };
       const pdfDocument = new PDFDocument(pdfManager, stream);
       pdfDocument.xref = xref;

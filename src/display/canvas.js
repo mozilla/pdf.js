@@ -2275,6 +2275,21 @@ class CanvasGraphics {
 
     ctx.lineWidth = lineWidth;
 
+    if (font.isInvalidPDFjsFont) {
+      const chars = [];
+      let width = 0;
+      for (const glyph of glyphs) {
+        chars.push(glyph.unicode);
+        width += glyph.width;
+      }
+      ctx.fillText(chars.join(""), 0, 0);
+      current.x += width * widthAdvanceScale * textHScale;
+      ctx.restore();
+      this.compose();
+
+      return undefined;
+    }
+
     let x = 0,
       i;
     for (i = 0; i < glyphsLength; ++i) {

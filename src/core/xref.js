@@ -42,18 +42,34 @@ class XRef {
     this._cacheMap = new Map(); // Prepare the XRef cache.
     this._pendingRefs = new RefSet();
     this.stats = new DocStats(pdfManager.msgHandler);
-    this._newRefNum = null;
+    this._newPersistentRefNum = null;
+    this._newTemporaryRefNum = null;
   }
 
-  getNewRef() {
-    if (this._newRefNum === null) {
-      this._newRefNum = this.entries.length || 1;
+  getNewPersistentRef(obj) {
+    // When printing we don't care that much about the ref number by itself, it
+    // can increase for ever and it allows to keep some re-usable refs.
+    if (this._newPersistentRefNum === null) {
+      this._newPersistentRefNum = this.entries.length || 1;
     }
-    return Ref.get(this._newRefNum++, 0);
+    const num = this._newPersistentRefNum++;
+    this._cacheMap.set(num, obj);
+    return Ref.get(num, 0);
   }
 
-  resetNewRef() {
-    this._newRefNum = null;
+  getNewTemporaryRef() {
+    // When saving we want to have some minimal numbers.
+    // Those refs are only created in order to be written in the final pdf
+    // stream.
+    if (this._newTemporaryRefNum === null) {
+      this._newTemporaryRefNum = this.entries.length || 1;
+    }
+    return Ref.get(this._newTemporaryRefNum++, 0);
+  }
+
+  resetNewTemporaryRef() {
+    // Called once saving is finished.
+    this._newTemporaryRefNum = null;
   }
 
   setStartXRef(startXRef) {
