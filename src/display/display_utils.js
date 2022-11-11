@@ -389,10 +389,9 @@ function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
 }
 
 class StatTimer {
-  constructor() {
-    this.started = Object.create(null);
-    this.times = [];
-  }
+  started = Object.create(null);
+
+  times = [];
 
   time(name) {
     if (name in this.started) {
@@ -418,15 +417,11 @@ class StatTimer {
     // Find the longest name for padding purposes.
     const outBuf = [];
     let longest = 0;
-    for (const time of this.times) {
-      const name = time.name;
-      if (name.length > longest) {
-        longest = name.length;
-      }
+    for (const { name } of this.times) {
+      longest = Math.max(name.length, longest);
     }
-    for (const time of this.times) {
-      const duration = time.end - time.start;
-      outBuf.push(`${time.name.padEnd(longest)} ${duration}ms\n`);
+    for (const { name, start, end } of this.times) {
+      outBuf.push(`${name.padEnd(longest)} ${end - start}ms\n`);
     }
     return outBuf.join("");
   }
