@@ -21,10 +21,11 @@ import { MurmurHash3_64 } from "../shared/murmurhash3.js";
  * Key/value storage for annotation data in forms.
  */
 class AnnotationStorage {
-  constructor() {
-    this._storage = new Map();
-    this._modified = false;
+  #modified = false;
 
+  #storage = new Map();
+
+  constructor() {
     // Callbacks to signal when the modification state is set or reset.
     // This is used by the viewer to only bind on `beforeunload` if forms
     // are actually edited to prevent doing so unconditionally since that
@@ -36,15 +37,12 @@ class AnnotationStorage {
 
   /**
    * Get the value for a given key if it exists, or return the default value.
-   *
-   * @public
-   * @memberof AnnotationStorage
    * @param {string} key
    * @param {Object} defaultValue
    * @returns {Object}
    */
   getValue(key, defaultValue) {
-    const value = this._storage.get(key);
+    const value = this.#storage.get(key);
     if (value === undefined) {
       return defaultValue;
     }
@@ -54,14 +52,11 @@ class AnnotationStorage {
 
   /**
    * Get the value for a given key.
-   *
-   * @public
-   * @memberof AnnotationStorage
    * @param {string} key
    * @returns {Object}
    */
   getRawValue(key) {
-    return this._storage.get(key);
+    return this.#storage.get(key);
   }
 
   /**
@@ -69,14 +64,14 @@ class AnnotationStorage {
    * @param {string} key
    */
   remove(key) {
-    this._storage.delete(key);
+    this.#storage.delete(key);
 
-    if (this._storage.size === 0) {
+    if (this.#storage.size === 0) {
       this.resetModified();
     }
 
     if (typeof this.onAnnotationEditor === "function") {
-      for (const value of this._storage.values()) {
+      for (const value of this.#storage.values()) {
         if (value instanceof AnnotationEditor) {
           return;
         }
@@ -87,14 +82,11 @@ class AnnotationStorage {
 
   /**
    * Set the value for a given key
-   *
-   * @public
-   * @memberof AnnotationStorage
    * @param {string} key
    * @param {Object} value
    */
   setValue(key, value) {
-    const obj = this._storage.get(key);
+    const obj = this.#storage.get(key);
     let modified = false;
     if (obj !== undefined) {
       for (const [entry, val] of Object.entries(value)) {
@@ -105,7 +97,7 @@ class AnnotationStorage {
       }
     } else {
       modified = true;
-      this._storage.set(key, value);
+      this.#storage.set(key, value);
     }
     if (modified) {
       this.#setModified();
@@ -125,20 +117,20 @@ class AnnotationStorage {
    * @returns {boolean}
    */
   has(key) {
-    return this._storage.has(key);
+    return this.#storage.has(key);
   }
 
   getAll() {
-    return this._storage.size > 0 ? objectFromMap(this._storage) : null;
+    return this.#storage.size > 0 ? objectFromMap(this.#storage) : null;
   }
 
   get size() {
-    return this._storage.size;
+    return this.#storage.size;
   }
 
   #setModified() {
-    if (!this._modified) {
-      this._modified = true;
+    if (!this.#modified) {
+      this.#modified = true;
       if (typeof this.onSetModified === "function") {
         this.onSetModified();
       }
@@ -146,8 +138,8 @@ class AnnotationStorage {
   }
 
   resetModified() {
-    if (this._modified) {
-      this._modified = false;
+    if (this.#modified) {
+      this.#modified = false;
       if (typeof this.onResetModified === "function") {
         this.onResetModified();
       }
@@ -166,12 +158,12 @@ class AnnotationStorage {
    * @ignore
    */
   get serializable() {
-    if (this._storage.size === 0) {
+    if (this.#storage.size === 0) {
       return null;
     }
     const clone = new Map();
 
-    for (const [key, val] of this._storage) {
+    for (const [key, val] of this.#storage) {
       const serialized =
         val instanceof AnnotationEditor ? val.serialize() : val;
       if (serialized) {
