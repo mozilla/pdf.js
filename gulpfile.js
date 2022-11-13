@@ -2169,7 +2169,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      canvas: "^2.10.1",
+      canvas: "^2.10.2",
     },
     dependencies: {
       "web-streams-polyfill": "^3.2.1",
