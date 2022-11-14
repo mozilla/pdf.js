@@ -647,4 +647,25 @@ describe("pdf_find_controller", function () {
       pageMatchesLength: [[4]],
     });
   });
+
+  it("performs a search in a text containing fullwidth chars", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "issue15690.pdf"
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "o",
+      },
+      matchesPerPage: [13],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[0, 10, 13, 30, 39, 41, 55, 60, 66, 84, 102, 117, 134]],
+      pageMatchesLength: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
+    });
+  });
 });
