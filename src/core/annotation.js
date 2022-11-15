@@ -524,6 +524,7 @@ class Annotation {
       this.data.pageIndex = params.pageIndex;
     }
 
+    this._isOffscreenCanvasSupported = params.isOffscreenCanvasSupported;
     this._fallbackFontDict = null;
     this._needAppearances = false;
   }
@@ -1519,7 +1520,6 @@ class WidgetAnnotation extends Annotation {
     const data = this.data;
     this.ref = params.ref;
     this._needAppearances = params.needAppearances;
-    this._isOffscreenCanvasSupported = params.isOffscreenCanvasSupported;
 
     data.annotationType = AnnotationType.WIDGET;
     if (data.fieldName === undefined) {
