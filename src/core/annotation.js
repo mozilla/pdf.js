@@ -27,7 +27,6 @@ import {
   FeatureTest,
   getModificationDate,
   IDENTITY_MATRIX,
-  isAscii,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   OPS,
@@ -42,6 +41,7 @@ import {
   collectActions,
   getInheritableProperty,
   getRotationMatrix,
+  isAscii,
   numberToString,
   stringToUTF16String,
 } from "./core_utils.js";

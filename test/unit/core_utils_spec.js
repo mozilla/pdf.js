@@ -18,6 +18,7 @@ import {
   encodeToXmlString,
   escapePDFName,
   getInheritableProperty,
+  isAscii,
   isWhiteSpace,
   log2,
   parseXFAPath,
@@ -332,6 +333,16 @@ describe("core_utils", function () {
       cssFontInfo.italicAngle = 2.718;
       validateCSSFont(cssFontInfo);
       expect(cssFontInfo.italicAngle).toEqual("2.718");
+    });
+  });
+
+  describe("isAscii", function () {
+    it("handles ascii/non-ascii strings", function () {
+      expect(isAscii("hello world")).toEqual(true);
+      expect(isAscii("こんにちは世界の")).toEqual(false);
+      expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
+        false
+      );
     });
   });
 

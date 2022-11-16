@@ -572,6 +572,10 @@ function getNewAnnotationsMap(annotationStorage) {
   return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
 }
 
+function isAscii(str) {
+  return /^[\x00-\x7F]*$/.test(str);
+}
+
 function stringToUTF16HexString(str) {
   const buf = [];
   for (let i = 0, ii = str.length; i < ii; i++) {
@@ -622,6 +626,7 @@ export {
   getLookupTableFactory,
   getNewAnnotationsMap,
   getRotationMatrix,
+  isAscii,
   isWhiteSpace,
   log2,
   MissingDataException,
