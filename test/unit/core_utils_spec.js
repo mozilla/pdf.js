@@ -17,6 +17,7 @@ import { Dict, Ref } from "../../src/core/primitives.js";
 import {
   encodeToXmlString,
   escapePDFName,
+  escapeString,
   getInheritableProperty,
   isAscii,
   isWhiteSpace,
@@ -219,6 +220,14 @@ describe("core_utils", function () {
       expect(escapePDFName("#h#e#l#l#o")).toEqual("#23h#23e#23l#23l#23o");
       expect(escapePDFName("#()<>[]{}/%")).toEqual(
         "#23#28#29#3c#3e#5b#5d#7b#7d#2f#25"
+      );
+    });
+  });
+
+  describe("escapeString", function () {
+    it("should escape (, ), \\n, \\r, and \\", function () {
+      expect(escapeString("((a\\a))\n(b(b\\b)\rb)")).toEqual(
+        "\\(\\(a\\\\a\\)\\)\\n\\(b\\(b\\\\b\\)\\rb\\)"
       );
     });
   });

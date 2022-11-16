@@ -313,6 +313,19 @@ function escapePDFName(str) {
   return buffer.join("");
 }
 
+// Replace "(", ")", "\n", "\r" and "\" by "\(", "\)", "\\n", "\\r" and "\\"
+// in order to write it in a PDF file.
+function escapeString(str) {
+  return str.replace(/([()\\\n\r])/g, match => {
+    if (match === "\n") {
+      return "\\n";
+    } else if (match === "\r") {
+      return "\\r";
+    }
+    return `\\${match}`;
+  });
+}
+
 function _collectJS(entry, xref, list, parents) {
   if (!entry) {
     return;
@@ -621,6 +634,7 @@ export {
   DocStats,
   encodeToXmlString,
   escapePDFName,
+  escapeString,
   getArrayLookupTableFactory,
   getInheritableProperty,
   getLookupTableFactory,

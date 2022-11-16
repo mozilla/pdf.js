@@ -23,7 +23,6 @@ import {
   AnnotationType,
   assert,
   BASELINE_FACTOR,
-  escapeString,
   FeatureTest,
   getModificationDate,
   IDENTITY_MATRIX,
@@ -39,6 +38,7 @@ import {
 } from "../shared/util.js";
 import {
   collectActions,
+  escapeString,
   getInheritableProperty,
   getRotationMatrix,
   isAscii,
