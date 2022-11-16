@@ -1037,20 +1037,6 @@ function stringToPDFString(str) {
   return strBuf.join("");
 }
 
-function escapeString(str) {
-  // replace "(", ")", "\n", "\r" and "\"
-  // by "\(", "\)", "\\n", "\\r" and "\\"
-  // in order to write it in a PDF file.
-  return str.replace(/([()\\\n\r])/g, match => {
-    if (match === "\n") {
-      return "\\n";
-    } else if (match === "\r") {
-      return "\\r";
-    }
-    return `\\${match}`;
-  });
-}
-
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -1151,7 +1137,6 @@ export {
   createPromiseCapability,
   createValidAbsoluteUrl,
   DocumentActionEventType,
-  escapeString,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   FontType,
