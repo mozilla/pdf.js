@@ -23,6 +23,7 @@ import {
   isWhiteSpace,
   log2,
   parseXFAPath,
+  stringToUTF16HexString,
   stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
@@ -351,6 +352,18 @@ describe("core_utils", function () {
       expect(isAscii("こんにちは世界の")).toEqual(false);
       expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
         false
+      );
+    });
+  });
+
+  describe("stringToUTF16HexString", function () {
+    it("should encode a string in UTF16 hexadecimal format", function () {
+      expect(stringToUTF16HexString("hello world")).toEqual(
+        "00680065006c006c006f00200077006f0072006c0064"
+      );
+
+      expect(stringToUTF16HexString("こんにちは世界の")).toEqual(
+        "30533093306b3061306f4e16754c306e"
       );
     });
   });
