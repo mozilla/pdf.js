@@ -34,7 +34,6 @@ import {
   RenderingIntentFlag,
   shadow,
   stringToPDFString,
-  stringToUTF16BEString,
   unreachable,
   Util,
   warn,
@@ -1879,7 +1878,11 @@ class WidgetAnnotation extends Annotation {
       value,
     };
 
-    const encoder = val => (isAscii(val) ? val : stringToUTF16BEString(val));
+    const encoder = val => {
+      return isAscii(val)
+        ? val
+        : stringToUTF16String(val, /* bigEndian = */ true);
+    };
     dict.set("V", Array.isArray(value) ? value.map(encoder) : encoder(value));
 
     const maybeMK = this._getMKDict(rotation);
@@ -3546,14 +3549,19 @@ class FreeTextAnnotation extends MarkupAnnotation {
     freetext.set("DA", da);
     freetext.set(
       "Contents",
-      isAscii(value) ? value : stringToUTF16BEString(value)
+      isAscii(value)
+        ? value
+        : stringToUTF16String(value, /* bigEndian = */ true)
     );
     freetext.set("F", 4);
     freetext.set("Border", [0, 0, 0]);
     freetext.set("Rotate", rotation);
 
     if (user) {
-      freetext.set("T", isAscii(user) ? user : stringToUTF16BEString(user));
+      freetext.set(
+        "T",
+        isAscii(user) ? user : stringToUTF16String(user, /* bigEndian = */ true)
+      );
     }
 
     if (apRef || ap) {
