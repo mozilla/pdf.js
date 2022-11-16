@@ -20,7 +20,6 @@ import {
   escapeString,
   getModificationDate,
   isArrayBuffer,
-  isAscii,
   string32,
   stringToBytes,
   stringToPDFString,
@@ -257,16 +256,6 @@ describe("util", function () {
     it("should get a correctly formatted date", function () {
       const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
       expect(getModificationDate(date)).toEqual("31410609020653");
-    });
-  });
-
-  describe("isAscii", function () {
-    it("handles ascii/non-ascii strings", function () {
-      expect(isAscii("hello world")).toEqual(true);
-      expect(isAscii("こんにちは世界の")).toEqual(false);
-      expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
-        false
-      );
     });
   });
 });

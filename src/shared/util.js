@@ -1051,10 +1051,6 @@ function escapeString(str) {
   });
 }
 
-function isAscii(str) {
-  return /^[\x00-\x7F]*$/.test(str);
-}
-
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -1168,7 +1164,6 @@ export {
   InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
-  isAscii,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   MissingPDFException,
