@@ -584,8 +584,11 @@ function stringToUTF16HexString(str) {
   return buf.join("");
 }
 
-function stringToUTF16String(str) {
+function stringToUTF16String(str, bigEndian = false) {
   const buf = [];
+  if (bigEndian) {
+    buf.push("\xFE\xFF");
+  }
   for (let i = 0, ii = str.length; i < ii; i++) {
     const char = str.charCodeAt(i);
     buf.push(

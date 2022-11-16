@@ -21,6 +21,7 @@ import {
   isWhiteSpace,
   log2,
   parseXFAPath,
+  stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
 } from "../../src/core/core_utils.js";
@@ -331,6 +332,30 @@ describe("core_utils", function () {
       cssFontInfo.italicAngle = 2.718;
       validateCSSFont(cssFontInfo);
       expect(cssFontInfo.italicAngle).toEqual("2.718");
+    });
+  });
+
+  describe("stringToUTF16String", function () {
+    it("should encode a string in UTF16", function () {
+      expect(stringToUTF16String("hello world")).toEqual(
+        "\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d"
+      );
+
+      expect(stringToUTF16String("こんにちは世界の")).toEqual(
+        "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
+      );
+    });
+
+    it("should encode a string in UTF16BE with a BOM", function () {
+      expect(
+        stringToUTF16String("hello world", /* bigEndian = */ true)
+      ).toEqual("\xfe\xff\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d");
+
+      expect(
+        stringToUTF16String("こんにちは世界の", /* bigEndian = */ true)
+      ).toEqual(
+        "\xfe\xff\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
+      );
     });
   });
 });
