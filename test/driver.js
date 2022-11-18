@@ -27,7 +27,8 @@ const {
   shadow,
   XfaLayer,
 } = pdfjsLib;
-const { parseQueryString, SimpleLinkService } = pdfjsViewer;
+const { GenericL10n, NullL10n, parseQueryString, SimpleLinkService } =
+  pdfjsViewer;
 
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
@@ -35,6 +36,7 @@ const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
+const VIEWER_LOCALE = "en-US";
 const WORKER_SRC = "../build/generic/build/pdf.worker.js";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -203,7 +205,8 @@ class Rasterize {
     annotationCanvasMap,
     page,
     imageResourcesPath,
-    renderForms = false
+    renderForms = false,
+    l10n = NullL10n
   ) {
     try {
       const { svg, foreignObject, style, div } = this.createContainer(viewport);
@@ -232,6 +235,7 @@ class Rasterize {
         annotationCanvasMap: annotationImageMap,
       };
       AnnotationLayer.render(parameters);
+      await l10n.translate(div);
 
       // Inline SVG images from text annotations.
       await inlineImages(div);
@@ -323,6 +327,8 @@ class Driver {
   constructor(options) {
     // Configure the global worker options.
     GlobalWorkerOptions.workerSrc = WORKER_SRC;
+
+    this._l10n = new GenericL10n(VIEWER_LOCALE);
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -794,7 +800,7 @@ class Driver {
               this._snapshot(task, error);
             };
             initPromise
-              .then(function (data) {
+              .then(data => {
                 const renderTask = page.render(renderContext);
 
                 if (task.renderTaskOnContinue) {
@@ -803,7 +809,7 @@ class Driver {
                     setTimeout(cont, RENDER_TASK_ON_CONTINUE_DELAY);
                   };
                 }
-                return renderTask.promise.then(function () {
+                return renderTask.promise.then(() => {
                   if (annotationCanvasMap) {
                     Rasterize.annotationLayer(
                       annotationLayerContext,
@@ -813,7 +819,8 @@ class Driver {
                       annotationCanvasMap,
                       page,
                       IMAGE_RESOURCES_PATH,
-                      renderForms
+                      renderForms,
+                      this._l10n
                     ).then(() => {
                       completeRender(false);
                     });
