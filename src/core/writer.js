@@ -13,9 +13,14 @@
  * limitations under the License.
  */
 
-import { bytesToString, escapeString, warn } from "../shared/util.js";
+import { bytesToString, warn } from "../shared/util.js";
 import { Dict, Name, Ref } from "./primitives.js";
-import { escapePDFName, numberToString, parseXFAPath } from "./core_utils.js";
+import {
+  escapePDFName,
+  escapeString,
+  numberToString,
+  parseXFAPath,
+} from "./core_utils.js";
 import { SimpleDOMNode, SimpleXMLParser } from "./xml_parser.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./crypto.js";

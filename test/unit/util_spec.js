@@ -17,14 +17,11 @@ import {
   bytesToString,
   createPromiseCapability,
   createValidAbsoluteUrl,
-  escapeString,
   getModificationDate,
   isArrayBuffer,
-  isAscii,
   string32,
   stringToBytes,
   stringToPDFString,
-  stringToUTF16BEString,
 } from "../../src/shared/util.js";
 
 describe("util", function () {
@@ -246,40 +243,10 @@ describe("util", function () {
     });
   });
 
-  describe("escapeString", function () {
-    it("should escape (, ), \\n, \\r, and \\", function () {
-      expect(escapeString("((a\\a))\n(b(b\\b)\rb)")).toEqual(
-        "\\(\\(a\\\\a\\)\\)\\n\\(b\\(b\\\\b\\)\\rb\\)"
-      );
-    });
-  });
-
   describe("getModificationDate", function () {
     it("should get a correctly formatted date", function () {
       const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
       expect(getModificationDate(date)).toEqual("31410609020653");
-    });
-  });
-
-  describe("isAscii", function () {
-    it("handles ascii/non-ascii strings", function () {
-      expect(isAscii("hello world")).toEqual(true);
-      expect(isAscii("こんにちは世界の")).toEqual(false);
-      expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
-        false
-      );
-    });
-  });
-
-  describe("stringToUTF16BEString", function () {
-    it("should encode a string in UTF16BE with a BOM", function () {
-      expect(stringToUTF16BEString("hello world")).toEqual(
-        "\xfe\xff\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d"
-      );
-      expect(stringToUTF16BEString("こんにちは世界の")).toEqual(
-        "\xfe\xff\x30\x53\x30\x93\x30\x6b\x30\x61" +
-          "\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
-      );
     });
   });
 });
