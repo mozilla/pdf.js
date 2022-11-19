@@ -17,10 +17,14 @@ import { Dict, Ref } from "../../src/core/primitives.js";
 import {
   encodeToXmlString,
   escapePDFName,
+  escapeString,
   getInheritableProperty,
+  isAscii,
   isWhiteSpace,
   log2,
   parseXFAPath,
+  stringToUTF16HexString,
+  stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
 } from "../../src/core/core_utils.js";
@@ -221,6 +225,14 @@ describe("core_utils", function () {
     });
   });
 
+  describe("escapeString", function () {
+    it("should escape (, ), \\n, \\r, and \\", function () {
+      expect(escapeString("((a\\a))\n(b(b\\b)\rb)")).toEqual(
+        "\\(\\(a\\\\a\\)\\)\\n\\(b\\(b\\\\b\\)\\rb\\)"
+      );
+    });
+  });
+
   describe("encodeToXmlString", function () {
     it("should get a correctly encoded string with some entities", function () {
       const str = "\"\u0397ell😂' & <W😂rld>";
@@ -331,6 +343,52 @@ describe("core_utils", function () {
       cssFontInfo.italicAngle = 2.718;
       validateCSSFont(cssFontInfo);
       expect(cssFontInfo.italicAngle).toEqual("2.718");
+    });
+  });
+
+  describe("isAscii", function () {
+    it("handles ascii/non-ascii strings", function () {
+      expect(isAscii("hello world")).toEqual(true);
+      expect(isAscii("こんにちは世界の")).toEqual(false);
+      expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
+        false
+      );
+    });
+  });
+
+  describe("stringToUTF16HexString", function () {
+    it("should encode a string in UTF16 hexadecimal format", function () {
+      expect(stringToUTF16HexString("hello world")).toEqual(
+        "00680065006c006c006f00200077006f0072006c0064"
+      );
+
+      expect(stringToUTF16HexString("こんにちは世界の")).toEqual(
+        "30533093306b3061306f4e16754c306e"
+      );
+    });
+  });
+
+  describe("stringToUTF16String", function () {
+    it("should encode a string in UTF16", function () {
+      expect(stringToUTF16String("hello world")).toEqual(
+        "\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d"
+      );
+
+      expect(stringToUTF16String("こんにちは世界の")).toEqual(
+        "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
+      );
+    });
+
+    it("should encode a string in UTF16BE with a BOM", function () {
+      expect(
+        stringToUTF16String("hello world", /* bigEndian = */ true)
+      ).toEqual("\xfe\xff\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d");
+
+      expect(
+        stringToUTF16String("こんにちは世界の", /* bigEndian = */ true)
+      ).toEqual(
+        "\xfe\xff\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
+      );
     });
   });
 });

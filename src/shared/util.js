@@ -1037,36 +1037,6 @@ function stringToPDFString(str) {
   return strBuf.join("");
 }
 
-function escapeString(str) {
-  // replace "(", ")", "\n", "\r" and "\"
-  // by "\(", "\)", "\\n", "\\r" and "\\"
-  // in order to write it in a PDF file.
-  return str.replace(/([()\\\n\r])/g, match => {
-    if (match === "\n") {
-      return "\\n";
-    } else if (match === "\r") {
-      return "\\r";
-    }
-    return `\\${match}`;
-  });
-}
-
-function isAscii(str) {
-  return /^[\x00-\x7F]*$/.test(str);
-}
-
-function stringToUTF16BEString(str) {
-  const buf = ["\xFE\xFF"];
-  for (let i = 0, ii = str.length; i < ii; i++) {
-    const char = str.charCodeAt(i);
-    buf.push(
-      String.fromCharCode((char >> 8) & 0xff),
-      String.fromCharCode(char & 0xff)
-    );
-  }
-  return buf.join("");
-}
-
 function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
@@ -1167,7 +1137,6 @@ export {
   createPromiseCapability,
   createValidAbsoluteUrl,
   DocumentActionEventType,
-  escapeString,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   FontType,
@@ -1180,7 +1149,6 @@ export {
   InvalidPDFException,
   isArrayBuffer,
   isArrayEqual,
-  isAscii,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
   MissingPDFException,
@@ -1198,7 +1166,6 @@ export {
   string32,
   stringToBytes,
   stringToPDFString,
-  stringToUTF16BEString,
   stringToUTF8String,
   TextRenderingMode,
   UnexpectedResponseException,
