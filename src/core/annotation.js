@@ -362,6 +362,10 @@ function getRgbColor(color, defaultColor = new Uint8ClampedArray(3)) {
   }
 }
 
+function getPdfColorArray(color) {
+  return Array.from(color, c => c / 255);
+}
+
 function getQuadPoints(dict, rect) {
   if (!dict.has("QuadPoints")) {
     return null;
@@ -1793,16 +1797,10 @@ class WidgetAnnotation extends Annotation {
       mk.set("R", rotation);
     }
     if (this.borderColor) {
-      mk.set(
-        "BC",
-        Array.from(this.borderColor, c => c / 255)
-      );
+      mk.set("BC", getPdfColorArray(this.borderColor));
     }
     if (this.backgroundColor) {
-      mk.set(
-        "BG",
-        Array.from(this.backgroundColor, c => c / 255)
-      );
+      mk.set("BG", getPdfColorArray(this.backgroundColor));
     }
     return mk.size > 0 ? mk : null;
   }
@@ -3701,21 +3699,13 @@ class LineAnnotation extends MarkupAnnotation {
 
     if (!this.appearance) {
       // The default stroke color is black.
-      const strokeColor = this.color
-        ? Array.from(this.color, c => c / 255)
-        : [0, 0, 0];
+      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
       const strokeAlpha = dict.get("CA");
 
+      const interiorColor = getRgbColor(dict.getArray("IC"), null);
       // The default fill color is transparent. Setting the fill colour is
       // necessary if/when we want to add support for non-default line endings.
-      let fillColor = null,
-        interiorColor = dict.getArray("IC");
-      if (interiorColor) {
-        interiorColor = getRgbColor(interiorColor, null);
-        fillColor = interiorColor
-          ? Array.from(interiorColor, c => c / 255)
-          : null;
-      }
+      const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
       const fillAlpha = fillColor ? strokeAlpha : null;
 
       const borderWidth = this.borderStyle.width || 1,
@@ -3766,20 +3756,12 @@ class SquareAnnotation extends MarkupAnnotation {
 
     if (!this.appearance) {
       // The default stroke color is black.
-      const strokeColor = this.color
-        ? Array.from(this.color, c => c / 255)
-        : [0, 0, 0];
+      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
       const strokeAlpha = parameters.dict.get("CA");
 
+      const interiorColor = getRgbColor(parameters.dict.getArray("IC"), null);
       // The default fill color is transparent.
-      let fillColor = null,
-        interiorColor = parameters.dict.getArray("IC");
-      if (interiorColor) {
-        interiorColor = getRgbColor(interiorColor, null);
-        fillColor = interiorColor
-          ? Array.from(interiorColor, c => c / 255)
-          : null;
-      }
+      const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
       const fillAlpha = fillColor ? strokeAlpha : null;
 
       if (this.borderStyle.width === 0 && !fillColor) {
@@ -3820,20 +3802,12 @@ class CircleAnnotation extends MarkupAnnotation {
 
     if (!this.appearance) {
       // The default stroke color is black.
-      const strokeColor = this.color
-        ? Array.from(this.color, c => c / 255)
-        : [0, 0, 0];
+      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
       const strokeAlpha = parameters.dict.get("CA");
 
+      const interiorColor = getRgbColor(parameters.dict.getArray("IC"), null);
       // The default fill color is transparent.
-      let fillColor = null;
-      let interiorColor = parameters.dict.getArray("IC");
-      if (interiorColor) {
-        interiorColor = getRgbColor(interiorColor, null);
-        fillColor = interiorColor
-          ? Array.from(interiorColor, c => c / 255)
-          : null;
-      }
+      const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
       const fillAlpha = fillColor ? strokeAlpha : null;
 
       if (this.borderStyle.width === 0 && !fillColor) {
@@ -3913,9 +3887,7 @@ class PolylineAnnotation extends MarkupAnnotation {
 
     if (!this.appearance) {
       // The default stroke color is black.
-      const strokeColor = this.color
-        ? Array.from(this.color, c => c / 255)
-        : [0, 0, 0];
+      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
       const strokeAlpha = dict.get("CA");
 
       const borderWidth = this.borderStyle.width || 1,
@@ -3999,9 +3971,7 @@ class InkAnnotation extends MarkupAnnotation {
 
     if (!this.appearance) {
       // The default stroke color is black.
-      const strokeColor = this.color
-        ? Array.from(this.color, c => c / 255)
-        : [0, 0, 0];
+      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
       const strokeAlpha = parameters.dict.get("CA");
 
       const borderWidth = this.borderStyle.width || 1,
@@ -4162,9 +4132,7 @@ class HighlightAnnotation extends MarkupAnnotation {
           warn("HighlightAnnotation - ignoring built-in appearance stream.");
         }
         // Default color is yellow in Acrobat Reader
-        const fillColor = this.color
-          ? Array.from(this.color, c => c / 255)
-          : [1, 1, 0];
+        const fillColor = this.color ? getPdfColorArray(this.color) : [1, 1, 0];
         const fillAlpha = parameters.dict.get("CA");
 
         this._setDefaultAppearance({
@@ -4203,7 +4171,7 @@ class UnderlineAnnotation extends MarkupAnnotation {
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
-          ? Array.from(this.color, c => c / 255)
+          ? getPdfColorArray(this.color)
           : [0, 0, 0];
         const strokeAlpha = parameters.dict.get("CA");
 
@@ -4242,7 +4210,7 @@ class SquigglyAnnotation extends MarkupAnnotation {
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
-          ? Array.from(this.color, c => c / 255)
+          ? getPdfColorArray(this.color)
           : [0, 0, 0];
         const strokeAlpha = parameters.dict.get("CA");
 
@@ -4288,7 +4256,7 @@ class StrikeOutAnnotation extends MarkupAnnotation {
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
-          ? Array.from(this.color, c => c / 255)
+          ? getPdfColorArray(this.color)
           : [0, 0, 0];
         const strokeAlpha = parameters.dict.get("CA");
 
