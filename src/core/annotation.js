@@ -463,7 +463,7 @@ function getTransformMatrix(rect, bbox, matrix) {
 
 class Annotation {
   constructor(params) {
-    const dict = params.dict;
+    const { dict, xref } = params;
 
     this.setTitle(dict.get("T"));
     this.setContents(dict.get("Contents"));
@@ -518,11 +518,7 @@ class Annotation {
         }
       }
 
-      this.data.actions = collectActions(
-        params.xref,
-        dict,
-        AnnotationActionEventType
-      );
+      this.data.actions = collectActions(xref, dict, AnnotationActionEventType);
       this.data.fieldName = this._constructFieldName(dict);
       this.data.pageIndex = params.pageIndex;
     }
@@ -1308,10 +1304,10 @@ class AnnotationBorderStyle {
 }
 
 class MarkupAnnotation extends Annotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
-    const dict = parameters.dict;
+    const { dict } = params;
 
     if (dict.has("IRT")) {
       const rawIRT = dict.getRaw("IRT");
@@ -1519,7 +1515,7 @@ class WidgetAnnotation extends Annotation {
   constructor(params) {
     super(params);
 
-    const dict = params.dict;
+    const { dict, xref } = params;
     const data = this.data;
     this.ref = params.ref;
     this._needAppearances = params.needAppearances;
@@ -1529,11 +1525,7 @@ class WidgetAnnotation extends Annotation {
       data.fieldName = this._constructFieldName(dict);
     }
     if (data.actions === undefined) {
-      data.actions = collectActions(
-        params.xref,
-        dict,
-        AnnotationActionEventType
-      );
+      data.actions = collectActions(xref, dict, AnnotationActionEventType);
     }
 
     let fieldValue = getInheritableProperty({
@@ -1588,7 +1580,7 @@ class WidgetAnnotation extends Annotation {
       acroFormResources,
       appearanceResources,
       mergedResources: Dict.merge({
-        xref: params.xref,
+        xref,
         dictArray: [localResources, appearanceResources, acroFormResources],
         mergeSubDicts: true,
       }),
@@ -3145,6 +3137,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    const { dict, xref } = params;
     // Determine the options. The options array may consist of strings or
     // arrays. If the array consists of arrays, then the first element of
     // each array is the export value and the second element of each array is
@@ -3156,9 +3149,8 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    const options = getInheritableProperty({ dict: params.dict, key: "Opt" });
+    const options = getInheritableProperty({ dict, key: "Opt" });
     if (Array.isArray(options)) {
-      const xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
         const option = xref.fetchIfRef(options[i]);
         const isOptionArray = Array.isArray(option);
@@ -3387,12 +3379,12 @@ class SignatureWidgetAnnotation extends WidgetAnnotation {
 }
 
 class TextAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
+  constructor(params) {
     const DEFAULT_ICON_SIZE = 22; // px
 
-    super(parameters);
+    super(params);
 
-    const dict = parameters.dict;
+    const { dict } = params;
     this.data.annotationType = AnnotationType.TEXT;
 
     if (this.data.hasAppearance) {
@@ -3437,12 +3429,13 @@ class LinkAnnotation extends Annotation {
 }
 
 class PopupAnnotation extends Annotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict } = params;
     this.data.annotationType = AnnotationType.POPUP;
 
-    let parentItem = parameters.dict.get("Parent");
+    let parentItem = dict.get("Parent");
     if (!parentItem) {
       warn("Popup annotation has a missing or invalid parent annotation.");
       return;
@@ -3451,7 +3444,7 @@ class PopupAnnotation extends Annotation {
     const parentSubtype = parentItem.get("Subtype");
     this.data.parentType =
       parentSubtype instanceof Name ? parentSubtype.name : null;
-    const rawParent = parameters.dict.getRaw("Parent");
+    const rawParent = dict.getRaw("Parent");
     this.data.parentId = rawParent instanceof Ref ? rawParent.toString() : null;
 
     const parentRect = parentItem.getArray("Rect");
@@ -3506,16 +3499,15 @@ class PopupAnnotation extends Annotation {
 }
 
 class FreeTextAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { xref } = params;
     this.data.annotationType = AnnotationType.FREETEXT;
-    this.setDefaultAppearance(parameters);
+    this.setDefaultAppearance(params);
+
     if (!this.appearance && this._isOffscreenCanvasSupported) {
-      const fakeUnicodeFont = new FakeUnicodeFont(
-        parameters.xref,
-        "sans-serif"
-      );
+      const fakeUnicodeFont = new FakeUnicodeFont(xref, "sans-serif");
       const fontData = this.data.defaultAppearanceData;
       this.appearance = fakeUnicodeFont.createAppearance(
         this._contents.str,
@@ -3685,10 +3677,10 @@ class FreeTextAnnotation extends MarkupAnnotation {
 }
 
 class LineAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
-    const { dict } = parameters;
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.LINE;
 
     const lineCoordinates = dict.getArray("L");
@@ -3724,7 +3716,7 @@ class LineAnnotation extends MarkupAnnotation {
       }
 
       this._setDefaultAppearance({
-        xref: parameters.xref,
+        xref,
         extra: `${borderWidth} w`,
         strokeColor,
         fillColor,
@@ -3749,17 +3741,18 @@ class LineAnnotation extends MarkupAnnotation {
 }
 
 class SquareAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.SQUARE;
 
     if (!this.appearance) {
       // The default stroke color is black.
       const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
-      const strokeAlpha = parameters.dict.get("CA");
+      const strokeAlpha = dict.get("CA");
 
-      const interiorColor = getRgbColor(parameters.dict.getArray("IC"), null);
+      const interiorColor = getRgbColor(dict.getArray("IC"), null);
       // The default fill color is transparent.
       const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
       const fillAlpha = fillColor ? strokeAlpha : null;
@@ -3770,7 +3763,7 @@ class SquareAnnotation extends MarkupAnnotation {
       }
 
       this._setDefaultAppearance({
-        xref: parameters.xref,
+        xref,
         extra: `${this.borderStyle.width} w`,
         strokeColor,
         fillColor,
@@ -3795,17 +3788,18 @@ class SquareAnnotation extends MarkupAnnotation {
 }
 
 class CircleAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.CIRCLE;
 
     if (!this.appearance) {
       // The default stroke color is black.
       const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
-      const strokeAlpha = parameters.dict.get("CA");
+      const strokeAlpha = dict.get("CA");
 
-      const interiorColor = getRgbColor(parameters.dict.getArray("IC"), null);
+      const interiorColor = getRgbColor(dict.getArray("IC"), null);
       // The default fill color is transparent.
       const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
       const fillAlpha = fillColor ? strokeAlpha : null;
@@ -3821,7 +3815,7 @@ class CircleAnnotation extends MarkupAnnotation {
       const controlPointsDistance = (4 / 3) * Math.tan(Math.PI / (2 * 4));
 
       this._setDefaultAppearance({
-        xref: parameters.xref,
+        xref,
         extra: `${this.borderStyle.width} w`,
         strokeColor,
         fillColor,
@@ -3858,10 +3852,10 @@ class CircleAnnotation extends MarkupAnnotation {
 }
 
 class PolylineAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
-    const { dict } = parameters;
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.POLYLINE;
     this.data.vertices = [];
 
@@ -3907,7 +3901,7 @@ class PolylineAnnotation extends MarkupAnnotation {
       }
 
       this._setDefaultAppearance({
-        xref: parameters.xref,
+        xref,
         extra: `${borderWidth} w`,
         strokeColor,
         strokeAlpha,
@@ -3927,34 +3921,34 @@ class PolylineAnnotation extends MarkupAnnotation {
 }
 
 class PolygonAnnotation extends PolylineAnnotation {
-  constructor(parameters) {
+  constructor(params) {
     // Polygons are specific forms of polylines, so reuse their logic.
-    super(parameters);
+    super(params);
 
     this.data.annotationType = AnnotationType.POLYGON;
   }
 }
 
 class CaretAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
     this.data.annotationType = AnnotationType.CARET;
   }
 }
 
 class InkAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.INK;
     this.data.inkLists = [];
 
-    const rawInkLists = parameters.dict.getArray("InkList");
+    const rawInkLists = dict.getArray("InkList");
     if (!Array.isArray(rawInkLists)) {
       return;
     }
-    const xref = parameters.xref;
     for (let i = 0, ii = rawInkLists.length; i < ii; ++i) {
       // The raw ink lists array contains arrays of numbers representing
       // the alternating horizontal and vertical coordinates, respectively,
@@ -3972,7 +3966,7 @@ class InkAnnotation extends MarkupAnnotation {
     if (!this.appearance) {
       // The default stroke color is black.
       const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
-      const strokeAlpha = parameters.dict.get("CA");
+      const strokeAlpha = dict.get("CA");
 
       const borderWidth = this.borderStyle.width || 1,
         borderAdjust = 2 * borderWidth;
@@ -3993,7 +3987,7 @@ class InkAnnotation extends MarkupAnnotation {
       }
 
       this._setDefaultAppearance({
-        xref: parameters.xref,
+        xref,
         extra: `${borderWidth} w`,
         strokeColor,
         strokeAlpha,
@@ -4111,14 +4105,13 @@ class InkAnnotation extends MarkupAnnotation {
 }
 
 class HighlightAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.HIGHLIGHT;
-    const quadPoints = (this.data.quadPoints = getQuadPoints(
-      parameters.dict,
-      null
-    ));
+
+    const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
       const resources =
         this.appearance && this.appearance.dict.get("Resources");
@@ -4133,10 +4126,10 @@ class HighlightAnnotation extends MarkupAnnotation {
         }
         // Default color is yellow in Acrobat Reader
         const fillColor = this.color ? getPdfColorArray(this.color) : [1, 1, 0];
-        const fillAlpha = parameters.dict.get("CA");
+        const fillAlpha = dict.get("CA");
 
         this._setDefaultAppearance({
-          xref: parameters.xref,
+          xref,
           fillColor,
           blendMode: "Multiply",
           fillAlpha,
@@ -4159,24 +4152,23 @@ class HighlightAnnotation extends MarkupAnnotation {
 }
 
 class UnderlineAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.UNDERLINE;
-    const quadPoints = (this.data.quadPoints = getQuadPoints(
-      parameters.dict,
-      null
-    ));
+
+    const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
           ? getPdfColorArray(this.color)
           : [0, 0, 0];
-        const strokeAlpha = parameters.dict.get("CA");
+        const strokeAlpha = dict.get("CA");
 
         this._setDefaultAppearance({
-          xref: parameters.xref,
+          xref,
           extra: "[] 0 d 1 w",
           strokeColor,
           strokeAlpha,
@@ -4197,25 +4189,23 @@ class UnderlineAnnotation extends MarkupAnnotation {
 }
 
 class SquigglyAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.SQUIGGLY;
 
-    const quadPoints = (this.data.quadPoints = getQuadPoints(
-      parameters.dict,
-      null
-    ));
+    const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
           ? getPdfColorArray(this.color)
           : [0, 0, 0];
-        const strokeAlpha = parameters.dict.get("CA");
+        const strokeAlpha = dict.get("CA");
 
         this._setDefaultAppearance({
-          xref: parameters.xref,
+          xref,
           extra: "[] 0 d 1 w",
           strokeColor,
           strokeAlpha,
@@ -4243,25 +4233,23 @@ class SquigglyAnnotation extends MarkupAnnotation {
 }
 
 class StrikeOutAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
+    const { dict, xref } = params;
     this.data.annotationType = AnnotationType.STRIKEOUT;
 
-    const quadPoints = (this.data.quadPoints = getQuadPoints(
-      parameters.dict,
-      null
-    ));
+    const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
       if (!this.appearance) {
         // Default color is black
         const strokeColor = this.color
           ? getPdfColorArray(this.color)
           : [0, 0, 0];
-        const strokeAlpha = parameters.dict.get("CA");
+        const strokeAlpha = dict.get("CA");
 
         this._setDefaultAppearance({
-          xref: parameters.xref,
+          xref,
           extra: "[] 0 d 1 w",
           strokeColor,
           strokeAlpha,
@@ -4284,18 +4272,18 @@ class StrikeOutAnnotation extends MarkupAnnotation {
 }
 
 class StampAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
     this.data.annotationType = AnnotationType.STAMP;
   }
 }
 
 class FileAttachmentAnnotation extends MarkupAnnotation {
-  constructor(parameters) {
-    super(parameters);
+  constructor(params) {
+    super(params);
 
-    const file = new FileSpec(parameters.dict.get("FS"), parameters.xref);
+    const file = new FileSpec(params.dict.get("FS"), params.xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.file = file.serializable;
