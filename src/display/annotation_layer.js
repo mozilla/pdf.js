@@ -34,6 +34,7 @@ import {
   DOMSVGFactory,
   getFilenameFromUrl,
   PDFDateString,
+  setLayerDimensions,
 } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
@@ -2593,7 +2594,6 @@ class AnnotationLayer {
   static render(parameters) {
     const { annotations, div, viewport, accessibilityManager } = parameters;
 
-    this.#setDimensions(div, viewport);
     let zIndex = 0;
 
     for (const data of annotations) {
@@ -2660,6 +2660,7 @@ class AnnotationLayer {
     }
 
     this.#setAnnotationCanvasMap(div, parameters.annotationCanvasMap);
+    setLayerDimensions(div, viewport);
   }
 
   /**
@@ -2672,25 +2673,9 @@ class AnnotationLayer {
   static update(parameters) {
     const { annotationCanvasMap, div, viewport } = parameters;
 
-    this.#setDimensions(div, viewport);
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
+    setLayerDimensions(div, { rotation: viewport.rotation });
     div.hidden = false;
-  }
-
-  /**
-   * @param {HTMLDivElement} div
-   * @param {PageViewport} viewport
-   */
-  static #setDimensions(div, { width, height, rotation }) {
-    const { style } = div;
-
-    const flipOrientation = rotation % 180 !== 0,
-      widthStr = Math.floor(width) + "px",
-      heightStr = Math.floor(height) + "px";
-
-    style.width = flipOrientation ? heightStr : widthStr;
-    style.height = flipOrientation ? widthStr : heightStr;
-    div.setAttribute("data-main-rotation", rotation);
   }
 
   static #setAnnotationCanvasMap(div, annotationCanvasMap) {

@@ -22,7 +22,7 @@ import {
   FeatureTest,
   Util,
 } from "../shared/util.js";
-import { deprecated } from "./display_utils.js";
+import { deprecated, setLayerDimensions } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -330,7 +330,7 @@ class TextLayerRenderTask {
     this._pageWidth = pageURx - pageLLx;
     this._pageHeight = pageURy - pageLLy;
 
-    setTextLayerDimensions(container, viewport);
+    setLayerDimensions(container, viewport);
 
     // Always clean-up the temporary canvas once rendering is no longer pending.
     this._capability.promise
@@ -485,7 +485,7 @@ function updateTextLayer({
   mustRescale = true,
 }) {
   if (mustRotate) {
-    setTextLayerDimensions(container, { rotation: viewport.rotation });
+    setLayerDimensions(container, { rotation: viewport.rotation });
   }
 
   if (mustRescale) {
@@ -505,26 +505,6 @@ function updateTextLayer({
       layout(params);
     }
   }
-}
-
-/**
- * @param {HTMLDivElement} div
- * @param {import("./display_utils").PageViewport} viewport
- */
-function setTextLayerDimensions(div, viewport) {
-  if (!viewport.viewBox) {
-    div.setAttribute("data-main-rotation", viewport.rotation);
-    return;
-  }
-
-  const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
-  const pageWidth = pageURx - pageLLx;
-  const pageHeight = pageURy - pageLLy;
-  const { style } = div;
-
-  style.width = `calc(var(--scale-factor) * ${pageWidth}px)`;
-  style.height = `calc(var(--scale-factor) * ${pageHeight}px)`;
-  div.setAttribute("data-main-rotation", viewport.rotation);
 }
 
 export { renderTextLayer, TextLayerRenderTask, updateTextLayer };

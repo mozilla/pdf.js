@@ -38,6 +38,7 @@ import {
   createPromiseCapability,
   PixelsPerInch,
   RenderingCancelledException,
+  setLayerDimensions,
   SVGGraphics,
 } from "pdfjs-lib";
 import {
@@ -179,14 +180,14 @@ class PDFPageView {
 
     const div = document.createElement("div");
     div.className = "page";
-    div.style.width = Math.round(this.viewport.width) + "px";
-    div.style.height = Math.round(this.viewport.height) + "px";
     div.setAttribute("data-page-number", this.id);
     div.setAttribute("role", "region");
     this.l10n.get("page_landmark", { page: this.id }).then(msg => {
       div.setAttribute("aria-label", msg);
     });
     this.div = div;
+
+    this.#setDimensions();
 
     container?.append(div);
 
@@ -217,6 +218,16 @@ class PDFPageView {
         });
       }
     }
+  }
+
+  #setDimensions() {
+    const { div, viewport } = this;
+    setLayerDimensions(
+      div,
+      viewport,
+      /* mustFlip = */ true,
+      /* mustRotate = */ false
+    );
   }
 
   setPdfPage(pdfPage) {
@@ -400,9 +411,8 @@ class PDFPageView {
     });
     this.renderingState = RenderingStates.INITIAL;
 
+    this.#setDimensions();
     const div = this.div;
-    div.style.width = Math.round(this.viewport.width) + "px";
-    div.style.height = Math.round(this.viewport.height) + "px";
 
     const childNodes = div.childNodes,
       zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
@@ -724,8 +734,6 @@ class PDFPageView {
     // Wrap the canvas so that if it has a CSS transform for high DPI the
     // overflow will be hidden in Firefox.
     const canvasWrapper = document.createElement("div");
-    canvasWrapper.style.width = div.style.width;
-    canvasWrapper.style.height = div.style.height;
     canvasWrapper.classList.add("canvasWrapper");
 
     if (this.textLayer) {

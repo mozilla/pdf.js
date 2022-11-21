@@ -72,14 +72,14 @@ class AnnotationEditorLayerBuilder {
     }
 
     // Create an AnnotationEditor layer div
-    this.div = document.createElement("div");
-    this.div.className = "annotationEditorLayer";
-    this.div.tabIndex = 0;
-    this.pageDiv.append(this.div);
+    const div = (this.div = document.createElement("div"));
+    div.className = "annotationEditorLayer";
+    div.tabIndex = 0;
+    this.pageDiv.append(div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({
       uiManager: this.#uiManager,
-      div: this.div,
+      div,
       accessibilityManager: this.accessibilityManager,
       pageIndex: this.pdfPage.pageNumber - 1,
       l10n: this.l10n,
@@ -88,7 +88,7 @@ class AnnotationEditorLayerBuilder {
 
     const parameters = {
       viewport: clonedViewport,
-      div: this.div,
+      div,
       annotations: null,
       intent,
     };

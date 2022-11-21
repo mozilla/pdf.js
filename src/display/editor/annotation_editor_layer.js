@@ -16,6 +16,7 @@
 /** @typedef {import("./editor.js").AnnotationEditor} AnnotationEditor */
 // eslint-disable-next-line max-len
 /** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
+/** @typedef {import("../display_utils.js").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
@@ -24,6 +25,7 @@ import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
 import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
+import { setLayerDimensions } from "../display_utils.js";
 
 /**
  * @typedef {Object} AnnotationEditorLayerOptions
@@ -34,6 +36,11 @@ import { InkEditor } from "./ink.js";
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {number} pageIndex
  * @property {IL10n} l10n
+ */
+
+/**
+ * @typedef {Object} RenderEditorLayerOptions
+ * @property {PageViewport} viewport
  */
 
 /**
@@ -529,12 +536,12 @@ class AnnotationEditorLayer {
 
   /**
    * Render the main editor.
-   * @param {Object} parameters
+   * @param {RenderEditorLayerOptions} parameters
    */
-  render(parameters) {
-    this.viewport = parameters.viewport;
+  render({ viewport }) {
+    this.viewport = viewport;
+    setLayerDimensions(this.div, viewport);
     bindEvents(this, this.div, ["dragover", "drop"]);
-    this.setDimensions();
     for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
       this.add(editor);
     }
@@ -543,16 +550,16 @@ class AnnotationEditorLayer {
 
   /**
    * Update the main editor.
-   * @param {Object} parameters
+   * @param {RenderEditorLayerOptions} parameters
    */
-  update(parameters) {
+  update({ viewport }) {
     // Editors have their dimensions/positions in percent so to avoid any
     // issues (see #15582), we must commit the current one before changing
     // the viewport.
     this.#uiManager.commitOrRemove();
 
-    this.viewport = parameters.viewport;
-    this.setDimensions();
+    this.viewport = viewport;
+    setLayerDimensions(this.div, { rotation: viewport.rotation });
     this.updateMode();
   }
 
@@ -566,21 +573,6 @@ class AnnotationEditorLayer {
     const height = pageURy - pageLLy;
 
     return [width, height];
-  }
-
-  /**
-   * Set the dimensions of the main div.
-   */
-  setDimensions() {
-    const { width, height, rotation } = this.viewport;
-
-    const flipOrientation = rotation % 180 !== 0,
-      widthStr = Math.floor(width) + "px",
-      heightStr = Math.floor(height) + "px";
-
-    this.div.style.width = flipOrientation ? heightStr : widthStr;
-    this.div.style.height = flipOrientation ? widthStr : heightStr;
-    this.div.setAttribute("data-main-rotation", rotation);
   }
 }
 
