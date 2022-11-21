@@ -447,7 +447,12 @@ class PDFPageView {
     div.append(this.loadingIconDiv);
   }
 
-  update({ scale = 0, rotation = null, optionalContentConfigPromise = null }) {
+  update({
+    scale = 0,
+    rotation = null,
+    optionalContentConfigPromise = null,
+    useOnlyCssZoom = false,
+  }) {
     this.scale = scale || this.scale;
     if (typeof rotation === "number") {
       this.rotation = rotation; // The rotation may be zero.
@@ -516,8 +521,19 @@ class PDFPageView {
       }
     }
 
+    if (
+      !this.canvas ||
+      (!this.useOnlyCssZoom &&
+        (!this.hasRestrictedScaling || !isScalingRestricted))
+    ) {
+      this.textLayer?.hide();
+    } else {
+      this.textLayer?.show();
+    }
+
     if (this.canvas) {
       if (
+        useOnlyCssZoom ||
         this.useOnlyCssZoom ||
         (this.hasRestrictedScaling && isScalingRestricted)
       ) {
@@ -607,29 +623,46 @@ class PDFPageView {
     redrawXfaLayer = false,
   }) {
     // Scale target (canvas or svg), its wrapper and page container.
-    const width = this.viewport.width;
-    const height = this.viewport.height;
-    const div = this.div;
-    target.style.width =
-      target.parentNode.style.width =
-      div.style.width =
-        Math.floor(width) + "px";
-    target.style.height =
-      target.parentNode.style.height =
-      div.style.height =
-        Math.floor(height) + "px";
-    // The canvas may have been originally rotated; rotate relative to that.
-    const relativeRotation =
-      this.viewport.rotation - this.paintedViewportMap.get(target).rotation;
-    const absRotation = Math.abs(relativeRotation);
-    let scaleX = 1,
-      scaleY = 1;
-    if (absRotation === 90 || absRotation === 270) {
-      // Scale x and y because of the rotation.
-      scaleX = height / width;
-      scaleY = width / height;
+
+    if (target instanceof HTMLCanvasElement) {
+      if (!target.hasAttribute("zooming")) {
+        target.setAttribute("zooming", true);
+        const { style } = target;
+        style.width = style.height = "";
+      }
+    } else {
+      const div = this.div;
+      const { width, height } = this.viewport;
+
+      target.style.width =
+        target.parentNode.style.width =
+        div.style.width =
+          Math.floor(width) + "px";
+      target.style.height =
+        target.parentNode.style.height =
+        div.style.height =
+          Math.floor(height) + "px";
     }
-    target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
+
+    const originalViewport = this.paintedViewportMap.get(target);
+    if (this.viewport !== originalViewport) {
+      // The canvas may have been originally rotated; rotate relative to that.
+      const relativeRotation =
+        this.viewport.rotation - originalViewport.rotation;
+      const absRotation = Math.abs(relativeRotation);
+      let scaleX = 1,
+        scaleY = 1;
+      if (absRotation === 90 || absRotation === 270) {
+        const { width, height } = this.viewport;
+        // Scale x and y because of the rotation.
+        scaleX = height / width;
+        scaleY = width / height;
+      }
+
+      if (absRotation !== 0) {
+        target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
+      }
+    }
 
     if (redrawAnnotationLayer && this.annotationLayer) {
       this._renderAnnotationLayer();
@@ -894,6 +927,7 @@ class PDFPageView {
     };
 
     const viewport = this.viewport;
+    const { width, height } = viewport;
     const canvas = document.createElement("canvas");
     canvas.setAttribute("role", "presentation");
 
@@ -920,12 +954,12 @@ class PDFPageView {
       });
       // Use a scale that makes the canvas have the originally intended size
       // of the page.
-      outputScale.sx *= actualSizeViewport.width / viewport.width;
-      outputScale.sy *= actualSizeViewport.height / viewport.height;
+      outputScale.sx *= actualSizeViewport.width / width;
+      outputScale.sy *= actualSizeViewport.height / height;
     }
 
     if (this.maxCanvasPixels > 0) {
-      const pixelsInViewport = viewport.width * viewport.height;
+      const pixelsInViewport = width * height;
       const maxScale = Math.sqrt(this.maxCanvasPixels / pixelsInViewport);
       if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
         outputScale.sx = maxScale;
@@ -954,7 +988,7 @@ class PDFPageView {
     const renderContext = {
       canvasContext: ctx,
       transform,
-      viewport: this.viewport,
+      viewport,
       annotationMode: this.#annotationMode,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       annotationCanvasMap: this._annotationCanvasMap,

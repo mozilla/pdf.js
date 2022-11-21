@@ -680,18 +680,18 @@ const PDFViewerApplication = {
     return this._initializedCapability.promise;
   },
 
-  zoomIn(steps) {
+  zoomIn(steps, options) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.increaseScale(steps);
+    this.pdfViewer.increaseScale(steps, options);
   },
 
-  zoomOut(steps) {
+  zoomOut(steps, options) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.decreaseScale(steps);
+    this.pdfViewer.decreaseScale(steps, options);
   },
 
   zoomReset() {
@@ -2701,10 +2701,12 @@ function webViewerWheel(evt) {
       );
     }
 
+    const DRAW_AFTER_SCALE_DELAY = 500;
+    const zoomOptions = { delay: DRAW_AFTER_SCALE_DELAY };
     if (ticks < 0) {
-      PDFViewerApplication.zoomOut(-ticks);
+      PDFViewerApplication.zoomOut(-ticks, zoomOptions);
     } else if (ticks > 0) {
-      PDFViewerApplication.zoomIn(ticks);
+      PDFViewerApplication.zoomIn(ticks, zoomOptions);
     }
 
     const currentScale = pdfViewer.currentScale;

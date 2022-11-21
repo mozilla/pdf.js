@@ -329,13 +329,13 @@ class PDFScriptingManager {
           if (isInPresentationMode) {
             return;
           }
-          this._pdfViewer.increaseScale();
+          this._pdfViewer.increaseScale(/* steps = */ 1);
           break;
         case "ZoomViewOut":
           if (isInPresentationMode) {
             return;
           }
-          this._pdfViewer.decreaseScale();
+          this._pdfViewer.decreaseScale(/* steps = */ 1);
           break;
       }
       return;
