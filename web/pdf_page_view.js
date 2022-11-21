@@ -178,14 +178,14 @@ class PDFPageView {
 
     const div = document.createElement("div");
     div.className = "page";
-    div.style.width = Math.floor(this.viewport.width) + "px";
-    div.style.height = Math.floor(this.viewport.height) + "px";
     div.setAttribute("data-page-number", this.id);
     div.setAttribute("role", "region");
     this.l10n.get("page_landmark", { page: this.id }).then(msg => {
       div.setAttribute("aria-label", msg);
     });
     this.div = div;
+
+    this.#setDimensions();
 
     container?.append(div);
 
@@ -209,6 +209,22 @@ class PDFPageView {
         });
       }
     }
+  }
+
+  #setDimensions() {
+    const { div, viewport } = this;
+    const { rotation, viewBox } = viewport;
+    const [pageLLx, pageLLy, pageURx, pageURy] = viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { style } = div;
+
+    const flipOrientation = rotation % 180 !== 0,
+      widthStr = `calc(var(--scale-factor) * ${pageWidth}px)`,
+      heightStr = `calc(var(--scale-factor) * ${pageHeight}px)`;
+
+    style.width = flipOrientation ? heightStr : widthStr;
+    style.height = flipOrientation ? widthStr : heightStr;
   }
 
   setPdfPage(pdfPage) {
@@ -352,9 +368,8 @@ class PDFPageView {
     });
     this.renderingState = RenderingStates.INITIAL;
 
+    this.#setDimensions();
     const div = this.div;
-    div.style.width = Math.floor(this.viewport.width) + "px";
-    div.style.height = Math.floor(this.viewport.height) + "px";
 
     const childNodes = div.childNodes,
       zoomLayerNode = (keepZoomLayer && this.zoomLayer) || null,
@@ -668,8 +683,6 @@ class PDFPageView {
     // Wrap the canvas so that if it has a CSS transform for high DPI the
     // overflow will be hidden in Firefox.
     const canvasWrapper = document.createElement("div");
-    canvasWrapper.style.width = div.style.width;
-    canvasWrapper.style.height = div.style.height;
     canvasWrapper.classList.add("canvasWrapper");
 
     if (this.textLayer) {

@@ -2582,7 +2582,6 @@ class AnnotationLayer {
   static render(parameters) {
     const { annotations, div, viewport, accessibilityManager } = parameters;
 
-    this.#setDimensions(div, viewport);
     let zIndex = 0;
 
     for (const data of annotations) {
@@ -2659,27 +2658,10 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static update(parameters) {
-    const { annotationCanvasMap, div, viewport } = parameters;
+    const { annotationCanvasMap, div } = parameters;
 
-    this.#setDimensions(div, viewport);
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
     div.hidden = false;
-  }
-
-  /**
-   * @param {HTMLDivElement} div
-   * @param {PageViewport} viewport
-   */
-  static #setDimensions(div, { width, height, rotation }) {
-    const { style } = div;
-
-    const flipOrientation = rotation % 180 !== 0,
-      widthStr = Math.floor(width) + "px",
-      heightStr = Math.floor(height) + "px";
-
-    style.width = flipOrientation ? heightStr : widthStr;
-    style.height = flipOrientation ? widthStr : heightStr;
-    div.setAttribute("data-main-rotation", rotation);
   }
 
   static #setAnnotationCanvasMap(div, annotationCanvasMap) {

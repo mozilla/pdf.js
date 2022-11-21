@@ -128,11 +128,14 @@ class AnnotationLayerBuilder {
       // If an annotationLayer already exists, refresh its children's
       // transformation matrices.
       AnnotationLayer.update(parameters);
+      this.#updateRotation(viewport);
     } else {
       // Create an annotation layer div and render the annotations
       // if there is at least one annotation.
       this.div = document.createElement("div");
       this.div.className = "annotationLayer";
+      this.#setDimensions(viewport);
+      this.#updateRotation(viewport);
       this.pageDiv.append(this.div);
       parameters.div = this.div;
 
@@ -154,6 +157,21 @@ class AnnotationLayerBuilder {
         );
       }
     }
+  }
+
+  #setDimensions(viewport) {
+    const { div } = this;
+    const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { style } = div;
+
+    style.width = `calc(var(--scale-factor) * ${pageWidth}px)`;
+    style.height = `calc(var(--scale-factor) * ${pageHeight}px)`;
+  }
+
+  #updateRotation(viewport) {
+    this.div.setAttribute("data-main-rotation", viewport.rotation);
   }
 
   cancel() {

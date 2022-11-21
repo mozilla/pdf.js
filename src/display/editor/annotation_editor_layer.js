@@ -549,7 +549,6 @@ class AnnotationEditorLayer {
   render(parameters) {
     this.viewport = parameters.viewport;
     bindEvents(this, this.div, ["dragover", "drop"]);
-    this.setDimensions();
     for (const editor of this.#uiManager.getEditors(this.pageIndex)) {
       this.add(editor);
     }
@@ -567,7 +566,6 @@ class AnnotationEditorLayer {
     this.#uiManager.commitOrRemove();
 
     this.viewport = parameters.viewport;
-    this.setDimensions();
     this.updateMode();
   }
 
@@ -594,21 +592,6 @@ class AnnotationEditorLayer {
   get viewportBaseDimensions() {
     const { width, height, rotation } = this.viewport;
     return rotation % 180 === 0 ? [width, height] : [height, width];
-  }
-
-  /**
-   * Set the dimensions of the main div.
-   */
-  setDimensions() {
-    const { width, height, rotation } = this.viewport;
-
-    const flipOrientation = rotation % 180 !== 0,
-      widthStr = Math.floor(width) + "px",
-      heightStr = Math.floor(height) + "px";
-
-    this.div.style.width = flipOrientation ? heightStr : widthStr;
-    this.div.style.height = flipOrientation ? widthStr : heightStr;
-    this.div.setAttribute("data-main-rotation", rotation);
   }
 }
 

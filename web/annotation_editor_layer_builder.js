@@ -73,19 +73,22 @@ class AnnotationEditorLayerBuilder {
     const clonedViewport = viewport.clone({ dontFlip: true });
     if (this.div) {
       this.annotationEditorLayer.update({ viewport: clonedViewport });
+      this.#updateRotation(viewport);
       this.show();
       return;
     }
 
     // Create an AnnotationEditor layer div
-    this.div = document.createElement("div");
-    this.div.className = "annotationEditorLayer";
-    this.div.tabIndex = 0;
-    this.pageDiv.append(this.div);
+    const div = (this.div = document.createElement("div"));
+    div.className = "annotationEditorLayer";
+    div.tabIndex = 0;
+    this.#setDimensions(viewport);
+    this.#updateRotation(viewport);
+    this.pageDiv.append(div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({
       uiManager: this.#uiManager,
-      div: this.div,
+      div,
       annotationStorage: this.annotationStorage,
       accessibilityManager: this.accessibilityManager,
       pageIndex: this.pdfPage._pageIndex,
@@ -95,12 +98,27 @@ class AnnotationEditorLayerBuilder {
 
     const parameters = {
       viewport: clonedViewport,
-      div: this.div,
+      div,
       annotations: null,
       intent,
     };
 
     this.annotationEditorLayer.render(parameters);
+  }
+
+  #setDimensions(viewport) {
+    const { div } = this;
+    const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { style } = div;
+
+    style.width = `calc(var(--scale-factor) * ${pageWidth}px)`;
+    style.height = `calc(var(--scale-factor) * ${pageHeight}px)`;
+  }
+
+  #updateRotation(viewport) {
+    this.div.setAttribute("data-main-rotation", viewport.rotation);
   }
 
   cancel() {
