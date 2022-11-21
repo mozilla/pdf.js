@@ -141,6 +141,10 @@
   display: none;
 }
 
+.pdfViewer .page .textLayer[hidden] {
+  display: none;
+}
+
 .pdfViewer .page .loadingIcon {
   position: absolute;
   display: block;

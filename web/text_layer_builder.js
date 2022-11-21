@@ -20,7 +20,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { renderTextLayer } from "pdfjs-lib";
+import { renderTextLayer, updateTextLayer } from "pdfjs-lib";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -31,6 +31,8 @@ import { renderTextLayer } from "pdfjs-lib";
  * @property {TextHighlighter} highlighter - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
+ * @property {boolean} [isOffscreenCanvasSupported] - Allows to use an
+ *   OffscreenCanvas if needed.
  */
 
 /**
@@ -40,27 +42,31 @@ import { renderTextLayer } from "pdfjs-lib";
  */
 class TextLayerBuilder {
   constructor({
-    textLayerDiv,
     eventBus,
     pageIndex,
     viewport,
     highlighter = null,
     accessibilityManager = null,
+    isOffscreenCanvasSupported = true,
   }) {
-    this.textLayerDiv = textLayerDiv;
     this.eventBus = eventBus;
     this.textContent = null;
     this.textContentItemsStr = [];
     this.textContentStream = null;
     this.renderingDone = false;
     this.pageNumber = pageIndex + 1;
-    this.viewport = viewport;
     this.textDivs = [];
+    this.textDivProperties = new WeakMap();
     this.textLayerRenderTask = null;
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
+    this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
+    this.scale = 0;
 
-    this.#bindMouse();
+    this.div = document.createElement("div");
+    this.div.className = "textLayer";
+    this.#setDimensions(viewport);
+    this.#update(viewport);
   }
 
   #finishRendering() {
@@ -68,13 +74,15 @@ class TextLayerBuilder {
 
     const endOfContent = document.createElement("div");
     endOfContent.className = "endOfContent";
-    this.textLayerDiv.append(endOfContent);
+    this.div.append(endOfContent);
 
     this.eventBus.dispatch("textlayerrendered", {
       source: this,
       pageNumber: this.pageNumber,
       numTextDivs: this.textDivs.length,
     });
+
+    this.#bindMouse();
   }
 
   /**
@@ -83,37 +91,83 @@ class TextLayerBuilder {
    * @param {number} [timeout] - Wait for a specified amount of milliseconds
    *                             before rendering.
    */
-  render(timeout = 0) {
-    if (!(this.textContent || this.textContentStream) || this.renderingDone) {
+  render(viewport, timeout = 0) {
+    if (!(this.textContent || this.textContentStream)) {
       return;
     }
-    this.cancel();
 
-    this.textDivs.length = 0;
-    this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
-    this.accessibilityManager?.setTextMapping(this.textDivs);
+    const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
 
-    const textLayerFrag = document.createDocumentFragment();
-    this.textLayerRenderTask = renderTextLayer({
-      textContent: this.textContent,
-      textContentStream: this.textContentStream,
-      container: textLayerFrag,
-      viewport: this.viewport,
-      textDivs: this.textDivs,
-      textContentItemsStr: this.textContentItemsStr,
-      timeout,
-    });
-    this.textLayerRenderTask.promise.then(
-      () => {
-        this.textLayerDiv.append(textLayerFrag);
-        this.#finishRendering();
-        this.highlighter?.enable();
-        this.accessibilityManager?.enable();
-      },
-      function (reason) {
-        // Cancelled or failed to render text layer; skipping errors.
+    if (this.renderingDone) {
+      this.#update(viewport);
+      if (scale !== this.scale) {
+        updateTextLayer({
+          viewport,
+          scale,
+          textDivs: this.textDivs,
+          textDivProperties: this.textDivProperties,
+          isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
+        });
+        this.scale = scale;
       }
-    );
+      this.show();
+    } else {
+      this.cancel();
+
+      this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
+      this.accessibilityManager?.setTextMapping(this.textDivs);
+
+      const textLayerFrag = document.createDocumentFragment();
+      this.textLayerRenderTask = renderTextLayer({
+        textContent: this.textContent,
+        textContentStream: this.textContentStream,
+        container: textLayerFrag,
+        viewport,
+        textDivs: this.textDivs,
+        textDivProperties: this.textDivProperties,
+        textContentItemsStr: this.textContentItemsStr,
+        isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
+        timeout,
+        scale,
+      });
+      this.textLayerRenderTask.promise.then(
+        () => {
+          this.div.append(textLayerFrag);
+          this.#finishRendering();
+          this.highlighter?.enable();
+          this.accessibilityManager?.enable();
+          this.div.style.display = "";
+          this.scale = scale;
+          this.show();
+        },
+        function (reason) {
+          // Cancelled or failed to render text layer; skipping errors.
+        }
+      );
+    }
+  }
+
+  #setDimensions(viewport) {
+    const { div } = this;
+    const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { style } = div;
+
+    style.width = `calc(var(--scale-factor) * ${pageWidth}px)`;
+    style.height = `calc(var(--scale-factor) * ${pageHeight}px)`;
+  }
+
+  #update(viewport) {
+    this.div.setAttribute("data-main-rotation", viewport.rotation);
+  }
+
+  hide() {
+    this.div.setAttribute("hidden", "true");
+  }
+
+  show() {
+    this.div.removeAttribute("hidden");
   }
 
   /**
@@ -126,6 +180,7 @@ class TextLayerBuilder {
     }
     this.highlighter?.disable();
     this.accessibilityManager?.disable();
+    this.renderingDone = false;
   }
 
   setTextContentStream(readableStream) {
@@ -144,7 +199,7 @@ class TextLayerBuilder {
    * dragged up or down.
    */
   #bindMouse() {
-    const div = this.textLayerDiv;
+    const { div } = this;
 
     div.addEventListener("mousedown", evt => {
       const end = div.querySelector(".endOfContent");

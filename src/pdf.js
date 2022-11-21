@@ -59,12 +59,12 @@ import {
   PixelsPerInch,
   RenderingCancelledException,
 } from "./display/display_utils.js";
+import { renderTextLayer, updateTextLayer } from "./display/text_layer.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
 import { AnnotationLayer } from "./display/annotation_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { isNodeJS } from "./shared/is_node.js";
-import { renderTextLayer } from "./display/text_layer.js";
 import { SVGGraphics } from "./display/svg.js";
 import { XfaLayer } from "./display/xfa_layer.js";
 
@@ -141,6 +141,7 @@ export {
   SVGGraphics,
   UnexpectedResponseException,
   UNSUPPORTED_FEATURES,
+  updateTextLayer,
   Util,
   VerbosityLevel,
   version,
