@@ -26,6 +26,15 @@
   /*#endif*/
 }
 
+@media (min-resolution: 1.1dppx) {
+  :root {
+    /*#if !COMPONENTS*/
+    --editorFreeText-editing-cursor: url(images/cursor-editorFreeText.svg) 0 16,
+      text;
+    /*#endif*/
+  }
+}
+
 @media (forced-colors: active) {
   :root {
     --focus-outline: solid 3px ButtonText;
