@@ -60,6 +60,7 @@ import {
   PDFDateString,
   PixelsPerInch,
   RenderingCancelledException,
+  setLayerDimensions,
 } from "./display/display_utils.js";
 import { renderTextLayer, updateTextLayer } from "./display/text_layer.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
@@ -141,6 +142,7 @@ export {
   PixelsPerInch,
   RenderingCancelledException,
   renderTextLayer,
+  setLayerDimensions,
   shadow,
   SVGGraphics,
   UnexpectedResponseException,

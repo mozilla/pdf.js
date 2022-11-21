@@ -131,10 +131,9 @@ class AnnotationLayerBuilder {
     } else {
       // Create an annotation layer div and render the annotations
       // if there is at least one annotation.
-      this.div = document.createElement("div");
+      this.div = parameters.div = document.createElement("div");
       this.div.className = "annotationLayer";
       this.pageDiv.append(this.div);
-      parameters.div = this.div;
 
       AnnotationLayer.render(parameters);
       this.l10n.translate(this.div);
