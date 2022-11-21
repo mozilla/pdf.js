@@ -387,6 +387,7 @@ class PDFPageView {
         case annotationEditorLayerNode:
         case xfaLayerNode:
         case textLayerNode:
+        case this.loadingIconDiv:
           continue;
       }
       node.remove();
@@ -430,8 +431,17 @@ class PDFPageView {
       delete this.svg;
     }
 
-    this.loadingIconDiv = document.createElement("div");
-    this.loadingIconDiv.className = "loadingIcon notVisible";
+    if (!this.loadingIconDiv) {
+      this.loadingIconDiv = document.createElement("div");
+      this.loadingIconDiv.className = "loadingIcon notVisible";
+      this.loadingIconDiv.setAttribute("role", "img");
+      this.l10n.get("loading").then(msg => {
+        this.loadingIconDiv?.setAttribute("aria-label", msg);
+      });
+      div.append(this.loadingIconDiv);
+    } else {
+      this.toggleLoadingIconSpinner();
+    }
 
     if (
       (typeof PDFJSDev === "undefined" ||
@@ -440,11 +450,6 @@ class PDFPageView {
     ) {
       this.toggleLoadingIconSpinner(/* viewVisible = */ true);
     }
-    this.loadingIconDiv.setAttribute("role", "img");
-    this.l10n.get("loading").then(msg => {
-      this.loadingIconDiv?.setAttribute("aria-label", msg);
-    });
-    div.append(this.loadingIconDiv);
   }
 
   update({
@@ -710,6 +715,8 @@ class PDFPageView {
       }
       return Promise.reject(new Error("pdfPage is not loaded"));
     }
+
+    this.toggleLoadingIconSpinner(/* viewVisible = */ true);
 
     this.renderingState = RenderingStates.RUNNING;
 
