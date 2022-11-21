@@ -165,12 +165,9 @@ class DefaultStructTreeLayerFactory {
 class DefaultTextLayerFactory {
   /**
    * @typedef {Object} CreateTextLayerBuilderParameters
-   * @property {HTMLDivElement} textLayerDiv
-   * @property {number} pageIndex
-   * @property {PageViewport} viewport
-   * @property {EventBus} eventBus
    * @property {TextHighlighter} highlighter
    * @property {TextAccessibilityManager} [accessibilityManager]
+   * @property {boolean} [isOffscreenCanvasSupported]
    */
 
   /**
@@ -178,20 +175,14 @@ class DefaultTextLayerFactory {
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder({
-    textLayerDiv,
-    pageIndex,
-    viewport,
-    eventBus,
     highlighter,
     accessibilityManager = null,
+    isOffscreenCanvasSupported = true,
   }) {
     return new TextLayerBuilder({
-      textLayerDiv,
-      pageIndex,
-      viewport,
-      eventBus,
       highlighter,
       accessibilityManager,
+      isOffscreenCanvasSupported,
     });
   }
 }

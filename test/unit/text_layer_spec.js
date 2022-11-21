@@ -24,7 +24,7 @@ import { isNodeJS } from "../../src/shared/is_node.js";
 describe("textLayer", function () {
   it("creates textLayer from ReadableStream", async function () {
     if (isNodeJS) {
-      pending("document.createDocumentFragment is not supported in Node.js.");
+      pending("document.createElement is not supported in Node.js.");
     }
     const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
     const pdfDocument = await loadingTask.promise;
@@ -34,7 +34,7 @@ describe("textLayer", function () {
 
     const textLayerRenderTask = renderTextLayer({
       textContentStream: page.streamTextContent(),
-      container: document.createDocumentFragment(),
+      container: document.createElement("div"),
       viewport: page.getViewport(),
       textContentItemsStr,
     });

@@ -95,6 +95,7 @@ class TextHighlighter {
       );
       this._onUpdateTextLayerMatches = null;
     }
+    this._updateMatches(/* reset = */ true);
   }
 
   _convertMatches(matches, matchesLength) {
@@ -264,8 +265,8 @@ class TextHighlighter {
     }
   }
 
-  _updateMatches() {
-    if (!this.enabled) {
+  _updateMatches(reset = false) {
+    if (!this.enabled && !reset) {
       return;
     }
     const { findController, matches, pageIdx } = this;
@@ -283,7 +284,7 @@ class TextHighlighter {
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
-    if (!findController?.highlightMatches) {
+    if (!findController?.highlightMatches || reset) {
       return;
     }
     // Convert the matches on the `findController` into the match format
