@@ -14,6 +14,8 @@
  */
 /* globals chrome */
 
+import { MCOptions } from './mc_options';
+
 'use strict';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
@@ -183,6 +185,17 @@ function getViewerConfiguration() {
   };
 }
 
+function setMCOptions() {
+  let canPrint = new URL(location.href).searchParams.get('canPrint');
+  MCOptions.set('canPrint', canPrint === 'true');
+}
+
+function enablePrintingIfCanPrint() {
+  if (MCOptions.get('canPrint')) {
+    document.getElementById('print').classList.remove('hidden');
+  }
+}
+
 function webViewerLoad() {
   let config = getViewerConfiguration();
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
@@ -200,6 +213,8 @@ function webViewerLoad() {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
       pdfjsWebAppOptions.AppOptions.set('defaultUrl', defaultUrl);
     }
+    setMCOptions();
+    enablePrintingIfCanPrint();
 
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     window.PDFViewerApplicationOptions = pdfjsWebAppOptions.AppOptions;
