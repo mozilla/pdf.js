@@ -2496,7 +2496,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     super(parameters, { isRenderable: true });
 
     const { filename, content } = this.data.file;
-    this.filename = getFilenameFromUrl(filename);
+    this.filename = getFilenameFromUrl(filename, /* onlyStripPath = */ true);
     this.content = content;
 
     this.linkService.eventBus?.dispatch("fileattachmentannotation", {
