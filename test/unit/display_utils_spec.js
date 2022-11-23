@@ -190,6 +190,13 @@ describe("display_utils", function () {
       const url = "https://server.org/filename.pdf?foo=bar";
       expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
     });
+
+    it("should get the filename from a relative URL, keeping the anchor", function () {
+      const url = "../../part1#part2.pdf";
+      expect(getFilenameFromUrl(url, /* onlyStripPath = */ true)).toEqual(
+        "part1#part2.pdf"
+      );
+    });
   });
 
   describe("getPdfFilenameFromUrl", function () {
