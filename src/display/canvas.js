@@ -1022,7 +1022,7 @@ class CanvasGraphics {
     commonObjs,
     objs,
     canvasFactory,
-    optionalContentConfig,
+    { optionalContentConfig, markedContentStack = null },
     annotationCanvasMap,
     pageColors
   ) {
@@ -1051,7 +1051,7 @@ class CanvasGraphics {
     this.tempSMask = null;
     this.suspendedCtx = null;
     this.contentVisible = true;
-    this.markedContentStack = [];
+    this.markedContentStack = markedContentStack || [];
     this.optionalContentConfig = optionalContentConfig;
     this.cachedCanvases = new CachedCanvases(this.canvasFactory);
     this.cachedPatterns = new Map();
@@ -2471,7 +2471,11 @@ class CanvasGraphics {
             ctx,
             this.commonObjs,
             this.objs,
-            this.canvasFactory
+            this.canvasFactory,
+            {
+              optionalContentConfig: this.optionalContentConfig,
+              markedContentStack: this.markedContentStack,
+            }
           );
         },
       };
