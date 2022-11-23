@@ -3245,7 +3245,7 @@ class InternalRenderTask {
       this.commonObjs,
       this.objs,
       this.canvasFactory,
-      optionalContentConfig,
+      { optionalContentConfig },
       this.annotationCanvasMap,
       this.pageColors
     );

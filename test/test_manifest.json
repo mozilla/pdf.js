@@ -4562,6 +4562,21 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue15716",
+       "file": "pdfs/issue15716.pdf",
+       "md5": "4d89aabeb97fcb181662406f092bbeb0",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue15716-no-red-oc",
+       "file": "pdfs/issue15716.pdf",
+       "md5": "4d89aabeb97fcb181662406f092bbeb0",
+       "rounds": 1,
+       "type": "eq",
+       "optionalContent": {
+         "1001R": false
+       }
+    },
     {  "id": "issue845",
        "file": "pdfs/issue845r.pdf",
        "md5": "b5f8fe4005cf3fb685fdb4a4c44ee4a2",
