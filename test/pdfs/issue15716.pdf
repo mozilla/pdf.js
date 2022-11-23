@@ -1,0 +1,132 @@
+%PDF-1.7
+
+1 0 obj
+<<
+	/Type /Catalog
+	/Pages 2 0 R
+	/OCProperties
+	<<
+		/OCGs [1000 0 R 1001 0 R]
+		/D << /Order [1000 0 R 1001 0 R] >>
+	>>
+>>
+endobj
+
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [ 10 0 R ] >>
+endobj
+
+
+% PAGE 1
+
+10 0 obj
+<<
+	/Type /Page
+	/Parent 2 0 R
+	/MediaBox [ 0 0 200 200 ]
+	/Contents 11 0 R
+	/Resources
+	<<
+		/Pattern << /P1 12 0 R >>
+	>>
+>>
+endobj
+
+11 0 obj
+<< /Length 146 >>
+stream
+	/Pattern cs % Set pattern color space
+	/P1 scn % Set pattern as nonstroking color
+	0 200 200 -200 re % Construct rectangular path
+	f % Fill path
+endstream
+endobj
+
+12 0 obj
+<<
+	/Type /Pattern
+	/PatternType 1
+	/PaintType 1
+	/TilingType 2
+	/BBox [0 0 100 100]
+	/XStep 100
+	/YStep 100
+	/Resources
+	<<
+		/Font << /F1 13 0 R >>
+		/Properties << /L1 1000 0 R /L2 1001 0 R >>
+	>>
+	/Length 788
+>>
+stream
+	BT % Begin text object
+	/F1 1 Tf % Set text font and size
+	64 0 0 64 7.1771 2.4414 Tm % Set text matrix
+	0 Tc % Set character spacing
+	0 Tw % Set word spacing
+	/OC /L1 BDC % Begin layer
+	0.0 0.0 0.0 rg % Set nonstroking color to black
+	(\001) Tj % Show spade glyph
+	EMC % End layer
+	0.7478 -0.007 TD % Move text position
+	/OC /L2 BDC % Begin layer
+	1.0 0.0 0.0 rg % Set nonstroking color to red
+	(\002) Tj % Show heart glyph
+	EMC % End layer
+	-0.7323 0.7813 TD % Move text position
+	/OC /L2 BDC % Begin layer
+	1.0 0.0 0.0 rg % Set nonstroking color to red
+	(\003) Tj % Show diamond glyph
+	EMC % End layer
+	0.6913 0.007 TD % Move text position
+	/OC /L1 BDC % Begin layer
+	0.0 0.0 0.0 rg % Set nonstroking color to black
+	(\004) Tj % Show club glyph
+	EMC % End layer
+	ET % End text object
+endstream
+endobj
+
+13 0 obj
+<<
+	/Type /Font
+	/Subtype /Type1
+	/BaseFont /ZapfDingbats
+	/Encoding
+	<<
+		/Type /Encoding /Differences [1 /a109 /a110 /a111 /a112]
+	>>
+>>
+endobj
+
+
+% SHARED OBJECTS
+
+1000 0 obj
+<< /Type /OCG /Name (Black) >>
+endobj
+
+1001 0 obj
+<< /Type /OCG /Name (Red) >>
+endobj
+
+
+xref
+0 3
+0000000000 65535 f
+0000000010 00000 n
+0000000151 00000 n
+10 4
+0000000223 00000 n
+0000000367 00000 n
+0000000565 00000 n
+0000001603 00000 n
+1000 2
+0000001778 00000 n
+0000001828 00000 n
+
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1877
+%%EOF
