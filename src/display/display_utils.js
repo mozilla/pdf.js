@@ -334,15 +334,16 @@ function isPdfFile(filename) {
 /**
  * Gets the filename from a given URL.
  * @param {string} url
+ * @param {boolean} [onlyStripPath]
  * @returns {string}
  */
-function getFilenameFromUrl(url) {
-  const anchor = url.indexOf("#");
-  const query = url.indexOf("?");
-  const end = Math.min(
-    anchor > 0 ? anchor : url.length,
-    query > 0 ? query : url.length
-  );
+function getFilenameFromUrl(url, onlyStripPath = false) {
+  let end = url.length;
+  if (!onlyStripPath) {
+    const anchor = url.indexOf("#");
+    const query = url.indexOf("?");
+    end = Math.min(anchor > 0 ? anchor : end, query > 0 ? query : end);
+  }
   return url.substring(url.lastIndexOf("/", end) + 1, end);
 }
 
