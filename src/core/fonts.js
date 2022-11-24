@@ -1242,8 +1242,8 @@ class Font {
       // Attempt to improve the glyph mapping for (some) composite fonts that
       // appear to lack meaningful ToUnicode data.
       if (this.composite && this.toUnicode instanceof IdentityToUnicodeMap) {
-        if (/Verdana/i.test(name)) {
-          // Fixes issue11242_reduced.pdf
+        if (/Tahoma|Verdana/i.test(name)) {
+          // Fixes issue15719.pdf and issue11242_reduced.pdf.
           applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
         }
       }
