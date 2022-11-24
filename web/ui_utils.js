@@ -109,8 +109,8 @@ class OutputScale {
  * @param {Object} spot - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
  * @param {boolean} [scrollMatches] - When scrolling search results into view,
- *   ignore elements that contain marked content identifiers.
- *   The default value is `false`.
+ *   ignore elements that either: Contains marked content identifiers,
+ *   or have the CSS-rule `overflow: hidden;` set. The default value is `false`.
  */
 function scrollIntoView(element, spot, scrollMatches = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
@@ -126,7 +126,9 @@ function scrollIntoView(element, spot, scrollMatches = false) {
   while (
     (parent.clientHeight === parent.scrollHeight &&
       parent.clientWidth === parent.scrollWidth) ||
-    (scrollMatches && parent.classList.contains("markedContent"))
+    (scrollMatches &&
+      (parent.classList.contains("markedContent") ||
+        getComputedStyle(parent).overflow === "hidden"))
   ) {
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
