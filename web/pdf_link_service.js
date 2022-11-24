@@ -360,57 +360,58 @@ class PDFLinkService {
       if (params.has("page")) {
         pageNumber = params.get("page") | 0 || 1;
       }
+      if (params.has("view")) {
+        const viewArgs = params.get("view").split(",");
+        const viewArg = viewArgs[0];
+
+        if (viewArg === "Fit" || viewArg === "FitB") {
+          dest = [null, { name: viewArg }];
+        } else if (
+          viewArg === "FitH" ||
+          viewArg === "FitBH" ||
+          viewArg === "FitV" ||
+          viewArg === "FitBV"
+        ) {
+          dest = [
+            null,
+            { name: viewArg },
+            viewArgs.length > 1 ? viewArgs[1] | 0 : null,
+          ];
+        } else if (viewArg === "FitR") {
+          if (viewArgs.length !== 5) {
+            console.error(
+              'PDFLinkService.setHash: Not enough parameters for "FitR".'
+            );
+          } else {
+            dest = [
+              null,
+              { name: viewArg },
+              viewArgs[1] | 0,
+              viewArgs[2] | 0,
+              viewArgs[3] | 0,
+              viewArgs[4] | 0,
+            ];
+          }
+        } else {
+          console.error(
+            `PDFLinkService.setHash: "${viewArg}" is not a valid view value.`
+          );
+        }
+      }
       if (params.has("zoom")) {
         // Build the destination array.
         const zoomArgs = params.get("zoom").split(","); // scale,left,top
         const zoomArg = zoomArgs[0];
         const zoomArgNumber = parseFloat(zoomArg);
 
-        if (!zoomArg.includes("Fit")) {
-          // If the zoomArg is a number, it has to get divided by 100. If it's
-          // a string, it should stay as it is.
-          dest = [
-            null,
-            { name: "XYZ" },
-            zoomArgs.length > 1 ? zoomArgs[1] | 0 : null,
-            zoomArgs.length > 2 ? zoomArgs[2] | 0 : null,
-            zoomArgNumber ? zoomArgNumber / 100 : zoomArg,
-          ];
-        } else {
-          if (zoomArg === "Fit" || zoomArg === "FitB") {
-            dest = [null, { name: zoomArg }];
-          } else if (
-            zoomArg === "FitH" ||
-            zoomArg === "FitBH" ||
-            zoomArg === "FitV" ||
-            zoomArg === "FitBV"
-          ) {
-            dest = [
-              null,
-              { name: zoomArg },
-              zoomArgs.length > 1 ? zoomArgs[1] | 0 : null,
-            ];
-          } else if (zoomArg === "FitR") {
-            if (zoomArgs.length !== 5) {
-              console.error(
-                'PDFLinkService.setHash: Not enough parameters for "FitR".'
-              );
-            } else {
-              dest = [
-                null,
-                { name: zoomArg },
-                zoomArgs[1] | 0,
-                zoomArgs[2] | 0,
-                zoomArgs[3] | 0,
-                zoomArgs[4] | 0,
-              ];
-            }
-          } else {
-            console.error(
-              `PDFLinkService.setHash: "${zoomArg}" is not a valid zoom value.`
-            );
-          }
-        }
+        // If the zoomArg is a number, it has to get divided by 100.
+        dest = [
+          null,
+          { name: "XYZ" },
+          zoomArgs.length > 1 ? zoomArgs[1] | 0 : null,
+          zoomArgs.length > 2 ? zoomArgs[2] | 0 : null,
+          zoomArgNumber ? zoomArgNumber / 100 : zoomArg,
+        ];
       }
       if (dest) {
         this.pdfViewer.scrollPageIntoView({
