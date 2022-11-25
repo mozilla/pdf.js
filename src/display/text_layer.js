@@ -18,6 +18,7 @@ import {
   createPromiseCapability,
   Util,
 } from "../shared/util.js";
+import { deprecated } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -250,7 +251,6 @@ class TextLayerRenderTask {
     this._canceled = false;
     this._capability = createPromiseCapability();
     this._renderTimer = null;
-    this._bounds = [];
     this._devicePixelRatio = globalThis.devicePixelRatio || 1;
 
     // Always clean-up the temporary canvas once rendering is no longer pending.
@@ -421,6 +421,13 @@ class TextLayerRenderTask {
         // Render right away
         render(this);
       } else {
+        if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
+          throw new Error("The `timeout` parameter was removed.");
+        }
+        deprecated(
+          "The TextLayerRender `timeout` parameter will be removed in the " +
+            "future, since streaming of textContent has made it obsolete."
+        );
         // Schedule
         this._renderTimer = setTimeout(() => {
           render(this);
