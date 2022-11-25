@@ -4274,10 +4274,15 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
 
-    const file = new FileSpec(params.dict.get("FS"), params.xref);
+    const { dict, xref } = params;
+    const file = new FileSpec(dict.get("FS"), xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.file = file.serializable;
+
+    const name = dict.get("Name");
+    this.data.name =
+      name instanceof Name ? stringToPDFString(name.name) : "PushPin";
   }
 }
 

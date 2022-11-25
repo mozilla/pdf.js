@@ -6064,6 +6064,14 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "bug1230933",
+       "file": "pdfs/bug1230933.pdf",
+       "md5": "d8e7dce9ce79aa5a6121b21be8935429",
+       "link": true,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue14117",
        "file": "pdfs/issue14117.pdf",
        "md5": "9b1c33ad2f59f4e723c258e863149abf",
