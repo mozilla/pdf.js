@@ -22,6 +22,7 @@ import {
   UNSUPPORTED_FEATURES,
   warn,
 } from "../shared/util.js";
+import { isNodeJS } from "../shared/is_node.js";
 
 class FontLoader {
   constructor({
@@ -141,17 +142,17 @@ class FontLoader {
 
     let supported = false;
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
-      if (typeof navigator === "undefined") {
+      if (isNodeJS) {
         // Node.js - we can pretend that sync font loading is supported.
         supported = true;
-      } else {
+      } else if (
+        typeof navigator !== "undefined" &&
         // User agent string sniffing is bad, but there is no reliable way to
         // tell if the font is fully loaded and ready to be used with canvas.
-        const m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
-        if (m?.[1] >= 14) {
-          supported = true;
-        }
-        // TODO - other browsers...
+        /Mozilla\/5.0.*?rv:\d+.*? Gecko/.test(navigator.userAgent)
+      ) {
+        // Firefox, from version 14, supports synchronous font loading.
+        supported = true;
       }
     }
     return shadow(this, "isSyncFontLoadingSupported", supported);
