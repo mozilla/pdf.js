@@ -1562,4 +1562,40 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in bug1802888.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1802888.pdf", getSelector("30R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check field value is treated by default as a number", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.type(getSelector("30R"), "123", {
+            delay: 10,
+          });
+          await page.click(getSelector("31R"));
+          await page.type(getSelector("31R"), "456", {
+            delay: 10,
+          });
+          await page.click(getSelector("26R"));
+          await page.click(getSelector("27R"));
+          await page.waitForFunction(`${getQuerySelector("26R")}.value !== ""`);
+
+          const value = await page.$eval(getSelector("26R"), el => el.value);
+          expect(value).withContext(`In ${browserName}`).toEqual("579");
+        })
+      );
+    });
+  });
 });
