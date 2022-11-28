@@ -559,6 +559,8 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
 class PDFDocumentLoadingTask {
   static #docId = 0;
 
+  #onUnsupportedFeature = null;
+
   constructor() {
     this._capability = createPromiseCapability();
     this._transport = null;
@@ -591,13 +593,26 @@ class PDFDocumentLoadingTask {
      * @type {function}
      */
     this.onProgress = null;
+  }
 
-    /**
-     * Callback for when an unsupported feature is used in the PDF document.
-     * The callback receives an {@link UNSUPPORTED_FEATURES} argument.
-     * @type {function}
-     */
-    this.onUnsupportedFeature = null;
+  /**
+   * @type {function | null} The current callback used with unsupported
+   * features.
+   */
+  get onUnsupportedFeature() {
+    return this.#onUnsupportedFeature;
+  }
+
+  /**
+   * Callback for when an unsupported feature is used in the PDF document.
+   * The callback receives an {@link UNSUPPORTED_FEATURES} argument.
+   * @type {function}
+   */
+  set onUnsupportedFeature(callback) {
+    deprecated(
+      "The PDFDocumentLoadingTask onUnsupportedFeature property will be removed in the future."
+    );
+    this.#onUnsupportedFeature = callback;
   }
 
   /**
@@ -758,6 +773,9 @@ class PDFDocumentProxy {
    *   structures, or `null` when no statistics exists.
    */
   get stats() {
+    deprecated(
+      "The PDFDocumentProxy stats property will be removed in the future."
+    );
     return this._transport.stats;
   }
 
