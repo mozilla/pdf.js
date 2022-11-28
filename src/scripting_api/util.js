@@ -297,6 +297,7 @@ class Util extends PDFObject {
 
   printx(cFormat, cSource) {
     // case
+    cSource = (cSource ?? "").toString();
     const handlers = [x => x, x => x.toUpperCase(), x => x.toLowerCase()];
     const buf = [];
     let i = 0;
