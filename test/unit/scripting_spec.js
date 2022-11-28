@@ -280,6 +280,18 @@ describe("Scripting", function () {
           `util.printf("Decimal number: %,0.2f", -12.34567)`
         );
         expect(value).toEqual("Decimal number: -12.35");
+
+        value = await myeval(`util.printf("Decimal number: %,0.0f", 4.95)`);
+        expect(value).toEqual("Decimal number: 5");
+
+        value = await myeval(`util.printf("Decimal number: %,0.0f", 4.49)`);
+        expect(value).toEqual("Decimal number: 4");
+
+        value = await myeval(`util.printf("Decimal number: %,0.0f", -4.95)`);
+        expect(value).toEqual("Decimal number: -5");
+
+        value = await myeval(`util.printf("Decimal number: %,0.0f", -4.49)`);
+        expect(value).toEqual("Decimal number: -4");
       });
 
       it("should print a string with no argument", async () => {
