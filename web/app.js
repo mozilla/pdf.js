@@ -49,7 +49,6 @@ import {
   PDFWorker,
   shadow,
   UnexpectedResponseException,
-  UNSUPPORTED_FEATURES,
   version,
 } from "pdfjs-lib";
 import { AppOptions, OptionKind } from "./app_options.js";
@@ -92,51 +91,6 @@ const ViewerCssTheme = {
   LIGHT: 1,
   DARK: 2,
 };
-
-// Keep these in sync with mozilla-central's Histograms.json.
-const KNOWN_VERSIONS = [
-  "1.0",
-  "1.1",
-  "1.2",
-  "1.3",
-  "1.4",
-  "1.5",
-  "1.6",
-  "1.7",
-  "1.8",
-  "1.9",
-  "2.0",
-  "2.1",
-  "2.2",
-  "2.3",
-];
-// Keep these in sync with mozilla-central's Histograms.json.
-const KNOWN_GENERATORS = [
-  "acrobat distiller",
-  "acrobat pdfwriter",
-  "adobe livecycle",
-  "adobe pdf library",
-  "adobe photoshop",
-  "ghostscript",
-  "tcpdf",
-  "cairo",
-  "dvipdfm",
-  "dvips",
-  "pdftex",
-  "pdfkit",
-  "itext",
-  "prince",
-  "quarkxpress",
-  "mac os x",
-  "microsoft",
-  "openoffice",
-  "oracle",
-  "luradocument",
-  "pdf-xchange",
-  "antenna house",
-  "aspose.cells",
-  "fpdf",
-];
 
 class DefaultExternalServices {
   constructor() {
@@ -257,7 +211,6 @@ const PDFViewerApplication = {
   _contentDispositionFilename: null,
   _contentLength: null,
   _saveInProgress: false,
-  _docStats: null,
   _wheelUnusedTicks: 0,
   _PDFBug: null,
   _hasAnnotationEditors: false,
@@ -866,7 +819,6 @@ const PDFViewerApplication = {
     this._contentDispositionFilename = null;
     this._contentLength = null;
     this._saveInProgress = false;
-    this._docStats = null;
     this._hasAnnotationEditors = false;
 
     promises.push(this.pdfScriptingManager.destroyPromise);
@@ -958,9 +910,6 @@ const PDFViewerApplication = {
     loadingTask.onProgress = ({ loaded, total }) => {
       this.progress(loaded / total);
     };
-
-    // Listen for unsupported features to report telemetry.
-    loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
     return loadingTask.promise.then(
       pdfDocument => {
@@ -1056,13 +1005,6 @@ const PDFViewerApplication = {
     }
   },
 
-  fallback(featureId) {
-    this.externalServices.reportTelemetry({
-      type: "unsupportedFeature",
-      featureId,
-    });
-  },
-
   /**
    * Report the error; used for errors affecting loading and/or parsing of
    * the entire PDF document.
@@ -1104,7 +1046,6 @@ const PDFViewerApplication = {
     }
 
     console.error(`${message}\n\n${moreInfoText.join("\n")}`);
-    this.fallback();
   },
 
   progress(level) {
@@ -1434,7 +1375,6 @@ const PDFViewerApplication = {
           return false;
         }
         console.warn("Warning: JavaScript support is not enabled");
-        this.fallback(UNSUPPORTED_FEATURES.javaScript);
         return true;
       });
 
@@ -1509,48 +1449,16 @@ const PDFViewerApplication = {
       } else {
         console.warn("Warning: XFA support is not enabled");
       }
-      this.fallback(UNSUPPORTED_FEATURES.forms);
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
       !this.pdfViewer.renderForms
     ) {
       console.warn("Warning: Interactive form support is not enabled");
-      this.fallback(UNSUPPORTED_FEATURES.forms);
     }
 
     if (info.IsSignaturesPresent) {
       console.warn("Warning: Digital signatures validation is not supported");
-      this.fallback(UNSUPPORTED_FEATURES.signatures);
     }
-
-    // Telemetry labels must be C++ variable friendly.
-    let versionId = "other";
-    if (KNOWN_VERSIONS.includes(info.PDFFormatVersion)) {
-      versionId = `v${info.PDFFormatVersion.replace(".", "_")}`;
-    }
-    let generatorId = "other";
-    if (info.Producer) {
-      const producer = info.Producer.toLowerCase();
-      KNOWN_GENERATORS.some(function (generator) {
-        if (!producer.includes(generator)) {
-          return false;
-        }
-        generatorId = generator.replace(/[ .-]/g, "_");
-        return true;
-      });
-    }
-    let formType = null;
-    if (info.IsXFAPresent) {
-      formType = "xfa";
-    } else if (info.IsAcroFormPresent) {
-      formType = "acroform";
-    }
-    this.externalServices.reportTelemetry({
-      type: "documentInfo",
-      version: versionId,
-      generator: generatorId,
-      formType,
-    });
 
     this.eventBus.dispatch("metadataloaded", { source: this });
   },
@@ -1801,10 +1709,6 @@ const PDFViewerApplication = {
     this.setTitle();
 
     printService.layout();
-
-    this.externalServices.reportTelemetry({
-      type: "print",
-    });
 
     if (this._hasAnnotationEditors) {
       this.externalServices.reportTelemetry({
@@ -2099,21 +2003,6 @@ const PDFViewerApplication = {
   },
 
   /**
-   * @ignore
-   */
-  _reportDocumentStatsTelemetry() {
-    const { stats } = this.pdfDocument;
-    if (stats !== this._docStats) {
-      this._docStats = stats;
-
-      this.externalServices.reportTelemetry({
-        type: "documentStats",
-        stats,
-      });
-    }
-  },
-
-  /**
    * Used together with the integration-tests, to enable awaiting full
    * initialization of the scripting/sandbox.
    */
@@ -2310,9 +2199,6 @@ function webViewerPageRendered({ pageNumber, error }) {
       PDFViewerApplication._otherError(msg, error);
     });
   }
-
-  // It is a good time to report stream and font types.
-  PDFViewerApplication._reportDocumentStatsTelemetry();
 }
 
 function webViewerPageMode({ mode }) {
