@@ -22,6 +22,7 @@ import {
   AnnotationBorderStyleType,
   AnnotationType,
   assert,
+  FeatureTest,
   LINE_FACTOR,
   shadow,
   unreachable,
@@ -563,15 +564,6 @@ class AnnotationElement {
     }
     return fields;
   }
-
-  static get platform() {
-    const platform = typeof navigator !== "undefined" ? navigator.platform : "";
-
-    return shadow(this, "platform", {
-      isWin: platform.includes("Win"),
-      isMac: platform.includes("Mac"),
-    });
-  }
 }
 
 class LinkAnnotationElement extends AnnotationElement {
@@ -904,7 +896,7 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   _getKeyModifier(event) {
-    const { isWin, isMac } = AnnotationElement.platform;
+    const { isWin, isMac } = FeatureTest.platform;
     return (isWin && event.ctrlKey) || (isMac && event.metaKey);
   }
 
