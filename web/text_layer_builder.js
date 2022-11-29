@@ -79,11 +79,8 @@ class TextLayerBuilder {
 
   /**
    * Renders the text layer.
-   *
-   * @param {number} [timeout] - Wait for a specified amount of milliseconds
-   *                             before rendering.
    */
-  render(timeout = 0) {
+  render() {
     if (!(this.textContent || this.textContentStream) || this.renderingDone) {
       return;
     }
@@ -101,7 +98,6 @@ class TextLayerBuilder {
       viewport: this.viewport,
       textDivs: this.textDivs,
       textContentItemsStr: this.textContentItemsStr,
-      timeout,
     });
     this.textLayerRenderTask.promise.then(
       () => {
