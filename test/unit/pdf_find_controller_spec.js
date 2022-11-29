@@ -668,4 +668,25 @@ describe("pdf_find_controller", function () {
       pageMatchesLength: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]],
     });
   });
+
+  it("performs a search in a text with some Katakana at the end of a line", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "issue15759.pdf"
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "ソレノイド",
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[6]],
+      pageMatchesLength: [[5]],
+    });
+  });
 });
