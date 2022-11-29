@@ -18,7 +18,6 @@ import {
   createPromiseCapability,
   Util,
 } from "../shared/util.js";
-import { deprecated } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -38,8 +37,6 @@ import { deprecated } from "./display_utils.js";
  * @property {Array<string>} [textContentItemsStr] - Strings that correspond to
  *   the `str` property of the text items of the textContent input.
  *   This is output and shall initially be set to an empty array.
- * @property {number} [timeout] - Delay in milliseconds before rendering of the
- *   text runs occurs.
  */
 
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -250,7 +247,6 @@ class TextLayerRenderTask {
     this._renderingDone = false;
     this._canceled = false;
     this._capability = createPromiseCapability();
-    this._renderTimer = null;
     this._devicePixelRatio = globalThis.devicePixelRatio || 1;
 
     // Always clean-up the temporary canvas once rendering is no longer pending.
@@ -292,10 +288,6 @@ class TextLayerRenderTask {
           // Avoid "Uncaught promise" messages in the console.
         });
       this._reader = null;
-    }
-    if (this._renderTimer !== null) {
-      clearTimeout(this._renderTimer);
-      this._renderTimer = null;
     }
     this._capability.reject(new Error("TextLayer task cancelled."));
   }
@@ -378,7 +370,7 @@ class TextLayerRenderTask {
   /**
    * @private
    */
-  _render(timeout = 0) {
+  _render() {
     const capability = createPromiseCapability();
     let styleCache = Object.create(null);
 
@@ -417,23 +409,7 @@ class TextLayerRenderTask {
 
     capability.promise.then(() => {
       styleCache = null;
-      if (!timeout) {
-        // Render right away
-        render(this);
-      } else {
-        if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("GENERIC")) {
-          throw new Error("The `timeout` parameter was removed.");
-        }
-        deprecated(
-          "The TextLayerRender `timeout` parameter will be removed in the " +
-            "future, since streaming of textContent has made it obsolete."
-        );
-        // Schedule
-        this._renderTimer = setTimeout(() => {
-          render(this);
-          this._renderTimer = null;
-        }, timeout);
-      }
+      render(this);
     }, this._capability.reject);
   }
 }
@@ -451,7 +427,7 @@ function renderTextLayer(renderParameters) {
     textDivs: renderParameters.textDivs,
     textContentItemsStr: renderParameters.textContentItemsStr,
   });
-  task._render(renderParameters.timeout);
+  task._render();
   return task;
 }
 
