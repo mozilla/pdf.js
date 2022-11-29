@@ -42,6 +42,7 @@ import {
   getPdfFilenameFromUrl,
   GlobalWorkerOptions,
   InvalidPDFException,
+  isDataScheme,
   isPdfFile,
   loadScript,
   MissingPDFException,
@@ -731,6 +732,9 @@ const PDFViewerApplication = {
       this._downloadUrl =
         downloadUrl === url ? this.baseUrl : downloadUrl.split("#")[0];
     }
+    if (isDataScheme(url)) {
+      this._hideViewBookmark();
+    }
     let title = getPdfFilenameFromUrl(url, "");
     if (!title) {
       try {
@@ -766,8 +770,17 @@ const PDFViewerApplication = {
    * @private
    */
   _hideViewBookmark() {
+    const { viewBookmarkButton, presentationModeButton } =
+      this.appConfig.secondaryToolbar;
+
     // URL does not reflect proper document location - hiding some buttons.
-    this.appConfig.secondaryToolbar.viewBookmarkButton.hidden = true;
+    viewBookmarkButton.hidden = true;
+
+    // Avoid displaying multiple consecutive separators in the secondaryToolbar.
+    if (presentationModeButton.hidden) {
+      const element = document.getElementById("viewBookmarkSeparator");
+      element.hidden = true;
+    }
   },
 
   /**
@@ -1123,6 +1136,11 @@ const PDFViewerApplication = {
       baseDocumentUrl = this.baseUrl;
     } else if (PDFJSDev.test("CHROME")) {
       baseDocumentUrl = location.href.split("#")[0];
+    }
+    if (baseDocumentUrl && isDataScheme(baseDocumentUrl)) {
+      // Ignore "data:"-URLs for performance reasons, even though it may cause
+      // internal links to not work perfectly in all cases (see bug 1803050).
+      baseDocumentUrl = null;
     }
     this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
     this.pdfDocumentProperties.setDocument(pdfDocument);
@@ -2137,7 +2155,7 @@ function webViewerInitialized() {
   }
 
   if (!PDFViewerApplication.supportsFullscreen) {
-    appConfig.secondaryToolbar.presentationModeButton.classList.add("hidden");
+    appConfig.secondaryToolbar.presentationModeButton.hidden = true;
   }
 
   if (PDFViewerApplication.supportsIntegratedFind) {
