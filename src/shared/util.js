@@ -738,6 +738,19 @@ class FeatureTest {
       typeof OffscreenCanvas !== "undefined"
     );
   }
+
+  static get platform() {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      typeof navigator === "undefined"
+    ) {
+      return shadow(this, "platform", { isWin: false, isMac: false });
+    }
+    return shadow(this, "platform", {
+      isWin: navigator.platform.includes("Win"),
+      isMac: navigator.platform.includes("Mac"),
+    });
+  }
 }
 
 const hexNumbers = [...Array(256).keys()].map(n =>

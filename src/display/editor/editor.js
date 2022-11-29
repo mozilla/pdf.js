@@ -16,8 +16,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
 
-import { bindEvents, ColorManager, KeyboardManager } from "./tools.js";
-import { shadow, unreachable } from "../../shared/util.js";
+import { bindEvents, ColorManager } from "./tools.js";
+import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -274,7 +274,7 @@ class AnnotationEditor {
    * @param {PointerEvent} event
    */
   pointerdown(event) {
-    const isMac = KeyboardManager.platform.isMac;
+    const { isMac } = FeatureTest.platform;
     if (event.button !== 0 || (event.ctrlKey && isMac)) {
       // Avoid to focus this editor because of a non-left click.
       event.preventDefault();
