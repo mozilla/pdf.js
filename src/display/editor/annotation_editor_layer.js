@@ -22,8 +22,8 @@
 /** @typedef {import("../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
 
-import { bindEvents, KeyboardManager } from "./tools.js";
-import { AnnotationEditorType } from "../../shared/util.js";
+import { AnnotationEditorType, FeatureTest } from "../../shared/util.js";
+import { bindEvents } from "./tools.js";
 import { FreeTextEditor } from "./freetext.js";
 import { InkEditor } from "./ink.js";
 
@@ -429,7 +429,7 @@ class AnnotationEditorLayer {
    * @param {PointerEvent} event
    */
   pointerup(event) {
-    const isMac = KeyboardManager.platform.isMac;
+    const { isMac } = FeatureTest.platform;
     if (event.button !== 0 || (event.ctrlKey && isMac)) {
       // Don't create an editor on right click.
       return;
@@ -461,7 +461,7 @@ class AnnotationEditorLayer {
    * @param {PointerEvent} event
    */
   pointerdown(event) {
-    const isMac = KeyboardManager.platform.isMac;
+    const { isMac } = FeatureTest.platform;
     if (event.button !== 0 || (event.ctrlKey && isMac)) {
       // Do nothing on right click.
       return;

@@ -20,6 +20,7 @@
 import {
   AnnotationEditorPrefix,
   AnnotationEditorType,
+  FeatureTest,
   shadow,
   Util,
   warn,
@@ -211,7 +212,7 @@ class KeyboardManager {
     this.callbacks = new Map();
     this.allKeys = new Set();
 
-    const isMac = KeyboardManager.platform.isMac;
+    const { isMac } = FeatureTest.platform;
     for (const [keys, callback] of callbacks) {
       for (const key of keys) {
         const isMacKey = key.startsWith("mac+");
@@ -224,15 +225,6 @@ class KeyboardManager {
         }
       }
     }
-  }
-
-  static get platform() {
-    const platform = typeof navigator !== "undefined" ? navigator.platform : "";
-
-    return shadow(this, "platform", {
-      isWin: platform.includes("Win"),
-      isMac: platform.includes("Mac"),
-    });
   }
 
   /**
