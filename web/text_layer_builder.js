@@ -15,22 +15,19 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-/** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { renderTextLayer } from "pdfjs-lib";
+import { renderTextLayer, updateTextLayer } from "pdfjs-lib";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
- * @property {HTMLDivElement} textLayerDiv - The text layer container.
- * @property {EventBus} eventBus - The application event bus.
- * @property {number} pageIndex - The page index.
- * @property {PageViewport} viewport - The viewport of the text layer.
  * @property {TextHighlighter} highlighter - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
+ * @property {boolean} [isOffscreenCanvasSupported] - Allows to use an
+ *   OffscreenCanvas if needed.
  */
 
 /**
@@ -39,28 +36,28 @@ import { renderTextLayer } from "pdfjs-lib";
  * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
+  #scale = 0;
+
+  #rotation = 0;
+
   constructor({
-    textLayerDiv,
-    eventBus,
-    pageIndex,
-    viewport,
     highlighter = null,
     accessibilityManager = null,
+    isOffscreenCanvasSupported = true,
   }) {
-    this.textLayerDiv = textLayerDiv;
-    this.eventBus = eventBus;
     this.textContent = null;
     this.textContentItemsStr = [];
     this.textContentStream = null;
     this.renderingDone = false;
-    this.pageNumber = pageIndex + 1;
-    this.viewport = viewport;
     this.textDivs = [];
+    this.textDivProperties = new WeakMap();
     this.textLayerRenderTask = null;
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
+    this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
 
-    this.#bindMouse();
+    this.div = document.createElement("div");
+    this.div.className = "textLayer";
   }
 
   #finishRendering() {
@@ -68,48 +65,80 @@ class TextLayerBuilder {
 
     const endOfContent = document.createElement("div");
     endOfContent.className = "endOfContent";
-    this.textLayerDiv.append(endOfContent);
+    this.div.append(endOfContent);
 
-    this.eventBus.dispatch("textlayerrendered", {
-      source: this,
-      pageNumber: this.pageNumber,
-      numTextDivs: this.textDivs.length,
-    });
+    this.#bindMouse();
+  }
+
+  get numTextDivs() {
+    return this.textDivs.length;
   }
 
   /**
    * Renders the text layer.
    */
-  render() {
-    if (!(this.textContent || this.textContentStream) || this.renderingDone) {
+  async render(viewport) {
+    if (!(this.textContent || this.textContentStream)) {
+      throw new Error(
+        `Neither "textContent" nor "textContentStream" specified.`
+      );
+    }
+
+    const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
+    if (this.renderingDone) {
+      const { rotation } = viewport;
+      const mustRotate = rotation !== this.#rotation;
+      const mustRescale = scale !== this.#scale;
+      if (mustRotate || mustRescale) {
+        this.hide();
+        updateTextLayer({
+          container: this.div,
+          viewport,
+          textDivs: this.textDivs,
+          textDivProperties: this.textDivProperties,
+          isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
+          mustRescale,
+          mustRotate,
+        });
+        this.show();
+        this.#scale = scale;
+        this.#rotation = rotation;
+      }
       return;
     }
-    this.cancel();
 
-    this.textDivs.length = 0;
+    this.cancel();
     this.highlighter?.setTextMapping(this.textDivs, this.textContentItemsStr);
     this.accessibilityManager?.setTextMapping(this.textDivs);
 
-    const textLayerFrag = document.createDocumentFragment();
     this.textLayerRenderTask = renderTextLayer({
       textContent: this.textContent,
       textContentStream: this.textContentStream,
-      container: textLayerFrag,
-      viewport: this.viewport,
+      container: this.div,
+      viewport,
       textDivs: this.textDivs,
+      textDivProperties: this.textDivProperties,
       textContentItemsStr: this.textContentItemsStr,
+      isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
     });
-    this.textLayerRenderTask.promise.then(
-      () => {
-        this.textLayerDiv.append(textLayerFrag);
-        this.#finishRendering();
-        this.highlighter?.enable();
-        this.accessibilityManager?.enable();
-      },
-      function (reason) {
-        // Cancelled or failed to render text layer; skipping errors.
-      }
-    );
+
+    await this.textLayerRenderTask.promise;
+    this.#finishRendering();
+    this.#scale = scale;
+    this.accessibilityManager?.enable();
+    this.show();
+  }
+
+  hide() {
+    // We turn off the highlighter in order to avoid to scroll into view an
+    // element of the text layer which could be hidden.
+    this.highlighter?.disable();
+    this.div.hidden = true;
+  }
+
+  show() {
+    this.div.hidden = false;
+    this.highlighter?.enable();
   }
 
   /**
@@ -122,6 +151,9 @@ class TextLayerBuilder {
     }
     this.highlighter?.disable();
     this.accessibilityManager?.disable();
+    this.textContentItemsStr.length = 0;
+    this.textDivs.length = 0;
+    this.textDivProperties = new WeakMap();
   }
 
   setTextContentStream(readableStream) {
@@ -140,7 +172,7 @@ class TextLayerBuilder {
    * dragged up or down.
    */
   #bindMouse() {
-    const div = this.textLayerDiv;
+    const { div } = this;
 
     div.addEventListener("mousedown", evt => {
       const end = div.querySelector(".endOfContent");

@@ -21,7 +21,6 @@
 /** @typedef {import("./annotation_layer_builder").AnnotationLayerBuilder} AnnotationLayerBuilder */
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer_builder").AnnotationEditorLayerBuilder} AnnotationEditorLayerBuilder */
-/** @typedef {import("./event_utils").EventBus} EventBus */
 // eslint-disable-next-line max-len
 /** @typedef {import("./struct_tree_builder").StructTreeLayerBuilder} StructTreeLayerBuilder */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
@@ -168,12 +167,9 @@ class IRenderableView {
 class IPDFTextLayerFactory {
   /**
    * @typedef {Object} CreateTextLayerBuilderParameters
-   * @property {HTMLDivElement} textLayerDiv
-   * @property {number} pageIndex
-   * @property {PageViewport} viewport
-   * @property {EventBus} eventBus
    * @property {TextHighlighter} highlighter
    * @property {TextAccessibilityManager} [accessibilityManager]
+   * @property {boolean} [isOffscreenCanvasSupported]
    */
 
   /**
@@ -181,12 +177,9 @@ class IPDFTextLayerFactory {
    * @returns {TextLayerBuilder}
    */
   createTextLayerBuilder({
-    textLayerDiv,
-    pageIndex,
-    viewport,
-    eventBus,
     highlighter,
     accessibilityManager,
+    isOffscreenCanvasSupported,
   }) {}
 }
 

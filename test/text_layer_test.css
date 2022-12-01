@@ -22,9 +22,11 @@
   right: 0;
   bottom: 0;
   line-height: 1;
+  opacity: 1;
 }
 .textLayer span,
 .textLayer br {
+  color: black;
   position: absolute;
   white-space: pre;
   transform-origin: 0% 0%;
