@@ -168,7 +168,7 @@ class Rasterize {
   }
 
   static get textStylePromise() {
-    const styles = ["./text_layer_test.css"];
+    const styles = [VIEWER_CSS, "./text_layer_test.css"];
     return shadow(this, "textStylePromise", loadStyles(styles));
   }
 
@@ -256,8 +256,10 @@ class Rasterize {
       // Items are transformed to have 1px font size.
       svg.setAttribute("font-size", 1);
 
-      const [overrides] = await this.textStylePromise;
-      style.textContent = overrides;
+      const [common, overrides] = await this.textStylePromise;
+      style.textContent =
+        `${common}\n${overrides}\n` +
+        `:root { --scale-factor: ${viewport.scale} }`;
 
       // Rendering text layer as HTML.
       const task = renderTextLayer({
@@ -265,6 +267,7 @@ class Rasterize {
         container: div,
         viewport,
       });
+
       await task.promise;
       svg.append(foreignObject);
 
