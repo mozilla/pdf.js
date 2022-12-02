@@ -224,13 +224,13 @@ class PageViewport {
     if (rotateA === 0) {
       offsetCanvasX = Math.abs(centerY - viewBox[1]) * scale + offsetX;
       offsetCanvasY = Math.abs(centerX - viewBox[0]) * scale + offsetY;
-      width = Math.abs(viewBox[3] - viewBox[1]) * scale;
-      height = Math.abs(viewBox[2] - viewBox[0]) * scale;
+      width = (viewBox[3] - viewBox[1]) * scale;
+      height = (viewBox[2] - viewBox[0]) * scale;
     } else {
       offsetCanvasX = Math.abs(centerX - viewBox[0]) * scale + offsetX;
       offsetCanvasY = Math.abs(centerY - viewBox[1]) * scale + offsetY;
-      width = Math.abs(viewBox[2] - viewBox[0]) * scale;
-      height = Math.abs(viewBox[3] - viewBox[1]) * scale;
+      width = (viewBox[2] - viewBox[0]) * scale;
+      height = (viewBox[3] - viewBox[1]) * scale;
     }
     // creating transform for the following operations:
     // translate(-centerX, -centerY), rotate and flip vertically,
