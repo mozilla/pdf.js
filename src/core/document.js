@@ -146,14 +146,14 @@ class Page {
     if (this.xfaData) {
       return this.xfaData.bbox;
     }
-
-    const box = this._getInheritableProperty(name, /* getArray = */ true);
+    let box = this._getInheritableProperty(name, /* getArray = */ true);
 
     if (Array.isArray(box) && box.length === 4) {
-      if (box[2] - box[0] !== 0 && box[3] - box[1] !== 0) {
+      box = Util.normalizeRect(box);
+      if (box[2] - box[0] > 0 && box[3] - box[1] > 0) {
         return box;
       }
-      warn(`Empty /${name} entry.`);
+      warn(`Empty, or invalid, /${name} entry.`);
     }
     return null;
   }
@@ -190,18 +190,15 @@ class Page {
     // extend beyond the boundaries of the media box. If they do, they are
     // effectively reduced to their intersection with the media box."
     const { cropBox, mediaBox } = this;
-    let view;
-    if (cropBox === mediaBox || isArrayEqual(cropBox, mediaBox)) {
-      view = mediaBox;
-    } else {
+
+    if (cropBox !== mediaBox && !isArrayEqual(cropBox, mediaBox)) {
       const box = Util.intersect(cropBox, mediaBox);
-      if (box && box[2] - box[0] !== 0 && box[3] - box[1] !== 0) {
-        view = box;
-      } else {
-        warn("Empty /CropBox and /MediaBox intersection.");
+      if (box && box[2] - box[0] > 0 && box[3] - box[1] > 0) {
+        return shadow(this, "view", box);
       }
+      warn("Empty /CropBox and /MediaBox intersection.");
     }
-    return shadow(this, "view", view || mediaBox);
+    return shadow(this, "view", mediaBox);
   }
 
   get rotate() {
