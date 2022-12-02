@@ -2172,6 +2172,7 @@ function packageJson() {
       canvas: "^2.10.2",
     },
     dependencies: {
+      "fit-curve": "^0.2.0",
       "web-streams-polyfill": "^3.2.1",
     },
     browser: {
