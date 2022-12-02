@@ -35,7 +35,7 @@ const TestReporter = function (browser) {
       status,
       description,
     };
-    if (typeof error !== "undefined") {
+    if (error !== undefined) {
       message.error = error;
     }
     send("/submit_task_results", message);
