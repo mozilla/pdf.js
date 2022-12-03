@@ -873,7 +873,7 @@ class PDFPageView {
       };
       this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
       this.structTreeLayer =
-        this.structTreeLayerFactory.createStructTreeLayerBuilder({ pdfPage });
+        this.structTreeLayerFactory.createStructTreeLayerBuilder();
     }
 
     div.setAttribute("data-loaded", true);
