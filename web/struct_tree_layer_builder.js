@@ -72,8 +72,19 @@ const PDF_ROLE_TO_HTML_ROLE = {
 const HEADING_PATTERN = /^H(\d+)$/;
 
 class StructTreeLayerBuilder {
+  #treeDom = undefined;
+
+  get renderingDone() {
+    return this.#treeDom !== undefined;
+  }
+
   render(structTree) {
-    return this.#walk(structTree);
+    if (this.#treeDom !== undefined) {
+      return this.#treeDom;
+    }
+    const treeDom = this.#walk(structTree);
+    treeDom?.classList.add("structTree");
+    return (this.#treeDom = treeDom);
   }
 
   #setAttributes(structElement, htmlElement) {
