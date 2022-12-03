@@ -14,8 +14,6 @@
  */
 /* globals pdfjsLib, pdfjsViewer */
 
-"use strict";
-
 const {
   AnnotationLayer,
   AnnotationMode,
@@ -322,7 +320,6 @@ class Rasterize {
  * @property {HTMLDivElement} end - Container for a completion message.
  */
 
-// eslint-disable-next-line no-unused-vars
 class Driver {
   /**
    * @param {DriverOptions} options
@@ -962,3 +959,5 @@ class Driver {
     return capability.promise;
   }
 }
+
+export { Driver };
