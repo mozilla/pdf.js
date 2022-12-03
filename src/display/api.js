@@ -1623,9 +1623,7 @@ class PDFPageProxy {
    *   or `null` when no structure tree is present for the current page.
    */
   getStructTree() {
-    return (this._structTreePromise ||= this._transport.getStructTree(
-      this._pageIndex
-    ));
+    return this._transport.getStructTree(this._pageIndex);
   }
 
   /**
@@ -1659,7 +1657,6 @@ class PDFPageProxy {
     this._bitmaps.clear();
     this._annotationPromises.clear();
     this._jsActionsPromise = null;
-    this._structTreePromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1694,7 +1691,6 @@ class PDFPageProxy {
     this.objs.clear();
     this._annotationPromises.clear();
     this._jsActionsPromise = null;
-    this._structTreePromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
