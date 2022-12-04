@@ -13,25 +13,28 @@
  * limitations under the License.
  */
 
+/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("./api").TextContent} TextContent */
+
 import {
   AbortException,
   createPromiseCapability,
   FeatureTest,
   Util,
 } from "../shared/util.js";
+import { deprecated } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
  *
  * @typedef {Object} TextLayerRenderParameters
- * @property {import("./api").TextContent} [textContent] - Text content to
- *   render (the object is returned by the page's `getTextContent` method).
- * @property {ReadableStream} [textContentStream] - Text content stream to
- *   render (the stream is returned by the page's `streamTextContent` method).
+ * @property {ReadableStream | TextContent} textContentSource - Text content to
+ *   render, i.e. the value returned by the page's `streamTextContent` or
+ *   `getTextContent` method.
  * @property {HTMLElement} container - The DOM node that will contain the text
- * runs.
- * @property {import("./display_utils").PageViewport} viewport - The target
- *   viewport to properly layout the text runs.
+ *   runs.
+ * @property {PageViewport} viewport - The target viewport to properly layout
+ *   the text runs.
  * @property {Array<HTMLElement>} [textDivs] - HTML elements that correspond to
  *   the text items of the textContent input.
  *   This is output and shall initially be set to an empty array.
@@ -49,9 +52,9 @@ import {
  *
  * @typedef {Object} TextLayerUpdateParameters
  * @property {HTMLElement} container - The DOM node that will contain the text
- * runs.
- * @property {import("./display_utils").PageViewport} viewport - The target
- *   viewport to properly layout the text runs.
+ *   runs.
+ * @property {PageViewport} viewport - The target viewport to properly layout
+ *   the text runs.
  * @property {Array<HTMLElement>} [textDivs] - HTML elements that correspond to
  *   the text items of the textContent input.
  *   This is output and shall initially be set to an empty array.
@@ -61,7 +64,7 @@ import {
  *   OffscreenCanvas to measure string widths.
  * @property {boolean} [mustRotate] true if the text layer must be rotated.
  * @property {boolean} [mustRescale] true if the text layer contents must be
- * rescaled.
+ *   rescaled.
  */
 
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -236,7 +239,7 @@ function appendText(task, geom, styles) {
     textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
   }
   task._textDivProperties.set(textDiv, textDivProperties);
-  if (task._textContentStream) {
+  if (task._isReadableStream) {
     task._layoutText(textDiv);
   }
 }
@@ -286,7 +289,7 @@ function render(task) {
     return;
   }
 
-  if (!task._textContentStream) {
+  if (!task._isReadableStream) {
     for (const textDiv of textDivs) {
       task._layoutText(textDiv);
     }
@@ -298,8 +301,7 @@ function render(task) {
 
 class TextLayerRenderTask {
   constructor({
-    textContent,
-    textContentStream,
+    textContentSource,
     container,
     viewport,
     textDivs,
@@ -307,8 +309,8 @@ class TextLayerRenderTask {
     textContentItemsStr,
     isOffscreenCanvasSupported,
   }) {
-    this._textContent = textContent;
-    this._textContentStream = textContentStream;
+    this._textContentSource = textContentSource;
+    this._isReadableStream = textContentSource instanceof ReadableStream;
     this._container = this._rootContainer = container;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
@@ -421,14 +423,7 @@ class TextLayerRenderTask {
     const capability = createPromiseCapability();
     let styleCache = Object.create(null);
 
-    // The temporary canvas is used to measure text length in the DOM.
-
-    if (this._textContent) {
-      const textItems = this._textContent.items;
-      const textStyles = this._textContent.styles;
-      this._processItems(textItems, textStyles);
-      capability.resolve();
-    } else if (this._textContentStream) {
+    if (this._isReadableStream) {
       const pump = () => {
         this._reader.read().then(({ value, done }) => {
           if (done) {
@@ -442,12 +437,14 @@ class TextLayerRenderTask {
         }, capability.reject);
       };
 
-      this._reader = this._textContentStream.getReader();
+      this._reader = this._textContentSource.getReader();
       pump();
+    } else if (this._textContentSource) {
+      const { items, styles } = this._textContentSource;
+      this._processItems(items, styles);
+      capability.resolve();
     } else {
-      throw new Error(
-        'Neither "textContent" nor "textContentStream" parameters specified.'
-      );
+      throw new Error('No "textContentSource" parameter specified.');
     }
 
     capability.promise.then(() => {
@@ -458,27 +455,29 @@ class TextLayerRenderTask {
 }
 
 /**
- * @param {TextLayerRenderParameters} renderParameters
+ * @param {TextLayerRenderParameters} params
  * @returns {TextLayerRenderTask}
  */
-function renderTextLayer(renderParameters) {
-  const task = new TextLayerRenderTask({
-    textContent: renderParameters.textContent,
-    textContentStream: renderParameters.textContentStream,
-    container: renderParameters.container,
-    viewport: renderParameters.viewport,
-    textDivs: renderParameters.textDivs,
-    textContentItemsStr: renderParameters.textContentItemsStr,
-    textDivProperties: renderParameters.textDivProperties,
-    isOffscreenCanvasSupported: renderParameters.isOffscreenCanvasSupported,
-  });
+function renderTextLayer(params) {
+  if (
+    (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+    !params.textContentSource &&
+    (params.textContent || params.textContentStream)
+  ) {
+    deprecated(
+      "The TextLayerRender `textContent`/`textContentStream` parameters " +
+        "will be removed in the future, please use `textContentSource` instead."
+    );
+    params.textContentSource = params.textContent || params.textContentStream;
+  }
+  const task = new TextLayerRenderTask(params);
   task._render();
   return task;
 }
 
 /**
- * @param {TextLayerUpdateParameters} renderParameters
- * @returns {TextLayerRenderTask}
+ * @param {TextLayerUpdateParameters} params
+ * @returns {undefined}
  */
 function updateTextLayer({
   container,
