@@ -15,6 +15,7 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("../src/display/api").TextContent} TextContent */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
@@ -36,18 +37,18 @@ import { renderTextLayer, updateTextLayer } from "pdfjs-lib";
  * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
+  #rotation = 0;
+
   #scale = 0;
 
-  #rotation = 0;
+  #textContentSource = null;
 
   constructor({
     highlighter = null,
     accessibilityManager = null,
     isOffscreenCanvasSupported = true,
   }) {
-    this.textContent = null;
     this.textContentItemsStr = [];
-    this.textContentStream = null;
     this.renderingDone = false;
     this.textDivs = [];
     this.textDivProperties = new WeakMap();
@@ -76,12 +77,11 @@ class TextLayerBuilder {
 
   /**
    * Renders the text layer.
+   * @param {PageViewport} viewport
    */
   async render(viewport) {
-    if (!(this.textContent || this.textContentStream)) {
-      throw new Error(
-        `Neither "textContent" nor "textContentStream" specified.`
-      );
+    if (!this.#textContentSource) {
+      throw new Error('No "textContentSource" parameter specified.');
     }
 
     const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
@@ -112,8 +112,7 @@ class TextLayerBuilder {
     this.accessibilityManager?.setTextMapping(this.textDivs);
 
     this.textLayerRenderTask = renderTextLayer({
-      textContent: this.textContent,
-      textContentStream: this.textContentStream,
+      textContentSource: this.#textContentSource,
       container: this.div,
       viewport,
       textDivs: this.textDivs,
@@ -156,14 +155,12 @@ class TextLayerBuilder {
     this.textDivProperties = new WeakMap();
   }
 
-  setTextContentStream(readableStream) {
+  /**
+   * @param {ReadableStream | TextContent} source
+   */
+  setTextContentSource(source) {
     this.cancel();
-    this.textContentStream = readableStream;
-  }
-
-  setTextContent(textContent) {
-    this.cancel();
-    this.textContent = textContent;
+    this.#textContentSource = source;
   }
 
   /**

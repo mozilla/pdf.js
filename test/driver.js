@@ -263,7 +263,7 @@ class Rasterize {
 
       // Rendering text layer as HTML.
       const task = renderTextLayer({
-        textContent,
+        textContentSource: textContent,
         container: div,
         viewport,
       });

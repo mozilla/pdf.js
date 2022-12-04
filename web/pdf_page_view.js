@@ -301,7 +301,7 @@ class PDFPageView {
         const readableStream = pdfPage.streamTextContent({
           includeMarkedContent: true,
         });
-        textLayer.setTextContentStream(readableStream);
+        textLayer.setTextContentSource(readableStream);
       }
       await textLayer.render(viewport);
     } catch (ex) {
