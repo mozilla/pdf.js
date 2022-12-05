@@ -237,9 +237,7 @@ class IPDFAnnotationEditorLayerFactory {
    * @property {HTMLDivElement} pageDiv
    * @property {PDFPageProxy} pdfPage
    * @property {IL10n} l10n
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    * @property {TextAccessibilityManager} [accessibilityManager]
-   *   data in forms.
    */
 
   /**
@@ -251,7 +249,6 @@ class IPDFAnnotationEditorLayerFactory {
     pageDiv,
     pdfPage,
     l10n,
-    annotationStorage = null,
     accessibilityManager,
   }) {}
 }
