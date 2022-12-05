@@ -284,7 +284,6 @@ function render(task) {
   // No point in rendering many divs as it would make the browser
   // unusable even after the divs are rendered.
   if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
-    task._renderingDone = true;
     capability.resolve();
     return;
   }
@@ -294,8 +293,6 @@ function render(task) {
       task._layoutText(textDiv);
     }
   }
-
-  task._renderingDone = true;
   capability.resolve();
 }
 
@@ -318,7 +315,6 @@ class TextLayerRenderTask {
 
     this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
-    this._renderingDone = false;
     this._canceled = false;
     this._capability = createPromiseCapability();
     this._layoutTextParams = {
