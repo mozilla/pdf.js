@@ -25,7 +25,7 @@ import {
   Util,
   warn,
 } from "../../shared/util.js";
-import { getColorValues, getRGB } from "../display_utils.js";
+import { getColorValues, getRGB, PixelsPerInch } from "../display_utils.js";
 
 function bindEvents(obj, element, names) {
   for (const name of names) {
@@ -350,11 +350,15 @@ class AnnotationEditorUIManager {
 
   #allLayers = new Map();
 
+  #annotationStorage = null;
+
   #commandManager = new CommandManager();
 
   #currentPageIndex = 0;
 
   #editorTypes = null;
+
+  #editorsToRescale = new Set();
 
   #eventBus = null;
 
@@ -377,6 +381,10 @@ class AnnotationEditorUIManager {
   #boundOnEditingAction = this.onEditingAction.bind(this);
 
   #boundOnPageChanging = this.onPageChanging.bind(this);
+
+  #boundOnScaleChanging = this.onScaleChanging.bind(this);
+
+  #boundOnRotationChanging = this.onRotationChanging.bind(this);
 
   #previousStates = {
     isEditing: false,
@@ -413,22 +421,32 @@ class AnnotationEditorUIManager {
     [["Escape", "mac+Escape"], AnnotationEditorUIManager.prototype.unselectAll],
   ]);
 
-  constructor(container, eventBus) {
+  constructor(container, eventBus, annotationStorage) {
     this.#container = container;
     this.#eventBus = eventBus;
     this.#eventBus._on("editingaction", this.#boundOnEditingAction);
     this.#eventBus._on("pagechanging", this.#boundOnPageChanging);
+    this.#eventBus._on("scalechanging", this.#boundOnScaleChanging);
+    this.#eventBus._on("rotationchanging", this.#boundOnRotationChanging);
+    this.#annotationStorage = annotationStorage;
+    this.viewParameters = {
+      realScale: PixelsPerInch.PDF_TO_CSS_UNITS,
+      rotation: 0,
+    };
   }
 
   destroy() {
     this.#removeKeyboardManager();
     this.#eventBus._off("editingaction", this.#boundOnEditingAction);
     this.#eventBus._off("pagechanging", this.#boundOnPageChanging);
+    this.#eventBus._off("scalechanging", this.#boundOnScaleChanging);
+    this.#eventBus._off("rotationchanging", this.#boundOnRotationChanging);
     for (const layer of this.#allLayers.values()) {
       layer.destroy();
     }
     this.#allLayers.clear();
     this.#allEditors.clear();
+    this.#editorsToRescale.clear();
     this.#activeEditor = null;
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
@@ -440,6 +458,41 @@ class AnnotationEditorUIManager {
 
   focusMainContainer() {
     this.#container.focus();
+  }
+
+  addShouldRescale(editor) {
+    this.#editorsToRescale.add(editor);
+  }
+
+  removeShouldRescale(editor) {
+    this.#editorsToRescale.delete(editor);
+  }
+
+  onScaleChanging({ scale }) {
+    this.commitOrRemove();
+    this.viewParameters.realScale = scale * PixelsPerInch.PDF_TO_CSS_UNITS;
+    for (const editor of this.#editorsToRescale) {
+      editor.onScaleChanging();
+    }
+  }
+
+  onRotationChanging({ pagesRotation }) {
+    this.commitOrRemove();
+    this.viewParameters.rotation = pagesRotation;
+  }
+
+  /**
+   * Add an editor in the annotation storage.
+   * @param {AnnotationEditor} editor
+   */
+  addToAnnotationStorage(editor) {
+    if (
+      !editor.isEmpty() &&
+      this.#annotationStorage &&
+      !this.#annotationStorage.has(editor.id)
+    ) {
+      this.#annotationStorage.setValue(editor.id, editor);
+    }
   }
 
   #addKeyboardManager() {
@@ -646,6 +699,14 @@ class AnnotationEditorUIManager {
     return this.#idManager.getId();
   }
 
+  get currentLayer() {
+    return this.#allLayers.get(this.#currentPageIndex);
+  }
+
+  get currentPageIndex() {
+    return this.#currentPageIndex;
+  }
+
   /**
    * Add a new layer for a page which will contains the editors.
    * @param {AnnotationEditorLayer} layer
@@ -783,6 +844,7 @@ class AnnotationEditorUIManager {
   removeEditor(editor) {
     this.#allEditors.delete(editor.id);
     this.unselect(editor);
+    this.#annotationStorage?.remove(editor.id);
   }
 
   /**

@@ -599,6 +599,49 @@ describe("Editor", () => {
               [0, 0, 0],
               [0, 0, 0],
             ]);
+
+          // Increase the font size for all the annotations.
+          // Select all.
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+          await page.waitForTimeout(10);
+
+          page.evaluate(() => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: /* AnnotationEditorParamsType.FREETEXT_SIZE */ 1,
+                value: 13,
+              }
+            );
+          });
+
+          await page.waitForTimeout(10);
+          expect(await serialize("fontSize"))
+            .withContext(`In ${browserName}`)
+            .toEqual([13, 13]);
+
+          // Change the colors for all the annotations.
+          page.evaluate(() => {
+            window.PDFViewerApplication.eventBus.dispatch(
+              "switchannotationeditorparams",
+              {
+                source: null,
+                type: /* AnnotationEditorParamsType.FREETEXT_COLOR */ 2,
+                value: "#FF0000",
+              }
+            );
+          });
+
+          await page.waitForTimeout(10);
+          expect(await serialize("color"))
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              [255, 0, 0],
+              [255, 0, 0],
+            ]);
         })
       );
     });

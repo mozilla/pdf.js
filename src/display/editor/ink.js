@@ -165,7 +165,7 @@ class InkEditor extends AnnotationEditor {
    */
   #updateThickness(thickness) {
     const savedThickness = this.thickness;
-    this.parent.addCommands({
+    this.addCommands({
       cmd: () => {
         this.thickness = thickness;
         this.#fitToContent();
@@ -187,7 +187,7 @@ class InkEditor extends AnnotationEditor {
    */
   #updateColor(color) {
     const savedColor = this.color;
-    this.parent.addCommands({
+    this.addCommands({
       cmd: () => {
         this.color = color;
         this.#redraw();
@@ -210,7 +210,7 @@ class InkEditor extends AnnotationEditor {
   #updateOpacity(opacity) {
     opacity /= 100;
     const savedOpacity = this.opacity;
-    this.parent.addCommands({
+    this.addCommands({
       cmd: () => {
         this.opacity = opacity;
         this.#redraw();
@@ -268,6 +268,27 @@ class InkEditor extends AnnotationEditor {
     super.remove();
   }
 
+  setParent(parent) {
+    if (!this.parent && parent) {
+      // We've a parent hence the rescale will be handled thanks to the
+      // ResizeObserver.
+      this._uiManager.removeShouldRescale(this);
+    } else if (this.parent && parent === null) {
+      // The editor is removed from the DOM, hence we handle the rescale thanks
+      // to the onScaleChanging callback.
+      // This way, it'll be saved/printed correctly.
+      this._uiManager.addShouldRescale(this);
+    }
+    super.setParent(parent);
+  }
+
+  onScaleChanging() {
+    const [parentWidth, parentHeight] = this.parentDimensions;
+    const width = this.width * parentWidth;
+    const height = this.height * parentHeight;
+    this.setDimensions(width, height);
+  }
+
   /** @inheritdoc */
   enableEditMode() {
     if (this.#disableEditing || this.canvas === null) {
@@ -311,14 +332,17 @@ class InkEditor extends AnnotationEditor {
   }
 
   #getInitialBBox() {
-    const { width, height, rotation } = this.parent.viewport;
-    switch (rotation) {
+    const {
+      parentRotation,
+      parentDimensions: [width, height],
+    } = this;
+    switch (parentRotation) {
       case 90:
-        return [0, width, width, height];
+        return [0, height, height, width];
       case 180:
         return [width, height, width, height];
       case 270:
-        return [height, 0, width, height];
+        return [width, 0, height, width];
       default:
         return [0, 0, width, height];
     }
@@ -328,12 +352,12 @@ class InkEditor extends AnnotationEditor {
    * Set line styles.
    */
   #setStroke() {
-    this.ctx.lineWidth =
-      (this.thickness * this.parent.scaleFactor) / this.scaleFactor;
-    this.ctx.lineCap = "round";
-    this.ctx.lineJoin = "round";
-    this.ctx.miterLimit = 10;
-    this.ctx.strokeStyle = `${this.color}${opacityToHex(this.opacity)}`;
+    const { ctx, color, opacity, thickness, parentScale, scaleFactor } = this;
+    ctx.lineWidth = (thickness * parentScale) / scaleFactor;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.miterLimit = 10;
+    ctx.strokeStyle = `${color}${opacityToHex(opacity)}`;
   }
 
   /**
@@ -445,7 +469,7 @@ class InkEditor extends AnnotationEditor {
       }
     };
 
-    this.parent.addCommands({ cmd, undo, mustExec: true });
+    this.addCommands({ cmd, undo, mustExec: true });
   }
 
   /**
@@ -493,9 +517,11 @@ class InkEditor extends AnnotationEditor {
     // When commiting, the position of this editor is changed, hence we must
     // move it to the right position in the DOM.
     this.parent.moveEditorInDOM(this);
-    // After the div has been moved in the DOM, the focus may have been stolen
-    // by document.body, hence we just keep it here.
-    this.div.focus();
+    if (this.pageIndex === this._uiManager.currentPageIndex) {
+      // After the div has been moved in the DOM, the focus may have been stolen
+      // by document.body, hence we just keep it here.
+      this.div.focus();
+    }
   }
 
   /** @inheritdoc */
@@ -581,7 +607,7 @@ class InkEditor extends AnnotationEditor {
       this.#boundCanvasPointermove
     );
 
-    this.parent.addToAnnotationStorage(this);
+    this.addToAnnotationStorage();
   }
 
   /**
@@ -649,7 +675,7 @@ class InkEditor extends AnnotationEditor {
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
-      const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+      const [parentWidth, parentHeight] = this.parentDimensions;
       this.setAt(
         baseX * parentWidth,
         baseY * parentHeight,
@@ -676,7 +702,7 @@ class InkEditor extends AnnotationEditor {
     if (!this.#isCanvasInitialized) {
       return;
     }
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const [parentWidth, parentHeight] = this.parentDimensions;
     this.canvas.width = Math.ceil(this.width * parentWidth);
     this.canvas.height = Math.ceil(this.height * parentHeight);
     this.#updateTransform();
@@ -712,7 +738,7 @@ class InkEditor extends AnnotationEditor {
       this.setDims(width, height);
     }
 
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const [parentWidth, parentHeight] = this.parentDimensions;
     this.width = width / parentWidth;
     this.height = height / parentHeight;
 
@@ -940,7 +966,7 @@ class InkEditor extends AnnotationEditor {
    */
   #getPadding() {
     return this.#disableEditing
-      ? Math.ceil(this.thickness * this.parent.scaleFactor)
+      ? Math.ceil(this.thickness * this.parentScale)
       : 0;
   }
 
@@ -967,7 +993,7 @@ class InkEditor extends AnnotationEditor {
     const width = Math.ceil(padding + this.#baseWidth * this.scaleFactor);
     const height = Math.ceil(padding + this.#baseHeight * this.scaleFactor);
 
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const [parentWidth, parentHeight] = this.parentDimensions;
     this.width = width / parentWidth;
     this.height = height / parentHeight;
 
@@ -1005,17 +1031,17 @@ class InkEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static deserialize(data, parent) {
-    const editor = super.deserialize(data, parent);
+  static deserialize(data, parent, uiManager) {
+    const editor = super.deserialize(data, parent, uiManager);
 
     editor.thickness = data.thickness;
     editor.color = Util.makeHexColor(...data.color);
     editor.opacity = data.opacity;
 
-    const [pageWidth, pageHeight] = parent.pageDimensions;
+    const [pageWidth, pageHeight] = editor.pageDimensions;
     const width = editor.width * pageWidth;
     const height = editor.height * pageHeight;
-    const scaleFactor = parent.scaleFactor;
+    const scaleFactor = editor.parentScale;
     const padding = data.thickness / 2;
 
     editor.#aspectRatio = width / height;
@@ -1058,10 +1084,6 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
-    if (this._serialized !== undefined) {
-      return this._serialized;
-    }
-
     if (this.isEmpty()) {
       return null;
     }
@@ -1078,12 +1100,12 @@ class InkEditor extends AnnotationEditor {
       thickness: this.thickness,
       opacity: this.opacity,
       paths: this.#serializePaths(
-        this.scaleFactor / this.parent.scaleFactor,
+        this.scaleFactor / this.parentScale,
         this.translationX,
         this.translationY,
         height
       ),
-      pageIndex: this.parent.pageIndex,
+      pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,
     };

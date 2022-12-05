@@ -111,9 +111,7 @@ class DefaultAnnotationEditorLayerFactory {
    * @property {HTMLDivElement} pageDiv
    * @property {PDFPageProxy} pdfPage
    * @property {IL10n} l10n
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    * @property {TextAccessibilityManager} [accessibilityManager]
-   *   data in forms.
    */
 
   /**
@@ -126,7 +124,6 @@ class DefaultAnnotationEditorLayerFactory {
     pdfPage,
     accessibilityManager = null,
     l10n,
-    annotationStorage = null,
   }) {
     return new AnnotationEditorLayerBuilder({
       uiManager,
@@ -134,7 +131,6 @@ class DefaultAnnotationEditorLayerFactory {
       pdfPage,
       accessibilityManager,
       l10n,
-      annotationStorage,
     });
   }
 }
