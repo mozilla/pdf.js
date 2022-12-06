@@ -318,6 +318,33 @@ class PDFPageView {
       numTextDivs: textLayer.numTextDivs,
       error,
     });
+
+    if (this.structTreeLayerFactory) {
+      this.#renderStructTreeLayer();
+    }
+  }
+
+  /**
+   * The structure tree is currently only supported when the text layer is
+   * enabled and a canvas is used for rendering.
+   *
+   * The structure tree must be generated after the text layer for the
+   * aria-owns to work.
+   */
+  async #renderStructTreeLayer() {
+    if (!this.textLayer) {
+      return;
+    }
+    this.structTreeLayer ||=
+      this.structTreeLayerFactory.createStructTreeLayerBuilder();
+
+    const tree = await (!this.structTreeLayer.renderingDone
+      ? this.pdfPage.getStructTree()
+      : null);
+    const treeDom = this.structTreeLayer?.render(tree);
+    if (treeDom) {
+      this.canvas?.append(treeDom);
+    }
   }
 
   async _buildXfaTextContentItems(textDivs) {
@@ -578,6 +605,9 @@ class PDFPageView {
       this.textLayer.cancel();
       this.textLayer = null;
     }
+    if (this.structTreeLayer && !this.textLayer) {
+      this.structTreeLayer = null;
+    }
     if (
       this.annotationLayer &&
       (!keepAnnotationLayer || !this.annotationLayer.div)
@@ -597,10 +627,6 @@ class PDFPageView {
       this.xfaLayer.cancel();
       this.xfaLayer = null;
       this.textHighlighter?.disable();
-    }
-    if (this._onTextLayerRendered) {
-      this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
-      this._onTextLayerRendered = null;
     }
   }
 
@@ -842,38 +868,6 @@ class PDFPageView {
         pdfPage,
       });
       this._renderXfaLayer();
-    }
-
-    // The structure tree is currently only supported when the text layer is
-    // enabled and a canvas is used for rendering.
-    if (this.structTreeLayerFactory && this.textLayer && this.canvas) {
-      // The structure tree must be generated after the text layer for the
-      // aria-owns to work.
-      this._onTextLayerRendered = event => {
-        if (event.pageNumber !== this.id) {
-          return;
-        }
-        this.eventBus._off("textlayerrendered", this._onTextLayerRendered);
-        this._onTextLayerRendered = null;
-
-        if (!this.canvas) {
-          return; // The canvas was removed, prevent errors below.
-        }
-        this.pdfPage.getStructTree().then(tree => {
-          if (!tree) {
-            return;
-          }
-          if (!this.canvas) {
-            return; // The canvas was removed, prevent errors below.
-          }
-          const treeDom = this.structTreeLayer.render(tree);
-          treeDom.classList.add("structTree");
-          this.canvas.append(treeDom);
-        });
-      };
-      this.eventBus._on("textlayerrendered", this._onTextLayerRendered);
-      this.structTreeLayer =
-        this.structTreeLayerFactory.createStructTreeLayerBuilder({ pdfPage });
     }
 
     div.setAttribute("data-loaded", true);

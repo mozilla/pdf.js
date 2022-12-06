@@ -144,18 +144,10 @@ class DefaultAnnotationEditorLayerFactory {
  */
 class DefaultStructTreeLayerFactory {
   /**
-   * @typedef {Object} CreateStructTreeLayerBuilderParameters
-   * @property {PDFPageProxy} pdfPage
-   */
-
-  /**
-   * @param {CreateStructTreeLayerBuilderParameters}
    * @returns {StructTreeLayerBuilder}
    */
-  createStructTreeLayerBuilder({ pdfPage }) {
-    return new StructTreeLayerBuilder({
-      pdfPage,
-    });
+  createStructTreeLayerBuilder() {
+    return new StructTreeLayerBuilder();
   }
 }
 
