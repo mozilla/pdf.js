@@ -21,8 +21,6 @@
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
-// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
@@ -30,21 +28,8 @@
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 import { SimpleLinkService } from "./pdf_link_service.js";
-import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
-
-/**
- * @implements IPDFStructTreeLayerFactory
- */
-class DefaultStructTreeLayerFactory {
-  /**
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder() {
-    return new StructTreeLayerBuilder();
-  }
-}
 
 /**
  * @implements IPDFTextLayerFactory
@@ -100,8 +85,4 @@ class DefaultXfaLayerFactory {
   }
 }
 
-export {
-  DefaultStructTreeLayerFactory,
-  DefaultTextLayerFactory,
-  DefaultXfaLayerFactory,
-};
+export { DefaultTextLayerFactory, DefaultXfaLayerFactory };

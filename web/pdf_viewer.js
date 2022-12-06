@@ -24,8 +24,6 @@
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
-// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 // eslint-disable-next-line max-len
@@ -69,7 +67,6 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
-import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
@@ -206,7 +203,6 @@ class PDFPageViewBuffer {
 /**
  * Simple viewer control to display PDF content/pages.
  *
- * @implements {IPDFStructTreeLayerFactory}
  * @implements {IPDFTextLayerFactory}
  * @implements {IPDFXfaLayerFactory}
  */
@@ -792,7 +788,6 @@ class PDFViewer {
             annotationMode,
             xfaLayerFactory: this,
             textHighlighterFactory: this,
-            structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             renderer:
               typeof PDFJSDev === "undefined" ||
@@ -1730,13 +1725,6 @@ class PDFViewer {
       annotationStorage,
       linkService: this.linkService,
     });
-  }
-
-  /**
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder() {
-    return new StructTreeLayerBuilder();
   }
 
   /**

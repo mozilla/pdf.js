@@ -17,8 +17,6 @@
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-// eslint-disable-next-line max-len
-/** @typedef {import("./struct_tree_builder").StructTreeLayerBuilder} StructTreeLayerBuilder */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_layer_builder").TextLayerBuilder} TextLayerBuilder */
@@ -201,16 +199,6 @@ class IPDFXfaLayerFactory {
 /**
  * @interface
  */
-class IPDFStructTreeLayerFactory {
-  /**
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder() {}
-}
-
-/**
- * @interface
- */
 class IDownloadManager {
   /**
    * @param {string} url
@@ -278,7 +266,6 @@ export {
   IDownloadManager,
   IL10n,
   IPDFLinkService,
-  IPDFStructTreeLayerFactory,
   IPDFTextLayerFactory,
   IPDFXfaLayerFactory,
   IRenderableView,

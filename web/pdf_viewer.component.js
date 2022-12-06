@@ -14,7 +14,6 @@
  */
 
 import {
-  DefaultStructTreeLayerFactory,
   DefaultTextLayerFactory,
   DefaultXfaLayerFactory,
 } from "./default_factory.js";
@@ -56,6 +55,15 @@ class DefaultAnnotationLayerFactory {
       "The `DefaultAnnotationLayerFactory` has been removed, " +
         "please use the `annotationMode` option when initializing " +
         "the `PDFPageView`-instance to control AnnotationLayer rendering."
+    );
+  }
+}
+
+class DefaultStructTreeLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultStructTreeLayerFactory` has been removed, " +
+        "this functionality is automatically enabled when the TextLayer is used."
     );
   }
 }
