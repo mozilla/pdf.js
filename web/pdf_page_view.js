@@ -20,8 +20,6 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
-// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
@@ -53,6 +51,7 @@ import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
+import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
 
 /**
@@ -76,7 +75,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {IPDFXfaLayerFactory} [xfaLayerFactory]
- * @property {IPDFStructTreeLayerFactory} [structTreeLayerFactory]
  * @property {Object} [textHighlighterFactory]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
@@ -160,7 +158,6 @@ class PDFPageView {
     this.textLayerFactory = options.textLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
     this._textHighlighterFactory = options.textHighlighterFactory;
-    this.structTreeLayerFactory = options.structTreeLayerFactory;
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
@@ -351,9 +348,7 @@ class PDFPageView {
       error,
     });
 
-    if (this.structTreeLayerFactory) {
-      this.#renderStructTreeLayer();
-    }
+    this.#renderStructTreeLayer();
   }
 
   /**
@@ -367,8 +362,7 @@ class PDFPageView {
     if (!this.textLayer) {
       return;
     }
-    this.structTreeLayer ||=
-      this.structTreeLayerFactory.createStructTreeLayerBuilder();
+    this.structTreeLayer ||= new StructTreeLayerBuilder();
 
     const tree = await (!this.structTreeLayer.renderingDone
       ? this.pdfPage.getStructTree()
