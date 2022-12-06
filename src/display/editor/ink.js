@@ -1058,6 +1058,10 @@ class InkEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
+    if (this._serialized !== undefined) {
+      return this._serialized;
+    }
+
     if (this.isEmpty()) {
       return null;
     }

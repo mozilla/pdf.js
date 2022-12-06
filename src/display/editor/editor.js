@@ -68,6 +68,8 @@ class AnnotationEditor {
     this.rotation = this.parent.viewport.rotation;
 
     this.isAttachedToDOM = false;
+
+    this._serialized = undefined;
   }
 
   static get _defaultLineColor() {
@@ -76,6 +78,11 @@ class AnnotationEditor {
       "_defaultLineColor",
       this._colorManager.getHexCode("CanvasText")
     );
+  }
+
+  setParent(parent) {
+    this._serialized = !parent ? this.serialize() : undefined;
+    this.parent = parent;
   }
 
   /**
