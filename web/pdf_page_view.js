@@ -753,6 +753,7 @@ class PDFPageView {
     if (
       !this.textLayer &&
       this.textLayerMode !== TextLayerMode.DISABLE &&
+      !pdfPage.isPureXfa &&
       this.textLayerFactory
     ) {
       this._accessibilityManager ||= new TextAccessibilityManager();
@@ -878,7 +879,7 @@ class PDFPageView {
       }
     );
 
-    if (this.xfaLayerFactory) {
+    if (pdfPage.isPureXfa && this.xfaLayerFactory) {
       this.xfaLayer ||= this.xfaLayerFactory.createXfaLayerBuilder({
         pageDiv: div,
         pdfPage,

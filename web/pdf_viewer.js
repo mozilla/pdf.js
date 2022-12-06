@@ -658,7 +658,6 @@ class PDFViewer {
     if (!pdfDocument) {
       return;
     }
-    const isPureXfa = pdfDocument.isPureXfa;
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
@@ -732,13 +731,13 @@ class PDFViewer {
         if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
           const mode = annotationEditorMode;
 
-          if (isPureXfa) {
+          if (pdfDocument.isPureXfa) {
             console.warn("Warning: XFA-editing is not implemented.");
           } else if (isValidAnnotationEditorMode(mode)) {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
               this.eventBus,
-              this.pdfDocument?.annotationStorage
+              pdfDocument?.annotationStorage
             );
             if (mode !== AnnotationEditorType.NONE) {
               this.#annotationEditorUIManager.updateMode(mode);
@@ -758,15 +757,6 @@ class PDFViewer {
         // see issue 15795.
         docStyle.setProperty("--scale-factor", viewport.scale);
 
-        const textLayerFactory =
-          textLayerMode !== TextLayerMode.DISABLE && !isPureXfa ? this : null;
-        const annotationLayerFactory =
-          annotationMode !== AnnotationMode.DISABLE ? this : null;
-        const xfaLayerFactory = isPureXfa ? this : null;
-        const annotationEditorLayerFactory = this.#annotationEditorUIManager
-          ? this
-          : null;
-
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
             container: viewerElement,
@@ -776,12 +766,16 @@ class PDFViewer {
             defaultViewport: viewport.clone(),
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
-            textLayerFactory,
+            textLayerFactory:
+              textLayerMode !== TextLayerMode.DISABLE ? this : null,
             textLayerMode,
-            annotationLayerFactory,
+            annotationLayerFactory:
+              annotationMode !== AnnotationMode.DISABLE ? this : null,
             annotationMode,
-            xfaLayerFactory,
-            annotationEditorLayerFactory,
+            xfaLayerFactory: this,
+            annotationEditorLayerFactory: this.#annotationEditorUIManager
+              ? this
+              : null,
             textHighlighterFactory: this,
             structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
