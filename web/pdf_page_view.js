@@ -19,8 +19,6 @@
 /** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IL10n} IL10n */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
 // eslint-disable-next-line max-len
@@ -54,6 +52,7 @@ import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
 import { TextHighlighter } from "./text_highlighter.js";
+import { TextLayerBuilder } from "./text_layer_builder.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -66,7 +65,6 @@ import { TextHighlighter } from "./text_highlighter.js";
  *   A promise that is resolved with an {@link OptionalContentConfig} instance.
  *   The default value is `null`.
  * @property {PDFRenderingQueue} [renderingQueue] - The rendering queue object.
- * @property {IPDFTextLayerFactory} [textLayerFactory]
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
@@ -156,7 +154,6 @@ class PDFPageView {
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
-    this.textLayerFactory = options.textLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
     if (
       typeof PDFJSDev === "undefined" ||
@@ -763,12 +760,11 @@ class PDFPageView {
     if (
       !this.textLayer &&
       this.textLayerMode !== TextLayerMode.DISABLE &&
-      !pdfPage.isPureXfa &&
-      this.textLayerFactory
+      !pdfPage.isPureXfa
     ) {
       this._accessibilityManager ||= new TextAccessibilityManager();
 
-      this.textLayer = this.textLayerFactory.createTextLayerBuilder({
+      this.textLayer = new TextLayerBuilder({
         highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,

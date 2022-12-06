@@ -17,13 +17,8 @@
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-/** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_layer_builder").TextLayerBuilder} TextLayerBuilder */
 /** @typedef {import("./ui_utils").RenderingStates} RenderingStates */
 /** @typedef {import("./xfa_layer_builder").XfaLayerBuilder} XfaLayerBuilder */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 /**
  * @interface
@@ -158,28 +153,6 @@ class IRenderableView {
 /**
  * @interface
  */
-class IPDFTextLayerFactory {
-  /**
-   * @typedef {Object} CreateTextLayerBuilderParameters
-   * @property {TextHighlighter} highlighter
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   * @property {boolean} [isOffscreenCanvasSupported]
-   */
-
-  /**
-   * @param {CreateTextLayerBuilderParameters}
-   * @returns {TextLayerBuilder}
-   */
-  createTextLayerBuilder({
-    highlighter,
-    accessibilityManager,
-    isOffscreenCanvasSupported,
-  }) {}
-}
-
-/**
- * @interface
- */
 class IPDFXfaLayerFactory {
   /**
    * @typedef {Object} CreateXfaLayerBuilderParameters
@@ -266,7 +239,6 @@ export {
   IDownloadManager,
   IL10n,
   IPDFLinkService,
-  IPDFTextLayerFactory,
   IPDFXfaLayerFactory,
   IRenderableView,
 };

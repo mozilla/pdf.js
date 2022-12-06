@@ -23,13 +23,7 @@
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_highlighter.js").TextHighlighter} TextHighlighter */
 
 import {
   AnnotationEditorType,
@@ -69,7 +63,6 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
-import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
@@ -204,7 +197,6 @@ class PDFPageViewBuffer {
 /**
  * Simple viewer control to display PDF content/pages.
  *
- * @implements {IPDFTextLayerFactory}
  * @implements {IPDFXfaLayerFactory}
  */
 class PDFViewer {
@@ -786,8 +778,6 @@ class PDFViewer {
             defaultViewport: viewport.clone(),
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
-            textLayerFactory:
-              textLayerMode !== TextLayerMode.DISABLE ? this : null,
             textLayerMode,
             annotationMode,
             xfaLayerFactory: this,
@@ -1662,29 +1652,6 @@ class PDFViewer {
       return true;
     }
     return false;
-  }
-
-  /**
-   * @typedef {Object} CreateTextLayerBuilderParameters
-   * @property {TextHighlighter} highlighter
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   * @property {boolean} [isOffscreenCanvasSupported]
-   */
-
-  /**
-   * @param {CreateTextLayerBuilderParameters}
-   * @returns {TextLayerBuilder}
-   */
-  createTextLayerBuilder({
-    highlighter,
-    accessibilityManager = null,
-    isOffscreenCanvasSupported = true,
-  }) {
-    return new TextLayerBuilder({
-      highlighter,
-      accessibilityManager,
-      isOffscreenCanvasSupported,
-    });
   }
 
   /**

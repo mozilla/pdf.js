@@ -14,10 +14,6 @@
  */
 
 import {
-  DefaultTextLayerFactory,
-  DefaultXfaLayerFactory,
-} from "./default_factory.js";
-import {
   LinkTarget,
   PDFLinkService,
   SimpleLinkService,
@@ -30,6 +26,7 @@ import {
   SpreadMode,
 } from "./ui_utils.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
+import { DefaultXfaLayerFactory } from "./default_factory.js";
 import { DownloadManager } from "./download_manager.js";
 import { EventBus } from "./event_utils.js";
 import { GenericL10n } from "./genericl10n.js";
@@ -64,6 +61,16 @@ class DefaultStructTreeLayerFactory {
     throw new Error(
       "The `DefaultStructTreeLayerFactory` has been removed, " +
         "this functionality is automatically enabled when the TextLayer is used."
+    );
+  }
+}
+
+class DefaultTextLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultTextLayerFactory` has been removed, " +
+        "please use the `textLayerMode` option when initializing " +
+        "the `PDFPageView`-instance to control TextLayer rendering."
     );
   }
 }
