@@ -100,3 +100,21 @@ async function waitForEvent(page, eventName, timeout = 30000) {
   ]);
 }
 exports.waitForEvent = waitForEvent;
+
+const waitForStorageEntries = async (page, nEntries) => {
+  await page.waitForFunction(
+    n => window.PDFViewerApplication.pdfDocument.annotationStorage.size === n,
+    {},
+    nEntries
+  );
+};
+exports.waitForStorageEntries = waitForStorageEntries;
+
+const waitForSelectedEditor = async (page, selector) => {
+  await page.waitForFunction(
+    sel => document.querySelector(sel).classList.contains("selectedEditor"),
+    {},
+    selector
+  );
+};
+exports.waitForSelectedEditor = waitForSelectedEditor;

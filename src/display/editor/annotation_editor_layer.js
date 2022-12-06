@@ -246,7 +246,7 @@ class AnnotationEditorLayer {
     this.attach(editor);
     editor.pageIndex = this.pageIndex;
     editor.parent?.detach(editor);
-    editor.parent = this;
+    editor.setParent(this);
     if (editor.div && editor.isAttachedToDOM) {
       editor.div.remove();
       this.div.append(editor.div);
@@ -521,8 +521,8 @@ class AnnotationEditorLayer {
     for (const editor of this.#editors.values()) {
       this.#accessibilityManager?.removePointerInTextLayer(editor.contentDiv);
       editor.isAttachedToDOM = false;
+      editor.setParent(null);
       editor.div.remove();
-      editor.parent = null;
     }
     this.div = null;
     this.#editors.clear();
