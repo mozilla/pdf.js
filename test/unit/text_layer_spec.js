@@ -33,7 +33,7 @@ describe("textLayer", function () {
     const textContentItemsStr = [];
 
     const textLayerRenderTask = renderTextLayer({
-      textContentStream: page.streamTextContent(),
+      textContentSource: page.streamTextContent(),
       container: document.createElement("div"),
       viewport: page.getViewport(),
       textContentItemsStr,
