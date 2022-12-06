@@ -30,7 +30,7 @@ import { NullL10n } from "./l10n_utils.js";
  * @property {AnnotationEditorUIManager} [uiManager]
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPageProxy} pdfPage
- * @property {IL10n} l10n
+ * @property {IL10n} [l10n]
  * @property {TextAccessibilityManager} [accessibilityManager]
  */
 

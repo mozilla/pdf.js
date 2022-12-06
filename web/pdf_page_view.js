@@ -22,8 +22,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
 // eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationEditorLayerFactory} IPDFAnnotationEditorLayerFactory */
-// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
@@ -52,6 +50,7 @@ import {
   roundToDivide,
   TextLayerMode,
 } from "./ui_utils.js";
+import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
@@ -77,7 +76,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {IPDFAnnotationLayerFactory} [annotationLayerFactory]
- * @property {IPDFAnnotationEditorLayerFactory} [annotationEditorLayerFactory]
  * @property {IPDFXfaLayerFactory} [xfaLayerFactory]
  * @property {IPDFStructTreeLayerFactory} [structTreeLayerFactory]
  * @property {Object} [textHighlighterFactory]
@@ -94,15 +92,28 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
  * @property {IL10n} [l10n] - Localization service.
+ * @property {function} [layerProperties] - The function that is used to lookup
+ *   the necessary layer-properties.
  */
 
 const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
+
+const DEFAULT_LAYER_PROPERTIES = () => {
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")) {
+    return null;
+  }
+  return {
+    annotationEditorUIManager: null,
+  };
+};
 
 /**
  * @implements {IRenderableView}
  */
 class PDFPageView {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
+
+  #layerProperties = null;
 
   #useThumbnailCanvas = {
     initialOptionalContent: true,
@@ -118,6 +129,7 @@ class PDFPageView {
 
     this.id = options.id;
     this.renderingId = "page" + this.id;
+    this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
 
     this.pdfPage = null;
     this.pageLabel = null;
@@ -142,7 +154,6 @@ class PDFPageView {
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
-    this.annotationEditorLayerFactory = options.annotationEditorLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
     this._textHighlighterFactory = options.textHighlighterFactory;
     this.structTreeLayerFactory = options.structTreeLayerFactory;
@@ -859,18 +870,22 @@ class PDFPageView {
           if (this.annotationLayer) {
             await this.#renderAnnotationLayer();
           }
-          if (this.annotationEditorLayerFactory) {
-            this.annotationEditorLayer ||=
-              this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
-                {
-                  pageDiv: div,
-                  pdfPage,
-                  l10n: this.l10n,
-                  accessibilityManager: this._accessibilityManager,
-                }
-              );
-            this.#renderAnnotationEditorLayer();
+
+          if (!this.annotationEditorLayer) {
+            const { annotationEditorUIManager } = this.#layerProperties();
+
+            if (!annotationEditorUIManager) {
+              return;
+            }
+            this.annotationEditorLayer = new AnnotationEditorLayerBuilder({
+              uiManager: annotationEditorUIManager,
+              pageDiv: div,
+              pdfPage,
+              l10n: this.l10n,
+              accessibilityManager: this._accessibilityManager,
+            });
           }
+          this.#renderAnnotationEditorLayer();
         });
       },
       function (reason) {

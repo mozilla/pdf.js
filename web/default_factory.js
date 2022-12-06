@@ -22,7 +22,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
 // eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationEditorLayerFactory} IPDFAnnotationEditorLayerFactory */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
@@ -33,7 +32,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
@@ -94,40 +92,6 @@ class DefaultAnnotationLayerFactory {
       fieldObjectsPromise,
       annotationCanvasMap,
       accessibilityManager,
-    });
-  }
-}
-
-/**
- * @implements IPDFAnnotationEditorLayerFactory
- */
-class DefaultAnnotationEditorLayerFactory {
-  /**
-   * @typedef {Object} CreateAnnotationEditorLayerBuilderParameters
-   * @property {AnnotationEditorUIManager} [uiManager]
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {IL10n} l10n
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationEditorLayerBuilderParameters}
-   * @returns {AnnotationEditorLayerBuilder}
-   */
-  createAnnotationEditorLayerBuilder({
-    uiManager = null,
-    pageDiv,
-    pdfPage,
-    accessibilityManager = null,
-    l10n,
-  }) {
-    return new AnnotationEditorLayerBuilder({
-      uiManager,
-      pageDiv,
-      pdfPage,
-      accessibilityManager,
-      l10n,
     });
   }
 }
@@ -199,7 +163,6 @@ class DefaultXfaLayerFactory {
 }
 
 export {
-  DefaultAnnotationEditorLayerFactory,
   DefaultAnnotationLayerFactory,
   DefaultStructTreeLayerFactory,
   DefaultTextLayerFactory,

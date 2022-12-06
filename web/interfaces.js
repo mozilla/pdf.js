@@ -20,8 +20,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_layer_builder").AnnotationLayerBuilder} AnnotationLayerBuilder */
 // eslint-disable-next-line max-len
-/** @typedef {import("./annotation_editor_layer_builder").AnnotationEditorLayerBuilder} AnnotationEditorLayerBuilder */
-// eslint-disable-next-line max-len
 /** @typedef {import("./struct_tree_builder").StructTreeLayerBuilder} StructTreeLayerBuilder */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 // eslint-disable-next-line max-len
@@ -228,32 +226,6 @@ class IPDFAnnotationLayerFactory {
 /**
  * @interface
  */
-class IPDFAnnotationEditorLayerFactory {
-  /**
-   * @typedef {Object} CreateAnnotationEditorLayerBuilderParameters
-   * @property {AnnotationEditorUIManager} [uiManager]
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {IL10n} l10n
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationEditorLayerBuilderParameters}
-   * @returns {AnnotationEditorLayerBuilder}
-   */
-  createAnnotationEditorLayerBuilder({
-    uiManager = null,
-    pageDiv,
-    pdfPage,
-    l10n,
-    accessibilityManager,
-  }) {}
-}
-
-/**
- * @interface
- */
 class IPDFXfaLayerFactory {
   /**
    * @typedef {Object} CreateXfaLayerBuilderParameters
@@ -349,7 +321,6 @@ class IL10n {
 export {
   IDownloadManager,
   IL10n,
-  IPDFAnnotationEditorLayerFactory,
   IPDFAnnotationLayerFactory,
   IPDFLinkService,
   IPDFStructTreeLayerFactory,
