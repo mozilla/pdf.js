@@ -20,8 +20,6 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
-// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
@@ -51,8 +49,10 @@ import {
   TextLayerMode,
 } from "./ui_utils.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
+import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
 
 /**
@@ -75,7 +75,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   being rendered. The constants from {@link AnnotationMode} should be used;
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
- * @property {IPDFAnnotationLayerFactory} [annotationLayerFactory]
  * @property {IPDFXfaLayerFactory} [xfaLayerFactory]
  * @property {IPDFStructTreeLayerFactory} [structTreeLayerFactory]
  * @property {Object} [textHighlighterFactory]
@@ -104,6 +103,12 @@ const DEFAULT_LAYER_PROPERTIES = () => {
   }
   return {
     annotationEditorUIManager: null,
+    annotationStorage: null,
+    downloadManager: null,
+    enableScripting: false,
+    fieldObjectsPromise: null,
+    hasJSActionsPromise: null,
+    linkService: new SimpleLinkService(),
   };
 };
 
@@ -153,7 +158,6 @@ class PDFPageView {
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
-    this.annotationLayerFactory = options.annotationLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
     this._textHighlighterFactory = options.textHighlighterFactory;
     this.structTreeLayerFactory = options.structTreeLayerFactory;
@@ -778,20 +782,34 @@ class PDFPageView {
     }
 
     if (
-      this.#annotationMode !== AnnotationMode.DISABLE &&
-      this.annotationLayerFactory
+      !this.annotationLayer &&
+      this.#annotationMode !== AnnotationMode.DISABLE
     ) {
+      const {
+        annotationStorage,
+        downloadManager,
+        enableScripting,
+        fieldObjectsPromise,
+        hasJSActionsPromise,
+        linkService,
+      } = this.#layerProperties();
+
       this._annotationCanvasMap ||= new Map();
-      this.annotationLayer ||=
-        this.annotationLayerFactory.createAnnotationLayerBuilder({
-          pageDiv: div,
-          pdfPage,
-          imageResourcesPath: this.imageResourcesPath,
-          renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
-          l10n: this.l10n,
-          annotationCanvasMap: this._annotationCanvasMap,
-          accessibilityManager: this._accessibilityManager,
-        });
+      this.annotationLayer = new AnnotationLayerBuilder({
+        pageDiv: div,
+        pdfPage,
+        annotationStorage,
+        imageResourcesPath: this.imageResourcesPath,
+        renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
+        linkService,
+        downloadManager,
+        l10n: this.l10n,
+        enableScripting,
+        hasJSActionsPromise,
+        fieldObjectsPromise,
+        annotationCanvasMap: this._annotationCanvasMap,
+        accessibilityManager: this._accessibilityManager,
+      });
     }
 
     if (this.xfaLayer?.div) {

@@ -19,9 +19,6 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
-// eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
@@ -32,69 +29,10 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
-import { NullL10n } from "./l10n_utils.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
-
-/**
- * @implements IPDFAnnotationLayerFactory
- */
-class DefaultAnnotationLayerFactory {
-  /**
-   * @typedef {Object} CreateAnnotationLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   * @property {string} [imageResourcesPath] - Path for image resources, mainly
-   *   for annotation icons. Include trailing slash.
-   * @property {boolean} renderForms
-   * @property {IL10n} l10n
-   * @property {boolean} [enableScripting]
-   * @property {Promise<boolean>} [hasJSActionsPromise]
-   * @property {Promise<Object<string, Array<Object>> | null>}
-   *   [fieldObjectsPromise]
-   * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
-   *   annotation ids with canvases used to render them.
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationLayerBuilderParameters}
-   * @returns {AnnotationLayerBuilder}
-   */
-  createAnnotationLayerBuilder({
-    pageDiv,
-    pdfPage,
-    annotationStorage = null,
-    imageResourcesPath = "",
-    renderForms = true,
-    l10n = NullL10n,
-    enableScripting = false,
-    hasJSActionsPromise = null,
-    fieldObjectsPromise = null,
-    annotationCanvasMap = null,
-    accessibilityManager = null,
-  }) {
-    return new AnnotationLayerBuilder({
-      pageDiv,
-      pdfPage,
-      imageResourcesPath,
-      renderForms,
-      linkService: new SimpleLinkService(),
-      l10n,
-      annotationStorage,
-      enableScripting,
-      hasJSActionsPromise,
-      fieldObjectsPromise,
-      annotationCanvasMap,
-      accessibilityManager,
-    });
-  }
-}
 
 /**
  * @implements IPDFStructTreeLayerFactory
@@ -163,7 +101,6 @@ class DefaultXfaLayerFactory {
 }
 
 export {
-  DefaultAnnotationLayerFactory,
   DefaultStructTreeLayerFactory,
   DefaultTextLayerFactory,
   DefaultXfaLayerFactory,

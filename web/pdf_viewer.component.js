@@ -14,7 +14,6 @@
  */
 
 import {
-  DefaultAnnotationLayerFactory,
   DefaultStructTreeLayerFactory,
   DefaultTextLayerFactory,
   DefaultXfaLayerFactory,
@@ -50,6 +49,16 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 // eslint-disable-next-line no-unused-vars
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
+
+class DefaultAnnotationLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultAnnotationLayerFactory` has been removed, " +
+        "please use the `annotationMode` option when initializing " +
+        "the `PDFPageView`-instance to control AnnotationLayer rendering."
+    );
+  }
+}
 
 export {
   AnnotationLayerBuilder,
