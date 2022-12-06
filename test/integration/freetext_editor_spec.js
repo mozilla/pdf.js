@@ -19,6 +19,8 @@ const {
   getSelectedEditors,
   loadAndWait,
   waitForEvent,
+  waitForSelectedEditor,
+  waitForStorageEntries,
 } = require("./test_utils.js");
 
 const copyPaste = async page => {
@@ -48,23 +50,6 @@ describe("Editor", () => {
     afterAll(async () => {
       await closePages(pages);
     });
-
-    const waitForStorageEntries = async (page, nEntries) => {
-      await page.waitForFunction(
-        n =>
-          window.PDFViewerApplication.pdfDocument.annotationStorage.size === n,
-        {},
-        nEntries
-      );
-    };
-
-    const waitForSelected = async (page, selector) => {
-      await page.waitForFunction(
-        sel => document.querySelector(sel).classList.contains("selectedEditor"),
-        {},
-        selector
-      );
-    };
 
     it("must write a string in a FreeText editor", async () => {
       await Promise.all(
@@ -98,7 +83,7 @@ describe("Editor", () => {
             editorRect.y + 2 * editorRect.height
           );
 
-          await waitForSelected(page, getEditorSelector(0));
+          await waitForSelectedEditor(page, getEditorSelector(0));
           await waitForStorageEntries(page, 1);
 
           const content = await page.$eval(getEditorSelector(0), el =>
@@ -123,7 +108,7 @@ describe("Editor", () => {
           editorRect.y + editorRect.height / 2
         );
 
-        await waitForSelected(page, getEditorSelector(0));
+        await waitForSelectedEditor(page, getEditorSelector(0));
         await copyPaste(page);
         await waitForStorageEntries(page, 2);
 
@@ -199,7 +184,7 @@ describe("Editor", () => {
           editorRect.y + editorRect.height / 2
         );
 
-        await waitForSelected(page, getEditorSelector(3));
+        await waitForSelectedEditor(page, getEditorSelector(3));
         await copyPaste(page);
 
         let hasEditor = await page.evaluate(sel => {
@@ -335,7 +320,7 @@ describe("Editor", () => {
             editorRect.y + editorRect.height / 2
           );
 
-          await waitForSelected(page, getEditorSelector(8));
+          await waitForSelectedEditor(page, getEditorSelector(8));
 
           expect(await getSelectedEditors(page))
             .withContext(`In ${browserName}`)
@@ -510,6 +495,112 @@ describe("Editor", () => {
           .withContext(`In ${browserName}`)
           .toEqual([0, 2, 4, 5, 6]);
       }
+    });
+  });
+
+  describe("FreeText (bugs)", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must serialize invisible annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+          let currentId = 0;
+          const expected = [];
+          const oneToFourteen = [...new Array(14).keys()].map(x => x + 1);
+
+          for (const pageNumber of oneToFourteen) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+
+            await page.evaluate(selector => {
+              const element = window.document.querySelector(selector);
+              element.scrollIntoView();
+            }, pageSelector);
+
+            const annotationLayerSelector = `${pageSelector} > .annotationEditorLayer`;
+            await page.waitForSelector(annotationLayerSelector, {
+              visible: true,
+              timeout: 0,
+            });
+            await page.waitForTimeout(50);
+            if (![1, 14].includes(pageNumber)) {
+              continue;
+            }
+
+            const rect = await page.$eval(annotationLayerSelector, el => {
+              // With Chrome something is wrong when serializing a DomRect,
+              // hence we extract the values and just return them.
+              const { x, y } = el.getBoundingClientRect();
+              return { x, y };
+            });
+
+            const data = `Hello PDF.js World !! on page ${pageNumber}`;
+            expected.push(data);
+            await page.mouse.click(rect.x + 100, rect.y + 100);
+            await page.type(`${getEditorSelector(currentId)} .internal`, data);
+
+            const editorRect = await page.$eval(
+              getEditorSelector(currentId),
+              el => {
+                const { x, y, width, height } = el.getBoundingClientRect();
+                return {
+                  x,
+                  y,
+                  width,
+                  height,
+                };
+              }
+            );
+
+            // Commit.
+            await page.mouse.click(
+              editorRect.x,
+              editorRect.y + 2 * editorRect.height
+            );
+
+            await waitForSelectedEditor(page, getEditorSelector(currentId));
+            await waitForStorageEntries(page, currentId + 1);
+
+            const content = await page.$eval(getEditorSelector(currentId), el =>
+              el.innerText.trimEnd()
+            );
+            expect(content).withContext(`In ${browserName}`).toEqual(data);
+
+            currentId += 1;
+            await page.waitForTimeout(10);
+          }
+
+          const serialize = proprName =>
+            page.evaluate(
+              name =>
+                [
+                  ...window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.values(),
+                ].map(x => x[name]),
+              proprName
+            );
+
+          expect(await serialize("value"))
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+          expect(await serialize("fontSize"))
+            .withContext(`In ${browserName}`)
+            .toEqual([10, 10]);
+          expect(await serialize("color"))
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              [0, 0, 0],
+              [0, 0, 0],
+            ]);
+        })
+      );
     });
   });
 });
