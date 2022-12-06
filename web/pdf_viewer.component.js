@@ -26,7 +26,6 @@ import {
   SpreadMode,
 } from "./ui_utils.js";
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
-import { DefaultXfaLayerFactory } from "./default_factory.js";
 import { DownloadManager } from "./download_manager.js";
 import { EventBus } from "./event_utils.js";
 import { GenericL10n } from "./genericl10n.js";
@@ -71,6 +70,16 @@ class DefaultTextLayerFactory {
       "The `DefaultTextLayerFactory` has been removed, " +
         "please use the `textLayerMode` option when initializing " +
         "the `PDFPageView`-instance to control TextLayer rendering."
+    );
+  }
+}
+
+class DefaultXfaLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultXfaLayerFactory` has been removed, " +
+        "please use the `enableXfa` option when calling " +
+        "the `getDocument`-function to control XfaLayer rendering."
     );
   }
 }

@@ -23,7 +23,6 @@
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
-/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 
 import {
   AnnotationEditorType,
@@ -63,7 +62,6 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
-import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
 const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
@@ -196,8 +194,6 @@ class PDFPageViewBuffer {
 
 /**
  * Simple viewer control to display PDF content/pages.
- *
- * @implements {IPDFXfaLayerFactory}
  */
 class PDFViewer {
   #buffer = null;
@@ -780,7 +776,6 @@ class PDFViewer {
             renderingQueue: this.renderingQueue,
             textLayerMode,
             annotationMode,
-            xfaLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             renderer:
               typeof PDFJSDev === "undefined" ||
@@ -1652,31 +1647,6 @@ class PDFViewer {
       return true;
     }
     return false;
-  }
-
-  /**
-   * @typedef {Object} CreateXfaLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   */
-
-  /**
-   * @param {CreateXfaLayerBuilderParameters}
-   * @returns {XfaLayerBuilder}
-   */
-  createXfaLayerBuilder({
-    pageDiv,
-    pdfPage,
-    annotationStorage = this.pdfDocument?.annotationStorage,
-  }) {
-    return new XfaLayerBuilder({
-      pageDiv,
-      pdfPage,
-      annotationStorage,
-      linkService: this.linkService,
-    });
   }
 
   /**
