@@ -18,7 +18,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 /** @typedef {import("./ui_utils").RenderingStates} RenderingStates */
-/** @typedef {import("./xfa_layer_builder").XfaLayerBuilder} XfaLayerBuilder */
 
 /**
  * @interface
@@ -153,25 +152,6 @@ class IRenderableView {
 /**
  * @interface
  */
-class IPDFXfaLayerFactory {
-  /**
-   * @typedef {Object} CreateXfaLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   */
-
-  /**
-   * @param {CreateXfaLayerBuilderParameters}
-   * @returns {XfaLayerBuilder}
-   */
-  createXfaLayerBuilder({ pageDiv, pdfPage, annotationStorage = null }) {}
-}
-
-/**
- * @interface
- */
 class IDownloadManager {
   /**
    * @param {string} url
@@ -235,10 +215,4 @@ class IL10n {
   async translate(element) {}
 }
 
-export {
-  IDownloadManager,
-  IL10n,
-  IPDFLinkService,
-  IPDFXfaLayerFactory,
-  IRenderableView,
-};
+export { IDownloadManager, IL10n, IPDFLinkService, IRenderableView };
