@@ -53,6 +53,7 @@ import { NullL10n } from "./l10n_utils.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
+import { TextHighlighter } from "./text_highlighter.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -75,7 +76,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
  * @property {IPDFXfaLayerFactory} [xfaLayerFactory]
- * @property {Object} [textHighlighterFactory]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
@@ -105,6 +105,7 @@ const DEFAULT_LAYER_PROPERTIES = () => {
     downloadManager: null,
     enableScripting: false,
     fieldObjectsPromise: null,
+    findController: null,
     hasJSActionsPromise: null,
     linkService: new SimpleLinkService(),
   };
@@ -157,7 +158,6 @@ class PDFPageView {
     this.renderingQueue = options.renderingQueue;
     this.textLayerFactory = options.textLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
-    this._textHighlighterFactory = options.textHighlighterFactory;
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
@@ -260,9 +260,10 @@ class PDFPageView {
     return shadow(
       this,
       "_textHighlighter",
-      this._textHighlighterFactory?.createTextHighlighter({
+      new TextHighlighter({
         pageIndex: this.id - 1,
         eventBus: this.eventBus,
+        findController: this.#layerProperties().findController,
       })
     );
   }

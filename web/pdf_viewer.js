@@ -28,6 +28,8 @@
 /** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
+// eslint-disable-next-line max-len
+/** @typedef {import("./text_highlighter.js").TextHighlighter} TextHighlighter */
 
 import {
   AnnotationEditorType,
@@ -67,7 +69,6 @@ import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
-import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
@@ -565,6 +566,9 @@ class PDFViewer {
       get fieldObjectsPromise() {
         return self.pdfDocument?.getFieldObjects();
       },
+      get findController() {
+        return self.findController;
+      },
       get hasJSActionsPromise() {
         return self.pdfDocument?.hasJSActions();
       },
@@ -787,7 +791,6 @@ class PDFViewer {
             textLayerMode,
             annotationMode,
             xfaLayerFactory: this,
-            textHighlighterFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             renderer:
               typeof PDFJSDev === "undefined" ||
@@ -1681,24 +1684,6 @@ class PDFViewer {
       highlighter,
       accessibilityManager,
       isOffscreenCanvasSupported,
-    });
-  }
-
-  /**
-   * @typedef {Object} CreateTextHighlighterParameters
-   * @property {number} pageIndex
-   * @property {EventBus} eventBus
-   */
-
-  /**
-   * @param {CreateTextHighlighterParameters}
-   * @returns {TextHighlighter}
-   */
-  createTextHighlighter({ pageIndex, eventBus }) {
-    return new TextHighlighter({
-      eventBus,
-      pageIndex,
-      findController: this.findController,
     });
   }
 
