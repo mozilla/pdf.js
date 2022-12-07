@@ -106,7 +106,7 @@ class DefaultExternalServices {
 
   static reportTelemetry(data) {}
 
-  static createDownloadManager(options) {
+  static createDownloadManager() {
     throw new Error("Not implemented: createDownloadManager");
   }
 

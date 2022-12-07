@@ -407,7 +407,7 @@ class ChromeExternalServices extends DefaultExternalServices {
     );
   }
 
-  static createDownloadManager(options) {
+  static createDownloadManager() {
     return new DownloadManager();
   }
 
