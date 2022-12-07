@@ -51,6 +51,21 @@ const loadingTask = pdfjsLib.getDocument({
   const pdfDocument = await loadingTask.promise;
   // Document loaded, retrieving the page.
   const pdfPage = await pdfDocument.getPage(PAGE_TO_VIEW);
+
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(pdfjsLib.version);
+  if (match && (match[1] | 0) >= 3 && (match[2] | 0) >= 2) {
+    // Creating the page view with default parameters.
+    const pdfPageView = new pdfjsViewer.PDFPageView({
+      container,
+      id: PAGE_TO_VIEW,
+      scale: SCALE,
+      defaultViewport: pdfPage.getViewport({ scale: SCALE }),
+      eventBus,
+    });
+    // Associate the actual page with the view, and draw it.
+    pdfPageView.setPdfPage(pdfPage);
+    return pdfPageView.draw();
+  }
   // Creating the page view with default parameters.
   const pdfPageView = new pdfjsViewer.PDFPageView({
     container,
