@@ -853,24 +853,23 @@ class PDFPageView {
 
     const resultPromise = paintTask.promise.then(
       () => {
-        return finishPaintTask(null).then(() => {
+        return finishPaintTask(null).then(async () => {
           this.#renderTextLayer();
 
           if (this.annotationLayer) {
-            this.#renderAnnotationLayer().then(() => {
-              if (this.annotationEditorLayerFactory) {
-                this.annotationEditorLayer ||=
-                  this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
-                    {
-                      pageDiv: div,
-                      pdfPage,
-                      l10n: this.l10n,
-                      accessibilityManager: this._accessibilityManager,
-                    }
-                  );
-                this.#renderAnnotationEditorLayer();
-              }
-            });
+            await this.#renderAnnotationLayer();
+          }
+          if (this.annotationEditorLayerFactory) {
+            this.annotationEditorLayer ||=
+              this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
+                {
+                  pageDiv: div,
+                  pdfPage,
+                  l10n: this.l10n,
+                  accessibilityManager: this._accessibilityManager,
+                }
+              );
+            this.#renderAnnotationEditorLayer();
           }
         });
       },
