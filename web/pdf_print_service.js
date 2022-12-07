@@ -34,8 +34,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
 
   // The physical size of the img as specified by the PDF document.
   let width = Math.floor(size.width * CSS_UNITS) + 'px';
-  let height = Math.floor(size.height * CSS_UNITS) + 'px'
-  ;
+  let height = Math.floor(size.height * CSS_UNITS) + 'px';
 
   let ctx = scratchCanvas.getContext('2d');
   ctx.save();
