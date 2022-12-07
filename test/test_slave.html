@@ -20,7 +20,6 @@ limitations under the License.
     <meta charset="utf-8">
     <script src="../build/generic/build/pdf.js"></script>
     <script src="../build/components/pdf_viewer.js"></script>
-    <script src="driver.js"></script>
 
     <link rel="resource" type="application/l10n" href="../build/generic/web/locale/locale.properties">
   </head>
@@ -33,8 +32,10 @@ limitations under the License.
     <pre id="output" style="max-height: 800px; overflow-y: scroll;"></pre>
     <div id="end"></div>
   </body>
-  <script>
-    var driver = new Driver({
+  <script type="module">
+    import { Driver } from "./driver.js";
+
+    const driver = new Driver({
       disableScrolling: document.getElementById('disableScrolling'),
       inflight: document.getElementById('inflight'),
       output: document.getElementById('output'),
