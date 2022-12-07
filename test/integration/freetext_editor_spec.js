@@ -547,24 +547,9 @@ describe("Editor", () => {
             await page.mouse.click(rect.x + 100, rect.y + 100);
             await page.type(`${getEditorSelector(currentId)} .internal`, data);
 
-            const editorRect = await page.$eval(
-              getEditorSelector(currentId),
-              el => {
-                const { x, y, width, height } = el.getBoundingClientRect();
-                return {
-                  x,
-                  y,
-                  width,
-                  height,
-                };
-              }
-            );
-
             // Commit.
-            await page.mouse.click(
-              editorRect.x,
-              editorRect.y + 2 * editorRect.height
-            );
+            await page.keyboard.press("Escape");
+            await page.waitForTimeout(10);
 
             await waitForSelectedEditor(page, getEditorSelector(currentId));
             await waitForStorageEntries(page, currentId + 1);
@@ -642,6 +627,90 @@ describe("Editor", () => {
               [255, 0, 0],
               [255, 0, 0],
             ]);
+        })
+      );
+    });
+  });
+
+  describe("issue 15789", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue15789.pdf", ".annotationEditorLayer");
+      pages = await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.select("#scaleSelect", "1");
+          return [browserName, page];
+        })
+      );
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must take the media box into account", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#editorFreeText");
+          let currentId = 0;
+
+          for (let step = 0; step < 3; step++) {
+            const rect = await page.$eval(".annotationEditorLayer", el => {
+              // With Chrome something is wrong when serializing a DomRect,
+              // hence we extract the values and just return them.
+              const { x, y, width, height } = el.getBoundingClientRect();
+              return { x, y, width, height };
+            });
+
+            const data = `Hello ${step}`;
+            const x = rect.x + 0.1 * rect.width;
+            const y = rect.y + 0.1 * rect.height;
+            await page.mouse.click(x, y);
+            await page.type(`${getEditorSelector(currentId)} .internal`, data);
+
+            // Commit.
+            await page.keyboard.press("Escape");
+            await page.waitForTimeout(10);
+
+            await page.evaluate(() => {
+              document.getElementById("pageRotateCw").click();
+            });
+            currentId += 1;
+            await page.waitForTimeout(10);
+          }
+
+          const serialize = proprName =>
+            page.evaluate(
+              name =>
+                [
+                  ...window.PDFViewerApplication.pdfDocument.annotationStorage.serializable.values(),
+                ].map(x => x[name]),
+              proprName
+            );
+
+          const rects = (await serialize("rect")).map(rect =>
+            rect.slice(0, 2).map(x => Math.floor(x))
+          );
+          const expected = [
+            [-28, 695],
+            [-38, -10],
+            [501, -20],
+          ];
+          // Dimensions aren't exactly the same from a platform to an other
+          // so we're a bit tolerant here with the numbers.
+          // Anyway the goal is to check that the bottom left corner of the
+          // media box is taken into account.
+          // The pdf has a media box equals to [-99 -99 612.0 792.0].
+          const diffs = rects.map(
+            (rect, i) =>
+              Math.abs(rect[0] - expected[i][0]) < 10 &&
+              Math.abs(rect[1] - expected[i][1]) < 10
+          );
+
+          expect(diffs)
+            .withContext(`In ${browserName}`)
+            .toEqual([true, true, true]);
         })
       );
     });
