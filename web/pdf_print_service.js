@@ -27,14 +27,15 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
   let scratchCanvas = activeService.scratchCanvas;
 
   // The size of the canvas in pixels for printing.
-  const PRINT_RESOLUTION = 150;
+  const PRINT_RESOLUTION = 300;
   const PRINT_UNITS = PRINT_RESOLUTION / 72.0;
   scratchCanvas.width = Math.floor(size.width * PRINT_UNITS);
   scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
   // The physical size of the img as specified by the PDF document.
   let width = Math.floor(size.width * CSS_UNITS) + 'px';
-  let height = Math.floor(size.height * CSS_UNITS) + 'px';
+  let height = Math.floor(size.height * CSS_UNITS) + 'px'
+  ;
 
   let ctx = scratchCanvas.getContext('2d');
   ctx.save();
