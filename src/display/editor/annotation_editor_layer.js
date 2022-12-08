@@ -568,11 +568,8 @@ class AnnotationEditorLayer {
    * @returns {Object} dimensions.
    */
   get pageDimensions() {
-    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
-    const width = pageURx - pageLLx;
-    const height = pageURy - pageLLy;
-
-    return [width, height];
+    const { pageWidth, pageHeight } = this.viewport.rawDims;
+    return [pageWidth, pageHeight];
   }
 }
 

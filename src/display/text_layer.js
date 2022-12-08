@@ -325,10 +325,10 @@ class TextLayerRenderTask {
       properties: null,
       ctx: getCtx(0, isOffscreenCanvasSupported),
     };
-    const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
-    this._transform = [1, 0, 0, -1, -pageLLx, pageURy];
-    this._pageWidth = pageURx - pageLLx;
-    this._pageHeight = pageURy - pageLLy;
+    const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
+    this._transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
+    this._pageWidth = pageWidth;
+    this._pageHeight = pageHeight;
 
     setLayerDimensions(container, viewport);
 

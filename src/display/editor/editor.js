@@ -70,14 +70,12 @@ class AnnotationEditor {
 
     const {
       rotation,
-      viewBox: [pageLLx, pageLLy, pageURx, pageURy],
+      rawDims: { pageWidth, pageHeight, pageX, pageY },
     } = this.parent.viewport;
-    this.rotation = rotation;
-    const pageWidth = pageURx - pageLLx;
-    const pageHeight = pageURy - pageLLy;
 
+    this.rotation = rotation;
     this.pageDimensions = [pageWidth, pageHeight];
-    this.pageTranslation = [pageLLx, pageLLy];
+    this.pageTranslation = [pageX, pageY];
 
     const [width, height] = this.parentDimensions;
     this.x = parameters.x / width;
