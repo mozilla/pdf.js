@@ -16,11 +16,8 @@
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
-// eslint-disable-next-line max-len
-/** @typedef {import("../annotation_storage.js").AnnotationStorage} AnnotationStorage */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
@@ -30,13 +27,11 @@ import { NullL10n } from "./l10n_utils.js";
 
 /**
  * @typedef {Object} AnnotationEditorLayerBuilderOptions
- * @property {number} mode - Editor mode
+ * @property {AnnotationEditorUIManager} [uiManager]
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPageProxy} pdfPage
- * @property {TextAccessibilityManager} accessibilityManager
- * @property {AnnotationStorage} annotationStorage
- * @property {IL10n} l10n - Localization service.
- * @property {AnnotationEditorUIManager} uiManager
+ * @property {IL10n} l10n
+ * @property {TextAccessibilityManager} [accessibilityManager]
  */
 
 class AnnotationEditorLayerBuilder {
@@ -48,7 +43,6 @@ class AnnotationEditorLayerBuilder {
   constructor(options) {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
-    this.annotationStorage = options.annotationStorage || null;
     this.accessibilityManager = options.accessibilityManager;
     this.l10n = options.l10n || NullL10n;
     this.annotationEditorLayer = null;
@@ -86,9 +80,8 @@ class AnnotationEditorLayerBuilder {
     this.annotationEditorLayer = new AnnotationEditorLayer({
       uiManager: this.#uiManager,
       div: this.div,
-      annotationStorage: this.annotationStorage,
       accessibilityManager: this.accessibilityManager,
-      pageIndex: this.pdfPage._pageIndex,
+      pageIndex: this.pdfPage.pageNumber - 1,
       l10n: this.l10n,
       viewport: clonedViewport,
     });
