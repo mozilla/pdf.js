@@ -68,8 +68,17 @@ class AnnotationEditor {
     this.div = null;
     this._uiManager = parameters.uiManager;
 
-    this.rotation = this.parent.viewport.rotation;
-    this.pageDimensions = this.parent.pageDimensions;
+    const {
+      rotation,
+      viewBox: [pageLLx, pageLLy, pageURx, pageURy],
+    } = this.parent.viewport;
+    this.rotation = rotation;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+
+    this.pageDimensions = [pageWidth, pageHeight];
+    this.pageTranslation = [pageLLx, pageLLy];
+
     const [width, height] = this.parentDimensions;
     this.x = parameters.x / width;
     this.y = parameters.y / height;
@@ -341,6 +350,7 @@ class AnnotationEditor {
   getRect(tx, ty) {
     const scale = this.parentScale;
     const [pageWidth, pageHeight] = this.pageDimensions;
+    const [pageX, pageY] = this.pageTranslation;
     const shiftX = tx / scale;
     const shiftY = ty / scale;
     const x = this.x * pageWidth;
@@ -351,31 +361,31 @@ class AnnotationEditor {
     switch (this.rotation) {
       case 0:
         return [
-          x + shiftX,
-          pageHeight - y - shiftY - height,
-          x + shiftX + width,
-          pageHeight - y - shiftY,
+          x + shiftX + pageX,
+          pageHeight - y - shiftY - height + pageY,
+          x + shiftX + width + pageX,
+          pageHeight - y - shiftY + pageY,
         ];
       case 90:
         return [
-          x + shiftY,
-          pageHeight - y + shiftX,
-          x + shiftY + height,
-          pageHeight - y + shiftX + width,
+          x + shiftY + pageX,
+          pageHeight - y + shiftX + pageY,
+          x + shiftY + height + pageX,
+          pageHeight - y + shiftX + width + pageY,
         ];
       case 180:
         return [
-          x - shiftX - width,
-          pageHeight - y + shiftY,
-          x - shiftX,
-          pageHeight - y + shiftY + height,
+          x - shiftX - width + pageX,
+          pageHeight - y + shiftY + pageY,
+          x - shiftX + pageX,
+          pageHeight - y + shiftY + height + pageY,
         ];
       case 270:
         return [
-          x - shiftY - height,
-          pageHeight - y - shiftX - width,
-          x - shiftY,
-          pageHeight - y - shiftX,
+          x - shiftY - height + pageX,
+          pageHeight - y - shiftX - width + pageY,
+          x - shiftY + pageX,
+          pageHeight - y - shiftX + pageY,
         ];
       default:
         throw new Error("Invalid rotation");
