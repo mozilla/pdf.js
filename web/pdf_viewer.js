@@ -730,7 +730,8 @@ class PDFViewer {
           } else if (isValidAnnotationEditorMode(mode)) {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
-              this.eventBus
+              this.eventBus,
+              this.pdfDocument?.annotationStorage
             );
             if (mode !== AnnotationEditorType.NONE) {
               this.#annotationEditorUIManager.updateMode(mode);
@@ -1741,9 +1742,7 @@ class PDFViewer {
    * @property {HTMLDivElement} pageDiv
    * @property {PDFPageProxy} pdfPage
    * @property {IL10n} l10n
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
    * @property {TextAccessibilityManager} [accessibilityManager]
-   *   data in forms.
    */
 
   /**
@@ -1756,13 +1755,11 @@ class PDFViewer {
     pdfPage,
     accessibilityManager = null,
     l10n,
-    annotationStorage = this.pdfDocument?.annotationStorage,
   }) {
     return new AnnotationEditorLayerBuilder({
       uiManager,
       pageDiv,
       pdfPage,
-      annotationStorage,
       accessibilityManager,
       l10n,
     });

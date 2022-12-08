@@ -17,8 +17,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 // eslint-disable-next-line max-len
-/** @typedef {import("../annotation_storage.js").AnnotationStorage} AnnotationStorage */
-// eslint-disable-next-line max-len
 /** @typedef {import("../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 /** @typedef {import("../../web/interfaces").IL10n} IL10n */
 
@@ -33,7 +31,6 @@ import { InkEditor } from "./ink.js";
  * @property {HTMLDivElement} div
  * @property {AnnotationEditorUIManager} uiManager
  * @property {boolean} enabled
- * @property {AnnotationStorage} annotationStorage
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {number} pageIndex
  * @property {IL10n} l10n
@@ -73,7 +70,6 @@ class AnnotationEditorLayer {
     options.uiManager.registerEditorTypes([FreeTextEditor, InkEditor]);
 
     this.#uiManager = options.uiManager;
-    this.annotationStorage = options.annotationStorage;
     this.pageIndex = options.pageIndex;
     this.div = options.div;
     this.#accessibilityManager = options.accessibilityManager;
@@ -213,7 +209,6 @@ class AnnotationEditorLayer {
 
     this.#uiManager.removeEditor(editor);
     this.detach(editor);
-    this.annotationStorage.remove(editor.id);
     editor.div.style.display = "none";
     setTimeout(() => {
       // When the div is removed from DOM the focus can move on the
@@ -244,7 +239,6 @@ class AnnotationEditorLayer {
     }
 
     this.attach(editor);
-    editor.pageIndex = this.pageIndex;
     editor.parent?.detach(editor);
     editor.setParent(this);
     if (editor.div && editor.isAttachedToDOM) {
@@ -270,7 +264,7 @@ class AnnotationEditorLayer {
 
     this.moveEditorInDOM(editor);
     editor.onceAdded();
-    this.addToAnnotationStorage(editor);
+    this.#uiManager.addToAnnotationStorage(editor);
   }
 
   moveEditorInDOM(editor) {
@@ -280,16 +274,6 @@ class AnnotationEditorLayer {
       editor.contentDiv,
       /* isRemovable = */ true
     );
-  }
-
-  /**
-   * Add an editor in the annotation storage.
-   * @param {AnnotationEditor} editor
-   */
-  addToAnnotationStorage(editor) {
-    if (!editor.isEmpty() && !this.annotationStorage.has(editor.id)) {
-      this.annotationStorage.setValue(editor.id, editor);
-    }
   }
 
   /**
@@ -365,9 +349,9 @@ class AnnotationEditorLayer {
   deserialize(data) {
     switch (data.annotationType) {
       case AnnotationEditorType.FREETEXT:
-        return FreeTextEditor.deserialize(data, this);
+        return FreeTextEditor.deserialize(data, this, this.#uiManager);
       case AnnotationEditorType.INK:
-        return InkEditor.deserialize(data, this);
+        return InkEditor.deserialize(data, this, this.#uiManager);
     }
     return null;
   }
@@ -384,6 +368,7 @@ class AnnotationEditorLayer {
       id,
       x: event.offsetX,
       y: event.offsetY,
+      uiManager: this.#uiManager,
     });
     if (editor) {
       this.add(editor);
@@ -520,8 +505,8 @@ class AnnotationEditorLayer {
 
     for (const editor of this.#editors.values()) {
       this.#accessibilityManager?.removePointerInTextLayer(editor.contentDiv);
-      editor.isAttachedToDOM = false;
       editor.setParent(null);
+      editor.isAttachedToDOM = false;
       editor.div.remove();
     }
     this.div = null;
@@ -572,14 +557,6 @@ class AnnotationEditorLayer {
   }
 
   /**
-   * Get the scale factor from the viewport.
-   * @returns {number}
-   */
-  get scaleFactor() {
-    return this.viewport.scale;
-  }
-
-  /**
    * Get page dimensions.
    * @returns {Object} dimensions.
    */
@@ -589,11 +566,6 @@ class AnnotationEditorLayer {
     const height = pageURy - pageLLy;
 
     return [width, height];
-  }
-
-  get viewportBaseDimensions() {
-    const { width, height, rotation } = this.viewport;
-    return rotation % 180 === 0 ? [width, height] : [height, width];
   }
 
   /**

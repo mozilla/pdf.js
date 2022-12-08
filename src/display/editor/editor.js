@@ -15,12 +15,15 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
+// eslint-disable-next-line max-len
+/** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 
 import { bindEvents, ColorManager } from "./tools.js";
 import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
+ * @property {AnnotationEditorUIManager} uiManager - the global manager
  * @property {AnnotationEditorLayer} parent - the layer containing this editor
  * @property {string} id - editor id
  * @property {number} x - x-coordinate
@@ -40,6 +43,8 @@ class AnnotationEditor {
   #isEditing = false;
 
   #isInEditMode = false;
+
+  _uiManager = null;
 
   #zIndex = AnnotationEditor._zIndex++;
 
@@ -61,15 +66,15 @@ class AnnotationEditor {
     this.pageIndex = parameters.parent.pageIndex;
     this.name = parameters.name;
     this.div = null;
+    this._uiManager = parameters.uiManager;
 
-    const [width, height] = this.parent.viewportBaseDimensions;
+    this.rotation = this.parent.viewport.rotation;
+    this.pageDimensions = this.parent.pageDimensions;
+    const [width, height] = this.parentDimensions;
     this.x = parameters.x / width;
     this.y = parameters.y / height;
-    this.rotation = this.parent.viewport.rotation;
 
     this.isAttachedToDOM = false;
-
-    this._serialized = undefined;
   }
 
   static get _defaultLineColor() {
@@ -80,9 +85,16 @@ class AnnotationEditor {
     );
   }
 
-  setParent(parent) {
-    this._serialized = !parent ? this.serialize() : undefined;
-    this.parent = parent;
+  /**
+   * Add some commands into the CommandManager (undo/redo stuff).
+   * @param {Object} params
+   */
+  addCommands(params) {
+    this._uiManager.addCommands(params);
+  }
+
+  get currentLayer() {
+    return this._uiManager.currentLayer;
   }
 
   /**
@@ -97,6 +109,14 @@ class AnnotationEditor {
    */
   setInForeground() {
     this.div.style.zIndex = this.#zIndex;
+  }
+
+  setParent(parent) {
+    if (parent !== null) {
+      this.pageIndex = parent.pageIndex;
+      this.pageDimensions = parent.pageDimensions;
+    }
+    this.parent = parent;
   }
 
   /**
@@ -130,7 +150,7 @@ class AnnotationEditor {
 
     event.preventDefault();
 
-    if (!this.parent.isMultipleSelection) {
+    if (!this.parent?.isMultipleSelection) {
       this.commitOrRemove();
     }
   }
@@ -147,7 +167,11 @@ class AnnotationEditor {
    * Commit the data contained in this editor.
    */
   commit() {
-    this.parent.addToAnnotationStorage(this);
+    this.addToAnnotationStorage();
+  }
+
+  addToAnnotationStorage() {
+    this._uiManager.addToAnnotationStorage(this);
   }
 
   /**
@@ -170,7 +194,7 @@ class AnnotationEditor {
    * @param {number} ty - y-translation in screen coordinates.
    */
   setAt(x, y, tx, ty) {
-    const [width, height] = this.parent.viewportBaseDimensions;
+    const [width, height] = this.parentDimensions;
     [tx, ty] = this.screenToPageTranslation(tx, ty);
 
     this.x = (x + tx) / width;
@@ -186,7 +210,7 @@ class AnnotationEditor {
    * @param {number} y - y-translation in screen coordinates.
    */
   translate(x, y) {
-    const [width, height] = this.parent.viewportBaseDimensions;
+    const [width, height] = this.parentDimensions;
     [x, y] = this.screenToPageTranslation(x, y);
 
     this.x += x / width;
@@ -202,8 +226,7 @@ class AnnotationEditor {
    * @param {number} y
    */
   screenToPageTranslation(x, y) {
-    const { rotation } = this.parent.viewport;
-    switch (rotation) {
+    switch (this.parentRotation) {
       case 90:
         return [y, -x];
       case 180:
@@ -215,13 +238,27 @@ class AnnotationEditor {
     }
   }
 
+  get parentScale() {
+    return this._uiManager.viewParameters.realScale;
+  }
+
+  get parentRotation() {
+    return this._uiManager.viewParameters.rotation;
+  }
+
+  get parentDimensions() {
+    const { realScale } = this._uiManager.viewParameters;
+    const [pageWidth, pageHeight] = this.pageDimensions;
+    return [pageWidth * realScale, pageHeight * realScale];
+  }
+
   /**
    * Set the dimensions of this editor.
    * @param {number} width
    * @param {number} height
    */
   setDims(width, height) {
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const [parentWidth, parentHeight] = this.parentDimensions;
     this.div.style.width = `${(100 * width) / parentWidth}%`;
     this.div.style.height = `${(100 * height) / parentHeight}%`;
   }
@@ -235,7 +272,7 @@ class AnnotationEditor {
       return;
     }
 
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+    const [parentWidth, parentHeight] = this.parentDimensions;
     if (!widthPercent) {
       style.width = `${(100 * parseFloat(width)) / parentWidth}%`;
     }
@@ -302,10 +339,10 @@ class AnnotationEditor {
   }
 
   getRect(tx, ty) {
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
-    const [pageWidth, pageHeight] = this.parent.pageDimensions;
-    const shiftX = (pageWidth * tx) / parentWidth;
-    const shiftY = (pageHeight * ty) / parentHeight;
+    const scale = this.parentScale;
+    const [pageWidth, pageHeight] = this.pageDimensions;
+    const shiftX = tx / scale;
+    const shiftY = ty / scale;
     const x = this.x * pageWidth;
     const y = this.y * pageHeight;
     const width = this.width * pageWidth;
@@ -443,16 +480,18 @@ class AnnotationEditor {
    *
    * @param {Object} data
    * @param {AnnotationEditorLayer} parent
+   * @param {AnnotationEditorUIManager} uiManager
    * @returns {AnnotationEditor}
    */
-  static deserialize(data, parent) {
+  static deserialize(data, parent, uiManager) {
     const editor = new this.prototype.constructor({
       parent,
       id: parent.getNextId(),
+      uiManager,
     });
     editor.rotation = data.rotation;
 
-    const [pageWidth, pageHeight] = parent.pageDimensions;
+    const [pageWidth, pageHeight] = editor.pageDimensions;
     const [x, y, width, height] = editor.getRectInCurrentCoords(
       data.rect,
       pageHeight
