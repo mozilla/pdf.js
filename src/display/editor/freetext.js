@@ -153,12 +153,12 @@ class FreeTextEditor extends AnnotationEditor {
   #updateFontSize(fontSize) {
     const setFontsize = size => {
       this.editorDiv.style.fontSize = `calc(${size}px * var(--scale-factor))`;
-      this.translate(0, -(size - this.#fontSize) * this.parent.scaleFactor);
+      this.translate(0, -(size - this.#fontSize) * this.parentScale);
       this.#fontSize = size;
       this.#setEditorDimensions();
     };
     const savedFontsize = this.#fontSize;
-    this.parent.addCommands({
+    this.addCommands({
       cmd: () => {
         setFontsize(fontSize);
       },
@@ -178,14 +178,12 @@ class FreeTextEditor extends AnnotationEditor {
    */
   #updateColor(color) {
     const savedColor = this.#color;
-    this.parent.addCommands({
+    this.addCommands({
       cmd: () => {
-        this.#color = color;
-        this.editorDiv.style.color = color;
+        this.#color = this.editorDiv.style.color = color;
       },
       undo: () => {
-        this.#color = savedColor;
-        this.editorDiv.style.color = savedColor;
+        this.#color = this.editorDiv.style.color = savedColor;
       },
       mustExec: true,
       type: AnnotationEditorParamsType.FREETEXT_COLOR,
@@ -197,10 +195,10 @@ class FreeTextEditor extends AnnotationEditor {
   /** @inheritdoc */
   getInitialTranslation() {
     // The start of the base line is where the user clicked.
+    const scale = this.parentScale;
     return [
-      -FreeTextEditor._internalPadding * this.parent.scaleFactor,
-      -(FreeTextEditor._internalPadding + this.#fontSize) *
-        this.parent.scaleFactor,
+      -FreeTextEditor._internalPadding * scale,
+      -(FreeTextEditor._internalPadding + this.#fontSize) * scale,
     ];
   }
 
@@ -254,9 +252,11 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
     this.editorDiv.removeEventListener("input", this.#boundEditorDivInput);
 
-    // On Chrome, the focus is given to <body> when contentEditable is set to
-    // false, hence we focus the div.
-    this.div.focus();
+    if (this.pageIndex === this._uiManager.currentPageIndex) {
+      // On Chrome, the focus is given to <body> when contentEditable is set to
+      // false, hence we focus the div.
+      this.div.focus();
+    }
 
     // In case the blur callback hasn't been called.
     this.isEditing = false;
@@ -311,8 +311,22 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   #setEditorDimensions() {
-    const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
-    const rect = this.div.getBoundingClientRect();
+    const [parentWidth, parentHeight] = this.parentDimensions;
+
+    let rect;
+    if (this.isAttachedToDOM) {
+      rect = this.div.getBoundingClientRect();
+    } else {
+      // This editor isn't on screen but we need to get its dimensions, so
+      // we just insert it in the DOM, get its bounding box and then remove it.
+      const { currentLayer, div } = this;
+      const savedDisplay = div.style.display;
+      div.style.display = "hidden";
+      currentLayer.div.append(this.div);
+      rect = div.getBoundingClientRect();
+      div.remove();
+      div.style.display = savedDisplay;
+    }
 
     this.width = rect.width / parentWidth;
     this.height = rect.height / parentHeight;
@@ -323,6 +337,10 @@ class FreeTextEditor extends AnnotationEditor {
    * @returns {undefined}
    */
   commit() {
+    if (!this.isInEditMode()) {
+      return;
+    }
+
     super.commit();
     if (!this.#hasAlreadyBeenCommitted) {
       // This editor has something and it's the first time
@@ -435,7 +453,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     if (this.width) {
       // This editor was created in using copy (ctrl+c).
-      const [parentWidth, parentHeight] = this.parent.viewportBaseDimensions;
+      const [parentWidth, parentHeight] = this.parentDimensions;
       this.setAt(
         baseX * parentWidth,
         baseY * parentHeight,
@@ -466,8 +484,8 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   /** @inheritdoc */
-  static deserialize(data, parent) {
-    const editor = super.deserialize(data, parent);
+  static deserialize(data, parent, uiManager) {
+    const editor = super.deserialize(data, parent, uiManager);
 
     editor.#fontSize = data.fontSize;
     editor.#color = Util.makeHexColor(...data.color);
@@ -478,19 +496,17 @@ class FreeTextEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   serialize() {
-    if (this._serialized !== undefined) {
-      return this._serialized;
-    }
-
     if (this.isEmpty()) {
       return null;
     }
 
-    const padding = FreeTextEditor._internalPadding * this.parent.scaleFactor;
+    const padding = FreeTextEditor._internalPadding * this.parentScale;
     const rect = this.getRect(padding, padding);
 
     const color = AnnotationEditor._colorManager.convert(
-      getComputedStyle(this.editorDiv).color
+      this.isAttachedToDOM
+        ? getComputedStyle(this.editorDiv).color
+        : this.#color
     );
 
     return {
@@ -498,7 +514,7 @@ class FreeTextEditor extends AnnotationEditor {
       color,
       fontSize: this.#fontSize,
       value: this.#content,
-      pageIndex: this.parent.pageIndex,
+      pageIndex: this.pageIndex,
       rect,
       rotation: this.rotation,
     };
