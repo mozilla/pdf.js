@@ -128,11 +128,19 @@ class PDFFetchStreamReader {
         this._abortController
       )
     )
-      .then(response => {
+      .then(async response => {
         if (!validateResponseStatus(response.status)) {
           throw createResponseStatusError(response.status, url);
         }
-        this._reader = response.body.getReader();
+        
+        if (!response.body) {
+          const myBlob = await response.blob();
+          const stream = myBlob.stream();
+          _this._reader = stream.getReader();
+        } else {
+          _this._reader = response.body.getReader();
+        }
+
         this._headersCapability.resolve();
 
         const getResponseHeader = name => {
