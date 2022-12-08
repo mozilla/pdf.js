@@ -1676,7 +1676,7 @@ class PDFViewer {
     return new TextHighlighter({
       eventBus,
       pageIndex,
-      findController: this.isInPresentationMode ? null : this.findController,
+      findController: this.findController,
     });
   }
 
