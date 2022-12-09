@@ -1163,7 +1163,14 @@ class PDFViewer {
         vPadding = VERTICAL_PADDING;
 
       if (this.isInPresentationMode) {
-        hPadding = vPadding = 4;
+        // Pages have a 2px (transparent) border in PresentationMode, see
+        // the `web/pdf_viewer.css` file.
+        hPadding = vPadding = 4; // 2 * 2px
+        if (this._spreadMode !== SpreadMode.NONE) {
+          // Account for two pages being visible in PresentationMode, thus
+          // "doubling" the total border width.
+          hPadding *= 2;
+        }
       } else if (this.removePageBorders) {
         hPadding = vPadding = 0;
       } else if (this._scrollMode === ScrollMode.HORIZONTAL) {
