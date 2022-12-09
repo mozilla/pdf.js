@@ -195,6 +195,13 @@ class PDFPageView {
         PDFJSDev.test("!PRODUCTION || GENERIC")) &&
       this._isStandalone
     ) {
+      // Ensure that the various layers always get the correct initial size,
+      // see issue 15795.
+      docStyle.setProperty(
+        "--scale-factor",
+        this.scale * PixelsPerInch.PDF_TO_CSS_UNITS
+      );
+
       const { optionalContentConfigPromise } = options;
       if (optionalContentConfigPromise) {
         // Ensure that the thumbnails always display the *initial* document

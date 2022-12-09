@@ -747,6 +747,10 @@ class PDFViewer {
         const viewport = firstPdfPage.getViewport({
           scale: scale * PixelsPerInch.PDF_TO_CSS_UNITS,
         });
+        // Ensure that the various layers always get the correct initial size,
+        // see issue 15795.
+        docStyle.setProperty("--scale-factor", viewport.scale);
+
         const textLayerFactory =
           textLayerMode !== TextLayerMode.DISABLE && !isPureXfa ? this : null;
         const annotationLayerFactory =
