@@ -26,6 +26,8 @@ import { AnnotationLayer } from "pdfjs-lib";
 import { NullL10n } from "./l10n_utils.js";
 import { PresentationModeState } from "./ui_utils.js";
 
+const DUMMY_DIV = Symbol("DUMMY_DIV");
+
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
@@ -77,8 +79,8 @@ class AnnotationLayerBuilder {
     this.l10n = l10n;
     this.annotationStorage = annotationStorage;
     this.enableScripting = enableScripting;
-    this._hasJSActionsPromise = hasJSActionsPromise;
-    this._fieldObjectsPromise = fieldObjectsPromise;
+    this._hasJSActionsPromise = hasJSActionsPromise || Promise.resolve(false);
+    this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
     this._mouseState = mouseState;
     this._annotationCanvasMap = annotationCanvasMap;
     this._accessibilityManager = accessibilityManager;
@@ -95,18 +97,42 @@ class AnnotationLayerBuilder {
    *   annotations is complete.
    */
   async render(viewport, intent = "display") {
-    const [annotations, hasJSActions = false, fieldObjects = null] =
-      await Promise.all([
-        this.pdfPage.getAnnotations({ intent }),
-        this._hasJSActionsPromise,
-        this._fieldObjectsPromise,
-      ]);
-
-    if (this._cancelled || annotations.length === 0) {
+    if (this.div) {
+      if (this._cancelled || this.div === DUMMY_DIV) {
+        return;
+      }
+      // If an annotationLayer already exists, refresh its children's
+      // transformation matrices.
+      AnnotationLayer.update({
+        viewport: viewport.clone({ dontFlip: true }),
+        div: this.div,
+        annotationCanvasMap: this._annotationCanvasMap,
+      });
       return;
     }
 
-    const parameters = {
+    const [annotations, hasJSActions, fieldObjects] = await Promise.all([
+      this.pdfPage.getAnnotations({ intent }),
+      this._hasJSActionsPromise,
+      this._fieldObjectsPromise,
+    ]);
+    if (this._cancelled) {
+      return;
+    }
+    if (annotations.length === 0) {
+      // Avoid needlessly trying to re-create the annotationLayer on
+      // zooming and rotation.
+      this.div = DUMMY_DIV;
+      return;
+    }
+
+    // Create an annotation layer div and render the annotations
+    // if there is at least one annotation.
+    this.div = document.createElement("div");
+    this.div.className = "annotationLayer";
+    this.pageDiv.append(this.div);
+
+    AnnotationLayer.render({
       viewport: viewport.clone({ dontFlip: true }),
       div: this.div,
       annotations,
@@ -122,37 +148,22 @@ class AnnotationLayerBuilder {
       mouseState: this._mouseState,
       annotationCanvasMap: this._annotationCanvasMap,
       accessibilityManager: this._accessibilityManager,
-    };
+    });
+    this.l10n.translate(this.div);
 
-    if (this.div) {
-      // If an annotationLayer already exists, refresh its children's
-      // transformation matrices.
-      AnnotationLayer.update(parameters);
-    } else {
-      // Create an annotation layer div and render the annotations
-      // if there is at least one annotation.
-      this.div = document.createElement("div");
-      this.div.className = "annotationLayer";
-      this.pageDiv.append(this.div);
-      parameters.div = this.div;
-
-      AnnotationLayer.render(parameters);
-      this.l10n.translate(this.div);
-
-      // Ensure that interactive form elements in the annotationLayer are
-      // disabled while PresentationMode is active (see issue 12232).
-      if (this.linkService.isInPresentationMode) {
-        this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
-      }
-      if (!this.#onPresentationModeChanged) {
-        this.#onPresentationModeChanged = evt => {
-          this.#updatePresentationModeState(evt.state);
-        };
-        this._eventBus?._on(
-          "presentationmodechanged",
-          this.#onPresentationModeChanged
-        );
-      }
+    // Ensure that interactive form elements in the annotationLayer are
+    // disabled while PresentationMode is active (see issue 12232).
+    if (this.linkService.isInPresentationMode) {
+      this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
+    }
+    if (!this.#onPresentationModeChanged) {
+      this.#onPresentationModeChanged = evt => {
+        this.#updatePresentationModeState(evt.state);
+      };
+      this._eventBus?._on(
+        "presentationmodechanged",
+        this.#onPresentationModeChanged
+      );
     }
   }
 
@@ -169,7 +180,7 @@ class AnnotationLayerBuilder {
   }
 
   hide() {
-    if (!this.div) {
+    if (!this.div || this.div === DUMMY_DIV) {
       return;
     }
     this.div.hidden = true;
