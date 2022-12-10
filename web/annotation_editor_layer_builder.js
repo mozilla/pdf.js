@@ -98,7 +98,13 @@ class AnnotationEditorLayerBuilder {
 
   cancel() {
     this._cancelled = true;
-    this.destroy();
+
+    if (!this.div) {
+      return;
+    }
+    this.pageDiv = null;
+    this.annotationEditorLayer.destroy();
+    this.div.remove();
   }
 
   hide() {
@@ -113,15 +119,6 @@ class AnnotationEditorLayerBuilder {
       return;
     }
     this.div.hidden = false;
-  }
-
-  destroy() {
-    if (!this.div) {
-      return;
-    }
-    this.pageDiv = null;
-    this.annotationEditorLayer.destroy();
-    this.div.remove();
   }
 }
 

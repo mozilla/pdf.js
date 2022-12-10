@@ -431,18 +431,14 @@ class PDFPageView {
       // so they are not displayed on the already resized page.
       this.annotationLayer.hide();
     }
-
     if (annotationEditorLayerNode) {
       this.annotationEditorLayer.hide();
-    } else {
-      this.annotationEditorLayer?.destroy();
     }
     if (xfaLayerNode) {
       // Hide the XFA layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.xfaLayer.hide();
     }
-
     if (textLayerNode) {
       this.textLayer.hide();
     }
