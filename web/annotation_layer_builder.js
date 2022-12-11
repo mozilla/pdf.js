@@ -47,6 +47,8 @@ import { PresentationModeState } from "./ui_utils.js";
  */
 
 class AnnotationLayerBuilder {
+  #numAnnotations = 0;
+
   #onPresentationModeChanged = null;
 
   /**
@@ -77,8 +79,8 @@ class AnnotationLayerBuilder {
     this.l10n = l10n;
     this.annotationStorage = annotationStorage;
     this.enableScripting = enableScripting;
-    this._hasJSActionsPromise = hasJSActionsPromise;
-    this._fieldObjectsPromise = fieldObjectsPromise;
+    this._hasJSActionsPromise = hasJSActionsPromise || Promise.resolve(false);
+    this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
     this._mouseState = mouseState;
     this._annotationCanvasMap = annotationCanvasMap;
     this._accessibilityManager = accessibilityManager;
@@ -95,18 +97,41 @@ class AnnotationLayerBuilder {
    *   annotations is complete.
    */
   async render(viewport, intent = "display") {
-    const [annotations, hasJSActions = false, fieldObjects = null] =
-      await Promise.all([
-        this.pdfPage.getAnnotations({ intent }),
-        this._hasJSActionsPromise,
-        this._fieldObjectsPromise,
-      ]);
-
-    if (this._cancelled || annotations.length === 0) {
+    if (this.div) {
+      if (this._cancelled || this.#numAnnotations === 0) {
+        return;
+      }
+      // If an annotationLayer already exists, refresh its children's
+      // transformation matrices.
+      AnnotationLayer.update({
+        viewport: viewport.clone({ dontFlip: true }),
+        div: this.div,
+        annotationCanvasMap: this._annotationCanvasMap,
+      });
       return;
     }
 
-    const parameters = {
+    const [annotations, hasJSActions, fieldObjects] = await Promise.all([
+      this.pdfPage.getAnnotations({ intent }),
+      this._hasJSActionsPromise,
+      this._fieldObjectsPromise,
+    ]);
+    if (this._cancelled) {
+      return;
+    }
+    this.#numAnnotations = annotations.length;
+
+    // Create an annotation layer div and render the annotations
+    // if there is at least one annotation.
+    this.div = document.createElement("div");
+    this.div.className = "annotationLayer";
+    this.pageDiv.append(this.div);
+
+    if (this.#numAnnotations === 0) {
+      this.hide();
+      return;
+    }
+    AnnotationLayer.render({
       viewport: viewport.clone({ dontFlip: true }),
       div: this.div,
       annotations,
@@ -122,36 +147,22 @@ class AnnotationLayerBuilder {
       mouseState: this._mouseState,
       annotationCanvasMap: this._annotationCanvasMap,
       accessibilityManager: this._accessibilityManager,
-    };
+    });
+    this.l10n.translate(this.div);
 
-    if (this.div) {
-      // If an annotationLayer already exists, refresh its children's
-      // transformation matrices.
-      AnnotationLayer.update(parameters);
-    } else {
-      // Create an annotation layer div and render the annotations
-      // if there is at least one annotation.
-      this.div = parameters.div = document.createElement("div");
-      this.div.className = "annotationLayer";
-      this.pageDiv.append(this.div);
-
-      AnnotationLayer.render(parameters);
-      this.l10n.translate(this.div);
-
-      // Ensure that interactive form elements in the annotationLayer are
-      // disabled while PresentationMode is active (see issue 12232).
-      if (this.linkService.isInPresentationMode) {
-        this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
-      }
-      if (!this.#onPresentationModeChanged) {
-        this.#onPresentationModeChanged = evt => {
-          this.#updatePresentationModeState(evt.state);
-        };
-        this._eventBus?._on(
-          "presentationmodechanged",
-          this.#onPresentationModeChanged
-        );
-      }
+    // Ensure that interactive form elements in the annotationLayer are
+    // disabled while PresentationMode is active (see issue 12232).
+    if (this.linkService.isInPresentationMode) {
+      this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
+    }
+    if (!this.#onPresentationModeChanged) {
+      this.#onPresentationModeChanged = evt => {
+        this.#updatePresentationModeState(evt.state);
+      };
+      this._eventBus?._on(
+        "presentationmodechanged",
+        this.#onPresentationModeChanged
+      );
     }
   }
 
