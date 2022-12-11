@@ -55,9 +55,9 @@ class XfaLayerBuilder {
    * @param {string} intent (default value is 'display')
    * @returns {Promise<Object | void>} A promise that is resolved when rendering
    *   of the XFA layer is complete. The first rendering will return an object
-   *   with a `textDivs` property that  can be used with the TextHighlighter.
+   *   with a `textDivs` property that can be used with the TextHighlighter.
    */
-  render(viewport, intent = "display") {
+  async render(viewport, intent = "display") {
     if (intent === "print") {
       const parameters = {
         viewport: viewport.clone({ dontFlip: true }),
@@ -73,39 +73,33 @@ class XfaLayerBuilder {
       this.pageDiv.append(div);
       parameters.div = div;
 
-      const result = XfaLayer.render(parameters);
-      return Promise.resolve(result);
+      return XfaLayer.render(parameters);
     }
 
     // intent === "display"
-    return this.pdfPage
-      .getXfa()
-      .then(xfaHtml => {
-        if (this._cancelled || !xfaHtml) {
-          return { textDivs: [] };
-        }
+    const xfaHtml = await this.pdfPage.getXfa();
+    if (this._cancelled || !xfaHtml) {
+      return { textDivs: [] };
+    }
 
-        const parameters = {
-          viewport: viewport.clone({ dontFlip: true }),
-          div: this.div,
-          xfaHtml,
-          annotationStorage: this.annotationStorage,
-          linkService: this.linkService,
-          intent,
-        };
+    const parameters = {
+      viewport: viewport.clone({ dontFlip: true }),
+      div: this.div,
+      xfaHtml,
+      annotationStorage: this.annotationStorage,
+      linkService: this.linkService,
+      intent,
+    };
 
-        if (this.div) {
-          return XfaLayer.update(parameters);
-        }
-        // Create an xfa layer div and render the form
-        this.div = document.createElement("div");
-        this.pageDiv.append(this.div);
-        parameters.div = this.div;
-        return XfaLayer.render(parameters);
-      })
-      .catch(error => {
-        console.error(error);
-      });
+    if (this.div) {
+      return XfaLayer.update(parameters);
+    }
+    // Create an xfa layer div and render the form
+    this.div = document.createElement("div");
+    this.pageDiv.append(this.div);
+    parameters.div = this.div;
+
+    return XfaLayer.render(parameters);
   }
 
   cancel() {
