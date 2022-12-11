@@ -614,6 +614,48 @@ function getCurrentTransformInverse(ctx) {
   return [a, b, c, d, e, f];
 }
 
+/**
+ * @param {HTMLDivElement} div
+ * @param {PageViewport} viewport
+ * @param {boolean} mustFlip
+ * @param {boolean} mustRotate
+ */
+function setLayerDimensions(
+  div,
+  viewport,
+  mustFlip = false,
+  mustRotate = true
+) {
+  const { viewBox, rotation } = viewport;
+  if (viewBox) {
+    const [pageLLx, pageLLy, pageURx, pageURy] = viewBox;
+    const pageWidth = pageURx - pageLLx;
+    const pageHeight = pageURy - pageLLy;
+    const { style } = div;
+
+    // TODO: Investigate if it could be interesting to use the css round
+    // function (https://developer.mozilla.org/en-US/docs/Web/CSS/round):
+    // const widthStr =
+    //   `round(down, var(--scale-factor) * ${pageWidth}px, 1px)`;
+    // const heightStr =
+    //   `round(down, var(--scale-factor) * ${pageHeight}px, 1px)`;
+    const widthStr = `calc(var(--scale-factor) * ${pageWidth}px)`;
+    const heightStr = `calc(var(--scale-factor) * ${pageHeight}px)`;
+
+    if (!mustFlip || rotation % 180 === 0) {
+      style.width = widthStr;
+      style.height = heightStr;
+    } else {
+      style.width = heightStr;
+      style.height = widthStr;
+    }
+  }
+
+  if (mustRotate) {
+    div.setAttribute("data-main-rotation", rotation);
+  }
+}
+
 export {
   AnnotationPrefix,
   deprecated,
@@ -636,5 +678,6 @@ export {
   PDFDateString,
   PixelsPerInch,
   RenderingCancelledException,
+  setLayerDimensions,
   StatTimer,
 };
