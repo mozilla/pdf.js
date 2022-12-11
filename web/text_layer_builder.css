@@ -36,6 +36,7 @@
   white-space: pre;
   cursor: text;
   transform-origin: 0% 0%;
+  line-height: 1;
 }
 
 /* Only necessary in Google Chrome, see issue 14205, and most unfortunately

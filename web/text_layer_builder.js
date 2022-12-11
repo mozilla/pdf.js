@@ -39,8 +39,6 @@ import { renderTextLayer, updateTextLayer } from "pdfjs-lib";
 class TextLayerBuilder {
   #rotation = 0;
 
-  #scale = 0;
-
   #textContentSource = null;
 
   constructor({
@@ -79,29 +77,26 @@ class TextLayerBuilder {
   /**
    * Renders the text layer.
    * @param {PageViewport} viewport
+   * @param {boolean} refresh
    */
-  async render(viewport) {
+  async render(viewport, refresh) {
     if (!this.#textContentSource) {
       throw new Error('No "textContentSource" parameter specified.');
     }
 
-    const scale = viewport.scale * (globalThis.devicePixelRatio || 1);
     const { rotation } = viewport;
     if (this.renderingDone) {
       const mustRotate = rotation !== this.#rotation;
-      const mustRescale = scale !== this.#scale;
-      if (mustRotate || mustRescale) {
+      if (mustRotate || refresh) {
         this.hide();
         updateTextLayer({
           container: this.div,
           viewport,
           textDivs: this.textDivs,
           textDivProperties: this.textDivProperties,
-          isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
-          mustRescale,
           mustRotate,
+          refresh,
         });
-        this.#scale = scale;
         this.#rotation = rotation;
       }
       this.show();
@@ -124,7 +119,6 @@ class TextLayerBuilder {
 
     await this.textLayerRenderTask.promise;
     this.#finishRendering();
-    this.#scale = scale;
     this.#rotation = rotation;
     this.show();
     this.accessibilityManager?.enable();

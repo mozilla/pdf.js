@@ -2626,7 +2626,7 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
 }
 
 function webViewerResolutionChange(evt) {
-  PDFViewerApplication.pdfViewer.refresh();
+  PDFViewerApplication.pdfViewer.refresh(false, { refreshTextLayer: true });
 }
 
 function webViewerVisibilityChange(evt) {

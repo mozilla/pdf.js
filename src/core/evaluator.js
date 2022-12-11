@@ -2689,12 +2689,13 @@ class PartialEvaluator {
         ) {
           if (textContentItem.str.length === 0) {
             resetLastChars();
+            const transform = textContentItem.prevTransform;
             textContent.items.push({
               str: " ",
               dir: "ltr",
-              width: 0,
+              width: Math.hypot(transform[0], transform[1]),
               height: Math.abs(advanceY),
-              transform: textContentItem.prevTransform,
+              transform,
               fontName: textContentItem.fontName,
               hasEOL: false,
             });
@@ -2746,12 +2747,13 @@ class PartialEvaluator {
       ) {
         if (textContentItem.str.length === 0) {
           resetLastChars();
+          const transform = textContentItem.prevTransform;
           textContent.items.push({
             str: " ",
             dir: "ltr",
             width: Math.abs(advanceX),
-            height: 0,
-            transform: textContentItem.prevTransform,
+            height: Math.hypot(transform[2], transform[3]),
+            transform,
             fontName: textContentItem.fontName,
             hasEOL: false,
           });
@@ -2903,11 +2905,14 @@ class PartialEvaluator {
       }
 
       const fontName = textContentItem.fontName;
+      const transform = transf || getCurrentTextTransform();
 
-      let height = 0;
-      if (textContentItem.vertical) {
+      let height;
+      if (!textContentItem.vertical) {
+        height = Math.hypot(transform[2], transform[3]);
+      } else {
         height = width;
-        width = 0;
+        width = Math.hypot(transform[0], transform[1]);
       }
 
       flushTextContentItem();
@@ -2919,7 +2924,7 @@ class PartialEvaluator {
         dir: "ltr",
         width: Math.abs(width),
         height: Math.abs(height),
-        transform: transf || getCurrentTextTransform(),
+        transform,
         fontName,
         hasEOL: false,
       });

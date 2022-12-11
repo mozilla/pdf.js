@@ -127,6 +127,8 @@ class PDFPageView {
     regularAnnotations: true,
   };
 
+  #mustRefreshTextLayer = false;
+
   /**
    * @param {PDFPageViewOptions} options
    */
@@ -364,7 +366,9 @@ class PDFPageView {
         });
         textLayer.setTextContentSource(readableStream);
       }
-      await textLayer.render(viewport);
+      const refreshTextLayer = this.#mustRefreshTextLayer;
+      this.#mustRefreshTextLayer = false;
+      await textLayer.render(viewport, refreshTextLayer);
     } catch (ex) {
       if (ex instanceof AbortException) {
         return;
@@ -529,6 +533,7 @@ class PDFPageView {
     rotation = null,
     optionalContentConfigPromise = null,
     drawingDelay = -1,
+    refreshTextLayer = false,
   }) {
     this.scale = scale || this.scale;
     if (typeof rotation === "number") {
@@ -550,6 +555,7 @@ class PDFPageView {
       });
     }
 
+    this.#mustRefreshTextLayer = refreshTextLayer;
     const totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = this.viewport.clone({
       scale: this.scale * PixelsPerInch.PDF_TO_CSS_UNITS,
