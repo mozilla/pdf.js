@@ -2273,7 +2273,7 @@ class PDFWorker {
         // the Webpack warnings instead (telling users to ignore them).
         //
         // eslint-disable-next-line no-eval
-        const worker = eval("require")(this.workerSrc);
+        const worker = (0, eval)("require")(this.workerSrc);
         return worker.WorkerMessageHandler;
       }
       await loadScript(this.workerSrc);
