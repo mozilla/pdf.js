@@ -28,6 +28,12 @@
       ],
       "default": 0
     },
+    "defaultZoomDelay": {
+      "title": "Default zoom delay",
+      "description": "Delay (in ms) to wait before redrawing the canvas.",
+      "type": "integer",
+      "default": 400
+    },
     "defaultZoomValue": {
       "title": "Default zoom level",
       "description": "Default zoom level of the viewer. Accepted values: 'auto', 'page-actual', 'page-width', 'page-height', 'page-fit', or a zoom level in percents.",
