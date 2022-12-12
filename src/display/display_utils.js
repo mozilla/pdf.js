@@ -19,7 +19,13 @@ import {
   BaseStandardFontDataFactory,
   BaseSVGFactory,
 } from "./base_factory.js";
-import { BaseException, stringToBytes, Util, warn } from "../shared/util.js";
+import {
+  BaseException,
+  shadow,
+  stringToBytes,
+  Util,
+  warn,
+} from "../shared/util.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -246,6 +252,20 @@ class PageViewport {
 
     this.width = width;
     this.height = height;
+  }
+
+  /**
+   * The original, un-scaled, viewport dimensions.
+   * @type {Object}
+   */
+  get rawDims() {
+    const { viewBox } = this;
+    return shadow(this, "rawDims", {
+      pageWidth: viewBox[2] - viewBox[0],
+      pageHeight: viewBox[3] - viewBox[1],
+      pageX: viewBox[0],
+      pageY: viewBox[1],
+    });
   }
 
   /**
@@ -626,11 +646,8 @@ function setLayerDimensions(
   mustFlip = false,
   mustRotate = true
 ) {
-  const { viewBox, rotation } = viewport;
-  if (viewBox) {
-    const [pageLLx, pageLLy, pageURx, pageURy] = viewBox;
-    const pageWidth = pageURx - pageLLx;
-    const pageHeight = pageURy - pageLLy;
+  if (viewport instanceof PageViewport) {
+    const { pageWidth, pageHeight } = viewport.rawDims;
     const { style } = div;
 
     // TODO: Investigate if it could be interesting to use the css round
@@ -642,7 +659,7 @@ function setLayerDimensions(
     const widthStr = `calc(var(--scale-factor) * ${pageWidth}px)`;
     const heightStr = `calc(var(--scale-factor) * ${pageHeight}px)`;
 
-    if (!mustFlip || rotation % 180 === 0) {
+    if (!mustFlip || viewport.rotation % 180 === 0) {
       style.width = widthStr;
       style.height = heightStr;
     } else {
@@ -652,7 +669,7 @@ function setLayerDimensions(
   }
 
   if (mustRotate) {
-    div.setAttribute("data-main-rotation", rotation);
+    div.setAttribute("data-main-rotation", viewport.rotation);
   }
 }
 
