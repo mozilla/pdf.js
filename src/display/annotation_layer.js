@@ -196,17 +196,13 @@ class AnnotationElement {
    * @returns {HTMLElement} A section element.
    */
   _createContainer(ignoreBorder = false) {
-    const data = this.data,
-      page = this.page,
-      viewport = this.viewport;
+    const { data, page, viewport } = this;
+
     const container = document.createElement("section");
-    const { width, height } = getRectDims(data.rect);
-
-    const [pageLLx, pageLLy, pageURx, pageURy] = viewport.viewBox;
-    const pageWidth = pageURx - pageLLx;
-    const pageHeight = pageURy - pageLLy;
-
     container.setAttribute("data-annotation-id", data.id);
+
+    const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
+    const { width, height } = getRectDims(data.rect);
 
     // Do *not* modify `data.rect`, since that will corrupt the annotation
     // position on subsequent calls to `_createContainer` (see issue 6804).
@@ -268,8 +264,8 @@ class AnnotationElement {
       }
     }
 
-    container.style.left = `${(100 * (rect[0] - pageLLx)) / pageWidth}%`;
-    container.style.top = `${(100 * (rect[1] - pageLLy)) / pageHeight}%`;
+    container.style.left = `${(100 * (rect[0] - pageX)) / pageWidth}%`;
+    container.style.top = `${(100 * (rect[1] - pageY)) / pageHeight}%`;
 
     const { rotation } = data;
     if (data.hasOwnCanvas || rotation === 0) {
@@ -283,9 +279,7 @@ class AnnotationElement {
   }
 
   setRotation(angle, container = this.container) {
-    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
-    const pageWidth = pageURx - pageLLx;
-    const pageHeight = pageURy - pageLLy;
+    const { pageWidth, pageHeight } = this.viewport.rawDims;
     const { width, height } = getRectDims(this.data.rect);
 
     let elementWidth, elementHeight;
@@ -1838,12 +1832,10 @@ class PopupAnnotationElement extends AnnotationElement {
       rect[0] + this.data.parentRect[2] - this.data.parentRect[0];
     const popupTop = rect[1];
 
-    const [pageLLx, pageLLy, pageURx, pageURy] = this.viewport.viewBox;
-    const pageWidth = pageURx - pageLLx;
-    const pageHeight = pageURy - pageLLy;
+    const { pageWidth, pageHeight, pageX, pageY } = this.viewport.rawDims;
 
-    this.container.style.left = `${(100 * (popupLeft - pageLLx)) / pageWidth}%`;
-    this.container.style.top = `${(100 * (popupTop - pageLLy)) / pageHeight}%`;
+    this.container.style.left = `${(100 * (popupLeft - pageX)) / pageWidth}%`;
+    this.container.style.top = `${(100 * (popupTop - pageY)) / pageHeight}%`;
 
     this.container.append(popup.render());
     return this.container;
