@@ -1651,4 +1651,54 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in issue15815.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue15815.pdf", getSelector("24R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check field value is correctly updated when committed with ENTER key", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let value = "A";
+          for (const [displayValue, exportValue] of [
+            ["B", "x2"],
+            ["C", "x3"],
+            ["A", "x1"],
+          ]) {
+            await clearInput(page, getSelector("27R"));
+            await page.select(getSelector("24R"), exportValue);
+            await page.waitForFunction(
+              `${getQuerySelector("27R")}.value !== ""`
+            );
+            const text = await page.$eval(getSelector("27R"), el => el.value);
+            expect(text)
+              .withContext(`In ${browserName}`)
+              .toEqual(`value=${value}, changeEx=${exportValue}`);
+            value = displayValue;
+          }
+
+          for (const exportValue of ["x3", "x2", "x1"]) {
+            await clearInput(page, getSelector("27R"));
+            await page.type(getSelector("27R"), exportValue);
+            await page.click("[data-annotation-id='28R']");
+            await page.waitForTimeout(10);
+
+            value = await page.$eval(getSelector("24R"), el => el.value);
+            expect(value).withContext(`In ${browserName}`).toEqual(exportValue);
+          }
+        })
+      );
+    });
+  });
 });
