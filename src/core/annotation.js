@@ -1978,7 +1978,15 @@ class WidgetAnnotation extends Annotation {
 
     assert(typeof value === "string", "Expected `value` to be a string.");
 
-    value = value.trim();
+    if (!this.data.combo) {
+      value = value.trim();
+    } else {
+      // The value is supposed to be one of the exportValue.
+      const option =
+        this.data.options.find(({ exportValue }) => value === exportValue) ||
+        this.data.options[0];
+      value = (option && option.displayValue) || "";
+    }
 
     if (value === "") {
       // the field is empty: nothing to render

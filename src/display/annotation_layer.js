@@ -1612,10 +1612,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       selectElement.addEventListener("input", removeEmptyEntry);
     }
 
-    const getValue = (event, isExport) => {
+    const getValue = isExport => {
       const name = isExport ? "value" : "textContent";
-      const options = event.target.options;
-      if (!event.target.multiple) {
+      const { options, multiple } = selectElement;
+      if (!multiple) {
         return options.selectedIndex === -1
           ? null
           : options[options.selectedIndex][name];
@@ -1624,6 +1624,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         .call(options, option => option.selected)
         .map(option => option[name]);
     };
+
+    let selectedValues = getValue(/* isExport */ false);
 
     const getItems = event => {
       const options = event.target.options;
@@ -1643,8 +1645,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               option.selected = values.has(option.value);
             }
             storage.setValue(id, {
-              value: getValue(event, /* isExport */ true),
+              value: getValue(/* isExport */ true),
             });
+            selectedValues = getValue(/* isExport */ false);
           },
           multipleSelection(event) {
             selectElement.multiple = true;
@@ -1664,15 +1667,17 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               }
             }
             storage.setValue(id, {
-              value: getValue(event, /* isExport */ true),
+              value: getValue(/* isExport */ true),
               items: getItems(event),
             });
+            selectedValues = getValue(/* isExport */ false);
           },
           clear(event) {
             while (selectElement.length !== 0) {
               selectElement.remove(0);
             }
             storage.setValue(id, { value: null, items: [] });
+            selectedValues = getValue(/* isExport */ false);
           },
           insert(event) {
             const { index, displayValue, exportValue } = event.detail.insert;
@@ -1687,9 +1692,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               selectElement.append(optionElement);
             }
             storage.setValue(id, {
-              value: getValue(event, /* isExport */ true),
+              value: getValue(/* isExport */ true),
               items: getItems(event),
             });
+            selectedValues = getValue(/* isExport */ false);
           },
           items(event) {
             const { items } = event.detail;
@@ -1707,9 +1713,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               selectElement.options[0].selected = true;
             }
             storage.setValue(id, {
-              value: getValue(event, /* isExport */ true),
+              value: getValue(/* isExport */ true),
               items: getItems(event),
             });
+            selectedValues = getValue(/* isExport */ false);
           },
           indices(event) {
             const indices = new Set(event.detail.indices);
@@ -1717,8 +1724,9 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               option.selected = indices.has(option.index);
             }
             storage.setValue(id, {
-              value: getValue(event, /* isExport */ true),
+              value: getValue(/* isExport */ true),
             });
+            selectedValues = getValue(/* isExport */ false);
           },
           editable(event) {
             event.target.disabled = !event.detail.editable;
@@ -1728,18 +1736,19 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       });
 
       selectElement.addEventListener("input", event => {
-        const exportValue = getValue(event, /* isExport */ true);
-        const value = getValue(event, /* isExport */ false);
+        const exportValue = getValue(/* isExport */ true);
         storage.setValue(id, { value: exportValue });
+
+        event.preventDefault();
 
         this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
           source: this,
           detail: {
             id,
             name: "Keystroke",
-            value,
+            value: selectedValues,
             changeEx: exportValue,
-            willCommit: true,
+            willCommit: false,
             commitKey: 1,
             keyDown: false,
           },
@@ -1761,7 +1770,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
       );
     } else {
       selectElement.addEventListener("input", function (event) {
-        storage.setValue(id, { value: getValue(event, /* isExport */ true) });
+        storage.setValue(id, { value: getValue(/* isExport */ true) });
       });
     }
 

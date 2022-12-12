@@ -7240,5 +7240,32 @@
             "value": "مرحبا بالعالم"
          }
       }
+   },
+   {
+      "id": "issue15815-print",
+      "file": "pdfs/issue15815.pdf",
+      "md5": "48b8b057954d5b773421ac03b7fcd738",
+      "rounds": 1,
+      "type": "eq",
+      "print": true,
+      "annotationStorage": {
+         "24R": {
+            "value": "x3"
+         }
+      }
+   },
+   {
+      "id": "issue15815-save-print",
+      "file": "pdfs/issue15815.pdf",
+      "md5": "48b8b057954d5b773421ac03b7fcd738",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "24R": {
+            "value": "x2"
+         }
+      }
    }
 ]
