@@ -199,7 +199,6 @@ class IPDFAnnotationLayerFactory {
    * @property {IL10n} l10n
    * @property {boolean} [enableScripting]
    * @property {Promise<boolean>} [hasJSActionsPromise]
-   * @property {Object} [mouseState]
    * @property {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
    * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
@@ -220,7 +219,6 @@ class IPDFAnnotationLayerFactory {
     l10n = undefined,
     enableScripting = false,
     hasJSActionsPromise = null,
-    mouseState = null,
     fieldObjectsPromise = null,
     annotationCanvasMap = null,
     accessibilityManager = null,

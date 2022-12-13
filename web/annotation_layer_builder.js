@@ -41,7 +41,6 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {Promise<boolean>} [hasJSActionsPromise]
  * @property {Promise<Object<string, Array<Object>> | null>}
  *   [fieldObjectsPromise]
- * @property {Object} [mouseState]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  * @property {TextAccessibilityManager} accessibilityManager
  */
@@ -66,7 +65,6 @@ class AnnotationLayerBuilder {
     enableScripting = false,
     hasJSActionsPromise = null,
     fieldObjectsPromise = null,
-    mouseState = null,
     annotationCanvasMap = null,
     accessibilityManager = null,
   }) {
@@ -81,7 +79,6 @@ class AnnotationLayerBuilder {
     this.enableScripting = enableScripting;
     this._hasJSActionsPromise = hasJSActionsPromise || Promise.resolve(false);
     this._fieldObjectsPromise = fieldObjectsPromise || Promise.resolve(null);
-    this._mouseState = mouseState;
     this._annotationCanvasMap = annotationCanvasMap;
     this._accessibilityManager = accessibilityManager;
 
@@ -144,7 +141,6 @@ class AnnotationLayerBuilder {
       enableScripting: this.enableScripting,
       hasJSActions,
       fieldObjects,
-      mouseState: this._mouseState,
       annotationCanvasMap: this._annotationCanvasMap,
       accessibilityManager: this._accessibilityManager,
     });
