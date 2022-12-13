@@ -101,27 +101,33 @@ class Doc extends PDFObject {
     this._disableSaving = false;
   }
 
+  _initActions() {
+    const dontRun = new Set([
+      "WillClose",
+      "WillSave",
+      "DidSave",
+      "WillPrint",
+      "DidPrint",
+      "OpenAction",
+    ]);
+    // When a pdf has just been opened it doesn't really make sense
+    // to save it: it's up to the user to decide if they want to do that.
+    // A pdf can contain an action /FooBar which will trigger a save
+    // even if there are no WillSave/DidSave (which are themselves triggered
+    // after a save).
+    this._disableSaving = true;
+    for (const actionName of this._actions.keys()) {
+      if (!dontRun.has(actionName)) {
+        this._runActions(actionName);
+      }
+    }
+    this._runActions("OpenAction");
+    this._disableSaving = false;
+  }
+
   _dispatchDocEvent(name) {
     if (name === "Open") {
-      const dontRun = new Set([
-        "WillClose",
-        "WillSave",
-        "DidSave",
-        "WillPrint",
-        "DidPrint",
-        "OpenAction",
-      ]);
-      // When a pdf has just been opened it doesn't really make sense
-      // to save it: it's up to the user to decide if they want to do that.
-      // A pdf can contain an action /FooBar which will trigger a save
-      // even if there are no WillSave/DidSave (which are themselves triggered
-      // after a save).
       this._disableSaving = true;
-      for (const actionName of this._actions.keys()) {
-        if (!dontRun.has(actionName)) {
-          this._runActions(actionName);
-        }
-      }
       this._runActions("OpenAction");
       this._disableSaving = false;
     } else if (name === "WillPrint") {

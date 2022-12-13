@@ -1703,7 +1703,6 @@ class PDFViewer {
    * @property {IL10n} l10n
    * @property {boolean} [enableScripting]
    * @property {Promise<boolean>} [hasJSActionsPromise]
-   * @property {Object} [mouseState]
    * @property {Promise<Object<string, Array<Object>> | null>}
    *   [fieldObjectsPromise]
    * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
@@ -1724,7 +1723,6 @@ class PDFViewer {
     l10n = NullL10n,
     enableScripting = this.enableScripting,
     hasJSActionsPromise = this.pdfDocument?.hasJSActions(),
-    mouseState = this._scriptingManager?.mouseState,
     fieldObjectsPromise = this.pdfDocument?.getFieldObjects(),
     annotationCanvasMap = null,
     accessibilityManager = null,
@@ -1740,7 +1738,6 @@ class PDFViewer {
       l10n,
       enableScripting,
       hasJSActionsPromise,
-      mouseState,
       fieldObjectsPromise,
       annotationCanvasMap,
       accessibilityManager,
