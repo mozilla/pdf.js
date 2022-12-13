@@ -2585,6 +2585,7 @@ class AnnotationLayer {
    */
   static render(parameters) {
     const { annotations, div, viewport, accessibilityManager } = parameters;
+    setLayerDimensions(div, viewport);
 
     let zIndex = 0;
 
@@ -2652,7 +2653,6 @@ class AnnotationLayer {
     }
 
     this.#setAnnotationCanvasMap(div, parameters.annotationCanvasMap);
-    setLayerDimensions(div, viewport);
   }
 
   /**
@@ -2664,9 +2664,9 @@ class AnnotationLayer {
    */
   static update(parameters) {
     const { annotationCanvasMap, div, viewport } = parameters;
+    setLayerDimensions(div, { rotation: viewport.rotation });
 
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
-    setLayerDimensions(div, { rotation: viewport.rotation });
     div.hidden = false;
   }
 

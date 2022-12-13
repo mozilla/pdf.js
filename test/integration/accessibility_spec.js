@@ -106,4 +106,37 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("Annotations order", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("fields_order.pdf", ".annotationLayer");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the text fields are in the visual order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const ids = await page.evaluate(() => {
+            const elements = document.querySelectorAll(
+              ".annotationLayer .textWidgetAnnotation"
+            );
+            const results = [];
+            for (const element of elements) {
+              results.push(element.getAttribute("data-annotation-id"));
+            }
+            return results;
+          });
+
+          expect(ids)
+            .withContext(`In ${browserName}`)
+            .toEqual(["32R", "30R", "31R", "34R", "29R", "33R"]);
+        })
+      );
+    });
+  });
 });
