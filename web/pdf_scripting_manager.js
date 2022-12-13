@@ -46,7 +46,6 @@ class PDFScriptingManager {
     this._destroyCapability = null;
 
     this._scripting = null;
-    this._mouseState = Object.create(null);
     this._ready = false;
 
     this._eventBus = eventBus;
@@ -143,18 +142,8 @@ class PDFScriptingManager {
       this._closeCapability?.resolve();
     });
 
-    this._domEvents.set("mousedown", event => {
-      this._mouseState.isDown = true;
-    });
-    this._domEvents.set("mouseup", event => {
-      this._mouseState.isDown = false;
-    });
-
     for (const [name, listener] of this._internalEvents) {
       this._eventBus._on(name, listener);
-    }
-    for (const [name, listener] of this._domEvents) {
-      window.addEventListener(name, listener, true);
     }
 
     try {
@@ -229,10 +218,6 @@ class PDFScriptingManager {
     });
   }
 
-  get mouseState() {
-    return this._mouseState;
-  }
-
   get destroyPromise() {
     return this._destroyCapability?.promise || null;
   }
@@ -246,13 +231,6 @@ class PDFScriptingManager {
    */
   get _internalEvents() {
     return shadow(this, "_internalEvents", new Map());
-  }
-
-  /**
-   * @private
-   */
-  get _domEvents() {
-    return shadow(this, "_domEvents", new Map());
   }
 
   /**
@@ -508,16 +486,10 @@ class PDFScriptingManager {
     }
     this._internalEvents.clear();
 
-    for (const [name, listener] of this._domEvents) {
-      window.removeEventListener(name, listener, true);
-    }
-    this._domEvents.clear();
-
     this._pageOpenPending.clear();
     this._visitedPages.clear();
 
     this._scripting = null;
-    delete this._mouseState.isDown;
     this._ready = false;
 
     this._destroyCapability?.resolve();

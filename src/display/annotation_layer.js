@@ -67,7 +67,6 @@ function getRectDims(rect) {
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
  * @property {Object} [fieldObjects]
- * @property {Object} [mouseState]
  */
 
 class AnnotationElementFactory {
@@ -177,7 +176,6 @@ class AnnotationElement {
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
     this._fieldObjects = parameters.fieldObjects;
-    this._mouseState = parameters.mouseState;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -1053,6 +1051,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         userValue: textContent,
         formattedValue: null,
         lastCommittedValue: null,
+        commitKey: 1,
       };
 
       if (this.data.multiLine) {
@@ -1114,6 +1113,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             target.value = elementData.userValue;
           }
           elementData.lastCommittedValue = target.value;
+          elementData.commitKey = 1;
         });
 
         element.addEventListener("updatefromsandbox", jsEvent => {
@@ -1178,8 +1178,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         // Even if the field hasn't any actions
         // leaving it can still trigger some actions with Calculate
         element.addEventListener("keydown", event => {
-          // if the key is one of Escape, Enter or Tab
-          // then the data are committed
+          elementData.commitKey = 1;
+          // If the key is one of Escape, Enter then the data are committed.
+          // If we've a Tab then data will be committed on blur.
           let commitKey = -1;
           if (event.key === "Escape") {
             commitKey = 0;
@@ -1189,7 +1190,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             // (see issue #15627).
             commitKey = 2;
           } else if (event.key === "Tab") {
-            commitKey = 3;
+            elementData.commitKey = 3;
           }
           if (commitKey === -1) {
             return;
@@ -1217,13 +1218,12 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         const _blurListener = blurListener;
         blurListener = null;
         element.addEventListener("blur", event => {
+          if (!event.relatedTarget) {
+            return;
+          }
           const { value } = event.target;
           elementData.userValue = value;
-          if (
-            this._mouseState.isDown &&
-            elementData.lastCommittedValue !== value
-          ) {
-            // Focus out using the mouse: data are committed
+          if (elementData.lastCommittedValue !== value) {
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
               source: this,
               detail: {
@@ -1231,7 +1231,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 name: "Keystroke",
                 value,
                 willCommit: true,
-                commitKey: 1,
+                commitKey: elementData.commitKey,
                 selStart: event.target.selectionStart,
                 selEnd: event.target.selectionEnd,
               },
@@ -2620,7 +2620,6 @@ class AnnotationLayer {
         enableScripting: parameters.enableScripting,
         hasJSActions: parameters.hasJSActions,
         fieldObjects: parameters.fieldObjects,
-        mouseState: parameters.mouseState || { isDown: false },
       });
       if (element.isRenderable) {
         const rendered = element.render();
