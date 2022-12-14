@@ -332,9 +332,10 @@ class PageViewport {
 }
 
 class RenderingCancelledException extends BaseException {
-  constructor(msg, type) {
+  constructor(msg, type, extraDelay = 0) {
     super(msg, "RenderingCancelledException");
     this.type = type;
+    this.extraDelay = extraDelay;
   }
 }
 
