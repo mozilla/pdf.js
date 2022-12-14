@@ -2562,13 +2562,16 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {PDFPageProxy} page
  * @property {IPDFLinkService} linkService
  * @property {IDownloadManager} downloadManager
+ * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
  * @property {boolean} [enableScripting] - Enable embedded script execution.
  * @property {boolean} [hasJSActions] - Some fields have JS actions.
  *   The default value is `false`.
+ * @property {Object<string, Array<Object>> | null} [fieldObjects]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
+ * @property {TextAccessibilityManager} [accessibilityManager]
  */
 
 class AnnotationLayer {
@@ -2588,14 +2591,28 @@ class AnnotationLayer {
   /**
    * Render a new annotation layer with all annotation elements.
    *
-   * @public
-   * @param {AnnotationLayerParameters} parameters
+   * @param {AnnotationLayerParameters} params
    * @memberof AnnotationLayer
    */
-  static render(parameters) {
-    const { annotations, div, viewport, accessibilityManager } = parameters;
+  static render(params) {
+    const { annotations, div, viewport, accessibilityManager } = params;
     setLayerDimensions(div, viewport);
 
+    const elementParams = {
+      data: null,
+      layer: div,
+      page: params.page,
+      viewport,
+      linkService: params.linkService,
+      downloadManager: params.downloadManager,
+      imageResourcesPath: params.imageResourcesPath || "",
+      renderForms: params.renderForms !== false,
+      svgFactory: new DOMSVGFactory(),
+      annotationStorage: params.annotationStorage || new AnnotationStorage(),
+      enableScripting: params.enableScripting === true,
+      hasJSActions: params.hasJSActions,
+      fieldObjects: params.fieldObjects,
+    };
     let zIndex = 0;
 
     for (const data of annotations) {
@@ -2605,73 +2622,60 @@ class AnnotationLayer {
           continue; // Ignore empty annotations.
         }
       }
-      const element = AnnotationElementFactory.create({
-        data,
-        layer: div,
-        page: parameters.page,
-        viewport,
-        linkService: parameters.linkService,
-        downloadManager: parameters.downloadManager,
-        imageResourcesPath: parameters.imageResourcesPath || "",
-        renderForms: parameters.renderForms !== false,
-        svgFactory: new DOMSVGFactory(),
-        annotationStorage:
-          parameters.annotationStorage || new AnnotationStorage(),
-        enableScripting: parameters.enableScripting,
-        hasJSActions: parameters.hasJSActions,
-        fieldObjects: parameters.fieldObjects,
-      });
-      if (element.isRenderable) {
-        const rendered = element.render();
-        if (data.hidden) {
-          rendered.style.visibility = "hidden";
-        }
-        if (Array.isArray(rendered)) {
-          for (const renderedElement of rendered) {
-            renderedElement.style.zIndex = zIndex++;
-            AnnotationLayer.#appendElement(
-              renderedElement,
-              data.id,
-              div,
-              accessibilityManager
-            );
-          }
-        } else {
-          // The accessibility manager will move the annotation in the DOM in
-          // order to match the visual ordering.
-          // But if an annotation is above an other one, then we must draw it
-          // after the other one whatever the order is in the DOM, hence the
-          // use of the z-index.
-          rendered.style.zIndex = zIndex++;
+      elementParams.data = data;
+      const element = AnnotationElementFactory.create(elementParams);
 
-          if (element instanceof PopupAnnotationElement) {
-            // Popup annotation elements should not be on top of other
-            // annotation elements to prevent interfering with mouse events.
-            div.prepend(rendered);
-          } else {
-            AnnotationLayer.#appendElement(
-              rendered,
-              data.id,
-              div,
-              accessibilityManager
-            );
-          }
+      if (!element.isRenderable) {
+        continue;
+      }
+      const rendered = element.render();
+      if (data.hidden) {
+        rendered.style.visibility = "hidden";
+      }
+      if (Array.isArray(rendered)) {
+        for (const renderedElement of rendered) {
+          renderedElement.style.zIndex = zIndex++;
+          AnnotationLayer.#appendElement(
+            renderedElement,
+            data.id,
+            div,
+            accessibilityManager
+          );
+        }
+      } else {
+        // The accessibility manager will move the annotation in the DOM in
+        // order to match the visual ordering.
+        // But if an annotation is above an other one, then we must draw it
+        // after the other one whatever the order is in the DOM, hence the
+        // use of the z-index.
+        rendered.style.zIndex = zIndex++;
+
+        if (element instanceof PopupAnnotationElement) {
+          // Popup annotation elements should not be on top of other
+          // annotation elements to prevent interfering with mouse events.
+          div.prepend(rendered);
+        } else {
+          AnnotationLayer.#appendElement(
+            rendered,
+            data.id,
+            div,
+            accessibilityManager
+          );
         }
       }
     }
 
-    this.#setAnnotationCanvasMap(div, parameters.annotationCanvasMap);
+    this.#setAnnotationCanvasMap(div, params.annotationCanvasMap);
   }
 
   /**
    * Update the annotation elements on existing annotation layer.
    *
-   * @public
-   * @param {AnnotationLayerParameters} parameters
+   * @param {AnnotationLayerParameters} params
    * @memberof AnnotationLayer
    */
-  static update(parameters) {
-    const { annotationCanvasMap, div, viewport } = parameters;
+  static update(params) {
+    const { annotationCanvasMap, div, viewport } = params;
     setLayerDimensions(div, { rotation: viewport.rotation });
 
     this.#setAnnotationCanvasMap(div, annotationCanvasMap);
