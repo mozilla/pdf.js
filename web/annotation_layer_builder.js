@@ -42,7 +42,7 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {Promise<Object<string, Array<Object>> | null>}
  *   [fieldObjectsPromise]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
- * @property {TextAccessibilityManager} accessibilityManager
+ * @property {TextAccessibilityManager} [accessibilityManager]
  */
 
 class AnnotationLayerBuilder {
