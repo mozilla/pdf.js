@@ -39,6 +39,7 @@ import {
   PixelsPerInch,
   RenderingCancelledException,
   setLayerDimensions,
+  shadow,
   SVGGraphics,
 } from "pdfjs-lib";
 import {
@@ -143,11 +144,7 @@ class PDFPageView {
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.annotationEditorLayerFactory = options.annotationEditorLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
-    this.textHighlighter =
-      options.textHighlighterFactory?.createTextHighlighter({
-        pageIndex: this.id - 1,
-        eventBus: this.eventBus,
-      });
+    this._textHighlighterFactory = options.textHighlighterFactory;
     this.structTreeLayerFactory = options.structTreeLayerFactory;
     if (
       typeof PDFJSDev === "undefined" ||
@@ -247,15 +244,23 @@ class PDFPageView {
     this.pdfPage?.cleanup();
   }
 
-  /**
-   * @private
-   */
-  async _renderAnnotationLayer() {
+  get _textHighlighter() {
+    return shadow(
+      this,
+      "_textHighlighter",
+      this._textHighlighterFactory?.createTextHighlighter({
+        pageIndex: this.id - 1,
+        eventBus: this.eventBus,
+      })
+    );
+  }
+
+  async #renderAnnotationLayer() {
     let error = null;
     try {
       await this.annotationLayer.render(this.viewport, "display");
     } catch (ex) {
-      console.error(`_renderAnnotationLayer: "${ex}".`);
+      console.error(`#renderAnnotationLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("annotationlayerrendered", {
@@ -266,15 +271,12 @@ class PDFPageView {
     }
   }
 
-  /**
-   * @private
-   */
-  async _renderAnnotationEditorLayer() {
+  async #renderAnnotationEditorLayer() {
     let error = null;
     try {
       await this.annotationEditorLayer.render(this.viewport, "display");
     } catch (ex) {
-      console.error(`_renderAnnotationEditorLayer: "${ex}".`);
+      console.error(`#renderAnnotationEditorLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("annotationeditorlayerrendered", {
@@ -285,18 +287,15 @@ class PDFPageView {
     }
   }
 
-  /**
-   * @private
-   */
-  async _renderXfaLayer() {
+  async #renderXfaLayer() {
     let error = null;
     try {
       const result = await this.xfaLayer.render(this.viewport, "display");
-      if (result?.textDivs && this.textHighlighter) {
-        this._buildXfaTextContentItems(result.textDivs);
+      if (result?.textDivs && this._textHighlighter) {
+        this.#buildXfaTextContentItems(result.textDivs);
       }
     } catch (ex) {
-      console.error(`_renderXfaLayer: "${ex}".`);
+      console.error(`#renderXfaLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("xfalayerrendered", {
@@ -365,14 +364,14 @@ class PDFPageView {
     }
   }
 
-  async _buildXfaTextContentItems(textDivs) {
+  async #buildXfaTextContentItems(textDivs) {
     const text = await this.pdfPage.getTextContent();
     const items = [];
     for (const item of text.items) {
       items.push(item.str);
     }
-    this.textHighlighter.setTextMapping(textDivs, items);
-    this.textHighlighter.enable();
+    this._textHighlighter.setTextMapping(textDivs, items);
+    this._textHighlighter.enable();
   }
 
   /**
@@ -639,7 +638,7 @@ class PDFPageView {
     if (this.xfaLayer && (!keepXfaLayer || !this.xfaLayer.div)) {
       this.xfaLayer.cancel();
       this.xfaLayer = null;
-      this.textHighlighter?.disable();
+      this._textHighlighter?.disable();
     }
   }
 
@@ -676,13 +675,13 @@ class PDFPageView {
     target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
 
     if (redrawAnnotationLayer && this.annotationLayer) {
-      this._renderAnnotationLayer();
+      this.#renderAnnotationLayer();
     }
     if (redrawAnnotationEditorLayer && this.annotationEditorLayer) {
-      this._renderAnnotationEditorLayer();
+      this.#renderAnnotationEditorLayer();
     }
     if (redrawXfaLayer && this.xfaLayer) {
-      this._renderXfaLayer();
+      this.#renderXfaLayer();
     }
     if (redrawTextLayer && this.textLayer) {
       this.#renderTextLayer();
@@ -753,7 +752,7 @@ class PDFPageView {
       this._accessibilityManager ||= new TextAccessibilityManager();
 
       this.textLayer = this.textLayerFactory.createTextLayerBuilder({
-        highlighter: this.textHighlighter,
+        highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
       });
@@ -851,7 +850,7 @@ class PDFPageView {
           this.#renderTextLayer();
 
           if (this.annotationLayer) {
-            this._renderAnnotationLayer().then(() => {
+            this.#renderAnnotationLayer().then(() => {
               if (this.annotationEditorLayerFactory) {
                 this.annotationEditorLayer ||=
                   this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
@@ -862,7 +861,7 @@ class PDFPageView {
                       accessibilityManager: this._accessibilityManager,
                     }
                   );
-                this._renderAnnotationEditorLayer();
+                this.#renderAnnotationEditorLayer();
               }
             });
           }
@@ -878,7 +877,7 @@ class PDFPageView {
         pageDiv: div,
         pdfPage,
       });
-      this._renderXfaLayer();
+      this.#renderXfaLayer();
     }
 
     div.setAttribute("data-loaded", true);
