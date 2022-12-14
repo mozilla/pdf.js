@@ -39,6 +39,7 @@ import {
   PixelsPerInch,
   RenderingCancelledException,
   setLayerDimensions,
+  shadow,
   SVGGraphics,
 } from "pdfjs-lib";
 import {
@@ -143,11 +144,7 @@ class PDFPageView {
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.annotationEditorLayerFactory = options.annotationEditorLayerFactory;
     this.xfaLayerFactory = options.xfaLayerFactory;
-    this.textHighlighter =
-      options.textHighlighterFactory?.createTextHighlighter({
-        pageIndex: this.id - 1,
-        eventBus: this.eventBus,
-      });
+    this._textHighlighterFactory = options.textHighlighterFactory;
     this.structTreeLayerFactory = options.structTreeLayerFactory;
     if (
       typeof PDFJSDev === "undefined" ||
@@ -247,6 +244,17 @@ class PDFPageView {
     this.pdfPage?.cleanup();
   }
 
+  get _textHighlighter() {
+    return shadow(
+      this,
+      "_textHighlighter",
+      this._textHighlighterFactory?.createTextHighlighter({
+        pageIndex: this.id - 1,
+        eventBus: this.eventBus,
+      })
+    );
+  }
+
   async #renderAnnotationLayer() {
     let error = null;
     try {
@@ -283,7 +291,7 @@ class PDFPageView {
     let error = null;
     try {
       const result = await this.xfaLayer.render(this.viewport, "display");
-      if (result?.textDivs && this.textHighlighter) {
+      if (result?.textDivs && this._textHighlighter) {
         this.#buildXfaTextContentItems(result.textDivs);
       }
     } catch (ex) {
@@ -362,8 +370,8 @@ class PDFPageView {
     for (const item of text.items) {
       items.push(item.str);
     }
-    this.textHighlighter.setTextMapping(textDivs, items);
-    this.textHighlighter.enable();
+    this._textHighlighter.setTextMapping(textDivs, items);
+    this._textHighlighter.enable();
   }
 
   /**
@@ -630,7 +638,7 @@ class PDFPageView {
     if (this.xfaLayer && (!keepXfaLayer || !this.xfaLayer.div)) {
       this.xfaLayer.cancel();
       this.xfaLayer = null;
-      this.textHighlighter?.disable();
+      this._textHighlighter?.disable();
     }
   }
 
@@ -744,7 +752,7 @@ class PDFPageView {
       this._accessibilityManager ||= new TextAccessibilityManager();
 
       this.textLayer = this.textLayerFactory.createTextLayerBuilder({
-        highlighter: this.textHighlighter,
+        highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
       });
