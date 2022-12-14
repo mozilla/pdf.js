@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<!--
+Copyright 2012 Mozilla Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Adobe CMap resources are covered by their own copyright but the same license:
+
+    Copyright 1990-2015 Adobe Systems Incorporated.
+
+See https://github.com/adobe-type-tools/cmap-resources
+-->
+<html dir="ltr" mozdisallowselectionprint>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>PDF.js viewer</title>
+
+<!--#if MOZCENTRAL-->
+<!--#include viewer-snippet-firefox-extension.html-->
+<!--#endif-->
+
+<!--#if MOZCENTRAL-->
+<!--<link rel="stylesheet" href="viewer.css">-->
+<!--#else-->
+<link rel="stylesheet" href="viewer-geckoview.css">
+<!--#endif-->
+
+<!--#if !MOZCENTRAL-->
+    <link rel="resource" type="application/l10n" href="locale/locale.properties">
+<!--#endif-->
+
+<!--#if !MOZCENTRAL-->
+    <script defer src="../node_modules/es-module-shims/dist/es-module-shims.js"></script>
+    <script type="importmap-shim">
+      {
+        "imports": {
+          "pdfjs/": "../src/",
+          "pdfjs-lib": "../src/pdf.js",
+          "pdfjs-web/": "./",
+          "pdfjs-fitCurve": "../build/dev-fitCurve/fit_curve.js"
+        }
+      }
+    </script>
+
+    <script src="viewer-geckoview.js" type="module-shim"></script>
+<!--#else-->
+<!--<script src="viewer.js"></script>-->
+<!--#endif-->
+
+  </head>
+
+  <body tabindex="1">
+    <div id="outerContainer">
+
+      <div id="mainContainer">
+
+        <div id="viewerContainer" tabindex="0">
+          <div id="viewer" class="pdfViewer"></div>
+        </div>
+      </div> <!-- mainContainer -->
+
+      <div id="dialogContainer">
+        <dialog id="passwordDialog">
+          <div class="row">
+            <label for="password" id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</label>
+          </div>
+          <div class="row">
+            <input type="password" id="password" class="toolbarField">
+          </div>
+          <div class="buttonRow">
+            <button id="passwordCancel" class="dialogButton"><span data-l10n-id="password_cancel">Cancel</span></button>
+            <button id="passwordSubmit" class="dialogButton"><span data-l10n-id="password_ok">OK</span></button>
+          </div>
+        </dialog>
+      </div>  <!-- dialogContainer -->
+
+    </div> <!-- outerContainer -->
+    <div id="printContainer"></div>
+
+<!--#if !MOZCENTRAL-->
+    <input type="file" id="fileInput" class="hidden">
+<!--#endif-->
+
+  </body>
+</html>
