@@ -247,15 +247,12 @@ class PDFPageView {
     this.pdfPage?.cleanup();
   }
 
-  /**
-   * @private
-   */
-  async _renderAnnotationLayer() {
+  async #renderAnnotationLayer() {
     let error = null;
     try {
       await this.annotationLayer.render(this.viewport, "display");
     } catch (ex) {
-      console.error(`_renderAnnotationLayer: "${ex}".`);
+      console.error(`#renderAnnotationLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("annotationlayerrendered", {
@@ -266,15 +263,12 @@ class PDFPageView {
     }
   }
 
-  /**
-   * @private
-   */
-  async _renderAnnotationEditorLayer() {
+  async #renderAnnotationEditorLayer() {
     let error = null;
     try {
       await this.annotationEditorLayer.render(this.viewport, "display");
     } catch (ex) {
-      console.error(`_renderAnnotationEditorLayer: "${ex}".`);
+      console.error(`#renderAnnotationEditorLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("annotationeditorlayerrendered", {
@@ -285,18 +279,15 @@ class PDFPageView {
     }
   }
 
-  /**
-   * @private
-   */
-  async _renderXfaLayer() {
+  async #renderXfaLayer() {
     let error = null;
     try {
       const result = await this.xfaLayer.render(this.viewport, "display");
       if (result?.textDivs && this.textHighlighter) {
-        this._buildXfaTextContentItems(result.textDivs);
+        this.#buildXfaTextContentItems(result.textDivs);
       }
     } catch (ex) {
-      console.error(`_renderXfaLayer: "${ex}".`);
+      console.error(`#renderXfaLayer: "${ex}".`);
       error = ex;
     } finally {
       this.eventBus.dispatch("xfalayerrendered", {
@@ -365,7 +356,7 @@ class PDFPageView {
     }
   }
 
-  async _buildXfaTextContentItems(textDivs) {
+  async #buildXfaTextContentItems(textDivs) {
     const text = await this.pdfPage.getTextContent();
     const items = [];
     for (const item of text.items) {
@@ -676,13 +667,13 @@ class PDFPageView {
     target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
 
     if (redrawAnnotationLayer && this.annotationLayer) {
-      this._renderAnnotationLayer();
+      this.#renderAnnotationLayer();
     }
     if (redrawAnnotationEditorLayer && this.annotationEditorLayer) {
-      this._renderAnnotationEditorLayer();
+      this.#renderAnnotationEditorLayer();
     }
     if (redrawXfaLayer && this.xfaLayer) {
-      this._renderXfaLayer();
+      this.#renderXfaLayer();
     }
     if (redrawTextLayer && this.textLayer) {
       this.#renderTextLayer();
@@ -851,7 +842,7 @@ class PDFPageView {
           this.#renderTextLayer();
 
           if (this.annotationLayer) {
-            this._renderAnnotationLayer().then(() => {
+            this.#renderAnnotationLayer().then(() => {
               if (this.annotationEditorLayerFactory) {
                 this.annotationEditorLayer ||=
                   this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
@@ -862,7 +853,7 @@ class PDFPageView {
                       accessibilityManager: this._accessibilityManager,
                     }
                   );
-                this._renderAnnotationEditorLayer();
+                this.#renderAnnotationEditorLayer();
               }
             });
           }
@@ -878,7 +869,7 @@ class PDFPageView {
         pageDiv: div,
         pdfPage,
       });
-      this._renderXfaLayer();
+      this.#renderXfaLayer();
     }
 
     div.setAttribute("data-loaded", true);
