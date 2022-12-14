@@ -2870,6 +2870,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         expect(reason instanceof RenderingCancelledException).toEqual(true);
         expect(reason.message).toEqual("Rendering cancelled, page 1");
         expect(reason.type).toEqual("canvas");
+        expect(reason.extraDelay).toEqual(0);
       }
 
       CanvasFactory.destroy(canvasAndCtx);

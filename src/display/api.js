@@ -1828,10 +1828,19 @@ class PDFPageProxy {
       // cancelled, since that will unnecessarily delay re-rendering when (for
       // partially parsed pages) e.g. zooming/rotation occurs in the viewer.
       if (reason instanceof RenderingCancelledException) {
+        let delay = RENDERING_CANCELLED_TIMEOUT;
+        if (reason.extraDelay > 0 && reason.extraDelay < /* ms = */ 1000) {
+          // Above, we prevent the total delay from becoming arbitrarily large.
+          delay += reason.extraDelay;
+        }
+
+        if (intentState.streamReaderCancelTimeout) {
+          clearTimeout(intentState.streamReaderCancelTimeout);
+        }
         intentState.streamReaderCancelTimeout = setTimeout(() => {
           this._abortOperatorList({ intentState, reason, force: true });
           intentState.streamReaderCancelTimeout = null;
-        }, RENDERING_CANCELLED_TIMEOUT);
+        }, delay);
         return;
       }
     }
@@ -3147,9 +3156,11 @@ class RenderTask {
    * Cancels the rendering task. If the task is currently rendering it will
    * not be cancelled until graphics pauses with a timeout. The promise that
    * this object extends will be rejected when cancelled.
+   *
+   * @param {number} [extraDelay]
    */
-  cancel() {
-    this.#internalRenderTask.cancel();
+  cancel(extraDelay = 0) {
+    this.#internalRenderTask.cancel(/* error = */ null, extraDelay);
   }
 
   /**
@@ -3266,7 +3277,7 @@ class InternalRenderTask {
     this.graphicsReadyCallback?.();
   }
 
-  cancel(error = null) {
+  cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
     this.gfx?.endDrawing();
@@ -3278,7 +3289,8 @@ class InternalRenderTask {
       error ||
         new RenderingCancelledException(
           `Rendering cancelled, page ${this._pageIndex + 1}`,
-          "canvas"
+          "canvas",
+          extraDelay
         )
     );
   }
