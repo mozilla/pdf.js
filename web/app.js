@@ -2363,7 +2363,6 @@ function webViewerResize() {
     // Work-around issue 15324 by ignoring "resize" events during printing.
     return;
   }
-  pdfViewer.updateContainerHeightCss();
 
   if (!pdfDocument) {
     return;
@@ -2646,9 +2645,9 @@ function webViewerWheel(evt) {
       // left corner is restored. When the mouse wheel is used, the position
       // under the cursor should be restored instead.
       const scaleCorrectionFactor = currentScale / previousScale - 1;
-      const rect = pdfViewer.container.getBoundingClientRect();
-      const dx = evt.clientX - rect.left;
-      const dy = evt.clientY - rect.top;
+      const [top, left] = pdfViewer.containerTopLeft;
+      const dx = evt.clientX - left;
+      const dy = evt.clientY - top;
       pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
       pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
     }
