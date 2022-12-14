@@ -697,8 +697,7 @@ class ProgressBar {
 
   #visible = true;
 
-  constructor(id) {
-    const bar = document.getElementById(id);
+  constructor(bar) {
     this.#classList = bar.classList;
   }
 
