@@ -532,7 +532,7 @@ const PDFViewerApplication = {
       pdfLinkService.setHistory(this.pdfHistory);
     }
 
-    if (appConfig.findBar && !this.supportsIntegratedFind) {
+    if (!this.supportsIntegratedFind && appConfig.findBar) {
       this.findBar = new PDFFindBar(appConfig.findBar, eventBus, this.l10n);
     }
 
@@ -543,11 +543,8 @@ const PDFViewerApplication = {
           eventBus
         );
       } else {
-        for (const element of [
-          document.getElementById("editorModeButtons"),
-          document.getElementById("editorModeSeparator"),
-        ]) {
-          element.hidden = true;
+        for (const id of ["editorModeButtons", "editorModeSeparator"]) {
+          document.getElementById(id)?.classList.add("hidden");
         }
       }
     }
@@ -792,16 +789,13 @@ const PDFViewerApplication = {
    * @private
    */
   _hideViewBookmark() {
-    const { viewBookmarkButton, presentationModeButton } =
-      this.appConfig.secondaryToolbar;
-
+    const { secondaryToolbar } = this.appConfig;
     // URL does not reflect proper document location - hiding some buttons.
-    viewBookmarkButton.hidden = true;
+    secondaryToolbar?.viewBookmarkButton.classList.add("hidden");
 
     // Avoid displaying multiple consecutive separators in the secondaryToolbar.
-    if (presentationModeButton.hidden) {
-      const element = document.getElementById("viewBookmarkSeparator");
-      element.hidden = true;
+    if (secondaryToolbar?.presentationModeButton.classList.contains("hidden")) {
+      document.getElementById("viewBookmarkSeparator")?.classList.add("hidden");
     }
   },
 
@@ -2175,8 +2169,8 @@ function webViewerInitialized() {
     appConfig.secondaryToolbar?.printButton.classList.add("hidden");
   }
 
-  if (appConfig.secondaryToolbar && !PDFViewerApplication.supportsFullscreen) {
-    appConfig.secondaryToolbar.presentationModeButton.hidden = true;
+  if (!PDFViewerApplication.supportsFullscreen) {
+    appConfig.secondaryToolbar?.presentationModeButton.classList.add("hidden");
   }
 
   if (PDFViewerApplication.supportsIntegratedFind) {
