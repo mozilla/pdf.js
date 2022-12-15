@@ -3522,6 +3522,14 @@
          "37R": false
        }
     },
+    {  "id": "issue15833",
+       "file": "pdfs/issue15833.pdf",
+       "md5": "9562d027b980ea2779dcfb1669f9cf7e",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue11242",
        "file": "pdfs/issue11242_reduced.pdf",
        "md5": "ba50b6ee537f3e815ccfe0c99e598e05",

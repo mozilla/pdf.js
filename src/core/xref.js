@@ -665,8 +665,8 @@ class XRef {
     // circular dependency between tables (fixes bug1393476.pdf).
     const startXRefParsedCache = new Set();
 
-    try {
-      while (this.startXRefQueue.length) {
+    while (this.startXRefQueue.length) {
+      try {
         const startXRef = this.startXRefQueue[0];
 
         if (startXRefParsedCache.has(startXRef)) {
@@ -734,20 +734,18 @@ class XRef {
           // This is a fallback for non-compliant PDFs, i.e. "/Prev NNN 0 R"
           this.startXRefQueue.push(obj.num);
         }
-
-        this.startXRefQueue.shift();
+      } catch (e) {
+        if (e instanceof MissingDataException) {
+          throw e;
+        }
+        info("(while reading XRef): " + e);
       }
-
-      return this.topDict;
-    } catch (e) {
-      if (e instanceof MissingDataException) {
-        throw e;
-      }
-      info("(while reading XRef): " + e);
-
       this.startXRefQueue.shift();
     }
 
+    if (this.topDict) {
+      return this.topDict;
+    }
     if (recoveryMode) {
       return undefined;
     }
