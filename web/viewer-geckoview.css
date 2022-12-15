@@ -1,0 +1,367 @@
+/* Copyright 2014 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import url(pdf_viewer.css);
+
+:root {
+  --dir-factor: 1;
+  --scale-select-width: 140px;
+
+  --toolbar-icon-opacity: 0.7;
+  --doorhanger-icon-opacity: 0.9;
+
+  --main-color: rgba(12, 12, 13, 1);
+  --body-bg-color: rgba(237, 237, 240, 1);
+  --scrollbar-color: auto;
+  --scrollbar-bg-color: auto;
+  --dialog-button-border: none;
+  --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
+  --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+}
+
+:root:dir(rtl) {
+  --dir-factor: -1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --main-color: rgba(249, 249, 250, 1);
+    --body-bg-color: rgba(42, 42, 46, 1);
+    --progressBar-color: rgba(0, 96, 223, 1);
+    --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
+    --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
+    --scrollbar-color: rgba(121, 121, 123, 1);
+    --scrollbar-bg-color: rgba(35, 35, 39, 1);
+
+    --dialog-button-bg-color: rgba(92, 92, 97, 1);
+    --dialog-button-hover-bg-color: rgba(115, 115, 115, 1);
+  }
+}
+
+@media screen and (forced-colors: active) {
+  :root {
+    --dialog-button-border: 1px solid Highlight;
+    --dialog-button-hover-bg-color: Highlight;
+    --dialog-button-hover-color: ButtonFace;
+    --main-color: CanvasText;
+  }
+}
+
+* {
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background-color: var(--body-bg-color);
+  scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
+}
+
+.hidden,
+[hidden] {
+  display: none !important;
+}
+
+#outerContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+#mainContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  min-width: 350px;
+}
+
+#viewerContainer {
+  overflow: auto;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  outline: none;
+}
+#viewerContainer {
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+}
+
+.dialogButton {
+  border: none;
+  background: none;
+  width: 28px;
+  height: 28px;
+  outline: none;
+}
+
+.dialogButton:hover,
+.dialogButton:focus-visible {
+  background-color: var(--dialog-button-hover-bg-color);
+}
+
+.dialogButton:hover > span,
+.dialogButton:focus-visible > span {
+  color: var(--dialog-button-hover-color);
+}
+
+.dialogButton[disabled] {
+  opacity: 0.5;
+}
+
+.dialogButton {
+  min-width: 16px;
+  margin: 2px 1px;
+  padding: 2px 6px 0;
+  border: none;
+  border-radius: 2px;
+  color: var(--main-color);
+  font-size: 12px;
+  line-height: 14px;
+  user-select: none;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+.toolbarField {
+  padding: 4px 7px;
+  margin: 3px 0;
+  border-radius: 2px;
+  background-color: var(--field-bg-color);
+  background-clip: padding-box;
+  border: 1px solid var(--field-border-color);
+  box-shadow: none;
+  color: var(--field-color);
+  font-size: 12px;
+  line-height: 16px;
+  outline: none;
+}
+
+.toolbarField:focus {
+  border-color: #0a84ff;
+}
+
+.dialogButton {
+  width: auto;
+  margin: 3px 4px 2px !important;
+  padding: 2px 11px;
+  color: var(--main-color);
+  background-color: var(--dialog-button-bg-color);
+  border: var(--dialog-button-border) !important;
+}
+
+dialog {
+  margin: auto;
+  padding: 15px;
+  border-spacing: 4px;
+  color: var(--main-color);
+  font: message-box;
+  font-size: 12px;
+  line-height: 14px;
+  background-color: var(--doorhanger-bg-color);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+dialog > .row {
+  display: table-row;
+}
+
+dialog > .row > * {
+  display: table-cell;
+}
+
+dialog .toolbarField {
+  margin: 5px 0;
+}
+
+dialog .separator {
+  display: block;
+  margin: 4px 0;
+  height: 1px;
+  width: 100%;
+  background-color: var(--separator-color);
+}
+
+dialog .buttonRow {
+  text-align: center;
+  vertical-align: middle;
+}
+
+dialog :link {
+  color: rgba(255, 255, 255, 1);
+}
+
+#passwordDialog {
+  text-align: center;
+}
+#passwordDialog .toolbarField {
+  width: 200px;
+}
+
+.grab-to-pan-grab {
+  cursor: grab !important;
+}
+.grab-to-pan-grab
+  *:not(input):not(textarea):not(button):not(select):not(:link) {
+  cursor: inherit !important;
+}
+.grab-to-pan-grab:active,
+.grab-to-pan-grabbing {
+  cursor: grabbing !important;
+  position: fixed;
+  background: rgba(0, 0, 0, 0);
+  display: block;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 50000; /* should be higher than anything else in PDF.js! */
+}
+
+@page {
+  margin: 0;
+}
+
+#printContainer {
+  display: none;
+}
+
+@media print {
+  body {
+    background: rgba(0, 0, 0, 0) none;
+  }
+  body[data-pdfjsprinting] #outerContainer {
+    display: none;
+  }
+  body[data-pdfjsprinting] #printContainer {
+    display: block;
+  }
+  #printContainer {
+    height: 100%;
+  }
+  /* wrapper around (scaled) print canvas elements */
+  #printContainer > .printedPage {
+    page-break-after: always;
+    page-break-inside: avoid;
+
+    /* The wrapper always cover the whole page. */
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #printContainer > .xfaPrintedPage .xfaPage {
+    position: absolute;
+  }
+
+  #printContainer > .xfaPrintedPage {
+    page-break-after: always;
+    page-break-inside: avoid;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  #printContainer > .printedPage canvas,
+  #printContainer > .printedPage img {
+    /* The intrinsic canvas / image size will make sure that we fit the page. */
+    max-width: 100%;
+    max-height: 100%;
+
+    direction: ltr;
+    display: block;
+  }
+}
+
+.visibleLargeView,
+.visibleMediumView {
+  display: none;
+}
+
+@media all and (max-width: 900px) {
+  #toolbarViewerMiddle {
+    display: table;
+    margin: auto;
+    left: auto;
+    position: inherit;
+    transform: none;
+  }
+}
+
+@media all and (max-width: 840px) {
+  #sidebarContainer {
+    background-color: var(--sidebar-narrow-bg-color);
+  }
+  #outerContainer.sidebarOpen #viewerContainer {
+    inset-inline-start: 0 !important;
+  }
+}
+
+@media all and (max-width: 820px) {
+  #outerContainer .hiddenLargeView {
+    display: none;
+  }
+  #outerContainer .visibleLargeView {
+    display: inherit;
+  }
+}
+
+@media all and (max-width: 750px) {
+  #outerContainer .hiddenMediumView {
+    display: none;
+  }
+  #outerContainer .visibleMediumView {
+    display: inherit;
+  }
+}
+
+@media all and (max-width: 690px) {
+  .hiddenSmallView,
+  .hiddenSmallView * {
+    display: none;
+  }
+  .toolbarButtonSpacer {
+    width: 0;
+  }
+  .findbar {
+    inset-inline-start: 34px;
+  }
+}
+
+@media all and (max-width: 560px) {
+  #scaleSelectContainer {
+    display: none;
+  }
+}
