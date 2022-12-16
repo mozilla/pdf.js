@@ -59,6 +59,7 @@ class TextLayerBuilder {
 
     this.div = document.createElement("div");
     this.div.className = "textLayer";
+    this.hide();
   }
 
   #finishRendering() {
