@@ -125,8 +125,8 @@ class TextLayerBuilder {
     await this.textLayerRenderTask.promise;
     this.#finishRendering();
     this.#scale = scale;
-    this.accessibilityManager?.enable();
     this.show();
+    this.accessibilityManager?.enable();
   }
 
   hide() {
