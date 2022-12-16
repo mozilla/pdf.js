@@ -1236,7 +1236,10 @@ const PDFViewerApplication = {
           if (pageMode && sidebarView === SidebarView.UNKNOWN) {
             sidebarView = apiPageModeToSidebarView(pageMode);
           }
+          // NOTE: Always ignore the pageLayout in GeckoView since there's
+          // no UI available to change Scroll/Spread modes for the user.
           if (
+            (typeof PDFJSDev === "undefined" || !PDFJSDev.test("GECKOVIEW")) &&
             pageLayout &&
             scrollMode === ScrollMode.UNKNOWN &&
             spreadMode === SpreadMode.UNKNOWN
