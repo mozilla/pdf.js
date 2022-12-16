@@ -539,10 +539,16 @@ describe("Interaction", () => {
                 page,
                 getSelector(refOpen),
                 async () => {
-                  await page.evaluate(selector => {
-                    const element = window.document.querySelector(selector);
+                  const selector = getSelector(refOpen);
+                  await page.evaluate(sel => {
+                    const element = window.document.querySelector(sel);
                     element.scrollIntoView();
-                  }, getSelector(refOpen));
+                  }, selector);
+                  await page.waitForSelector(selector, {
+                    visible: true,
+                    timeout: 0,
+                  });
+                  await page.waitForTimeout(50);
                 },
                 false
               );
@@ -1032,9 +1038,11 @@ describe("Interaction", () => {
         );
 
         await clearInput(page, getSelector("29R"));
+        await page.waitForTimeout(10);
         await clearInput(page, getSelector("30R"));
 
         await page.focus(getSelector("29R"));
+        await page.waitForTimeout(10);
         await page.type(getSelector("29R"), "12A", { delay: 100 });
         await page.waitForFunction(
           `${getQuerySelector("29R")}.value !== "12A"`
@@ -1044,8 +1052,10 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("12");
 
         await page.focus(getSelector("29R"));
+        await page.waitForTimeout(10);
         await page.type(getSelector("29R"), "34", { delay: 100 });
-        await page.click("[data-annotation-id='30R']");
+        await page.focus(getSelector("30R"));
+        await page.waitForTimeout(10);
 
         await page.waitForFunction(
           `${getQuerySelector("29R")}.value !== "1234"`
@@ -1055,8 +1065,10 @@ describe("Interaction", () => {
         expect(text).withContext(`In ${browserName}`).toEqual("");
 
         await page.focus(getSelector("29R"));
+        await page.waitForTimeout(10);
         await page.type(getSelector("29R"), "12345", { delay: 100 });
-        await page.click("[data-annotation-id='30R']");
+        await page.focus(getSelector("30R"));
+        await page.waitForTimeout(10);
 
         text = await page.$eval(getSelector(`29R`), el => el.value);
         expect(text).withContext(`In ${browserName}`).toEqual("12345");
