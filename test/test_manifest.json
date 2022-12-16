@@ -7275,5 +7275,13 @@
             "value": "x2"
          }
       }
+   },
+   {
+      "id": "issue15784",
+      "file": "pdfs/issue15784.pdf",
+      "md5": "6e4fce8e36d960955a7476b862f58939",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
    }
 ]

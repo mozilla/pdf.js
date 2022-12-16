@@ -108,38 +108,38 @@ const CFFStandardStrings = [
 const NUM_STANDARD_CFF_STRINGS = 391;
 
 const CharstringValidationData = [
-  null,
-  { id: "hstem", min: 2, stackClearing: true, stem: true },
-  null,
-  { id: "vstem", min: 2, stackClearing: true, stem: true },
-  { id: "vmoveto", min: 1, stackClearing: true },
-  { id: "rlineto", min: 2, resetStack: true },
-  { id: "hlineto", min: 1, resetStack: true },
-  { id: "vlineto", min: 1, resetStack: true },
-  { id: "rrcurveto", min: 6, resetStack: true },
-  null,
-  { id: "callsubr", min: 1, undefStack: true },
-  { id: "return", min: 0, undefStack: true },
-  null, // 12
-  null,
-  { id: "endchar", min: 0, stackClearing: true },
-  null,
-  null,
-  null,
-  { id: "hstemhm", min: 2, stackClearing: true, stem: true },
-  { id: "hintmask", min: 0, stackClearing: true },
-  { id: "cntrmask", min: 0, stackClearing: true },
-  { id: "rmoveto", min: 2, stackClearing: true },
-  { id: "hmoveto", min: 1, stackClearing: true },
-  { id: "vstemhm", min: 2, stackClearing: true, stem: true },
-  { id: "rcurveline", min: 8, resetStack: true },
-  { id: "rlinecurve", min: 8, resetStack: true },
-  { id: "vvcurveto", min: 4, resetStack: true },
-  { id: "hhcurveto", min: 4, resetStack: true },
-  null, // shortint
-  { id: "callgsubr", min: 1, undefStack: true },
-  { id: "vhcurveto", min: 4, resetStack: true },
-  { id: "hvcurveto", min: 4, resetStack: true },
+  /*  0 */ null,
+  /*  1 */ { id: "hstem", min: 2, stackClearing: true, stem: true },
+  /*  2 */ null,
+  /*  3 */ { id: "vstem", min: 2, stackClearing: true, stem: true },
+  /*  4 */ { id: "vmoveto", min: 1, stackClearing: true },
+  /*  5 */ { id: "rlineto", min: 2, resetStack: true },
+  /*  6 */ { id: "hlineto", min: 1, resetStack: true },
+  /*  7 */ { id: "vlineto", min: 1, resetStack: true },
+  /*  8 */ { id: "rrcurveto", min: 6, resetStack: true },
+  /*  9 */ null,
+  /* 10 */ { id: "callsubr", min: 1, undefStack: true },
+  /* 11 */ { id: "return", min: 0, undefStack: true },
+  /* 12 */ null,
+  /* 13 */ null,
+  /* 14 */ { id: "endchar", min: 0, stackClearing: true },
+  /* 15 */ null,
+  /* 16 */ null,
+  /* 17 */ null,
+  /* 18 */ { id: "hstemhm", min: 2, stackClearing: true, stem: true },
+  /* 19 */ { id: "hintmask", min: 0, stackClearing: true },
+  /* 20 */ { id: "cntrmask", min: 0, stackClearing: true },
+  /* 21 */ { id: "rmoveto", min: 2, stackClearing: true },
+  /* 22 */ { id: "hmoveto", min: 1, stackClearing: true },
+  /* 23 */ { id: "vstemhm", min: 2, stackClearing: true, stem: true },
+  /* 24 */ { id: "rcurveline", min: 8, resetStack: true },
+  /* 25 */ { id: "rlinecurve", min: 8, resetStack: true },
+  /* 26 */ { id: "vvcurveto", min: 4, resetStack: true },
+  /* 27 */ { id: "hhcurveto", min: 4, resetStack: true },
+  /* 28 */ null, // shortint
+  /* 29 */ { id: "callgsubr", min: 1, undefStack: true },
+  /* 30 */ { id: "vhcurveto", min: 4, resetStack: true },
+  /* 31 */ { id: "hvcurveto", min: 4, resetStack: true },
 ];
 
 const CharstringValidationData12 = [
@@ -489,7 +489,7 @@ class CFFParser {
     let stackSize = state.stackSize;
     const stack = state.stack;
 
-    const length = data.length;
+    let length = data.length;
 
     for (let j = 0; j < length; ) {
       const value = data[j++];
@@ -601,6 +601,12 @@ class CFFParser {
         // So just replace it by endchar command to make OTS happy.
         data[j - 1] = 14;
         validationCommand = CharstringValidationData[14];
+      } else if (value === 9) {
+        // Not a valid value.
+        data.copyWithin(j - 1, j, -1);
+        j -= 1;
+        length -= 1;
+        continue;
       } else {
         validationCommand = CharstringValidationData[value];
       }
@@ -672,6 +678,9 @@ class CFFParser {
           state.firstStackClearing = false;
         }
       }
+    }
+    if (length < data.length) {
+      data.fill(/* endchar = */ 14, length);
     }
     state.stackSize = stackSize;
     return true;
