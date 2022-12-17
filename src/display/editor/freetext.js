@@ -252,11 +252,11 @@ class FreeTextEditor extends AnnotationEditor {
     this.editorDiv.removeEventListener("blur", this.#boundEditorDivBlur);
     this.editorDiv.removeEventListener("input", this.#boundEditorDivInput);
 
-    if (this.pageIndex === this._uiManager.currentPageIndex) {
-      // On Chrome, the focus is given to <body> when contentEditable is set to
-      // false, hence we focus the div.
-      this.div.focus();
-    }
+    // On Chrome, the focus is given to <body> when contentEditable is set to
+    // false, hence we focus the div.
+    this.div.focus({
+      preventScroll: true /* See issue #15744 */,
+    });
 
     // In case the blur callback hasn't been called.
     this.isEditing = false;

@@ -517,11 +517,9 @@ class InkEditor extends AnnotationEditor {
     // When commiting, the position of this editor is changed, hence we must
     // move it to the right position in the DOM.
     this.parent.moveEditorInDOM(this);
-    if (this.pageIndex === this._uiManager.currentPageIndex) {
-      // After the div has been moved in the DOM, the focus may have been stolen
-      // by document.body, hence we just keep it here.
-      this.div.focus();
-    }
+    this.div.focus({
+      preventScroll: true /* See issue #15744 */,
+    });
   }
 
   /** @inheritdoc */
