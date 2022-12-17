@@ -227,9 +227,13 @@ class PDFViewer {
 
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
+  #containerTopLeft = null;
+
   #enablePermissions = false;
 
   #previousContainerHeight = 0;
+
+  #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
 
   #scrollModePageState = null;
 
@@ -247,6 +251,8 @@ class PDFViewer {
       );
     }
     this.container = options.container;
+    this.#resizeObserver.observe(this.container);
+
     this.viewer = options.viewer || options.container.firstElementChild;
 
     if (
@@ -330,7 +336,8 @@ class PDFViewer {
     if (this.removePageBorders) {
       this.viewer.classList.add("removePageBorders");
     }
-    this.updateContainerHeightCss();
+
+    this.#updateContainerHeightCss();
   }
 
   get pagesCount() {
@@ -1137,7 +1144,6 @@ class PDFViewer {
     if (this.defaultRenderingQueue) {
       this.update();
     }
-    this.updateContainerHeightCss();
   }
 
   /**
@@ -2186,14 +2192,30 @@ class PDFViewer {
     this.currentScaleValue = newScale;
   }
 
-  updateContainerHeightCss() {
-    const height = this.container.clientHeight;
-
+  #updateContainerHeightCss(height = this.container.clientHeight) {
     if (height !== this.#previousContainerHeight) {
       this.#previousContainerHeight = height;
-
       docStyle.setProperty("--viewer-container-height", `${height}px`);
     }
+  }
+
+  #resizeObserverCallback(entries) {
+    for (const entry of entries) {
+      if (entry.target === this.container) {
+        this.#updateContainerHeightCss(
+          Math.floor(entry.borderBoxSize[0].blockSize)
+        );
+        this.#containerTopLeft = null;
+        break;
+      }
+    }
+  }
+
+  get containerTopLeft() {
+    return (this.#containerTopLeft ||= [
+      this.container.offsetTop,
+      this.container.offsetLeft,
+    ]);
   }
 
   /**
