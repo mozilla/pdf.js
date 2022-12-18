@@ -17,19 +17,7 @@
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
-// eslint-disable-next-line max-len
-/** @typedef {import("./annotation_layer_builder").AnnotationLayerBuilder} AnnotationLayerBuilder */
-// eslint-disable-next-line max-len
-/** @typedef {import("./annotation_editor_layer_builder").AnnotationEditorLayerBuilder} AnnotationEditorLayerBuilder */
-// eslint-disable-next-line max-len
-/** @typedef {import("./struct_tree_builder").StructTreeLayerBuilder} StructTreeLayerBuilder */
-/** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_layer_builder").TextLayerBuilder} TextLayerBuilder */
 /** @typedef {import("./ui_utils").RenderingStates} RenderingStates */
-/** @typedef {import("./xfa_layer_builder").XfaLayerBuilder} XfaLayerBuilder */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 /**
  * @interface
@@ -164,125 +152,6 @@ class IRenderableView {
 /**
  * @interface
  */
-class IPDFTextLayerFactory {
-  /**
-   * @typedef {Object} CreateTextLayerBuilderParameters
-   * @property {TextHighlighter} highlighter
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   * @property {boolean} [isOffscreenCanvasSupported]
-   */
-
-  /**
-   * @param {CreateTextLayerBuilderParameters}
-   * @returns {TextLayerBuilder}
-   */
-  createTextLayerBuilder({
-    highlighter,
-    accessibilityManager,
-    isOffscreenCanvasSupported,
-  }) {}
-}
-
-/**
- * @interface
- */
-class IPDFAnnotationLayerFactory {
-  /**
-   * @typedef {Object} CreateAnnotationLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   * @property {string} [imageResourcesPath] - Path for image resources, mainly
-   *   for annotation icons. Include trailing slash.
-   * @property {boolean} renderForms
-   * @property {IL10n} l10n
-   * @property {boolean} [enableScripting]
-   * @property {Promise<boolean>} [hasJSActionsPromise]
-   * @property {Promise<Object<string, Array<Object>> | null>}
-   *   [fieldObjectsPromise]
-   * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
-   *   annotation ids with canvases used to render them.
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationLayerBuilderParameters}
-   * @returns {AnnotationLayerBuilder}
-   */
-  createAnnotationLayerBuilder({
-    pageDiv,
-    pdfPage,
-    annotationStorage = null,
-    imageResourcesPath = "",
-    renderForms = true,
-    l10n = undefined,
-    enableScripting = false,
-    hasJSActionsPromise = null,
-    fieldObjectsPromise = null,
-    annotationCanvasMap = null,
-    accessibilityManager = null,
-  }) {}
-}
-
-/**
- * @interface
- */
-class IPDFAnnotationEditorLayerFactory {
-  /**
-   * @typedef {Object} CreateAnnotationEditorLayerBuilderParameters
-   * @property {AnnotationEditorUIManager} [uiManager]
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {IL10n} l10n
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationEditorLayerBuilderParameters}
-   * @returns {AnnotationEditorLayerBuilder}
-   */
-  createAnnotationEditorLayerBuilder({
-    uiManager = null,
-    pageDiv,
-    pdfPage,
-    l10n,
-    accessibilityManager,
-  }) {}
-}
-
-/**
- * @interface
- */
-class IPDFXfaLayerFactory {
-  /**
-   * @typedef {Object} CreateXfaLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   */
-
-  /**
-   * @param {CreateXfaLayerBuilderParameters}
-   * @returns {XfaLayerBuilder}
-   */
-  createXfaLayerBuilder({ pageDiv, pdfPage, annotationStorage = null }) {}
-}
-
-/**
- * @interface
- */
-class IPDFStructTreeLayerFactory {
-  /**
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder() {}
-}
-
-/**
- * @interface
- */
 class IDownloadManager {
   /**
    * @param {string} url
@@ -346,14 +215,4 @@ class IL10n {
   async translate(element) {}
 }
 
-export {
-  IDownloadManager,
-  IL10n,
-  IPDFAnnotationEditorLayerFactory,
-  IPDFAnnotationLayerFactory,
-  IPDFLinkService,
-  IPDFStructTreeLayerFactory,
-  IPDFTextLayerFactory,
-  IPDFXfaLayerFactory,
-  IRenderableView,
-};
+export { IDownloadManager, IL10n, IPDFLinkService, IRenderableView };

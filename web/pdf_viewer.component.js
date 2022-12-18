@@ -14,12 +14,6 @@
  */
 
 import {
-  DefaultAnnotationLayerFactory,
-  DefaultStructTreeLayerFactory,
-  DefaultTextLayerFactory,
-  DefaultXfaLayerFactory,
-} from "./default_factory.js";
-import {
   LinkTarget,
   PDFLinkService,
   SimpleLinkService,
@@ -50,6 +44,45 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 // eslint-disable-next-line no-unused-vars
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
+
+class DefaultAnnotationLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultAnnotationLayerFactory` has been removed, " +
+        "please use the `annotationMode` option when initializing " +
+        "the `PDFPageView`-instance to control AnnotationLayer rendering."
+    );
+  }
+}
+
+class DefaultStructTreeLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultStructTreeLayerFactory` has been removed, " +
+        "this functionality is automatically enabled when the TextLayer is used."
+    );
+  }
+}
+
+class DefaultTextLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultTextLayerFactory` has been removed, " +
+        "please use the `textLayerMode` option when initializing " +
+        "the `PDFPageView`-instance to control TextLayer rendering."
+    );
+  }
+}
+
+class DefaultXfaLayerFactory {
+  constructor() {
+    throw new Error(
+      "The `DefaultXfaLayerFactory` has been removed, " +
+        "please use the `enableXfa` option when calling " +
+        "the `getDocument`-function to control XfaLayer rendering."
+    );
+  }
+}
 
 export {
   AnnotationLayerBuilder,
