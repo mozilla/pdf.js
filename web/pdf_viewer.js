@@ -22,18 +22,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 /** @typedef {import("./interfaces").IL10n} IL10n */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationEditorLayerFactory} IPDFAnnotationEditorLayerFactory */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
-/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
 import {
   AnnotationEditorType,
@@ -69,16 +58,10 @@ import {
   VERTICAL_PADDING,
   watchScroll,
 } from "./ui_utils.js";
-import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
-import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { NullL10n } from "./l10n_utils.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
-import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
-import { TextHighlighter } from "./text_highlighter.js";
-import { TextLayerBuilder } from "./text_layer_builder.js";
-import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 const DEFAULT_CACHE_SIZE = 10;
 const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
@@ -211,12 +194,6 @@ class PDFPageViewBuffer {
 
 /**
  * Simple viewer control to display PDF content/pages.
- *
- * @implements {IPDFAnnotationLayerFactory}
- * @implements {IPDFAnnotationEditorLayerFactory}
- * @implements {IPDFStructTreeLayerFactory}
- * @implements {IPDFTextLayerFactory}
- * @implements {IPDFXfaLayerFactory}
  */
 class PDFViewer {
   #buffer = null;
@@ -559,6 +536,36 @@ class PDFViewer {
     return this.pdfDocument ? this._pagesCapability.promise : null;
   }
 
+  #layerProperties() {
+    const self = this;
+    return {
+      get annotationEditorUIManager() {
+        return self.#annotationEditorUIManager;
+      },
+      get annotationStorage() {
+        return self.pdfDocument?.annotationStorage;
+      },
+      get downloadManager() {
+        return self.downloadManager;
+      },
+      get enableScripting() {
+        return !!self._scriptingManager;
+      },
+      get fieldObjectsPromise() {
+        return self.pdfDocument?.getFieldObjects();
+      },
+      get findController() {
+        return self.findController;
+      },
+      get hasJSActionsPromise() {
+        return self.pdfDocument?.hasJSActions();
+      },
+      get linkService() {
+        return self.linkService;
+      },
+    };
+  }
+
   /**
    * Currently only *some* permissions are supported.
    * @returns {Object}
@@ -658,7 +665,6 @@ class PDFViewer {
     if (!pdfDocument) {
       return;
     }
-    const isPureXfa = pdfDocument.isPureXfa;
     const pagesCount = pdfDocument.numPages;
     const firstPagePromise = pdfDocument.getPage(1);
     // Rendering (potentially) depends on this, hence fetching it immediately.
@@ -732,13 +738,13 @@ class PDFViewer {
         if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
           const mode = annotationEditorMode;
 
-          if (isPureXfa) {
+          if (pdfDocument.isPureXfa) {
             console.warn("Warning: XFA-editing is not implemented.");
           } else if (isValidAnnotationEditorMode(mode)) {
             this.#annotationEditorUIManager = new AnnotationEditorUIManager(
               this.container,
               this.eventBus,
-              this.pdfDocument?.annotationStorage
+              pdfDocument?.annotationStorage
             );
             if (mode !== AnnotationEditorType.NONE) {
               this.#annotationEditorUIManager.updateMode(mode);
@@ -748,6 +754,7 @@ class PDFViewer {
           }
         }
 
+        const layerProperties = this.#layerProperties.bind(this);
         const viewerElement =
           this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
         const scale = this.currentScale;
@@ -758,15 +765,6 @@ class PDFViewer {
         // see issue 15795.
         docStyle.setProperty("--scale-factor", viewport.scale);
 
-        const textLayerFactory =
-          textLayerMode !== TextLayerMode.DISABLE && !isPureXfa ? this : null;
-        const annotationLayerFactory =
-          annotationMode !== AnnotationMode.DISABLE ? this : null;
-        const xfaLayerFactory = isPureXfa ? this : null;
-        const annotationEditorLayerFactory = this.#annotationEditorUIManager
-          ? this
-          : null;
-
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
             container: viewerElement,
@@ -776,14 +774,8 @@ class PDFViewer {
             defaultViewport: viewport.clone(),
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
-            textLayerFactory,
             textLayerMode,
-            annotationLayerFactory,
             annotationMode,
-            xfaLayerFactory,
-            annotationEditorLayerFactory,
-            textHighlighterFactory: this,
-            structTreeLayerFactory: this,
             imageResourcesPath: this.imageResourcesPath,
             renderer:
               typeof PDFJSDev === "undefined" ||
@@ -795,6 +787,7 @@ class PDFViewer {
             maxCanvasPixels: this.maxCanvasPixels,
             pageColors: this.pageColors,
             l10n: this.l10n,
+            layerProperties,
           });
           this._pages.push(pageView);
         }
@@ -1654,161 +1647,6 @@ class PDFViewer {
       return true;
     }
     return false;
-  }
-
-  /**
-   * @typedef {Object} CreateTextLayerBuilderParameters
-   * @property {TextHighlighter} highlighter
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   * @property {boolean} [isOffscreenCanvasSupported]
-   */
-
-  /**
-   * @param {CreateTextLayerBuilderParameters}
-   * @returns {TextLayerBuilder}
-   */
-  createTextLayerBuilder({
-    highlighter,
-    accessibilityManager = null,
-    isOffscreenCanvasSupported = true,
-  }) {
-    return new TextLayerBuilder({
-      highlighter,
-      accessibilityManager,
-      isOffscreenCanvasSupported,
-    });
-  }
-
-  /**
-   * @typedef {Object} CreateTextHighlighterParameters
-   * @property {number} pageIndex
-   * @property {EventBus} eventBus
-   */
-
-  /**
-   * @param {CreateTextHighlighterParameters}
-   * @returns {TextHighlighter}
-   */
-  createTextHighlighter({ pageIndex, eventBus }) {
-    return new TextHighlighter({
-      eventBus,
-      pageIndex,
-      findController: this.findController,
-    });
-  }
-
-  /**
-   * @typedef {Object} CreateAnnotationLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   * @property {string} [imageResourcesPath] - Path for image resources, mainly
-   *   for annotation icons. Include trailing slash.
-   * @property {boolean} renderForms
-   * @property {IL10n} l10n
-   * @property {boolean} [enableScripting]
-   * @property {Promise<boolean>} [hasJSActionsPromise]
-   * @property {Promise<Object<string, Array<Object>> | null>}
-   *   [fieldObjectsPromise]
-   * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap] - Map some
-   *   annotation ids with canvases used to render them.
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationLayerBuilderParameters}
-   * @returns {AnnotationLayerBuilder}
-   */
-  createAnnotationLayerBuilder({
-    pageDiv,
-    pdfPage,
-    annotationStorage = this.pdfDocument?.annotationStorage,
-    imageResourcesPath = "",
-    renderForms = true,
-    l10n = NullL10n,
-    enableScripting = this.enableScripting,
-    hasJSActionsPromise = this.pdfDocument?.hasJSActions(),
-    fieldObjectsPromise = this.pdfDocument?.getFieldObjects(),
-    annotationCanvasMap = null,
-    accessibilityManager = null,
-  }) {
-    return new AnnotationLayerBuilder({
-      pageDiv,
-      pdfPage,
-      annotationStorage,
-      imageResourcesPath,
-      renderForms,
-      linkService: this.linkService,
-      downloadManager: this.downloadManager,
-      l10n,
-      enableScripting,
-      hasJSActionsPromise,
-      fieldObjectsPromise,
-      annotationCanvasMap,
-      accessibilityManager,
-    });
-  }
-
-  /**
-   * @typedef {Object} CreateAnnotationEditorLayerBuilderParameters
-   * @property {AnnotationEditorUIManager} [uiManager]
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {IL10n} l10n
-   * @property {TextAccessibilityManager} [accessibilityManager]
-   */
-
-  /**
-   * @param {CreateAnnotationEditorLayerBuilderParameters}
-   * @returns {AnnotationEditorLayerBuilder}
-   */
-  createAnnotationEditorLayerBuilder({
-    uiManager = this.#annotationEditorUIManager,
-    pageDiv,
-    pdfPage,
-    accessibilityManager = null,
-    l10n,
-  }) {
-    return new AnnotationEditorLayerBuilder({
-      uiManager,
-      pageDiv,
-      pdfPage,
-      accessibilityManager,
-      l10n,
-    });
-  }
-
-  /**
-   * @typedef {Object} CreateXfaLayerBuilderParameters
-   * @property {HTMLDivElement} pageDiv
-   * @property {PDFPageProxy} pdfPage
-   * @property {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   */
-
-  /**
-   * @param {CreateXfaLayerBuilderParameters}
-   * @returns {XfaLayerBuilder}
-   */
-  createXfaLayerBuilder({
-    pageDiv,
-    pdfPage,
-    annotationStorage = this.pdfDocument?.annotationStorage,
-  }) {
-    return new XfaLayerBuilder({
-      pageDiv,
-      pdfPage,
-      annotationStorage,
-      linkService: this.linkService,
-    });
-  }
-
-  /**
-   * @returns {StructTreeLayerBuilder}
-   */
-  createStructTreeLayerBuilder() {
-    return new StructTreeLayerBuilder();
   }
 
   /**

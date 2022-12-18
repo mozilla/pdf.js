@@ -19,15 +19,6 @@
 /** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IL10n} IL10n */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationLayerFactory} IPDFAnnotationLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFAnnotationEditorLayerFactory} IPDFAnnotationEditorLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFStructTreeLayerFactory} IPDFStructTreeLayerFactory */
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces").IPDFTextLayerFactory} IPDFTextLayerFactory */
-/** @typedef {import("./interfaces").IPDFXfaLayerFactory} IPDFXfaLayerFactory */
 /** @typedef {import("./interfaces").IRenderableView} IRenderableView */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
@@ -52,9 +43,16 @@ import {
   roundToDivide,
   TextLayerMode,
 } from "./ui_utils.js";
+import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
+import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
+import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
+import { TextHighlighter } from "./text_highlighter.js";
+import { TextLayerBuilder } from "./text_layer_builder.js";
+import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 /**
  * @typedef {Object} PDFPageViewOptions
@@ -67,7 +65,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   A promise that is resolved with an {@link OptionalContentConfig} instance.
  *   The default value is `null`.
  * @property {PDFRenderingQueue} [renderingQueue] - The rendering queue object.
- * @property {IPDFTextLayerFactory} [textLayerFactory]
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
@@ -76,11 +73,6 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   being rendered. The constants from {@link AnnotationMode} should be used;
  *   see also {@link RenderParameters} and {@link GetOperatorListParameters}.
  *   The default value is `AnnotationMode.ENABLE_FORMS`.
- * @property {IPDFAnnotationLayerFactory} [annotationLayerFactory]
- * @property {IPDFAnnotationEditorLayerFactory} [annotationEditorLayerFactory]
- * @property {IPDFXfaLayerFactory} [xfaLayerFactory]
- * @property {IPDFStructTreeLayerFactory} [structTreeLayerFactory]
- * @property {Object} [textHighlighterFactory]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} [useOnlyCssZoom] - Enables CSS only zooming. The default
@@ -94,15 +86,35 @@ import { TextAccessibilityManager } from "./text_accessibility.js";
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
  * @property {IL10n} [l10n] - Localization service.
+ * @property {function} [layerProperties] - The function that is used to lookup
+ *   the necessary layer-properties.
  */
 
 const MAX_CANVAS_PIXELS = compatibilityParams.maxCanvasPixels || 16777216;
+
+const DEFAULT_LAYER_PROPERTIES = () => {
+  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")) {
+    return null;
+  }
+  return {
+    annotationEditorUIManager: null,
+    annotationStorage: null,
+    downloadManager: null,
+    enableScripting: false,
+    fieldObjectsPromise: null,
+    findController: null,
+    hasJSActionsPromise: null,
+    linkService: new SimpleLinkService(),
+  };
+};
 
 /**
  * @implements {IRenderableView}
  */
 class PDFPageView {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
+
+  #layerProperties = null;
 
   #useThumbnailCanvas = {
     initialOptionalContent: true,
@@ -118,6 +130,7 @@ class PDFPageView {
 
     this.id = options.id;
     this.renderingId = "page" + this.id;
+    this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
 
     this.pdfPage = null;
     this.pageLabel = null;
@@ -140,12 +153,6 @@ class PDFPageView {
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
-    this.textLayerFactory = options.textLayerFactory;
-    this.annotationLayerFactory = options.annotationLayerFactory;
-    this.annotationEditorLayerFactory = options.annotationEditorLayerFactory;
-    this.xfaLayerFactory = options.xfaLayerFactory;
-    this._textHighlighterFactory = options.textHighlighterFactory;
-    this.structTreeLayerFactory = options.structTreeLayerFactory;
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
@@ -248,9 +255,10 @@ class PDFPageView {
     return shadow(
       this,
       "_textHighlighter",
-      this._textHighlighterFactory?.createTextHighlighter({
+      new TextHighlighter({
         pageIndex: this.id - 1,
         eventBus: this.eventBus,
+        findController: this.#layerProperties().findController,
       })
     );
   }
@@ -336,9 +344,7 @@ class PDFPageView {
       error,
     });
 
-    if (this.structTreeLayerFactory) {
-      this.#renderStructTreeLayer();
-    }
+    this.#renderStructTreeLayer();
   }
 
   /**
@@ -352,8 +358,7 @@ class PDFPageView {
     if (!this.textLayer) {
       return;
     }
-    this.structTreeLayer ||=
-      this.structTreeLayerFactory.createStructTreeLayerBuilder();
+    this.structTreeLayer ||= new StructTreeLayerBuilder();
 
     const tree = await (!this.structTreeLayer.renderingDone
       ? this.pdfPage.getStructTree()
@@ -753,11 +758,11 @@ class PDFPageView {
     if (
       !this.textLayer &&
       this.textLayerMode !== TextLayerMode.DISABLE &&
-      this.textLayerFactory
+      !pdfPage.isPureXfa
     ) {
       this._accessibilityManager ||= new TextAccessibilityManager();
 
-      this.textLayer = this.textLayerFactory.createTextLayerBuilder({
+      this.textLayer = new TextLayerBuilder({
         highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
@@ -766,20 +771,34 @@ class PDFPageView {
     }
 
     if (
-      this.#annotationMode !== AnnotationMode.DISABLE &&
-      this.annotationLayerFactory
+      !this.annotationLayer &&
+      this.#annotationMode !== AnnotationMode.DISABLE
     ) {
+      const {
+        annotationStorage,
+        downloadManager,
+        enableScripting,
+        fieldObjectsPromise,
+        hasJSActionsPromise,
+        linkService,
+      } = this.#layerProperties();
+
       this._annotationCanvasMap ||= new Map();
-      this.annotationLayer ||=
-        this.annotationLayerFactory.createAnnotationLayerBuilder({
-          pageDiv: div,
-          pdfPage,
-          imageResourcesPath: this.imageResourcesPath,
-          renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
-          l10n: this.l10n,
-          annotationCanvasMap: this._annotationCanvasMap,
-          accessibilityManager: this._accessibilityManager,
-        });
+      this.annotationLayer = new AnnotationLayerBuilder({
+        pageDiv: div,
+        pdfPage,
+        annotationStorage,
+        imageResourcesPath: this.imageResourcesPath,
+        renderForms: this.#annotationMode === AnnotationMode.ENABLE_FORMS,
+        linkService,
+        downloadManager,
+        l10n: this.l10n,
+        enableScripting,
+        hasJSActionsPromise,
+        fieldObjectsPromise,
+        annotationCanvasMap: this._annotationCanvasMap,
+        accessibilityManager: this._accessibilityManager,
+      });
     }
 
     if (this.xfaLayer?.div) {
@@ -852,25 +871,28 @@ class PDFPageView {
 
     const resultPromise = paintTask.promise.then(
       () => {
-        return finishPaintTask(null).then(() => {
+        return finishPaintTask(null).then(async () => {
           this.#renderTextLayer();
 
           if (this.annotationLayer) {
-            this.#renderAnnotationLayer().then(() => {
-              if (this.annotationEditorLayerFactory) {
-                this.annotationEditorLayer ||=
-                  this.annotationEditorLayerFactory.createAnnotationEditorLayerBuilder(
-                    {
-                      pageDiv: div,
-                      pdfPage,
-                      l10n: this.l10n,
-                      accessibilityManager: this._accessibilityManager,
-                    }
-                  );
-                this.#renderAnnotationEditorLayer();
-              }
+            await this.#renderAnnotationLayer();
+          }
+
+          if (!this.annotationEditorLayer) {
+            const { annotationEditorUIManager } = this.#layerProperties();
+
+            if (!annotationEditorUIManager) {
+              return;
+            }
+            this.annotationEditorLayer = new AnnotationEditorLayerBuilder({
+              uiManager: annotationEditorUIManager,
+              pageDiv: div,
+              pdfPage,
+              l10n: this.l10n,
+              accessibilityManager: this._accessibilityManager,
             });
           }
+          this.#renderAnnotationEditorLayer();
         });
       },
       function (reason) {
@@ -878,11 +900,17 @@ class PDFPageView {
       }
     );
 
-    if (this.xfaLayerFactory) {
-      this.xfaLayer ||= this.xfaLayerFactory.createXfaLayerBuilder({
-        pageDiv: div,
-        pdfPage,
-      });
+    if (pdfPage.isPureXfa) {
+      if (!this.xfaLayer) {
+        const { annotationStorage, linkService } = this.#layerProperties();
+
+        this.xfaLayer = new XfaLayerBuilder({
+          pageDiv: div,
+          pdfPage,
+          annotationStorage,
+          linkService,
+        });
+      }
       this.#renderXfaLayer();
     }
 
