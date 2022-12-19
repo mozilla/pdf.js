@@ -431,16 +431,14 @@ class XRef {
       }
       return skipped;
     }
+    const gEndobjRegExp = /\b(endobj|\d+\s+\d+\s+obj|xref|trailer)\b/g;
+    const gStartxrefRegExp = /\b(startxref|\d+\s+\d+\s+obj)\b/g;
     const objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
-    const endobjRegExp = /\bendobj[\b\s]$/;
-    const nestedObjRegExp = /\s+(\d+\s+\d+\s+obj[\b\s<])$/;
-    const CHECK_CONTENT_LENGTH = 25;
 
     const trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
     const startxrefBytes = new Uint8Array([
       115, 116, 97, 114, 116, 120, 114, 101, 102,
     ]);
-    const objBytes = new Uint8Array([111, 98, 106]);
     const xrefBytes = new Uint8Array([47, 88, 82, 101, 102]);
 
     // Clear out any existing entries, since they may be bogus.
@@ -450,6 +448,7 @@ class XRef {
     const stream = this.stream;
     stream.pos = 0;
     const buffer = stream.getBytes(),
+      bufferStr = bytesToString(buffer),
       length = buffer.length;
     let position = stream.start;
     const trailers = [],
@@ -484,8 +483,8 @@ class XRef {
         const num = m[1] | 0,
           gen = m[2] | 0;
 
+        const startPos = position + token.length;
         let contentLength,
-          startPos = position + token.length,
           updateEntries = false;
         if (!this.entries[num]) {
           updateEntries = true;
@@ -519,31 +518,22 @@ class XRef {
         // Find the next "obj" string, rather than "endobj", to ensure that
         // we won't skip over a new 'obj' operator in corrupt files where
         // 'endobj' operators are missing (fixes issue9105_reduced.pdf).
-        while (startPos < length) {
-          const endPos = startPos + skipUntil(buffer, startPos, objBytes) + 4;
+        gEndobjRegExp.lastIndex = startPos;
+        const match = gEndobjRegExp.exec(bufferStr);
+
+        if (match) {
+          const endPos = gEndobjRegExp.lastIndex + 1;
           contentLength = endPos - position;
 
-          const checkPos = Math.max(endPos - CHECK_CONTENT_LENGTH, startPos);
-          const tokenStr = bytesToString(buffer.subarray(checkPos, endPos));
-
-          // Check if the current object ends with an 'endobj' operator.
-          if (endobjRegExp.test(tokenStr)) {
-            break;
-          } else {
-            // Check if an "obj" occurrence is actually a new object,
-            // i.e. the current object is missing the 'endobj' operator.
-            const objToken = nestedObjRegExp.exec(tokenStr);
-
-            if (objToken && objToken[1]) {
-              warn(
-                'indexObjects: Found new "obj" inside of another "obj", ' +
-                  'caused by missing "endobj" -- trying to recover.'
-              );
-              contentLength -= objToken[1].length;
-              break;
-            }
+          if (match[1] !== "endobj") {
+            warn(
+              `indexObjects: Found "${match[1]}" inside of another "obj", ` +
+                'caused by missing "endobj" -- trying to recover.'
+            );
+            contentLength -= match[1].length + 1;
           }
-          startPos = endPos;
+        } else {
+          contentLength = length - position;
         }
         const content = buffer.subarray(position, position + contentLength);
 
@@ -562,26 +552,26 @@ class XRef {
       ) {
         trailers.push(position);
 
-        const contentLength = skipUntil(buffer, position, startxrefBytes);
+        const startPos = position + token.length;
+        let contentLength;
         // Attempt to handle (some) corrupt documents, where no 'startxref'
         // operators are present (fixes issue15590.pdf).
-        if (position + contentLength >= length) {
-          const endPos = position + skipUntil(buffer, position, objBytes) + 4;
+        gStartxrefRegExp.lastIndex = startPos;
+        const match = gStartxrefRegExp.exec(bufferStr);
 
-          const checkPos = Math.max(endPos - CHECK_CONTENT_LENGTH, position);
-          const tokenStr = bytesToString(buffer.subarray(checkPos, endPos));
+        if (match) {
+          const endPos = gStartxrefRegExp.lastIndex + 1;
+          contentLength = endPos - position;
 
-          // Find the first "obj" occurrence after the 'trailer' operator.
-          const objToken = nestedObjRegExp.exec(tokenStr);
-
-          if (objToken && objToken[1]) {
+          if (match[1] !== "startxref") {
             warn(
-              'indexObjects: Found first "obj" after "trailer", ' +
+              `indexObjects: Found "${match[1]}" after "trailer", ` +
                 'caused by missing "startxref" -- trying to recover.'
             );
-            position = endPos - objToken[1].length;
-            continue;
+            contentLength -= match[1].length + 1;
           }
+        } else {
+          contentLength = length - position;
         }
         position += contentLength;
       } else {
