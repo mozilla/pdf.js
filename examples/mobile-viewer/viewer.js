@@ -161,9 +161,12 @@ const PDFViewerApplication = {
   },
 
   get loadingBar() {
-    const bar = new pdfjsViewer.ProgressBar("loadingBar");
-
-    return pdfjsLib.shadow(this, "loadingBar", bar);
+    const bar = document.getElementById("loadingBar");
+    return pdfjsLib.shadow(
+      this,
+      "loadingBar",
+      new pdfjsViewer.ProgressBar(bar)
+    );
   },
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
