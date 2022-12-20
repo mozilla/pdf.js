@@ -262,13 +262,13 @@ class AnnotationElement {
       }
     }
 
-    container.style.left = `${(100 * (rect[0] - pageX)) / pageWidth}%`;
-    container.style.top = `${(100 * (rect[1] - pageY)) / pageHeight}%`;
+    container.style.left = `${Math.ceil(rect[0] * viewport.scale)}px`;
+    container.style.top = `${Math.ceil(rect[1] * viewport.scale)}px`;
 
     const { rotation } = data;
     if (data.hasOwnCanvas || rotation === 0) {
-      container.style.width = `${(100 * width) / pageWidth}%`;
-      container.style.height = `${(100 * height) / pageHeight}%`;
+      container.style.width = `${Math.ceil(width * viewport.scale)}px`;
+      container.style.height = `${Math.ceil(height * viewport.scale)}px`;
     } else {
       this.setRotation(rotation, container);
     }
