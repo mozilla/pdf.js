@@ -60,7 +60,7 @@
   font-size: calc(100px * var(--scale-factor));
   transform-origin: 0 0;
   cursor: auto;
-  z-index: 20000;
+  z-index: 4;
 }
 
 .annotationEditorLayer.freeTextEditing {

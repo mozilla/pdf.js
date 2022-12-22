@@ -26,6 +26,7 @@
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
+  z-index: 2;
 }
 
 .textLayer span,
