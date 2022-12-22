@@ -55,6 +55,7 @@
   overflow: hidden;
   width: 100%;
   height: 100%;
+  z-index: 1;
 }
 
 .pdfViewer .page {
@@ -156,6 +157,7 @@
   right: 0;
   bottom: 0;
   background: url("images/loading-icon.gif") center no-repeat;
+  z-index: 5;
 }
 .pdfViewer .page .loadingIcon.notVisible {
   background: none;
