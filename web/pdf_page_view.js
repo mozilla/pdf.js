@@ -490,6 +490,7 @@ class PDFPageView {
       div.append(this.loadingIconDiv);
     } else {
       this.toggleLoadingIconSpinner();
+      div.append(this.loadingIconDiv);
     }
 
     if (
