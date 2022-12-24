@@ -1761,6 +1761,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue15803",
+       "file": "pdfs/issue15803.pdf",
+       "md5": "e501a4418d4ece5be7ce4e8acf029100",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue9105_other",
        "file": "pdfs/issue9105_other.pdf",
        "md5": "4c8b9c2cceb9c5d621e1d50b3dc38efc",
