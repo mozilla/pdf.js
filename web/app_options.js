@@ -68,6 +68,12 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  defaultZoomDelay: {
+    /** @type {number} */
+    value:
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("GENERIC") ? 400 : -1,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   defaultZoomValue: {
     /** @type {string} */
     value: "",
