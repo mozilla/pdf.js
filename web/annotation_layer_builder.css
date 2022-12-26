@@ -44,6 +44,7 @@
   left: 0;
   pointer-events: none;
   transform-origin: 0 0;
+  z-index: 3;
 }
 
 .annotationLayer section {
