@@ -1804,6 +1804,7 @@ const PDFViewerApplication = {
     eventBus._on("hashchange", webViewerHashchange);
     eventBus._on("beforeprint", _boundEvents.beforePrint);
     eventBus._on("afterprint", _boundEvents.afterPrint);
+    eventBus._on("pagerender", webViewerPageRender);
     eventBus._on("pagerendered", webViewerPageRendered);
     eventBus._on("updateviewarea", webViewerUpdateViewarea);
     eventBus._on("pagechanging", webViewerPageChanging);
@@ -1936,6 +1937,7 @@ const PDFViewerApplication = {
     eventBus._off("hashchange", webViewerHashchange);
     eventBus._off("beforeprint", _boundEvents.beforePrint);
     eventBus._off("afterprint", _boundEvents.afterPrint);
+    eventBus._off("pagerender", webViewerPageRender);
     eventBus._off("pagerendered", webViewerPageRendered);
     eventBus._off("updateviewarea", webViewerUpdateViewarea);
     eventBus._off("pagechanging", webViewerPageChanging);
@@ -2212,6 +2214,14 @@ function webViewerInitialized() {
   }
 }
 
+function webViewerPageRender({ pageNumber }) {
+  // If the page is (the most) visible when it starts rendering,
+  // ensure that the page number input loading indicator is displayed.
+  if (pageNumber === PDFViewerApplication.page) {
+    PDFViewerApplication.toolbar?.updateLoadingIndicatorState(true);
+  }
+}
+
 function webViewerPageRendered({ pageNumber, error }) {
   // If the page is still visible when it has finished rendering,
   // ensure that the page number input loading indicator is hidden.
@@ -2321,20 +2331,13 @@ function webViewerUpdateViewarea({ location }) {
         // Unable to write to storage.
       });
   }
-  const href = PDFViewerApplication.pdfLinkService.getAnchorUrl(
-    location.pdfOpenParams
-  );
   if (PDFViewerApplication.appConfig.secondaryToolbar) {
+    const href = PDFViewerApplication.pdfLinkService.getAnchorUrl(
+      location.pdfOpenParams
+    );
     PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href =
       href;
   }
-
-  // Show/hide the loading indicator in the page number input element.
-  const currentPage = PDFViewerApplication.pdfViewer.getPageView(
-    /* index = */ PDFViewerApplication.page - 1
-  );
-  const loading = currentPage?.renderingState !== RenderingStates.FINISHED;
-  PDFViewerApplication.toolbar?.updateLoadingIndicatorState(loading);
 }
 
 function webViewerScrollModeChanged(evt) {
@@ -2565,6 +2568,14 @@ function webViewerPageChanging({ pageNumber, pageLabel }) {
       pageNumber
     );
   }
+
+  // Show/hide the loading indicator in the page number input element.
+  const currentPage = PDFViewerApplication.pdfViewer.getPageView(
+    /* index = */ pageNumber - 1
+  );
+  PDFViewerApplication.toolbar?.updateLoadingIndicatorState(
+    currentPage?.renderingState === RenderingStates.RUNNING
+  );
 }
 
 function webViewerResolutionChange(evt) {
