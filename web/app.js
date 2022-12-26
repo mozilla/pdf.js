@@ -655,14 +655,18 @@ const PDFViewerApplication = {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.increaseScale(steps);
+    this.pdfViewer.increaseScale(steps, {
+      delay: AppOptions.get("defaultZoomDelay"),
+    });
   },
 
   zoomOut(steps) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.decreaseScale(steps);
+    this.pdfViewer.decreaseScale(steps, {
+      delay: AppOptions.get("defaultZoomDelay"),
+    });
   },
 
   zoomReset() {
@@ -2019,9 +2023,7 @@ const PDFViewerApplication = {
       this._wheelUnusedTicks = 0;
     }
     this._wheelUnusedTicks += ticks;
-    const wholeTicks =
-      Math.sign(this._wheelUnusedTicks) *
-      Math.floor(Math.abs(this._wheelUnusedTicks));
+    const wholeTicks = Math.trunc(this._wheelUnusedTicks);
     this._wheelUnusedTicks -= wholeTicks;
     return wholeTicks;
   },
