@@ -804,19 +804,7 @@ class PDFPageView {
     // overflow will be hidden in Firefox.
     const canvasWrapper = document.createElement("div");
     canvasWrapper.classList.add("canvasWrapper");
-
-    if (this.textLayer) {
-      this.textLayer.div.before(canvasWrapper);
-    } else {
-      const lastDivBeforeTextDiv =
-        this.annotationLayer?.div || this.annotationEditorLayer?.div;
-      if (lastDivBeforeTextDiv) {
-        // The annotation layer needs to stay on top.
-        lastDivBeforeTextDiv.before(canvasWrapper);
-      } else {
-        div.append(canvasWrapper);
-      }
-    }
+    div.append(canvasWrapper);
 
     if (
       !this.textLayer &&
@@ -830,7 +818,7 @@ class PDFPageView {
         accessibilityManager: this._accessibilityManager,
         isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
       });
-      canvasWrapper.after(this.textLayer.div);
+      div.append(this.textLayer.div);
     }
 
     if (
