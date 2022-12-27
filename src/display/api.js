@@ -1338,9 +1338,7 @@ class PDFPageProxy {
    *   {Object} with JS actions.
    */
   getJSActions() {
-    return (this._jsActionsPromise ||= this._transport.getPageJSActions(
-      this._pageIndex
-    ));
+    return this._transport.getPageJSActions(this._pageIndex);
   }
 
   /**
@@ -1656,7 +1654,6 @@ class PDFPageProxy {
       bitmap.close();
     }
     this._bitmaps.clear();
-    this._jsActionsPromise = null;
     this.pendingCleanup = false;
     return Promise.all(waitOn);
   }
@@ -1689,7 +1686,6 @@ class PDFPageProxy {
 
     this._intentStates.clear();
     this.objs.clear();
-    this._jsActionsPromise = null;
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
