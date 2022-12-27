@@ -196,7 +196,6 @@ class PDFPageView {
     this.div = div;
 
     this.#setDimensions();
-
     container?.append(div);
 
     if (
@@ -230,10 +229,12 @@ class PDFPageView {
 
   #setDimensions() {
     const { viewport } = this;
-    if (this.#previousRotation === viewport.rotation) {
-      return;
+    if (this.pdfPage) {
+      if (this.#previousRotation === viewport.rotation) {
+        return;
+      }
+      this.#previousRotation = viewport.rotation;
     }
-    this.#previousRotation = viewport.rotation;
 
     setLayerDimensions(
       this.div,
