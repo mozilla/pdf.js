@@ -1104,11 +1104,18 @@ a.secondaryToolbarButton[href="#"] {
   -moz-appearance: textfield; /* hides the spinner in moz */
   text-align: right;
   width: 40px;
+  background-size: 0 0;
+  transition-property: none;
 }
 #pageNumber.visiblePageIsLoading {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
   background-position: 3px;
+  background-size: 16px 16px;
+  /* Using a delay with background-image doesn't work,
+     consequently we use background-size. */
+  transition-property: background-size;
+  transition-delay: var(--loading-icon-delay);
 }
 /*#if !MOZCENTRAL*/
 #pageNumber::-webkit-inner-spin-button {
