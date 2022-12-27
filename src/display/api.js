@@ -1821,6 +1821,12 @@ class PDFPageProxy {
     if (!intentState.streamReader) {
       return;
     }
+    // Ensure that a pending `streamReader` cancel timeout is always aborted.
+    if (intentState.streamReaderCancelTimeout) {
+      clearTimeout(intentState.streamReaderCancelTimeout);
+      intentState.streamReaderCancelTimeout = null;
+    }
+
     if (!force) {
       // Ensure that an Error occurring in *only* one `InternalRenderTask`, e.g.
       // multiple render() calls on the same canvas, won't break all rendering.
@@ -1837,12 +1843,9 @@ class PDFPageProxy {
           delay += reason.extraDelay;
         }
 
-        if (intentState.streamReaderCancelTimeout) {
-          clearTimeout(intentState.streamReaderCancelTimeout);
-        }
         intentState.streamReaderCancelTimeout = setTimeout(() => {
-          this._abortOperatorList({ intentState, reason, force: true });
           intentState.streamReaderCancelTimeout = null;
+          this._abortOperatorList({ intentState, reason, force: true });
         }, delay);
         return;
       }
