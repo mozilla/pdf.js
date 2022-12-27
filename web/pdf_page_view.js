@@ -120,6 +120,8 @@ class PDFPageView {
 
   #previousRotation = null;
 
+  #renderingState = RenderingStates.INITIAL;
+
   #useThumbnailCanvas = {
     initialOptionalContent: true,
     regularAnnotations: true,
@@ -167,7 +169,6 @@ class PDFPageView {
 
     this.paintTask = null;
     this.paintedViewportMap = new WeakMap();
-    this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
     this._renderError = null;
     if (
@@ -224,6 +225,30 @@ class PDFPageView {
             optionalContentConfig.hasInitialVisibility;
         });
       }
+    }
+  }
+
+  get renderingState() {
+    return this.#renderingState;
+  }
+
+  set renderingState(state) {
+    this.#renderingState = state;
+
+    switch (state) {
+      case RenderingStates.INITIAL:
+      case RenderingStates.PAUSED:
+        this.loadingIconDiv?.classList.add("notVisible");
+        break;
+      case RenderingStates.RUNNING:
+        this.loadingIconDiv?.classList.remove("notVisible");
+        break;
+      case RenderingStates.FINISHED:
+        if (this.loadingIconDiv) {
+          this.loadingIconDiv.remove();
+          delete this.loadingIconDiv;
+        }
+        break;
     }
   }
 
@@ -496,17 +521,6 @@ class PDFPageView {
         this.loadingIconDiv?.setAttribute("aria-label", msg);
       });
       div.append(this.loadingIconDiv);
-    } else {
-      this.toggleLoadingIconSpinner();
-      div.append(this.loadingIconDiv);
-    }
-
-    if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      this._isStandalone
-    ) {
-      this.toggleLoadingIconSpinner(/* viewVisible = */ true);
     }
   }
 
@@ -775,13 +789,6 @@ class PDFPageView {
     return this.viewport.convertToPdfPoint(x, y);
   }
 
-  /**
-   * @ignore
-   */
-  toggleLoadingIconSpinner(viewVisible = false) {
-    this.loadingIconDiv?.classList.toggle("notVisible", !viewVisible);
-  }
-
   draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
@@ -791,11 +798,6 @@ class PDFPageView {
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
-
-      if (this.loadingIconDiv) {
-        this.loadingIconDiv.remove();
-        delete this.loadingIconDiv;
-      }
       return Promise.reject(new Error("pdfPage is not loaded"));
     }
 
@@ -888,11 +890,6 @@ class PDFPageView {
       this._renderError = error;
 
       this.renderingState = RenderingStates.FINISHED;
-
-      if (this.loadingIconDiv) {
-        this.loadingIconDiv.remove();
-        delete this.loadingIconDiv;
-      }
       this._resetZoomLayer(/* removeFromDOM = */ true);
 
       // Ensure that the thumbnails won't become partially (or fully) blank,
