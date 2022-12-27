@@ -25,6 +25,7 @@
   --page-border-image: url(images/shadow.png) 9 9 repeat;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --scale-factor: 1;
+  --loading-icon-delay: 400ms;
 }
 
 @media screen and (forced-colors: active) {
@@ -157,10 +158,16 @@
   right: 0;
   bottom: 0;
   background: url("images/loading-icon.gif") center no-repeat;
+  visibility: visible;
+  /* Using a delay with background-image doesn't work,
+     consequently we use the visibility. */
+  transition-property: visibility;
+  transition-delay: var(--loading-icon-delay);
   z-index: 5;
 }
 .pdfViewer .page .loadingIcon.notVisible {
-  background: none;
+  transition-property: none;
+  visibility: hidden;
 }
 
 .pdfViewer.enablePermissions .textLayer span {
