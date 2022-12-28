@@ -5,37 +5,37 @@ We forked PDF.js so that we could apply a few customizations to their viewer. We
 To build for use in MasterControl during developmental testing you can run
 
     $ gulp mc-build
-    
+
 This will build PDF.js in a minified form and zip it up in a file named `mcPDFjs-<version>.zip`.
 
 It's likely you're looking for the `mc-deploy-snapshot` below.
-   
+
 
 ### Deploying an artifact to Artifactory
 Please make sure you don't have any uncommitted changes as they'd be zipped and deployed in the artifact too. Create the following environment variables with your artifactory credentials. The password could use your artifactory API key.  `artifactory_username` and `artifactory_password`. The following commands will first call `mc-build`.
 
-#### Deploying a snapshot 
+#### Deploying a snapshot
 You should be able to deploy a snapshot to artifactory by running the following command.
 
     $ gulp mc-deploy-snapshot
 
-#### Deploying a release 
+#### Deploying a release
 This will deploy straight to our libs-release-local repo, **you have been warned**.
 
 First make sure the version is correct in pdfjs.config.  Then run:
 
     $ gulp mc-deploy-release
-    
+
 Please don't forget to tag the commit you deployed and push the tags to the repository with a command similar to the following:
 
     $ git push --tags origin mc-master
 
 # ORIGINAL README BELOW
-# PDF.js [![Build Status](https://travis-ci.org/mozilla/pdf.js.svg?branch=master)](https://travis-ci.org/mozilla/pdf.js)
+# PDF.js [![Build Status](https://github.com/mozilla/pdf.js/workflows/CI/badge.svg?branch=master)](https://github.com/mozilla/pdf.js/actions?query=workflow%3ACI+branch%3Amaster)
 
-PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
+[PDF.js](https://mozilla.github.io/pdf.js/) is a Portable Document Format (PDF) viewer that is built with HTML5.
 
-PDF.js is community-driven and supported by Mozilla Labs. Our goal is to
+PDF.js is community-driven and supported by Mozilla. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
@@ -47,16 +47,22 @@ get involved, visit:
 + [Issue Reporting Guide](https://github.com/mozilla/pdf.js/blob/master/.github/CONTRIBUTING.md)
 + [Code Contribution Guide](https://github.com/mozilla/pdf.js/wiki/Contributing)
 + [Frequently Asked Questions](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)
-+ [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?direction=desc&labels=5-good-beginner-bug&page=1&sort=created&state=open)
++ [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?direction=desc&labels=good-beginner-bug&page=1&sort=created&state=open)
 + [Projects](https://github.com/mozilla/pdf.js/projects)
 
-Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
+Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org) for questions or guidance.
 
 ## Getting Started
 
 ### Online demo
 
-+ https://mozilla.github.io/pdf.js/web/viewer.html
+Please note that the "Modern browsers" version assumes native support for
+features such as optional chaining, nullish coalescing,
+and private `class` fields/methods; please also see [this wiki page](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support).
+
++ Modern browsers: https://mozilla.github.io/pdf.js/web/viewer.html
+
++ Older browsers: https://mozilla.github.io/pdf.js/legacy/web/viewer.html
 
 ### Browser Extensions
 
@@ -66,8 +72,6 @@ PDF.js is built into version 19+ of Firefox.
 
 #### Chrome
 
-+ The official extension for Chrome can be installed from the [Chrome Web Store](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm).
-*This extension is maintained by [@Rob--W](https://github.com/Rob--W).*
 + Build Your Own - Get the code as explained below and issue `gulp chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
 directory `build/chromium`.
@@ -81,7 +85,7 @@ To get a local copy of the current code, clone it using git:
 
 Next, install Node.js via the [official package](https://nodejs.org) or via
 [nvm](https://github.com/creationix/nvm). You need to install the gulp package
-globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#getting-started)):
+globally (see also [gulp's getting started](https://github.com/gulpjs/gulp/tree/master/docs/getting-started)):
 
     $ npm install -g gulp-cli
 
@@ -98,7 +102,7 @@ and then you can open:
 
 + http://localhost:8888/web/viewer.html
 
-Please keep in mind that this requires an ES6 compatible browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for usage with older browsers.
+Please keep in mind that this requires a modern and fully up-to-date browser; refer to [Building PDF.js](https://github.com/mozilla/pdf.js/blob/master/README.md#building-pdfjs) for non-development usage of the PDF.js library.
 
 It is also possible to view all test PDF files on the right side by opening:
 
@@ -111,7 +115,11 @@ viewer, run:
 
     $ gulp generic
 
-This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory.
+If you need to support older browsers, run:
+
+    $ gulp generic-legacy
+
+This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory (respectively `build/generic-legacy/build/`).
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 
@@ -146,20 +154,24 @@ More learning resources can be found at:
 
 + https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
 
+The API documentation can be found at:
+
++ https://mozilla.github.io/pdf.js/api/
+
 ## Questions
 
 Check out our FAQs and get answers to common questions:
 
 + https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
 
-Talk to us on IRC (Internet Relay Chat):
+Talk to us on Matrix:
 
-+ #pdfjs on irc.mozilla.org
++ https://chat.mozilla.org/#/room/#pdfjs:mozilla.org
 
 File an issue:
 
 + https://github.com/mozilla/pdf.js/issues/new
 
-Follow us on twitter: @pdfjs
+Follow us on Twitter: @pdfjs
 
 + https://twitter.com/pdfjs

@@ -1,22 +1,31 @@
 {
   "parserOptions": {
-    "ecmaVersion": 8,
+    "ecmaVersion": 2022,
     "sourceType": "module",
   },
 
   "plugins": [
+    "import",
+    "json",
     "mozilla",
+    "no-unsanitized",
+    "sort-exports",
     "unicorn",
+  ],
+
+  "extends": [
+    "plugin:json/recommended",
+    "plugin:prettier/recommended"
   ],
 
   "env": {
     "browser": true,
-    "es6": true,
+    "es2022": true,
     "worker": true,
     "amd": true,
   },
 
-  globals: {
+  "globals": {
     "PDFJSDev": false,
     "exports": false,
     "SystemJS": false,
@@ -24,39 +33,82 @@
 
   "rules": {
     // Plugins
+    "import/extensions": ["error", "always", { "ignorePackages": true, }],
+    "import/no-unresolved": ["error", {
+      "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web", "pdfjs-fitCurve"]
+    }],
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
-    "unicorn/no-array-instanceof": "error",
+    "no-unsanitized/method": "error",
+    "no-unsanitized/property": "error",
+    "sort-exports/sort-exports": ["error", {
+      "ignoreCase": true,
+    }],
+    "unicorn/no-abusive-eslint-disable": "error",
+    "unicorn/no-array-push-push": "error",
+    "unicorn/no-instanceof-array": "error",
+    "unicorn/no-new-buffer": "error",
+    "unicorn/no-useless-spread": "error",
+    "unicorn/prefer-array-find": "error",
+    "unicorn/prefer-array-flat": "error",
+    "unicorn/prefer-array-flat-map": "error",
+    "unicorn/prefer-array-index-of": "error",
+    "unicorn/prefer-at": "error",
+    "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-dom-node-append": "error",
+    "unicorn/prefer-dom-node-remove": "error",
+    "unicorn/prefer-logical-operator-over-ternary": "error",
+    "unicorn/prefer-modern-dom-apis": "error",
+    "unicorn/prefer-regexp-test": "error",
+    "unicorn/prefer-string-starts-ends-with": "error",
 
     // Possible errors
     "for-direction": "error",
+    "getter-return": "error",
+    "no-async-promise-executor": "error",
     "no-cond-assign": ["error", "except-parens"],
     "no-constant-condition": ["error", { "checkLoops": false, }],
+    "no-debugger": "error",
     "no-dupe-args": "error",
+    "no-dupe-else-if": "error",
     "no-dupe-keys": "error",
     "no-duplicate-case": "error",
     "no-empty": ["error", { "allowEmptyCatch": true, }],
+    "no-empty-character-class": "error",
     "no-ex-assign": "error",
     "no-extra-boolean-cast": "error",
-    "no-extra-semi": "error",
     "no-func-assign": "error",
     "no-inner-declarations": ["error", "functions"],
     "no-invalid-regexp": "error",
     "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
     "no-obj-calls": "error",
+    "no-promise-executor-return": "error",
     "no-regex-spaces": "error",
+    "no-setter-return": "error",
     "no-sparse-arrays": "error",
+    "no-template-curly-in-string": "error",
     "no-unexpected-multiline": "error",
     "no-unreachable": "error",
     "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
-    "use-isnan": "error",
+    "no-unsafe-optional-chaining": ["error", { "disallowArithmeticOperators": true }],
+    "no-unused-private-class-members": "error",
+    "use-isnan": ["error", { "enforceForIndexOf": true, }],
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
 
     // Best Practices
-    "accessor-pairs": ["error", { "setWithoutGet": true, }],
+    "accessor-pairs": ["error", {
+      "setWithoutGet": true,
+      "enforceForClassMembers": true,
+    }],
+    "consistent-return": "error",
     "curly": ["error", "all"],
+    "default-case-last": "error",
+    "dot-notation": "error",
     "eqeqeq": ["error", "always"],
+    "grouped-accessor-pairs": ["error", "getBeforeSet"],
+    "no-alert": "error",
     "no-caller": "error",
     "no-else-return": "error",
     "no-empty-pattern": "error",
@@ -70,9 +122,6 @@
     "no-implied-eval": "error",
     "no-iterator": "error",
     "no-lone-blocks": "error",
-    "no-multi-spaces": ["error", {
-      "ignoreEOLComments": true,
-    }],
     "no-multi-str": "error",
     "no-new-func": "error",
     "no-new-wrappers": "error",
@@ -80,14 +129,19 @@
     "no-octal-escape": "error",
     "no-octal": "error",
     "no-redeclare": "error",
+    "no-return-await": "error",
     "no-self-assign": "error",
     "no-self-compare": "error",
     "no-throw-literal": "error",
     "no-unused-expressions": "error",
     "no-unused-labels": "error",
     "no-useless-call": "error",
+    "no-useless-catch": "error",
     "no-useless-concat": "error",
+    "no-useless-escape": "error",
+    "no-useless-return": "error",
     "prefer-promise-reject-errors": "error",
+    "prefer-spread": "error",
     "wrap-iife": ["error", "any"],
     "yoda": ["error", "never", {
       "exceptRange": true,
@@ -97,75 +151,71 @@
     "strict": ["off", "global"],
 
     // Variables
-    "no-catch-shadow": "error",
     "no-delete-var": "error",
     "no-label-var": "error",
-    "no-restricted-globals": ["error",
-      {
-        "name": "ReadableStream",
-        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
-      },
-      {
-        "name": "URL",
-        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
-      },
-      {
-        "name": "WritableStream",
-        "message": "Import it from `src/shared/util.js` or `pdfjsLib` instead; outside of the `/src` and `/web` folders, the rule may be disabled as needed. ",
-      },
-    ],
+    "no-shadow": "error",
     "no-shadow-restricted-names": "error",
-    "no-shadow": "off",
     "no-undef-init": "error",
     "no-undef": ["error", { "typeof": true, }],
     "no-unused-vars": ["error", {
       "vars": "local",
       "args": "none",
     }],
+    "no-use-before-define": ["error", {
+      "functions": false,
+      "classes": false,
+      "variables": false,
+    }],
 
     // Stylistic Issues
-    "array-bracket-spacing": ["error", "never"],
-    "block-spacing": ["error", "always"],
-    "brace-style": ["error", "1tbs", {
-      "allowSingleLine": false,
-    }],
-    "comma-dangle": ["error", {
-      "arrays": "ignore",
-      "objects": "always",
-      "imports": "never",
-      "exports": "always",
-      "functions": "never",
-    }],
-    "comma-spacing": ["error", { "before": false, "after": true, }],
-    "comma-style": ["error", "last"],
-    "eol-last": "error",
-    "func-call-spacing": ["error", "never"],
-    "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "strict", }],
-    "keyword-spacing": ["error", { "before": true, "after": true, }],
-    "linebreak-style": ["error", "unix"],
     "lines-between-class-members": ["error", "always"],
     "max-len": ["error", {
-      "code": 80,
+      "code": 1000,
+      "comments": 80,
       "ignoreUrls": true
     }],
     "new-cap": ["error", { "newIsCap": true, "capIsNew": false, }],
-    "new-parens": "error",
     "no-array-constructor": "error",
     "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 0, "maxBOF": 1, }],
+    "no-nested-ternary": "error",
     "no-new-object": "error",
-    "no-tabs": "error",
-    "no-trailing-spaces": ["error", { "skipBlankLines": false, }],
-    "no-whitespace-before-property": "error",
-    "object-curly-spacing": ["error", "always"],
-    "operator-linebreak": ["error", "after", { "overrides": { ":": "ignore", } }],
-    "quotes": ["error", "single"],
-    "semi-spacing": ["error", { "before": false, "after": true, }],
-    "semi": ["error", "always"],
-    "space-before-blocks": ["error", "always"],
-    "space-before-function-paren": ["error", { "anonymous": "ignore", "named": "never", }],
-    "space-in-parens": ["error", "never"],
-    "space-infix-ops": ["error", { "int32Hint": false }],
-    "space-unary-ops": ["error", { "words": true, "nonwords": false, }],
+    "no-restricted-syntax": ["error",
+      {
+        "selector": "BinaryExpression[operator='instanceof'][right.name='Object']",
+        "message": "Use `typeof` rather than `instanceof Object`.",
+      },
+      {
+        "selector": "CallExpression[callee.name='assert'][arguments.length!=2]",
+        "message": "`assert()` must always be invoked with two arguments.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isCmd'][arguments.length<2]",
+        "message": "Use `instanceof Cmd` rather than `isCmd()` with one argument.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isDict'][arguments.length<2]",
+        "message": "Use `instanceof Dict` rather than `isDict()` with one argument.",
+      },
+      {
+        "selector": "CallExpression[callee.name='isName'][arguments.length<2]",
+        "message": "Use `instanceof Name` rather than `isName()` with one argument.",
+      },
+      {
+        "selector": "NewExpression[callee.name='Cmd']",
+        "message": "Use `Cmd.get()` rather than `new Cmd()`.",
+      },
+      {
+        "selector": "NewExpression[callee.name='Name']",
+        "message": "Use `Name.get()` rather than `new Name()`.",
+      },
+      {
+        "selector": "NewExpression[callee.name='Ref']",
+        "message": "Use `Ref.get()` rather than `new Ref()`.",
+      },
+    ],
+    "no-unneeded-ternary": "error",
+    "operator-assignment": "error",
+    "prefer-exponentiation-operator": "error",
     "spaced-comment": ["error", "always", {
       "block": {
         "balanced": true,
@@ -173,12 +223,6 @@
     }],
 
     // ECMAScript 6
-    "arrow-body-style": ["error", "always"],
-    "arrow-parens": ["error", "always"],
-    "arrow-spacing": ["error", {
-      "before": true,
-      "after": true,
-    }],
     "constructor-super": "error",
     "no-class-assign": "error",
     "no-confusing-arrow": "error",
@@ -189,11 +233,11 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
-    "no-var": "off",
+    "no-var": "error",
     "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
-    "rest-spread-spacing": ["error", "never"],
+    "prefer-const": "error",
     "sort-imports": ["error", {
       "ignoreCase": true,
     }],

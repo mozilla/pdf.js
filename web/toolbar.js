@@ -14,13 +14,17 @@
  */
 
 import {
-  animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, MAX_SCALE,
-  MIN_SCALE, noContextMenuHandler, NullL10n
-} from './ui_utils';
+  animationStarted,
+  DEFAULT_SCALE,
+  DEFAULT_SCALE_VALUE,
+  docStyle,
+  MAX_SCALE,
+  MIN_SCALE,
+  noContextMenuHandler,
+} from "./ui_utils.js";
+import { AnnotationEditorType } from "pdfjs-lib";
 
-const PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
-const SCALE_SELECT_CONTAINER_PADDING = 8;
-const SCALE_SELECT_PADDING = 22;
+const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
 
 /**
  * @typedef {Object} ToolbarOptions
@@ -28,9 +32,8 @@ const SCALE_SELECT_PADDING = 22;
  * @property {HTMLSpanElement} numPages - Label that contains number of pages.
  * @property {HTMLInputElement} pageNumber - Control for display and user input
  *   of the current page number.
- * @property {HTMLSpanElement} scaleSelectContainer - Container where scale
- *   controls are placed. The width is adjusted on UI initialization.
  * @property {HTMLSelectElement} scaleSelect - Scale selection control.
+ *   Its width is adjusted, when necessary, on UI localization.
  * @property {HTMLOptionElement} customScaleOption - The item used to display
  *   a non-predefined scale.
  * @property {HTMLButtonElement} previous - Button to go to the previous page.
@@ -39,48 +42,91 @@ const SCALE_SELECT_PADDING = 22;
  * @property {HTMLButtonElement} zoomOut - Button to zoom out the pages.
  * @property {HTMLButtonElement} viewFind - Button to open find bar.
  * @property {HTMLButtonElement} openFile - Button to open a new document.
- * @property {HTMLButtonElement} presentationModeButton - Button to switch to
- *   presentation mode.
+ * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
+ *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
- * @property {HTMLAElement} viewBookmark - Element to link current url of
- *   the page view.
  */
 
 class Toolbar {
+  #wasLocalized = false;
+
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
    * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, eventBus, l10n = NullL10n) {
+  constructor(options, eventBus, l10n) {
     this.toolbar = options.container;
     this.eventBus = eventBus;
     this.l10n = l10n;
-    this.items = options;
+    this.buttons = [
+      { element: options.previous, eventName: "previouspage" },
+      { element: options.next, eventName: "nextpage" },
+      { element: options.zoomIn, eventName: "zoomin" },
+      { element: options.zoomOut, eventName: "zoomout" },
+      { element: options.print, eventName: "print" },
+      { element: options.download, eventName: "download" },
+      {
+        element: options.editorFreeTextButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorFreeTextButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.FREETEXT;
+          },
+        },
+      },
+      {
+        element: options.editorInkButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorInkButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.INK;
+          },
+        },
+      },
+    ];
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      this.buttons.push({ element: options.openFile, eventName: "openfile" });
+    }
+    this.items = {
+      numPages: options.numPages,
+      pageNumber: options.pageNumber,
+      scaleSelect: options.scaleSelect,
+      customScaleOption: options.customScaleOption,
+      previous: options.previous,
+      next: options.next,
+      zoomIn: options.zoomIn,
+      zoomOut: options.zoomOut,
+    };
 
-    this._wasLocalized = false;
+    // Bind the event listeners for click and various other actions.
+    this.#bindListeners(options);
+
     this.reset();
-
-    // Bind the event listeners for click and hand tool actions.
-    this._bindListeners();
   }
 
   setPageNumber(pageNumber, pageLabel) {
     this.pageNumber = pageNumber;
     this.pageLabel = pageLabel;
-    this._updateUIState(false);
+    this.#updateUIState(false);
   }
 
   setPagesCount(pagesCount, hasPageLabels) {
     this.pagesCount = pagesCount;
     this.hasPageLabels = hasPageLabels;
-    this._updateUIState(true);
+    this.#updateUIState(true);
   }
 
   setPageScale(pageScaleValue, pageScale) {
     this.pageScaleValue = (pageScaleValue || pageScale).toString();
     this.pageScale = pageScale;
-    this._updateUIState(false);
+    this.#updateUIState(false);
   }
 
   reset() {
@@ -90,94 +136,129 @@ class Toolbar {
     this.pagesCount = 0;
     this.pageScaleValue = DEFAULT_SCALE_VALUE;
     this.pageScale = DEFAULT_SCALE;
-    this._updateUIState(true);
+    this.#updateUIState(true);
+    this.updateLoadingIndicatorState();
+
+    // Reset the Editor buttons too, since they're document specific.
+    this.eventBus.dispatch("toolbarreset", { source: this });
   }
 
-  _bindListeners() {
-    let { eventBus, items, } = this;
-    let self = this;
+  #bindListeners(options) {
+    const { pageNumber, scaleSelect } = this.items;
+    const self = this;
 
-    items.previous.addEventListener('click', function() {
-      eventBus.dispatch('previouspage', { source: self, });
-    });
-
-    items.next.addEventListener('click', function() {
-      eventBus.dispatch('nextpage', { source: self, });
-    });
-
-    items.zoomIn.addEventListener('click', function() {
-      eventBus.dispatch('zoomin', { source: self, });
-    });
-
-    items.zoomOut.addEventListener('click', function() {
-      eventBus.dispatch('zoomout', { source: self, });
-    });
-
-    items.pageNumber.addEventListener('click', function() {
+    // The buttons within the toolbar.
+    for (const { element, eventName, eventDetails } of this.buttons) {
+      element.addEventListener("click", evt => {
+        if (eventName !== null) {
+          const details = { source: this };
+          if (eventDetails) {
+            for (const property in eventDetails) {
+              details[property] = eventDetails[property];
+            }
+          }
+          this.eventBus.dispatch(eventName, details);
+        }
+      });
+    }
+    // The non-button elements within the toolbar.
+    pageNumber.addEventListener("click", function () {
       this.select();
     });
-
-    items.pageNumber.addEventListener('change', function() {
-      eventBus.dispatch('pagenumberchanged', {
+    pageNumber.addEventListener("change", function () {
+      self.eventBus.dispatch("pagenumberchanged", {
         source: self,
         value: this.value,
       });
     });
 
-    items.scaleSelect.addEventListener('change', function() {
-      if (this.value === 'custom') {
+    scaleSelect.addEventListener("change", function () {
+      if (this.value === "custom") {
         return;
       }
-      eventBus.dispatch('scalechanged', {
+      self.eventBus.dispatch("scalechanged", {
         source: self,
         value: this.value,
       });
     });
-
-    items.presentationModeButton.addEventListener('click', function() {
-      eventBus.dispatch('presentationmode', { source: self, });
+    // Here we depend on browsers dispatching the "click" event *after* the
+    // "change" event, when the <select>-element changes.
+    scaleSelect.addEventListener("click", function (evt) {
+      const target = evt.target;
+      // Remove focus when an <option>-element was *clicked*, to improve the UX
+      // for mouse users (fixes bug 1300525 and issue 4923).
+      if (
+        this.value === self.pageScaleValue &&
+        target.tagName.toUpperCase() === "OPTION"
+      ) {
+        this.blur();
+      }
     });
-
-    items.openFile.addEventListener('click', function() {
-      eventBus.dispatch('openfile', { source: self, });
-    });
-
-    items.print.addEventListener('click', function() {
-      eventBus.dispatch('print', { source: self, });
-    });
-
-    items.download.addEventListener('click', function() {
-      eventBus.dispatch('download', { source: self, });
-    });
-
     // Suppress context menus for some controls.
-    items.scaleSelect.oncontextmenu = noContextMenuHandler;
+    scaleSelect.oncontextmenu = noContextMenuHandler;
 
-    eventBus.on('localized', () => {
-      this._localized();
+    this.eventBus._on("localized", () => {
+      this.#wasLocalized = true;
+      this.#adjustScaleWidth();
+      this.#updateUIState(true);
+    });
+
+    this.#bindEditorToolsListener(options);
+  }
+
+  #bindEditorToolsListener({
+    editorFreeTextButton,
+    editorFreeTextParamsToolbar,
+    editorInkButton,
+    editorInkParamsToolbar,
+  }) {
+    const editorModeChanged = (evt, disableButtons = false) => {
+      const editorButtons = [
+        {
+          mode: AnnotationEditorType.FREETEXT,
+          button: editorFreeTextButton,
+          toolbar: editorFreeTextParamsToolbar,
+        },
+        {
+          mode: AnnotationEditorType.INK,
+          button: editorInkButton,
+          toolbar: editorInkParamsToolbar,
+        },
+      ];
+
+      for (const { mode, button, toolbar } of editorButtons) {
+        const checked = mode === evt.mode;
+        button.classList.toggle("toggled", checked);
+        button.setAttribute("aria-checked", checked);
+        button.disabled = disableButtons;
+        toolbar?.classList.toggle("hidden", !checked);
+      }
+    };
+    this.eventBus._on("annotationeditormodechanged", editorModeChanged);
+
+    this.eventBus._on("toolbarreset", evt => {
+      if (evt.source === this) {
+        editorModeChanged(
+          { mode: AnnotationEditorType.NONE },
+          /* disableButtons = */ true
+        );
+      }
     });
   }
 
-  _localized() {
-    this._wasLocalized = true;
-    this._adjustScaleWidth();
-    this._updateUIState(true);
-  }
-
-  _updateUIState(resetNumPages = false) {
-    if (!this._wasLocalized) {
+  #updateUIState(resetNumPages = false) {
+    if (!this.#wasLocalized) {
       // Don't update the UI state until we localize the toolbar.
       return;
     }
-    const { pageNumber, pagesCount, pageScaleValue, pageScale, items, } = this;
+    const { pageNumber, pagesCount, pageScaleValue, pageScale, items } = this;
 
     if (resetNumPages) {
       if (this.hasPageLabels) {
-        items.pageNumber.type = 'text';
+        items.pageNumber.type = "text";
       } else {
-        items.pageNumber.type = 'number';
-        this.l10n.get('of_pages', { pagesCount, }, 'of {{pagesCount}}').
-            then((msg) => {
+        items.pageNumber.type = "number";
+        this.l10n.get("of_pages", { pagesCount }).then(msg => {
           items.numPages.textContent = msg;
         });
       }
@@ -186,70 +267,88 @@ class Toolbar {
 
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
-      this.l10n.get('page_of_pages', { pageNumber, pagesCount, },
-                    '({{pageNumber}} of {{pagesCount}})').then((msg) => {
+      this.l10n.get("page_of_pages", { pageNumber, pagesCount }).then(msg => {
         items.numPages.textContent = msg;
       });
     } else {
       items.pageNumber.value = pageNumber;
     }
 
-    items.previous.disabled = (pageNumber <= 1);
-    items.next.disabled = (pageNumber >= pagesCount);
+    items.previous.disabled = pageNumber <= 1;
+    items.next.disabled = pageNumber >= pagesCount;
 
-    items.zoomOut.disabled = (pageScale <= MIN_SCALE);
-    items.zoomIn.disabled = (pageScale >= MAX_SCALE);
+    items.zoomOut.disabled = pageScale <= MIN_SCALE;
+    items.zoomIn.disabled = pageScale >= MAX_SCALE;
 
-    let customScale = Math.round(pageScale * 10000) / 100;
-    this.l10n.get('page_scale_percent', { scale: customScale, },
-                  '{{scale}}%').then((msg) => {
-      let options = items.scaleSelect.options;
-      let predefinedValueFound = false;
-      for (let i = 0, ii = options.length; i < ii; i++) {
-        let option = options[i];
-        if (option.value !== pageScaleValue) {
-          option.selected = false;
-          continue;
+    this.l10n
+      .get("page_scale_percent", { scale: Math.round(pageScale * 10000) / 100 })
+      .then(msg => {
+        let predefinedValueFound = false;
+        for (const option of items.scaleSelect.options) {
+          if (option.value !== pageScaleValue) {
+            option.selected = false;
+            continue;
+          }
+          option.selected = true;
+          predefinedValueFound = true;
         }
-        option.selected = true;
-        predefinedValueFound = true;
-      }
-      if (!predefinedValueFound) {
-        items.customScaleOption.textContent = msg;
-        items.customScaleOption.selected = true;
-      }
-    });
+        if (!predefinedValueFound) {
+          items.customScaleOption.textContent = msg;
+          items.customScaleOption.selected = true;
+        }
+      });
   }
 
   updateLoadingIndicatorState(loading = false) {
-    let pageNumberInput = this.items.pageNumber;
+    const { pageNumber } = this.items;
 
-    pageNumberInput.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
+    pageNumber.classList.toggle(PAGE_NUMBER_LOADING_INDICATOR, loading);
   }
 
-  _adjustScaleWidth() {
-    let container = this.items.scaleSelectContainer;
-    let select = this.items.scaleSelect;
+  /**
+   * Increase the width of the zoom dropdown DOM element if, and only if, it's
+   * too narrow to fit the *longest* of the localized strings.
+   */
+  async #adjustScaleWidth() {
+    const { items, l10n } = this;
 
-    animationStarted.then(function() {
-      // Adjust the width of the zoom box to fit the content.
-      // Note: If the window is narrow enough that the zoom box is not
-      //       visible, we temporarily show it to be able to adjust its width.
-      if (container.clientWidth === 0) {
-        container.setAttribute('style', 'display: inherit;');
+    const predefinedValuesPromise = Promise.all([
+      l10n.get("page_scale_auto"),
+      l10n.get("page_scale_actual"),
+      l10n.get("page_scale_fit"),
+      l10n.get("page_scale_width"),
+    ]);
+    await animationStarted;
+
+    const style = getComputedStyle(items.scaleSelect);
+    const scaleSelectWidth = parseFloat(
+      style.getPropertyValue("--scale-select-width")
+    );
+
+    // The temporary canvas is used to measure text length in the DOM.
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    ctx.font = `${style.fontSize} ${style.fontFamily}`;
+
+    let maxWidth = 0;
+    for (const predefinedValue of await predefinedValuesPromise) {
+      const { width } = ctx.measureText(predefinedValue);
+      if (width > maxWidth) {
+        maxWidth = width;
       }
-      if (container.clientWidth > 0) {
-        select.setAttribute('style', 'min-width: inherit;');
-        let width = select.clientWidth + SCALE_SELECT_CONTAINER_PADDING;
-        select.setAttribute('style', 'min-width: ' +
-                                     (width + SCALE_SELECT_PADDING) + 'px;');
-        container.setAttribute('style', 'min-width: ' + width + 'px; ' +
-                                        'max-width: ' + width + 'px;');
-      }
-    });
+    }
+    // Account for the icon width, and ensure that there's always some spacing
+    // between the text and the icon.
+    maxWidth += 0.3 * scaleSelectWidth;
+
+    if (maxWidth > scaleSelectWidth) {
+      docStyle.setProperty("--scale-select-width", `${maxWidth}px`);
+    }
+    // Zeroing the width and height cause Firefox to release graphics resources
+    // immediately, which can greatly reduce memory consumption.
+    canvas.width = 0;
+    canvas.height = 0;
   }
 }
 
-export {
-  Toolbar,
-};
+export { Toolbar };

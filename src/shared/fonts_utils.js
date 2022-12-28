@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* globals CFFDictDataMap, CFFDictPrivateDataMap, CFFEncodingMap, CFFStrings,
-           Components, Dict, dump, FormatError, isNum, netscape, Stream */
+           Components, Dict, dump, FormatError, netscape, Stream */
 
 'use strict';
 
@@ -73,7 +73,7 @@ function readCharstringEncoding(aString) {
   var charstringTokens = [];
 
   var count = aString.length;
-  for (var i = 0; i < count; ) { // eslint-disable-line space-in-parens
+  for (var i = 0; i < count; ) {
     var value = aString[i++] | 0;
     var token = null;
 
@@ -120,7 +120,7 @@ function readFontDictData(aString, aMap) {
   var fontDictDataTokens = [];
 
   var count = aString.length;
-  for (var i = 0; i < count; i) {
+  for (var i = 0; i < count; ) {
     var value = aString[i++] | 0;
     var token = null;
 
@@ -253,7 +253,7 @@ var Type2Parser = function type2Parser(aFilePath) {
   var xhr = new XMLHttpRequest();
   xhr.open('GET', aFilePath, false);
   xhr.responseType = 'arraybuffer';
-  xhr.expected = (document.URL.indexOf('file:') === 0) ? 0 : 200;
+  xhr.expected = document.URL.startsWith('file:') ? 0 : 200;
   xhr.send(null);
   this.data = new Stream(xhr.response);
 
@@ -273,7 +273,7 @@ var Type2Parser = function type2Parser(aFilePath) {
     var count = decoded.length;
     for (var i = 0; i < count; i++) {
       var token = decoded[i];
-      if (isNum(token)) {
+      if (typeof token === "number") {
         stack.push(token);
       } else {
         switch (token.operand) {
@@ -397,7 +397,6 @@ var Type2Parser = function type2Parser(aFilePath) {
  *  var file = new Uint8Array(cffFileArray, 0, cffFileSize);
  *  var parser = new Type2Parser();
  *  parser.parse(new Stream(file));
- *
  */
 
 /*

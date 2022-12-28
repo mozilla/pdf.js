@@ -1,0 +1,90 @@
+%PDF-1.4
+% A 4000 x 400 PDF with a red square rectangle and 50 units of padding at all sides.
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/MediaBox [0.0 0.0 4000 400]
+/Parent 2 0 R
+/Resources 4 0 R
+/Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+/Pattern 6 0 R
+/ColorSpace 7 0 R
+>>
+endobj
+5 0 obj
+<<
+/Length 36
+>>
+stream
+50 50 3950 350 re
+/cs1 cs
+/p1 scn
+f
+endstream
+endobj
+6 0 obj
+<<
+/p1 8 0 R
+>>
+endobj
+7 0 obj
+<<
+/cs1 [/Pattern /DeviceRGB]
+>>
+endobj
+8 0 obj
+<<
+/Length 43
+/Type /Pattern
+/PatternType 1
+/Resources <<
+>>
+/BBox [0 0 3950 350]
+/PaintType 1
+/TilingType 1
+/XStep 90000
+/YStep 90000
+>>
+stream
+/DeviceRGB cs
+1 0 0 sc
+50 50 3950 300 re
+B
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f
+0000000094 00000 n
+0000000143 00000 n
+0000000200 00000 n
+0000000309 00000 n
+0000000363 00000 n
+0000000448 00000 n
+0000000479 00000 n
+0000000527 00000 n
+trailer
+<<
+/Root 1 0 R
+/Size 9
+>>
+startxref
+740
+%%EOF

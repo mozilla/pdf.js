@@ -13,58 +13,81 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFSinglePageViewer) {
-  alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist-install`');
+  // eslint-disable-next-line no-alert
+  alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
 // The workerSrc property shall be specified.
 //
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
-var CMAP_PACKED = true;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
-var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
-var SEARCH_FOR = ''; // try 'Mozilla';
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+// To test the AcroForm and/or scripting functionality, try e.g. this file:
+// "../../test/pdfs/160F-2019.pdf"
 
-var container = document.getElementById('viewerContainer');
+const ENABLE_XFA = true;
+const SEARCH_FOR = ""; // try "Mozilla";
+
+const SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
+
+const container = document.getElementById("viewerContainer");
+
+const eventBus = new pdfjsViewer.EventBus();
 
 // (Optionally) enable hyperlinks within PDF files.
-var pdfLinkService = new pdfjsViewer.PDFLinkService();
+const pdfLinkService = new pdfjsViewer.PDFLinkService({
+  eventBus,
+});
 
 // (Optionally) enable find controller.
-var pdfFindController = new pdfjsViewer.PDFFindController({
+const pdfFindController = new pdfjsViewer.PDFFindController({
+  eventBus,
   linkService: pdfLinkService,
 });
 
-var pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
-  container: container,
+// (Optionally) enable scripting support.
+const pdfScriptingManager = new pdfjsViewer.PDFScriptingManager({
+  eventBus,
+  sandboxBundleSrc: SANDBOX_BUNDLE_SRC,
+});
+
+const pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
+  container,
+  eventBus,
   linkService: pdfLinkService,
   findController: pdfFindController,
+  scriptingManager: pdfScriptingManager,
 });
 pdfLinkService.setViewer(pdfSinglePageViewer);
+pdfScriptingManager.setViewer(pdfSinglePageViewer);
 
-container.addEventListener('pagesinit', function () {
+eventBus.on("pagesinit", function () {
   // We can use pdfSinglePageViewer now, e.g. let's change default scale.
-  pdfSinglePageViewer.currentScaleValue = 'page-width';
+  pdfSinglePageViewer.currentScaleValue = "page-width";
 
-  if (SEARCH_FOR) { // We can try search for things
-    pdfFindController.executeCommand('find', { query: SEARCH_FOR, });
+  // We can try searching for things.
+  if (SEARCH_FOR) {
+    eventBus.dispatch("find", { type: "", query: SEARCH_FOR });
   }
 });
 
 // Loading document.
-pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
-}).then(function(pdfDocument) {
+  enableXfa: ENABLE_XFA,
+});
+loadingTask.promise.then(function (pdfDocument) {
   // Document loaded, specifying document for the viewer and
   // the (optional) linkService.
   pdfSinglePageViewer.setDocument(pdfDocument);

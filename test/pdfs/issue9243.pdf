@@ -1,0 +1,110 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog
+   /Outlines 2 0 R
+   /Pages 3 0 R
+>>
+endobj
+2 0 obj
+<< /Type /Outlines
+   /Count 0
+>>
+endobj
+3 0 obj
+<< /Type /Pages
+   /Kids [
+           9 0 R
+         ]
+   /Count 1
+>>
+endobj
+4 0 obj
+<<
+   /Title (Shading pattern test)
+   /Author (Luis)
+   /Producer (SciSoft PDF exporter)
+   /CreationDate (D:20171205161319-03'00')
+>>
+endobj
+5 0 obj
+<< /FunctionType 2
+   /Domain [ 0.000000 1.000000 ]
+   /C0 [ 0.100000 0.700000 0.700000 ]
+   /C1 [ 0.000000 0.000000 0.700000 ]
+   /N 1.000000
+>>
+endobj
+6 0 obj
+<< /ShadingType 2
+   /ColorSpace /DeviceRGB
+   /Function 5 0 R
+   /Coords [ 0.000000 0.000000 432.000000 432.000000 ]
+   /Domain [ 0.000000 1.000000 ]
+   /Extend [ false false ]
+>>
+endobj
+7 0 obj
+<< /Type /Pattern
+   /PatternType 2
+   /Shading 6 0 R
+>>
+endobj
+8 0 obj
+<< /Type /Font /Subtype /Type1
+   /Name /F8
+   /BaseFont /Helvetica-Bold
+   /Encoding /WinAnsiEncoding
+>>
+endobj
+9 0 obj
+<< /Type /Page
+   /Parent 3 0 R
+   /MediaBox [ 0 0 432 144 ]
+   /Contents 10 0 R
+   /Resources
+   << /ProcSet [ /PDF /Text ]
+      /Font <<
+               /F8 8 0 R
+      >>
+      /Pattern << /PT7 7 0 R >>
+   >>
+>>
+endobj
+10 0 obj
+<< /Length 11 0 R >>
+stream
+/Pattern cs
+/PT7 scn
+BT
+/F8 72 Tf
+36 36 Td
+0 Tr
+(SHADING) Tj
+ET
+endstream
+endobj
+11 0 obj
+   64
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000009 00000 n 
+0000000080 00000 n 
+0000000129 00000 n 
+0000000214 00000 n 
+0000000365 00000 n 
+0000000526 00000 n 
+0000000722 00000 n 
+0000000794 00000 n 
+0000000915 00000 n 
+0000001145 00000 n 
+0000001263 00000 n 
+trailer
+<< /Size 12
+   /Root 1 0 R
+   /Info 4 0 R
+>>
+startxref
+1285
+%%EOF

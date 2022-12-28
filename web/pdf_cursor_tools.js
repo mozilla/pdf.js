@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { GrabToPan } from './grab_to_pan';
+import { AnnotationEditorType } from "pdfjs-lib";
+import { GrabToPan } from "./grab_to_pan.js";
+import { PresentationModeState } from "./ui_utils.js";
 
 const CursorTool = {
   SELECT: 0, // The default value.
@@ -25,27 +27,27 @@ const CursorTool = {
  * @typedef {Object} PDFCursorToolsOptions
  * @property {HTMLDivElement} container - The document container.
  * @property {EventBus} eventBus - The application event bus.
- * @property {number} cursorToolOnLoad - (optional) The cursor tool that will be
- *   enabled on load; the constants from {CursorTool} should be used.
- *   The default value is `CursorTool.SELECT`.
+ * @property {number} [cursorToolOnLoad] - The cursor tool that will be enabled
+ *   on load; the constants from {CursorTool} should be used. The default value
+ *   is `CursorTool.SELECT`.
  */
 
 class PDFCursorTools {
   /**
    * @param {PDFCursorToolsOptions} options
    */
-  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT, }) {
+  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT }) {
     this.container = container;
     this.eventBus = eventBus;
 
     this.active = CursorTool.SELECT;
-    this.activeBeforePresentationMode = null;
+    this.previouslyActive = null;
 
     this.handTool = new GrabToPan({
       element: this.container,
     });
 
-    this._addEventListeners();
+    this.#addEventListeners();
 
     // Defer the initial `switchTool` call, to give other viewer components
     // time to initialize *and* register 'cursortoolchanged' event listeners.
@@ -55,26 +57,26 @@ class PDFCursorTools {
   }
 
   /**
-   * @returns {number} One of the values in {CursorTool}.
+   * @type {number} One of the values in {CursorTool}.
    */
   get activeTool() {
     return this.active;
   }
 
   /**
-   * NOTE: This method is ignored while Presentation Mode is active.
    * @param {number} tool - The cursor mode that should be switched to,
    *                        must be one of the values in {CursorTool}.
    */
   switchTool(tool) {
-    if (this.activeBeforePresentationMode !== null) {
-      return; // Cursor tools cannot be used in Presentation Mode.
+    if (this.previouslyActive !== null) {
+      // Cursor tools cannot be used in PresentationMode/AnnotationEditor.
+      return;
     }
     if (tool === this.active) {
       return; // The requested tool is already active.
     }
 
-    let disableActiveTool = () => {
+    const disableActiveTool = () => {
       switch (this.active) {
         case CursorTool.SELECT:
           break;
@@ -82,11 +84,12 @@ class PDFCursorTools {
           this.handTool.deactivate();
           break;
         case CursorTool.ZOOM:
-          /* falls through */
+        /* falls through */
       }
     };
 
-    switch (tool) { // Enable the new cursor tool.
+    // Enable the new cursor tool.
+    switch (tool) {
       case CursorTool.SELECT:
         disableActiveTool();
         break;
@@ -95,7 +98,7 @@ class PDFCursorTools {
         this.handTool.activate();
         break;
       case CursorTool.ZOOM:
-        /* falls through */
+      /* falls through */
       default:
         console.error(`switchTool: "${tool}" is an unsupported value.`);
         return;
@@ -104,49 +107,72 @@ class PDFCursorTools {
     // in order to prevent setting it to an invalid state.
     this.active = tool;
 
-    this._dispatchEvent();
+    this.#dispatchEvent();
   }
 
-  /**
-   * @private
-   */
-  _dispatchEvent() {
-    this.eventBus.dispatch('cursortoolchanged', {
+  #dispatchEvent() {
+    this.eventBus.dispatch("cursortoolchanged", {
       source: this,
       tool: this.active,
     });
   }
 
-  /**
-   * @private
-   */
-  _addEventListeners() {
-    this.eventBus.on('switchcursortool', (evt) => {
+  #addEventListeners() {
+    this.eventBus._on("switchcursortool", evt => {
       this.switchTool(evt.tool);
     });
 
-    this.eventBus.on('presentationmodechanged', (evt) => {
-      if (evt.switchInProgress) {
-        return;
-      }
-      let previouslyActive;
+    let annotationEditorMode = AnnotationEditorType.NONE,
+      presentationModeState = PresentationModeState.NORMAL;
 
-      if (evt.active) {
-        previouslyActive = this.active;
+    const disableActive = () => {
+      const previouslyActive = this.active;
 
-        this.switchTool(CursorTool.SELECT);
-        this.activeBeforePresentationMode = previouslyActive;
-      } else {
-        previouslyActive = this.activeBeforePresentationMode;
+      this.switchTool(CursorTool.SELECT);
+      this.previouslyActive ??= previouslyActive; // Keep track of the first one.
+    };
+    const enableActive = () => {
+      const previouslyActive = this.previouslyActive;
 
-        this.activeBeforePresentationMode = null;
+      if (
+        previouslyActive !== null &&
+        annotationEditorMode === AnnotationEditorType.NONE &&
+        presentationModeState === PresentationModeState.NORMAL
+      ) {
+        this.previouslyActive = null;
         this.switchTool(previouslyActive);
+      }
+    };
+
+    this.eventBus._on("secondarytoolbarreset", evt => {
+      if (this.previouslyActive !== null) {
+        annotationEditorMode = AnnotationEditorType.NONE;
+        presentationModeState = PresentationModeState.NORMAL;
+
+        enableActive();
+      }
+    });
+
+    this.eventBus._on("annotationeditormodechanged", ({ mode }) => {
+      annotationEditorMode = mode;
+
+      if (mode === AnnotationEditorType.NONE) {
+        enableActive();
+      } else {
+        disableActive();
+      }
+    });
+
+    this.eventBus._on("presentationmodechanged", ({ state }) => {
+      presentationModeState = state;
+
+      if (state === PresentationModeState.NORMAL) {
+        enableActive();
+      } else if (state === PresentationModeState.FULLSCREEN) {
+        disableActive();
       }
     });
   }
 }
 
-export {
-  CursorTool,
-  PDFCursorTools,
-};
+export { CursorTool, PDFCursorTools };

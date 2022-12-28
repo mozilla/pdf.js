@@ -1,11 +1,32 @@
 {
   "type": "object",
   "properties": {
+    "viewerCssTheme": {
+      "title": "Theme",
+      "description": "The theme to use.\n0 = Use system theme.\n1 = Light theme.\n2 = Dark theme.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "default": 2
+    },
     "showPreviousViewOnLoad": {
-      "title": "Show previous position of PDF upon load",
-      "description": "Whether to view PDF documents in the last page and position upon opening the viewer.",
+      "description": "DEPRECATED. Set viewOnLoad to 1 to disable showing the last page/position on load.",
       "type": "boolean",
       "default": true
+    },
+    "viewOnLoad": {
+      "title": "View position on load",
+      "description": "The position in the document upon load.\n -1 = Default (uses OpenAction if available, otherwise equal to `viewOnLoad = 0`).\n 0 = The last viewed page/position.\n 1 = The initial page/position.",
+      "type": "integer",
+      "enum": [
+        -1,
+        0,
+        1
+      ],
+      "default": 0
     },
     "defaultZoomValue": {
       "title": "Default zoom level",
@@ -16,15 +37,16 @@
     },
     "sidebarViewOnLoad": {
       "title": "Sidebar state on load",
-      "description": "Controls the state of the sidebar upon load.\n 0 = do not show sidebar.\n 1 = show thumbnails in sidebar.\n 2 = show document outline in sidebar.\n 3 = Show attachments in sidebar.",
+      "description": "Controls the state of the sidebar upon load.\n -1 = Default (uses PageMode if available, otherwise the last position if available/enabled).\n 0 = Do not show sidebar.\n 1 = Show thumbnails in sidebar.\n 2 = Show document outline in sidebar.\n 3 = Show attachments in sidebar.",
       "type": "integer",
       "enum": [
+        -1,
         0,
         1,
         2,
         3
       ],
-      "default": 0
+      "default": -1
     },
     "enableHandToolOnLoad": {
       "description": "DEPRECATED. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
@@ -41,20 +63,16 @@
       ],
       "default": 0
     },
-    "enableWebGL": {
-      "title": "Enable WebGL",
-      "description": "Whether to enable WebGL.",
-      "type": "boolean",
-      "default": false
-    },
-    "eventBusDispatchToDOM": {
-      "type": "boolean",
-      "default": false
-    },
     "pdfBugEnabled": {
       "title": "Enable debugging tools",
       "description": "Whether to enable debugging tools.",
       "type": "boolean",
+      "default": false
+    },
+    "enableScripting": {
+      "title": "Enable active content (JavaScript) in PDFs",
+      "type": "boolean",
+      "description": "Whether to allow execution of active content (JavaScript) by PDF files.",
       "default": false
     },
     "disableRange": {
@@ -84,19 +102,13 @@
       "type": "boolean",
       "default": false
     },
-    "enhanceTextSelection": {
-      "description": "DEPRECATED. Set textLayerMode to 2 to use the enhanced text selection layer by default.",
-      "type": "boolean",
-      "default": false
-    },
     "textLayerMode": {
       "title": "Text layer mode",
-      "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.\n 2 = (Experimental) Enabled, with enhanced text selection.",
+      "description": "Controls if the text layer is enabled, and the selection mode that is used.\n 0 = Disabled.\n 1 = Enabled.",
       "type": "integer",
       "enum": [
         0,
-        1,
-        2
+        1
       ],
       "default": 1
     },
@@ -122,6 +134,7 @@
       "default": false
     },
     "disablePageMode": {
+      "description": "DEPRECATED.",
       "type": "boolean",
       "default": false
     },
@@ -131,45 +144,89 @@
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
       "default": false
     },
-    "renderer": {
-      "type": "string",
+    "annotationMode": {
+      "type": "integer",
       "enum": [
-        "canvas",
-        "svg"
+        0,
+        1,
+        2,
+        3
       ],
-      "default": "canvas"
+      "default": 2
     },
-    "renderInteractiveForms": {
+    "annotationEditorMode": {
+      "type": "integer",
+      "enum": [
+        -1,
+        0,
+        3,
+        15
+      ],
+      "default": 0
+    },
+    "enablePermissions": {
+      "type": "boolean",
+      "default": false
+    },
+    "enableXfa": {
+      "type": "boolean",
+      "default": true
+    },
+    "historyUpdateUrl": {
+      "type": "boolean",
+      "default": false
+    },
+    "ignoreDestinationZoom": {
+      "title": "Ignore the zoom argument in destinations",
+      "description": "When enabled it will maintain the currently active zoom level, rather than letting the PDF document modify it, when navigating to internal destinations.",
       "type": "boolean",
       "default": false
     },
     "enablePrintAutoRotate": {
       "title": "Automatically rotate printed pages",
-      "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",
+      "description": "When enabled, landscape pages are rotated when printed.",
       "type": "boolean",
-      "default": false
+      "default": true
     },
     "scrollModeOnLoad": {
       "title": "Scroll mode on load",
-      "description": "Controls how the viewer scrolls upon load.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
+      "description": "Controls how the viewer scrolls upon load.\n -1 = Default (uses the last position if available/enabled).\n 3 = Page scrolling.\n 0 = Vertical scrolling.\n 1 = Horizontal scrolling.\n 2 = Wrapped scrolling.",
       "type": "integer",
       "enum": [
+        -1,
         0,
         1,
-        2
+        2,
+        3
       ],
-      "default": 0
+      "default": -1
     },
     "spreadModeOnLoad": {
       "title": "Spread mode on load",
-      "description": "Whether the viewer should join pages into spreads upon load.\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
+      "description": "Whether the viewer should join pages into spreads upon load.\n -1 = Default (uses the last position if available/enabled).\n 0 = No spreads.\n 1 = Odd spreads.\n 2 = Even spreads.",
       "type": "integer",
       "enum": [
+        -1,
         0,
         1,
         2
       ],
-      "default": 0
+      "default": -1
+    },
+    "forcePageColors": {
+      "description": "When enabled, the pdf rendering will use the high contrast mode colors",
+      "type": "boolean",
+      "default": false
+    },
+    "pageColorsBackground": {
+      "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",
+      "type": "string",
+      "default": "Canvas"
+    },
+    "pageColorsForeground": {
+      "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",
+      "type": "string",
+      "default": "CanvasText"
     }
   }
 }

@@ -1,0 +1,97 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/FontName /Calibri
+/StemV 0
+/Ascent 750
+/Flags 32
+/Descent -250
+/ItalicAngle 0
+/FontBBox [-503 -312 1240 1026]
+/Type /FontDescriptor
+/CapHeight 0
+>>
+endobj 
+2 0 obj 
+<<
+/BaseFont /Calibri
+/CIDSystemInfo 
+<<
+/Supplement 0
+/Ordering (Identity)
+/Registry (Adobe)
+>>
+/Subtype /CIDFontType2
+/FontDescriptor 1 0 R
+/Type /Font
+>>
+endobj 
+3 0 obj 
+<<
+/Pages 4 0 R
+/Type /Catalog
+>>
+endobj 
+4 0 obj 
+<<
+/Kids [5 0 R]
+/Type /Pages
+/Count 1
+>>
+endobj 
+5 0 obj 
+<<
+/Parent 4 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 6 0 R
+>>
+>>
+/MediaBox [0 0 200 50]
+/Type /Page
+/Contents 7 0 R
+>>
+endobj 
+6 0 obj 
+<<
+/BaseFont /Calibri
+/DescendantFonts [2 0 R]
+/Subtype /Type0
+/Encoding /Identity-H
+/Type /Font
+>>
+endobj 
+7 0 obj 
+<<
+/Length 55
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+<00090050006D0107018201BA> Tj
+ET
+
+endstream 
+endobj xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000184 00000 n 
+0000000358 00000 n 
+0000000409 00000 n 
+0000000468 00000 n 
+0000000597 00000 n 
+0000000714 00000 n 
+trailer
+
+<<
+/Root 3 0 R
+/Size 8
+>>
+startxref
+821
+%%EOF

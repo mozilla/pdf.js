@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-'use strict';
+"use strict";
 
 (function PageActionClosure() {
   /**
@@ -28,17 +28,17 @@ limitations under the License.
     if (url) {
       url = url[1];
       chrome.pageAction.setPopup({
-        tabId: tabId,
-        popup: '/pageAction/popup.html?file=' + encodeURIComponent(url),
+        tabId,
+        popup: "/pageAction/popup.html?file=" + encodeURIComponent(url),
       });
       chrome.pageAction.show(tabId);
     } else {
-      console.log('Unable to get PDF url from ' + displayUrl);
+      console.log("Unable to get PDF url from " + displayUrl);
     }
   }
 
-  chrome.runtime.onMessage.addListener(function(message, sender) {
-    if (message === 'showPageAction' && sender.tab) {
+  chrome.runtime.onMessage.addListener(function (message, sender) {
+    if (message === "showPageAction" && sender.tab) {
       showPageAction(sender.tab.id, sender.tab.url);
     }
   });

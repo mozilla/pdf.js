@@ -1,0 +1,122 @@
+%PDF-1.6
+%µ¶
+
+1 0 obj
+<</Type/Catalog/Outlines 2 0 R/Pages 3 0 R>>
+endobj
+
+2 0 obj
+<</Type/Outlines/Count 0>>
+endobj
+
+3 0 obj
+<</Type/Pages/Kids[4 0 R]/Count 1>>
+endobj
+
+4 0 obj
+<</Type/Page/Parent 3 0 R/MediaBox[0 0 600 840]/Contents 5 0 R/Resources<</Font<</FType3A 6 0 R>>>>>>
+endobj
+
+5 0 obj
+<</Length 123>>
+stream
+BT
+  1 0 0 1 100 500 Tm
+  2 Tr  % Fill then Stroke Text render mode
+  /FType3A 20 Tf
+  20 20 Td
+  50 Tw
+  (ab) Tj
+ET
+endstream
+endobj
+
+6 0 obj
+<</Type/Font/Subtype/Type3/Name/FType3A/Widths[1000 1000]/FontBBox[0 0 750 750]/FontMatrix[.01 0 0 .01 0 0]/Encoding<</Type/Encoding/Differences[97/rect/triangle]>>/Resources<</Font<</FType3B 9 0 R>>>>/CharProcs<</rect 7 0 R/triangle 8 0 R>>/FirstChar 97/LastChar 98>>
+endobj
+
+7 0 obj
+<</Length 179>>
+stream
+%%% FType3A stroked red 'rect' = 97 or 'a'
+1000 0 d0
+20 w
+1 0 0 RG 
+0 0 750 750 re s
+BT % This is where a Type3 calls into another Type 3!
+   /FType3B 50 Tf
+   (ccc) Tj
+ET
+endstream
+endobj
+
+8 0 obj
+<</Length 99>>
+stream
+%%% FType3A stroked green 'triangle' = 98 'b'
+1000 0 d0
+20 w
+0 1 0 RG
+0 0 m 375 750 l 750 0 l s
+endstream
+endobj
+
+9 0 obj
+<</Type/Font/Subtype/Type3/Name/FType3B/FontBBox[0 0 750 750]/FontMatrix[.004 0 0 .004 0 0]/Encoding<</Type/Encoding/Differences[99/fontinside]>>/Widths[900]/Resources<</Font<</F1 11 0 R>>/Pattern<</P1 12 0 R>>>>/CharProcs<</fontinside 10 0 R>>/FirstChar 99/LastChar 99>>
+endobj
+
+10 0 obj
+<</Length 265>>
+stream
+900 0 d0
+%%% FType3B Helv text for 'c'
+2 Tr     % Fill then Stroke Text render mode
+10 w     % stroke width 10
+0 0 1 RG % Blue stroke
+/Pattern cs /P1 scn % Set /P1 pattern as fill (magenta text)
+BT
+  /F1 60 Tf
+  30 0 0 30 15 15 Tm -3 Tc  0 Tw
+  (ab) Tj
+ET
+endstream
+endobj
+
+11 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>
+endobj
+
+12 0 obj
+<</Type/Pattern/PaintType 1/PatternType 1/TilingType 2/Matrix[0.9 0 0 0.9 0 0]/XStep 55/YStep 32/BBox[0 0 60 60]/Resources<</Font<</CyclicFont  6 0 R>>>>/Length 100>>
+stream
+BT
+  /CyclicFont 4 Tf
+  10 0 0 10 1 1 Tm
+  0 Tc
+  0 Tw
+  1 0 1 rg % Magenta fill
+  (ba) Tj
+ET
+endstream
+endobj
+
+xref
+0 13
+0000000000 65536 f
+0000000016 00000 n
+0000000077 00000 n
+0000000120 00000 n
+0000000172 00000 n
+0000000290 00000 n
+0000000464 00000 n
+0000000749 00000 n
+0000000978 00000 n
+0000001127 00000 n
+0000001419 00000 n
+0000001736 00000 n
+0000001802 00000 n
+trailer
+<</Size 13/Root 1 0 R>>
+startxref
+2111
+%%EOF

@@ -8,8 +8,6 @@
   },
 
   "rules": {
-    "mozilla/use-includes-instead-of-indexOf": "off",
-    "object-shorthand": "off",
-    "no-restricted-globals": "off",
+    "unicorn/prefer-at": "off",
   },
 }

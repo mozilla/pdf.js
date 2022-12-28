@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 var url = location.search.match(/[&?]file=([^&]+)/i);
 if (url) {

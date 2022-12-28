@@ -21,7 +21,7 @@ Before downloading PDF.js please take a moment to understand the different layer
   <tbody>
     <tr>
       <td>Core</td>
-      <td>The core layer is where a binary PDF is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the API is likely to change. For an example of using the core layer see the [PDF Object Browser](https://github.com/brendandahl/pdf.js.utils/tree/master/browser)
+      <td>The core layer is where a binary PDF is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the API is likely to change. For an example of using the core layer see the <a href="https://github.com/brendandahl/pdf.js.utils/tree/master/browser">PDF Object Browser</a>.
       </td>
     </tr>
     <tr>
@@ -30,28 +30,34 @@ Before downloading PDF.js please take a moment to understand the different layer
     </tr>
     <tr>
       <td>Viewer</td>
-      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. *However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.*</td>
+      <td>The viewer is built on the display layer and is the UI for PDF viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. <em>However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.</em></td>
     </tr>
   </tbody>
 </table>
 
 ## Download
 
+Please refer to [this wiki page](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support) for information about supported browsers.
+
 <div class="row">
-  <div class="col-md-6">
-    <h3>Pre-built</h3>
+  <div class="col-md-4">
+    <h3>Prebuilt (modern browsers)</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
-    <span class="btn-group-vertical centered">
-      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
-      <a type="button" class="btn btn-warning" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
-    </span>
+    <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-4">
+    <h3>Prebuilt (older browsers)</h3>
+    <p>
+      Includes the generic build of PDF.js and the viewer.
+    </p>
+    <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-legacy-dist.zip">Stable (vSTABLE_VERSION)</a>
+  </div>
+  <div class="col-md-4">
     <h3>Source</h3>
     To get a local copy of the current code, clone it using git:
-    <pre><code>$ git clone git://github.com/mozilla/pdf.js.git
+    <pre><code>$ git clone https://github.com/mozilla/pdf.js.git
 $ cd pdf.js
 </code></pre>
   </div>
@@ -66,49 +72,51 @@ PDF.js is hosted on several free CDNs:
 
 ## File Layout Overview
 
+Note that we only mention the most relevant files and folders.
+
 ### Prebuilt
 
 ```
-├── LICENSE
 ├── build/
 │   ├── pdf.js                             - display layer
-│   └── pdf.worker.js                      - core layer
-└── web/
-    ├── cmaps/                             - character maps(required by core)
-    ├── compressed.tracemonkey-pldi-09.pdf - test pdf
-    ├── debugger.js                        - helpful pdf debugging features
-    ├── images/                            - images for the viewer and annotation icons
-    ├── l10n.js                            - localization
-    ├── locale/                            - translation files
-    ├── viewer.css                         - viewer style sheet
-    ├── viewer.html                        - viewer html
-    └── viewer.js                          - viewer layer
+│   ├── pdf.js.map                         - display layer's source map
+│   ├── pdf.worker.js                      - core layer
+│   └── pdf.worker.js.map                  - core layer's source map
+├── web/
+│   ├── cmaps/                             - character maps (required by core)
+│   ├── compressed.tracemonkey-pldi-09.pdf - PDF file for testing purposes
+│   ├── debugger.js                        - helpful debugging features
+│   ├── images/                            - images for the viewer and annotation icons
+│   ├── locale/                            - translation files
+│   ├── viewer.css                         - viewer style sheet
+│   ├── viewer.html                        - viewer layout
+│   ├── viewer.js                          - viewer layer
+│   └── viewer.js.map                      - viewer layer's source map
+└── LICENSE
 ```
 
 ### Source
 
 ```
-├── AUTHORS
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-├── build/                                 - output of build steps (empty)
-├── docs/                                  - this
-├── examples/                              - bare bones examples
-├── extensions/                            - various browser extensions
+├── docs/                                  - website source code
+├── examples/                              - simple usage examples
+├── extensions/                            - browser extension source code
 ├── external/                              - third party code
 ├── l10n/                                  - translation files
-├── gulpfile.js                            - build script
-├── package.json
 ├── src/
 │   ├── core/                              - core layer
 │   ├── display/                           - display layer
-│   ├── images/
-│   ├── pdf.js                             - wrapper file that everything is bundled into
-│   ├── shared/                            - shared code between core and display layers
+│   ├── shared/                            - shared code between the core and display layers
+│   ├── interfaces.js                      - interface definitions for the core/display layers
+│   ├── pdf.*.js                           - wrapper files for bundling
 │   └── worker_loader.js                   - used for developer builds to load worker files
-├── test/                                  - reference, unit, and font tests
-└── web/                                   - viewer layer
+├── test/                                  - unit, font, reference, and integration tests
+├── web/                                   - viewer layer
+├── LICENSE
+├── README.md
+├── gulpfile.js                            - build scripts/logic
+├── package-lock.json                      - pinned dependency versions
+└── package.json                           - package definition and dependencies
 ```
 
 ## Trying the Viewer

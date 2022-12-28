@@ -1,0 +1,156 @@
+/* Copyright 2022 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:root {
+  --focus-outline: solid 2px blue;
+  --hover-outline: dashed 2px blue;
+  --freetext-line-height: 1.35;
+  --freetext-padding: 2px;
+  --editorFreeText-editing-cursor: text;
+  /*#if COMPONENTS*/
+  --editorInk-editing-cursor: pointer;
+  /*#else*/
+  --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
+  /*#endif*/
+}
+
+@media (forced-colors: active) {
+  :root {
+    --focus-outline: solid 3px ButtonText;
+    --hover-outline: dashed 3px ButtonText;
+  }
+}
+
+[data-editor-rotation="90"] {
+  transform: rotate(90deg);
+}
+[data-editor-rotation="180"] {
+  transform: rotate(180deg);
+}
+[data-editor-rotation="270"] {
+  transform: rotate(270deg);
+}
+
+.annotationEditorLayer {
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: calc(100px * var(--scale-factor));
+  transform-origin: 0 0;
+  cursor: auto;
+  z-index: 20000;
+}
+
+.annotationEditorLayer.freeTextEditing {
+  cursor: var(--editorFreeText-editing-cursor);
+}
+
+.annotationEditorLayer.inkEditing {
+  cursor: var(--editorInk-editing-cursor);
+}
+
+.annotationEditorLayer .selectedEditor {
+  outline: var(--focus-outline);
+  resize: none;
+}
+
+.annotationEditorLayer .freeTextEditor {
+  position: absolute;
+  background: transparent;
+  border-radius: 3px;
+  padding: calc(var(--freetext-padding) * var(--scale-factor));
+  resize: none;
+  width: auto;
+  height: auto;
+  z-index: 1;
+  transform-origin: 0 0;
+  touch-action: none;
+  cursor: auto;
+}
+
+.annotationEditorLayer .freeTextEditor .internal {
+  background: transparent;
+  border: none;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  white-space: nowrap;
+  resize: none;
+  font: 10px sans-serif;
+  line-height: var(--freetext-line-height);
+}
+
+.annotationEditorLayer .freeTextEditor .overlay {
+  position: absolute;
+  display: none;
+  background: transparent;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.annotationEditorLayer .freeTextEditor .overlay.enabled {
+  display: block;
+}
+
+.annotationEditorLayer .freeTextEditor .internal:empty::before {
+  content: attr(default-content);
+  color: gray;
+}
+
+.annotationEditorLayer .freeTextEditor .internal:focus {
+  outline: none;
+}
+
+.annotationEditorLayer .inkEditor.disabled {
+  resize: none;
+}
+
+.annotationEditorLayer .inkEditor.disabled.selectedEditor {
+  resize: horizontal;
+}
+
+.annotationEditorLayer .freeTextEditor:hover:not(.selectedEditor),
+.annotationEditorLayer .inkEditor:hover:not(.selectedEditor) {
+  outline: var(--hover-outline);
+}
+
+.annotationEditorLayer .inkEditor {
+  position: absolute;
+  background: transparent;
+  border-radius: 3px;
+  overflow: auto;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  transform-origin: 0 0;
+  cursor: auto;
+}
+
+.annotationEditorLayer .inkEditor.editing {
+  resize: none;
+  cursor: inherit;
+}
+
+.annotationEditorLayer .inkEditor .inkEditorCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}

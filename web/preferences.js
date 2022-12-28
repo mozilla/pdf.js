@@ -13,30 +13,7 @@
  * limitations under the License.
  */
 
-let defaultPreferences = null;
-function getDefaultPreferences() {
-  if (!defaultPreferences) {
-    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
-      defaultPreferences = Promise.resolve(
-        PDFJSDev.json('$ROOT/web/default_preferences.json'));
-    } else {
-      defaultPreferences = new Promise(function (resolve) {
-        let xhr = new XMLHttpRequest();
-        xhr.open('GET', 'default_preferences.json');
-        xhr.onload = xhr.onerror = function loaded() {
-          try {
-            resolve(JSON.parse(xhr.responseText));
-          } catch (e) {
-            console.error(`Unable to load default preferences: ${e}`);
-            resolve({});
-          }
-        };
-        xhr.send();
-      });
-    }
-  }
-  return defaultPreferences;
-}
+import { AppOptions, OptionKind } from "./app_options.js";
 
 /**
  * BasePreferences - Abstract base class for storing persistent settings.
@@ -44,138 +21,151 @@ function getDefaultPreferences() {
  *   or every time the viewer is loaded.
  */
 class BasePreferences {
+  #defaults = Object.freeze(
+    typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      ? AppOptions.getAll(OptionKind.PREFERENCE)
+      : PDFJSDev.eval("DEFAULT_PREFERENCES")
+  );
+
+  #prefs = Object.create(null);
+
+  #initializedPromise = null;
+
   constructor() {
     if (this.constructor === BasePreferences) {
-      throw new Error('Cannot initialize BasePreferences.');
+      throw new Error("Cannot initialize BasePreferences.");
     }
-    this.prefs = null;
 
-    this._initializedPromise = getDefaultPreferences().then((defaults) => {
-      Object.defineProperty(this, 'defaults', {
-        value: Object.freeze(defaults),
-        writable: false,
-        enumerable: true,
-        configurable: false,
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+      Object.defineProperty(this, "defaults", {
+        get() {
+          return this.#defaults;
+        },
       });
+    }
 
-      this.prefs = Object.assign(Object.create(null), defaults);
-      return this._readFromStorage(defaults);
-    }).then((prefs) => {
-      if (!prefs) {
-        return;
-      }
-      for (let name in prefs) {
-        const defaultValue = this.defaults[name], prefValue = prefs[name];
-        // Ignore preferences not present in, or whose types don't match,
-        // the default values.
-        if (defaultValue === undefined ||
-            typeof prefValue !== typeof defaultValue) {
-          continue;
+    this.#initializedPromise = this._readFromStorage(this.#defaults).then(
+      prefs => {
+        for (const name in this.#defaults) {
+          const prefValue = prefs?.[name];
+          // Ignore preferences whose types don't match the default values.
+          if (typeof prefValue === typeof this.#defaults[name]) {
+            this.#prefs[name] = prefValue;
+          }
         }
-        this.prefs[name] = prefValue;
       }
-    });
+    );
   }
 
   /**
    * Stub function for writing preferences to storage.
    * @param {Object} prefObj The preferences that should be written to storage.
-   * @return {Promise} A promise that is resolved when the preference values
-   *                   have been written.
+   * @returns {Promise} A promise that is resolved when the preference values
+   *                    have been written.
    */
   async _writeToStorage(prefObj) {
-    throw new Error('Not implemented: _writeToStorage');
+    throw new Error("Not implemented: _writeToStorage");
   }
 
   /**
    * Stub function for reading preferences from storage.
    * @param {Object} prefObj The preferences that should be read from storage.
-   * @return {Promise} A promise that is resolved with an {Object} containing
-   *                   the preferences that have been read.
+   * @returns {Promise} A promise that is resolved with an {Object} containing
+   *                    the preferences that have been read.
    */
   async _readFromStorage(prefObj) {
-    throw new Error('Not implemented: _readFromStorage');
+    throw new Error("Not implemented: _readFromStorage");
   }
 
   /**
    * Reset the preferences to their default values and update storage.
-   * @return {Promise} A promise that is resolved when the preference values
-   *                   have been reset.
+   * @returns {Promise} A promise that is resolved when the preference values
+   *                    have been reset.
    */
   async reset() {
-    await this._initializedPromise;
-    this.prefs = Object.assign(Object.create(null), this.defaults);
-    return this._writeToStorage(this.defaults);
+    await this.#initializedPromise;
+    const prefs = this.#prefs;
+
+    this.#prefs = Object.create(null);
+    return this._writeToStorage(this.#defaults).catch(reason => {
+      // Revert all preference values, since writing to storage failed.
+      this.#prefs = prefs;
+      throw reason;
+    });
   }
 
   /**
    * Set the value of a preference.
    * @param {string} name The name of the preference that should be changed.
    * @param {boolean|number|string} value The new value of the preference.
-   * @return {Promise} A promise that is resolved when the value has been set,
-   *                   provided that the preference exists and the types match.
+   * @returns {Promise} A promise that is resolved when the value has been set,
+   *                    provided that the preference exists and the types match.
    */
   async set(name, value) {
-    await this._initializedPromise;
-    let defaultValue = this.defaults[name];
+    await this.#initializedPromise;
+    const defaultValue = this.#defaults[name],
+      prefs = this.#prefs;
 
     if (defaultValue === undefined) {
       throw new Error(`Set preference: "${name}" is undefined.`);
     } else if (value === undefined) {
-      throw new Error('Set preference: no value is specified.');
+      throw new Error("Set preference: no value is specified.");
     }
-    let valueType = typeof value;
-    let defaultType = typeof defaultValue;
+    const valueType = typeof value,
+      defaultType = typeof defaultValue;
 
     if (valueType !== defaultType) {
-      if (valueType === 'number' && defaultType === 'string') {
+      if (valueType === "number" && defaultType === "string") {
         value = value.toString();
       } else {
-        throw new Error(`Set preference: "${value}" is a ${valueType}, ` +
-                        `expected a ${defaultType}.`);
+        throw new Error(
+          `Set preference: "${value}" is a ${valueType}, expected a ${defaultType}.`
+        );
       }
     } else {
-      if (valueType === 'number' && !Number.isInteger(value)) {
+      if (valueType === "number" && !Number.isInteger(value)) {
         throw new Error(`Set preference: "${value}" must be an integer.`);
       }
     }
-    this.prefs[name] = value;
-    return this._writeToStorage(this.prefs);
+
+    this.#prefs[name] = value;
+    return this._writeToStorage(this.#prefs).catch(reason => {
+      // Revert all preference values, since writing to storage failed.
+      this.#prefs = prefs;
+      throw reason;
+    });
   }
 
   /**
    * Get the value of a preference.
    * @param {string} name The name of the preference whose value is requested.
-   * @return {Promise} A promise that is resolved with a {boolean|number|string}
-   *                   containing the value of the preference.
+   * @returns {Promise} A promise resolved with a {boolean|number|string}
+   *                    containing the value of the preference.
    */
   async get(name) {
-    await this._initializedPromise;
-    let defaultValue = this.defaults[name];
+    await this.#initializedPromise;
+    const defaultValue = this.#defaults[name];
 
     if (defaultValue === undefined) {
       throw new Error(`Get preference: "${name}" is undefined.`);
-    } else {
-      let prefValue = this.prefs[name];
-
-      if (prefValue !== undefined) {
-        return prefValue;
-      }
     }
-    return defaultValue;
+    return this.#prefs[name] ?? defaultValue;
   }
 
   /**
    * Get the values of all preferences.
-   * @return {Promise} A promise that is resolved with an {Object} containing
-   *                   the values of all preferences.
+   * @returns {Promise} A promise that is resolved with an {Object} containing
+   *                    the values of all preferences.
    */
   async getAll() {
-    await this._initializedPromise;
-    return Object.assign(Object.create(null), this.defaults, this.prefs);
+    await this.#initializedPromise;
+    const obj = Object.create(null);
+
+    for (const name in this.#defaults) {
+      obj[name] = this.#prefs[name] ?? this.#defaults[name];
+    }
+    return obj;
   }
 }
 
-export {
-  BasePreferences,
-};
+export { BasePreferences };

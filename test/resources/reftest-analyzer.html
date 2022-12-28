@@ -92,7 +92,7 @@ Original author: L. David Baron <dbaron@dbaron.org>
     <div id="itemlist">
       <table id="itemtable"></table>
     </div>
-    <div id="images">
+    <div id="imagepane">
     <form id="imgcontrols">
       <label>
         <input type="radio" name="which" id="testImage" value="0" checked="checked"> Test
@@ -103,73 +103,76 @@ Original author: L. David Baron <dbaron@dbaron.org>
       <label>
         <input type="checkbox" id="differences"> Circle differences
       </label>
+      <span id="shortcuts">Shortcuts: n=next p=previous t=toggle d=differences</span>
     </form>
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="800px" height="1130px" viewbox="0 0 800 1130" id="svg">
-      <defs>
-        <!-- use sRGB to avoid loss of data -->
-        <filter id="showDifferences" x="0%" y="0%" width="100%" height="100%"
-                style="color-interpolation-filters: sRGB">
-          <feImage id="feimage1" result="img1" xlink:href="#image1" />
-          <feImage id="feimage2" result="img2" xlink:href="#image2" />
-          <!-- inv1 and inv2 are the images with RGB inverted -->
-          <feComponentTransfer result="inv1" in="img1">
-            <feFuncR type="linear" slope="-1" intercept="1" />
-            <feFuncG type="linear" slope="-1" intercept="1" />
-            <feFuncB type="linear" slope="-1" intercept="1" />
-          </feComponentTransfer>
-          <feComponentTransfer result="inv2" in="img2">
-            <feFuncR type="linear" slope="-1" intercept="1" />
-            <feFuncG type="linear" slope="-1" intercept="1" />
-            <feFuncB type="linear" slope="-1" intercept="1" />
-          </feComponentTransfer>
-          <!-- w1 will have non-white pixels anywhere that img2
-               is brighter than img1, and w2 for the reverse.
-               It would be nice not to have to go through these
-               intermediate states, but feComposite
-               type="arithmetic" can't transform the RGB channels
-               and leave the alpha channel untouched. -->
-          <feComposite result="w1" in="img1" in2="inv2" operator="arithmetic" k2="1" k3="1" />
-          <feComposite result="w2" in="img2" in2="inv1" operator="arithmetic" k2="1" k3="1" />
-          <!-- c1 will have non-black pixels anywhere that img2
-               is brighter than img1, and c2 for the reverse -->
-          <feComponentTransfer result="c1" in="w1">
-            <feFuncR type="linear" slope="-1" intercept="1" />
-            <feFuncG type="linear" slope="-1" intercept="1" />
-            <feFuncB type="linear" slope="-1" intercept="1" />
-          </feComponentTransfer>
-          <feComponentTransfer result="c2" in="w2">
-            <feFuncR type="linear" slope="-1" intercept="1" />
-            <feFuncG type="linear" slope="-1" intercept="1" />
-            <feFuncB type="linear" slope="-1" intercept="1" />
-          </feComponentTransfer>
-          <!-- c will be nonblack (and fully on) for every pixel+component where there are differences -->
-          <feComposite result="c" in="c1" in2="c2" operator="arithmetic" k2="255" k3="255" />
-          <!-- a will be opaque for every pixel with differences and transparent for all others -->
-          <feColorMatrix result="a" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 1 1 0 0" />
+    <div id="images">
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="800" height="1000" id="svg">
+        <defs>
+          <!-- use sRGB to avoid loss of data -->
+          <filter id="showDifferences" x="0%" y="0%" width="100%" height="100%"
+                  style="color-interpolation-filters: sRGB">
+            <feImage id="feimage1" result="img1" xlink:href="#image1" />
+            <feImage id="feimage2" result="img2" xlink:href="#image2" />
+            <!-- inv1 and inv2 are the images with RGB inverted -->
+            <feComponentTransfer result="inv1" in="img1">
+              <feFuncR type="linear" slope="-1" intercept="1" />
+              <feFuncG type="linear" slope="-1" intercept="1" />
+              <feFuncB type="linear" slope="-1" intercept="1" />
+            </feComponentTransfer>
+            <feComponentTransfer result="inv2" in="img2">
+              <feFuncR type="linear" slope="-1" intercept="1" />
+              <feFuncG type="linear" slope="-1" intercept="1" />
+              <feFuncB type="linear" slope="-1" intercept="1" />
+            </feComponentTransfer>
+            <!-- w1 will have non-white pixels anywhere that img2
+                 is brighter than img1, and w2 for the reverse.
+                 It would be nice not to have to go through these
+                 intermediate states, but feComposite
+                 type="arithmetic" can't transform the RGB channels
+                 and leave the alpha channel untouched. -->
+            <feComposite result="w1" in="img1" in2="inv2" operator="arithmetic" k2="1" k3="1" />
+            <feComposite result="w2" in="img2" in2="inv1" operator="arithmetic" k2="1" k3="1" />
+            <!-- c1 will have non-black pixels anywhere that img2
+                 is brighter than img1, and c2 for the reverse -->
+            <feComponentTransfer result="c1" in="w1">
+              <feFuncR type="linear" slope="-1" intercept="1" />
+              <feFuncG type="linear" slope="-1" intercept="1" />
+              <feFuncB type="linear" slope="-1" intercept="1" />
+            </feComponentTransfer>
+            <feComponentTransfer result="c2" in="w2">
+              <feFuncR type="linear" slope="-1" intercept="1" />
+              <feFuncG type="linear" slope="-1" intercept="1" />
+              <feFuncB type="linear" slope="-1" intercept="1" />
+            </feComponentTransfer>
+            <!-- c will be nonblack (and fully on) for every pixel+component where there are differences -->
+            <feComposite result="c" in="c1" in2="c2" operator="arithmetic" k2="255" k3="255" />
+            <!-- a will be opaque for every pixel with differences and transparent for all others -->
+            <feColorMatrix result="a" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 1 1 0 0" />
 
-          <!-- a, dilated by 4 pixels -->
-          <feMorphology result="dila4" in="a" operator="dilate" radius="4" />
-          <!-- a, dilated by 1 pixel -->
-          <feMorphology result="dila1" in="a" operator="dilate" radius="1" />
+            <!-- a, dilated by 4 pixels -->
+            <feMorphology result="dila4" in="a" operator="dilate" radius="4" />
+            <!-- a, dilated by 1 pixel -->
+            <feMorphology result="dila1" in="a" operator="dilate" radius="1" />
 
-          <!-- all the pixels in the 3-pixel dilation of a but not in the 1-pixel dilation of a, to highlight the diffs -->
-          <feComposite result="highlight" in="dila4" in2="dila1" operator="out" />
+            <!-- all the pixels in the 3-pixel dilation of a but not in the 1-pixel dilation of a, to highlight the diffs -->
+            <feComposite result="highlight" in="dila4" in2="dila1" operator="out" />
 
-          <feFlood result="red" flood-color="red" />
-          <feComposite result="redhighlight" in="red" in2="highlight" operator="in" />
-          <feFlood result="black" flood-color="black" flood-opacity="0.5" />
-          <feMerge>
-            <feMergeNode in="black" />
-            <feMergeNode in="redhighlight" />
-          </feMerge>
-        </filter>
-      </defs>
-      <g id="magnify">
-        <image x="0" y="0" width="100%" height="100%" id="image1" />
-        <image x="0" y="0" width="100%" height="100%" id="image2" />
-      </g>
-      <rect id="diffrect" filter="url(#showDifferences)" pointer-events="none" x="0" y="0" width="100%" height="100%" />
-    </svg>
+            <feFlood result="red" flood-color="red" />
+            <feComposite result="redhighlight" in="red" in2="highlight" operator="in" />
+            <feFlood result="black" flood-color="black" flood-opacity="0.5" />
+            <feMerge>
+              <feMergeNode in="black" />
+              <feMergeNode in="redhighlight" />
+            </feMerge>
+          </filter>
+        </defs>
+        <g id="magnify">
+          <image x="0" y="0" id="image1" />
+          <image x="0" y="0" id="image2" />
+        </g>
+        <rect id="diffrect" filter="url(#showDifferences)" pointer-events="none" x="0" y="0" width="100%" height="100%" />
+      </svg>
+    </div>
   </div>
 </body>
 </html>

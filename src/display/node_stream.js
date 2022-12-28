@@ -14,23 +14,33 @@
  */
 /* globals __non_webpack_require__ */
 
-let fs = __non_webpack_require__('fs');
-let http = __non_webpack_require__('http');
-let https = __non_webpack_require__('https');
-let url = __non_webpack_require__('url');
+import {
+  AbortException,
+  assert,
+  createPromiseCapability,
+  MissingPDFException,
+} from "../shared/util.js";
+import {
+  extractFilenameFromHeader,
+  validateRangeRequestCapabilities,
+} from "./network_utils.js";
 
-import {
-  AbortException, assert, createPromiseCapability, MissingPDFException
-} from '../shared/util';
-import {
-  extractFilenameFromHeader, validateRangeRequestCapabilities
-} from './network_utils';
+if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+  throw new Error(
+    'Module "./node_stream.js" shall not be used with MOZCENTRAL builds.'
+  );
+}
+
+const fs = __non_webpack_require__("fs");
+const http = __non_webpack_require__("http");
+const https = __non_webpack_require__("https");
+const url = __non_webpack_require__("url");
 
 const fileUriRegex = /^file:\/\/\/[a-zA-Z]:\//;
 
 function parseUrl(sourceUrl) {
-  let parsedUrl = url.parse(sourceUrl);
-  if (parsedUrl.protocol === 'file:' || parsedUrl.host) {
+  const parsedUrl = url.parse(sourceUrl);
+  if (parsedUrl.protocol === "file:" || parsedUrl.host) {
     return parsedUrl;
   }
   // Prepending 'file:///' to Windows absolute path.
@@ -39,7 +49,7 @@ function parseUrl(sourceUrl) {
   }
   // Changes protocol to 'file:' if url refers to filesystem.
   if (!parsedUrl.host) {
-    parsedUrl.protocol = 'file:';
+    parsedUrl.protocol = "file:";
   }
   return parsedUrl;
 }
@@ -48,41 +58,48 @@ class PDFNodeStream {
   constructor(source) {
     this.source = source;
     this.url = parseUrl(source.url);
-    this.isHttp = this.url.protocol === 'http:' ||
-                  this.url.protocol === 'https:';
+    this.isHttp =
+      this.url.protocol === "http:" || this.url.protocol === "https:";
     // Check if url refers to filesystem.
-    this.isFsUrl = this.url.protocol === 'file:';
+    this.isFsUrl = this.url.protocol === "file:";
     this.httpHeaders = (this.isHttp && source.httpHeaders) || {};
 
-    this._fullRequest = null;
+    this._fullRequestReader = null;
     this._rangeRequestReaders = [];
   }
 
+  get _progressiveDataLength() {
+    return this._fullRequestReader?._loaded ?? 0;
+  }
+
   getFullReader() {
-    assert(!this._fullRequest);
-    this._fullRequest = this.isFsUrl ?
-      new PDFNodeStreamFsFullReader(this) :
-      new PDFNodeStreamFullReader(this);
-    return this._fullRequest;
+    assert(
+      !this._fullRequestReader,
+      "PDFNodeStream.getFullReader can only be called once."
+    );
+    this._fullRequestReader = this.isFsUrl
+      ? new PDFNodeStreamFsFullReader(this)
+      : new PDFNodeStreamFullReader(this);
+    return this._fullRequestReader;
   }
 
   getRangeReader(start, end) {
-    let rangeReader = this.isFsUrl ?
-      new PDFNodeStreamFsRangeReader(this, start, end) :
-      new PDFNodeStreamRangeReader(this, start, end);
+    if (end <= this._progressiveDataLength) {
+      return null;
+    }
+    const rangeReader = this.isFsUrl
+      ? new PDFNodeStreamFsRangeReader(this, start, end)
+      : new PDFNodeStreamRangeReader(this, start, end);
     this._rangeRequestReaders.push(rangeReader);
     return rangeReader;
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequest) {
-      this._fullRequest.cancel(reason);
-    }
+    this._fullRequestReader?.cancel(reason);
 
-    let readers = this._rangeRequestReaders.slice(0);
-    readers.forEach(function(reader) {
+    for (const reader of this._rangeRequestReaders.slice(0)) {
       reader.cancel(reason);
-    });
+    }
   }
 }
 
@@ -92,7 +109,7 @@ class BaseFullReader {
     this._done = false;
     this._storedError = null;
     this.onProgress = null;
-    let source = stream.source;
+    const source = stream.source;
     this._contentLength = source.length; // optional
     this._loaded = 0;
     this._filename = null;
@@ -134,27 +151,26 @@ class BaseFullReader {
   async read() {
     await this._readCapability.promise;
     if (this._done) {
-      return { value: undefined, done: true, };
+      return { value: undefined, done: true };
     }
     if (this._storedError) {
       throw this._storedError;
     }
 
-    let chunk = this._readableStream.read();
+    const chunk = this._readableStream.read();
     if (chunk === null) {
       this._readCapability = createPromiseCapability();
       return this.read();
     }
     this._loaded += chunk.length;
-    if (this.onProgress) {
-      this.onProgress({
-        loaded: this._loaded,
-        total: this._contentLength,
-      });
-    }
+    this.onProgress?.({
+      loaded: this._loaded,
+      total: this._contentLength,
+    });
+
     // Ensure that `read()` method returns ArrayBuffer.
-    let buffer = new Uint8Array(chunk).buffer;
-    return { value: buffer, done: false, };
+    const buffer = new Uint8Array(chunk).buffer;
+    return { value: buffer, done: false };
   }
 
   cancel(reason) {
@@ -174,25 +190,25 @@ class BaseFullReader {
 
   _setReadableStream(readableStream) {
     this._readableStream = readableStream;
-    readableStream.on('readable', () => {
+    readableStream.on("readable", () => {
       this._readCapability.resolve();
     });
 
-    readableStream.on('end', () => {
+    readableStream.on("end", () => {
       // Destroy readable to minimize resource usage.
       readableStream.destroy();
       this._done = true;
       this._readCapability.resolve();
     });
 
-    readableStream.on('error', (reason) => {
+    readableStream.on("error", reason => {
       this._error(reason);
     });
 
     // We need to stop reading when range is supported and streaming is
     // disabled.
     if (!this._isStreamingSupported && this._isRangeSupported) {
-      this._error(new AbortException('streaming is disabled'));
+      this._error(new AbortException("streaming is disabled"));
     }
 
     // Destroy ReadableStream if already in errored state.
@@ -211,7 +227,7 @@ class BaseRangeReader {
     this._loaded = 0;
     this._readableStream = null;
     this._readCapability = createPromiseCapability();
-    let source = stream.source;
+    const source = stream.source;
     this._isStreamingSupported = !source.disableStream;
   }
 
@@ -222,24 +238,23 @@ class BaseRangeReader {
   async read() {
     await this._readCapability.promise;
     if (this._done) {
-      return { value: undefined, done: true, };
+      return { value: undefined, done: true };
     }
     if (this._storedError) {
       throw this._storedError;
     }
 
-    let chunk = this._readableStream.read();
+    const chunk = this._readableStream.read();
     if (chunk === null) {
       this._readCapability = createPromiseCapability();
       return this.read();
     }
     this._loaded += chunk.length;
-    if (this.onProgress) {
-      this.onProgress({ loaded: this._loaded, });
-    }
+    this.onProgress?.({ loaded: this._loaded });
+
     // Ensure that `read()` method returns ArrayBuffer.
-    let buffer = new Uint8Array(chunk).buffer;
-    return { value: buffer, done: false, };
+    const buffer = new Uint8Array(chunk).buffer;
+    return { value: buffer, done: false };
   }
 
   cancel(reason) {
@@ -259,18 +274,18 @@ class BaseRangeReader {
 
   _setReadableStream(readableStream) {
     this._readableStream = readableStream;
-    readableStream.on('readable', () => {
+    readableStream.on("readable", () => {
       this._readCapability.resolve();
     });
 
-    readableStream.on('end', () => {
+    readableStream.on("end", () => {
       // Destroy readableStream to minimize resource usage.
       readableStream.destroy();
       this._done = true;
       this._readCapability.resolve();
     });
 
-    readableStream.on('error', (reason) => {
+    readableStream.on("error", reason => {
       this._error(reason);
     });
 
@@ -281,14 +296,14 @@ class BaseRangeReader {
   }
 }
 
-function createRequestOptions(url, headers) {
+function createRequestOptions(parsedUrl, headers) {
   return {
-    protocol: url.protocol,
-    auth: url.auth,
-    host: url.hostname,
-    port: url.port,
-    path: url.path,
-    method: 'GET',
+    protocol: parsedUrl.protocol,
+    auth: parsedUrl.auth,
+    host: parsedUrl.hostname,
+    port: parsedUrl.port,
+    path: parsedUrl.path,
+    method: "GET",
     headers,
   };
 }
@@ -297,7 +312,7 @@ class PDFNodeStreamFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
 
-    let handleResponse = (response) => {
+    const handleResponse = response => {
       if (response.statusCode === 404) {
         const error = new MissingPDFException(`Missing PDF "${this._url}".`);
         this._storedError = error;
@@ -307,12 +322,12 @@ class PDFNodeStreamFullReader extends BaseFullReader {
       this._headersCapability.resolve();
       this._setReadableStream(response);
 
-      const getResponseHeader = (name) => {
+      const getResponseHeader = name => {
         // Make sure that headers name are in lower case, as mentioned
         // here: https://nodejs.org/api/http.html#http_message_headers.
         return this._readableStream.headers[name.toLowerCase()];
       };
-      let { allowRangeRequests, suggestedLength, } =
+      const { allowRangeRequests, suggestedLength } =
         validateRangeRequestCapabilities({
           getResponseHeader,
           isHttp: stream.isHttp,
@@ -328,17 +343,19 @@ class PDFNodeStreamFullReader extends BaseFullReader {
     };
 
     this._request = null;
-    if (this._url.protocol === 'http:') {
+    if (this._url.protocol === "http:") {
       this._request = http.request(
         createRequestOptions(this._url, stream.httpHeaders),
-        handleResponse);
+        handleResponse
+      );
     } else {
       this._request = https.request(
         createRequestOptions(this._url, stream.httpHeaders),
-        handleResponse);
+        handleResponse
+      );
     }
 
-    this._request.on('error', (reason) => {
+    this._request.on("error", reason => {
       this._storedError = reason;
       this._headersCapability.reject(reason);
     });
@@ -354,16 +371,16 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     super(stream);
 
     this._httpHeaders = {};
-    for (let property in stream.httpHeaders) {
-      let value = stream.httpHeaders[property];
-      if (typeof value === 'undefined') {
+    for (const property in stream.httpHeaders) {
+      const value = stream.httpHeaders[property];
+      if (typeof value === "undefined") {
         continue;
       }
       this._httpHeaders[property] = value;
     }
-    this._httpHeaders['Range'] = `bytes=${start}-${end - 1}`;
+    this._httpHeaders.Range = `bytes=${start}-${end - 1}`;
 
-    let handleResponse = (response) => {
+    const handleResponse = response => {
       if (response.statusCode === 404) {
         const error = new MissingPDFException(`Missing PDF "${this._url}".`);
         this._storedError = error;
@@ -373,17 +390,19 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     };
 
     this._request = null;
-    if (this._url.protocol === 'http:') {
+    if (this._url.protocol === "http:") {
       this._request = http.request(
         createRequestOptions(this._url, this._httpHeaders),
-        handleResponse);
+        handleResponse
+      );
     } else {
       this._request = https.request(
         createRequestOptions(this._url, this._httpHeaders),
-        handleResponse);
+        handleResponse
+      );
     }
 
-    this._request.on('error', (reason) => {
+    this._request.on("error", reason => {
       this._storedError = reason;
     });
     this._request.end();
@@ -398,12 +417,12 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
 
     // Remove the extra slash to get right path from url like `file:///C:/`
     if (fileUriRegex.test(this._url.href)) {
-      path = path.replace(/^\//, '');
+      path = path.replace(/^\//, "");
     }
 
     fs.lstat(path, (error, stat) => {
       if (error) {
-        if (error.code === 'ENOENT') {
+        if (error.code === "ENOENT") {
           error = new MissingPDFException(`Missing PDF "${path}".`);
         }
         this._storedError = error;
@@ -427,14 +446,11 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
 
     // Remove the extra slash to get right path from url like `file:///C:/`
     if (fileUriRegex.test(this._url.href)) {
-      path = path.replace(/^\//, '');
+      path = path.replace(/^\//, "");
     }
 
-    this._setReadableStream(
-      fs.createReadStream(path, { start, end: end - 1, }));
+    this._setReadableStream(fs.createReadStream(path, { start, end: end - 1 }));
   }
 }
 
-export {
-  PDFNodeStream,
-};
+export { PDFNodeStream };

@@ -1,0 +1,73 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Title (Issue 10438)
+/Author (Snuffleupagus)
+>>
+2 0 obj<<
+/Pages 3 0 R
+/Type /Catalog
+>>
+endobj 
+3 0 obj 
+<<
+/Kids [4 0 R]
+/Count 1
+/Type /Pages
+>>
+endobj 
+4 0 obj 
+<<
+/Parent 3 0 R
+/MediaBox [0 0 200 50]
+/Resources 
+<<
+/Font 
+<<
+/F1 5 0 R
+>>
+>>
+/Contents 6 0 R
+/Type /Page
+>>
+endobj 
+5 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/Type /Font
+>>
+endobj 
+6 0 obj 
+<<
+/Length 41
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Issue 10438) Tj
+ET
+
+endstream 
+endobj xref
+0 7
+0000000000 65535 f 
+0000000001 00000 n 
+0000000002 00000 n 
+0000000003 00000 n 
+0000000004 00000 n 
+0000000005 00000 n 
+0000000006 00000 n 
+trailer
+
+<<
+/Info 1 0 R
+/Root 2 0 R
+/Size 7
+>>
+startxref
+491
+%%EOF

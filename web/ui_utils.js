@@ -13,15 +13,22 @@
  * limitations under the License.
  */
 
-const CSS_UNITS = 96.0 / 72.0;
-const DEFAULT_SCALE_VALUE = 'auto';
+const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
-const MIN_SCALE = 0.10;
+const DEFAULT_SCALE_DELTA = 1.1;
+const MIN_SCALE = 0.1;
 const MAX_SCALE = 10.0;
 const UNKNOWN_SCALE = 0;
 const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
+
+const RenderingStates = {
+  INITIAL: 0,
+  RUNNING: 1,
+  PAUSED: 2,
+  FINISHED: 3,
+};
 
 const PresentationModeState = {
   UNKNOWN: 0,
@@ -30,66 +37,70 @@ const PresentationModeState = {
   FULLSCREEN: 3,
 };
 
-const RendererType = {
-  CANVAS: 'canvas',
-  SVG: 'svg',
+const SidebarView = {
+  UNKNOWN: -1,
+  NONE: 0,
+  THUMBS: 1, // Default value.
+  OUTLINE: 2,
+  ATTACHMENTS: 3,
+  LAYERS: 4,
 };
+
+const RendererType =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
+    ? {
+        CANVAS: "canvas",
+        SVG: "svg",
+      }
+    : null;
 
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
-  ENABLE_ENHANCE: 2,
 };
 
-// Replaces {{arguments}} with their values.
-function formatL10nValue(text, args) {
-  if (!args) {
-    return text;
+const ScrollMode = {
+  UNKNOWN: -1,
+  VERTICAL: 0, // Default value.
+  HORIZONTAL: 1,
+  WRAPPED: 2,
+  PAGE: 3,
+};
+
+const SpreadMode = {
+  UNKNOWN: -1,
+  NONE: 0, // Default value.
+  ODD: 1,
+  EVEN: 2,
+};
+
+// Used by `PDFViewerApplication`, and by the API unit-tests.
+const AutoPrintRegExp = /\bprint\s*\(/;
+
+/**
+ * Scale factors for the canvas, necessary with HiDPI displays.
+ */
+class OutputScale {
+  constructor() {
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    /**
+     * @type {number} Horizontal scale.
+     */
+    this.sx = pixelRatio;
+
+    /**
+     * @type {number} Vertical scale.
+     */
+    this.sy = pixelRatio;
   }
-  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
-    return (name in args ? args[name] : '{{' + name + '}}');
-  });
-}
 
-/**
- * No-op implementation of the localization service.
- * @implements {IL10n}
- */
-let NullL10n = {
-  async getLanguage() {
-    return 'en-us';
-  },
-
-  async getDirection() {
-    return 'ltr';
-  },
-
-  async get(property, args, fallback) {
-    return formatL10nValue(fallback, args);
-  },
-
-  async translate(element) { },
-};
-
-/**
- * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
- * @return {Object} The object with horizontal (sx) and vertical (sy)
-                    scales. The scaled property is set to false if scaling is
-                    not required, true otherwise.
- */
-function getOutputScale(ctx) {
-  let devicePixelRatio = window.devicePixelRatio || 1;
-  let backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
-                          ctx.mozBackingStorePixelRatio ||
-                          ctx.msBackingStorePixelRatio ||
-                          ctx.oBackingStorePixelRatio ||
-                          ctx.backingStorePixelRatio || 1;
-  let pixelRatio = devicePixelRatio / backingStoreRatio;
-  return {
-    sx: pixelRatio,
-    sy: pixelRatio,
-    scaled: pixelRatio !== 1,
-  };
+  /**
+   * @type {boolean} Returns `true` when scaling is required, `false` otherwise.
+   */
+  get scaled() {
+    return this.sx !== 1 || this.sy !== 1;
+  }
 }
 
 /**
@@ -97,30 +108,31 @@ function getOutputScale(ctx) {
  * @param {Object} element - The element to be visible.
  * @param {Object} spot - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
- * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
- *   the CSS rule `overflow: hidden;` set. The default is false.
+ * @param {boolean} [scrollMatches] - When scrolling search results into view,
+ *   ignore elements that either: Contains marked content identifiers,
+ *   or have the CSS-rule `overflow: hidden;` set. The default value is `false`.
  */
-function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
+function scrollIntoView(element, spot, scrollMatches = false) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStarted.
   let parent = element.offsetParent;
   if (!parent) {
-    console.error('offsetParent is not set -- cannot scroll');
+    console.error("offsetParent is not set -- cannot scroll");
     return;
   }
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
-  while ((parent.clientHeight === parent.scrollHeight &&
-          parent.clientWidth === parent.scrollWidth) ||
-         (skipOverflowHiddenElements &&
-          getComputedStyle(parent).overflow === 'hidden')) {
-    if (parent.dataset._scaleY) {
-      offsetY /= parent.dataset._scaleY;
-      offsetX /= parent.dataset._scaleX;
-    }
+  while (
+    (parent.clientHeight === parent.scrollHeight &&
+      parent.clientWidth === parent.scrollWidth) ||
+    (scrollMatches &&
+      (parent.classList.contains("markedContent") ||
+        getComputedStyle(parent).overflow === "hidden"))
+  ) {
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
+
     parent = parent.offsetParent;
     if (!parent) {
       return; // no need to scroll
@@ -143,7 +155,7 @@ function scrollIntoView(element, spot, skipOverflowHiddenElements = false) {
  * PDF.js friendly one: with scroll debounce and scroll direction.
  */
 function watchScroll(viewAreaElement, callback) {
-  let debounceScroll = function(evt) {
+  const debounceScroll = function (evt) {
     if (rAF) {
       return;
     }
@@ -151,14 +163,14 @@ function watchScroll(viewAreaElement, callback) {
     rAF = window.requestAnimationFrame(function viewAreaElementScrolled() {
       rAF = null;
 
-      let currentX = viewAreaElement.scrollLeft;
-      let lastX = state.lastX;
+      const currentX = viewAreaElement.scrollLeft;
+      const lastX = state.lastX;
       if (currentX !== lastX) {
         state.right = currentX > lastX;
       }
       state.lastX = currentX;
-      let currentY = viewAreaElement.scrollTop;
-      let lastY = state.lastY;
+      const currentY = viewAreaElement.scrollTop;
+      const lastY = state.lastY;
       if (currentY !== lastY) {
         state.down = currentY > lastY;
       }
@@ -167,7 +179,7 @@ function watchScroll(viewAreaElement, callback) {
     });
   };
 
-  let state = {
+  const state = {
     right: true,
     down: true,
     lastX: viewAreaElement.scrollLeft,
@@ -176,23 +188,39 @@ function watchScroll(viewAreaElement, callback) {
   };
 
   let rAF = null;
-  viewAreaElement.addEventListener('scroll', debounceScroll, true);
+  viewAreaElement.addEventListener("scroll", debounceScroll, true);
   return state;
 }
 
 /**
- * Helper function to parse query string (e.g. ?param1=value&parm2=...).
+ * Helper function to parse query string (e.g. ?param1=value&param2=...).
+ * @param {string}
+ * @returns {Map}
  */
 function parseQueryString(query) {
-  let parts = query.split('&');
-  let params = Object.create(null);
-  for (let i = 0, ii = parts.length; i < ii; ++i) {
-    let param = parts[i].split('=');
-    let key = param[0].toLowerCase();
-    let value = param.length > 1 ? param[1] : null;
-    params[decodeURIComponent(key)] = decodeURIComponent(value);
+  const params = new Map();
+  for (const [key, value] of new URLSearchParams(query)) {
+    params.set(key.toLowerCase(), value);
   }
   return params;
+}
+
+const NullCharactersRegExp = /\x00/g;
+const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
+
+/**
+ * @param {string} str
+ * @param {boolean} [replaceInvisible]
+ */
+function removeNullCharacters(str, replaceInvisible = false) {
+  if (typeof str !== "string") {
+    console.error(`The argument must be a string.`);
+    return str;
+  }
+  if (replaceInvisible) {
+    str = str.replace(InvisibleCharactersRegExp, " ");
+  }
+  return str.replace(NullCharactersRegExp, "");
 }
 
 /**
@@ -201,14 +229,14 @@ function parseQueryString(query) {
  * that if the condition is true for one item in the array, then it is also true
  * for all following items.
  *
- * @returns {Number} Index of the first array element to pass the test,
+ * @returns {number} Index of the first array element to pass the test,
  *                   or |items.length| if no such element exists.
  */
-function binarySearchFirstItem(items, condition) {
-  let minIndex = 0;
+function binarySearchFirstItem(items, condition, start = 0) {
+  let minIndex = start;
   let maxIndex = items.length - 1;
 
-  if (items.length === 0 || !condition(items[maxIndex])) {
+  if (maxIndex < 0 || !condition(items[maxIndex])) {
     return items.length;
   }
   if (condition(items[minIndex])) {
@@ -216,8 +244,8 @@ function binarySearchFirstItem(items, condition) {
   }
 
   while (minIndex < maxIndex) {
-    let currentIndex = (minIndex + maxIndex) >> 1;
-    let currentItem = items[currentIndex];
+    const currentIndex = (minIndex + maxIndex) >> 1;
+    const currentItem = items[currentIndex];
     if (condition(currentItem)) {
       maxIndex = currentIndex;
     } else {
@@ -239,28 +267,34 @@ function approximateFraction(x) {
   if (Math.floor(x) === x) {
     return [x, 1];
   }
-  let xinv = 1 / x;
-  let limit = 8;
+  const xinv = 1 / x;
+  const limit = 8;
   if (xinv > limit) {
     return [1, limit];
   } else if (Math.floor(xinv) === xinv) {
     return [1, xinv];
   }
 
-  let x_ = x > 1 ? xinv : x;
+  const x_ = x > 1 ? xinv : x;
   // a/b and c/d are neighbours in Farey sequence.
-  let a = 0, b = 1, c = 1, d = 1;
+  let a = 0,
+    b = 1,
+    c = 1,
+    d = 1;
   // Limiting search to order 8.
   while (true) {
     // Generating next term in sequence (order of q).
-    let p = a + c, q = b + d;
+    const p = a + c,
+      q = b + d;
     if (q > limit) {
       break;
     }
     if (x_ <= p / q) {
-      c = p; d = q;
+      c = p;
+      d = q;
     } else {
-      a = p; b = q;
+      a = p;
+      b = q;
     }
   }
   let result;
@@ -274,28 +308,39 @@ function approximateFraction(x) {
 }
 
 function roundToDivide(x, div) {
-  let r = x % div;
+  const r = x % div;
   return r === 0 ? x : Math.round(x - r + div);
 }
 
 /**
- * Gets the size of the specified page, converted from PDF units to inches.
- * @param {Object} An Object containing the properties: {Array} `view`,
- *   {number} `userUnit`, and {number} `rotate`.
- * @return {Object} An Object containing the properties: {number} `width`
- *   and {number} `height`, given in inches.
+ * @typedef {Object} GetPageSizeInchesParameters
+ * @property {number[]} view
+ * @property {number} userUnit
+ * @property {number} rotate
  */
-function getPageSizeInches({ view, userUnit, rotate, }) {
+
+/**
+ * @typedef {Object} PageSize
+ * @property {number} width - In inches.
+ * @property {number} height - In inches.
+ */
+
+/**
+ * Gets the size of the specified page, converted from PDF units to inches.
+ * @param {GetPageSizeInchesParameters} params
+ * @returns {PageSize}
+ */
+function getPageSizeInches({ view, userUnit, rotate }) {
   const [x1, y1, x2, y2] = view;
   // We need to take the page rotation into account as well.
   const changeOrientation = rotate % 180 !== 0;
 
-  const width = (x2 - x1) / 72 * userUnit;
-  const height = (y2 - y1) / 72 * userUnit;
+  const width = ((x2 - x1) / 72) * userUnit;
+  const height = ((y2 - y1) / 72) * userUnit;
 
   return {
-    width: (changeOrientation ? height : width),
-    height: (changeOrientation ? width : height),
+    width: changeOrientation ? height : width,
+    height: changeOrientation ? width : height,
   };
 }
 
@@ -385,6 +430,21 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
 }
 
 /**
+ * @typedef {Object} GetVisibleElementsParameters
+ * @property {HTMLElement} scrollEl - A container that can possibly scroll.
+ * @property {Array} views - Objects with a `div` property that contains an
+ *   HTMLElement, which should all be descendants of `scrollEl` satisfying the
+ *   relevant layout assumptions.
+ * @property {boolean} sortByVisibility - If `true`, the returned elements are
+ *   sorted in descending order of the percent of their padding box that is
+ *   visible. The default value is `false`.
+ * @property {boolean} horizontal - If `true`, the elements are assumed to be
+ *   laid out horizontally instead of vertically. The default value is `false`.
+ * @property {boolean} rtl - If `true`, the `scrollEl` container is assumed to
+ *   be in right-to-left mode. The default value is `false`.
+ */
+
+/**
  * Generic helper to find out what elements are visible within a scroll pane.
  *
  * Well, pretty generic. There are some assumptions placed on the elements
@@ -401,20 +461,20 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
  * rendering canvas. Earlier and later refer to index in `views`, not page
  * layout.)
  *
- * @param scrollEl {HTMLElement} - a container that can possibly scroll
- * @param views {Array} - objects with a `div` property that contains an
- *   HTMLElement, which should all be descendents of `scrollEl` satisfying the
- *   above layout assumptions
- * @param sortByVisibility {boolean} - if true, the returned elements are sorted
- *   in descending order of the percent of their padding box that is visible
- * @param horizontal {boolean} - if true, the elements are assumed to be laid
- *   out horizontally instead of vertically
+ * @param {GetVisibleElementsParameters}
  * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
-function getVisibleElements(scrollEl, views, sortByVisibility = false,
-                            horizontal = false) {
-  let top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
-  let left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+function getVisibleElements({
+  scrollEl,
+  views,
+  sortByVisibility = false,
+  horizontal = false,
+  rtl = false,
+}) {
+  const top = scrollEl.scrollTop,
+    bottom = top + scrollEl.clientHeight;
+  const left = scrollEl.scrollLeft,
+    right = left + scrollEl.clientWidth;
 
   // Throughout this "generic" function, comments will assume we're working with
   // PDF document pages, which is the most important and complex case. In this
@@ -427,34 +487,45 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // the border). Adding clientWidth/Height gets us the bottom-right corner of
   // the padding edge.
   function isElementBottomAfterViewTop(view) {
-    let element = view.div;
-    let elementBottom =
+    const element = view.div;
+    const elementBottom =
       element.offsetTop + element.clientTop + element.clientHeight;
     return elementBottom > top;
   }
-  function isElementRightAfterViewLeft(view) {
-    let element = view.div;
-    let elementRight =
-      element.offsetLeft + element.clientLeft + element.clientWidth;
-    return elementRight > left;
+  function isElementNextAfterViewHorizontally(view) {
+    const element = view.div;
+    const elementLeft = element.offsetLeft + element.clientLeft;
+    const elementRight = elementLeft + element.clientWidth;
+    return rtl ? elementLeft < right : elementRight > left;
   }
 
-  let visible = [], view, element;
-  let currentHeight, viewHeight, viewBottom, hiddenHeight;
-  let currentWidth, viewWidth, viewRight, hiddenWidth;
-  let percentVisible;
-  let firstVisibleElementInd = views.length === 0 ? 0 :
-    binarySearchFirstItem(views, horizontal ? isElementRightAfterViewLeft :
-                                              isElementBottomAfterViewTop);
+  const visible = [],
+    ids = new Set(),
+    numViews = views.length;
+  let firstVisibleElementInd = binarySearchFirstItem(
+    views,
+    horizontal
+      ? isElementNextAfterViewHorizontally
+      : isElementBottomAfterViewTop
+  );
 
-  if (views.length > 0 && !horizontal) {
+  // Please note the return value of the `binarySearchFirstItem` function when
+  // no valid element is found (hence the `firstVisibleElementInd` check below).
+  if (
+    firstVisibleElementInd > 0 &&
+    firstVisibleElementInd < numViews &&
+    !horizontal
+  ) {
     // In wrapped scrolling (or vertical scrolling with spreads), with some page
     // sizes, isElementBottomAfterViewTop doesn't satisfy the binary search
     // condition: there can be pages with bottoms above the view top between
     // pages with bottoms below. This function detects and corrects that error;
     // see it for more comments.
-    firstVisibleElementInd =
-      backtrackBeforeAllVisibleElements(firstVisibleElementInd, views, top);
+    firstVisibleElementInd = backtrackBeforeAllVisibleElements(
+      firstVisibleElementInd,
+      views,
+      top
+    );
   }
 
   // lastEdge acts as a cutoff for us to stop looping, because we know all
@@ -467,15 +538,15 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
   // we pass `right`, without needing the code below that handles the -1 case.
   let lastEdge = horizontal ? right : -1;
 
-  for (let i = firstVisibleElementInd, ii = views.length; i < ii; i++) {
-    view = views[i];
-    element = view.div;
-    currentWidth = element.offsetLeft + element.clientLeft;
-    currentHeight = element.offsetTop + element.clientTop;
-    viewWidth = element.clientWidth;
-    viewHeight = element.clientHeight;
-    viewRight = currentWidth + viewWidth;
-    viewBottom = currentHeight + viewHeight;
+  for (let i = firstVisibleElementInd; i < numViews; i++) {
+    const view = views[i],
+      element = view.div;
+    const currentWidth = element.offsetLeft + element.clientLeft;
+    const currentHeight = element.offsetTop + element.clientTop;
+    const viewWidth = element.clientWidth,
+      viewHeight = element.clientHeight;
+    const viewRight = currentWidth + viewWidth;
+    const viewBottom = currentHeight + viewHeight;
 
     if (lastEdge === -1) {
       // As commented above, this is only needed in non-horizontal cases.
@@ -489,40 +560,48 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
       break;
     }
 
-    if (viewBottom <= top || currentHeight >= bottom ||
-        viewRight <= left || currentWidth >= right) {
+    if (
+      viewBottom <= top ||
+      currentHeight >= bottom ||
+      viewRight <= left ||
+      currentWidth >= right
+    ) {
       continue;
     }
 
-    hiddenHeight = Math.max(0, top - currentHeight) +
-      Math.max(0, viewBottom - bottom);
-    hiddenWidth = Math.max(0, left - currentWidth) +
-      Math.max(0, viewRight - right);
-    percentVisible = ((viewHeight - hiddenHeight) * (viewWidth - hiddenWidth) *
-      100 / viewHeight / viewWidth) | 0;
+    const hiddenHeight =
+      Math.max(0, top - currentHeight) + Math.max(0, viewBottom - bottom);
+    const hiddenWidth =
+      Math.max(0, left - currentWidth) + Math.max(0, viewRight - right);
+
+    const fractionHeight = (viewHeight - hiddenHeight) / viewHeight,
+      fractionWidth = (viewWidth - hiddenWidth) / viewWidth;
+    const percent = (fractionHeight * fractionWidth * 100) | 0;
 
     visible.push({
       id: view.id,
       x: currentWidth,
       y: currentHeight,
       view,
-      percent: percentVisible,
+      percent,
+      widthPercent: (fractionWidth * 100) | 0,
     });
+    ids.add(view.id);
   }
 
-  let first = visible[0];
-  let last = visible[visible.length - 1];
+  const first = visible[0],
+    last = visible.at(-1);
 
   if (sortByVisibility) {
-    visible.sort(function(a, b) {
-      let pc = a.percent - b.percent;
+    visible.sort(function (a, b) {
+      const pc = a.percent - b.percent;
       if (Math.abs(pc) > 0.001) {
         return -pc;
       }
       return a.id - b.id; // ensure stability
     });
   }
-  return { first, last, views: visible, };
+  return { first, last, views: visible, ids };
 }
 
 /**
@@ -530,14 +609,6 @@ function getVisibleElements(scrollEl, views, sortByVisibility = false,
  */
 function noContextMenuHandler(evt) {
   evt.preventDefault();
-}
-
-function isDataSchema(url) {
-  let i = 0, ii = url.length;
-  while (i < ii && url[i].trim() === '') {
-    i++;
-  }
-  return url.substring(i, i + 5).toLowerCase() === 'data:';
 }
 
 function getParameterByName(name, url) {
@@ -560,53 +631,19 @@ function getDocumentTitle() {
   return getParameterByName('documentTitle') || defaultTitle;
 }
 
-/**
- * Returns the filename or guessed filename from the url (see issue 3455).
- * @param {string} url - The original PDF location.
- * @param {string} defaultFilename - The value returned if the filename is
- *   unknown, or the protocol is unsupported.
- * @returns {string} Guessed PDF filename.
- */
-function getPDFFileNameFromURL(url, defaultFilename = 'document.pdf') {
-  if (typeof url !== 'string') {
-    return defaultFilename;
-  }
-  if (isDataSchema(url)) {
-    console.warn('getPDFFileNameFromURL: ' +
-                 'ignoring "data:" URL for performance reasons.');
-    return defaultFilename;
-  }
-  const reURI = /^(?:(?:[^:]+:)?\/\/[^\/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
-  //            SCHEME        HOST         1.PATH  2.QUERY   3.REF
-  // Pattern to get last matching NAME.pdf
-  const reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
-  let splitURI = reURI.exec(url);
-  let suggestedFilename = reFilename.exec(splitURI[1]) ||
-                          reFilename.exec(splitURI[2]) ||
-                          reFilename.exec(splitURI[3]);
-  if (suggestedFilename) {
-    suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.includes('%')) {
-      // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
-      try {
-        suggestedFilename =
-          reFilename.exec(decodeURIComponent(suggestedFilename))[0];
-      } catch (ex) { // Possible (extremely rare) errors:
-        // URIError "Malformed URI", e.g. for "%AA.pdf"
-        // TypeError "null has no properties", e.g. for "%2F.pdf"
-      }
-    }
-  }
-  return suggestedFilename || defaultFilename;
-}
 
-function normalizeWheelEventDelta(evt) {
-  let delta = Math.sqrt(evt.deltaX * evt.deltaX + evt.deltaY * evt.deltaY);
-  let angle = Math.atan2(evt.deltaY, evt.deltaX);
+function normalizeWheelEventDirection(evt) {
+  let delta = Math.hypot(evt.deltaX, evt.deltaY);
+  const angle = Math.atan2(evt.deltaY, evt.deltaX);
   if (-0.25 * Math.PI < angle && angle < 0.75 * Math.PI) {
     // All that is left-up oriented has to change the sign.
     delta = -delta;
   }
+  return delta;
+}
+
+function normalizeWheelEventDelta(evt) {
+  let delta = normalizeWheelEventDirection(evt);
 
   const MOUSE_DOM_DELTA_PIXEL_MODE = 0;
   const MOUSE_DOM_DELTA_LINE_MODE = 1;
@@ -626,286 +663,232 @@ function isValidRotation(angle) {
   return Number.isInteger(angle) && angle % 90 === 0;
 }
 
-function isPortraitOrientation(size) {
-  return size.width <= size.height;
+function isValidScrollMode(mode) {
+  return (
+    Number.isInteger(mode) &&
+    Object.values(ScrollMode).includes(mode) &&
+    mode !== ScrollMode.UNKNOWN
+  );
 }
 
-const WaitOnType = {
-  EVENT: 'event',
-  TIMEOUT: 'timeout',
-};
+function isValidSpreadMode(mode) {
+  return (
+    Number.isInteger(mode) &&
+    Object.values(SpreadMode).includes(mode) &&
+    mode !== SpreadMode.UNKNOWN
+  );
+}
 
-/**
- * @typedef {Object} WaitOnEventOrTimeoutParameters
- * @property {Object} target - The event target, can for example be:
- *   `window`, `document`, a DOM element, or an {EventBus} instance.
- * @property {string} name - The name of the event.
- * @property {number} delay - The delay, in milliseconds, after which the
- *   timeout occurs (if the event wasn't already dispatched).
- */
-
-/**
- * Allows waiting for an event or a timeout, whichever occurs first.
- * Can be used to ensure that an action always occurs, even when an event
- * arrives late or not at all.
- *
- * @param {WaitOnEventOrTimeoutParameters}
- * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
- */
-function waitOnEventOrTimeout({ target, name, delay = 0, }) {
-  return new Promise(function(resolve, reject) {
-    if (typeof target !== 'object' || !(name && typeof name === 'string') ||
-        !(Number.isInteger(delay) && delay >= 0)) {
-      throw new Error('waitOnEventOrTimeout - invalid parameters.');
-    }
-
-    function handler(type) {
-      if (target instanceof EventBus) {
-        target.off(name, eventHandler);
-      } else {
-        target.removeEventListener(name, eventHandler);
-      }
-
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      resolve(type);
-    }
-
-    const eventHandler = handler.bind(null, WaitOnType.EVENT);
-    if (target instanceof EventBus) {
-      target.on(name, eventHandler);
-    } else {
-      target.addEventListener(name, eventHandler);
-    }
-
-    const timeoutHandler = handler.bind(null, WaitOnType.TIMEOUT);
-    let timeout = setTimeout(timeoutHandler, delay);
-  });
+function isPortraitOrientation(size) {
+  return size.width <= size.height;
 }
 
 /**
  * Promise that is resolved when DOM window becomes visible.
  */
-let animationStarted = new Promise(function (resolve) {
-  if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) &&
-      typeof window === 'undefined') {
+const animationStarted = new Promise(function (resolve) {
+  if (
+    typeof PDFJSDev !== "undefined" &&
+    PDFJSDev.test("LIB") &&
+    typeof window === "undefined"
+  ) {
     // Prevent "ReferenceError: window is not defined" errors when running the
-    // unit-tests in Node.js/Travis.
+    // unit-tests in Node.js environments.
     setTimeout(resolve, 20);
     return;
   }
   window.requestAnimationFrame(resolve);
 });
 
-/**
- * Simple event bus for an application. Listeners are attached using the
- * `on` and `off` methods. To raise an event, the `dispatch` method shall be
- * used.
- */
-class EventBus {
-  constructor({ dispatchToDOM = false, } = {}) {
-    this._listeners = Object.create(null);
-    this._dispatchToDOM = dispatchToDOM === true;
-  }
-
-  on(eventName, listener) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners) {
-      eventListeners = [];
-      this._listeners[eventName] = eventListeners;
-    }
-    eventListeners.push(listener);
-  }
-
-  off(eventName, listener) {
-    let eventListeners = this._listeners[eventName];
-    let i;
-    if (!eventListeners || ((i = eventListeners.indexOf(listener)) < 0)) {
-      return;
-    }
-    eventListeners.splice(i, 1);
-  }
-
-  dispatch(eventName) {
-    let eventListeners = this._listeners[eventName];
-    if (!eventListeners || eventListeners.length === 0) {
-      if (this._dispatchToDOM) {
-        const args = Array.prototype.slice.call(arguments, 1);
-        this._dispatchDOMEvent(eventName, args);
-      }
-      return;
-    }
-    // Passing all arguments after the eventName to the listeners.
-    const args = Array.prototype.slice.call(arguments, 1);
-    // Making copy of the listeners array in case if it will be modified
-    // during dispatch.
-    eventListeners.slice(0).forEach(function (listener) {
-      listener.apply(null, args);
-    });
-    if (this._dispatchToDOM) {
-      this._dispatchDOMEvent(eventName, args);
-    }
-  }
-
-  /**
-   * @private
-   */
-  _dispatchDOMEvent(eventName, args = null) {
-    if (!this._dispatchToDOM) {
-      return;
-    }
-    const details = Object.create(null);
-    if (args && args.length > 0) {
-      const obj = args[0];
-      for (let key in obj) {
-        const value = obj[key];
-        if (key === 'source') {
-          if (value === window || value === document) {
-            return; // No need to re-dispatch (already) global events.
-          }
-          continue; // Ignore the `source` property.
-        }
-        details[key] = value;
-      }
-    }
-    const event = document.createEvent('CustomEvent');
-    event.initCustomEvent(eventName, true, true, details);
-    document.dispatchEvent(event);
-  }
-}
+const docStyle =
+  typeof PDFJSDev !== "undefined" &&
+  PDFJSDev.test("LIB") &&
+  typeof document === "undefined"
+    ? null
+    : document.documentElement.style;
 
 function clamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
 
 class ProgressBar {
-  constructor(id, { height, width, units, } = {}) {
-    this.visible = true;
+  #classList = null;
 
-    // Fetch the sub-elements for later.
-    this.div = document.querySelector(id + ' .progress');
-    // Get the loading bar element, so it can be resized to fit the viewer.
-    this.bar = this.div.parentNode;
+  #percent = 0;
 
-    // Get options, with sensible defaults.
-    this.height = height || 100;
-    this.width = width || 100;
-    this.units = units || '%';
+  #visible = true;
 
-    // Initialize heights.
-    this.div.style.height = this.height + this.units;
-    this.percent = 0;
-  }
-
-  _updateBar() {
-    if (this._indeterminate) {
-      this.div.classList.add('indeterminate');
-      this.div.style.width = this.width + this.units;
-      return;
-    }
-
-    this.div.classList.remove('indeterminate');
-    let progressSize = this.width * this._percent / 100;
-    this.div.style.width = progressSize + this.units;
+  constructor(id) {
+    const bar = document.getElementById(id);
+    this.#classList = bar.classList;
   }
 
   get percent() {
-    return this._percent;
+    return this.#percent;
   }
 
   set percent(val) {
-    this._indeterminate = isNaN(val);
-    this._percent = clamp(val, 0, 100);
-    this._updateBar();
+    this.#percent = clamp(val, 0, 100);
+
+    if (isNaN(val)) {
+      this.#classList.add("indeterminate");
+      return;
+    }
+    this.#classList.remove("indeterminate");
+
+    docStyle.setProperty("--progressBar-percent", `${this.#percent}%`);
   }
 
   setWidth(viewer) {
     if (!viewer) {
       return;
     }
-    let container = viewer.parentNode;
-    let scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
+    const container = viewer.parentNode;
+    const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      this.bar.setAttribute('style', 'width: calc(100% - ' +
-                                     scrollbarWidth + 'px);');
+      docStyle.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
     }
   }
 
   hide() {
-    if (!this.visible) {
+    if (!this.#visible) {
       return;
     }
-    this.visible = false;
-    this.bar.classList.add('hidden');
-    document.body.classList.remove('loadingInProgress');
+    this.#visible = false;
+    this.#classList.add("hidden");
   }
 
   show() {
-    if (this.visible) {
+    if (this.#visible) {
       return;
     }
-    this.visible = true;
-    document.body.classList.add('loadingInProgress');
-    this.bar.classList.remove('hidden');
+    this.#visible = true;
+    this.#classList.remove("hidden");
   }
 }
 
 /**
- * Moves all elements of an array that satisfy condition to the end of the
- * array, preserving the order of the rest.
+ * Get the active or focused element in current DOM.
+ *
+ * Recursively search for the truly active or focused element in case there are
+ * shadow DOMs.
+ *
+ * @returns {Element} the truly active or focused element.
  */
-function moveToEndOfArray(arr, condition) {
-  const moved = [], len = arr.length;
-  let write = 0;
-  for (let read = 0; read < len; ++read) {
-    if (condition(arr[read])) {
-      moved.push(arr[read]);
-    } else {
-      arr[write] = arr[read];
-      ++write;
-    }
+function getActiveOrFocusedElement() {
+  let curRoot = document;
+  let curActiveOrFocused =
+    curRoot.activeElement || curRoot.querySelector(":focus");
+
+  while (curActiveOrFocused?.shadowRoot) {
+    curRoot = curActiveOrFocused.shadowRoot;
+    curActiveOrFocused =
+      curRoot.activeElement || curRoot.querySelector(":focus");
   }
-  for (let read = 0; write < len; ++read, ++write) {
-    arr[write] = moved[read];
+
+  return curActiveOrFocused;
+}
+
+/**
+ * Converts API PageLayout values to the format used by `BaseViewer`.
+ * NOTE: This is supported to the extent that the viewer implements the
+ *       necessary Scroll/Spread modes (since SinglePage, TwoPageLeft,
+ *       and TwoPageRight all suggests using non-continuous scrolling).
+ * @param {string} mode - The API PageLayout value.
+ * @returns {Object}
+ */
+function apiPageLayoutToViewerModes(layout) {
+  let scrollMode = ScrollMode.VERTICAL,
+    spreadMode = SpreadMode.NONE;
+
+  switch (layout) {
+    case "SinglePage":
+      scrollMode = ScrollMode.PAGE;
+      break;
+    case "OneColumn":
+      break;
+    case "TwoPageLeft":
+      scrollMode = ScrollMode.PAGE;
+    /* falls through */
+    case "TwoColumnLeft":
+      spreadMode = SpreadMode.ODD;
+      break;
+    case "TwoPageRight":
+      scrollMode = ScrollMode.PAGE;
+    /* falls through */
+    case "TwoColumnRight":
+      spreadMode = SpreadMode.EVEN;
+      break;
   }
+  return { scrollMode, spreadMode };
+}
+
+/**
+ * Converts API PageMode values to the format used by `PDFSidebar`.
+ * NOTE: There's also a "FullScreen" parameter which is not possible to support,
+ *       since the Fullscreen API used in browsers requires that entering
+ *       fullscreen mode only occurs as a result of a user-initiated event.
+ * @param {string} mode - The API PageMode value.
+ * @returns {number} A value from {SidebarView}.
+ */
+function apiPageModeToSidebarView(mode) {
+  switch (mode) {
+    case "UseNone":
+      return SidebarView.NONE;
+    case "UseThumbs":
+      return SidebarView.THUMBS;
+    case "UseOutlines":
+      return SidebarView.OUTLINE;
+    case "UseAttachments":
+      return SidebarView.ATTACHMENTS;
+    case "UseOC":
+      return SidebarView.LAYERS;
+  }
+  return SidebarView.NONE; // Default value.
 }
 
 export {
-  CSS_UNITS,
-  DEFAULT_SCALE_VALUE,
-  DEFAULT_SCALE,
-  MIN_SCALE,
-  MAX_SCALE,
-  UNKNOWN_SCALE,
-  MAX_AUTO_SCALE,
-  SCROLLBAR_PADDING,
-  VERTICAL_PADDING,
-  isValidRotation,
-  isPortraitOrientation,
-  PresentationModeState,
-  RendererType,
-  TextLayerMode,
-  NullL10n,
-  EventBus,
-  ProgressBar,
-  getDocumentTitle,
-  getWatermarkText,
-  getPDFFileNameFromURL,
-  noContextMenuHandler,
-  parseQueryString,
-  backtrackBeforeAllVisibleElements, // only exported for testing
-  getVisibleElements,
-  roundToDivide,
-  getPageSizeInches,
-  approximateFraction,
-  getOutputScale,
-  scrollIntoView,
-  watchScroll,
-  binarySearchFirstItem,
-  normalizeWheelEventDelta,
   animationStarted,
-  WaitOnType,
-  waitOnEventOrTimeout,
-  moveToEndOfArray,
+  apiPageLayoutToViewerModes,
+  apiPageModeToSidebarView,
+  approximateFraction,
+  AutoPrintRegExp,
+  backtrackBeforeAllVisibleElements, // only exported for testing
+  binarySearchFirstItem,
+  DEFAULT_SCALE,
+  DEFAULT_SCALE_DELTA,
+  DEFAULT_SCALE_VALUE,
+  docStyle,
+  getActiveOrFocusedElement,
+  getDocumentTitle,
+  getPageSizeInches,
+  getVisibleElements,
+  getWatermarkText,
+  isPortraitOrientation,
+  isValidRotation,
+  isValidScrollMode,
+  isValidSpreadMode,
+  MAX_AUTO_SCALE,
+  MAX_SCALE,
+  MIN_SCALE,
+  noContextMenuHandler,
+  normalizeWheelEventDelta,
+  normalizeWheelEventDirection,
+  OutputScale,
+  parseQueryString,
+  PresentationModeState,
+  ProgressBar,
+  removeNullCharacters,
+  RendererType,
+  RenderingStates,
+  roundToDivide,
+  SCROLLBAR_PADDING,
+  scrollIntoView,
+  ScrollMode,
+  SidebarView,
+  SpreadMode,
+  TextLayerMode,
+  UNKNOWN_SCALE,
+  VERTICAL_PADDING,
+  watchScroll,
 };

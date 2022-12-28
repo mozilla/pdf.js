@@ -26,6 +26,10 @@
     - Removes consoleWarn and consoleLog and use console.log/warn directly.
     - Removes window._ assignment.
     - Remove compatibility code for OldIE.
+    - Replaces `String.prototype.substr()` with `String.prototype.substring()`.
+    - Replaces one `Node.insertBefore()` with `Element.prepend()`.
+    - Removes `fireL10nReadyEvent` since the "localized" event it dispatches
+      is unused and may clash with an identically named event in the viewer.
 */
 
 /*jshint browser: true, devel: true, es5: true, globalstrict: true */
@@ -91,13 +95,6 @@ document.webL10n = (function(window, document, undefined) {
       }
     }
     return { id: l10nId, args: args };
-  }
-
-  function fireL10nReadyEvent(lang) {
-    var evtObject = document.createEvent('Event');
-    evtObject.initEvent('localized', true, false);
-    evtObject.language = lang;
-    document.dispatchEvent(evtObject);
   }
 
   function xhrLoadText(url, onSuccess, onFailure) {
@@ -326,7 +323,6 @@ document.webL10n = (function(window, document, undefined) {
         console.log('no resource to load, early way out');
       }
       // early way out
-      fireL10nReadyEvent(lang);
       gReadyState = 'complete';
       return;
     }
@@ -338,7 +334,6 @@ document.webL10n = (function(window, document, undefined) {
       gResourceCount++;
       if (gResourceCount >= langCount) {
         callback();
-        fireL10nReadyEvent(lang);
         gReadyState = 'complete';
       }
     };
@@ -927,7 +922,7 @@ document.webL10n = (function(window, document, undefined) {
         // first element child.
         if (!found) {
           var textNode = document.createTextNode(data[gTextProp]);
-          element.insertBefore(textNode, element.firstChild);
+          element.prepend(textNode);
         }
       }
       delete data[gTextProp];

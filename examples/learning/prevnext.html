@@ -16,7 +16,7 @@
 </div>
 
 <div>
-  <canvas id="the-canvas" style="border:1px solid black"></canvas>
+  <canvas id="the-canvas" style="border: 1px solid black; direction: ltr;"></canvas>
 </div>
 
 <script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
@@ -52,14 +52,24 @@
     pageRendering = true;
     // Using promise to fetch the page
     pdfDoc.getPage(num).then(function(page) {
-      var viewport = page.getViewport(scale);
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      var viewport = page.getViewport({ scale: scale, });
+      // Support HiDPI-screens.
+      var outputScale = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = Math.floor(viewport.width) + "px";
+      canvas.style.height =  Math.floor(viewport.height) + "px";
+
+      var transform = outputScale !== 1
+        ? [outputScale, 0, 0, outputScale, 0, 0]
+        : null;
 
       // Render PDF page into canvas context
       var renderContext = {
         canvasContext: ctx,
-        viewport: viewport
+        transform: transform,
+        viewport: viewport,
       };
       var renderTask = page.render(renderContext);
 
@@ -80,7 +90,7 @@
 
   /**
    * If another page rendering in progress, waits until the rendering is
-   * finised. Otherwise, executes rendering immediately.
+   * finished. Otherwise, executes rendering immediately.
    */
   function queueRenderPage(num) {
     if (pageRendering) {
@@ -117,7 +127,8 @@
   /**
    * Asynchronously downloads PDF.
    */
-  pdfjsLib.getDocument(url).then(function (pdfDoc_) {
+  var loadingTask = pdfjsLib.getDocument(url);
+  loadingTask.promise.then(function(pdfDoc_) {
     pdfDoc = pdfDoc_;
     document.getElementById('page_count').textContent = pdfDoc.numPages;
 

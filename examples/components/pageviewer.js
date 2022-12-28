@@ -13,49 +13,62 @@
  * limitations under the License.
  */
 
-'use strict';
+"use strict";
 
 if (!pdfjsLib.getDocument || !pdfjsViewer.PDFPageView) {
-  alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist-install`');
+  // eslint-disable-next-line no-alert
+  alert("Please build the pdfjs-dist library using\n  `gulp dist-install`");
 }
 
 // The workerSrc property shall be specified.
 //
 pdfjsLib.GlobalWorkerOptions.workerSrc =
-  '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+  "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = '../../node_modules/pdfjs-dist/cmaps/';
-var CMAP_PACKED = true;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
-var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
-var PAGE_TO_VIEW = 1;
-var SCALE = 1.0;
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+const PAGE_TO_VIEW = 1;
+const SCALE = 1.0;
 
-var container = document.getElementById('pageContainer');
+const ENABLE_XFA = true;
+
+const container = document.getElementById("pageContainer");
+
+const eventBus = new pdfjsViewer.EventBus();
 
 // Loading document.
-pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
-}).then(function(pdfDocument) {
-  // Document loaded, retrieving the page.
-  return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
-    // Creating the page view with default parameters.
-    var pdfPageView = new pdfjsViewer.PDFPageView({
-      container: container,
-      id: PAGE_TO_VIEW,
-      scale: SCALE,
-      defaultViewport: pdfPage.getViewport(SCALE),
-      // We can enable text/annotations layers, if needed
-      textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
-      annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
-    });
-    // Associates the actual page with the view, and drawing it
-    pdfPageView.setPdfPage(pdfPage);
-    return pdfPageView.draw();
-  });
+  enableXfa: ENABLE_XFA,
 });
+(async function () {
+  const pdfDocument = await loadingTask.promise;
+  // Document loaded, retrieving the page.
+  const pdfPage = await pdfDocument.getPage(PAGE_TO_VIEW);
+  // Creating the page view with default parameters.
+  const pdfPageView = new pdfjsViewer.PDFPageView({
+    container,
+    id: PAGE_TO_VIEW,
+    scale: SCALE,
+    defaultViewport: pdfPage.getViewport({ scale: SCALE }),
+    eventBus,
+    // We can enable text/annotation/xfa/struct-layers, as needed.
+    textLayerFactory: !pdfDocument.isPureXfa
+      ? new pdfjsViewer.DefaultTextLayerFactory()
+      : null,
+    annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
+    xfaLayerFactory: pdfDocument.isPureXfa
+      ? new pdfjsViewer.DefaultXfaLayerFactory()
+      : null,
+    structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
+  });
+  // Associate the actual page with the view, and draw it.
+  pdfPageView.setPdfPage(pdfPage);
+  return pdfPageView.draw();
+})();

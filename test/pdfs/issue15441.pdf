@@ -1,0 +1,102 @@
+%PDF-1.7
+13 0 obj
+<<
+/Type /Catalog
+/Pages 14 0 R
+>>
+endobj
+14 0 obj
+<<
+/Type /Pages
+/MediaBox [ 0 0 225 50 ]
+/Count 1
+/Kids [ 15 0 R ]
+>>
+endobj
+15 0 obj
+<<
+/Type /Page
+/Parent 14 0 R
+/Resources <<
+/Font <<
+/F1 16 0 R
+>>
+>>
+/Contents 17 0 R
+>>
+endobj
+16 0 obj
+<<
+/Type /Font
+/Subtype /Type0
+/BaseFont /Arial,Bold
+/Encoding /Identity-H
+/DescendantFonts [ 9 0 R ]
+>>
+endobj
+17 0 obj
+<<
+/Length 75
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+<00b300240025002600b4000300b500440045004600b6> Tj
+ET
+
+endstream
+
+endobj
+9 0 obj
+<<
+/Type /Font
+/Subtype /CIDFontType2
+/BaseFont /Arial,Bold
+/CIDSystemInfo <<
+/Registry (Adobe)
+/Ordering (Identity)
+/Supplement 0
+>>
+/W [ 182 [ 277.832 ] ]
+/FontDescriptor 10 0 R
+>>
+endobj
+10 0 obj
+<<
+/Type /FontDescriptor
+/Ascent 728
+/CapHeight 0
+/Descent -210
+/Flags 32
+/FontBBox [ -628 -376 2000 1056 ]
+/FontName /Arial,Bold
+/ItalicAngle 0
+/StemV 0
+>>
+endobj
+xref
+0 1
+0000000000 65535 f
+9 1
+0000000500 00000 n
+10 1
+0000000698 00000 n
+13 1
+0000000009 00000 n
+14 1
+0000000060 00000 n
+15 1
+0000000146 00000 n
+16 1
+0000000252 00000 n
+17 1
+0000000373 00000 n
+trailer
+<<
+/Size 7
+/Root 13 0 R
+>>
+startxref
+871
+%%EOF
