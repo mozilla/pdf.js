@@ -656,7 +656,7 @@ const PDFViewerApplication = {
       return;
     }
     this.pdfViewer.increaseScale(steps, {
-      delay: AppOptions.get("defaultZoomDelay"),
+      drawingDelay: AppOptions.get("defaultZoomDelay"),
     });
   },
 
@@ -665,7 +665,7 @@ const PDFViewerApplication = {
       return;
     }
     this.pdfViewer.decreaseScale(steps, {
-      delay: AppOptions.get("defaultZoomDelay"),
+      drawingDelay: AppOptions.get("defaultZoomDelay"),
     });
   },
 
