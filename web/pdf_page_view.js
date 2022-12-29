@@ -599,7 +599,6 @@ class PDFPageView {
         isScalingRestricted = true;
       }
     }
-
     const postponeDrawing = drawingDelay >= 0 && drawingDelay < 1000;
 
     if (this.canvas) {
