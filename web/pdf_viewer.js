@@ -1083,7 +1083,7 @@ class PDFViewer {
   _setScaleUpdatePages(
     newScale,
     newValue,
-    { noScroll = false, preset = false, delay: drawingDelay = -1 }
+    { noScroll = false, preset = false, drawingDelay = -1 }
   ) {
     this._currentScaleValue = newValue.toString();
 
@@ -1103,16 +1103,13 @@ class PDFViewer {
       newScale * PixelsPerInch.PDF_TO_CSS_UNITS
     );
 
-    const mustPostponeDrawing = drawingDelay >= 0 && drawingDelay < 1000;
-    const updateArgs = {
+    const postponeDrawing = drawingDelay >= 0 && drawingDelay < 1000;
+    this.refresh(true, {
       scale: newScale,
-    };
-    if (mustPostponeDrawing) {
-      updateArgs.drawingDelay = drawingDelay;
-    }
-    this.refresh(true, updateArgs);
+      drawingDelay: postponeDrawing ? drawingDelay : -1,
+    });
 
-    if (mustPostponeDrawing) {
+    if (postponeDrawing) {
       this.#scaleTimeoutId = setTimeout(() => {
         this.#scaleTimeoutId = null;
         this.refresh();
