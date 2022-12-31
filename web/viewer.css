@@ -30,8 +30,8 @@
   --progressBar-percent: 0%;
   --progressBar-end-offset: 0;
   --progressBar-color: rgba(10, 132, 255, 1);
-  --progressBar-indeterminate-bg-color: rgba(221, 221, 222, 1);
-  --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
+  --progressBar-bg-color: rgba(221, 221, 222, 1);
+  --progressBar-blend-color: rgba(116, 177, 239, 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
   --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
@@ -123,8 +123,8 @@
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
     --progressBar-color: rgba(0, 96, 223, 1);
-    --progressBar-indeterminate-bg-color: rgba(40, 40, 43, 1);
-    --progressBar-indeterminate-blend-color: rgba(20, 68, 133, 1);
+    --progressBar-bg-color: rgba(40, 40, 43, 1);
+    --progressBar-blend-color: rgba(20, 68, 133, 1);
     --scrollbar-color: rgba(121, 121, 123, 1);
     --scrollbar-bg-color: rgba(35, 35, 39, 1);
     --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
@@ -374,7 +374,7 @@ body {
   position: absolute;
   inset-inline: 0 var(--progressBar-end-offset);
   height: 4px;
-  background-color: var(--body-bg-color);
+  background-color: var(--progressBar-bg-color);
   border-bottom: 1px solid var(--toolbar-border-color);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
@@ -409,7 +409,7 @@ body {
 
 #loadingBar.indeterminate .progress {
   transform: none;
-  background-color: var(--progressBar-indeterminate-bg-color);
+  background-color: var(--progressBar-bg-color);
   transition: none;
 }
 
@@ -421,12 +421,12 @@ body {
   width: calc(100% + 150px);
   background: repeating-linear-gradient(
     135deg,
-    var(--progressBar-indeterminate-blend-color) 0,
-    var(--progressBar-indeterminate-bg-color) 5px,
-    var(--progressBar-indeterminate-bg-color) 45px,
+    var(--progressBar-blend-color) 0,
+    var(--progressBar-bg-color) 5px,
+    var(--progressBar-bg-color) 45px,
     var(--progressBar-color) 55px,
     var(--progressBar-color) 95px,
-    var(--progressBar-indeterminate-blend-color) 100px
+    var(--progressBar-blend-color) 100px
   );
   animation: progressIndeterminate 1s linear infinite;
 }
