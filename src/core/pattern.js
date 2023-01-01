@@ -82,9 +82,11 @@ class Pattern {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      handler.send("UnsupportedFeature", {
-        featureId: UNSUPPORTED_FEATURES.shadingPattern,
-      });
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        handler.send("UnsupportedFeature", {
+          featureId: UNSUPPORTED_FEATURES.shadingPattern,
+        });
+      }
       warn(ex);
       return new DummyShading();
     }

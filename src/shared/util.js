@@ -346,28 +346,31 @@ const OPS = {
   constructPath: 91,
 };
 
-const UNSUPPORTED_FEATURES = {
-  forms: "forms",
-  javaScript: "javaScript",
-  signatures: "signatures",
-  smask: "smask",
-  shadingPattern: "shadingPattern",
-  errorTilingPattern: "errorTilingPattern",
-  errorExtGState: "errorExtGState",
-  errorXObject: "errorXObject",
-  errorFontLoadType3: "errorFontLoadType3",
-  errorFontState: "errorFontState",
-  errorFontMissing: "errorFontMissing",
-  errorFontTranslate: "errorFontTranslate",
-  errorColorSpace: "errorColorSpace",
-  errorOperatorList: "errorOperatorList",
-  errorFontToUnicode: "errorFontToUnicode",
-  errorFontLoadNative: "errorFontLoadNative",
-  errorFontBuildPath: "errorFontBuildPath",
-  errorFontGetPath: "errorFontGetPath",
-  errorMarkedContent: "errorMarkedContent",
-  errorContentSubStream: "errorContentSubStream",
-};
+const UNSUPPORTED_FEATURES =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
+    ? {
+        forms: "forms",
+        javaScript: "javaScript",
+        signatures: "signatures",
+        smask: "smask",
+        shadingPattern: "shadingPattern",
+        errorTilingPattern: "errorTilingPattern",
+        errorExtGState: "errorExtGState",
+        errorXObject: "errorXObject",
+        errorFontLoadType3: "errorFontLoadType3",
+        errorFontState: "errorFontState",
+        errorFontMissing: "errorFontMissing",
+        errorFontTranslate: "errorFontTranslate",
+        errorColorSpace: "errorColorSpace",
+        errorOperatorList: "errorOperatorList",
+        errorFontToUnicode: "errorFontToUnicode",
+        errorFontLoadNative: "errorFontLoadNative",
+        errorFontBuildPath: "errorFontBuildPath",
+        errorFontGetPath: "errorFontGetPath",
+        errorMarkedContent: "errorMarkedContent",
+        errorContentSubStream: "errorContentSubStream",
+      }
+    : null;
 
 const PasswordResponses = {
   NEED_PASSWORD: 1,
