@@ -609,10 +609,12 @@ class PDFDocumentLoadingTask {
    * @type {function}
    */
   set onUnsupportedFeature(callback) {
-    deprecated(
-      "The PDFDocumentLoadingTask onUnsupportedFeature property will be removed in the future."
-    );
-    this.#onUnsupportedFeature = callback;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      deprecated(
+        "The PDFDocumentLoadingTask onUnsupportedFeature property will be removed in the future."
+      );
+      this.#onUnsupportedFeature = callback;
+    }
   }
 
   /**
@@ -2748,10 +2750,12 @@ class WorkerTransport {
       });
     });
 
-    messageHandler.on(
-      "UnsupportedFeature",
-      this._onUnsupportedFeature.bind(this)
-    );
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      messageHandler.on(
+        "UnsupportedFeature",
+        this._onUnsupportedFeature.bind(this)
+      );
+    }
 
     messageHandler.on("FetchBuiltInCMap", data => {
       if (this.destroyed) {
@@ -2783,10 +2787,12 @@ class WorkerTransport {
   }
 
   _onUnsupportedFeature({ featureId }) {
-    if (this.destroyed) {
-      return; // Ignore any pending requests if the worker was terminated.
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      if (this.destroyed) {
+        return; // Ignore any pending requests if the worker was terminated.
+      }
+      this.loadingTask.onUnsupportedFeature?.(featureId);
     }
-    this.loadingTask.onUnsupportedFeature?.(featureId);
   }
 
   getData() {

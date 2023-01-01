@@ -30,7 +30,9 @@ class FontLoader {
     ownerDocument = globalThis.document,
     styleElement = null, // For testing only.
   }) {
-    this._onUnsupportedFeature = onUnsupportedFeature;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      this._onUnsupportedFeature = onUnsupportedFeature;
+    }
     this._document = ownerDocument;
 
     this.nativeFontFaces = [];
@@ -88,9 +90,11 @@ class FontLoader {
         try {
           await nativeFontFace.loaded;
         } catch (ex) {
-          this._onUnsupportedFeature({
-            featureId: UNSUPPORTED_FEATURES.errorFontLoadNative,
-          });
+          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+            this._onUnsupportedFeature({
+              featureId: UNSUPPORTED_FEATURES.errorFontLoadNative,
+            });
+          }
           warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
 
           // When font loading failed, fall back to the built-in font renderer.
@@ -340,7 +344,9 @@ class FontFaceObject {
     this.isEvalSupported = isEvalSupported !== false;
     this.disableFontFace = disableFontFace === true;
     this.ignoreErrors = ignoreErrors === true;
-    this._onUnsupportedFeature = onUnsupportedFeature;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      this._onUnsupportedFeature = onUnsupportedFeature;
+    }
     this.fontRegistry = fontRegistry;
   }
 
@@ -403,9 +409,11 @@ class FontFaceObject {
       if (!this.ignoreErrors) {
         throw ex;
       }
-      this._onUnsupportedFeature({
-        featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
-      });
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        this._onUnsupportedFeature({
+          featureId: UNSUPPORTED_FEATURES.errorFontGetPath,
+        });
+      }
       warn(`getPathGenerator - ignoring character: "${ex}".`);
 
       return (this.compiledGlyphs[character] = function (c, size) {
