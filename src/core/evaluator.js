@@ -35,7 +35,6 @@ import {
 import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import { ErrorFont, Font } from "./fonts.js";
-import { FontFlags, getFontType } from "./fonts_utils.js";
 import {
   getEncoding,
   MacRomanEncoding,
@@ -67,6 +66,7 @@ import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
+import { FontFlags } from "./fonts_utils.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
@@ -1302,10 +1302,6 @@ class PartialEvaluator {
 
     this.translateFont(preEvaluatedFont)
       .then(translatedFont => {
-        if (translatedFont.fontType !== undefined) {
-          xref.stats.addFontType(translatedFont.fontType);
-        }
-
         fontCapability.resolve(
           new TranslatedFont({
             loadedName: font.loadedName,
@@ -1322,19 +1318,6 @@ class PartialEvaluator {
           featureId: UNSUPPORTED_FEATURES.errorFontTranslate,
         });
         warn(`loadFont - translateFont failed: "${reason}".`);
-
-        try {
-          // error, but it's still nice to have font type reported
-          const fontFile3 = descriptor && descriptor.get("FontFile3");
-          const subtype = fontFile3 && fontFile3.get("Subtype");
-          const fontType = getFontType(
-            preEvaluatedFont.type,
-            subtype && subtype.name
-          );
-          if (fontType !== undefined) {
-            xref.stats.addFontType(fontType);
-          }
-        } catch (ex) {}
 
         fontCapability.resolve(
           new TranslatedFont({

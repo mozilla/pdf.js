@@ -17,7 +17,6 @@ import {
   assert,
   bytesToString,
   FONT_IDENTITY_MATRIX,
-  FontType,
   FormatError,
   info,
   shadow,
@@ -27,7 +26,6 @@ import {
 import { CFFCompiler, CFFParser } from "./cff_parser.js";
 import {
   FontFlags,
-  getFontType,
   MacStandardGlyphOrdering,
   normalizeFontName,
   recoverGlyphName,
@@ -92,7 +90,6 @@ const EXPORT_DATA_PROPERTIES = [
   "descent",
   "fallbackName",
   "fontMatrix",
-  "fontType",
   "isInvalidPDFjsFont",
   "isType3Font",
   "italic",
@@ -986,7 +983,6 @@ class Font {
         this.toFontChar[charCode] =
           this.differences[charCode] || properties.defaultEncoding[charCode];
       }
-      this.fontType = FontType.TYPE3;
       return;
     }
 
@@ -1066,7 +1062,6 @@ class Font {
 
     amendFallbackToUnicode(properties);
     this.data = data;
-    this.fontType = getFontType(type, subtype, properties.isStandardFont);
 
     // Transfer some properties again that could change during font conversion
     this.fontMatrix = properties.fontMatrix;
@@ -1102,9 +1097,7 @@ class Font {
     this.missingFile = true;
     // The file data is not specified. Trying to fix the font name
     // to be used with the canvas.font.
-    const name = this.name;
-    const type = this.type;
-    const subtype = this.subtype;
+    const { name, type } = this;
     let fontName = normalizeFontName(name);
     const stdFontMap = getStdFontMap(),
       nonStdFontMap = getNonStdFontMap();
@@ -1252,7 +1245,6 @@ class Font {
 
     amendFallbackToUnicode(properties);
     this.loadedName = fontName.split("-")[0];
-    this.fontType = getFontType(type, subtype, properties.isStandardFont);
   }
 
   checkAndRepair(name, font, properties) {
