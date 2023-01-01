@@ -759,27 +759,6 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @typedef {Object} PDFDocumentStats
-   * @property {Object<string, boolean>} streamTypes - Used stream types in the
-   *   document (an item is set to true if specific stream ID was used in the
-   *   document).
-   * @property {Object<string, boolean>} fontTypes - Used font types in the
-   *   document (an item is set to true if specific font ID was used in the
-   *   document).
-   */
-
-  /**
-   * @type {PDFDocumentStats | null} The current statistics about document
-   *   structures, or `null` when no statistics exists.
-   */
-  get stats() {
-    deprecated(
-      "The PDFDocumentProxy stats property will be removed in the future."
-    );
-    return this._transport.stats;
-  }
-
-  /**
    * @type {boolean} True if only XFA form.
    */
   get isPureXfa() {
@@ -2296,8 +2275,6 @@ class PDFWorker {
  * @ignore
  */
 class WorkerTransport {
-  #docStats = null;
-
   #pageCache = new Map();
 
   #pagePromises = new Map();
@@ -2339,10 +2316,6 @@ class WorkerTransport {
 
   get annotationStorage() {
     return shadow(this, "annotationStorage", new AnnotationStorage());
-  }
-
-  get stats() {
-    return this.#docStats;
   }
 
   getRenderingIntent(
@@ -2772,18 +2745,6 @@ class WorkerTransport {
       loadingTask.onProgress?.({
         loaded: data.loaded,
         total: data.total,
-      });
-    });
-
-    messageHandler.on("DocStats", data => {
-      if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
-      }
-      // Ensure that a `PDFDocumentProxy.stats` call-site cannot accidentally
-      // modify this internal data.
-      this.#docStats = Object.freeze({
-        streamTypes: Object.freeze(data.streamTypes),
-        fontTypes: Object.freeze(data.fontTypes),
       });
     });
 

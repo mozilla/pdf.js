@@ -16,7 +16,6 @@
 import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { assert } from "../../src/shared/util.js";
-import { DocStats } from "../../src/core/core_utils.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { Ref } from "../../src/core/primitives.js";
 
@@ -77,7 +76,6 @@ function buildGetDocumentParams(filename, options) {
 class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
-    this.stats = new DocStats({ send: () => {} });
     this._newTemporaryRefNum = null;
     this._newPersistentRefNum = null;
     this.stream = new NullStream();

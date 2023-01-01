@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { FontType, info } from "../shared/util.js";
 import { getEncoding, StandardEncoding } from "./encodings.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getUnicodeForGlyph } from "./unicode.js";
+import { info } from "../shared/util.js";
 
 // Accented characters have issues on Windows and Linux. When this flag is
 // enabled glyphs that use seac and seac style endchar operators are truncated
@@ -77,32 +77,6 @@ const MacStandardGlyphOrdering = [
   "onesuperior", "twosuperior", "threesuperior", "onehalf", "onequarter",
   "threequarters", "franc", "Gbreve", "gbreve", "Idotaccent", "Scedilla",
   "scedilla", "Cacute", "cacute", "Ccaron", "ccaron", "dcroat"];
-
-function getFontType(type, subtype, isStandardFont = false) {
-  switch (type) {
-    case "Type1":
-      if (isStandardFont) {
-        return FontType.TYPE1STANDARD;
-      }
-      return subtype === "Type1C" ? FontType.TYPE1C : FontType.TYPE1;
-    case "CIDFontType0":
-      return subtype === "CIDFontType0C"
-        ? FontType.CIDFONTTYPE0C
-        : FontType.CIDFONTTYPE0;
-    case "OpenType":
-      return FontType.OPENTYPE;
-    case "TrueType":
-      return FontType.TRUETYPE;
-    case "CIDFontType2":
-      return FontType.CIDFONTTYPE2;
-    case "MMType1":
-      return FontType.MMTYPE1;
-    case "Type0":
-      return FontType.TYPE0;
-    default:
-      return FontType.UNKNOWN;
-  }
-}
 
 // Some bad PDF generators, e.g. Scribus PDF, include glyph names
 // in a 'uniXXXX' format -- attempting to recover proper ones.
@@ -212,7 +186,6 @@ function normalizeFontName(name) {
 
 export {
   FontFlags,
-  getFontType,
   MacStandardGlyphOrdering,
   normalizeFontName,
   recoverGlyphName,
