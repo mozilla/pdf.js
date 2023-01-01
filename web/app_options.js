@@ -53,6 +53,14 @@ const OptionKind = {
  *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
+  annotationEditorMode: {
+    /** @type {boolean} */
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
+        ? 0
+        : -1,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   annotationMode: {
     /** @type {number} */
     value: 2,
@@ -62,11 +70,6 @@ const defaultOptions = {
     /** @type {number} */
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  },
-  defaultUrl: {
-    /** @type {string} */
-    value: "compressed.tracemonkey-pldi-09.pdf",
-    kind: OptionKind.VIEWER,
   },
   defaultZoomValue: {
     /** @type {string} */
@@ -126,8 +129,12 @@ const defaultOptions = {
   maxCanvasPixels: {
     /** @type {number} */
     value: 16777216,
-    compatibility: compatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
+  },
+  forcePageColors: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   pageColorsBackground: {
     /** @type {string} */
@@ -147,11 +154,6 @@ const defaultOptions = {
   printResolution: {
     /** @type {number} */
     value: 150,
-    kind: OptionKind.VIEWER,
-  },
-  renderer: {
-    /** @type {string} */
-    value: "canvas",
     kind: OptionKind.VIEWER,
   },
   sidebarViewOnLoad: {
@@ -285,6 +287,11 @@ if (
   typeof PDFJSDev === "undefined" ||
   PDFJSDev.test("!PRODUCTION || GENERIC")
 ) {
+  defaultOptions.defaultUrl = {
+    /** @type {string} */
+    value: "compressed.tracemonkey-pldi-09.pdf",
+    kind: OptionKind.VIEWER,
+  };
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
     value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
@@ -295,6 +302,11 @@ if (
     value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
+  defaultOptions.renderer = {
+    /** @type {string} */
+    value: "canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
@@ -303,9 +315,12 @@ if (
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,
   };
-
-  defaultOptions.renderer.kind += OptionKind.PREFERENCE;
 } else if (PDFJSDev.test("CHROME")) {
+  defaultOptions.defaultUrl = {
+    /** @type {string} */
+    value: "",
+    kind: OptionKind.VIEWER,
+  };
   defaultOptions.disableTelemetry = {
     /** @type {boolean} */
     value: false,
@@ -332,7 +347,7 @@ class AppOptions {
     }
     const defaultOption = defaultOptions[name];
     if (defaultOption !== undefined) {
-      return defaultOption.compatibility ?? defaultOption.value;
+      return compatibilityParams[name] ?? defaultOption.value;
     }
     return undefined;
   }
@@ -364,7 +379,7 @@ class AppOptions {
       options[name] =
         userOption !== undefined
           ? userOption
-          : defaultOption.compatibility ?? defaultOption.value;
+          : compatibilityParams[name] ?? defaultOption.value;
     }
     return options;
   }

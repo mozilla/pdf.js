@@ -127,9 +127,9 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       this._bindLink(element, { content, filename });
       element.textContent = this._normalizeTextContent(filename);
 
-      div.appendChild(element);
+      div.append(element);
 
-      fragment.appendChild(div);
+      fragment.append(div);
       attachmentsCount++;
     }
 

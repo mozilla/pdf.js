@@ -58,3 +58,32 @@ exports.clearInput = async (page, selector) => {
   await page.keyboard.up("Control");
   await page.keyboard.press("Backspace");
 };
+
+function getSelector(id) {
+  return `[data-element-id="${id}"]`;
+}
+exports.getSelector = getSelector;
+
+function getQuerySelector(id) {
+  return `document.querySelector('${getSelector(id)}')`;
+}
+exports.getQuerySelector = getQuerySelector;
+
+function getComputedStyleSelector(id) {
+  return `getComputedStyle(${getQuerySelector(id)})`;
+}
+exports.getComputedStyleSelector = getComputedStyleSelector;
+exports.getEditorSelector = n => `#pdfjs_internal_editor_${n}`;
+
+function getSelectedEditors(page) {
+  return page.evaluate(() => {
+    const elements = document.querySelectorAll(".selectedEditor");
+    const results = [];
+    for (const { id } of elements) {
+      results.push(parseInt(id.split("_").at(-1)));
+    }
+    results.sort();
+    return results;
+  });
+}
+exports.getSelectedEditors = getSelectedEditors;

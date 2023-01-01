@@ -27,7 +27,7 @@ function addState(parentState, pattern, checkFn, iterateFn, processFn) {
     const item = pattern[i];
     state = state[item] || (state[item] = []);
   }
-  state[pattern[pattern.length - 1]] = {
+  state[pattern.at(-1)] = {
     checkFn,
     iterateFn,
     processFn,
@@ -690,7 +690,7 @@ class OperatorList {
     return transfers;
   }
 
-  flush(lastChunk = false) {
+  flush(lastChunk = false, separateAnnots = null) {
     this.optimizer.flush();
     const length = this.length;
     this._totalLength += length;
@@ -700,6 +700,7 @@ class OperatorList {
         fnArray: this.fnArray,
         argsArray: this.argsArray,
         lastChunk,
+        separateAnnots,
         length,
       },
       1,

@@ -66,6 +66,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/display_svg_spec.js",
       "pdfjs-test/unit/display_utils_spec.js",
       "pdfjs-test/unit/document_spec.js",
+      "pdfjs-test/unit/editor_spec.js",
       "pdfjs-test/unit/encodings_spec.js",
       "pdfjs-test/unit/evaluator_spec.js",
       "pdfjs-test/unit/event_utils_spec.js",
@@ -84,6 +85,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/scripting_spec.js",
       "pdfjs-test/unit/stream_spec.js",
       "pdfjs-test/unit/struct_tree_spec.js",
+      "pdfjs-test/unit/text_layer_spec.js",
       "pdfjs-test/unit/type1_parser_spec.js",
       "pdfjs-test/unit/ui_utils_spec.js",
       "pdfjs-test/unit/unicode_spec.js",
@@ -165,10 +167,10 @@ async function initializePDFJS(callback) {
       return document.body;
     },
     createElement() {
-      return document.createElement.apply(document, arguments);
+      return document.createElement(...arguments);
     },
     createTextNode() {
-      return document.createTextNode.apply(document, arguments);
+      return document.createTextNode(...arguments);
     },
     timer: new jasmine.Timer(),
   });

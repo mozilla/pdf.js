@@ -221,13 +221,13 @@ canvas {
   }
 }
 
-#loadingBar .progress.indeterminate {
+#loadingBar.indeterminate .progress {
   transform: none;
   background-color: rgba(153, 153, 153, 1);
   transition: none;
 }
 
-#loadingBar .indeterminate .glimmer {
+#loadingBar.indeterminate .progress .glimmer {
   position: absolute;
   top: 0;
   left: 0;

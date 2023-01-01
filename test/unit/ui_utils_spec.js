@@ -301,7 +301,7 @@ describe("ui_utils", function () {
           ids.add(view.id);
         }
       }
-      return { first: views[0], last: views[views.length - 1], views, ids };
+      return { first: views[0], last: views.at(-1), views, ids };
     }
 
     // This function takes a fixed layout of pages and compares the system under

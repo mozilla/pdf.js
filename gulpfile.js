@@ -78,18 +78,22 @@ const builder = require("./external/builder/builder.js");
 const CONFIG_FILE = "pdfjs.config";
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
+const ENV_TARGETS = [
+  "last 2 versions",
+  "Chrome >= 76",
+  "Firefox ESR",
+  "Safari >= 13.1",
+  "> 1%",
+  "not IE > 0",
+  "not dead",
+];
+
 // Default Autoprefixer config used for generic, components, minified-pre
 const AUTOPREFIXER_CONFIG = {
-  overrideBrowserslist: [
-    "last 2 versions",
-    "Chrome >= 73",
-    "Firefox ESR",
-    "Safari >= 12.1",
-    "> 1%",
-    "not IE > 0",
-    "not dead",
-  ],
+  overrideBrowserslist: ENV_TARGETS,
 };
+// Default Babel targets used for generic, components, minified-pre
+const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const DEFINES = Object.freeze({
   PRODUCTION: true,
@@ -190,6 +194,8 @@ function createWebpackConfig(
     DEFAULT_PREFERENCES: defaultPreferencesDir
       ? getDefaultPreferences(defaultPreferencesDir)
       : {},
+    DIALOG_POLYFILL_CSS:
+      defines.GENERIC && !defines.SKIP_BABEL ? getDialogPolyfillCSS() : "",
   });
   const licenseHeaderLibre = fs
     .readFileSync("./src/license_header_libre.js")
@@ -211,16 +217,7 @@ function createWebpackConfig(
   }
   const babelExcludeRegExp = new RegExp(`(${babelExcludes.join("|")})`);
 
-  const babelPlugins = [
-    "@babel/plugin-transform-modules-commonjs",
-    [
-      "@babel/plugin-transform-runtime",
-      {
-        helpers: false,
-        regenerator: true,
-      },
-    ],
-  ];
+  const babelPlugins = ["@babel/plugin-transform-modules-commonjs"];
 
   const plugins = [];
   if (!disableLicenseHeader) {
@@ -229,11 +226,15 @@ function createWebpackConfig(
     );
   }
 
+  const experiments =
+    output.library?.type === "module" ? { outputModule: true } : undefined;
+
   // Required to expose e.g., the `window` object.
   output.globalObject = "globalThis";
 
   return {
     mode: "none",
+    experiments,
     output,
     performance: {
       hints: false, // Disable messages about larger file sizes.
@@ -244,6 +245,7 @@ function createWebpackConfig(
         pdfjs: path.join(__dirname, "src"),
         "pdfjs-web": path.join(__dirname, "web"),
         "pdfjs-lib": path.join(__dirname, "web/pdfjs"),
+        "pdfjs-fitCurve": path.join(__dirname, "src/display/editor/fit_curve"),
       },
     },
     devtool: enableSourceMaps ? "source-map" : undefined,
@@ -255,6 +257,7 @@ function createWebpackConfig(
           options: {
             presets: skipBabel ? undefined : ["@babel/preset-env"],
             plugins: babelPlugins,
+            targets: BABEL_TARGETS,
           },
         },
         {
@@ -509,6 +512,26 @@ function createImageDecodersBundle(defines) {
     .pipe(replaceJSRootName(imageDecodersAMDName, "pdfjsImageDecoders"));
 }
 
+function createFitCurveBundle(defines) {
+  const fitCurveOutputName = "fit_curve.js";
+
+  const fitCurveFileConfig = createWebpackConfig(
+    defines,
+    {
+      filename: fitCurveOutputName,
+      library: {
+        type: "module",
+      },
+    },
+    {
+      disableVersionInfo: true,
+    }
+  );
+  return gulp
+    .src("src/display/editor/fit_curve.js")
+    .pipe(webpack2Stream(fitCurveFileConfig));
+}
+
 function createCMapBundle() {
   return gulp.src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
     base: "external/bcmaps",
@@ -716,6 +739,12 @@ function getDefaultPreferences(dir) {
   return AppOptions.getAll(OptionKind.PREFERENCE);
 }
 
+function getDialogPolyfillCSS() {
+  return fs
+    .readFileSync("node_modules/dialog-polyfill/dist/dialog-polyfill.css")
+    .toString();
+}
+
 gulp.task("locale", function () {
   const VIEWER_LOCALE_OUTPUT = "web/locale/";
 
@@ -729,8 +758,7 @@ gulp.task("locale", function () {
   subfolders.sort();
   let viewerOutput = "";
   const locales = [];
-  for (let i = 0; i < subfolders.length; i++) {
-    const locale = subfolders[i];
+  for (const locale of subfolders) {
     const dirPath = L10N_DIR + locale;
     if (!checkDir(dirPath)) {
       continue;
@@ -1215,7 +1243,6 @@ gulp.task(
       const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
         MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
         MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
-        FIREFOX_EXTENSION_DIR = "extensions/firefox/",
         MOZCENTRAL_L10N_DIR =
           MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/",
         FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + "/firefox/content/";
@@ -1227,10 +1254,6 @@ gulp.task(
 
       // Clear out everything in the firefox extension build directory
       rimraf.sync(MOZCENTRAL_DIR);
-
-      const versionJSON = getVersionJSON();
-      const version = versionJSON.version,
-        commit = versionJSON.commit;
 
       return merge([
         createMainBundle(defines).pipe(
@@ -1274,11 +1297,6 @@ gulp.task(
         gulp
           .src("l10n/en-US/*.properties")
           .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
-        gulp
-          .src(FIREFOX_EXTENSION_DIR + "README.mozilla")
-          .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
-          .pipe(replace(/\bPDFJSSCRIPT_COMMIT\b/g, commit))
-          .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
         gulp.src("LICENSE").pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
         gulp
           .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.jsm")
@@ -1363,7 +1381,7 @@ gulp.task(
             postcss([
               postcssLogical({ preserve: true }),
               postcssDirPseudoClass(),
-              autoprefixer({ overrideBrowserslist: ["Chrome >= 73"] }),
+              autoprefixer({ overrideBrowserslist: ["Chrome >= 76"] }),
             ])
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
@@ -1452,15 +1470,9 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
       presets: skipBabel ? undefined : ["@babel/preset-env"],
       plugins: [
         "@babel/plugin-transform-modules-commonjs",
-        [
-          "@babel/plugin-transform-runtime",
-          {
-            helpers: false,
-            regenerator: true,
-          },
-        ],
         babelPluginReplaceNonWebpackImports,
       ],
+      targets: BABEL_TARGETS,
     }).code;
     const removeCjsSrc =
       /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
@@ -1476,6 +1488,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     defines: bundleDefines,
     map: {
       "pdfjs-lib": "../pdf",
+      "pdfjs-fitCurve": "./fit_curve",
     },
   };
   const licenseHeaderLibre = fs
@@ -1500,6 +1513,8 @@ function buildLib(defines, dir) {
     DEFAULT_PREFERENCES: getDefaultPreferences(
       defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
     ),
+    DIALOG_POLYFILL_CSS:
+      defines.GENERIC && !defines.SKIP_BABEL ? getDialogPolyfillCSS() : "",
   });
 
   const inputStream = merge([
@@ -1614,54 +1629,90 @@ function setTestEnv(done) {
   done();
 }
 
+gulp.task("dev-fitCurve", function createDevFitCurve() {
+  console.log();
+  console.log("### Building development fitCurve");
+
+  const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
+  const fitCurveDir = BUILD_DIR + "dev-fitCurve/";
+
+  rimraf.sync(fitCurveDir);
+
+  return createFitCurveBundle(defines).pipe(gulp.dest(fitCurveDir));
+});
+
 gulp.task(
   "test",
-  gulp.series(setTestEnv, "generic", "components", function runTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit"),
-      createTestSource("browser"),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit"),
+        createTestSource("browser"),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "bottest",
-  gulp.series(setTestEnv, "generic", "components", function runBotTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
-      createTestSource("browser", { bot: true }),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runBotTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit", { bot: true }),
+        createTestSource("font", { bot: true }),
+        createTestSource("browser", { bot: true }),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "xfatest",
-  gulp.series(setTestEnv, "generic", "components", function runXfaTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit"),
-      createTestSource("browser", { xfaOnly: true }),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runXfaTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit"),
+        createTestSource("browser", { xfaOnly: true }),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
   "botxfatest",
-  gulp.series(setTestEnv, "generic", "components", function runBotXfaTest() {
-    return streamqueue(
-      { objectMode: true },
-      createTestSource("unit", { bot: true }),
-      createTestSource("font", { bot: true }),
-      createTestSource("browser", { bot: true, xfaOnly: true }),
-      createTestSource("integration")
-    );
-  })
+  gulp.series(
+    setTestEnv,
+    "generic",
+    "components",
+    "dev-fitCurve",
+    function runBotXfaTest() {
+      return streamqueue(
+        { objectMode: true },
+        createTestSource("unit", { bot: true }),
+        createTestSource("font", { bot: true }),
+        createTestSource("browser", { bot: true, xfaOnly: true }),
+        createTestSource("integration")
+      );
+    }
+  )
 );
 
 gulp.task(
@@ -1688,7 +1739,7 @@ gulp.task(
 
 gulp.task(
   "unittest",
-  gulp.series(setTestEnv, "generic", function runUnitTest() {
+  gulp.series(setTestEnv, "generic", "dev-fitCurve", function runUnitTest() {
     return createTestSource("unit");
   })
 );
@@ -1944,6 +1995,13 @@ gulp.task(
         ["web/*.css", "web/images/*"],
         { ignoreInitial: false },
         gulp.series("dev-css")
+      );
+    },
+    function watchDevFitCurve() {
+      gulp.watch(
+        ["src/display/editor/*"],
+        { ignoreInitial: false },
+        gulp.series("dev-fitCurve")
       );
     },
     function watchDevSandbox() {

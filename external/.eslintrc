@@ -6,4 +6,8 @@
   "env": {
     "node": true,
   },
+
+  "rules": {
+    "unicorn/prefer-at": "off",
+  },
 }

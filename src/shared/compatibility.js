@@ -23,7 +23,7 @@ if (
 ) {
   globalThis._pdfjsCompatibilityChecked = true;
 
-  // Support: Node.js
+  // Support: Node.js<16.0.0
   (function checkNodeBtoa() {
     if (globalThis.btoa || !isNodeJS) {
       return;
@@ -34,7 +34,7 @@ if (
     };
   })();
 
-  // Support: Node.js
+  // Support: Node.js<16.0.0
   (function checkNodeAtob() {
     if (globalThis.atob || !isNodeJS) {
       return;
@@ -55,21 +55,6 @@ if (
     );
   })();
 
-  // Provides support for *recent* additions to the Promise specification,
-  // however basic Promise support is assumed to be available natively.
-  // Support: Firefox<71, Chrome<76, Safari<13, Node.js<12.9.0
-  (function checkPromise() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
-      // The current image decoders are synchronous, hence `Promise` shouldn't
-      // need to be polyfilled for the IMAGE_DECODERS build target.
-      return;
-    }
-    if (globalThis.Promise.allSettled) {
-      return;
-    }
-    globalThis.Promise = require("core-js/es/promise/index.js");
-  })();
-
   // Support: Node.js
   (function checkReadableStream() {
     if (globalThis.ReadableStream || !isNodeJS) {
@@ -78,6 +63,22 @@ if (
     globalThis.ReadableStream = __non_webpack_require__(
       "web-streams-polyfill/dist/ponyfill.js"
     ).ReadableStream;
+  })();
+
+  // Support: Firefox<90, Chrome<92, Safari<15.4, Node.js<16.6.0
+  (function checkArrayAt() {
+    if (Array.prototype.at) {
+      return;
+    }
+    require("core-js/es/array/at.js");
+  })();
+
+  // Support: Firefox<90, Chrome<92, Safari<15.4, Node.js<16.6.0
+  (function checkTypedArrayAt() {
+    if (Uint8Array.prototype.at) {
+      return;
+    }
+    require("core-js/es/typed-array/at.js");
   })();
 
   // Support: Firefox<94, Chrome<98, Safari<15.4, Node.js<17.0.0

@@ -247,7 +247,7 @@ function layoutNode(node, availableSpace) {
       }
     }
 
-    const maxWidth = (!node.w ? availableSpace.width : node.w) - marginH;
+    const maxWidth = (node.w || availableSpace.width) - marginH;
     const fontFinder = node[$globalData].fontFinder;
     if (
       node.value.exData &&
@@ -562,7 +562,7 @@ function isPrintOnly(node) {
 
 function getCurrentPara(node) {
   const stack = node[$getTemplateRoot]()[$extra].paraStack;
-  return stack.length ? stack[stack.length - 1] : null;
+  return stack.length ? stack.at(-1) : null;
 }
 
 function setPara(node, nodeStyle, value) {

@@ -21,6 +21,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { getCurrentTransform } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
 
 const PathType = {
@@ -96,7 +97,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     if (pathType === PathType.STROKE || pathType === PathType.FILL) {
       const ownerBBox = owner.current.getClippedPathBoundingBox(
         pathType,
-        ctx.mozCurrentTransform
+        getCurrentTransform(ctx)
       ) || [0, 0, 0, 0];
       // Create a canvas that is only as big as the current path. This doesn't
       // allow us to cache the pattern, but it generally creates much smaller
@@ -128,9 +129,9 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         ownerBBox[1],
       ]);
 
-      tmpCtx.transform.apply(tmpCtx, owner.baseTransform);
+      tmpCtx.transform(...owner.baseTransform);
       if (this.matrix) {
-        tmpCtx.transform.apply(tmpCtx, this.matrix);
+        tmpCtx.transform(...this.matrix);
       }
       applyBoundingBox(tmpCtx, this._bbox);
 
@@ -409,7 +410,7 @@ class MeshShadingPattern extends BaseShadingPattern {
     applyBoundingBox(ctx, this._bbox);
     let scale;
     if (pathType === PathType.SHADING) {
-      scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);
+      scale = Util.singularValueDecompose2dScale(getCurrentTransform(ctx));
     } else {
       // Obtain scale from matrix and current transformation matrix.
       scale = Util.singularValueDecompose2dScale(owner.baseTransform);
@@ -428,9 +429,9 @@ class MeshShadingPattern extends BaseShadingPattern {
     );
 
     if (pathType !== PathType.SHADING) {
-      ctx.setTransform.apply(ctx, owner.baseTransform);
+      ctx.setTransform(...owner.baseTransform);
       if (this.matrix) {
-        ctx.transform.apply(ctx, this.matrix);
+        ctx.transform(...this.matrix);
       }
     }
 
@@ -584,7 +585,7 @@ class TilingPattern {
 
     this.clipBbox(graphics, adjustedX0, adjustedY0, adjustedX1, adjustedY1);
 
-    graphics.baseTransform = graphics.ctx.mozCurrentTransform.slice();
+    graphics.baseTransform = getCurrentTransform(graphics.ctx);
 
     graphics.executeOperatorList(operatorList);
 
@@ -620,7 +621,7 @@ class TilingPattern {
     const bboxWidth = x1 - x0;
     const bboxHeight = y1 - y0;
     graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
-    graphics.current.updateRectMinMax(graphics.ctx.mozCurrentTransform, [
+    graphics.current.updateRectMinMax(getCurrentTransform(graphics.ctx), [
       x0,
       y0,
       x1,

@@ -47,7 +47,7 @@ class XRef {
 
   getNewRef() {
     if (this._newRefNum === null) {
-      this._newRefNum = this.entries.length;
+      this._newRefNum = this.entries.length || 1;
     }
     return Ref.get(this._newRefNum++, 0);
   }

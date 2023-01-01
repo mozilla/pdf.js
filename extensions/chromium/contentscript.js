@@ -133,7 +133,7 @@ function updateEmbedElement(elem) {
   elem.type = "text/html";
   elem.src = getEmbeddedViewerURL(elem.src);
   if (parentNode) {
-    parentNode.insertBefore(elem, nextSibling);
+    nextSibling.before(elem);
   }
 }
 
@@ -160,7 +160,7 @@ function updateObjectElement(elem) {
   if (!iframe || !iframe.__inserted_by_pdfjs) {
     iframe = createFullSizeIframe();
     elem.textContent = "";
-    elem.appendChild(iframe);
+    elem.append(iframe);
     iframe.__inserted_by_pdfjs = true;
   }
   iframe.src = getEmbeddedViewerURL(elem.data);

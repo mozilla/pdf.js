@@ -87,7 +87,7 @@ class BaseTreeViewer {
         this._toggleTreeItem(div, shouldShowAll);
       }
     };
-    div.insertBefore(toggler, div.firstChild);
+    div.prepend(toggler);
   }
 
   /**
@@ -122,7 +122,7 @@ class BaseTreeViewer {
 
       this._lastToggleIsShow = !fragment.querySelector(".treeItemsHidden");
     }
-    this.container.appendChild(fragment);
+    this.container.append(fragment);
 
     this._dispatchEvent(count);
   }

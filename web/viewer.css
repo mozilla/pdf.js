@@ -71,6 +71,8 @@
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
+  --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
+  --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
   --toolbarButton-sidebarToggle-icon: url(images/toolbarButton-sidebarToggle.svg);
   --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);
@@ -267,7 +269,7 @@ select {
   right: 0;
   bottom: 0;
   left: 0;
-  min-width: 320px;
+  min-width: 350px;
 }
 
 #sidebarContent {
@@ -332,7 +334,8 @@ select {
 
 #toolbarContainer,
 .findbar,
-.secondaryToolbar {
+.secondaryToolbar,
+.editorParamsToolbar {
   position: relative;
   height: 32px;
   background-color: var(--toolbar-bg-color);
@@ -380,13 +383,13 @@ select {
   }
 }
 
-#loadingBar .progress.indeterminate {
+#loadingBar.indeterminate .progress {
   transform: none;
   background-color: var(--progressBar-indeterminate-bg-color);
   transition: none;
 }
 
-#loadingBar .progress.indeterminate .glimmer {
+#loadingBar.indeterminate .progress .glimmer {
   position: absolute;
   top: 0;
   left: 0;
@@ -412,14 +415,14 @@ select {
 }
 
 .findbar,
-.secondaryToolbar {
+.secondaryToolbar,
+.editorParamsToolbar {
   top: 32px;
   position: absolute;
   z-index: 10000;
   height: auto;
   padding: 0 4px;
   margin: 4px 2px;
-  color: rgba(217, 217, 217, 1);
   font-size: 12px;
   line-height: 14px;
   text-align: left;
@@ -484,12 +487,62 @@ select {
   background-color: rgba(255, 102, 102, 1);
 }
 
-.secondaryToolbar {
+.secondaryToolbar,
+.editorParamsToolbar {
   padding: 6px 0 10px;
   inset-inline-end: 4px;
   height: auto;
   z-index: 30000;
   background-color: var(--doorhanger-bg-color);
+}
+
+.editorParamsToolbarContainer {
+  width: 220px;
+  margin-bottom: -4px;
+}
+
+.editorParamsToolbarContainer > .editorParamsSetter {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 10px;
+}
+
+.editorParamsToolbarContainer .editorParamsLabel {
+  padding-inline-end: 10px;
+  flex: none;
+  color: var(--main-color);
+}
+
+.editorParamsToolbarContainer .editorParamsColor {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+
+.editorParamsToolbarContainer .editorParamsSlider {
+  background-color: transparent;
+  width: 90px;
+  flex: 0 1 0;
+}
+
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-progress {
+  background-color: black;
+}
+
+/*#if !MOZCENTRAL*/
+.editorParamsToolbarContainer .editorParamsSlider::-webkit-slider-runnable-track,
+/*#endif*/
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-track {
+  background-color: black;
+}
+
+/*#if !MOZCENTRAL*/
+.editorParamsToolbarContainer .editorParamsSlider::-webkit-slider-thumb,
+/*#endif*/
+.editorParamsToolbarContainer .editorParamsSlider::-moz-range-thumb {
+  background-color: white;
 }
 
 #secondaryToolbarButtonContainer {
@@ -498,6 +551,16 @@ select {
   max-height: calc(var(--viewer-container-height) - 40px);
   overflow-y: auto;
   margin-bottom: -4px;
+}
+
+#editorInkParamsToolbar {
+  inset-inline-end: 40px;
+  background-color: var(--toolbar-bg-color);
+}
+
+#editorFreeTextParamsToolbar {
+  inset-inline-end: 68px;
+  background-color: var(--toolbar-bg-color);
 }
 
 .doorHanger,
@@ -824,6 +887,14 @@ select {
   mask-image: var(--toolbarButton-presentationMode-icon);
 }
 
+#editorFreeText::before {
+  mask-image: var(--toolbarButton-editorFreeText-icon);
+}
+
+#editorInk::before {
+  mask-image: var(--toolbarButton-editorInk-icon);
+}
+
 #print::before,
 #secondaryPrint::before {
   mask-image: var(--toolbarButton-print-icon);
@@ -1141,11 +1212,15 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   cursor: pointer;
 }
 
-#layersView .treeItem > a > * {
+#layersView .treeItem > a * {
   cursor: pointer;
 }
 #layersView .treeItem > a > label {
   padding-inline-start: 4px;
+}
+#layersView .treeItem > a > label > input {
+  float: inline-start;
+  margin-top: 1px;
 }
 
 .treeItemToggler {
@@ -1405,7 +1480,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 770px) {
+@media all and (max-width: 820px) {
   #outerContainer .hiddenLargeView {
     display: none;
   }
@@ -1414,7 +1489,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 700px) {
+@media all and (max-width: 750px) {
   #outerContainer .hiddenMediumView {
     display: none;
   }
@@ -1423,7 +1498,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 640px) {
+@media all and (max-width: 690px) {
   .hiddenSmallView,
   .hiddenSmallView * {
     display: none;
@@ -1439,7 +1514,7 @@ dialog :link {
   }
 }
 
-@media all and (max-width: 535px) {
+@media all and (max-width: 560px) {
   #scaleSelectContainer {
     display: none;
   }

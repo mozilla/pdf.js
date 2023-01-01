@@ -90,12 +90,6 @@ class PDFThumbnailViewer {
 
     this.scroll = watchScroll(this.container, this._scrollUpdated.bind(this));
     this._resetView();
-
-    eventBus._on("optionalcontentconfigchanged", () => {
-      // Ensure that the thumbnails always render with the *default* optional
-      // content configuration.
-      this._setImageDisabled = true;
-    });
   }
 
   /**
@@ -200,8 +194,6 @@ class PDFThumbnailViewer {
     this._currentPageNumber = 1;
     this._pageLabels = null;
     this._pagesRotation = 0;
-    this._optionalContentConfigPromise = null;
-    this._setImageDisabled = false;
 
     // Remove the thumbnails from the DOM.
     this.container.textContent = "";
@@ -225,13 +217,8 @@ class PDFThumbnailViewer {
 
     firstPagePromise
       .then(firstPdfPage => {
-        this._optionalContentConfigPromise = optionalContentConfigPromise;
-
         const pagesCount = pdfDocument.numPages;
         const viewport = firstPdfPage.getViewport({ scale: 1 });
-        const checkSetImageDisabled = () => {
-          return this._setImageDisabled;
-        };
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const thumbnail = new PDFThumbnailView({
@@ -241,7 +228,6 @@ class PDFThumbnailViewer {
             optionalContentConfigPromise,
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
-            checkSetImageDisabled,
             l10n: this.l10n,
             pageColors: this.pageColors,
             thumbnailWidth: this.#thumbnailWidth,

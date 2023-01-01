@@ -160,6 +160,10 @@
       ],
       "default": 2
     },
+    "annotationEditorMode": {
+      "type": "integer",
+      "default": -1
+    },
     "enablePermissions": {
       "type": "boolean",
       "default": false
@@ -208,6 +212,11 @@
         2
       ],
       "default": -1
+    },
+    "forcePageColors": {
+      "description": "When enabled, the pdf rendering will use the high contrast mode colors",
+      "type": "boolean",
+      "default": false
     },
     "pageColorsBackground": {
       "description": "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",

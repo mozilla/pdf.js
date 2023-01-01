@@ -102,7 +102,7 @@ class FontSelector {
   }
 
   pushData(xfaFont, margin, lineHeight) {
-    const lastFont = this.stack[this.stack.length - 1];
+    const lastFont = this.stack.at(-1);
     for (const name of [
       "typeface",
       "posture",
@@ -139,7 +139,7 @@ class FontSelector {
   }
 
   topFont() {
-    return this.stack[this.stack.length - 1];
+    return this.stack.at(-1);
   }
 }
 

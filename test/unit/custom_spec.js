@@ -134,7 +134,7 @@ describe("custom ownerDocument", function () {
       fonts: new Set(),
       createElement,
       documentElement: {
-        getElementsByTagName: () => [{ appendChild: () => {} }],
+        getElementsByTagName: () => [{ append: () => {} }],
       },
     };
     const CanvasFactory = new DefaultCanvasFactory({ ownerDocument });

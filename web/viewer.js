@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+import { RenderingStates, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { AppOptions } from "./app_options.js";
+import { LinkTarget } from "./pdf_link_service.js";
 import { PDFViewerApplication } from "./app.js";
 
 /* eslint-disable-next-line no-unused-vars */
@@ -23,18 +25,22 @@ const pdfjsVersion =
 const pdfjsBuild =
   typeof PDFJSDev !== "undefined" ? PDFJSDev.eval("BUNDLE_BUILD") : void 0;
 
+const AppConstants =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
+    ? { LinkTarget, RenderingStates, ScrollMode, SpreadMode }
+    : null;
+
 window.PDFViewerApplication = PDFViewerApplication;
+window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  var defaultUrl; // eslint-disable-line no-var
-
   (function rewriteUrlClosure() {
     // Run this code outside DOMContentLoaded to make sure that the URL
     // is rewritten as soon as possible.
     const queryString = document.location.search.slice(1);
     const m = /(^|&)file=([^&]*)/.exec(queryString);
-    defaultUrl = m ? decodeURIComponent(m[2]) : "";
+    const defaultUrl = m ? decodeURIComponent(m[2]) : "";
 
     // Example: chrome-extension://.../http://example.com/file.pdf
     const humanReadableUrl = "/" + defaultUrl + location.hash;
@@ -43,6 +49,8 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
       // eslint-disable-next-line no-undef
       chrome.runtime.sendMessage("showPageAction");
     }
+
+    AppOptions.set("defaultUrl", defaultUrl);
   })();
 }
 
@@ -93,6 +101,12 @@ function getViewerConfiguration() {
           ? document.getElementById("openFile")
           : null,
       print: document.getElementById("print"),
+      editorFreeTextButton: document.getElementById("editorFreeText"),
+      editorFreeTextParamsToolbar: document.getElementById(
+        "editorFreeTextParamsToolbar"
+      ),
+      editorInkButton: document.getElementById("editorInk"),
+      editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       presentationModeButton: document.getElementById("presentationMode"),
       download: document.getElementById("download"),
       viewBookmark: document.getElementById("viewBookmark"),
@@ -190,6 +204,13 @@ function getViewerConfiguration() {
         linearized: document.getElementById("linearizedField"),
       },
     },
+    annotationEditorParams: {
+      editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
+      editorFreeTextColor: document.getElementById("editorFreeTextColor"),
+      editorInkColor: document.getElementById("editorInkColor"),
+      editorInkThickness: document.getElementById("editorInkThickness"),
+      editorInkOpacity: document.getElementById("editorInkOpacity"),
+    },
     errorWrapper,
     printContainer: document.getElementById("printContainer"),
     openFileInput:
@@ -208,7 +229,7 @@ function webViewerLoad() {
       link.rel = "stylesheet";
       link.href = "../build/dev-css/viewer.css";
 
-      document.head.appendChild(link);
+      document.head.append(link);
     }
 
     Promise.all([
@@ -218,10 +239,6 @@ function webViewerLoad() {
       PDFViewerApplication.run(config);
     });
   } else {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-      AppOptions.set("defaultUrl", defaultUrl);
-    }
-
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
       // Give custom implementations of the default viewer a simpler way to
       // set various `AppOptions`, by dispatching an event once all viewer
@@ -260,4 +277,8 @@ if (
   document.addEventListener("DOMContentLoaded", webViewerLoad, true);
 }
 
-export { PDFViewerApplication, AppOptions as PDFViewerApplicationOptions };
+export {
+  PDFViewerApplication,
+  AppConstants as PDFViewerApplicationConstants,
+  AppOptions as PDFViewerApplicationOptions,
+};

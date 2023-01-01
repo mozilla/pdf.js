@@ -29,7 +29,8 @@ function renderPage(
   pageNumber,
   size,
   printResolution,
-  optionalContentConfigPromise
+  optionalContentConfigPromise,
+  printAnnotationStoragePromise
 ) {
   const scratchCanvas = activeService.scratchCanvas;
 
@@ -44,7 +45,10 @@ function renderPage(
   ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
   ctx.restore();
 
-  return pdfDocument.getPage(pageNumber).then(function (pdfPage) {
+  return Promise.all([
+    pdfDocument.getPage(pageNumber),
+    printAnnotationStoragePromise,
+  ]).then(function ([pdfPage, printAnnotationStorage]) {
     const renderContext = {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
@@ -52,6 +56,7 @@ function renderPage(
       intent: "print",
       annotationMode: AnnotationMode.ENABLE_STORAGE,
       optionalContentConfigPromise,
+      printAnnotationStorage,
     };
     return pdfPage.render(renderContext).promise;
   });
@@ -63,6 +68,7 @@ function PDFPrintService(
   printContainer,
   printResolution,
   optionalContentConfigPromise = null,
+  printAnnotationStoragePromise = null,
   l10n
 ) {
   this.pdfDocument = pdfDocument;
@@ -71,6 +77,8 @@ function PDFPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+  this._printAnnotationStoragePromise =
+    printAnnotationStoragePromise || Promise.resolve();
   this.l10n = l10n;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
@@ -110,7 +118,7 @@ PDFPrintService.prototype = {
     const pageSize = this.pagesOverview[0];
     this.pageStyleSheet.textContent =
       "@page { size: " + pageSize.width + "pt " + pageSize.height + "pt;}";
-    body.appendChild(this.pageStyleSheet);
+    body.append(this.pageStyleSheet);
   },
 
   destroy() {
@@ -160,7 +168,8 @@ PDFPrintService.prototype = {
         /* pageNumber = */ index + 1,
         this.pagesOverview[index],
         this._printResolution,
-        this._optionalContentConfigPromise
+        this._optionalContentConfigPromise,
+        this._printAnnotationStoragePromise
       )
         .then(this.useRenderedPage.bind(this))
         .then(function () {
@@ -184,8 +193,8 @@ PDFPrintService.prototype = {
 
     const wrapper = document.createElement("div");
     wrapper.className = "printedPage";
-    wrapper.appendChild(img);
-    this.printContainer.appendChild(wrapper);
+    wrapper.append(img);
+    this.printContainer.append(wrapper);
 
     return new Promise(function (resolve, reject) {
       img.onload = resolve;
@@ -359,6 +368,7 @@ PDFPrintServiceFactory.instance = {
     printContainer,
     printResolution,
     optionalContentConfigPromise,
+    printAnnotationStoragePromise,
     l10n
   ) {
     if (activeService) {
@@ -370,6 +380,7 @@ PDFPrintServiceFactory.instance = {
       printContainer,
       printResolution,
       optionalContentConfigPromise,
+      printAnnotationStoragePromise,
       l10n
     );
     return activeService;

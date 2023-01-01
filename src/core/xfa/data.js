@@ -32,7 +32,7 @@ class DataHandler {
     const stack = [[-1, this.data[$getChildren]()]];
 
     while (stack.length > 0) {
-      const last = stack[stack.length - 1];
+      const last = stack.at(-1);
       const [i, children] = last;
       if (i + 1 === children.length) {
         stack.pop();

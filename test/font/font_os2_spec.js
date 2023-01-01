@@ -30,7 +30,9 @@ describe("font_post", function () {
       const output = await ttx(font.data);
 
       verifyTtxOutput(output);
-      expect(/<OS_2>\s*<version value="3"\/>/.test(output)).toEqual(true);
+      expect(
+        /<OS_2>\s*<!--.*\r?\n.*-->\s*<version value="3"\/>/.test(output)
+      ).toEqual(true);
     });
 
     it("has invalid selection attributes presence", async function () {
@@ -51,7 +53,9 @@ describe("font_post", function () {
       const output = await ttx(font.data);
 
       verifyTtxOutput(output);
-      expect(/<OS_2>\s*<version value="3"\/>/.test(output)).toEqual(true);
+      expect(
+        /<OS_2>\s*<!--.*\r?\n.*-->\s*<version value="3"\/>/.test(output)
+      ).toEqual(true);
     });
   });
 });

@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
+import { objectFromMap, unreachable } from "../shared/util.js";
+import { AnnotationEditor } from "./editor/editor.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
-import { objectFromMap } from "../shared/util.js";
 
 /**
  * Key/value storage for annotation data in forms.
@@ -30,6 +31,7 @@ class AnnotationStorage {
     // can have undesirable effects.
     this.onSetModified = null;
     this.onResetModified = null;
+    this.onAnnotationEditor = null;
   }
 
   /**
@@ -63,6 +65,27 @@ class AnnotationStorage {
   }
 
   /**
+   * Remove a value from the storage.
+   * @param {string} key
+   */
+  remove(key) {
+    this._storage.delete(key);
+
+    if (this._storage.size === 0) {
+      this.resetModified();
+    }
+
+    if (typeof this.onAnnotationEditor === "function") {
+      for (const value of this._storage.values()) {
+        if (value instanceof AnnotationEditor) {
+          return;
+        }
+      }
+      this.onAnnotationEditor(null);
+    }
+  }
+
+  /**
    * Set the value for a given key
    *
    * @public
@@ -85,8 +108,24 @@ class AnnotationStorage {
       this._storage.set(key, value);
     }
     if (modified) {
-      this._setModified();
+      this.#setModified();
     }
+
+    if (
+      value instanceof AnnotationEditor &&
+      typeof this.onAnnotationEditor === "function"
+    ) {
+      this.onAnnotationEditor(value.constructor._type);
+    }
+  }
+
+  /**
+   * Check if the storage contains the given key.
+   * @param {string} key
+   * @returns {boolean}
+   */
+  has(key) {
+    return this._storage.has(key);
   }
 
   getAll() {
@@ -97,10 +136,7 @@ class AnnotationStorage {
     return this._storage.size;
   }
 
-  /**
-   * @private
-   */
-  _setModified() {
+  #setModified() {
     if (!this._modified) {
       this._modified = true;
       if (typeof this.onSetModified === "function") {
@@ -119,25 +155,78 @@ class AnnotationStorage {
   }
 
   /**
-   * PLEASE NOTE: Only intended for usage within the API itself.
-   * @ignore
+   * @returns {PrintAnnotationStorage}
    */
-  get serializable() {
-    return this._storage.size > 0 ? this._storage : null;
+  get print() {
+    return new PrintAnnotationStorage(this);
   }
 
   /**
    * PLEASE NOTE: Only intended for usage within the API itself.
    * @ignore
    */
-  get hash() {
+  get serializable() {
+    if (this._storage.size === 0) {
+      return null;
+    }
+    const clone = new Map();
+
+    for (const [key, val] of this._storage) {
+      const serialized =
+        val instanceof AnnotationEditor ? val.serialize() : val;
+      if (serialized) {
+        clone.set(key, serialized);
+      }
+    }
+    return clone;
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  static getHash(map) {
+    if (!map) {
+      return "";
+    }
     const hash = new MurmurHash3_64();
 
-    for (const [key, value] of this._storage) {
-      hash.update(`${key}:${JSON.stringify(value)}`);
+    for (const [key, val] of map) {
+      hash.update(`${key}:${JSON.stringify(val)}`);
     }
     return hash.hexdigest();
   }
 }
 
-export { AnnotationStorage };
+/**
+ * A special `AnnotationStorage` for use during printing, where the serializable
+ * data is *frozen* upon initialization, to prevent scripting from modifying its
+ * contents. (Necessary since printing is triggered synchronously in browsers.)
+ */
+class PrintAnnotationStorage extends AnnotationStorage {
+  #serializable = null;
+
+  constructor(parent) {
+    super();
+    // Create a *copy* of the data, since Objects are passed by reference in JS.
+    this.#serializable = structuredClone(parent.serializable);
+  }
+
+  /**
+   * @returns {PrintAnnotationStorage}
+   */
+  // eslint-disable-next-line getter-return
+  get print() {
+    unreachable("Should not call PrintAnnotationStorage.print");
+  }
+
+  /**
+   * PLEASE NOTE: Only intended for usage within the API itself.
+   * @ignore
+   */
+  get serializable() {
+    return this.#serializable;
+  }
+}
+
+export { AnnotationStorage, PrintAnnotationStorage };

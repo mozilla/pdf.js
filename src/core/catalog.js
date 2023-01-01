@@ -982,7 +982,8 @@ class Catalog {
       if (javaScript === null) {
         javaScript = new Map();
       }
-      javaScript.set(name, stringToPDFString(js));
+      js = stringToPDFString(js).replace(/\u0000/g, "");
+      javaScript.set(name, js);
     }
 
     if (obj instanceof Dict && obj.has("JavaScript")) {
@@ -1212,7 +1213,7 @@ class Catalog {
     }
 
     while (queue.length > 0) {
-      const queueItem = queue[queue.length - 1];
+      const queueItem = queue.at(-1);
       const { currentNode, posInKids } = queueItem;
 
       let kids = currentNode.getRaw("Kids");

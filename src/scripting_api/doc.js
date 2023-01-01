@@ -1151,6 +1151,7 @@ class Doc extends PDFObject {
       field.obj.value = field.obj.defaultValue;
       this._send({
         id: field.obj._id,
+        siblings: field.obj._siblings,
         value: field.obj.defaultValue,
         formattedValue: null,
         selRange: [0, 0],

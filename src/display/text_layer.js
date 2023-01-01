@@ -18,6 +18,7 @@ import {
   createPromiseCapability,
   Util,
 } from "../shared/util.js";
+import { deprecated } from "./display_utils.js";
 
 /**
  * Text layer render parameters.
@@ -27,8 +28,8 @@ import {
  *   render (the object is returned by the page's `getTextContent` method).
  * @property {ReadableStream} [textContentStream] - Text content stream to
  *   render (the stream is returned by the page's `streamTextContent` method).
- * @property {DocumentFragment} container - The DOM node that will contain the
- *   text runs.
+ * @property {DocumentFragment | HTMLElement} container - The DOM node that
+ *   will contain the text runs.
  * @property {import("./display_utils").PageViewport} viewport - The target
  *   viewport to properly layout the text runs.
  * @property {Array<HTMLElement>} [textDivs] - HTML elements that correspond to
@@ -131,12 +132,14 @@ function appendText(task, geom, styles, ctx) {
         paddingRight: 0,
         paddingTop: 0,
         scale: 1,
+        fontSize: 0,
       }
     : {
         angle: 0,
         canvasWidth: 0,
         hasText: geom.str !== "",
         hasEOL: geom.hasEOL,
+        fontSize: 0,
       };
 
   task._textDivs.push(textDiv);
@@ -164,6 +167,8 @@ function appendText(task, geom, styles, ctx) {
   textDiv.style.top = `${top}px`;
   textDiv.style.fontSize = `${fontHeight}px`;
   textDiv.style.fontFamily = style.fontFamily;
+
+  textDivProperties.fontSize = fontHeight;
 
   // Keeps screen readers from pausing on every new text span.
   textDiv.setAttribute("role", "presentation");
@@ -488,7 +493,7 @@ function expandBoundsLTR(width, bounds) {
         affectedBoundary.x2 > boundary.x2 ? affectedBoundary : boundary;
       if (lastBoundary === useBoundary) {
         // Merging with previous.
-        changedHorizon[changedHorizon.length - 1].end = horizonPart.end;
+        changedHorizon.at(-1).end = horizonPart.end;
       } else {
         changedHorizon.push({
           start: horizonPart.start,
@@ -507,7 +512,7 @@ function expandBoundsLTR(width, bounds) {
       });
     }
     if (boundary.y2 < horizon[j].end) {
-      changedHorizon[changedHorizon.length - 1].end = boundary.y2;
+      changedHorizon.at(-1).end = boundary.y2;
       changedHorizon.push({
         start: boundary.y2,
         end: horizon[j].end,
@@ -547,10 +552,7 @@ function expandBoundsLTR(width, bounds) {
       }
     }
 
-    Array.prototype.splice.apply(
-      horizon,
-      [i, j - i + 1].concat(changedHorizon)
-    );
+    Array.prototype.splice.apply(horizon, [i, j - i + 1, ...changedHorizon]);
   }
 
   // Set new x2 for all unset boundaries.
@@ -572,6 +574,11 @@ class TextLayerRenderTask {
     textContentItemsStr,
     enhanceTextSelection,
   }) {
+    if (enhanceTextSelection) {
+      deprecated(
+        "The `enhanceTextSelection` functionality will be removed in the future."
+      );
+    }
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;
@@ -592,6 +599,7 @@ class TextLayerRenderTask {
     this._capability = createPromiseCapability();
     this._renderTimer = null;
     this._bounds = [];
+    this._devicePixelRatio = globalThis.devicePixelRatio || 1;
 
     // Always clean-up the temporary canvas once rendering is no longer pending.
     this._capability.promise
@@ -658,7 +666,7 @@ class TextLayerRenderTask {
           if (items[i].id !== null) {
             this._container.setAttribute("id", `${items[i].id}`);
           }
-          parent.appendChild(this._container);
+          parent.append(this._container);
         } else if (items[i].type === "endMarkedContent") {
           this._container = this._container.parentNode;
         }
@@ -677,14 +685,17 @@ class TextLayerRenderTask {
 
     let transform = "";
     if (textDivProperties.canvasWidth !== 0 && textDivProperties.hasText) {
-      const { fontSize, fontFamily } = textDiv.style;
+      const { fontFamily } = textDiv.style;
+      const { fontSize } = textDivProperties;
 
       // Only build font string and set to context if different from last.
       if (
         fontSize !== this._layoutTextLastFontSize ||
         fontFamily !== this._layoutTextLastFontFamily
       ) {
-        this._layoutTextCtx.font = `${fontSize} ${fontFamily}`;
+        this._layoutTextCtx.font = `${
+          fontSize * this._devicePixelRatio
+        }px ${fontFamily}`;
         this._layoutTextLastFontSize = fontSize;
         this._layoutTextLastFontFamily = fontFamily;
       }
@@ -692,7 +703,8 @@ class TextLayerRenderTask {
       const { width } = this._layoutTextCtx.measureText(textDiv.textContent);
 
       if (width > 0) {
-        const scale = textDivProperties.canvasWidth / width;
+        const scale =
+          (this._devicePixelRatio * textDivProperties.canvasWidth) / width;
         if (this._enhanceTextSelection) {
           textDivProperties.scale = scale;
         }
@@ -710,12 +722,12 @@ class TextLayerRenderTask {
     }
 
     if (textDivProperties.hasText) {
-      this._container.appendChild(textDiv);
+      this._container.append(textDiv);
     }
     if (textDivProperties.hasEOL) {
       const br = document.createElement("br");
       br.setAttribute("role", "presentation");
-      this._container.appendChild(br);
+      this._container.append(br);
     }
   }
 
@@ -857,4 +869,4 @@ function renderTextLayer(renderParameters) {
   return task;
 }
 
-export { renderTextLayer };
+export { renderTextLayer, TextLayerRenderTask };

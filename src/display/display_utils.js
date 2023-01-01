@@ -23,6 +23,8 @@ import { BaseException, stringToBytes, Util, warn } from "../shared/util.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+const AnnotationPrefix = "pdfjs_internal_id_";
+
 class PixelsPerInch {
   static CSS = 96.0;
 
@@ -459,7 +461,7 @@ function loadScript(src, removeScriptElement = false) {
     script.onerror = function () {
       reject(new Error(`Cannot load script at: ${script.src}`));
     };
-    (document.head || document.documentElement).appendChild(script);
+    (document.head || document.documentElement).append(script);
   });
 }
 
@@ -567,14 +569,71 @@ function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
   });
 }
 
+function getRGB(color) {
+  if (color.startsWith("#")) {
+    const colorRGB = parseInt(color.slice(1), 16);
+    return [
+      (colorRGB & 0xff0000) >> 16,
+      (colorRGB & 0x00ff00) >> 8,
+      colorRGB & 0x0000ff,
+    ];
+  }
+
+  if (color.startsWith("rgb(")) {
+    // getComputedStyle(...).color returns a `rgb(R, G, B)` color.
+    return color
+      .slice(/* "rgb(".length */ 4, -1) // Strip out "rgb(" and ")".
+      .split(",")
+      .map(x => parseInt(x));
+  }
+
+  if (color.startsWith("rgba(")) {
+    return color
+      .slice(/* "rgba(".length */ 5, -1) // Strip out "rgba(" and ")".
+      .split(",")
+      .map(x => parseInt(x))
+      .slice(0, 3);
+  }
+
+  warn(`Not a valid color format: "${color}"`);
+  return [0, 0, 0];
+}
+
+function getColorValues(colors) {
+  const span = document.createElement("span");
+  span.style.visibility = "hidden";
+  document.body.append(span);
+  for (const name of colors.keys()) {
+    span.style.color = name;
+    const computedColor = window.getComputedStyle(span).color;
+    colors.set(name, getRGB(computedColor));
+  }
+  span.remove();
+}
+
+function getCurrentTransform(ctx) {
+  const { a, b, c, d, e, f } = ctx.getTransform();
+  return [a, b, c, d, e, f];
+}
+
+function getCurrentTransformInverse(ctx) {
+  const { a, b, c, d, e, f } = ctx.getTransform().invertSelf();
+  return [a, b, c, d, e, f];
+}
+
 export {
+  AnnotationPrefix,
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
   DOMStandardFontDataFactory,
   DOMSVGFactory,
+  getColorValues,
+  getCurrentTransform,
+  getCurrentTransformInverse,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getRGB,
   getXfaPageViewport,
   isDataScheme,
   isPdfFile,

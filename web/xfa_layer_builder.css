@@ -17,6 +17,12 @@
   --xfa-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
 }
 
+@media (forced-colors: active) {
+  .xfaLayer *:required {
+    outline: 1.5px solid selectedItem;
+  }
+}
+
 .xfaLayer .highlight {
   margin: -1px;
   padding: 1px;
@@ -85,6 +91,10 @@
   margin: 0;
   pointer-events: auto;
   line-height: inherit;
+}
+
+.xfaLayer *:required {
+  outline: 1.5px solid red;
 }
 
 .xfaLayer div {

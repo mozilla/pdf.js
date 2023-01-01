@@ -218,8 +218,8 @@ function parseCMap(binaryData) {
       const sign = fromHexDigit(num[num.length - 1]) & 1 ? 15 : 0;
       let c = 0;
       let result = "";
-      for (let i = 0; i < num.length; i++) {
-        c = (c << 4) | fromHexDigit(num[i]);
+      for (const digit of num) {
+        c = (c << 4) | fromHexDigit(digit);
         result += toHexDigit(sign ? (c >> 1) ^ sign : c >> 1);
         c &= 1;
       }

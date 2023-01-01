@@ -32,13 +32,13 @@ import {
   warn,
 } from "../shared/util.js";
 import { Dict, Ref } from "./primitives.js";
+import { getNewAnnotationsMap, XRefParseException } from "./core_utils.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
 import { isNodeJS } from "../shared/is_node.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { PDFWorkerStream } from "./worker_stream.js";
-import { XRefParseException } from "./core_utils.js";
 
 class WorkerTask {
   constructor(name) {
@@ -263,8 +263,8 @@ class WorkerMessageHandler {
           // There may be a chance that `newPdfManager` is not initialized for
           // the first few runs of `readchunk` block of code. Be sure to send
           // all cached chunks, if any, to chunked_stream via pdf_manager.
-          for (let i = 0; i < cachedChunks.length; i++) {
-            newPdfManager.sendProgressiveData(cachedChunks[i]);
+          for (const chunk of cachedChunks) {
+            newPdfManager.sendProgressiveData(chunk);
           }
 
           cachedChunks = [];
@@ -536,7 +536,18 @@ class WorkerMessageHandler {
 
     handler.on("GetAnnotations", function ({ pageIndex, intent }) {
       return pdfManager.getPage(pageIndex).then(function (page) {
-        return page.getAnnotationsData(intent);
+        const task = new WorkerTask(`GetAnnotations: page ${pageIndex}`);
+        startWorkerTask(task);
+
+        return page.getAnnotationsData(handler, task, intent).then(
+          data => {
+            finishWorkerTask(task);
+            return data;
+          },
+          reason => {
+            finishWorkerTask(task);
+          }
+        );
       });
     });
 
@@ -557,6 +568,10 @@ class WorkerMessageHandler {
       function ({ isPureXfa, numPages, annotationStorage, filename }) {
         pdfManager.requestLoadedStream();
 
+        const newAnnotationsByPage = !isPureXfa
+          ? getNewAnnotationsMap(annotationStorage)
+          : null;
+
         const promises = [
           pdfManager.onLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
@@ -564,6 +579,21 @@ class WorkerMessageHandler {
           pdfManager.ensureDoc("xref"),
           pdfManager.ensureDoc("startXRef"),
         ];
+
+        if (newAnnotationsByPage) {
+          for (const [pageIndex, annotations] of newAnnotationsByPage) {
+            promises.push(
+              pdfManager.getPage(pageIndex).then(page => {
+                const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
+                return page
+                  .saveNewAnnotations(handler, task, annotations)
+                  .finally(function () {
+                    finishWorkerTask(task);
+                  });
+              })
+            );
+          }
+        }
 
         if (isPureXfa) {
           promises.push(pdfManager.serializeXfaData(annotationStorage));
@@ -598,11 +628,7 @@ class WorkerMessageHandler {
               return stream.bytes;
             }
           } else {
-            for (const ref of refs) {
-              newRefs = ref
-                .filter(x => x !== null)
-                .reduce((a, b) => a.concat(b), newRefs);
-            }
+            newRefs = refs.flat(2);
 
             if (newRefs.length === 0) {
               // No new refs so just return the initial bytes

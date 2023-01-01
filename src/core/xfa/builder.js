@@ -182,7 +182,7 @@ class Builder {
     }
     const prefixStack = this._namespacePrefixes.get(prefix);
     if (prefixStack && prefixStack.length > 0) {
-      return prefixStack[prefixStack.length - 1];
+      return prefixStack.at(-1);
     }
 
     warn(`Unknown namespace prefix: ${prefix}.`);

@@ -204,6 +204,10 @@ function* getContainedChildren(node) {
   }
 }
 
+function isRequired(node) {
+  return node.validate && node.validate.nullTest === "error";
+}
+
 function setTabIndex(node) {
   while (node) {
     if (!node.traversal) {
@@ -453,7 +457,7 @@ class Arc extends XFAObject {
   }
 
   [$toHTML]() {
-    const edge = this.edge ? this.edge : new Edge({});
+    const edge = this.edge || new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
     if (this.fill && this.fill.presence === "visible") {
@@ -906,7 +910,7 @@ class Border extends XFAObject {
     if (!this[$extra]) {
       const edges = this.edge.children.slice();
       if (edges.length < 4) {
-        const defaultEdge = edges[edges.length - 1] || new Edge({});
+        const defaultEdge = edges.at(-1) || new Edge({});
         for (let i = edges.length; i < 4; i++) {
           edges.push(defaultEdge);
         }
@@ -946,7 +950,7 @@ class Border extends XFAObject {
     if (this.corner.children.some(node => node.radius !== 0)) {
       const cornerStyles = this.corner.children.map(node => node[$toStyle]());
       if (cornerStyles.length === 2 || cornerStyles.length === 3) {
-        const last = cornerStyles[cornerStyles.length - 1];
+        const last = cornerStyles.at(-1);
         for (let i = cornerStyles.length; i < 4; i++) {
           cornerStyles.push(last);
         }
@@ -1368,11 +1372,17 @@ class CheckButton extends XFAObject {
         xfaOn: exportedValue.on,
         xfaOff: exportedValue.off,
         "aria-label": ariaLabel(field),
+        "aria-required": false,
       },
     };
 
     if (groupId) {
       input.attributes.name = groupId;
+    }
+
+    if (isRequired(field)) {
+      input.attributes["aria-required"] = true;
+      input.attributes.required = true;
     }
 
     return HTMLResult.success({
@@ -1415,7 +1425,7 @@ class ChoiceList extends XFAObject {
     const field = ui[$getParent]();
     const fontSize = (field.font && field.font.size) || 10;
     const optionStyle = {
-      fontSize: `calc(${fontSize}px * var(--zoom-factor))`,
+      fontSize: `calc(${fontSize}px * var(--scale-factor))`,
     };
     const children = [];
 
@@ -1465,7 +1475,13 @@ class ChoiceList extends XFAObject {
       dataId: (field[$data] && field[$data][$uid]) || field[$uid],
       style,
       "aria-label": ariaLabel(field),
+      "aria-required": false,
     };
+
+    if (isRequired(field)) {
+      selectAttributes["aria-required"] = true;
+      selectAttributes.required = true;
+    }
 
     if (this.open === "multiSelect") {
       selectAttributes.multiple = true;
@@ -1704,8 +1720,14 @@ class DateTimeEdit extends XFAObject {
         class: ["xfaTextfield"],
         style,
         "aria-label": ariaLabel(field),
+        "aria-required": false,
       },
     };
+
+    if (isRequired(field)) {
+      html.attributes["aria-required"] = true;
+      html.attributes.required = true;
+    }
 
     return HTMLResult.success({
       name: "label",
@@ -3628,7 +3650,7 @@ class Line extends XFAObject {
 
   [$toHTML]() {
     const parent = this[$getParent]()[$getParent]();
-    const edge = this.edge ? this.edge : new Edge({});
+    const edge = this.edge || new Edge({});
     const edgeStyle = edge[$toStyle]();
     const style = Object.create(null);
     const thickness = edge.presence === "visible" ? edge.thickness : 0;
@@ -3859,8 +3881,14 @@ class NumericEdit extends XFAObject {
         class: ["xfaTextfield"],
         style,
         "aria-label": ariaLabel(field),
+        "aria-required": false,
       },
     };
+
+    if (isRequired(field)) {
+      html.attributes["aria-required"] = true;
+      html.attributes.required = true;
+    }
 
     return HTMLResult.success({
       name: "label",
@@ -5630,7 +5658,7 @@ class Template extends XFAObject {
             // We must stop the contentAreas filling and go to the next page.
             targetPageArea = target;
           } else if (target instanceof ContentArea) {
-            const index = contentAreas.findIndex(e => e === target);
+            const index = contentAreas.indexOf(target);
             if (index !== -1) {
               if (index > currentIndex) {
                 // In the next loop iteration `i` will be incremented, note the
@@ -5643,9 +5671,7 @@ class Template extends XFAObject {
               }
             } else {
               targetPageArea = target[$getParent]();
-              startIndex = targetPageArea.contentArea.children.findIndex(
-                e => e === target
-              );
+              startIndex = targetPageArea.contentArea.children.indexOf(target);
             }
           }
           continue;
@@ -5833,6 +5859,7 @@ class TextEdit extends XFAObject {
           class: ["xfaTextfield"],
           style,
           "aria-label": ariaLabel(field),
+          "aria-required": false,
         },
       };
     } else {
@@ -5845,8 +5872,14 @@ class TextEdit extends XFAObject {
           class: ["xfaTextfield"],
           style,
           "aria-label": ariaLabel(field),
+          "aria-required": false,
         },
       };
+    }
+
+    if (isRequired(field)) {
+      html.attributes["aria-required"] = true;
+      html.attributes.required = true;
     }
 
     return HTMLResult.success({

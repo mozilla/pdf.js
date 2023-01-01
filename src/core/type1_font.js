@@ -219,9 +219,8 @@ class Type1Font {
 
   getCharset() {
     const charset = [".notdef"];
-    const charstrings = this.charstrings;
-    for (let glyphId = 0; glyphId < charstrings.length; glyphId++) {
-      charset.push(charstrings[glyphId].glyphName);
+    for (const { glyphName } of this.charstrings) {
+      charset.push(glyphName);
     }
     return charset;
   }

@@ -15,23 +15,36 @@
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
 @import url(xfa_layer_builder.css);
+@import url(annotation_editor_layer_builder.css);
 
 :root {
   --viewer-container-height: 0;
   --pdfViewer-padding-bottom: 0;
   --page-margin: 1px auto -8px;
   --page-border: 9px solid transparent;
+  --page-border-image: url(images/shadow.png) 9 9 repeat;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
-  --zoom-factor: 1;
+  --scale-factor: 1;
 }
 
 @media screen and (forced-colors: active) {
   :root {
     --pdfViewer-padding-bottom: 9px;
-    --page-margin: 9px auto 0;
-    --page-border: none;
-    --spreadHorizontalWrapped-margin-LR: 4.5px;
+    --page-margin: 8px auto -1px;
+    --page-border: 1px solid CanvasText;
+    --page-border-image: none;
+    --spreadHorizontalWrapped-margin-LR: 3.5px;
   }
+}
+
+[data-main-rotation="90"] {
+  transform: rotate(90deg) translateY(-100%);
+}
+[data-main-rotation="180"] {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+[data-main-rotation="270"] {
+  transform: rotate(270deg) translateX(-100%);
 }
 
 .pdfViewer {
@@ -50,8 +63,8 @@
   position: relative;
   overflow: visible;
   border: var(--page-border);
+  border-image: var(--page-border-image);
   background-clip: content-box;
-  border-image: url(images/shadow.png) 9 9 repeat;
   background-color: rgba(255, 255, 255, 1);
 }
 

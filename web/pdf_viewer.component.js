@@ -35,16 +35,21 @@ import {
   PDFLinkService,
   SimpleLinkService,
 } from "./pdf_link_service.js";
+import {
+  parseQueryString,
+  ProgressBar,
+  ScrollMode,
+  SpreadMode,
+} from "./ui_utils.js";
+import { PDFSinglePageViewer, PDFViewer } from "./pdf_viewer.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue, RenderingStates } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 import { PDFThumbnailViewer } from "./pdf_thumbnail_viewer.js";
-import { PDFSinglePageViewer, PDFViewer } from "./pdf_viewer.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextHighlighter } from "./text_highlighter.js";
 import { TextLayerBuilder } from "./text_layer_builder.js";
-import { parseQueryString, ProgressBar } from "./ui_utils.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 // eslint-disable-next-line no-unused-vars
@@ -73,12 +78,14 @@ export {
   PDFSinglePageViewer,
   PDFViewer,
   ProgressBar,
+  RenderingStates,
+  ScrollMode,
   SimpleLinkService,
+  SpreadMode,
   StructTreeLayerBuilder,
   TextLayerBuilder,
   TextHighlighter,
   XfaLayerBuilder,
-  RenderingStates,
   PDFRenderingQueue,
   PDFThumbnailView,
   PDFThumbnailViewer,

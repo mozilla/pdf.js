@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { assert } from "../../src/shared/util.js";
 import { DocStats } from "../../src/core/core_utils.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
 import { Ref } from "../../src/core/primitives.js";
-import { StringStream } from "../../src/core/stream.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
@@ -79,6 +79,7 @@ class XRefMock {
     this._map = Object.create(null);
     this.stats = new DocStats({ send: () => {} });
     this._newRefNum = null;
+    this.stream = new NullStream();
 
     for (const key in array) {
       const obj = array[key];
@@ -88,7 +89,7 @@ class XRefMock {
 
   getNewRef() {
     if (this._newRefNum === null) {
-      this._newRefNum = Object.keys(this._map).length;
+      this._newRefNum = Object.keys(this._map).length || 1;
     }
     return Ref.get(this._newRefNum++, 0);
   }

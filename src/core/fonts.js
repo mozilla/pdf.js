@@ -433,11 +433,14 @@ function convertCidString(charCode, cid, shouldThrow = false) {
  * font that we build
  * 'charCodeToGlyphId' - maps the new font char codes to glyph ids
  */
-function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId) {
+function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   const newMap = Object.create(null);
+  const toUnicodeExtraMap = new Map();
   const toFontChar = [];
+  const usedGlyphIds = new Set();
   let privateUseAreaIndex = 0;
-  let nextAvailableFontCharCode = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
+  const privateUseOffetStart = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
+  let nextAvailableFontCharCode = privateUseOffetStart;
   let privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
   for (let originalCharCode in charCodeToGlyphId) {
     originalCharCode |= 0;
@@ -461,17 +464,37 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId) {
       glyphId = newGlyphZeroId;
     }
 
+    // Fix for bug 1778484:
+    // The charcodes are moved into a private use area to fix some rendering
+    // issues (https://github.com/mozilla/pdf.js/pull/9340) but when printing
+    // to PDF the generated font will contain wrong chars. We can avoid that by
+    // adding the unicode to the cmap and the print backend will then map the
+    // glyph ids to the correct unicode.
+    let unicode = toUnicode.get(originalCharCode);
+    if (typeof unicode === "string") {
+      unicode = unicode.codePointAt(0);
+    }
+    if (
+      unicode &&
+      unicode < privateUseOffetStart &&
+      !usedGlyphIds.has(glyphId)
+    ) {
+      toUnicodeExtraMap.set(unicode, glyphId);
+      usedGlyphIds.add(glyphId);
+    }
+
     newMap[fontCharCode] = glyphId;
     toFontChar[originalCharCode] = fontCharCode;
   }
   return {
     toFontChar,
     charCodeToGlyphId: newMap,
+    toUnicodeExtraMap,
     nextAvailableFontCharCode,
   };
 }
 
-function getRanges(glyphs, numGlyphs) {
+function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
   // Array.sort() sorts by characters, not numerically, so convert to an
   // array of characters.
   const codes = [];
@@ -481,6 +504,14 @@ function getRanges(glyphs, numGlyphs) {
       continue;
     }
     codes.push({ fontCharCode: charCode | 0, glyphId: glyphs[charCode] });
+  }
+  if (toUnicodeExtraMap) {
+    for (const [unicode, glyphId] of toUnicodeExtraMap) {
+      if (glyphId >= numGlyphs) {
+        continue;
+      }
+      codes.push({ fontCharCode: unicode, glyphId });
+    }
   }
   // Some fonts have zero glyphs and are used only for text selection, but
   // there needs to be at least one to build a valid cmap table.
@@ -513,9 +544,9 @@ function getRanges(glyphs, numGlyphs) {
   return ranges;
 }
 
-function createCmapTable(glyphs, numGlyphs) {
-  const ranges = getRanges(glyphs, numGlyphs);
-  const numTables = ranges[ranges.length - 1][1] > 0xffff ? 2 : 1;
+function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
+  const ranges = getRanges(glyphs, toUnicodeExtraMap, numGlyphs);
+  const numTables = ranges.at(-1)[1] > 0xffff ? 2 : 1;
   let cmap =
     "\x00\x00" + // version
     string16(numTables) + // numTables
@@ -1267,7 +1298,7 @@ class Font {
 
       // Read the table associated data
       const previousPosition = file.pos;
-      file.pos = file.start ? file.start : 0;
+      file.pos = file.start || 0;
       file.skip(offset);
       const data = file.getBytes(length);
       file.pos = previousPosition;
@@ -1405,7 +1436,7 @@ class Font {
         };
       }
       let segment;
-      let start = (file.start ? file.start : 0) + cmap.offset;
+      let start = (file.start || 0) + cmap.offset;
       file.pos = start;
 
       file.skip(2); // version
@@ -1717,7 +1748,7 @@ class Font {
         return;
       }
 
-      file.pos = (file.start ? file.start : 0) + header.offset;
+      file.pos = (file.start || 0) + header.offset;
       file.pos += 4; // version
       file.pos += 2; // ascent
       file.pos += 2; // descent
@@ -2081,7 +2112,7 @@ class Font {
     }
 
     function readPostScriptTable(post, propertiesObj, maxpNumGlyphs) {
-      const start = (font.start ? font.start : 0) + post.offset;
+      const start = (font.start || 0) + post.offset;
       font.pos = start;
 
       const length = post.length,
@@ -2151,7 +2182,7 @@ class Font {
     }
 
     function readNameTable(nameTable) {
-      const start = (font.start ? font.start : 0) + nameTable.offset;
+      const start = (font.start || 0) + nameTable.offset;
       font.pos = start;
 
       const names = [[], []];
@@ -2291,7 +2322,7 @@ class Font {
           // CALL
           if (!inFDEF && !inELSE) {
             // collecting information about which functions are used
-            funcId = stack[stack.length - 1];
+            funcId = stack.at(-1);
             if (isNaN(funcId)) {
               info("TT: CALL empty stack (or invalid entry).");
             } else {
@@ -2374,7 +2405,7 @@ class Font {
         } else if (op === 0x1c) {
           // JMPR
           if (!inFDEF && !inELSE) {
-            const offset = stack[stack.length - 1];
+            const offset = stack.at(-1);
             // only jumping forward to prevent infinite loop
             if (offset > 0) {
               i += offset - 1;
@@ -2914,12 +2945,17 @@ class Font {
       const newMapping = adjustMapping(
         charCodeToGlyphId,
         hasGlyph,
-        glyphZeroId
+        glyphZeroId,
+        this.toUnicode
       );
       this.toFontChar = newMapping.toFontChar;
       tables.cmap = {
         tag: "cmap",
-        data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphsOut),
+        data: createCmapTable(
+          newMapping.charCodeToGlyphId,
+          newMapping.toUnicodeExtraMap,
+          numGlyphsOut
+        ),
       };
 
       if (!tables["OS/2"] || !validateOS2Table(tables["OS/2"], font)) {
@@ -2992,6 +3028,7 @@ class Font {
     const mapping = font.getGlyphMapping(properties);
     let newMapping = null;
     let newCharCodeToGlyphId = mapping;
+    let toUnicodeExtraMap = null;
 
     // When `cssFontInfo` is set, the font is used to render text in the HTML
     // view (e.g. with Xfa) so nothing must be moved in the private use area.
@@ -2999,10 +3036,12 @@ class Font {
       newMapping = adjustMapping(
         mapping,
         font.hasGlyphId.bind(font),
-        glyphZeroId
+        glyphZeroId,
+        this.toUnicode
       );
       this.toFontChar = newMapping.toFontChar;
       newCharCodeToGlyphId = newMapping.charCodeToGlyphId;
+      toUnicodeExtraMap = newMapping.toUnicodeExtraMap;
     }
     const numGlyphs = font.numGlyphs;
 
@@ -3087,7 +3126,10 @@ class Font {
     // OS/2 and Windows Specific metrics
     builder.addTable("OS/2", createOS2Table(properties, newCharCodeToGlyphId));
     // Character to glyphs mapping
-    builder.addTable("cmap", createCmapTable(newCharCodeToGlyphId, numGlyphs));
+    builder.addTable(
+      "cmap",
+      createCmapTable(newCharCodeToGlyphId, toUnicodeExtraMap, numGlyphs)
+    );
     // Font header
     builder.addTable(
       "head",

@@ -204,7 +204,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
         this._setStyles(element, item);
         element.textContent = this._normalizeTextContent(item.title);
 
-        div.appendChild(element);
+        div.append(element);
 
         if (item.items.length > 0) {
           hasAnyNesting = true;
@@ -212,12 +212,12 @@ class PDFOutlineViewer extends BaseTreeViewer {
 
           const itemsDiv = document.createElement("div");
           itemsDiv.className = "treeItems";
-          div.appendChild(itemsDiv);
+          div.append(itemsDiv);
 
           queue.push({ parent: itemsDiv, items: item.items });
         }
 
-        levelData.parent.appendChild(div);
+        levelData.parent.append(div);
         outlineCount++;
       }
     }

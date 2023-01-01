@@ -135,7 +135,7 @@ class PDFLayerViewer extends BaseTreeViewer {
         div.className = "treeItem";
 
         const element = document.createElement("a");
-        div.appendChild(element);
+        div.append(element);
 
         if (typeof groupId === "object") {
           hasAnyNesting = true;
@@ -144,7 +144,7 @@ class PDFLayerViewer extends BaseTreeViewer {
 
           const itemsDiv = document.createElement("div");
           itemsDiv.className = "treeItems";
-          div.appendChild(itemsDiv);
+          div.append(itemsDiv);
 
           queue.push({ parent: itemsDiv, groups: groupId.order });
         } else {
@@ -153,20 +153,17 @@ class PDFLayerViewer extends BaseTreeViewer {
           const input = document.createElement("input");
           this._bindLink(element, { groupId, input });
           input.type = "checkbox";
-          input.id = groupId;
           input.checked = group.visible;
 
           const label = document.createElement("label");
-          label.setAttribute("for", groupId);
           label.textContent = this._normalizeTextContent(group.name);
 
-          element.appendChild(input);
-          element.appendChild(label);
-
+          label.append(input);
+          element.append(label);
           layersCount++;
         }
 
-        levelData.parent.appendChild(div);
+        levelData.parent.append(div);
       }
     }
 

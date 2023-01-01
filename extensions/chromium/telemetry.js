@@ -110,8 +110,7 @@ limitations under the License.
       id = "";
       var buf = new Uint8Array(5);
       crypto.getRandomValues(buf);
-      for (var i = 0; i < buf.length; ++i) {
-        var c = buf[i];
+      for (const c of buf) {
         id += (c >>> 4).toString(16) + (c & 0xf).toString(16);
       }
       localStorage.telemetryDeduplicationId = id;

@@ -68,10 +68,10 @@ const FontInspector = (function FontInspectorClosure() {
       const tmp = document.createElement("button");
       tmp.addEventListener("click", resetSelection);
       tmp.textContent = "Refresh";
-      panel.appendChild(tmp);
+      panel.append(tmp);
 
       fonts = document.createElement("div");
-      panel.appendChild(fonts);
+      panel.append(fonts);
     },
     cleanup() {
       fonts.textContent = "";
@@ -98,11 +98,11 @@ const FontInspector = (function FontInspectorClosure() {
           const tr = document.createElement("tr");
           const td1 = document.createElement("td");
           td1.textContent = entry;
-          tr.appendChild(td1);
+          tr.append(td1);
           const td2 = document.createElement("td");
           td2.textContent = obj[entry].toString();
-          tr.appendChild(td2);
-          moreInfo.appendChild(tr);
+          tr.append(td2);
+          moreInfo.append(tr);
         }
         return moreInfo;
       }
@@ -117,7 +117,7 @@ const FontInspector = (function FontInspectorClosure() {
         download.href = url[1];
       } else if (fontObj.data) {
         download.href = URL.createObjectURL(
-          new Blob([fontObj.data], { type: fontObj.mimeType })
+          new Blob([fontObj.data], { type: fontObj.mimetype })
         );
       }
       download.textContent = "Download";
@@ -134,14 +134,8 @@ const FontInspector = (function FontInspectorClosure() {
       select.addEventListener("click", function () {
         selectFont(fontName, select.checked);
       });
-      font.appendChild(select);
-      font.appendChild(name);
-      font.appendChild(document.createTextNode(" "));
-      font.appendChild(download);
-      font.appendChild(document.createTextNode(" "));
-      font.appendChild(logIt);
-      font.appendChild(moreInfo);
-      fonts.appendChild(font);
+      font.append(select, name, " ", download, " ", logIt, moreInfo);
+      fonts.append(font);
       // Somewhat of a hack, should probably add a hook for when the text layer
       // is done rendering.
       setTimeout(() => {
@@ -173,10 +167,9 @@ const StepperManager = (function StepperManagerClosure() {
       stepperChooser.addEventListener("change", function (event) {
         self.selectStepper(this.value);
       });
-      stepperControls.appendChild(stepperChooser);
+      stepperControls.append(stepperChooser);
       stepperDiv = document.createElement("div");
-      this.panel.appendChild(stepperControls);
-      this.panel.appendChild(stepperDiv);
+      this.panel.append(stepperControls, stepperDiv);
       if (sessionStorage.getItem("pdfjsBreakPoints")) {
         breakPoints = JSON.parse(sessionStorage.getItem("pdfjsBreakPoints"));
       }
@@ -199,11 +192,11 @@ const StepperManager = (function StepperManagerClosure() {
       debug.id = "stepper" + pageIndex;
       debug.hidden = true;
       debug.className = "stepper";
-      stepperDiv.appendChild(debug);
+      stepperDiv.append(debug);
       const b = document.createElement("option");
       b.textContent = "Page " + (pageIndex + 1);
       b.value = pageIndex;
-      stepperChooser.appendChild(b);
+      stepperChooser.append(b);
       const initBreakPoints = breakPoints[pageIndex] || [];
       const stepper = new Stepper(debug, pageIndex, initBreakPoints);
       steppers.push(stepper);
@@ -289,15 +282,17 @@ const Stepper = (function StepperClosure() {
       const panel = this.panel;
       const content = c("div", "c=continue, s=step");
       const table = c("table");
-      content.appendChild(table);
+      content.append(table);
       table.cellSpacing = 0;
       const headerRow = c("tr");
-      table.appendChild(headerRow);
-      headerRow.appendChild(c("th", "Break"));
-      headerRow.appendChild(c("th", "Idx"));
-      headerRow.appendChild(c("th", "fn"));
-      headerRow.appendChild(c("th", "args"));
-      panel.appendChild(content);
+      table.append(headerRow);
+      headerRow.append(
+        c("th", "Break"),
+        c("th", "Idx"),
+        c("th", "fn"),
+        c("th", "args")
+      );
+      panel.append(content);
       this.table = table;
       this.updateOperatorList(operatorList);
     }
@@ -329,7 +324,7 @@ const Stepper = (function StepperClosure() {
         const line = c("tr");
         line.className = "line";
         line.dataset.idx = i;
-        chunk.appendChild(line);
+        chunk.append(line);
         const checked = this.breakPoints.includes(i);
         const args = operatorList.argsArray[i] || [];
 
@@ -341,9 +336,8 @@ const Stepper = (function StepperClosure() {
         cbox.dataset.idx = i;
         cbox.onclick = cboxOnClick;
 
-        breakCell.appendChild(cbox);
-        line.appendChild(breakCell);
-        line.appendChild(c("td", i.toString()));
+        breakCell.append(cbox);
+        line.append(breakCell, c("td", i.toString()));
         const fn = opMap[operatorList.fnArray[i]];
         let decArgs = args;
         if (fn === "showText") {
@@ -353,46 +347,44 @@ const Stepper = (function StepperClosure() {
           const unicodeRow = c("tr");
           for (const glyph of glyphs) {
             if (typeof glyph === "object" && glyph !== null) {
-              charCodeRow.appendChild(c("td", glyph.originalCharCode));
-              fontCharRow.appendChild(c("td", glyph.fontChar));
-              unicodeRow.appendChild(c("td", glyph.unicode));
+              charCodeRow.append(c("td", glyph.originalCharCode));
+              fontCharRow.append(c("td", glyph.fontChar));
+              unicodeRow.append(c("td", glyph.unicode));
             } else {
               // null or number
               const advanceEl = c("td", glyph);
               advanceEl.classList.add("advance");
-              charCodeRow.appendChild(advanceEl);
-              fontCharRow.appendChild(c("td"));
-              unicodeRow.appendChild(c("td"));
+              charCodeRow.append(advanceEl);
+              fontCharRow.append(c("td"));
+              unicodeRow.append(c("td"));
             }
           }
           decArgs = c("td");
           const table = c("table");
           table.classList.add("showText");
-          decArgs.appendChild(table);
-          table.appendChild(charCodeRow);
-          table.appendChild(fontCharRow);
-          table.appendChild(unicodeRow);
+          decArgs.append(table);
+          table.append(charCodeRow, fontCharRow, unicodeRow);
         } else if (fn === "restore") {
           this.indentLevel--;
         }
-        line.appendChild(c("td", " ".repeat(this.indentLevel * 2) + fn));
+        line.append(c("td", " ".repeat(this.indentLevel * 2) + fn));
         if (fn === "save") {
           this.indentLevel++;
         }
 
         if (decArgs instanceof HTMLElement) {
-          line.appendChild(decArgs);
+          line.append(decArgs);
         } else {
-          line.appendChild(c("td", JSON.stringify(simplifyArgs(decArgs))));
+          line.append(c("td", JSON.stringify(simplifyArgs(decArgs))));
         }
       }
       if (operatorsToDisplay < operatorList.fnArray.length) {
         const lastCell = c("td", "...");
         lastCell.colspan = 4;
-        chunk.appendChild(lastCell);
+        chunk.append(lastCell);
       }
       this.operatorListIdx = operatorList.fnArray.length;
-      this.table.appendChild(chunk);
+      this.table.append(chunk);
     }
 
     getNextBreakPoint() {
@@ -485,15 +477,14 @@ const Stats = (function Stats() {
       title.textContent = "Page: " + pageNumber;
       const statsDiv = document.createElement("div");
       statsDiv.textContent = stat.toString();
-      wrapper.appendChild(title);
-      wrapper.appendChild(statsDiv);
+      wrapper.append(title, statsDiv);
       stats.push({ pageNumber, div: wrapper });
       stats.sort(function (a, b) {
         return a.pageNumber - b.pageNumber;
       });
       clear(this.panel);
       for (const entry of stats) {
-        this.panel.appendChild(entry.div);
+        this.panel.append(entry.div);
       }
     },
     cleanup() {
@@ -547,13 +538,13 @@ const PDFBug = (function PDFBugClosure() {
 
       const controls = document.createElement("div");
       controls.setAttribute("class", "controls");
-      ui.appendChild(controls);
+      ui.append(controls);
 
       const panels = document.createElement("div");
       panels.setAttribute("class", "panels");
-      ui.appendChild(panels);
+      ui.append(panels);
 
-      container.appendChild(ui);
+      container.append(ui);
       container.style.right = panelWidth + "px";
 
       // Initialize all the debugging tools.
@@ -565,8 +556,8 @@ const PDFBug = (function PDFBugClosure() {
           event.preventDefault();
           this.selectPanel(tool);
         });
-        controls.appendChild(panelButton);
-        panels.appendChild(panel);
+        controls.append(panelButton);
+        panels.append(panel);
         tool.panel = panel;
         tool.manager = this;
         if (tool.enabled) {
@@ -587,7 +578,7 @@ const PDFBug = (function PDFBugClosure() {
       link.rel = "stylesheet";
       link.href = url.replace(/.js$/, ".css");
 
-      document.head.appendChild(link);
+      document.head.append(link);
     },
     cleanup() {
       for (const tool of this.tools) {

@@ -416,10 +416,10 @@ describe("function", function () {
           "destOffset",
           compiledCode
         );
-        for (let i = 0; i < samples.length; i++) {
-          const out = new Float32Array(samples[i].output.length);
-          fn(samples[i].input, 0, out, 0);
-          expect(Array.prototype.slice.call(out, 0)).toEqual(samples[i].output);
+        for (const { input, output } of samples) {
+          const out = new Float32Array(output.length);
+          fn(input, 0, out, 0);
+          expect(Array.prototype.slice.call(out, 0)).toEqual(output);
         }
       }
     }

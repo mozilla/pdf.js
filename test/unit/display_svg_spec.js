@@ -84,8 +84,8 @@ describe("SVGGraphics", function () {
           let svgImg;
           // A mock to steal the svg:image element from paintInlineImageXObject.
           const elementContainer = {
-            appendChild(element) {
-              svgImg = element;
+            append(...elements) {
+              svgImg = elements.at(-1);
             },
           };
 

@@ -206,7 +206,7 @@ class RadialAxialShading extends BaseShading {
     }
     if (!extendEnd) {
       // Same idea as above in extendStart but for the end.
-      colorStops[colorStops.length - 1][0] -= BaseShading.SMALL_NUMBER;
+      colorStops.at(-1)[0] -= BaseShading.SMALL_NUMBER;
       colorStops.push([1, background]);
     }
 
@@ -501,11 +501,11 @@ class MeshShading extends BaseShading {
             verticesLeft = 3;
             break;
           case 1:
-            ps.push(ps[ps.length - 2], ps[ps.length - 1]);
+            ps.push(ps.at(-2), ps.at(-1));
             verticesLeft = 1;
             break;
           case 2:
-            ps.push(ps[ps.length - 3], ps[ps.length - 1]);
+            ps.push(ps.at(-3), ps.at(-1));
             verticesLeft = 1;
             break;
         }
