@@ -47,6 +47,7 @@ import {
   DOMCMapReaderFactory,
   DOMStandardFontDataFactory,
   isDataScheme,
+  isValidFetchUrl,
   loadScript,
   PageViewport,
   RenderingCancelledException,
@@ -363,8 +364,11 @@ function getDocument(src) {
   }
   if (typeof params.useWorkerFetch !== "boolean") {
     params.useWorkerFetch =
-      params.CMapReaderFactory === DOMCMapReaderFactory &&
-      params.StandardFontDataFactory === DOMStandardFontDataFactory;
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      (params.CMapReaderFactory === DOMCMapReaderFactory &&
+        params.StandardFontDataFactory === DOMStandardFontDataFactory &&
+        isValidFetchUrl(params.cMapUrl, document.baseURI) &&
+        isValidFetchUrl(params.standardFontDataUrl, document.baseURI));
   }
   if (typeof params.isEvalSupported !== "boolean") {
     params.isEvalSupported = true;
