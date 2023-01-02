@@ -2001,6 +2001,9 @@ class PDFViewer {
    * @param {Object|null} [options]
    */
   increaseScale(steps = 1, options = null) {
+    if (!this.pdfDocument) {
+      return;
+    }
     let newScale = this._currentScale;
     do {
       newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
@@ -2019,6 +2022,9 @@ class PDFViewer {
    * @param {Object|null} [options]
    */
   decreaseScale(steps = 1, options = null) {
+    if (!this.pdfDocument) {
+      return;
+    }
     let newScale = this._currentScale;
     do {
       newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
