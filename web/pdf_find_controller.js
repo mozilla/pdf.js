@@ -591,9 +591,13 @@ class PDFFindController {
   }
 
   #calculateRegExpMatch(query, entireWord, pageIndex, pageContent) {
-    const matches = [],
-      matchesLength = [];
-
+    const matches = (this._pageMatches[pageIndex] = []);
+    const matchesLength = (this._pageMatchesLength[pageIndex] = []);
+    if (!query) {
+      // The query can be empty because some chars like diacritics could have
+      // been stripped out.
+      return;
+    }
     const diffs = this._pageDiffs[pageIndex];
     let match;
     while ((match = query.exec(pageContent)) !== null) {
@@ -615,8 +619,6 @@ class PDFFindController {
         matchesLength.push(matchLen);
       }
     }
-    this._pageMatches[pageIndex] = matches;
-    this._pageMatchesLength[pageIndex] = matchesLength;
   }
 
   #convertToRegExpString(query, hasDiacritics) {
@@ -691,7 +693,7 @@ class PDFFindController {
 
   #calculateMatch(pageIndex) {
     let query = this.#query;
-    if (query.length === 0) {
+    if (!query) {
       // Do nothing: the matches should be wiped out already.
       return;
     }
@@ -724,7 +726,7 @@ class PDFFindController {
     }
 
     const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
-    query = new RegExp(query, flags);
+    query = query ? new RegExp(query, flags) : null;
 
     this.#calculateRegExpMatch(query, entireWord, pageIndex, pageContent);
 
@@ -854,7 +856,7 @@ class PDFFindController {
     }
 
     // If there's no query there's no point in searching.
-    if (this.#query === "") {
+    if (!this.#query) {
       this.#updateUIState(FindState.FOUND);
       return;
     }

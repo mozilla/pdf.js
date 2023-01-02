@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
+import { FindState, PDFFindController } from "../../web/pdf_find_controller.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { EventBus } from "../../web/event_utils.js";
 import { getDocument } from "../../src/display/api.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
-import { PDFFindController } from "../../web/pdf_find_controller.js";
 import { SimpleLinkService } from "../../web/pdf_link_service.js";
 
 const tracemonkeyFileName = "tracemonkey.pdf";
@@ -150,6 +150,38 @@ function testSearch({
           );
         }
 
+        resolve();
+      }
+    );
+  });
+}
+
+function testEmptySearch({ eventBus, pdfFindController, state }) {
+  return new Promise(function (resolve) {
+    const eventState = Object.assign(
+      Object.create(null),
+      {
+        source: this,
+        type: "",
+        query: null,
+        caseSensitive: false,
+        entireWord: false,
+        phraseSearch: true,
+        findPrevious: false,
+        matchDiacritics: false,
+      },
+      state
+    );
+    eventBus.dispatch("find", eventState);
+
+    eventBus.on(
+      "updatefindcontrolstate",
+      function onUpdatefindcontrolstate(evt) {
+        if (evt.state !== FindState.NOT_FOUND) {
+          return;
+        }
+        eventBus.off("updatefindcontrolstate", onUpdatefindcontrolstate);
+        expect(evt.matchesCount.total).toBe(0);
         resolve();
       }
     );
@@ -687,6 +719,18 @@ describe("pdf_find_controller", function () {
       },
       pageMatches: [[6]],
       pageMatchesLength: [[5]],
+    });
+  });
+
+  it("performs a search with a single diacritic", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController();
+
+    await testEmptySearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "\u064E",
+      },
     });
   });
 });
