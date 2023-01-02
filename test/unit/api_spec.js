@@ -17,7 +17,6 @@ import {
   AnnotationMode,
   AnnotationType,
   createPromiseCapability,
-  FontType,
   ImageKind,
   InvalidPDFException,
   MissingPDFException,
@@ -25,7 +24,6 @@ import {
   PasswordException,
   PasswordResponses,
   PermissionFlag,
-  StreamType,
   UnknownErrorException,
 } from "../../src/shared/util.js";
 import {
@@ -1846,11 +1844,6 @@ describe("api", function () {
       expect(downloadInfo).toEqual({ length: basicApiFileLength });
     });
 
-    it("gets document stats", async function () {
-      const stats = pdfDocument.stats;
-      expect(stats).toEqual(null);
-    });
-
     it("cleans up document resources", async function () {
       await pdfDocument.cleanup();
 
@@ -2759,24 +2752,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(opList.lastChunk).toEqual(true);
 
       await loadingTask.destroy();
-    });
-
-    it("gets document stats after parsing page", async function () {
-      await page.getOperatorList();
-      const stats = pdfDocument.stats;
-
-      const expectedStreamTypes = {
-        [StreamType.FLATE]: true,
-      };
-      const expectedFontTypes = {
-        [FontType.TYPE1STANDARD]: true,
-        [FontType.CIDFONTTYPE2]: true,
-      };
-
-      expect(stats).toEqual({
-        streamTypes: expectedStreamTypes,
-        fontTypes: expectedFontTypes,
-      });
     });
 
     it("gets page stats after parsing page, without `pdfBug` set", async function () {

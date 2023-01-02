@@ -222,11 +222,13 @@ class Page {
    */
   _onSubStreamError(handler, reason, objId) {
     if (this.evaluatorOptions.ignoreErrors) {
-      // Error(s) when reading one of the /Contents sub-streams -- sending
-      // unsupported feature notification and allow parsing to continue.
-      handler.send("UnsupportedFeature", {
-        featureId: UNSUPPORTED_FEATURES.errorContentSubStream,
-      });
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+        // Error(s) when reading one of the /Contents sub-streams -- sending
+        // unsupported feature notification and allow parsing to continue.
+        handler.send("UnsupportedFeature", {
+          featureId: UNSUPPORTED_FEATURES.errorContentSubStream,
+        });
+      }
       warn(`getContentStream - ignoring sub-stream (${objId}): "${reason}".`);
       return;
     }

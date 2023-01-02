@@ -18,7 +18,6 @@ import {
   bytesToString,
   FormatError,
   info,
-  StreamType,
   warn,
 } from "../shared/util.js";
 import { Cmd, Dict, EOF, isCmd, Name, Ref } from "./primitives.js";
@@ -732,13 +731,11 @@ class Parser {
       warn(`Empty "${name}" stream.`);
       return new NullStream();
     }
-    const xrefStats = this.xref.stats;
 
     try {
       switch (name) {
         case "Fl":
         case "FlateDecode":
-          xrefStats.addStreamType(StreamType.FLATE);
           if (params) {
             return new PredictorStream(
               new FlateStream(stream, maybeLength),
@@ -749,7 +746,6 @@ class Parser {
           return new FlateStream(stream, maybeLength);
         case "LZW":
         case "LZWDecode":
-          xrefStats.addStreamType(StreamType.LZW);
           let earlyChange = 1;
           if (params) {
             if (params.has("EarlyChange")) {
@@ -764,30 +760,23 @@ class Parser {
           return new LZWStream(stream, maybeLength, earlyChange);
         case "DCT":
         case "DCTDecode":
-          xrefStats.addStreamType(StreamType.DCT);
           return new JpegStream(stream, maybeLength, params);
         case "JPX":
         case "JPXDecode":
-          xrefStats.addStreamType(StreamType.JPX);
           return new JpxStream(stream, maybeLength, params);
         case "A85":
         case "ASCII85Decode":
-          xrefStats.addStreamType(StreamType.A85);
           return new Ascii85Stream(stream, maybeLength);
         case "AHx":
         case "ASCIIHexDecode":
-          xrefStats.addStreamType(StreamType.AHX);
           return new AsciiHexStream(stream, maybeLength);
         case "CCF":
         case "CCITTFaxDecode":
-          xrefStats.addStreamType(StreamType.CCF);
           return new CCITTFaxStream(stream, maybeLength, params);
         case "RL":
         case "RunLengthDecode":
-          xrefStats.addStreamType(StreamType.RLX);
           return new RunLengthStream(stream, maybeLength);
         case "JBIG2Decode":
-          xrefStats.addStreamType(StreamType.JBIG);
           return new Jbig2Stream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);

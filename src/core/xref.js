@@ -22,14 +22,13 @@ import {
   warn,
 } from "../shared/util.js";
 import { CIRCULAR_REF, Cmd, Dict, isCmd, Ref, RefSet } from "./primitives.js";
+import { Lexer, Parser } from "./parser.js";
 import {
-  DocStats,
   MissingDataException,
   ParserEOFException,
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { Lexer, Parser } from "./parser.js";
 import { BaseStream } from "./base_stream.js";
 import { CipherTransformFactory } from "./crypto.js";
 
@@ -41,7 +40,6 @@ class XRef {
     this.xrefstms = Object.create(null);
     this._cacheMap = new Map(); // Prepare the XRef cache.
     this._pendingRefs = new RefSet();
-    this.stats = new DocStats(pdfManager.msgHandler);
     this._newPersistentRefNum = null;
     this._newTemporaryRefNum = null;
   }
