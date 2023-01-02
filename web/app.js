@@ -122,6 +122,10 @@ class DefaultExternalServices {
     throw new Error("Not implemented: createScripting");
   }
 
+  static get supportsPinchToZoom() {
+    return shadow(this, "supportsPinchToZoom", true);
+  }
+
   static get supportsIntegratedFind() {
     return shadow(this, "supportsIntegratedFind", false);
   }
@@ -213,10 +217,12 @@ const PDFViewerApplication = {
   _contentLength: null,
   _saveInProgress: false,
   _wheelUnusedTicks: 0,
+  _touchUnusedTicks: 0,
   _PDFBug: null,
   _hasAnnotationEditors: false,
   _title: document.title,
   _printAnnotationStoragePromise: null,
+  _touchInfo: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -651,21 +657,25 @@ const PDFViewerApplication = {
     return this._initializedCapability.promise;
   },
 
-  zoomIn(steps) {
+  zoomIn(steps, scaleFactor) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.increaseScale(steps, {
+    this.pdfViewer.increaseScale({
       drawingDelay: AppOptions.get("defaultZoomDelay"),
+      steps,
+      scaleFactor,
     });
   },
 
-  zoomOut(steps) {
+  zoomOut(steps, scaleFactor) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
-    this.pdfViewer.decreaseScale(steps, {
+    this.pdfViewer.decreaseScale({
       drawingDelay: AppOptions.get("defaultZoomDelay"),
+      steps,
+      scaleFactor,
     });
   },
 
@@ -694,6 +704,10 @@ const PDFViewerApplication = {
 
   get supportsFullscreen() {
     return shadow(this, "supportsFullscreen", document.fullscreenEnabled);
+  },
+
+  get supportsPinchToZoom() {
+    return this.externalServices.supportsPinchToZoom;
   },
 
   get supportsIntegratedFind() {
@@ -1915,6 +1929,12 @@ const PDFViewerApplication = {
     window.addEventListener("touchstart", webViewerTouchStart, {
       passive: false,
     });
+    window.addEventListener("touchmove", webViewerTouchMove, {
+      passive: false,
+    });
+    window.addEventListener("touchend", webViewerTouchEnd, {
+      passive: false,
+    });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
     window.addEventListener("resize", _boundEvents.windowResize);
@@ -1997,6 +2017,12 @@ const PDFViewerApplication = {
     window.removeEventListener("touchstart", webViewerTouchStart, {
       passive: false,
     });
+    window.removeEventListener("touchmove", webViewerTouchMove, {
+      passive: false,
+    });
+    window.removeEventListener("touchend", webViewerTouchEnd, {
+      passive: false,
+    });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
     window.removeEventListener("resize", _boundEvents.windowResize);
@@ -2027,6 +2053,20 @@ const PDFViewerApplication = {
     this._wheelUnusedTicks += ticks;
     const wholeTicks = Math.trunc(this._wheelUnusedTicks);
     this._wheelUnusedTicks -= wholeTicks;
+    return wholeTicks;
+  },
+
+  accumulateTouchTicks(ticks) {
+    // If the scroll direction changed, reset the accumulated touch ticks.
+    if (
+      (this._touchUnusedTicks > 0 && ticks < 0) ||
+      (this._touchUnusedTicks < 0 && ticks > 0)
+    ) {
+      this._touchUnusedTicks = 0;
+    }
+    this._touchUnusedTicks += ticks;
+    const wholeTicks = Math.trunc(this._touchUnusedTicks);
+    this._touchUnusedTicks -= wholeTicks;
     return wholeTicks;
   },
 
@@ -2673,17 +2713,101 @@ function webViewerWheel(evt) {
 }
 
 function webViewerTouchStart(evt) {
-  if (evt.touches.length > 1) {
-    // Disable touch-based zooming, because the entire UI bits gets zoomed and
-    // that doesn't look great. If we do want to have a good touch-based
-    // zooming experience, we need to implement smooth zoom capability (probably
-    // using a CSS transform for faster visual response, followed by async
-    // re-rendering at the final zoom level) and do gesture detection on the
-    // touchmove events to drive it. Or if we want to settle for a less good
-    // experience we can make the touchmove events drive the existing step-zoom
-    // behaviour that the ctrl+mousewheel path takes.
-    evt.preventDefault();
+  if (
+    PDFViewerApplication.pdfViewer.isInPresentationMode ||
+    evt.touches.length < 2
+  ) {
+    return;
   }
+  evt.preventDefault();
+
+  if (evt.touches.length !== 2) {
+    PDFViewerApplication._touchInfo = null;
+    return;
+  }
+
+  const [touch0, touch1] = evt.touches;
+  PDFViewerApplication._touchInfo = {
+    centerX: (touch0.pageX + touch1.pageX) / 2,
+    centerY: (touch0.pageY + touch1.pageY) / 2,
+    distance:
+      Math.hypot(touch0.pageX - touch1.pageX, touch0.pageY - touch1.pageY) || 1,
+  };
+}
+
+function webViewerTouchMove(evt) {
+  if (!PDFViewerApplication._touchInfo || evt.touches.length !== 2) {
+    return;
+  }
+
+  const { pdfViewer, _touchInfo, supportsPinchToZoom } = PDFViewerApplication;
+  const [touch0, touch1] = evt.touches;
+  const { pageX: page0X, pageY: page0Y } = touch0;
+  const { pageX: page1X, pageY: page1Y } = touch1;
+  const distance = Math.hypot(page0X - page1X, page0Y - page1Y) || 1;
+  const { distance: previousDistance } = _touchInfo;
+  const scaleFactor = distance / previousDistance;
+
+  if (supportsPinchToZoom && Math.abs(scaleFactor - 1) <= 1e-2) {
+    // Scale increase/decrease isn't significant enough.
+    return;
+  }
+
+  const { centerX, centerY } = _touchInfo;
+  const diff0X = page0X - centerX;
+  const diff1X = page1X - centerX;
+  const diff0Y = page0Y - centerY;
+  const diff1Y = page1Y - centerY;
+  const dotProduct = diff0X * diff1X + diff0Y * diff1Y;
+  if (dotProduct >= 0) {
+    // The two touches go in almost the same direction.
+    return;
+  }
+
+  evt.preventDefault();
+
+  const previousScale = pdfViewer.currentScale;
+  if (supportsPinchToZoom) {
+    if (scaleFactor < 1) {
+      PDFViewerApplication.zoomOut(null, scaleFactor);
+    } else {
+      PDFViewerApplication.zoomIn(null, scaleFactor);
+    }
+  } else {
+    const PIXELS_PER_LINE_SCALE = 30;
+    const delta = (distance - previousDistance) / PIXELS_PER_LINE_SCALE;
+    const ticks = PDFViewerApplication.accumulateTouchTicks(delta);
+    if (ticks < 0) {
+      PDFViewerApplication.zoomOut(-ticks);
+    } else if (ticks > 0) {
+      PDFViewerApplication.zoomIn(ticks);
+    }
+  }
+
+  const currentScale = pdfViewer.currentScale;
+  if (previousScale !== currentScale) {
+    const scaleCorrectionFactor = currentScale / previousScale - 1;
+    const newCenterX = (_touchInfo.centerX = (page0X + page1X) / 2);
+    const newCenterY = (_touchInfo.centerY = (page0Y + page1Y) / 2);
+    _touchInfo.distance = distance;
+
+    const [top, left] = pdfViewer.containerTopLeft;
+    const dx = newCenterX - left;
+    const dy = newCenterY - top;
+    pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
+    pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
+  }
+}
+
+function webViewerTouchEnd(evt) {
+  if (!PDFViewerApplication._touchInfo) {
+    return;
+  }
+
+  evt.preventDefault();
+  PDFViewerApplication._touchInfo = null;
+  PDFViewerApplication.pdfViewer.refresh();
+  PDFViewerApplication._touchUnusedTicks = 0;
 }
 
 function webViewerClick(evt) {
