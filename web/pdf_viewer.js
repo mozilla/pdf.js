@@ -230,20 +230,13 @@ class PDFViewer {
       );
     }
     this.container = options.container;
-    this.#resizeObserver.observe(this.container);
-
     this.viewer = options.viewer || options.container.firstElementChild;
 
     if (
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
-      if (
-        !(
-          this.container?.tagName.toUpperCase() === "DIV" &&
-          this.viewer?.tagName.toUpperCase() === "DIV"
-        )
-      ) {
+      if (this.container?.tagName !== "DIV" || this.viewer?.tagName !== "DIV") {
         throw new Error("Invalid `container` and/or `viewer` option.");
       }
 
@@ -254,6 +247,8 @@ class PDFViewer {
         throw new Error("The `container` must be absolutely positioned.");
       }
     }
+    this.#resizeObserver.observe(this.container);
+
     this.eventBus = options.eventBus;
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
