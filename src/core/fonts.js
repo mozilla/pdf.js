@@ -945,8 +945,7 @@ class Font {
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
     this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
 
-    let type = properties.type;
-    let subtype = properties.subtype;
+    let { type, subtype } = properties;
     this.type = type;
     this.subtype = subtype;
 
@@ -1064,6 +1063,8 @@ class Font {
     this.data = data;
 
     // Transfer some properties again that could change during font conversion
+    this.type = type;
+    this.subtype = subtype;
     this.fontMatrix = properties.fontMatrix;
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
