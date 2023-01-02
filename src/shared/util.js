@@ -236,34 +236,6 @@ const PageActionEventType = {
   C: "PageClose",
 };
 
-const StreamType = {
-  UNKNOWN: "UNKNOWN",
-  FLATE: "FLATE",
-  LZW: "LZW",
-  DCT: "DCT",
-  JPX: "JPX",
-  JBIG: "JBIG",
-  A85: "A85",
-  AHX: "AHX",
-  CCF: "CCF",
-  RLX: "RLX", // PDF short name is 'RL', but telemetry requires three chars.
-};
-
-const FontType = {
-  UNKNOWN: "UNKNOWN",
-  TYPE1: "TYPE1",
-  TYPE1STANDARD: "TYPE1STANDARD",
-  TYPE1C: "TYPE1C",
-  CIDFONTTYPE0: "CIDFONTTYPE0",
-  CIDFONTTYPE0C: "CIDFONTTYPE0C",
-  TRUETYPE: "TRUETYPE",
-  CIDFONTTYPE2: "CIDFONTTYPE2",
-  TYPE3: "TYPE3",
-  OPENTYPE: "OPENTYPE",
-  TYPE0: "TYPE0",
-  MMTYPE1: "MMTYPE1",
-};
-
 const VerbosityLevel = {
   ERRORS: 0,
   WARNINGS: 1,
@@ -374,28 +346,31 @@ const OPS = {
   constructPath: 91,
 };
 
-const UNSUPPORTED_FEATURES = {
-  forms: "forms",
-  javaScript: "javaScript",
-  signatures: "signatures",
-  smask: "smask",
-  shadingPattern: "shadingPattern",
-  errorTilingPattern: "errorTilingPattern",
-  errorExtGState: "errorExtGState",
-  errorXObject: "errorXObject",
-  errorFontLoadType3: "errorFontLoadType3",
-  errorFontState: "errorFontState",
-  errorFontMissing: "errorFontMissing",
-  errorFontTranslate: "errorFontTranslate",
-  errorColorSpace: "errorColorSpace",
-  errorOperatorList: "errorOperatorList",
-  errorFontToUnicode: "errorFontToUnicode",
-  errorFontLoadNative: "errorFontLoadNative",
-  errorFontBuildPath: "errorFontBuildPath",
-  errorFontGetPath: "errorFontGetPath",
-  errorMarkedContent: "errorMarkedContent",
-  errorContentSubStream: "errorContentSubStream",
-};
+const UNSUPPORTED_FEATURES =
+  typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
+    ? {
+        forms: "forms",
+        javaScript: "javaScript",
+        signatures: "signatures",
+        smask: "smask",
+        shadingPattern: "shadingPattern",
+        errorTilingPattern: "errorTilingPattern",
+        errorExtGState: "errorExtGState",
+        errorXObject: "errorXObject",
+        errorFontLoadType3: "errorFontLoadType3",
+        errorFontState: "errorFontState",
+        errorFontMissing: "errorFontMissing",
+        errorFontTranslate: "errorFontTranslate",
+        errorColorSpace: "errorColorSpace",
+        errorOperatorList: "errorOperatorList",
+        errorFontToUnicode: "errorFontToUnicode",
+        errorFontLoadNative: "errorFontLoadNative",
+        errorFontBuildPath: "errorFontBuildPath",
+        errorFontGetPath: "errorFontGetPath",
+        errorMarkedContent: "errorMarkedContent",
+        errorContentSubStream: "errorContentSubStream",
+      }
+    : null;
 
 const PasswordResponses = {
   NEED_PASSWORD: 1,
@@ -1152,7 +1127,6 @@ export {
   DocumentActionEventType,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
-  FontType,
   FormatError,
   getModificationDate,
   getVerbosityLevel,
@@ -1175,7 +1149,6 @@ export {
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
-  StreamType,
   string32,
   stringToBytes,
   stringToPDFString,

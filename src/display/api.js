@@ -609,10 +609,12 @@ class PDFDocumentLoadingTask {
    * @type {function}
    */
   set onUnsupportedFeature(callback) {
-    deprecated(
-      "The PDFDocumentLoadingTask onUnsupportedFeature property will be removed in the future."
-    );
-    this.#onUnsupportedFeature = callback;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      deprecated(
+        "The PDFDocumentLoadingTask onUnsupportedFeature property will be removed in the future."
+      );
+      this.#onUnsupportedFeature = callback;
+    }
   }
 
   /**
@@ -756,27 +758,6 @@ class PDFDocumentProxy {
    */
   get fingerprints() {
     return this._pdfInfo.fingerprints;
-  }
-
-  /**
-   * @typedef {Object} PDFDocumentStats
-   * @property {Object<string, boolean>} streamTypes - Used stream types in the
-   *   document (an item is set to true if specific stream ID was used in the
-   *   document).
-   * @property {Object<string, boolean>} fontTypes - Used font types in the
-   *   document (an item is set to true if specific font ID was used in the
-   *   document).
-   */
-
-  /**
-   * @type {PDFDocumentStats | null} The current statistics about document
-   *   structures, or `null` when no statistics exists.
-   */
-  get stats() {
-    deprecated(
-      "The PDFDocumentProxy stats property will be removed in the future."
-    );
-    return this._transport.stats;
   }
 
   /**
@@ -2296,8 +2277,6 @@ class PDFWorker {
  * @ignore
  */
 class WorkerTransport {
-  #docStats = null;
-
   #pageCache = new Map();
 
   #pagePromises = new Map();
@@ -2339,10 +2318,6 @@ class WorkerTransport {
 
   get annotationStorage() {
     return shadow(this, "annotationStorage", new AnnotationStorage());
-  }
-
-  get stats() {
-    return this.#docStats;
   }
 
   getRenderingIntent(
@@ -2775,22 +2750,12 @@ class WorkerTransport {
       });
     });
 
-    messageHandler.on("DocStats", data => {
-      if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
-      }
-      // Ensure that a `PDFDocumentProxy.stats` call-site cannot accidentally
-      // modify this internal data.
-      this.#docStats = Object.freeze({
-        streamTypes: Object.freeze(data.streamTypes),
-        fontTypes: Object.freeze(data.fontTypes),
-      });
-    });
-
-    messageHandler.on(
-      "UnsupportedFeature",
-      this._onUnsupportedFeature.bind(this)
-    );
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      messageHandler.on(
+        "UnsupportedFeature",
+        this._onUnsupportedFeature.bind(this)
+      );
+    }
 
     messageHandler.on("FetchBuiltInCMap", data => {
       if (this.destroyed) {
@@ -2822,10 +2787,12 @@ class WorkerTransport {
   }
 
   _onUnsupportedFeature({ featureId }) {
-    if (this.destroyed) {
-      return; // Ignore any pending requests if the worker was terminated.
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      if (this.destroyed) {
+        return; // Ignore any pending requests if the worker was terminated.
+      }
+      this.loadingTask.onUnsupportedFeature?.(featureId);
     }
-    this.loadingTask.onUnsupportedFeature?.(featureId);
   }
 
   getData() {
