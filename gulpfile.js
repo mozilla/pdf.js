@@ -1739,28 +1739,43 @@ gulp.task(
   )
 );
 
-gulp.task('mc-build', ['minified'], function(done) {
-  var targetName = getTargetName();
-  gulp.src(BUILD_DIR + 'minified/**')
-    .pipe(gulp.dest(MC_DIR))
-    .on('end', function () {
-      gulp.src(MC_DIR + '**', { base: BUILD_DIR, })
-        .pipe(zip(targetName))
-        .pipe(gulp.dest(BUILD_DIR))
+gulp.task('mc-build',
+  gulp.series(
+    'minified',
+    function packageMcBuild(done) {
+      var targetName = getTargetName();
+      gulp.src(BUILD_DIR + 'minified/**')
+        .pipe(gulp.dest(MC_DIR))
         .on('end', function () {
-          console.log('Built distribution file: ' + targetName);
-          done();
+          gulp.src(MC_DIR + '**', { base: BUILD_DIR, })
+            .pipe(zip(targetName))
+            .pipe(gulp.dest(BUILD_DIR))
+            .on('end', function () {
+              console.log('Built distribution file: ' + targetName);
+              done();
+            });
         });
-    });
-});
+    }
+  )
+);
 
-gulp.task('mc-deploy-snapshot', ['mc-build'], function(done) {
-  mcDeploy(getDeployUrl(), done);
-});
+gulp.task('mc-deploy-snapshot',
+  gulp.series(
+    'mc-build',
+    function deploySnapshot(done) {
+      mcDeploy(getDeployUrl(), done);
+    }
+  )
+);
 
-gulp.task('mc-deploy-release', ['mc-build'], function(done) {
-  mcDeploy(getDeployUrl(true), done);
-});
+gulp.task('mc-deploy-release',
+  gulp.series(
+    'mc-build',
+    function deployRelease(done) {
+      mcDeploy(getDeployUrl(true), done);
+    }
+  )
+);
 
 function mcDeploy(deployUrl, done){
   console.log('### Deploying ' + getTargetName() + ' to ' + deployUrl)
