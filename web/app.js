@@ -2042,31 +2042,14 @@ const PDFViewerApplication = {
     _boundEvents.windowUpdateFromSandbox = null;
   },
 
-  accumulateWheelTicks(ticks) {
-    // If the scroll direction changed, reset the accumulated wheel ticks.
-    if (
-      (this._wheelUnusedTicks > 0 && ticks < 0) ||
-      (this._wheelUnusedTicks < 0 && ticks > 0)
-    ) {
-      this._wheelUnusedTicks = 0;
+  _accumulateTicks(ticks, prop) {
+    // If the direction changed, reset the accumulated ticks.
+    if ((this[prop] > 0 && ticks < 0) || (this[prop] < 0 && ticks > 0)) {
+      this[prop] = 0;
     }
-    this._wheelUnusedTicks += ticks;
-    const wholeTicks = Math.trunc(this._wheelUnusedTicks);
-    this._wheelUnusedTicks -= wholeTicks;
-    return wholeTicks;
-  },
-
-  accumulateTouchTicks(ticks) {
-    // If the scroll direction changed, reset the accumulated touch ticks.
-    if (
-      (this._touchUnusedTicks > 0 && ticks < 0) ||
-      (this._touchUnusedTicks < 0 && ticks > 0)
-    ) {
-      this._touchUnusedTicks = 0;
-    }
-    this._touchUnusedTicks += ticks;
-    const wholeTicks = Math.trunc(this._touchUnusedTicks);
-    this._touchUnusedTicks -= wholeTicks;
+    this[prop] += ticks;
+    const wholeTicks = Math.trunc(this[prop]);
+    this[prop] -= wholeTicks;
     return wholeTicks;
   },
 
@@ -2679,13 +2662,17 @@ function webViewerWheel(evt) {
       } else {
         // If we're getting fractional lines (I can't think of a scenario
         // this might actually happen), be safe and use the accumulator.
-        ticks = PDFViewerApplication.accumulateWheelTicks(delta);
+        ticks = PDFViewerApplication._accumulateTicks(
+          delta,
+          "_wheelUnusedTicks"
+        );
       }
     } else {
       // pixel-based devices
       const PIXELS_PER_LINE_SCALE = 30;
-      ticks = PDFViewerApplication.accumulateWheelTicks(
-        delta / PIXELS_PER_LINE_SCALE
+      ticks = PDFViewerApplication._accumulateTicks(
+        delta / PIXELS_PER_LINE_SCALE,
+        "_wheelUnusedTicks"
       );
     }
 
@@ -2775,8 +2762,10 @@ function webViewerTouchMove(evt) {
     }
   } else {
     const PIXELS_PER_LINE_SCALE = 30;
-    const delta = (distance - previousDistance) / PIXELS_PER_LINE_SCALE;
-    const ticks = PDFViewerApplication.accumulateTouchTicks(delta);
+    const ticks = PDFViewerApplication._accumulateTicks(
+      (distance - previousDistance) / PIXELS_PER_LINE_SCALE,
+      "_touchUnusedTicks"
+    );
     if (ticks < 0) {
       PDFViewerApplication.zoomOut(-ticks);
     } else if (ticks > 0) {
