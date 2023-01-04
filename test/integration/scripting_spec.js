@@ -1753,4 +1753,31 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in autoprint.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("autoprint.pdf", ".endOfContent");
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check if printing is triggered when the document is open", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.waitForFunction(
+            `document.querySelector(".printedPage") !== null`
+          );
+          await page.keyboard.press("Escape");
+        })
+      );
+    });
+  });
 });
