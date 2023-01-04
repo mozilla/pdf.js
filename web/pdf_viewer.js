@@ -1992,42 +1992,80 @@ class PDFViewer {
 
   /**
    * Increase the current zoom level one, or more, times.
-   * @param {number} [steps] - Defaults to zooming once.
    * @param {Object|null} [options]
    */
-  increaseScale(steps = 1, options = null) {
+  increaseScale(options = null) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      typeof options === "number"
+    ) {
+      console.error(
+        "The `increaseScale` method-signature was updated, please use an object instead."
+      );
+      options = { steps: options };
+    }
+
     if (!this.pdfDocument) {
       return;
     }
-    let newScale = this._currentScale;
-    do {
-      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.ceil(newScale * 10) / 10;
-      newScale = Math.min(MAX_SCALE, newScale);
-    } while (--steps > 0 && newScale < MAX_SCALE);
 
     options ||= Object.create(null);
+
+    let newScale = this._currentScale;
+    if (options.scaleFactor > 1) {
+      newScale = Math.min(
+        MAX_SCALE,
+        Math.round(newScale * options.scaleFactor * 100) / 100
+      );
+    } else {
+      let steps = options.steps ?? 1;
+      do {
+        newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
+        newScale = Math.ceil(newScale * 10) / 10;
+        newScale = Math.min(MAX_SCALE, newScale);
+      } while (--steps > 0 && newScale < MAX_SCALE);
+    }
+
     options.noScroll = false;
     this._setScale(newScale, options);
   }
 
   /**
    * Decrease the current zoom level one, or more, times.
-   * @param {number} [steps] - Defaults to zooming once.
    * @param {Object|null} [options]
    */
-  decreaseScale(steps = 1, options = null) {
+  decreaseScale(options = null) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      typeof options === "number"
+    ) {
+      console.error(
+        "The `decreaseScale` method-signature was updated, please use an object instead."
+      );
+      options = { steps: options };
+    }
+
     if (!this.pdfDocument) {
       return;
     }
-    let newScale = this._currentScale;
-    do {
-      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.floor(newScale * 10) / 10;
-      newScale = Math.max(MIN_SCALE, newScale);
-    } while (--steps > 0 && newScale > MIN_SCALE);
 
     options ||= Object.create(null);
+
+    let newScale = this._currentScale;
+    if (options.scaleFactor > 0 && options.scaleFactor < 1) {
+      newScale = Math.max(
+        MIN_SCALE,
+        Math.round(newScale * options.scaleFactor * 100) / 100
+      );
+    } else {
+      let steps = options.steps ?? 1;
+      do {
+        newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
+        newScale = Math.floor(newScale * 10) / 10;
+        newScale = Math.max(MIN_SCALE, newScale);
+      } while (--steps > 0 && newScale > MIN_SCALE);
+    }
+
     options.noScroll = false;
     this._setScale(newScale, options);
   }
