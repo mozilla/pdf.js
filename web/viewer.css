@@ -25,7 +25,7 @@
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
 
-  --main-color: rgba(12, 12, 13, 1);
+  --main-color: hsla(208, 28%, 20%);;
   --body-bg-color: rgba(237, 237, 240, 1);
   --progressBar-percent: 0%;
   --progressBar-end-offset: 0;
@@ -54,7 +54,7 @@
   --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
   --dropdown-btn-border: none;
   --separator-color: rgba(0, 0, 0, 0.3);
-  --field-color: rgba(6, 6, 6, 1);
+  --field-color: var(--main-color);
   --field-bg-color: rgba(255, 255, 255, 1);
   --field-border-color: rgba(187, 187, 188, 1);
   --treeitem-color: rgba(0, 0, 0, 0.8);
@@ -118,6 +118,7 @@
   --dir-factor: -1;
 }
 
+/* mc removed dark scheme for forced consistency
 @media (prefers-color-scheme: dark) {
   :root {
     --main-color: rgba(249, 249, 250, 1);
@@ -158,10 +159,11 @@
 
     /* This image is used in <input> elements, which unfortunately means that
      * the `mask-image` approach used with all of the other images doesn't work
-     * here; hence why we still have two versions of this particular image. */
+     * here; hence why we still have two versions of this particular image. *!
     --loading-icon: url(images/loading-dark.svg);
   }
 }
+*/
 
 @media screen and (forced-colors: active) {
   :root {
