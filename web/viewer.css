@@ -807,7 +807,6 @@ body {
   top: 6px;
   inset-inline-end: 6px;
   pointer-events: none;
-  mask-image: var(--toolbarButton-menuArrow-icon);
 }
 
 .dropdownToolbarButton > select {
@@ -826,6 +825,9 @@ body {
 .dropdownToolbarButton > select:focus-visible {
   background-color: var(--button-hover-color);
   color: var(--toggled-btn-color);
+  background-image: var(--toolbarButton-menuArrow-icon);
+  background-repeat: no-repeat;
+  background-position: center right;
 }
 .dropdownToolbarButton > select > option {
   background: var(--doorhanger-bg-color);
