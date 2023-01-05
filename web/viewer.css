@@ -1087,8 +1087,8 @@ a.secondaryToolbarButton[href="#"] {
   mask-image: var(--secondaryToolbarButton-spreadEven-icon);
 }
 
-#spreadModeButtons .secondaryToolbarButton {
-  padding-left: 12px;
+#spreadModeButtons button::before {
+  background-color: var(--main-color);
 }
 
 #documentProperties::before {
