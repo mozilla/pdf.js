@@ -36,7 +36,6 @@ window.PDFViewerApplicationOptions = AppOptions;
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   require("./firefoxcom.js");
-  require("./firefox_print_service.js");
 }
 
 function getViewerConfiguration() {
@@ -52,7 +51,6 @@ function getViewerConfiguration() {
       submitButton: document.getElementById("passwordSubmit"),
       cancelButton: document.getElementById("passwordCancel"),
     },
-    printContainer: document.getElementById("printContainer"),
     openFileInput:
       typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
         ? document.getElementById("fileInput")
@@ -71,10 +69,7 @@ function webViewerLoad() {
       document.head.append(link);
     }
 
-    Promise.all([
-      import("pdfjs-web/genericcom.js"),
-      import("pdfjs-web/pdf_print_service.js"),
-    ]).then(function ([genericCom, pdfPrintService]) {
+    import("pdfjs-web/genericcom.js").then(function (genericCom) {
       PDFViewerApplication.run(config);
     });
   } else {
