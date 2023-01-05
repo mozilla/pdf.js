@@ -246,61 +246,6 @@ dialog :link {
   margin: 0;
 }
 
-#printContainer {
-  display: none;
-}
-
-@media print {
-  body {
-    background: rgba(0, 0, 0, 0) none;
-  }
-  body[data-pdfjsprinting] #outerContainer {
-    display: none;
-  }
-  body[data-pdfjsprinting] #printContainer {
-    display: block;
-  }
-  #printContainer {
-    height: 100%;
-  }
-  /* wrapper around (scaled) print canvas elements */
-  #printContainer > .printedPage {
-    page-break-after: always;
-    page-break-inside: avoid;
-
-    /* The wrapper always cover the whole page. */
-    height: 100%;
-    width: 100%;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  #printContainer > .xfaPrintedPage .xfaPage {
-    position: absolute;
-  }
-
-  #printContainer > .xfaPrintedPage {
-    page-break-after: always;
-    page-break-inside: avoid;
-    width: 100%;
-    height: 100%;
-    position: relative;
-  }
-
-  #printContainer > .printedPage canvas,
-  #printContainer > .printedPage img {
-    /* The intrinsic canvas / image size will make sure that we fit the page. */
-    max-width: 100%;
-    max-height: 100%;
-
-    direction: ltr;
-    display: block;
-  }
-}
-
 .visibleLargeView,
 .visibleMediumView {
   display: none;
