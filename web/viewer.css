@@ -925,7 +925,7 @@ body {
   content: "\f067";
 }
 
-#presentationMode::before {
+#presentationMode::before, #secondaryPresentationMode::before {
   font: 14px FontAwesome;
   content: "\f0b2";
 }

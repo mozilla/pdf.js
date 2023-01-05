@@ -44,6 +44,8 @@ const PAGE_NUMBER_LOADING_INDICATOR = "visiblePageIsLoading";
  * @property {HTMLButtonElement} openFile - Button to open a new document.
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
+ * @property {HTMLButtonElement} presentationModeButton - Button to switch to
+ * presentation mode.
  * @property {HTMLButtonElement} download - Button to download the document.
  */
 
@@ -66,6 +68,7 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      { element: options.presentationModeButton, eventName: "presentationmode" },
       {
         element: options.editorFreeTextButton,
         eventName: "switchannotationeditormode",

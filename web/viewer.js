@@ -91,6 +91,7 @@ function getViewerConfiguration() {
           ? document.getElementById("openFile")
           : null,
       print: document.getElementById("print"),
+      presentationModeButton: document.getElementById("presentationMode"),
       editorFreeTextButton: document.getElementById("editorFreeText"),
       editorFreeTextParamsToolbar: document.getElementById(
         "editorFreeTextParamsToolbar"
@@ -102,7 +103,7 @@ function getViewerConfiguration() {
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
       toggleButton: document.getElementById("secondaryToolbarToggle"),
-      presentationModeButton: document.getElementById("presentationMode"),
+      presentationModeButton: document.getElementById("secondaryPresentationMode"),
       openFileButton:
         typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
           ? document.getElementById("secondaryOpenFile")
