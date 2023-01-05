@@ -967,7 +967,8 @@ a.secondaryToolbarButton[href="#"] {
 }
 
 #viewBookmark::before {
-  mask-image: var(--toolbarButton-bookmark-icon);
+  font: 14px FontAwesome;
+  content: "\f02e";
 }
 
 #viewThumbnail::before {
