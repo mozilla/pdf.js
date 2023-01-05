@@ -1046,7 +1046,7 @@ a.secondaryToolbarButton[href="#"] {
 
 #pageRotateCw::before {
   font: 14px FontAwesome;
-  content: "\f0e1";
+  content: "\f01e";
 }
 
 #cursorSelectTool::before {
