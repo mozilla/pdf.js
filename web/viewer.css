@@ -22,7 +22,7 @@
   --sidebar-transition-timing-function: ease;
   --scale-select-width: 140px;
 
-  --toolbar-icon-opacity: 0.7;
+  --toolbar-icon-opacity: 1;
   --doorhanger-icon-opacity: 0.9;
 
   --main-color: hsla(208, 28%, 20%);;
@@ -34,8 +34,9 @@
   --progressBar-indeterminate-blend-color: rgba(116, 177, 239, 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
-  --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
-  --toolbar-icon-hover-bg-color: rgba(0, 0, 0, 1);
+  --toolbar-icon-bg-color: rgba(255, 255, 255, 1); /*TODO: consider 0 opacity*/
+  --toolbar-icon-hover-bg-color: rgba(0, 0, 0, 0);
+  --original-toolbar-icon-hover-bg-color: rgba(255, 255, 255, 1);
 
   --sidebar-narrow-bg-color: rgba(237, 237, 240, 0.9);
   --sidebar-toolbar-bg-color: rgba(245, 246, 247, 1);
@@ -48,11 +49,11 @@
     0 1px 0 rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.1);
   --toolbarSidebar-border-bottom: none;
   --button-hover-color: rgba(221, 222, 223, 1);
-  --toggled-btn-color: rgba(0, 0, 0, 1);
+  --toggled-btn-color: rgba(255, 255, 255, .1);
   --toggled-btn-bg-color: rgba(0, 0, 0, 0.3);
   --toggled-hover-active-btn-color: rgba(0, 0, 0, 0.4);
-  --dropdown-btn-bg-color: rgba(215, 215, 219, 1);
-  --dropdown-btn-border: none;
+  --dropdown-btn-bg-color: rgba(255, 255, 255, 1);
+  --dropdown-btn-border: 1px solid var(--field-border-color);
   --separator-color: rgba(0, 0, 0, 0.3);
   --field-color: var(--main-color);
   --field-bg-color: rgba(255, 255, 255, 1);
@@ -811,8 +812,8 @@ body {
 
 .dropdownToolbarButton > select {
   appearance: none;
-  width: inherit;
-  height: 28px;
+  width:calc(var(--scale-select-width) - 6px);
+  height: 24px;
   font-size: 12px;
   color: var(--main-color);
   margin: 0;
@@ -847,11 +848,15 @@ body {
   display: inline-block;
   width: 16px;
   height: 16px;
-
   content: "";
-  background-color: var(--toolbar-icon-bg-color);
+  /*background-color: var(--toolbar-icon-bg-color);*/ /*TODO: do we need this?*/
   mask-size: cover;
 }
+
+/*.dropdownToolbarButton::after {*/
+/*  background-color: var(--original-toolbar-icon-hover-bg-color);!*TODO: choose a color and make a more specific selector, this is for the dropdown arrow*!*/
+/*}*/
+
 
 .dropdownToolbarButton:hover::after,
 .dropdownToolbarButton:focus-visible::after,
@@ -880,40 +885,49 @@ body {
 
 #sidebarToggle::before {
   mask-image: var(--toolbarButton-sidebarToggle-icon);
+  background-color: rgba(1, 1, 1, 1); /*TODO: consider 0 opacity*/
   transform: scaleX(var(--dir-factor));
 }
 
 #secondaryToolbarToggle::before {
-  mask-image: var(--toolbarButton-secondaryToolbarToggle-icon);
+  font: 14px FontAwesome;
+  content: "\f101";
   transform: scaleX(var(--dir-factor));
 }
 
 #findPrevious::before {
-  mask-image: var(--findbarButton-previous-icon);
+  font: 14px FontAwesome;
+  content: "\f104";
 }
 
 #findNext::before {
-  mask-image: var(--findbarButton-next-icon);
+  font: 14px FontAwesome;
+  content: "\f105";
 }
 
 #previous::before {
-  mask-image: var(--toolbarButton-pageUp-icon);
+  font: 14px FontAwesome;
+  content: "\f062";
 }
 
 #next::before {
-  mask-image: var(--toolbarButton-pageDown-icon);
+  font: 14px FontAwesome;
+  content: "\f063";
 }
 
 #zoomOut::before {
-  mask-image: var(--toolbarButton-zoomOut-icon);
+  font: 14px FontAwesome;
+  content: "\f068";
 }
 
 #zoomIn::before {
-  mask-image: var(--toolbarButton-zoomIn-icon);
+  font: 14px FontAwesome;
+  content: "\f067";
 }
 
 #presentationMode::before {
-  mask-image: var(--toolbarButton-presentationMode-icon);
+  font: 14px FontAwesome;
+  content: "\f0b2";
 }
 
 #editorFreeText::before {
@@ -926,7 +940,8 @@ body {
 
 #print::before,
 #secondaryPrint::before {
-  mask-image: var(--toolbarButton-print-icon);
+  font: 14px FontAwesome;
+  content: "\f02f";
 }
 
 /*#if GENERIC*/
@@ -978,7 +993,8 @@ a.secondaryToolbarButton[href="#"] {
 }
 
 #viewFind::before {
-  mask-image: var(--toolbarButton-search-icon);
+  font: 14px FontAwesome;
+  content: "\f002";
 }
 
 .pdfSidebarNotification::after {
@@ -1014,27 +1030,33 @@ a.secondaryToolbarButton[href="#"] {
 }
 
 #firstPage::before {
-  mask-image: var(--secondaryToolbarButton-firstPage-icon);
+  font: 14px FontAwesome;
+  content: "\f062";
 }
 
 #lastPage::before {
-  mask-image: var(--secondaryToolbarButton-lastPage-icon);
+  font: 14px FontAwesome;
+  content: "\f063";
 }
 
 #pageRotateCcw::before {
-  mask-image: var(--secondaryToolbarButton-rotateCcw-icon);
+  font: 14px FontAwesome;
+  content: "\f0e2";
 }
 
 #pageRotateCw::before {
-  mask-image: var(--secondaryToolbarButton-rotateCw-icon);
+  font: 14px FontAwesome;
+  content: "\f0e1";
 }
 
 #cursorSelectTool::before {
-  mask-image: var(--secondaryToolbarButton-selectTool-icon);
+  font: 14px FontAwesome;
+  content: "\f245";
 }
 
 #cursorHandTool::before {
-  mask-image: var(--secondaryToolbarButton-handTool-icon);
+  font: 14px FontAwesome;
+  content: "\f256";
 }
 
 #scrollPage::before {
@@ -1042,15 +1064,18 @@ a.secondaryToolbarButton[href="#"] {
 }
 
 #scrollVertical::before {
-  mask-image: var(--secondaryToolbarButton-scrollVertical-icon);
+  font: 14px FontAwesome;
+  content: "\f07d";
 }
 
 #scrollHorizontal::before {
-  mask-image: var(--secondaryToolbarButton-scrollHorizontal-icon);
+  font: 14px FontAwesome;
+  content: "\f07e";
 }
 
 #scrollWrapped::before {
-  mask-image: var(--secondaryToolbarButton-scrollWrapped-icon);
+  font: 14px FontAwesome;
+  content: "\f00a";
 }
 
 #spreadNone::before {
@@ -1519,7 +1544,7 @@ dialog :link {
 
 .mcToolbar {
   background-image: none !important;
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 1) !important;
 }
 
 .mcToolbar * button {
@@ -1528,7 +1553,7 @@ dialog :link {
 
 .mcToolbar option{
   background-image: none !important;
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 1) !important;
   color: hsl(208, 28%, 20%)
 }
 
