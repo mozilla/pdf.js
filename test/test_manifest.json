@@ -386,6 +386,13 @@
       "lastPage": 4,
       "type": "eq"
     },
+    {  "id": "issue15893_reduced",
+       "file": "pdfs/issue15893_reduced.pdf",
+       "md5": "cf889b927f9f53d164622a99378bf39d",
+       "rounds": 1,
+       "type": "eq",
+       "password": "test"
+    },
     {  "id": "bug1727053",
        "file": "pdfs/bug1727053.pdf",
        "md5": "8ed1e52da64000f9fdcb8b732f5a58f8",
