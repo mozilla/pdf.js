@@ -51,7 +51,10 @@ class MockLinkService extends SimpleLinkService {
   }
 }
 
-async function initPdfFindController(filename) {
+async function initPdfFindController(
+  filename,
+  updateMatchesCountOnProgress = true
+) {
   const loadingTask = getDocument(
     buildGetDocumentParams(filename || tracemonkeyFileName, {
       ...CMAP_PARAMS,
@@ -67,6 +70,7 @@ async function initPdfFindController(filename) {
   const pdfFindController = new PDFFindController({
     linkService,
     eventBus,
+    updateMatchesCountOnProgress,
   });
   pdfFindController.setDocument(pdfDocument); // Enable searching.
 
@@ -81,6 +85,7 @@ function testSearch({
   selectedMatch,
   pageMatches = null,
   pageMatchesLength = null,
+  countUpdate = null,
 }) {
   return new Promise(function (resolve) {
     const eventState = Object.assign(
@@ -125,6 +130,9 @@ function testSearch({
     eventBus.on(
       "updatefindmatchescount",
       function onUpdateFindMatchesCount(evt) {
+        if (countUpdate) {
+          countUpdate[0] += 1;
+        }
         if (pdfFindController.pageMatches.length !== totalPages) {
           return;
         }
@@ -191,6 +199,7 @@ function testEmptySearch({ eventBus, pdfFindController, state }) {
 describe("pdf_find_controller", function () {
   it("performs a normal search", async function () {
     const { eventBus, pdfFindController } = await initPdfFindController();
+    const countUpdate = [0];
 
     await testSearch({
       eventBus,
@@ -203,7 +212,34 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
+      countUpdate,
     });
+
+    expect(countUpdate[0]).toBe(9);
+  });
+
+  it("performs a normal search but the total counts is only updated one time", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      null,
+      false
+    );
+    const countUpdate = [0];
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "Dynamic",
+      },
+      matchesPerPage: [11, 5, 0, 3, 0, 0, 0, 1, 1, 1, 0, 3, 4, 4],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      countUpdate,
+    });
+
+    expect(countUpdate[0]).toBe(1);
   });
 
   it("performs a normal search and finds the previous result", async function () {
