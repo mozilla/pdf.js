@@ -581,16 +581,11 @@ class XRef {
       this.startXRefQueue.push(xrefStm);
       this.readXRef(/* recoveryMode */ true);
     }
-    // finding main trailer
-    let trailerDict, trailerError;
-    for (const trailer of [...trailers, "generationFallback", ...trailers]) {
-      if (trailer === "generationFallback") {
-        if (!trailerError) {
-          break; // No need to fallback if there were no validation errors.
-        }
-        this._generationFallback = true;
-        continue;
-      }
+
+    const trailerDicts = [];
+    // Pre-parsing the trailers to check if the document is possibly encrypted.
+    let isEncrypted = false;
+    for (const trailer of trailers) {
       stream.pos = trailer;
       const parser = new Parser({
         lexer: new Lexer(stream),
@@ -605,6 +600,23 @@ class XRef {
       // read the trailer dictionary
       const dict = parser.getObj();
       if (!(dict instanceof Dict)) {
+        continue;
+      }
+      trailerDicts.push(dict);
+
+      if (dict.has("Encrypt")) {
+        isEncrypted = true;
+      }
+    }
+
+    // finding main trailer
+    let trailerDict, trailerError;
+    for (const dict of [...trailerDicts, "genFallback", ...trailerDicts]) {
+      if (dict === "genFallback") {
+        if (!trailerError) {
+          break; // No need to fallback if there were no validation errors.
+        }
+        this._generationFallback = true;
         continue;
       }
       // Do some basic validation of the trailer/root dictionary candidate.
@@ -628,7 +640,11 @@ class XRef {
         continue;
       }
       // taking the first one with 'ID'
-      if (validPagesDict && dict.has("ID")) {
+      if (
+        validPagesDict &&
+        (!isEncrypted || dict.has("Encrypt")) &&
+        dict.has("ID")
+      ) {
         return dict;
       }
       // The current dictionary is a candidate, but continue searching.
