@@ -82,32 +82,37 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS) {
   DefaultStandardFontDataFactory = NodeStandardFontDataFactory;
 }
 
-/**
- * @typedef {function} IPDFStreamFactory
- * @param {DocumentInitParameters} params - The document initialization
- *   parameters. The "url" key is always present.
- * @returns {Promise} A promise, which is resolved with an instance of
- *   {IPDFStream}.
- * @ignore
- */
-
-/**
- * @type {IPDFStreamFactory}
- * @private
- */
 let createPDFNetworkStream;
+if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+  const streamsPromise = Promise.all([
+    import("./network.js"),
+    import("./fetch_stream.js"),
+  ]);
 
-/**
- * Sets the function that instantiates an {IPDFStream} as an alternative PDF
- * data transport.
- *
- * @param {IPDFStreamFactory} pdfNetworkStreamFactory - The factory function
- *   that takes document initialization parameters (including a "url") and
- *   returns a promise which is resolved with an instance of {IPDFStream}.
- * @ignore
- */
-function setPDFNetworkStreamFactory(pdfNetworkStreamFactory) {
-  createPDFNetworkStream = pdfNetworkStreamFactory;
+  createPDFNetworkStream = async params => {
+    const [{ PDFNetworkStream }, { PDFFetchStream }] = await streamsPromise;
+
+    return isValidFetchUrl(params.url)
+      ? new PDFFetchStream(params)
+      : new PDFNetworkStream(params);
+  };
+} else if (PDFJSDev.test("GENERIC || CHROME")) {
+  if (PDFJSDev.test("GENERIC") && isNodeJS) {
+    const { PDFNodeStream } = require("./node_stream.js");
+
+    createPDFNetworkStream = params => {
+      return new PDFNodeStream(params);
+    };
+  } else {
+    const { PDFNetworkStream } = require("./network.js");
+    const { PDFFetchStream } = require("./fetch_stream.js");
+
+    createPDFNetworkStream = params => {
+      return isValidFetchUrl(params.url)
+        ? new PDFFetchStream(params)
+        : new PDFNetworkStream(params);
+    };
+  }
 }
 
 /**
@@ -442,6 +447,9 @@ function getDocument(src) {
             rangeTransport
           );
         } else if (!params.data) {
+          if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+            throw new Error("Not implemented: createPDFNetworkStream");
+          }
           networkStream = createPDFNetworkStream({
             url: params.url,
             length: params.length,
@@ -3353,6 +3361,5 @@ export {
   PDFWorker,
   PDFWorkerUtil,
   RenderTask,
-  setPDFNetworkStreamFactory,
   version,
 };
