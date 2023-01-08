@@ -23,6 +23,7 @@ import {
   isWhiteSpace,
   log2,
   parseXFAPath,
+  recoverJsURL,
   stringToUTF16HexString,
   stringToUTF16String,
   toRomanNumerals,
@@ -207,6 +208,39 @@ describe("core_utils", function () {
         { name: "FOO", pos: 123 },
         { name: "BAR", pos: 456 },
       ]);
+    });
+  });
+
+  describe("recoverJsURL", function () {
+    it("should get valid URLs without `newWindow` property", function () {
+      const inputs = [
+        "window.open('https://test.local')",
+        "window.open('https://test.local', true)",
+        "app.launchURL('https://test.local')",
+        "app.launchURL('https://test.local', false)",
+        "xfa.host.gotoURL('https://test.local')",
+        "xfa.host.gotoURL('https://test.local', true)",
+      ];
+
+      for (const input of inputs) {
+        expect(recoverJsURL(input)).toEqual({
+          url: "https://test.local",
+          newWindow: false,
+        });
+      }
+    });
+
+    it("should get valid URLs with `newWindow` property", function () {
+      const input = "app.launchURL('https://test.local', true)";
+      expect(recoverJsURL(input)).toEqual({
+        url: "https://test.local",
+        newWindow: true,
+      });
+    });
+
+    it("should not get invalid URLs", function () {
+      const input = "navigateToUrl('https://test.local')";
+      expect(recoverJsURL(input)).toBeNull();
     });
   });
 
