@@ -22,6 +22,7 @@ import {
   isAscii,
   isWhiteSpace,
   log2,
+  numberToString,
   parseXFAPath,
   recoverJsURL,
   stringToUTF16HexString,
@@ -179,6 +180,21 @@ describe("core_utils", function () {
       expect(log2(2)).toEqual(1);
       expect(log2(3)).toEqual(2);
       expect(log2(3.14)).toEqual(2);
+    });
+  });
+
+  describe("numberToString", function () {
+    it("should stringify integers", function () {
+      expect(numberToString(1)).toEqual("1");
+      expect(numberToString(0)).toEqual("0");
+      expect(numberToString(-1)).toEqual("-1");
+    });
+
+    it("should stringify floats", function () {
+      expect(numberToString(1.0)).toEqual("1");
+      expect(numberToString(1.2)).toEqual("1.2");
+      expect(numberToString(1.23)).toEqual("1.23");
+      expect(numberToString(1.234)).toEqual("1.23");
     });
   });
 
