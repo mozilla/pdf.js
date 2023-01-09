@@ -223,6 +223,7 @@ const PDFViewerApplication = {
   _title: document.title,
   _printAnnotationStoragePromise: null,
   _touchInfo: null,
+  _isCtrlKeyDown: false,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -1942,6 +1943,7 @@ const PDFViewerApplication = {
     });
     window.addEventListener("click", webViewerClick);
     window.addEventListener("keydown", webViewerKeyDown);
+    window.addEventListener("keyup", webViewerKeyUp);
     window.addEventListener("resize", _boundEvents.windowResize);
     window.addEventListener("hashchange", _boundEvents.windowHashChange);
     window.addEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2030,6 +2032,7 @@ const PDFViewerApplication = {
     });
     window.removeEventListener("click", webViewerClick);
     window.removeEventListener("keydown", webViewerKeyDown);
+    window.removeEventListener("keyup", webViewerKeyUp);
     window.removeEventListener("resize", _boundEvents.windowResize);
     window.removeEventListener("hashchange", _boundEvents.windowHashChange);
     window.removeEventListener("beforeprint", _boundEvents.windowBeforePrint);
@@ -2635,7 +2638,14 @@ function webViewerWheel(evt) {
     return;
   }
 
+  // Pinch-to-zoom on a trackpad maps to a wheel event with ctrlKey set to true
+  // https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent#browser_compatibility
+  // Hence if ctrlKey is true but ctrl key hasn't been pressed then we can
+  // infer that we have a pinch-to-zoom.
+  const isPinchToZoom = evt.ctrlKey && !PDFViewerApplication._isCtrlKeyDown;
+
   if (
+    isPinchToZoom ||
     (evt.ctrlKey && supportedMouseWheelZoomModifierKeys.ctrlKey) ||
     (evt.metaKey && supportedMouseWheelZoomModifierKeys.metaKey)
   ) {
@@ -2818,7 +2828,16 @@ function webViewerClick(evt) {
   }
 }
 
+function webViewerKeyUp(evt) {
+  // evt.ctrlKey is false hence we use evt.key.
+  if (evt.key === "Control") {
+    PDFViewerApplication._isCtrlKeyDown = false;
+  }
+}
+
 function webViewerKeyDown(evt) {
+  PDFViewerApplication._isCtrlKeyDown = evt.key === "Control";
+
   if (PDFViewerApplication.overlayManager.active) {
     return;
   }
