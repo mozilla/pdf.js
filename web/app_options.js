@@ -270,6 +270,11 @@ const defaultOptions = {
         : "../web/standard_fonts/",
     kind: OptionKind.API,
   },
+  transferPdfData: {
+    /** @type {boolean} */
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL"),
+    kind: OptionKind.API,
+  },
   verbosity: {
     /** @type {number} */
     value: 1,
