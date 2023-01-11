@@ -17,6 +17,7 @@ import {
   AbortException,
   assert,
   createPromiseCapability,
+  warn,
 } from "../shared/util.js";
 import {
   createResponseStatusError,
@@ -52,6 +53,17 @@ function createHeaders(httpHeaders) {
     headers.append(property, value);
   }
   return headers;
+}
+
+function getArrayBuffer(val) {
+  if (val instanceof Uint8Array) {
+    return val.buffer;
+  }
+  if (val instanceof ArrayBuffer) {
+    return val;
+  }
+  warn(`getArrayBuffer - unexpected data format: ${val}`);
+  return new Uint8Array(val).buffer;
 }
 
 /** @implements {IPDFStream} */
@@ -195,8 +207,7 @@ class PDFFetchStreamReader {
       total: this._contentLength,
     });
 
-    const buffer = new Uint8Array(value).buffer;
-    return { value: buffer, done: false };
+    return { value: getArrayBuffer(value), done: false };
   }
 
   cancel(reason) {
@@ -254,8 +265,7 @@ class PDFFetchStreamRangeReader {
     this._loaded += value.byteLength;
     this.onProgress?.({ loaded: this._loaded });
 
-    const buffer = new Uint8Array(value).buffer;
-    return { value: buffer, done: false };
+    return { value: getArrayBuffer(value), done: false };
   }
 
   cancel(reason) {
