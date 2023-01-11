@@ -146,9 +146,6 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  *   cross-site Access-Control requests should be made using credentials such
  *   as cookies or authorization headers. The default is `false`.
  * @property {string} [password] - For decrypting password-protected PDFs.
- * @property {TypedArray} [initialData] - A typed array with the first portion
- *   or all of the pdf data. Used by the extension since some data is already
- *   loaded before the switch to range requests.
  * @property {number} [length] - The PDF file length. It's used for progress
  *   reports and range requests operations.
  * @property {PDFDataRangeTransport} [range] - Allows for using a custom range
@@ -192,6 +189,14 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  * @property {number} [maxImageSize] - The maximum allowed image size in total
  *   pixels, i.e. width * height. Images above this value will not be rendered.
  *   Use -1 for no limit, which is also the default value.
+ * @property {boolean} [transferPdfData] - Determines if we can transfer
+ *   TypedArrays used for loading the PDF file, utilized together with:
+ *    - The `data`-option, for the `getDocument` function.
+ *    - The `initialData`-option, for the `PDFDataRangeTransport` constructor.
+ *    - The `chunk`-option, for the `PDFDataTransportStream._onReceiveData`
+ *      method.
+ *   This will help reduce main-thread memory usage, however it will take
+ *   ownership of the TypedArrays. The default value is `false`.
  * @property {boolean} [isEvalSupported] - Determines if we can evaluate strings
  *   as JavaScript. Primarily used to improve performance of font rendering, and
  *   when parsing PDF functions. The default value is `true`.
@@ -342,6 +347,7 @@ function getDocument(src) {
   params.StandardFontDataFactory =
     params.StandardFontDataFactory || DefaultStandardFontDataFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
+  params.transferPdfData = params.transferPdfData === true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
   params.enableXfa = params.enableXfa === true;
@@ -439,6 +445,7 @@ function getDocument(src) {
             {
               length: params.length,
               initialData: params.initialData,
+              transferPdfData: params.transferPdfData,
               progressiveDone: params.progressiveDone,
               contentDispositionFilename: params.contentDispositionFilename,
               disableRange: params.disableRange,
@@ -513,6 +520,9 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.contentDispositionFilename =
       pdfDataRangeTransport.contentDispositionFilename;
   }
+  const transfers =
+    source.transferPdfData && source.data ? [source.data.buffer] : null;
+
   const workerId = await worker.messageHandler.sendWithPromise(
     "GetDocRequest",
     // Only send the required properties, and *not* the entire `source` object.
@@ -542,14 +552,9 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
           ? source.standardFontDataUrl
           : null,
       },
-    }
+    },
+    transfers
   );
-
-  // Release the TypedArray data, when it exists, since it's no longer needed
-  // on the main-thread *after* it's been sent to the worker-thread.
-  if (source.data) {
-    source.data = null;
-  }
 
   if (worker.destroyed) {
     throw new Error("Worker was destroyed");

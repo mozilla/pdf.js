@@ -193,6 +193,45 @@ describe("api", function () {
       expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
       expect(data[1].loaded / data[1].total).toEqual(1);
 
+      // Check that the TypedArray wasn't transferred.
+      expect(typedArrayPdf.length).toEqual(basicApiFileLength);
+
+      await loadingTask.destroy();
+    });
+
+    it("creates pdf doc from TypedArray, with `transferPdfData` set", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const typedArrayPdf = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + basicApiFileName,
+      });
+
+      // Sanity check to make sure that we fetched the entire PDF file.
+      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
+      expect(typedArrayPdf.length).toEqual(basicApiFileLength);
+
+      const loadingTask = getDocument({
+        data: typedArrayPdf,
+        transferPdfData: true,
+      });
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+
+      const progressReportedCapability = createPromiseCapability();
+      loadingTask.onProgress = function (data) {
+        progressReportedCapability.resolve(data);
+      };
+
+      const data = await Promise.all([
+        loadingTask.promise,
+        progressReportedCapability.promise,
+      ]);
+      expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+      expect(data[1].loaded / data[1].total).toEqual(1);
+
+      // Check that the TypedArray was transferred.
+      expect(typedArrayPdf.length).toEqual(0);
+
       await loadingTask.destroy();
     });
 
@@ -3256,6 +3295,47 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfPage = await pdfDocument.getPage(10);
       expect(pdfPage.rotate).toEqual(0);
       expect(fetches).toBeGreaterThan(2);
+
+      // Check that the TypedArray wasn't transferred.
+      expect(initialData.length).toEqual(initialDataLength);
+
+      await loadingTask.destroy();
+    });
+
+    it("should fetch document info and page using ranges, with `transferPdfData` set", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const initialDataLength = 4000;
+      let fetches = 0;
+
+      const data = await dataPromise;
+      const initialData = new Uint8Array(data.subarray(0, initialDataLength));
+      const transport = new PDFDataRangeTransport(data.length, initialData);
+      transport.requestDataRange = function (begin, end) {
+        fetches++;
+        waitSome(function () {
+          transport.onDataProgress(4000);
+          transport.onDataRange(
+            begin,
+            new Uint8Array(data.subarray(begin, end))
+          );
+        });
+      };
+
+      const loadingTask = getDocument({
+        range: transport,
+        transferPdfData: true,
+      });
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(14);
+
+      const pdfPage = await pdfDocument.getPage(10);
+      expect(pdfPage.rotate).toEqual(0);
+      expect(fetches).toBeGreaterThan(2);
+
+      // Check that the TypedArray was transferred.
+      expect(initialData.length).toEqual(0);
 
       await loadingTask.destroy();
     });
