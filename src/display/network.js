@@ -38,8 +38,7 @@ function getArrayBuffer(xhr) {
   if (typeof data !== "string") {
     return data;
   }
-  const array = stringToBytes(data);
-  return array.buffer;
+  return stringToBytes(data).buffer;
 }
 
 class NetworkManager {
