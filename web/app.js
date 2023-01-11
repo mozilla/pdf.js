@@ -702,10 +702,7 @@ const PDFViewerApplication = {
   },
 
   get supportsPrinting() {
-    return (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("GECKOVIEW")) &&
-      PDFPrintServiceFactory.instance.supportsPrinting
-    );
+    return PDFPrintServiceFactory.instance.supportsPrinting;
   },
 
   get supportsFullscreen() {
