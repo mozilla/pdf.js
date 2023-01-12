@@ -77,9 +77,10 @@ class PDFDataTransportStream {
   }
 
   _onReceiveData({ begin, chunk }) {
-    const buffer = this.#transferPdfData
-      ? chunk.buffer
-      : new Uint8Array(chunk).buffer;
+    const buffer =
+      this.#transferPdfData && chunk?.length >= 0
+        ? chunk.buffer
+        : new Uint8Array(chunk).buffer;
 
     if (begin === undefined) {
       if (this._fullRequestReader) {

@@ -665,7 +665,7 @@ class PDFDocumentLoadingTask {
 class PDFDataRangeTransport {
   /**
    * @param {number} length
-   * @param {Uint8Array} initialData
+   * @param {Uint8Array|null} initialData
    * @param {boolean} [progressiveDone]
    * @param {string} [contentDispositionFilename]
    */
@@ -687,28 +687,48 @@ class PDFDataRangeTransport {
     this._readyCapability = createPromiseCapability();
   }
 
+  /**
+   * @param {function} listener
+   */
   addRangeListener(listener) {
     this._rangeListeners.push(listener);
   }
 
+  /**
+   * @param {function} listener
+   */
   addProgressListener(listener) {
     this._progressListeners.push(listener);
   }
 
+  /**
+   * @param {function} listener
+   */
   addProgressiveReadListener(listener) {
     this._progressiveReadListeners.push(listener);
   }
 
+  /**
+   * @param {function} listener
+   */
   addProgressiveDoneListener(listener) {
     this._progressiveDoneListeners.push(listener);
   }
 
+  /**
+   * @param {number} begin
+   * @param {Uint8Array|null} chunk
+   */
   onDataRange(begin, chunk) {
     for (const listener of this._rangeListeners) {
       listener(begin, chunk);
     }
   }
 
+  /**
+   * @param {number} loaded
+   * @param {number|undefined} total
+   */
   onDataProgress(loaded, total) {
     this._readyCapability.promise.then(() => {
       for (const listener of this._progressListeners) {
@@ -717,6 +737,9 @@ class PDFDataRangeTransport {
     });
   }
 
+  /**
+   * @param {Uint8Array|null} chunk
+   */
   onDataProgressiveRead(chunk) {
     this._readyCapability.promise.then(() => {
       for (const listener of this._progressiveReadListeners) {
@@ -737,6 +760,10 @@ class PDFDataRangeTransport {
     this._readyCapability.resolve();
   }
 
+  /**
+   * @param {number} begin
+   * @param {number} end
+   */
   requestDataRange(begin, end) {
     unreachable("Abstract method PDFDataRangeTransport.requestDataRange");
   }
