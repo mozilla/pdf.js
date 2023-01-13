@@ -281,20 +281,20 @@ function getDocument(src) {
     worker = null;
 
   for (const key in source) {
-    const value = source[key];
+    const val = source[key];
 
     switch (key) {
       case "url":
         if (typeof window !== "undefined") {
           try {
             // The full path is required in the 'url' field.
-            params[key] = new URL(value, window.location).href;
+            params[key] = new URL(val, window.location).href;
             continue;
           } catch (ex) {
             warn(`Cannot create valid URL: "${ex}".`);
           }
-        } else if (typeof value === "string" || value instanceof URL) {
-          params[key] = value.toString(); // Support Node.js environments.
+        } else if (typeof val === "string" || val instanceof URL) {
+          params[key] = val.toString(); // Support Node.js environments.
           continue;
         }
         throw new Error(
@@ -302,10 +302,10 @@ function getDocument(src) {
             "either string or URL-object is expected in the url property."
         );
       case "range":
-        rangeTransport = value;
+        rangeTransport = val;
         continue;
       case "worker":
-        worker = value;
+        worker = val;
         continue;
       case "data":
         // Converting string or array-like data to Uint8Array.
@@ -314,21 +314,18 @@ function getDocument(src) {
           PDFJSDev.test("GENERIC") &&
           isNodeJS &&
           typeof Buffer !== "undefined" && // eslint-disable-line no-undef
-          value instanceof Buffer // eslint-disable-line no-undef
+          val instanceof Buffer // eslint-disable-line no-undef
         ) {
-          params[key] = new Uint8Array(value);
-        } else if (value instanceof Uint8Array) {
+          params[key] = new Uint8Array(val);
+        } else if (val instanceof Uint8Array) {
           break; // Use the data as-is when it's already a Uint8Array.
-        } else if (typeof value === "string") {
-          params[key] = stringToBytes(value);
+        } else if (typeof val === "string") {
+          params[key] = stringToBytes(val);
         } else if (
-          typeof value === "object" &&
-          value !== null &&
-          !isNaN(value.length)
+          (typeof val === "object" && val !== null && !isNaN(val.length)) ||
+          isArrayBuffer(val)
         ) {
-          params[key] = new Uint8Array(value);
-        } else if (isArrayBuffer(value)) {
-          params[key] = new Uint8Array(value);
+          params[key] = new Uint8Array(val);
         } else {
           throw new Error(
             "Invalid PDF binary data: either TypedArray, " +
@@ -337,7 +334,7 @@ function getDocument(src) {
         }
         continue;
     }
-    params[key] = value;
+    params[key] = val;
   }
 
   params.CMapReaderFactory =
