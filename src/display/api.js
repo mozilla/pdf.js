@@ -139,8 +139,12 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  * @typedef {Object} DocumentInitParameters
  * @property {string | URL} [url] - The URL of the PDF.
  * @property {BinaryData} [data] - Binary PDF data.
- *   Use typed arrays (Uint8Array) to improve the memory usage. If PDF data is
+ *   Use TypedArrays (Uint8Array) to improve the memory usage. If PDF data is
  *   BASE64-encoded, use `atob()` to convert it to a binary string first.
+ *
+ *   NOTE: If TypedArrays are used they will generally be transferred to the
+ *   worker-thread. This will help reduce main-thread memory usage, however
+ *   it will take ownership of the TypedArrays.
  * @property {Object} [httpHeaders] - Basic authentication headers.
  * @property {boolean} [withCredentials] - Indicates whether or not
  *   cross-site Access-Control requests should be made using credentials such
@@ -189,12 +193,6 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  * @property {number} [maxImageSize] - The maximum allowed image size in total
  *   pixels, i.e. width * height. Images above this value will not be rendered.
  *   Use -1 for no limit, which is also the default value.
- * @property {boolean} [transferPdfData] - Determines if we can transfer
- *   TypedArrays used for loading the PDF file, utilized together with:
- *    - The `data`-option, for the `getDocument` function.
- *    - The `PDFDataTransportStream` implementation.
- *   This will help reduce main-thread memory usage, however it will take
- *   ownership of the TypedArrays. The default value is `false`.
  * @property {boolean} [isEvalSupported] - Determines if we can evaluate strings
  *   as JavaScript. Primarily used to improve performance of font rendering, and
  *   when parsing PDF functions. The default value is `true`.
@@ -317,8 +315,14 @@ function getDocument(src) {
           val instanceof Buffer // eslint-disable-line no-undef
         ) {
           params[key] = new Uint8Array(val);
-        } else if (val instanceof Uint8Array) {
-          break; // Use the data as-is when it's already a Uint8Array.
+        } else if (
+          val instanceof Uint8Array &&
+          val.byteLength === val.buffer.byteLength
+        ) {
+          // Use the data as-is when it's already a Uint8Array that completely
+          // "utilizes" its underlying ArrayBuffer, to prevent any possible
+          // issues when transferring it to the worker-thread.
+          break;
         } else if (typeof val === "string") {
           params[key] = stringToBytes(val);
         } else if (
@@ -342,7 +346,6 @@ function getDocument(src) {
   params.StandardFontDataFactory =
     params.StandardFontDataFactory || DefaultStandardFontDataFactory;
   params.ignoreErrors = params.stopAtErrors !== true;
-  params.transferPdfData = params.transferPdfData === true;
   params.fontExtraProperties = params.fontExtraProperties === true;
   params.pdfBug = params.pdfBug === true;
   params.enableXfa = params.enableXfa === true;
@@ -440,7 +443,6 @@ function getDocument(src) {
             {
               length: params.length,
               initialData: params.initialData,
-              transferPdfData: params.transferPdfData,
               progressiveDone: params.progressiveDone,
               contentDispositionFilename: params.contentDispositionFilename,
               disableRange: params.disableRange,
@@ -515,8 +517,7 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.contentDispositionFilename =
       pdfDataRangeTransport.contentDispositionFilename;
   }
-  const transfers =
-    source.transferPdfData && source.data ? [source.data.buffer] : null;
+  const transfers = source.data ? [source.data.buffer] : null;
 
   const workerId = await worker.messageHandler.sendWithPromise(
     "GetDocRequest",
@@ -656,6 +657,10 @@ class PDFDocumentLoadingTask {
 
 /**
  * Abstract class to support range requests file loading.
+ *
+ * NOTE: The TypedArrays passed to the constructor and relevant methods below
+ * will generally be transferred to the worker-thread. This will help reduce
+ * main-thread memory usage, however it will take ownership of the TypedArrays.
  */
 class PDFDataRangeTransport {
   /**
