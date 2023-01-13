@@ -192,9 +192,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  * @property {boolean} [transferPdfData] - Determines if we can transfer
  *   TypedArrays used for loading the PDF file, utilized together with:
  *    - The `data`-option, for the `getDocument` function.
- *    - The `initialData`-option, for the `PDFDataRangeTransport` constructor.
- *    - The `chunk`-option, for the `PDFDataTransportStream._onReceiveData`
- *      method.
+ *    - The `PDFDataTransportStream` implementation.
  *   This will help reduce main-thread memory usage, however it will take
  *   ownership of the TypedArrays. The default value is `false`.
  * @property {boolean} [isEvalSupported] - Determines if we can evaluate strings
@@ -2499,7 +2497,7 @@ class WorkerTransport {
               return;
             }
             assert(
-              isArrayBuffer(value),
+              value instanceof ArrayBuffer,
               "GetReader - expected an ArrayBuffer."
             );
             // Enqueue data chunk into sink, and transfer it
@@ -2585,7 +2583,7 @@ class WorkerTransport {
               return;
             }
             assert(
-              isArrayBuffer(value),
+              value instanceof ArrayBuffer,
               "GetRangeReader - expected an ArrayBuffer."
             );
             sink.enqueue(new Uint8Array(value), 1, [value]);
