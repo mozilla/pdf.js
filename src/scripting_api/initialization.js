@@ -67,29 +67,66 @@ function initSandbox(params) {
   });
 
   const util = new Util({ externalCall });
+  const appObjects = app._objects;
 
   if (data.objects) {
+    const annotations = [];
+
     for (const [name, objs] of Object.entries(data.objects)) {
-      const obj = objs[0];
-      obj.send = send;
+      annotations.length = 0;
+      let container = null;
+
+      for (const obj of objs) {
+        if (obj.type !== "") {
+          annotations.push(obj);
+        } else {
+          container = obj;
+        }
+      }
+
+      let obj = container;
+      if (annotations.length > 0) {
+        obj = annotations[0];
+        obj.send = send;
+      }
+
       obj.globalEval = globalEval;
-      obj.doc = _document.wrapped;
+      obj.doc = _document;
+      obj.fieldPath = name;
+      obj.appObjects = appObjects;
+
       let field;
-      if (obj.type === "radiobutton") {
-        const otherButtons = objs.slice(1);
-        field = new RadioButtonField(otherButtons, obj);
-      } else if (obj.type === "checkbox") {
-        const otherButtons = objs.slice(1);
-        field = new CheckboxField(otherButtons, obj);
-      } else {
-        field = new Field(obj);
+      switch (obj.type) {
+        case "radiobutton": {
+          const otherButtons = annotations.slice(1);
+          field = new RadioButtonField(otherButtons, obj);
+          break;
+        }
+        case "checkbox": {
+          const otherButtons = annotations.slice(1);
+          field = new CheckboxField(otherButtons, obj);
+          break;
+        }
+        case "text":
+          if (annotations.length <= 1) {
+            field = new Field(obj);
+            break;
+          }
+          obj.siblings = annotations.map(x => x.id).slice(1);
+          field = new Field(obj);
+          break;
+        default:
+          field = new Field(obj);
       }
 
       const wrapped = new Proxy(field, proxyHandler);
-      doc._addField(name, wrapped);
       const _object = { obj: field, wrapped };
+      doc._addField(name, _object);
       for (const object of objs) {
-        app._objects[object.id] = _object;
+        appObjects[object.id] = _object;
+      }
+      if (container) {
+        appObjects[container.id] = _object;
       }
     }
   }
@@ -113,6 +150,12 @@ function initSandbox(params) {
   globalThis.style = Style;
   globalThis.trans = Trans;
   globalThis.zoomtype = ZoomType;
+
+  // Avoid to have a popup asking to update Acrobat.
+  globalThis.ADBE = {
+    Reader_Value_Asked: true,
+    Viewer_Value_Asked: true,
+  };
 
   // AF... functions
   const aform = new AForm(doc, app, util, color);

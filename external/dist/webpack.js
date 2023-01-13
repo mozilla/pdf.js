@@ -1,4 +1,4 @@
-/* Copyright 2021 Mozilla Foundation
+/* Copyright 2022 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 
 "use strict";
 
-var pdfjs = require("./build/pdf.js");
-var PdfjsWorker = require("worker-loader?esModule=false&filename=[name].js!./build/pdf.worker.js");
+const pdfjs = require("./build/pdf.js");
 
 if (typeof window !== "undefined" && "Worker" in window) {
-  pdfjs.GlobalWorkerOptions.workerPort = new PdfjsWorker();
+  pdfjs.GlobalWorkerOptions.workerPort = new Worker(
+    new URL("./build/pdf.worker.js", import.meta.url)
+  );
 }
 
 module.exports = pdfjs;

@@ -28,7 +28,7 @@ function runTtx(ttxResourcesHomePath, fontPath, registerOnCancel, callback) {
   fs.realpath(ttxResourcesHomePath, function (error, realTtxResourcesHomePath) {
     const fontToolsHome = path.join(realTtxResourcesHomePath, "fonttools-code");
     fs.realpath(fontPath, function (errorFontPath, realFontPath) {
-      const ttxPath = path.join("Tools", "ttx");
+      const ttxPath = path.join("Lib", "fontTools", "ttx.py");
       if (!fs.existsSync(path.join(fontToolsHome, ttxPath))) {
         callback("TTX was not found, please checkout PDF.js submodules");
         return;
@@ -38,7 +38,8 @@ function runTtx(ttxResourcesHomePath, fontPath, registerOnCancel, callback) {
         PYTHONDONTWRITEBYTECODE: true,
       };
       const ttxStdioMode = "ignore";
-      const ttx = spawn("python", [ttxPath, realFontPath], {
+      const python = process.platform !== "win32" ? "python2" : "python";
+      const ttx = spawn(python, [ttxPath, realFontPath], {
         cwd: fontToolsHome,
         stdio: ttxStdioMode,
         env: ttxEnv,

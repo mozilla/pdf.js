@@ -14,62 +14,48 @@
  */
 
 import {
-  Ascii85Stream,
-  AsciiHexStream,
-  FlateStream,
-  LZWStream,
-  NullStream,
-  PredictorStream,
-  RunLengthStream,
-} from "./stream.js";
-import {
   assert,
   bytesToString,
   FormatError,
   info,
-  isNum,
-  StreamType,
   warn,
 } from "../shared/util.js";
+import { Cmd, Dict, EOF, isCmd, Name, Ref } from "./primitives.js";
 import {
-  Cmd,
-  Dict,
-  EOF,
-  isCmd,
-  isDict,
-  isEOF,
-  isName,
-  Name,
-  Ref,
-} from "./primitives.js";
-import { isWhiteSpace, MissingDataException } from "./core_utils.js";
+  isWhiteSpace,
+  MissingDataException,
+  ParserEOFException,
+} from "./core_utils.js";
+import { Ascii85Stream } from "./ascii_85_stream.js";
+import { AsciiHexStream } from "./ascii_hex_stream.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
+import { FlateStream } from "./flate_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxStream } from "./jpx_stream.js";
+import { LZWStream } from "./lzw_stream.js";
+import { NullStream } from "./stream.js";
+import { PredictorStream } from "./predictor_stream.js";
+import { RunLengthStream } from "./run_length_stream.js";
 
 const MAX_LENGTH_TO_CACHE = 1000;
-const MAX_ADLER32_LENGTH = 5552;
 
-function computeAdler32(bytes) {
-  const bytesLength = bytes.length;
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
-    assert(
-      bytesLength < MAX_ADLER32_LENGTH,
-      'computeAdler32: Unsupported "bytes" length.'
-    );
+function getInlineImageCacheKey(bytes) {
+  const strBuf = [],
+    ii = bytes.length;
+  let i = 0;
+  while (i < ii - 1) {
+    strBuf.push((bytes[i++] << 8) | bytes[i++]);
   }
-  let a = 1,
-    b = 0;
-  for (let i = 0; i < bytesLength; ++i) {
-    // No modulo required in the loop if `bytesLength < 5552`.
-    a += bytes[i] & 0xff;
-    b += a;
+  // Handle an odd number of elements.
+  if (i < ii) {
+    strBuf.push(bytes[i]);
   }
-  return (b % 65521 << 16) | a % 65521;
+  // We purposely include the "raw" length in the cacheKey, to prevent any
+  // possible issues with hash collisions in the inline image cache.
+  // Here we also assume that `strBuf` is never larger than 8192 elements,
+  // please refer to the `bytesToString` implementation.
+  return ii + "_" + String.fromCharCode.apply(null, strBuf);
 }
 
 class Parser {
@@ -80,6 +66,7 @@ class Parser {
     this.recoveryMode = recoveryMode;
 
     this.imageCache = Object.create(null);
+    this._imageId = 0;
     this.refill();
   }
 
@@ -122,21 +109,21 @@ class Parser {
           return this.makeInlineImage(cipherTransform);
         case "[": // array
           const array = [];
-          while (!isCmd(this.buf1, "]") && !isEOF(this.buf1)) {
+          while (!isCmd(this.buf1, "]") && this.buf1 !== EOF) {
             array.push(this.getObj(cipherTransform));
           }
-          if (isEOF(this.buf1)) {
-            if (!this.recoveryMode) {
-              throw new FormatError("End of file inside array");
+          if (this.buf1 === EOF) {
+            if (this.recoveryMode) {
+              return array;
             }
-            return array;
+            throw new ParserEOFException("End of file inside array.");
           }
           this.shift();
           return array;
         case "<<": // dictionary or stream
           const dict = new Dict(this.xref);
-          while (!isCmd(this.buf1, ">>") && !isEOF(this.buf1)) {
-            if (!isName(this.buf1)) {
+          while (!isCmd(this.buf1, ">>") && this.buf1 !== EOF) {
+            if (!(this.buf1 instanceof Name)) {
               info("Malformed dictionary: key must be a name object");
               this.shift();
               continue;
@@ -144,16 +131,16 @@ class Parser {
 
             const key = this.buf1.name;
             this.shift();
-            if (isEOF(this.buf1)) {
+            if (this.buf1 === EOF) {
               break;
             }
             dict.set(key, this.getObj(cipherTransform));
           }
-          if (isEOF(this.buf1)) {
-            if (!this.recoveryMode) {
-              throw new FormatError("End of file inside dictionary");
+          if (this.buf1 === EOF) {
+            if (this.recoveryMode) {
+              return dict;
             }
-            return dict;
+            throw new ParserEOFException("End of file inside dictionary.");
           }
 
           // Stream objects are not allowed inside content streams or
@@ -165,8 +152,7 @@ class Parser {
           }
           this.shift();
           return dict;
-        default:
-          // simple object
+        default: // simple object
           return buf1;
       }
     }
@@ -216,7 +202,12 @@ class Parser {
       } else if (state === 1) {
         state = ch === I ? 2 : 0;
       } else {
-        assert(state === 2, "findDefaultInlineStreamEnd - invalid state.");
+        if (
+          typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("!PRODUCTION || TESTING")
+        ) {
+          assert(state === 2, "findDefaultInlineStreamEnd - invalid state.");
+        }
         if (ch === SPACE || ch === LF || ch === CR) {
           maybeEIPos = stream.pos;
           // Let's check that the next `n` bytes are ASCII... just to be sure.
@@ -493,32 +484,33 @@ class Parser {
     const lexer = this.lexer;
     const stream = lexer.stream;
 
-    // Parse dictionary.
-    const dict = new Dict(this.xref);
+    // Parse dictionary, but initialize it lazily to improve performance with
+    // cached inline images (see issue 2618).
+    const dictMap = Object.create(null);
     let dictLength;
-    while (!isCmd(this.buf1, "ID") && !isEOF(this.buf1)) {
-      if (!isName(this.buf1)) {
+    while (!isCmd(this.buf1, "ID") && this.buf1 !== EOF) {
+      if (!(this.buf1 instanceof Name)) {
         throw new FormatError("Dictionary key must be a name object");
       }
       const key = this.buf1.name;
       this.shift();
-      if (isEOF(this.buf1)) {
+      if (this.buf1 === EOF) {
         break;
       }
-      dict.set(key, this.getObj(cipherTransform));
+      dictMap[key] = this.getObj(cipherTransform);
     }
     if (lexer.beginInlineImagePos !== -1) {
       dictLength = stream.pos - lexer.beginInlineImagePos;
     }
 
     // Extract the name of the first (i.e. the current) image filter.
-    const filter = dict.get("Filter", "F");
+    const filter = this.xref.fetchIfRef(dictMap.F || dictMap.Filter);
     let filterName;
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       filterName = filter.name;
     } else if (Array.isArray(filter)) {
       const filterZero = this.xref.fetchIfRef(filter[0]);
-      if (isName(filterZero)) {
+      if (filterZero instanceof Name) {
         filterName = filterZero.name;
       }
     }
@@ -526,33 +518,34 @@ class Parser {
     // Parse image stream.
     const startPos = stream.pos;
     let length;
-    if (filterName === "DCTDecode" || filterName === "DCT") {
-      length = this.findDCTDecodeInlineStreamEnd(stream);
-    } else if (filterName === "ASCII85Decode" || filterName === "A85") {
-      length = this.findASCII85DecodeInlineStreamEnd(stream);
-    } else if (filterName === "ASCIIHexDecode" || filterName === "AHx") {
-      length = this.findASCIIHexDecodeInlineStreamEnd(stream);
-    } else {
-      length = this.findDefaultInlineStreamEnd(stream);
+    switch (filterName) {
+      case "DCT":
+      case "DCTDecode":
+        length = this.findDCTDecodeInlineStreamEnd(stream);
+        break;
+      case "A85":
+      case "ASCII85Decode":
+        length = this.findASCII85DecodeInlineStreamEnd(stream);
+        break;
+      case "AHx":
+      case "ASCIIHexDecode":
+        length = this.findASCIIHexDecodeInlineStreamEnd(stream);
+        break;
+      default:
+        length = this.findDefaultInlineStreamEnd(stream);
     }
-    let imageStream = stream.makeSubStream(startPos, length, dict);
 
     // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their
-    // adler32 checksum.
+    // stringified content, to prevent possible hash collisions.
     let cacheKey;
-    if (length < MAX_LENGTH_TO_CACHE && dictLength < MAX_ADLER32_LENGTH) {
-      const imageBytes = imageStream.getBytes();
-      imageStream.reset();
-
+    if (length < MAX_LENGTH_TO_CACHE && dictLength > 0) {
       const initialStreamPos = stream.pos;
       // Set the stream position to the beginning of the dictionary data...
       stream.pos = lexer.beginInlineImagePos;
-      // ... and fetch the bytes of the *entire* dictionary.
-      const dictBytes = stream.getBytes(dictLength);
+      // ... and fetch the bytes of the dictionary *and* the inline image.
+      cacheKey = getInlineImageCacheKey(stream.getBytes(dictLength + length));
       // Finally, don't forget to reset the stream position.
       stream.pos = initialStreamPos;
-
-      cacheKey = computeAdler32(imageBytes) + "_" + computeAdler32(dictBytes);
 
       const cacheEntry = this.imageCache[cacheKey];
       if (cacheEntry !== undefined) {
@@ -564,6 +557,11 @@ class Parser {
       }
     }
 
+    const dict = new Dict(this.xref);
+    for (const key in dictMap) {
+      dict.set(key, dictMap[key]);
+    }
+    let imageStream = stream.makeSubStream(startPos, length, dict);
     if (cipherTransform) {
       imageStream = cipherTransform.createStream(imageStream, length);
     }
@@ -571,7 +569,7 @@ class Parser {
     imageStream = this.filter(imageStream, dict, length);
     imageStream.dict = dict;
     if (cacheKey !== undefined) {
-      imageStream.cacheKey = `inline_${length}_${cacheKey}`;
+      imageStream.cacheKey = `inline_img_${++this._imageId}`;
       this.imageCache[cacheKey] = imageStream;
     }
 
@@ -624,7 +622,7 @@ class Parser {
     // Get the length.
     let length = dict.get("Length");
     if (!Number.isInteger(length)) {
-      info(`Bad length "${length}" in stream`);
+      info(`Bad length "${length && length.toString()}" in stream.`);
       length = 0;
     }
 
@@ -637,9 +635,9 @@ class Parser {
       this.shift(); // 'stream'
     } else {
       // Bad stream length, scanning for endstream command.
-      // prettier-ignore
       const ENDSTREAM_SIGNATURE = new Uint8Array([
-        0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6D]);
+        0x65, 0x6e, 0x64, 0x73, 0x74, 0x72, 0x65, 0x61, 0x6d,
+      ]);
       let actualLength = this._findStreamLength(startPos, ENDSTREAM_SIGNATURE);
       if (actualLength < 0) {
         // Only allow limited truncation of the endstream signature,
@@ -693,15 +691,12 @@ class Parser {
   }
 
   filter(stream, dict, length) {
-    let filter = dict.get("Filter", "F");
-    let params = dict.get("DecodeParms", "DP");
+    let filter = dict.get("F", "Filter");
+    let params = dict.get("DP", "DecodeParms");
 
-    if (isName(filter)) {
+    if (filter instanceof Name) {
       if (Array.isArray(params)) {
-        warn(
-          "/DecodeParms should not contain an Array, " +
-            "when /Filter contains a Name."
-        );
+        warn("/DecodeParms should not be an Array, when /Filter is a Name.");
       }
       return this.makeFilter(stream, filter.name, length, params);
     }
@@ -712,7 +707,7 @@ class Parser {
       const paramsArray = params;
       for (let i = 0, ii = filterArray.length; i < ii; ++i) {
         filter = this.xref.fetchIfRef(filterArray[i]);
-        if (!isName(filter)) {
+        if (!(filter instanceof Name)) {
           throw new FormatError(`Bad filter name "${filter}"`);
         }
 
@@ -738,60 +733,51 @@ class Parser {
     }
 
     try {
-      const xrefStreamStats = this.xref.stats.streamTypes;
-      if (name === "FlateDecode" || name === "Fl") {
-        xrefStreamStats[StreamType.FLATE] = true;
-        if (params) {
-          return new PredictorStream(
-            new FlateStream(stream, maybeLength),
-            maybeLength,
-            params
-          );
-        }
-        return new FlateStream(stream, maybeLength);
-      }
-      if (name === "LZWDecode" || name === "LZW") {
-        xrefStreamStats[StreamType.LZW] = true;
-        let earlyChange = 1;
-        if (params) {
-          if (params.has("EarlyChange")) {
-            earlyChange = params.get("EarlyChange");
+      switch (name) {
+        case "Fl":
+        case "FlateDecode":
+          if (params) {
+            return new PredictorStream(
+              new FlateStream(stream, maybeLength),
+              maybeLength,
+              params
+            );
           }
-          return new PredictorStream(
-            new LZWStream(stream, maybeLength, earlyChange),
-            maybeLength,
-            params
-          );
-        }
-        return new LZWStream(stream, maybeLength, earlyChange);
-      }
-      if (name === "DCTDecode" || name === "DCT") {
-        xrefStreamStats[StreamType.DCT] = true;
-        return new JpegStream(stream, maybeLength, stream.dict, params);
-      }
-      if (name === "JPXDecode" || name === "JPX") {
-        xrefStreamStats[StreamType.JPX] = true;
-        return new JpxStream(stream, maybeLength, stream.dict, params);
-      }
-      if (name === "ASCII85Decode" || name === "A85") {
-        xrefStreamStats[StreamType.A85] = true;
-        return new Ascii85Stream(stream, maybeLength);
-      }
-      if (name === "ASCIIHexDecode" || name === "AHx") {
-        xrefStreamStats[StreamType.AHX] = true;
-        return new AsciiHexStream(stream, maybeLength);
-      }
-      if (name === "CCITTFaxDecode" || name === "CCF") {
-        xrefStreamStats[StreamType.CCF] = true;
-        return new CCITTFaxStream(stream, maybeLength, params);
-      }
-      if (name === "RunLengthDecode" || name === "RL") {
-        xrefStreamStats[StreamType.RLX] = true;
-        return new RunLengthStream(stream, maybeLength);
-      }
-      if (name === "JBIG2Decode") {
-        xrefStreamStats[StreamType.JBIG] = true;
-        return new Jbig2Stream(stream, maybeLength, stream.dict, params);
+          return new FlateStream(stream, maybeLength);
+        case "LZW":
+        case "LZWDecode":
+          let earlyChange = 1;
+          if (params) {
+            if (params.has("EarlyChange")) {
+              earlyChange = params.get("EarlyChange");
+            }
+            return new PredictorStream(
+              new LZWStream(stream, maybeLength, earlyChange),
+              maybeLength,
+              params
+            );
+          }
+          return new LZWStream(stream, maybeLength, earlyChange);
+        case "DCT":
+        case "DCTDecode":
+          return new JpegStream(stream, maybeLength, params);
+        case "JPX":
+        case "JPXDecode":
+          return new JpxStream(stream, maybeLength, params);
+        case "A85":
+        case "ASCII85Decode":
+          return new Ascii85Stream(stream, maybeLength);
+        case "AHx":
+        case "ASCIIHexDecode":
+          return new AsciiHexStream(stream, maybeLength);
+        case "CCF":
+        case "CCITTFaxDecode":
+          return new CCITTFaxStream(stream, maybeLength, params);
+        case "RL":
+        case "RunLengthDecode":
+          return new RunLengthStream(stream, maybeLength);
+        case "JBIG2Decode":
+          return new Jbig2Stream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);
       return stream;
@@ -902,18 +888,15 @@ class Lexer {
       ch = this.nextChar();
     }
     if (ch < /* '0' = */ 0x30 || ch > /* '9' = */ 0x39) {
-      if (
-        divideBy === 10 &&
-        sign === 0 &&
-        (isWhiteSpace(ch) || ch === /* EOF = */ -1)
-      ) {
-        // This is consistent with Adobe Reader (fixes issue9252.pdf).
-        warn("Lexer.getNumber - treating a single decimal point as zero.");
+      const msg = `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`;
+
+      if (isWhiteSpace(ch) || ch === /* EOF = */ -1) {
+        // This is consistent with Adobe Reader (fixes issue9252.pdf,
+        // issue15604.pdf, bug1753983.pdf).
+        info(`Lexer.getNumber - "${msg}".`);
         return 0;
       }
-      throw new FormatError(
-        `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`
-      );
+      throw new FormatError(msg);
     }
 
     sign = sign || 1;
@@ -1252,7 +1235,7 @@ class Lexer {
         return Cmd.get("}");
       case 0x29: // ')'
         // Consume the current character in order to avoid permanently hanging
-        // the worker thread if `Lexer.getObject` is called from within a loop
+        // the worker thread if `Lexer.getObj` is called from within a loop
         // containing try-catch statements, since we would otherwise attempt
         // to parse the *same* character over and over (fixes issue8061.pdf).
         this.nextChar();
@@ -1261,6 +1244,15 @@ class Lexer {
 
     // Start reading a command.
     let str = String.fromCharCode(ch);
+    // A valid command cannot start with a non-visible ASCII character,
+    // and the next character may be (the start of) a valid command.
+    if (ch < 0x20 || ch > 0x7f) {
+      const nextCh = this.peekChar();
+      if (nextCh >= 0x20 && nextCh <= 0x7f) {
+        this.nextChar();
+        return Cmd.get(str);
+      }
+    }
     const knownCommands = this.knownCommands;
     let knownCommandFound = knownCommands && knownCommands[str] !== undefined;
     while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
@@ -1383,8 +1375,8 @@ class Linearization {
         Number.isInteger(obj1) &&
         Number.isInteger(obj2) &&
         isCmd(obj3, "obj") &&
-        isDict(linDict) &&
-        isNum((obj = linDict.get("Linearized"))) &&
+        linDict instanceof Dict &&
+        typeof (obj = linDict.get("Linearized")) === "number" &&
         obj > 0
       )
     ) {

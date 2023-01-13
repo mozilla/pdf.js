@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* import-globals-from pdfHandler.js */
+/* exported saveReferer */
 
 "use strict";
 /**
@@ -123,7 +124,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
         {
           urls: [data.requestUrl],
           types: ["xmlhttprequest"],
-          tabId: tabId,
+          tabId,
         },
         ["blocking", ...extraInfoSpecWithHeaders]
       );
@@ -148,7 +149,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
     {
       urls: ["https://*/*"],
       types: ["xmlhttprequest"],
-      tabId: tabId,
+      tabId,
     },
     ["blocking", "responseHeaders"]
   );

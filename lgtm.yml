@@ -1,3 +1,0 @@
-queries:
-  # Already handled by the "no-unused-vars" ESLint rule.
-  - exclude: js/unused-local-variable

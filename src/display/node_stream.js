@@ -95,14 +95,11 @@ class PDFNodeStream {
   }
 
   cancelAllRequests(reason) {
-    if (this._fullRequestReader) {
-      this._fullRequestReader.cancel(reason);
-    }
+    this._fullRequestReader?.cancel(reason);
 
-    const readers = this._rangeRequestReaders.slice(0);
-    readers.forEach(function (reader) {
+    for (const reader of this._rangeRequestReaders.slice(0)) {
       reader.cancel(reason);
-    });
+    }
   }
 }
 
@@ -166,12 +163,11 @@ class BaseFullReader {
       return this.read();
     }
     this._loaded += chunk.length;
-    if (this.onProgress) {
-      this.onProgress({
-        loaded: this._loaded,
-        total: this._contentLength,
-      });
-    }
+    this.onProgress?.({
+      loaded: this._loaded,
+      total: this._contentLength,
+    });
+
     // Ensure that `read()` method returns ArrayBuffer.
     const buffer = new Uint8Array(chunk).buffer;
     return { value: buffer, done: false };
@@ -254,9 +250,8 @@ class BaseRangeReader {
       return this.read();
     }
     this._loaded += chunk.length;
-    if (this.onProgress) {
-      this.onProgress({ loaded: this._loaded });
-    }
+    this.onProgress?.({ loaded: this._loaded });
+
     // Ensure that `read()` method returns ArrayBuffer.
     const buffer = new Uint8Array(chunk).buffer;
     return { value: buffer, done: false };
@@ -332,15 +327,13 @@ class PDFNodeStreamFullReader extends BaseFullReader {
         // here: https://nodejs.org/api/http.html#http_message_headers.
         return this._readableStream.headers[name.toLowerCase()];
       };
-      const {
-        allowRangeRequests,
-        suggestedLength,
-      } = validateRangeRequestCapabilities({
-        getResponseHeader,
-        isHttp: stream.isHttp,
-        rangeChunkSize: this._rangeChunkSize,
-        disableRange: this._disableRange,
-      });
+      const { allowRangeRequests, suggestedLength } =
+        validateRangeRequestCapabilities({
+          getResponseHeader,
+          isHttp: stream.isHttp,
+          rangeChunkSize: this._rangeChunkSize,
+          disableRange: this._disableRange,
+        });
 
       this._isRangeSupported = allowRangeRequests;
       // Setting right content length.
@@ -380,7 +373,7 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
     this._httpHeaders = {};
     for (const property in stream.httpHeaders) {
       const value = stream.httpHeaders[property];
-      if (typeof value === "undefined") {
+      if (value === undefined) {
         continue;
       }
       this._httpHeaders[property] = value;

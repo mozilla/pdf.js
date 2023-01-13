@@ -19,13 +19,17 @@ import {
   createPromiseCapability,
 } from "../shared/util.js";
 import { MissingDataException } from "./core_utils.js";
+import { Stream } from "./stream.js";
 
-class ChunkedStream {
+class ChunkedStream extends Stream {
   constructor(length, chunkSize, manager) {
-    this.bytes = new Uint8Array(length);
-    this.start = 0;
-    this.pos = 0;
-    this.end = length;
+    super(
+      /* arrayBuffer = */ new Uint8Array(length),
+      /* start = */ 0,
+      /* length = */ length,
+      /* dict = */ null
+    );
+
     this.chunkSize = chunkSize;
     this._loadedChunks = new Set();
     this.numChunks = Math.ceil(length / chunkSize);
@@ -46,15 +50,11 @@ class ChunkedStream {
     return chunks;
   }
 
-  getBaseStreams() {
-    return [this];
-  }
-
   get numChunksLoaded() {
     return this._loadedChunks.size;
   }
 
-  allChunksLoaded() {
+  get isDataLoaded() {
     return this.numChunksLoaded === this.numChunks;
   }
 
@@ -107,6 +107,9 @@ class ChunkedStream {
     }
 
     const chunk = Math.floor(pos / this.chunkSize);
+    if (chunk > this.numChunks) {
+      return;
+    }
     if (chunk === this.lastSuccessfulEnsureByteChunk) {
       return;
     }
@@ -125,9 +128,14 @@ class ChunkedStream {
       return;
     }
 
-    const chunkSize = this.chunkSize;
-    const beginChunk = Math.floor(begin / chunkSize);
-    const endChunk = Math.floor((end - 1) / chunkSize) + 1;
+    const beginChunk = Math.floor(begin / this.chunkSize);
+    if (beginChunk > this.numChunks) {
+      return;
+    }
+    const endChunk = Math.min(
+      Math.floor((end - 1) / this.chunkSize) + 1,
+      this.numChunks
+    );
     for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
       if (!this._loadedChunks.has(chunk)) {
         throw new MissingDataException(begin, end);
@@ -150,14 +158,6 @@ class ChunkedStream {
     return this._loadedChunks.has(chunk);
   }
 
-  get length() {
-    return this.end - this.start;
-  }
-
-  get isEmpty() {
-    return this.length === 0;
-  }
-
   getByte() {
     const pos = this.pos;
     if (pos >= this.end) {
@@ -169,25 +169,7 @@ class ChunkedStream {
     return this.bytes[this.pos++];
   }
 
-  getUint16() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    if (b0 === -1 || b1 === -1) {
-      return -1;
-    }
-    return (b0 << 8) + b1;
-  }
-
-  getInt32() {
-    const b0 = this.getByte();
-    const b1 = this.getByte();
-    const b2 = this.getByte();
-    const b3 = this.getByte();
-    return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-  }
-
-  // Returns subarray of original buffer, should only be read.
-  getBytes(length, forceClamped = false) {
+  getBytes(length) {
     const bytes = this.bytes;
     const pos = this.pos;
     const strEnd = this.end;
@@ -196,9 +178,7 @@ class ChunkedStream {
       if (strEnd > this.progressiveDataLength) {
         this.ensureRange(pos, strEnd);
       }
-      const subarray = bytes.subarray(pos, strEnd);
-      // `this.bytes` is always a `Uint8Array` here.
-      return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
+      return bytes.subarray(pos, strEnd);
     }
 
     let end = pos + length;
@@ -210,23 +190,7 @@ class ChunkedStream {
     }
 
     this.pos = end;
-    const subarray = bytes.subarray(pos, end);
-    // `this.bytes` is always a `Uint8Array` here.
-    return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
-  }
-
-  peekByte() {
-    const peekedByte = this.getByte();
-    if (peekedByte !== -1) {
-      this.pos--;
-    }
-    return peekedByte;
-  }
-
-  peekBytes(length, forceClamped = false) {
-    const bytes = this.getBytes(length, forceClamped);
-    this.pos -= bytes.length;
-    return bytes;
+    return bytes.subarray(pos, end);
   }
 
   getByteRange(begin, end) {
@@ -242,22 +206,7 @@ class ChunkedStream {
     return this.bytes.subarray(begin, end);
   }
 
-  skip(n) {
-    if (!n) {
-      n = 1;
-    }
-    this.pos += n;
-  }
-
-  reset() {
-    this.pos = this.start;
-  }
-
-  moveStart() {
-    this.start = this.pos;
-  }
-
-  makeSubStream(start, length, dict) {
+  makeSubStream(start, length, dict = null) {
     if (length) {
       if (start + length > this.progressiveDataLength) {
         this.ensureRange(start, start + length);
@@ -291,18 +240,25 @@ class ChunkedStream {
       }
       return missingChunks;
     };
-    ChunkedStreamSubstream.prototype.allChunksLoaded = function () {
-      if (this.numChunksLoaded === this.numChunks) {
-        return true;
-      }
-      return this.getMissingChunks().length === 0;
-    };
+    Object.defineProperty(ChunkedStreamSubstream.prototype, "isDataLoaded", {
+      get() {
+        if (this.numChunksLoaded === this.numChunks) {
+          return true;
+        }
+        return this.getMissingChunks().length === 0;
+      },
+      configurable: true,
+    });
 
     const subStream = new ChunkedStreamSubstream();
     subStream.pos = subStream.start = start;
     subStream.end = start + length || this.end;
     subStream.dict = dict;
     return subStream;
+  }
+
+  getBaseStreams() {
+    return [this];
   }
 }
 
@@ -326,10 +282,6 @@ class ChunkedStreamManager {
     this._loadedStreamCapability = createPromiseCapability();
   }
 
-  onLoadedStream() {
-    return this._loadedStreamCapability.promise;
-  }
-
   sendRequest(begin, end) {
     const rangeReader = this.pdfNetworkStream.getRangeReader(begin, end);
     if (!rangeReader.isStreamingSupported) {
@@ -338,7 +290,7 @@ class ChunkedStreamManager {
 
     let chunks = [],
       loaded = 0;
-    const promise = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const readChunk = chunk => {
         try {
           if (!chunk.done) {
@@ -359,23 +311,23 @@ class ChunkedStreamManager {
         }
       };
       rangeReader.read().then(readChunk, reject);
-    });
-    promise.then(data => {
+    }).then(data => {
       if (this.aborted) {
         return; // Ignoring any data after abort.
       }
       this.onReceiveData({ chunk: data, begin });
     });
-    // TODO check errors
   }
 
   /**
    * Get all the chunks that are not yet loaded and group them into
    * contiguous ranges to load in as few requests as possible.
    */
-  requestAllChunks() {
-    const missingChunks = this.stream.getMissingChunks();
-    this._requestChunks(missingChunks);
+  requestAllChunks(noFetch = false) {
+    if (!noFetch) {
+      const missingChunks = this.stream.getMissingChunks();
+      this._requestChunks(missingChunks);
+    }
     return this._loadedStreamCapability.promise;
   }
 
@@ -417,7 +369,7 @@ class ChunkedStreamManager {
           groupedChunk.endChunk * this.chunkSize,
           this.length
         );
-        this.sendRequest(begin, end);
+        this.sendRequest(begin, end).catch(capability.reject);
       }
     }
 
@@ -521,7 +473,7 @@ class ChunkedStreamManager {
       this.stream.onReceiveData(begin, chunk);
     }
 
-    if (this.stream.allChunksLoaded()) {
+    if (this.stream.isDataLoaded) {
       this._loadedStreamCapability.resolve(this.stream);
     }
 

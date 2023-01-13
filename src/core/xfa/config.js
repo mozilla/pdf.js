@@ -112,7 +112,7 @@ class Area extends XFAObject {
     this.level = getInteger({
       data: attributes.level,
       defaultValue: 0,
-      validator: n => n >= 1 && n <= 3,
+      validate: n => n >= 1 && n <= 3,
     });
     this.name = getStringOption(attributes.name, [
       "",
@@ -171,7 +171,7 @@ class BehaviorOverride extends ContentObject {
       this[$content]
         .trim()
         .split(/\s+/)
-        .filter(x => !!x && x.include(":"))
+        .filter(x => x.includes(":"))
         .map(x => x.split(":", 2))
     );
   }
@@ -403,7 +403,7 @@ class Equate extends XFAObject {
     this.force = getInteger({
       data: attributes.force,
       defaultValue: 1,
-      validator: n => n === 0,
+      validate: n => n === 0,
     });
 
     this.from = attributes.from || "";
@@ -723,12 +723,12 @@ class PageOffset extends XFAObject {
     this.x = getInteger({
       data: attributes.x,
       defaultValue: "useXDCSetting",
-      validator: n => true,
+      validate: n => true,
     });
     this.y = getInteger({
       data: attributes.y,
       defaultValue: "useXDCSetting",
-      validator: n => true,
+      validate: n => true,
     });
   }
 }
@@ -1005,7 +1005,7 @@ class Rename extends ContentObject {
     // is no colon.
     if (
       this[$content].toLowerCase().startsWith("xml") ||
-      this[$content].match(new RegExp("[\\p{L}_][\\p{L}\\d._\\p{M}-]*", "u"))
+      new RegExp("[\\p{L}_][\\p{L}\\d._\\p{M}-]*", "u").test(this[$content])
     ) {
       warn("XFA - Rename: invalid XFA name");
     }
@@ -1159,7 +1159,7 @@ class TemplateCache extends XFAObject {
     this.maxEntries = getInteger({
       data: attributes.maxEntries,
       defaultValue: 5,
-      validator: n => n >= 0,
+      validate: n => n >= 0,
     });
   }
 }

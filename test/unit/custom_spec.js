@@ -27,36 +27,29 @@ function getTopLeftPixel(canvasContext) {
 }
 
 describe("custom canvas rendering", function () {
-  const transparentGetDocumentParams = buildGetDocumentParams(
-    "transparent.pdf"
-  );
+  const transparentGetDocumentParams =
+    buildGetDocumentParams("transparent.pdf");
 
   let CanvasFactory;
   let loadingTask;
   let page;
 
-  beforeAll(function (done) {
+  beforeAll(async function () {
     CanvasFactory = new DefaultCanvasFactory();
 
     loadingTask = getDocument(transparentGetDocumentParams);
-    loadingTask.promise
-      .then(function (doc) {
-        return doc.getPage(1);
-      })
-      .then(function (data) {
-        page = data;
-        done();
-      })
-      .catch(done.fail);
+    const doc = await loadingTask.promise;
+    const data = await doc.getPage(1);
+    page = data;
   });
 
-  afterAll(function (done) {
+  afterAll(async function () {
     CanvasFactory = null;
     page = null;
-    loadingTask.destroy().then(done);
+    await loadingTask.destroy();
   });
 
-  it("renders to canvas with a default white background", function (done) {
+  it("renders to canvas with a default white background", async function () {
     const viewport = page.getViewport({ scale: 1 });
     const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
@@ -64,21 +57,18 @@ describe("custom canvas rendering", function () {
       canvasContext: canvasAndCtx.context,
       viewport,
     });
-    renderTask.promise
-      .then(function () {
-        expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
-          r: 255,
-          g: 255,
-          b: 255,
-          a: 255,
-        });
-        CanvasFactory.destroy(canvasAndCtx);
-        done();
-      })
-      .catch(done.fail);
+    await renderTask.promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 255,
+      g: 255,
+      b: 255,
+      a: 255,
+    });
+    CanvasFactory.destroy(canvasAndCtx);
   });
 
-  it("renders to canvas with a custom background", function (done) {
+  it("renders to canvas with a custom background", async function () {
     const viewport = page.getViewport({ scale: 1 });
     const canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
@@ -87,18 +77,15 @@ describe("custom canvas rendering", function () {
       viewport,
       background: "rgba(255,0,0,1.0)",
     });
-    renderTask.promise
-      .then(function () {
-        expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
-          r: 255,
-          g: 0,
-          b: 0,
-          a: 255,
-        });
-        CanvasFactory.destroy(canvasAndCtx);
-        done();
-      })
-      .catch(done.fail);
+    await renderTask.promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 255,
+      g: 0,
+      b: 0,
+      a: 255,
+    });
+    CanvasFactory.destroy(canvasAndCtx);
   });
 });
 
@@ -147,7 +134,7 @@ describe("custom ownerDocument", function () {
       fonts: new Set(),
       createElement,
       documentElement: {
-        getElementsByTagName: () => [{ appendChild: () => {} }],
+        getElementsByTagName: () => [{ append: () => {} }],
       },
     };
     const CanvasFactory = new DefaultCanvasFactory({ ownerDocument });
@@ -185,7 +172,7 @@ describe("custom ownerDocument", function () {
     expect(style).toBeFalsy();
     expect(ownerDocument.fonts.size).toBeGreaterThanOrEqual(1);
     expect(Array.from(ownerDocument.fonts).find(checkFont)).toBeTruthy();
-    await doc.destroy();
+
     await loadingTask.destroy();
     CanvasFactory.destroy(canvasAndCtx);
     expect(ownerDocument.fonts.size).toBe(0);
@@ -217,7 +204,7 @@ describe("custom ownerDocument", function () {
     const style = elements.find(element => element.tagName === "style");
     expect(style.sheet.cssRules.length).toBeGreaterThanOrEqual(1);
     expect(style.sheet.cssRules.find(checkFontFaceRule)).toBeTruthy();
-    await doc.destroy();
+
     await loadingTask.destroy();
     CanvasFactory.destroy(canvasAndCtx);
     expect(style.remove.called).toBe(true);

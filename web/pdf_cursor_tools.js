@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { AnnotationEditorType } from "pdfjs-lib";
 import { GrabToPan } from "./grab_to_pan.js";
 import { PresentationModeState } from "./ui_utils.js";
 
@@ -40,13 +41,13 @@ class PDFCursorTools {
     this.eventBus = eventBus;
 
     this.active = CursorTool.SELECT;
-    this.activeBeforePresentationMode = null;
+    this.previouslyActive = null;
 
     this.handTool = new GrabToPan({
       element: this.container,
     });
 
-    this._addEventListeners();
+    this.#addEventListeners();
 
     // Defer the initial `switchTool` call, to give other viewer components
     // time to initialize *and* register 'cursortoolchanged' event listeners.
@@ -63,13 +64,13 @@ class PDFCursorTools {
   }
 
   /**
-   * NOTE: This method is ignored while Presentation Mode is active.
    * @param {number} tool - The cursor mode that should be switched to,
    *                        must be one of the values in {CursorTool}.
    */
   switchTool(tool) {
-    if (this.activeBeforePresentationMode !== null) {
-      return; // Cursor tools cannot be used in Presentation Mode.
+    if (this.previouslyActive !== null) {
+      // Cursor tools cannot be used in PresentationMode/AnnotationEditor.
+      return;
     }
     if (tool === this.active) {
       return; // The requested tool is already active.
@@ -106,43 +107,69 @@ class PDFCursorTools {
     // in order to prevent setting it to an invalid state.
     this.active = tool;
 
-    this._dispatchEvent();
+    this.#dispatchEvent();
   }
 
-  /**
-   * @private
-   */
-  _dispatchEvent() {
+  #dispatchEvent() {
     this.eventBus.dispatch("cursortoolchanged", {
       source: this,
       tool: this.active,
     });
   }
 
-  /**
-   * @private
-   */
-  _addEventListeners() {
+  #addEventListeners() {
     this.eventBus._on("switchcursortool", evt => {
       this.switchTool(evt.tool);
     });
 
-    this.eventBus._on("presentationmodechanged", evt => {
-      switch (evt.state) {
-        case PresentationModeState.FULLSCREEN: {
-          const previouslyActive = this.active;
+    let annotationEditorMode = AnnotationEditorType.NONE,
+      presentationModeState = PresentationModeState.NORMAL;
 
-          this.switchTool(CursorTool.SELECT);
-          this.activeBeforePresentationMode = previouslyActive;
-          break;
-        }
-        case PresentationModeState.NORMAL: {
-          const previouslyActive = this.activeBeforePresentationMode;
+    const disableActive = () => {
+      const previouslyActive = this.active;
 
-          this.activeBeforePresentationMode = null;
-          this.switchTool(previouslyActive);
-          break;
-        }
+      this.switchTool(CursorTool.SELECT);
+      this.previouslyActive ??= previouslyActive; // Keep track of the first one.
+    };
+    const enableActive = () => {
+      const previouslyActive = this.previouslyActive;
+
+      if (
+        previouslyActive !== null &&
+        annotationEditorMode === AnnotationEditorType.NONE &&
+        presentationModeState === PresentationModeState.NORMAL
+      ) {
+        this.previouslyActive = null;
+        this.switchTool(previouslyActive);
+      }
+    };
+
+    this.eventBus._on("secondarytoolbarreset", evt => {
+      if (this.previouslyActive !== null) {
+        annotationEditorMode = AnnotationEditorType.NONE;
+        presentationModeState = PresentationModeState.NORMAL;
+
+        enableActive();
+      }
+    });
+
+    this.eventBus._on("annotationeditormodechanged", ({ mode }) => {
+      annotationEditorMode = mode;
+
+      if (mode === AnnotationEditorType.NONE) {
+        enableActive();
+      } else {
+        disableActive();
+      }
+    });
+
+    this.eventBus._on("presentationmodechanged", ({ state }) => {
+      presentationModeState = state;
+
+      if (state === PresentationModeState.NORMAL) {
+        enableActive();
+      } else if (state === PresentationModeState.FULLSCREEN) {
+        disableActive();
       }
     });
   }

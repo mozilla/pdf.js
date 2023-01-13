@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
+
 var babel = require("plugin-babel");
 
 var cacheExpiration = 60 /* min */ * 60 * 1000;
@@ -41,7 +43,7 @@ function getDb() {
   return dbPromise;
 }
 
-function storeCache(address, hashCode, translated, format) {
+function storeCache(address, hashCode, translated, format, sourceMap) {
   return getDb().then(function (db) {
     var tx = db.transaction(dbCacheTable, "readwrite");
     var store = tx.objectStore(dbCacheTable);
@@ -51,6 +53,7 @@ function storeCache(address, hashCode, translated, format) {
       translated,
       expires: Date.now() + cacheExpiration,
       format,
+      sourceMap,
     });
     return new Promise(function (resolve, reject) {
       tx.oncomplete = function () {
@@ -78,6 +81,7 @@ function loadCache(address, hashCode) {
             ? {
                 translated: found.translated,
                 format: found.format,
+                sourceMap: found.sourceMap,
               }
             : null
         );
@@ -125,7 +129,8 @@ exports.translate = function (load, opt) {
               load.address,
               savedHashCode,
               translated,
-              load.metadata.format
+              load.metadata.format,
+              load.metadata.sourceMap
             ).then(function () {
               return translated;
             });

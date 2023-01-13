@@ -1,6 +1,6 @@
 root = true
 
-[*.{js,jsm,html,css}]
+[*.{js,jsm,json,html,css,pdf.link}]
 charset = utf-8
 end_of_line = lf
 indent_size = 2
@@ -9,9 +9,12 @@ insert_final_newline = true
 max_line_length = 80
 trim_trailing_whitespace = true
 
+[*.{json,pdf.link}]
+max_line_length = off
+
 [*.md]
-max_line_length = 0
+max_line_length = off
 trim_trailing_whitespace = false
 
 [COMMIT_EDITMSG]
-max_line_length = 0
+max_line_length = off

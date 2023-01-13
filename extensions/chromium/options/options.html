@@ -43,6 +43,19 @@ body {
 </div>
 </template>
 
+<template id="viewerCssTheme-template">
+<div class="settings-row">
+  <label>
+    <span></span>
+    <select>
+      <option value="0">Use system theme</option>
+      <option value="1">Light theme</option>
+      <option value="2">Dark theme</option>
+    </select>
+  </label>
+</div>
+</template>
+
 <template id="viewOnLoad-template">
 <div class="settings-row">
   <label>
@@ -113,7 +126,6 @@ body {
     <select>
       <option value="0">Disable text selection</option>
       <option value="1">Enable text selection</option>
-      <option value="2">Enable enhanced mode (experimental)</option>
     </select>
   </label>
 </div>
@@ -140,6 +152,7 @@ body {
     <span></span>
     <select>
       <option value="-1">Default</option>
+      <option value="3">Page scrolling</option>
       <option value="0">Vertical scrolling</option>
       <option value="1">Horizontal scrolling</option>
       <option value="2">Wrapped scrolling</option>

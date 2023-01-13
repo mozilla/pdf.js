@@ -1,8 +1,9 @@
 import { decodeFontData, ttx, verifyTtxOutput } from "./fontutils.js";
-import { Font, ToUnicodeMap } from "../../src/core/fonts.js";
 import { CMapFactory } from "../../src/core/cmap.js";
+import { Font } from "../../src/core/fonts.js";
 import { Name } from "../../src/core/primitives.js";
 import { Stream } from "../../src/core/stream.js";
+import { ToUnicodeMap } from "../../src/core/to_unicode_map.js";
 
 describe("font_fpgm", function () {
   const font2324 = decodeFontData(
@@ -11,26 +12,29 @@ describe("font_fpgm", function () {
   );
 
   describe("Fixes fpgm table", function () {
-    it("table was truncated in the middle of functions", function (done) {
-      CMapFactory.create({
+    it("table was truncated in the middle of functions", async function () {
+      const cMap = await CMapFactory.create({
         encoding: Name.get("Identity-H"),
-      }).then(function (cMap) {
-        const font = new Font("font", new Stream(font2324), {
-          loadedName: "font",
-          type: "CIDFontType2",
-          differences: [],
-          defaultEncoding: [],
-          cMap,
-          toUnicode: new ToUnicodeMap([]),
-        });
-        ttx(font.data, function (output) {
-          verifyTtxOutput(output);
-          expect(
-            /(ENDF\[ \]|SVTCA\[0\])\s*<\/assembly>\s*<\/fpgm>/.test(output)
-          ).toEqual(true);
-          done();
-        });
       });
+      const font = new Font("font", new Stream(font2324), {
+        loadedName: "font",
+        type: "CIDFontType2",
+        differences: [],
+        defaultEncoding: [],
+        cMap,
+        toUnicode: new ToUnicodeMap([]),
+        xHeight: 0,
+        capHeight: 0,
+        italicAngle: 0,
+      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(
+        /(ENDF\[ \]|SVTCA\[0\])\s*\/\*.*\*\/\s*<\/assembly>\s*<\/fpgm>/.test(
+          output
+        )
+      ).toEqual(true);
     });
   });
 });

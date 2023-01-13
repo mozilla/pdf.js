@@ -21,7 +21,9 @@ class BaseLocalCache {
     if (this.constructor === BaseLocalCache) {
       unreachable("Cannot initialize BaseLocalCache.");
     }
-    if (!options || !options.onlyRefs) {
+    this._onlyRefs = (options && options.onlyRefs) === true;
+
+    if (!this._onlyRefs) {
       this._nameRefMap = new Map();
       this._imageMap = new Map();
     }
@@ -29,6 +31,9 @@ class BaseLocalCache {
   }
 
   getByName(name) {
+    if (this._onlyRefs) {
+      unreachable("Should not call `getByName` method.");
+    }
     const ref = this._nameRefMap.get(name);
     if (ref) {
       return this.getByRef(ref);
@@ -47,7 +52,7 @@ class BaseLocalCache {
 
 class LocalImageCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error('LocalImageCache.set - expected "name" argument.');
     }
     if (ref) {
@@ -68,7 +73,7 @@ class LocalImageCache extends BaseLocalCache {
 
 class LocalColorSpaceCache extends BaseLocalCache {
   set(name = null, ref = null, data) {
-    if (!name && !ref) {
+    if (typeof name !== "string" && !ref) {
       throw new Error(
         'LocalColorSpaceCache.set - expected "name" and/or "ref" argument.'
       );
@@ -77,7 +82,7 @@ class LocalColorSpaceCache extends BaseLocalCache {
       if (this._imageCache.has(ref)) {
         return;
       }
-      if (name) {
+      if (name !== null) {
         // Optional when `ref` is defined.
         this._nameRefMap.set(name, ref);
       }
@@ -97,10 +102,6 @@ class LocalFunctionCache extends BaseLocalCache {
     super({ onlyRefs: true });
   }
 
-  getByName(name) {
-    unreachable("Should not call `getByName` method.");
-  }
-
   set(name = null, ref, data) {
     if (!ref) {
       throw new Error('LocalFunctionCache.set - expected "ref" argument.');
@@ -114,7 +115,7 @@ class LocalFunctionCache extends BaseLocalCache {
 
 class LocalGStateCache extends BaseLocalCache {
   set(name, ref = null, data) {
-    if (!name) {
+    if (typeof name !== "string") {
       throw new Error('LocalGStateCache.set - expected "name" argument.');
     }
     if (ref) {
@@ -134,25 +135,18 @@ class LocalGStateCache extends BaseLocalCache {
 }
 
 class LocalTilingPatternCache extends BaseLocalCache {
-  set(name, ref = null, data) {
-    if (!name) {
-      throw new Error(
-        'LocalTilingPatternCache.set - expected "name" argument.'
-      );
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('LocalTilingPatternCache.set - expected "ref" argument.');
     }
-    if (ref) {
-      if (this._imageCache.has(ref)) {
-        return;
-      }
-      this._nameRefMap.set(name, ref);
-      this._imageCache.put(ref, data);
+    if (this._imageCache.has(ref)) {
       return;
     }
-    // name
-    if (this._imageMap.has(name)) {
-      return;
-    }
-    this._imageMap.set(name, data);
+    this._imageCache.put(ref, data);
   }
 }
 
@@ -185,9 +179,9 @@ class GlobalImageCache {
 
   get _byteSize() {
     let byteSize = 0;
-    this._imageCache.forEach(imageData => {
+    for (const imageData of this._imageCache) {
       byteSize += imageData.byteSize;
-    });
+    }
     return byteSize;
   }
 

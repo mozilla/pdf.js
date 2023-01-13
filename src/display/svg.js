@@ -14,26 +14,30 @@
  */
 /* globals __non_webpack_require__ */
 
+import { deprecated, DOMSVGFactory } from "./display_utils.js";
 import {
-  createObjectURL,
   FONT_IDENTITY_MATRIX,
   IDENTITY_MATRIX,
   ImageKind,
-  isNum,
   OPS,
   TextRenderingMode,
+  unreachable,
   Util,
   warn,
 } from "../shared/util.js";
-import { DOMSVGFactory } from "./display_utils.js";
 import { isNodeJS } from "../shared/is_node.js";
 
 /** @type {any} */
-let SVGGraphics = function () {
-  throw new Error("Not implemented: SVGGraphics");
+let SVGGraphics = class {
+  constructor() {
+    unreachable("Not implemented: SVGGraphics");
+  }
 };
 
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+if (
+  typeof PDFJSDev === "undefined" ||
+  PDFJSDev.test("!PRODUCTION || GENERIC")
+) {
   const SVG_DEFAULTS = {
     fontStyle: "normal",
     fontWeight: "normal",
@@ -44,16 +48,39 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const LINE_CAP_STYLES = ["butt", "round", "square"];
   const LINE_JOIN_STYLES = ["miter", "round", "bevel"];
 
+  const createObjectURL = function (
+    data,
+    contentType = "",
+    forceDataSchema = false
+  ) {
+    if (
+      URL.createObjectURL &&
+      typeof Blob !== "undefined" &&
+      !forceDataSchema
+    ) {
+      return URL.createObjectURL(new Blob([data], { type: contentType }));
+    }
+    // Blob/createObjectURL is not available, falling back to data schema.
+    const digits =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+    let buffer = `data:${contentType};base64,`;
+    for (let i = 0, ii = data.length; i < ii; i += 3) {
+      const b1 = data[i] & 0xff;
+      const b2 = data[i + 1] & 0xff;
+      const b3 = data[i + 2] & 0xff;
+      const d1 = b1 >> 2,
+        d2 = ((b1 & 3) << 4) | (b2 >> 4);
+      const d3 = i + 1 < ii ? ((b2 & 0xf) << 2) | (b3 >> 6) : 64;
+      const d4 = i + 2 < ii ? b3 & 0x3f : 64;
+      buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
+    }
+    return buffer;
+  };
+
   const convertImgDataToPng = (function () {
     const PNG_HEADER = new Uint8Array([
-      0x89,
-      0x50,
-      0x4e,
-      0x47,
-      0x0d,
-      0x0a,
-      0x1a,
-      0x0a,
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
     ]);
     const CHUNK_WRAPPER_SIZE = 12;
 
@@ -362,7 +389,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (opListElement.fn === "save") {
         opTree.push({ fnId: 92, fn: "group", items: [] });
         tmp.push(opTree);
-        opTree = opTree[opTree.length - 1].items;
+        opTree = opTree.at(-1).items;
         continue;
       }
 
@@ -438,9 +465,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   let maskCount = 0;
   let shadingCount = 0;
 
-  // eslint-disable-next-line no-shadow
-  SVGGraphics = class SVGGraphics {
+  SVGGraphics = class {
     constructor(commonObjs, objs, forceDataSchema = false) {
+      deprecated(
+        "The SVG back-end is no longer maintained and *may* be removed in the future."
+      );
       this.svgFactory = new DOMSVGFactory();
 
       this.current = new SVGExtraState();
@@ -464,6 +493,15 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       for (const op in OPS) {
         this._operatorIdMapping[OPS[op]] = op;
       }
+    }
+
+    getObject(data, fallback = null) {
+      if (typeof data === "string") {
+        return data.startsWith("g_")
+          ? this.commonObjs.get(data)
+          : this.objs.get(data);
+      }
+      return fallback;
     }
 
     save() {
@@ -752,7 +790,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       current.tspan.setAttributeNS(null, "y", pf(-current.y));
 
       current.txtElement = this.svgFactory.createElement("svg:text");
-      current.txtElement.appendChild(current.tspan);
+      current.txtElement.append(current.tspan);
     }
 
     beginText() {
@@ -810,7 +848,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
           // Word break
           x += fontDirection * wordSpacing;
           continue;
-        } else if (isNum(glyph)) {
+        } else if (typeof glyph === "number") {
           x += (spacingDir * glyph * fontSize) / 1000;
           continue;
         }
@@ -933,10 +971,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         `${pm(textMatrix)} scale(${pf(textHScale)}, -1)`
       );
       current.txtElement.setAttributeNS(XML_NS, "xml:space", "preserve");
-      current.txtElement.appendChild(current.tspan);
-      current.txtgrp.appendChild(current.txtElement);
+      current.txtElement.append(current.tspan);
+      current.txtgrp.append(current.txtElement);
 
-      this._ensureTransformGroup().appendChild(current.txtElement);
+      this._ensureTransformGroup().append(current.txtElement);
     }
 
     setLeadingMoveText(x, y) {
@@ -954,7 +992,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (!this.cssStyle) {
         this.cssStyle = this.svgFactory.createElement("svg:style");
         this.cssStyle.setAttributeNS(null, "type", "text/css");
-        this.defs.appendChild(this.cssStyle);
+        this.defs.append(this.cssStyle);
       }
 
       const url = createObjectURL(
@@ -1089,7 +1127,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (this.current.fillAlpha < 1) {
         rect.setAttributeNS(null, "fill-opacity", this.current.fillAlpha);
       }
-      this._ensureTransformGroup().appendChild(rect);
+      this._ensureTransformGroup().append(rect);
     }
 
     /**
@@ -1115,8 +1153,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       const paintType = args[7];
 
       const tilingId = `shading${shadingCount++}`;
-      const [tx0, ty0] = Util.applyTransform([x0, y0], matrix);
-      const [tx1, ty1] = Util.applyTransform([x1, y1], matrix);
+      const [tx0, ty0, tx1, ty1] = Util.normalizeRect([
+        ...Util.applyTransform([x0, y0], matrix),
+        ...Util.applyTransform([x1, y1], matrix),
+      ]);
       const [xscale, yscale] = Util.singularValueDecompose2dScale(matrix);
       const txstep = xstep * xscale;
       const tystep = ystep * yscale;
@@ -1151,8 +1191,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this.current.fillColor = fillColor;
       this.current.strokeColor = strokeColor;
 
-      tiling.appendChild(bbox.childNodes[0]);
-      this.defs.appendChild(tiling);
+      tiling.append(bbox.childNodes[0]);
+      this.defs.append(tiling);
       return `url(#${tilingId})`;
     }
 
@@ -1160,6 +1200,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
      * @private
      */
     _makeShadingPattern(args) {
+      if (typeof args === "string") {
+        args = this.objs.get(args);
+      }
       switch (args[0]) {
         case "RadialAxial":
           const shadingId = `shading${shadingCount++}`;
@@ -1200,9 +1243,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
             const stop = this.svgFactory.createElement("svg:stop");
             stop.setAttributeNS(null, "offset", colorStop[0]);
             stop.setAttributeNS(null, "stop-color", colorStop[1]);
-            gradient.appendChild(stop);
+            gradient.append(stop);
           }
-          this.defs.appendChild(gradient);
+          this.defs.append(gradient);
           return `url(#${shadingId})`;
         case "Mesh":
           warn("Unimplemented pattern Mesh");
@@ -1323,7 +1366,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         d = current.path.getAttributeNS(null, "d") + d;
       } else {
         current.path = this.svgFactory.createElement("svg:path");
-        this._ensureTransformGroup().appendChild(current.path);
+        this._ensureTransformGroup().append(current.path);
       }
 
       current.path.setAttributeNS(null, "d", d);
@@ -1363,16 +1406,16 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         clipElement.setAttributeNS(null, "clip-rule", "nonzero");
       }
       this.pendingClip = null;
-      clipPath.appendChild(clipElement);
-      this.defs.appendChild(clipPath);
+      clipPath.append(clipElement);
+      this.defs.append(clipPath);
 
       if (current.activeClipUrl) {
         // The previous clipping group content can go out of order -- resetting
         // cached clipGroups.
         current.clipGroup = null;
-        this.extraStack.forEach(function (prev) {
+        for (const prev of this.extraStack) {
           prev.clipGroup = null;
-        });
+        }
         // Intersect with the previous clipping path.
         clipPath.setAttributeNS(null, "clip-path", current.activeClipUrl);
       }
@@ -1509,9 +1552,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     eoFill() {
-      if (this.current.element) {
-        this.current.element.setAttributeNS(null, "fill-rule", "evenodd");
-      }
+      this.current.element?.setAttributeNS(null, "fill-rule", "evenodd");
       this.fill();
     }
 
@@ -1523,9 +1564,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
 
     eoFillStroke() {
-      if (this.current.element) {
-        this.current.element.setAttributeNS(null, "fill-rule", "evenodd");
-      }
+      this.current.element?.setAttributeNS(null, "fill-rule", "evenodd");
       this.fillStroke();
     }
 
@@ -1552,13 +1591,11 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       rect.setAttributeNS(null, "height", "1px");
       rect.setAttributeNS(null, "fill", this.current.fillColor);
 
-      this._ensureTransformGroup().appendChild(rect);
+      this._ensureTransformGroup().append(rect);
     }
 
     paintImageXObject(objId) {
-      const imgData = objId.startsWith("g_")
-        ? this.commonObjs.get(objId)
-        : this.objs.get(objId);
+      const imgData = this.getObject(objId);
       if (!imgData) {
         warn(`Dependent image with object ID ${objId} is not ready yet`);
         return;
@@ -1591,13 +1628,21 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         `scale(${pf(1 / width)} ${pf(-1 / height)})`
       );
       if (mask) {
-        mask.appendChild(imgEl);
+        mask.append(imgEl);
       } else {
-        this._ensureTransformGroup().appendChild(imgEl);
+        this._ensureTransformGroup().append(imgEl);
       }
     }
 
-    paintImageMaskXObject(imgData) {
+    paintImageMaskXObject(img) {
+      const imgData = this.getObject(img.data, img);
+      if (imgData.bitmap) {
+        warn(
+          "paintImageMaskXObject: ImageBitmap support is not implemented, " +
+            "ensure that the `isOffscreenCanvasSupported` API parameter is disabled."
+        );
+        return;
+      }
       const current = this.current;
       const width = imgData.width;
       const height = imgData.height;
@@ -1615,8 +1660,8 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       rect.setAttributeNS(null, "fill", fillColor);
       rect.setAttributeNS(null, "mask", `url(#${current.maskId})`);
 
-      this.defs.appendChild(mask);
-      this._ensureTransformGroup().appendChild(rect);
+      this.defs.append(mask);
+      this._ensureTransformGroup().append(rect);
 
       this.paintInlineImageXObject(imgData, mask);
     }
@@ -1658,14 +1703,14 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
       // Create the definitions element.
       const definitions = this.svgFactory.createElement("svg:defs");
-      svg.appendChild(definitions);
+      svg.append(definitions);
       this.defs = definitions;
 
       // Create the root group element, which acts a container for all other
       // groups and applies the viewport transform.
       const rootGroup = this.svgFactory.createElement("svg:g");
       rootGroup.setAttributeNS(null, "transform", pm(viewport.transform));
-      svg.appendChild(rootGroup);
+      svg.append(rootGroup);
 
       // For the construction of the SVG image we are only interested in the
       // root group, so we expose it as the entry point of the SVG image for
@@ -1682,7 +1727,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (!this.current.clipGroup) {
         const clipGroup = this.svgFactory.createElement("svg:g");
         clipGroup.setAttributeNS(null, "clip-path", this.current.activeClipUrl);
-        this.svg.appendChild(clipGroup);
+        this.svg.append(clipGroup);
         this.current.clipGroup = clipGroup;
       }
       return this.current.clipGroup;
@@ -1696,9 +1741,9 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         this.tgrp = this.svgFactory.createElement("svg:g");
         this.tgrp.setAttributeNS(null, "transform", pm(this.transformMatrix));
         if (this.current.activeClipUrl) {
-          this._ensureClipGroup().appendChild(this.tgrp);
+          this._ensureClipGroup().append(this.tgrp);
         } else {
-          this.svg.appendChild(this.tgrp);
+          this.svg.append(this.tgrp);
         }
       }
       return this.tgrp;

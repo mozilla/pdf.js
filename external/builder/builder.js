@@ -1,8 +1,10 @@
 "use strict";
 
-var fs = require("fs"),
+const fs = require("fs"),
   path = require("path"),
   vm = require("vm");
+
+const AllWhitespaceRegexp = /^\s+$/g;
 
 /**
  * A simple preprocessor that is based on the Firefox preprocessor
@@ -33,22 +35,49 @@ var fs = require("fs"),
  * //#endif
  */
 function preprocess(inFilename, outFilename, defines) {
+  let lineNumber = 0;
+  function loc() {
+    return fs.realpathSync(inFilename) + ":" + lineNumber;
+  }
+
+  function expandCssImports(content, baseUrl) {
+    return content.replace(
+      /^\s*@import\s+url\(([^)]+)\);\s*$/gm,
+      function (all, url) {
+        const file = path.join(path.dirname(baseUrl), url);
+        const imported = fs.readFileSync(file, "utf8").toString();
+        return expandCssImports(imported, file);
+      }
+    );
+  }
+
   // TODO make this really read line by line.
-  var lines = fs.readFileSync(inFilename).toString().split("\n");
-  var totalLines = lines.length;
-  var out = "";
-  var i = 0;
+  let content = fs.readFileSync(inFilename, "utf8").toString();
+  // Handle CSS-imports first, when necessary.
+  if (/\.css$/i.test(inFilename)) {
+    content = expandCssImports(content, inFilename);
+  }
+  const lines = content.split("\n"),
+    totalLines = lines.length;
+  const out = [];
+  let i = 0;
   function readLine() {
     if (i < totalLines) {
       return lines[i++];
     }
     return null;
   }
-  var writeLine =
+  const writeLine =
     typeof outFilename === "function"
       ? outFilename
       : function (line) {
-          out += line + "\n";
+          if (!line || AllWhitespaceRegexp.test(line)) {
+            const prevLine = out[out.length - 1];
+            if (!prevLine || AllWhitespaceRegexp.test(prevLine)) {
+              return; // Avoid adding consecutive blank lines.
+            }
+          }
+          out.push(line);
         };
   function evaluateCondition(code) {
     if (!code || !code.trim()) {
@@ -70,10 +99,10 @@ function preprocess(inFilename, outFilename, defines) {
     }
   }
   function include(file) {
-    var realPath = fs.realpathSync(inFilename);
-    var dir = path.dirname(realPath);
+    const realPath = fs.realpathSync(inFilename);
+    const dir = path.dirname(realPath);
     try {
-      var fullpath;
+      let fullpath;
       if (file.indexOf("$ROOT/") === 0) {
         fullpath = path.join(
           __dirname,
@@ -103,28 +132,26 @@ function preprocess(inFilename, outFilename, defines) {
   }
 
   // not inside if or else (process lines)
-  var STATE_NONE = 0;
+  const STATE_NONE = 0;
   // inside if, condition false (ignore until #else or #endif)
-  var STATE_IF_FALSE = 1;
+  const STATE_IF_FALSE = 1;
   // inside else, #if was false, so #else is true (process lines until #endif)
-  var STATE_ELSE_TRUE = 2;
+  const STATE_ELSE_TRUE = 2;
   // inside if, condition true (process lines until #else or #endif)
-  var STATE_IF_TRUE = 3;
+  const STATE_IF_TRUE = 3;
   // inside else or elif, #if/#elif was true, so following #else or #elif is
   // false (ignore lines until #endif)
-  var STATE_ELSE_FALSE = 4;
+  const STATE_ELSE_FALSE = 4;
 
-  var line;
-  var state = STATE_NONE;
-  var stack = [];
-  var control = /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
-  var lineNumber = 0;
-  var loc = function () {
-    return fs.realpathSync(inFilename) + ":" + lineNumber;
-  };
+  let line;
+  let state = STATE_NONE;
+  const stack = [];
+  const control =
+    /^(?:\/\/|\s*\/\*|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:\*\/|-->)?$)?/;
+
   while ((line = readLine()) !== null) {
     ++lineNumber;
-    var m = control.exec(line);
+    const m = control.exec(line);
     if (m) {
       switch (m[1]) {
         case "if":
@@ -181,7 +208,12 @@ function preprocess(inFilename, outFilename, defines) {
         !stack.includes(STATE_IF_FALSE) &&
         !stack.includes(STATE_ELSE_FALSE)
       ) {
-        writeLine(line.replace(/^\/\/|^<!--/g, "  ").replace(/-->$/g, ""));
+        writeLine(
+          line
+            .replace(/^\/\/|^<!--/g, "  ")
+            .replace(/(^\s*)\/\*/g, "$1  ")
+            .replace(/\*\/$|-->$/g, "")
+        );
       }
     }
   }
@@ -191,97 +223,21 @@ function preprocess(inFilename, outFilename, defines) {
     );
   }
   if (typeof outFilename !== "function") {
-    fs.writeFileSync(outFilename, out);
+    fs.writeFileSync(outFilename, out.join("\n"));
   }
 }
 exports.preprocess = preprocess;
-
-function preprocessCSS(mode, source, destination) {
-  function hasPrefixedMozcentral(line) {
-    return /(^|\W)-(ms|o|webkit)-\w/.test(line);
-  }
-
-  function expandImports(content, baseUrl) {
-    return content.replace(
-      /^\s*@import\s+url\(([^)]+)\);\s*$/gm,
-      function (all, url) {
-        var file = path.join(path.dirname(baseUrl), url);
-        var imported = fs.readFileSync(file, "utf8").toString();
-        return expandImports(imported, file);
-      }
-    );
-  }
-
-  function removePrefixed(content, hasPrefixedFilter) {
-    var lines = content.split(/\r?\n/g);
-    var i = 0;
-    while (i < lines.length) {
-      var line = lines[i];
-      if (!hasPrefixedFilter(line)) {
-        i++;
-        continue;
-      }
-      if (/\{\s*$/.test(line)) {
-        var bracketLevel = 1;
-        var j = i + 1;
-        while (j < lines.length && bracketLevel > 0) {
-          var checkBracket = /([{}])\s*$/.exec(lines[j]);
-          if (checkBracket) {
-            if (checkBracket[1] === "{") {
-              bracketLevel++;
-            } else if (!lines[j].includes("{")) {
-              bracketLevel--;
-            }
-          }
-          j++;
-        }
-        lines.splice(i, j - i);
-      } else if (/[};]\s*$/.test(line)) {
-        lines.splice(i, 1);
-      } else {
-        // multiline? skipping until next directive or bracket
-        do {
-          lines.splice(i, 1);
-        } while (
-          i < lines.length &&
-          !/\}\s*$/.test(lines[i]) &&
-          !lines[i].includes(":")
-        );
-        if (i < lines.length && /\S\s*}\s*$/.test(lines[i])) {
-          lines[i] = lines[i].substring(lines[i].indexOf("}"));
-        }
-      }
-      // collapse whitespaces
-      while (lines[i] === "" && lines[i - 1] === "") {
-        lines.splice(i, 1);
-      }
-    }
-    return lines.join("\n");
-  }
-
-  if (!mode) {
-    throw new Error("Invalid CSS preprocessor mode");
-  }
-
-  var content = fs.readFileSync(source, "utf8").toString();
-  content = expandImports(content, source);
-  if (mode === "mozcentral") {
-    content = removePrefixed(content, hasPrefixedMozcentral);
-  }
-  fs.writeFileSync(destination, content);
-}
-exports.preprocessCSS = preprocessCSS;
 
 /**
  * Merge two defines arrays. Values in the second param will override values in
  * the first.
  */
 function merge(defaults, defines) {
-  var ret = {};
-  for (var key in defaults) {
+  const ret = Object.create(null);
+  for (const key in defaults) {
     ret[key] = defaults[key];
   }
-  for (key in defines) {
+  for (const key in defines) {
     ret[key] = defines[key];
   }
   return ret;

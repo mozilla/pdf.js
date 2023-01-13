@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-import { isRef, Ref } from "../../src/core/primitives.js";
+import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { assert } from "../../src/shared/util.js";
 import { isNodeJS } from "../../src/shared/is_node.js";
-import { StringStream } from "../../src/core/stream.js";
+import { Ref } from "../../src/core/primitives.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
@@ -25,6 +25,10 @@ const CMAP_PARAMS = {
   cMapUrl: isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/",
   cMapPacked: true,
 };
+
+const STANDARD_FONT_DATA_URL = isNodeJS
+  ? "./external/standard_fonts/"
+  : "../../external/standard_fonts/";
 
 class DOMFileReaderFactory {
   static async fetch(params) {
@@ -61,6 +65,7 @@ function buildGetDocumentParams(filename, options) {
   params.url = isNodeJS
     ? TEST_PDFS_PATH + filename
     : new URL(TEST_PDFS_PATH + filename, window.location).href;
+  params.standardFontDataUrl = STANDARD_FONT_DATA_URL;
 
   for (const option in options) {
     params[option] = options[option];
@@ -71,11 +76,9 @@ function buildGetDocumentParams(filename, options) {
 class XRefMock {
   constructor(array) {
     this._map = Object.create(null);
-    this.stats = {
-      streamTypes: Object.create(null),
-      fontTypes: Object.create(null),
-    };
-    this._newRefNum = null;
+    this._newTemporaryRefNum = null;
+    this._newPersistentRefNum = null;
+    this.stream = new NullStream();
 
     for (const key in array) {
       const obj = array[key];
@@ -83,15 +86,24 @@ class XRefMock {
     }
   }
 
-  getNewRef() {
-    if (this._newRefNum === null) {
-      this._newRefNum = Object.keys(this._map).length;
+  getNewPersistentRef(obj) {
+    if (this._newPersistentRefNum === null) {
+      this._newPersistentRefNum = Object.keys(this._map).length || 1;
     }
-    return Ref.get(this._newRefNum++, 0);
+    const ref = Ref.get(this._newPersistentRefNum++, 0);
+    this._map[ref.toString()] = obj;
+    return ref;
   }
 
-  resetNewRef() {
-    this.newRef = null;
+  getNewTemporaryRef() {
+    if (this._newTemporaryRefNum === null) {
+      this._newTemporaryRefNum = Object.keys(this._map).length || 1;
+    }
+    return Ref.get(this._newTemporaryRefNum++, 0);
+  }
+
+  resetNewTemporaryRef() {
+    this._newTemporaryRefNum = null;
   }
 
   fetch(ref) {
@@ -103,10 +115,10 @@ class XRefMock {
   }
 
   fetchIfRef(obj) {
-    if (!isRef(obj)) {
-      return obj;
+    if (obj instanceof Ref) {
+      return this.fetch(obj);
     }
-    return this.fetch(obj);
+    return obj;
   }
 
   async fetchIfRefAsync(obj) {
@@ -146,6 +158,7 @@ export {
   createIdFactory,
   DefaultFileReaderFactory,
   isEmptyObj,
+  STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   XRefMock,
 };

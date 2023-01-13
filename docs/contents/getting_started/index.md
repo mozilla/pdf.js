@@ -37,26 +37,22 @@ Before downloading PDF.js please take a moment to understand the different layer
 
 ## Download
 
+Please refer to [this wiki page](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#faq-support) for information about supported browsers.
+
 <div class="row">
   <div class="col-md-4">
-    <h3>Prebuilt</h3>
+    <h3>Prebuilt (modern browsers)</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
-    <span class="GROUP_CLASS">
-      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
-      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION-dist.zip">Beta (vBETA_VERSION)</a>
-    </span>
+    <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-dist.zip">Stable (vSTABLE_VERSION)</a>
   </div>
   <div class="col-md-4">
-    <h3>Prebuilt (for older browsers)</h3>
+    <h3>Prebuilt (older browsers)</h3>
     <p>
       Includes the generic build of PDF.js and the viewer.
     </p>
-    <span class="GROUP_CLASS">
-      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION_LEGACY-dist.zip">Stable (vSTABLE_VERSION)</a>
-      <a type="button" class="btn btn-warning HIDDEN_CLASS" href="https://github.com/mozilla/pdf.js/releases/download/vBETA_VERSION/pdfjs-BETA_VERSION_LEGACY-dist.zip">Beta (vBETA_VERSION)</a>
-    </span>
+    <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/vSTABLE_VERSION/pdfjs-STABLE_VERSION-legacy-dist.zip">Stable (vSTABLE_VERSION)</a>
   </div>
   <div class="col-md-4">
     <h3>Source</h3>
@@ -114,7 +110,7 @@ Note that we only mention the most relevant files and folders.
 │   ├── interfaces.js                      - interface definitions for the core/display layers
 │   ├── pdf.*.js                           - wrapper files for bundling
 │   └── worker_loader.js                   - used for developer builds to load worker files
-├── test/                                  - unit, font and reference tests
+├── test/                                  - unit, font, reference, and integration tests
 ├── web/                                   - viewer layer
 ├── LICENSE
 ├── README.md

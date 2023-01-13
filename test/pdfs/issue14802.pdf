@@ -1,0 +1,89 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Pages 2 0 R
+/URI 
+<<
+/Base (http://example.com/)
+>>
+/Type /Catalog
+>>
+endobj 
+2 0 obj 
+<<
+/Kids [3 0 R]
+/Type /Pages
+/Count 1
+>>
+endobj 
+3 0 obj 
+<<
+/Parent 2 0 R
+/Annots [4 0 R]
+/Resources 
+<<
+/Font 
+<<
+/F1 5 0 R
+>>
+>>
+/MediaBox [0 0 260 50]
+/Type /Page
+/Contents 6 0 R
+>>
+endobj 
+4 0 obj 
+<<
+/Border [0 0 1]
+/Subtype /Link
+/C [0 0 1]
+/A 
+<<
+/URI (./relative_link.txt)
+/Type /Action
+/S /URI
+>>
+/Type /Annot
+/Rect [5 10 250 40]
+>>
+endobj 
+5 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Type /Font
+/Encoding /WinAnsiEncoding
+>>
+endobj 
+6 0 obj 
+<<
+/Length 81
+>>
+stream
+1 0 0 rg
+BT
+10 20 TD
+/F1 14 Tf
+(A relative link, with a /Catalog Base-URI) Tj
+ET
+
+endstream 
+endobj xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000106 00000 n 
+0000000165 00000 n 
+0000000310 00000 n 
+0000000467 00000 n 
+0000000568 00000 n 
+trailer
+
+<<
+/Root 1 0 R
+/Size 7
+>>
+startxref
+701
+%%EOF

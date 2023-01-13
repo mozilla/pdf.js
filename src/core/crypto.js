@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import {
   bytesToString,
   FormatError,
+  isArrayEqual,
   PasswordException,
   PasswordResponses,
   stringToBytes,
@@ -24,24 +24,21 @@ import {
   utf8StringToString,
   warn,
 } from "../shared/util.js";
-import { isDict, isName, Name } from "./primitives.js";
-import { DecryptStream } from "./stream.js";
+import { Dict, isName, Name } from "./primitives.js";
+import { DecryptStream } from "./decrypt_stream.js";
 
-var ARCFourCipher = (function ARCFourCipherClosure() {
-  // eslint-disable-next-line no-shadow
-  function ARCFourCipher(key) {
+class ARCFourCipher {
+  constructor(key) {
     this.a = 0;
     this.b = 0;
-    var s = new Uint8Array(256);
-    var i,
-      j = 0,
-      tmp,
-      keyLength = key.length;
-    for (i = 0; i < 256; ++i) {
+    const s = new Uint8Array(256);
+    const keyLength = key.length;
+
+    for (let i = 0; i < 256; ++i) {
       s[i] = i;
     }
-    for (i = 0; i < 256; ++i) {
-      tmp = s[i];
+    for (let i = 0, j = 0; i < 256; ++i) {
+      const tmp = s[i];
       j = (j + tmp + key[i % keyLength]) & 0xff;
       s[i] = s[j];
       s[j] = tmp;
@@ -49,46 +46,44 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
     this.s = s;
   }
 
-  ARCFourCipher.prototype = {
-    encryptBlock: function ARCFourCipher_encryptBlock(data) {
-      var i,
-        n = data.length,
-        tmp,
-        tmp2;
-      var a = this.a,
-        b = this.b,
-        s = this.s;
-      var output = new Uint8Array(n);
-      for (i = 0; i < n; ++i) {
-        a = (a + 1) & 0xff;
-        tmp = s[a];
-        b = (b + tmp) & 0xff;
-        tmp2 = s[b];
-        s[a] = tmp2;
-        s[b] = tmp;
-        output[i] = data[i] ^ s[(tmp + tmp2) & 0xff];
-      }
-      this.a = a;
-      this.b = b;
-      return output;
-    },
-  };
-  ARCFourCipher.prototype.decryptBlock = ARCFourCipher.prototype.encryptBlock;
-  ARCFourCipher.prototype.encrypt = ARCFourCipher.prototype.encryptBlock;
+  encryptBlock(data) {
+    let a = this.a,
+      b = this.b;
+    const s = this.s;
+    const n = data.length;
+    const output = new Uint8Array(n);
+    for (let i = 0; i < n; ++i) {
+      a = (a + 1) & 0xff;
+      const tmp = s[a];
+      b = (b + tmp) & 0xff;
+      const tmp2 = s[b];
+      s[a] = tmp2;
+      s[b] = tmp;
+      output[i] = data[i] ^ s[(tmp + tmp2) & 0xff];
+    }
+    this.a = a;
+    this.b = b;
+    return output;
+  }
 
-  return ARCFourCipher;
-})();
+  decryptBlock(data) {
+    return this.encryptBlock(data);
+  }
 
-var calculateMD5 = (function calculateMD5Closure() {
-  // prettier-ignore
-  var r = new Uint8Array([
-    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-    5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
-    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21]);
+  encrypt(data) {
+    return this.encryptBlock(data);
+  }
+}
 
-  // prettier-ignore
-  var k = new Int32Array([
+const calculateMD5 = (function calculateMD5Closure() {
+  const r = new Uint8Array([
+    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5,
+    9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11,
+    16, 23, 4, 11, 16, 23, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10,
+    15, 21,
+  ]);
+
+  const k = new Int32Array([
     -680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426,
     -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162,
     1804603682, -40341101, -1502002290, 1236535329, -165796510, -1069501632,
@@ -99,22 +94,23 @@ var calculateMD5 = (function calculateMD5Closure() {
     -722521979, 76029189, -640364487, -421815835, 530742520, -995338651,
     -198630844, 1126891415, -1416354905, -57434055, 1700485571, -1894986606,
     -1051523, -2054922799, 1873313359, -30611744, -1560198380, 1309151649,
-    -145523070, -1120210379, 718787259, -343485551]);
+    -145523070, -1120210379, 718787259, -343485551,
+  ]);
 
   function hash(data, offset, length) {
-    var h0 = 1732584193,
+    let h0 = 1732584193,
       h1 = -271733879,
       h2 = -1732584194,
       h3 = 271733878;
     // pre-processing
-    var paddedLength = (length + 72) & ~63; // data + 9 extra bytes
-    var padded = new Uint8Array(paddedLength);
-    var i, j, n;
+    const paddedLength = (length + 72) & ~63; // data + 9 extra bytes
+    const padded = new Uint8Array(paddedLength);
+    let i, j;
     for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
     }
     padded[i++] = 0x80;
-    n = paddedLength - 8;
+    const n = paddedLength - 8;
     while (i < n) {
       padded[i++] = 0;
     }
@@ -126,7 +122,7 @@ var calculateMD5 = (function calculateMD5Closure() {
     padded[i++] = 0;
     padded[i++] = 0;
     padded[i++] = 0;
-    var w = new Int32Array(16);
+    const w = new Int32Array(16);
     for (i = 0; i < paddedLength; ) {
       for (j = 0; j < 16; ++j, i += 4) {
         w[j] =
@@ -135,7 +131,7 @@ var calculateMD5 = (function calculateMD5Closure() {
           (padded[i + 2] << 16) |
           (padded[i + 3] << 24);
       }
-      var a = h0,
+      let a = h0,
         b = h1,
         c = h2,
         d = h3,
@@ -155,7 +151,7 @@ var calculateMD5 = (function calculateMD5Closure() {
           f = c ^ (b | ~d);
           g = (7 * j) & 15;
         }
-        var tmp = d,
+        const tmp = d,
           rotateArg = (a + f + k[j] + w[g]) | 0,
           rotate = r[j];
         d = c;
@@ -179,96 +175,95 @@ var calculateMD5 = (function calculateMD5Closure() {
 
   return hash;
 })();
-var Word64 = (function Word64Closure() {
-  // eslint-disable-next-line no-shadow
-  function Word64(highInteger, lowInteger) {
+
+class Word64 {
+  constructor(highInteger, lowInteger) {
     this.high = highInteger | 0;
     this.low = lowInteger | 0;
   }
-  Word64.prototype = {
-    and: function Word64_and(word) {
-      this.high &= word.high;
-      this.low &= word.low;
-    },
-    xor: function Word64_xor(word) {
-      this.high ^= word.high;
-      this.low ^= word.low;
-    },
 
-    or: function Word64_or(word) {
-      this.high |= word.high;
-      this.low |= word.low;
-    },
+  and(word) {
+    this.high &= word.high;
+    this.low &= word.low;
+  }
 
-    shiftRight: function Word64_shiftRight(places) {
-      if (places >= 32) {
-        this.low = (this.high >>> (places - 32)) | 0;
-        this.high = 0;
-      } else {
-        this.low = (this.low >>> places) | (this.high << (32 - places));
-        this.high = (this.high >>> places) | 0;
-      }
-    },
+  xor(word) {
+    this.high ^= word.high;
+    this.low ^= word.low;
+  }
 
-    shiftLeft: function Word64_shiftLeft(places) {
-      if (places >= 32) {
-        this.high = this.low << (places - 32);
-        this.low = 0;
-      } else {
-        this.high = (this.high << places) | (this.low >>> (32 - places));
-        this.low = this.low << places;
-      }
-    },
+  or(word) {
+    this.high |= word.high;
+    this.low |= word.low;
+  }
 
-    rotateRight: function Word64_rotateRight(places) {
-      var low, high;
-      if (places & 32) {
-        high = this.low;
-        low = this.high;
-      } else {
-        low = this.low;
-        high = this.high;
-      }
-      places &= 31;
-      this.low = (low >>> places) | (high << (32 - places));
-      this.high = (high >>> places) | (low << (32 - places));
-    },
+  shiftRight(places) {
+    if (places >= 32) {
+      this.low = (this.high >>> (places - 32)) | 0;
+      this.high = 0;
+    } else {
+      this.low = (this.low >>> places) | (this.high << (32 - places));
+      this.high = (this.high >>> places) | 0;
+    }
+  }
 
-    not: function Word64_not() {
-      this.high = ~this.high;
-      this.low = ~this.low;
-    },
+  shiftLeft(places) {
+    if (places >= 32) {
+      this.high = this.low << (places - 32);
+      this.low = 0;
+    } else {
+      this.high = (this.high << places) | (this.low >>> (32 - places));
+      this.low <<= places;
+    }
+  }
 
-    add: function Word64_add(word) {
-      var lowAdd = (this.low >>> 0) + (word.low >>> 0);
-      var highAdd = (this.high >>> 0) + (word.high >>> 0);
-      if (lowAdd > 0xffffffff) {
-        highAdd += 1;
-      }
-      this.low = lowAdd | 0;
-      this.high = highAdd | 0;
-    },
+  rotateRight(places) {
+    let low, high;
+    if (places & 32) {
+      high = this.low;
+      low = this.high;
+    } else {
+      low = this.low;
+      high = this.high;
+    }
+    places &= 31;
+    this.low = (low >>> places) | (high << (32 - places));
+    this.high = (high >>> places) | (low << (32 - places));
+  }
 
-    copyTo: function Word64_copyTo(bytes, offset) {
-      bytes[offset] = (this.high >>> 24) & 0xff;
-      bytes[offset + 1] = (this.high >> 16) & 0xff;
-      bytes[offset + 2] = (this.high >> 8) & 0xff;
-      bytes[offset + 3] = this.high & 0xff;
-      bytes[offset + 4] = (this.low >>> 24) & 0xff;
-      bytes[offset + 5] = (this.low >> 16) & 0xff;
-      bytes[offset + 6] = (this.low >> 8) & 0xff;
-      bytes[offset + 7] = this.low & 0xff;
-    },
+  not() {
+    this.high = ~this.high;
+    this.low = ~this.low;
+  }
 
-    assign: function Word64_assign(word) {
-      this.high = word.high;
-      this.low = word.low;
-    },
-  };
-  return Word64;
-})();
+  add(word) {
+    const lowAdd = (this.low >>> 0) + (word.low >>> 0);
+    let highAdd = (this.high >>> 0) + (word.high >>> 0);
+    if (lowAdd > 0xffffffff) {
+      highAdd += 1;
+    }
+    this.low = lowAdd | 0;
+    this.high = highAdd | 0;
+  }
 
-var calculateSHA256 = (function calculateSHA256Closure() {
+  copyTo(bytes, offset) {
+    bytes[offset] = (this.high >>> 24) & 0xff;
+    bytes[offset + 1] = (this.high >> 16) & 0xff;
+    bytes[offset + 2] = (this.high >> 8) & 0xff;
+    bytes[offset + 3] = this.high & 0xff;
+    bytes[offset + 4] = (this.low >>> 24) & 0xff;
+    bytes[offset + 5] = (this.low >> 16) & 0xff;
+    bytes[offset + 6] = (this.low >> 8) & 0xff;
+    bytes[offset + 7] = this.low & 0xff;
+  }
+
+  assign(word) {
+    this.high = word.high;
+    this.low = word.low;
+  }
+}
+
+const calculateSHA256 = (function calculateSHA256Closure() {
   function rotr(x, n) {
     return (x >>> n) | (x << (32 - n));
   }
@@ -297,27 +292,23 @@ var calculateSHA256 = (function calculateSHA256Closure() {
     return rotr(x, 17) ^ rotr(x, 19) ^ (x >>> 10);
   }
 
-  // prettier-ignore
-  var k = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-           0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-           0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-           0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-           0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
-           0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-           0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
-           0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-           0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-           0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-           0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
-           0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-           0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
-           0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-           0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-           0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+  const k = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
+    0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
+    0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
+    0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+    0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
+    0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
 
   function hash(data, offset, length) {
     // initial hash values
-    var h0 = 0x6a09e667,
+    let h0 = 0x6a09e667,
       h1 = 0xbb67ae85,
       h2 = 0x3c6ef372,
       h3 = 0xa54ff53a,
@@ -326,14 +317,14 @@ var calculateSHA256 = (function calculateSHA256Closure() {
       h6 = 0x1f83d9ab,
       h7 = 0x5be0cd19;
     // pre-processing
-    var paddedLength = Math.ceil((length + 9) / 64) * 64;
-    var padded = new Uint8Array(paddedLength);
-    var i, j, n;
+    const paddedLength = Math.ceil((length + 9) / 64) * 64;
+    const padded = new Uint8Array(paddedLength);
+    let i, j;
     for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
     }
     padded[i++] = 0x80;
-    n = paddedLength - 8;
+    const n = paddedLength - 8;
     while (i < n) {
       padded[i++] = 0;
     }
@@ -345,7 +336,7 @@ var calculateSHA256 = (function calculateSHA256Closure() {
     padded[i++] = (length >> 13) & 0xff;
     padded[i++] = (length >> 5) & 0xff;
     padded[i++] = (length << 3) & 0xff;
-    var w = new Uint32Array(64);
+    const w = new Uint32Array(64);
     // for each 512 bit block
     for (i = 0; i < paddedLength; ) {
       for (j = 0; j < 16; ++j) {
@@ -365,7 +356,7 @@ var calculateSHA256 = (function calculateSHA256Closure() {
             w[j - 16]) |
           0;
       }
-      var a = h0,
+      let a = h0,
         b = h1,
         c = h2,
         d = h3,
@@ -412,7 +403,7 @@ var calculateSHA256 = (function calculateSHA256Closure() {
   return hash;
 })();
 
-var calculateSHA512 = (function calculateSHA512Closure() {
+const calculateSHA512 = (function calculateSHA512Closure() {
   function ch(result, x, y, z, tmp) {
     result.assign(x);
     result.and(y);
@@ -478,7 +469,7 @@ var calculateSHA512 = (function calculateSHA512Closure() {
   }
 
   // prettier-ignore
-  var k = [
+  const k = [
     new Word64(0x428a2f98, 0xd728ae22), new Word64(0x71374491, 0x23ef65cd),
     new Word64(0xb5c0fbcf, 0xec4d3b2f), new Word64(0xe9b5dba5, 0x8189dbbc),
     new Word64(0x3956c25b, 0xf348b538), new Word64(0x59f111f1, 0xb605d019),
@@ -520,10 +511,9 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     new Word64(0x4cc5d4be, 0xcb3e42b6), new Word64(0x597f299c, 0xfc657e2a),
     new Word64(0x5fcb6fab, 0x3ad6faec), new Word64(0x6c44198c, 0x4a475817)];
 
-  function hash(data, offset, length, mode384) {
-    mode384 = !!mode384;
+  function hash(data, offset, length, mode384 = false) {
     // initial hash values
-    var h0, h1, h2, h3, h4, h5, h6, h7;
+    let h0, h1, h2, h3, h4, h5, h6, h7;
     if (!mode384) {
       h0 = new Word64(0x6a09e667, 0xf3bcc908);
       h1 = new Word64(0xbb67ae85, 0x84caa73b);
@@ -547,14 +537,14 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     }
 
     // pre-processing
-    var paddedLength = Math.ceil((length + 17) / 128) * 128;
-    var padded = new Uint8Array(paddedLength);
-    var i, j, n;
+    const paddedLength = Math.ceil((length + 17) / 128) * 128;
+    const padded = new Uint8Array(paddedLength);
+    let i, j;
     for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
     }
     padded[i++] = 0x80;
-    n = paddedLength - 16;
+    const n = paddedLength - 16;
     while (i < n) {
       padded[i++] = 0;
     }
@@ -575,23 +565,23 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     padded[i++] = (length >> 5) & 0xff;
     padded[i++] = (length << 3) & 0xff;
 
-    var w = new Array(80);
+    const w = new Array(80);
     for (i = 0; i < 80; i++) {
       w[i] = new Word64(0, 0);
     }
-    var a = new Word64(0, 0),
+    let a = new Word64(0, 0),
       b = new Word64(0, 0),
       c = new Word64(0, 0);
-    var d = new Word64(0, 0),
+    let d = new Word64(0, 0),
       e = new Word64(0, 0),
       f = new Word64(0, 0);
-    var g = new Word64(0, 0),
+    let g = new Word64(0, 0),
       h = new Word64(0, 0);
-    var t1 = new Word64(0, 0),
+    const t1 = new Word64(0, 0),
       t2 = new Word64(0, 0);
-    var tmp1 = new Word64(0, 0),
-      tmp2 = new Word64(0, 0),
-      tmp3;
+    const tmp1 = new Word64(0, 0),
+      tmp2 = new Word64(0, 0);
+    let tmp3;
 
     // for each 1024 bit block
     for (i = 0; i < paddedLength; ) {
@@ -661,7 +651,7 @@ var calculateSHA512 = (function calculateSHA512Closure() {
       h7.add(h);
     }
 
-    var result;
+    let result;
     if (!mode384) {
       result = new Uint8Array(64);
       h0.copyTo(result, 0);
@@ -686,28 +676,20 @@ var calculateSHA512 = (function calculateSHA512Closure() {
 
   return hash;
 })();
-var calculateSHA384 = (function calculateSHA384Closure() {
-  function hash(data, offset, length) {
-    return calculateSHA512(data, offset, length, true);
+
+function calculateSHA384(data, offset, length) {
+  return calculateSHA512(data, offset, length, /* mode384 = */ true);
+}
+
+class NullCipher {
+  decryptBlock(data) {
+    return data;
   }
 
-  return hash;
-})();
-var NullCipher = (function NullCipherClosure() {
-  // eslint-disable-next-line no-shadow
-  function NullCipher() {}
-
-  NullCipher.prototype = {
-    decryptBlock: function NullCipher_decryptBlock(data) {
-      return data;
-    },
-    encrypt: function NullCipher_encrypt(data) {
-      return data;
-    },
-  };
-
-  return NullCipher;
-})();
+  encrypt(data) {
+    return data;
+  }
+}
 
 class AESBaseCipher {
   constructor() {
@@ -715,7 +697,6 @@ class AESBaseCipher {
       unreachable("Cannot initialize AESBaseCipher.");
     }
 
-    // prettier-ignore
     this._s = new Uint8Array([
       0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
       0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
@@ -741,7 +722,6 @@ class AESBaseCipher {
       0xb0, 0x54, 0xbb, 0x16,
     ]);
 
-    // prettier-ignore
     this._inv_s = new Uint8Array([
       0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e,
       0x81, 0xf3, 0xd7, 0xfb, 0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87,
@@ -767,7 +747,6 @@ class AESBaseCipher {
       0x55, 0x21, 0x0c, 0x7d,
     ]);
 
-    // prettier-ignore
     this._mix = new Uint32Array([
       0x00000000, 0x0e090d0b, 0x1c121a16, 0x121b171d, 0x3824342c, 0x362d3927,
       0x24362e3a, 0x2a3f2331, 0x70486858, 0x7e416553, 0x6c5a724e, 0x62537f45,
@@ -1035,7 +1014,7 @@ class AESBaseCipher {
     let outputLength = 16 * result.length;
     if (finalize) {
       // undo a padding that is described in RFC 2898
-      const lastBlock = result[result.length - 1];
+      const lastBlock = result.at(-1);
       let psLen = lastBlock[15];
       if (psLen <= 16) {
         for (let i = 15, ii = 16 - psLen; i >= ii; --i) {
@@ -1138,7 +1117,6 @@ class AES128Cipher extends AESBaseCipher {
     this._cyclesOfRepetition = 10;
     this._keySize = 160; // bits
 
-    // prettier-ignore
     this._rcon = new Uint8Array([
       0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
       0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
@@ -1187,7 +1165,7 @@ class AES128Cipher extends AESBaseCipher {
       t3 = s[t3];
       t4 = s[t4];
       // Rcon
-      t1 = t1 ^ rcon[i];
+      t1 ^= rcon[i];
       for (let n = 0; n < 4; ++n) {
         result[j] = t1 ^= result[j - 16];
         j++;
@@ -1240,7 +1218,7 @@ class AES256Cipher extends AESBaseCipher {
         t3 = s[t3];
         t4 = s[t4];
         // Rcon
-        t1 = t1 ^ r;
+        t1 ^= r;
         if ((r <<= 1) >= 256) {
           r = (r ^ 0x1b) & 0xff;
         }
@@ -1261,115 +1239,76 @@ class AES256Cipher extends AESBaseCipher {
   }
 }
 
-var PDF17 = (function PDF17Closure() {
-  function compareByteArrays(array1, array2) {
-    if (array1.length !== array2.length) {
-      return false;
-    }
-    for (var i = 0; i < array1.length; i++) {
-      if (array1[i] !== array2[i]) {
-        return false;
-      }
-    }
-    return true;
+class PDF17 {
+  checkOwnerPassword(password, ownerValidationSalt, userBytes, ownerPassword) {
+    const hashData = new Uint8Array(password.length + 56);
+    hashData.set(password, 0);
+    hashData.set(ownerValidationSalt, password.length);
+    hashData.set(userBytes, password.length + ownerValidationSalt.length);
+    const result = calculateSHA256(hashData, 0, hashData.length);
+    return isArrayEqual(result, ownerPassword);
   }
 
-  // eslint-disable-next-line no-shadow
-  function PDF17() {}
-
-  PDF17.prototype = {
-    checkOwnerPassword: function PDF17_checkOwnerPassword(
-      password,
-      ownerValidationSalt,
-      userBytes,
-      ownerPassword
-    ) {
-      var hashData = new Uint8Array(password.length + 56);
-      hashData.set(password, 0);
-      hashData.set(ownerValidationSalt, password.length);
-      hashData.set(userBytes, password.length + ownerValidationSalt.length);
-      var result = calculateSHA256(hashData, 0, hashData.length);
-      return compareByteArrays(result, ownerPassword);
-    },
-    checkUserPassword: function PDF17_checkUserPassword(
-      password,
-      userValidationSalt,
-      userPassword
-    ) {
-      var hashData = new Uint8Array(password.length + 8);
-      hashData.set(password, 0);
-      hashData.set(userValidationSalt, password.length);
-      var result = calculateSHA256(hashData, 0, hashData.length);
-      return compareByteArrays(result, userPassword);
-    },
-    getOwnerKey: function PDF17_getOwnerKey(
-      password,
-      ownerKeySalt,
-      userBytes,
-      ownerEncryption
-    ) {
-      var hashData = new Uint8Array(password.length + 56);
-      hashData.set(password, 0);
-      hashData.set(ownerKeySalt, password.length);
-      hashData.set(userBytes, password.length + ownerKeySalt.length);
-      var key = calculateSHA256(hashData, 0, hashData.length);
-      var cipher = new AES256Cipher(key);
-      return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
-    },
-    getUserKey: function PDF17_getUserKey(
-      password,
-      userKeySalt,
-      userEncryption
-    ) {
-      var hashData = new Uint8Array(password.length + 8);
-      hashData.set(password, 0);
-      hashData.set(userKeySalt, password.length);
-      // `key` is the decryption key for the UE string.
-      var key = calculateSHA256(hashData, 0, hashData.length);
-      var cipher = new AES256Cipher(key);
-      return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
-    },
-  };
-  return PDF17;
-})();
-
-var PDF20 = (function PDF20Closure() {
-  function concatArrays(array1, array2) {
-    var t = new Uint8Array(array1.length + array2.length);
-    t.set(array1, 0);
-    t.set(array2, array1.length);
-    return t;
+  checkUserPassword(password, userValidationSalt, userPassword) {
+    const hashData = new Uint8Array(password.length + 8);
+    hashData.set(password, 0);
+    hashData.set(userValidationSalt, password.length);
+    const result = calculateSHA256(hashData, 0, hashData.length);
+    return isArrayEqual(result, userPassword);
   }
 
+  getOwnerKey(password, ownerKeySalt, userBytes, ownerEncryption) {
+    const hashData = new Uint8Array(password.length + 56);
+    hashData.set(password, 0);
+    hashData.set(ownerKeySalt, password.length);
+    hashData.set(userBytes, password.length + ownerKeySalt.length);
+    const key = calculateSHA256(hashData, 0, hashData.length);
+    const cipher = new AES256Cipher(key);
+    return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
+  }
+
+  getUserKey(password, userKeySalt, userEncryption) {
+    const hashData = new Uint8Array(password.length + 8);
+    hashData.set(password, 0);
+    hashData.set(userKeySalt, password.length);
+    // `key` is the decryption key for the UE string.
+    const key = calculateSHA256(hashData, 0, hashData.length);
+    const cipher = new AES256Cipher(key);
+    return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
+  }
+}
+
+const PDF20 = (function PDF20Closure() {
   function calculatePDF20Hash(password, input, userBytes) {
     // This refers to Algorithm 2.B as defined in ISO 32000-2.
-    var k = calculateSHA256(input, 0, input.length).subarray(0, 32);
-    var e = [0];
-    var i = 0;
-    while (i < 64 || e[e.length - 1] > i - 32) {
-      var arrayLength = password.length + k.length + userBytes.length;
+    let k = calculateSHA256(input, 0, input.length).subarray(0, 32);
+    let e = [0];
+    let i = 0;
+    while (i < 64 || e.at(-1) > i - 32) {
+      const combinedLength = password.length + k.length + userBytes.length,
+        combinedArray = new Uint8Array(combinedLength);
+      let writeOffset = 0;
+      combinedArray.set(password, writeOffset);
+      writeOffset += password.length;
+      combinedArray.set(k, writeOffset);
+      writeOffset += k.length;
+      combinedArray.set(userBytes, writeOffset);
 
-      var k1 = new Uint8Array(arrayLength * 64);
-      var array = concatArrays(password, k);
-      array = concatArrays(array, userBytes);
-      for (var j = 0, pos = 0; j < 64; j++, pos += arrayLength) {
-        k1.set(array, pos);
+      const k1 = new Uint8Array(combinedLength * 64);
+      for (let j = 0, pos = 0; j < 64; j++, pos += combinedLength) {
+        k1.set(combinedArray, pos);
       }
       // AES128 CBC NO PADDING with first 16 bytes of k as the key
       // and the second 16 as the iv.
-      var cipher = new AES128Cipher(k.subarray(0, 16));
+      const cipher = new AES128Cipher(k.subarray(0, 16));
       e = cipher.encrypt(k1, k.subarray(16, 32));
       // Now we have to take the first 16 bytes of an unsigned big endian
       // integer and compute the remainder modulo 3. That is a fairly large
-      // number and JavaScript isn't going to handle that well, so we're using
-      // a trick that allows us to perform modulo math byte by byte.
-      var remainder = 0;
-      for (var z = 0; z < 16; z++) {
-        remainder *= 256 % 3;
-        remainder %= 3;
-        remainder += (e[z] >>> 0) % 3;
-        remainder %= 3;
-      }
+      // number and JavaScript isn't going to handle that well.
+      // The number is e0 + 256 * e1 + 256^2 * e2... and 256 % 3 === 1, hence
+      // the powers of 256 are === 1 modulo 3 and finally the number modulo 3
+      // is equal to the remainder modulo 3 of the sum of the e_n.
+      const remainder = e.slice(0, 16).reduce((a, b) => a + b, 0) % 3;
       if (remainder === 0) {
         k = calculateSHA256(e, 0, e.length);
       } else if (remainder === 1) {
@@ -1383,150 +1322,126 @@ var PDF20 = (function PDF20Closure() {
   }
 
   // eslint-disable-next-line no-shadow
-  function PDF20() {}
-
-  function compareByteArrays(array1, array2) {
-    if (array1.length !== array2.length) {
-      return false;
-    }
-    for (var i = 0; i < array1.length; i++) {
-      if (array1[i] !== array2[i]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  PDF20.prototype = {
-    hash: function PDF20_hash(password, concatBytes, userBytes) {
+  class PDF20 {
+    hash(password, concatBytes, userBytes) {
       return calculatePDF20Hash(password, concatBytes, userBytes);
-    },
-    checkOwnerPassword: function PDF20_checkOwnerPassword(
+    }
+
+    checkOwnerPassword(
       password,
       ownerValidationSalt,
       userBytes,
       ownerPassword
     ) {
-      var hashData = new Uint8Array(password.length + 56);
+      const hashData = new Uint8Array(password.length + 56);
       hashData.set(password, 0);
       hashData.set(ownerValidationSalt, password.length);
       hashData.set(userBytes, password.length + ownerValidationSalt.length);
-      var result = calculatePDF20Hash(password, hashData, userBytes);
-      return compareByteArrays(result, ownerPassword);
-    },
-    checkUserPassword: function PDF20_checkUserPassword(
-      password,
-      userValidationSalt,
-      userPassword
-    ) {
-      var hashData = new Uint8Array(password.length + 8);
+      const result = calculatePDF20Hash(password, hashData, userBytes);
+      return isArrayEqual(result, ownerPassword);
+    }
+
+    checkUserPassword(password, userValidationSalt, userPassword) {
+      const hashData = new Uint8Array(password.length + 8);
       hashData.set(password, 0);
       hashData.set(userValidationSalt, password.length);
-      var result = calculatePDF20Hash(password, hashData, []);
-      return compareByteArrays(result, userPassword);
-    },
-    getOwnerKey: function PDF20_getOwnerKey(
-      password,
-      ownerKeySalt,
-      userBytes,
-      ownerEncryption
-    ) {
-      var hashData = new Uint8Array(password.length + 56);
+      const result = calculatePDF20Hash(password, hashData, []);
+      return isArrayEqual(result, userPassword);
+    }
+
+    getOwnerKey(password, ownerKeySalt, userBytes, ownerEncryption) {
+      const hashData = new Uint8Array(password.length + 56);
       hashData.set(password, 0);
       hashData.set(ownerKeySalt, password.length);
       hashData.set(userBytes, password.length + ownerKeySalt.length);
-      var key = calculatePDF20Hash(password, hashData, userBytes);
-      var cipher = new AES256Cipher(key);
+      const key = calculatePDF20Hash(password, hashData, userBytes);
+      const cipher = new AES256Cipher(key);
       return cipher.decryptBlock(ownerEncryption, false, new Uint8Array(16));
-    },
-    getUserKey: function PDF20_getUserKey(
-      password,
-      userKeySalt,
-      userEncryption
-    ) {
-      var hashData = new Uint8Array(password.length + 8);
+    }
+
+    getUserKey(password, userKeySalt, userEncryption) {
+      const hashData = new Uint8Array(password.length + 8);
       hashData.set(password, 0);
       hashData.set(userKeySalt, password.length);
       // `key` is the decryption key for the UE string.
-      var key = calculatePDF20Hash(password, hashData, []);
-      var cipher = new AES256Cipher(key);
+      const key = calculatePDF20Hash(password, hashData, []);
+      const cipher = new AES256Cipher(key);
       return cipher.decryptBlock(userEncryption, false, new Uint8Array(16));
-    },
-  };
+    }
+  }
+
   return PDF20;
 })();
 
-var CipherTransform = (function CipherTransformClosure() {
-  // eslint-disable-next-line no-shadow
-  function CipherTransform(stringCipherConstructor, streamCipherConstructor) {
+class CipherTransform {
+  constructor(stringCipherConstructor, streamCipherConstructor) {
     this.StringCipherConstructor = stringCipherConstructor;
     this.StreamCipherConstructor = streamCipherConstructor;
   }
 
-  CipherTransform.prototype = {
-    createStream: function CipherTransform_createStream(stream, length) {
-      var cipher = new this.StreamCipherConstructor();
-      return new DecryptStream(
-        stream,
-        length,
-        function cipherTransformDecryptStream(data, finalize) {
-          return cipher.decryptBlock(data, finalize);
+  createStream(stream, length) {
+    const cipher = new this.StreamCipherConstructor();
+    return new DecryptStream(
+      stream,
+      length,
+      function cipherTransformDecryptStream(data, finalize) {
+        return cipher.decryptBlock(data, finalize);
+      }
+    );
+  }
+
+  decryptString(s) {
+    const cipher = new this.StringCipherConstructor();
+    let data = stringToBytes(s);
+    data = cipher.decryptBlock(data, true);
+    return bytesToString(data);
+  }
+
+  encryptString(s) {
+    const cipher = new this.StringCipherConstructor();
+    if (cipher instanceof AESBaseCipher) {
+      // Append some chars equal to "16 - (M mod 16)"
+      // where M is the string length (see section 7.6.2 in PDF specification)
+      // to have a final string where the length is a multiple of 16.
+      // Special note:
+      //   "Note that the pad is present when M is evenly divisible by 16;
+      //   it contains 16 bytes of 0x10."
+      const strLen = s.length;
+      const pad = 16 - (strLen % 16);
+      s += String.fromCharCode(pad).repeat(pad);
+
+      // Generate an initialization vector
+      const iv = new Uint8Array(16);
+      if (typeof crypto !== "undefined") {
+        crypto.getRandomValues(iv);
+      } else {
+        for (let i = 0; i < 16; i++) {
+          iv[i] = Math.floor(256 * Math.random());
         }
-      );
-    },
-    decryptString: function CipherTransform_decryptString(s) {
-      var cipher = new this.StringCipherConstructor();
-      var data = stringToBytes(s);
-      data = cipher.decryptBlock(data, true);
-      return bytesToString(data);
-    },
-    encryptString: function CipherTransform_encryptString(s) {
-      const cipher = new this.StringCipherConstructor();
-      if (cipher instanceof AESBaseCipher) {
-        // Append some chars equal to "16 - (M mod 16)"
-        // where M is the string length (see section 7.6.2 in PDF specification)
-        // to have a final string where the length is a multiple of 16.
-        const strLen = s.length;
-        const pad = 16 - (strLen % 16);
-        if (pad !== 16) {
-          s = s.padEnd(16 * Math.ceil(strLen / 16), String.fromCharCode(pad));
-        }
-
-        // Generate an initialization vector
-        const iv = new Uint8Array(16);
-        if (typeof crypto !== "undefined") {
-          crypto.getRandomValues(iv);
-        } else {
-          for (let i = 0; i < 16; i++) {
-            iv[i] = Math.floor(256 * Math.random());
-          }
-        }
-
-        let data = stringToBytes(s);
-        data = cipher.encrypt(data, iv);
-
-        const buf = new Uint8Array(16 + data.length);
-        buf.set(iv);
-        buf.set(data, 16);
-
-        return bytesToString(buf);
       }
 
       let data = stringToBytes(s);
-      data = cipher.encrypt(data);
-      return bytesToString(data);
-    },
-  };
-  return CipherTransform;
-})();
+      data = cipher.encrypt(data, iv);
 
-var CipherTransformFactory = (function CipherTransformFactoryClosure() {
-  // prettier-ignore
-  var defaultPasswordBytes = new Uint8Array([
-    0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
-    0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
-    0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-    0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A]);
+      const buf = new Uint8Array(16 + data.length);
+      buf.set(iv);
+      buf.set(data, 16);
+
+      return bytesToString(buf);
+    }
+
+    let data = stringToBytes(s);
+    data = cipher.encrypt(data);
+    return bytesToString(data);
+  }
+}
+
+const CipherTransformFactory = (function CipherTransformFactoryClosure() {
+  const defaultPasswordBytes = new Uint8Array([
+    0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41, 0x64, 0x00, 0x4e, 0x56,
+    0xff, 0xfa, 0x01, 0x08, 0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
+    0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a,
+  ]);
 
   function createEncryptionKey20(
     revision,
@@ -1543,12 +1458,12 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     perms
   ) {
     if (password) {
-      var passwordLength = Math.min(127, password.length);
+      const passwordLength = Math.min(127, password.length);
       password = password.subarray(0, passwordLength);
     } else {
       password = [];
     }
-    var pdfAlgorithm;
+    let pdfAlgorithm;
     if (revision === 6) {
       pdfAlgorithm = new PDF20();
     } else {
@@ -1589,9 +1504,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     keyLength,
     encryptMetadata
   ) {
-    var hashDataSize = 40 + ownerPassword.length + fileId.length;
-    var hashData = new Uint8Array(hashDataSize),
-      i = 0,
+    const hashDataSize = 40 + ownerPassword.length + fileId.length;
+    const hashData = new Uint8Array(hashDataSize);
+    let i = 0,
       j,
       n;
     if (password) {
@@ -1621,15 +1536,15 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       hashData[i++] = 0xff;
       hashData[i++] = 0xff;
     }
-    var hash = calculateMD5(hashData, 0, i);
-    var keyLengthInBytes = keyLength >> 3;
+    let hash = calculateMD5(hashData, 0, i);
+    const keyLengthInBytes = keyLength >> 3;
     if (revision >= 3) {
       for (j = 0; j < 50; ++j) {
         hash = calculateMD5(hash, 0, keyLengthInBytes);
       }
     }
-    var encryptionKey = hash.subarray(0, keyLengthInBytes);
-    var cipher, checkData;
+    const encryptionKey = hash.subarray(0, keyLengthInBytes);
+    let cipher, checkData;
 
     if (revision >= 3) {
       for (i = 0; i < 32; ++i) {
@@ -1641,10 +1556,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
-      var derivedKey = new Uint8Array(n),
-        k;
+      const derivedKey = new Uint8Array(n);
       for (j = 1; j <= 19; ++j) {
-        for (k = 0; k < n; ++k) {
+        for (let k = 0; k < n; ++k) {
           derivedKey[k] = encryptionKey[k] ^ j;
         }
         cipher = new ARCFourCipher(derivedKey);
@@ -1668,33 +1582,30 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   function decodeUserPassword(password, ownerPassword, revision, keyLength) {
-    var hashData = new Uint8Array(32),
-      i = 0,
-      j,
-      n;
-    n = Math.min(32, password.length);
+    const hashData = new Uint8Array(32);
+    let i = 0;
+    const n = Math.min(32, password.length);
     for (; i < n; ++i) {
       hashData[i] = password[i];
     }
-    j = 0;
+    let j = 0;
     while (i < 32) {
       hashData[i++] = defaultPasswordBytes[j++];
     }
-    var hash = calculateMD5(hashData, 0, i);
-    var keyLengthInBytes = keyLength >> 3;
+    let hash = calculateMD5(hashData, 0, i);
+    const keyLengthInBytes = keyLength >> 3;
     if (revision >= 3) {
       for (j = 0; j < 50; ++j) {
         hash = calculateMD5(hash, 0, hash.length);
       }
     }
 
-    var cipher, userPassword;
+    let cipher, userPassword;
     if (revision >= 3) {
       userPassword = ownerPassword;
-      var derivedKey = new Uint8Array(keyLengthInBytes),
-        k;
+      const derivedKey = new Uint8Array(keyLengthInBytes);
       for (j = 19; j >= 0; j--) {
-        for (k = 0; k < keyLengthInBytes; ++k) {
+        for (let k = 0; k < keyLengthInBytes; ++k) {
           derivedKey[k] = hash[k] ^ j;
         }
         cipher = new ARCFourCipher(derivedKey);
@@ -1707,167 +1618,13 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     return userPassword;
   }
 
-  var identityName = Name.get("Identity");
+  const identityName = Name.get("Identity");
 
-  // eslint-disable-next-line no-shadow
-  function CipherTransformFactory(dict, fileId, password) {
-    var filter = dict.get("Filter");
-    if (!isName(filter, "Standard")) {
-      throw new FormatError("unknown encryption method");
-    }
-    this.dict = dict;
-    var algorithm = dict.get("V");
-    if (
-      !Number.isInteger(algorithm) ||
-      (algorithm !== 1 && algorithm !== 2 && algorithm !== 4 && algorithm !== 5)
-    ) {
-      throw new FormatError("unsupported encryption algorithm");
-    }
-    this.algorithm = algorithm;
-    var keyLength = dict.get("Length");
-    if (!keyLength) {
-      // Spec asks to rely on encryption dictionary's Length entry, however
-      // some PDFs don't have it. Trying to recover.
-      if (algorithm <= 3) {
-        // For 1 and 2 it's fixed to 40-bit, for 3 40-bit is a minimal value.
-        keyLength = 40;
-      } else {
-        // Trying to find default handler -- it usually has Length.
-        var cfDict = dict.get("CF");
-        var streamCryptoName = dict.get("StmF");
-        if (isDict(cfDict) && isName(streamCryptoName)) {
-          cfDict.suppressEncryption = true; // See comment below.
-          var handlerDict = cfDict.get(streamCryptoName.name);
-          keyLength = (handlerDict && handlerDict.get("Length")) || 128;
-          if (keyLength < 40) {
-            // Sometimes it's incorrect value of bits, generators specify bytes.
-            keyLength <<= 3;
-          }
-        }
-      }
-    }
-    if (!Number.isInteger(keyLength) || keyLength < 40 || keyLength % 8 !== 0) {
-      throw new FormatError("invalid key length");
-    }
-
-    // prepare keys
-    var ownerPassword = stringToBytes(dict.get("O")).subarray(0, 32);
-    var userPassword = stringToBytes(dict.get("U")).subarray(0, 32);
-    var flags = dict.get("P");
-    var revision = dict.get("R");
-    // meaningful when V is 4 or 5
-    var encryptMetadata =
-      (algorithm === 4 || algorithm === 5) &&
-      dict.get("EncryptMetadata") !== false;
-    this.encryptMetadata = encryptMetadata;
-
-    var fileIdBytes = stringToBytes(fileId);
-    var passwordBytes;
-    if (password) {
-      if (revision === 6) {
-        try {
-          password = utf8StringToString(password);
-        } catch (ex) {
-          warn(
-            "CipherTransformFactory: " +
-              "Unable to convert UTF8 encoded password."
-          );
-        }
-      }
-      passwordBytes = stringToBytes(password);
-    }
-
-    var encryptionKey;
-    if (algorithm !== 5) {
-      encryptionKey = prepareKeyData(
-        fileIdBytes,
-        passwordBytes,
-        ownerPassword,
-        userPassword,
-        flags,
-        revision,
-        keyLength,
-        encryptMetadata
-      );
-    } else {
-      var ownerValidationSalt = stringToBytes(dict.get("O")).subarray(32, 40);
-      var ownerKeySalt = stringToBytes(dict.get("O")).subarray(40, 48);
-      var uBytes = stringToBytes(dict.get("U")).subarray(0, 48);
-      var userValidationSalt = stringToBytes(dict.get("U")).subarray(32, 40);
-      var userKeySalt = stringToBytes(dict.get("U")).subarray(40, 48);
-      var ownerEncryption = stringToBytes(dict.get("OE"));
-      var userEncryption = stringToBytes(dict.get("UE"));
-      var perms = stringToBytes(dict.get("Perms"));
-      encryptionKey = createEncryptionKey20(
-        revision,
-        passwordBytes,
-        ownerPassword,
-        ownerValidationSalt,
-        ownerKeySalt,
-        uBytes,
-        userPassword,
-        userValidationSalt,
-        userKeySalt,
-        ownerEncryption,
-        userEncryption,
-        perms
-      );
-    }
-    if (!encryptionKey && !password) {
-      throw new PasswordException(
-        "No password given",
-        PasswordResponses.NEED_PASSWORD
-      );
-    } else if (!encryptionKey && password) {
-      // Attempting use the password as an owner password
-      var decodedPassword = decodeUserPassword(
-        passwordBytes,
-        ownerPassword,
-        revision,
-        keyLength
-      );
-      encryptionKey = prepareKeyData(
-        fileIdBytes,
-        decodedPassword,
-        ownerPassword,
-        userPassword,
-        flags,
-        revision,
-        keyLength,
-        encryptMetadata
-      );
-    }
-
-    if (!encryptionKey) {
-      throw new PasswordException(
-        "Incorrect Password",
-        PasswordResponses.INCORRECT_PASSWORD
-      );
-    }
-
-    this.encryptionKey = encryptionKey;
-
-    if (algorithm >= 4) {
-      var cf = dict.get("CF");
-      if (isDict(cf)) {
-        // The 'CF' dictionary itself should not be encrypted, and by setting
-        // `suppressEncryption` we can prevent an infinite loop inside of
-        // `XRef_fetchUncompressed` if the dictionary contains indirect objects
-        // (fixes issue7665.pdf).
-        cf.suppressEncryption = true;
-      }
-      this.cf = cf;
-      this.stmf = dict.get("StmF") || identityName;
-      this.strf = dict.get("StrF") || identityName;
-      this.eff = dict.get("EFF") || this.stmf;
-    }
-  }
-
-  function buildObjectKey(num, gen, encryptionKey, isAes) {
-    var key = new Uint8Array(encryptionKey.length + 9),
-      i,
-      n;
-    for (i = 0, n = encryptionKey.length; i < n; ++i) {
+  function buildObjectKey(num, gen, encryptionKey, isAes = false) {
+    const key = new Uint8Array(encryptionKey.length + 9);
+    const n = encryptionKey.length;
+    let i;
+    for (i = 0; i < n; ++i) {
       key[i] = encryptionKey[i];
     }
     key[i++] = num & 0xff;
@@ -1881,16 +1638,16 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       key[i++] = 0x6c;
       key[i++] = 0x54;
     }
-    var hash = calculateMD5(key, 0, i);
+    const hash = calculateMD5(key, 0, i);
     return hash.subarray(0, Math.min(encryptionKey.length + 5, 16));
   }
 
   function buildCipherConstructor(cf, name, num, gen, key) {
-    if (!isName(name)) {
+    if (!(name instanceof Name)) {
       throw new FormatError("Invalid crypt filter name.");
     }
-    var cryptFilter = cf.get(name.name);
-    var cfm;
+    const cryptFilter = cf.get(name.name);
+    let cfm;
     if (cryptFilter !== null && cryptFilter !== undefined) {
       cfm = cryptFilter.get("CFM");
     }
@@ -1901,12 +1658,16 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
     if (cfm.name === "V2") {
       return function cipherTransformFactoryBuildCipherConstructorV2() {
-        return new ARCFourCipher(buildObjectKey(num, gen, key, false));
+        return new ARCFourCipher(
+          buildObjectKey(num, gen, key, /* isAes = */ false)
+        );
       };
     }
     if (cfm.name === "AESV2") {
       return function cipherTransformFactoryBuildCipherConstructorAESV2() {
-        return new AES128Cipher(buildObjectKey(num, gen, key, true));
+        return new AES128Cipher(
+          buildObjectKey(num, gen, key, /* isAes = */ true)
+        );
       };
     }
     if (cfm.name === "AESV3") {
@@ -1917,23 +1678,189 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     throw new FormatError("Unknown crypto method");
   }
 
-  CipherTransformFactory.prototype = {
-    createCipherTransform: function CipherTransformFactory_createCipherTransform(
-      num,
-      gen
-    ) {
+  // eslint-disable-next-line no-shadow
+  class CipherTransformFactory {
+    constructor(dict, fileId, password) {
+      const filter = dict.get("Filter");
+      if (!isName(filter, "Standard")) {
+        throw new FormatError("unknown encryption method");
+      }
+      this.filterName = filter.name;
+      this.dict = dict;
+      const algorithm = dict.get("V");
+      if (
+        !Number.isInteger(algorithm) ||
+        (algorithm !== 1 &&
+          algorithm !== 2 &&
+          algorithm !== 4 &&
+          algorithm !== 5)
+      ) {
+        throw new FormatError("unsupported encryption algorithm");
+      }
+      this.algorithm = algorithm;
+      let keyLength = dict.get("Length");
+      if (!keyLength) {
+        // Spec asks to rely on encryption dictionary's Length entry, however
+        // some PDFs don't have it. Trying to recover.
+        if (algorithm <= 3) {
+          // For 1 and 2 it's fixed to 40-bit, for 3 40-bit is a minimal value.
+          keyLength = 40;
+        } else {
+          // Trying to find default handler -- it usually has Length.
+          const cfDict = dict.get("CF");
+          const streamCryptoName = dict.get("StmF");
+          if (cfDict instanceof Dict && streamCryptoName instanceof Name) {
+            cfDict.suppressEncryption = true; // See comment below.
+            const handlerDict = cfDict.get(streamCryptoName.name);
+            keyLength = (handlerDict && handlerDict.get("Length")) || 128;
+            if (keyLength < 40) {
+              // Sometimes it's incorrect value of bits, generators specify
+              // bytes.
+              keyLength <<= 3;
+            }
+          }
+        }
+      }
+      if (
+        !Number.isInteger(keyLength) ||
+        keyLength < 40 ||
+        keyLength % 8 !== 0
+      ) {
+        throw new FormatError("invalid key length");
+      }
+
+      // prepare keys
+      const ownerPassword = stringToBytes(dict.get("O")).subarray(0, 32);
+      const userPassword = stringToBytes(dict.get("U")).subarray(0, 32);
+      const flags = dict.get("P");
+      const revision = dict.get("R");
+      // meaningful when V is 4 or 5
+      const encryptMetadata =
+        (algorithm === 4 || algorithm === 5) &&
+        dict.get("EncryptMetadata") !== false;
+      this.encryptMetadata = encryptMetadata;
+
+      const fileIdBytes = stringToBytes(fileId);
+      let passwordBytes;
+      if (password) {
+        if (revision === 6) {
+          try {
+            password = utf8StringToString(password);
+          } catch (ex) {
+            warn(
+              "CipherTransformFactory: " +
+                "Unable to convert UTF8 encoded password."
+            );
+          }
+        }
+        passwordBytes = stringToBytes(password);
+      }
+
+      let encryptionKey;
+      if (algorithm !== 5) {
+        encryptionKey = prepareKeyData(
+          fileIdBytes,
+          passwordBytes,
+          ownerPassword,
+          userPassword,
+          flags,
+          revision,
+          keyLength,
+          encryptMetadata
+        );
+      } else {
+        const ownerValidationSalt = stringToBytes(dict.get("O")).subarray(
+          32,
+          40
+        );
+        const ownerKeySalt = stringToBytes(dict.get("O")).subarray(40, 48);
+        const uBytes = stringToBytes(dict.get("U")).subarray(0, 48);
+        const userValidationSalt = stringToBytes(dict.get("U")).subarray(
+          32,
+          40
+        );
+        const userKeySalt = stringToBytes(dict.get("U")).subarray(40, 48);
+        const ownerEncryption = stringToBytes(dict.get("OE"));
+        const userEncryption = stringToBytes(dict.get("UE"));
+        const perms = stringToBytes(dict.get("Perms"));
+        encryptionKey = createEncryptionKey20(
+          revision,
+          passwordBytes,
+          ownerPassword,
+          ownerValidationSalt,
+          ownerKeySalt,
+          uBytes,
+          userPassword,
+          userValidationSalt,
+          userKeySalt,
+          ownerEncryption,
+          userEncryption,
+          perms
+        );
+      }
+      if (!encryptionKey && !password) {
+        throw new PasswordException(
+          "No password given",
+          PasswordResponses.NEED_PASSWORD
+        );
+      } else if (!encryptionKey && password) {
+        // Attempting use the password as an owner password
+        const decodedPassword = decodeUserPassword(
+          passwordBytes,
+          ownerPassword,
+          revision,
+          keyLength
+        );
+        encryptionKey = prepareKeyData(
+          fileIdBytes,
+          decodedPassword,
+          ownerPassword,
+          userPassword,
+          flags,
+          revision,
+          keyLength,
+          encryptMetadata
+        );
+      }
+
+      if (!encryptionKey) {
+        throw new PasswordException(
+          "Incorrect Password",
+          PasswordResponses.INCORRECT_PASSWORD
+        );
+      }
+
+      this.encryptionKey = encryptionKey;
+
+      if (algorithm >= 4) {
+        const cf = dict.get("CF");
+        if (cf instanceof Dict) {
+          // The 'CF' dictionary itself should not be encrypted, and by setting
+          // `suppressEncryption` we can prevent an infinite loop inside of
+          // `XRef_fetchUncompressed` if the dictionary contains indirect
+          // objects (fixes issue7665.pdf).
+          cf.suppressEncryption = true;
+        }
+        this.cf = cf;
+        this.stmf = dict.get("StmF") || identityName;
+        this.strf = dict.get("StrF") || identityName;
+        this.eff = dict.get("EFF") || this.stmf;
+      }
+    }
+
+    createCipherTransform(num, gen) {
       if (this.algorithm === 4 || this.algorithm === 5) {
         return new CipherTransform(
           buildCipherConstructor(
             this.cf,
-            this.stmf,
+            this.strf,
             num,
             gen,
             this.encryptionKey
           ),
           buildCipherConstructor(
             this.cf,
-            this.strf,
+            this.stmf,
             num,
             gen,
             this.encryptionKey
@@ -1941,13 +1868,18 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         );
       }
       // algorithms 1 and 2
-      var key = buildObjectKey(num, gen, this.encryptionKey, false);
-      var cipherConstructor = function buildCipherCipherConstructor() {
+      const key = buildObjectKey(
+        num,
+        gen,
+        this.encryptionKey,
+        /* isAes = */ false
+      );
+      const cipherConstructor = function buildCipherCipherConstructor() {
         return new ARCFourCipher(key);
       };
       return new CipherTransform(cipherConstructor, cipherConstructor);
-    },
-  };
+    }
+  }
 
   return CipherTransformFactory;
 })();

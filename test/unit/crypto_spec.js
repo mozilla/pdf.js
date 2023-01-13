@@ -355,16 +355,13 @@ describe("crypto", function () {
     it("should correctly check a user key", function () {
       const alg = new PDF17();
       const password = new Uint8Array([117, 115, 101, 114]);
-      // prettier-ignore
       const userValidation = new Uint8Array([
-        117, 169, 4, 32, 159, 101, 22, 220
+        117, 169, 4, 32, 159, 101, 22, 220,
       ]);
-      // prettier-ignore
       const userPassword = new Uint8Array([
-        131, 242, 143, 160, 87, 2, 138, 134, 79,
-        253, 189, 173, 224, 73, 144, 241, 190, 81,
-        197, 15, 249, 105, 145, 151, 15, 194, 65,
-        3, 1, 126, 187, 221
+        131, 242, 143, 160, 87, 2, 138, 134, 79, 253, 189, 173, 224, 73, 144,
+        241, 190, 81, 197, 15, 249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
+        221,
       ]);
       const result = alg.checkUserPassword(
         password,
@@ -377,24 +374,19 @@ describe("crypto", function () {
     it("should correctly check an owner key", function () {
       const alg = new PDF17();
       const password = new Uint8Array([111, 119, 110, 101, 114]);
-      // prettier-ignore
       const ownerValidation = new Uint8Array([
-        243, 118, 71, 153, 128, 17, 101, 62
+        243, 118, 71, 153, 128, 17, 101, 62,
       ]);
-      // prettier-ignore
       const ownerPassword = new Uint8Array([
-        60, 98, 137, 35, 51, 101, 200, 152, 210,
-        178, 226, 228, 134, 205, 163, 24, 204,
-        126, 177, 36, 106, 50, 36, 125, 210, 172,
-        171, 120, 222, 108, 139, 115
+        60, 98, 137, 35, 51, 101, 200, 152, 210, 178, 226, 228, 134, 205, 163,
+        24, 204, 126, 177, 36, 106, 50, 36, 125, 210, 172, 171, 120, 222, 108,
+        139, 115,
       ]);
-      // prettier-ignore
       const uBytes = new Uint8Array([
-        131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
-        189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
-        249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
-        221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
-        94, 215, 192, 100, 38, 188, 40
+        131, 242, 143, 160, 87, 2, 138, 134, 79, 253, 189, 173, 224, 73, 144,
+        241, 190, 81, 197, 15, 249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
+        221, 117, 169, 4, 32, 159, 101, 22, 220, 168, 94, 215, 192, 100, 38,
+        188, 40,
       ]);
       const result = alg.checkOwnerPassword(
         password,
@@ -409,20 +401,15 @@ describe("crypto", function () {
       const alg = new PDF17();
       const password = new Uint8Array([117, 115, 101, 114]);
       const userKeySalt = new Uint8Array([168, 94, 215, 192, 100, 38, 188, 40]);
-      // prettier-ignore
       const userEncryption = new Uint8Array([
-        35, 150, 195, 169, 245, 51, 51, 255,
-        158, 158, 33, 242, 231, 75, 125, 190,
-        25, 126, 172, 114, 195, 244, 137, 245,
-        234, 165, 42, 74, 60, 38, 17, 17
+        35, 150, 195, 169, 245, 51, 51, 255, 158, 158, 33, 242, 231, 75, 125,
+        190, 25, 126, 172, 114, 195, 244, 137, 245, 234, 165, 42, 74, 60, 38,
+        17, 17,
       ]);
       const result = alg.getUserKey(password, userKeySalt, userEncryption);
-      // prettier-ignore
       const expected = new Uint8Array([
-        63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
-        186, 144, 254, 248, 163, 153, 151, 51, 133,
-        10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
-        239, 13, 213
+        63, 114, 136, 209, 87, 61, 12, 30, 249, 1, 186, 144, 254, 248, 163, 153,
+        151, 51, 133, 10, 80, 152, 206, 15, 72, 187, 231, 33, 224, 239, 13, 213,
       ]);
       expect(result).toEqual(expected);
     });
@@ -430,24 +417,18 @@ describe("crypto", function () {
     it("should generate a file encryption key from the owner key", function () {
       const alg = new PDF17();
       const password = new Uint8Array([111, 119, 110, 101, 114]);
-      // prettier-ignore
       const ownerKeySalt = new Uint8Array([
-        200, 245, 242, 12, 218, 123, 24, 120
+        200, 245, 242, 12, 218, 123, 24, 120,
       ]);
-      // prettier-ignore
       const ownerEncryption = new Uint8Array([
-        213, 202, 14, 189, 110, 76, 70, 191, 6,
-        195, 10, 190, 157, 100, 144, 85, 8, 62,
-        123, 178, 156, 229, 50, 40, 229, 216,
-        54, 222, 34, 38, 106, 223
+        213, 202, 14, 189, 110, 76, 70, 191, 6, 195, 10, 190, 157, 100, 144, 85,
+        8, 62, 123, 178, 156, 229, 50, 40, 229, 216, 54, 222, 34, 38, 106, 223,
       ]);
-      // prettier-ignore
       const uBytes = new Uint8Array([
-        131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
-        189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
-        249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
-        221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
-        94, 215, 192, 100, 38, 188, 40
+        131, 242, 143, 160, 87, 2, 138, 134, 79, 253, 189, 173, 224, 73, 144,
+        241, 190, 81, 197, 15, 249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
+        221, 117, 169, 4, 32, 159, 101, 22, 220, 168, 94, 215, 192, 100, 38,
+        188, 40,
       ]);
       const result = alg.getOwnerKey(
         password,
@@ -455,12 +436,9 @@ describe("crypto", function () {
         uBytes,
         ownerEncryption
       );
-      // prettier-ignore
       const expected = new Uint8Array([
-        63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
-        186, 144, 254, 248, 163, 153, 151, 51, 133,
-        10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
-        239, 13, 213
+        63, 114, 136, 209, 87, 61, 12, 30, 249, 1, 186, 144, 254, 248, 163, 153,
+        151, 51, 133, 10, 80, 152, 206, 15, 72, 187, 231, 33, 224, 239, 13, 213,
       ]);
       expect(result).toEqual(expected);
     });
@@ -470,16 +448,13 @@ describe("crypto", function () {
     it("should correctly check a user key", function () {
       const alg = new PDF20();
       const password = new Uint8Array([117, 115, 101, 114]);
-      // prettier-ignore
       const userValidation = new Uint8Array([
-        83, 245, 146, 101, 198, 247, 34, 198
+        83, 245, 146, 101, 198, 247, 34, 198,
       ]);
-      // prettier-ignore
       const userPassword = new Uint8Array([
-        94, 230, 205, 75, 166, 99, 250, 76, 219,
-        128, 17, 85, 57, 17, 33, 164, 150, 46,
-        103, 176, 160, 156, 187, 233, 166, 223,
-        163, 253, 147, 235, 95, 184
+        94, 230, 205, 75, 166, 99, 250, 76, 219, 128, 17, 85, 57, 17, 33, 164,
+        150, 46, 103, 176, 160, 156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
+        184,
       ]);
       const result = alg.checkUserPassword(
         password,
@@ -492,24 +467,18 @@ describe("crypto", function () {
     it("should correctly check an owner key", function () {
       const alg = new PDF20();
       const password = new Uint8Array([111, 119, 110, 101, 114]);
-      // prettier-ignore
       const ownerValidation = new Uint8Array([
-        142, 232, 169, 208, 202, 214, 5, 185
+        142, 232, 169, 208, 202, 214, 5, 185,
       ]);
-      // prettier-ignore
       const ownerPassword = new Uint8Array([
-        88, 232, 62, 54, 245, 26, 245, 209, 137,
-        123, 221, 72, 199, 49, 37, 217, 31, 74,
-        115, 167, 127, 158, 176, 77, 45, 163, 87,
-        47, 39, 90, 217, 141
+        88, 232, 62, 54, 245, 26, 245, 209, 137, 123, 221, 72, 199, 49, 37, 217,
+        31, 74, 115, 167, 127, 158, 176, 77, 45, 163, 87, 47, 39, 90, 217, 141,
       ]);
-      // prettier-ignore
       const uBytes = new Uint8Array([
-        94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
-        17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
-        156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
-        184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
-        11, 16, 94, 237, 216, 20, 175
+        94, 230, 205, 75, 166, 99, 250, 76, 219, 128, 17, 85, 57, 17, 33, 164,
+        150, 46, 103, 176, 160, 156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
+        184, 83, 245, 146, 101, 198, 247, 34, 198, 191, 11, 16, 94, 237, 216,
+        20, 175,
       ]);
       const result = alg.checkOwnerPassword(
         password,
@@ -524,20 +493,15 @@ describe("crypto", function () {
       const alg = new PDF20();
       const password = new Uint8Array([117, 115, 101, 114]);
       const userKeySalt = new Uint8Array([191, 11, 16, 94, 237, 216, 20, 175]);
-      // prettier-ignore
       const userEncryption = new Uint8Array([
-        121, 208, 2, 181, 230, 89, 156, 60, 253,
-        143, 212, 28, 84, 180, 196, 177, 173,
-        128, 221, 107, 46, 20, 94, 186, 135, 51,
-        95, 24, 20, 223, 254, 36
+        121, 208, 2, 181, 230, 89, 156, 60, 253, 143, 212, 28, 84, 180, 196,
+        177, 173, 128, 221, 107, 46, 20, 94, 186, 135, 51, 95, 24, 20, 223, 254,
+        36,
       ]);
       const result = alg.getUserKey(password, userKeySalt, userEncryption);
-      // prettier-ignore
       const expected = new Uint8Array([
-        42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
-        133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
-        181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
-        239
+        42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248, 133, 18, 189, 61, 34,
+        107, 79, 29, 56, 59, 181, 213, 118, 113, 34, 65, 210, 87, 174, 22, 239,
       ]);
       expect(result).toEqual(expected);
     });
@@ -546,20 +510,16 @@ describe("crypto", function () {
       const alg = new PDF20();
       const password = new Uint8Array([111, 119, 110, 101, 114]);
       const ownerKeySalt = new Uint8Array([29, 208, 185, 46, 11, 76, 135, 149]);
-      // prettier-ignore
       const ownerEncryption = new Uint8Array([
-        209, 73, 224, 77, 103, 155, 201, 181,
-        190, 68, 223, 20, 62, 90, 56, 210, 5,
-        240, 178, 128, 238, 124, 68, 254, 253,
-        244, 62, 108, 208, 135, 10, 251
+        209, 73, 224, 77, 103, 155, 201, 181, 190, 68, 223, 20, 62, 90, 56, 210,
+        5, 240, 178, 128, 238, 124, 68, 254, 253, 244, 62, 108, 208, 135, 10,
+        251,
       ]);
-      // prettier-ignore
       const uBytes = new Uint8Array([
-        94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
-        17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
-        156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
-        184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
-        11, 16, 94, 237, 216, 20, 175
+        94, 230, 205, 75, 166, 99, 250, 76, 219, 128, 17, 85, 57, 17, 33, 164,
+        150, 46, 103, 176, 160, 156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
+        184, 83, 245, 146, 101, 198, 247, 34, 198, 191, 11, 16, 94, 237, 216,
+        20, 175,
       ]);
       const result = alg.getOwnerKey(
         password,
@@ -567,12 +527,9 @@ describe("crypto", function () {
         uBytes,
         ownerEncryption
       );
-      // prettier-ignore
       const expected = new Uint8Array([
-        42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
-        133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
-        181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
-        239
+        42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248, 133, 18, 189, 61, 34,
+        107, 79, 29, 56, 59, 181, 213, 118, 113, 34, 65, 210, 87, 174, 22, 239,
       ]);
       expect(result).toEqual(expected);
     });
@@ -588,43 +545,64 @@ describe("CipherTransformFactory", function () {
     return dict;
   }
 
-  function ensurePasswordCorrect(done, dict, fileId, password) {
+  function ensurePasswordCorrect(dict, fileId, password) {
     try {
       const factory = new CipherTransformFactory(dict, fileId, password);
       expect("createCipherTransform" in factory).toEqual(true);
     } catch (ex) {
-      done.fail("Password should be accepted: " + ex);
-      return;
+      // Shouldn't get here.
+      expect(false).toEqual(true);
     }
-    done();
   }
 
-  function ensurePasswordNeeded(done, dict, fileId, password) {
+  function ensurePasswordNeeded(dict, fileId, password) {
     try {
       // eslint-disable-next-line no-new
       new CipherTransformFactory(dict, fileId, password);
+
+      // Shouldn't get here.
+      expect(false).toEqual(true);
     } catch (ex) {
       expect(ex instanceof PasswordException).toEqual(true);
       expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
-
-      done();
-      return;
     }
-    done.fail("Password should be rejected.");
   }
 
-  function ensurePasswordIncorrect(done, dict, fileId, password) {
+  function ensurePasswordIncorrect(dict, fileId, password) {
     try {
       // eslint-disable-next-line no-new
       new CipherTransformFactory(dict, fileId, password);
+
+      // Shouldn't get here.
+      expect(false).toEqual(true);
     } catch (ex) {
       expect(ex instanceof PasswordException).toEqual(true);
       expect(ex.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
-
-      done();
-      return;
     }
-    done.fail("Password should be rejected.");
+  }
+
+  function ensureAESEncryptedStringHasCorrectLength(
+    dict,
+    fileId,
+    password,
+    string
+  ) {
+    const factory = new CipherTransformFactory(dict, fileId, password);
+    const cipher = factory.createCipherTransform(123, 0);
+    const encrypted = cipher.encryptString(string);
+
+    // The final length is a multiple of 16.
+    // If the initial string has a length which is a multiple of 16
+    // then 16 chars of padding are added.
+    // So we've the mapping:
+    //   - length: [0-15] => new length: 16
+    //   - length: [16-31] => new length: 32
+    //   - length: [32-47] => new length: 48
+    // ...
+    expect(encrypted.length).toEqual(
+      16 /* initialization vector length */ +
+        16 * Math.ceil((string.length + 1) / 16)
+    );
   }
 
   function ensureEncryptDecryptIsIdentity(dict, fileId, password, string) {
@@ -639,7 +617,7 @@ describe("CipherTransformFactory", function () {
   let fileId1, fileId2, dict1, dict2, dict3;
   let aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     fileId1 = unescape("%F6%C6%AF%17%F3rR%8DRM%9A%80%D1%EF%DF%18");
     fileId2 = unescape("%3CL_%3AD%96%AF@%9A%9D%B3%3Cx%1Cv%AC");
 
@@ -775,8 +753,6 @@ describe("CipherTransformFactory", function () {
       P: -1084,
       R: 6,
     });
-
-    done();
   });
 
   afterAll(function () {
@@ -786,60 +762,60 @@ describe("CipherTransformFactory", function () {
 
   describe("#ctor", function () {
     describe("AES256 Revision 5", function () {
-      it("should accept user password", function (done) {
-        ensurePasswordCorrect(done, aes256Dict, fileId1, "user");
+      it("should accept user password", function () {
+        ensurePasswordCorrect(aes256Dict, fileId1, "user");
       });
-      it("should accept owner password", function (done) {
-        ensurePasswordCorrect(done, aes256Dict, fileId1, "owner");
+      it("should accept owner password", function () {
+        ensurePasswordCorrect(aes256Dict, fileId1, "owner");
       });
-      it("should not accept blank password", function (done) {
-        ensurePasswordNeeded(done, aes256Dict, fileId1);
+      it("should not accept blank password", function () {
+        ensurePasswordNeeded(aes256Dict, fileId1);
       });
-      it("should not accept wrong password", function (done) {
-        ensurePasswordIncorrect(done, aes256Dict, fileId1, "wrong");
+      it("should not accept wrong password", function () {
+        ensurePasswordIncorrect(aes256Dict, fileId1, "wrong");
       });
-      it("should accept blank password", function (done) {
-        ensurePasswordCorrect(done, aes256BlankDict, fileId1);
+      it("should accept blank password", function () {
+        ensurePasswordCorrect(aes256BlankDict, fileId1);
       });
     });
 
     describe("AES256 Revision 6", function () {
-      it("should accept user password", function (done) {
-        ensurePasswordCorrect(done, aes256IsoDict, fileId1, "user");
+      it("should accept user password", function () {
+        ensurePasswordCorrect(aes256IsoDict, fileId1, "user");
       });
-      it("should accept owner password", function (done) {
-        ensurePasswordCorrect(done, aes256IsoDict, fileId1, "owner");
+      it("should accept owner password", function () {
+        ensurePasswordCorrect(aes256IsoDict, fileId1, "owner");
       });
-      it("should not accept blank password", function (done) {
-        ensurePasswordNeeded(done, aes256IsoDict, fileId1);
+      it("should not accept blank password", function () {
+        ensurePasswordNeeded(aes256IsoDict, fileId1);
       });
-      it("should not accept wrong password", function (done) {
-        ensurePasswordIncorrect(done, aes256IsoDict, fileId1, "wrong");
+      it("should not accept wrong password", function () {
+        ensurePasswordIncorrect(aes256IsoDict, fileId1, "wrong");
       });
-      it("should accept blank password", function (done) {
-        ensurePasswordCorrect(done, aes256IsoBlankDict, fileId1);
+      it("should accept blank password", function () {
+        ensurePasswordCorrect(aes256IsoBlankDict, fileId1);
       });
     });
 
-    it("should accept user password", function (done) {
-      ensurePasswordCorrect(done, dict1, fileId1, "123456");
+    it("should accept user password", function () {
+      ensurePasswordCorrect(dict1, fileId1, "123456");
     });
-    it("should accept owner password", function (done) {
-      ensurePasswordCorrect(done, dict1, fileId1, "654321");
+    it("should accept owner password", function () {
+      ensurePasswordCorrect(dict1, fileId1, "654321");
     });
-    it("should not accept blank password", function (done) {
-      ensurePasswordNeeded(done, dict1, fileId1);
+    it("should not accept blank password", function () {
+      ensurePasswordNeeded(dict1, fileId1);
     });
-    it("should not accept wrong password", function (done) {
-      ensurePasswordIncorrect(done, dict1, fileId1, "wrong");
+    it("should not accept wrong password", function () {
+      ensurePasswordIncorrect(dict1, fileId1, "wrong");
     });
-    it("should accept blank password", function (done) {
-      ensurePasswordCorrect(done, dict2, fileId2);
+    it("should accept blank password", function () {
+      ensurePasswordCorrect(dict2, fileId2);
     });
   });
 
   describe("Encrypt and decrypt", function () {
-    it("should encrypt and decrypt using ARCFour", function (done) {
+    it("should encrypt and decrypt using ARCFour", function () {
       dict3.CF = buildDict({
         Identity: buildDict({
           CFM: Name.get("V2"),
@@ -847,15 +823,16 @@ describe("CipherTransformFactory", function () {
       });
       const dict = buildDict(dict3);
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "hello world");
-      done();
     });
-    it("should encrypt and decrypt using AES128", function (done) {
+    it("should encrypt and decrypt using AES128", function () {
       dict3.CF = buildDict({
         Identity: buildDict({
           CFM: Name.get("AESV2"),
         }),
       });
       const dict = buildDict(dict3);
+      // 0 char
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "");
       // 1 char
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "a");
       // 2 chars
@@ -869,15 +846,16 @@ describe("CipherTransformFactory", function () {
         "user",
         "aaaaaaaaaaaaaaaaaaa"
       );
-      done();
     });
-    it("should encrypt and decrypt using AES256", function (done) {
+    it("should encrypt and decrypt using AES256", function () {
       dict3.CF = buildDict({
         Identity: buildDict({
           CFM: Name.get("AESV3"),
         }),
       });
       const dict = buildDict(dict3);
+      // 0 chars
+      ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "");
       // 4 chars
       ensureEncryptDecryptIsIdentity(dict, fileId1, "user", "aaaa");
       // 5 chars
@@ -891,7 +869,62 @@ describe("CipherTransformFactory", function () {
         "user",
         "aaaaaaaaaaaaaaaaaaaaaa"
       );
-      done();
+    });
+    it("should encrypt and have the correct length using AES128", function () {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV2"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      // 0 char
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "");
+      // 1 char
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "a");
+      // 2 chars
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "aa");
+      // 16 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaa"
+      );
+      // 19 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaaaaa"
+      );
+    });
+    it("should encrypt and have the correct length using AES256", function () {
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV3"),
+        }),
+      });
+      const dict = buildDict(dict3);
+      // 0 char
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "");
+      // 4 chars
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "aaaa");
+      // 5 chars
+      ensureAESEncryptedStringHasCorrectLength(dict, fileId1, "user", "aaaaa");
+      // 16 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaa"
+      );
+      // 22 chars
+      ensureAESEncryptedStringHasCorrectLength(
+        dict,
+        fileId1,
+        "user",
+        "aaaaaaaaaaaaaaaaaaaaaa"
+      );
     });
   });
 });

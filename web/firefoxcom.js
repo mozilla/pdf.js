@@ -15,9 +15,10 @@
 
 import "../extensions/firefox/tools/l10n.js";
 import { DefaultExternalServices, PDFViewerApplication } from "./app.js";
-import { PDFDataRangeTransport, shadow } from "pdfjs-lib";
+import { isPdfFile, PDFDataRangeTransport, shadow } from "pdfjs-lib";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
+import { getL10nFallback } from "./l10n_utils.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -37,7 +38,7 @@ class FirefoxCom {
    */
   static requestSync(action, data) {
     const request = document.createTextNode("");
-    document.documentElement.appendChild(request);
+    document.documentElement.append(request);
 
     const sender = document.createEvent("CustomEvent");
     sender.initCustomEvent("pdf.js.message", true, false, {
@@ -85,7 +86,7 @@ class FirefoxCom {
         { once: true }
       );
     }
-    document.documentElement.appendChild(request);
+    document.documentElement.append(request);
 
     const sender = document.createEvent("CustomEvent");
     sender.initCustomEvent("pdf.js.message", true, false, {
@@ -99,6 +100,8 @@ class FirefoxCom {
 }
 
 class DownloadManager {
+  #openBlobUrls = new WeakMap();
+
   downloadUrl(url, filename) {
     FirefoxCom.request("download", {
       originalUrl: url,
@@ -111,31 +114,53 @@ class DownloadManager {
       new Blob([data], { type: contentType })
     );
 
-    FirefoxCom.requestAsync("download", {
+    FirefoxCom.request("download", {
       blobUrl,
       originalUrl: blobUrl,
       filename,
       isAttachment: true,
-    }).then(error => {
-      URL.revokeObjectURL(blobUrl);
     });
   }
 
-  download(blob, url, filename, sourceEventType = "download") {
+  /**
+   * @returns {boolean} Indicating if the data was opened.
+   */
+  openOrDownloadData(element, data, filename) {
+    const isPdfData = isPdfFile(filename);
+    const contentType = isPdfData ? "application/pdf" : "";
+
+    if (isPdfData) {
+      let blobUrl = this.#openBlobUrls.get(element);
+      if (!blobUrl) {
+        blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));
+        this.#openBlobUrls.set(element, blobUrl);
+      }
+      // Let Firefox's content handler catch the URL and display the PDF.
+      const viewerUrl = blobUrl + "#filename=" + encodeURIComponent(filename);
+
+      try {
+        window.open(viewerUrl);
+        return true;
+      } catch (ex) {
+        console.error(`openOrDownloadData: ${ex}`);
+        // Release the `blobUrl`, since opening it failed, and fallback to
+        // downloading the PDF file.
+        URL.revokeObjectURL(blobUrl);
+        this.#openBlobUrls.delete(element);
+      }
+    }
+
+    this.downloadData(data, filename, contentType);
+    return false;
+  }
+
+  download(blob, url, filename) {
     const blobUrl = URL.createObjectURL(blob);
 
-    FirefoxCom.requestAsync("download", {
+    FirefoxCom.request("download", {
       blobUrl,
       originalUrl: url,
       filename,
-      sourceEventType,
-    }).then(error => {
-      if (error) {
-        // If downloading failed in `PdfStreamConverter.jsm` it's very unlikely
-        // that attempting to fallback and re-download would be helpful here.
-        console.error("`ChromeActions.download` failed.");
-      }
-      URL.revokeObjectURL(blobUrl);
     });
   }
 }
@@ -164,8 +189,8 @@ class MozL10n {
     return this.mozL10n.getDirection();
   }
 
-  async get(property, args, fallback) {
-    return this.mozL10n.get(property, args, fallback);
+  async get(key, args = null, fallback = getL10nFallback(key, args)) {
+    return this.mozL10n.get(key, args, fallback);
   }
 
   async translate(element) {
@@ -181,7 +206,10 @@ class MozL10n {
     "findcasesensitivitychange",
     "findentirewordchange",
     "findbarclose",
+    "finddiacriticmatchingchange",
   ];
+  const findLen = "find".length;
+
   const handleEvent = function ({ type, detail }) {
     if (!PDFViewerApplication.initialized) {
       return;
@@ -192,13 +220,14 @@ class MozL10n {
     }
     PDFViewerApplication.eventBus.dispatch("find", {
       source: window,
-      type: type.substring("find".length),
+      type: type.substring(findLen),
       query: detail.query,
       phraseSearch: true,
       caseSensitive: !!detail.caseSensitive,
       entireWord: !!detail.entireWord,
       highlightAll: !!detail.highlightAll,
       findPrevious: !!detail.findPrevious,
+      matchDiacritics: !!detail.matchDiacritics,
     });
   };
 
@@ -234,10 +263,24 @@ class MozL10n {
     if (!PDFViewerApplication.initialized) {
       return;
     }
-    PDFViewerApplication.eventBus.dispatch(type, { source: window });
+    PDFViewerApplication.eventBus.dispatch("download", { source: window });
   };
 
   window.addEventListener("save", handleEvent);
+})();
+
+(function listenEditingEvent() {
+  const handleEvent = function ({ detail }) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch("editingaction", {
+      source: window,
+      name: detail.name,
+    });
+  };
+
+  window.addEventListener("editingaction", handleEvent);
 })();
 
 class FirefoxComDataRangeTransport extends PDFDataRangeTransport {
@@ -293,10 +336,15 @@ class FirefoxExternalServices extends DefaultExternalServices {
       }
       switch (args.pdfjsLoadAction) {
         case "supportsRangedLoading":
+          if (args.done && !args.data) {
+            callbacks.onError();
+            break;
+          }
           pdfDataRangeTransport = new FirefoxComDataRangeTransport(
             args.length,
             args.data,
-            args.done
+            args.done,
+            args.filename
           );
 
           callbacks.onOpenWithTransport(
@@ -319,9 +367,7 @@ class FirefoxExternalServices extends DefaultExternalServices {
           pdfDataRangeTransport.onDataProgress(args.loaded, args.total);
           break;
         case "progressiveDone":
-          if (pdfDataRangeTransport) {
-            pdfDataRangeTransport.onDataProgressiveDone();
-          }
+          pdfDataRangeTransport?.onDataProgressiveDone();
           break;
         case "progress":
           callbacks.onProgress(args.loaded, args.total);
@@ -331,27 +377,27 @@ class FirefoxExternalServices extends DefaultExternalServices {
             callbacks.onError(args.errorCode);
             break;
           }
-          callbacks.onOpenWithData(args.data);
+          callbacks.onOpenWithData(args.data, args.filename);
           break;
       }
     });
     FirefoxCom.requestSync("initPassiveLoading", null);
   }
 
-  static async fallback(data) {
-    return FirefoxCom.requestAsync("fallback", data);
-  }
-
   static reportTelemetry(data) {
     FirefoxCom.request("reportTelemetry", JSON.stringify(data));
   }
 
-  static createDownloadManager(options) {
+  static createDownloadManager() {
     return new DownloadManager();
   }
 
   static createPreferences() {
     return new FirefoxPreferences();
+  }
+
+  static updateEditorStates(data) {
+    FirefoxCom.request("updateEditorStates", data);
   }
 
   static createL10n(options) {
@@ -362,6 +408,11 @@ class FirefoxExternalServices extends DefaultExternalServices {
 
   static createScripting(options) {
     return FirefoxScripting;
+  }
+
+  static get supportsPinchToZoom() {
+    const support = FirefoxCom.requestSync("supportsPinchToZoom");
+    return shadow(this, "supportsPinchToZoom", support);
   }
 
   static get supportsIntegratedFind() {
@@ -397,7 +448,7 @@ document.mozL10n.setExternalLocalizerServices({
   },
 
   getStrings(key) {
-    return FirefoxCom.requestSync("getStrings", key);
+    return FirefoxCom.requestSync("getStrings", null);
   },
 });
 

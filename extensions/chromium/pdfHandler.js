@@ -54,8 +54,7 @@ function isPdfDownloadable(details) {
  * @returns {undefined|{name: string, value: string}} The header, if found.
  */
 function getHeaderFromHeaders(headers, headerName) {
-  for (var i = 0; i < headers.length; ++i) {
-    var header = headers[i];
+  for (const header of headers) {
     if (header.name.toLowerCase() === headerName) {
       return header;
     }
@@ -242,12 +241,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       chrome.tabs.create({
         windowId: sender.tab.windowId,
         index: sender.tab.index + 1,
-        url: url,
+        url,
         openerTabId: sender.tab.id,
       });
     } else {
       chrome.tabs.update(sender.tab.id, {
-        url: url,
+        url,
       });
     }
   }

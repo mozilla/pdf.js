@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-var Canvas = require("canvas");
-var assert = require("assert").strict;
-var fs = require("fs");
+const Canvas = require("canvas");
+const assert = require("assert").strict;
+const fs = require("fs");
 
 function NodeCanvasFactory() {}
 NodeCanvasFactory.prototype = {
   create: function NodeCanvasFactory_create(width, height) {
     assert(width > 0 && height > 0, "Invalid canvas size");
-    var canvas = Canvas.createCanvas(width, height);
-    var context = canvas.getContext("2d");
+    const canvas = Canvas.createCanvas(width, height);
+    const context = canvas.getContext("2d");
     return {
       canvas,
       context,
@@ -48,58 +48,64 @@ NodeCanvasFactory.prototype = {
   },
 };
 
-var pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
 
 // Some PDFs need external cmaps.
-var CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
-var CMAP_PACKED = true;
+const CMAP_URL = "../../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
+
+// Where the standard fonts are located.
+const STANDARD_FONT_DATA_URL =
+  "../../../node_modules/pdfjs-dist/standard_fonts/";
 
 // Loading file from file system into typed array.
-var pdfPath =
+const pdfPath =
   process.argv[2] || "../../../web/compressed.tracemonkey-pldi-09.pdf";
-var data = new Uint8Array(fs.readFileSync(pdfPath));
+const data = new Uint8Array(fs.readFileSync(pdfPath));
 
 // Load the PDF file.
-var loadingTask = pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   data,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
+  standardFontDataUrl: STANDARD_FONT_DATA_URL,
 });
-loadingTask.promise
-  .then(function (pdfDocument) {
+
+(async function () {
+  try {
+    const pdfDocument = await loadingTask.promise;
     console.log("# PDF document loaded.");
-
     // Get the first page.
-    pdfDocument.getPage(1).then(function (page) {
-      // Render the page on a Node canvas with 100% scale.
-      var viewport = page.getViewport({ scale: 1.0 });
-      var canvasFactory = new NodeCanvasFactory();
-      var canvasAndContext = canvasFactory.create(
-        viewport.width,
-        viewport.height
-      );
-      var renderContext = {
-        canvasContext: canvasAndContext.context,
-        viewport,
-        canvasFactory,
-      };
+    const page = await pdfDocument.getPage(1);
+    // Render the page on a Node canvas with 100% scale.
+    const viewport = page.getViewport({ scale: 1.0 });
+    const canvasFactory = new NodeCanvasFactory();
+    const canvasAndContext = canvasFactory.create(
+      viewport.width,
+      viewport.height
+    );
+    const renderContext = {
+      canvasContext: canvasAndContext.context,
+      viewport,
+      canvasFactory,
+    };
 
-      var renderTask = page.render(renderContext);
-      renderTask.promise.then(function () {
-        // Convert the canvas to an image buffer.
-        var image = canvasAndContext.canvas.toBuffer();
-        fs.writeFile("output.png", image, function (error) {
-          if (error) {
-            console.error("Error: " + error);
-          } else {
-            console.log(
-              "Finished converting first page of PDF file to a PNG image."
-            );
-          }
-        });
-      });
+    const renderTask = page.render(renderContext);
+    await renderTask.promise;
+    // Convert the canvas to an image buffer.
+    const image = canvasAndContext.canvas.toBuffer();
+    fs.writeFile("output.png", image, function (error) {
+      if (error) {
+        console.error("Error: " + error);
+      } else {
+        console.log(
+          "Finished converting first page of PDF file to a PNG image."
+        );
+      }
     });
-  })
-  .catch(function (reason) {
+    // Release page resources.
+    page.cleanup();
+  } catch (reason) {
     console.log(reason);
-  });
+  }
+})();

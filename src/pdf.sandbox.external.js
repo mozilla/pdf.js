@@ -29,8 +29,10 @@ class SandboxSupportBase {
   }
 
   destroy() {
-    this.commFunc = null;
-    this.timeoutIds.forEach(([_, id]) => this.win.clearTimeout(id));
+    this.commFun = null;
+    for (const id of this.timeoutIds.values()) {
+      this.win.clearTimeout(id);
+    }
     this.timeoutIds = null;
   }
 
@@ -79,6 +81,13 @@ class SandboxSupportBase {
         ) {
           return;
         }
+
+        if (callbackId === 0) {
+          // This callbackId corresponds to the one used for userActivation.
+          // So here, we cancel the last userActivation.
+          this.win.clearTimeout(this.timeoutIds.get(callbackId));
+        }
+
         const id = this.win.setTimeout(() => {
           this.timeoutIds.delete(callbackId);
           this.callSandboxFunction("timeoutCb", {
@@ -88,9 +97,9 @@ class SandboxSupportBase {
         }, nMilliseconds);
         this.timeoutIds.set(callbackId, id);
       },
-      clearTimeout: id => {
-        this.win.clearTimeout(this.timeoutIds.get(id));
-        this.timeoutIds.delete(id);
+      clearTimeout: callbackId => {
+        this.win.clearTimeout(this.timeoutIds.get(callbackId));
+        this.timeoutIds.delete(callbackId);
       },
       setInterval: (callbackId, nMilliseconds) => {
         if (
@@ -107,15 +116,21 @@ class SandboxSupportBase {
         }, nMilliseconds);
         this.timeoutIds.set(callbackId, id);
       },
-      clearInterval: id => {
-        this.win.clearInterval(this.timeoutIds.get(id));
-        this.timeoutIds.delete(id);
+      clearInterval: callbackId => {
+        this.win.clearInterval(this.timeoutIds.get(callbackId));
+        this.timeoutIds.delete(callbackId);
       },
       alert: cMsg => {
         if (typeof cMsg !== "string") {
           return;
         }
         this.win.alert(cMsg);
+      },
+      confirm: cMsg => {
+        if (typeof cMsg !== "string") {
+          return false;
+        }
+        return this.win.confirm(cMsg);
       },
       prompt: (cQuestion, cDefault) => {
         if (typeof cQuestion !== "string" || typeof cDefault !== "string") {

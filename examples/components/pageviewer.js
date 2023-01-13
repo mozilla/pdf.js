@@ -27,39 +27,63 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // Some PDFs need external cmaps.
 //
-var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
-var CMAP_PACKED = true;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
-var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
-var PAGE_TO_VIEW = 1;
-var SCALE = 1.0;
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+const PAGE_TO_VIEW = 1;
+const SCALE = 1.0;
 
-var container = document.getElementById("pageContainer");
+const ENABLE_XFA = true;
 
-var eventBus = new pdfjsViewer.EventBus();
+const container = document.getElementById("pageContainer");
+
+const eventBus = new pdfjsViewer.EventBus();
 
 // Loading document.
-var loadingTask = pdfjsLib.getDocument({
+const loadingTask = pdfjsLib.getDocument({
   url: DEFAULT_URL,
   cMapUrl: CMAP_URL,
   cMapPacked: CMAP_PACKED,
+  enableXfa: ENABLE_XFA,
 });
-loadingTask.promise.then(function (pdfDocument) {
+(async function () {
+  const pdfDocument = await loadingTask.promise;
   // Document loaded, retrieving the page.
-  return pdfDocument.getPage(PAGE_TO_VIEW).then(function (pdfPage) {
+  const pdfPage = await pdfDocument.getPage(PAGE_TO_VIEW);
+
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(pdfjsLib.version);
+  if (match && (match[1] | 0) >= 3 && (match[2] | 0) >= 2) {
     // Creating the page view with default parameters.
-    var pdfPageView = new pdfjsViewer.PDFPageView({
+    const pdfPageView = new pdfjsViewer.PDFPageView({
       container,
       id: PAGE_TO_VIEW,
       scale: SCALE,
       defaultViewport: pdfPage.getViewport({ scale: SCALE }),
       eventBus,
-      // We can enable text/annotations layers, if needed
-      textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
-      annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
     });
-    // Associates the actual page with the view, and drawing it
+    // Associate the actual page with the view, and draw it.
     pdfPageView.setPdfPage(pdfPage);
     return pdfPageView.draw();
+  }
+  // Creating the page view with default parameters.
+  const pdfPageView = new pdfjsViewer.PDFPageView({
+    container,
+    id: PAGE_TO_VIEW,
+    scale: SCALE,
+    defaultViewport: pdfPage.getViewport({ scale: SCALE }),
+    eventBus,
+    // We can enable text/annotation/xfa/struct-layers, as needed.
+    textLayerFactory: !pdfDocument.isPureXfa
+      ? new pdfjsViewer.DefaultTextLayerFactory()
+      : null,
+    annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
+    xfaLayerFactory: pdfDocument.isPureXfa
+      ? new pdfjsViewer.DefaultXfaLayerFactory()
+      : null,
+    structTreeLayerFactory: new pdfjsViewer.DefaultStructTreeLayerFactory(),
   });
-});
+  // Associate the actual page with the view, and draw it.
+  pdfPageView.setPdfPage(pdfPage);
+  return pdfPageView.draw();
+})();

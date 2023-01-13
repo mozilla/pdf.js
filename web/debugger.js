@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
-"use strict";
+let opMap;
 
-var FontInspector = (function FontInspectorClosure() {
-  var fonts;
-  var active = false;
-  var fontAttribute = "data-font-name";
+const FontInspector = (function FontInspectorClosure() {
+  let fonts;
+  let active = false;
+  const fontAttribute = "data-font-name";
   function removeSelection() {
     const divs = document.querySelectorAll(`span[${fontAttribute}]`);
     for (const div of divs) {
@@ -47,10 +46,9 @@ var FontInspector = (function FontInspectorClosure() {
     ) {
       return;
     }
-    var fontName = e.target.dataset.fontName;
-    var selects = document.getElementsByTagName("input");
-    for (var i = 0; i < selects.length; ++i) {
-      var select = selects[i];
+    const fontName = e.target.dataset.fontName;
+    const selects = document.getElementsByTagName("input");
+    for (const select of selects) {
       if (select.dataset.fontName !== fontName) {
         continue;
       }
@@ -65,17 +63,17 @@ var FontInspector = (function FontInspectorClosure() {
     name: "Font Inspector",
     panel: null,
     manager: null,
-    init: function init(pdfjsLib) {
-      var panel = this.panel;
-      var tmp = document.createElement("button");
+    init(pdfjsLib) {
+      const panel = this.panel;
+      const tmp = document.createElement("button");
       tmp.addEventListener("click", resetSelection);
       tmp.textContent = "Refresh";
-      panel.appendChild(tmp);
+      panel.append(tmp);
 
       fonts = document.createElement("div");
-      panel.appendChild(fonts);
+      panel.append(fonts);
     },
-    cleanup: function cleanup() {
+    cleanup() {
       fonts.textContent = "";
     },
     enabled: false,
@@ -93,37 +91,37 @@ var FontInspector = (function FontInspectorClosure() {
       }
     },
     // FontInspector specific functions.
-    fontAdded: function fontAdded(fontObj, url) {
+    fontAdded(fontObj, url) {
       function properties(obj, list) {
-        var moreInfo = document.createElement("table");
-        for (var i = 0; i < list.length; i++) {
-          var tr = document.createElement("tr");
-          var td1 = document.createElement("td");
-          td1.textContent = list[i];
-          tr.appendChild(td1);
-          var td2 = document.createElement("td");
-          td2.textContent = obj[list[i]].toString();
-          tr.appendChild(td2);
-          moreInfo.appendChild(tr);
+        const moreInfo = document.createElement("table");
+        for (const entry of list) {
+          const tr = document.createElement("tr");
+          const td1 = document.createElement("td");
+          td1.textContent = entry;
+          tr.append(td1);
+          const td2 = document.createElement("td");
+          td2.textContent = obj[entry].toString();
+          tr.append(td2);
+          moreInfo.append(tr);
         }
         return moreInfo;
       }
-      var moreInfo = properties(fontObj, ["name", "type"]);
+      const moreInfo = properties(fontObj, ["name", "type"]);
       const fontName = fontObj.loadedName;
-      var font = document.createElement("div");
-      var name = document.createElement("span");
+      const font = document.createElement("div");
+      const name = document.createElement("span");
       name.textContent = fontName;
-      var download = document.createElement("a");
+      const download = document.createElement("a");
       if (url) {
         url = /url\(['"]?([^)"']+)/.exec(url);
         download.href = url[1];
       } else if (fontObj.data) {
         download.href = URL.createObjectURL(
-          new Blob([fontObj.data], { type: fontObj.mimeType })
+          new Blob([fontObj.data], { type: fontObj.mimetype })
         );
       }
       download.textContent = "Download";
-      var logIt = document.createElement("a");
+      const logIt = document.createElement("a");
       logIt.href = "";
       logIt.textContent = "Log";
       logIt.addEventListener("click", function (event) {
@@ -136,14 +134,8 @@ var FontInspector = (function FontInspectorClosure() {
       select.addEventListener("click", function () {
         selectFont(fontName, select.checked);
       });
-      font.appendChild(select);
-      font.appendChild(name);
-      font.appendChild(document.createTextNode(" "));
-      font.appendChild(download);
-      font.appendChild(document.createTextNode(" "));
-      font.appendChild(logIt);
-      font.appendChild(moreInfo);
-      fonts.appendChild(font);
+      font.append(select, name, " ", download, " ", logIt, moreInfo);
+      fonts.append(font);
       // Somewhat of a hack, should probably add a hook for when the text layer
       // is done rendering.
       setTimeout(() => {
@@ -155,42 +147,39 @@ var FontInspector = (function FontInspectorClosure() {
   };
 })();
 
-var opMap;
-
 // Manages all the page steppers.
-var StepperManager = (function StepperManagerClosure() {
-  var steppers = [];
-  var stepperDiv = null;
-  var stepperControls = null;
-  var stepperChooser = null;
-  var breakPoints = Object.create(null);
+const StepperManager = (function StepperManagerClosure() {
+  let steppers = [];
+  let stepperDiv = null;
+  let stepperControls = null;
+  let stepperChooser = null;
+  let breakPoints = Object.create(null);
   return {
     // Properties/functions needed by PDFBug.
     id: "Stepper",
     name: "Stepper",
     panel: null,
     manager: null,
-    init: function init(pdfjsLib) {
-      var self = this;
+    init(pdfjsLib) {
+      const self = this;
       stepperControls = document.createElement("div");
       stepperChooser = document.createElement("select");
       stepperChooser.addEventListener("change", function (event) {
         self.selectStepper(this.value);
       });
-      stepperControls.appendChild(stepperChooser);
+      stepperControls.append(stepperChooser);
       stepperDiv = document.createElement("div");
-      this.panel.appendChild(stepperControls);
-      this.panel.appendChild(stepperDiv);
+      this.panel.append(stepperControls, stepperDiv);
       if (sessionStorage.getItem("pdfjsBreakPoints")) {
         breakPoints = JSON.parse(sessionStorage.getItem("pdfjsBreakPoints"));
       }
 
       opMap = Object.create(null);
-      for (var key in pdfjsLib.OPS) {
+      for (const key in pdfjsLib.OPS) {
         opMap[pdfjsLib.OPS[key]] = key;
       }
     },
-    cleanup: function cleanup() {
+    cleanup() {
       stepperChooser.textContent = "";
       stepperDiv.textContent = "";
       steppers = [];
@@ -198,52 +187,48 @@ var StepperManager = (function StepperManagerClosure() {
     enabled: false,
     active: false,
     // Stepper specific functions.
-    create: function create(pageIndex) {
-      var debug = document.createElement("div");
+    create(pageIndex) {
+      const debug = document.createElement("div");
       debug.id = "stepper" + pageIndex;
       debug.hidden = true;
       debug.className = "stepper";
-      stepperDiv.appendChild(debug);
-      var b = document.createElement("option");
+      stepperDiv.append(debug);
+      const b = document.createElement("option");
       b.textContent = "Page " + (pageIndex + 1);
       b.value = pageIndex;
-      stepperChooser.appendChild(b);
-      var initBreakPoints = breakPoints[pageIndex] || [];
-      var stepper = new Stepper(debug, pageIndex, initBreakPoints);
+      stepperChooser.append(b);
+      const initBreakPoints = breakPoints[pageIndex] || [];
+      const stepper = new Stepper(debug, pageIndex, initBreakPoints);
       steppers.push(stepper);
       if (steppers.length === 1) {
         this.selectStepper(pageIndex, false);
       }
       return stepper;
     },
-    selectStepper: function selectStepper(pageIndex, selectPanel) {
-      var i;
-      pageIndex = pageIndex | 0;
+    selectStepper(pageIndex, selectPanel) {
+      pageIndex |= 0;
       if (selectPanel) {
         this.manager.selectPanel(this);
       }
-      for (i = 0; i < steppers.length; ++i) {
-        var stepper = steppers[i];
+      for (const stepper of steppers) {
         stepper.panel.hidden = stepper.pageIndex !== pageIndex;
       }
-      var options = stepperChooser.options;
-      for (i = 0; i < options.length; ++i) {
-        var option = options[i];
+      for (const option of stepperChooser.options) {
         option.selected = (option.value | 0) === pageIndex;
       }
     },
-    saveBreakPoints: function saveBreakPoints(pageIndex, bps) {
+    saveBreakPoints(pageIndex, bps) {
       breakPoints[pageIndex] = bps;
       sessionStorage.setItem("pdfjsBreakPoints", JSON.stringify(breakPoints));
     },
   };
 })();
 
-// The stepper for each page's IRQueue.
-var Stepper = (function StepperClosure() {
+// The stepper for each page's operatorList.
+const Stepper = (function StepperClosure() {
   // Shorter way to create element and optionally set textContent.
   function c(tag, textContent) {
-    var d = document.createElement(tag);
+    const d = document.createElement(tag);
     if (textContent) {
       d.textContent = textContent;
     }
@@ -252,7 +237,7 @@ var Stepper = (function StepperClosure() {
 
   function simplifyArgs(args) {
     if (typeof args === "string") {
-      var MAX_STRING_LENGTH = 75;
+      const MAX_STRING_LENGTH = 75;
       return args.length <= MAX_STRING_LENGTH
         ? args
         : args.substring(0, MAX_STRING_LENGTH) + "...";
@@ -262,10 +247,9 @@ var Stepper = (function StepperClosure() {
     }
     if ("length" in args) {
       // array
-      var simpleArgs = [],
-        i,
-        ii;
-      var MAX_ITEMS = 10;
+      const MAX_ITEMS = 10,
+        simpleArgs = [];
+      let i, ii;
       for (i = 0, ii = Math.min(MAX_ITEMS, args.length); i < ii; i++) {
         simpleArgs.push(simplifyArgs(args[i]));
       }
@@ -274,45 +258,50 @@ var Stepper = (function StepperClosure() {
       }
       return simpleArgs;
     }
-    var simpleObj = {};
-    for (var key in args) {
+    const simpleObj = {};
+    for (const key in args) {
       simpleObj[key] = simplifyArgs(args[key]);
     }
     return simpleObj;
   }
 
   // eslint-disable-next-line no-shadow
-  function Stepper(panel, pageIndex, initialBreakPoints) {
-    this.panel = panel;
-    this.breakPoint = 0;
-    this.nextBreakPoint = null;
-    this.pageIndex = pageIndex;
-    this.breakPoints = initialBreakPoints;
-    this.currentIdx = -1;
-    this.operatorListIdx = 0;
-  }
-  Stepper.prototype = {
-    init: function init(operatorList) {
-      var panel = this.panel;
-      var content = c("div", "c=continue, s=step");
-      var table = c("table");
-      content.appendChild(table);
+  class Stepper {
+    constructor(panel, pageIndex, initialBreakPoints) {
+      this.panel = panel;
+      this.breakPoint = 0;
+      this.nextBreakPoint = null;
+      this.pageIndex = pageIndex;
+      this.breakPoints = initialBreakPoints;
+      this.currentIdx = -1;
+      this.operatorListIdx = 0;
+      this.indentLevel = 0;
+    }
+
+    init(operatorList) {
+      const panel = this.panel;
+      const content = c("div", "c=continue, s=step");
+      const table = c("table");
+      content.append(table);
       table.cellSpacing = 0;
-      var headerRow = c("tr");
-      table.appendChild(headerRow);
-      headerRow.appendChild(c("th", "Break"));
-      headerRow.appendChild(c("th", "Idx"));
-      headerRow.appendChild(c("th", "fn"));
-      headerRow.appendChild(c("th", "args"));
-      panel.appendChild(content);
+      const headerRow = c("tr");
+      table.append(headerRow);
+      headerRow.append(
+        c("th", "Break"),
+        c("th", "Idx"),
+        c("th", "fn"),
+        c("th", "args")
+      );
+      panel.append(content);
       this.table = table;
       this.updateOperatorList(operatorList);
-    },
-    updateOperatorList: function updateOperatorList(operatorList) {
-      var self = this;
+    }
+
+    updateOperatorList(operatorList) {
+      const self = this;
 
       function cboxOnClick() {
-        var x = +this.dataset.idx;
+        const x = +this.dataset.idx;
         if (this.checked) {
           self.breakPoints.push(x);
         } else {
@@ -321,109 +310,122 @@ var Stepper = (function StepperClosure() {
         StepperManager.saveBreakPoints(self.pageIndex, self.breakPoints);
       }
 
-      var MAX_OPERATORS_COUNT = 15000;
+      const MAX_OPERATORS_COUNT = 15000;
       if (this.operatorListIdx > MAX_OPERATORS_COUNT) {
         return;
       }
 
-      var chunk = document.createDocumentFragment();
-      var operatorsToDisplay = Math.min(
+      const chunk = document.createDocumentFragment();
+      const operatorsToDisplay = Math.min(
         MAX_OPERATORS_COUNT,
         operatorList.fnArray.length
       );
-      for (var i = this.operatorListIdx; i < operatorsToDisplay; i++) {
-        var line = c("tr");
+      for (let i = this.operatorListIdx; i < operatorsToDisplay; i++) {
+        const line = c("tr");
         line.className = "line";
         line.dataset.idx = i;
-        chunk.appendChild(line);
-        var checked = this.breakPoints.includes(i);
-        var args = operatorList.argsArray[i] || [];
+        chunk.append(line);
+        const checked = this.breakPoints.includes(i);
+        const args = operatorList.argsArray[i] || [];
 
-        var breakCell = c("td");
-        var cbox = c("input");
+        const breakCell = c("td");
+        const cbox = c("input");
         cbox.type = "checkbox";
         cbox.className = "points";
         cbox.checked = checked;
         cbox.dataset.idx = i;
         cbox.onclick = cboxOnClick;
 
-        breakCell.appendChild(cbox);
-        line.appendChild(breakCell);
-        line.appendChild(c("td", i.toString()));
-        var fn = opMap[operatorList.fnArray[i]];
-        var decArgs = args;
+        breakCell.append(cbox);
+        line.append(breakCell, c("td", i.toString()));
+        const fn = opMap[operatorList.fnArray[i]];
+        let decArgs = args;
         if (fn === "showText") {
-          var glyphs = args[0];
-          var newArgs = [];
-          var str = [];
-          for (var j = 0; j < glyphs.length; j++) {
-            var glyph = glyphs[j];
+          const glyphs = args[0];
+          const charCodeRow = c("tr");
+          const fontCharRow = c("tr");
+          const unicodeRow = c("tr");
+          for (const glyph of glyphs) {
             if (typeof glyph === "object" && glyph !== null) {
-              str.push(glyph.fontChar);
+              charCodeRow.append(c("td", glyph.originalCharCode));
+              fontCharRow.append(c("td", glyph.fontChar));
+              unicodeRow.append(c("td", glyph.unicode));
             } else {
-              if (str.length > 0) {
-                newArgs.push(str.join(""));
-                str = [];
-              }
-              newArgs.push(glyph); // null or number
+              // null or number
+              const advanceEl = c("td", glyph);
+              advanceEl.classList.add("advance");
+              charCodeRow.append(advanceEl);
+              fontCharRow.append(c("td"));
+              unicodeRow.append(c("td"));
             }
           }
-          if (str.length > 0) {
-            newArgs.push(str.join(""));
-          }
-          decArgs = [newArgs];
+          decArgs = c("td");
+          const table = c("table");
+          table.classList.add("showText");
+          decArgs.append(table);
+          table.append(charCodeRow, fontCharRow, unicodeRow);
+        } else if (fn === "restore" && this.indentLevel > 0) {
+          this.indentLevel--;
         }
-        line.appendChild(c("td", fn));
-        line.appendChild(c("td", JSON.stringify(simplifyArgs(decArgs))));
+        line.append(c("td", " ".repeat(this.indentLevel * 2) + fn));
+        if (fn === "save") {
+          this.indentLevel++;
+        }
+
+        if (decArgs instanceof HTMLElement) {
+          line.append(decArgs);
+        } else {
+          line.append(c("td", JSON.stringify(simplifyArgs(decArgs))));
+        }
       }
       if (operatorsToDisplay < operatorList.fnArray.length) {
-        var lastCell = c("td", "...");
+        const lastCell = c("td", "...");
         lastCell.colspan = 4;
-        chunk.appendChild(lastCell);
+        chunk.append(lastCell);
       }
       this.operatorListIdx = operatorList.fnArray.length;
-      this.table.appendChild(chunk);
-    },
-    getNextBreakPoint: function getNextBreakPoint() {
+      this.table.append(chunk);
+    }
+
+    getNextBreakPoint() {
       this.breakPoints.sort(function (a, b) {
         return a - b;
       });
-      for (var i = 0; i < this.breakPoints.length; i++) {
-        if (this.breakPoints[i] > this.currentIdx) {
-          return this.breakPoints[i];
+      for (const breakPoint of this.breakPoints) {
+        if (breakPoint > this.currentIdx) {
+          return breakPoint;
         }
       }
       return null;
-    },
-    breakIt: function breakIt(idx, callback) {
+    }
+
+    breakIt(idx, callback) {
       StepperManager.selectStepper(this.pageIndex, true);
-      var self = this;
-      var dom = document;
-      self.currentIdx = idx;
-      var listener = function (e) {
-        switch (e.keyCode) {
+      this.currentIdx = idx;
+
+      const listener = evt => {
+        switch (evt.keyCode) {
           case 83: // step
-            dom.removeEventListener("keydown", listener);
-            self.nextBreakPoint = self.currentIdx + 1;
-            self.goTo(-1);
+            document.removeEventListener("keydown", listener);
+            this.nextBreakPoint = this.currentIdx + 1;
+            this.goTo(-1);
             callback();
             break;
           case 67: // continue
-            dom.removeEventListener("keydown", listener);
-            var breakPoint = self.getNextBreakPoint();
-            self.nextBreakPoint = breakPoint;
-            self.goTo(-1);
+            document.removeEventListener("keydown", listener);
+            this.nextBreakPoint = this.getNextBreakPoint();
+            this.goTo(-1);
             callback();
             break;
         }
       };
-      dom.addEventListener("keydown", listener);
-      self.goTo(idx);
-    },
-    goTo: function goTo(idx) {
-      var allRows = this.panel.getElementsByClassName("line");
-      for (var x = 0, xx = allRows.length; x < xx; ++x) {
-        var row = allRows[x];
+      document.addEventListener("keydown", listener);
+      this.goTo(idx);
+    }
+
+    goTo(idx) {
+      const allRows = this.panel.getElementsByClassName("line");
+      for (const row of allRows) {
         if ((row.dataset.idx | 0) === idx) {
           row.style.backgroundColor = "rgb(251,250,207)";
           row.scrollIntoView();
@@ -431,21 +433,19 @@ var Stepper = (function StepperClosure() {
           row.style.backgroundColor = null;
         }
       }
-    },
-  };
+    }
+  }
   return Stepper;
 })();
 
-var Stats = (function Stats() {
-  var stats = [];
+const Stats = (function Stats() {
+  let stats = [];
   function clear(node) {
-    while (node.hasChildNodes()) {
-      node.removeChild(node.lastChild);
-    }
+    node.textContent = ""; // Remove any `node` contents from the DOM.
   }
   function getStatIndex(pageNumber) {
-    for (var i = 0, ii = stats.length; i < ii; ++i) {
-      if (stats[i].pageNumber === pageNumber) {
+    for (const [i, stat] of stats.entries()) {
+      if (stat.pageNumber === pageNumber) {
         return i;
       }
     }
@@ -465,28 +465,26 @@ var Stats = (function Stats() {
       if (!stat) {
         return;
       }
-      var statsIndex = getStatIndex(pageNumber);
+      const statsIndex = getStatIndex(pageNumber);
       if (statsIndex !== false) {
-        const b = stats[statsIndex];
-        this.panel.removeChild(b.div);
+        stats[statsIndex].div.remove();
         stats.splice(statsIndex, 1);
       }
-      var wrapper = document.createElement("div");
+      const wrapper = document.createElement("div");
       wrapper.className = "stats";
-      var title = document.createElement("div");
+      const title = document.createElement("div");
       title.className = "title";
       title.textContent = "Page: " + pageNumber;
-      var statsDiv = document.createElement("div");
+      const statsDiv = document.createElement("div");
       statsDiv.textContent = stat.toString();
-      wrapper.appendChild(title);
-      wrapper.appendChild(statsDiv);
+      wrapper.append(title, statsDiv);
       stats.push({ pageNumber, div: wrapper });
       stats.sort(function (a, b) {
         return a.pageNumber - b.pageNumber;
       });
       clear(this.panel);
-      for (var i = 0, ii = stats.length; i < ii; ++i) {
-        this.panel.appendChild(stats[i].div);
+      for (const entry of stats) {
+        this.panel.append(entry.div);
       }
     },
     cleanup() {
@@ -497,21 +495,17 @@ var Stats = (function Stats() {
 })();
 
 // Manages all the debugging tools.
-window.PDFBug = (function PDFBugClosure() {
-  var panelWidth = 300;
-  var buttons = [];
-  var activePanel = null;
+const PDFBug = (function PDFBugClosure() {
+  const panelWidth = 300;
+  const buttons = [];
+  let activePanel = null;
 
   return {
     tools: [FontInspector, StepperManager, Stats],
     enable(ids) {
-      var all = false,
-        tools = this.tools;
-      if (ids.length === 1 && ids[0] === "all") {
-        all = true;
-      }
-      for (var i = 0; i < tools.length; ++i) {
-        var tool = tools[i];
+      const all = ids.length === 1 && ids[0] === "all";
+      const tools = this.tools;
+      for (const tool of tools) {
         if (all || ids.includes(tool.id)) {
           tool.enabled = true;
         }
@@ -519,15 +513,17 @@ window.PDFBug = (function PDFBugClosure() {
       if (!all) {
         // Sort the tools by the order they are enabled.
         tools.sort(function (a, b) {
-          var indexA = ids.indexOf(a.id);
+          let indexA = ids.indexOf(a.id);
           indexA = indexA < 0 ? tools.length : indexA;
-          var indexB = ids.indexOf(b.id);
+          let indexB = ids.indexOf(b.id);
           indexB = indexB < 0 ? tools.length : indexB;
           return indexA - indexB;
         });
       }
     },
-    init(pdfjsLib, container) {
+    init(pdfjsLib, container, ids) {
+      this.loadCSS();
+      this.enable(ids);
       /*
        * Basic Layout:
        * PDFBug
@@ -537,60 +533,57 @@ window.PDFBug = (function PDFBugClosure() {
        *    Panel
        *    ...
        */
-      var ui = document.createElement("div");
+      const ui = document.createElement("div");
       ui.id = "PDFBug";
 
-      var controls = document.createElement("div");
+      const controls = document.createElement("div");
       controls.setAttribute("class", "controls");
-      ui.appendChild(controls);
+      ui.append(controls);
 
-      var panels = document.createElement("div");
+      const panels = document.createElement("div");
       panels.setAttribute("class", "panels");
-      ui.appendChild(panels);
+      ui.append(panels);
 
-      container.appendChild(ui);
+      container.append(ui);
       container.style.right = panelWidth + "px";
 
       // Initialize all the debugging tools.
-      var tools = this.tools;
-      var self = this;
-      for (var i = 0; i < tools.length; ++i) {
-        var tool = tools[i];
-        var panel = document.createElement("div");
-        var panelButton = document.createElement("button");
+      for (const tool of this.tools) {
+        const panel = document.createElement("div");
+        const panelButton = document.createElement("button");
         panelButton.textContent = tool.name;
-        panelButton.addEventListener(
-          "click",
-          (function (selected) {
-            return function (event) {
-              event.preventDefault();
-              self.selectPanel(selected);
-            };
-          })(i)
-        );
-        controls.appendChild(panelButton);
-        panels.appendChild(panel);
+        panelButton.addEventListener("click", event => {
+          event.preventDefault();
+          this.selectPanel(tool);
+        });
+        controls.append(panelButton);
+        panels.append(panel);
         tool.panel = panel;
         tool.manager = this;
         if (tool.enabled) {
           tool.init(pdfjsLib);
         } else {
           panel.textContent =
-            tool.name +
-            " is disabled. To enable add " +
-            ' "' +
-            tool.id +
-            '" to the pdfBug parameter ' +
-            "and refresh (separate multiple by commas).";
+            `${tool.name} is disabled. To enable add "${tool.id}" to ` +
+            "the pdfBug parameter and refresh (separate multiple by commas).";
         }
         buttons.push(panelButton);
       }
       this.selectPanel(0);
     },
+    loadCSS() {
+      const { url } = import.meta;
+
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = url.replace(/.js$/, ".css");
+
+      document.head.append(link);
+    },
     cleanup() {
-      for (var i = 0, ii = this.tools.length; i < ii; i++) {
-        if (this.tools[i].enabled) {
-          this.tools[i].cleanup();
+      for (const tool of this.tools) {
+        if (tool.enabled) {
+          tool.cleanup();
         }
       }
     },
@@ -602,13 +595,18 @@ window.PDFBug = (function PDFBugClosure() {
         return;
       }
       activePanel = index;
-      var tools = this.tools;
-      for (var j = 0; j < tools.length; ++j) {
-        var isActive = j === index;
+      for (const [j, tool] of this.tools.entries()) {
+        const isActive = j === index;
         buttons[j].classList.toggle("active", isActive);
-        tools[j].active = isActive;
-        tools[j].panel.hidden = !isActive;
+        tool.active = isActive;
+        tool.panel.hidden = !isActive;
       }
     },
   };
 })();
+
+globalThis.FontInspector = FontInspector;
+globalThis.StepperManager = StepperManager;
+globalThis.Stats = Stats;
+
+export { PDFBug };

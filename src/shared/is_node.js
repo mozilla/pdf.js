@@ -19,6 +19,7 @@
 // https://www.electronjs.org/docs/api/process#processversionselectron-readonly
 // https://www.electronjs.org/docs/api/process#processtype-readonly
 const isNodeJS =
+  (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
   typeof process === "object" &&
   process + "" === "[object process]" &&
   !process.versions.nw &&

@@ -26,10 +26,18 @@ import {
 
 describe("network_utils", function () {
   describe("validateRangeRequestCapabilities", function () {
-    it("rejects range chunk sizes that are not larger than zero", function () {
+    it("rejects invalid rangeChunkSize", function () {
+      expect(function () {
+        validateRangeRequestCapabilities({ rangeChunkSize: "abc" });
+      }).toThrow(
+        new Error("rangeChunkSize must be an integer larger than zero.")
+      );
+
       expect(function () {
         validateRangeRequestCapabilities({ rangeChunkSize: 0 });
-      }).toThrow(new Error("Range chunk size must be larger than zero"));
+      }).toThrow(
+        new Error("rangeChunkSize must be an integer larger than zero.")
+      );
     });
 
     it("rejects disabled or non-HTTP range requests", function () {

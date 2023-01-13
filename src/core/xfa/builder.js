@@ -14,19 +14,44 @@
  */
 
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
-import { $cleanup, $onChild, XFAObject } from "./xfa_object.js";
+import {
+  $cleanup,
+  $finalize,
+  $ids,
+  $isNsAgnostic,
+  $nsAttributes,
+  $onChild,
+  $resolvePrototypes,
+  $root,
+  XFAObject,
+} from "./xfa_object.js";
 import { NamespaceSetUp } from "./setup.js";
+import { Template } from "./template.js";
 import { UnknownNamespace } from "./unknown.js";
 import { warn } from "../../shared/util.js";
 
 class Root extends XFAObject {
-  constructor() {
+  constructor(ids) {
     super(-1, "root", Object.create(null));
     this.element = null;
+    this[$ids] = ids;
   }
 
   [$onChild](child) {
     this.element = child;
+    return true;
+  }
+
+  [$finalize]() {
+    super[$finalize]();
+    if (this.element.template instanceof Template) {
+      // Set the root element in $ids using a symbol in order
+      // to avoid conflict with real IDs.
+      this[$ids].set($root, this.element);
+
+      this.element.template[$resolvePrototypes](this[$ids]);
+      this.element.template[$ids] = this[$ids];
+    }
   }
 }
 
@@ -35,12 +60,15 @@ class Empty extends XFAObject {
     super(-1, "", Object.create(null));
   }
 
-  [$onChild](_) {}
+  [$onChild](_) {
+    return false;
+  }
 }
 
 class Builder {
-  constructor() {
+  constructor(rootNameSpace = null) {
     this._namespaceStack = [];
+    this._nsAgnosticLevel = 0;
 
     // Each prefix has its own stack
     this._namespacePrefixes = new Map();
@@ -48,11 +76,12 @@ class Builder {
     this._nextNsId = Math.max(
       ...Object.values(NamespaceIds).map(({ id }) => id)
     );
-    this._currentNamespace = new UnknownNamespace(++this._nextNsId);
+    this._currentNamespace =
+      rootNameSpace || new UnknownNamespace(++this._nextNsId);
   }
 
-  buildRoot() {
-    return new Root();
+  buildRoot(ids) {
+    return new Root(ids);
   }
 
   build({ nsPrefix, name, attributes, namespace, prefixes }) {
@@ -68,21 +97,49 @@ class Builder {
       this._addNamespacePrefix(prefixes);
     }
 
+    if (attributes.hasOwnProperty($nsAttributes)) {
+      // Only support xfa-data namespace.
+      const dataTemplate = NamespaceSetUp.datasets;
+      const nsAttrs = attributes[$nsAttributes];
+      let xfaAttrs = null;
+      for (const [ns, attrs] of Object.entries(nsAttrs)) {
+        const nsToUse = this._getNamespaceToUse(ns);
+        if (nsToUse === dataTemplate) {
+          xfaAttrs = { xfa: attrs };
+          break;
+        }
+      }
+      if (xfaAttrs) {
+        attributes[$nsAttributes] = xfaAttrs;
+      } else {
+        delete attributes[$nsAttributes];
+      }
+    }
+
     const namespaceToUse = this._getNamespaceToUse(nsPrefix);
     const node =
       (namespaceToUse && namespaceToUse[$buildXFAObject](name, attributes)) ||
       new Empty();
 
+    if (node[$isNsAgnostic]()) {
+      this._nsAgnosticLevel++;
+    }
+
     // In case the node has some namespace things,
     // we must pop the different stacks.
-    if (hasNamespaceDef || prefixes) {
+    if (hasNamespaceDef || prefixes || node[$isNsAgnostic]()) {
       node[$cleanup] = {
         hasNamespace: hasNamespaceDef,
         prefixes,
+        nsAgnostic: node[$isNsAgnostic](),
       };
     }
 
     return node;
+  }
+
+  isNsAgnostic() {
+    return this._nsAgnosticLevel > 0;
   }
 
   _searchNamespace(nsName) {
@@ -125,7 +182,7 @@ class Builder {
     }
     const prefixStack = this._namespacePrefixes.get(prefix);
     if (prefixStack && prefixStack.length > 0) {
-      return prefixStack[prefixStack.length - 1];
+      return prefixStack.at(-1);
     }
 
     warn(`Unknown namespace prefix: ${prefix}.`);
@@ -133,7 +190,7 @@ class Builder {
   }
 
   clean(data) {
-    const { hasNamespace, prefixes } = data;
+    const { hasNamespace, prefixes, nsAgnostic } = data;
     if (hasNamespace) {
       this._currentNamespace = this._namespaceStack.pop();
     }
@@ -141,6 +198,9 @@ class Builder {
       prefixes.forEach(({ prefix }) => {
         this._namespacePrefixes.get(prefix).pop();
       });
+    }
+    if (nsAgnostic) {
+      this._nsAgnosticLevel--;
     }
   }
 }

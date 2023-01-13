@@ -1,0 +1,130 @@
+%PDF-1.3
+%ÿÿÿÿ
+6 0 obj
+<<
+/FunctionType 2
+/Domain [0 1]
+/C0 [1 1 0]
+/C1 [0 0.5019607843137255 0]
+/N 1
+>>
+endobj
+7 0 obj
+<<
+/FunctionType 2
+/Domain [0 1]
+/C0 [0 0.5019607843137255 0]
+/C1 [1 1 1]
+/N 1
+>>
+endobj
+8 0 obj
+<<
+/FunctionType 3
+/Domain [0 1]
+/Functions [6 0 R 7 0 R]
+/Bounds [0.5]
+/Encode [0 1 0 1]
+>>
+endobj
+9 0 obj
+<<
+/ShadingType 3
+/ColorSpace /DeviceRGB
+/Coords [0.5 0.5 0 0.5 0.5 0.5]
+/Function 8 0 R
+/Extend [true true]
+>>
+endobj
+10 0 obj
+<<
+/Type /Pattern
+/PatternType 2
+/Shading 9 0 R
+/Matrix [440 0 0 -200 20 220]
+>>
+endobj
+11 0 obj
+<<
+/Type /ExtGState
+/ca 1
+>>
+endobj
+5 0 obj
+<<
+/Type /Page
+/Parent 1 0 R
+/MediaBox [0 0 480 240]
+/Contents 3 0 R
+/Resources 4 0 R
+>>
+endobj
+4 0 obj
+<<
+/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]
+/Pattern <<
+/Sh1 10 0 R
+>>
+/ExtGState <<
+/Gs1 11 0 R
+>>
+>>
+endobj
+3 0 obj
+<<
+/Length 66
+>>
+stream
+1 0 0 -1 0 240 cm
+20 20 440 200 re
+/Pattern cs
+/Sh1 scn
+/Gs1 gs
+f
+
+endstream
+endobj
+12 0 obj
+<<
+/Producer (PDFKit)
+/Creator (PDFKit)
+/CreationDate (D:20161124005340Z)
+>>
+endobj
+2 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+>>
+endobj
+1 0 obj
+<<
+/Type /Pages
+/Count 1
+/Kids [5 0 R]
+>>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000001071 00000 n 
+0000001022 00000 n 
+0000000813 00000 n 
+0000000690 00000 n 
+0000000586 00000 n 
+0000000015 00000 n 
+0000000112 00000 n 
+0000000209 00000 n 
+0000000317 00000 n 
+0000000444 00000 n 
+0000000541 00000 n 
+0000000929 00000 n 
+trailer
+<<
+/Size 13
+/Root 2 0 R
+/Info 12 0 R
+>>
+startxref
+1128
+%%EOF

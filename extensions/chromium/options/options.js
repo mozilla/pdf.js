@@ -155,7 +155,7 @@ function renderBooleanPref(shortDescription, description, prefName) {
     storageArea.set(pref);
   };
   wrapper.querySelector("span").textContent = shortDescription;
-  document.getElementById("settings-boxes").appendChild(wrapper);
+  document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
     checkbox.checked = value;
@@ -172,7 +172,7 @@ function renderEnumPref(shortDescription, prefName) {
     storageArea.set(pref);
   };
   wrapper.querySelector("span").textContent = shortDescription;
-  document.getElementById("settings-boxes").appendChild(wrapper);
+  document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
     select.value = value;
@@ -189,7 +189,7 @@ function renderDefaultZoomValue(shortDescription) {
     });
   };
   wrapper.querySelector("span").textContent = shortDescription;
-  document.getElementById("settings-boxes").appendChild(wrapper);
+  document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
     value = value || "auto";

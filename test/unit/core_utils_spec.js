@@ -15,12 +15,18 @@
 
 import { Dict, Ref } from "../../src/core/primitives.js";
 import {
+  encodeToXmlString,
   escapePDFName,
+  escapeString,
   getInheritableProperty,
+  isAscii,
   isWhiteSpace,
   log2,
   parseXFAPath,
+  stringToUTF16HexString,
+  stringToUTF16String,
   toRomanNumerals,
+  validateCSSFont,
 } from "../../src/core/core_utils.js";
 import { XRefMock } from "./test_utils.js";
 
@@ -123,30 +129,6 @@ describe("core_utils", function () {
         ["qux2", "quux"],
       ]);
     });
-
-    it("stops searching when the loop limit is reached", function () {
-      const dict = new Dict();
-      let currentDict = dict;
-      let parentDict = null;
-      // Exceed the loop limit of 100.
-      for (let i = 0; i < 150; i++) {
-        parentDict = new Dict();
-        currentDict.set("Parent", parentDict);
-        currentDict = parentDict;
-      }
-      parentDict.set("foo", "bar"); // Never found because of loop limit.
-      expect(getInheritableProperty({ dict, key: "foo" })).toEqual(undefined);
-
-      dict.set("foo", "baz");
-      expect(
-        getInheritableProperty({
-          dict,
-          key: "foo",
-          getArray: false,
-          stopWhenFound: false,
-        })
-      ).toEqual(["baz"]);
-    });
   });
 
   describe("toRomanNumerals", function () {
@@ -239,6 +221,173 @@ describe("core_utils", function () {
       expect(escapePDFName("#h#e#l#l#o")).toEqual("#23h#23e#23l#23l#23o");
       expect(escapePDFName("#()<>[]{}/%")).toEqual(
         "#23#28#29#3c#3e#5b#5d#7b#7d#2f#25"
+      );
+    });
+  });
+
+  describe("escapeString", function () {
+    it("should escape (, ), \\n, \\r, and \\", function () {
+      expect(escapeString("((a\\a))\n(b(b\\b)\rb)")).toEqual(
+        "\\(\\(a\\\\a\\)\\)\\n\\(b\\(b\\\\b\\)\\rb\\)"
+      );
+    });
+  });
+
+  describe("encodeToXmlString", function () {
+    it("should get a correctly encoded string with some entities", function () {
+      const str = "\"\u0397ell😂' & <W😂rld>";
+      expect(encodeToXmlString(str)).toEqual(
+        "&quot;&#x397;ell&#x1F602;&apos; &amp; &lt;W&#x1F602;rld&gt;"
+      );
+    });
+
+    it("should get a correctly encoded basic ascii string", function () {
+      const str = "hello world";
+      expect(encodeToXmlString(str)).toEqual(str);
+    });
+  });
+
+  describe("validateCSSFont", function () {
+    it("Check font family", function () {
+      const cssFontInfo = {
+        fontFamily: `"blah blah " blah blah"`,
+        fontWeight: 0,
+        italicAngle: 0,
+      };
+
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `"blah blah \\" blah blah"`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = `'blah blah ' blah blah'`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `'blah blah \\' blah blah'`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = `"blah blah `;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `blah blah"`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `'blah blah `;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = `blah blah'`;
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = "blah 0blah blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah -0blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah --blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+
+      cssFontInfo.fontFamily = "blah blah -blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = "blah fdqAJqjHJK23kl23__--Kj blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+
+      cssFontInfo.fontFamily = "blah fdqAJqjH$JK23kl23__--Kj blah";
+      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+    });
+
+    it("Check font weight", function () {
+      const cssFontInfo = {
+        fontFamily: "blah",
+        fontWeight: 100,
+        italicAngle: 0,
+      };
+
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("100");
+
+      cssFontInfo.fontWeight = "700";
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("700");
+
+      cssFontInfo.fontWeight = "normal";
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("normal");
+
+      cssFontInfo.fontWeight = 314;
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.fontWeight).toEqual("400");
+    });
+
+    it("Check italic angle", function () {
+      const cssFontInfo = {
+        fontFamily: "blah",
+        fontWeight: 100,
+        italicAngle: 10,
+      };
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("10");
+
+      cssFontInfo.italicAngle = -123;
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("14");
+
+      cssFontInfo.italicAngle = "91";
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("14");
+
+      cssFontInfo.italicAngle = 2.718;
+      validateCSSFont(cssFontInfo);
+      expect(cssFontInfo.italicAngle).toEqual("2.718");
+    });
+  });
+
+  describe("isAscii", function () {
+    it("handles ascii/non-ascii strings", function () {
+      expect(isAscii("hello world")).toEqual(true);
+      expect(isAscii("こんにちは世界の")).toEqual(false);
+      expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
+        false
+      );
+    });
+  });
+
+  describe("stringToUTF16HexString", function () {
+    it("should encode a string in UTF16 hexadecimal format", function () {
+      expect(stringToUTF16HexString("hello world")).toEqual(
+        "00680065006c006c006f00200077006f0072006c0064"
+      );
+
+      expect(stringToUTF16HexString("こんにちは世界の")).toEqual(
+        "30533093306b3061306f4e16754c306e"
+      );
+    });
+  });
+
+  describe("stringToUTF16String", function () {
+    it("should encode a string in UTF16", function () {
+      expect(stringToUTF16String("hello world")).toEqual(
+        "\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d"
+      );
+
+      expect(stringToUTF16String("こんにちは世界の")).toEqual(
+        "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
+      );
+    });
+
+    it("should encode a string in UTF16BE with a BOM", function () {
+      expect(
+        stringToUTF16String("hello world", /* bigEndian = */ true)
+      ).toEqual("\xfe\xff\0h\0e\0l\0l\0o\0 \0w\0o\0r\0l\0d");
+
+      expect(
+        stringToUTF16String("こんにちは世界の", /* bigEndian = */ true)
+      ).toEqual(
+        "\xfe\xff\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e"
       );
     });
   });

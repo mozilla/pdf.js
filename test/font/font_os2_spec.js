@@ -1,8 +1,9 @@
 import { decodeFontData, ttx, verifyTtxOutput } from "./fontutils.js";
-import { Font, ToUnicodeMap } from "../../src/core/fonts.js";
 import { CMapFactory } from "../../src/core/cmap.js";
+import { Font } from "../../src/core/fonts.js";
 import { Name } from "../../src/core/primitives.js";
 import { Stream } from "../../src/core/stream.js";
+import { ToUnicodeMap } from "../../src/core/to_unicode_map.js";
 
 describe("font_post", function () {
   const font2154 = decodeFontData(
@@ -15,39 +16,46 @@ describe("font_post", function () {
   );
 
   describe("OS/2 table removal on bad post table values", function () {
-    it("has invalid version number", function (done) {
+    it("has invalid version number", async function () {
       const font = new Font("font", new Stream(font2154), {
         loadedName: "font",
         type: "TrueType",
         differences: [],
         defaultEncoding: [],
         toUnicode: new ToUnicodeMap([]),
+        xHeight: 0,
+        capHeight: 0,
+        italicAngle: 0,
       });
-      ttx(font.data, function (output) {
-        verifyTtxOutput(output);
-        expect(/<OS_2>\s*<version value="3"\/>/.test(output)).toEqual(true);
-        done();
-      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(
+        /<OS_2>\s*<!--.*\r?\n.*-->\s*<version value="3"\/>/.test(output)
+      ).toEqual(true);
     });
 
-    it("has invalid selection attributes presence", function (done) {
-      CMapFactory.create({
+    it("has invalid selection attributes presence", async function () {
+      const cMap = await CMapFactory.create({
         encoding: Name.get("Identity-H"),
-      }).then(function (cMap) {
-        const font = new Font("font", new Stream(font1282), {
-          loadedName: "font",
-          type: "CIDFontType2",
-          differences: [],
-          defaultEncoding: [],
-          cMap,
-          toUnicode: new ToUnicodeMap([]),
-        });
-        ttx(font.data, function (output) {
-          verifyTtxOutput(output);
-          expect(/<OS_2>\s*<version value="3"\/>/.test(output)).toEqual(true);
-          done();
-        });
       });
+      const font = new Font("font", new Stream(font1282), {
+        loadedName: "font",
+        type: "CIDFontType2",
+        differences: [],
+        defaultEncoding: [],
+        cMap,
+        toUnicode: new ToUnicodeMap([]),
+        xHeight: 0,
+        capHeight: 0,
+        italicAngle: 0,
+      });
+      const output = await ttx(font.data);
+
+      verifyTtxOutput(output);
+      expect(
+        /<OS_2>\s*<!--.*\r?\n.*-->\s*<version value="3"\/>/.test(output)
+      ).toEqual(true);
     });
   });
 });

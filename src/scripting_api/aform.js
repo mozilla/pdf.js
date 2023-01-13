@@ -38,6 +38,7 @@ class AForm {
       "m/d/yy HH:MM",
     ];
     this._timeFormats = ["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"];
+    this._dateActionsCache = new Map();
 
     // The e-mail address regex below originates from:
     // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
@@ -52,17 +53,107 @@ class AForm {
     return event.target ? `[ ${event.target.name} ]` : "";
   }
 
-  _parseDate(cFormat, cDate) {
-    const ddate = Date.parse(cDate);
-    if (isNaN(ddate)) {
-      try {
-        return this._util.scand(cFormat, cDate);
-      } catch (error) {
-        return null;
-      }
-    } else {
-      return new Date(ddate);
+  _tryToGuessDate(cFormat, cDate) {
+    // We use the format to know the order of day, month, year, ...
+
+    let actions = this._dateActionsCache.get(cFormat);
+    if (!actions) {
+      actions = [];
+      this._dateActionsCache.set(cFormat, actions);
+      cFormat.replace(
+        /(d+)|(m+)|(y+)|(H+)|(M+)|(s+)/g,
+        function (match, d, m, y, H, M, s) {
+          if (d) {
+            actions.push((n, date) => {
+              if (n >= 1 && n <= 31) {
+                date.setDate(n);
+                return true;
+              }
+              return false;
+            });
+          } else if (m) {
+            actions.push((n, date) => {
+              if (n >= 1 && n <= 12) {
+                date.setMonth(n - 1);
+                return true;
+              }
+              return false;
+            });
+          } else if (y) {
+            actions.push((n, date) => {
+              if (n < 50) {
+                n += 2000;
+              } else if (n < 100) {
+                n += 1900;
+              }
+              date.setYear(n);
+              return true;
+            });
+          } else if (H) {
+            actions.push((n, date) => {
+              if (n >= 0 && n <= 23) {
+                date.setHours(n);
+                return true;
+              }
+              return false;
+            });
+          } else if (M) {
+            actions.push((n, date) => {
+              if (n >= 0 && n <= 59) {
+                date.setMinutes(n);
+                return true;
+              }
+              return false;
+            });
+          } else if (s) {
+            actions.push((n, date) => {
+              if (n >= 0 && n <= 59) {
+                date.setSeconds(n);
+                return true;
+              }
+              return false;
+            });
+          }
+          return "";
+        }
+      );
     }
+
+    const number = /\d+/g;
+    let i = 0;
+    let array;
+    const date = new Date();
+    while ((array = number.exec(cDate)) !== null) {
+      if (i < actions.length) {
+        if (!actions[i++](parseInt(array[0]), date)) {
+          return null;
+        }
+      } else {
+        break;
+      }
+    }
+
+    if (i === 0) {
+      return null;
+    }
+
+    return date;
+  }
+
+  _parseDate(cFormat, cDate) {
+    let date = null;
+    try {
+      date = this._util.scand(cFormat, cDate);
+    } catch (error) {}
+    if (!date) {
+      date = Date.parse(cDate);
+      if (isNaN(date)) {
+        date = this._tryToGuessDate(cFormat, cDate);
+      } else {
+        date = new Date(date);
+      }
+    }
+    return date;
   }
 
   AFMergeChange(event = globalThis.event) {
@@ -90,7 +181,7 @@ class AForm {
       str = `0${str}`;
     }
 
-    const numbers = str.match(/([0-9]+)/g);
+    const numbers = str.match(/(\d+)/g);
     if (numbers.length === 0) {
       return null;
     }
@@ -161,11 +252,7 @@ class AForm {
     // sepStyle is an integer in [0;4]
     sepStyle = Math.min(Math.max(0, Math.floor(sepStyle)), 4);
 
-    buf.push("%,");
-    buf.push(sepStyle);
-    buf.push(".");
-    buf.push(nDec.toString());
-    buf.push("f");
+    buf.push("%,", sepStyle, ".", nDec.toString(), "f");
 
     if (!bCurrencyPrepend) {
       buf.push(strCurrency);
@@ -206,13 +293,13 @@ class AForm {
     if (sepStyle > 1) {
       // comma sep
       pattern = event.willCommit
-        ? /^[+-]?([0-9]+(,[0-9]*)?|,[0-9]+)$/
-        : /^[+-]?[0-9]*,?[0-9]*$/;
+        ? /^[+-]?(\d+(,\d*)?|,\d+)$/
+        : /^[+-]?\d*,?\d*$/;
     } else {
       // dot sep
       pattern = event.willCommit
-        ? /^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)$/
-        : /^[+-]?[0-9]*\.?[0-9]*$/;
+        ? /^[+-]?(\d+(\.\d*)?|\.\d+)$/
+        : /^[+-]?\d*\.?\d*$/;
     }
 
     if (!pattern.test(value)) {
@@ -413,11 +500,18 @@ class AForm {
 
     const event = globalThis.event;
     const values = [];
+
+    cFields = this.AFMakeArrayFromList(cFields);
     for (const cField of cFields) {
       const field = this._document.getField(cField);
-      const number = this.AFMakeNumber(field.value);
-      if (number !== null) {
-        values.push(number);
+      if (!field) {
+        continue;
+      }
+      for (const child of field.getArray()) {
+        const number = this.AFMakeNumber(child.value);
+        if (number !== null) {
+          values.push(number);
+        }
       }
     }
 
@@ -437,11 +531,8 @@ class AForm {
     }
 
     psf = this.AFMakeNumber(psf);
-    if (psf === null) {
-      throw new Error("Invalid psf in AFSpecial_Format");
-    }
 
-    let formatStr = "";
+    let formatStr;
     switch (psf) {
       case 0:
         formatStr = "99999";
@@ -473,6 +564,10 @@ class AForm {
 
     const event = globalThis.event;
     const value = this.AFMergeChange(event);
+    if (!value) {
+      return;
+    }
+
     const checkers = new Map([
       ["9", char => char >= "0" && char <= "9"],
       [
@@ -490,7 +585,7 @@ class AForm {
     ]);
 
     function _checkValidity(_value, _cMask) {
-      for (let i = 0, ii = value.length; i < ii; i++) {
+      for (let i = 0, ii = _value.length; i < ii; i++) {
         const mask = _cMask.charAt(i);
         const char = _value.charAt(i);
         const checker = checkers.get(mask);
@@ -503,10 +598,6 @@ class AForm {
         }
       }
       return true;
-    }
-
-    if (!value) {
-      return;
     }
 
     const err = `${GlobalConstants.IDS_INVALID_VALUE} = "${cMask}"`;
@@ -529,7 +620,7 @@ class AForm {
         event.rc = false;
         return;
       }
-      event.value += cMask.subString(value.length);
+      event.value += cMask.substring(value.length);
       return;
     }
 
@@ -545,14 +636,7 @@ class AForm {
 
   AFSpecial_Keystroke(psf) {
     const event = globalThis.event;
-    if (!event.value) {
-      return;
-    }
-
     psf = this.AFMakeNumber(psf);
-    if (psf === null) {
-      throw new Error("Invalid psf in AFSpecial_Keystroke");
-    }
 
     let formatStr;
     switch (psf) {
@@ -563,12 +647,8 @@ class AForm {
         formatStr = "99999-9999";
         break;
       case 2:
-        const finalLen =
-          event.value.length +
-          event.change.length +
-          event.selStart -
-          event.selEnd;
-        if (finalLen >= 8) {
+        const value = this.AFMergeChange(event);
+        if (value.length > 8 || value.startsWith("(")) {
           formatStr = "(999) 999-9999";
         } else {
           formatStr = "999-9999";
@@ -606,6 +686,14 @@ class AForm {
 
   eMailValidate(str) {
     return this._emailRegex.test(str);
+  }
+
+  AFExactMatch(rePatterns, str) {
+    if (rePatterns instanceof RegExp) {
+      return str.match(rePatterns)?.[0] === str || 0;
+    }
+
+    return rePatterns.findIndex(re => str.match(re)?.[0] === str) + 1;
   }
 }
 

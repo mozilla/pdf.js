@@ -13,8 +13,13 @@
  * limitations under the License.
  */
 
-import { RenderingCancelledException, shadow } from "pdfjs-lib";
-import { CSS_UNITS } from "./ui_utils.js";
+import {
+  AnnotationMode,
+  PixelsPerInch,
+  RenderingCancelledException,
+  shadow,
+} from "pdfjs-lib";
+import { getXfaHtmlForPrinting } from "./print_utils.js";
 import { PDFPrintServiceFactory } from "./app.js";
 
 // Creates a placeholder with div and canvas with right size for the page.
@@ -24,22 +29,20 @@ function composePage(
   size,
   printContainer,
   printResolution,
-  optionalContentConfigPromise
+  optionalContentConfigPromise,
+  printAnnotationStoragePromise
 ) {
   const canvas = document.createElement("canvas");
 
   // The size of the canvas in pixels for printing.
-  const PRINT_UNITS = printResolution / 72.0;
+  const PRINT_UNITS = printResolution / PixelsPerInch.PDF;
   canvas.width = Math.floor(size.width * PRINT_UNITS);
   canvas.height = Math.floor(size.height * PRINT_UNITS);
 
-  // The physical size of the canvas as specified by the PDF document.
-  canvas.style.width = Math.floor(size.width * CSS_UNITS) + "px";
-  canvas.style.height = Math.floor(size.height * CSS_UNITS) + "px";
-
   const canvasWrapper = document.createElement("div");
-  canvasWrapper.appendChild(canvas);
-  printContainer.appendChild(canvasWrapper);
+  canvasWrapper.className = "printedPage";
+  canvasWrapper.append(canvas);
+  printContainer.append(canvasWrapper);
 
   // A callback for a given page may be executed multiple times for different
   // print operations (think of changing the print settings in the browser).
@@ -59,9 +62,12 @@ function composePage(
     ctx.restore();
 
     let thisRenderTask = null;
-    pdfDocument
-      .getPage(pageNumber)
-      .then(function (pdfPage) {
+
+    Promise.all([
+      pdfDocument.getPage(pageNumber),
+      printAnnotationStoragePromise,
+    ])
+      .then(function ([pdfPage, printAnnotationStorage]) {
         if (currentRenderTask) {
           currentRenderTask.cancel();
           currentRenderTask = null;
@@ -71,8 +77,9 @@ function composePage(
           transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: pdfPage.getViewport({ scale: 1, rotation: size.rotation }),
           intent: "print",
-          annotationStorage: pdfDocument.annotationStorage,
+          annotationMode: AnnotationMode.ENABLE_STORAGE,
           optionalContentConfigPromise,
+          printAnnotationStorage,
         };
         currentRenderTask = thisRenderTask = pdfPage.render(renderContext);
         return thisRenderTask.promise;
@@ -112,7 +119,8 @@ function FirefoxPrintService(
   pagesOverview,
   printContainer,
   printResolution,
-  optionalContentConfigPromise = null
+  optionalContentConfigPromise = null,
+  printAnnotationStoragePromise = null
 ) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
@@ -120,6 +128,8 @@ function FirefoxPrintService(
   this._printResolution = printResolution || 150;
   this._optionalContentConfigPromise =
     optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+  this._printAnnotationStoragePromise =
+    printAnnotationStoragePromise || Promise.resolve();
 }
 
 FirefoxPrintService.prototype = {
@@ -130,10 +140,16 @@ FirefoxPrintService.prototype = {
       printContainer,
       _printResolution,
       _optionalContentConfigPromise,
+      _printAnnotationStoragePromise,
     } = this;
 
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
+
+    if (pdfDocument.isPureXfa) {
+      getXfaHtmlForPrinting(printContainer, pdfDocument);
+      return;
+    }
 
     for (let i = 0, ii = pagesOverview.length; i < ii; ++i) {
       composePage(
@@ -142,7 +158,8 @@ FirefoxPrintService.prototype = {
         pagesOverview[i],
         printContainer,
         _printResolution,
-        _optionalContentConfigPromise
+        _optionalContentConfigPromise,
+        _printAnnotationStoragePromise
       );
     }
   },
@@ -168,14 +185,16 @@ PDFPrintServiceFactory.instance = {
     pagesOverview,
     printContainer,
     printResolution,
-    optionalContentConfigPromise
+    optionalContentConfigPromise,
+    printAnnotationStoragePromise
   ) {
     return new FirefoxPrintService(
       pdfDocument,
       pagesOverview,
       printContainer,
       printResolution,
-      optionalContentConfigPromise
+      optionalContentConfigPromise,
+      printAnnotationStoragePromise
     );
   },
 };

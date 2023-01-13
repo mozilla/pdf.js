@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DecodeStream } from "./stream.js";
+import { DecodeStream } from "./decode_stream.js";
 import { JpxImage } from "./jpx.js";
 import { shadow } from "../shared/util.js";
 
@@ -21,33 +21,27 @@ import { shadow } from "../shared/util.js";
  * For JPEG 2000's we use a library to decode these images and
  * the stream behaves like all the other DecodeStreams.
  */
-const JpxStream = (function JpxStreamClosure() {
-  // eslint-disable-next-line no-shadow
-  function JpxStream(stream, maybeLength, dict, params) {
-    this.stream = stream;
-    this.maybeLength = maybeLength;
-    this.dict = dict;
-    this.params = params;
+class JpxStream extends DecodeStream {
+  constructor(stream, maybeLength, params) {
+    super(maybeLength);
 
-    DecodeStream.call(this, maybeLength);
+    this.stream = stream;
+    this.dict = stream.dict;
+    this.maybeLength = maybeLength;
+    this.params = params;
   }
 
-  JpxStream.prototype = Object.create(DecodeStream.prototype);
+  get bytes() {
+    // If `this.maybeLength` is null, we'll get the entire stream.
+    return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
+  }
 
-  Object.defineProperty(JpxStream.prototype, "bytes", {
-    get: function JpxStream_bytes() {
-      // If `this.maybeLength` is null, we'll get the entire stream.
-      return shadow(this, "bytes", this.stream.getBytes(this.maybeLength));
-    },
-    configurable: true,
-  });
-
-  JpxStream.prototype.ensureBuffer = function (requested) {
+  ensureBuffer(requested) {
     // No-op, since `this.readBlock` will always parse the entire image and
     // directly insert all of its data into `this.buffer`.
-  };
+  }
 
-  JpxStream.prototype.readBlock = function () {
+  readBlock() {
     if (this.eof) {
       return;
     }
@@ -87,9 +81,7 @@ const JpxStream = (function JpxStreamClosure() {
     }
     this.bufferLength = this.buffer.length;
     this.eof = true;
-  };
-
-  return JpxStream;
-})();
+  }
+}
 
 export { JpxStream };

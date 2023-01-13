@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { createActionsMap, FieldType, getFieldType } from "./common.js";
 import { Color } from "./color.js";
-import { createActionsMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 
 class Field extends PDFObject {
@@ -29,7 +29,6 @@ class Field extends PDFObject {
     this.buttonScaleHow = data.buttonScaleHow;
     this.ButtonScaleWhen = data.buttonScaleWhen;
     this.calcOrderIndex = data.calcOrderIndex;
-    this.charLimit = data.charLimit;
     this.comb = data.comb;
     this.commitOnSelChange = data.commitOnSelChange;
     this.currentValueIndices = data.currentValueIndices;
@@ -39,7 +38,7 @@ class Field extends PDFObject {
     this.doNotSpellCheck = data.doNotSpellCheck;
     this.delay = data.delay;
     this.display = data.display;
-    this.doc = data.doc;
+    this.doc = data.doc.wrapped;
     this.editable = data.editable;
     this.exportValues = data.exportValues;
     this.fileSelect = data.fileSelect;
@@ -49,7 +48,6 @@ class Field extends PDFObject {
     this.multiline = data.multiline;
     this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
-    this.page = data.page;
     this.password = data.password;
     this.print = data.print;
     this.radiosInUnison = data.radiosInUnison;
@@ -58,7 +56,6 @@ class Field extends PDFObject {
     this.required = data.required;
     this.richText = data.richText;
     this.richValue = data.richValue;
-    this.rotation = data.rotation;
     this.style = data.style;
     this.submitName = data.submitName;
     this.textFont = data.textFont;
@@ -68,17 +65,32 @@ class Field extends PDFObject {
 
     // Private
     this._actions = createActionsMap(data.actions);
+    this._browseForFileToSubmit = data.browseForFileToSubmit || null;
+    this._buttonCaption = null;
+    this._buttonIcon = null;
+    this._charLimit = data.charLimit;
+    this._children = null;
     this._currentValueIndices = data.currentValueIndices || 0;
     this._document = data.doc;
+    this._fieldPath = data.fieldPath;
     this._fillColor = data.fillColor || ["T"];
     this._isChoice = Array.isArray(data.items);
     this._items = data.items || [];
+    this._hasValue = data.hasOwnProperty("value");
+    this._page = data.page || 0;
     this._strokeColor = data.strokeColor || ["G", 0];
     this._textColor = data.textColor || ["G", 0];
-    this._value = data.value || "";
-    this._valueAsString = data.valueAsString;
+    this._value = null;
+    this._kidIds = data.kidIds || null;
+    this._fieldType = getFieldType(this._actions);
+    this._siblings = data.siblings || null;
+    this._rotation = data.rotation || 0;
 
     this._globalEval = data.globalEval;
+    this._appObjects = data.appObjects;
+
+    // The value is set depending on the field type.
+    this.value = data.value || "";
   }
 
   get currentValueIndices() {
@@ -135,6 +147,25 @@ class Field extends PDFObject {
     }
   }
 
+  get bgColor() {
+    return this.fillColor;
+  }
+
+  set bgColor(color) {
+    this.fillColor = color;
+  }
+
+  get charLimit() {
+    return this._charLimit;
+  }
+
+  set charLimit(limit) {
+    if (typeof limit !== "number") {
+      throw new Error("Invalid argument value");
+    }
+    this._charLimit = Math.max(0, Math.floor(limit));
+  }
+
   get numItems() {
     if (!this._isChoice) {
       throw new Error("Not a choice widget");
@@ -156,6 +187,38 @@ class Field extends PDFObject {
     }
   }
 
+  get borderColor() {
+    return this.strokeColor;
+  }
+
+  set borderColor(color) {
+    this.strokeColor = color;
+  }
+
+  get page() {
+    return this._page;
+  }
+
+  set page(_) {
+    throw new Error("field.page is read-only");
+  }
+
+  get rotation() {
+    return this._rotation;
+  }
+
+  set rotation(angle) {
+    angle = Math.floor(angle);
+    if (angle % 90 !== 0) {
+      throw new Error("Invalid rotation: must be a multiple of 90");
+    }
+    angle %= 360;
+    if (angle < 0) {
+      angle += 360;
+    }
+    this._rotation = angle;
+  }
+
   get textColor() {
     return this._textColor;
   }
@@ -166,35 +229,128 @@ class Field extends PDFObject {
     }
   }
 
+  get fgColor() {
+    return this.textColor;
+  }
+
+  set fgColor(color) {
+    this.textColor = color;
+  }
+
   get value() {
     return this._value;
   }
 
   set value(value) {
-    this._value = value;
     if (this._isChoice) {
-      if (this.multipleSelection) {
-        const values = new Set(value);
+      this._setChoiceValue(value);
+      return;
+    }
+
+    if (value === "") {
+      this._value = "";
+    } else if (typeof value === "string") {
+      switch (this._fieldType) {
+        case FieldType.none:
+          this._value = !isNaN(value) ? parseFloat(value) : value;
+          break;
+        case FieldType.number:
+        case FieldType.percent:
+          const number = parseFloat(value);
+          this._value = !isNaN(number) ? number : 0;
+          break;
+        default:
+          this._value = value;
+      }
+    } else {
+      this._value = value;
+    }
+  }
+
+  _setChoiceValue(value) {
+    if (this.multipleSelection) {
+      if (!Array.isArray(value)) {
+        value = [value];
+      }
+      const values = new Set(value);
+      if (Array.isArray(this._currentValueIndices)) {
         this._currentValueIndices.length = 0;
-        this._items.forEach(({ displayValue }, i) => {
-          if (values.has(displayValue)) {
-            this._currentValueIndices.push(i);
-          }
-        });
+        this._value.length = 0;
       } else {
-        this._currentValueIndices = this._items.findIndex(
-          ({ displayValue }) => value === displayValue
-        );
+        this._currentValueIndices = [];
+        this._value = [];
+      }
+      this._items.forEach((item, i) => {
+        if (values.has(item.exportValue)) {
+          this._currentValueIndices.push(i);
+          this._value.push(item.exportValue);
+        }
+      });
+    } else {
+      if (Array.isArray(value)) {
+        value = value[0];
+      }
+      const index = this._items.findIndex(
+        ({ exportValue }) => value === exportValue
+      );
+      if (index !== -1) {
+        this._currentValueIndices = index;
+        this._value = this._items[index].exportValue;
       }
     }
   }
 
   get valueAsString() {
-    return this._valueAsString;
+    return (this._value ?? "").toString();
   }
 
-  set valueAsString(val) {
-    this._valueAsString = val ? val.toString() : "";
+  set valueAsString(_) {
+    // Do nothing.
+  }
+
+  browseForFileToSubmit() {
+    if (this._browseForFileToSubmit) {
+      // TODO: implement this function on Firefox side
+      // we can use nsIFilePicker but open method is async.
+      // Maybe it's possible to use a html input (type=file) too.
+      this._browseForFileToSubmit();
+    }
+  }
+
+  buttonGetCaption(nFace = 0) {
+    if (this._buttonCaption) {
+      return this._buttonCaption[nFace];
+    }
+    return "";
+  }
+
+  buttonGetIcon(nFace = 0) {
+    if (this._buttonIcon) {
+      return this._buttonIcon[nFace];
+    }
+    return null;
+  }
+
+  buttonImportIcon(cPath = null, nPave = 0) {
+    /* Not implemented */
+  }
+
+  buttonSetCaption(cCaption, nFace = 0) {
+    if (!this._buttonCaption) {
+      this._buttonCaption = ["", "", ""];
+    }
+    this._buttonCaption[nFace] = cCaption;
+    // TODO: send to the annotation layer
+    // Right now the button is drawn on the canvas using its appearance so
+    // update the caption means redraw...
+    // We should probably have an html button for this annotation.
+  }
+
+  buttonSetIcon(oIcon, nFace = 0) {
+    if (!this._buttonIcon) {
+      this._buttonIcon = [null, null, null];
+    }
+    this._buttonIcon[nFace] = oIcon;
   }
 
   checkThisBox(nWidget, bCheckIt = true) {}
@@ -258,6 +414,40 @@ class Field extends PDFObject {
     }
     const item = this._items[nIdx];
     return bExportValue ? item.exportValue : item.displayValue;
+  }
+
+  getArray() {
+    // Gets the array of terminal child fields (that is, fields that can have
+    // a value for this Field object, the parent field).
+    if (this._kidIds) {
+      const array = [];
+      const fillArrayWithKids = kidIds => {
+        for (const id of kidIds) {
+          const obj = this._appObjects[id];
+          if (!obj) {
+            continue;
+          }
+          if (obj.obj._hasValue) {
+            array.push(obj.wrapped);
+          }
+          if (obj.obj._kidIds) {
+            fillArrayWithKids(obj.obj._kidIds);
+          }
+        }
+      };
+      fillArrayWithKids(this._kidIds);
+      return array;
+    }
+
+    if (this._children === null) {
+      this._children = this._document.obj._getTerminalChildren(this._fieldPath);
+    }
+
+    return this._children;
+  }
+
+  getLock() {
+    return undefined;
   }
 
   isBoxChecked(nWidget) {
@@ -337,8 +527,26 @@ class Field extends PDFObject {
     this._send({ id: this._id, items: this._items });
   }
 
+  setLock() {}
+
+  signatureGetModifications() {}
+
+  signatureGetSeedValue() {}
+
+  signatureInfo() {}
+
+  signatureSetSeedValue() {}
+
+  signatureSign() {}
+
+  signatureValidate() {}
+
   _isButton() {
     return false;
+  }
+
+  _reset() {
+    this.value = this.defaultValue;
   }
 
   _runActions(event) {
@@ -378,6 +586,9 @@ class RadioButtonField extends Field {
         this._id = radioData.id;
       }
     }
+
+    this._hasBeenInitialized = true;
+    this._value = data.value || "";
   }
 
   get value() {
@@ -385,6 +596,13 @@ class RadioButtonField extends Field {
   }
 
   set value(value) {
+    if (!this._hasBeenInitialized) {
+      return;
+    }
+
+    if (value === null || value === undefined) {
+      this._value = "";
+    }
     const i = this.exportValues.indexOf(value);
     if (0 <= i && i < this._radioIds.length) {
       this._id = this._radioIds[i];
@@ -444,7 +662,7 @@ class CheckboxField extends RadioButtonField {
   }
 
   set value(value) {
-    if (value === "Off") {
+    if (!value || value === "Off") {
       this._value = "Off";
     } else {
       super.value = value;

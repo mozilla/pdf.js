@@ -21,9 +21,6 @@ const pdfjsVersion = PDFJSDev.eval("BUNDLE_VERSION");
 /* eslint-disable-next-line no-unused-vars */
 const pdfjsBuild = PDFJSDev.eval("BUNDLE_BUILD");
 
-const TESTING =
-  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING");
-
 class SandboxSupport extends SandboxSupportBase {
   exportValueToSandbox(val) {
     // The communication with the Quickjs sandbox is based on strings
@@ -58,33 +55,40 @@ class Sandbox {
   }
 
   create(data) {
-    if (TESTING) {
+    if (PDFJSDev.test("!PRODUCTION || TESTING")) {
       this._module.ccall("nukeSandbox", null, []);
     }
     const code = [PDFJSDev.eval("PDF_SCRIPTING_JS_SOURCE")];
-    if (!TESTING) {
-      code.push("delete dump;");
-    } else {
+
+    if (PDFJSDev.test("!PRODUCTION || TESTING")) {
       code.push(
         `globalThis.sendResultForTesting = callExternalFunction.bind(null, "send");`
       );
+    } else {
+      code.push("delete dump;");
     }
 
     let success = false;
+    let buf = 0;
     try {
       const sandboxData = JSON.stringify(data);
       // "pdfjsScripting.initSandbox..." MUST be the last line to be evaluated
       // since the returned value is used for the communication.
       code.push(`pdfjsScripting.initSandbox({ data: ${sandboxData} })`);
+      buf = this._module.stringToNewUTF8(code.join("\n"));
 
       success = !!this._module.ccall(
         "init",
         "number",
-        ["string", "number"],
-        [code.join("\n"), this._alertOnError]
+        ["number", "number"],
+        [buf, this._alertOnError]
       );
     } catch (error) {
       console.error(error);
+    } finally {
+      if (buf) {
+        this._module.ccall("free", "number", ["number"], [buf]);
+      }
     }
 
     if (success) {
@@ -99,7 +103,7 @@ class Sandbox {
   }
 
   dispatchEvent(event) {
-    this.support.callSandboxFunction("dispatchEvent", event);
+    this.support?.callSandboxFunction("dispatchEvent", event);
   }
 
   dumpMemoryUse() {
@@ -118,7 +122,7 @@ class Sandbox {
   }
 
   evalForTesting(code, key) {
-    if (TESTING) {
+    if (PDFJSDev.test("!PRODUCTION || TESTING")) {
       this._module.ccall(
         "evalInSandbox",
         null,
@@ -132,6 +136,8 @@ class Sandbox {
           this._alertOnError,
         ]
       );
+    } else {
+      throw new Error("Not implemented: evalForTesting");
     }
   }
 }

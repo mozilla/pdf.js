@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 /* no-babel-preset */
-/* eslint-disable no-var */
 
 import { getArrayLookupTableFactory } from "./core_utils.js";
 
-var getGlyphsUnicode = getArrayLookupTableFactory(function () {
+const getGlyphsUnicode = getArrayLookupTableFactory(function () {
   // prettier-ignore
   return [
     "A", 0x0041,
@@ -1829,10 +1828,13 @@ var getGlyphsUnicode = getArrayLookupTableFactory(function () {
     "feicoptic", 0x03e5,
     "female", 0x2640,
     "ff", 0xfb00,
-    "f_f", 0xfb00, // Fixes issue 11016.
+    "f_f", 0xfb00,
     "ffi", 0xfb03,
+    "f_f_i", 0xfb03,
     "ffl", 0xfb04,
+    "f_f_l", 0xfb04,
     "fi", 0xfb01,
+    "f_i", 0xfb01,
     "fifteencircle", 0x246e,
     "fifteenparen", 0x2482,
     "fifteenperiod", 0x2496,
@@ -1876,6 +1878,7 @@ var getGlyphsUnicode = getArrayLookupTableFactory(function () {
     "fivesuperior", 0x2075,
     "fivethai", 0x0e55,
     "fl", 0xfb02,
+    "f_l", 0xfb02,
     "florin", 0x0192,
     "fmonospace", 0xff46,
     "fmsquare", 0x3399,
@@ -4347,7 +4350,7 @@ var getGlyphsUnicode = getArrayLookupTableFactory(function () {
   ];
 });
 
-var getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
+const getDingbatsGlyphsUnicode = getArrayLookupTableFactory(function () {
   // prettier-ignore
   return [
     "space", 0x0020,

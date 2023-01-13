@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-var */
 
 "use strict";
 
@@ -25,7 +26,8 @@ function rewriteWebArchiveUrl(url) {
   // Web Archive URLs need to be transformed to add `if_` after the ID.
   // Without this, an HTML page containing an iframe with the PDF file
   // will be served instead (issue 8920).
-  var webArchiveRegex = /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
+  var webArchiveRegex =
+    /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
   var urlParts = webArchiveRegex.exec(url);
   if (urlParts) {
     return urlParts[1] + (urlParts[2] + "if_") + urlParts[3];
@@ -36,11 +38,9 @@ function rewriteWebArchiveUrl(url) {
 function downloadFile(file, url, callback, redirects) {
   url = rewriteWebArchiveUrl(url);
 
-  var completed = false;
   var protocol = /^https:\/\//.test(url) ? https : http;
   protocol
     .get(url, function (response) {
-      var redirectTo;
       if (
         response.statusCode === 301 ||
         response.statusCode === 302 ||
@@ -50,56 +50,28 @@ function downloadFile(file, url, callback, redirects) {
         if (redirects > 10) {
           callback("Too many redirects");
         }
-        redirectTo = response.headers.location;
+        var redirectTo = response.headers.location;
         redirectTo = require("url").resolve(url, redirectTo);
-        downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
-        return;
-      }
-      if (response.statusCode === 404 && !url.includes("web.archive.org")) {
-        // trying waybackmachine
-        redirectTo = "http://web.archive.org/web/" + url;
         downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
         return;
       }
 
       if (response.statusCode !== 200) {
-        if (!completed) {
-          completed = true;
-          callback("HTTP " + response.statusCode);
-        }
+        callback("HTTP " + response.statusCode);
         return;
       }
       var stream = fs.createWriteStream(file);
       stream.on("error", function (err) {
-        if (!completed) {
-          completed = true;
-          callback(err);
-        }
+        callback(err);
       });
       response.pipe(stream);
       stream.on("finish", function () {
         stream.end();
-        if (!completed) {
-          completed = true;
-          callback();
-        }
+        callback();
       });
     })
     .on("error", function (err) {
-      if (!completed) {
-        if (
-          typeof err === "object" &&
-          err.errno === "ENOTFOUND" &&
-          !url.includes("web.archive.org")
-        ) {
-          // trying waybackmachine
-          var redirectTo = "http://web.archive.org/web/" + url;
-          downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
-          return;
-        }
-        completed = true;
-        callback(err);
-      }
+      callback(err);
     });
 }
 
@@ -164,6 +136,15 @@ function verifyManifestFiles(manifest, callback) {
     if (fs.existsSync(item.file + ".error")) {
       console.error(
         'WARNING: File was not downloaded. See "' + item.file + '.error" file.'
+      );
+      error = true;
+      i++;
+      verifyNext();
+      return;
+    }
+    if (item.link && !fs.existsSync(item.file + ".link")) {
+      console.error(
+        `WARNING: Unneeded \`"link": true\`-entry for the "${item.id}" test.`
       );
       error = true;
       i++;

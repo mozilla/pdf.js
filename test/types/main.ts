@@ -1,9 +1,12 @@
 import { getDocument } from "pdfjs-dist";
+import { EventBus } from "pdfjs-dist/web/pdf_viewer.component";
 
 class MainTest {
+  eventBus: EventBus;
   task: ReturnType<typeof getDocument> | undefined;
 
   constructor(public file: string) {
+    this.eventBus = new EventBus();
   }
 
   loadPdf() {

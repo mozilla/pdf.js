@@ -19,6 +19,7 @@ import {
   UnexpectedResponseException,
 } from "../shared/util.js";
 import { getFilenameFromContentDispositionHeader } from "./content_disposition.js";
+import { isPdfFile } from "./display_utils.js";
 
 function validateRangeRequestCapabilities({
   getResponseHeader,
@@ -26,7 +27,15 @@ function validateRangeRequestCapabilities({
   rangeChunkSize,
   disableRange,
 }) {
-  assert(rangeChunkSize > 0, "Range chunk size must be larger than zero");
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    assert(
+      Number.isInteger(rangeChunkSize) && rangeChunkSize > 0,
+      "rangeChunkSize must be an integer larger than zero."
+    );
+  }
   const returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined,
@@ -70,7 +79,7 @@ function extractFilenameFromHeader(getResponseHeader) {
         filename = decodeURIComponent(filename);
       } catch (ex) {}
     }
-    if (/\.pdf$/i.test(filename)) {
+    if (isPdfFile(filename)) {
       return filename;
     }
   }
@@ -82,11 +91,7 @@ function createResponseStatusError(status, url) {
     return new MissingPDFException('Missing PDF "' + url + '".');
   }
   return new UnexpectedResponseException(
-    "Unexpected server response (" +
-      status +
-      ') while retrieving PDF "' +
-      url +
-      '".',
+    `Unexpected server response (${status}) while retrieving PDF "${url}".`,
     status
   );
 }

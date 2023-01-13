@@ -20,7 +20,7 @@ import {
   CFFParser,
   CFFStrings,
 } from "../../src/core/cff_parser.js";
-import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts.js";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("CFFParser", function () {
@@ -41,7 +41,7 @@ describe("CFFParser", function () {
 
   let fontData, parser, cff;
 
-  beforeAll(function (done) {
+  beforeAll(function () {
     // This example font comes from the CFF spec:
     // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
     const exampleFont =
@@ -61,22 +61,19 @@ describe("CFFParser", function () {
       fontArr.push(parseInt(hex, 16));
     }
     fontData = new Stream(fontArr);
-    done();
   });
 
   afterAll(function () {
     fontData = null;
   });
 
-  beforeEach(function (done) {
+  beforeEach(function () {
     parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
     cff = parser.parse();
-    done();
   });
 
-  afterEach(function (done) {
+  afterEach(function () {
     parser = cff = null;
-    done();
   });
 
   it("parses header", function () {
@@ -126,10 +123,9 @@ describe("CFFParser", function () {
     "ignores reserved commands in parseDict, and refuses to add privateDict " +
       "keys with invalid values (bug 1308536)",
     function () {
-      // prettier-ignore
       const bytes = new Uint8Array([
-      64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6
-    ]);
+        64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6,
+      ]);
       parser.bytes = bytes;
       const topDict = cff.topDict;
       topDict.setByName("Private", [bytes.length, 0]);
@@ -167,7 +163,7 @@ describe("CFFParser", function () {
       privateDict: privateDictStub,
     }).charStrings;
     expect(charStrings.count).toEqual(1);
-    // shoudn't be sanitized
+    // shouldn't be sanitized
     expect(charStrings.get(0).length).toEqual(38);
   });
 

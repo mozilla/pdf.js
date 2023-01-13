@@ -27,6 +27,7 @@
     - Removes window._ assignment.
     - Remove compatibility code for OldIE.
     - Replaces `String.prototype.substr()` with `String.prototype.substring()`.
+    - Replaces one `Node.insertBefore()` with `Element.prepend()`.
     - Removes `fireL10nReadyEvent` since the "localized" event it dispatches
       is unused and may clash with an identically named event in the viewer.
 */
@@ -921,7 +922,7 @@ document.webL10n = (function(window, document, undefined) {
         // first element child.
         if (!found) {
           var textNode = document.createTextNode(data[gTextProp]);
-          element.insertBefore(textNode, element.firstChild);
+          element.prepend(textNode);
         }
       }
       delete data[gTextProp];

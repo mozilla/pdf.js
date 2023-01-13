@@ -13,7 +13,32 @@
  * limitations under the License.
  */
 
-import { viewerCompatibilityParams } from "./viewer_compatibility.js";
+const compatibilityParams = Object.create(null);
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+  if (
+    typeof PDFJSDev !== "undefined" &&
+    PDFJSDev.test("LIB") &&
+    typeof navigator === "undefined"
+  ) {
+    globalThis.navigator = Object.create(null);
+  }
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 1;
+
+  const isAndroid = /Android/.test(userAgent);
+  const isIOS =
+    /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent) ||
+    (platform === "MacIntel" && maxTouchPoints > 1);
+
+  // Limit canvas size to 5 mega-pixels on mobile.
+  // Support: Android, iOS
+  (function checkCanvasSizeLimitation() {
+    if (isIOS || isAndroid) {
+      compatibilityParams.maxCanvasPixels = 5242880;
+    }
+  })();
+}
 
 const OptionKind = {
   VIEWER: 0x02,
@@ -23,19 +48,30 @@ const OptionKind = {
 };
 
 /**
- * PLEASE NOTE: To avoid introducing unnecessary dependencies, we specify the
- *              values below *explicitly* rather than relying on imported types.
+ * NOTE: These options are used to generate the `default_preferences.json` file,
+ *       see `OptionKind.PREFERENCE`, hence the values below must use only
+ *       primitive types and cannot rely on any imported types.
  */
 const defaultOptions = {
+  annotationEditorMode: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  annotationMode: {
+    /** @type {number} */
+    value: 2,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   cursorToolOnLoad: {
     /** @type {number} */
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  defaultUrl: {
-    /** @type {string} */
-    value: "compressed.tracemonkey-pldi-09.pdf",
-    kind: OptionKind.VIEWER,
+  defaultZoomDelay: {
+    /** @type {number} */
+    value: 400,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   defaultZoomValue: {
     /** @type {string} */
@@ -52,9 +88,6 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  /**
-   * The `disablePreferences` is, conditionally, defined below.
-   */
   enablePermissions: {
     /** @type {boolean} */
     value: false,
@@ -62,17 +95,12 @@ const defaultOptions = {
   },
   enablePrintAutoRotate: {
     /** @type {boolean} */
-    value: false,
+    value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableScripting: {
     /** @type {boolean} */
-    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  },
-  enableWebGL: {
-    /** @type {boolean} */
-    value: false,
+    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   externalLinkRel: {
@@ -100,14 +128,25 @@ const defaultOptions = {
     value: "./images/",
     kind: OptionKind.VIEWER,
   },
-  /**
-   * The `locale` is, conditionally, defined below.
-   */
   maxCanvasPixels: {
     /** @type {number} */
     value: 16777216,
-    compatibility: viewerCompatibilityParams.maxCanvasPixels,
     kind: OptionKind.VIEWER,
+  },
+  forcePageColors: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  pageColorsBackground: {
+    /** @type {string} */
+    value: "Canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
+  pageColorsForeground: {
+    /** @type {string} */
+    value: "CanvasText",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   pdfBugEnabled: {
     /** @type {boolean} */
@@ -118,16 +157,6 @@ const defaultOptions = {
     /** @type {number} */
     value: 150,
     kind: OptionKind.VIEWER,
-  },
-  renderer: {
-    /** @type {string} */
-    value: "canvas",
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  },
-  renderInteractiveForms: {
-    /** @type {boolean} */
-    value: true,
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   sidebarViewOnLoad: {
     /** @type {number} */
@@ -156,7 +185,7 @@ const defaultOptions = {
   },
   viewerCssTheme: {
     /** @type {number} */
-    value: 0,
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME") ? 2 : 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   viewOnLoad: {
@@ -203,12 +232,22 @@ const defaultOptions = {
     value: "",
     kind: OptionKind.API,
   },
+  enableXfa: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
+  },
   fontExtraProperties: {
     /** @type {boolean} */
     value: false,
     kind: OptionKind.API,
   },
   isEvalSupported: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.API,
+  },
+  isOffscreenCanvasSupported: {
     /** @type {boolean} */
     value: true,
     kind: OptionKind.API,
@@ -221,6 +260,19 @@ const defaultOptions = {
   pdfBug: {
     /** @type {boolean} */
     value: false,
+    kind: OptionKind.API,
+  },
+  standardFontDataUrl: {
+    /** @type {string} */
+    value:
+      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+        ? "../external/standard_fonts/"
+        : "../web/standard_fonts/",
+    kind: OptionKind.API,
+  },
+  transferPdfData: {
+    /** @type {boolean} */
+    value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL"),
     kind: OptionKind.API,
   },
   verbosity: {
@@ -245,8 +297,13 @@ const defaultOptions = {
 };
 if (
   typeof PDFJSDev === "undefined" ||
-  PDFJSDev.test("!PRODUCTION || (GENERIC && !LIB)")
+  PDFJSDev.test("!PRODUCTION || GENERIC")
 ) {
+  defaultOptions.defaultUrl = {
+    /** @type {string} */
+    value: "compressed.tracemonkey-pldi-09.pdf",
+    kind: OptionKind.VIEWER,
+  };
   defaultOptions.disablePreferences = {
     /** @type {boolean} */
     value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING"),
@@ -254,8 +311,13 @@ if (
   };
   defaultOptions.locale = {
     /** @type {string} */
-    value: typeof navigator !== "undefined" ? navigator.language : "en-US",
+    value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
+  };
+  defaultOptions.renderer = {
+    /** @type {string} */
+    value: "canvas",
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
@@ -266,6 +328,16 @@ if (
     kind: OptionKind.VIEWER,
   };
 } else if (PDFJSDev.test("CHROME")) {
+  defaultOptions.defaultUrl = {
+    /** @type {string} */
+    value: "",
+    kind: OptionKind.VIEWER,
+  };
+  defaultOptions.disableTelemetry = {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value: "../build/pdf.sandbox.js",
@@ -287,7 +359,7 @@ class AppOptions {
     }
     const defaultOption = defaultOptions[name];
     if (defaultOption !== undefined) {
-      return defaultOption.compatibility || defaultOption.value;
+      return compatibilityParams[name] ?? defaultOption.value;
     }
     return undefined;
   }
@@ -319,7 +391,7 @@ class AppOptions {
       options[name] =
         userOption !== undefined
           ? userOption
-          : defaultOption.compatibility || defaultOption.value;
+          : compatibilityParams[name] ?? defaultOption.value;
     }
     return options;
   }
@@ -337,6 +409,13 @@ class AppOptions {
   static remove(name) {
     delete userOptions[name];
   }
+
+  /**
+   * @ignore
+   */
+  static _hasUserOptions() {
+    return Object.keys(userOptions).length > 0;
+  }
 }
 
-export { AppOptions, OptionKind };
+export { AppOptions, compatibilityParams, OptionKind };

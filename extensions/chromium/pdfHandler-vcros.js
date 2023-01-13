@@ -78,9 +78,9 @@ limitations under the License.
     if (windowId) {
       chrome.tabs.create(
         {
-          windowId: windowId,
+          windowId,
           active: true,
-          url: url,
+          url,
         },
         function () {
           openViewer(windowId, fileEntries);
@@ -91,7 +91,7 @@ limitations under the License.
         {
           type: "normal",
           focused: true,
-          url: url,
+          url,
         },
         function (chromeWindow) {
           openViewer(chromeWindow.id, fileEntries);

@@ -18,6 +18,8 @@ import { PDFObject } from "./pdf_object.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
 
+const DOC_EXTERNAL = false;
+
 class InfoProxyHandler {
   static get(obj, prop) {
     return obj[prop.toLowerCase()];
@@ -66,6 +68,7 @@ class Doc extends PDFObject {
     this._numPages = data.numPages || 1;
     this._pageNum = data.pageNum || 0;
     this._producer = data.Producer || "";
+    this._securityHandler = data.EncryptFilterName || null;
     this._subject = data.Subject || "";
     this._title = data.Title || "";
     this._URL = data.URL || "";
@@ -93,24 +96,48 @@ class Doc extends PDFObject {
     this._actions = createActionsMap(data.actions);
     this._globalEval = data.globalEval;
     this._pageActions = new Map();
+    this._userActivation = false;
+    this._disablePrinting = false;
+    this._disableSaving = false;
+  }
+
+  _initActions() {
+    const dontRun = new Set([
+      "WillClose",
+      "WillSave",
+      "DidSave",
+      "WillPrint",
+      "DidPrint",
+      "OpenAction",
+    ]);
+    // When a pdf has just been opened it doesn't really make sense
+    // to save it: it's up to the user to decide if they want to do that.
+    // A pdf can contain an action /FooBar which will trigger a save
+    // even if there are no WillSave/DidSave (which are themselves triggered
+    // after a save).
+    this._disableSaving = true;
+    for (const actionName of this._actions.keys()) {
+      if (!dontRun.has(actionName)) {
+        this._runActions(actionName);
+      }
+    }
+    this._runActions("OpenAction");
+    this._disableSaving = false;
   }
 
   _dispatchDocEvent(name) {
     if (name === "Open") {
-      const dontRun = new Set([
-        "WillClose",
-        "WillSave",
-        "DidSave",
-        "WillPrint",
-        "DidPrint",
-        "OpenAction",
-      ]);
-      for (const actionName of this._actions.keys()) {
-        if (!dontRun.has(actionName)) {
-          this._runActions(actionName);
-        }
-      }
+      this._disableSaving = true;
       this._runActions("OpenAction");
+      this._disableSaving = false;
+    } else if (name === "WillPrint") {
+      this._disablePrinting = true;
+      this._runActions(name);
+      this._disablePrinting = false;
+    } else if (name === "WillSave") {
+      this._disableSaving = true;
+      this._runActions(name);
+      this._disableSaving = false;
     } else {
       this._runActions(name);
     }
@@ -271,7 +298,10 @@ class Doc extends PDFObject {
   }
 
   get external() {
-    return true;
+    // According to the specification this should be `true` in non-Acrobat
+    // applications, however we ignore that to avoid bothering users with
+    // an `alert`-dialog on document load (see issue 15509).
+    return DOC_EXTERNAL;
   }
 
   set external(_) {
@@ -355,6 +385,11 @@ class Doc extends PDFObject {
   }
 
   set layout(value) {
+    if (!this._userActivation) {
+      return;
+    }
+    this._userActivation = false;
+
     if (typeof value !== "string") {
       return;
     }
@@ -474,6 +509,11 @@ class Doc extends PDFObject {
   }
 
   set pageNum(value) {
+    if (!this._userActivation) {
+      return;
+    }
+    this._userActivation = false;
+
     if (typeof value !== "number" || value < 0 || value >= this._numPages) {
       return;
     }
@@ -522,7 +562,7 @@ class Doc extends PDFObject {
   }
 
   get securityHandler() {
-    return null;
+    return this._securityHandler;
   }
 
   set securityHandler(_) {
@@ -622,6 +662,11 @@ class Doc extends PDFObject {
   }
 
   set zoomType(type) {
+    if (!this._userActivation) {
+      return;
+    }
+    this._userActivation = false;
+
     if (typeof type !== "string") {
       return;
     }
@@ -656,6 +701,11 @@ class Doc extends PDFObject {
   }
 
   set zoom(value) {
+    if (!this._userActivation) {
+      return;
+    }
+    this._userActivation = false;
+
     if (typeof value !== "number" || value < 8.33 || value > 6400) {
       return;
     }
@@ -819,7 +869,10 @@ class Doc extends PDFObject {
     /* Not implemented */
   }
 
-  getField(cName) {
+  _getField(cName) {
+    if (cName && typeof cName === "object") {
+      cName = cName.cName;
+    }
     if (typeof cName !== "string") {
       throw new TypeError("Invalid field name: must be a string");
     }
@@ -828,13 +881,74 @@ class Doc extends PDFObject {
       return searchedField;
     }
 
+    const parts = cName.split("#");
+    let childIndex = NaN;
+    if (parts.length === 2) {
+      childIndex = Math.floor(parseFloat(parts[1]));
+      cName = parts[0];
+    }
+
     for (const [name, field] of this._fields.entries()) {
-      if (name.includes(cName)) {
+      if (name.endsWith(cName)) {
+        if (!isNaN(childIndex)) {
+          const children = this._getChildren(name);
+          if (childIndex < 0 || childIndex >= children.length) {
+            childIndex = 0;
+          }
+          if (childIndex < children.length) {
+            this._fields.set(cName, children[childIndex]);
+            return children[childIndex];
+          }
+        }
+        this._fields.set(cName, field);
         return field;
       }
     }
 
-    return undefined;
+    return null;
+  }
+
+  getField(cName) {
+    const field = this._getField(cName);
+    if (!field) {
+      return null;
+    }
+    return field.wrapped;
+  }
+
+  _getChildren(fieldName) {
+    // Children of foo.bar are foo.bar.oof, foo.bar.rab
+    // but not foo.bar.oof.FOO.
+    const len = fieldName.length;
+    const children = [];
+    const pattern = /^\.[^.]+$/;
+    for (const [name, field] of this._fields.entries()) {
+      if (name.startsWith(fieldName)) {
+        const finalPart = name.slice(len);
+        if (pattern.test(finalPart)) {
+          children.push(field);
+        }
+      }
+    }
+    return children;
+  }
+
+  _getTerminalChildren(fieldName) {
+    // Get all the descendants which have a value.
+    const children = [];
+    const len = fieldName.length;
+    for (const [name, field] of this._fields.entries()) {
+      if (name.startsWith(fieldName)) {
+        const finalPart = name.slice(len);
+        if (
+          field.obj._hasValue &&
+          (finalPart === "" || finalPart.startsWith("."))
+        ) {
+          children.push(field.wrapped);
+        }
+      }
+    }
+    return children;
   }
 
   getIcon() {
@@ -850,6 +964,9 @@ class Doc extends PDFObject {
   }
 
   getNthFieldName(nIndex) {
+    if (nIndex && typeof nIndex === "object") {
+      nIndex = nIndex.nIndex;
+    }
     if (typeof nIndex !== "number") {
       throw new TypeError("Invalid field index: must be a number");
     }
@@ -900,10 +1017,9 @@ class Doc extends PDFObject {
   }
 
   getPrintParams() {
-    if (!this._printParams) {
-      this._printParams = new PrintParams({ lastPage: this._numPages - 1 });
-    }
-    return this._printParams;
+    return (this._printParams ||= new PrintParams({
+      lastPage: this._numPages - 1,
+    }));
   }
 
   getSound() {
@@ -985,6 +1101,23 @@ class Doc extends PDFObject {
     bAnnotations = true,
     printParams = null
   ) {
+    if (this._disablePrinting || !this._userActivation) {
+      return;
+    }
+    this._userActivation = false;
+
+    if (bUI && typeof bUI === "object") {
+      nStart = bUI.nStart;
+      nEnd = bUI.nEnd;
+      bSilent = bUI.bSilent;
+      bShrinkToFit = bUI.bShrinkToFit;
+      bPrintAsImage = bUI.bPrintAsImage;
+      bReverse = bUI.bReverse;
+      bAnnotations = bUI.bAnnotations;
+      printParams = bUI.printParams;
+      bUI = bUI.bUI;
+    }
+
     // TODO: for now just use nStart and nEnd
     // so need to see how to deal with the other params
     // (if possible)
@@ -1049,23 +1182,53 @@ class Doc extends PDFObject {
   }
 
   resetForm(aFields = null) {
+    // Handle the case resetForm({ aFields: ... })
+    if (aFields && typeof aFields === "object") {
+      aFields = aFields.aFields;
+    }
+
+    if (aFields && !Array.isArray(aFields)) {
+      aFields = [aFields];
+    }
+
     let mustCalculate = false;
+    let fieldsToReset;
     if (aFields) {
+      fieldsToReset = [];
       for (const fieldName of aFields) {
-        const field = this.getField(fieldName);
-        if (field) {
-          field.value = field.defaultValue;
-          field.valueAsString = field.value;
-          mustCalculate = true;
+        if (!fieldName) {
+          continue;
         }
-      }
-    } else {
-      mustCalculate = this._fields.size !== 0;
-      for (const field of this._fields.values()) {
-        field.value = field.defaultValue;
-        field.valueAsString = field.value;
+        if (typeof fieldName !== "string") {
+          // In Acrobat if a fieldName is not a string all the fields are reset.
+          fieldsToReset = null;
+          break;
+        }
+        const field = this._getField(fieldName);
+        if (!field) {
+          continue;
+        }
+        fieldsToReset.push(field);
+        mustCalculate = true;
       }
     }
+
+    if (!fieldsToReset) {
+      fieldsToReset = this._fields.values();
+      mustCalculate = this._fields.size !== 0;
+    }
+
+    for (const field of fieldsToReset) {
+      field.obj.value = field.obj.defaultValue;
+      this._send({
+        id: field.obj._id,
+        siblings: field.obj._siblings,
+        value: field.obj.defaultValue,
+        formattedValue: null,
+        selRange: [0, 0],
+      });
+    }
+
     if (mustCalculate) {
       this.calculateNow();
     }

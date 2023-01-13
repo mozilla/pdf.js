@@ -20,22 +20,22 @@ if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
   alert("Please build the pdfjs-dist library using\n `gulp dist-install`");
 }
 
-var USE_ONLY_CSS_ZOOM = true;
-var TEXT_LAYER_MODE = 0; // DISABLE
-var MAX_IMAGE_SIZE = 1024 * 1024;
-var CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
-var CMAP_PACKED = true;
+const USE_ONLY_CSS_ZOOM = true;
+const TEXT_LAYER_MODE = 0; // DISABLE
+const MAX_IMAGE_SIZE = 1024 * 1024;
+const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
+const CMAP_PACKED = true;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "../../node_modules/pdfjs-dist/build/pdf.worker.js";
 
-var DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
-var DEFAULT_SCALE_DELTA = 1.1;
-var MIN_SCALE = 0.25;
-var MAX_SCALE = 10.0;
-var DEFAULT_SCALE_VALUE = "auto";
+const DEFAULT_URL = "../../web/compressed.tracemonkey-pldi-09.pdf";
+const DEFAULT_SCALE_DELTA = 1.1;
+const MIN_SCALE = 0.25;
+const MAX_SCALE = 10.0;
+const DEFAULT_SCALE_VALUE = "auto";
 
-var PDFViewerApplication = {
+const PDFViewerApplication = {
   pdfLoadingTask: null,
   pdfDocument: null,
   pdfViewer: null,
@@ -59,12 +59,12 @@ var PDFViewerApplication = {
       );
     }
 
-    var url = params.url;
-    var self = this;
+    const url = params.url;
+    const self = this;
     this.setTitleUsingUrl(url);
 
     // Loading document.
-    var loadingTask = pdfjsLib.getDocument({
+    const loadingTask = pdfjsLib.getDocument({
       url,
       maxImageSize: MAX_IMAGE_SIZE,
       cMapUrl: CMAP_URL,
@@ -82,15 +82,17 @@ var PDFViewerApplication = {
         self.pdfDocument = pdfDocument;
         self.pdfViewer.setDocument(pdfDocument);
         self.pdfLinkService.setDocument(pdfDocument);
-        self.pdfHistory.initialize({ fingerprint: pdfDocument.fingerprint });
+        self.pdfHistory.initialize({
+          fingerprint: pdfDocument.fingerprints[0],
+        });
 
         self.loadingBar.hide();
         self.setTitleUsingMetadata(pdfDocument);
       },
       function (exception) {
-        var message = exception && exception.message;
-        var l10n = self.l10n;
-        var loadingErrorMessage;
+        const message = exception && exception.message;
+        const l10n = self.l10n;
+        let loadingErrorMessage;
 
         if (exception instanceof pdfjsLib.InvalidPDFException) {
           // change error message also for other builds
@@ -134,14 +136,14 @@ var PDFViewerApplication = {
    *                      destruction is completed.
    */
   close() {
-    var errorWrapper = document.getElementById("errorWrapper");
+    const errorWrapper = document.getElementById("errorWrapper");
     errorWrapper.hidden = true;
 
     if (!this.pdfLoadingTask) {
       return Promise.resolve();
     }
 
-    var promise = this.pdfLoadingTask.destroy();
+    const promise = this.pdfLoadingTask.destroy();
     this.pdfLoadingTask = null;
 
     if (this.pdfDocument) {
@@ -159,14 +161,17 @@ var PDFViewerApplication = {
   },
 
   get loadingBar() {
-    var bar = new pdfjsViewer.ProgressBar("#loadingBar", {});
-
-    return pdfjsLib.shadow(this, "loadingBar", bar);
+    const bar = document.getElementById("loadingBar");
+    return pdfjsLib.shadow(
+      this,
+      "loadingBar",
+      new pdfjsViewer.ProgressBar(bar)
+    );
   },
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
-    var title = pdfjsLib.getFilenameFromUrl(url) || url;
+    let title = pdfjsLib.getFilenameFromUrl(url) || url;
     try {
       title = decodeURIComponent(title);
     } catch (e) {
@@ -177,9 +182,9 @@ var PDFViewerApplication = {
   },
 
   setTitleUsingMetadata(pdfDocument) {
-    var self = this;
+    const self = this;
     pdfDocument.getMetadata().then(function (data) {
-      var info = data.info,
+      const info = data.info,
         metadata = data.metadata;
       self.documentInfo = info;
       self.metadata = metadata;
@@ -187,7 +192,7 @@ var PDFViewerApplication = {
       // Provides some basic debug information
       console.log(
         "PDF " +
-          pdfDocument.fingerprint +
+          pdfDocument.fingerprints[0] +
           " [" +
           info.PDFFormatVersion +
           " " +
@@ -200,9 +205,9 @@ var PDFViewerApplication = {
           ")"
       );
 
-      var pdfTitle;
+      let pdfTitle;
       if (metadata && metadata.has("dc:title")) {
-        var title = metadata.get("dc:title");
+        const title = metadata.get("dc:title");
         // Ghostscript sometimes returns 'Untitled', so prevent setting the
         // title to 'Untitled.
         if (title !== "Untitled") {
@@ -226,8 +231,8 @@ var PDFViewerApplication = {
   },
 
   error: function pdfViewError(message, moreInfo) {
-    var l10n = this.l10n;
-    var moreInfoText = [
+    const l10n = this.l10n;
+    const moreInfoText = [
       l10n.get(
         "error_version_info",
         { version: pdfjsLib.version || "?", build: pdfjsLib.build || "?" },
@@ -269,20 +274,20 @@ var PDFViewerApplication = {
       }
     }
 
-    var errorWrapper = document.getElementById("errorWrapper");
+    const errorWrapper = document.getElementById("errorWrapper");
     errorWrapper.hidden = false;
 
-    var errorMessage = document.getElementById("errorMessage");
+    const errorMessage = document.getElementById("errorMessage");
     errorMessage.textContent = message;
 
-    var closeButton = document.getElementById("errorClose");
+    const closeButton = document.getElementById("errorClose");
     closeButton.onclick = function () {
       errorWrapper.hidden = true;
     };
 
-    var errorMoreInfo = document.getElementById("errorMoreInfo");
-    var moreInfoButton = document.getElementById("errorShowMore");
-    var lessInfoButton = document.getElementById("errorShowLess");
+    const errorMoreInfo = document.getElementById("errorMoreInfo");
+    const moreInfoButton = document.getElementById("errorShowMore");
+    const lessInfoButton = document.getElementById("errorShowLess");
     moreInfoButton.onclick = function () {
       errorMoreInfo.hidden = false;
       moreInfoButton.hidden = true;
@@ -302,7 +307,7 @@ var PDFViewerApplication = {
   },
 
   progress: function pdfViewProgress(level) {
-    var percent = Math.round(level * 100);
+    const percent = Math.round(level * 100);
     // Updating the bar if value increases.
     if (percent > this.loadingBar.percent || isNaN(percent)) {
       this.loadingBar.percent = percent;
@@ -322,7 +327,7 @@ var PDFViewerApplication = {
   },
 
   zoomIn: function pdfViewZoomIn(ticks) {
-    var newScale = this.pdfViewer.currentScale;
+    let newScale = this.pdfViewer.currentScale;
     do {
       newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.ceil(newScale * 10) / 10;
@@ -332,7 +337,7 @@ var PDFViewerApplication = {
   },
 
   zoomOut: function pdfViewZoomOut(ticks) {
-    var newScale = this.pdfViewer.currentScale;
+    let newScale = this.pdfViewer.currentScale;
     do {
       newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.floor(newScale * 10) / 10;
@@ -342,18 +347,18 @@ var PDFViewerApplication = {
   },
 
   initUI: function pdfViewInitUI() {
-    var eventBus = new pdfjsViewer.EventBus();
+    const eventBus = new pdfjsViewer.EventBus();
     this.eventBus = eventBus;
 
-    var linkService = new pdfjsViewer.PDFLinkService({
+    const linkService = new pdfjsViewer.PDFLinkService({
       eventBus,
     });
     this.pdfLinkService = linkService;
 
     this.l10n = pdfjsViewer.NullL10n;
 
-    var container = document.getElementById("viewerContainer");
-    var pdfViewer = new pdfjsViewer.PDFViewer({
+    const container = document.getElementById("viewerContainer");
+    const pdfViewer = new pdfjsViewer.PDFViewer({
       container,
       eventBus,
       linkService,
@@ -413,8 +418,8 @@ var PDFViewerApplication = {
     eventBus.on(
       "pagechanging",
       function (evt) {
-        var page = evt.pageNumber;
-        var numPages = PDFViewerApplication.pagesCount;
+        const page = evt.pageNumber;
+        const numPages = PDFViewerApplication.pagesCount;
 
         document.getElementById("pageNumber").value = page;
         document.getElementById("previous").disabled = page <= 1;
@@ -425,6 +430,8 @@ var PDFViewerApplication = {
   },
 };
 
+window.PDFViewerApplication = PDFViewerApplication;
+
 document.addEventListener(
   "DOMContentLoaded",
   function () {
@@ -433,18 +440,14 @@ document.addEventListener(
   true
 );
 
-(function animationStartedClosure() {
-  // The offsetParent is not set until the PDF.js iframe or object is visible.
-  // Waiting for first animation.
-  PDFViewerApplication.animationStartedPromise = new Promise(function (
-    resolve
-  ) {
-    window.requestAnimationFrame(resolve);
-  });
-})();
+// The offsetParent is not set until the PDF.js iframe or object is visible;
+// waiting for first animation.
+const animationStarted = new Promise(function (resolve) {
+  window.requestAnimationFrame(resolve);
+});
 
 // We need to delay opening until all HTML is loaded.
-PDFViewerApplication.animationStartedPromise.then(function () {
+animationStarted.then(function () {
   PDFViewerApplication.open({
     url: DEFAULT_URL,
   });

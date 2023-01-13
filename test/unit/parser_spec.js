@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint no-var: error */
 
+import { Cmd, EOF, Name } from "../../src/core/primitives.js";
 import { Lexer, Linearization, Parser } from "../../src/core/parser.js";
 import { FormatError } from "../../src/shared/util.js";
-import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
 describe("parser", function () {
@@ -152,13 +151,17 @@ describe("parser", function () {
         expect(plusLexer.getNumber()).toEqual(205.88);
       });
 
-      it("should treat a single decimal point as zero", function () {
-        const input = new StringStream(".");
-        const lexer = new Lexer(input);
-        expect(lexer.getNumber()).toEqual(0);
+      it("should treat a single decimal point, or minus/plus sign, as zero", function () {
+        const validNums = [".", "-", "+", "-.", "+.", "-\r\n.", "+\r\n."];
+        for (const number of validNums) {
+          const validInput = new StringStream(number);
+          const validLexer = new Lexer(validInput);
 
-        const numbers = ["..", "-.", "+.", "-\r\n.", "+\r\n."];
-        for (const number of numbers) {
+          expect(validLexer.getNumber()).toEqual(0);
+        }
+
+        const invalidNums = ["..", ".-", ".+"];
+        for (const number of invalidNums) {
           const invalidInput = new StringStream(number);
           const invalidLexer = new Lexer(invalidInput);
 
@@ -217,6 +220,32 @@ describe("parser", function () {
           expect(lexer.getName()).toEqual(Name.get(expectedNames[i]));
         }
       });
+    });
+
+    describe("getObj", function () {
+      it(
+        "should stop immediately when the start of a command is " +
+          "a non-visible ASCII character (issue 13999)",
+        function () {
+          const input = new StringStream("\x14q\nQ");
+          const lexer = new Lexer(input);
+
+          let obj = lexer.getObj();
+          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj.cmd).toEqual("\x14");
+
+          obj = lexer.getObj();
+          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj.cmd).toEqual("q");
+
+          obj = lexer.getObj();
+          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj.cmd).toEqual("Q");
+
+          obj = lexer.getObj();
+          expect(obj).toEqual(EOF);
+        }
+      );
     });
   });
 

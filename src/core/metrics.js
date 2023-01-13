@@ -12,14 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var */
 
 import { getLookupTableFactory } from "./core_utils.js";
 
 // The Metrics object contains glyph widths (in glyph space units).
 // As per PDF spec, for most fonts (Type 3 being an exception) a glyph
 // space unit corresponds to 1/1000th of text space unit.
-var getMetrics = getLookupTableFactory(function (t) {
+const getMetrics = getLookupTableFactory(function (t) {
   t.Courier = 600;
   t["Courier-Bold"] = 600;
   t["Courier-BoldOblique"] = 600;
@@ -2968,4 +2967,91 @@ var getMetrics = getLookupTableFactory(function (t) {
   });
 });
 
-export { getMetrics };
+const getFontBasicMetrics = getLookupTableFactory(function (t) {
+  t.Courier = {
+    ascent: 629,
+    descent: -157,
+    capHeight: 562,
+    xHeight: -426,
+  };
+  t["Courier-Bold"] = {
+    ascent: 629,
+    descent: -157,
+    capHeight: 562,
+    xHeight: 439,
+  };
+  t["Courier-Oblique"] = {
+    ascent: 629,
+    descent: -157,
+    capHeight: 562,
+    xHeight: 426,
+  };
+  t["Courier-BoldOblique"] = {
+    ascent: 629,
+    descent: -157,
+    capHeight: 562,
+    xHeight: 426,
+  };
+  t.Helvetica = {
+    ascent: 718,
+    descent: -207,
+    capHeight: 718,
+    xHeight: 523,
+  };
+  t["Helvetica-Bold"] = {
+    ascent: 718,
+    descent: -207,
+    capHeight: 718,
+    xHeight: 532,
+  };
+  t["Helvetica-Oblique"] = {
+    ascent: 718,
+    descent: -207,
+    capHeight: 718,
+    xHeight: 523,
+  };
+  t["Helvetica-BoldOblique"] = {
+    ascent: 718,
+    descent: -207,
+    capHeight: 718,
+    xHeight: 532,
+  };
+  t["Times-Roman"] = {
+    ascent: 683,
+    descent: -217,
+    capHeight: 662,
+    xHeight: 450,
+  };
+  t["Times-Bold"] = {
+    ascent: 683,
+    descent: -217,
+    capHeight: 676,
+    xHeight: 461,
+  };
+  t["Times-Italic"] = {
+    ascent: 683,
+    descent: -217,
+    capHeight: 653,
+    xHeight: 441,
+  };
+  t["Times-BoldItalic"] = {
+    ascent: 683,
+    descent: -217,
+    capHeight: 669,
+    xHeight: 462,
+  };
+  t.Symbol = {
+    ascent: Math.NaN,
+    descent: Math.NaN,
+    capHeight: Math.NaN,
+    xHeight: Math.NaN,
+  };
+  t.ZapfDingbats = {
+    ascent: Math.NaN,
+    descent: Math.NaN,
+    capHeight: Math.NaN,
+    xHeight: Math.NaN,
+  };
+});
+
+export { getFontBasicMetrics, getMetrics };

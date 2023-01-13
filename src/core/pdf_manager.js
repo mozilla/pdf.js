@@ -24,6 +24,17 @@ import { MissingDataException } from "./core_utils.js";
 import { PDFDocument } from "./document.js";
 import { Stream } from "./stream.js";
 
+function parseDocBaseUrl(url) {
+  if (url) {
+    const absoluteUrl = createValidAbsoluteUrl(url);
+    if (absoluteUrl) {
+      return absoluteUrl.href;
+    }
+    warn(`Invalid absolute docBaseUrl: "${url}".`);
+  }
+  return null;
+}
+
 class BasePdfManager {
   constructor() {
     if (this.constructor === BasePdfManager) {
@@ -40,20 +51,8 @@ class BasePdfManager {
   }
 
   get docBaseUrl() {
-    let docBaseUrl = null;
-    if (this._docBaseUrl) {
-      const absoluteUrl = createValidAbsoluteUrl(this._docBaseUrl);
-      if (absoluteUrl) {
-        docBaseUrl = absoluteUrl.href;
-      } else {
-        warn(`Invalid absolute docBaseUrl: "${this._docBaseUrl}".`);
-      }
-    }
-    return shadow(this, "docBaseUrl", docBaseUrl);
-  }
-
-  onLoadedStream() {
-    unreachable("Abstract method `onLoadedStream` called");
+    const catalog = this.pdfDocument.catalog;
+    return shadow(this, "docBaseUrl", catalog.baseUrl || this._docBaseUrl);
   }
 
   ensureDoc(prop, args) {
@@ -76,6 +75,18 @@ class BasePdfManager {
     return this.pdfDocument.fontFallback(id, handler);
   }
 
+  loadXfaFonts(handler, task) {
+    return this.pdfDocument.loadXfaFonts(handler, task);
+  }
+
+  loadXfaImages() {
+    return this.pdfDocument.loadXfaImages();
+  }
+
+  serializeXfaData(annotationStorage) {
+    return this.pdfDocument.serializeXfaData(annotationStorage);
+  }
+
   cleanup(manuallyTriggered = false) {
     return this.pdfDocument.cleanup(manuallyTriggered);
   }
@@ -88,7 +99,7 @@ class BasePdfManager {
     unreachable("Abstract method `requestRange` called");
   }
 
-  requestLoadedStream() {
+  requestLoadedStream(noFetch = false) {
     unreachable("Abstract method `requestLoadedStream` called");
   }
 
@@ -106,13 +117,23 @@ class BasePdfManager {
 }
 
 class LocalPdfManager extends BasePdfManager {
-  constructor(docId, data, password, evaluatorOptions, docBaseUrl) {
+  constructor(
+    docId,
+    data,
+    password,
+    msgHandler,
+    evaluatorOptions,
+    enableXfa,
+    docBaseUrl
+  ) {
     super();
 
     this._docId = docId;
     this._password = password;
-    this._docBaseUrl = docBaseUrl;
+    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
+    this.msgHandler = msgHandler;
     this.evaluatorOptions = evaluatorOptions;
+    this.enableXfa = enableXfa;
 
     const stream = new Stream(data);
     this.pdfDocument = new PDFDocument(this, stream);
@@ -131,9 +152,7 @@ class LocalPdfManager extends BasePdfManager {
     return Promise.resolve();
   }
 
-  requestLoadedStream() {}
-
-  onLoadedStream() {
+  requestLoadedStream(noFetch = false) {
     return this._loadedStreamPromise;
   }
 
@@ -141,14 +160,22 @@ class LocalPdfManager extends BasePdfManager {
 }
 
 class NetworkPdfManager extends BasePdfManager {
-  constructor(docId, pdfNetworkStream, args, evaluatorOptions, docBaseUrl) {
+  constructor(
+    docId,
+    pdfNetworkStream,
+    args,
+    evaluatorOptions,
+    enableXfa,
+    docBaseUrl
+  ) {
     super();
 
     this._docId = docId;
     this._password = args.password;
-    this._docBaseUrl = docBaseUrl;
+    this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
     this.msgHandler = args.msgHandler;
     this.evaluatorOptions = evaluatorOptions;
+    this.enableXfa = enableXfa;
 
     this.streamManager = new ChunkedStreamManager(pdfNetworkStream, {
       msgHandler: args.msgHandler,
@@ -179,16 +206,12 @@ class NetworkPdfManager extends BasePdfManager {
     return this.streamManager.requestRange(begin, end);
   }
 
-  requestLoadedStream() {
-    this.streamManager.requestAllChunks();
+  requestLoadedStream(noFetch = false) {
+    return this.streamManager.requestAllChunks(noFetch);
   }
 
   sendProgressiveData(chunk) {
     this.streamManager.onReceiveData({ chunk });
-  }
-
-  onLoadedStream() {
-    return this.streamManager.onLoadedStream();
   }
 
   terminate(reason) {

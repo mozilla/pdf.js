@@ -14,6 +14,11 @@
  */
 /* eslint-disable getter-return */
 
+/** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./ui_utils").RenderingStates} RenderingStates */
+
 /**
  * @interface
  */
@@ -46,6 +51,11 @@ class IPDFLinkService {
   /**
    * @type {boolean}
    */
+  get isInPresentationMode() {}
+
+  /**
+   * @type {boolean}
+   */
   get externalLinkEnabled() {}
 
   /**
@@ -62,6 +72,13 @@ class IPDFLinkService {
    * @param {number|string} val - The page number, or page label.
    */
   goToPage(val) {}
+
+  /**
+   * @param {HTMLAnchorElement} link
+   * @param {string} url
+   * @param {boolean} [newWindow]
+   */
+  addLinkAttributes(link, url, newWindow = false) {}
 
   /**
    * @param dest - The PDF destination object.
@@ -86,6 +103,11 @@ class IPDFLinkService {
   executeNamedAction(action) {}
 
   /**
+   * @param {Object} action
+   */
+  executeSetOCGState(action) {}
+
+  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
@@ -105,35 +127,12 @@ class IPDFLinkService {
 /**
  * @interface
  */
-class IPDFHistory {
-  /**
-   * @param {Object} params
-   */
-  initialize({ fingerprint, resetHistory = false, updateUrl = false }) {}
-
-  reset() {}
-
-  /**
-   * @param {Object} params
-   */
-  push({ namedDest = null, explicitDest, pageNumber }) {}
-
-  /**
-   * @param {number} pageNumber
-   */
-  pushPage(pageNumber) {}
-
-  pushCurrentPosition() {}
-
-  back() {}
-
-  forward() {}
-}
-
-/**
- * @interface
- */
 class IRenderableView {
+  constructor() {
+    /** @type {function | null} */
+    this.resume = null;
+  }
+
   /**
    * @type {string} - Unique ID for rendering queue.
    */
@@ -148,60 +147,39 @@ class IRenderableView {
    * @returns {Promise} Resolved on draw completion.
    */
   draw() {}
-
-  resume() {}
 }
 
 /**
  * @interface
  */
-class IPDFTextLayerFactory {
+class IDownloadManager {
   /**
-   * @param {HTMLDivElement} textLayerDiv
-   * @param {number} pageIndex
-   * @param {PageViewport} viewport
-   * @param {boolean} enhanceTextSelection
-   * @param {EventBus} eventBus
-   * @returns {TextLayerBuilder}
+   * @param {string} url
+   * @param {string} filename
    */
-  createTextLayerBuilder(
-    textLayerDiv,
-    pageIndex,
-    viewport,
-    enhanceTextSelection = false,
-    eventBus
-  ) {}
-}
+  downloadUrl(url, filename) {}
 
-/**
- * @interface
- */
-class IPDFAnnotationLayerFactory {
   /**
-   * @param {HTMLDivElement} pageDiv
-   * @param {PDFPage} pdfPage
-   * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
-   *   data in forms.
-   * @param {string} [imageResourcesPath] - Path for image resources, mainly
-   *   for annotation icons. Include trailing slash.
-   * @param {boolean} renderInteractiveForms
-   * @param {IL10n} l10n
-   * @param {boolean} [enableScripting]
-   * @param {Promise<boolean>} [hasJSActionsPromise]
-   * @param {Object} [mouseState]
-   * @returns {AnnotationLayerBuilder}
+   * @param {Uint8Array} data
+   * @param {string} filename
+   * @param {string} [contentType]
    */
-  createAnnotationLayerBuilder(
-    pageDiv,
-    pdfPage,
-    annotationStorage = null,
-    imageResourcesPath = "",
-    renderInteractiveForms = true,
-    l10n = undefined,
-    enableScripting = false,
-    hasJSActionsPromise = null,
-    mouseState = null
-  ) {}
+  downloadData(data, filename, contentType) {}
+
+  /**
+   * @param {HTMLElement} element
+   * @param {Uint8Array} data
+   * @param {string} filename
+   * @returns {boolean} Indicating if the data was opened.
+   */
+  openOrDownloadData(element, data, filename) {}
+
+  /**
+   * @param {Blob} blob
+   * @param {string} url
+   * @param {string} filename
+   */
+  download(blob, url, filename) {}
 }
 
 /**
@@ -223,11 +201,11 @@ class IL10n {
    * property bag. If the key was not found, translation falls back to the
    * fallback text.
    * @param {string} key
-   * @param {object} args
-   * @param {string} fallback
+   * @param {Object | null} [args]
+   * @param {string} [fallback]
    * @returns {Promise<string>}
    */
-  async get(key, args, fallback) {}
+  async get(key, args = null, fallback) {}
 
   /**
    * Translates HTML element.
@@ -237,11 +215,4 @@ class IL10n {
   async translate(element) {}
 }
 
-export {
-  IL10n,
-  IPDFAnnotationLayerFactory,
-  IPDFHistory,
-  IPDFLinkService,
-  IPDFTextLayerFactory,
-  IRenderableView,
-};
+export { IDownloadManager, IL10n, IPDFLinkService, IRenderableView };

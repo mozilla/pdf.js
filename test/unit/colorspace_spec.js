@@ -52,14 +52,12 @@ describe("colorspace", function () {
   describe("ColorSpace caching", function () {
     let localColorSpaceCache = null;
 
-    beforeAll(function (done) {
+    beforeAll(function () {
       localColorSpaceCache = new LocalColorSpaceCache();
-      done();
     });
 
-    afterAll(function (done) {
+    afterAll(function () {
       localColorSpaceCache = null;
-      done();
     });
 
     it("caching by Name", function () {

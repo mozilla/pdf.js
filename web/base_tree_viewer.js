@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { removeNullCharacters } from "pdfjs-lib";
+import { removeNullCharacters } from "./ui_utils.js";
 
 const TREEITEM_OFFSET_TOP = -100; // px
 const TREEITEM_SELECTED_CLASS = "selected";
@@ -59,7 +59,12 @@ class BaseTreeViewer {
    * @private
    */
   _normalizeTextContent(str) {
-    return removeNullCharacters(str) || /* en dash = */ "\u2013";
+    // Chars in range [0x01-0x1F] will be replaced with a white space
+    // and 0x00 by "".
+    return (
+      removeNullCharacters(str, /* replaceInvisible */ true) ||
+      /* en dash = */ "\u2013"
+    );
   }
 
   /**
@@ -82,7 +87,7 @@ class BaseTreeViewer {
         this._toggleTreeItem(div, shouldShowAll);
       }
     };
-    div.insertBefore(toggler, div.firstChild);
+    div.prepend(toggler);
   }
 
   /**
@@ -117,7 +122,7 @@ class BaseTreeViewer {
 
       this._lastToggleIsShow = !fragment.querySelector(".treeItemsHidden");
     }
-    this.container.appendChild(fragment);
+    this.container.append(fragment);
 
     this._dispatchEvent(count);
   }

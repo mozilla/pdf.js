@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+import { USERACTIVATION_CALLBACKID } from "./doc.js";
+
+const USERACTIVATION_MAXTIME_VALIDITY = 5000;
+
 class Event {
   constructor(data) {
     this.change = data.change || "";
@@ -26,8 +30,8 @@ class Event {
     this.richChange = data.richChange || [];
     this.richChangeEx = data.richChangeEx || [];
     this.richValue = data.richValue || [];
-    this.selEnd = data.selEnd || -1;
-    this.selStart = data.selStart || -1;
+    this.selEnd = data.selEnd ?? -1;
+    this.selStart = data.selStart ?? -1;
     this.shift = data.shift || false;
     this.source = data.source || null;
     this.target = data.target || null;
@@ -39,16 +43,21 @@ class Event {
 }
 
 class EventDispatcher {
-  constructor(document, calculationOrder, objects) {
+  constructor(document, calculationOrder, objects, externalCall) {
     this._document = document;
     this._calculationOrder = calculationOrder;
     this._objects = objects;
+    this._externalCall = externalCall;
 
     this._document.obj._eventDispatcher = this;
+    this._isCalculating = false;
   }
 
   mergeChange(event) {
     let value = event.value;
+    if (Array.isArray(value)) {
+      return value;
+    }
     if (typeof value !== "string") {
       value = value.toString();
     }
@@ -62,6 +71,14 @@ class EventDispatcher {
     return `${prefix}${event.change}${postfix}`;
   }
 
+  userActivation() {
+    this._document.obj._userActivation = true;
+    this._externalCall("setTimeout", [
+      USERACTIVATION_CALLBACKID,
+      USERACTIVATION_MAXTIME_VALIDITY,
+    ]);
+  }
+
   dispatch(baseEvent) {
     const id = baseEvent.id;
     if (!(id in this._objects)) {
@@ -72,13 +89,38 @@ class EventDispatcher {
         event.name = baseEvent.name;
       }
       if (id === "doc") {
+        const eventName = event.name;
+        if (eventName === "Open") {
+          // The user has decided to open this pdf, hence we enable
+          // userActivation.
+          this.userActivation();
+          // Initialize named actions before calling formatAll to avoid any
+          // errors in the case where a formatter is using one of those named
+          // actions (see #15818).
+          this._document.obj._initActions();
+          // Before running the Open event, we format all the fields
+          // (see bug 1766987).
+          this.formatAll();
+        }
+        if (
+          !["DidPrint", "DidSave", "WillPrint", "WillSave"].includes(eventName)
+        ) {
+          this.userActivation();
+        }
         this._document.obj._dispatchDocEvent(event.name);
       } else if (id === "page") {
+        this.userActivation();
         this._document.obj._dispatchPageEvent(
           event.name,
           baseEvent.actions,
           baseEvent.pageNumber
         );
+      } else if (id === "app" && baseEvent.name === "ResetForm") {
+        this.userActivation();
+        for (const fieldId of baseEvent.ids) {
+          const obj = this._objects[fieldId];
+          obj?.obj._reset();
+        }
       }
       return;
     }
@@ -88,6 +130,8 @@ class EventDispatcher {
     const event = (globalThis.event = new Event(baseEvent));
     let savedChange;
 
+    this.userActivation();
+
     if (source.obj._isButton()) {
       source.obj._id = id;
       event.value = source.obj._getExportValue(event.value);
@@ -96,64 +140,139 @@ class EventDispatcher {
       }
     }
 
-    if (name === "Keystroke") {
-      savedChange = {
-        value: event.value,
-        change: event.change,
-        selStart: event.selStart,
-        selEnd: event.selEnd,
-      };
-    } else if (name === "Blur" || name === "Focus") {
-      Object.defineProperty(event, "value", {
-        configurable: false,
-        writable: false,
-        enumerable: true,
-        value: event.value,
-      });
-    } else if (name === "Validate") {
-      this.runValidation(source, event);
-      return;
+    switch (name) {
+      case "Keystroke":
+        savedChange = {
+          value: event.value,
+          changeEx: event.changeEx,
+          change: event.change,
+          selStart: event.selStart,
+          selEnd: event.selEnd,
+        };
+        break;
+      case "Blur":
+      case "Focus":
+        Object.defineProperty(event, "value", {
+          configurable: false,
+          writable: false,
+          enumerable: true,
+          value: event.value,
+        });
+        break;
+      case "Validate":
+        this.runValidation(source, event);
+        return;
+      case "Action":
+        this.runActions(source, source, event, name);
+        this.runCalculate(source, event);
+        return;
     }
 
     this.runActions(source, source, event, name);
 
-    if (name === "Keystroke") {
-      if (event.rc) {
-        if (event.willCommit) {
-          this.runValidation(source, event);
-        } else if (
-          event.change !== savedChange.change ||
+    if (name !== "Keystroke") {
+      return;
+    }
+
+    if (event.rc) {
+      if (event.willCommit) {
+        this.runValidation(source, event);
+      } else {
+        if (source.obj._isChoice) {
+          source.obj.value = savedChange.changeEx;
+          source.obj._send({
+            id: source.obj._id,
+            siblings: source.obj._siblings,
+            value: source.obj.value,
+          });
+          return;
+        }
+
+        const value = (source.obj.value = this.mergeChange(event));
+        let selStart, selEnd;
+        if (
           event.selStart !== savedChange.selStart ||
           event.selEnd !== savedChange.selEnd
         ) {
-          source.wrapped.value = this.mergeChange(event);
+          // Selection has been changed by the script so apply the changes.
+          selStart = event.selStart;
+          selEnd = event.selEnd;
+        } else {
+          selEnd = selStart = savedChange.selStart + event.change.length;
         }
-      } else if (!event.willCommit) {
         source.obj._send({
           id: source.obj._id,
-          value: savedChange.value,
-          selRange: [savedChange.selStart, savedChange.selEnd],
+          siblings: source.obj._siblings,
+          value,
+          selRange: [selStart, selEnd],
+        });
+      }
+    } else if (!event.willCommit) {
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: savedChange.value,
+        selRange: [savedChange.selStart, savedChange.selEnd],
+      });
+    } else {
+      // Entry is not valid (rc == false) and it's a commit
+      // so just clear the field.
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: "",
+        formattedValue: null,
+        selRange: [0, 0],
+      });
+    }
+  }
+
+  formatAll() {
+    // Run format actions if any for all the fields.
+    const event = (globalThis.event = new Event({}));
+    for (const source of Object.values(this._objects)) {
+      event.value = source.obj.value;
+      if (this.runActions(source, source, event, "Format")) {
+        source.obj._send({
+          id: source.obj._id,
+          siblings: source.obj._siblings,
+          formattedValue: event.value?.toString?.(),
         });
       }
     }
   }
 
   runValidation(source, event) {
-    const hasRan = this.runActions(source, source, event, "Validate");
+    const didValidateRun = this.runActions(source, source, event, "Validate");
     if (event.rc) {
-      if (hasRan) {
-        source.wrapped.value = event.value;
-      } else {
-        source.obj.value = event.value;
+      source.obj.value = event.value;
+
+      this.runCalculate(source, event);
+
+      const savedValue = (event.value = source.obj.value);
+      let formattedValue = null;
+
+      if (this.runActions(source, source, event, "Format")) {
+        formattedValue = event.value?.toString?.();
       }
 
-      if (this._document.obj.calculate) {
-        this.runCalculate(source, event);
-      }
-
-      event.value = source.obj.value;
-      this.runActions(source, source, event, "Format");
-      source.wrapped.valueAsString = event.value;
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: savedValue,
+        formattedValue,
+      });
+      event.value = savedValue;
+    } else if (didValidateRun) {
+      // The value is not valid.
+      source.obj._send({
+        id: source.obj._id,
+        siblings: source.obj._siblings,
+        value: "",
+        formattedValue: null,
+        selRange: [0, 0],
+        focus: true, // Stay in the field.
+      });
     }
   }
 
@@ -168,17 +287,42 @@ class EventDispatcher {
   }
 
   calculateNow() {
-    if (!this._calculationOrder) {
+    // This function can be called by a JS script (doc.calculateNow()).
+    // If !this._calculationOrder then there is nothing to calculate.
+    // _isCalculating is here to prevent infinite recursion with calculateNow.
+    // If !this._document.obj.calculate then the script doesn't want to have
+    // a calculate.
+
+    if (
+      !this._calculationOrder ||
+      this._isCalculating ||
+      !this._document.obj.calculate
+    ) {
       return;
     }
+    this._isCalculating = true;
     const first = this._calculationOrder[0];
     const source = this._objects[first];
     globalThis.event = new Event({});
-    this.runCalculate(source, globalThis.event);
+
+    try {
+      this.runCalculate(source, globalThis.event);
+    } catch (error) {
+      this._isCalculating = false;
+      throw error;
+    }
+
+    this._isCalculating = false;
   }
 
   runCalculate(source, event) {
-    if (!this._calculationOrder) {
+    // _document.obj.calculate is equivalent to doc.calculate and can be
+    // changed by a script to allow a future calculate or not.
+    // This function is either called by calculateNow or when an action
+    // is triggered (in this case we cannot be currently calculating).
+    // So there are no need to check for _isCalculating because it has
+    // been already done in calculateNow.
+    if (!this._calculationOrder || !this._document.obj.calculate) {
       return;
     }
 
@@ -187,16 +331,45 @@ class EventDispatcher {
         continue;
       }
 
+      if (!this._document.obj.calculate) {
+        // An action could have changed calculate value.
+        break;
+      }
+
+      event.value = null;
       const target = this._objects[targetId];
+      let savedValue = target.obj.value;
       this.runActions(source, target, event, "Calculate");
-      this.runActions(target, target, event, "Validate");
       if (!event.rc) {
         continue;
       }
 
-      target.wrapped.value = event.value;
-      this.runActions(target, target, event, "Format");
-      target.wrapped.valueAsString = event.value;
+      if (event.value !== null) {
+        // A new value has been calculated so set it.
+        target.obj.value = event.value;
+      }
+
+      event.value = target.obj.value;
+      this.runActions(target, target, event, "Validate");
+      if (!event.rc) {
+        if (target.obj.value !== savedValue) {
+          target.wrapped.value = savedValue;
+        }
+        continue;
+      }
+
+      savedValue = event.value = target.obj.value;
+      let formattedValue = null;
+      if (this.runActions(target, target, event, "Format")) {
+        formattedValue = event.value?.toString?.();
+      }
+
+      target.obj._send({
+        id: target.obj._id,
+        siblings: target.obj._siblings,
+        value: savedValue,
+        formattedValue,
+      });
     }
   }
 }
