@@ -22,7 +22,9 @@ import {
   isAscii,
   isWhiteSpace,
   log2,
+  numberToString,
   parseXFAPath,
+  recoverJsURL,
   stringToUTF16HexString,
   stringToUTF16String,
   toRomanNumerals,
@@ -181,6 +183,21 @@ describe("core_utils", function () {
     });
   });
 
+  describe("numberToString", function () {
+    it("should stringify integers", function () {
+      expect(numberToString(1)).toEqual("1");
+      expect(numberToString(0)).toEqual("0");
+      expect(numberToString(-1)).toEqual("-1");
+    });
+
+    it("should stringify floats", function () {
+      expect(numberToString(1.0)).toEqual("1");
+      expect(numberToString(1.2)).toEqual("1.2");
+      expect(numberToString(1.23)).toEqual("1.23");
+      expect(numberToString(1.234)).toEqual("1.23");
+    });
+  });
+
   describe("isWhiteSpace", function () {
     it("handles space characters", function () {
       expect(isWhiteSpace(0x20)).toEqual(true);
@@ -207,6 +224,39 @@ describe("core_utils", function () {
         { name: "FOO", pos: 123 },
         { name: "BAR", pos: 456 },
       ]);
+    });
+  });
+
+  describe("recoverJsURL", function () {
+    it("should get valid URLs without `newWindow` property", function () {
+      const inputs = [
+        "window.open('https://test.local')",
+        "window.open('https://test.local', true)",
+        "app.launchURL('https://test.local')",
+        "app.launchURL('https://test.local', false)",
+        "xfa.host.gotoURL('https://test.local')",
+        "xfa.host.gotoURL('https://test.local', true)",
+      ];
+
+      for (const input of inputs) {
+        expect(recoverJsURL(input)).toEqual({
+          url: "https://test.local",
+          newWindow: false,
+        });
+      }
+    });
+
+    it("should get valid URLs with `newWindow` property", function () {
+      const input = "app.launchURL('https://test.local', true)";
+      expect(recoverJsURL(input)).toEqual({
+        url: "https://test.local",
+        newWindow: true,
+      });
+    });
+
+    it("should not get invalid URLs", function () {
+      const input = "navigateToUrl('https://test.local')";
+      expect(recoverJsURL(input)).toBeNull();
     });
   });
 
