@@ -1071,7 +1071,12 @@ class PDFPageView {
         renderCapability.resolve();
       },
       function (error) {
-        showCanvas();
+        // When zooming with a `drawingDelay` set, avoid temporarily showing
+        // a black canvas if rendering was cancelled before the `onContinue`-
+        // callback had been invoked at least once.
+        if (!(error instanceof RenderingCancelledException)) {
+          showCanvas();
+        }
         renderCapability.reject(error);
       }
     );
