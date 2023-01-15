@@ -18,13 +18,11 @@
 
 const fs = require("fs");
 const path = require("path");
-const rimrafSync = require("rimraf").sync;
+const { rimraf } = require("rimraf");
 
 exports.removeDirSync = function removeDirSync(dir) {
   fs.readdirSync(dir); // Will throw if dir is not a directory
-  rimrafSync(dir, {
-    disableGlob: true,
-  });
+  rimraf.sync(dir);
 };
 
 exports.copySubtreeSync = function copySubtreeSync(src, dest) {
