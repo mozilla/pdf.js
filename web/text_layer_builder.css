@@ -72,6 +72,15 @@
   background-color: rgba(0, 100, 0, 1);
 }
 
+@media (forced-colors: active) {
+  .textLayer .highlight {
+    background-color: Highlight;
+  }
+  .textLayer .highlight.selected {
+    background-color: ButtonText;
+  }
+}
+
 .textLayer ::selection {
   /*#if !MOZCENTRAL*/
   background: blue;
