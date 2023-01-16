@@ -167,6 +167,31 @@ function normalizeBlendMode(value, parsingArray = false) {
   return "source-over";
 }
 
+function getFallbackEncoding(properties) {
+  const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+  const isNonsymbolicFont = !!(properties.flags & FontFlags.Nonsymbolic);
+  // According to "Table 114" in section "9.6.6.1 General" (under
+  // "9.6.6 Character Encoding") of the PDF specification, a Nonsymbolic
+  // font should use the `StandardEncoding` if no encoding is specified.
+  let encoding = StandardEncoding;
+  if (properties.type === "TrueType" && !isNonsymbolicFont) {
+    encoding = WinAnsiEncoding;
+  }
+  // The Symbolic attribute can be misused for regular fonts
+  // Heuristic: we have to check if the font is a standard one also
+  if (isSymbolicFont) {
+    encoding = MacRomanEncoding;
+    if (!properties.file || properties.isInternalFont) {
+      if (/Symbol/i.test(properties.name)) {
+        encoding = SymbolSetEncoding;
+      } else if (/Dingbats|Wingdings/i.test(properties.name)) {
+        encoding = ZapfDingbatsEncoding;
+      }
+    }
+  }
+  return encoding;
+}
+
 function incrementCachedImageMaskCount(data) {
   if (
     data.fn === OPS.paintImageMaskXObject &&
@@ -3479,28 +3504,7 @@ class PartialEvaluator {
     if (baseEncodingName) {
       properties.defaultEncoding = getEncoding(baseEncodingName);
     } else {
-      const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
-      const isNonsymbolicFont = !!(properties.flags & FontFlags.Nonsymbolic);
-      // According to "Table 114" in section "9.6.6.1 General" (under
-      // "9.6.6 Character Encoding") of the PDF specification, a Nonsymbolic
-      // font should use the `StandardEncoding` if no encoding is specified.
-      encoding = StandardEncoding;
-      if (properties.type === "TrueType" && !isNonsymbolicFont) {
-        encoding = WinAnsiEncoding;
-      }
-      // The Symbolic attribute can be misused for regular fonts
-      // Heuristic: we have to check if the font is a standard one also
-      if (isSymbolicFont) {
-        encoding = MacRomanEncoding;
-        if (!properties.file || properties.isInternalFont) {
-          if (/Symbol/i.test(properties.name)) {
-            encoding = SymbolSetEncoding;
-          } else if (/Dingbats|Wingdings/i.test(properties.name)) {
-            encoding = ZapfDingbatsEncoding;
-          }
-        }
-      }
-      properties.defaultEncoding = encoding;
+      properties.defaultEncoding = getFallbackEncoding(properties);
     }
 
     properties.differences = differences;
