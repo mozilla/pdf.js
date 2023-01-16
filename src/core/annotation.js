@@ -866,7 +866,10 @@ class Annotation {
     if (!(as instanceof Name) || !normalAppearanceState.has(as.name)) {
       return;
     }
-    this.appearance = normalAppearanceState.get(as.name);
+    const appearance = normalAppearanceState.get(as.name);
+    if (appearance instanceof BaseStream) {
+      this.appearance = appearance;
+    }
   }
 
   setOptionalContent(dict) {
@@ -3013,9 +3016,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.data.exportValue = exportValues[1];
 
+    const checkedAppearance = normalAppearance.get(this.data.exportValue);
     this.checkedAppearance =
-      normalAppearance.get(this.data.exportValue) || null;
-    this.uncheckedAppearance = normalAppearance.get("Off") || null;
+      checkedAppearance instanceof BaseStream ? checkedAppearance : null;
+    const uncheckedAppearance = normalAppearance.get("Off");
+    this.uncheckedAppearance =
+      uncheckedAppearance instanceof BaseStream ? uncheckedAppearance : null;
 
     if (this.checkedAppearance) {
       this._streams.push(this.checkedAppearance);
@@ -3058,9 +3064,12 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
+    const checkedAppearance = normalAppearance.get(this.data.buttonValue);
     this.checkedAppearance =
-      normalAppearance.get(this.data.buttonValue) || null;
-    this.uncheckedAppearance = normalAppearance.get("Off") || null;
+      checkedAppearance instanceof BaseStream ? checkedAppearance : null;
+    const uncheckedAppearance = normalAppearance.get("Off");
+    this.uncheckedAppearance =
+      uncheckedAppearance instanceof BaseStream ? uncheckedAppearance : null;
 
     if (this.checkedAppearance) {
       this._streams.push(this.checkedAppearance);
