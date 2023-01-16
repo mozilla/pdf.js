@@ -168,28 +168,32 @@ function normalizeBlendMode(value, parsingArray = false) {
 }
 
 function getFallbackEncoding(properties) {
-  const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
-  const isNonsymbolicFont = !!(properties.flags & FontFlags.Nonsymbolic);
   // According to "Table 114" in section "9.6.6.1 General" (under
   // "9.6.6 Character Encoding") of the PDF specification, a Nonsymbolic
   // font should use the `StandardEncoding` if no encoding is specified.
-  let encoding = StandardEncoding;
-  if (properties.type === "TrueType" && !isNonsymbolicFont) {
-    encoding = WinAnsiEncoding;
-  }
+  const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
+  const isNonsymbolicFont = !!(properties.flags & FontFlags.Nonsymbolic);
+
   // The Symbolic attribute can be misused for regular fonts
   // Heuristic: we have to check if the font is a standard one also
   if (isSymbolicFont) {
-    encoding = MacRomanEncoding;
     if (!properties.file || properties.isInternalFont) {
       if (/Symbol/i.test(properties.name)) {
-        encoding = SymbolSetEncoding;
+        return SymbolSetEncoding;
       } else if (/Dingbats|Wingdings/i.test(properties.name)) {
-        encoding = ZapfDingbatsEncoding;
+        return ZapfDingbatsEncoding;
       }
     }
+    if (properties.type === "TrueType" && !isNonsymbolicFont) {
+      // Use the font-name to try and guess if `WinAnsiEncoding` is more
+      // appropriate than `MacRomanEncoding` (fixes issue15910.pdf).
+      if (/Arial/i.test(properties.name)) {
+        return WinAnsiEncoding;
+      }
+    }
+    return MacRomanEncoding;
   }
-  return encoding;
+  return StandardEncoding;
 }
 
 function incrementCachedImageMaskCount(data) {
