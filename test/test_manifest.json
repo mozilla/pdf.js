@@ -785,6 +785,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "checkbox-bad-appearance",
+       "file": "pdfs/checkbox-bad-appearance.pdf",
+       "md5": "acdac655911cb3d33c3fb1462cf2ad56",
+       "rounds": 1,
+       "type": "eq",
+       "forms": true
+    },
     {  "id": "artofwar",
        "file": "pdfs/artofwar.pdf",
        "md5": "7bdd51c327b74f1f7abdd90eedb2f912",
