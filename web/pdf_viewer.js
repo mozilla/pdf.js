@@ -758,7 +758,7 @@ class PDFViewer {
         });
         // Ensure that the various layers always get the correct initial size,
         // see issue 15795.
-        docStyle.setProperty("--scale-factor", viewport.scale);
+        this.viewer.style.setProperty("--scale-factor", viewport.scale);
 
         for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           const pageView = new PDFPageView({
@@ -1093,7 +1093,7 @@ class PDFViewer {
       return;
     }
 
-    docStyle.setProperty(
+    this.viewer.style.setProperty(
       "--scale-factor",
       newScale * PixelsPerInch.PDF_TO_CSS_UNITS
     );

@@ -36,7 +36,6 @@ import {
 import {
   approximateFraction,
   DEFAULT_SCALE,
-  docStyle,
   OutputScale,
   RendererType,
   RenderingStates,
@@ -206,7 +205,7 @@ class PDFPageView {
     ) {
       // Ensure that the various layers always get the correct initial size,
       // see issue 15795.
-      docStyle.setProperty(
+      container?.style.setProperty(
         "--scale-factor",
         this.scale * PixelsPerInch.PDF_TO_CSS_UNITS
       );
@@ -562,7 +561,10 @@ class PDFPageView {
         PDFJSDev.test("!PRODUCTION || GENERIC")) &&
       this._isStandalone
     ) {
-      docStyle.setProperty("--scale-factor", this.viewport.scale);
+      this.div.parentNode?.style.setProperty(
+        "--scale-factor",
+        this.viewport.scale
+      );
     }
 
     if (
