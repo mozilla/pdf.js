@@ -18,7 +18,7 @@
   --highlight-selected-bg-color: rgba(0, 100, 0, 1);
 }
 
-@media (forced-colors: active) {
+@media screen and (forced-colors: active) {
   :root {
     --highlight-bg-color: Highlight;
     --highlight-selected-bg-color: ButtonText;
