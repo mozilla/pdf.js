@@ -3265,7 +3265,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         });
       };
 
-      const loadingTask = getDocument(transport);
+      const loadingTask = getDocument({ range: transport });
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(14);
 
@@ -3310,7 +3310,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         });
       };
 
-      const loadingTask = getDocument(transport);
+      const loadingTask = getDocument({ range: transport });
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(14);
 
