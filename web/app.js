@@ -2077,6 +2077,16 @@ const PDFViewerApplication = {
     return newFactor;
   },
 
+  _centerAtPos(previousScale, x, y) {
+    const { pdfViewer } = this;
+    const scaleDiff = pdfViewer.currentScale / previousScale - 1;
+    if (scaleDiff !== 0) {
+      const [top, left] = pdfViewer.containerTopLeft;
+      pdfViewer.container.scrollLeft += (x - left) * scaleDiff;
+      pdfViewer.container.scrollTop += (y - top) * scaleDiff;
+    }
+  },
+
   /**
    * Should be called *after* all pages have loaded, or if an error occurred,
    * to unblock the "load" event; see https://bugzilla.mozilla.org/show_bug.cgi?id=1618553
@@ -2689,6 +2699,8 @@ function webViewerWheel(evt) {
         PDFViewerApplication.zoomOut(null, scaleFactor);
       } else if (scaleFactor > 1) {
         PDFViewerApplication.zoomIn(null, scaleFactor);
+      } else {
+        return;
       }
     } else {
       // It is important that we query deltaMode before delta{X,Y}, so that
@@ -2729,21 +2741,15 @@ function webViewerWheel(evt) {
         PDFViewerApplication.zoomOut(-ticks);
       } else if (ticks > 0) {
         PDFViewerApplication.zoomIn(ticks);
+      } else {
+        return;
       }
     }
 
-    const currentScale = pdfViewer.currentScale;
-    if (previousScale !== currentScale) {
-      // After scaling the page via zoomIn/zoomOut, the position of the upper-
-      // left corner is restored. When the mouse wheel is used, the position
-      // under the cursor should be restored instead.
-      const scaleCorrectionFactor = currentScale / previousScale - 1;
-      const [top, left] = pdfViewer.containerTopLeft;
-      const dx = evt.clientX - left;
-      const dy = evt.clientY - top;
-      pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
-      pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
-    }
+    // After scaling the page via zoomIn/zoomOut, the position of the upper-
+    // left corner is restored. When the mouse wheel is used, the position
+    // under the cursor should be restored instead.
+    PDFViewerApplication._centerAtPos(previousScale, evt.clientX, evt.clientY);
   } else {
     setZoomDisabledTimeout();
   }
@@ -2858,6 +2864,8 @@ function webViewerTouchMove(evt) {
       PDFViewerApplication.zoomOut(null, newScaleFactor);
     } else if (newScaleFactor > 1) {
       PDFViewerApplication.zoomIn(null, newScaleFactor);
+    } else {
+      return;
     }
   } else {
     const PIXELS_PER_LINE_SCALE = 30;
@@ -2869,21 +2877,16 @@ function webViewerTouchMove(evt) {
       PDFViewerApplication.zoomOut(-ticks);
     } else if (ticks > 0) {
       PDFViewerApplication.zoomIn(ticks);
+    } else {
+      return;
     }
   }
 
-  const currentScale = pdfViewer.currentScale;
-  if (previousScale !== currentScale) {
-    const scaleCorrectionFactor = currentScale / previousScale - 1;
-    const newCenterX = (page0X + page1X) / 2;
-    const newCenterY = (page0Y + page1Y) / 2;
-
-    const [top, left] = pdfViewer.containerTopLeft;
-    const dx = newCenterX - left;
-    const dy = newCenterY - top;
-    pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
-    pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
-  }
+  PDFViewerApplication._centerAtPos(
+    previousScale,
+    (page0X + page1X) / 2,
+    (page0Y + page1Y) / 2
+  );
 }
 
 function webViewerTouchEnd(evt) {
