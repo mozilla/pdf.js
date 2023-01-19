@@ -2002,6 +2002,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue15942",
+       "file": "pdfs/issue15942.pdf",
+       "md5": "d690e16e6a3a8486ebf7289a9c43ba39",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "bug1046314",
        "file": "pdfs/bug1046314.pdf",
        "md5": "fc658439f44cd2dd27c8bee7e7a8344e",
