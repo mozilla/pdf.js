@@ -35,7 +35,7 @@
   }
 }
 
-@media (forced-colors: active) {
+@media screen and (forced-colors: active) {
   :root {
     --focus-outline: solid 3px ButtonText;
     --hover-outline: dashed 3px ButtonText;
