@@ -1052,6 +1052,16 @@ class PDFFindController {
   }
 
   #updateUIState(state, previous = false) {
+    if (
+      !this.#updateMatchesCountOnProgress &&
+      (this.#visitedPagesCount !== this._linkService.pagesCount ||
+        state === FindState.PENDING)
+    ) {
+      // When this.#updateMatchesCountOnProgress is false we only send an update
+      // when everything is ready.
+      return;
+    }
+
     this._eventBus.dispatch("updatefindcontrolstate", {
       source: this,
       state,

@@ -85,7 +85,8 @@ function testSearch({
   selectedMatch,
   pageMatches = null,
   pageMatchesLength = null,
-  countUpdate = null,
+  updateFindMatchesCount = null,
+  updateFindControlState = null,
 }) {
   return new Promise(function (resolve) {
     const eventState = Object.assign(
@@ -127,11 +128,20 @@ function testSearch({
       return a + b;
     });
 
+    if (updateFindControlState) {
+      eventBus.on(
+        "updatefindcontrolstate",
+        function onUpdateFindControlState(evt) {
+          updateFindControlState[0] += 1;
+        }
+      );
+    }
+
     eventBus.on(
       "updatefindmatchescount",
       function onUpdateFindMatchesCount(evt) {
-        if (countUpdate) {
-          countUpdate[0] += 1;
+        if (updateFindMatchesCount) {
+          updateFindMatchesCount[0] += 1;
         }
         if (pdfFindController.pageMatches.length !== totalPages) {
           return;
@@ -199,7 +209,7 @@ function testEmptySearch({ eventBus, pdfFindController, state }) {
 describe("pdf_find_controller", function () {
   it("performs a normal search", async function () {
     const { eventBus, pdfFindController } = await initPdfFindController();
-    const countUpdate = [0];
+    const updateFindMatchesCount = [0];
 
     await testSearch({
       eventBus,
@@ -212,10 +222,10 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      countUpdate,
+      updateFindMatchesCount,
     });
 
-    expect(countUpdate[0]).toBe(9);
+    expect(updateFindMatchesCount[0]).toBe(9);
   });
 
   it("performs a normal search but the total counts is only updated one time", async function () {
@@ -223,7 +233,8 @@ describe("pdf_find_controller", function () {
       null,
       false
     );
-    const countUpdate = [0];
+    const updateFindMatchesCount = [0];
+    const updateFindControlState = [0];
 
     await testSearch({
       eventBus,
@@ -236,10 +247,12 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      countUpdate,
+      updateFindMatchesCount,
+      updateFindControlState,
     });
 
-    expect(countUpdate[0]).toBe(1);
+    expect(updateFindMatchesCount[0]).toBe(1);
+    expect(updateFindControlState[0]).toBe(0);
   });
 
   it("performs a normal search and finds the previous result", async function () {
