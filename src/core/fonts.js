@@ -201,7 +201,7 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
   for (const charCode in builtInEncoding) {
     if (properties.hasEncoding) {
       if (
-        properties.differences.length === 0 ||
+        properties.baseEncodingName ||
         properties.differences[charCode] !== undefined
       ) {
         continue; // The font dictionary has an `Encoding`/`Differences` entry.

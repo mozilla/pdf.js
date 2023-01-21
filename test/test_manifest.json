@@ -1006,6 +1006,12 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "bug1811668",
+       "file": "pdfs/bug1811668_reduced.pdf",
+       "md5": "87aa65d89aa0682cbe7b87152b884495",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "issue8092",
        "file": "pdfs/issue8092.pdf",
        "md5": "e4f3376b35fd132580246c3db1fbd738",
