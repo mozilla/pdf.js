@@ -233,8 +233,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  */
 
 /**
- * @typedef { string | URL | TypedArray | ArrayBuffer |
- *            PDFDataRangeTransport | DocumentInitParameters
+ * @typedef { string | URL | TypedArray | ArrayBuffer | DocumentInitParameters
  * } GetDocumentParameters
  */
 
@@ -258,7 +257,14 @@ function getDocument(src) {
     source = { url: src };
   } else if (isArrayBuffer(src)) {
     source = { data: src };
-  } else if (src instanceof PDFDataRangeTransport) {
+  } else if (
+    (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+    src instanceof PDFDataRangeTransport
+  ) {
+    deprecated(
+      "`PDFDataRangeTransport`-instance, " +
+        "please use a parameter object with `range`-property instead."
+    );
     source = { range: src };
   } else {
     if (typeof src !== "object") {
