@@ -77,7 +77,6 @@ import { SecondaryToolbar } from "./secondary_toolbar.js";
 import { Toolbar } from "./toolbar.js";
 import { ViewHistory } from "./view_history.js";
 
-const DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000; // ms
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 const WHEEL_ZOOM_DISABLED_TIMEOUT = 1000; // ms
 
@@ -1121,23 +1120,12 @@ const PDFViewerApplication = {
     // the loading bar will not be completely filled, nor will it be hidden.
     // To prevent displaying a partially filled loading bar permanently, we
     // hide it when no data has been loaded during a certain amount of time.
-    const disableAutoFetch =
+    if (
       this.pdfDocument?.loadingParams.disableAutoFetch ??
-      AppOptions.get("disableAutoFetch");
-
-    if (!disableAutoFetch || isNaN(percent)) {
-      return;
+      AppOptions.get("disableAutoFetch")
+    ) {
+      this.loadingBar.setDisableAutoFetch();
     }
-    if (this.disableAutoFetchLoadingBarTimeout) {
-      clearTimeout(this.disableAutoFetchLoadingBarTimeout);
-      this.disableAutoFetchLoadingBarTimeout = null;
-    }
-    this.loadingBar.show();
-
-    this.disableAutoFetchLoadingBarTimeout = setTimeout(() => {
-      this.loadingBar.hide();
-      this.disableAutoFetchLoadingBarTimeout = null;
-    }, DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
   },
 
   load(pdfDocument) {
