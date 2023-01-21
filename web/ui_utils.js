@@ -693,6 +693,8 @@ function clamp(v, min, max) {
 class ProgressBar {
   #classList = null;
 
+  #disableAutoFetchTimeout = null;
+
   #percent = 0;
 
   #visible = true;
@@ -726,6 +728,21 @@ class ProgressBar {
     if (scrollbarWidth > 0) {
       docStyle.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
     }
+  }
+
+  setDisableAutoFetch(delay = /* ms = */ 5000) {
+    if (isNaN(this.#percent)) {
+      return;
+    }
+    if (this.#disableAutoFetchTimeout) {
+      clearTimeout(this.#disableAutoFetchTimeout);
+    }
+    this.show();
+
+    this.#disableAutoFetchTimeout = setTimeout(() => {
+      this.#disableAutoFetchTimeout = null;
+      this.hide();
+    }, delay);
   }
 
   hide() {
