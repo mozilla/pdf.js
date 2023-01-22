@@ -21,7 +21,6 @@ import {
   Util,
 } from "../shared/util.js";
 import { getCurrentTransform } from "./display_utils.js";
-import { isNodeJS } from "../shared/is_node.js";
 
 const PathType = {
   FILL: "Fill",
@@ -30,7 +29,7 @@ const PathType = {
 };
 
 function applyBoundingBox(ctx, bbox) {
-  if (!bbox || isNodeJS) {
+  if (!bbox) {
     return;
   }
   const width = bbox[2] - bbox[0];
