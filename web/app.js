@@ -236,13 +236,16 @@ const PDFViewerApplication = {
     this._forceCssTheme();
     await this._initializeL10n();
 
-    if (
-      this.isViewerEmbedded &&
-      AppOptions.get("externalLinkTarget") === LinkTarget.NONE
-    ) {
-      // Prevent external links from "replacing" the viewer,
-      // when it's embedded in e.g. an <iframe> or an <object>.
-      AppOptions.set("externalLinkTarget", LinkTarget.TOP);
+    if (this.isViewerEmbedded) {
+      if (AppOptions.get("externalLinkTarget") === LinkTarget.NONE) {
+        // Prevent external links from "replacing" the viewer,
+        // when it's embedded in e.g. an <iframe> or an <object>.
+        AppOptions.set("externalLinkTarget", LinkTarget.TOP);
+      }
+
+      // We don't focus an embedded viewer upon PDF document load;
+      // please see the comment in the `webViewerMouseLeave` function.
+      this._isCtrlKeyDown = true;
     }
     await this._initializeViewerComponents();
 
@@ -1872,7 +1875,7 @@ const PDFViewerApplication = {
   },
 
   bindWindowEvents() {
-    const { eventBus, _boundEvents } = this;
+    const { appConfig, eventBus, _boundEvents } = this;
 
     function addWindowResolutionChange(evt = null) {
       if (evt) {
@@ -1916,6 +1919,8 @@ const PDFViewerApplication = {
         detail: event.detail,
       });
     };
+
+    appConfig.appContainer.addEventListener("mouseleave", webViewerMouseLeave);
 
     window.addEventListener("visibilitychange", webViewerVisibilityChange);
     window.addEventListener("wheel", webViewerWheel, { passive: false });
@@ -2004,7 +2009,12 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Not implemented: unbindWindowEvents");
     }
-    const { _boundEvents } = this;
+    const { appConfig, _boundEvents } = this;
+
+    appConfig.appContainer.removeEventListener(
+      "mouseleave",
+      webViewerMouseLeave
+    );
 
     window.removeEventListener("visibilitychange", webViewerVisibilityChange);
     window.removeEventListener("wheel", webViewerWheel, { passive: false });
@@ -2900,6 +2910,12 @@ function webViewerClick(evt) {
   ) {
     PDFViewerApplication.secondaryToolbar.close();
   }
+}
+
+function webViewerMouseLeave(evt) {
+  // Prevent mouse-wheel zooming starting *outside* of the viewer from being
+  // interpreted as a pinch-gesture (fixes bug 1810800).
+  PDFViewerApplication._isCtrlKeyDown = true;
 }
 
 function webViewerKeyUp(evt) {
