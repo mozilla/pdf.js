@@ -2659,7 +2659,26 @@ function webViewerWheel(evt) {
   // https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent#browser_compatibility
   // Hence if ctrlKey is true but ctrl key hasn't been pressed then we can
   // infer that we have a pinch-to-zoom.
-  const isPinchToZoom = evt.ctrlKey && !PDFViewerApplication._isCtrlKeyDown;
+  // But the ctrlKey could have been pressed outside of the browser window,
+  // hence we try to do some magic to guess if the scaleFactor is likely coming
+  // from a pinch-to-zoom or not.
+
+  // It is important that we query deltaMode before delta{X,Y}, so that
+  // Firefox doesn't switch to DOM_DELTA_PIXEL mode for compat with other
+  // browsers, see https://bugzilla.mozilla.org/show_bug.cgi?id=1392460.
+  const deltaMode = evt.deltaMode;
+
+  // The following formula is a bit strange but it comes from:
+  // https://searchfox.org/mozilla-central/rev/d62c4c4d5547064487006a1506287da394b64724/widget/InputData.cpp#618-626
+  let scaleFactor = Math.exp(-evt.deltaY / 100);
+
+  const isPinchToZoom =
+    evt.ctrlKey &&
+    !PDFViewerApplication._isCtrlKeyDown &&
+    deltaMode === WheelEvent.DOM_DELTA_PIXEL &&
+    evt.deltaX === 0 &&
+    Math.abs(scaleFactor - 1) < 0.05 &&
+    evt.deltaZ === 0;
 
   if (
     isPinchToZoom ||
@@ -2675,9 +2694,6 @@ function webViewerWheel(evt) {
 
     const previousScale = pdfViewer.currentScale;
     if (isPinchToZoom && supportsPinchToZoom) {
-      // The following formula is a bit strange but it comes from:
-      // https://searchfox.org/mozilla-central/rev/d62c4c4d5547064487006a1506287da394b64724/widget/InputData.cpp#618-626
-      let scaleFactor = Math.exp(-evt.deltaY / 100);
       scaleFactor = PDFViewerApplication._accumulateFactor(
         previousScale,
         scaleFactor,
@@ -2691,10 +2707,6 @@ function webViewerWheel(evt) {
         return;
       }
     } else {
-      // It is important that we query deltaMode before delta{X,Y}, so that
-      // Firefox doesn't switch to DOM_DELTA_PIXEL mode for compat with other
-      // browsers, see https://bugzilla.mozilla.org/show_bug.cgi?id=1392460.
-      const deltaMode = evt.deltaMode;
       const delta = normalizeWheelEventDirection(evt);
 
       let ticks = 0;
