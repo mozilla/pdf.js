@@ -696,10 +696,13 @@ class ProgressBar {
 
   #percent = 0;
 
+  #style = null;
+
   #visible = true;
 
   constructor(bar) {
     this.#classList = bar.classList;
+    this.#style = bar.style;
   }
 
   get percent() {
@@ -715,7 +718,7 @@ class ProgressBar {
     }
     this.#classList.remove("indeterminate");
 
-    docStyle.setProperty("--progressBar-percent", `${this.#percent}%`);
+    this.#style.setProperty("--progressBar-percent", `${this.#percent}%`);
   }
 
   setWidth(viewer) {
@@ -725,7 +728,10 @@ class ProgressBar {
     const container = viewer.parentNode;
     const scrollbarWidth = container.offsetWidth - viewer.offsetWidth;
     if (scrollbarWidth > 0) {
-      docStyle.setProperty("--progressBar-end-offset", `${scrollbarWidth}px`);
+      this.#style.setProperty(
+        "--progressBar-end-offset",
+        `${scrollbarWidth}px`
+      );
     }
   }
 
