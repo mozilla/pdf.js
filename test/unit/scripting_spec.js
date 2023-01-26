@@ -346,7 +346,7 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toEqual(true);
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        value: 123,
+        value: "123",
       });
     });
 
@@ -826,7 +826,7 @@ describe("Scripting", function () {
         expect(send_queue.get(refId)).toEqual({
           id: refId,
           siblings: null,
-          value: 123456.789,
+          value: "123456.789",
           formattedValue: null,
         });
       });
@@ -1006,7 +1006,7 @@ describe("Scripting", function () {
         expect(send_queue.get(refId)).toEqual({
           id: refId,
           siblings: null,
-          value: 321,
+          value: "321",
           formattedValue: null,
         });
       });
