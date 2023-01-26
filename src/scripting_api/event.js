@@ -249,7 +249,8 @@ class EventDispatcher {
 
       this.runCalculate(source, event);
 
-      const savedValue = (event.value = source.obj.value);
+      const savedValue = source.obj._getValue();
+      event.value = source.obj.value;
       let formattedValue = null;
 
       if (this.runActions(source, source, event, "Format")) {
