@@ -233,59 +233,53 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  */
 
 /**
- * @typedef { string | URL | TypedArray | ArrayBuffer | DocumentInitParameters
- * } GetDocumentParameters
- */
-
-/**
  * This is the main entry point for loading a PDF and interacting with it.
  *
  * NOTE: If a URL is used to fetch the PDF data a standard Fetch API call (or
  * XHR as fallback) is used, which means it must follow same origin rules,
  * e.g. no cross-domain requests without CORS.
  *
- * @param {GetDocumentParameters}
+ * @param {string | URL | TypedArray | ArrayBuffer | DocumentInitParameters}
  *   src - Can be a URL where a PDF file is located, a typed array (Uint8Array)
  *         already populated with data, or a parameter object.
  * @returns {PDFDocumentLoadingTask}
  */
 function getDocument(src) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    if (typeof src === "string" || src instanceof URL) {
+      src = { url: src };
+    } else if (isArrayBuffer(src)) {
+      src = { data: src };
+    } else if (src instanceof PDFDataRangeTransport) {
+      deprecated(
+        "`PDFDataRangeTransport`-instance, " +
+          "please use a parameter object with `range`-property instead."
+      );
+      src = { range: src };
+    } else {
+      if (typeof src !== "object") {
+        throw new Error(
+          "Invalid parameter in getDocument, " +
+            "need either string, URL, TypedArray, or parameter object."
+        );
+      }
+    }
+  } else if (typeof src !== "object") {
+    throw new Error("Invalid parameter in getDocument, need parameter object.");
+  }
+  if (!src.url && !src.data && !src.range) {
+    throw new Error(
+      "Invalid parameter object: need either .data, .range or .url"
+    );
+  }
   const task = new PDFDocumentLoadingTask();
 
-  let source;
-  if (typeof src === "string" || src instanceof URL) {
-    source = { url: src };
-  } else if (isArrayBuffer(src)) {
-    source = { data: src };
-  } else if (
-    (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-    src instanceof PDFDataRangeTransport
-  ) {
-    deprecated(
-      "`PDFDataRangeTransport`-instance, " +
-        "please use a parameter object with `range`-property instead."
-    );
-    source = { range: src };
-  } else {
-    if (typeof src !== "object") {
-      throw new Error(
-        "Invalid parameter in getDocument, " +
-          "need either string, URL, TypedArray, or parameter object."
-      );
-    }
-    if (!src.url && !src.data && !src.range) {
-      throw new Error(
-        "Invalid parameter object: need either .data, .range or .url"
-      );
-    }
-    source = src;
-  }
   const params = Object.create(null);
   let rangeTransport = null,
     worker = null;
 
-  for (const key in source) {
-    const val = source[key];
+  for (const key in src) {
+    const val = src[key];
 
     switch (key) {
       case "url":
