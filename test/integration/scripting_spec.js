@@ -1780,4 +1780,78 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in bug1811694.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1811694.pdf", getSelector("25R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a field value with a number isn't changed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          await page.click(getSelector("25R"));
+          await page.type(getSelector("25R"), "00000000123", { delay: 10 });
+
+          let text = await page.$eval(getSelector("25R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("00000000123");
+
+          await page.click(getSelector("26R"));
+          await page.waitForTimeout(10);
+
+          text = await page.$eval(getSelector("25R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("00000000123");
+        })
+      );
+    });
+  });
+
+  describe("in bug1811510.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("bug1811510.pdf", getSelector("22R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a field value with a number with a comma has the correct value", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let text = await page.$eval(getSelector("22R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("5,25");
+
+          await page.$eval(getSelector("31R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("5,25");
+
+          await page.click(getSelector("22R"));
+          await page.waitForTimeout(10);
+
+          text = await page.$eval(getSelector("22R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("5,25");
+
+          await page.click(getSelector("31R"));
+          await page.waitForTimeout(10);
+
+          text = await page.$eval(getSelector("31R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("5.25");
+        })
+      );
+    });
+  });
 });

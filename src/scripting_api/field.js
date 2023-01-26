@@ -251,20 +251,29 @@ class Field extends PDFObject {
       this._value = "";
     } else if (typeof value === "string") {
       switch (this._fieldType) {
-        case FieldType.none:
-          this._value = !isNaN(value) ? parseFloat(value) : value;
+        case FieldType.none: {
+          this._originalValue = value;
+          const _value = value.trim().replace(",", ".");
+          this._value = !isNaN(_value) ? parseFloat(_value) : value;
           break;
+        }
         case FieldType.number:
-        case FieldType.percent:
-          const number = parseFloat(value);
+        case FieldType.percent: {
+          const _value = value.trim().replace(",", ".");
+          const number = parseFloat(_value);
           this._value = !isNaN(number) ? number : 0;
           break;
+        }
         default:
           this._value = value;
       }
     } else {
       this._value = value;
     }
+  }
+
+  _getValue() {
+    return this._originalValue ?? this.value;
   }
 
   _setChoiceValue(value) {
