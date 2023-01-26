@@ -42,7 +42,6 @@
     "path2d-polyfill": "^2.0.1",
     "postcss": "^8.4.21",
     "postcss-dir-pseudo-class": "^7.0.0",
-    "postcss-logical": "^5.0.4",
     "prettier": "^2.8.3",
     "puppeteer": "^19.0.0",
     "rimraf": "^4.1.2",

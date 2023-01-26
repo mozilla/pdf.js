@@ -17,6 +17,14 @@
 
 :root {
   --dir-factor: 1;
+  /*#if MOZCENTRAL*/
+  --inline-start: inline-start;
+  --inline-end: inline-end;
+  /*#else*/
+  --inline-start: left;
+  --inline-end: right;
+  /*#endif*/
+
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
@@ -114,6 +122,10 @@
 
 :root:dir(rtl) {
   --dir-factor: -1;
+  /*#if !MOZCENTRAL*/
+  --inline-start: right;
+  --inline-end: left;
+  /*#endif*/
 }
 
 @media (prefers-color-scheme: dark) {
@@ -658,11 +670,11 @@ body {
 
 #toolbarViewerLeft,
 #toolbarSidebarLeft {
-  float: inline-start;
+  float: var(--inline-start);
 }
 #toolbarViewerRight,
 #toolbarSidebarRight {
-  float: inline-end;
+  float: var(--inline-end);
 }
 
 #toolbarViewerLeft > *,
@@ -672,7 +684,7 @@ body {
 #toolbarSidebarRight *,
 .findbar * {
   position: relative;
-  float: inline-start;
+  float: var(--inline-start);
 }
 
 #toolbarViewerLeft {
@@ -690,7 +702,7 @@ body {
   display: inline-block;
 }
 .splitToolbarButton > .toolbarButton {
-  float: inline-start;
+  float: var(--inline-start);
 }
 
 .toolbarButton,
@@ -740,7 +752,7 @@ body {
 }
 
 .splitToolbarButtonSeparator {
-  float: inline-start;
+  float: var(--inline-start);
   margin: 4px 0;
   width: 1px;
   height: 20px;
@@ -1169,7 +1181,7 @@ a.secondaryToolbarButton[href="#"] {
 }
 
 .thumbnail {
-  float: inline-start;
+  float: var(--inline-start);
   margin: 0 10px 5px;
 }
 
@@ -1251,13 +1263,13 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding-inline-start: 4px;
 }
 #layersView .treeItem > a > label > input {
-  float: inline-start;
+  float: var(--inline-start);
   margin-top: 1px;
 }
 
 .treeItemToggler {
   position: relative;
-  float: inline-start;
+  float: var(--inline-start);
   height: 0;
   width: 0;
   color: rgba(255, 255, 255, 0.5);
