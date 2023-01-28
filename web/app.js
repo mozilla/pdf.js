@@ -741,19 +741,16 @@ const PDFViewerApplication = {
     }
     this.externalServices.initPassiveLoading({
       onOpenWithTransport: (url, length, transport) => {
-        this.open(url, { length, range: transport });
+        this.open({ url, length, range: transport });
       },
       onOpenWithData: (data, contentDispositionFilename) => {
         if (isPdfFile(contentDispositionFilename)) {
           this._contentDispositionFilename = contentDispositionFilename;
         }
-        this.open(data);
+        this.open({ data });
       },
       onOpenWithURL: (url, length, originalUrl) => {
-        const file = originalUrl !== undefined ? { url, originalUrl } : url;
-        const args = length !== undefined ? { length } : null;
-
-        this.open(file, args);
+        this.open({ url, length, originalUrl });
       },
       onError: err => {
         this.l10n.get("loading_error").then(msg => {
@@ -890,15 +887,28 @@ const PDFViewerApplication = {
   },
 
   /**
-   * Opens PDF document specified by URL or array with additional arguments.
-   * @param {string|TypedArray|ArrayBuffer} file - PDF location or binary data.
-   * @param {Object} [args] - Additional arguments for the getDocument call,
-   *                          e.g. HTTP headers ('httpHeaders') or alternative
-   *                          data transport ('range').
-   * @returns {Promise} - Returns the promise, which is resolved when document
-   *                      is opened.
+   * Opens a new PDF document.
+   * @param {Object} args - Accepts any/all of the properties from
+   *   {@link DocumentInitParameters}, and also a `originalUrl` string.
+   * @returns {Promise} - Promise that is resolved when the document is opened.
    */
-  async open(file, args) {
+  async open(args) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      let deprecatedArgs = false;
+      if (typeof args === "string") {
+        args = { url: args }; // URL
+        deprecatedArgs = true;
+      } else if (args?.byteLength) {
+        args = { data: args }; // ArrayBuffer
+        deprecatedArgs = true;
+      }
+      if (deprecatedArgs) {
+        console.error(
+          "The `PDFViewerApplication.open` signature was updated, please use an object instead."
+        );
+      }
+    }
+
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       await this.close();
@@ -910,36 +920,36 @@ const PDFViewerApplication = {
     }
 
     const parameters = Object.create(null);
-    if (typeof file === "string") {
-      // URL
-      this.setTitleUsingUrl(file, /* downloadUrl = */ file);
-      parameters.url = file;
-    } else if (file && "byteLength" in file) {
-      // ArrayBuffer
-      parameters.data = file;
-    } else if (file.url && file.originalUrl) {
-      this.setTitleUsingUrl(file.originalUrl, /* downloadUrl = */ file.url);
-      parameters.url = file.url;
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      args.url
+    ) {
+      // The Firefox built-in viewer always calls `setTitleUsingUrl`, before
+      // `initPassiveLoading`, and it never provides an `originalUrl` here.
+      if (args.originalUrl) {
+        this.setTitleUsingUrl(args.originalUrl, /* downloadUrl = */ args.url);
+        delete args.originalUrl;
+      } else {
+        this.setTitleUsingUrl(args.url, /* downloadUrl = */ args.url);
+      }
     }
     // Set the necessary API parameters, using the available options.
     const apiParameters = AppOptions.getAll(OptionKind.API);
     for (const key in apiParameters) {
       let value = apiParameters[key];
 
-      if (key === "docBaseUrl" && !value) {
+      if (key === "docBaseUrl") {
         if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-          value = document.URL.split("#")[0];
+          value ||= document.URL.split("#")[0];
         } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-          value = this.baseUrl;
+          value ||= this.baseUrl;
         }
       }
       parameters[key] = value;
     }
-    // Finally, update the API parameters with the arguments (if they exist).
-    if (args) {
-      for (const key in args) {
-        parameters[key] = args[key];
-      }
+    // Finally, update the API parameters with the arguments.
+    for (const key in args) {
+      parameters[key] = args[key];
     }
 
     const loadingTask = getDocument(parameters);
@@ -2242,7 +2252,7 @@ function webViewerInitialized() {
   try {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
-        PDFViewerApplication.open(file);
+        PDFViewerApplication.open({ url: file });
       } else {
         PDFViewerApplication._hideViewBookmark();
       }
@@ -2452,11 +2462,10 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     }
     const file = evt.fileInput.files[0];
 
-    let url = URL.createObjectURL(file);
-    if (file.name) {
-      url = { url, originalUrl: file.name };
-    }
-    PDFViewerApplication.open(url);
+    PDFViewerApplication.open({
+      url: URL.createObjectURL(file),
+      originalUrl: file.name,
+    });
   };
 
   // eslint-disable-next-line no-var
