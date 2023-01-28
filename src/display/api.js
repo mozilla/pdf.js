@@ -289,17 +289,23 @@ function getDocument(src) {
 
     switch (key) {
       case "url":
-        if (typeof window !== "undefined") {
-          try {
-            // The full path is required in the 'url' field.
-            params[key] = new URL(val, window.location).href;
-            continue;
-          } catch (ex) {
-            warn(`Cannot create valid URL: "${ex}".`);
-          }
-        } else if (typeof val === "string" || val instanceof URL) {
-          params[key] = val.toString(); // Support Node.js environments.
+        if (val instanceof URL) {
+          params[key] = val.href;
           continue;
+        }
+        try {
+          // The full path is required in the 'url' field.
+          params[key] = new URL(val, window.location).href;
+          continue;
+        } catch (ex) {
+          if (
+            typeof PDFJSDev !== "undefined" &&
+            PDFJSDev.test("GENERIC") &&
+            isNodeJS &&
+            typeof val === "string"
+          ) {
+            break; // Use the url as-is in Node.js environments.
+          }
         }
         throw new Error(
           "Invalid PDF url data: " +
