@@ -2206,6 +2206,7 @@ function packageJson() {
       canvas: "^2.11.0",
     },
     dependencies: {
+      "path2d-polyfill": "^2.0.1",
       "web-streams-polyfill": "^3.2.1",
     },
     browser: {

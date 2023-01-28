@@ -39,6 +39,7 @@
     "merge-stream": "^2.0.0",
     "mkdirp": "^2.1.3",
     "needle": "^3.2.0",
+    "path2d-polyfill": "^2.0.1",
     "postcss": "^8.4.21",
     "postcss-dir-pseudo-class": "^7.0.0",
     "postcss-logical": "^5.0.4",
