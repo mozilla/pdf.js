@@ -38,7 +38,6 @@ import {
   TilingPattern,
 } from "./pattern_helper.js";
 import { applyMaskImageData } from "../shared/image_utils.js";
-import { isNodeJS } from "../shared/is_node.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -55,13 +54,7 @@ const EXECUTION_TIME = 15; // ms
 const EXECUTION_STEPS = 10;
 
 // To disable Type3 compilation, set the value to `-1`.
-const MAX_SIZE_TO_COMPILE =
-  typeof PDFJSDev !== "undefined" &&
-  PDFJSDev.test("GENERIC") &&
-  isNodeJS &&
-  typeof Path2D === "undefined"
-    ? -1
-    : 1000;
+const MAX_SIZE_TO_COMPILE = 1000;
 
 const FULL_CHUNK_HEIGHT = 16;
 

@@ -47,6 +47,18 @@ import { isNodeJS } from "./is_node.js";
 })();
 
 // Support: Node.js
+(function checkPath2D() {
+  if (globalThis.Path2D || !isNodeJS) {
+    return;
+  }
+  const { CanvasRenderingContext2D } = __non_webpack_require__("canvas");
+  const { polyfillPath2D } = __non_webpack_require__("path2d-polyfill");
+
+  globalThis.CanvasRenderingContext2D = CanvasRenderingContext2D;
+  polyfillPath2D(globalThis);
+})();
+
+// Support: Node.js
 (function checkReadableStream() {
   if (globalThis.ReadableStream || !isNodeJS) {
     return;
