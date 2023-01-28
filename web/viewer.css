@@ -189,6 +189,12 @@
   }
 }
 
+@media screen and (prefers-reduced-motion: reduce) {
+  :root {
+    --sidebar-transition-duration: 0;
+  }
+}
+
 * {
   padding: 0;
   margin: 0;
