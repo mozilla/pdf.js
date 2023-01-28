@@ -18,7 +18,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { rimraf } = require("rimraf");
+const rimraf = require("rimraf");
 
 exports.removeDirSync = function removeDirSync(dir) {
   fs.readdirSync(dir); // Will throw if dir is not a directory
