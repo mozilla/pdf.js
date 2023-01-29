@@ -274,157 +274,82 @@ function getDocument(src) {
   }
   const task = new PDFDocumentLoadingTask();
 
-  const params = Object.create(null);
-  let rangeTransport = null,
-    worker = null;
+  const url = src.url ? getUrlProp(src.url) : null;
+  const data = src.data ? getDataProp(src.data) : null;
+  const httpHeaders = src.httpHeaders || null;
+  const withCredentials = src.withCredentials === true;
+  const password = src.password ?? null;
+  const rangeTransport =
+    src.range instanceof PDFDataRangeTransport ? src.range : null;
+  const rangeChunkSize =
+    Number.isInteger(src.rangeChunkSize) && src.rangeChunkSize > 0
+      ? src.rangeChunkSize
+      : DEFAULT_RANGE_CHUNK_SIZE;
+  let worker = src.worker instanceof PDFWorker ? src.worker : null;
+  const verbosity = src.verbosity;
+  // Ignore "data:"-URLs, since they can't be used to recover valid absolute
+  // URLs anyway. We want to avoid sending them to the worker-thread, since
+  // they contain the *entire* PDF document and can thus be arbitrarily long.
+  const docBaseUrl =
+    typeof src.docBaseUrl === "string" && !isDataScheme(src.docBaseUrl)
+      ? src.docBaseUrl
+      : null;
+  const cMapUrl = typeof src.cMapUrl === "string" ? src.cMapUrl : null;
+  const cMapPacked = src.cMapPacked !== false;
+  const CMapReaderFactory = src.CMapReaderFactory || DefaultCMapReaderFactory;
+  const standardFontDataUrl =
+    typeof src.standardFontDataUrl === "string"
+      ? src.standardFontDataUrl
+      : null;
+  const StandardFontDataFactory =
+    src.StandardFontDataFactory || DefaultStandardFontDataFactory;
+  const ignoreErrors = src.stopAtErrors !== true;
+  const maxImageSize =
+    Number.isInteger(src.maxImageSize) && src.maxImageSize > -1
+      ? src.maxImageSize
+      : -1;
+  const isEvalSupported = src.isEvalSupported !== false;
+  const isOffscreenCanvasSupported =
+    typeof src.isOffscreenCanvasSupported === "boolean"
+      ? src.isOffscreenCanvasSupported
+      : !isNodeJS;
+  const disableFontFace =
+    typeof src.disableFontFace === "boolean" ? src.disableFontFace : isNodeJS;
+  const fontExtraProperties = src.fontExtraProperties === true;
+  const enableXfa = src.enableXfa === true;
+  const ownerDocument = src.ownerDocument || globalThis.document;
+  const disableRange = src.disableRange === true;
+  const disableStream = src.disableStream === true;
+  const disableAutoFetch = src.disableAutoFetch === true;
+  const pdfBug = src.pdfBug === true;
 
-  for (const key in src) {
-    const val = src[key];
+  // Parameters whose default values depend on other parameters.
+  const length = rangeTransport ? rangeTransport.length : src.length ?? NaN;
+  const useSystemFonts =
+    typeof src.useSystemFonts === "boolean"
+      ? src.useSystemFonts
+      : !isNodeJS && !disableFontFace;
+  const useWorkerFetch =
+    typeof src.useWorkerFetch === "boolean"
+      ? src.useWorkerFetch
+      : (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+        (CMapReaderFactory === DOMCMapReaderFactory &&
+          StandardFontDataFactory === DOMStandardFontDataFactory &&
+          isValidFetchUrl(cMapUrl, document.baseURI) &&
+          isValidFetchUrl(standardFontDataUrl, document.baseURI));
 
-    switch (key) {
-      case "url":
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          continue; // The 'url' is unused with `PDFDataRangeTransport`.
-        } else {
-          if (val instanceof URL) {
-            params[key] = val.href;
-            continue;
-          }
-          try {
-            // The full path is required in the 'url' field.
-            params[key] = new URL(val, window.location).href;
-            continue;
-          } catch (ex) {
-            if (
-              typeof PDFJSDev !== "undefined" &&
-              PDFJSDev.test("GENERIC") &&
-              isNodeJS &&
-              typeof val === "string"
-            ) {
-              break; // Use the url as-is in Node.js environments.
-            }
-          }
-          throw new Error(
-            "Invalid PDF url data: " +
-              "either string or URL-object is expected in the url property."
-          );
-        }
-      case "range":
-        rangeTransport = val;
-        continue;
-      case "worker":
-        worker = val;
-        continue;
-      case "data":
-        // Converting string or array-like data to Uint8Array.
-        if (
-          typeof PDFJSDev !== "undefined" &&
-          PDFJSDev.test("GENERIC") &&
-          isNodeJS &&
-          typeof Buffer !== "undefined" && // eslint-disable-line no-undef
-          val instanceof Buffer // eslint-disable-line no-undef
-        ) {
-          params[key] = new Uint8Array(val);
-        } else if (
-          val instanceof Uint8Array &&
-          val.byteLength === val.buffer.byteLength
-        ) {
-          // Use the data as-is when it's already a Uint8Array that completely
-          // "utilizes" its underlying ArrayBuffer, to prevent any possible
-          // issues when transferring it to the worker-thread.
-          break;
-        } else if (typeof val === "string") {
-          params[key] = stringToBytes(val);
-        } else if (
-          (typeof val === "object" && val !== null && !isNaN(val.length)) ||
-          isArrayBuffer(val)
-        ) {
-          params[key] = new Uint8Array(val);
-        } else {
-          throw new Error(
-            "Invalid PDF binary data: either TypedArray, " +
-              "string, or array-like object is expected in the data property."
-          );
-        }
-        continue;
-    }
-    params[key] = val;
-  }
-
-  params.cMapPacked = params.cMapPacked !== false;
-  params.CMapReaderFactory =
-    params.CMapReaderFactory || DefaultCMapReaderFactory;
-  params.StandardFontDataFactory =
-    params.StandardFontDataFactory || DefaultStandardFontDataFactory;
-  params.ignoreErrors = params.stopAtErrors !== true;
-  params.fontExtraProperties = params.fontExtraProperties === true;
-  params.pdfBug = params.pdfBug === true;
-  params.enableXfa = params.enableXfa === true;
-
-  if (!Number.isInteger(params.rangeChunkSize) || params.rangeChunkSize < 1) {
-    params.rangeChunkSize = DEFAULT_RANGE_CHUNK_SIZE;
-  }
-  if (
-    typeof params.docBaseUrl !== "string" ||
-    isDataScheme(params.docBaseUrl)
-  ) {
-    // Ignore "data:"-URLs, since they can't be used to recover valid absolute
-    // URLs anyway. We want to avoid sending them to the worker-thread, since
-    // they contain the *entire* PDF document and can thus be arbitrarily long.
-    params.docBaseUrl = null;
-  }
-  if (!Number.isInteger(params.maxImageSize) || params.maxImageSize < -1) {
-    params.maxImageSize = -1;
-  }
-  if (typeof params.cMapUrl !== "string") {
-    params.cMapUrl = null;
-  }
-  if (typeof params.standardFontDataUrl !== "string") {
-    params.standardFontDataUrl = null;
-  }
-  if (typeof params.useWorkerFetch !== "boolean") {
-    params.useWorkerFetch =
-      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-      (params.CMapReaderFactory === DOMCMapReaderFactory &&
-        params.StandardFontDataFactory === DOMStandardFontDataFactory &&
-        isValidFetchUrl(params.cMapUrl, document.baseURI) &&
-        isValidFetchUrl(params.standardFontDataUrl, document.baseURI));
-  }
-  if (typeof params.isEvalSupported !== "boolean") {
-    params.isEvalSupported = true;
-  }
-  if (typeof params.isOffscreenCanvasSupported !== "boolean") {
-    params.isOffscreenCanvasSupported = !isNodeJS;
-  }
-  if (typeof params.disableFontFace !== "boolean") {
-    params.disableFontFace = isNodeJS;
-  }
-  if (typeof params.useSystemFonts !== "boolean") {
-    params.useSystemFonts = !isNodeJS && !params.disableFontFace;
-  }
-  if (
-    typeof params.ownerDocument !== "object" ||
-    params.ownerDocument === null
-  ) {
-    params.ownerDocument = globalThis.document;
-  }
-
-  if (typeof params.disableRange !== "boolean") {
-    params.disableRange = false;
-  }
-  if (typeof params.disableStream !== "boolean") {
-    params.disableStream = false;
-  }
-  if (typeof params.disableAutoFetch !== "boolean") {
-    params.disableAutoFetch = false;
-  }
+  // Parameters only intended for development/testing purposes.
+  const styleElement =
+    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
+      ? src.styleElement
+      : null;
 
   // Set the main-thread verbosity level.
-  setVerbosityLevel(params.verbosity);
+  setVerbosityLevel(verbosity);
 
   if (!worker) {
     const workerParams = {
-      verbosity: params.verbosity,
+      verbosity,
       port: GlobalWorkerOptions.workerPort,
     };
     // Worker was not provided -- creating and owning our own. If message port
@@ -435,44 +360,67 @@ function getDocument(src) {
     task._worker = worker;
   }
   const docId = task.docId;
+
+  const params = {
+    data,
+    password,
+    rangeChunkSize,
+    length,
+    docBaseUrl,
+    cMapUrl,
+    cMapPacked,
+    CMapReaderFactory,
+    standardFontDataUrl,
+    StandardFontDataFactory,
+    ignoreErrors,
+    maxImageSize,
+    isEvalSupported,
+    isOffscreenCanvasSupported,
+    disableFontFace,
+    fontExtraProperties,
+    enableXfa,
+    ownerDocument,
+    disableAutoFetch,
+    pdfBug,
+    useSystemFonts,
+    useWorkerFetch,
+    styleElement,
+  };
+
   worker.promise
     .then(function () {
       if (task.destroyed) {
         throw new Error("Loading aborted");
       }
 
-      const workerIdPromise = _fetchDocument(
-        worker,
-        params,
-        rangeTransport,
-        docId
-      );
+      const workerIdPromise = _fetchDocument(worker, params, docId);
       const networkStreamPromise = new Promise(function (resolve) {
         let networkStream;
         if (rangeTransport) {
           networkStream = new PDFDataTransportStream(
             {
-              length: params.length,
-              initialData: params.initialData,
-              progressiveDone: params.progressiveDone,
-              contentDispositionFilename: params.contentDispositionFilename,
-              disableRange: params.disableRange,
-              disableStream: params.disableStream,
+              length,
+              initialData: rangeTransport.initialData,
+              progressiveDone: rangeTransport.progressiveDone,
+              contentDispositionFilename:
+                rangeTransport.contentDispositionFilename,
+              disableRange,
+              disableStream,
             },
             rangeTransport
           );
-        } else if (!params.data) {
+        } else if (!data) {
           if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
             throw new Error("Not implemented: createPDFNetworkStream");
           }
           networkStream = createPDFNetworkStream({
-            url: params.url,
-            length: params.length,
-            httpHeaders: params.httpHeaders,
-            withCredentials: params.withCredentials,
-            rangeChunkSize: params.rangeChunkSize,
-            disableRange: params.disableRange,
-            disableStream: params.disableStream,
+            url,
+            length,
+            httpHeaders,
+            withCredentials,
+            rangeChunkSize,
+            disableRange,
+            disableStream,
           });
         }
         resolve(networkStream);
@@ -510,23 +458,14 @@ function getDocument(src) {
  *
  * @param {PDFWorker} worker
  * @param {Object} source
- * @param {PDFDataRangeTransport} pdfDataRangeTransport
  * @param {string} docId - Unique document ID, used in `MessageHandler`.
  * @returns {Promise<string>} A promise that is resolved when the worker ID of
  *   the `MessageHandler` is known.
  * @private
  */
-async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
+async function _fetchDocument(worker, source, docId) {
   if (worker.destroyed) {
     throw new Error("Worker was destroyed");
-  }
-
-  if (pdfDataRangeTransport) {
-    source.length = pdfDataRangeTransport.length;
-    source.initialData = pdfDataRangeTransport.initialData;
-    source.progressiveDone = pdfDataRangeTransport.progressiveDone;
-    source.contentDispositionFilename =
-      pdfDataRangeTransport.contentDispositionFilename;
   }
   const transfers = source.data ? [source.data.buffer] : null;
 
@@ -567,6 +506,63 @@ async function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     throw new Error("Worker was destroyed");
   }
   return workerId;
+}
+
+function getUrlProp(val) {
+  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    return null; // The 'url' is unused with `PDFDataRangeTransport`.
+  } else if (val instanceof URL) {
+    return val.href;
+  }
+  try {
+    // The full path is required in the 'url' field.
+    return new URL(val, window.location).href;
+  } catch (ex) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("GENERIC") &&
+      isNodeJS &&
+      typeof val === "string"
+    ) {
+      return val; // Use the url as-is in Node.js environments.
+    }
+  }
+  throw new Error(
+    "Invalid PDF url data: " +
+      "either string or URL-object is expected in the url property."
+  );
+}
+
+function getDataProp(val) {
+  // Converting string or array-like data to Uint8Array.
+  if (
+    typeof PDFJSDev !== "undefined" &&
+    PDFJSDev.test("GENERIC") &&
+    isNodeJS &&
+    typeof Buffer !== "undefined" && // eslint-disable-line no-undef
+    val instanceof Buffer // eslint-disable-line no-undef
+  ) {
+    return new Uint8Array(val);
+  } else if (
+    val instanceof Uint8Array &&
+    val.byteLength === val.buffer.byteLength
+  ) {
+    // Use the data as-is when it's already a Uint8Array that completely
+    // "utilizes" its underlying ArrayBuffer, to prevent any possible
+    // issues when transferring it to the worker-thread.
+    return val;
+  } else if (typeof val === "string") {
+    return stringToBytes(val);
+  } else if (
+    (typeof val === "object" && !isNaN(val?.length)) ||
+    isArrayBuffer(val)
+  ) {
+    return new Uint8Array(val);
+  }
+  throw new Error(
+    "Invalid PDF binary data: either TypedArray, " +
+      "string, or array-like object is expected in the data property."
+  );
 }
 
 /**
