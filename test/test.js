@@ -810,27 +810,23 @@ function startUnitTest(testUrl, name) {
   }, makeTestUrl(startUrl));
 }
 
-function startIntegrationTest() {
+async function startIntegrationTest() {
   onAllSessionsClosed = onAllSessionsClosedAfterTests("integration");
   startServer();
 
   const { runTests } = require("./integration-boot.js");
-  startBrowsers(function (session) {
+  await startBrowsers(function (session) {
     session.numRuns = 0;
     session.numErrors = 0;
   });
   global.integrationBaseUrl = `http://${host}:${server.port}/build/generic/web/viewer.html`;
   global.integrationSessions = sessions;
 
-  Promise.all(sessions.map(session => session.browserPromise)).then(
-    async () => {
-      const results = { runs: 0, failures: 0 };
-      await runTests(results);
-      sessions[0].numRuns = results.runs;
-      sessions[0].numErrors = results.failures;
-      await Promise.all(sessions.map(session => closeSession(session.name)));
-    }
-  );
+  const results = { runs: 0, failures: 0 };
+  await runTests(results);
+  sessions[0].numRuns = results.runs;
+  sessions[0].numErrors = results.failures;
+  await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
 function unitTestPostHandler(req, res) {
@@ -977,7 +973,7 @@ async function startBrowser(browserName, startUrl = "") {
   return browser;
 }
 
-function startBrowsers(initSessionCallback, makeStartUrl = null) {
+async function startBrowsers(initSessionCallback, makeStartUrl = null) {
   const browserNames = options.noChrome ? ["firefox"] : ["firefox", "chrome"];
 
   sessions = [];
@@ -995,18 +991,16 @@ function startBrowsers(initSessionCallback, makeStartUrl = null) {
       browser: undefined,
       closed: false,
     };
-    sessions.push(session);
     const startUrl = makeStartUrl ? makeStartUrl(browserName) : "";
 
-    session.browserPromise = startBrowser(browserName, startUrl)
-      .then(function (browser) {
-        session.browser = browser;
-        initSessionCallback?.(session);
-      })
-      .catch(function (ex) {
-        console.log(`Error while starting ${browserName}: ${ex.message}`);
-        closeSession(browserName);
-      });
+    try {
+      const browser = await startBrowser(browserName, startUrl);
+      session.browser = browser;
+      initSessionCallback?.(session);
+      sessions.push(session);
+    } catch (ex) {
+      console.log(`Error while starting ${browserName}: ${ex.message}`);
+    }
   }
 }
 
