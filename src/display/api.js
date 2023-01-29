@@ -361,28 +361,45 @@ function getDocument(src) {
   }
   const docId = task.docId;
 
-  const params = {
+  const fetchDocParams = {
+    docId,
+    apiVersion:
+      typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
+        ? PDFJSDev.eval("BUNDLE_VERSION")
+        : null,
     data,
     password,
+    disableAutoFetch,
     rangeChunkSize,
     length,
     docBaseUrl,
+    enableXfa,
+    evaluatorOptions: {
+      maxImageSize,
+      disableFontFace,
+      ignoreErrors,
+      isEvalSupported,
+      isOffscreenCanvasSupported,
+      fontExtraProperties,
+      useSystemFonts,
+      cMapUrl: useWorkerFetch ? cMapUrl : null,
+      standardFontDataUrl: useWorkerFetch ? standardFontDataUrl : null,
+    },
+  };
+  const transportParams = {
     cMapUrl,
     cMapPacked,
     CMapReaderFactory,
     standardFontDataUrl,
     StandardFontDataFactory,
     ignoreErrors,
-    maxImageSize,
     isEvalSupported,
-    isOffscreenCanvasSupported,
     disableFontFace,
     fontExtraProperties,
     enableXfa,
     ownerDocument,
     disableAutoFetch,
     pdfBug,
-    useSystemFonts,
     useWorkerFetch,
     styleElement,
   };
@@ -393,7 +410,7 @@ function getDocument(src) {
         throw new Error("Loading aborted");
       }
 
-      const workerIdPromise = _fetchDocument(worker, params, docId);
+      const workerIdPromise = _fetchDocument(worker, fetchDocParams);
       const networkStreamPromise = new Promise(function (resolve) {
         let networkStream;
         if (rangeTransport) {
@@ -441,7 +458,7 @@ function getDocument(src) {
             messageHandler,
             task,
             networkStream,
-            params
+            transportParams
           );
           task._transport = transport;
           messageHandler.send("Ready", null);
@@ -458,48 +475,18 @@ function getDocument(src) {
  *
  * @param {PDFWorker} worker
  * @param {Object} source
- * @param {string} docId - Unique document ID, used in `MessageHandler`.
  * @returns {Promise<string>} A promise that is resolved when the worker ID of
  *   the `MessageHandler` is known.
  * @private
  */
-async function _fetchDocument(worker, source, docId) {
+async function _fetchDocument(worker, source) {
   if (worker.destroyed) {
     throw new Error("Worker was destroyed");
   }
-  const transfers = source.data ? [source.data.buffer] : null;
-
   const workerId = await worker.messageHandler.sendWithPromise(
     "GetDocRequest",
-    // Only send the required properties, and *not* the entire `source` object.
-    {
-      docId,
-      apiVersion:
-        typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
-          ? PDFJSDev.eval("BUNDLE_VERSION")
-          : null,
-      data: source.data,
-      password: source.password,
-      disableAutoFetch: source.disableAutoFetch,
-      rangeChunkSize: source.rangeChunkSize,
-      length: source.length,
-      docBaseUrl: source.docBaseUrl,
-      enableXfa: source.enableXfa,
-      evaluatorOptions: {
-        maxImageSize: source.maxImageSize,
-        disableFontFace: source.disableFontFace,
-        ignoreErrors: source.ignoreErrors,
-        isEvalSupported: source.isEvalSupported,
-        isOffscreenCanvasSupported: source.isOffscreenCanvasSupported,
-        fontExtraProperties: source.fontExtraProperties,
-        useSystemFonts: source.useSystemFonts,
-        cMapUrl: source.useWorkerFetch ? source.cMapUrl : null,
-        standardFontDataUrl: source.useWorkerFetch
-          ? source.standardFontDataUrl
-          : null,
-      },
-    },
-    transfers
+    source,
+    source.data ? [source.data.buffer] : null
   );
 
   if (worker.destroyed) {
@@ -3075,10 +3062,10 @@ class WorkerTransport {
   }
 
   get loadingParams() {
-    const params = this._params;
+    const { disableAutoFetch, enableXfa } = this._params;
     return shadow(this, "loadingParams", {
-      disableAutoFetch: params.disableAutoFetch,
-      enableXfa: params.enableXfa,
+      disableAutoFetch,
+      enableXfa,
     });
   }
 }
