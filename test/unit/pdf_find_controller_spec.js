@@ -21,10 +21,8 @@ import { isNodeJS } from "../../src/shared/is_node.js";
 import { SimpleLinkService } from "../../web/pdf_link_service.js";
 
 const tracemonkeyFileName = "tracemonkey.pdf";
-const CMAP_PARAMS = {
-  cMapUrl: isNodeJS ? "./external/bcmaps/" : "../../../external/bcmaps/",
-  cMapPacked: true,
-};
+
+const CMAP_URL = isNodeJS ? "./external/bcmaps/" : "../../../external/bcmaps/";
 
 class MockLinkService extends SimpleLinkService {
   constructor() {
@@ -57,7 +55,7 @@ async function initPdfFindController(
 ) {
   const loadingTask = getDocument(
     buildGetDocumentParams(filename || tracemonkeyFileName, {
-      ...CMAP_PARAMS,
+      cMapUrl: CMAP_URL,
     })
   );
   const pdfDocument = await loadingTask.promise;
