@@ -488,6 +488,7 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[182] = 8217;
   t[200] = 193;
   t[203] = 205;
+  t[207] = 211;
   t[210] = 218;
   t[223] = 711;
   t[224] = 321;
