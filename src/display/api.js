@@ -347,6 +347,20 @@ function getDocument(src) {
   // Set the main-thread verbosity level.
   setVerbosityLevel(verbosity);
 
+  // Ensure that the various factories can be initialized, when necessary,
+  // since the user may provide *custom* ones.
+  const transportFactory = useWorkerFetch
+    ? null
+    : {
+        cMapReaderFactory: new CMapReaderFactory({
+          baseUrl: cMapUrl,
+          isCompressed: cMapPacked,
+        }),
+        standardFontDataFactory: new StandardFontDataFactory({
+          baseUrl: standardFontDataUrl,
+        }),
+      };
+
   if (!worker) {
     const workerParams = {
       verbosity,
@@ -387,11 +401,6 @@ function getDocument(src) {
     },
   };
   const transportParams = {
-    cMapUrl,
-    cMapPacked,
-    CMapReaderFactory,
-    standardFontDataUrl,
-    StandardFontDataFactory,
     ignoreErrors,
     isEvalSupported,
     disableFontFace,
@@ -400,7 +409,6 @@ function getDocument(src) {
     ownerDocument,
     disableAutoFetch,
     pdfBug,
-    useWorkerFetch,
     styleElement,
   };
 
@@ -458,7 +466,8 @@ function getDocument(src) {
             messageHandler,
             task,
             networkStream,
-            transportParams
+            transportParams,
+            transportFactory
           );
           task._transport = transport;
           messageHandler.send("Ready", null);
@@ -2326,7 +2335,7 @@ class WorkerTransport {
 
   #pagePromises = new Map();
 
-  constructor(messageHandler, loadingTask, networkStream, params) {
+  constructor(messageHandler, loadingTask, networkStream, params, factory) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
@@ -2337,15 +2346,8 @@ class WorkerTransport {
     });
     this._params = params;
 
-    if (!params.useWorkerFetch) {
-      this.CMapReaderFactory = new params.CMapReaderFactory({
-        baseUrl: params.cMapUrl,
-        isCompressed: params.cMapPacked,
-      });
-      this.StandardFontDataFactory = new params.StandardFontDataFactory({
-        baseUrl: params.standardFontDataUrl,
-      });
-    }
+    this.cMapReaderFactory = factory?.cMapReaderFactory;
+    this.standardFontDataFactory = factory?.standardFontDataFactory;
 
     this.destroyed = false;
     this.destroyCapability = null;
@@ -2813,28 +2815,28 @@ class WorkerTransport {
       if (this.destroyed) {
         return Promise.reject(new Error("Worker was destroyed."));
       }
-      if (!this.CMapReaderFactory) {
+      if (!this.cMapReaderFactory) {
         return Promise.reject(
           new Error(
             "CMapReaderFactory not initialized, see the `useWorkerFetch` parameter."
           )
         );
       }
-      return this.CMapReaderFactory.fetch(data);
+      return this.cMapReaderFactory.fetch(data);
     });
 
     messageHandler.on("FetchStandardFontData", data => {
       if (this.destroyed) {
         return Promise.reject(new Error("Worker was destroyed."));
       }
-      if (!this.StandardFontDataFactory) {
+      if (!this.standardFontDataFactory) {
         return Promise.reject(
           new Error(
             "StandardFontDataFactory not initialized, see the `useWorkerFetch` parameter."
           )
         );
       }
-      return this.StandardFontDataFactory.fetch(data);
+      return this.standardFontDataFactory.fetch(data);
     });
   }
 
