@@ -2235,6 +2235,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue15977",
+       "file": "pdfs/issue15977_reduced.pdf",
+       "md5": "cd06accb3da81597ad11acffeb0b68fc",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue5084",
        "file": "pdfs/issue5084.pdf",
        "md5": "a42a076ba90e20e3aae9af869eb4de45",
