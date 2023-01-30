@@ -21,10 +21,7 @@ import { Ref } from "../../src/core/primitives.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
-const CMAP_PARAMS = {
-  cMapUrl: isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/",
-  cMapPacked: true,
-};
+const CMAP_URL = isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/";
 
 const STANDARD_FONT_DATA_URL = isNodeJS
   ? "./external/standard_fonts/"
@@ -154,7 +151,7 @@ function isEmptyObj(obj) {
 
 export {
   buildGetDocumentParams,
-  CMAP_PARAMS,
+  CMAP_URL,
   createIdFactory,
   DefaultFileReaderFactory,
   isEmptyObj,
