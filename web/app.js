@@ -304,7 +304,12 @@ const PDFViewerApplication = {
     const { mainContainer, viewerContainer } = this.appConfig,
       params = parseQueryString(hash);
 
-    if (params.get("disableworker") === "true") {
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) &&
+      params.get("workermodules") === "true"
+    ) {
+      AppOptions.set("workerSrc", "../src/pdf.worker.js");
+    } else if (params.get("disableworker") === "true") {
       try {
         await loadFakeWorker();
       } catch (ex) {
@@ -2143,7 +2148,7 @@ async function loadFakeWorker() {
   GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
 
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-    window.pdfjsWorker = await import("pdfjs/core/worker.js");
+    window.pdfjsWorker = await import("pdfjs/pdf.worker.js");
     return;
   }
   await loadScript(PDFWorker.workerSrc);
