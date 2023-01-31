@@ -2101,7 +2101,12 @@ class PDFWorker {
 
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        const worker = new Worker(workerSrc);
+        const worker =
+          (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) &&
+          !workerSrc.endsWith("/build/pdf.worker.js") &&
+          !workerSrc.endsWith("/src/worker_loader.js")
+            ? new Worker(workerSrc, { type: "module" })
+            : new Worker(workerSrc);
         const messageHandler = new MessageHandler("main", "worker", worker);
         const terminateEarly = () => {
           worker.removeEventListener("error", onWorkerError);
@@ -2289,7 +2294,7 @@ class PDFWorker {
         return mainWorkerMessageHandler;
       }
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-        const worker = await import("pdfjs/core/worker.js");
+        const worker = await import("pdfjs/pdf.worker.js");
         return worker.WorkerMessageHandler;
       }
       if (
