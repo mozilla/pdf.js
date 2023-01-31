@@ -108,8 +108,7 @@ Note that we only mention the most relevant files and folders.
 │   ├── display/                           - display layer
 │   ├── shared/                            - shared code between the core and display layers
 │   ├── interfaces.js                      - interface definitions for the core/display layers
-│   ├── pdf.*.js                           - wrapper files for bundling
-│   └── worker_loader.js                   - used for developer builds to load worker files
+│   └── pdf.*.js                           - wrapper files for bundling
 ├── test/                                  - unit, font, reference, and integration tests
 ├── web/                                   - viewer layer
 ├── LICENSE
