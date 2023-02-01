@@ -75,6 +75,7 @@ class AnnotationEditorLayerBuilder {
     const div = (this.div = document.createElement("div"));
     div.className = "annotationEditorLayer";
     div.tabIndex = 0;
+    div.hidden = true;
     this.pageDiv.append(div);
 
     this.annotationEditorLayer = new AnnotationEditorLayer({
@@ -94,6 +95,7 @@ class AnnotationEditorLayerBuilder {
     };
 
     this.annotationEditorLayer.render(parameters);
+    this.show();
   }
 
   cancel() {
@@ -115,7 +117,7 @@ class AnnotationEditorLayerBuilder {
   }
 
   show() {
-    if (!this.div) {
+    if (!this.div || this.annotationEditorLayer.isEmpty) {
       return;
     }
     this.div.hidden = false;
