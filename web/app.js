@@ -919,12 +919,9 @@ const PDFViewerApplication = {
       await this.close();
     }
     // Set the necessary global worker parameters, using the available options.
-    const workerParameters = AppOptions.getAll(OptionKind.WORKER);
-    for (const key in workerParameters) {
-      GlobalWorkerOptions[key] = workerParameters[key];
-    }
+    const workerParams = AppOptions.getAll(OptionKind.WORKER);
+    Object.assign(GlobalWorkerOptions, workerParams);
 
-    const parameters = Object.create(null);
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
       args.url
@@ -938,26 +935,16 @@ const PDFViewerApplication = {
         this.setTitleUsingUrl(args.url, /* downloadUrl = */ args.url);
       }
     }
-    // Set the necessary API parameters, using the available options.
-    const apiParameters = AppOptions.getAll(OptionKind.API);
-    for (const key in apiParameters) {
-      let value = apiParameters[key];
+    // Set the necessary API parameters, using all the available options.
+    const apiParams = AppOptions.getAll(OptionKind.API);
+    const params = { ...apiParams, ...args };
 
-      if (key === "docBaseUrl") {
-        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-          value ||= document.URL.split("#")[0];
-        } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
-          value ||= this.baseUrl;
-        }
-      }
-      parameters[key] = value;
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+      params.docBaseUrl ||= document.URL.split("#")[0];
+    } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
+      params.docBaseUrl ||= this.baseUrl;
     }
-    // Finally, update the API parameters with the arguments.
-    for (const key in args) {
-      parameters[key] = args[key];
-    }
-
-    const loadingTask = getDocument(parameters);
+    const loadingTask = getDocument(params);
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = (updateCallback, reason) => {
