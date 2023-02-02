@@ -117,6 +117,8 @@ class PDFPageView {
 
   #layerProperties = null;
 
+  #loadingId = null;
+
   #previousRotation = null;
 
   #renderingState = RenderingStates.INITIAL;
@@ -232,21 +234,34 @@ class PDFPageView {
   }
 
   set renderingState(state) {
+    if (state === this.#renderingState) {
+      return;
+    }
     this.#renderingState = state;
+
+    if (this.#loadingId) {
+      clearTimeout(this.#loadingId);
+      this.#loadingId = null;
+    }
 
     switch (state) {
       case RenderingStates.INITIAL:
       case RenderingStates.PAUSED:
-        this.loadingIconDiv?.classList.add("notVisible");
+        this.div.classList.remove("loading");
         break;
       case RenderingStates.RUNNING:
-        this.loadingIconDiv?.classList.remove("notVisible");
+        this.div.classList.add("loadingIcon");
+        this.#loadingId = setTimeout(() => {
+          // Adding the loading class is slightly postponed in order to not have
+          // it with loadingIcon.
+          // If we don't do that the visibility of the background is changed but
+          // the transition isn't triggered.
+          this.div.classList.add("loading");
+          this.#loadingId = null;
+        }, 0);
         break;
       case RenderingStates.FINISHED:
-        if (this.loadingIconDiv) {
-          this.loadingIconDiv.remove();
-          delete this.loadingIconDiv;
-        }
+        this.div.classList.remove("loadingIcon", "loading");
         break;
     }
   }
@@ -468,7 +483,6 @@ class PDFPageView {
         case annotationEditorLayerNode:
         case xfaLayerNode:
         case textLayerNode:
-        case this.loadingIconDiv:
           continue;
       }
       node.remove();
@@ -510,16 +524,6 @@ class PDFPageView {
     ) {
       this.paintedViewportMap.delete(this.svg);
       delete this.svg;
-    }
-
-    if (!this.loadingIconDiv) {
-      this.loadingIconDiv = document.createElement("div");
-      this.loadingIconDiv.className = "loadingIcon notVisible";
-      this.loadingIconDiv.setAttribute("role", "img");
-      this.l10n.get("loading").then(msg => {
-        this.loadingIconDiv?.setAttribute("aria-label", msg);
-      });
-      div.append(this.loadingIconDiv);
     }
   }
 
