@@ -83,6 +83,7 @@
   border: none;
 }
 
+/*#if COMPONENTS*/
 .pdfViewer.singlePageView {
   display: inline-block;
 }
@@ -91,6 +92,7 @@
   margin: 0;
   border: none;
 }
+/*#endif*/
 
 .pdfViewer.scrollHorizontal,
 .pdfViewer.scrollWrapped,
