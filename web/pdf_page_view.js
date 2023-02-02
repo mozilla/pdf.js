@@ -245,7 +245,6 @@ class PDFPageView {
     }
 
     switch (state) {
-      case RenderingStates.INITIAL:
       case RenderingStates.PAUSED:
         this.div.classList.remove("loading");
         break;
@@ -260,6 +259,7 @@ class PDFPageView {
           this.#loadingId = null;
         }, 0);
         break;
+      case RenderingStates.INITIAL:
       case RenderingStates.FINISHED:
         this.div.classList.remove("loadingIcon", "loading");
         break;
