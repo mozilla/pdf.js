@@ -221,27 +221,6 @@ dialog :link {
   width: 200px;
 }
 
-.grab-to-pan-grab {
-  cursor: grab !important;
-}
-.grab-to-pan-grab
-  *:not(input):not(textarea):not(button):not(select):not(:link) {
-  cursor: inherit !important;
-}
-.grab-to-pan-grab:active,
-.grab-to-pan-grabbing {
-  cursor: grabbing !important;
-  position: fixed;
-  background: rgba(0, 0, 0, 0);
-  display: block;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  z-index: 50000; /* should be higher than anything else in PDF.js! */
-}
-
 @page {
   margin: 0;
 }

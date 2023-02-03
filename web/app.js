@@ -576,11 +576,15 @@ const PDFViewerApplication = {
       );
     }
 
-    this.pdfCursorTools = new PDFCursorTools({
-      container,
-      eventBus,
-      cursorToolOnLoad: AppOptions.get("cursorToolOnLoad"),
-    });
+    // NOTE: The cursor-tools are unlikely to be helpful/useful in GeckoView,
+    // in particular the `HandTool` which basically simulates touch scrolling.
+    if (appConfig.secondaryToolbar?.cursorHandToolButton) {
+      this.pdfCursorTools = new PDFCursorTools({
+        container,
+        eventBus,
+        cursorToolOnLoad: AppOptions.get("cursorToolOnLoad"),
+      });
+    }
 
     if (appConfig.toolbar) {
       this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
