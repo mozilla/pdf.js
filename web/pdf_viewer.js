@@ -254,7 +254,6 @@ class PDFViewer {
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
     this._scriptingManager = options.scriptingManager || null;
-    this.removePageBorders = options.removePageBorders || false;
     this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
@@ -266,6 +265,7 @@ class PDFViewer {
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
+      this.removePageBorders = options.removePageBorders || false;
       this.renderer = options.renderer || RendererType.CANVAS;
     }
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
@@ -307,7 +307,10 @@ class PDFViewer {
     this._onBeforeDraw = this._onAfterDraw = null;
     this._resetView();
 
-    if (this.removePageBorders) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.removePageBorders
+    ) {
       this.viewer.classList.add("removePageBorders");
     }
 
@@ -1183,7 +1186,10 @@ class PDFViewer {
           // "doubling" the total border width.
           hPadding *= 2;
         }
-      } else if (this.removePageBorders) {
+      } else if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+        this.removePageBorders
+      ) {
         hPadding = vPadding = 0;
       } else if (this._scrollMode === ScrollMode.HORIZONTAL) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
@@ -1350,9 +1356,15 @@ class PDFViewer {
         y = destArray[3];
         width = destArray[4] - x;
         height = destArray[5] - y;
-        const hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
-        const vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
+        let hPadding = SCROLLBAR_PADDING,
+          vPadding = VERTICAL_PADDING;
 
+        if (
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+          this.removePageBorders
+        ) {
+          hPadding = vPadding = 0;
+        }
         widthScale =
           (this.container.clientWidth - hPadding) /
           width /
