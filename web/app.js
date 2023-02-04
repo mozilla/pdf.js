@@ -2487,14 +2487,10 @@ function webViewerDownload() {
   PDFViewerApplication.downloadOrSave();
 }
 function webViewerFirstPage() {
-  if (PDFViewerApplication.pdfDocument) {
-    PDFViewerApplication.page = 1;
-  }
+  PDFViewerApplication.page = 1;
 }
 function webViewerLastPage() {
-  if (PDFViewerApplication.pdfDocument) {
-    PDFViewerApplication.page = PDFViewerApplication.pagesCount;
-  }
+  PDFViewerApplication.page = PDFViewerApplication.pagesCount;
 }
 function webViewerNextPage() {
   PDFViewerApplication.pdfViewer.nextPage();
