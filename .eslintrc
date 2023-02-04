@@ -35,7 +35,7 @@
     // Plugins
     "import/extensions": ["error", "always", { "ignorePackages": true, }],
     "import/no-unresolved": ["error", {
-      "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web", "pdfjs-fitCurve"]
+      "ignore": ["pdfjs", "pdfjs-lib", "pdfjs-web", "pdfjs-fitCurve", "web"]
     }],
     "mozilla/avoid-removeChild": "error",
     "mozilla/use-includes-instead-of-indexOf": "error",
