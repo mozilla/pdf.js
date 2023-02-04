@@ -2166,7 +2166,7 @@ function reportPageStatsPDFBug({ pageNumber }) {
 }
 
 function webViewerInitialized() {
-  const { appConfig, eventBus } = PDFViewerApplication;
+  const { appConfig, eventBus, l10n } = PDFViewerApplication;
   let file;
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     const queryString = document.location.search.substring(1);
@@ -2217,7 +2217,7 @@ function webViewerInitialized() {
 
   if (!PDFViewerApplication.supportsDocumentFonts) {
     AppOptions.set("disableFontFace", true);
-    PDFViewerApplication.l10n.get("web_fonts_disabled").then(msg => {
+    l10n.get("web_fonts_disabled").then(msg => {
       console.warn(msg);
     });
   }
@@ -2259,7 +2259,7 @@ function webViewerInitialized() {
       throw new Error("Not implemented: webViewerInitialized");
     }
   } catch (reason) {
-    PDFViewerApplication.l10n.get("loading_error").then(msg => {
+    l10n.get("loading_error").then(msg => {
       PDFViewerApplication._documentError(msg, reason);
     });
   }
