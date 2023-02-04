@@ -166,7 +166,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  * @property {string} [cMapUrl] - The URL where the predefined Adobe CMaps are
  *   located. Include the trailing slash.
  * @property {boolean} [cMapPacked] - Specifies if the Adobe CMaps are binary
- *   packed or not.
+ *   packed or not. The default value is `true`.
  * @property {Object} [CMapReaderFactory] - The factory that will be used when
  *   reading built-in CMap files. Providing a custom factory is useful for
  *   environments without Fetch API or `XMLHttpRequest` support, such as
@@ -347,6 +347,7 @@ function getDocument(src) {
     params[key] = val;
   }
 
+  params.cMapPacked = params.cMapPacked !== false;
   params.CMapReaderFactory =
     params.CMapReaderFactory || DefaultCMapReaderFactory;
   params.StandardFontDataFactory =

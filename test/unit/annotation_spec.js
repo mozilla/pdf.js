@@ -32,7 +32,7 @@ import {
   stringToUTF8String,
 } from "../../src/shared/util.js";
 import {
-  CMAP_PARAMS,
+  CMAP_URL,
   createIdFactory,
   STANDARD_FONT_DATA_URL,
   XRefMock,
@@ -108,8 +108,7 @@ describe("annotation", function () {
     });
 
     const CMapReaderFactory = new DefaultCMapReaderFactory({
-      baseUrl: CMAP_PARAMS.cMapUrl,
-      isCompressed: CMAP_PARAMS.cMapPacked,
+      baseUrl: CMAP_URL,
     });
 
     const builtInCMapCache = new Map();
