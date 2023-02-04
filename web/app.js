@@ -2954,12 +2954,12 @@ function webViewerKeyDown(evt) {
         if (!PDFViewerApplication.supportsIntegratedFind) {
           const { state } = PDFViewerApplication.findController;
           if (state) {
-            const eventState = Object.assign(Object.create(null), state, {
+            const newState = {
               source: window,
               type: "again",
               findPrevious: cmd === 5 || cmd === 12,
-            });
-            eventBus.dispatch("find", eventState);
+            };
+            eventBus.dispatch("find", { ...state, ...newState });
           }
           handled = true;
         }
