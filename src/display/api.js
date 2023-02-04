@@ -2337,11 +2337,11 @@ class PDFWorker {
  * @ignore
  */
 class WorkerTransport {
+  #methodPromises = new Map();
+
   #pageCache = new Map();
 
   #pagePromises = new Map();
-
-  #metadataPromise = null;
 
   constructor(messageHandler, loadingTask, networkStream, params) {
     this.messageHandler = messageHandler;
@@ -2374,6 +2374,17 @@ class WorkerTransport {
     this.downloadInfoCapability = createPromiseCapability();
 
     this.setupMessageHandler();
+  }
+
+  #cacheSimpleMethod(name, data = null) {
+    const cachedPromise = this.#methodPromises.get(name);
+    if (cachedPromise) {
+      return cachedPromise;
+    }
+    const promise = this.messageHandler.sendWithPromise(name, data);
+
+    this.#methodPromises.set(name, promise);
+    return promise;
   }
 
   get annotationStorage() {
@@ -2472,9 +2483,7 @@ class WorkerTransport {
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();
-      this.#metadataPromise = null;
-      this._getFieldObjectsPromise = null;
-      this._hasJSActionsPromise = null;
+      this.#methodPromises.clear();
 
       if (this._networkStream) {
         this._networkStream.cancelAllRequests(
@@ -2939,15 +2948,11 @@ class WorkerTransport {
   }
 
   getFieldObjects() {
-    return (this._getFieldObjectsPromise ||=
-      this.messageHandler.sendWithPromise("GetFieldObjects", null));
+    return this.#cacheSimpleMethod("GetFieldObjects");
   }
 
   hasJSActions() {
-    return (this._hasJSActionsPromise ||= this.messageHandler.sendWithPromise(
-      "HasJSActions",
-      null
-    ));
+    return this.#cacheSimpleMethod("HasJSActions");
   }
 
   getCalculationOrderIds() {
@@ -3028,8 +3033,13 @@ class WorkerTransport {
   }
 
   getMetadata() {
-    return (this.#metadataPromise ||= this.messageHandler
-      .sendWithPromise("GetMetadata", null)
+    const name = "GetMetadata",
+      cachedPromise = this.#methodPromises.get(name);
+    if (cachedPromise) {
+      return cachedPromise;
+    }
+    const promise = this.messageHandler
+      .sendWithPromise(name, null)
       .then(results => {
         return {
           info: results[0],
@@ -3037,7 +3047,9 @@ class WorkerTransport {
           contentDispositionFilename: this._fullReader?.filename ?? null,
           contentLength: this._fullReader?.contentLength ?? null,
         };
-      }));
+      });
+    this.#methodPromises.set(name, promise);
+    return promise;
   }
 
   getMarkInfo() {
@@ -3063,9 +3075,7 @@ class WorkerTransport {
     if (!keepLoadedFonts) {
       this.fontLoader.clear();
     }
-    this.#metadataPromise = null;
-    this._getFieldObjectsPromise = null;
-    this._hasJSActionsPromise = null;
+    this.#methodPromises.clear();
   }
 
   get loadingParams() {
