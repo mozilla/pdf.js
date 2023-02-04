@@ -749,8 +749,8 @@ const PDFViewerApplication = {
       throw new Error("Not implemented: initPassiveLoading");
     }
     this.externalServices.initPassiveLoading({
-      onOpenWithTransport: (url, length, transport) => {
-        this.open({ url, length, range: transport });
+      onOpenWithTransport: range => {
+        this.open({ range });
       },
       onOpenWithData: (data, contentDispositionFilename) => {
         if (isPdfFile(contentDispositionFilename)) {

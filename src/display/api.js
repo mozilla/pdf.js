@@ -283,28 +283,32 @@ function getDocument(src) {
 
     switch (key) {
       case "url":
-        if (val instanceof URL) {
-          params[key] = val.href;
-          continue;
-        }
-        try {
-          // The full path is required in the 'url' field.
-          params[key] = new URL(val, window.location).href;
-          continue;
-        } catch (ex) {
-          if (
-            typeof PDFJSDev !== "undefined" &&
-            PDFJSDev.test("GENERIC") &&
-            isNodeJS &&
-            typeof val === "string"
-          ) {
-            break; // Use the url as-is in Node.js environments.
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+          continue; // The 'url' is unused with `PDFDataRangeTransport`.
+        } else {
+          if (val instanceof URL) {
+            params[key] = val.href;
+            continue;
           }
+          try {
+            // The full path is required in the 'url' field.
+            params[key] = new URL(val, window.location).href;
+            continue;
+          } catch (ex) {
+            if (
+              typeof PDFJSDev !== "undefined" &&
+              PDFJSDev.test("GENERIC") &&
+              isNodeJS &&
+              typeof val === "string"
+            ) {
+              break; // Use the url as-is in Node.js environments.
+            }
+          }
+          throw new Error(
+            "Invalid PDF url data: " +
+              "either string or URL-object is expected in the url property."
+          );
         }
-        throw new Error(
-          "Invalid PDF url data: " +
-            "either string or URL-object is expected in the url property."
-        );
       case "range":
         rangeTransport = val;
         continue;
