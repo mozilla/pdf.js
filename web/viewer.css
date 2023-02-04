@@ -20,7 +20,6 @@
   --sidebar-width: 200px;
   --sidebar-transition-duration: 200ms;
   --sidebar-transition-timing-function: ease;
-  --scale-select-width: 140px;
 
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
@@ -799,6 +798,10 @@ body {
 }
 
 .dropdownToolbarButton {
+  /* Define this variable here, and not in :root, to avoid reflowing the
+     entire viewer when updating the width. */
+  --scale-select-width: 140px;
+
   width: var(--scale-select-width);
   padding: 0;
   background-color: var(--dropdown-btn-bg-color);
