@@ -74,6 +74,12 @@ const SpreadMode = {
   EVEN: 2,
 };
 
+const CursorTool = {
+  SELECT: 0, // The default value.
+  HAND: 1,
+  ZOOM: 2,
+};
+
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
@@ -852,6 +858,7 @@ export {
   AutoPrintRegExp,
   backtrackBeforeAllVisibleElements, // only exported for testing
   binarySearchFirstItem,
+  CursorTool,
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
