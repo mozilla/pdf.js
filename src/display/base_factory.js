@@ -65,7 +65,7 @@ class BaseCanvasFactory {
 }
 
 class BaseCMapReaderFactory {
-  constructor({ baseUrl = null, isCompressed = false }) {
+  constructor({ baseUrl = null, isCompressed = true }) {
     if (this.constructor === BaseCMapReaderFactory) {
       unreachable("Cannot initialize BaseCMapReaderFactory.");
     }

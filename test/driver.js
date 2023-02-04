@@ -30,7 +30,6 @@ const { GenericL10n, NullL10n, parseQueryString, SimpleLinkService } =
 
 const WAITING_TIME = 100; // ms
 const CMAP_URL = "/build/generic/web/cmaps/";
-const CMAP_PACKED = true;
 const STANDARD_FONT_DATA_URL = "/build/generic/web/standard_fonts/";
 const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
@@ -475,7 +474,6 @@ class Driver {
           url: absoluteUrl,
           password: task.password,
           cMapUrl: CMAP_URL,
-          cMapPacked: CMAP_PACKED,
           standardFontDataUrl: STANDARD_FONT_DATA_URL,
           disableRange: task.disableRange,
           disableAutoFetch: !task.enableAutoFetch,
