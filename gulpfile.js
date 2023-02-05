@@ -241,6 +241,7 @@ function createWebpackConfig(
   };
   const viewerAlias = {
     "web-annotation_editor_params": "web/annotation_editor_params.js",
+    "web-com": "",
     "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
     "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
     "web-pdf_document_properties": "web/pdf_document_properties.js",
@@ -251,13 +252,25 @@ function createWebpackConfig(
     "web-pdf_sidebar": "web/pdf_sidebar.js",
     "web-pdf_sidebar_resizer": "web/pdf_sidebar_resizer.js",
     "web-pdf_thumbnail_viewer": "web/pdf_thumbnail_viewer.js",
+    "web-print_service": "",
     "web-secondary_toolbar": "web/secondary_toolbar.js",
     "web-toolbar": "web/toolbar.js",
   };
-  if (bundleDefines.GECKOVIEW) {
-    for (const key in viewerAlias) {
-      viewerAlias[key] = "web/stubs-geckoview.js";
+  if (bundleDefines.CHROME) {
+    viewerAlias["web-com"] = "web/chromecom.js";
+    viewerAlias["web-print_service"] = "web/pdf_print_service.js";
+  } else if (bundleDefines.GENERIC) {
+    viewerAlias["web-com"] = "web/genericcom.js";
+    viewerAlias["web-print_service"] = "web/pdf_print_service.js";
+  } else if (bundleDefines.MOZCENTRAL) {
+    if (bundleDefines.GECKOVIEW) {
+      for (const key in viewerAlias) {
+        viewerAlias[key] = "web/stubs-geckoview.js";
+      }
+    } else {
+      viewerAlias["web-print_service"] = "web/firefox_print_service.js";
     }
+    viewerAlias["web-com"] = "web/firefoxcom.js";
   }
   const alias = { ...basicAlias, ...viewerAlias };
   for (const key in alias) {
