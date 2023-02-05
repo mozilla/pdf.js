@@ -932,12 +932,10 @@ const PDFViewerApplication = {
     ) {
       // The Firefox built-in viewer always calls `setTitleUsingUrl`, before
       // `initPassiveLoading`, and it never provides an `originalUrl` here.
-      if (args.originalUrl) {
-        this.setTitleUsingUrl(args.originalUrl, /* downloadUrl = */ args.url);
-        delete args.originalUrl;
-      } else {
-        this.setTitleUsingUrl(args.url, /* downloadUrl = */ args.url);
-      }
+      this.setTitleUsingUrl(
+        args.originalUrl || args.url,
+        /* downloadUrl = */ args.url
+      );
     }
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
