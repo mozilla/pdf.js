@@ -2166,7 +2166,7 @@ function reportPageStatsPDFBug({ pageNumber }) {
 }
 
 function webViewerInitialized() {
-  const { appConfig, eventBus } = PDFViewerApplication;
+  const { appConfig, eventBus, l10n } = PDFViewerApplication;
   let file;
   if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     const queryString = document.location.search.substring(1);
@@ -2217,7 +2217,7 @@ function webViewerInitialized() {
 
   if (!PDFViewerApplication.supportsDocumentFonts) {
     AppOptions.set("disableFontFace", true);
-    PDFViewerApplication.l10n.get("web_fonts_disabled").then(msg => {
+    l10n.get("web_fonts_disabled").then(msg => {
       console.warn(msg);
     });
   }
@@ -2259,7 +2259,7 @@ function webViewerInitialized() {
       throw new Error("Not implemented: webViewerInitialized");
     }
   } catch (reason) {
-    PDFViewerApplication.l10n.get("loading_error").then(msg => {
+    l10n.get("loading_error").then(msg => {
       PDFViewerApplication._documentError(msg, reason);
     });
   }
@@ -2487,14 +2487,10 @@ function webViewerDownload() {
   PDFViewerApplication.downloadOrSave();
 }
 function webViewerFirstPage() {
-  if (PDFViewerApplication.pdfDocument) {
-    PDFViewerApplication.page = 1;
-  }
+  PDFViewerApplication.page = 1;
 }
 function webViewerLastPage() {
-  if (PDFViewerApplication.pdfDocument) {
-    PDFViewerApplication.page = PDFViewerApplication.pagesCount;
-  }
+  PDFViewerApplication.page = PDFViewerApplication.pagesCount;
 }
 function webViewerNextPage() {
   PDFViewerApplication.pdfViewer.nextPage();
@@ -2958,12 +2954,12 @@ function webViewerKeyDown(evt) {
         if (!PDFViewerApplication.supportsIntegratedFind) {
           const { state } = PDFViewerApplication.findController;
           if (state) {
-            const eventState = Object.assign(Object.create(null), state, {
+            const newState = {
               source: window,
               type: "again",
               findPrevious: cmd === 5 || cmd === 12,
-            });
-            eventBus.dispatch("find", eventState);
+            };
+            eventBus.dispatch("find", { ...state, ...newState });
           }
           handled = true;
         }
@@ -2972,17 +2968,13 @@ function webViewerKeyDown(evt) {
       case 107: // FF '+' and '='
       case 187: // Chrome '+'
       case 171: // FF with German keyboard
-        if (!isViewerInPresentationMode) {
-          PDFViewerApplication.zoomIn();
-        }
+        PDFViewerApplication.zoomIn();
         handled = true;
         break;
       case 173: // FF/Mac '-'
       case 109: // FF '-'
       case 189: // Chrome '-'
-        if (!isViewerInPresentationMode) {
-          PDFViewerApplication.zoomOut();
-        }
+        PDFViewerApplication.zoomOut();
         handled = true;
         break;
       case 48: // '0'
