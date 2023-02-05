@@ -61,13 +61,6 @@ function getViewerConfiguration() {
 function webViewerLoad() {
   const config = getViewerConfiguration();
   if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
-    if (window.chrome) {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "../build/dev-css/viewer.css";
-
-      document.head.append(link);
-    }
     window.isGECKOVIEW = true;
 
     import("pdfjs-web/genericcom.js").then(function (genericCom) {
