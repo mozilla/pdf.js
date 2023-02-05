@@ -2004,27 +2004,6 @@ gulp.task(
   )
 );
 
-gulp.task("dev-css", function createDevCSS() {
-  console.log();
-  console.log("### Building development CSS");
-
-  const defines = builder.merge(DEFINES, { GENERIC: true, TESTING: true });
-  const cssDir = BUILD_DIR + "dev-css/";
-
-  return merge([
-    gulp.src("web/images/*", { base: "web/" }).pipe(gulp.dest(cssDir)),
-
-    preprocessCSS("web/viewer.css", defines)
-      .pipe(
-        postcss([
-          postcssDirPseudoClass(),
-          autoprefixer({ overrideBrowserslist: ["last 1 versions"] }),
-        ])
-      )
-      .pipe(gulp.dest(cssDir)),
-  ]);
-});
-
 gulp.task(
   "dev-sandbox",
   gulp.series(
@@ -2053,13 +2032,6 @@ gulp.task(
 gulp.task(
   "server",
   gulp.parallel(
-    function watchDevCSS() {
-      gulp.watch(
-        ["web/*.css", "web/images/*"],
-        { ignoreInitial: false },
-        gulp.series("dev-css")
-      );
-    },
     function watchDevFitCurve() {
       gulp.watch(
         ["src/display/editor/*"],
