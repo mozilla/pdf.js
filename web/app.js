@@ -466,7 +466,9 @@ const PDFViewerApplication = {
       linkService: pdfLinkService,
       eventBus,
       updateMatchesCountOnProgress:
-        typeof PDFJSDev === "undefined" || !PDFJSDev.test("GECKOVIEW"),
+        typeof PDFJSDev === "undefined"
+          ? !window.isGECKOVIEW
+          : !PDFJSDev.test("GECKOVIEW"),
     });
     this.findController = findController;
 
@@ -1247,23 +1249,28 @@ const PDFViewerApplication = {
               spreadMode = stored.spreadMode | 0;
             }
           }
-          // Always let the user preference/view history take precedence.
-          if (pageMode && sidebarView === SidebarView.UNKNOWN) {
-            sidebarView = apiPageModeToSidebarView(pageMode);
-          }
-          // NOTE: Always ignore the pageLayout in GeckoView since there's
-          // no UI available to change Scroll/Spread modes for the user.
+          // NOTE: Ignore the pageMode/pageLayout in GeckoView since there's no
+          // sidebar available, nor any UI for changing the Scroll/Spread modes.
           if (
-            (typeof PDFJSDev === "undefined" || !PDFJSDev.test("GECKOVIEW")) &&
-            pageLayout &&
-            scrollMode === ScrollMode.UNKNOWN &&
-            spreadMode === SpreadMode.UNKNOWN
+            typeof PDFJSDev === "undefined"
+              ? !window.isGECKOVIEW
+              : !PDFJSDev.test("GECKOVIEW")
           ) {
-            const modes = apiPageLayoutToViewerModes(pageLayout);
-            // TODO: Try to improve page-switching when using the mouse-wheel
-            // and/or arrow-keys before allowing the document to control this.
-            // scrollMode = modes.scrollMode;
-            spreadMode = modes.spreadMode;
+            // Always let the user preference/view history take precedence.
+            if (pageMode && sidebarView === SidebarView.UNKNOWN) {
+              sidebarView = apiPageModeToSidebarView(pageMode);
+            }
+            if (
+              pageLayout &&
+              scrollMode === ScrollMode.UNKNOWN &&
+              spreadMode === SpreadMode.UNKNOWN
+            ) {
+              const modes = apiPageLayoutToViewerModes(pageLayout);
+              // TODO: Try to improve page-switching when using the mouse-wheel
+              // and/or arrow-keys before allowing the document to control this.
+              // scrollMode = modes.scrollMode;
+              spreadMode = modes.spreadMode;
+            }
           }
 
           this.setInitialView(hash, {
