@@ -264,7 +264,7 @@ endcmap CMapName currentdict /CMap defineresource pop end end`;
     return this.resources;
   }
 
-  createAppearance(text, rect, rotation, fontSize, bgColor) {
+  createAppearance(text, rect, rotation, fontSize, bgColor, strokeAlpha) {
     const ctx = this._createContext();
     const lines = [];
     let maxWidth = -Infinity;
@@ -321,6 +321,23 @@ endcmap CMapName currentdict /CMap defineresource pop end end`;
       `/${this.fontName.name} ${numberToString(newFontSize)} Tf`,
     ];
 
+    const { resources } = this;
+    strokeAlpha =
+      typeof strokeAlpha === "number" && strokeAlpha >= 0 && strokeAlpha <= 1
+        ? strokeAlpha
+        : 1;
+
+    if (strokeAlpha !== 1) {
+      buffer.push("/R0 gs");
+      const extGState = new Dict(this.xref);
+      const r0 = new Dict(this.xref);
+      r0.set("ca", strokeAlpha);
+      r0.set("CA", strokeAlpha);
+      r0.set("Type", Name.get("ExtGState"));
+      extGState.set("R0", r0);
+      resources.set("ExtGState", extGState);
+    }
+
     const vShift = numberToString(lineHeight);
     for (const line of lines) {
       buffer.push(`0 -${vShift} Td <${stringToUTF16HexString(line)}> Tj`);
@@ -333,7 +350,7 @@ endcmap CMapName currentdict /CMap defineresource pop end end`;
     appearanceStreamDict.set("Type", Name.get("XObject"));
     appearanceStreamDict.set("BBox", [0, 0, w, h]);
     appearanceStreamDict.set("Length", appearance.length);
-    appearanceStreamDict.set("Resources", this.resources);
+    appearanceStreamDict.set("Resources", resources);
 
     if (rotation) {
       const matrix = getRotationMatrix(rotation, w, h);
