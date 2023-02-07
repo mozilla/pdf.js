@@ -1531,6 +1531,13 @@ const PDFViewerApplication = {
    * @private
    */
   async _initializePageLabels(pdfDocument) {
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      return;
+    }
     const labels = await pdfDocument.getPageLabels();
 
     if (pdfDocument !== this.pdfDocument) {
