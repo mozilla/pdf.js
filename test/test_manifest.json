@@ -7349,5 +7349,12 @@
             "value": "bar"
          }
       }
+   },
+   {
+      "id": "issue16021",
+      "file": "pdfs/issue16021.pdf",
+      "md5": "78a12254cac90ba5219a4c5555ea35ed",
+      "rounds": 1,
+      "type": "eq"
    }
 ]
