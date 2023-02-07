@@ -233,6 +233,37 @@ function createWebpackConfig(
   // Required to expose e.g., the `window` object.
   output.globalObject = "globalThis";
 
+  const basicAlias = {
+    pdfjs: "src",
+    "pdfjs-web": "web",
+    "pdfjs-lib": "web/pdfjs",
+    "pdfjs-fitCurve": "src/display/editor/fit_curve",
+  };
+  const viewerAlias = {
+    "web-annotation_editor_params": "web/annotation_editor_params.js",
+    "web-pdf_attachment_viewer": "web/pdf_attachment_viewer.js",
+    "web-pdf_cursor_tools": "web/pdf_cursor_tools.js",
+    "web-pdf_document_properties": "web/pdf_document_properties.js",
+    "web-pdf_find_bar": "web/pdf_find_bar.js",
+    "web-pdf_layer_viewer": "web/pdf_layer_viewer.js",
+    "web-pdf_outline_viewer": "web/pdf_outline_viewer.js",
+    "web-pdf_presentation_mode": "web/pdf_presentation_mode.js",
+    "web-pdf_sidebar": "web/pdf_sidebar.js",
+    "web-pdf_sidebar_resizer": "web/pdf_sidebar_resizer.js",
+    "web-pdf_thumbnail_viewer": "web/pdf_thumbnail_viewer.js",
+    "web-secondary_toolbar": "web/secondary_toolbar.js",
+    "web-toolbar": "web/toolbar.js",
+  };
+  if (bundleDefines.GECKOVIEW) {
+    for (const key in viewerAlias) {
+      viewerAlias[key] = "web/stubs-geckoview.js";
+    }
+  }
+  const alias = { ...basicAlias, ...viewerAlias };
+  for (const key in alias) {
+    alias[key] = path.join(__dirname, alias[key]);
+  }
+
   return {
     mode: "none",
     experiments,
@@ -242,12 +273,7 @@ function createWebpackConfig(
     },
     plugins,
     resolve: {
-      alias: {
-        pdfjs: path.join(__dirname, "src"),
-        "pdfjs-web": path.join(__dirname, "web"),
-        "pdfjs-lib": path.join(__dirname, "web/pdfjs"),
-        "pdfjs-fitCurve": path.join(__dirname, "src/display/editor/fit_curve"),
-      },
+      alias,
     },
     devtool: enableSourceMaps ? "source-map" : undefined,
     module: {
