@@ -1336,26 +1336,32 @@ const PDFViewerApplication = {
         timestamp: data.timestamp,
       });
 
-      pdfDocument.getOutline().then(outline => {
-        if (pdfDocument !== this.pdfDocument) {
-          return; // The document was closed while the outline resolved.
-        }
-        this.pdfOutlineViewer?.render({ outline, pdfDocument });
-      });
-      pdfDocument.getAttachments().then(attachments => {
-        if (pdfDocument !== this.pdfDocument) {
-          return; // The document was closed while the attachments resolved.
-        }
-        this.pdfAttachmentViewer?.render({ attachments });
-      });
-      // Ensure that the layers accurately reflects the current state in the
-      // viewer itself, rather than the default state provided by the API.
-      pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
-        if (pdfDocument !== this.pdfDocument) {
-          return; // The document was closed while the layers resolved.
-        }
-        this.pdfLayerViewer?.render({ optionalContentConfig, pdfDocument });
-      });
+      if (this.pdfOutlineViewer) {
+        pdfDocument.getOutline().then(outline => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while the outline resolved.
+          }
+          this.pdfOutlineViewer.render({ outline, pdfDocument });
+        });
+      }
+      if (this.pdfAttachmentViewer) {
+        pdfDocument.getAttachments().then(attachments => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while the attachments resolved.
+          }
+          this.pdfAttachmentViewer.render({ attachments });
+        });
+      }
+      if (this.pdfLayerViewer) {
+        // Ensure that the layers accurately reflects the current state in the
+        // viewer itself, rather than the default state provided by the API.
+        pdfViewer.optionalContentConfigPromise.then(optionalContentConfig => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while the layers resolved.
+          }
+          this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+        });
+      }
     });
 
     this._initializePageLabels(pdfDocument);
