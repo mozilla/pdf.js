@@ -45,13 +45,13 @@ function writeDict(dict, buffer, transform) {
 }
 
 function writeStream(stream, buffer, transform) {
-  writeDict(stream.dict, buffer, transform);
-  buffer.push(" stream\n");
   let string = stream.getString();
   if (transform !== null) {
     string = transform.encryptString(string);
   }
-  buffer.push(string, "\nendstream");
+  stream.dict.set("Length", string.length);
+  writeDict(stream.dict, buffer, transform);
+  buffer.push(" stream\n", string, "\nendstream");
 }
 
 function writeArray(array, buffer, transform) {

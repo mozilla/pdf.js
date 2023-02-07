@@ -7332,5 +7332,22 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+   },
+   {
+      "id": "bug1815476-save-print",
+      "file": "pdfs/bug1815476.pdf",
+      "md5": "476f77da5f9422ef86ea5f4531602e93",
+      "rounds": 1,
+      "type": "eq",
+      "save": true,
+      "print": true,
+      "annotationStorage": {
+         "88R": {
+            "value": "foo"
+         },
+         "87R": {
+            "value": "bar"
+         }
+      }
    }
 ]
