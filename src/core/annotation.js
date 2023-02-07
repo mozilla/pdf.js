@@ -3511,8 +3511,8 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const { xref } = params;
     this.data.annotationType = AnnotationType.FREETEXT;
     this.setDefaultAppearance(params);
-
     if (!this.appearance && this._isOffscreenCanvasSupported) {
+      const strokeAlpha = params.dict.get("CA");
       const fakeUnicodeFont = new FakeUnicodeFont(xref, "sans-serif");
       const fontData = this.data.defaultAppearanceData;
       this.appearance = fakeUnicodeFont.createAppearance(
@@ -3520,7 +3520,8 @@ class FreeTextAnnotation extends MarkupAnnotation {
         this.rectangle,
         this.rotation,
         fontData.fontSize || 10,
-        fontData.fontColor
+        fontData.fontColor,
+        strokeAlpha
       );
       this._streams.push(this.appearance, FakeUnicodeFont.toUnicodeStream);
     } else if (!this._isOffscreenCanvasSupported) {
