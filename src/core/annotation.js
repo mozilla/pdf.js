@@ -1894,13 +1894,11 @@ class WidgetAnnotation extends Annotation {
       let newTransform = null;
       if (encrypt) {
         newTransform = encrypt.createCipherTransform(newRef.num, newRef.gen);
-        appearance = newTransform.encryptString(appearance);
       }
 
       const resources = this._getSaveFieldResources(xref);
       const appearanceStream = new StringStream(appearance);
       const appearanceDict = (appearanceStream.dict = new Dict(xref));
-      appearanceDict.set("Length", appearance.length);
       appearanceDict.set("Subtype", Name.get("Form"));
       appearanceDict.set("Resources", resources);
       appearanceDict.set("BBox", [
@@ -3669,7 +3667,6 @@ class FreeTextAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("Subtype", Name.get("Form"));
     appearanceStreamDict.set("Type", Name.get("XObject"));
     appearanceStreamDict.set("BBox", [0, 0, w, h]);
-    appearanceStreamDict.set("Length", appearance.length);
     appearanceStreamDict.set("Resources", resources);
 
     if (rotation) {
