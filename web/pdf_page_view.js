@@ -417,6 +417,7 @@ class PDFPageView {
     if (treeDom) {
       this.canvas?.append(treeDom);
     }
+    this.structTreeLayer?.show();
   }
 
   async #buildXfaTextContentItems(textDivs) {
@@ -505,6 +506,7 @@ class PDFPageView {
     if (textLayerNode) {
       this.textLayer.hide();
     }
+    this.structTreeLayer?.hide();
 
     if (!zoomLayerNode) {
       if (this.canvas) {
@@ -776,6 +778,7 @@ class PDFPageView {
     if (this.textLayer) {
       if (hideTextLayer) {
         this.textLayer.hide();
+        this.structTreeLayer?.hide();
       } else if (redrawTextLayer) {
         this.#renderTextLayer();
       }
