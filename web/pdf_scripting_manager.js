@@ -269,7 +269,9 @@ class PDFScriptingManager {
           // NOTE: Always ignore the pageLayout in GeckoView since there's
           // no UI available to change Scroll/Spread modes for the user.
           if (
-            (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GECKOVIEW")) ||
+            (typeof PDFJSDev === "undefined"
+              ? window.isGECKOVIEW
+              : PDFJSDev.test("GECKOVIEW")) ||
             isInPresentationMode
           ) {
             return;

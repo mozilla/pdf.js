@@ -68,6 +68,7 @@ function webViewerLoad() {
 
       document.head.append(link);
     }
+    window.isGECKOVIEW = true;
 
     import("pdfjs-web/genericcom.js").then(function (genericCom) {
       PDFViewerApplication.run(config);
