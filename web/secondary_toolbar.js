@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { ScrollMode, SpreadMode } from "./ui_utils.js";
-import { CursorTool } from "./pdf_cursor_tools.js";
+import { CursorTool, ScrollMode, SpreadMode } from "./ui_utils.js";
 import { PagesCountLimit } from "./pdf_viewer.js";
 
 /**

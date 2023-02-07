@@ -13,15 +13,9 @@
  * limitations under the License.
  */
 
+import { CursorTool, PresentationModeState } from "./ui_utils.js";
 import { AnnotationEditorType } from "pdfjs-lib";
 import { GrabToPan } from "./grab_to_pan.js";
-import { PresentationModeState } from "./ui_utils.js";
-
-const CursorTool = {
-  SELECT: 0, // The default value.
-  HAND: 1,
-  ZOOM: 2,
-};
 
 /**
  * @typedef {Object} PDFCursorToolsOptions
@@ -175,4 +169,4 @@ class PDFCursorTools {
   }
 }
 
-export { CursorTool, PDFCursorTools };
+export { PDFCursorTools };
