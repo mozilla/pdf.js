@@ -46,6 +46,7 @@ import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.
 import { AnnotationLayerBuilder } from "./annotation_layer_builder.js";
 import { compatibilityParams } from "./app_options.js";
 import { NullL10n } from "./l10n_utils.js";
+import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
 import { TextHighlighter } from "./text_highlighter.js";
@@ -103,7 +104,6 @@ const DEFAULT_LAYER_PROPERTIES = () => {
     findController: null,
     hasJSActionsPromise: null,
     get linkService() {
-      const { SimpleLinkService } = require("./pdf_link_service.js");
       return new SimpleLinkService();
     },
   };
