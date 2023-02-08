@@ -38,6 +38,7 @@ import {
   AnnotationEditorType,
   build,
   createPromiseCapability,
+  FeatureTest,
   getDocument,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
@@ -2695,12 +2696,16 @@ function webViewerWheel(evt) {
   // https://searchfox.org/mozilla-central/rev/d62c4c4d5547064487006a1506287da394b64724/widget/InputData.cpp#618-626
   let scaleFactor = Math.exp(-evt.deltaY / 100);
 
+  const isBuiltInMac =
+    typeof PDFJSDev !== "undefined" &&
+    PDFJSDev.test("MOZCENTRAL") &&
+    FeatureTest.platform.isMac;
   const isPinchToZoom =
     evt.ctrlKey &&
     !PDFViewerApplication._isCtrlKeyDown &&
     deltaMode === WheelEvent.DOM_DELTA_PIXEL &&
     evt.deltaX === 0 &&
-    Math.abs(scaleFactor - 1) < 0.05 &&
+    (Math.abs(scaleFactor - 1) < 0.05 || isBuiltInMac) &&
     evt.deltaZ === 0;
 
   if (
