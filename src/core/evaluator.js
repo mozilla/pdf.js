@@ -2821,7 +2821,7 @@ class PartialEvaluator {
           continue;
         }
 
-        if (!compareWithLastPosition()) {
+        if (!category.isZeroWidthDiacritic && !compareWithLastPosition()) {
           // The glyph is not in page so just skip it.
           continue;
         }
