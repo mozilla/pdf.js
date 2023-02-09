@@ -14,8 +14,8 @@
  */
 
 import {
-  arrayByteLength,
   arraysToBytes,
+  assert,
   createPromiseCapability,
 } from "../shared/util.js";
 import { MissingDataException } from "./core_utils.js";
@@ -291,21 +291,31 @@ class ChunkedStreamManager {
     let chunks = [],
       loaded = 0;
     return new Promise((resolve, reject) => {
-      const readChunk = chunk => {
+      const readChunk = ({ value, done }) => {
         try {
-          if (!chunk.done) {
-            const data = chunk.value;
-            chunks.push(data);
-            loaded += arrayByteLength(data);
-            if (rangeReader.isStreamingSupported) {
-              this.onProgress({ loaded });
-            }
-            rangeReader.read().then(readChunk, reject);
+          if (done) {
+            const chunkData = arraysToBytes(chunks);
+            chunks = null;
+            resolve(chunkData);
             return;
           }
-          const chunkData = arraysToBytes(chunks);
-          chunks = null;
-          resolve(chunkData);
+          if (
+            typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")
+          ) {
+            assert(
+              value instanceof ArrayBuffer,
+              "readChunk (sendRequest) - expected an ArrayBuffer."
+            );
+          }
+          loaded += value.byteLength;
+
+          if (rangeReader.isStreamingSupported) {
+            this.onProgress({ loaded });
+          }
+
+          chunks.push(value);
+          rangeReader.read().then(readChunk, reject);
         } catch (e) {
           reject(e);
         }
