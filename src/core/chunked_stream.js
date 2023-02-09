@@ -291,21 +291,21 @@ class ChunkedStreamManager {
     let chunks = [],
       loaded = 0;
     return new Promise((resolve, reject) => {
-      const readChunk = chunk => {
+      const readChunk = ({ value, done }) => {
         try {
-          if (!chunk.done) {
-            const data = chunk.value;
-            chunks.push(data);
-            loaded += arrayByteLength(data);
-            if (rangeReader.isStreamingSupported) {
-              this.onProgress({ loaded });
-            }
-            rangeReader.read().then(readChunk, reject);
+          if (done) {
+            const chunkData = arraysToBytes(chunks);
+            chunks = null;
+            resolve(chunkData);
             return;
           }
-          const chunkData = arraysToBytes(chunks);
-          chunks = null;
-          resolve(chunkData);
+
+          chunks.push(value);
+          loaded += arrayByteLength(value);
+          if (rangeReader.isStreamingSupported) {
+            this.onProgress({ loaded });
+          }
+          rangeReader.read().then(readChunk, reject);
         } catch (e) {
           reject(e);
         }
