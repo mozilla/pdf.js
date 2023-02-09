@@ -149,6 +149,10 @@
   display: block;
 }
 
+.pdfViewer .page canvas .structTree {
+  contain: strict;
+}
+
 .pdfViewer .page canvas[hidden] {
   display: none;
 }
