@@ -1791,6 +1791,8 @@ class WidgetAnnotation extends Annotation {
     return mk.size > 0 ? mk : null;
   }
 
+  amendSavedDict(annotationStorage, dict) {}
+
   async save(evaluator, task, annotationStorage) {
     const storageEntry = annotationStorage
       ? annotationStorage.get(this.data.id)
@@ -1868,6 +1870,7 @@ class WidgetAnnotation extends Annotation {
         : stringToUTF16String(val, /* bigEndian = */ true);
     };
     dict.set("V", Array.isArray(value) ? value.map(encoder) : encoder(value));
+    this.amendSavedDict(annotationStorage, dict);
 
     const maybeMK = this._getMKDict(rotation);
     if (maybeMK) {
@@ -3144,6 +3147,10 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     super(params);
 
     const { dict, xref } = params;
+
+    this.indices = dict.getArray("I");
+    this.hasIndices = Array.isArray(this.indices) && this.indices.length > 0;
+
     // Determine the options. The options array may consist of strings or
     // arrays. If the array consists of arrays, then the first element of
     // each array is the export value and the second element of each array is
@@ -3172,14 +3179,28 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
-    // The field value can be `null` if no item is selected, a string if one
-    // item is selected or an array of strings if multiple items are selected.
-    // For consistency in the API and convenience in the display layer, we
-    // always make the field value an array with zero, one or multiple items.
-    if (typeof this.data.fieldValue === "string") {
-      this.data.fieldValue = [this.data.fieldValue];
-    } else if (!this.data.fieldValue) {
+    if (!this.hasIndices) {
+      // The field value can be `null` if no item is selected, a string if one
+      // item is selected or an array of strings if multiple items are selected.
+      // For consistency in the API and convenience in the display layer, we
+      // always make the field value an array with zero, one or multiple items.
+      if (typeof this.data.fieldValue === "string") {
+        this.data.fieldValue = [this.data.fieldValue];
+      } else if (!this.data.fieldValue) {
+        this.data.fieldValue = [];
+      }
+    } else {
+      // The specs say that we should have an indices array only with
+      // multiselectable Choice and the "V" entry should have the
+      // precedence, but Acrobat itself is using it whatever the
+      // the "V" entry is (see bug 1770750).
       this.data.fieldValue = [];
+      const ii = this.data.options.length;
+      for (const i of this.indices) {
+        if (Number.isInteger(i) && i >= 0 && i < ii) {
+          this.data.fieldValue.push(this.data.options[i].exportValue);
+        }
+      }
     }
 
     // Process field flags for the display layer.
@@ -3210,6 +3231,28 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       rotation: this.rotation,
       type,
     };
+  }
+
+  amendSavedDict(annotationStorage, dict) {
+    if (!this.hasIndices) {
+      return;
+    }
+    const storageEntry = annotationStorage
+      ? annotationStorage.get(this.data.id)
+      : undefined;
+    let values = storageEntry && storageEntry.value;
+    if (!Array.isArray(values)) {
+      values = [values];
+    }
+    const indices = [];
+    const { options } = this.data;
+    for (let i = 0, j = 0, ii = options.length; i < ii; i++) {
+      if (options[i].exportValue === values[j]) {
+        indices.push(i);
+        j += 1;
+      }
+    }
+    dict.set("I", indices);
   }
 
   async _getAppearance(evaluator, task, intent, annotationStorage) {
