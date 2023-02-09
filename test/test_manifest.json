@@ -7356,5 +7356,13 @@
       "md5": "78a12254cac90ba5219a4c5555ea35ed",
       "rounds": 1,
       "type": "eq"
+   },
+   {
+      "id": "bug1770750-annotations",
+      "file": "pdfs/bug1770750.pdf",
+      "md5": "01e6d77eac90b4b08d75240d3db2b826",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true
    }
 ]
