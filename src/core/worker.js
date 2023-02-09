@@ -15,8 +15,8 @@
 
 import {
   AbortException,
-  arrayByteLength,
   arraysToBytes,
+  assert,
   createPromiseCapability,
   getVerbosityLevel,
   info,
@@ -314,8 +314,17 @@ class WorkerMessageHandler {
               cancelXHRs = null;
               return;
             }
+            if (
+              typeof PDFJSDev === "undefined" ||
+              PDFJSDev.test("!PRODUCTION || TESTING")
+            ) {
+              assert(
+                value instanceof ArrayBuffer,
+                "readChunk (getPdfManager) - expected an ArrayBuffer."
+              );
+            }
+            loaded += value.byteLength;
 
-            loaded += arrayByteLength(value);
             if (!fullRequest.isStreamingSupported) {
               handler.send("DocProgress", {
                 loaded,
@@ -328,7 +337,6 @@ class WorkerMessageHandler {
             } else {
               cachedChunks.push(value);
             }
-
             fullRequest.read().then(readChunk, reject);
           } catch (e) {
             reject(e);

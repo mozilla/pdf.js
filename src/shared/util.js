@@ -1115,7 +1115,6 @@ export {
   AnnotationReviewState,
   AnnotationStateModelType,
   AnnotationType,
-  arrayByteLength,
   arraysToBytes,
   assert,
   BaseException,

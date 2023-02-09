@@ -14,8 +14,8 @@
  */
 
 import {
-  arrayByteLength,
   arraysToBytes,
+  assert,
   createPromiseCapability,
 } from "../shared/util.js";
 import { MissingDataException } from "./core_utils.js";
@@ -299,12 +299,22 @@ class ChunkedStreamManager {
             resolve(chunkData);
             return;
           }
+          if (
+            typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("!PRODUCTION || TESTING")
+          ) {
+            assert(
+              value instanceof ArrayBuffer,
+              "readChunk (sendRequest) - expected an ArrayBuffer."
+            );
+          }
+          loaded += value.byteLength;
 
-          chunks.push(value);
-          loaded += arrayByteLength(value);
           if (rangeReader.isStreamingSupported) {
             this.onProgress({ loaded });
           }
+
+          chunks.push(value);
           rangeReader.read().then(readChunk, reject);
         } catch (e) {
           reject(e);
