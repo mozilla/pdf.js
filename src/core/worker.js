@@ -15,7 +15,7 @@
 
 import {
   AbortException,
-  arraysToBytes,
+  arrayBuffersToBytes,
   assert,
   createPromiseCapability,
   getVerbosityLevel,
@@ -281,7 +281,7 @@ class WorkerMessageHandler {
 
       let loaded = 0;
       const flushChunks = function () {
-        const pdfFile = arraysToBytes(cachedChunks);
+        const pdfFile = arrayBuffersToBytes(cachedChunks);
         if (length && pdfFile.length !== length) {
           warn("reported HTTP length is different from actual");
         }
