@@ -13,12 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  arrayBuffersToBytes,
-  assert,
-  createPromiseCapability,
-} from "../shared/util.js";
-import { MissingDataException } from "./core_utils.js";
+import { arrayBuffersToBytes, MissingDataException } from "./core_utils.js";
+import { assert, createPromiseCapability } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 class ChunkedStream extends Stream {

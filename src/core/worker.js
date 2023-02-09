@@ -15,7 +15,6 @@
 
 import {
   AbortException,
-  arrayBuffersToBytes,
   assert,
   createPromiseCapability,
   getVerbosityLevel,
@@ -30,8 +29,12 @@ import {
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
+import {
+  arrayBuffersToBytes,
+  getNewAnnotationsMap,
+  XRefParseException,
+} from "./core_utils.js";
 import { Dict, Ref } from "./primitives.js";
-import { getNewAnnotationsMap, XRefParseException } from "./core_utils.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
