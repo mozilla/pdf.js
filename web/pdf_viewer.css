@@ -166,22 +166,22 @@
   width: 100%;
   height: 100%;
   background: url("images/loading-icon.gif") center no-repeat;
-  visibility: hidden;
+  display: none;
   /* Using a delay with background-image doesn't work,
-     consequently we use the visibility. */
-  transition-property: visibility;
+     consequently we use the display. */
+  transition-property: display;
   transition-delay: var(--loading-icon-delay);
   z-index: 5;
   contain: strict;
 }
 
 .pdfViewer .page.loading:after {
-  visibility: visible;
+  display: block;
 }
 
 .pdfViewer .page:not(.loading):after {
   transition-property: none;
-  visibility: hidden;
+  display: none;
 }
 
 .pdfViewer.enablePermissions .textLayer span {
