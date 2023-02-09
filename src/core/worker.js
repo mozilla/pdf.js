@@ -93,7 +93,7 @@ class WorkerMessageHandler {
     let pdfManager;
     let terminated = false;
     let cancelXHRs = null;
-    const WorkerTasks = [];
+    const WorkerTasks = new Set();
     const verbosity = getVerbosityLevel();
 
     const { docId, apiVersion } = docParams;
@@ -151,13 +151,12 @@ class WorkerMessageHandler {
     }
 
     function startWorkerTask(task) {
-      WorkerTasks.push(task);
+      WorkerTasks.add(task);
     }
 
     function finishWorkerTask(task) {
       task.finish();
-      const i = WorkerTasks.indexOf(task);
-      WorkerTasks.splice(i, 1);
+      WorkerTasks.delete(task);
     }
 
     async function loadDocument(recoveryMode) {
