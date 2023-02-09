@@ -1909,7 +1909,7 @@ class PDFPageProxy {
 }
 
 class LoopbackPort {
-  #listeners = [];
+  #listeners = new Set();
 
   #deferred = Promise.resolve();
 
@@ -1926,16 +1926,15 @@ class LoopbackPort {
   }
 
   addEventListener(name, listener) {
-    this.#listeners.push(listener);
+    this.#listeners.add(listener);
   }
 
   removeEventListener(name, listener) {
-    const i = this.#listeners.indexOf(listener);
-    this.#listeners.splice(i, 1);
+    this.#listeners.delete(listener);
   }
 
   terminate() {
-    this.#listeners.length = 0;
+    this.#listeners.clear();
   }
 }
 
