@@ -14,7 +14,7 @@
  */
 
 import {
-  arraysToBytes,
+  arrayBuffersToBytes,
   assert,
   createPromiseCapability,
 } from "../shared/util.js";
@@ -294,7 +294,7 @@ class ChunkedStreamManager {
       const readChunk = ({ value, done }) => {
         try {
           if (done) {
-            const chunkData = arraysToBytes(chunks);
+            const chunkData = arrayBuffersToBytes(chunks);
             chunks = null;
             resolve(chunkData);
             return;

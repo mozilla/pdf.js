@@ -598,51 +598,39 @@ function stringToBytes(str) {
 }
 
 /**
- * Gets length of the array (Array, Uint8Array, or string) in bytes.
- * @param {Array<any>|Uint8Array|string} arr
- * @returns {number}
- */
-// eslint-disable-next-line consistent-return
-function arrayByteLength(arr) {
-  if (arr.length !== undefined) {
-    return arr.length;
-  }
-  if (arr.byteLength !== undefined) {
-    return arr.byteLength;
-  }
-  unreachable("Invalid argument for arrayByteLength");
-}
-
-/**
- * Combines array items (arrays) into single Uint8Array object.
- * @param {Array<Array<any>|Uint8Array|string>} arr - the array of the arrays
- *   (Array, Uint8Array, or string).
+ * Combines multiple ArrayBuffers into a single Uint8Array.
+ * @param {Array<ArrayBuffer>} arr - An array of ArrayBuffers.
  * @returns {Uint8Array}
  */
-function arraysToBytes(arr) {
-  const length = arr.length;
-  // Shortcut: if first and only item is Uint8Array, return it.
-  if (length === 1 && arr[0] instanceof Uint8Array) {
-    return arr[0];
-  }
-  let resultLength = 0;
-  for (let i = 0; i < length; i++) {
-    resultLength += arrayByteLength(arr[i]);
-  }
-  let pos = 0;
-  const data = new Uint8Array(resultLength);
-  for (let i = 0; i < length; i++) {
-    let item = arr[i];
-    if (!(item instanceof Uint8Array)) {
-      if (typeof item === "string") {
-        item = stringToBytes(item);
-      } else {
-        item = new Uint8Array(item);
-      }
+function arrayBuffersToBytes(arr) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    for (const item of arr) {
+      assert(
+        item instanceof ArrayBuffer,
+        "arrayBuffersToBytes - expected an ArrayBuffer."
+      );
     }
-    const itemLength = item.byteLength;
+  }
+  const length = arr.length;
+  if (length === 0) {
+    return new Uint8Array(0);
+  }
+  if (length === 1) {
+    return new Uint8Array(arr[0]);
+  }
+  let dataLength = 0;
+  for (let i = 0; i < length; i++) {
+    dataLength += arr[i].byteLength;
+  }
+  const data = new Uint8Array(dataLength);
+  let pos = 0;
+  for (let i = 0; i < length; i++) {
+    const item = new Uint8Array(arr[i]);
     data.set(item, pos);
-    pos += itemLength;
+    pos += item.byteLength;
   }
   return data;
 }
@@ -1115,7 +1103,7 @@ export {
   AnnotationReviewState,
   AnnotationStateModelType,
   AnnotationType,
-  arraysToBytes,
+  arrayBuffersToBytes,
   assert,
   BaseException,
   BASELINE_FACTOR,
