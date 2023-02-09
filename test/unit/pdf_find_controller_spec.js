@@ -780,4 +780,42 @@ describe("pdf_find_controller", function () {
       },
     });
   });
+
+  it("performs a search in a text containing combining diacritics", async function () {
+    if (isNodeJS) {
+      pending("Linked test-cases are not supported in Node.js.");
+    }
+
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "issue12909.pdf"
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "הספר",
+        matchDiacritics: true,
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 0, 0, 0, 1],
+      selectedMatch: {
+        pageIndex: 8,
+        matchIndex: 0,
+      },
+    });
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "הספר",
+        matchDiacritics: false,
+      },
+      matchesPerPage: [0, 1, 0, 0, 0, 0, 0, 0, 1],
+      selectedMatch: {
+        pageIndex: 8,
+        matchIndex: 0,
+      },
+    });
+  });
 });
