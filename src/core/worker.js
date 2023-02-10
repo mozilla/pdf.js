@@ -544,6 +544,7 @@ class WorkerMessageHandler {
           },
           reason => {
             finishWorkerTask(task);
+            throw reason;
           }
         );
       });
