@@ -404,13 +404,12 @@ class AppOptions {
   static remove(name) {
     delete userOptions[name];
   }
+}
 
-  /**
-   * @ignore
-   */
-  static _hasUserOptions() {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+  AppOptions._hasUserOptions = function () {
     return Object.keys(userOptions).length > 0;
-  }
+  };
 }
 
 export { AppOptions, compatibilityParams, OptionKind };
