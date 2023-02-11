@@ -210,20 +210,26 @@ class WorkerMessageHandler {
       enableXfa,
       evaluatorOptions,
     }) {
+      const pdfManagerArgs = {
+        source: null,
+        disableAutoFetch,
+        docBaseUrl,
+        docId,
+        enableXfa,
+        evaluatorOptions,
+        handler,
+        length,
+        password,
+        rangeChunkSize,
+      };
       const pdfManagerCapability = createPromiseCapability();
       let newPdfManager;
 
       if (data) {
         try {
-          newPdfManager = new LocalPdfManager(
-            docId,
-            data,
-            password,
-            handler,
-            evaluatorOptions,
-            enableXfa,
-            docBaseUrl
-          );
+          pdfManagerArgs.source = data;
+
+          newPdfManager = new LocalPdfManager(pdfManagerArgs);
           pdfManagerCapability.resolve(newPdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -246,24 +252,13 @@ class WorkerMessageHandler {
           if (!fullRequest.isRangeSupported) {
             return;
           }
+          pdfManagerArgs.source = pdfStream;
+          pdfManagerArgs.length = fullRequest.contentLength;
           // We don't need auto-fetch when streaming is enabled.
-          disableAutoFetch =
-            disableAutoFetch || fullRequest.isStreamingSupported;
+          pdfManagerArgs.disableAutoFetch =
+            pdfManagerArgs.disableAutoFetch || fullRequest.isStreamingSupported;
 
-          newPdfManager = new NetworkPdfManager(
-            docId,
-            pdfStream,
-            {
-              msgHandler: handler,
-              password,
-              length: fullRequest.contentLength,
-              disableAutoFetch,
-              rangeChunkSize,
-            },
-            evaluatorOptions,
-            enableXfa,
-            docBaseUrl
-          );
+          newPdfManager = new NetworkPdfManager(pdfManagerArgs);
           // There may be a chance that `newPdfManager` is not initialized for
           // the first few runs of `readchunk` block of code. Be sure to send
           // all cached chunks, if any, to chunked_stream via pdf_manager.
@@ -288,15 +283,9 @@ class WorkerMessageHandler {
         }
         // the data is array, instantiating directly from it
         try {
-          newPdfManager = new LocalPdfManager(
-            docId,
-            pdfFile,
-            password,
-            handler,
-            evaluatorOptions,
-            enableXfa,
-            docBaseUrl
-          );
+          pdfManagerArgs.source = pdfFile;
+
+          newPdfManager = new LocalPdfManager(pdfManagerArgs);
           pdfManagerCapability.resolve(newPdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
