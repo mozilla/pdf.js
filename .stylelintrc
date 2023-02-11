@@ -3,12 +3,9 @@
     "stylelint-prettier"
   ],
 
-  "extends": [
-    "stylelint-prettier/recommended"
-  ],
-
-
   "rules": {
+    "prettier/prettier": true,
+
     "block-no-empty": true,
     "length-zero-no-unit": [true, {
       ignore: ["custom-properties"]
