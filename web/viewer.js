@@ -36,26 +36,6 @@ window.PDFViewerApplication = PDFViewerApplication;
 window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
 
-if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
-  (function rewriteUrlClosure() {
-    // Run this code outside DOMContentLoaded to make sure that the URL
-    // is rewritten as soon as possible.
-    const queryString = document.location.search.slice(1);
-    const m = /(^|&)file=([^&]*)/.exec(queryString);
-    const defaultUrl = m ? decodeURIComponent(m[2]) : "";
-
-    // Example: chrome-extension://.../http://example.com/file.pdf
-    const humanReadableUrl = "/" + defaultUrl + location.hash;
-    history.replaceState(history.state, "", humanReadableUrl);
-    if (top === window) {
-      // eslint-disable-next-line no-undef
-      chrome.runtime.sendMessage("showPageAction");
-    }
-
-    AppOptions.set("defaultUrl", defaultUrl);
-  })();
-}
-
 function getViewerConfiguration() {
   return {
     appContainer: document.body,
