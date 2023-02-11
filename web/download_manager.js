@@ -71,7 +71,10 @@ class DownloadManager {
     const isPdfData = isPdfFile(filename);
     const contentType = isPdfData ? "application/pdf" : "";
 
-    if (isPdfData) {
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")) &&
+      isPdfData
+    ) {
       let blobUrl = this.#openBlobUrls.get(element);
       if (!blobUrl) {
         blobUrl = URL.createObjectURL(new Blob([data], { type: contentType }));
