@@ -597,56 +597,6 @@ function stringToBytes(str) {
   return bytes;
 }
 
-/**
- * Gets length of the array (Array, Uint8Array, or string) in bytes.
- * @param {Array<any>|Uint8Array|string} arr
- * @returns {number}
- */
-// eslint-disable-next-line consistent-return
-function arrayByteLength(arr) {
-  if (arr.length !== undefined) {
-    return arr.length;
-  }
-  if (arr.byteLength !== undefined) {
-    return arr.byteLength;
-  }
-  unreachable("Invalid argument for arrayByteLength");
-}
-
-/**
- * Combines array items (arrays) into single Uint8Array object.
- * @param {Array<Array<any>|Uint8Array|string>} arr - the array of the arrays
- *   (Array, Uint8Array, or string).
- * @returns {Uint8Array}
- */
-function arraysToBytes(arr) {
-  const length = arr.length;
-  // Shortcut: if first and only item is Uint8Array, return it.
-  if (length === 1 && arr[0] instanceof Uint8Array) {
-    return arr[0];
-  }
-  let resultLength = 0;
-  for (let i = 0; i < length; i++) {
-    resultLength += arrayByteLength(arr[i]);
-  }
-  let pos = 0;
-  const data = new Uint8Array(resultLength);
-  for (let i = 0; i < length; i++) {
-    let item = arr[i];
-    if (!(item instanceof Uint8Array)) {
-      if (typeof item === "string") {
-        item = stringToBytes(item);
-      } else {
-        item = new Uint8Array(item);
-      }
-    }
-    const itemLength = item.byteLength;
-    data.set(item, pos);
-    pos += itemLength;
-  }
-  return data;
-}
-
 function string32(value) {
   if (
     typeof PDFJSDev === "undefined" ||
@@ -1115,7 +1065,6 @@ export {
   AnnotationReviewState,
   AnnotationStateModelType,
   AnnotationType,
-  arraysToBytes,
   assert,
   BaseException,
   BASELINE_FACTOR,

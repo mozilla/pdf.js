@@ -81,6 +81,44 @@ class XRefParseException extends BaseException {
 }
 
 /**
+ * Combines multiple ArrayBuffers into a single Uint8Array.
+ * @param {Array<ArrayBuffer>} arr - An array of ArrayBuffers.
+ * @returns {Uint8Array}
+ */
+function arrayBuffersToBytes(arr) {
+  if (
+    typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("!PRODUCTION || TESTING")
+  ) {
+    for (const item of arr) {
+      assert(
+        item instanceof ArrayBuffer,
+        "arrayBuffersToBytes - expected an ArrayBuffer."
+      );
+    }
+  }
+  const length = arr.length;
+  if (length === 0) {
+    return new Uint8Array(0);
+  }
+  if (length === 1) {
+    return new Uint8Array(arr[0]);
+  }
+  let dataLength = 0;
+  for (let i = 0; i < length; i++) {
+    dataLength += arr[i].byteLength;
+  }
+  const data = new Uint8Array(dataLength);
+  let pos = 0;
+  for (let i = 0; i < length; i++) {
+    const item = new Uint8Array(arr[i]);
+    data.set(item, pos);
+    pos += item.byteLength;
+  }
+  return data;
+}
+
+/**
  * Get the value of an inheritable property.
  *
  * If the PDF specification explicitly lists a property in a dictionary as
@@ -579,6 +617,7 @@ function getRotationMatrix(rotation, width, height) {
 }
 
 export {
+  arrayBuffersToBytes,
   collectActions,
   encodeToXmlString,
   escapePDFName,

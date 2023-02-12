@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { Dict, Ref } from "../../src/core/primitives.js";
 import {
+  arrayBuffersToBytes,
   encodeToXmlString,
   escapePDFName,
   escapeString,
@@ -30,9 +30,36 @@ import {
   toRomanNumerals,
   validateCSSFont,
 } from "../../src/core/core_utils.js";
+import { Dict, Ref } from "../../src/core/primitives.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("core_utils", function () {
+  describe("arrayBuffersToBytes", function () {
+    it("handles zero ArrayBuffers", function () {
+      const bytes = arrayBuffersToBytes([]);
+
+      expect(bytes).toEqual(new Uint8Array(0));
+    });
+
+    it("handles one ArrayBuffer", function () {
+      const buffer = new Uint8Array([1, 2, 3]).buffer;
+      const bytes = arrayBuffersToBytes([buffer]);
+
+      expect(bytes).toEqual(new Uint8Array([1, 2, 3]));
+      // Ensure that the fast-path works correctly.
+      expect(bytes.buffer).toBe(buffer);
+    });
+
+    it("handles multiple ArrayBuffers", function () {
+      const buffer1 = new Uint8Array([1, 2, 3]).buffer,
+        buffer2 = new Uint8Array(0).buffer,
+        buffer3 = new Uint8Array([4, 5]).buffer;
+      const bytes = arrayBuffersToBytes([buffer1, buffer2, buffer3]);
+
+      expect(bytes).toEqual(new Uint8Array([1, 2, 3, 4, 5]));
+    });
+  });
+
   describe("getInheritableProperty", function () {
     it("handles non-dictionary arguments", function () {
       expect(getInheritableProperty({ dict: null, key: "foo" })).toEqual(

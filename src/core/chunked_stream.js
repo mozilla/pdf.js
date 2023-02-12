@@ -13,12 +13,8 @@
  * limitations under the License.
  */
 
-import {
-  arraysToBytes,
-  assert,
-  createPromiseCapability,
-} from "../shared/util.js";
-import { MissingDataException } from "./core_utils.js";
+import { arrayBuffersToBytes, MissingDataException } from "./core_utils.js";
+import { assert, createPromiseCapability } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 class ChunkedStream extends Stream {
@@ -294,7 +290,7 @@ class ChunkedStreamManager {
       const readChunk = ({ value, done }) => {
         try {
           if (done) {
-            const chunkData = arraysToBytes(chunks);
+            const chunkData = arrayBuffersToBytes(chunks);
             chunks = null;
             resolve(chunkData);
             return;

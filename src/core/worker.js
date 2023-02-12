@@ -15,7 +15,6 @@
 
 import {
   AbortException,
-  arraysToBytes,
   assert,
   createPromiseCapability,
   getVerbosityLevel,
@@ -30,8 +29,12 @@ import {
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
+import {
+  arrayBuffersToBytes,
+  getNewAnnotationsMap,
+  XRefParseException,
+} from "./core_utils.js";
 import { Dict, Ref } from "./primitives.js";
-import { getNewAnnotationsMap, XRefParseException } from "./core_utils.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
@@ -93,7 +96,7 @@ class WorkerMessageHandler {
     let pdfManager;
     let terminated = false;
     let cancelXHRs = null;
-    const WorkerTasks = [];
+    const WorkerTasks = new Set();
     const verbosity = getVerbosityLevel();
 
     const { docId, apiVersion } = docParams;
@@ -151,13 +154,12 @@ class WorkerMessageHandler {
     }
 
     function startWorkerTask(task) {
-      WorkerTasks.push(task);
+      WorkerTasks.add(task);
     }
 
     function finishWorkerTask(task) {
       task.finish();
-      const i = WorkerTasks.indexOf(task);
-      WorkerTasks.splice(i, 1);
+      WorkerTasks.delete(task);
     }
 
     async function loadDocument(recoveryMode) {
@@ -277,7 +279,7 @@ class WorkerMessageHandler {
 
       let loaded = 0;
       const flushChunks = function () {
-        const pdfFile = arraysToBytes(cachedChunks);
+        const pdfFile = arrayBuffersToBytes(cachedChunks);
         if (length && pdfFile.length !== length) {
           warn("reported HTTP length is different from actual");
         }
