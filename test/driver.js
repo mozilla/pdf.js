@@ -457,7 +457,6 @@ class Driver {
 
       this._log('Loading file "' + task.file + '"\n');
 
-      const absoluteUrl = new URL(task.file, window.location).href;
       try {
         let xfaStyleElement = null;
         if (task.enableXfa) {
@@ -471,11 +470,10 @@ class Driver {
         }
 
         const loadingTask = getDocument({
-          url: absoluteUrl,
+          url: new URL(task.file, window.location),
           password: task.password,
           cMapUrl: CMAP_URL,
           standardFontDataUrl: STANDARD_FONT_DATA_URL,
-          disableRange: task.disableRange,
           disableAutoFetch: !task.enableAutoFetch,
           pdfBug: true,
           useSystemFonts: task.useSystemFonts,
