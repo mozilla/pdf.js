@@ -120,8 +120,20 @@ class AnnotationStorage {
     return this.#storage.has(key);
   }
 
+  /**
+   * @returns {Object | null}
+   */
   getAll() {
     return this.#storage.size > 0 ? objectFromMap(this.#storage) : null;
+  }
+
+  /**
+   * @param {Object} obj
+   */
+  setAll(obj) {
+    for (const [key, val] of Object.entries(obj)) {
+      this.setValue(key, val);
+    }
   }
 
   get size() {
