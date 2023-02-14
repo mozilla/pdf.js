@@ -539,6 +539,9 @@ function getDataProp(val) {
     typeof Buffer !== "undefined" && // eslint-disable-line no-undef
     val instanceof Buffer // eslint-disable-line no-undef
   ) {
+    deprecated(
+      "Please provide binary data as `Uint8Array`, rather than `Buffer`."
+    );
     return new Uint8Array(val);
   }
   if (val instanceof Uint8Array && val.byteLength === val.buffer.byteLength) {
