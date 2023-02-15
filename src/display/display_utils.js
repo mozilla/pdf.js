@@ -39,6 +39,139 @@ class PixelsPerInch {
   static PDF_TO_CSS_UNITS = this.CSS / this.PDF;
 }
 
+/**
+ * FilterFactory aims to create some SVG filters we can use when drawing an
+ * image (or whatever) on a canvas.
+ * Filters aren't applied with ctx.putImageData because it just overwrites the
+ * underlying pixels.
+ * With these filters, it's possible for example to apply some transfer maps on
+ * an image without the need to apply them on the pixel arrays: the renderer
+ * does the magic for us.
+ */
+class FilterFactory {
+  #_cache;
+
+  #_defs;
+
+  #document;
+
+  #id = 0;
+
+  constructor({ ownerDocument = globalThis.document } = {}) {
+    this.#document = ownerDocument;
+  }
+
+  get #cache() {
+    return (this.#_cache ||= new Map());
+  }
+
+  get #defs() {
+    if (!this.#_defs) {
+      const svg = this.#document.createElementNS(SVG_NS, "svg");
+      svg.setAttribute("width", 0);
+      svg.setAttribute("height", 0);
+      svg.style.visibility = "hidden";
+      svg.style.contain = "strict";
+      this.#_defs = this.#document.createElementNS(SVG_NS, "defs");
+      svg.append(this.#_defs);
+      this.#document.body.append(svg);
+    }
+    return this.#_defs;
+  }
+
+  addFilter(maps) {
+    if (!maps) {
+      return "";
+    }
+
+    // When a page is zoomed the page is re-drawn but the maps are likely
+    // the same.
+    let value = this.#cache.get(maps);
+    if (value) {
+      return value;
+    }
+
+    let tableR, tableG, tableB, key;
+    if (maps.length === 1) {
+      const mapR = maps[0];
+      const buffer = new Array(256);
+      for (let i = 0; i < 256; i++) {
+        buffer[i] = mapR[i] / 255;
+      }
+      key = tableR = tableG = tableB = buffer.join(",");
+    } else {
+      const [mapR, mapG, mapB] = maps;
+      const bufferR = new Array(256);
+      const bufferG = new Array(256);
+      const bufferB = new Array(256);
+      for (let i = 0; i < 256; i++) {
+        bufferR[i] = mapR[i] / 255;
+        bufferG[i] = mapG[i] / 255;
+        bufferB[i] = mapB[i] / 255;
+      }
+      tableR = bufferR.join(",");
+      tableG = bufferG.join(",");
+      tableB = bufferB.join(",");
+      key = `${tableR}${tableG}${tableB}`;
+    }
+
+    value = this.#cache.get(key);
+    if (value) {
+      this.#cache.set(maps, value);
+      return value;
+    }
+
+    // We create a SVG filter: feComponentTransferElement
+    //  https://www.w3.org/TR/SVG11/filters.html#feComponentTransferElement
+
+    const id = `transfer_map_${this.#id++}`;
+    const url = `url(#${id})`;
+    this.#cache.set(maps, url);
+    this.#cache.set(key, url);
+
+    const filter = this.#document.createElementNS(SVG_NS, "filter", SVG_NS);
+    filter.setAttribute("id", id);
+    filter.setAttribute("color-interpolation-filters", "sRGB");
+    const feComponentTransfer = this.#document.createElementNS(
+      SVG_NS,
+      "feComponentTransfer"
+    );
+    filter.append(feComponentTransfer);
+
+    const type = "discrete";
+    const feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
+    feFuncR.setAttribute("type", type);
+    feFuncR.setAttribute("tableValues", tableR);
+    feComponentTransfer.append(feFuncR);
+
+    const feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
+    feFuncG.setAttribute("type", type);
+    feFuncG.setAttribute("tableValues", tableG);
+    feComponentTransfer.append(feFuncG);
+
+    const feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
+    feFuncB.setAttribute("type", type);
+    feFuncB.setAttribute("tableValues", tableB);
+    feComponentTransfer.append(feFuncB);
+
+    this.#defs.append(filter);
+
+    return url;
+  }
+
+  destroy() {
+    if (this.#_defs) {
+      this.#_defs.parentNode.remove();
+      this.#_defs = null;
+    }
+    if (this.#_cache) {
+      this.#_cache.clear();
+      this.#_cache = null;
+    }
+    this.#id = 0;
+  }
+}
+
 class DOMCanvasFactory extends BaseCanvasFactory {
   constructor({ ownerDocument = globalThis.document } = {}) {
     super();
@@ -681,6 +814,7 @@ export {
   DOMCMapReaderFactory,
   DOMStandardFontDataFactory,
   DOMSVGFactory,
+  FilterFactory,
   getColorValues,
   getCurrentTransform,
   getCurrentTransformInverse,

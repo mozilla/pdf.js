@@ -37,7 +37,7 @@ import {
   PathType,
   TilingPattern,
 } from "./pattern_helper.js";
-import { applyMaskImageData } from "../shared/image_utils.js";
+import { convertBlackAndWhiteToRGBA } from "../shared/image_utils.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -812,12 +812,13 @@ function putBinaryImageMask(ctx, imgData) {
     // Expand the mask so it can be used by the canvas.  Any required
     // inversion has already been handled.
 
-    ({ srcPos } = applyMaskImageData({
+    ({ srcPos } = convertBlackAndWhiteToRGBA({
       src,
       srcPos,
       dest,
       width,
       height: thisChunkHeight,
+      nonBlackColor: 0,
     }));
 
     ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
@@ -1015,6 +1016,7 @@ class CanvasGraphics {
     commonObjs,
     objs,
     canvasFactory,
+    filterFactory,
     { optionalContentConfig, markedContentStack = null },
     annotationCanvasMap,
     pageColors
@@ -1032,6 +1034,7 @@ class CanvasGraphics {
     this.commonObjs = commonObjs;
     this.objs = objs;
     this.canvasFactory = canvasFactory;
+    this.filterFactory = filterFactory;
     this.groupStack = [];
     this.processingType3 = null;
     // Patterns are painted relative to the initial page/form transform, see
@@ -1573,7 +1576,10 @@ class CanvasGraphics {
           this.checkSMaskState();
           break;
         case "TR":
-          this.current.transferMaps = value;
+          this.current.transferMaps = this.filterFactory
+            ? this.filterFactory.addFilter(value)
+            : value;
+          break;
       }
     }
   }
@@ -2463,6 +2469,7 @@ class CanvasGraphics {
             this.commonObjs,
             this.objs,
             this.canvasFactory,
+            this.filterFactory,
             {
               optionalContentConfig: this.optionalContentConfig,
               markedContentStack: this.markedContentStack,
@@ -3017,6 +3024,24 @@ class CanvasGraphics {
     this.paintInlineImageXObjectGroup(imgData, map);
   }
 
+  applyTransferMapsToBitmap(imgData) {
+    if (!this.current.transferMaps) {
+      return imgData.bitmap;
+    }
+    const { bitmap, width, height } = imgData;
+    const tmpCanvas = this.cachedCanvases.getCanvas(
+      "inlineImage",
+      width,
+      height
+    );
+    const tmpCtx = tmpCanvas.context;
+    tmpCtx.filter = this.current.transferMaps;
+    tmpCtx.drawImage(bitmap, 0, 0);
+    tmpCtx.filter = "";
+
+    return tmpCanvas.canvas;
+  }
+
   paintInlineImageXObject(imgData) {
     if (!this.contentVisible) {
       return;
@@ -3030,11 +3055,13 @@ class CanvasGraphics {
     ctx.scale(1 / width, -1 / height);
 
     let imgToPaint;
-    // typeof check is needed due to node.js support, see issue #8489
-    if (
+    if (imgData.bitmap) {
+      imgToPaint = this.applyTransferMapsToBitmap(imgData);
+    } else if (
       (typeof HTMLElement === "function" && imgData instanceof HTMLElement) ||
       !imgData.data
     ) {
+      // typeof check is needed due to node.js support, see issue #8489
       imgToPaint = imgData;
     } else {
       const tmpCanvas = this.cachedCanvases.getCanvas(
@@ -3077,12 +3104,18 @@ class CanvasGraphics {
       return;
     }
     const ctx = this.ctx;
-    const w = imgData.width;
-    const h = imgData.height;
+    let imgToPaint;
+    if (imgData.bitmap) {
+      imgToPaint = this.applyTransferMapsToBitmap(imgData);
+    } else {
+      const w = imgData.width;
+      const h = imgData.height;
 
-    const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
-    const tmpCtx = tmpCanvas.context;
-    putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
+      const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
+      const tmpCtx = tmpCanvas.context;
+      putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
+      imgToPaint = tmpCanvas.canvas;
+    }
 
     for (const entry of map) {
       ctx.save();
@@ -3090,7 +3123,7 @@ class CanvasGraphics {
       ctx.scale(1, -1);
       drawImageAtIntegerCoords(
         ctx,
-        tmpCanvas.canvas,
+        imgToPaint,
         entry.x,
         entry.y,
         entry.w,

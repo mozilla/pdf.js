@@ -46,6 +46,7 @@ import {
   DOMCanvasFactory,
   DOMCMapReaderFactory,
   DOMStandardFontDataFactory,
+  FilterFactory,
   isDataScheme,
   isValidFetchUrl,
   loadScript,
@@ -232,6 +233,8 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  *   (see `web/debugger.js`). The default value is `false`.
  * @property {Object} [canvasFactory] - The factory instance that will be used
  *   when creating canvases. The default value is {new DOMCanvasFactory()}.
+ * @property {Object} [filterFactory] - A factory instance that will be used
+ *   to create SVG filters when rendering some images on the main canvas.
  */
 
 /**
@@ -341,6 +344,8 @@ function getDocument(src) {
           isValidFetchUrl(standardFontDataUrl, document.baseURI));
   const canvasFactory =
     src.canvasFactory || new DefaultCanvasFactory({ ownerDocument });
+  const filterFactory =
+    src.filterFactory || new FilterFactory({ ownerDocument });
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
@@ -355,6 +360,7 @@ function getDocument(src) {
   // since the user may provide *custom* ones.
   const transportFactory = {
     canvasFactory,
+    filterFactory,
   };
   if (!useWorkerFetch) {
     transportFactory.cMapReaderFactory = new CMapReaderFactory({
@@ -1514,6 +1520,7 @@ class PDFPageProxy {
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
       canvasFactory: canvasFactory || this._transport.canvasFactory,
+      filterFactory: this._transport.filterFactory,
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
       pageColors,
@@ -1526,19 +1533,25 @@ class PDFPageProxy {
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
     ])
-      .then(([transparency, optionalContentConfig]) => {
-        if (this.pendingCleanup) {
-          complete();
-          return;
-        }
-        this._stats?.time("Rendering");
-
-        internalRenderTask.initializeGraphics({
-          transparency,
+      .then(
+        ([
+          { transparency, isOffscreenCanvasSupported },
           optionalContentConfig,
-        });
-        internalRenderTask.operatorListChanged();
-      })
+        ]) => {
+          if (this.pendingCleanup) {
+            complete();
+            return;
+          }
+          this._stats?.time("Rendering");
+
+          internalRenderTask.initializeGraphics({
+            transparency,
+            isOffscreenCanvasSupported,
+            optionalContentConfig,
+          });
+          internalRenderTask.operatorListChanged();
+        }
+      )
       .catch(complete);
 
     return renderTask;
@@ -1739,7 +1752,7 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, cacheKey) {
+  _startRenderPage(transparency, isOffscreenCanvasSupported, cacheKey) {
     const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
@@ -1748,7 +1761,10 @@ class PDFPageProxy {
 
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
-    intentState.displayReadyCapability?.resolve(transparency);
+    intentState.displayReadyCapability?.resolve({
+      transparency,
+      isOffscreenCanvasSupported,
+    });
   }
 
   /**
@@ -2357,6 +2373,7 @@ class WorkerTransport {
     this._params = params;
 
     this.canvasFactory = factory.canvasFactory;
+    this.filterFactory = factory.filterFactory;
     this.cMapReaderFactory = factory.cMapReaderFactory;
     this.standardFontDataFactory = factory.standardFontDataFactory;
 
@@ -2489,6 +2506,7 @@ class WorkerTransport {
       this.commonObjs.clear();
       this.fontLoader.clear();
       this.#methodPromises.clear();
+      this.filterFactory.destroy();
 
       if (this._networkStream) {
         this._networkStream.cancelAllRequests(
@@ -2709,7 +2727,11 @@ class WorkerTransport {
       }
 
       const page = this.#pageCache.get(data.pageIndex);
-      page._startRenderPage(data.transparency, data.cacheKey);
+      page._startRenderPage(
+        data.transparency,
+        data.isOffscreenCanvasSupported,
+        data.cacheKey
+      );
     });
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
@@ -3079,6 +3101,7 @@ class WorkerTransport {
       this.fontLoader.clear();
     }
     this.#methodPromises.clear();
+    this.filterFactory.destroy();
   }
 
   get loadingParams() {
@@ -3246,6 +3269,7 @@ class InternalRenderTask {
     operatorList,
     pageIndex,
     canvasFactory,
+    filterFactory,
     useRequestAnimationFrame = false,
     pdfBug = false,
     pageColors = null,
@@ -3259,6 +3283,7 @@ class InternalRenderTask {
     this.operatorList = operatorList;
     this._pageIndex = pageIndex;
     this.canvasFactory = canvasFactory;
+    this.filterFactory = filterFactory;
     this._pdfBug = pdfBug;
     this.pageColors = pageColors;
 
@@ -3285,7 +3310,11 @@ class InternalRenderTask {
     });
   }
 
-  initializeGraphics({ transparency = false, optionalContentConfig }) {
+  initializeGraphics({
+    transparency = false,
+    isOffscreenCanvasSupported = false,
+    optionalContentConfig,
+  }) {
     if (this.cancelled) {
       return;
     }
@@ -3312,6 +3341,7 @@ class InternalRenderTask {
       this.commonObjs,
       this.objs,
       this.canvasFactory,
+      isOffscreenCanvasSupported ? this.filterFactory : null,
       { optionalContentConfig },
       this.annotationCanvasMap,
       this.pageColors
