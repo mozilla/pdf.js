@@ -2655,7 +2655,11 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
     });
 
     it("gets operatorList with JPEG image (issue 4888)", async function () {
-      const loadingTask = getDocument(buildGetDocumentParams("cmykjpeg.pdf"));
+      const loadingTask = getDocument(
+        buildGetDocumentParams("cmykjpeg.pdf", {
+          isOffscreenCanvasSupported: false,
+        })
+      );
 
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
@@ -3089,7 +3093,11 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         EXPECTED_WIDTH = 2550,
         EXPECTED_HEIGHT = 3300;
 
-      const loadingTask = getDocument(buildGetDocumentParams("issue11878.pdf"));
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue11878.pdf", {
+          isOffscreenCanvasSupported: false,
+        })
+      );
       const pdfDoc = await loadingTask.promise;
       let firstImgData = null;
 

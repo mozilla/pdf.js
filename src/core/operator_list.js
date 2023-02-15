@@ -136,17 +136,32 @@ addState(
       }
     }
 
+    const img = {
+      width: imgWidth,
+      height: imgHeight,
+    };
+    if (context.isOffscreenCanvasSupported) {
+      const canvas = new OffscreenCanvas(imgWidth, imgHeight);
+      const ctx = canvas.getContext("2d");
+      ctx.putImageData(
+        new ImageData(
+          new Uint8ClampedArray(imgData.buffer),
+          imgWidth,
+          imgHeight
+        ),
+        0,
+        0
+      );
+      img.bitmap = canvas.transferToImageBitmap();
+      img.data = null;
+    } else {
+      img.kind = ImageKind.RGBA_32BPP;
+      img.data = imgData;
+    }
+
     // Replace queue items.
     fnArray.splice(iFirstSave, count * 4, OPS.paintInlineImageXObjectGroup);
-    argsArray.splice(iFirstSave, count * 4, [
-      {
-        width: imgWidth,
-        height: imgHeight,
-        kind: ImageKind.RGBA_32BPP,
-        data: imgData,
-      },
-      map,
-    ]);
+    argsArray.splice(iFirstSave, count * 4, [img, map]);
 
     return iFirstSave + 1;
   }
@@ -487,9 +502,15 @@ class QueueOptimizer extends NullOptimizer {
       iCurr: 0,
       fnArray: queue.fnArray,
       argsArray: queue.argsArray,
+      isOffscreenCanvasSupported: false,
     };
     this.match = null;
     this.lastProcessed = 0;
+  }
+
+  // eslint-disable-next-line accessor-pairs
+  set isOffscreenCanvasSupported(value) {
+    this.context.isOffscreenCanvasSupported = value;
   }
 
   _optimize() {
@@ -587,6 +608,11 @@ class OperatorList {
     this._totalLength = 0;
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
+  }
+
+  // eslint-disable-next-line accessor-pairs
+  set isOffscreenCanvasSupported(value) {
+    this.optimizer.isOffscreenCanvasSupported = value;
   }
 
   get length() {

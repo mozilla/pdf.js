@@ -13,23 +13,37 @@
  * limitations under the License.
  */
 
-import { FeatureTest } from "./util.js";
+import { FeatureTest, ImageKind } from "./util.js";
 
-function applyMaskImageData({
+function convertToRGBA(params) {
+  switch (params.kind) {
+    case ImageKind.GRAYSCALE_1BPP:
+      return convertBlackAndWhiteToRGBA(params);
+    case ImageKind.RGB_24BPP:
+      return convertRGBToRGBA(params);
+  }
+
+  return null;
+}
+
+function convertBlackAndWhiteToRGBA({
   src,
   srcPos = 0,
   dest,
-  destPos = 0,
   width,
   height,
+  nonBlackColor = 0xffffffff,
   inverseDecode = false,
 }) {
-  const opaque = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
-  const [zeroMapping, oneMapping] = !inverseDecode ? [opaque, 0] : [0, opaque];
+  const black = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
+  const [zeroMapping, oneMapping] = inverseDecode
+    ? [nonBlackColor, black]
+    : [black, nonBlackColor];
   const widthInSource = width >> 3;
   const widthRemainder = width & 7;
   const srcLength = src.length;
   dest = new Uint32Array(dest.buffer);
+  let destPos = 0;
 
   for (let i = 0; i < height; i++) {
     for (const max = srcPos + widthInSource; srcPos < max; srcPos++) {
@@ -51,8 +65,70 @@ function applyMaskImageData({
       dest[destPos++] = elem & (1 << (7 - j)) ? oneMapping : zeroMapping;
     }
   }
+  return { srcPos, destPos };
+}
+
+function convertRGBToRGBA({
+  src,
+  srcPos = 0,
+  dest,
+  destPos = 0,
+  width,
+  height,
+}) {
+  let i = 0;
+  const len32 = src.length >> 2;
+  const src32 = new Uint32Array(src.buffer, srcPos, len32);
+
+  if (FeatureTest.isLittleEndian) {
+    // It's a way faster to do the shuffle manually instead of working
+    // component by component with some Uint8 arrays.
+    for (; i < len32 - 2; i += 3, destPos += 4) {
+      const s1 = src32[i]; // R2B1G1R1
+      const s2 = src32[i + 1]; // G3R3B2G2
+      const s3 = src32[i + 2]; // B4G4R4B3
+
+      dest[destPos] = s1 | 0xff000000;
+      dest[destPos + 1] = (s1 >>> 24) | (s2 << 8) | 0xff000000;
+      dest[destPos + 2] = (s2 >>> 16) | (s3 << 16) | 0xff000000;
+      dest[destPos + 3] = (s3 >>> 8) | 0xff000000;
+    }
+
+    for (let j = i * 4, jj = src.length; j < jj; j += 3) {
+      dest[destPos++] =
+        src[j] | (src[j + 1] << 8) | (src[j + 2] << 16) | 0xff000000;
+    }
+  } else {
+    for (; i < len32 - 2; i += 3, destPos += 4) {
+      const s1 = src32[i]; // R1G1B1R2
+      const s2 = src32[i + 1]; // G2B2R3G3
+      const s3 = src32[i + 2]; // B3R4G4B4
+
+      dest[destPos] = s1 | 0xff;
+      dest[destPos + 1] = (s1 << 24) | (s2 >>> 8) | 0xff;
+      dest[destPos + 2] = (s2 << 16) | (s3 >>> 16) | 0xff;
+      dest[destPos + 3] = (s3 << 8) | 0xff;
+    }
+
+    for (let j = i * 4, jj = src.length; j < jj; j += 3) {
+      dest[destPos++] =
+        (src[j] << 24) | (src[j + 1] << 16) | (src[j + 2] << 8) | 0xff;
+    }
+  }
 
   return { srcPos, destPos };
 }
 
-export { applyMaskImageData };
+function grayToRGBA(src, dest) {
+  if (FeatureTest.isLittleEndian) {
+    for (let i = 0, ii = src.length; i < ii; i++) {
+      dest[i] = (src[i] * 0x10101) | 0xff000000;
+    }
+  } else {
+    for (let i = 0, ii = src.length; i < ii; i++) {
+      dest[i] = (src[i] * 0x1010100) | 0x000000ff;
+    }
+  }
+}
+
+export { convertBlackAndWhiteToRGBA, convertToRGBA, grayToRGBA };
