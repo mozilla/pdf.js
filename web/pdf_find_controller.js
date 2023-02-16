@@ -136,7 +136,8 @@ function normalize(text) {
     // 3040-309F: Hiragana
     // 30A0-30FF: Katakana
     const CJK = "(?:\\p{Ideographic}|[\u3040-\u30FF])";
-    const regexp = `([${replace}])|([${toNormalizeWithNFKC}])|(\\p{M}+(?:-\\n)?)|(\\S-\\n)|(${CJK}\\n)|(\\n)`;
+    const HKDiacritics = "(?:\u3099|\u309A)";
+    const regexp = `([${replace}])|([${toNormalizeWithNFKC}])|(${HKDiacritics}\\n)|(\\p{M}+(?:-\\n)?)|(\\S-\\n)|(${CJK}\\n)|(\\n)`;
 
     if (syllablePositions.length === 0) {
       // Most of the syllables belong to Hangul so there are no need
@@ -198,7 +199,7 @@ function normalize(text) {
 
   normalized = normalized.replace(
     normalizationRegex,
-    (match, p1, p2, p3, p4, p5, p6, p7, i) => {
+    (match, p1, p2, p3, p4, p5, p6, p7, p8, i) => {
       i -= shiftOrigin;
       if (p1) {
         // Maybe fractions or quotations mark...
@@ -227,8 +228,32 @@ function normalize(text) {
       }
 
       if (p3) {
-        const hasTrailingDashEOL = p3.endsWith("\n");
-        const len = hasTrailingDashEOL ? p3.length - 2 : p3.length;
+        // We've a Katakana-Hiragana diacritic followed by a \n so don't replace
+        // the \n by a whitespace.
+        hasDiacritics = true;
+
+        // Diacritic.
+        if (i + eol === rawDiacriticsPositions[rawDiacriticsIndex]?.[1]) {
+          ++rawDiacriticsIndex;
+        } else {
+          // i is the position of the first diacritic
+          // so (i - 1) is the position for the letter before.
+          positions.push([i - 1 - shift + 1, shift - 1]);
+          shift -= 1;
+          shiftOrigin += 1;
+        }
+
+        // End-of-line.
+        positions.push([i - shift + 1, shift]);
+        shiftOrigin += 1;
+        eol += 1;
+
+        return p3.charAt(0);
+      }
+
+      if (p4) {
+        const hasTrailingDashEOL = p4.endsWith("\n");
+        const len = hasTrailingDashEOL ? p4.length - 2 : p4.length;
 
         // Diacritics.
         hasDiacritics = true;
@@ -248,19 +273,19 @@ function normalize(text) {
 
         if (hasTrailingDashEOL) {
           // Diacritics are followed by a -\n.
-          // See comments in `if (p4)` block.
+          // See comments in `if (p5)` block.
           i += len - 1;
           positions.push([i - shift + 1, 1 + shift]);
           shift += 1;
           shiftOrigin += 1;
           eol += 1;
-          return p3.slice(0, len);
+          return p4.slice(0, len);
         }
 
-        return p3;
+        return p4;
       }
 
-      if (p4) {
+      if (p5) {
         // "X-\n" is removed because an hyphen at the end of a line
         // with not a space before is likely here to mark a break
         // in a word.
@@ -269,19 +294,19 @@ function normalize(text) {
         shift += 1;
         shiftOrigin += 1;
         eol += 1;
-        return p4.charAt(0);
+        return p5.charAt(0);
       }
 
-      if (p5) {
+      if (p6) {
         // An ideographic at the end of a line doesn't imply adding an extra
         // white space.
         positions.push([i - shift + 1, shift]);
         shiftOrigin += 1;
         eol += 1;
-        return p5.charAt(0);
+        return p6.charAt(0);
       }
 
-      if (p6) {
+      if (p7) {
         // eol is replaced by space: "foo\nbar" is likely equivalent to
         // "foo bar".
         positions.push([i - shift + 1, shift - 1]);
@@ -291,7 +316,7 @@ function normalize(text) {
         return " ";
       }
 
-      // p7
+      // p8
       if (i + eol === syllablePositions[syllableIndex]?.[1]) {
         // A syllable (1 char) is replaced with several chars (n) so
         // newCharsLen = n - 1.
@@ -303,7 +328,7 @@ function normalize(text) {
         shift -= newCharLen;
         shiftOrigin += newCharLen;
       }
-      return p7;
+      return p8;
     }
   );
 
