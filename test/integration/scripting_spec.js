@@ -1854,4 +1854,43 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in issue16067.pdf", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("issue16067.pdf", getSelector("6R"));
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that a field has the correct value when a choice is changed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForFunction(
+            "window.PDFViewerApplication.scriptingReady === true"
+          );
+
+          let text = await page.$eval(getSelector("44R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("");
+
+          await page.select(getSelector("6R"), "Yes");
+          await page.waitForTimeout(10);
+
+          text = await page.$eval(getSelector("44R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("Yes");
+
+          await clearInput(page, getSelector("44R"));
+
+          await page.select(getSelector("6R"), "No");
+          await page.waitForTimeout(10);
+
+          text = await page.$eval(getSelector("44R"), el => el.value);
+          expect(text).withContext(`In ${browserName}`).toEqual("No");
+        })
+      );
+    });
+  });
 });
