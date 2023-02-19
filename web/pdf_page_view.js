@@ -863,11 +863,6 @@ class PDFPageView {
       });
     }
 
-    if (this.xfaLayer?.div) {
-      // The xfa layer needs to stay on top.
-      div.append(this.xfaLayer.div);
-    }
-
     let renderContinueCallback = null;
     if (this.renderingQueue) {
       renderContinueCallback = cont => {
@@ -967,6 +962,9 @@ class PDFPageView {
           annotationStorage,
           linkService,
         });
+      } else if (this.xfaLayer.div) {
+        // The xfa layer needs to stay on top.
+        div.append(this.xfaLayer.div);
       }
       this.#renderXfaLayer();
     }
