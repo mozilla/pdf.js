@@ -507,7 +507,8 @@ async function _fetchDocument(worker, source) {
 function getUrlProp(val) {
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
     return null; // The 'url' is unused with `PDFDataRangeTransport`.
-  } else if (val instanceof URL) {
+  }
+  if (val instanceof URL) {
     return val.href;
   }
   try {
@@ -538,21 +539,21 @@ function getDataProp(val) {
     typeof Buffer !== "undefined" && // eslint-disable-line no-undef
     val instanceof Buffer // eslint-disable-line no-undef
   ) {
+    deprecated(
+      "Please provide binary data as `Uint8Array`, rather than `Buffer`."
+    );
     return new Uint8Array(val);
-  } else if (
-    val instanceof Uint8Array &&
-    val.byteLength === val.buffer.byteLength
-  ) {
+  }
+  if (val instanceof Uint8Array && val.byteLength === val.buffer.byteLength) {
     // Use the data as-is when it's already a Uint8Array that completely
     // "utilizes" its underlying ArrayBuffer, to prevent any possible
     // issues when transferring it to the worker-thread.
     return val;
-  } else if (typeof val === "string") {
+  }
+  if (typeof val === "string") {
     return stringToBytes(val);
-  } else if (
-    (typeof val === "object" && !isNaN(val?.length)) ||
-    isArrayBuffer(val)
-  ) {
+  }
+  if ((typeof val === "object" && !isNaN(val?.length)) || isArrayBuffer(val)) {
     return new Uint8Array(val);
   }
   throw new Error(
