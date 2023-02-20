@@ -28,6 +28,7 @@ import {
 import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
+import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 import { Name } from "./primitives.js";
@@ -352,7 +353,7 @@ class PDFImage {
     return { data, width, height, interpolate };
   }
 
-  static createMask({
+  static async createMask({
     imgArray,
     width,
     height,
@@ -371,6 +372,25 @@ class PDFImage {
     }
 
     if (isOffscreenCanvasSupported) {
+      if (ImageResizer.needsToBeResized(width, height)) {
+        const data = new Uint8ClampedArray(width * height * 4);
+        convertBlackAndWhiteToRGBA({
+          src: imgArray,
+          dest: data,
+          width,
+          height,
+          nonBlackColor: 0,
+          inverseDecode,
+        });
+        return ImageResizer.createImage({
+          kind: ImageKind.RGBA_32BPP,
+          data,
+          width,
+          height,
+          interpolate,
+        });
+      }
+
       const canvas = new OffscreenCanvas(width, height);
       const ctx = canvas.getContext("2d");
       const imgData = ctx.createImageData(width, height);
@@ -652,7 +672,7 @@ class PDFImage {
     }
   }
 
-  createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
+  async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
     const drawWidth = this.drawWidth;
     const drawHeight = this.drawHeight;
     const imgData = {
@@ -671,6 +691,9 @@ class PDFImage {
 
     // Rows start at byte boundary.
     const rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
+    const mustBeResized =
+      isOffscreenCanvasSupported &&
+      ImageResizer.needsToBeResized(drawWidth, drawHeight);
 
     if (!forceRGBA) {
       // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
@@ -699,6 +722,18 @@ class PDFImage {
       ) {
         const data = this.getImageBytes(originalHeight * rowBytes, {});
         if (isOffscreenCanvasSupported) {
+          if (mustBeResized) {
+            return ImageResizer.createImage(
+              {
+                data,
+                kind,
+                width: drawWidth,
+                height: drawHeight,
+                interpolate: this.interpolate,
+              },
+              this.needsDecode
+            );
+          }
           return this.createBitmap(kind, originalWidth, originalHeight, data);
         }
         imgData.kind = kind;
@@ -719,7 +754,7 @@ class PDFImage {
       }
       if (this.image instanceof JpegStream && !this.smask && !this.mask) {
         let imageLength = originalHeight * rowBytes;
-        if (isOffscreenCanvasSupported) {
+        if (isOffscreenCanvasSupported && !mustBeResized) {
           let isHandled = false;
           switch (this.colorSpace.name) {
             case "DeviceGray":
@@ -763,6 +798,10 @@ class PDFImage {
                 drawHeight,
                 forceRGB: true,
               });
+              if (mustBeResized) {
+                // The image is too big so we resize it.
+                return ImageResizer.createImage(imgData);
+              }
               return imgData;
           }
         }
@@ -783,7 +822,7 @@ class PDFImage {
     let alpha01, maybeUndoPreblend;
 
     let canvas, ctx, canvasImgData, data;
-    if (isOffscreenCanvasSupported) {
+    if (isOffscreenCanvasSupported && !mustBeResized) {
       canvas = new OffscreenCanvas(drawWidth, drawHeight);
       ctx = canvas.getContext("2d");
       canvasImgData = ctx.createImageData(drawWidth, drawHeight);
@@ -793,7 +832,7 @@ class PDFImage {
     imgData.kind = ImageKind.RGBA_32BPP;
 
     if (!forceRGBA && !this.smask && !this.mask) {
-      if (!isOffscreenCanvasSupported) {
+      if (!isOffscreenCanvasSupported || mustBeResized) {
         imgData.kind = ImageKind.RGB_24BPP;
         data = new Uint8ClampedArray(drawWidth * drawHeight * 3);
         alpha01 = 0;
@@ -804,7 +843,7 @@ class PDFImage {
       }
       maybeUndoPreblend = false;
     } else {
-      if (!isOffscreenCanvasSupported) {
+      if (!isOffscreenCanvasSupported || mustBeResized) {
         data = new Uint8ClampedArray(drawWidth * drawHeight * 4);
       }
 
@@ -833,7 +872,7 @@ class PDFImage {
       this.undoPreblend(data, drawWidth, actualHeight);
     }
 
-    if (isOffscreenCanvasSupported) {
+    if (isOffscreenCanvasSupported && !mustBeResized) {
       ctx.putImageData(canvasImgData, 0, 0);
       const bitmap = canvas.transferToImageBitmap();
 
@@ -847,6 +886,9 @@ class PDFImage {
     }
 
     imgData.data = data;
+    if (mustBeResized) {
+      return ImageResizer.createImage(imgData);
+    }
     return imgData;
   }
 
