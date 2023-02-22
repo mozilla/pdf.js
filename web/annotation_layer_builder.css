@@ -20,6 +20,7 @@
   --input-unfocused-border-color: transparent;
   --input-disabled-border-color: transparent;
   --input-hover-border-color: black;
+  --link-outline: none;
 }
 
 @media screen and (forced-colors: active) {
@@ -28,6 +29,7 @@
     --input-unfocused-border-color: ActiveText;
     --input-disabled-border-color: GrayText;
     --input-hover-border-color: Highlight;
+    --link-outline: 1.5px solid LinkText;
   }
   .annotationLayer .textWidgetAnnotation input:required,
   .annotationLayer .textWidgetAnnotation textarea:required,
@@ -35,6 +37,10 @@
   .annotationLayer .buttonWidgetAnnotation.checkBox input:required,
   .annotationLayer .buttonWidgetAnnotation.radioButton input:required {
     outline: 1.5px solid selectedItem;
+  }
+
+  .annotationLayer .linkAnnotation:hover {
+    backdrop-filter: invert(100%);
   }
 }
 
@@ -53,6 +59,10 @@
   pointer-events: auto;
   box-sizing: border-box;
   transform-origin: 0 0;
+}
+
+.annotationLayer .linkAnnotation {
+  outline: var(--link-outline);
 }
 
 .annotationLayer .linkAnnotation > a,
