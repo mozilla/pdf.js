@@ -82,6 +82,21 @@ describe("api", function () {
       .join("");
   }
 
+  function getNamedNodeInXML(node, path) {
+    for (const component of path.split(".")) {
+      if (!node.childNodes) {
+        break;
+      }
+      for (const child of node.childNodes) {
+        if (child.nodeName === component) {
+          node = child;
+          break;
+        }
+      }
+    }
+    return node;
+  }
+
   describe("getDocument", function () {
     it("creates pdf doc from URL-string", async function () {
       const urlStr = TEST_PDFS_PATH + basicApiFileName;
@@ -1899,6 +1914,68 @@ describe("api", function () {
       const field = annotations.find(annotation => annotation.id === "55R");
       expect(!!field).toEqual(true);
       expect(field.fieldValue).toEqual(value);
+
+      await loadingTask.destroy();
+    });
+
+    it("write a value in an annotation, save the pdf and check the value in xfa datasets (1)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      let loadingTask = getDocument(buildGetDocumentParams("issue16081.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const value = "Hello World";
+
+      pdfDoc.annotationStorage.setValue("2055R", { value });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const datasets = await pdfDoc.getXFADatasets();
+
+      const surName = getNamedNodeInXML(
+        datasets.node,
+        "xfa:data.PPTC_153.Page1.PersonalInformation.TitleAndNameInformation.PersonalInfo.Surname.#text"
+      );
+      expect(surName.nodeValue).toEqual(value);
+
+      await loadingTask.destroy();
+    });
+
+    it("write a value in an annotation, save the pdf and check the value in xfa datasets (2)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      // In this file the path to the fields are wrong but the last path element
+      // is unique so we can guess what the node is.
+      let loadingTask = getDocument(buildGetDocumentParams("f1040_2022.pdf"));
+      let pdfDoc = await loadingTask.promise;
+
+      pdfDoc.annotationStorage.setValue("1573R", { value: "hello" });
+      pdfDoc.annotationStorage.setValue("1577R", { value: "world" });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const datasets = await pdfDoc.getXFADatasets();
+
+      const firstName = getNamedNodeInXML(
+        datasets.node,
+        "xfa:data.topmostSubform.f1_02.#text"
+      );
+      expect(firstName.nodeValue).toEqual("hello");
+
+      const lastName = getNamedNodeInXML(
+        datasets.node,
+        "xfa:data.topmostSubform.f1_06.#text"
+      );
+      expect(lastName.nodeValue).toEqual("world");
 
       await loadingTask.destroy();
     });
