@@ -139,7 +139,12 @@ function writeXFADataForAcroform(str, newRefs) {
     if (!path) {
       continue;
     }
-    const node = xml.documentElement.searchNode(parseXFAPath(path), 0);
+    const nodePath = parseXFAPath(path);
+    let node = xml.documentElement.searchNode(nodePath, 0);
+    if (!node && nodePath.length > 1) {
+      // If we're lucky the last element in the path will identify the node.
+      node = xml.documentElement.searchNode([nodePath.at(-1)], 0);
+    }
     if (node) {
       if (Array.isArray(value)) {
         node.childNodes = value.map(val => new SimpleDOMNode("value", val));

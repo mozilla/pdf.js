@@ -782,6 +782,15 @@ class PDFDocumentProxy {
   constructor(pdfInfo, transport) {
     this._pdfInfo = pdfInfo;
     this._transport = transport;
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      // For testing purposes.
+      Object.defineProperty(this, "getXFADatasets", {
+        value: () => {
+          return this._transport.getXFADatasets();
+        },
+      });
+    }
   }
 
   /**
@@ -2349,6 +2358,15 @@ class WorkerTransport {
     this.downloadInfoCapability = createPromiseCapability();
 
     this.setupMessageHandler();
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      // For testing purposes.
+      Object.defineProperty(this, "getXFADatasets", {
+        value: () => {
+          return this.messageHandler.sendWithPromise("GetXFADatasets", null);
+        },
+      });
+    }
   }
 
   #cacheSimpleMethod(name, data = null) {

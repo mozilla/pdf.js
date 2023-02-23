@@ -831,6 +831,13 @@ class WorkerMessageHandler {
       setupDoc(docParams);
       docParams = null; // we don't need docParams anymore -- saving memory.
     });
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      handler.on("GetXFADatasets", function (data) {
+        return pdfManager.ensureDoc("xfaDatasets");
+      });
+    }
+
     return workerHandlerName;
   }
 
