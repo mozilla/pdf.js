@@ -311,6 +311,7 @@ class TextLayerRenderTask {
     this._container = this._rootContainer = container;
     this._textDivs = textDivs || [];
     this._textContentItemsStr = textContentItemsStr || [];
+    this._isOffscreenCanvasSupported = isOffscreenCanvasSupported;
     this._fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
     this._reader = null;
