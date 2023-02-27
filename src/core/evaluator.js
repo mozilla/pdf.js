@@ -80,7 +80,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   disableFontFace: false,
   ignoreErrors: false,
   isEvalSupported: true,
-  isOffscreenCanvasSupported: true,
+  isOffscreenCanvasSupported: false,
   fontExtraProperties: false,
   useSystemFonts: true,
   cMapUrl: null,

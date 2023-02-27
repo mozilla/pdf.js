@@ -23,7 +23,6 @@ import {
   AnnotationType,
   assert,
   BASELINE_FACTOR,
-  FeatureTest,
   getModificationDate,
   IDENTITY_MATRIX,
   LINE_DESCENT_FACTOR,
@@ -147,7 +146,6 @@ class AnnotationFactory {
         !collectFields && acroFormDict.get("NeedAppearances") === true,
       pageIndex,
       isOffscreenCanvasSupported:
-        FeatureTest.isOffscreenCanvasSupported &&
         pdfManager.evaluatorOptions.isOffscreenCanvasSupported,
     };
 
@@ -306,10 +304,8 @@ class AnnotationFactory {
     }
 
     const xref = evaluator.xref;
+    const { isOffscreenCanvasSupported } = evaluator.options;
     const promises = [];
-    const isOffscreenCanvasSupported =
-      FeatureTest.isOffscreenCanvasSupported &&
-      evaluator.options.isOffscreenCanvasSupported;
     for (const annotation of annotations) {
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
