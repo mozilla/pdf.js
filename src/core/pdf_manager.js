@@ -45,7 +45,7 @@ class BasePdfManager {
     this._docId = args.docId;
     this._password = args.password;
     this.enableXfa = args.enableXfa;
-    
+
     // Check `OffscreenCanvas` support once, rather than repeatedly throughout
     // the worker-thread code.
     args.evaluatorOptions.isOffscreenCanvasSupported =
