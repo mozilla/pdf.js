@@ -13,14 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  assert,
-  FeatureTest,
-  FormatError,
-  ImageKind,
-  info,
-  warn,
-} from "../shared/util.js";
+import { assert, FormatError, ImageKind, info, warn } from "../shared/util.js";
 import { applyMaskImageData } from "../shared/image_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
@@ -356,7 +349,7 @@ class PDFImage {
     imageIsFromDecodeStream,
     inverseDecode,
     interpolate,
-    isOffscreenCanvasSupported = true,
+    isOffscreenCanvasSupported = false,
   }) {
     const isSingleOpaquePixel =
       width === 1 &&
@@ -367,7 +360,7 @@ class PDFImage {
       return { isSingleOpaquePixel };
     }
 
-    if (isOffscreenCanvasSupported && FeatureTest.isOffscreenCanvasSupported) {
+    if (isOffscreenCanvasSupported) {
       const canvas = new OffscreenCanvas(width, height);
       const ctx = canvas.getContext("2d");
       const imgData = ctx.createImageData(width, height);
