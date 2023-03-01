@@ -2880,7 +2880,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -2916,7 +2915,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask = page.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -2948,7 +2946,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask = page.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -2966,7 +2963,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
 
       const reRenderTask = page.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       expect(reRenderTask instanceof RenderTask).toEqual(true);
@@ -2990,7 +2986,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask1 = page.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
         optionalContentConfigPromise,
       });
@@ -2998,7 +2993,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
 
       const renderTask2 = page.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
         optionalContentConfigPromise,
       });
@@ -3033,7 +3027,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -3064,7 +3057,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask = pdfPage.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       expect(renderTask instanceof RenderTask).toEqual(true);
@@ -3166,7 +3158,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         );
         const renderTask = pdfPage.render({
           canvasContext: canvasAndCtx.context,
-          canvasFactory: CanvasFactory,
           viewport,
           intent: "print",
           annotationMode: AnnotationMode.ENABLE_STORAGE,
@@ -3256,7 +3247,6 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const renderTask = page.render({
         canvasContext: canvasAndCtx.context,
-        canvasFactory: CanvasFactory,
         viewport,
       });
       await renderTask.promise;
