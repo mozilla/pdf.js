@@ -61,7 +61,11 @@ describe("SVGGraphics", function () {
   let page;
 
   beforeAll(async function () {
-    loadingTask = getDocument(buildGetDocumentParams("xobject-image.pdf"));
+    loadingTask = getDocument(
+      buildGetDocumentParams("xobject-image.pdf", {
+        isOffscreenCanvasSupported: false,
+      })
+    );
     const doc = await loadingTask.promise;
     page = await doc.getPage(1);
   });

@@ -716,7 +716,12 @@ class PartialEvaluator {
       });
       // We force the use of RGBA_32BPP images here, because we can't handle
       // any other kind.
-      imgData = imageObj.createImageData(/* forceRGBA = */ true);
+      imgData = imageObj.createImageData(
+        /* forceRGBA = */ true,
+        /* isOffscreenCanvasSupported = */ false
+      );
+      operatorList.isOffscreenCanvasSupported =
+        this.options.isOffscreenCanvasSupported;
       operatorList.addImageOps(
         OPS.paintInlineImageXObject,
         [imgData],
@@ -756,11 +761,22 @@ class PartialEvaluator {
       localColorSpaceCache,
     })
       .then(imageObj => {
-        imgData = imageObj.createImageData(/* forceRGBA = */ false);
+        imgData = imageObj.createImageData(
+          /* forceRGBA = */ false,
+          /* isOffscreenCanvasSupported = */ this.options
+            .isOffscreenCanvasSupported
+        );
 
         if (cacheKey && imageRef && cacheGlobally) {
-          this.globalImageCache.addByteSize(imageRef, imgData.data.length);
+          let length = 0;
+          if (imgData.bitmap) {
+            length = imgData.width * imgData.height * 4;
+          } else {
+            length = imgData.data.length;
+          }
+          this.globalImageCache.addByteSize(imageRef, length);
         }
+
         return this._sendImgData(objId, imgData, cacheGlobally);
       })
       .catch(reason => {
