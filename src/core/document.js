@@ -425,6 +425,8 @@ class Page {
           this.resources,
           this.nonBlendModesSet
         ),
+        isOffscreenCanvasSupported:
+          this.evaluatorOptions.isOffscreenCanvasSupported,
         pageIndex: this.pageIndex,
         cacheKey,
       });
