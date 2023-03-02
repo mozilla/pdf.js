@@ -255,21 +255,9 @@ function getDocument(src) {
       src = { url: src };
     } else if (isArrayBuffer(src)) {
       src = { data: src };
-    } else if (src instanceof PDFDataRangeTransport) {
-      deprecated(
-        "`PDFDataRangeTransport`-instance, " +
-          "please use a parameter object with `range`-property instead."
-      );
-      src = { range: src };
-    } else {
-      if (typeof src !== "object") {
-        throw new Error(
-          "Invalid parameter in getDocument, " +
-            "need either string, URL, TypedArray, or parameter object."
-        );
-      }
     }
-  } else if (typeof src !== "object") {
+  }
+  if (typeof src !== "object") {
     throw new Error("Invalid parameter in getDocument, need parameter object.");
   }
   if (!src.url && !src.data && !src.range) {
