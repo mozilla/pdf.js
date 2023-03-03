@@ -160,10 +160,9 @@ class RadialAxialShading extends BaseShading {
     const fnObj = dict.getRaw("Function");
     const fn = pdfFunctionFactory.createFromArray(fnObj);
 
-    // 10 samples seems good enough for now, but probably won't work
-    // if there are sharp color changes. Ideally, we would implement
-    // the spec faithfully and add lossless optimizations.
-    const NUMBER_OF_SAMPLES = 10;
+    // Use lcm(1,2,3,4,5,6,7,8,10) = 840 (including 9 increases this to 2520)
+    // to catch evenly spaced stops. oeis.org/A003418
+    const NUMBER_OF_SAMPLES = 840;
     const step = (t1 - t0) / NUMBER_OF_SAMPLES;
 
     const colorStops = (this.colorStops = []);
@@ -179,13 +178,80 @@ class RadialAxialShading extends BaseShading {
     const color = new Float32Array(cs.numComps),
       ratio = new Float32Array(1);
     let rgbColor;
-    for (let i = 0; i <= NUMBER_OF_SAMPLES; i++) {
+
+    let iBase = 0;
+    ratio[0] = t0;
+    fn(ratio, 0, color, 0);
+    let rgbBase = cs.getRgb(color, 0);
+    const cssColorBase = Util.makeHexColor(rgbBase[0], rgbBase[1], rgbBase[2]);
+    colorStops.push([0, cssColorBase]);
+
+    let iPrev = 1;
+    ratio[0] = t0 + step;
+    fn(ratio, 0, color, 0);
+    let rgbPrev = cs.getRgb(color, 0);
+
+    // Slopes are rise / run.
+    // A max slope is from the least value the base component could have been
+    // to the greatest value the current component could have been.
+    // A min slope is from the greatest value the base component could have been
+    // to the least value the current component could have been.
+    // Each component could have been rounded up to .5 from its original value
+    // so the conservative deltas are +-1 (+-.5 for base and -+.5 for current).
+
+    // The run is iPrev - iBase = 1, so omitted.
+    let maxSlopeR = rgbPrev[0] - rgbBase[0] + 1;
+    let maxSlopeG = rgbPrev[1] - rgbBase[1] + 1;
+    let maxSlopeB = rgbPrev[2] - rgbBase[2] + 1;
+    let minSlopeR = rgbPrev[0] - rgbBase[0] - 1;
+    let minSlopeG = rgbPrev[1] - rgbBase[1] - 1;
+    let minSlopeB = rgbPrev[2] - rgbBase[2] - 1;
+
+    for (let i = 2; i < NUMBER_OF_SAMPLES; i++) {
       ratio[0] = t0 + i * step;
       fn(ratio, 0, color, 0);
       rgbColor = cs.getRgb(color, 0);
-      const cssColor = Util.makeHexColor(rgbColor[0], rgbColor[1], rgbColor[2]);
-      colorStops.push([i / NUMBER_OF_SAMPLES, cssColor]);
+
+      // Keep going if the maximum minimum slope <= the minimum maximum slope.
+      // Otherwise add a rgbPrev color stop and make it the new base.
+
+      const run = i - iBase;
+      maxSlopeR = Math.min(maxSlopeR, (rgbColor[0] - rgbBase[0] + 1) / run);
+      maxSlopeG = Math.min(maxSlopeG, (rgbColor[1] - rgbBase[1] + 1) / run);
+      maxSlopeB = Math.min(maxSlopeB, (rgbColor[2] - rgbBase[2] + 1) / run);
+      minSlopeR = Math.max(minSlopeR, (rgbColor[0] - rgbBase[0] - 1) / run);
+      minSlopeG = Math.max(minSlopeG, (rgbColor[1] - rgbBase[1] - 1) / run);
+      minSlopeB = Math.max(minSlopeB, (rgbColor[2] - rgbBase[2] - 1) / run);
+
+      const slopesExist =
+        minSlopeR <= maxSlopeR &&
+        minSlopeG <= maxSlopeG &&
+        minSlopeB <= maxSlopeB;
+
+      if (!slopesExist) {
+        const cssColor = Util.makeHexColor(rgbPrev[0], rgbPrev[1], rgbPrev[2]);
+        colorStops.push([iPrev / NUMBER_OF_SAMPLES, cssColor]);
+
+        // TODO: When fn frequency is high (iPrev - iBase === 1 twice in a row),
+        // send the color space and function to do the sampling display side.
+
+        // The run is i - iPrev = 1, so omitted.
+        maxSlopeR = rgbColor[0] - rgbPrev[0] + 1;
+        maxSlopeG = rgbColor[1] - rgbPrev[1] + 1;
+        maxSlopeB = rgbColor[2] - rgbPrev[2] + 1;
+        minSlopeR = rgbColor[0] - rgbPrev[0] - 1;
+        minSlopeG = rgbColor[1] - rgbPrev[1] - 1;
+        minSlopeB = rgbColor[2] - rgbPrev[2] - 1;
+
+        iBase = iPrev;
+        rgbBase = rgbPrev;
+      }
+
+      iPrev = i;
+      rgbPrev = rgbColor;
     }
+    const cssColor = Util.makeHexColor(rgbPrev[0], rgbPrev[1], rgbPrev[2]);
+    colorStops.push([1, cssColor]);
 
     let background = "transparent";
     if (dict.has("Background")) {

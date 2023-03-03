@@ -5376,6 +5376,12 @@
        "enableXfa": true,
        "type": "eq"
     },
+    {  "id": "issue14165",
+       "file": "pdfs/issue14165.pdf",
+       "md5": "917850af2a387475b34b00010200897d",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "scorecard_reduced",
        "file": "pdfs/scorecard_reduced.pdf",
        "md5": "aa8ed0827092c963eea64adb718a3806",
@@ -6250,6 +6256,12 @@
            "value": true
          }
        }
+    },
+    {  "id": "issue10572",
+       "file": "pdfs/issue10572.pdf",
+       "md5": "48ad69ed106338b3c6845fc7101488b2",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue11931",
        "file": "pdfs/issue11931.pdf",
