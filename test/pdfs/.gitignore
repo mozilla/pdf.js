@@ -341,6 +341,7 @@
 !issue12810.pdf
 !bug866395.pdf
 !issue12010_reduced.pdf
+!issue10572.pdf
 !issue11718_reduced.pdf
 !bug1027533.pdf
 !bug1028735.pdf
@@ -529,6 +530,7 @@
 !issue15012.pdf
 !issue15150.pdf
 !poppler-395-0-fuzzed.pdf
+!issue14165.pdf
 !GHOSTSCRIPT-698804-1-fuzzed.pdf
 !issue14814.pdf
 !poppler-91414-0-53.pdf
