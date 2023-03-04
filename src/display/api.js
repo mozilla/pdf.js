@@ -26,6 +26,7 @@ import {
   info,
   InvalidPDFException,
   isArrayBuffer,
+  MAX_IMAGE_SIZE_TO_CACHE,
   MissingPDFException,
   PasswordException,
   RenderingIntentFlag,
@@ -2811,7 +2812,6 @@ class WorkerTransport {
           pageProxy.objs.resolve(id, imageData);
 
           // Heuristic that will allow us not to store large data.
-          const MAX_IMAGE_SIZE_TO_STORE = 8000000;
           if (imageData) {
             let length;
             if (imageData.bitmap) {
@@ -2821,7 +2821,7 @@ class WorkerTransport {
               length = imageData.data?.length || 0;
             }
 
-            if (length > MAX_IMAGE_SIZE_TO_STORE) {
+            if (length > MAX_IMAGE_SIZE_TO_CACHE) {
               pageProxy._maybeCleanupAfterRender = true;
             }
           }
