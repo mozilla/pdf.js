@@ -625,6 +625,9 @@ class Driver {
             let viewport = page.getViewport({
               scale: PixelsPerInch.PDF_TO_CSS_UNITS,
             });
+            if (task.rotation) {
+              viewport = viewport.clone({ rotation: task.rotation });
+            }
             // Restrict the test from creating a canvas that is too big.
             const MAX_CANVAS_PIXEL_DIMENSION = 4096;
             const largestDimension = Math.max(viewport.width, viewport.height);
