@@ -1262,6 +1262,8 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
+  #pendingCleanup = false;
+
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
     this._pageIndex = pageIndex;
     this._pageInfo = pageInfo;
@@ -1273,7 +1275,6 @@ class PDFPageProxy {
     this.objs = new PDFObjects();
 
     this.cleanupAfterRender = false;
-    this.pendingCleanup = false;
     this._intentStates = new Map();
     this.destroyed = false;
   }
@@ -1414,7 +1415,7 @@ class PDFPageProxy {
     );
     // If there was a pending destroy, cancel it so no cleanup happens during
     // this call to render.
-    this.pendingCleanup = false;
+    this.#pendingCleanup = false;
 
     if (!optionalContentConfigPromise) {
       optionalContentConfigPromise = this._transport.getOptionalContentConfig();
@@ -1457,9 +1458,9 @@ class PDFPageProxy {
       // Attempt to reduce memory usage during *printing*, by always running
       // cleanup once rendering has finished (regardless of cleanupAfterRender).
       if (this.cleanupAfterRender || intentPrint) {
-        this.pendingCleanup = true;
+        this.#pendingCleanup = true;
       }
-      this._tryCleanup();
+      this.#tryCleanup();
 
       if (error) {
         internalRenderTask.capability.reject(error);
@@ -1509,7 +1510,7 @@ class PDFPageProxy {
           { transparency, isOffscreenCanvasSupported },
           optionalContentConfig,
         ]) => {
-          if (this.pendingCleanup) {
+          if (this.#pendingCleanup) {
             complete();
             return;
           }
@@ -1681,7 +1682,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    this.pendingCleanup = false;
+    this.#pendingCleanup = false;
     return Promise.all(waitOn);
   }
 
@@ -1693,16 +1694,15 @@ class PDFPageProxy {
    * @returns {boolean} Indicates if clean-up was successfully run.
    */
   cleanup(resetStats = false) {
-    this.pendingCleanup = true;
-    return this._tryCleanup(resetStats);
+    this.#pendingCleanup = true;
+    return this.#tryCleanup(resetStats);
   }
 
   /**
    * Attempts to clean up if rendering is in a state where that's possible.
-   * @private
    */
-  _tryCleanup(resetStats = false) {
-    if (!this.pendingCleanup) {
+  #tryCleanup(resetStats = false) {
+    if (!this.#pendingCleanup) {
       return false;
     }
     for (const { renderTasks, operatorList } of this._intentStates.values()) {
@@ -1716,7 +1716,7 @@ class PDFPageProxy {
     if (resetStats && this._stats) {
       this._stats = new StatTimer();
     }
-    this.pendingCleanup = false;
+    this.#pendingCleanup = false;
     return true;
   }
 
@@ -1756,7 +1756,7 @@ class PDFPageProxy {
     }
 
     if (operatorListChunk.lastChunk) {
-      this._tryCleanup();
+      this.#tryCleanup();
     }
   }
 
@@ -1814,7 +1814,7 @@ class PDFPageProxy {
             for (const internalRenderTask of intentState.renderTasks) {
               internalRenderTask.operatorListChanged();
             }
-            this._tryCleanup();
+            this.#tryCleanup();
           }
 
           if (intentState.displayReadyCapability) {
