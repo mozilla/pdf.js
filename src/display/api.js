@@ -66,6 +66,7 @@ import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
+const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
 let DefaultCanvasFactory = DOMCanvasFactory;
 let DefaultCMapReaderFactory = DOMCMapReaderFactory;
@@ -1262,6 +1263,8 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
+  #delayedCleanupTimeout = null;
+
   #pendingCleanup = false;
 
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
@@ -1274,7 +1277,7 @@ class PDFPageProxy {
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
 
-    this.cleanupAfterRender = false;
+    this._maybeCleanupAfterRender = false;
     this._intentStates = new Map();
     this.destroyed = false;
   }
@@ -1414,8 +1417,10 @@ class PDFPageProxy {
       printAnnotationStorage
     );
     // If there was a pending destroy, cancel it so no cleanup happens during
-    // this call to render.
+    // this call to render...
     this.#pendingCleanup = false;
+    // ... and ensure that a delayed cleanup is always aborted.
+    this.#abortDelayedCleanup();
 
     if (!optionalContentConfigPromise) {
       optionalContentConfigPromise = this._transport.getOptionalContentConfig();
@@ -1456,11 +1461,11 @@ class PDFPageProxy {
       intentState.renderTasks.delete(internalRenderTask);
 
       // Attempt to reduce memory usage during *printing*, by always running
-      // cleanup once rendering has finished (regardless of cleanupAfterRender).
-      if (this.cleanupAfterRender || intentPrint) {
+      // cleanup immediately once rendering has finished.
+      if (this._maybeCleanupAfterRender || intentPrint) {
         this.#pendingCleanup = true;
       }
-      this.#tryCleanup();
+      this.#tryCleanup(/* delayed = */ !intentPrint);
 
       if (error) {
         internalRenderTask.capability.reject(error);
@@ -1683,6 +1688,8 @@ class PDFPageProxy {
     }
     this.objs.clear();
     this.#pendingCleanup = false;
+    this.#abortDelayedCleanup();
+
     return Promise.all(waitOn);
   }
 
@@ -1695,14 +1702,33 @@ class PDFPageProxy {
    */
   cleanup(resetStats = false) {
     this.#pendingCleanup = true;
-    return this.#tryCleanup(resetStats);
+    const success = this.#tryCleanup(/* delayed = */ false);
+
+    if (resetStats && success) {
+      this._stats &&= new StatTimer();
+    }
+    return success;
   }
 
   /**
    * Attempts to clean up if rendering is in a state where that's possible.
+   * @param {boolean} [delayed] - Delay the cleanup, to e.g. improve zooming
+   *   performance in documents with large images.
+   *   The default value is `false`.
+   * @returns {boolean} Indicates if clean-up was successfully run.
    */
-  #tryCleanup(resetStats = false) {
+  #tryCleanup(delayed = false) {
+    this.#abortDelayedCleanup();
+
     if (!this.#pendingCleanup) {
+      return false;
+    }
+    if (delayed) {
+      this.#delayedCleanupTimeout = setTimeout(() => {
+        this.#delayedCleanupTimeout = null;
+        this.#tryCleanup(/* delayed = */ false);
+      }, DELAYED_CLEANUP_TIMEOUT);
+
       return false;
     }
     for (const { renderTasks, operatorList } of this._intentStates.values()) {
@@ -1710,14 +1736,17 @@ class PDFPageProxy {
         return false;
       }
     }
-
     this._intentStates.clear();
     this.objs.clear();
-    if (resetStats && this._stats) {
-      this._stats = new StatTimer();
-    }
     this.#pendingCleanup = false;
     return true;
+  }
+
+  #abortDelayedCleanup() {
+    if (this.#delayedCleanupTimeout) {
+      clearTimeout(this.#delayedCleanupTimeout);
+      this.#delayedCleanupTimeout = null;
+    }
   }
 
   /**
@@ -1756,7 +1785,7 @@ class PDFPageProxy {
     }
 
     if (operatorListChunk.lastChunk) {
-      this.#tryCleanup();
+      this.#tryCleanup(/* delayed = */ true);
     }
   }
 
@@ -1814,7 +1843,7 @@ class PDFPageProxy {
             for (const internalRenderTask of intentState.renderTasks) {
               internalRenderTask.operatorListChanged();
             }
-            this.#tryCleanup();
+            this.#tryCleanup(/* delayed = */ true);
           }
 
           if (intentState.displayReadyCapability) {
@@ -2793,7 +2822,7 @@ class WorkerTransport {
             }
 
             if (length > MAX_IMAGE_SIZE_TO_STORE) {
-              pageProxy.cleanupAfterRender = true;
+              pageProxy._maybeCleanupAfterRender = true;
             }
           }
           break;
