@@ -261,6 +261,19 @@
   pointer-events: auto;
 }
 
+.annotationLayer[data-main-rotation="270"] .popup {
+  transform-origin: top left;
+  transform: rotate(90deg) translateY(-100%);
+}
+.annotationLayer[data-main-rotation="180"] .popup {
+  transform-origin: top left;
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+.annotationLayer[data-main-rotation="90"] .popup {
+  transform-origin: top left;
+  transform: rotate(270deg) translateX(-100%);
+}
+
 .annotationLayer .popup > * {
   font-size: calc(9px * var(--scale-factor));
 }

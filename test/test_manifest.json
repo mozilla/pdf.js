@@ -7378,5 +7378,32 @@
       "md5": "1eec7137e471a3d68a20855a04293b5b",
       "link": true,
       "type": "other"
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-90",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 90
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-180",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 180
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-270",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 270
    }
 ]
