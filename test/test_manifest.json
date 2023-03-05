@@ -7378,5 +7378,21 @@
       "md5": "1eec7137e471a3d68a20855a04293b5b",
       "link": true,
       "type": "other"
+   },
+   {
+      "id": "issue6741",
+      "file": "pdfs/issue6741.pdf",
+      "md5": "ddbe6ccc7ae414c7ffa6c4110536730d",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue8076",
+      "file": "pdfs/issue8076.pdf",
+      "md5": "4a866bff4209956a6cfa2e2c9456f421",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
    }
 ]
