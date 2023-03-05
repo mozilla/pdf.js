@@ -642,7 +642,7 @@ class PartialEvaluator {
         return;
       }
 
-      imgData = PDFImage.createMask({
+      imgData = await PDFImage.createMask({
         imgArray,
         width: w,
         height: h,
@@ -716,7 +716,7 @@ class PartialEvaluator {
       });
       // We force the use of RGBA_32BPP images here, because we can't handle
       // any other kind.
-      imgData = imageObj.createImageData(
+      imgData = await imageObj.createImageData(
         /* forceRGBA = */ true,
         /* isOffscreenCanvasSupported = */ false
       );
@@ -760,8 +760,8 @@ class PartialEvaluator {
       pdfFunctionFactory: this._pdfFunctionFactory,
       localColorSpaceCache,
     })
-      .then(imageObj => {
-        imgData = imageObj.createImageData(
+      .then(async imageObj => {
+        imgData = await imageObj.createImageData(
           /* forceRGBA = */ false,
           /* isOffscreenCanvasSupported = */ this.options
             .isOffscreenCanvasSupported
