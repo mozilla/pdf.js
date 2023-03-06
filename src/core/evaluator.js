@@ -71,6 +71,7 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
+import { ImageResizer } from "./image_resizer.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -81,6 +82,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   isOffscreenCanvasSupported: false,
+  canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
   useSystemFonts: true,
   cMapUrl: null,
@@ -229,6 +231,7 @@ class PartialEvaluator {
     this.parsingType3Font = false;
 
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
+    ImageResizer.setMaxArea(this.options.canvasMaxAreaInBytes);
   }
 
   /**
