@@ -81,7 +81,7 @@ class FilterFactory {
 
   addFilter(maps) {
     if (!maps) {
-      return "";
+      return "none";
     }
 
     // When a page is zoomed the page is re-drawn but the maps are likely
