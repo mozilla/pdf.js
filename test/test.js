@@ -22,7 +22,6 @@ var path = require("path");
 var fs = require("fs");
 var os = require("os");
 var puppeteer = require("puppeteer");
-const rimraf = require("rimraf");
 var url = require("url");
 var testUtils = require("./testutils.js");
 const dns = require("dns");
@@ -1044,6 +1043,7 @@ async function closeSession(browser) {
     });
     if (allClosed) {
       if (tempDir) {
+        const rimraf = require("rimraf");
         rimraf.sync(tempDir);
       }
       onAllSessionsClosed?.();
