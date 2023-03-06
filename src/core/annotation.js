@@ -486,6 +486,7 @@ class Annotation {
       rect: this.rectangle,
       subtype: params.subtype,
       hasOwnCanvas: false,
+      noRotate: !!(this.flags & AnnotationFlag.NOROTATE),
     };
 
     if (params.collectFields) {
@@ -3415,6 +3416,7 @@ class SignatureWidgetAnnotation extends WidgetAnnotation {
     // non-serializable and will thus cause errors when sending annotations
     // to the main-thread (issue 10347).
     this.data.fieldValue = null;
+    this.data.hasOwnCanvas = this.data.noRotate;
   }
 
   getFieldObject() {
@@ -3432,6 +3434,10 @@ class TextAnnotation extends MarkupAnnotation {
     const DEFAULT_ICON_SIZE = 22; // px
 
     super(params);
+
+    // No rotation for Text (see 12.5.6.4).
+    this.data.noRotate = true;
+    this.data.hasOwnCanvas = this.data.noRotate;
 
     const { dict } = params;
     this.data.annotationType = AnnotationType.TEXT;
@@ -3550,6 +3556,8 @@ class PopupAnnotation extends Annotation {
 class FreeTextAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
+
+    this.data.hasOwnCanvas = this.data.noRotate;
 
     const { xref } = params;
     this.data.annotationType = AnnotationType.FREETEXT;
@@ -3731,6 +3739,7 @@ class LineAnnotation extends MarkupAnnotation {
 
     const { dict, xref } = params;
     this.data.annotationType = AnnotationType.LINE;
+    this.data.hasOwnCanvas = this.data.noRotate;
 
     const lineCoordinates = dict.getArray("L");
     this.data.lineCoordinates = Util.normalizeRect(lineCoordinates);
@@ -3795,6 +3804,7 @@ class SquareAnnotation extends MarkupAnnotation {
 
     const { dict, xref } = params;
     this.data.annotationType = AnnotationType.SQUARE;
+    this.data.hasOwnCanvas = this.data.noRotate;
 
     if (!this.appearance) {
       // The default stroke color is black.
@@ -3906,6 +3916,7 @@ class PolylineAnnotation extends MarkupAnnotation {
 
     const { dict, xref } = params;
     this.data.annotationType = AnnotationType.POLYLINE;
+    this.data.hasOwnCanvas = this.data.noRotate;
     this.data.vertices = [];
 
     if (!(this instanceof PolygonAnnotation)) {
@@ -3989,6 +4000,8 @@ class CaretAnnotation extends MarkupAnnotation {
 class InkAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
+
+    this.data.hasOwnCanvas = this.data.noRotate;
 
     const { dict, xref } = params;
     this.data.annotationType = AnnotationType.INK;
@@ -4325,6 +4338,7 @@ class StampAnnotation extends MarkupAnnotation {
     super(params);
 
     this.data.annotationType = AnnotationType.STAMP;
+    this.data.hasOwnCanvas = this.data.noRotate;
   }
 }
 
@@ -4336,6 +4350,7 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
     const file = new FileSpec(dict.get("FS"), xref);
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
+    this.data.hasOwnCanvas = this.data.noRotate;
     this.data.file = file.serializable;
 
     const name = dict.get("Name");
