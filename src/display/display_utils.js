@@ -58,6 +58,12 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   #document;
 
+  #hcmFilter;
+
+  #hcmKey;
+
+  #hcmUrl;
+
   #id = 0;
 
   constructor({ docId, ownerDocument = globalThis.document } = {}) {
@@ -172,7 +178,136 @@ class DOMFilterFactory extends BaseFilterFactory {
     return url;
   }
 
-  destroy() {
+  addHCMFilter(fgColor, bgColor) {
+    const key = `${fgColor}-${bgColor}`;
+    if (this.#hcmKey === key) {
+      return this.#hcmUrl;
+    }
+
+    this.#hcmKey = key;
+    this.#hcmUrl = "none";
+    this.#hcmFilter?.remove();
+
+    if (!fgColor || !bgColor) {
+      return this.#hcmUrl;
+    }
+
+    this.#defs.style.color = fgColor;
+    fgColor = getComputedStyle(this.#defs).getPropertyValue("color");
+    const fgRGB = getRGB(fgColor);
+    fgColor = Util.makeHexColor(...fgRGB);
+    this.#defs.style.color = bgColor;
+    bgColor = getComputedStyle(this.#defs).getPropertyValue("color");
+    const bgRGB = getRGB(bgColor);
+    bgColor = Util.makeHexColor(...bgRGB);
+    this.#defs.style.color = "";
+
+    if (
+      (fgColor === "#000000" && bgColor === "#ffffff") ||
+      fgColor === bgColor
+    ) {
+      return this.#hcmUrl;
+    }
+
+    // https://developer.mozilla.org/en-US/docs/Web/Accessibility/Understanding_Colors_and_Luminance
+    //
+    // Relative luminance:
+    // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+    //
+    // We compute the rounded luminance of the default background color.
+    // Then for every color in the pdf, if its rounded luminance is the
+    // same as the background one then it's replaced by the new
+    // background color else by the foreground one.
+    const map = new Array(256);
+    for (let i = 0; i <= 255; i++) {
+      const x = i / 255;
+      map[i] = x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    }
+    const table = map.join(",");
+
+    const id = `g_${this.#docId}_hcm_filter`;
+    const filter = (this.#hcmFilter = this.#document.createElementNS(
+      SVG_NS,
+      "filter",
+      SVG_NS
+    ));
+    filter.setAttribute("id", id);
+    filter.setAttribute("color-interpolation-filters", "sRGB");
+    let feComponentTransfer = this.#document.createElementNS(
+      SVG_NS,
+      "feComponentTransfer"
+    );
+    filter.append(feComponentTransfer);
+
+    let type = "discrete";
+    let feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
+    feFuncR.setAttribute("type", type);
+    feFuncR.setAttribute("tableValues", table);
+    feComponentTransfer.append(feFuncR);
+
+    let feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
+    feFuncG.setAttribute("type", type);
+    feFuncG.setAttribute("tableValues", table);
+    feComponentTransfer.append(feFuncG);
+
+    let feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
+    feFuncB.setAttribute("type", type);
+    feFuncB.setAttribute("tableValues", table);
+    feComponentTransfer.append(feFuncB);
+
+    const feColorMatrix = this.#document.createElementNS(
+      SVG_NS,
+      "feColorMatrix"
+    );
+    feColorMatrix.setAttribute("type", "matrix");
+    feColorMatrix.setAttribute(
+      "values",
+      "0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"
+    );
+    filter.append(feColorMatrix);
+
+    feComponentTransfer = this.#document.createElementNS(
+      SVG_NS,
+      "feComponentTransfer"
+    );
+    filter.append(feComponentTransfer);
+
+    const getSteps = (c, n) => {
+      const start = fgRGB[c] / 255;
+      const end = bgRGB[c] / 255;
+      const arr = new Array(n + 1);
+      for (let i = 0; i <= n; i++) {
+        arr[i] = start + (i / n) * (end - start);
+      }
+      return arr.join(",");
+    };
+
+    type = "discrete";
+    feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
+    feFuncR.setAttribute("type", type);
+    feFuncR.setAttribute("tableValues", `${getSteps(0, 5)}`);
+    feComponentTransfer.append(feFuncR);
+
+    feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
+    feFuncG.setAttribute("type", type);
+    feFuncG.setAttribute("tableValues", `${getSteps(1, 5)}`);
+    feComponentTransfer.append(feFuncG);
+
+    feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
+    feFuncB.setAttribute("type", type);
+    feFuncB.setAttribute("tableValues", `${getSteps(2, 5)}`);
+    feComponentTransfer.append(feFuncB);
+
+    this.#defs.append(filter);
+
+    this.#hcmUrl = `url(#${id})`;
+    return this.#hcmUrl;
+  }
+
+  destroy(keepHCM = false) {
+    if (keepHCM && this.#hcmUrl) {
+      return;
+    }
     if (this.#_defs) {
       this.#_defs.parentNode.parentNode.remove();
       this.#_defs = null;
