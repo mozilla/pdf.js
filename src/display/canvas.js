@@ -1313,11 +1313,21 @@ class CanvasGraphics {
       let newWidth = paintWidth,
         newHeight = paintHeight;
       if (widthScale > 2 && paintWidth > 1) {
-        newWidth = Math.ceil(paintWidth / 2);
+        // See bug 1820511 (Windows specific bug).
+        // TODO: once the above bug is fixed we could revert to:
+        // newWidth = Math.ceil(paintWidth / 2);
+        newWidth =
+          paintWidth >= 16384
+            ? Math.floor(paintWidth / 2) - 1 || 1
+            : Math.ceil(paintWidth / 2);
         widthScale /= paintWidth / newWidth;
       }
       if (heightScale > 2 && paintHeight > 1) {
-        newHeight = Math.ceil(paintHeight / 2);
+        // TODO: see the comment above.
+        newHeight =
+          paintHeight >= 16384
+            ? Math.floor(paintHeight / 2) - 1 || 1
+            : Math.ceil(paintHeight) / 2;
         heightScale /= paintHeight / newHeight;
       }
       tmpCanvas = this.cachedCanvases.getCanvas(
