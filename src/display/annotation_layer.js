@@ -2621,6 +2621,9 @@ class AnnotationLayer {
     let zIndex = 0;
 
     for (const data of annotations) {
+      if (data.noHTML) {
+        continue;
+      }
       if (data.annotationType !== AnnotationType.POPUP) {
         const { width, height } = getRectDims(data.rect);
         if (width <= 0 || height <= 0) {
