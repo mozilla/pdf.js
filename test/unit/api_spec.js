@@ -2368,6 +2368,26 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
+    it("gets text content, with no extra spaces (issue 16119)", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      const loadingTask = getDocument(buildGetDocumentParams("issue16119.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(
+        text.includes(
+          "Engang var der i Samvirke en opskrift på en fiskelagkage, som jeg med"
+        )
+      ).toBe(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with merged spaces (issue 13201)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue13201.pdf"));
       const pdfDoc = await loadingTask.promise;
