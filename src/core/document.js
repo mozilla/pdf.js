@@ -27,7 +27,6 @@ import {
   stringToPDFString,
   stringToUTF8String,
   unreachable,
-  UNSUPPORTED_FEATURES,
   Util,
   warn,
 } from "../shared/util.js";
@@ -220,15 +219,8 @@ class Page {
   /**
    * @private
    */
-  _onSubStreamError(handler, reason, objId) {
+  _onSubStreamError(reason, objId) {
     if (this.evaluatorOptions.ignoreErrors) {
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        // Error(s) when reading one of the /Contents sub-streams -- sending
-        // unsupported feature notification and allow parsing to continue.
-        handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.errorContentSubStream,
-        });
-      }
       warn(`getContentStream - ignoring sub-stream (${objId}): "${reason}".`);
       return;
     }
@@ -238,7 +230,7 @@ class Page {
   /**
    * @returns {Promise<BaseStream>}
    */
-  getContentStream(handler) {
+  getContentStream() {
     return this.pdfManager.ensure(this, "content").then(content => {
       if (content instanceof BaseStream) {
         return content;
@@ -246,7 +238,7 @@ class Page {
       if (Array.isArray(content)) {
         return new StreamsSequenceStream(
           content,
-          this._onSubStreamError.bind(this, handler)
+          this._onSubStreamError.bind(this)
         );
       }
       // Replace non-existent page content with empty content.
@@ -378,7 +370,7 @@ class Page {
     cacheKey,
     annotationStorage = null,
   }) {
-    const contentStreamPromise = this.getContentStream(handler);
+    const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
       "ColorSpace",
       "ExtGState",
@@ -528,7 +520,7 @@ class Page {
     sink,
     combineTextItems,
   }) {
-    const contentStreamPromise = this.getContentStream(handler);
+    const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
       "ExtGState",
       "Font",
