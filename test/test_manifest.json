@@ -7421,5 +7421,14 @@
       "type": "eq",
       "annotations": true,
       "rotation": 270
+   },
+   {
+      "id": "bug1723568",
+      "file": "pdfs/bug1723568.pdf",
+      "md5": "c5cc9f1e01d195b96eadf8be0a819578",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "forms": true
    }
 ]

@@ -471,6 +471,12 @@ class Annotation {
       this._streams.push(this.appearance);
     }
 
+    // The annotation cannot be changed (neither its position/visibility nor its
+    // contents), hence we can just display its appearance and don't generate
+    // a HTML element for it.
+    const isLocked = !!(this.flags & AnnotationFlag.LOCKED);
+    const isContentLocked = !!(this.flags & AnnotationFlag.LOCKEDCONTENTS);
+
     // Expose public properties using a data object.
     this.data = {
       annotationFlags: this.flags,
@@ -487,6 +493,7 @@ class Annotation {
       subtype: params.subtype,
       hasOwnCanvas: false,
       noRotate: !!(this.flags & AnnotationFlag.NOROTATE),
+      noHTML: isLocked && isContentLocked,
     };
 
     if (params.collectFields) {
@@ -1694,7 +1701,11 @@ class WidgetAnnotation extends Annotation {
   ) {
     // Do not render form elements on the canvas when interactive forms are
     // enabled. The display layer is responsible for rendering them instead.
-    if (renderForms && !(this instanceof SignatureWidgetAnnotation)) {
+    if (
+      renderForms &&
+      !(this instanceof SignatureWidgetAnnotation) &&
+      !this.data.noHTML
+    ) {
       return {
         opList: new OperatorList(),
         separateForm: true,
