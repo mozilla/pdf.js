@@ -103,8 +103,17 @@ class ImageResizer {
   }
 
   static set MAX_AREA(area) {
-    this._hasMaxArea = true;
-    shadow(this, "MAX_AREA", area);
+    if (area >= 0) {
+      this._hasMaxArea = true;
+      shadow(this, "MAX_AREA", area);
+    }
+  }
+
+  static setMaxArea(area) {
+    if (!this._hasMaxArea) {
+      // Divide by 4 to have the value in pixels.
+      this.MAX_AREA = area >> 2;
+    }
   }
 
   static _areGoodDims(width, height) {
