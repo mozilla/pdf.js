@@ -66,7 +66,7 @@
   --treeitem-hover-color: rgba(0, 0, 0, 0.9);
   --treeitem-selected-color: rgba(0, 0, 0, 0.9);
   --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
-  --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
+  --sidebaritem-bg-color: AccentColor;
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
   --doorhanger-hover-color: rgba(12, 12, 13, 1);
@@ -156,7 +156,6 @@
     --treeitem-hover-color: rgba(255, 255, 255, 0.9);
     --treeitem-selected-color: rgba(255, 255, 255, 0.9);
     --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
-    --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
     --doorhanger-hover-color: rgba(249, 249, 250, 1);
@@ -194,6 +193,7 @@
     --field-border-color: ButtonText;
     --main-color: CanvasText;
     --separator-color: GrayText;
+    --sidebaritem-bg-color: SelectedItem;
     --doorhanger-separator-color: GrayText;
     --toolbarSidebar-box-shadow: none;
     --toolbarSidebar-border-bottom: 1px solid var(--toolbar-border-color);
