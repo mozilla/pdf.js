@@ -2527,7 +2527,7 @@ class CanvasGraphics {
     if (this.cachedPatterns.has(objId)) {
       pattern = this.cachedPatterns.get(objId);
     } else {
-      pattern = getShadingPattern(this.objs.get(objId));
+      pattern = getShadingPattern(this.getObject(objId));
       this.cachedPatterns.set(objId, pattern);
     }
     if (matrix) {
