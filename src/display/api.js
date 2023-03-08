@@ -582,8 +582,6 @@ function getDataProp(val) {
 class PDFDocumentLoadingTask {
   static #docId = 0;
 
-  #onUnsupportedFeature = null;
-
   constructor() {
     this._capability = createPromiseCapability();
     this._transport = null;
@@ -616,28 +614,6 @@ class PDFDocumentLoadingTask {
      * @type {function}
      */
     this.onProgress = null;
-  }
-
-  /**
-   * @type {function | null} The current callback used with unsupported
-   * features.
-   */
-  get onUnsupportedFeature() {
-    return this.#onUnsupportedFeature;
-  }
-
-  /**
-   * Callback for when an unsupported feature is used in the PDF document.
-   * The callback receives an {@link UNSUPPORTED_FEATURES} argument.
-   * @type {function}
-   */
-  set onUnsupportedFeature(callback) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      deprecated(
-        "The PDFDocumentLoadingTask onUnsupportedFeature property will be removed in the future."
-      );
-      this.#onUnsupportedFeature = callback;
-    }
   }
 
   /**
@@ -2361,7 +2337,6 @@ class WorkerTransport {
     this.loadingTask = loadingTask;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader({
-      onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
       ownerDocument: params.ownerDocument,
       styleElement: params.styleElement,
     });
@@ -2761,7 +2736,6 @@ class WorkerTransport {
             isEvalSupported: params.isEvalSupported,
             disableFontFace: params.disableFontFace,
             ignoreErrors: params.ignoreErrors,
-            onUnsupportedFeature: this._onUnsupportedFeature.bind(this),
             fontRegistry,
           });
 
@@ -2840,13 +2814,6 @@ class WorkerTransport {
       });
     });
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      messageHandler.on(
-        "UnsupportedFeature",
-        this._onUnsupportedFeature.bind(this)
-      );
-    }
-
     messageHandler.on("FetchBuiltInCMap", data => {
       if (this.destroyed) {
         return Promise.reject(new Error("Worker was destroyed."));
@@ -2874,15 +2841,6 @@ class WorkerTransport {
       }
       return this.standardFontDataFactory.fetch(data);
     });
-  }
-
-  _onUnsupportedFeature({ featureId }) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      if (this.destroyed) {
-        return; // Ignore any pending requests if the worker was terminated.
-      }
-      this.loadingTask.onUnsupportedFeature?.(featureId);
-    }
   }
 
   getData() {
