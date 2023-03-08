@@ -434,6 +434,11 @@ class FirefoxExternalServices extends DefaultExternalServices {
     const isInAutomation = FirefoxCom.requestSync("isInAutomation");
     return shadow(this, "isInAutomation", isInAutomation);
   }
+
+  static get canvasMaxAreaInBytes() {
+    const maxArea = FirefoxCom.requestSync("getCanvasMaxArea");
+    return shadow(this, "canvasMaxAreaInBytes", maxArea);
+  }
 }
 PDFViewerApplication.externalServices = FirefoxExternalServices;
 
