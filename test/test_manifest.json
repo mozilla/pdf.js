@@ -2378,6 +2378,16 @@
        "type": "eq",
        "about": "Type3 fonts with image resources; both pages need to be tested, otherwise the bug won't manifest."
     },
+    {  "id": "issue16127",
+       "file": "pdfs/issue16127.pdf",
+       "md5": "42714567a818876f51ef960df21600f5",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 1,
+       "lastPage": 2,
+       "type": "eq",
+       "about": "Type3 fonts with pattern resources; both pages need to be tested, otherwise the bug won't manifest."
+    },
     {  "id": "doc_actions",
        "file": "pdfs/doc_actions.pdf",
        "md5": "ceae4eb405a0b40394f4d63d7525a870",
