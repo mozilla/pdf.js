@@ -27,10 +27,6 @@ import { opacityToHex } from "./tools.js";
 // so each dimension must be greater than RESIZER_SIZE.
 const RESIZER_SIZE = 16;
 
-// Some dimensions aren't in percent and that leads to some errors
-// when the page is zoomed (see #15571).
-const TIME_TO_WAIT_BEFORE_FIXING_DIMS = 100;
-
 /**
  * Basic draw editor in order to generate an Ink annotation.
  */
@@ -627,20 +623,9 @@ class InkEditor extends AnnotationEditor {
    * Create the resize observer.
    */
   #createObserver() {
-    let timeoutId = null;
     this.#observer = new ResizeObserver(entries => {
       const rect = entries[0].contentRect;
       if (rect.width && rect.height) {
-        // Workaround for:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=1795536
-        if (timeoutId !== null) {
-          clearTimeout(timeoutId);
-        }
-        timeoutId = setTimeout(() => {
-          this.fixDims();
-          timeoutId = null;
-        }, TIME_TO_WAIT_BEFORE_FIXING_DIMS);
-
         this.setDimensions(rect.width, rect.height);
       }
     });
@@ -748,6 +733,10 @@ class InkEditor extends AnnotationEditor {
     this.#redraw();
 
     this.canvas.style.visibility = "visible";
+
+    // For any reason the dimensions couldn't be in percent but in pixels, hence
+    // we must fix them.
+    this.fixDims();
   }
 
   #setScaleFactor(width, height) {
