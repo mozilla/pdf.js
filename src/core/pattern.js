@@ -19,7 +19,6 @@ import {
   info,
   shadow,
   unreachable,
-  UNSUPPORTED_FEATURES,
   Util,
   warn,
 } from "../shared/util.js";
@@ -46,7 +45,6 @@ class Pattern {
     shading,
     xref,
     res,
-    handler,
     pdfFunctionFactory,
     localColorSpaceCache
   ) {
@@ -81,11 +79,6 @@ class Pattern {
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
-      }
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.shadingPattern,
-        });
       }
       warn(ex);
       return new DummyShading();
