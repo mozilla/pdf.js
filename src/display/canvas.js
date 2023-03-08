@@ -38,6 +38,7 @@ import {
   TilingPattern,
 } from "./pattern_helper.js";
 import { convertBlackAndWhiteToRGBA } from "../shared/image_utils.js";
+import { isNodeJS } from "../shared/is_node.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -837,6 +838,7 @@ function copyCtxState(sourceCtx, destCtx) {
     "miterLimit",
     "globalCompositeOperation",
     "font",
+    "filter",
   ];
   for (const property of properties) {
     if (sourceCtx[property] !== undefined) {
@@ -862,6 +864,9 @@ function resetCtxToDefault(ctx, foregroundColor) {
   if (ctx.setLineDash !== undefined) {
     ctx.setLineDash([]);
     ctx.lineDashOffset = 0;
+  }
+  if (!isNodeJS) {
+    ctx.filter = "none";
   }
 }
 
@@ -1586,9 +1591,12 @@ class CanvasGraphics {
           this.checkSMaskState();
           break;
         case "TR":
-          this.current.transferMaps = this.filterFactory
-            ? this.filterFactory.addFilter(value)
-            : value;
+          if (this.filterFactory) {
+            this.ctx.filter = this.current.transferMaps =
+              this.filterFactory.addFilter(value);
+          } else {
+            this.current.transferMaps = value;
+          }
           break;
       }
     }
@@ -3035,7 +3043,7 @@ class CanvasGraphics {
   }
 
   applyTransferMapsToBitmap(imgData) {
-    if (!this.current.transferMaps) {
+    if (!this.current.transferMaps || this.current.transferMaps === "none") {
       return imgData.bitmap;
     }
     const { bitmap, width, height } = imgData;
@@ -3047,7 +3055,7 @@ class CanvasGraphics {
     const tmpCtx = tmpCanvas.context;
     tmpCtx.filter = this.current.transferMaps;
     tmpCtx.drawImage(bitmap, 0, 0);
-    tmpCtx.filter = "";
+    tmpCtx.filter = "none";
 
     return tmpCanvas.canvas;
   }
@@ -3061,6 +3069,15 @@ class CanvasGraphics {
     const ctx = this.ctx;
 
     this.save();
+
+    if (!isNodeJS) {
+      // The filter, if any, will be applied in applyTransferMapsToBitmap.
+      // It must be applied to the image before rescaling else some artifacts
+      // could appear.
+      // The final restore will reset it to its value.
+      ctx.filter = "none";
+    }
+
     // scale the image to the unit square
     ctx.scale(1 / width, -1 / height);
 
@@ -3116,7 +3133,7 @@ class CanvasGraphics {
     const ctx = this.ctx;
     let imgToPaint;
     if (imgData.bitmap) {
-      imgToPaint = this.applyTransferMapsToBitmap(imgData);
+      imgToPaint = imgData.bitmap;
     } else {
       const w = imgData.width;
       const h = imgData.height;
