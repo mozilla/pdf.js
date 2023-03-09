@@ -269,6 +269,7 @@ function getDocument(src) {
     );
   }
   const task = new PDFDocumentLoadingTask();
+  const { docId } = task;
 
   const url = src.url ? getUrlProp(src.url) : null;
   const data = src.data ? getDataProp(src.data) : null;
@@ -339,7 +340,7 @@ function getDocument(src) {
   const canvasFactory =
     src.canvasFactory || new DefaultCanvasFactory({ ownerDocument });
   const filterFactory =
-    src.filterFactory || new FilterFactory({ ownerDocument });
+    src.filterFactory || new FilterFactory({ docId, ownerDocument });
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
@@ -378,7 +379,6 @@ function getDocument(src) {
       : new PDFWorker(workerParams);
     task._worker = worker;
   }
-  const docId = task.docId;
 
   const fetchDocParams = {
     docId,
