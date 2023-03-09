@@ -289,21 +289,26 @@ function normalize(text) {
         // "X-\n" is removed because an hyphen at the end of a line
         // with not a space before is likely here to mark a break
         // in a word.
-        // The \n isn't in the original text so here y = i, n = 1 and o = 2.
-        positions.push([i - shift + 1, 1 + shift]);
+        // If X is encoded with UTF-32 then it can have a length greater than 1.
+        // The \n isn't in the original text so here y = i, n = X.len - 2 and
+        // o = X.len - 1.
+        const len = p5.length - 2;
+        positions.push([i - shift + len, 1 + shift]);
         shift += 1;
         shiftOrigin += 1;
         eol += 1;
-        return p5.charAt(0);
+        return p5.slice(0, -2);
       }
 
       if (p6) {
         // An ideographic at the end of a line doesn't imply adding an extra
         // white space.
-        positions.push([i - shift + 1, shift]);
+        // A CJK can be encoded in UTF-32, hence their length isn't always 1.
+        const len = p6.length - 1;
+        positions.push([i - shift + len, shift]);
         shiftOrigin += 1;
         eol += 1;
-        return p6.charAt(0);
+        return p6.slice(0, -1);
       }
 
       if (p7) {
