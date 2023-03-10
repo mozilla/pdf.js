@@ -53,12 +53,15 @@ class FilterFactory {
 
   #_defs;
 
+  #baseURL = null;
+
   #document;
 
   #id = 0;
 
   constructor({ ownerDocument = globalThis.document } = {}) {
     this.#document = ownerDocument;
+    this.#baseURL = this.#document?.URL ? new URL(this.#document.URL) : null;
   }
 
   get #cache() {
@@ -125,7 +128,16 @@ class FilterFactory {
     //  https://www.w3.org/TR/SVG11/filters.html#feComponentTransferElement
 
     const id = `transfer_map_${this.#id++}`;
-    const url = `url(#${id})`;
+    let url;
+    if (this.#baseURL) {
+      this.#baseURL.hash = id;
+      // We use an absolute URL to avoid any issues in Firefox builtin viewer
+      // (see bug 1821408).
+      url = `url(${this.#baseURL})`;
+    } else {
+      url = `url(#${id})`;
+    }
+
     this.#cache.set(maps, url);
     this.#cache.set(key, url);
 
