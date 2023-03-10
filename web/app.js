@@ -2133,19 +2133,18 @@ const PDFViewerApplication = {
 };
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-  const HOSTED_VIEWER_ORIGINS = [
-    "null",
-    "http://mozilla.github.io",
-    "https://mozilla.github.io",
-  ];
+  const HOSTED_VIEWER_ORIGINS = ["null"];
   // eslint-disable-next-line no-var
-  var validateFileURL = function (file) {
+  var validateFileURL = function (file, forceNullHostedViewOrigin = false) {
     if (!file) {
       return;
     }
     try {
       const viewerOrigin = new URL(window.location.href).origin || "null";
-      if (HOSTED_VIEWER_ORIGINS.includes(viewerOrigin)) {
+      if (
+        HOSTED_VIEWER_ORIGINS.includes(viewerOrigin) ||
+        forceNullHostedViewOrigin
+      ) {
         // Hosted or local viewer, allow for any file locations
         return;
       }
@@ -2202,7 +2201,7 @@ function webViewerInitialized() {
     const queryString = document.location.search.substring(1);
     const params = parseQueryString(queryString);
     file = params.get("file") ?? AppOptions.get("defaultUrl");
-    validateFileURL(file);
+    validateFileURL(file, true);
   } else if (PDFJSDev.test("MOZCENTRAL")) {
     file = window.location.href;
   } else if (PDFJSDev.test("CHROME")) {
@@ -2221,26 +2220,6 @@ function webViewerInitialized() {
       eventBus.dispatch("fileinputchange", {
         source: this,
         fileInput: evt.target,
-      });
-    });
-
-    // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
-    appConfig.mainContainer.addEventListener("dragover", function (evt) {
-      evt.preventDefault();
-
-      evt.dataTransfer.dropEffect =
-        evt.dataTransfer.effectAllowed === "copy" ? "copy" : "move";
-    });
-    appConfig.mainContainer.addEventListener("drop", function (evt) {
-      evt.preventDefault();
-
-      const { files } = evt.dataTransfer;
-      if (!files || files.length === 0) {
-        return;
-      }
-      eventBus.dispatch("fileinputchange", {
-        source: this,
-        fileInput: evt.dataTransfer,
       });
     });
   }
@@ -2278,7 +2257,7 @@ function webViewerInitialized() {
   try {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
-        PDFViewerApplication.open({ url: file });
+        PDFViewerApplication.open({ url: file, withCredentials: true });
       } else {
         PDFViewerApplication._hideViewBookmark();
       }

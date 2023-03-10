@@ -32,7 +32,7 @@
   --toolbar-icon-opacity: 0.7;
   --doorhanger-icon-opacity: 0.9;
 
-  --main-color: rgba(12, 12, 13, 1);
+  --main-color: rgba(249, 249, 250, 1);
   --body-bg-color: rgba(212, 212, 215, 1);
   --progressBar-color: rgba(10, 132, 255, 1);
   --progressBar-bg-color: rgba(221, 221, 222, 1);
@@ -218,7 +218,7 @@ body {
 }
 
 body {
-  background-color: var(--body-bg-color);
+  background-color: #263238;
   scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
 }
 
@@ -258,7 +258,7 @@ body {
 
 #sidebarContainer {
   position: absolute;
-  top: 32px;
+  top: 52px;
   bottom: 0;
   inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
@@ -302,7 +302,7 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  top: 32px;
+  top: 52px;
   right: 0;
   bottom: 0;
   left: 0;
@@ -382,6 +382,8 @@ body {
 
 #toolbarViewer {
   height: 32px;
+  background-color: #12191d;
+  padding: 10px;
 }
 
 #loadingBar {
@@ -393,7 +395,7 @@ body {
   position: absolute;
   inset-inline: 0 var(--progressBar-end-offset);
   height: 4px;
-  background-color: var(--progressBar-bg-color);
+  background-color: #1d272c;
   border-bottom: 1px solid var(--toolbar-border-color);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
@@ -412,7 +414,7 @@ body {
   transform: scaleX(var(--progressBar-percent));
   transform-origin: 0 0;
   height: 100%;
-  background-color: var(--progressBar-color);
+  background-color: #673ab7;
   overflow: hidden;
   transition: transform 200ms;
 }
@@ -746,7 +748,8 @@ body {
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus-visible,
 .dropdownToolbarButton:hover {
-  background-color: var(--button-hover-color);
+  background-color: #37474f;
+  border-radius: 50%;
 }
 .splitToolbarButton > .toolbarButton {
   position: relative;
@@ -783,7 +786,8 @@ body {
 
 .toolbarButton:hover,
 .toolbarButton:focus-visible {
-  background-color: var(--button-hover-color);
+  background-color: #37474f;
+  border-radius: 50%;
 }
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus-visible {
@@ -835,12 +839,12 @@ body {
   margin: 0;
   padding: 1px 0 2px;
   padding-inline-start: 6px;
-  border: none;
-  background-color: var(--dropdown-btn-bg-color);
+  border: 1px solid rgb(55, 71, 79);
+  background-color: #1d272c;
+  border-radius: 8px;
 }
 .dropdownToolbarButton > select:hover,
 .dropdownToolbarButton > select:focus-visible {
-  background-color: var(--button-hover-color);
   color: var(--toggled-btn-color);
 }
 .dropdownToolbarButton > select > option {
@@ -862,8 +866,8 @@ body {
    * All relevant containers have a size of 28x28 */
   position: absolute;
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 
   content: "";
   background-color: var(--toolbar-icon-bg-color);
@@ -878,8 +882,8 @@ body {
 
 .toolbarButton::before {
   opacity: var(--toolbar-icon-opacity);
-  top: 6px;
-  left: 6px;
+  top: 5px;
+  left: 5px;
 }
 
 .toolbarButton:hover::before,
@@ -1104,10 +1108,10 @@ a.secondaryToolbarButton[href="#"] {
 .toolbarField {
   padding: 4px 7px;
   margin: 3px 0;
-  border-radius: 2px;
-  background-color: var(--field-bg-color);
+  border-radius: 8px;
+  background-color: #1d272c;
   background-clip: padding-box;
-  border: 1px solid var(--field-border-color);
+  border: 1px solid #37474f;
   box-shadow: none;
   color: var(--field-color);
   font-size: 12px;
@@ -1147,7 +1151,7 @@ a.secondaryToolbarButton[href="#"] {
 /*#endif*/
 
 .toolbarField:focus {
-  border-color: #0a84ff;
+  border-color: #673ab7;
 }
 
 .toolbarLabel {
@@ -1530,4 +1534,55 @@ dialog :link {
   #scaleSelectContainer {
     display: none;
   }
+}
+
+/* The emerging W3C standard
+that is currently Firefox-only */
+* {
+  scrollbar-color: rgba(198, 210, 217, 0.5) rgba(25, 26, 31, 0);
+  scrollbar-width: thin;
+}
+
+/* Works on Chrome/Edge/Safari */
+*::-webkit-scrollbar {
+  width: 15px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(198, 210, 217, 0.5);
+  border-radius: 20px;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0);
+}
+
+#viewFind,
+#openFile,
+#editorFreeText,
+#editorInk,
+#secondaryToolbarToggle,
+#editorModeSeparator,
+#sidebarToggle,
+#toolbarViewerRight .verticalToolbarSeparator {
+  display: none;
+}
+
+#scaleSelectContainer {
+  background-color: transparent;
+}
+
+#toolbarViewerRight {
+  padding-right: 20px;
+}
+
+#pageNumber {
+  font-size: 12px;
+  line-height: 18px;
 }
