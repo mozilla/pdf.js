@@ -195,6 +195,10 @@ function webViewerLoad() {
       document.dispatchEvent(event);
     }
   }
+  AppOptions.set("disablePreferences", true);
+  AppOptions.set("externalLinkTarget", LinkTarget.BLANK);
+  // set Dark themed viewer
+  AppOptions.set("viewerCssTheme", 2);
   PDFViewerApplication.run(config);
 }
 
