@@ -28,7 +28,6 @@ import {
   shadow,
   stringToPDFString,
   TextRenderingMode,
-  UNSUPPORTED_FEATURES,
   Util,
   warn,
 } from "../shared/util.js";
@@ -71,6 +70,7 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
+import { ImageResizer } from "./image_resizer.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFImage } from "./image.js";
@@ -81,6 +81,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   ignoreErrors: false,
   isEvalSupported: true,
   isOffscreenCanvasSupported: false,
+  canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
   useSystemFonts: true,
   cMapUrl: null,
@@ -229,6 +230,7 @@ class PartialEvaluator {
     this.parsingType3Font = false;
 
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
+    ImageResizer.setMaxArea(this.options.canvasMaxAreaInBytes);
   }
 
   /**
@@ -642,7 +644,7 @@ class PartialEvaluator {
         return;
       }
 
-      imgData = PDFImage.createMask({
+      imgData = await PDFImage.createMask({
         imgArray,
         width: w,
         height: h,
@@ -716,7 +718,12 @@ class PartialEvaluator {
       });
       // We force the use of RGBA_32BPP images here, because we can't handle
       // any other kind.
-      imgData = imageObj.createImageData(/* forceRGBA = */ true);
+      imgData = await imageObj.createImageData(
+        /* forceRGBA = */ true,
+        /* isOffscreenCanvasSupported = */ false
+      );
+      operatorList.isOffscreenCanvasSupported =
+        this.options.isOffscreenCanvasSupported;
       operatorList.addImageOps(
         OPS.paintInlineImageXObject,
         [imgData],
@@ -755,12 +762,23 @@ class PartialEvaluator {
       pdfFunctionFactory: this._pdfFunctionFactory,
       localColorSpaceCache,
     })
-      .then(imageObj => {
-        imgData = imageObj.createImageData(/* forceRGBA = */ false);
+      .then(async imageObj => {
+        imgData = await imageObj.createImageData(
+          /* forceRGBA = */ false,
+          /* isOffscreenCanvasSupported = */ this.options
+            .isOffscreenCanvasSupported
+        );
 
         if (cacheKey && imageRef && cacheGlobally) {
-          this.globalImageCache.addByteSize(imageRef, imgData.data.length);
+          let length = 0;
+          if (imgData.bitmap) {
+            length = imgData.width * imgData.height * 4;
+          } else {
+            length = imgData.data.length;
+          }
+          this.globalImageCache.addByteSize(imageRef, length);
         }
+
         return this._sendImgData(objId, imgData, cacheGlobally);
       })
       .catch(reason => {
@@ -929,13 +947,6 @@ class PartialEvaluator {
           return;
         }
         if (this.options.ignoreErrors) {
-          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-            // Error(s) in the TilingPattern -- sending unsupported feature
-            // notification and allow rendering to continue.
-            this.handler.send("UnsupportedFeature", {
-              featureId: UNSUPPORTED_FEATURES.errorTilingPattern,
-            });
-          }
           warn(`handleTilingType - ignoring pattern: "${reason}".`);
           return;
         }
@@ -977,13 +988,6 @@ class PartialEvaluator {
             return translated;
           })
           .catch(reason => {
-            if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-              // Error in the font data -- sending unsupported feature
-              // notification.
-              this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.errorFontLoadType3,
-              });
-            }
             return new TranslatedFont({
               loadedName: "g_font_error",
               font: new ErrorFont(`Type3 font load error: ${reason}`),
@@ -1033,13 +1037,6 @@ class PartialEvaluator {
     );
 
     if (this.options.ignoreErrors) {
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        // Missing setFont operator before text rendering operator -- sending
-        // unsupported feature notification and allow rendering to continue.
-        this.handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.errorFontState,
-        });
-      }
       warn(`ensureStateFont: "${reason}".`);
       return;
     }
@@ -1197,12 +1194,6 @@ class PartialEvaluator {
         warn(`${partialMsg}.`);
         return errorFont();
       }
-      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-        // Font not found -- sending unsupported feature notification.
-        this.handler.send("UnsupportedFeature", {
-          featureId: UNSUPPORTED_FEATURES.errorFontMissing,
-        });
-      }
       warn(`${partialMsg} -- attempting to fallback to a default font.`);
 
       // Falling back to a default font to avoid completely broken rendering,
@@ -1321,12 +1312,6 @@ class PartialEvaluator {
       })
       .catch(reason => {
         // TODO fontCapability.reject?
-        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-          // Error in the font data -- sending unsupported feature notification.
-          this.handler.send("UnsupportedFeature", {
-            featureId: UNSUPPORTED_FEATURES.errorFontTranslate,
-          });
-        }
         warn(`loadFont - translateFont failed: "${reason}".`);
 
         fontCapability.resolve(
@@ -1432,13 +1417,6 @@ class PartialEvaluator {
         return null;
       }
       if (this.options.ignoreErrors) {
-        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-          // Error(s) in the ColorSpace -- sending unsupported feature
-          // notification and allow rendering to continue.
-          this.handler.send("UnsupportedFeature", {
-            featureId: UNSUPPORTED_FEATURES.errorColorSpace,
-          });
-        }
         warn(`parseColorSpace - ignoring ColorSpace: "${reason}".`);
         return null;
       }
@@ -1460,14 +1438,21 @@ class PartialEvaluator {
         shading,
         this.xref,
         resources,
-        this.handler,
         this._pdfFunctionFactory,
         localColorSpaceCache
       );
       const patternIR = shadingFill.getIR();
       id = `pattern_${this.idFactory.createObjId()}`;
+      if (this.parsingType3Font) {
+        id = `${this.idFactory.getDocId()}_type3_${id}`;
+      }
       localShadingPatternCache.set(shading, id);
-      this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
+
+      if (this.parsingType3Font) {
+        this.handler.send("commonobj", [id, "Pattern", patternIR]);
+      } else {
+        this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
+      }
     }
     return id;
   }
@@ -1823,16 +1808,6 @@ class PartialEvaluator {
                   return;
                 }
                 if (self.options.ignoreErrors) {
-                  if (
-                    typeof PDFJSDev === "undefined" ||
-                    PDFJSDev.test("GENERIC")
-                  ) {
-                    // Error(s) in the XObject -- sending unsupported feature
-                    // notification and allow rendering to continue.
-                    self.handler.send("UnsupportedFeature", {
-                      featureId: UNSUPPORTED_FEATURES.errorXObject,
-                    });
-                  }
                   warn(`getOperatorList - ignoring XObject: "${reason}".`);
                   return;
                 }
@@ -2147,16 +2122,6 @@ class PartialEvaluator {
                   return;
                 }
                 if (self.options.ignoreErrors) {
-                  if (
-                    typeof PDFJSDev === "undefined" ||
-                    PDFJSDev.test("GENERIC")
-                  ) {
-                    // Error(s) in the ExtGState -- sending unsupported feature
-                    // notification and allow parsing/rendering to continue.
-                    self.handler.send("UnsupportedFeature", {
-                      featureId: UNSUPPORTED_FEATURES.errorExtGState,
-                    });
-                  }
                   warn(`getOperatorList - ignoring ExtGState: "${reason}".`);
                   return;
                 }
@@ -2204,14 +2169,6 @@ class PartialEvaluator {
                       return;
                     }
                     if (self.options.ignoreErrors) {
-                      if (
-                        typeof PDFJSDev === "undefined" ||
-                        PDFJSDev.test("GENERIC")
-                      ) {
-                        self.handler.send("UnsupportedFeature", {
-                          featureId: UNSUPPORTED_FEATURES.errorMarkedContent,
-                        });
-                      }
                       warn(
                         `getOperatorList - ignoring beginMarkedContentProps: "${reason}".`
                       );
@@ -2262,13 +2219,6 @@ class PartialEvaluator {
         return;
       }
       if (this.options.ignoreErrors) {
-        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-          // Error(s) in the OperatorList -- sending unsupported feature
-          // notification and allow rendering to continue.
-          this.handler.send("UnsupportedFeature", {
-            featureId: UNSUPPORTED_FEATURES.errorOperatorList,
-          });
-        }
         warn(
           `getOperatorList - ignoring errors during "${task.name}" ` +
             `task: "${reason}".`
@@ -2370,7 +2320,7 @@ class PartialEvaluator {
 
     // A white <= fontSize * TRACKING_SPACE_FACTOR is a tracking space
     // so it doesn't count as a space.
-    const TRACKING_SPACE_FACTOR = 0.1;
+    const TRACKING_SPACE_FACTOR = 0.102;
 
     // When a white <= fontSize * NOT_A_SPACE_FACTOR, there is no space
     // even if one is present in the text stream.
@@ -2388,7 +2338,7 @@ class PartialEvaluator {
     // (which means a new span in the text layer).
     // It's useful to adjust the best as possible the span in the layer
     // to what is displayed in the canvas.
-    const SPACE_IN_FLOW_MIN_FACTOR = 0.1;
+    const SPACE_IN_FLOW_MIN_FACTOR = 0.102;
     const SPACE_IN_FLOW_MAX_FACTOR = 0.6;
 
     const self = this;
@@ -2474,16 +2424,12 @@ class PartialEvaluator {
       const scaleCtmX = Math.hypot(textState.ctm[0], textState.ctm[1]);
       textContentItem.textAdvanceScale = scaleCtmX * scaleLineX;
 
-      textContentItem.trackingSpaceMin =
-        textState.fontSize * TRACKING_SPACE_FACTOR;
-      textContentItem.notASpace = textState.fontSize * NOT_A_SPACE_FACTOR;
-      textContentItem.negativeSpaceMax =
-        textState.fontSize * NEGATIVE_SPACE_FACTOR;
-      textContentItem.spaceInFlowMin =
-        textState.fontSize * SPACE_IN_FLOW_MIN_FACTOR;
-      textContentItem.spaceInFlowMax =
-        textState.fontSize * SPACE_IN_FLOW_MAX_FACTOR;
-
+      const { fontSize } = textState;
+      textContentItem.trackingSpaceMin = fontSize * TRACKING_SPACE_FACTOR;
+      textContentItem.notASpace = fontSize * NOT_A_SPACE_FACTOR;
+      textContentItem.negativeSpaceMax = fontSize * NEGATIVE_SPACE_FACTOR;
+      textContentItem.spaceInFlowMin = fontSize * SPACE_IN_FLOW_MIN_FACTOR;
+      textContentItem.spaceInFlowMax = fontSize * SPACE_IN_FLOW_MAX_FACTOR;
       textContentItem.hasEOL = false;
 
       textContentItem.initialized = true;
@@ -3763,13 +3709,6 @@ class PartialEvaluator {
             return null;
           }
           if (this.options.ignoreErrors) {
-            if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-              // Error in the ToUnicode data -- sending unsupported feature
-              // notification and allow font parsing to continue.
-              this.handler.send("UnsupportedFeature", {
-                featureId: UNSUPPORTED_FEATURES.errorFontToUnicode,
-              });
-            }
             warn(`readToUnicode - ignoring ToUnicode data: "${reason}".`);
             return null;
           }
@@ -4343,13 +4282,6 @@ class PartialEvaluator {
         ]);
       } catch (reason) {
         if (evaluatorOptions.ignoreErrors) {
-          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-            // Error in the font data -- sending unsupported feature
-            // notification and allow glyph path building to continue.
-            handler.send("UnsupportedFeature", {
-              featureId: UNSUPPORTED_FEATURES.errorFontBuildPath,
-            });
-          }
           warn(`buildFontPaths - ignoring ${glyphName} glyph: "${reason}".`);
           return;
         }

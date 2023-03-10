@@ -53,6 +53,22 @@
   z-index: 3;
 }
 
+.annotationLayer[data-main-rotation="90"] .norotate {
+  transform: rotate(270deg) translateX(-100%);
+}
+.annotationLayer[data-main-rotation="180"] .norotate {
+  transform: rotate(180deg) translate(-100%, -100%);
+}
+.annotationLayer[data-main-rotation="270"] .norotate {
+  transform: rotate(90deg) translateY(-100%);
+}
+
+.annotationLayer canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
 .annotationLayer section {
   position: absolute;
   text-align: initial;
@@ -75,11 +91,6 @@
   height: 100%;
 }
 
-.annotationLayer .buttonWidgetAnnotation.pushButton > canvas {
-  width: 100%;
-  height: 100%;
-}
-
 .annotationLayer .linkAnnotation > a:hover,
 .annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
   opacity: 0.2;
@@ -92,6 +103,8 @@
   cursor: pointer;
   width: 100%;
   height: 100%;
+  top: 0;
+  left: 0;
 }
 
 .annotationLayer .textWidgetAnnotation input,
@@ -237,6 +250,10 @@
   width: 100%;
 }
 
+.annotationLayer .fileAttachmentAnnotation .popupTriggerArea {
+  position: absolute;
+}
+
 .annotationLayer .popupWrapper {
   position: absolute;
   font-size: calc(9px * var(--scale-factor));
@@ -306,6 +323,8 @@
   position: absolute;
   width: 100%;
   height: 100%;
+  top: 0;
+  left: 0;
 }
 
 .annotationLayer .annotationTextContent {

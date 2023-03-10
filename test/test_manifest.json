@@ -2378,6 +2378,16 @@
        "type": "eq",
        "about": "Type3 fonts with image resources; both pages need to be tested, otherwise the bug won't manifest."
     },
+    {  "id": "issue16127",
+       "file": "pdfs/issue16127.pdf",
+       "md5": "42714567a818876f51ef960df21600f5",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 1,
+       "lastPage": 2,
+       "type": "eq",
+       "about": "Type3 fonts with pattern resources; both pages need to be tested, otherwise the bug won't manifest."
+    },
     {  "id": "doc_actions",
        "file": "pdfs/doc_actions.pdf",
        "md5": "ceae4eb405a0b40394f4d63d7525a870",
@@ -7376,6 +7386,80 @@
       "id": "f1040_2022.pdf",
       "file": "pdfs/f1040_2022.pdf",
       "md5": "1eec7137e471a3d68a20855a04293b5b",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "issue6741",
+      "file": "pdfs/issue6741.pdf",
+      "md5": "ddbe6ccc7ae414c7ffa6c4110536730d",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "issue8076",
+      "file": "pdfs/issue8076.pdf",
+      "md5": "4a866bff4209956a6cfa2e2c9456f421",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-90",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 90
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-180",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 180
+   },
+   {
+      "id": "annotation-link-text-popup-rotated-270",
+      "file": "pdfs/annotation-link-text-popup.pdf",
+      "md5": "4bbf56e81d47232de5f305124ab0ba27",
+      "rounds": 1,
+      "type": "eq",
+      "annotations": true,
+      "rotation": 270
+   },
+   {
+      "id": "bug1723568",
+      "file": "pdfs/bug1723568.pdf",
+      "md5": "c5cc9f1e01d195b96eadf8be0a819578",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "forms": true
+   },
+   {
+      "id": "issue16119",
+      "file": "pdfs/issue16119.pdf",
+      "md5": "76d680172c969c77c9fb650b3d822ad6",
+      "link": true,
+      "type": "other"
+   },
+   {
+      "id": "issue16114",
+      "file": "pdfs/issue16114.pdf",
+      "md5": "c04827ea33692e0f94a5e51716d9aa2e",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+   },
+   {
+      "id": "bug1820909",
+      "file": "pdfs/bug1820909.pdf",
+      "md5": "d95a83a868671a03cbf322f16b2e2b9d",
       "link": true,
       "type": "other"
    }
