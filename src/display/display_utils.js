@@ -436,7 +436,7 @@ class PageViewport {
    * converting PDF location into canvas pixel coordinates.
    * @param {number} x - The x-coordinate.
    * @param {number} y - The y-coordinate.
-   * @returns {Object} Object containing `x` and `y` properties of the
+   * @returns {Array} Array containing `x`- and `y`-coordinates of the
    *   point in the viewport coordinate space.
    * @see {@link convertToPdfPoint}
    * @see {@link convertToViewportRectangle}
@@ -463,7 +463,7 @@ class PageViewport {
    * for converting canvas pixel location into PDF one.
    * @param {number} x - The x-coordinate.
    * @param {number} y - The y-coordinate.
-   * @returns {Object} Object containing `x` and `y` properties of the
+   * @returns {Array} Array containing `x`- and `y`-coordinates of the
    *   point in the PDF coordinate space.
    * @see {@link convertToViewportPoint}
    */
