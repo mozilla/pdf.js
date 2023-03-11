@@ -840,6 +840,12 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "colorspace_sin",
+       "file": "pdfs/colorspace_sin.pdf",
+       "md5": "4e341c346f4f37cd94b82c532badb8fd",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue215",
        "file": "pdfs/issue215.pdf",
        "md5": "31f3dc60ecf008987d970edfd2b1df61",
@@ -2420,6 +2426,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "colorspace_cos",
+       "file": "pdfs/colorspace_cos.pdf",
+       "md5": "d3703784c2558f33e03b91dccb745b6c",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue6692",
        "file": "pdfs/issue6692.pdf",
        "md5": "ba078e0ddd59cda4b6c51ea10599f49a",
@@ -3836,6 +3848,12 @@
       "md5": "c11439fe3b7f8bc39d89dcff58c50a0c",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "colorspace_atan",
+       "file": "pdfs/colorspace_atan.pdf",
+       "md5": "ec310d65a1849a39ae57d0d16b17261d",
+       "rounds": 1,
+       "type": "eq"
     },
     {
       "id": "bug1199237",
