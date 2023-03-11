@@ -53,11 +53,14 @@ class FilterFactory {
 
   #_defs;
 
+  #docId;
+
   #document;
 
   #id = 0;
 
-  constructor({ ownerDocument = globalThis.document } = {}) {
+  constructor({ docId, ownerDocument = globalThis.document } = {}) {
+    this.#docId = docId;
     this.#document = ownerDocument;
   }
 
@@ -132,7 +135,7 @@ class FilterFactory {
     // We create a SVG filter: feComponentTransferElement
     //  https://www.w3.org/TR/SVG11/filters.html#feComponentTransferElement
 
-    const id = `transfer_map_${this.#id++}`;
+    const id = `g_${this.#docId}_transfer_map_${this.#id++}`;
     const url = `url(#${id})`;
     this.#cache.set(maps, url);
     this.#cache.set(key, url);
