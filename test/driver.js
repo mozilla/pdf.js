@@ -469,6 +469,8 @@ class Driver {
             .getElementsByTagName("head")[0]
             .append(xfaStyleElement);
         }
+        const isOffscreenCanvasSupported =
+          task.isOffscreenCanvasSupported === false ? false : undefined;
 
         const loadingTask = getDocument({
           url: new URL(task.file, window.location),
@@ -480,6 +482,7 @@ class Driver {
           useSystemFonts: task.useSystemFonts,
           useWorkerFetch: task.useWorkerFetch,
           enableXfa: task.enableXfa,
+          isOffscreenCanvasSupported,
           styleElement: xfaStyleElement,
         });
         let promise = loadingTask.promise;

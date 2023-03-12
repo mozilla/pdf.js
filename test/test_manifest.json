@@ -6281,6 +6281,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6931-disable-isOffscreenCanvasSupported",
+       "file": "pdfs/issue6931_reduced.pdf",
+       "md5": "e61388913821a5e044bf85a5846d6d9a",
+       "rounds": 1,
+       "type": "eq",
+       "isOffscreenCanvasSupported": false
+    },
     {  "id": "annotation-button-widget-annotations",
        "file": "pdfs/annotation-button-widget.pdf",
        "md5": "5cf23adfff84256d9cfe261bea96dade",
@@ -7473,6 +7480,15 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+   },
+   {
+      "id": "issue16114-disable-isOffscreenCanvasSupported",
+      "file": "pdfs/issue16114.pdf",
+      "md5": "c04827ea33692e0f94a5e51716d9aa2e",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "isOffscreenCanvasSupported": false
    },
    {
       "id": "bug1820909",

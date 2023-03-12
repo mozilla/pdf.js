@@ -51,7 +51,6 @@ import {
   version,
 } from "./display/api.js";
 import {
-  FilterFactory,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   getXfaPageViewport,
@@ -91,7 +90,6 @@ export {
   createPromiseCapability,
   createValidAbsoluteUrl,
   FeatureTest,
-  FilterFactory,
   getDocument,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
