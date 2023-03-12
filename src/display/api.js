@@ -1105,7 +1105,7 @@ class PDFDocumentProxy {
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
- * @property {boolean} disableCombineTextItems - Do not attempt to combine
+ * @property {boolean} [disableCombineTextItems] - Do not attempt to combine
  *   same line {@link TextItem}'s. The default value is `false`.
  * @property {boolean} [includeMarkedContent] - When true include marked
  *   content items in the items array of TextContent. The default is `false`.
@@ -1114,8 +1114,9 @@ class PDFDocumentProxy {
 /**
  * Page text content.
  *
+ * @template {TextItem | TextMarkedContent} [T=TextItem | TextMarkedContent]
  * @typedef {Object} TextContent
- * @property {Array<TextItem | TextMarkedContent>} items - Array of
+ * @property {Array<T>} items - Array of
  *   {@link TextItem} and {@link TextMarkedContent} objects. TextMarkedContent
  *   items are included when includeMarkedContent is true.
  * @property {Object<string, TextStyle>} styles - {@link TextStyle} objects,
@@ -1586,11 +1587,34 @@ class PDFPageProxy {
   }
 
   /**
+   * @overload
+   * @param {getTextContentParameters & {includeMarkedContent:true}} params -
+   *   getTextContent parameters.
+   * @returns {ReadableStream<TextContent<TextMarkedContent>>} Stream for
+   *   reading text content chunks. TextMarkedContent items are included when
+   *   includeMarkedContent is true.
+   */
+  /**
+   * @overload
+   * @param {getTextContentParameters & {includeMarkedContent?:false}} [params]
+   *   - getTextContent parameters.
+   * @returns {ReadableStream<TextContent<TextItem>>} Stream for reading text
+   *   content chunks. TextItem items are included when includeMarkedContent is
+   *   false.
+   */
+  /**
+   * @overload
+   * @param {getTextContentParameters} params - getTextContent parameters.
+   * @returns {ReadableStream<TextContent>} Stream for reading text content
+   *   chunks.
+   */
+  /**
    * NOTE: All occurrences of whitespace will be replaced by
    * standard spaces (0x20).
    *
    * @param {getTextContentParameters} params - getTextContent parameters.
-   * @returns {ReadableStream} Stream for reading text content chunks.
+   * @returns {ReadableStream<TextContent>} Stream for reading text content
+   *   chunks.
    */
   streamTextContent({
     disableCombineTextItems = false,
@@ -1614,6 +1638,30 @@ class PDFPageProxy {
     );
   }
 
+  /**
+   * @overload
+   * @param {getTextContentParameters & {includeMarkedContent:true}} params -
+   *   getTextContent parameters.
+   * @returns {Promise<TextContent<TextMarkedContent>>} A promise that is
+   *   resolved with a {@link TextContent} object that represents the page's
+   *   text content. TextMarkedContent items are included when
+   *   includeMarkedContent is true.
+   */
+  /**
+   * @overload
+   * @param {getTextContentParameters & {includeMarkedContent?:false}} [params]
+   *   - getTextContent parameters.
+   * @returns {Promise<TextContent<TextItem>>} A promise that is
+   *   resolved with a {@link TextContent} object that represents the page's
+   *   text content. TextItem items are included when includeMarkedContent is
+   *   false.
+   */
+  /**
+   * @overload
+   * @param {getTextContentParameters} params - getTextContent parameters.
+   * @returns {Promise<TextContent>} A promise that is resolved with a
+   *   {@link TextContent} object that represents the page's text content.
+   */
   /**
    * NOTE: All occurrences of whitespace will be replaced by
    * standard spaces (0x20).
