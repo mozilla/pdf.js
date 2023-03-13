@@ -294,6 +294,10 @@ class TextHighlighter {
 
     this.matches = this._convertMatches(pageMatches, pageMatchesLength);
     this._renderMatches(this.matches);
+    this.eventBus.dispatch("matchesrendered", {
+      pageIndex: this.pageIdx,
+      matches: this.matches
+    });
   }
 }
 
