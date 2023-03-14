@@ -16,6 +16,7 @@
 import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
+  BaseFilterFactory,
   BaseStandardFontDataFactory,
   BaseSVGFactory,
 } from "./base_factory.js";
@@ -48,7 +49,7 @@ class PixelsPerInch {
  * an image without the need to apply them on the pixel arrays: the renderer
  * does the magic for us.
  */
-class FilterFactory {
+class DOMFilterFactory extends BaseFilterFactory {
   #_cache;
 
   #_defs;
@@ -60,6 +61,7 @@ class FilterFactory {
   #id = 0;
 
   constructor({ docId, ownerDocument = globalThis.document } = {}) {
+    super();
     this.#docId = docId;
     this.#document = ownerDocument;
   }
@@ -823,9 +825,9 @@ export {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMFilterFactory,
   DOMStandardFontDataFactory,
   DOMSVGFactory,
-  FilterFactory,
   getColorValues,
   getCurrentTransform,
   getCurrentTransformInverse,

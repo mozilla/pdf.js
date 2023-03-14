@@ -46,8 +46,8 @@ import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMFilterFactory,
   DOMStandardFontDataFactory,
-  FilterFactory,
   isDataScheme,
   isValidFetchUrl,
   loadScript,
@@ -71,17 +71,20 @@ const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
 let DefaultCanvasFactory = DOMCanvasFactory;
 let DefaultCMapReaderFactory = DOMCMapReaderFactory;
+let DefaultFilterFactory = DOMFilterFactory;
 let DefaultStandardFontDataFactory = DOMStandardFontDataFactory;
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS) {
   const {
     NodeCanvasFactory,
     NodeCMapReaderFactory,
+    NodeFilterFactory,
     NodeStandardFontDataFactory,
   } = require("./node_utils.js");
 
   DefaultCanvasFactory = NodeCanvasFactory;
   DefaultCMapReaderFactory = NodeCMapReaderFactory;
+  DefaultFilterFactory = NodeFilterFactory;
   DefaultStandardFontDataFactory = NodeStandardFontDataFactory;
 }
 
@@ -342,7 +345,7 @@ function getDocument(src) {
   const canvasFactory =
     src.canvasFactory || new DefaultCanvasFactory({ ownerDocument });
   const filterFactory =
-    src.filterFactory || new FilterFactory({ docId, ownerDocument });
+    src.filterFactory || new DefaultFilterFactory({ docId, ownerDocument });
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
@@ -782,6 +785,13 @@ class PDFDocumentProxy {
    */
   get annotationStorage() {
     return this._transport.annotationStorage;
+  }
+
+  /**
+   * @type {Object} The filter factory instance.
+   */
+  get filterFactory() {
+    return this._transport.filterFactory;
   }
 
   /**
@@ -1512,25 +1522,19 @@ class PDFPageProxy {
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
     ])
-      .then(
-        ([
-          { transparency, isOffscreenCanvasSupported },
-          optionalContentConfig,
-        ]) => {
-          if (this.#pendingCleanup) {
-            complete();
-            return;
-          }
-          this._stats?.time("Rendering");
-
-          internalRenderTask.initializeGraphics({
-            transparency,
-            isOffscreenCanvasSupported,
-            optionalContentConfig,
-          });
-          internalRenderTask.operatorListChanged();
+      .then(([transparency, optionalContentConfig]) => {
+        if (this.#pendingCleanup) {
+          complete();
+          return;
         }
-      )
+        this._stats?.time("Rendering");
+
+        internalRenderTask.initializeGraphics({
+          transparency,
+          optionalContentConfig,
+        });
+        internalRenderTask.operatorListChanged();
+      })
       .catch(complete);
 
     return renderTask;
@@ -1754,7 +1758,7 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, isOffscreenCanvasSupported, cacheKey) {
+  _startRenderPage(transparency, cacheKey) {
     const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
@@ -1763,10 +1767,7 @@ class PDFPageProxy {
 
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
-    intentState.displayReadyCapability?.resolve({
-      transparency,
-      isOffscreenCanvasSupported,
-    });
+    intentState.displayReadyCapability?.resolve(transparency);
   }
 
   /**
@@ -2728,11 +2729,7 @@ class WorkerTransport {
       }
 
       const page = this.#pageCache.get(data.pageIndex);
-      page._startRenderPage(
-        data.transparency,
-        data.isOffscreenCanvasSupported,
-        data.cacheKey
-      );
+      page._startRenderPage(data.transparency, data.cacheKey);
     });
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
@@ -3294,11 +3291,7 @@ class InternalRenderTask {
     });
   }
 
-  initializeGraphics({
-    transparency = false,
-    isOffscreenCanvasSupported = false,
-    optionalContentConfig,
-  }) {
+  initializeGraphics({ transparency = false, optionalContentConfig }) {
     if (this.cancelled) {
       return;
     }
@@ -3325,7 +3318,7 @@ class InternalRenderTask {
       this.commonObjs,
       this.objs,
       this.canvasFactory,
-      isOffscreenCanvasSupported ? this.filterFactory : null,
+      this.filterFactory,
       { optionalContentConfig },
       this.annotationCanvasMap,
       this.pageColors
@@ -3430,6 +3423,7 @@ export {
   build,
   DefaultCanvasFactory,
   DefaultCMapReaderFactory,
+  DefaultFilterFactory,
   DefaultStandardFontDataFactory,
   getDocument,
   LoopbackPort,
