@@ -17,6 +17,7 @@
 import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
+  BaseFilterFactory,
   BaseStandardFontDataFactory,
 } from "./base_factory.js";
 
@@ -38,6 +39,8 @@ const fetchData = function (url) {
     });
   });
 };
+
+class NodeFilterFactory extends BaseFilterFactory {}
 
 class NodeCanvasFactory extends BaseCanvasFactory {
   /**
@@ -72,5 +75,6 @@ class NodeStandardFontDataFactory extends BaseStandardFontDataFactory {
 export {
   NodeCanvasFactory,
   NodeCMapReaderFactory,
+  NodeFilterFactory,
   NodeStandardFontDataFactory,
 };

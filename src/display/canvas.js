@@ -491,7 +491,7 @@ class CanvasExtraState {
     this.strokeAlpha = 1;
     this.lineWidth = 1;
     this.activeSMask = null;
-    this.transferMaps = null;
+    this.transferMaps = "none";
 
     this.startNewPathAndClipBox([0, 0, width, height]);
   }
@@ -588,7 +588,7 @@ class CanvasExtraState {
   }
 }
 
-function putBinaryImageData(ctx, imgData, transferMaps = null) {
+function putBinaryImageData(ctx, imgData) {
   if (typeof ImageData !== "undefined" && imgData instanceof ImageData) {
     ctx.putImageData(imgData, 0, 0);
     return;
@@ -618,24 +618,6 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
   const dest = chunkImgData.data;
   let i, j, thisChunkHeight, elemsInThisChunk;
 
-  let transferMapRed, transferMapGreen, transferMapBlue, transferMapGray;
-  if (transferMaps) {
-    switch (transferMaps.length) {
-      case 1:
-        transferMapRed = transferMaps[0];
-        transferMapGreen = transferMaps[0];
-        transferMapBlue = transferMaps[0];
-        transferMapGray = transferMaps[0];
-        break;
-      case 4:
-        transferMapRed = transferMaps[0];
-        transferMapGreen = transferMaps[1];
-        transferMapBlue = transferMaps[2];
-        transferMapGray = transferMaps[3];
-        break;
-    }
-  }
-
   // There are multiple forms in which the pixel data can be passed, and
   // imgData.kind tells us which one this is.
   if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
@@ -644,14 +626,8 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
     const dest32 = new Uint32Array(dest.buffer, 0, dest.byteLength >> 2);
     const dest32DataLength = dest32.length;
     const fullSrcDiff = (width + 7) >> 3;
-    let white = 0xffffffff;
-    let black = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
-
-    if (transferMapGray) {
-      if (transferMapGray[0] === 0xff && transferMapGray[0xff] === 0) {
-        [white, black] = [black, white];
-      }
-    }
+    const white = 0xffffffff;
+    const black = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff;
 
     for (i = 0; i < totalChunks; i++) {
       thisChunkHeight = i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
@@ -693,31 +669,11 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
     }
   } else if (imgData.kind === ImageKind.RGBA_32BPP) {
     // RGBA, 32-bits per pixel.
-    const hasTransferMaps = !!(
-      transferMapRed ||
-      transferMapGreen ||
-      transferMapBlue
-    );
-
     j = 0;
     elemsInThisChunk = width * FULL_CHUNK_HEIGHT * 4;
     for (i = 0; i < fullChunks; i++) {
       dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
       srcPos += elemsInThisChunk;
-
-      if (hasTransferMaps) {
-        for (let k = 0; k < elemsInThisChunk; k += 4) {
-          if (transferMapRed) {
-            dest[k + 0] = transferMapRed[dest[k + 0]];
-          }
-          if (transferMapGreen) {
-            dest[k + 1] = transferMapGreen[dest[k + 1]];
-          }
-          if (transferMapBlue) {
-            dest[k + 2] = transferMapBlue[dest[k + 2]];
-          }
-        }
-      }
 
       ctx.putImageData(chunkImgData, 0, j);
       j += FULL_CHUNK_HEIGHT;
@@ -726,30 +682,10 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
       elemsInThisChunk = width * partialChunkHeight * 4;
       dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
 
-      if (hasTransferMaps) {
-        for (let k = 0; k < elemsInThisChunk; k += 4) {
-          if (transferMapRed) {
-            dest[k + 0] = transferMapRed[dest[k + 0]];
-          }
-          if (transferMapGreen) {
-            dest[k + 1] = transferMapGreen[dest[k + 1]];
-          }
-          if (transferMapBlue) {
-            dest[k + 2] = transferMapBlue[dest[k + 2]];
-          }
-        }
-      }
-
       ctx.putImageData(chunkImgData, 0, j);
     }
   } else if (imgData.kind === ImageKind.RGB_24BPP) {
     // RGB, 24-bits per pixel.
-    const hasTransferMaps = !!(
-      transferMapRed ||
-      transferMapGreen ||
-      transferMapBlue
-    );
-
     thisChunkHeight = FULL_CHUNK_HEIGHT;
     elemsInThisChunk = width * thisChunkHeight;
     for (i = 0; i < totalChunks; i++) {
@@ -764,20 +700,6 @@ function putBinaryImageData(ctx, imgData, transferMaps = null) {
         dest[destPos++] = src[srcPos++];
         dest[destPos++] = src[srcPos++];
         dest[destPos++] = 255;
-      }
-
-      if (hasTransferMaps) {
-        for (let k = 0; k < destPos; k += 4) {
-          if (transferMapRed) {
-            dest[k + 0] = transferMapRed[dest[k + 0]];
-          }
-          if (transferMapGreen) {
-            dest[k + 1] = transferMapGreen[dest[k + 1]];
-          }
-          if (transferMapBlue) {
-            dest[k + 2] = transferMapBlue[dest[k + 2]];
-          }
-        }
       }
 
       ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
@@ -865,7 +787,10 @@ function resetCtxToDefault(ctx, foregroundColor) {
     ctx.setLineDash([]);
     ctx.lineDashOffset = 0;
   }
-  if (!isNodeJS) {
+  if (
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+    !isNodeJS
+  ) {
     ctx.filter = "none";
   }
 }
@@ -1591,12 +1516,8 @@ class CanvasGraphics {
           this.checkSMaskState();
           break;
         case "TR":
-          if (this.filterFactory) {
-            this.ctx.filter = this.current.transferMaps =
-              this.filterFactory.addFilter(value);
-          } else {
-            this.current.transferMaps = value;
-          }
+          this.ctx.filter = this.current.transferMaps =
+            this.filterFactory.addFilter(value);
           break;
       }
     }
@@ -3042,8 +2963,25 @@ class CanvasGraphics {
     this.paintInlineImageXObjectGroup(imgData, map);
   }
 
+  applyTransferMapsToCanvas(ctx) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      if (this.current.transferMaps !== "none") {
+        warn("Ignoring transferMaps - `OffscreenCanvas` support is disabled.");
+      }
+      return ctx.canvas;
+    }
+    if (this.current.transferMaps === "none") {
+      return ctx.canvas;
+    }
+    ctx.filter = this.current.transferMaps;
+    ctx.drawImage(ctx.canvas, 0, 0);
+    ctx.filter = "none";
+
+    return ctx.canvas;
+  }
+
   applyTransferMapsToBitmap(imgData) {
-    if (!this.current.transferMaps || this.current.transferMaps === "none") {
+    if (this.current.transferMaps === "none") {
       return imgData.bitmap;
     }
     const { bitmap, width, height } = imgData;
@@ -3070,7 +3008,10 @@ class CanvasGraphics {
 
     this.save();
 
-    if (!isNodeJS) {
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      !isNodeJS
+    ) {
       // The filter, if any, will be applied in applyTransferMapsToBitmap.
       // It must be applied to the image before rescaling else some artifacts
       // could appear.
@@ -3097,8 +3038,8 @@ class CanvasGraphics {
         height
       );
       const tmpCtx = tmpCanvas.context;
-      putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
-      imgToPaint = tmpCanvas.canvas;
+      putBinaryImageData(tmpCtx, imgData);
+      imgToPaint = this.applyTransferMapsToCanvas(tmpCtx);
     }
 
     const scaled = this._scaleImage(
@@ -3140,8 +3081,8 @@ class CanvasGraphics {
 
       const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
       const tmpCtx = tmpCanvas.context;
-      putBinaryImageData(tmpCtx, imgData, this.current.transferMaps);
-      imgToPaint = tmpCanvas.canvas;
+      putBinaryImageData(tmpCtx, imgData);
+      imgToPaint = this.applyTransferMapsToCanvas(tmpCtx);
     }
 
     for (const entry of map) {
