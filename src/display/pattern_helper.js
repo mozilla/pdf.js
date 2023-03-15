@@ -13,13 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  FormatError,
-  info,
-  shadow,
-  unreachable,
-  Util,
-} from "../shared/util.js";
+import { FormatError, info, unreachable, Util } from "../shared/util.js";
 import { getCurrentTransform } from "./display_utils.js";
 
 const PathType = {
@@ -462,9 +456,7 @@ const PaintType = {
 
 class TilingPattern {
   // 10in @ 300dpi shall be enough.
-  static get MAX_PATTERN_SIZE() {
-    return shadow(this, "MAX_PATTERN_SIZE", 3000);
-  }
+  static MAX_PATTERN_SIZE = 3000;
 
   constructor(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
     this.operatorList = IR[2];
