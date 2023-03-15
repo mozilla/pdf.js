@@ -16,7 +16,6 @@
 import {
   assert,
   MAX_IMAGE_SIZE_TO_CACHE,
-  shadow,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -173,17 +172,11 @@ class RegionalImageCache extends BaseLocalCache {
 }
 
 class GlobalImageCache {
-  static get NUM_PAGES_THRESHOLD() {
-    return shadow(this, "NUM_PAGES_THRESHOLD", 2);
-  }
+  static NUM_PAGES_THRESHOLD = 2;
 
-  static get MIN_IMAGES_TO_CACHE() {
-    return shadow(this, "MIN_IMAGES_TO_CACHE", 10);
-  }
+  static MIN_IMAGES_TO_CACHE = 10;
 
-  static get MAX_BYTE_SIZE() {
-    return shadow(this, "MAX_BYTE_SIZE", 5 * MAX_IMAGE_SIZE_TO_CACHE);
-  }
+  static MAX_BYTE_SIZE = 5 * MAX_IMAGE_SIZE_TO_CACHE;
 
   constructor() {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
