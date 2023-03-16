@@ -289,6 +289,9 @@ function abort() {
 }
 
 function renderProgress(index, total, l10n) {
+  if (typeof PDFJSDev === "undefined" && window.isGECKOVIEW) {
+    return;
+  }
   dialog ||= document.getElementById("printServiceDialog");
   const progress = Math.round((100 * index) / total);
   const progressBar = dialog.querySelector("progress");
@@ -333,6 +336,11 @@ if ("onbeforeprint" in window) {
 
 let overlayPromise;
 function ensureOverlay() {
+  if (typeof PDFJSDev === "undefined" && window.isGECKOVIEW) {
+    return Promise.reject(
+      new Error("ensureOverlay not implemented in GECKOVIEW development mode.")
+    );
+  }
   if (!overlayPromise) {
     overlayManager = PDFViewerApplication.overlayManager;
     if (!overlayManager) {
