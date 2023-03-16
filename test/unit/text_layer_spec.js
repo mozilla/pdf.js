@@ -35,7 +35,7 @@ describe("textLayer", function () {
     const textLayerRenderTask = renderTextLayer({
       textContentSource: page.streamTextContent(),
       container: document.createElement("div"),
-      viewport: page.getViewport(),
+      viewport: page.getViewport({ scale: 1 }),
       textContentItemsStr,
     });
     expect(textLayerRenderTask instanceof TextLayerRenderTask).toEqual(true);
