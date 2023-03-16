@@ -467,6 +467,19 @@ function renderTextLayer(params) {
     );
     params.textContentSource = params.textContent || params.textContentStream;
   }
+  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC && !TESTING")) {
+    const { container, viewport } = params;
+    const style = getComputedStyle(container);
+    const scaleFactor = parseFloat(style.getPropertyValue("--scale-factor"));
+
+    if (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-15) {
+      console.error(
+        "The `--scale-factor` CSS-variable must be set, " +
+          "to the same value as `viewport.scale`, " +
+          "either on the `container`-element itself or higher up in the DOM."
+      );
+    }
+  }
   const task = new TextLayerRenderTask(params);
   task._render();
   return task;
