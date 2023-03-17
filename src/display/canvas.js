@@ -2964,19 +2964,11 @@ class CanvasGraphics {
   }
 
   applyTransferMapsToCanvas(ctx) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      if (this.current.transferMaps !== "none") {
-        warn("Ignoring transferMaps - `OffscreenCanvas` support is disabled.");
-      }
-      return ctx.canvas;
+    if (this.current.transferMaps !== "none") {
+      ctx.filter = this.current.transferMaps;
+      ctx.drawImage(ctx.canvas, 0, 0);
+      ctx.filter = "none";
     }
-    if (this.current.transferMaps === "none") {
-      return ctx.canvas;
-    }
-    ctx.filter = this.current.transferMaps;
-    ctx.drawImage(ctx.canvas, 0, 0);
-    ctx.filter = "none";
-
     return ctx.canvas;
   }
 
