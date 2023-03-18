@@ -564,10 +564,7 @@ class PDFImage {
   }
 
   fillOpacity(rgbaBuf, width, height, actualHeight, image) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         rgbaBuf instanceof Uint8ClampedArray,
         'PDFImage.fillOpacity: Unsupported "rgbaBuf" type.'
@@ -637,10 +634,7 @@ class PDFImage {
   }
 
   undoPreblend(buffer, width, height) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         buffer instanceof Uint8ClampedArray,
         'PDFImage.undoPreblend: Unsupported "buffer" type.'
@@ -893,10 +887,7 @@ class PDFImage {
   }
 
   fillGrayBuffer(buffer) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         buffer instanceof Uint8ClampedArray,
         'PDFImage.fillGrayBuffer: Unsupported "buffer" type.'

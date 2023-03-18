@@ -309,10 +309,7 @@ class WorkerMessageHandler {
               cancelXHRs = null;
               return;
             }
-            if (
-              typeof PDFJSDev === "undefined" ||
-              PDFJSDev.test("!PRODUCTION || TESTING")
-            ) {
+            if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
               assert(
                 value instanceof ArrayBuffer,
                 "readChunk (getPdfManager) - expected an ArrayBuffer."

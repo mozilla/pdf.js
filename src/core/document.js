@@ -698,10 +698,7 @@ const EMPTY_FINGERPRINT =
   "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 
 function find(stream, signature, limit = 1024, backwards = false) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(limit > 0, 'The "limit" must be a positive integer.');
   }
   const signatureLength = signature.length;
@@ -755,10 +752,7 @@ function find(stream, signature, limit = 1024, backwards = false) {
  */
 class PDFDocument {
   constructor(pdfManager, stream) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         stream instanceof BaseStream,
         'PDFDocument: Invalid "stream" argument.'
@@ -1419,10 +1413,7 @@ class PDFDocument {
 
   async _getLinearizationPage(pageIndex) {
     const { catalog, linearization, xref } = this;
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         linearization && linearization.pageFirst === pageIndex,
         "_getLinearizationPage - invalid pageIndex argument."

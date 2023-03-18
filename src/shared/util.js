@@ -452,10 +452,7 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
 }
 
 function shadow(obj, prop, value, nonSerializable = false) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       prop in obj,
       `shadow: Property "${prop && prop.toString()}" not found in object.`
@@ -574,10 +571,7 @@ function stringToBytes(str) {
 }
 
 function string32(value) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       typeof value === "number" && Math.abs(value) < 2 ** 32,
       `string32: Unexpected input "${value}".`

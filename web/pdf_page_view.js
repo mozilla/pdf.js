@@ -165,10 +165,7 @@ class PDFPageView {
 
     this.renderTask = null;
     this.resume = null;
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || GENERIC")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       this._isStandalone = !this.renderingQueue?.hasViewer();
     }
 
@@ -194,8 +191,7 @@ class PDFPageView {
     container?.append(div);
 
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       this._isStandalone
     ) {
       // Ensure that the various layers always get the correct initial size,
@@ -548,8 +544,7 @@ class PDFPageView {
     this.#setDimensions();
 
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       this._isStandalone
     ) {
       this.div.parentNode?.style.setProperty(
@@ -686,8 +681,7 @@ class PDFPageView {
   }) {
     // Scale target (canvas), its wrapper and page container.
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")) &&
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       !(target instanceof HTMLCanvasElement)
     ) {
       throw new Error("Expected `target` to be a canvas.");
