@@ -149,10 +149,7 @@ class MessageHandler {
   }
 
   on(actionName, handler) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         typeof handler === "function",
         'MessageHandler.on: Expected "handler" to be a function.'

@@ -89,7 +89,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS) {
 }
 
 let createPDFNetworkStream;
-if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+if (typeof PDFJSDev === "undefined") {
   const streamsPromise = Promise.all([
     import("./network.js"),
     import("./fetch_stream.js"),
@@ -1793,10 +1793,7 @@ class PDFPageProxy {
    * @private
    */
   _pumpOperatorList({ renderingIntent, cacheKey, annotationStorageMap }) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         Number.isInteger(renderingIntent) && renderingIntent > 0,
         '_pumpOperatorList: Expected valid "renderingIntent" argument.'
@@ -1863,10 +1860,7 @@ class PDFPageProxy {
    * @private
    */
   _abortOperatorList({ intentState, reason, force = false }) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         reason instanceof Error,
         '_abortOperatorList: Expected valid "reason" argument.'
@@ -2133,7 +2127,7 @@ class PDFWorker {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
         const worker =
-          (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) &&
+          typeof PDFJSDev === "undefined" &&
           !workerSrc.endsWith("/build/pdf.worker.js") &&
           !workerSrc.endsWith("/src/worker_loader.js")
             ? new Worker(workerSrc, { type: "module" })
@@ -2324,7 +2318,7 @@ class PDFWorker {
         // The worker was already loaded using e.g. a `<script>` tag.
         return mainWorkerMessageHandler;
       }
-      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+      if (typeof PDFJSDev === "undefined") {
         const worker = await import("pdfjs/pdf.worker.js");
         return worker.WorkerMessageHandler;
       }

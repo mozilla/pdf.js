@@ -295,10 +295,7 @@ class ChunkedStreamManager {
             resolve(chunkData);
             return;
           }
-          if (
-            typeof PDFJSDev === "undefined" ||
-            PDFJSDev.test("!PRODUCTION || TESTING")
-          ) {
+          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
             assert(
               value instanceof ArrayBuffer,
               "readChunk (sendRequest) - expected an ArrayBuffer."

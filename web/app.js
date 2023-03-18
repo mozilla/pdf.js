@@ -310,7 +310,7 @@ const PDFViewerApplication = {
       params = parseQueryString(hash);
 
     if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) &&
+      typeof PDFJSDev === "undefined" &&
       params.get("workermodules") === "true"
     ) {
       AppOptions.set("workerSrc", "../src/pdf.worker.js");
@@ -377,8 +377,7 @@ const PDFViewerApplication = {
     }
     // It is not possible to change locale for the (various) extension builds.
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
       params.has("locale")
     ) {
       AppOptions.set("locale", params.get("locale"));
@@ -390,7 +389,7 @@ const PDFViewerApplication = {
    */
   async _initializeL10n() {
     this.l10n = this.externalServices.createL10n(
-      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
         ? { locale: AppOptions.get("locale") }
         : null
     );
@@ -480,8 +479,7 @@ const PDFViewerApplication = {
     const pdfScriptingManager = new PDFScriptingManager({
       eventBus,
       sandboxBundleSrc:
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC || CHROME")
+        typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")
           ? AppOptions.get("sandboxBundleSrc")
           : null,
       scriptingFactory: externalServices,
@@ -959,7 +957,7 @@ const PDFViewerApplication = {
       ...args,
     };
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+    if (typeof PDFJSDev === "undefined") {
       params.docBaseUrl ||= document.URL.split("#")[0];
     } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
       params.docBaseUrl ||= this.baseUrl;
@@ -2159,7 +2157,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 async function loadFakeWorker() {
   GlobalWorkerOptions.workerSrc ||= AppOptions.get("workerSrc");
 
-  if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
+  if (typeof PDFJSDev === "undefined") {
     window.pdfjsWorker = await import("pdfjs/pdf.worker.js");
     return;
   }
@@ -2169,7 +2167,7 @@ async function loadFakeWorker() {
 async function loadPDFBug(self) {
   const { debuggerScriptPath } = self.appConfig;
   const { PDFBug } =
-    typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+    typeof PDFJSDev === "undefined"
       ? await import(debuggerScriptPath) // eslint-disable-line no-unsanitized/method
       : await __non_webpack_import__(debuggerScriptPath); // eslint-disable-line no-undef
 
