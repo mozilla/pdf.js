@@ -2003,83 +2003,58 @@ class PDFViewer {
   }
 
   /**
-   * Increase the current zoom level one, or more, times.
-   * @param {Object|null} [options]
+   * @typedef {Object} ChangeScaleOptions
+   * @property {number} [drawingDelay]
+   * @property {number} [scaleFactor]
+   * @property {number} [steps]
    */
-  increaseScale(options = null) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      typeof options === "number"
-    ) {
-      console.error(
-        "The `increaseScale` method-signature was updated, please use an object instead."
-      );
-      options = { steps: options };
-    }
 
+  /**
+   * Increase the current zoom level one, or more, times.
+   * @param {ChangeScaleOptions} [options]
+   */
+  increaseScale({ drawingDelay, scaleFactor, steps } = {}) {
     if (!this.pdfDocument) {
       return;
     }
-
-    options ||= Object.create(null);
-
     let newScale = this._currentScale;
-    if (options.scaleFactor > 1) {
+    if (scaleFactor > 1) {
       newScale = Math.min(
         MAX_SCALE,
-        Math.round(newScale * options.scaleFactor * 100) / 100
+        Math.round(newScale * scaleFactor * 100) / 100
       );
     } else {
-      let steps = options.steps ?? 1;
+      steps ??= 1;
       do {
         newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
-        newScale = Math.ceil(newScale * 10) / 10;
-        newScale = Math.min(MAX_SCALE, newScale);
+        newScale = Math.min(MAX_SCALE, Math.ceil(newScale * 10) / 10);
       } while (--steps > 0 && newScale < MAX_SCALE);
     }
-
-    options.noScroll = false;
-    this._setScale(newScale, options);
+    this._setScale(newScale, { noScroll: false, drawingDelay });
   }
 
   /**
    * Decrease the current zoom level one, or more, times.
-   * @param {Object|null} [options]
+   * @param {ChangeScaleOptions} [options]
    */
-  decreaseScale(options = null) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      typeof options === "number"
-    ) {
-      console.error(
-        "The `decreaseScale` method-signature was updated, please use an object instead."
-      );
-      options = { steps: options };
-    }
-
+  decreaseScale({ drawingDelay, scaleFactor, steps } = {}) {
     if (!this.pdfDocument) {
       return;
     }
-
-    options ||= Object.create(null);
-
     let newScale = this._currentScale;
-    if (options.scaleFactor > 0 && options.scaleFactor < 1) {
+    if (scaleFactor > 0 && scaleFactor < 1) {
       newScale = Math.max(
         MIN_SCALE,
-        Math.round(newScale * options.scaleFactor * 100) / 100
+        Math.round(newScale * scaleFactor * 100) / 100
       );
     } else {
-      let steps = options.steps ?? 1;
+      steps ??= 1;
       do {
         newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
-        newScale = Math.floor(newScale * 10) / 10;
-        newScale = Math.max(MIN_SCALE, newScale);
+        newScale = Math.max(MIN_SCALE, Math.floor(newScale * 10) / 10);
       } while (--steps > 0 && newScale > MIN_SCALE);
     }
-
-    options.noScroll = false;
-    this._setScale(newScale, options);
+    this._setScale(newScale, { noScroll: false, drawingDelay });
   }
 
   #updateContainerHeightCss(height = this.container.clientHeight) {
