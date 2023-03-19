@@ -208,10 +208,8 @@ describe("api", function () {
       expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
       expect(data[1].loaded / data[1].total).toEqual(1);
 
-      if (!isNodeJS) {
-        // Check that the TypedArray was transferred.
-        expect(typedArrayPdf.length).toEqual(0);
-      }
+      // Check that the TypedArray was transferred.
+      expect(typedArrayPdf.length).toEqual(0);
 
       await loadingTask.destroy();
     });
@@ -240,10 +238,8 @@ describe("api", function () {
       expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
       expect(data[1].loaded / data[1].total).toEqual(1);
 
-      if (!isNodeJS) {
-        // Check that the ArrayBuffer was transferred.
-        expect(arrayBufferPdf.byteLength).toEqual(0);
-      }
+      // Check that the ArrayBuffer was transferred.
+      expect(arrayBufferPdf.byteLength).toEqual(0);
 
       await loadingTask.destroy();
     });
@@ -3368,11 +3364,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       expect(pdfPage.rotate).toEqual(0);
       expect(fetches).toBeGreaterThan(2);
 
-      if (!isNodeJS) {
-        // Check that the TypedArrays were transferred.
-        for (const array of subArrays) {
-          expect(array.length).toEqual(0);
-        }
+      // Check that the TypedArrays were transferred.
+      for (const array of subArrays) {
+        expect(array.length).toEqual(0);
       }
 
       await loadingTask.destroy();
@@ -3417,11 +3411,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         waitSome(resolve);
       });
 
-      if (!isNodeJS) {
-        // Check that the TypedArrays were transferred.
-        for (const array of subArrays) {
-          expect(array.length).toEqual(0);
-        }
+      // Check that the TypedArrays were transferred.
+      for (const array of subArrays) {
+        expect(array.length).toEqual(0);
       }
 
       await loadingTask.destroy();
@@ -3458,11 +3450,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         expect(pdfPage.rotate).toEqual(0);
         expect(fetches).toEqual(0);
 
-        if (!isNodeJS) {
-          // Check that the TypedArrays were transferred.
-          for (const array of subArrays) {
-            expect(array.length).toEqual(0);
-          }
+        // Check that the TypedArrays were transferred.
+        for (const array of subArrays) {
+          expect(array.length).toEqual(0);
         }
 
         await loadingTask.destroy();
