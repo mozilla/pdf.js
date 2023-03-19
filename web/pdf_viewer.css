@@ -99,8 +99,7 @@
 .pdfViewer.scrollHorizontal,
 .pdfViewer.scrollWrapped,
 .spread {
-  margin-left: 3.5px;
-  margin-right: 3.5px;
+  margin-inline: 3.5px;
   text-align: center;
 }
 
@@ -114,8 +113,7 @@
 /*#endif*/
 .pdfViewer.scrollHorizontal .spread,
 .pdfViewer.scrollWrapped .spread {
-  margin-left: 0;
-  margin-right: 0;
+  margin-inline: 0;
 }
 
 .spread .page,
@@ -131,16 +129,14 @@
 .spread .page,
 .pdfViewer.scrollHorizontal .page,
 .pdfViewer.scrollWrapped .page {
-  margin-left: var(--spreadHorizontalWrapped-margin-LR);
-  margin-right: var(--spreadHorizontalWrapped-margin-LR);
+  margin-inline: var(--spreadHorizontalWrapped-margin-LR);
 }
 
 /*#if GENERIC*/
 .pdfViewer.removePageBorders .spread .page,
 .pdfViewer.removePageBorders.scrollHorizontal .page,
 .pdfViewer.removePageBorders.scrollWrapped .page {
-  margin-left: 5px;
-  margin-right: 5px;
+  margin-inline: 5px;
 }
 /*#endif*/
 
