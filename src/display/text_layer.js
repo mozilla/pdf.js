@@ -470,9 +470,13 @@ function renderTextLayer(params) {
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC && !TESTING")) {
     const { container, viewport } = params;
     const style = getComputedStyle(container);
+    const visibility = style.getPropertyValue("visibility");
     const scaleFactor = parseFloat(style.getPropertyValue("--scale-factor"));
 
-    if (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-15) {
+    if (
+      visibility === "visible" &&
+      (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-15)
+    ) {
       console.error(
         "The `--scale-factor` CSS-variable must be set, " +
           "to the same value as `viewport.scale`, " +
