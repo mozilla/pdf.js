@@ -3320,8 +3320,7 @@ class InternalRenderTask {
       this.canvasFactory,
       this.filterFactory,
       { optionalContentConfig },
-      this.annotationCanvasMap,
-      this.pageColors
+      this.annotationCanvasMap
     );
     this.gfx.beginDrawing({
       transform,
