@@ -98,7 +98,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
   createPDFNetworkStream = async params => {
     const [{ PDFNetworkStream }, { PDFFetchStream }] = await streamsPromise;
 
-    return isValidFetchUrl(params.url)
+    return isValidFetchUrl(params.url) && !params.disablePSFFetchStream
       ? new PDFFetchStream(params)
       : new PDFNetworkStream(params);
   };
@@ -114,7 +114,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
     const { PDFFetchStream } = require("./fetch_stream.js");
 
     createPDFNetworkStream = params => {
-      return isValidFetchUrl(params.url)
+      return isValidFetchUrl(params.url) && !params.disablePSFFetchStream
         ? new PDFFetchStream(params)
         : new PDFNetworkStream(params);
     };
@@ -237,6 +237,8 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")) {
  *
  *   NOTE: It is also necessary to disable streaming, see above, in order for
  *   disabling of pre-fetching to work correctly.
+ * @property {boolean} [disablePDFFetchStream] - Force PDF fetching in the
+ *   browser to PDFNetworkStream strategy. The default value is `false`.
  * @property {boolean} [pdfBug] - Enables special hooks for debugging PDF.js
  *   (see `web/debugger.js`). The default value is `false`.
  * @property {Object} [canvasFactory] - The factory instance that will be used
