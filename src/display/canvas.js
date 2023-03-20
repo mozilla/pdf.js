@@ -29,7 +29,6 @@ import {
 import {
   getCurrentTransform,
   getCurrentTransformInverse,
-  getRGB,
   PixelsPerInch,
 } from "./display_utils.js";
 import {
@@ -773,8 +772,8 @@ function copyCtxState(sourceCtx, destCtx) {
   }
 }
 
-function resetCtxToDefault(ctx, foregroundColor) {
-  ctx.strokeStyle = ctx.fillStyle = foregroundColor || "#000000";
+function resetCtxToDefault(ctx) {
+  ctx.strokeStyle = ctx.fillStyle = "#000000";
   ctx.fillRule = "nonzero";
   ctx.globalAlpha = 1;
   ctx.lineWidth = 1;
@@ -948,8 +947,7 @@ class CanvasGraphics {
     canvasFactory,
     filterFactory,
     { optionalContentConfig, markedContentStack = null },
-    annotationCanvasMap,
-    pageColors
+    annotationCanvasMap
   ) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState(
@@ -985,8 +983,6 @@ class CanvasGraphics {
     this.viewportScale = 1;
     this.outputScaleX = 1;
     this.outputScaleY = 1;
-    this.backgroundColor = pageColors?.background || null;
-    this.foregroundColor = pageColors?.foreground || null;
 
     this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
@@ -1015,69 +1011,11 @@ class CanvasGraphics {
     // transparent canvas when we have blend modes.
     const width = this.ctx.canvas.width;
     const height = this.ctx.canvas.height;
-    const defaultBackgroundColor = background || "#ffffff";
-    this.ctx.save();
 
-    if (this.foregroundColor && this.backgroundColor) {
-      // Get the #RRGGBB value of the color. If it's a name (e.g. CanvasText)
-      // then it'll be converted to its rgb value.
-      this.ctx.fillStyle = this.foregroundColor;
-      const fg = (this.foregroundColor = this.ctx.fillStyle);
-      this.ctx.fillStyle = this.backgroundColor;
-      const bg = (this.backgroundColor = this.ctx.fillStyle);
-      let isValidDefaultBg = true;
-      let defaultBg = defaultBackgroundColor;
-
-      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-        this.ctx.fillStyle = defaultBackgroundColor;
-        defaultBg = this.ctx.fillStyle;
-        isValidDefaultBg =
-          typeof defaultBg === "string" && /^#[0-9A-Fa-f]{6}$/.test(defaultBg);
-      }
-
-      if (
-        (fg === "#000000" && bg === "#ffffff") ||
-        fg === bg ||
-        !isValidDefaultBg
-      ) {
-        // Ignore the `pageColors`-option when:
-        //  - The computed background/foreground colors have their default
-        //    values, i.e. white/black.
-        //  - The computed background/foreground colors are identical,
-        //    since that'd render the `canvas` mostly blank.
-        //  - The `background`-option has a value that's incompatible with
-        //    the `pageColors`-values.
-        //
-        this.foregroundColor = this.backgroundColor = null;
-      } else {
-        // https://developer.mozilla.org/en-US/docs/Web/Accessibility/Understanding_Colors_and_Luminance
-        //
-        // Relative luminance:
-        // https://www.w3.org/TR/WCAG20/#relativeluminancedef
-        //
-        // We compute the rounded luminance of the default background color.
-        // Then for every color in the pdf, if its rounded luminance is the
-        // same as the background one then it's replaced by the new
-        // background color else by the foreground one.
-        const [rB, gB, bB] = getRGB(defaultBg);
-        const newComp = x => {
-          x /= 255;
-          return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-        };
-        const lumB = Math.round(
-          0.2126 * newComp(rB) + 0.7152 * newComp(gB) + 0.0722 * newComp(bB)
-        );
-        this.selectColor = (r, g, b) => {
-          const lumC =
-            0.2126 * newComp(r) + 0.7152 * newComp(g) + 0.0722 * newComp(b);
-          return Math.round(lumC) === lumB ? bg : fg;
-        };
-      }
-    }
-
-    this.ctx.fillStyle = this.backgroundColor || defaultBackgroundColor;
+    const savedFillStyle = this.ctx.fillStyle;
+    this.ctx.fillStyle = background || "#ffffff";
     this.ctx.fillRect(0, 0, width, height);
-    this.ctx.restore();
+    this.ctx.fillStyle = savedFillStyle;
 
     if (transparency) {
       const transparentCanvas = this.cachedCanvases.getCanvas(
@@ -1095,7 +1033,7 @@ class CanvasGraphics {
     }
 
     this.ctx.save();
-    resetCtxToDefault(this.ctx, this.foregroundColor);
+    resetCtxToDefault(this.ctx);
     if (transform) {
       this.ctx.transform(...transform);
       this.outputScaleX = transform[0];
@@ -1197,7 +1135,7 @@ class CanvasGraphics {
     }
   }
 
-  endDrawing() {
+  endDrawing(pageColors = null) {
     this.#restoreInitialState();
 
     this.cachedCanvases.clear();
@@ -1215,6 +1153,19 @@ class CanvasGraphics {
       cache.clear();
     }
     this._cachedBitmapsMap.clear();
+
+    if (pageColors) {
+      const hcmFilterId = this.filterFactory.addHCMFilter(
+        pageColors.foreground,
+        pageColors.background
+      );
+      if (hcmFilterId !== "none") {
+        const savedFilter = this.ctx.filter;
+        this.ctx.filter = hcmFilterId;
+        this.ctx.drawImage(this.ctx.canvas, 0, 0);
+        this.ctx.filter = savedFilter;
+      }
+    }
   }
 
   _scaleImage(img, inverseTransform) {
@@ -2439,13 +2390,13 @@ class CanvasGraphics {
   }
 
   setStrokeRGBColor(r, g, b) {
-    const color = this.selectColor?.(r, g, b) || Util.makeHexColor(r, g, b);
+    const color = Util.makeHexColor(r, g, b);
     this.ctx.strokeStyle = color;
     this.current.strokeColor = color;
   }
 
   setFillRGBColor(r, g, b) {
-    const color = this.selectColor?.(r, g, b) || Util.makeHexColor(r, g, b);
+    const color = Util.makeHexColor(r, g, b);
     this.ctx.fillStyle = color;
     this.current.fillColor = color;
     this.current.patternFill = false;
@@ -2719,7 +2670,7 @@ class CanvasGraphics {
     // a clipping path, whatever...
     // So in order to have something clean, we restore the initial state.
     this.#restoreInitialState();
-    resetCtxToDefault(this.ctx, this.foregroundColor);
+    resetCtxToDefault(this.ctx);
 
     this.ctx.save();
     this.save();
@@ -2763,9 +2714,9 @@ class CanvasGraphics {
         this.ctx = context;
         this.ctx.setTransform(scaleX, 0, 0, -scaleY, 0, height * scaleY);
 
-        resetCtxToDefault(this.ctx, this.foregroundColor);
+        resetCtxToDefault(this.ctx);
       } else {
-        resetCtxToDefault(this.ctx, this.foregroundColor);
+        resetCtxToDefault(this.ctx);
 
         this.ctx.rect(rect[0], rect[1], width, height);
         this.ctx.clip();
