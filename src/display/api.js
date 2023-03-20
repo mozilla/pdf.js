@@ -3082,7 +3082,7 @@ class WorkerTransport {
       this.fontLoader.clear();
     }
     this.#methodPromises.clear();
-    this.filterFactory.destroy();
+    this.filterFactory.destroy(/* keepHCM = */ true);
   }
 
   get loadingParams() {
@@ -3337,7 +3337,7 @@ class InternalRenderTask {
   cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
-    this.gfx?.endDrawing();
+    this.gfx?.endDrawing(this.pageColors);
 
     if (this._canvas) {
       InternalRenderTask.#canvasInUse.delete(this._canvas);
@@ -3402,7 +3402,7 @@ class InternalRenderTask {
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
       if (this.operatorList.lastChunk) {
-        this.gfx.endDrawing();
+        this.gfx.endDrawing(this.pageColors);
         if (this._canvas) {
           InternalRenderTask.#canvasInUse.delete(this._canvas);
         }
