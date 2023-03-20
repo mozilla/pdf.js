@@ -98,6 +98,13 @@ class DOMFilterFactory extends BaseFilterFactory {
     return this.#_defs;
   }
 
+  #appendFeFunc(feComponentTransfer, func, table) {
+    const feFunc = this.#document.createElementNS(SVG_NS, func);
+    feFunc.setAttribute("type", "discrete");
+    feFunc.setAttribute("tableValues", table);
+    feComponentTransfer.append(feFunc);
+  }
+
   addFilter(maps) {
     if (!maps) {
       return "none";
@@ -157,21 +164,9 @@ class DOMFilterFactory extends BaseFilterFactory {
     );
     filter.append(feComponentTransfer);
 
-    const type = "discrete";
-    const feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
-    feFuncR.setAttribute("type", type);
-    feFuncR.setAttribute("tableValues", tableR);
-    feComponentTransfer.append(feFuncR);
-
-    const feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
-    feFuncG.setAttribute("type", type);
-    feFuncG.setAttribute("tableValues", tableG);
-    feComponentTransfer.append(feFuncG);
-
-    const feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
-    feFuncB.setAttribute("type", type);
-    feFuncB.setAttribute("tableValues", tableB);
-    feComponentTransfer.append(feFuncB);
+    this.#appendFeFunc(feComponentTransfer, "feFuncR", tableR);
+    this.#appendFeFunc(feComponentTransfer, "feFuncG", tableG);
+    this.#appendFeFunc(feComponentTransfer, "feFuncB", tableB);
 
     this.#defs.append(filter);
 
@@ -239,21 +234,9 @@ class DOMFilterFactory extends BaseFilterFactory {
     );
     filter.append(feComponentTransfer);
 
-    let type = "discrete";
-    let feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
-    feFuncR.setAttribute("type", type);
-    feFuncR.setAttribute("tableValues", table);
-    feComponentTransfer.append(feFuncR);
-
-    let feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
-    feFuncG.setAttribute("type", type);
-    feFuncG.setAttribute("tableValues", table);
-    feComponentTransfer.append(feFuncG);
-
-    let feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
-    feFuncB.setAttribute("type", type);
-    feFuncB.setAttribute("tableValues", table);
-    feComponentTransfer.append(feFuncB);
+    this.#appendFeFunc(feComponentTransfer, "feFuncR", table);
+    this.#appendFeFunc(feComponentTransfer, "feFuncG", table);
+    this.#appendFeFunc(feComponentTransfer, "feFuncB", table);
 
     const feColorMatrix = this.#document.createElementNS(
       SVG_NS,
@@ -281,22 +264,9 @@ class DOMFilterFactory extends BaseFilterFactory {
       }
       return arr.join(",");
     };
-
-    type = "discrete";
-    feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
-    feFuncR.setAttribute("type", type);
-    feFuncR.setAttribute("tableValues", `${getSteps(0, 5)}`);
-    feComponentTransfer.append(feFuncR);
-
-    feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
-    feFuncG.setAttribute("type", type);
-    feFuncG.setAttribute("tableValues", `${getSteps(1, 5)}`);
-    feComponentTransfer.append(feFuncG);
-
-    feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
-    feFuncB.setAttribute("type", type);
-    feFuncB.setAttribute("tableValues", `${getSteps(2, 5)}`);
-    feComponentTransfer.append(feFuncB);
+    this.#appendFeFunc(feComponentTransfer, "feFuncR", getSteps(0, 5));
+    this.#appendFeFunc(feComponentTransfer, "feFuncG", getSteps(1, 5));
+    this.#appendFeFunc(feComponentTransfer, "feFuncB", getSteps(2, 5));
 
     this.#defs.append(filter);
 
