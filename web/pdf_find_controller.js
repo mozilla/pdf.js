@@ -382,8 +382,6 @@ class PDFFindController {
 
   #visitedPagesCount = 0;
 
-  #calculatedPageMatches = [];
-  #calculatedPageMatchesLength = [];
   /**
    * @param {PDFFindControllerOptions} options
    */
@@ -527,8 +525,6 @@ class PDFFindController {
     this._highlightMatches = false;
     this._scrollMatches = false;
     this._pdfDocument = null;
-    this.#calculatedPageMatches = [];
-    this.#calculatedPageMatchesLength = [];
     this._pageMatches = [];
     this._pageMatchesLength = [];
     this.#visitedPagesCount = 0;
@@ -634,8 +630,8 @@ class PDFFindController {
   }
 
   #calculateRegExpMatch(query, entireWord, pageIndex, pageContent) {
-    const matches = (this.#calculatedPageMatches[pageIndex] = []);
-    const matchesLength = (this.#calculatedPageMatchesLength[pageIndex] = []);
+    const matches = (this._pageMatches[pageIndex] = []);
+    const matchesLength = (this._pageMatchesLength[pageIndex] = []);
     if (!query) {
       // The query can be empty because some chars like diacritics could have
       // been stripped out.
@@ -741,8 +737,37 @@ class PDFFindController {
       return;
     }
 
-    this._pageMatches[pageIndex] = this.#calculatedPageMatches[pageIndex];
-    this._pageMatchesLength[pageIndex] = this.#calculatedPageMatchesLength[pageIndex];
+    const { caseSensitive, entireWord, phraseSearch } = this._state;
+    const pageContent = this._pageContents[pageIndex];
+    const hasDiacritics = this._hasDiacritics[pageIndex];
+
+    let isUnicode = false;
+    if (phraseSearch) {
+      [isUnicode, query] = this.#convertToRegExpString(query, hasDiacritics);
+    } else {
+      // Words are sorted in reverse order to be sure that "foobar" is matched
+      // before "foo" in case the query is "foobar foo".
+      const match = query.match(/\S+/g);
+      if (match) {
+        query = match
+          .sort()
+          .reverse()
+          .map(q => {
+            const [isUnicodePart, queryPart] = this.#convertToRegExpString(
+              q,
+              hasDiacritics
+            );
+            isUnicode ||= isUnicodePart;
+            return `(${queryPart})`;
+          })
+          .join("|");
+      }
+    }
+
+    const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
+    query = query ? new RegExp(query, flags) : null;
+
+    this.#calculateRegExpMatch(query, entireWord, pageIndex, pageContent);
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -802,41 +827,6 @@ class PDFFindController {
                 this._pageDiffs[i],
                 this._hasDiacritics[i],
               ] = normalize(strBuf.join(""));
-
-              let query = this.#query;
-
-              const { caseSensitive, entireWord, phraseSearch } = this._state;
-              const pageContent = this._pageContents[i];
-              const hasDiacritics = this._hasDiacritics[i];
-
-              let isUnicode = false;
-              if (phraseSearch) {
-                [isUnicode, query] = this.#convertToRegExpString(query, hasDiacritics);
-              } else {
-                // Words are sorted in reverse order to be sure that "foobar" is matched
-                // before "foo" in case the query is "foobar foo".
-                const match = query.match(/\S+/g);
-                if (match) {
-                  query = match
-                    .sort()
-                    .reverse()
-                    .map(q => {
-                      const [isUnicodePart, queryPart] = this.#convertToRegExpString(
-                        q,
-                        hasDiacritics
-                      );
-                      isUnicode ||= isUnicodePart;
-                      return `(${queryPart})`;
-                    })
-                    .join("|");
-                }
-              }
-
-              const flags = `g${isUnicode ? "u" : ""}${caseSensitive ? "" : "i"}`;
-              query = query ? new RegExp(query, flags) : null;
-
-              this.#calculateRegExpMatch(query, entireWord, i, pageContent);
-
               extractTextCapability.resolve();
             },
             reason => {
