@@ -369,7 +369,7 @@ function getOriginalIndex(diffs, pos, len) {
  * @typedef {Object} PDFFindControllerOptions
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {EventBus} eventBus - The application event bus.
- * @property {boolean} updateMatchesCountOnProgress - True if the matches
+ * @property {boolean} [updateMatchesCountOnProgress] - True if the matches
  *   count must be updated on progress or only when the last page is reached.
  *   The default value is `true`.
  */

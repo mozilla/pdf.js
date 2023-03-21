@@ -26,6 +26,7 @@ import {
   info,
   InvalidPDFException,
   isArrayBuffer,
+  MAX_IMAGE_SIZE_TO_CACHE,
   MissingPDFException,
   PasswordException,
   RenderingIntentFlag,
@@ -45,8 +46,8 @@ import {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMFilterFactory,
   DOMStandardFontDataFactory,
-  FilterFactory,
   isDataScheme,
   isValidFetchUrl,
   loadScript,
@@ -66,20 +67,24 @@ import { XfaText } from "./xfa_text.js";
 
 const DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
+const DELAYED_CLEANUP_TIMEOUT = 5000; // ms
 
 let DefaultCanvasFactory = DOMCanvasFactory;
 let DefaultCMapReaderFactory = DOMCMapReaderFactory;
+let DefaultFilterFactory = DOMFilterFactory;
 let DefaultStandardFontDataFactory = DOMStandardFontDataFactory;
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS) {
   const {
     NodeCanvasFactory,
     NodeCMapReaderFactory,
+    NodeFilterFactory,
     NodeStandardFontDataFactory,
   } = require("./node_utils.js");
 
   DefaultCanvasFactory = NodeCanvasFactory;
   DefaultCMapReaderFactory = NodeCMapReaderFactory;
+  DefaultFilterFactory = NodeFilterFactory;
   DefaultStandardFontDataFactory = NodeStandardFontDataFactory;
 }
 
@@ -269,6 +274,7 @@ function getDocument(src) {
     );
   }
   const task = new PDFDocumentLoadingTask();
+  const { docId } = task;
 
   const url = src.url ? getUrlProp(src.url) : null;
   const data = src.data ? getDataProp(src.data) : null;
@@ -339,7 +345,7 @@ function getDocument(src) {
   const canvasFactory =
     src.canvasFactory || new DefaultCanvasFactory({ ownerDocument });
   const filterFactory =
-    src.filterFactory || new FilterFactory({ ownerDocument });
+    src.filterFactory || new DefaultFilterFactory({ docId, ownerDocument });
 
   // Parameters only intended for development/testing purposes.
   const styleElement =
@@ -378,7 +384,6 @@ function getDocument(src) {
       : new PDFWorker(workerParams);
     task._worker = worker;
   }
-  const docId = task.docId;
 
   const fetchDocParams = {
     docId,
@@ -783,6 +788,13 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @type {Object} The filter factory instance.
+   */
+  get filterFactory() {
+    return this._transport.filterFactory;
+  }
+
+  /**
    * @type {number} Total number of pages in the PDF file.
    */
   get numPages() {
@@ -1167,7 +1179,8 @@ class PDFDocumentProxy {
  * Page render parameters.
  *
  * @typedef {Object} RenderParameters
- * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
+ * @property {CanvasRenderingContext2D} canvasContext - A 2D context of a DOM
+ *   Canvas object.
  * @property {PageViewport} viewport - Rendering viewport obtained by calling
  *   the `PDFPageProxy.getViewport` method.
  * @property {string} [intent] - Rendering intent, can be 'display', 'print',
@@ -1262,6 +1275,10 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
+  #delayedCleanupTimeout = null;
+
+  #pendingCleanup = false;
+
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
     this._pageIndex = pageIndex;
     this._pageInfo = pageInfo;
@@ -1272,8 +1289,7 @@ class PDFPageProxy {
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
 
-    this.cleanupAfterRender = false;
-    this.pendingCleanup = false;
+    this._maybeCleanupAfterRender = false;
     this._intentStates = new Map();
     this.destroyed = false;
   }
@@ -1413,8 +1429,10 @@ class PDFPageProxy {
       printAnnotationStorage
     );
     // If there was a pending destroy, cancel it so no cleanup happens during
-    // this call to render.
-    this.pendingCleanup = false;
+    // this call to render...
+    this.#pendingCleanup = false;
+    // ... and ensure that a delayed cleanup is always aborted.
+    this.#abortDelayedCleanup();
 
     if (!optionalContentConfigPromise) {
       optionalContentConfigPromise = this._transport.getOptionalContentConfig();
@@ -1455,11 +1473,11 @@ class PDFPageProxy {
       intentState.renderTasks.delete(internalRenderTask);
 
       // Attempt to reduce memory usage during *printing*, by always running
-      // cleanup once rendering has finished (regardless of cleanupAfterRender).
-      if (this.cleanupAfterRender || intentPrint) {
-        this.pendingCleanup = true;
+      // cleanup immediately once rendering has finished.
+      if (this._maybeCleanupAfterRender || intentPrint) {
+        this.#pendingCleanup = true;
       }
-      this._tryCleanup();
+      this.#tryCleanup(/* delayed = */ !intentPrint);
 
       if (error) {
         internalRenderTask.capability.reject(error);
@@ -1504,25 +1522,19 @@ class PDFPageProxy {
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
     ])
-      .then(
-        ([
-          { transparency, isOffscreenCanvasSupported },
-          optionalContentConfig,
-        ]) => {
-          if (this.pendingCleanup) {
-            complete();
-            return;
-          }
-          this._stats?.time("Rendering");
-
-          internalRenderTask.initializeGraphics({
-            transparency,
-            isOffscreenCanvasSupported,
-            optionalContentConfig,
-          });
-          internalRenderTask.operatorListChanged();
+      .then(([transparency, optionalContentConfig]) => {
+        if (this.#pendingCleanup) {
+          complete();
+          return;
         }
-      )
+        this._stats?.time("Rendering");
+
+        internalRenderTask.initializeGraphics({
+          transparency,
+          optionalContentConfig,
+        });
+        internalRenderTask.operatorListChanged();
+      })
       .catch(complete);
 
     return renderTask;
@@ -1681,7 +1693,9 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    this.pendingCleanup = false;
+    this.#pendingCleanup = false;
+    this.#abortDelayedCleanup();
+
     return Promise.all(waitOn);
   }
 
@@ -1693,16 +1707,34 @@ class PDFPageProxy {
    * @returns {boolean} Indicates if clean-up was successfully run.
    */
   cleanup(resetStats = false) {
-    this.pendingCleanup = true;
-    return this._tryCleanup(resetStats);
+    this.#pendingCleanup = true;
+    const success = this.#tryCleanup(/* delayed = */ false);
+
+    if (resetStats && success) {
+      this._stats &&= new StatTimer();
+    }
+    return success;
   }
 
   /**
    * Attempts to clean up if rendering is in a state where that's possible.
-   * @private
+   * @param {boolean} [delayed] - Delay the cleanup, to e.g. improve zooming
+   *   performance in documents with large images.
+   *   The default value is `false`.
+   * @returns {boolean} Indicates if clean-up was successfully run.
    */
-  _tryCleanup(resetStats = false) {
-    if (!this.pendingCleanup) {
+  #tryCleanup(delayed = false) {
+    this.#abortDelayedCleanup();
+
+    if (!this.#pendingCleanup) {
+      return false;
+    }
+    if (delayed) {
+      this.#delayedCleanupTimeout = setTimeout(() => {
+        this.#delayedCleanupTimeout = null;
+        this.#tryCleanup(/* delayed = */ false);
+      }, DELAYED_CLEANUP_TIMEOUT);
+
       return false;
     }
     for (const { renderTasks, operatorList } of this._intentStates.values()) {
@@ -1710,20 +1742,23 @@ class PDFPageProxy {
         return false;
       }
     }
-
     this._intentStates.clear();
     this.objs.clear();
-    if (resetStats && this._stats) {
-      this._stats = new StatTimer();
-    }
-    this.pendingCleanup = false;
+    this.#pendingCleanup = false;
     return true;
+  }
+
+  #abortDelayedCleanup() {
+    if (this.#delayedCleanupTimeout) {
+      clearTimeout(this.#delayedCleanupTimeout);
+      this.#delayedCleanupTimeout = null;
+    }
   }
 
   /**
    * @private
    */
-  _startRenderPage(transparency, isOffscreenCanvasSupported, cacheKey) {
+  _startRenderPage(transparency, cacheKey) {
     const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
@@ -1732,10 +1767,7 @@ class PDFPageProxy {
 
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
-    intentState.displayReadyCapability?.resolve({
-      transparency,
-      isOffscreenCanvasSupported,
-    });
+    intentState.displayReadyCapability?.resolve(transparency);
   }
 
   /**
@@ -1756,7 +1788,7 @@ class PDFPageProxy {
     }
 
     if (operatorListChunk.lastChunk) {
-      this._tryCleanup();
+      this.#tryCleanup(/* delayed = */ true);
     }
   }
 
@@ -1814,7 +1846,7 @@ class PDFPageProxy {
             for (const internalRenderTask of intentState.renderTasks) {
               internalRenderTask.operatorListChanged();
             }
-            this._tryCleanup();
+            this.#tryCleanup(/* delayed = */ true);
           }
 
           if (intentState.displayReadyCapability) {
@@ -1911,9 +1943,9 @@ class LoopbackPort {
 
   #deferred = Promise.resolve();
 
-  postMessage(obj, transfers) {
+  postMessage(obj, transfer) {
     const event = {
-      data: structuredClone(obj, transfers),
+      data: structuredClone(obj, transfer ? { transfer } : null),
     };
 
     this.#deferred.then(() => {
@@ -2697,11 +2729,7 @@ class WorkerTransport {
       }
 
       const page = this.#pageCache.get(data.pageIndex);
-      page._startRenderPage(
-        data.transparency,
-        data.isOffscreenCanvasSupported,
-        data.cacheKey
-      );
+      page._startRenderPage(data.transparency, data.cacheKey);
     });
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
@@ -2782,7 +2810,6 @@ class WorkerTransport {
           pageProxy.objs.resolve(id, imageData);
 
           // Heuristic that will allow us not to store large data.
-          const MAX_IMAGE_SIZE_TO_STORE = 8000000;
           if (imageData) {
             let length;
             if (imageData.bitmap) {
@@ -2792,8 +2819,8 @@ class WorkerTransport {
               length = imageData.data?.length || 0;
             }
 
-            if (length > MAX_IMAGE_SIZE_TO_STORE) {
-              pageProxy.cleanupAfterRender = true;
+            if (length > MAX_IMAGE_SIZE_TO_CACHE) {
+              pageProxy._maybeCleanupAfterRender = true;
             }
           }
           break;
@@ -3055,7 +3082,7 @@ class WorkerTransport {
       this.fontLoader.clear();
     }
     this.#methodPromises.clear();
-    this.filterFactory.destroy();
+    this.filterFactory.destroy(/* keepHCM = */ true);
   }
 
   get loadingParams() {
@@ -3264,11 +3291,7 @@ class InternalRenderTask {
     });
   }
 
-  initializeGraphics({
-    transparency = false,
-    isOffscreenCanvasSupported = false,
-    optionalContentConfig,
-  }) {
+  initializeGraphics({ transparency = false, optionalContentConfig }) {
     if (this.cancelled) {
       return;
     }
@@ -3295,10 +3318,9 @@ class InternalRenderTask {
       this.commonObjs,
       this.objs,
       this.canvasFactory,
-      isOffscreenCanvasSupported ? this.filterFactory : null,
+      this.filterFactory,
       { optionalContentConfig },
-      this.annotationCanvasMap,
-      this.pageColors
+      this.annotationCanvasMap
     );
     this.gfx.beginDrawing({
       transform,
@@ -3314,7 +3336,7 @@ class InternalRenderTask {
   cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
-    this.gfx?.endDrawing();
+    this.gfx?.endDrawing(this.pageColors);
 
     if (this._canvas) {
       InternalRenderTask.#canvasInUse.delete(this._canvas);
@@ -3379,7 +3401,7 @@ class InternalRenderTask {
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
       if (this.operatorList.lastChunk) {
-        this.gfx.endDrawing();
+        this.gfx.endDrawing(this.pageColors);
         if (this._canvas) {
           InternalRenderTask.#canvasInUse.delete(this._canvas);
         }
@@ -3400,6 +3422,7 @@ export {
   build,
   DefaultCanvasFactory,
   DefaultCMapReaderFactory,
+  DefaultFilterFactory,
   DefaultStandardFontDataFactory,
   getDocument,
   LoopbackPort,

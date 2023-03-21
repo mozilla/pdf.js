@@ -82,7 +82,7 @@ const ENV_TARGETS = [
   "Chrome >= 87",
   "Firefox ESR",
   "Safari >= 14.1",
-  "Node >= 14",
+  "Node >= 16",
   "> 1%",
   "not IE > 0",
   "not dead",
@@ -2219,6 +2219,9 @@ function packageJson() {
     repository: {
       type: "git",
       url: DIST_REPO_URL,
+    },
+    engines: {
+      node: ">=16",
     },
   };
 

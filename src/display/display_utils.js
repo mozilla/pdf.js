@@ -16,6 +16,7 @@
 import {
   BaseCanvasFactory,
   BaseCMapReaderFactory,
+  BaseFilterFactory,
   BaseStandardFontDataFactory,
   BaseSVGFactory,
 } from "./base_factory.js";
@@ -48,16 +49,26 @@ class PixelsPerInch {
  * an image without the need to apply them on the pixel arrays: the renderer
  * does the magic for us.
  */
-class FilterFactory {
+class DOMFilterFactory extends BaseFilterFactory {
   #_cache;
 
   #_defs;
 
+  #docId;
+
   #document;
+
+  #hcmFilter;
+
+  #hcmKey;
+
+  #hcmUrl;
 
   #id = 0;
 
-  constructor({ ownerDocument = globalThis.document } = {}) {
+  constructor({ docId, ownerDocument = globalThis.document } = {}) {
+    super();
+    this.#docId = docId;
     this.#document = ownerDocument;
   }
 
@@ -67,16 +78,31 @@ class FilterFactory {
 
   get #defs() {
     if (!this.#_defs) {
+      const div = this.#document.createElement("div");
+      const { style } = div;
+      style.visibility = "hidden";
+      style.contain = "strict";
+      style.width = style.height = 0;
+      style.position = "absolute";
+      style.top = style.left = 0;
+      style.zIndex = -1;
+
       const svg = this.#document.createElementNS(SVG_NS, "svg");
       svg.setAttribute("width", 0);
       svg.setAttribute("height", 0);
-      svg.style.visibility = "hidden";
-      svg.style.contain = "strict";
       this.#_defs = this.#document.createElementNS(SVG_NS, "defs");
+      div.append(svg);
       svg.append(this.#_defs);
-      this.#document.body.append(svg);
+      this.#document.body.append(div);
     }
     return this.#_defs;
+  }
+
+  #appendFeFunc(feComponentTransfer, func, table) {
+    const feFunc = this.#document.createElementNS(SVG_NS, func);
+    feFunc.setAttribute("type", "discrete");
+    feFunc.setAttribute("tableValues", table);
+    feComponentTransfer.append(feFunc);
   }
 
   addFilter(maps) {
@@ -124,7 +150,7 @@ class FilterFactory {
     // We create a SVG filter: feComponentTransferElement
     //  https://www.w3.org/TR/SVG11/filters.html#feComponentTransferElement
 
-    const id = `transfer_map_${this.#id++}`;
+    const id = `g_${this.#docId}_transfer_map_${this.#id++}`;
     const url = `url(#${id})`;
     this.#cache.set(maps, url);
     this.#cache.set(key, url);
@@ -138,30 +164,122 @@ class FilterFactory {
     );
     filter.append(feComponentTransfer);
 
-    const type = "discrete";
-    const feFuncR = this.#document.createElementNS(SVG_NS, "feFuncR");
-    feFuncR.setAttribute("type", type);
-    feFuncR.setAttribute("tableValues", tableR);
-    feComponentTransfer.append(feFuncR);
-
-    const feFuncG = this.#document.createElementNS(SVG_NS, "feFuncG");
-    feFuncG.setAttribute("type", type);
-    feFuncG.setAttribute("tableValues", tableG);
-    feComponentTransfer.append(feFuncG);
-
-    const feFuncB = this.#document.createElementNS(SVG_NS, "feFuncB");
-    feFuncB.setAttribute("type", type);
-    feFuncB.setAttribute("tableValues", tableB);
-    feComponentTransfer.append(feFuncB);
+    this.#appendFeFunc(feComponentTransfer, "feFuncR", tableR);
+    this.#appendFeFunc(feComponentTransfer, "feFuncG", tableG);
+    this.#appendFeFunc(feComponentTransfer, "feFuncB", tableB);
 
     this.#defs.append(filter);
 
     return url;
   }
 
-  destroy() {
+  addHCMFilter(fgColor, bgColor) {
+    const key = `${fgColor}-${bgColor}`;
+    if (this.#hcmKey === key) {
+      return this.#hcmUrl;
+    }
+
+    this.#hcmKey = key;
+    this.#hcmUrl = "none";
+    this.#hcmFilter?.remove();
+
+    if (!fgColor || !bgColor) {
+      return this.#hcmUrl;
+    }
+
+    this.#defs.style.color = fgColor;
+    fgColor = getComputedStyle(this.#defs).getPropertyValue("color");
+    const fgRGB = getRGB(fgColor);
+    fgColor = Util.makeHexColor(...fgRGB);
+    this.#defs.style.color = bgColor;
+    bgColor = getComputedStyle(this.#defs).getPropertyValue("color");
+    const bgRGB = getRGB(bgColor);
+    bgColor = Util.makeHexColor(...bgRGB);
+    this.#defs.style.color = "";
+
+    if (
+      (fgColor === "#000000" && bgColor === "#ffffff") ||
+      fgColor === bgColor
+    ) {
+      return this.#hcmUrl;
+    }
+
+    // https://developer.mozilla.org/en-US/docs/Web/Accessibility/Understanding_Colors_and_Luminance
+    //
+    // Relative luminance:
+    // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+    //
+    // We compute the rounded luminance of the default background color.
+    // Then for every color in the pdf, if its rounded luminance is the
+    // same as the background one then it's replaced by the new
+    // background color else by the foreground one.
+    const map = new Array(256);
+    for (let i = 0; i <= 255; i++) {
+      const x = i / 255;
+      map[i] = x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    }
+    const table = map.join(",");
+
+    const id = `g_${this.#docId}_hcm_filter`;
+    const filter = (this.#hcmFilter = this.#document.createElementNS(
+      SVG_NS,
+      "filter",
+      SVG_NS
+    ));
+    filter.setAttribute("id", id);
+    filter.setAttribute("color-interpolation-filters", "sRGB");
+    let feComponentTransfer = this.#document.createElementNS(
+      SVG_NS,
+      "feComponentTransfer"
+    );
+    filter.append(feComponentTransfer);
+
+    this.#appendFeFunc(feComponentTransfer, "feFuncR", table);
+    this.#appendFeFunc(feComponentTransfer, "feFuncG", table);
+    this.#appendFeFunc(feComponentTransfer, "feFuncB", table);
+
+    const feColorMatrix = this.#document.createElementNS(
+      SVG_NS,
+      "feColorMatrix"
+    );
+    feColorMatrix.setAttribute("type", "matrix");
+    feColorMatrix.setAttribute(
+      "values",
+      "0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"
+    );
+    filter.append(feColorMatrix);
+
+    feComponentTransfer = this.#document.createElementNS(
+      SVG_NS,
+      "feComponentTransfer"
+    );
+    filter.append(feComponentTransfer);
+
+    const getSteps = (c, n) => {
+      const start = fgRGB[c] / 255;
+      const end = bgRGB[c] / 255;
+      const arr = new Array(n + 1);
+      for (let i = 0; i <= n; i++) {
+        arr[i] = start + (i / n) * (end - start);
+      }
+      return arr.join(",");
+    };
+    this.#appendFeFunc(feComponentTransfer, "feFuncR", getSteps(0, 5));
+    this.#appendFeFunc(feComponentTransfer, "feFuncG", getSteps(1, 5));
+    this.#appendFeFunc(feComponentTransfer, "feFuncB", getSteps(2, 5));
+
+    this.#defs.append(filter);
+
+    this.#hcmUrl = `url(#${id})`;
+    return this.#hcmUrl;
+  }
+
+  destroy(keepHCM = false) {
+    if (keepHCM && this.#hcmUrl) {
+      return;
+    }
     if (this.#_defs) {
-      this.#_defs.parentNode.remove();
+      this.#_defs.parentNode.parentNode.remove();
       this.#_defs = null;
     }
     if (this.#_cache) {
@@ -428,7 +546,7 @@ class PageViewport {
    * converting PDF location into canvas pixel coordinates.
    * @param {number} x - The x-coordinate.
    * @param {number} y - The y-coordinate.
-   * @returns {Object} Object containing `x` and `y` properties of the
+   * @returns {Array} Array containing `x`- and `y`-coordinates of the
    *   point in the viewport coordinate space.
    * @see {@link convertToPdfPoint}
    * @see {@link convertToViewportRectangle}
@@ -455,7 +573,7 @@ class PageViewport {
    * for converting canvas pixel location into PDF one.
    * @param {number} x - The x-coordinate.
    * @param {number} y - The y-coordinate.
-   * @returns {Object} Object containing `x` and `y` properties of the
+   * @returns {Array} Array containing `x`- and `y`-coordinates of the
    *   point in the PDF coordinate space.
    * @see {@link convertToViewportPoint}
    */
@@ -812,9 +930,9 @@ export {
   deprecated,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMFilterFactory,
   DOMStandardFontDataFactory,
   DOMSVGFactory,
-  FilterFactory,
   getColorValues,
   getCurrentTransform,
   getCurrentTransformInverse,
