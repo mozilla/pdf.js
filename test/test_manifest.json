@@ -7496,5 +7496,12 @@
       "md5": "d95a83a868671a03cbf322f16b2e2b9d",
       "link": true,
       "type": "other"
+   },
+   {
+      "id": "bug1823296",
+      "file": "pdfs/bug1823296.pdf",
+      "md5": "f71e89ebe3d6e75e0c83ce41cd72df1f",
+      "link": true,
+      "type": "other"
    }
 ]

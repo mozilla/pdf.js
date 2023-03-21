@@ -756,6 +756,11 @@ class XRef {
     throw new XRefParseException();
   }
 
+  get lastXRefStreamPos() {
+    const pos = Object.keys(this.xrefstms);
+    return pos.length === 0 ? null : Math.max(...pos);
+  }
+
   getEntry(i) {
     const xrefEntry = this.entries[i];
     if (xrefEntry && !xrefEntry.free && xrefEntry.offset) {
