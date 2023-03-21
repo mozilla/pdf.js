@@ -660,6 +660,7 @@ class WorkerMessageHandler {
               });
             }
 
+            const lastXRefStreamPos = xref.lastXRefStreamPos;
             newXrefInfo = {
               rootRef: xref.trailer.getRaw("Root") || null,
               encryptRef: xref.trailer.getRaw("Encrypt") || null,
@@ -667,7 +668,8 @@ class WorkerMessageHandler {
               infoRef: xref.trailer.getRaw("Info") || null,
               info: infoObj,
               fileIds: xref.trailer.get("ID") || null,
-              startXRef,
+              startXRef:
+                lastXRefStreamPos === null ? startXRef : lastXRefStreamPos,
               filename,
             };
           }
@@ -835,6 +837,11 @@ class WorkerMessageHandler {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       handler.on("GetXFADatasets", function (data) {
         return pdfManager.ensureDoc("xfaDatasets");
+      });
+      handler.on("GetXRefPrevValue", function (data) {
+        return pdfManager
+          .ensureXRef("trailer")
+          .then(trailer => trailer.get("Prev"));
       });
     }
 

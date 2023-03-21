@@ -14,6 +14,7 @@
  */
 
 import {
+  AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
   createPromiseCapability,
@@ -1976,6 +1977,35 @@ describe("api", function () {
         "xfa:data.topmostSubform.f1_06.#text"
       );
       expect(lastName.nodeValue).toEqual("world");
+
+      await loadingTask.destroy();
+    });
+
+    it("write a a new annotation, save the pdf and check that the prev entry in xref stream is correct", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      let loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello PDF.js World!",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const xrefPrev = await pdfDoc.getXRefPrevValue();
+
+      expect(xrefPrev).toEqual(143954);
 
       await loadingTask.destroy();
     });
