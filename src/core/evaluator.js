@@ -3632,7 +3632,8 @@ class PartialEvaluator {
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
         useCMap: null,
       });
-      const toUnicode = [];
+      const toUnicode = [],
+        buf = [];
       properties.cMap.forEach(function (charcode, cid) {
         if (cid > 0xffff) {
           throw new FormatError("Max size of CID is 65,535");
@@ -3641,9 +3642,12 @@ class PartialEvaluator {
         // obtained in step (d), producing a Unicode value.
         const ucs2 = ucs2CMap.lookup(cid);
         if (ucs2) {
-          toUnicode[charcode] = String.fromCharCode(
-            (ucs2.charCodeAt(0) << 8) + ucs2.charCodeAt(1)
-          );
+          buf.length = 0;
+          // Support multi-byte entries (fixes issue16176.pdf).
+          for (let i = 0, ii = ucs2.length; i < ii; i += 2) {
+            buf.push((ucs2.charCodeAt(i) << 8) + ucs2.charCodeAt(i + 1));
+          }
+          toUnicode[charcode] = String.fromCharCode(...buf);
         }
       });
       return new ToUnicodeMap(toUnicode);
