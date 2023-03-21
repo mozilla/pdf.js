@@ -16,28 +16,6 @@
 
 import { isNodeJS } from "./is_node.js";
 
-// Support: Node.js<16.0.0
-(function checkNodeBtoa() {
-  if (globalThis.btoa || !isNodeJS) {
-    return;
-  }
-  globalThis.btoa = function (chars) {
-    // eslint-disable-next-line no-undef
-    return Buffer.from(chars, "binary").toString("base64");
-  };
-})();
-
-// Support: Node.js<16.0.0
-(function checkNodeAtob() {
-  if (globalThis.atob || !isNodeJS) {
-    return;
-  }
-  globalThis.atob = function (input) {
-    // eslint-disable-next-line no-undef
-    return Buffer.from(input, "base64").toString("binary");
-  };
-})();
-
 // Support: Node.js
 (function checkDOMMatrix() {
   if (globalThis.DOMMatrix || !isNodeJS) {

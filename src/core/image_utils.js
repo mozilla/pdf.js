@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { assert, shadow, unreachable, warn } from "../shared/util.js";
+import {
+  assert,
+  MAX_IMAGE_SIZE_TO_CACHE,
+  shadow,
+  unreachable,
+  warn,
+} from "../shared/util.js";
 import { RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
@@ -160,7 +166,7 @@ class GlobalImageCache {
   }
 
   static get MAX_BYTE_SIZE() {
-    return shadow(this, "MAX_BYTE_SIZE", /* Forty megabytes = */ 40e6);
+    return shadow(this, "MAX_BYTE_SIZE", 5 * MAX_IMAGE_SIZE_TO_CACHE);
   }
 
   constructor() {
