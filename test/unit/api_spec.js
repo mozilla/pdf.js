@@ -29,6 +29,7 @@ import {
 } from "../../src/shared/util.js";
 import {
   buildGetDocumentParams,
+  CMAP_URL,
   DefaultFileReaderFactory,
   TEST_PDFS_PATH,
 } from "./test_utils.js";
@@ -2619,6 +2620,23 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const text = mergeText(items);
 
       expect(text).toEqual("ffi fi ffl ff fl \x07 \x08 Ý");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with multi-byte entries, using predefined CMaps (issue 16176)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue16176.pdf", {
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const text = mergeText(items);
+
+      expect(text).toEqual("𠮷");
 
       await loadingTask.destroy();
     });
