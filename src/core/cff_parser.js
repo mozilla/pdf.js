@@ -1383,7 +1383,9 @@ class CFFCompiler {
       data: [],
       length: 0,
       add(data) {
-        this.data = this.data.concat(data);
+        for (let i = 0; i < data.length; i++) {
+          this.data.push(data[i]);
+        }
         this.length = this.data.length;
       },
     };
