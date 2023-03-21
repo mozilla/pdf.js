@@ -777,6 +777,11 @@ class PDFDocumentProxy {
           return this._transport.getXFADatasets();
         },
       });
+      Object.defineProperty(this, "getXRefPrevValue", {
+        value: () => {
+          return this._transport.getXRefPrevValue();
+        },
+      });
     }
   }
 
@@ -2395,6 +2400,11 @@ class WorkerTransport {
       Object.defineProperty(this, "getXFADatasets", {
         value: () => {
           return this.messageHandler.sendWithPromise("GetXFADatasets", null);
+        },
+      });
+      Object.defineProperty(this, "getXRefPrevValue", {
+        value: () => {
+          return this.messageHandler.sendWithPromise("GetXRefPrevValue", null);
         },
       });
     }
