@@ -282,10 +282,7 @@ body {
 
 #mainContainer {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   min-width: 350px;
 }
 
@@ -302,10 +299,7 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  top: 32px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 32px 0 0;
   outline: none;
 }
 #viewerContainer:not(.pdfPresentationMode) {
@@ -320,8 +314,7 @@ body {
 
 .toolbar {
   position: relative;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   z-index: 9999;
   cursor: default;
   font: message-box;
@@ -1404,10 +1397,7 @@ dialog :link {
   position: fixed;
   background: rgba(0, 0, 0, 0);
   display: block;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   overflow: hidden;
   z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
