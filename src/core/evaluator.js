@@ -3550,6 +3550,16 @@ class PartialEvaluator {
             code = unicode;
           }
           break;
+        default:
+          // Support (some) non-standard ligatures.
+          switch (glyphName) {
+            case "f_h":
+            case "f_t":
+            case "T_h":
+              toUnicode[charcode] = glyphName.replaceAll("_", "");
+              continue;
+          }
+          break;
       }
       if (code > 0 && code <= 0x10ffff && Number.isInteger(code)) {
         // If `baseEncodingName` is one the predefined encodings, and `code`
