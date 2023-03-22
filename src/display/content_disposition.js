@@ -199,7 +199,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
       function (matches, charset, encoding, text) {
         if (encoding === "q" || encoding === "Q") {
           // RFC 2047 section 4.2.
-          text = text.replace(/_/g, " ");
+          text = text.replaceAll("_", " ");
           text = text.replace(/=([0-9a-fA-F]{2})/g, function (match, hex) {
             return String.fromCharCode(parseInt(hex, 16));
           });

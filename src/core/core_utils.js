@@ -341,7 +341,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code = code && stringToPDFString(code).replace(/\u0000/g, "");
+      code = code && stringToPDFString(code).replaceAll("\x00", "");
       if (code) {
         list.push(code);
       }
