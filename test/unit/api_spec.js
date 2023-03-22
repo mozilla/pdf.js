@@ -14,6 +14,7 @@
  */
 
 import {
+  AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
   createPromiseCapability,
@@ -28,6 +29,7 @@ import {
 } from "../../src/shared/util.js";
 import {
   buildGetDocumentParams,
+  CMAP_URL,
   DefaultFileReaderFactory,
   TEST_PDFS_PATH,
 } from "./test_utils.js";
@@ -1976,6 +1978,35 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a a new annotation, save the pdf and check that the prev entry in xref stream is correct", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      let loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello PDF.js World!",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const xrefPrev = await pdfDoc.getXRefPrevValue();
+
+      expect(xrefPrev).toEqual(143954);
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
@@ -2576,19 +2607,19 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
-    // TODO: Change this to a `text` reference test instead.
-    //       Currently that doesn't work, since the `XMLSerializer` fails on
-    //       the ASCII "control characters" found in the text-content.
-    it("gets text content with non-standard ligatures (issue issue15516)", async function () {
+    it("gets text content with multi-byte entries, using predefined CMaps (issue 16176)", async function () {
       const loadingTask = getDocument(
-        buildGetDocumentParams("issue15516_reduced.pdf")
+        buildGetDocumentParams("issue16176.pdf", {
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        })
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent();
       const text = mergeText(items);
 
-      expect(text).toEqual("ffi fi ffl ff fl \x07 \x08 Ý");
+      expect(text).toEqual("𠮷");
 
       await loadingTask.destroy();
     });
