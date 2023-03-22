@@ -71,6 +71,10 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
+.annotationEditorLayer :is(.freeTextEditor, .inkEditor)[draggable="true"] {
+  cursor: move;
+}
+
 .annotationEditorLayer .selectedEditor {
   outline: var(--focus-outline);
   resize: none;
