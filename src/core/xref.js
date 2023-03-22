@@ -37,7 +37,7 @@ class XRef {
     this.stream = stream;
     this.pdfManager = pdfManager;
     this.entries = [];
-    this.xrefstms = Object.create(null);
+    this._xrefStms = new Set();
     this._cacheMap = new Map(); // Prepare the XRef cache.
     this._pendingRefs = new RefSet();
     this._newPersistentRefNum = null;
@@ -540,7 +540,7 @@ class XRef {
         const xrefTagOffset = skipUntil(content, 0, xrefBytes);
         if (xrefTagOffset < contentLength && content[xrefTagOffset + 5] < 64) {
           xrefStms.push(position - stream.start);
-          this.xrefstms[position - stream.start] = 1; // Avoid recursion
+          this._xrefStms.add(position - stream.start); // Avoid recursion
         }
 
         position += contentLength;
@@ -700,14 +700,11 @@ class XRef {
 
           // Recursively get other XRefs 'XRefStm', if any
           obj = dict.get("XRefStm");
-          if (Number.isInteger(obj)) {
-            const pos = obj;
+          if (Number.isInteger(obj) && !this._xrefStms.has(obj)) {
             // ignore previously loaded xref streams
             // (possible infinite recursion)
-            if (!(pos in this.xrefstms)) {
-              this.xrefstms[pos] = 1;
-              this.startXRefQueue.push(pos);
-            }
+            this._xrefStms.add(obj);
+            this.startXRefQueue.push(obj);
           }
         } else if (Number.isInteger(obj)) {
           // Parse in-stream XRef
@@ -757,8 +754,7 @@ class XRef {
   }
 
   get lastXRefStreamPos() {
-    const pos = Object.keys(this.xrefstms);
-    return pos.length === 0 ? null : Math.max(...pos);
+    return this._xrefStms.size > 0 ? Math.max(...this._xrefStms) : null;
   }
 
   getEntry(i) {
