@@ -296,7 +296,7 @@ class TextHighlighter {
     this._renderMatches(this.matches);
     this.eventBus.dispatch("matchesrendered", {
       pageIndex: this.pageIdx,
-      matches: this.matches
+      matches: this.matches,
     });
   }
 }

@@ -382,21 +382,36 @@ class PDFFindController {
 
   #visitedPagesCount = 0;
 
+  #doCalculateMatch = null;
+
   /**
    * @param {PDFFindControllerOptions} options
    */
-  constructor({ linkService, eventBus, updateMatchesCountOnProgress = true }) {
+  constructor({
+    linkService,
+    eventBus,
+    updateMatchesCountOnProgress = true,
+    customCalculateMatch = null,
+  }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
     this.#updateMatchesCountOnProgress = updateMatchesCountOnProgress;
+    this.#doCalculateMatch = (
+      customCalculateMatch ?? this.#defaultCalculateMatch
+    ).bind(this);
 
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
     eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
+    eventBus._on("scrolltomatch", this.#onScrollToMatch.bind(this));
   }
 
   get highlightMatches() {
     return this._highlightMatches;
+  }
+
+  get pageContents() {
+    return this._pageContents;
   }
 
   get pageMatches() {
@@ -413,6 +428,10 @@ class PDFFindController {
 
   get state() {
     return this._state;
+  }
+
+  getOriginalPosition(pageIndex, pos, len) {
+    return getOriginalIndex(this._pageDiffs[pageIndex], pos, len);
   }
 
   /**
@@ -730,13 +749,8 @@ class PDFFindController {
     return [isUnicode, query];
   }
 
-  #calculateMatch(pageIndex) {
+  #defaultCalculateMatch(pageIndex) {
     let query = this.#query;
-    if (!query) {
-      // Do nothing: the matches should be wiped out already.
-      return;
-    }
-
     const { caseSensitive, entireWord, phraseSearch } = this._state;
     const pageContent = this._pageContents[pageIndex];
     const hasDiacritics = this._hasDiacritics[pageIndex];
@@ -768,6 +782,16 @@ class PDFFindController {
     query = query ? new RegExp(query, flags) : null;
 
     this.#calculateRegExpMatch(query, entireWord, pageIndex, pageContent);
+  }
+
+  async #calculateMatch(pageIndex) {
+    const query = this.#query;
+    if (!query) {
+      // Do nothing: the matches should be wiped out already.
+      return;
+    }
+
+    await this.#doCalculateMatch(pageIndex);
 
     // When `highlightAll` is set, ensure that the matches on previously
     // rendered (and still active) pages are correctly highlighted.
@@ -1099,6 +1123,12 @@ class PDFFindController {
       matchesCount: this.#requestMatchesCount(),
       rawQuery: this._state?.query ?? null,
     });
+  }
+
+  #onScrollToMatch(evt) {
+    this._offset.pageIdx = evt.pageIndex;
+    this._offset.matchIdx = evt.matchIdx;
+    this.#updateMatch(true);
   }
 }
 
