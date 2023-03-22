@@ -230,7 +230,14 @@
       "link": true,
       "type": "eq",
       "annotations": true
-   },
+    },
+    {  "id": "issue15516",
+       "file": "pdfs/issue15516_reduced.pdf",
+       "md5": "a30be78c73d13aa6ff890834ce69adc1",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "bug946506",
        "file": "pdfs/bug946506.pdf",
        "md5": "c28911b5c31bdc337c2ce404c5971cfc",
