@@ -21,7 +21,7 @@ files.forEach(function (expectationFilename) {
     .readFileSync(expectationFilename)
     .toString()
     .trim()
-    .replace(/__filename/g, fs.realpathSync(inFilename));
+    .replaceAll("__filename", fs.realpathSync(inFilename));
   const outLines = [];
 
   const outFilename = function (line) {

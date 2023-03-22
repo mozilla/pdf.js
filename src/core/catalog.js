@@ -989,7 +989,7 @@ class Catalog {
       if (javaScript === null) {
         javaScript = new Map();
       }
-      js = stringToPDFString(js).replace(/\u0000/g, "");
+      js = stringToPDFString(js).replaceAll("\x00", "");
       javaScript.set(name, js);
     }
 

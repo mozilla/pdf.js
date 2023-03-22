@@ -211,7 +211,6 @@ function parseQueryString(query) {
   return params;
 }
 
-const NullCharactersRegExp = /\x00/g;
 const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
 
 /**
@@ -226,7 +225,7 @@ function removeNullCharacters(str, replaceInvisible = false) {
   if (replaceInvisible) {
     str = str.replace(InvisibleCharactersRegExp, " ");
   }
-  return str.replace(NullCharactersRegExp, "");
+  return str.replaceAll("\x00", "");
 }
 
 /**
