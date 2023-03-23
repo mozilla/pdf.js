@@ -303,7 +303,7 @@ function escapePDFName(str) {
 // Replace "(", ")", "\n", "\r" and "\" by "\(", "\)", "\\n", "\\r" and "\\"
 // in order to write it in a PDF file.
 function escapeString(str) {
-  return str.replace(/([()\\\n\r])/g, match => {
+  return str.replaceAll(/([()\\\n\r])/g, match => {
     if (match === "\n") {
       return "\\n";
     } else if (match === "\r") {

@@ -42,7 +42,7 @@ files.forEach(function (expectationFilename) {
   try {
     out = p2.preprocessPDFJSCode(ctx, input);
   } catch (e) {
-    out = ("Error: " + e.message).replace(/^/gm, "//");
+    out = ("Error: " + e.message).replaceAll(/^/gm, "//");
   }
   if (out !== expectation) {
     errors++;

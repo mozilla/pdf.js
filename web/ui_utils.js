@@ -223,7 +223,7 @@ function removeNullCharacters(str, replaceInvisible = false) {
     return str;
   }
   if (replaceInvisible) {
-    str = str.replace(InvisibleCharactersRegExp, " ");
+    str = str.replaceAll(InvisibleCharactersRegExp, " ");
   }
   return str.replaceAll("\x00", "");
 }
