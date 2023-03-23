@@ -99,7 +99,7 @@ class FontFinder {
     }
 
     const pattern = /,|-|_| |bolditalic|bold|italic|regular|it/gi;
-    let name = fontName.replace(pattern, "");
+    let name = fontName.replaceAll(pattern, "");
     font = this.fonts.get(name);
     if (font) {
       this.cache.set(fontName, font);
@@ -109,7 +109,7 @@ class FontFinder {
 
     const maybe = [];
     for (const [family, pdfFont] of this.fonts.entries()) {
-      if (family.replace(pattern, "").toLowerCase().startsWith(name)) {
+      if (family.replaceAll(pattern, "").toLowerCase().startsWith(name)) {
         maybe.push(pdfFont);
       }
     }
@@ -119,7 +119,7 @@ class FontFinder {
         if (
           pdfFont.regular.name &&
           pdfFont.regular.name
-            .replace(pattern, "")
+            .replaceAll(pattern, "")
             .toLowerCase()
             .startsWith(name)
         ) {
@@ -129,9 +129,9 @@ class FontFinder {
     }
 
     if (maybe.length === 0) {
-      name = name.replace(/psmt|mt/gi, "");
+      name = name.replaceAll(/psmt|mt/gi, "");
       for (const [family, pdfFont] of this.fonts.entries()) {
-        if (family.replace(pattern, "").toLowerCase().startsWith(name)) {
+        if (family.replaceAll(pattern, "").toLowerCase().startsWith(name)) {
           maybe.push(pdfFont);
         }
       }
@@ -142,7 +142,7 @@ class FontFinder {
         if (
           pdfFont.regular.name &&
           pdfFont.regular.name
-            .replace(pattern, "")
+            .replaceAll(pattern, "")
             .toLowerCase()
             .startsWith(name)
         ) {
