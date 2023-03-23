@@ -368,6 +368,7 @@ class PDFPageView {
       if (!textLayer.renderingDone) {
         const readableStream = pdfPage.streamTextContent({
           includeMarkedContent: true,
+          disableNormalization: true,
         });
         textLayer.setTextContentSource(readableStream);
       }
