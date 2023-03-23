@@ -2340,7 +2340,9 @@ page 1 / 3`);
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent();
+      const { items, styles } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       expect(items.length).toEqual(1);
       // Font name will be a random object id.
       const fontName = items[0].fontName;
@@ -2376,7 +2378,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue13226.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(text).toEqual(
@@ -2394,7 +2398,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue16119.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2410,7 +2416,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue13201.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2436,7 +2444,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue11913.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2456,7 +2466,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue10900.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2475,11 +2487,27 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue10640.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
-      const text = mergeText(items);
+      let { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      let text = mergeText(items);
+      let expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
+Open Sans was designed with an upright stress, open forms and a neu-
+tral, yet friendly appearance. It was optimized for print, web, and mobile
+interfaces, and has excellent legibility characteristics in its letterforms (see
+ﬁgure \x81 on the following page). This font is available from the Google Font
+Directory [\x81] as TrueType ﬁles licensed under the Apache License version \x82.\x80.
+This package provides support for this font in LATEX. It includes Type \x81
+versions of the fonts, converted for this package using FontForge from its
+sources, for full support with Dvips.`;
 
-      expect(
-        text.includes(`Open Sans is a humanist sans serif typeface designed by Steve Matteson.
+      expect(text.includes(expected)).toEqual(true);
+
+      ({ items } = await pdfPage.getTextContent({
+        disableNormalization: false,
+      }));
+      text = mergeText(items);
+      expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
 Open Sans was designed with an upright stress, open forms and a neu-
 tral, yet friendly appearance. It was optimized for print, web, and mobile
 interfaces, and has excellent legibility characteristics in its letterforms (see
@@ -2487,8 +2515,8 @@ figure \x81 on the following page). This font is available from the Google Font
 Directory [\x81] as TrueType files licensed under the Apache License version \x82.\x80.
 This package provides support for this font in LATEX. It includes Type \x81
 versions of the fonts, converted for this package using FontForge from its
-sources, for full support with Dvips.`)
-      ).toEqual(true);
+sources, for full support with Dvips.`;
+      expect(text.includes(expected)).toEqual(true);
 
       await loadingTask.destroy();
     });
@@ -2501,7 +2529,9 @@ sources, for full support with Dvips.`)
       const loadingTask = getDocument(buildGetDocumentParams("bug931481.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2529,7 +2559,9 @@ sozialökonomische Gerechtigkeit.`)
       const loadingTask = getDocument(buildGetDocumentParams("issue9186.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2550,7 +2582,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(text).toEqual(
@@ -2568,7 +2602,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const loadingTask = getDocument(buildGetDocumentParams("bug1755201.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(6);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(/win aisle/.test(text)).toEqual(false);
@@ -2586,10 +2622,12 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfPage = await pdfDoc.getPage(568);
       let { items } = await pdfPage.getTextContent({
         includeMarkedContent: false,
+        disableNormalization: true,
       });
       const textWithoutMC = mergeText(items);
       ({ items } = await pdfPage.getTextContent({
         includeMarkedContent: true,
+        disableNormalization: true,
       }));
       const textWithMC = mergeText(items);
 
@@ -2607,7 +2645,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(text).toEqual("𠮷");
@@ -2619,7 +2659,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const loadingTask = getDocument(buildGetDocumentParams("issue16221.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
 
       expect(items.map(i => i.str)).toEqual(["Hello ", "World"]);
 

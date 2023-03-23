@@ -18,8 +18,8 @@
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
 import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
+import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
 import { createPromiseCapability } from "pdfjs-lib";
-import { getCharacterType } from "./pdf_find_utils.js";
 
 const FindState = {
   FOUND: 0,
@@ -126,12 +126,7 @@ function normalize(text) {
   } else {
     // Compile the regular expression for text normalization once.
     const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
-    const toNormalizeWithNFKC =
-      "\u2460-\u2473" + // Circled numbers.
-      "\u24b6-\u24ff" + // Circled letters/numbers.
-      "\u3244-\u32bf" + // Circled ideograms/numbers.
-      "\u32d0-\u32fe" + // Circled ideograms.
-      "\uff00-\uffef"; // Halfwidth, fullwidth forms.
+    const toNormalizeWithNFKC = getNormalizeWithNFKC();
 
     // 3040-309F: Hiragana
     // 30A0-30FF: Katakana
@@ -840,6 +835,7 @@ class PDFFindController {
     }
 
     let promise = Promise.resolve();
+    const textOptions = { disableNormalization: true };
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
       const extractTextCapability = createPromiseCapability();
       this._extractTextPromises[i] = extractTextCapability.promise;
@@ -848,7 +844,7 @@ class PDFFindController {
         return this._pdfDocument
           .getPage(i + 1)
           .then(pdfPage => {
-            return pdfPage.getTextContent();
+            return pdfPage.getTextContent(textOptions);
           })
           .then(
             textContent => {

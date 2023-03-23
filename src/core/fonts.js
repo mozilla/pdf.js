@@ -33,11 +33,9 @@ import {
 } from "./fonts_utils.js";
 import {
   getCharUnicodeCategory,
-  getNormalizedUnicodes,
   getUnicodeForGlyph,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
-  reverseIfRtl,
 } from "./unicode.js";
 import { getDingbatsGlyphsUnicode, getGlyphsUnicode } from "./glyphlist.js";
 import {
@@ -277,24 +275,6 @@ class Glyph {
       /* nonSerializable = */ true
     );
   }
-
-  /**
-   * This property, which is only used by `PartialEvaluator.getTextContent`,
-   * is purposely made non-serializable.
-   * @type {string}
-   */
-  get normalizedUnicode() {
-    return shadow(
-      this,
-      "normalizedUnicode",
-      reverseIfRtl(Glyph._NormalizedUnicodes[this.unicode] || this.unicode),
-      /* nonSerializable = */ true
-    );
-  }
-
-  static get _NormalizedUnicodes() {
-    return shadow(this, "_NormalizedUnicodes", getNormalizedUnicodes());
-  }
 }
 
 function int16(b0, b1) {
@@ -507,6 +487,9 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   const privateUseOffetStart = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
   let nextAvailableFontCharCode = privateUseOffetStart;
   let privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
+  const isInPrivateArea = code =>
+    (PRIVATE_USE_AREAS[0][0] <= code && code <= PRIVATE_USE_AREAS[0][1]) ||
+    (PRIVATE_USE_AREAS[1][0] <= code && code <= PRIVATE_USE_AREAS[1][1]);
   for (let originalCharCode in charCodeToGlyphId) {
     originalCharCode |= 0;
     let glyphId = charCodeToGlyphId[originalCharCode];
@@ -539,11 +522,7 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
     if (typeof unicode === "string") {
       unicode = unicode.codePointAt(0);
     }
-    if (
-      unicode &&
-      unicode < privateUseOffetStart &&
-      !usedGlyphIds.has(glyphId)
-    ) {
+    if (unicode && !isInPrivateArea(unicode) && !usedGlyphIds.has(glyphId)) {
       toUnicodeExtraMap.set(unicode, glyphId);
       usedGlyphIds.add(glyphId);
     }
@@ -785,6 +764,7 @@ function createOS2Table(properties, charstrings, override) {
 
   let firstCharIndex = null;
   let lastCharIndex = 0;
+  let position = -1;
 
   if (charstrings) {
     for (let code in charstrings) {
@@ -796,7 +776,7 @@ function createOS2Table(properties, charstrings, override) {
         lastCharIndex = code;
       }
 
-      const position = getUnicodeRangeFor(code);
+      position = getUnicodeRangeFor(code, position);
       if (position < 32) {
         ulUnicodeRange1 |= 1 << position;
       } else if (position < 64) {

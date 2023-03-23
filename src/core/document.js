@@ -511,7 +511,13 @@ class Page {
     });
   }
 
-  extractTextContent({ handler, task, includeMarkedContent, sink }) {
+  extractTextContent({
+    handler,
+    task,
+    includeMarkedContent,
+    disableNormalization,
+    sink,
+  }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources([
       "ExtGState",
@@ -539,6 +545,7 @@ class Page {
         task,
         resources: this.resources,
         includeMarkedContent,
+        disableNormalization,
         sink,
         viewBox: this.view,
       });
