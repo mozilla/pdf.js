@@ -68,9 +68,9 @@ class FileSpec {
     if (!this._filename && this.root) {
       const filename = pickPlatformItem(this.root) || "unnamed";
       this._filename = stringToPDFString(filename)
-        .replace(/\\\\/g, "\\")
-        .replace(/\\\//g, "/")
-        .replace(/\\/g, "/");
+        .replaceAll("\\\\", "\\")
+        .replaceAll("\\/", "/")
+        .replaceAll("\\", "/");
     }
     return this._filename;
   }

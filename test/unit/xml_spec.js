@@ -103,8 +103,8 @@ describe("XML", function () {
       const buffer = [];
       root.dump(buffer);
 
-      expect(buffer.join("").replace(/\s+/g, "")).toEqual(
-        xml.replace(/\s+/g, "")
+      expect(buffer.join("").replaceAll(/\s+/g, "")).toEqual(
+        xml.replaceAll(/\s+/g, "")
       );
     });
   });

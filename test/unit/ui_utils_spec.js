@@ -157,9 +157,10 @@ describe("ui_utils", function () {
     });
 
     it("should modify string with non-displayable characters", function () {
-      const str = Array.from(Array(32).keys())
-        .map(x => String.fromCharCode(x) + "a")
-        .join("");
+      const str = Array.from(
+        Array(32).keys(),
+        x => String.fromCharCode(x) + "a"
+      ).join("");
       // \x00 is replaced by an empty string.
       const expected =
         "a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a";

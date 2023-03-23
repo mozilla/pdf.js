@@ -21,7 +21,7 @@ files.forEach(function (expectationFilename) {
     .readFileSync(expectationFilename)
     .toString()
     .trim()
-    .replace(/__filename/g, fs.realpathSync(inFilename));
+    .replaceAll("__filename", fs.realpathSync(inFilename));
   const input = fs.readFileSync(inFilename).toString();
 
   const defines = {
@@ -42,7 +42,7 @@ files.forEach(function (expectationFilename) {
   try {
     out = p2.preprocessPDFJSCode(ctx, input);
   } catch (e) {
-    out = ("Error: " + e.message).replace(/^/gm, "//");
+    out = ("Error: " + e.message).replaceAll(/^/gm, "//");
   }
   if (out !== expectation) {
     errors++;

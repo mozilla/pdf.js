@@ -41,7 +41,7 @@ function preprocess(inFilename, outFilename, defines) {
   }
 
   function expandCssImports(content, baseUrl) {
-    return content.replace(
+    return content.replaceAll(
       /^\s*@import\s+url\(([^)]+)\);\s*$/gm,
       function (all, url) {
         const file = path.join(path.dirname(baseUrl), url);
@@ -121,7 +121,7 @@ function preprocess(inFilename, outFilename, defines) {
     }
   }
   function expand(line) {
-    line = line.replace(/__[\w]+__/g, function (variable) {
+    line = line.replaceAll(/__[\w]+__/g, function (variable) {
       variable = variable.substring(2, variable.length - 2);
       if (variable in defines) {
         return defines[variable];
@@ -210,9 +210,9 @@ function preprocess(inFilename, outFilename, defines) {
       ) {
         writeLine(
           line
-            .replace(/^\/\/|^<!--/g, "  ")
-            .replace(/(^\s*)\/\*/g, "$1  ")
-            .replace(/\*\/$|-->$/g, "")
+            .replaceAll(/^\/\/|^<!--/g, "  ")
+            .replaceAll(/(^\s*)\/\*/g, "$1  ")
+            .replaceAll(/\*\/$|-->$/g, "")
         );
       }
     }

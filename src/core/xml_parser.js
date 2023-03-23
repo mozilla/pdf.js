@@ -48,7 +48,7 @@ function isWhitespaceString(s) {
 
 class XMLParserBase {
   _resolveEntities(s) {
-    return s.replace(/&([^;]+);/g, (all, entity) => {
+    return s.replaceAll(/&([^;]+);/g, (all, entity) => {
       if (entity.substring(0, 2) === "#x") {
         return String.fromCodePoint(parseInt(entity.substring(2), 16));
       } else if (entity.substring(0, 1) === "#") {

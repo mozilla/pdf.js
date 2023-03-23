@@ -60,7 +60,7 @@ class AForm {
     if (!actions) {
       actions = [];
       this._dateActionsCache.set(cFormat, actions);
-      cFormat.replace(
+      cFormat.replaceAll(
         /(d+)|(m+)|(y+)|(H+)|(M+)|(s+)/g,
         function (match, d, m, y, H, M, s) {
           if (d) {
