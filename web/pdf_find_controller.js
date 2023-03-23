@@ -663,7 +663,7 @@ class PDFFindController {
   #convertToRegExpString(query, hasDiacritics) {
     const { matchDiacritics } = this._state;
     let isUnicode = false;
-    query = query.replace(
+    query = query.replaceAll(
       SPECIAL_CHARS_REG_EXP,
       (
         match,

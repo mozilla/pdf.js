@@ -23,7 +23,7 @@
     if (!args) {
       return text;
     }
-    return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function (all, name) {
+    return text.replaceAll(/\{\{\s*(\w+)\s*\}\}/g, function (all, name) {
       return name in args ? args[name] : "{{" + name + "}}";
     });
   }
