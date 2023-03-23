@@ -27,7 +27,7 @@ const DEFAULT_LOCALE = "en-US";
 const EXCLUDE_LANG_CODES = ["ca-valencia", "ja-JP-mac"];
 
 function normalizeText(s) {
-  return s.replace(/\r\n?/g, "\n").replaceAll("\uFEFF", "");
+  return s.replaceAll(/\r\n?/g, "\n").replaceAll("\uFEFF", "");
 }
 
 function downloadLanguageCodes() {

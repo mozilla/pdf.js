@@ -36,7 +36,7 @@ files.forEach(function (expectationFilename) {
     builder.preprocess(inFilename, outFilename, defines);
     out = outLines.join("\n").trim();
   } catch (e) {
-    out = ("Error: " + e.message).replace(/^/gm, "//");
+    out = ("Error: " + e.message).replaceAll(/^/gm, "//");
   }
   if (out !== expectation) {
     errors++;

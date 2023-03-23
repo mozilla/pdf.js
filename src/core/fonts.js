@@ -903,7 +903,7 @@ function createPostTable(properties) {
 
 function createPostscriptName(name) {
   // See https://docs.microsoft.com/en-us/typography/opentype/spec/recom#name.
-  return name.replace(/[^\x21-\x7E]|[[\](){}<>/%]/g, "").slice(0, 63);
+  return name.replaceAll(/[^\x21-\x7E]|[[\](){}<>/%]/g, "").slice(0, 63);
 }
 
 function createNameTable(name, proto) {
@@ -994,7 +994,7 @@ class Font {
     // Fallback to checking the font name, in order to improve text-selection,
     // since the /Flags-entry is often wrong (fixes issue13845.pdf).
     if (!isSerifFont && !properties.isSimulatedFlags) {
-      const baseName = name.replace(/[,_]/g, "-").split("-")[0],
+      const baseName = name.replaceAll(/[,_]/g, "-").split("-")[0],
         serifFonts = getSerifFonts();
       for (const namePart of baseName.split("+")) {
         if (serifFonts[namePart]) {
@@ -1445,7 +1445,7 @@ class Font {
         for (let j = 0, jj = nameTable.length; j < jj; j++) {
           for (let k = 0, kk = nameTable[j].length; k < kk; k++) {
             const nameEntry =
-              nameTable[j][k] && nameTable[j][k].replace(/\s/g, "");
+              nameTable[j][k] && nameTable[j][k].replaceAll(/\s/g, "");
             if (!nameEntry) {
               continue;
             }

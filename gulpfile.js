@@ -130,7 +130,7 @@ function safeSpawnSync(command, parameters, options) {
     if (!/[\s`~!#$*(){[|\\;'"<>?]/.test(param)) {
       return param;
     }
-    return '"' + param.replace(/([$\\"`])/g, "\\$1") + '"';
+    return '"' + param.replaceAll(/([$\\"`])/g, "\\$1") + '"';
   });
 
   const result = spawnSync(command, parameters, options);
@@ -909,7 +909,7 @@ function preprocessCSS(source, defines) {
 
   // Strip out all license headers in the middle.
   const reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
-  out = out.replace(reg, "");
+  out = out.replaceAll(reg, "");
 
   const i = source.lastIndexOf("/");
   return createStringSource(source.substr(i + 1), out);
@@ -1557,9 +1557,10 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     }).code;
     const removeCjsSrc =
       /^(var\s+\w+\s*=\s*(_interopRequireDefault\()?require\(".*?)(?:\/src)(\/[^"]*"\)\)?;)$/gm;
-    content = content.replace(removeCjsSrc, (all, prefix, interop, suffix) => {
-      return prefix + suffix;
-    });
+    content = content.replaceAll(
+      removeCjsSrc,
+      (all, prefix, interop, suffix) => prefix + suffix
+    );
     return licenseHeaderLibre + content;
   }
   const babel = require("@babel/core");
