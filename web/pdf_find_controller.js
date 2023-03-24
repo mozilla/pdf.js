@@ -28,7 +28,7 @@ const FindState = {
   PENDING: 3,
 };
 
-const FIND_TIMEOUT = 250; // ms
+const DEFAULT_DEBOUNCE_FIND_TIME = 250; // ms
 const MATCH_SCROLL_OFFSET_TOP = -50; // px
 const MATCH_SCROLL_OFFSET_LEFT = -400; // px
 
@@ -384,6 +384,8 @@ class PDFFindController {
 
   #doCalculateMatch = null;
 
+  #debounceTime = DEFAULT_DEBOUNCE_FIND_TIME;
+
   /**
    * @param {PDFFindControllerOptions} options
    */
@@ -427,6 +429,14 @@ class PDFFindController {
 
   get state() {
     return this._state;
+  }
+
+  get debounceTime() {
+    return this.#debounceTime;
+  }
+
+  set debounceTime(time) {
+    this.#debounceTime = time;
   }
 
   getOriginalPosition(pageIndex, pos, len) {
@@ -489,7 +499,7 @@ class PDFFindController {
         this._findTimeout = setTimeout(() => {
           this.#nextMatch();
           this._findTimeout = null;
-        }, FIND_TIMEOUT);
+        }, this.#debounceTime);
       } else if (this._dirtyMatch) {
         // Immediately trigger searching for non-'find' operations, when the
         // current state needs to be reset and matches re-calculated.
@@ -1058,9 +1068,9 @@ class PDFFindController {
         return;
       }
       // Ensure that a pending, not yet started, search operation is aborted.
-      if (this._findTimeout) {
-        clearTimeout(this._findTimeout);
-        this._findTimeout = null;
+      if (this._findTimeoutId) {
+        clearTimeout(this._findTimeoutId);
+        this._findTimeoutId = null;
       }
       // Abort any long running searches, to avoid a match being scrolled into
       // view *after* the findbar has been closed. In this case `this._offset`
