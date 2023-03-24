@@ -953,10 +953,6 @@ function buildGeneric(defines, dir) {
         postcss([postcssDirPseudoClass(), autoprefixer(AUTOPREFIXER_CONFIG)])
       )
       .pipe(gulp.dest(dir + "web")),
-
-    gulp
-      .src("web/compressed.tracemonkey-pldi-09.pdf")
-      .pipe(gulp.dest(dir + "web")),
   ]);
 }
 
@@ -1121,10 +1117,6 @@ function buildMinified(defines, dir) {
       .pipe(
         postcss([postcssDirPseudoClass(), autoprefixer(AUTOPREFIXER_CONFIG)])
       )
-      .pipe(gulp.dest(dir + "web")),
-
-    gulp
-      .src("web/compressed.tracemonkey-pldi-09.pdf")
       .pipe(gulp.dest(dir + "web")),
   ]);
 }
