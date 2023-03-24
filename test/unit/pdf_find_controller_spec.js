@@ -103,24 +103,7 @@ function testSearch({
     );
     eventBus.dispatch("find", eventState);
 
-    // The `updatefindmatchescount` event is only emitted if the page contains
-    // at least one match for the query, so the last non-zero item in the
-    // matches per page array corresponds to the page for which the final
-    // `updatefindmatchescount` event is emitted. If this happens, we know
-    // that any subsequent pages won't trigger the event anymore and we
-    // can start comparing the matches per page. This logic is necessary
-    // because we call the `pdfFindController.pageMatches` getter directly
-    // after receiving the event and the underlying `_pageMatches` array
-    // is only extended when a page is processed, so it will only contain
-    // entries for the pages processed until the time when the final event
-    // was emitted.
-    let totalPages = matchesPerPage.length;
-    for (let i = totalPages - 1; i >= 0; i--) {
-      if (matchesPerPage[i] > 0) {
-        totalPages = i + 1;
-        break;
-      }
-    }
+    const pageIndicesWithMatches = matchesPerPage.filter(it => it);
 
     const totalMatches = matchesPerPage.reduce((a, b) => {
       return a + b;
@@ -141,16 +124,21 @@ function testSearch({
         if (updateFindMatchesCount) {
           updateFindMatchesCount[0] += 1;
         }
-        if (pdfFindController.pageMatches.length !== totalPages) {
+        if (evt.matchesCount.total !== totalMatches) {
           return;
         }
         eventBus.off("updatefindmatchescount", onUpdateFindMatchesCount);
 
-        expect(evt.matchesCount.total).toBe(totalMatches);
-        for (let i = 0; i < totalPages; i++) {
+        for (const i in pageIndicesWithMatches) {
           expect(pdfFindController.pageMatches[i].length).toEqual(
             matchesPerPage[i]
           );
+          if (pageMatches) {
+            expect(pdfFindController.pageMatches[i]).toEqual(pageMatches[i]);
+            expect(pdfFindController.pageMatchesLength[i]).toEqual(
+              pageMatchesLength[i]
+            );
+          }
         }
         expect(pdfFindController.selected.pageIdx).toEqual(
           selectedMatch.pageIndex
@@ -158,13 +146,6 @@ function testSearch({
         expect(pdfFindController.selected.matchIdx).toEqual(
           selectedMatch.matchIndex
         );
-
-        if (pageMatches) {
-          expect(pdfFindController.pageMatches).toEqual(pageMatches);
-          expect(pdfFindController.pageMatchesLength).toEqual(
-            pageMatchesLength
-          );
-        }
 
         resolve();
       }
@@ -295,6 +276,8 @@ describe("pdf_find_controller", function () {
   it("performs an entire word search", async function () {
     // Page 13 contains both 'Government' and 'Governmental', so the latter
     // should not be found with entire word search.
+    // Page 14 contains 'Government' with 'Gov-' in one line and 'ernent' in
+    // the next line.
     const { eventBus, pdfFindController } = await initPdfFindController();
 
     await testSearch({
@@ -304,7 +287,7 @@ describe("pdf_find_controller", function () {
         query: "Government",
         entireWord: true,
       },
-      matchesPerPage: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+      matchesPerPage: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
       selectedMatch: {
         pageIndex: 12,
         matchIndex: 0,

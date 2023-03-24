@@ -391,12 +391,13 @@ class PDFFindController {
     linkService,
     eventBus,
     updateMatchesCountOnProgress = true,
-    customCalculateMatch = this.#defaultCalculateMatch,
+    customCalculateMatch = null,
   }) {
     this._linkService = linkService;
     this._eventBus = eventBus;
     this.#updateMatchesCountOnProgress = updateMatchesCountOnProgress;
-    this.#doCalculateMatch = customCalculateMatch;
+    this.#doCalculateMatch =
+      customCalculateMatch ?? this.#defaultCalculateMatch;
 
     this.#reset();
     eventBus._on("find", this.#onFind.bind(this));
