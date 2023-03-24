@@ -471,12 +471,12 @@ function validateCSSFont(cssFontInfo) {
 
   // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
   if (/^".*"$/.test(fontFamily)) {
-    if (/[^\\]"/.test(fontFamily.slice(1, fontFamily.length - 1))) {
+    if (/[^\\]"/.test(fontFamily.slice(1, -1))) {
       warn(`XFA - FontFamily contains some unescaped ": ${fontFamily}.`);
       return false;
     }
   } else if (/^'.*'$/.test(fontFamily)) {
-    if (/[^\\]'/.test(fontFamily.slice(1, fontFamily.length - 1))) {
+    if (/[^\\]'/.test(fontFamily.slice(1, -1))) {
       warn(`XFA - FontFamily contains some unescaped ': ${fontFamily}.`);
       return false;
     }
