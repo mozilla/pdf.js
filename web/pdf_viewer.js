@@ -454,7 +454,7 @@ class PDFViewer {
     if (!this.pdfDocument) {
       return;
     }
-    this._setScale(val, { noScroll: false });
+    this.#setScale(val, { noScroll: false });
   }
 
   /**
@@ -471,7 +471,7 @@ class PDFViewer {
     if (!this.pdfDocument) {
       return;
     }
-    this._setScale(val, { noScroll: false });
+    this.#setScale(val, { noScroll: false });
   }
 
   /**
@@ -508,7 +508,7 @@ class PDFViewer {
     // Prevent errors in case the rotation changes *before* the scale has been
     // set to a non-default value.
     if (this._currentScaleValue) {
-      this._setScale(this._currentScaleValue, { noScroll: true });
+      this.#setScale(this._currentScaleValue, { noScroll: true });
     }
 
     this.eventBus.dispatch("rotationchanging", {
@@ -1078,7 +1078,7 @@ class PDFViewer {
     );
   }
 
-  _setScaleUpdatePages(
+  #setScaleUpdatePages(
     newScale,
     newValue,
     { noScroll = false, preset = false, drawingDelay = -1 }
@@ -1150,10 +1150,7 @@ class PDFViewer {
     }
   }
 
-  /**
-   * @private
-   */
-  get _pageWidthScaleFactor() {
+  get #pageWidthScaleFactor() {
     if (
       this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL
@@ -1163,12 +1160,12 @@ class PDFViewer {
     return 1;
   }
 
-  _setScale(value, options) {
+  #setScale(value, options) {
     let scale = parseFloat(value);
 
     if (scale > 0) {
       options.preset = false;
-      this._setScaleUpdatePages(scale, value, options);
+      this.#setScaleUpdatePages(scale, value, options);
     } else {
       const currentPage = this._pages[this._currentPageNumber - 1];
       if (!currentPage) {
@@ -1197,7 +1194,7 @@ class PDFViewer {
       const pageWidthScale =
         (((this.container.clientWidth - hPadding) / currentPage.width) *
           currentPage.scale) /
-        this._pageWidthScaleFactor;
+        this.#pageWidthScaleFactor;
       const pageHeightScale =
         ((this.container.clientHeight - vPadding) / currentPage.height) *
         currentPage.scale;
@@ -1223,11 +1220,11 @@ class PDFViewer {
           scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:
-          console.error(`_setScale: "${value}" is an unknown zoom value.`);
+          console.error(`#setScale: "${value}" is an unknown zoom value.`);
           return;
       }
       options.preset = true;
-      this._setScaleUpdatePages(scale, value, options);
+      this.#setScaleUpdatePages(scale, value, options);
     }
   }
 
@@ -1239,7 +1236,7 @@ class PDFViewer {
 
     if (this.isInPresentationMode) {
       // Fixes the case when PDF has different page sizes.
-      this._setScale(this._currentScaleValue, { noScroll: true });
+      this.#setScale(this._currentScaleValue, { noScroll: true });
     }
     this.#scrollIntoView(pageView);
   }
@@ -1792,7 +1789,7 @@ class PDFViewer {
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
     if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
-      this._setScale(this._currentScaleValue, { noScroll: true });
+      this.#setScale(this._currentScaleValue, { noScroll: true });
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
@@ -1864,7 +1861,7 @@ class PDFViewer {
     // Call this before re-scrolling to the current page, to ensure that any
     // changes in scale don't move the current page.
     if (this._currentScaleValue && isNaN(this._currentScaleValue)) {
-      this._setScale(this._currentScaleValue, { noScroll: true });
+      this.#setScale(this._currentScaleValue, { noScroll: true });
     }
     this._setCurrentPageNumber(pageNumber, /* resetCurrentPageView = */ true);
     this.update();
@@ -2019,18 +2016,18 @@ class PDFViewer {
     }
     let newScale = this._currentScale;
     if (scaleFactor > 1) {
-      newScale = Math.min(
-        MAX_SCALE,
-        Math.round(newScale * scaleFactor * 100) / 100
-      );
+      newScale = Math.round(newScale * scaleFactor * 100) / 100;
     } else {
       steps ??= 1;
       do {
-        newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
-        newScale = Math.min(MAX_SCALE, Math.ceil(newScale * 10) / 10);
+        newScale =
+          Math.ceil((newScale * DEFAULT_SCALE_DELTA).toFixed(2) * 10) / 10;
       } while (--steps > 0 && newScale < MAX_SCALE);
     }
-    this._setScale(newScale, { noScroll: false, drawingDelay });
+    this.#setScale(Math.min(MAX_SCALE, newScale), {
+      noScroll: false,
+      drawingDelay,
+    });
   }
 
   /**
@@ -2043,18 +2040,18 @@ class PDFViewer {
     }
     let newScale = this._currentScale;
     if (scaleFactor > 0 && scaleFactor < 1) {
-      newScale = Math.max(
-        MIN_SCALE,
-        Math.round(newScale * scaleFactor * 100) / 100
-      );
+      newScale = Math.round(newScale * scaleFactor * 100) / 100;
     } else {
       steps ??= 1;
       do {
-        newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
-        newScale = Math.max(MIN_SCALE, Math.floor(newScale * 10) / 10);
+        newScale =
+          Math.floor((newScale / DEFAULT_SCALE_DELTA).toFixed(2) * 10) / 10;
       } while (--steps > 0 && newScale > MIN_SCALE);
     }
-    this._setScale(newScale, { noScroll: false, drawingDelay });
+    this.#setScale(Math.max(MIN_SCALE, newScale), {
+      noScroll: false,
+      drawingDelay,
+    });
   }
 
   #updateContainerHeightCss(height = this.container.clientHeight) {
