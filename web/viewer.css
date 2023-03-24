@@ -34,9 +34,9 @@
 
   --main-color: rgba(249, 249, 250, 1);
   --body-bg-color: rgba(212, 212, 215, 1);
-  --progressBar-color: rgba(10, 132, 255, 1);
-  --progressBar-bg-color: rgba(221, 221, 222, 1);
-  --progressBar-blend-color: rgba(116, 177, 239, 1);
+  --progressBar-color: rgba(103, 58, 183, 1);
+  --progressBar-bg-color: rgba(29, 39, 44, 1);
+  --progressBar-blend-color: rgba(103, 58, 183, 1);
   --scrollbar-color: auto;
   --scrollbar-bg-color: auto;
   --toolbar-icon-bg-color: rgba(0, 0, 0, 1);
@@ -75,6 +75,8 @@
   --dialog-button-border: none;
   --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
   --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+
+  --modal-surface: rgba(38, 50, 56, 1);
 
   --loading-icon: url(images/loading.svg);
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
@@ -131,9 +133,9 @@
   :root {
     --main-color: rgba(249, 249, 250, 1);
     --body-bg-color: rgba(42, 42, 46, 1);
-    --progressBar-color: rgba(0, 96, 223, 1);
-    --progressBar-bg-color: rgba(40, 40, 43, 1);
-    --progressBar-blend-color: rgba(20, 68, 133, 1);
+    --progressBar-color: rgba(103, 58, 183, 1);
+    --progressBar-bg-color: rgba(29, 39, 44, 1);
+    --progressBar-blend-color: rgba(103, 58, 183, 1);
     --scrollbar-color: rgba(121, 121, 123, 1);
     --scrollbar-bg-color: rgba(35, 35, 39, 1);
     --toolbar-icon-bg-color: rgba(255, 255, 255, 1);
@@ -218,7 +220,7 @@ body {
 }
 
 body {
-  background-color: #263238;
+  background-color: var(--modal-surface);
   scrollbar-color: var(--scrollbar-color) var(--scrollbar-bg-color);
 }
 
@@ -395,7 +397,7 @@ body {
   position: absolute;
   inset-inline: 0 var(--progressBar-end-offset);
   height: 4px;
-  background-color: #1d272c;
+  background-color: var(--progressBar-bg-color);
   border-bottom: 1px solid var(--toolbar-border-color);
   transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
@@ -414,7 +416,7 @@ body {
   transform: scaleX(var(--progressBar-percent));
   transform-origin: 0 0;
   height: 100%;
-  background-color: #673ab7;
+  background-color: var(--progressBar-color);
   overflow: hidden;
   transition: transform 200ms;
 }
@@ -1331,7 +1333,7 @@ dialog {
   font: message-box;
   font-size: 12px;
   line-height: 14px;
-  background-color: var(--doorhanger-bg-color);
+  background-color: var(--modal-surface);
   border: 1px solid rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -1367,6 +1369,18 @@ dialog .buttonRow {
 
 dialog :link {
   color: rgba(255, 255, 255, 1);
+}
+
+dialog progress {
+  background-color: var(--progressBar-color);
+}
+
+dialog progress::-moz-progress-bar {
+  background-color: var(--progressBar-color);
+}
+
+dialog progress::-webkit-progress-value {
+  background-color: var(--progressBar-color);
 }
 
 #passwordDialog {
