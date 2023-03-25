@@ -1966,7 +1966,7 @@ class PDFViewer {
 
   /**
    * Go to the next page, taking scroll/spread-modes into account.
-   * @returns {boolean} Whether navigation occured.
+   * @returns {boolean} Whether navigation occurred.
    */
   nextPage() {
     const currentPageNumber = this._currentPageNumber,
@@ -1984,7 +1984,7 @@ class PDFViewer {
 
   /**
    * Go to the previous page, taking scroll/spread-modes into account.
-   * @returns {boolean} Whether navigation occured.
+   * @returns {boolean} Whether navigation occurred.
    */
   previousPage() {
     const currentPageNumber = this._currentPageNumber;

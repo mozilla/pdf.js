@@ -449,7 +449,7 @@ class AnnotationEditorLayer {
       // It can happen when the user starts a drag inside a text editor
       // and then releases the mouse button outside of it. In such a case
       // we don't want to create a new editor, hence we check that a pointerdown
-      // occured on this div previously.
+      // occurred on this div previously.
       return;
     }
     this.#hadPointerDown = false;
