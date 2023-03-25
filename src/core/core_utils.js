@@ -515,7 +515,7 @@ function recoverJsURL(str) {
   const URL_OPEN_METHODS = ["app.launchURL", "window.open", "xfa.host.gotoURL"];
   const regex = new RegExp(
     "^\\s*(" +
-      URL_OPEN_METHODS.join("|").split(".").join("\\.") +
+      URL_OPEN_METHODS.join("|").replaceAll(".", "\\.") +
       ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
     "i"
   );
