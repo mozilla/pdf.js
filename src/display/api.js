@@ -1206,7 +1206,8 @@ class PDFDocumentProxy {
  *   before viewport transform.
  * @property {Object} [canvasFactory] - The factory instance that will be used
  *   when creating canvases. The default value is {new DOMCanvasFactory()}.
- * @property {Object | string} [background] - Background to use for the canvas.
+ * @property {CanvasGradient | CanvasPattern | string} [background] - Background
+ *   to use for the canvas.
  *   Any valid `canvas.fillStyle` can be used: a `DOMString` parsed as CSS
  *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
  *   a `CanvasPattern` object (a repetitive image). The default value is
@@ -1936,7 +1937,8 @@ class PDFPageProxy {
   }
 
   /**
-   * @type {Object} Returns page stats, if enabled; returns `null` otherwise.
+   * @type {StatTimer | null} Returns page stats, if enabled; returns `null`
+   *   otherwise.
    */
   get stats() {
     return this._stats;
@@ -1976,7 +1978,7 @@ class LoopbackPort {
 /**
  * @typedef {Object} PDFWorkerParameters
  * @property {string} [name] - The name of the worker.
- * @property {Object} [port] - The `workerPort` object.
+ * @property {Worker} [port] - The `workerPort` object.
  * @property {number} [verbosity] - Controls the logging level;
  *   the constants from {@link VerbosityLevel} should be used.
  */
