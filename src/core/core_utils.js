@@ -470,14 +470,11 @@ function validateCSSFont(cssFontInfo) {
   const { fontFamily, fontWeight, italicAngle } = cssFontInfo;
 
   // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
-  if (/^".*"$/.test(fontFamily)) {
-    if (/[^\\]"/.test(fontFamily.slice(1, -1))) {
-      warn(`XFA - FontFamily contains some unescaped ": ${fontFamily}.`);
-      return false;
-    }
-  } else if (/^'.*'$/.test(fontFamily)) {
-    if (/[^\\]'/.test(fontFamily.slice(1, -1))) {
-      warn(`XFA - FontFamily contains some unescaped ': ${fontFamily}.`);
+  const m = /^("|').*("|')$/.exec(fontFamily);
+  if (m && m[1] === m[2]) {
+    const re = new RegExp(`[^\\\\]${m[1]}`);
+    if (re.test(fontFamily.slice(1, -1))) {
+      warn(`XFA - FontFamily contains unescaped ${m[1]}: ${fontFamily}.`);
       return false;
     }
   } else {
@@ -485,7 +482,7 @@ function validateCSSFont(cssFontInfo) {
     for (const ident of fontFamily.split(/[ \t]+/)) {
       if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
         warn(
-          `XFA - FontFamily contains some invalid <custom-ident>: ${fontFamily}.`
+          `XFA - FontFamily contains invalid <custom-ident>: ${fontFamily}.`
         );
         return false;
       }
