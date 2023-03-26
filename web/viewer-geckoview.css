@@ -94,10 +94,6 @@ body {
   inset: 0;
   outline: none;
 }
-#viewerContainer {
-  transition-duration: var(--sidebar-transition-duration);
-  transition-timing-function: var(--sidebar-transition-timing-function);
-}
 
 .dialogButton {
   border: none;
