@@ -51,7 +51,8 @@ class MockLinkService extends SimpleLinkService {
 
 async function initPdfFindController(
   filename,
-  updateMatchesCountOnProgress = true
+  updateMatchesCountOnProgress = true,
+  customCalculateMatch = null
 ) {
   const loadingTask = getDocument(
     buildGetDocumentParams(filename || tracemonkeyFileName, {
@@ -69,6 +70,7 @@ async function initPdfFindController(
     linkService,
     eventBus,
     updateMatchesCountOnProgress,
+    customCalculateMatch,
   });
   pdfFindController.setDocument(pdfDocument); // Enable searching.
 
@@ -881,6 +883,67 @@ describe("pdf_find_controller", function () {
       },
       pageMatches: [[42, 95]],
       pageMatchesLength: [[5, 5]],
+    });
+  });
+
+  it("performs a custom search where searching red returns blue", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "custom_search.pdf",
+      true,
+      pageIndex => {
+        const query = pdfFindController.state.query === "red" ? "blue" : "red";
+        pdfFindController.pageMatches[pageIndex] = [
+          pdfFindController.pageContents[pageIndex].indexOf(query),
+        ];
+        pdfFindController.pageMatchesLength[pageIndex] = [query.length];
+      }
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "red",
+      },
+      matchesPerPage: [1, 1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[4], [0]],
+      pageMatchesLength: [[4], [4]],
+    });
+  });
+
+  it("performs an async custom search where searching blue returns red", async function () {
+    const { eventBus, pdfFindController } = await initPdfFindController(
+      "custom_search.pdf",
+      true,
+      async pageIndex => {
+        await new Promise(resolve => {
+          setTimeout(resolve, 5000);
+        });
+        const query = pdfFindController.state.query === "red" ? "blue" : "red";
+        pdfFindController.pageMatches[pageIndex] = [
+          pdfFindController.pageContents[pageIndex].indexOf(query),
+        ];
+        pdfFindController.pageMatchesLength[pageIndex] = [query.length];
+      }
+    );
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "blue",
+      },
+      matchesPerPage: [1, 1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[0], [5]],
+      pageMatchesLength: [[3], [3]],
     });
   });
 });
