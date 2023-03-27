@@ -892,10 +892,10 @@ describe("pdf_find_controller", function () {
       true,
       pageIndex => {
         const query = pdfFindController.state.query === "red" ? "blue" : "red";
-        pdfFindController.pageMatches[pageIndex] = [
-          pdfFindController.pageContents[pageIndex].indexOf(query),
-        ];
-        pdfFindController.pageMatchesLength[pageIndex] = [query.length];
+        const index = pdfFindController.pageContents[pageIndex].indexOf(query);
+        pdfFindController.pageMatches[pageIndex] = index === -1 ? [] : [index];
+        pdfFindController.pageMatchesLength[pageIndex] =
+          index === -1 ? [] : [query.length];
       }
     );
 
@@ -905,13 +905,13 @@ describe("pdf_find_controller", function () {
       state: {
         query: "red",
       },
-      matchesPerPage: [1, 1],
+      matchesPerPage: [1, 1, 0, 1],
       selectedMatch: {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[4], [0]],
-      pageMatchesLength: [[4], [4]],
+      pageMatches: [[4], [0], [], [0]],
+      pageMatchesLength: [[4], [4], [], [4]],
     });
   });
 
@@ -921,13 +921,13 @@ describe("pdf_find_controller", function () {
       true,
       async pageIndex => {
         await new Promise(resolve => {
-          setTimeout(resolve, 5000);
+          setTimeout(resolve, 2000);
         });
         const query = pdfFindController.state.query === "red" ? "blue" : "red";
-        pdfFindController.pageMatches[pageIndex] = [
-          pdfFindController.pageContents[pageIndex].indexOf(query),
-        ];
-        pdfFindController.pageMatchesLength[pageIndex] = [query.length];
+        const index = pdfFindController.pageContents[pageIndex].indexOf(query);
+        pdfFindController.pageMatches[pageIndex] = index === -1 ? [] : [index];
+        pdfFindController.pageMatchesLength[pageIndex] =
+          index === -1 ? [] : [query.length];
       }
     );
 
@@ -937,13 +937,13 @@ describe("pdf_find_controller", function () {
       state: {
         query: "blue",
       },
-      matchesPerPage: [1, 1],
+      matchesPerPage: [1, 1, 1, 0],
       selectedMatch: {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[0], [5]],
-      pageMatchesLength: [[3], [3]],
+      pageMatches: [[0], [5], [0], []],
+      pageMatchesLength: [[3], [3], [3], []],
     });
   });
 });
