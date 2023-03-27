@@ -13,10 +13,6 @@
  * limitations under the License.
  */
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["PdfJsDefaultPreferences"];
-
-var PdfJsDefaultPreferences = Object.freeze(
+export const PdfJsDefaultPreferences = Object.freeze(
   PDFJSDev.eval("DEFAULT_PREFERENCES")
 );
