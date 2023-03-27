@@ -434,12 +434,15 @@ function createSandboxExternal(defines) {
     saveComments: false,
     defines,
   };
-  return gulp.src("./src/pdf.sandbox.external.js").pipe(
-    transform("utf8", content => {
-      content = preprocessor2.preprocessPDFJSCode(ctx, content);
-      return `${licenseHeader}\n${content}`;
-    })
-  );
+  return gulp
+    .src("./src/pdf.sandbox.external.js")
+    .pipe(rename("pdf.sandbox.external.sys.mjs"))
+    .pipe(
+      transform("utf8", content => {
+        content = preprocessor2.preprocessPDFJSCode(ctx, content);
+        return `${licenseHeader}\n${content}`;
+      })
+    );
 }
 
 function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
@@ -1381,7 +1384,7 @@ gulp.task(
           .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
         gulp.src("LICENSE").pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
         gulp
-          .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.jsm")
+          .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.sys.mjs")
           .pipe(transform("utf8", preprocessDefaultPreferences))
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
       ]);
