@@ -31,13 +31,11 @@ import {
   RenderingCancelledException,
   setLayerDimensions,
   shadow,
-  SVGGraphics,
 } from "pdfjs-lib";
 import {
   approximateFraction,
   DEFAULT_SCALE,
   OutputScale,
-  RendererType,
   RenderingStates,
   roundToDivide,
   TextLayerMode,
@@ -160,12 +158,6 @@ class PDFPageView {
 
     this.eventBus = options.eventBus;
     this.renderingQueue = options.renderingQueue;
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || GENERIC")
-    ) {
-      this.renderer = options.renderer || RendererType.CANVAS;
-    }
     this.l10n = options.l10n || NullL10n;
 
     this.paintTask = null;
@@ -519,14 +511,6 @@ class PDFPageView {
       }
       this._resetZoomLayer();
     }
-    if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      this.svg
-    ) {
-      this.paintedViewportMap.delete(this.svg);
-      delete this.svg;
-    }
   }
 
   update({
@@ -571,29 +555,6 @@ class PDFPageView {
         "--scale-factor",
         this.viewport.scale
       );
-    }
-
-    if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      this.svg
-    ) {
-      this.cssTransform({
-        target: this.svg,
-        redrawAnnotationLayer: true,
-        redrawAnnotationEditorLayer: true,
-        redrawXfaLayer: true,
-        redrawTextLayer: true,
-      });
-
-      this.eventBus.dispatch("pagerendered", {
-        source: this,
-        pageNumber: this.id,
-        cssTransform: true,
-        timestamp: performance.now(),
-        error: this._renderError,
-      });
-      return;
     }
 
     let isScalingRestricted = false;
@@ -722,26 +683,18 @@ class PDFPageView {
     redrawTextLayer = false,
     hideTextLayer = false,
   }) {
-    // Scale target (canvas or svg), its wrapper and page container.
-
-    if (target instanceof HTMLCanvasElement) {
-      if (!target.hasAttribute("zooming")) {
-        target.setAttribute("zooming", true);
-        const { style } = target;
-        style.width = style.height = "";
-      }
-    } else {
-      const div = this.div;
-      const { width, height } = this.viewport;
-
-      target.style.width =
-        target.parentNode.style.width =
-        div.style.width =
-          Math.floor(width) + "px";
-      target.style.height =
-        target.parentNode.style.height =
-        div.style.height =
-          Math.floor(height) + "px";
+    // Scale target (canvas), its wrapper and page container.
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("!PRODUCTION || TESTING")) &&
+      !(target instanceof HTMLCanvasElement)
+    ) {
+      throw new Error("Expected `target` to be a canvas.");
+    }
+    if (!target.hasAttribute("zooming")) {
+      target.setAttribute("zooming", true);
+      const { style } = target;
+      style.width = style.height = "";
     }
 
     const originalViewport = this.paintedViewportMap.get(target);
@@ -908,12 +861,7 @@ class PDFPageView {
       }
     };
 
-    const paintTask =
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")) &&
-      this.renderer === RendererType.SVG
-        ? this.paintOnSvg(canvasWrapper)
-        : this.paintOnCanvas(canvasWrapper);
+    const paintTask = this.paintOnCanvas(canvasWrapper);
     paintTask.onRenderContinue = renderContinueCallback;
     this.paintTask = paintTask;
 
@@ -1090,62 +1038,6 @@ class PDFPageView {
       }
     );
     return result;
-  }
-
-  paintOnSvg(wrapper) {
-    if (
-      !(
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || GENERIC")
-      )
-    ) {
-      throw new Error("Not implemented: paintOnSvg");
-    }
-    let cancelled = false;
-    const ensureNotCancelled = () => {
-      if (cancelled) {
-        throw new RenderingCancelledException(
-          `Rendering cancelled, page ${this.id}`,
-          "svg"
-        );
-      }
-    };
-
-    const pdfPage = this.pdfPage;
-    const actualSizeViewport = this.viewport.clone({
-      scale: PixelsPerInch.PDF_TO_CSS_UNITS,
-    });
-    const promise = pdfPage
-      .getOperatorList({
-        annotationMode: this.#annotationMode,
-      })
-      .then(opList => {
-        ensureNotCancelled();
-        const svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
-        return svgGfx.getSVG(opList, actualSizeViewport).then(svg => {
-          ensureNotCancelled();
-          this.svg = svg;
-          this.paintedViewportMap.set(svg, actualSizeViewport);
-
-          svg.style.width = wrapper.style.width;
-          svg.style.height = wrapper.style.height;
-          this.renderingState = RenderingStates.FINISHED;
-          wrapper.append(svg);
-        });
-      });
-
-    return {
-      promise,
-      onRenderContinue(cont) {
-        cont();
-      },
-      cancel() {
-        cancelled = true;
-      },
-      get separateAnnots() {
-        return false;
-      },
-    };
   }
 
   /**

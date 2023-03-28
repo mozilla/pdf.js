@@ -47,7 +47,6 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   PresentationModeState,
-  RendererType,
   RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -266,7 +265,6 @@ class PDFViewer {
       PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
       this.removePageBorders = options.removePageBorders || false;
-      this.renderer = options.renderer || RendererType.CANVAS;
     }
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.isOffscreenCanvasSupported =
@@ -775,11 +773,6 @@ class PDFViewer {
             textLayerMode,
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
-            renderer:
-              typeof PDFJSDev === "undefined" ||
-              PDFJSDev.test("!PRODUCTION || GENERIC")
-                ? this.renderer
-                : null,
             useOnlyCssZoom: this.useOnlyCssZoom,
             isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
             maxCanvasPixels: this.maxCanvasPixels,
