@@ -2341,6 +2341,12 @@ class PartialEvaluator {
     const SPACE_IN_FLOW_MIN_FACTOR = 0.102;
     const SPACE_IN_FLOW_MAX_FACTOR = 0.6;
 
+    // If a char is too high/too low compared to the previous we just create
+    // a new chunk.
+    // If the advance isn't in the +/-VERTICAL_SHIFT_RATIO * height range then
+    // a new chunk is created.
+    const VERTICAL_SHIFT_RATIO = 0.25;
+
     const self = this;
     const xref = this.xref;
     const showSpacedTextBuffer = [];
@@ -2649,6 +2655,10 @@ class PartialEvaluator {
           }
         }
 
+        if (Math.abs(advanceX) > textContentItem.width * VERTICAL_SHIFT_RATIO) {
+          flushTextContentItem();
+        }
+
         return true;
       }
 
@@ -2704,6 +2714,10 @@ class PartialEvaluator {
         } else {
           textContentItem.width += advanceX;
         }
+      }
+
+      if (Math.abs(advanceY) > textContentItem.height * VERTICAL_SHIFT_RATIO) {
+        flushTextContentItem();
       }
 
       return true;
