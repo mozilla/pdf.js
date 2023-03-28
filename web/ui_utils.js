@@ -46,14 +46,6 @@ const SidebarView = {
   LAYERS: 4,
 };
 
-const RendererType =
-  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
-    ? {
-        CANVAS: "canvas",
-        SVG: "svg",
-      }
-    : null;
-
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
@@ -880,7 +872,6 @@ export {
   PresentationModeState,
   ProgressBar,
   removeNullCharacters,
-  RendererType,
   RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,

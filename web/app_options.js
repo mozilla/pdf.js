@@ -315,11 +315,6 @@ if (
     value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
   };
-  defaultOptions.renderer = {
-    /** @type {string} */
-    value: "canvas",
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
