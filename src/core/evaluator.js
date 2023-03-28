@@ -2311,6 +2311,13 @@ class PartialEvaluator {
       return ret;
     }
 
+    function shouldAddWhitepsace() {
+      return (
+        twoLastChars[twoLastCharsPos] !== " " &&
+        twoLastChars[(twoLastCharsPos + 1) % 2] === " "
+      );
+    }
+
     function resetLastChars() {
       twoLastChars[0] = twoLastChars[1] = " ";
       twoLastCharsPos = 0;
@@ -2359,6 +2366,23 @@ class PartialEvaluator {
     const preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
     let textState;
+
+    function pushWhitespace({
+      width = 0,
+      height = 0,
+      transform = textContentItem.prevTransform,
+      fontName = textContentItem.fontName,
+    }) {
+      textContent.items.push({
+        str: " ",
+        dir: "ltr",
+        width,
+        height,
+        transform,
+        fontName,
+        hasEOL: false,
+      });
+    }
 
     function getCurrentTextTransform() {
       // 9.4.4 Text Space Details
@@ -2631,7 +2655,16 @@ class PartialEvaluator {
         }
 
         if (advanceY <= textOrientation * textContentItem.trackingSpaceMin) {
-          textContentItem.height += advanceY;
+          if (shouldAddWhitepsace()) {
+            // The space is very thin, hence it deserves to have its own span in
+            // order to avoid too much shift between the canvas and the text
+            // layer.
+            resetLastChars();
+            flushTextContentItem();
+            pushWhitespace({ height: Math.abs(advanceY) });
+          } else {
+            textContentItem.height += advanceY;
+          }
         } else if (
           !addFakeSpaces(
             advanceY,
@@ -2641,15 +2674,7 @@ class PartialEvaluator {
         ) {
           if (textContentItem.str.length === 0) {
             resetLastChars();
-            textContent.items.push({
-              str: " ",
-              dir: "ltr",
-              width: 0,
-              height: Math.abs(advanceY),
-              transform: textContentItem.prevTransform,
-              fontName: textContentItem.fontName,
-              hasEOL: false,
-            });
+            pushWhitespace({ height: Math.abs(advanceY) });
           } else {
             textContentItem.height += advanceY;
           }
@@ -2696,21 +2721,22 @@ class PartialEvaluator {
       }
 
       if (advanceX <= textOrientation * textContentItem.trackingSpaceMin) {
-        textContentItem.width += advanceX;
+        if (shouldAddWhitepsace()) {
+          // The space is very thin, hence it deserves to have its own span in
+          // order to avoid too much shift between the canvas and the text
+          // layer.
+          resetLastChars();
+          flushTextContentItem();
+          pushWhitespace({ width: Math.abs(advanceX) });
+        } else {
+          textContentItem.width += advanceX;
+        }
       } else if (
         !addFakeSpaces(advanceX, textContentItem.prevTransform, textOrientation)
       ) {
         if (textContentItem.str.length === 0) {
           resetLastChars();
-          textContent.items.push({
-            str: " ",
-            dir: "ltr",
-            width: Math.abs(advanceX),
-            height: 0,
-            transform: textContentItem.prevTransform,
-            fontName: textContentItem.fontName,
-            hasEOL: false,
-          });
+          pushWhitespace({ width: Math.abs(advanceX) });
         } else {
           textContentItem.width += advanceX;
         }
@@ -2872,16 +2898,11 @@ class PartialEvaluator {
 
       flushTextContentItem();
       resetLastChars();
-      textContent.items.push({
-        str: " ",
-        // TODO: check if using the orientation from last chunk is
-        // better or not.
-        dir: "ltr",
+      pushWhitespace({
         width: Math.abs(width),
         height: Math.abs(height),
         transform: transf || getCurrentTextTransform(),
         fontName,
-        hasEOL: false,
       });
 
       return true;
