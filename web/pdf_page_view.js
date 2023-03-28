@@ -746,7 +746,41 @@ class PDFPageView {
     return this.viewport.convertToPdfPoint(x, y);
   }
 
-  draw() {
+  async #finishPaintTask(paintTask, error = null) {
+    // The paintTask may have been replaced by a new one, so only remove
+    // the reference to the paintTask if it matches the one that is
+    // triggering this callback.
+    if (paintTask === this.paintTask) {
+      this.paintTask = null;
+    }
+
+    if (error instanceof RenderingCancelledException) {
+      this._renderError = null;
+      return;
+    }
+    this._renderError = error;
+
+    this.renderingState = RenderingStates.FINISHED;
+    this._resetZoomLayer(/* removeFromDOM = */ true);
+
+    // Ensure that the thumbnails won't become partially (or fully) blank,
+    // for documents that contain interactive form elements.
+    this.#useThumbnailCanvas.regularAnnotations = !paintTask.separateAnnots;
+
+    this.eventBus.dispatch("pagerendered", {
+      source: this,
+      pageNumber: this.id,
+      cssTransform: false,
+      timestamp: performance.now(),
+      error: this._renderError,
+    });
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
@@ -755,7 +789,7 @@ class PDFPageView {
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
-      return Promise.reject(new Error("pdfPage is not loaded"));
+      throw new Error("pdfPage is not loaded");
     }
 
     this.renderingState = RenderingStates.RUNNING;
@@ -827,47 +861,13 @@ class PDFPageView {
       };
     }
 
-    const finishPaintTask = async (error = null) => {
-      // The paintTask may have been replaced by a new one, so only remove
-      // the reference to the paintTask if it matches the one that is
-      // triggering this callback.
-      if (paintTask === this.paintTask) {
-        this.paintTask = null;
-      }
-
-      if (error instanceof RenderingCancelledException) {
-        this._renderError = null;
-        return;
-      }
-      this._renderError = error;
-
-      this.renderingState = RenderingStates.FINISHED;
-      this._resetZoomLayer(/* removeFromDOM = */ true);
-
-      // Ensure that the thumbnails won't become partially (or fully) blank,
-      // for documents that contain interactive form elements.
-      this.#useThumbnailCanvas.regularAnnotations = !paintTask.separateAnnots;
-
-      this.eventBus.dispatch("pagerendered", {
-        source: this,
-        pageNumber: this.id,
-        cssTransform: false,
-        timestamp: performance.now(),
-        error: this._renderError,
-      });
-
-      if (error) {
-        throw error;
-      }
-    };
-
     const paintTask = this.paintOnCanvas(canvasWrapper);
     paintTask.onRenderContinue = renderContinueCallback;
     this.paintTask = paintTask;
 
     const resultPromise = paintTask.promise.then(
       () => {
-        return finishPaintTask(null).then(async () => {
+        return this.#finishPaintTask(paintTask).then(async () => {
           this.#renderTextLayer();
 
           if (this.annotationLayer) {
@@ -891,8 +891,8 @@ class PDFPageView {
           this.#renderAnnotationEditorLayer();
         });
       },
-      function (reason) {
-        return finishPaintTask(reason);
+      error => {
+        return this.#finishPaintTask(paintTask, error);
       }
     );
 
