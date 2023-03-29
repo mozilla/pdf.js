@@ -125,7 +125,10 @@ const defaultOptions = {
   },
   imageResourcesPath: {
     /** @type {string} */
-    value: "./images/",
+    value:
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? "resource://pdf.js/web/images/"
+        : "./images/",
     kind: OptionKind.VIEWER,
   },
   maxCanvasPixels: {
