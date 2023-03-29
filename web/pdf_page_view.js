@@ -607,14 +607,13 @@ class PDFPageView {
         isScalingRestricted = true;
       }
     }
-    const postponeDrawing = drawingDelay >= 0 && drawingDelay < 1000;
+    const onlyCssZoom =
+      this.useOnlyCssZoom || (this.hasRestrictedScaling && isScalingRestricted);
+    const postponeDrawing =
+      !onlyCssZoom && drawingDelay >= 0 && drawingDelay < 1000;
 
     if (this.canvas) {
-      if (
-        postponeDrawing ||
-        this.useOnlyCssZoom ||
-        (this.hasRestrictedScaling && isScalingRestricted)
-      ) {
+      if (postponeDrawing || onlyCssZoom) {
         if (
           postponeDrawing &&
           this.renderingState !== RenderingStates.FINISHED
