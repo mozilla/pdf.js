@@ -759,10 +759,7 @@ class PDFPageView {
         scaleX = height / width;
         scaleY = width / height;
       }
-
-      if (absRotation !== 0) {
-        target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
-      }
+      target.style.transform = `rotate(${relativeRotation}deg) scale(${scaleX}, ${scaleY})`;
     }
 
     if (redrawAnnotationLayer && this.annotationLayer) {
