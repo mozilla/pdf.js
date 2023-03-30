@@ -1267,7 +1267,6 @@ function preprocessDefaultPreferences(content) {
   const preprocessor2 = require("./external/builder/preprocessor2.js");
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
-  const GLOBALS = "/* eslint-disable */\n";
   const MODIFICATION_WARNING =
     "//\n// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!\n//\n";
 
@@ -1283,16 +1282,7 @@ function preprocessDefaultPreferences(content) {
     content
   );
 
-  return (
-    licenseHeader +
-    "\n" +
-    GLOBALS +
-    "\n" +
-    MODIFICATION_WARNING +
-    "\n" +
-    content +
-    "\n"
-  );
+  return licenseHeader + "\n" + MODIFICATION_WARNING + "\n" + content + "\n";
 }
 
 gulp.task(
