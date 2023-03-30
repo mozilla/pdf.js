@@ -21,6 +21,7 @@ import {
   ImageKind,
   InvalidPDFException,
   MissingPDFException,
+  objectSize,
   OPS,
   PasswordException,
   PasswordResponses,
@@ -2321,26 +2322,16 @@ describe("api", function () {
     });
 
     it("gets text content", async function () {
-      const defaultPromise = page.getTextContent();
-      const parametersPromise = page.getTextContent({
-        disableCombineTextItems: true,
-      });
+      const { items, styles } = await page.getTextContent();
 
-      const data = await Promise.all([defaultPromise, parametersPromise]);
+      expect(items.length).toEqual(15);
+      expect(objectSize(styles)).toEqual(5);
 
-      expect(!!data[0].items).toEqual(true);
-      expect(data[0].items.length).toEqual(15);
-      expect(!!data[0].styles).toEqual(true);
-
-      const page1 = mergeText(data[0].items);
-      expect(page1).toEqual(`Table Of Content
+      const text = mergeText(items);
+      expect(text).toEqual(`Table Of Content
 Chapter 1 .......................................................... 2
 Paragraph 1.1 ...................................................... 3
 page 1 / 3`);
-
-      expect(!!data[1].items).toEqual(true);
-      expect(data[1].items.length).toEqual(6);
-      expect(!!data[1].styles).toEqual(true);
     });
 
     it("gets text content, with correct properties (issue 8276)", async function () {

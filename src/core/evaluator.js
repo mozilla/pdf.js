@@ -2236,7 +2236,6 @@ class PartialEvaluator {
     task,
     resources,
     stateManager = null,
-    combineTextItems = false,
     includeMarkedContent = false,
     sink,
     seenStyles = new Set(),
@@ -2534,11 +2533,7 @@ class PartialEvaluator {
         return false;
       }
 
-      if (
-        !combineTextItems ||
-        !textState.font ||
-        !textContentItem.prevTransform
-      ) {
+      if (!textState.font || !textContentItem.prevTransform) {
         return true;
       }
 
@@ -3191,7 +3186,6 @@ class PartialEvaluator {
                     task,
                     resources: xobj.dict.get("Resources") || resources,
                     stateManager: xObjStateManager,
-                    combineTextItems,
                     includeMarkedContent,
                     sink: sinkWrapper,
                     seenStyles,
