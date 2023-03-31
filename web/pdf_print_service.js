@@ -111,9 +111,9 @@ PDFPrintService.prototype = {
     // TODO(robwu): Use named pages when size calculation bugs get resolved
     // (e.g. https://crbug.com/355116) AND when support for named pages is
     // added (http://www.w3.org/TR/css3-page/#using-named-pages).
-    // In browsers where @page + size is not supported (such as Firefox,
-    // https://bugzil.la/851441), the next stylesheet will be ignored and the
-    // user has to select the correct paper size in the UI if wanted.
+    // In browsers where @page + size is not supported, the next stylesheet
+    // will be ignored and the user has to select the correct paper size in
+    // the UI if wanted.
     this.pageStyleSheet = document.createElement("style");
     const pageSize = this.pagesOverview[0];
     this.pageStyleSheet.textContent =
