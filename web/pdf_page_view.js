@@ -945,17 +945,16 @@ class PDFPageView {
     // Keep the canvas hidden until the first draw callback, or until drawing
     // is complete when `!this.renderingQueue`, to prevent black flickering.
     canvas.hidden = true;
-    let isCanvasHidden = true;
     const hasHCM = !!(
       this.pageColors?.background && this.pageColors?.foreground
     );
-    const showCanvas = function (isLastShow) {
+    let showCanvas = isLastShow => {
       // In HCM, a final filter is applied on the canvas which means that
       // before it's applied we've normal colors. Consequently, to avoid to have
       // a final flash we just display it once all the drawing is done.
-      if (isCanvasHidden && (!hasHCM || isLastShow)) {
+      if (!hasHCM || isLastShow) {
         canvas.hidden = false;
-        isCanvasHidden = false;
+        showCanvas = null; // Only invoke the function once.
       }
     };
 
@@ -1014,7 +1013,7 @@ class PDFPageView {
     };
     const renderTask = this.pdfPage.render(renderContext);
     renderTask.onContinue = function (cont) {
-      showCanvas(false);
+      showCanvas?.(false);
       if (result.onRenderContinue) {
         result.onRenderContinue(cont);
       } else {
@@ -1024,7 +1023,7 @@ class PDFPageView {
 
     renderTask.promise.then(
       function () {
-        showCanvas(true);
+        showCanvas?.(true);
         renderCapability.resolve();
       },
       function (error) {
@@ -1032,7 +1031,7 @@ class PDFPageView {
         // a black canvas if rendering was cancelled before the `onContinue`-
         // callback had been invoked at least once.
         if (!(error instanceof RenderingCancelledException)) {
-          showCanvas(true);
+          showCanvas?.(true);
         }
         renderCapability.reject(error);
       }
