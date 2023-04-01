@@ -741,7 +741,7 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetTextContent", function (data, sink) {
-      const pageIndex = data.pageIndex;
+      const { pageIndex, includeMarkedContent } = data;
 
       pdfManager.getPage(pageIndex).then(function (page) {
         const task = new WorkerTask("GetTextContent: page " + pageIndex);
@@ -755,8 +755,7 @@ class WorkerMessageHandler {
             handler,
             task,
             sink,
-            includeMarkedContent: data.includeMarkedContent,
-            combineTextItems: data.combineTextItems,
+            includeMarkedContent,
           })
           .then(
             function () {
