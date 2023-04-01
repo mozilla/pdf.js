@@ -1120,8 +1120,6 @@ class PDFDocumentProxy {
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
- * @property {boolean} disableCombineTextItems - Do not attempt to combine
- *   same line {@link TextItem}'s. The default value is `false`.
  * @property {boolean} [includeMarkedContent] - When true include marked
  *   content items in the items array of TextContent. The default is `false`.
  */
@@ -1602,17 +1600,13 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({
-    disableCombineTextItems = false,
-    includeMarkedContent = false,
-  } = {}) {
+  streamTextContent({ includeMarkedContent = false } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
         pageIndex: this._pageIndex,
-        combineTextItems: disableCombineTextItems !== true,
         includeMarkedContent: includeMarkedContent === true,
       },
       {
