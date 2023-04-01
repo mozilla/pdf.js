@@ -133,10 +133,14 @@ class WorkerMessageHandler {
       // Ensure that (primarily) Node.js users won't accidentally attempt to use
       // a non-translated/non-polyfilled build of the library, since that would
       // quickly fail anyway because of missing functionality.
-      if (typeof ReadableStream === "undefined") {
+      if (
+        typeof Path2D === "undefined" ||
+        typeof ReadableStream === "undefined"
+      ) {
         const partialMsg =
           "The browser/environment lacks native support for critical " +
-          "functionality used by the PDF.js library (e.g. `ReadableStream`); ";
+          "functionality used by the PDF.js library " +
+          "(e.g. `Path2D` and/or `ReadableStream`); ";
 
         if (isNodeJS) {
           throw new Error(partialMsg + "please use a `legacy`-build instead.");
