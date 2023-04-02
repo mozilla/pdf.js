@@ -203,11 +203,7 @@ class SecondaryToolbar {
     for (const { element, eventName, close, eventDetails } of this.buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          const details = { source: this };
-          for (const property in eventDetails) {
-            details[property] = eventDetails[property];
-          }
-          this.eventBus.dispatch(eventName, details);
+          this.eventBus.dispatch(eventName, { source: this, ...eventDetails });
         }
         if (close) {
           this.close();

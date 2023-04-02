@@ -150,13 +150,7 @@ class Toolbar {
     for (const { element, eventName, eventDetails } of this.buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          const details = { source: this };
-          if (eventDetails) {
-            for (const property in eventDetails) {
-              details[property] = eventDetails[property];
-            }
-          }
-          this.eventBus.dispatch(eventName, details);
+          this.eventBus.dispatch(eventName, { source: this, ...eventDetails });
         }
       });
     }
