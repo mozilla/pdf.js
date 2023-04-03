@@ -79,7 +79,7 @@ const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
 const ENV_TARGETS = [
   "last 2 versions",
-  "Chrome >= 87",
+  "Chrome >= 88",
   "Firefox ESR",
   "Safari >= 14.1",
   "Node >= 16",
@@ -1309,6 +1309,9 @@ gulp.task(
         ...COMMON_WEB_FILES,
         "!web/images/toolbarButton-openFile.svg",
       ];
+      const MOZCENTRAL_AUTOPREFIXER_CONFIG = {
+        overrideBrowserslist: ["last 1 firefox versions"],
+      };
 
       // Clear out everything in the firefox extension build directory
       rimraf.sync(MOZCENTRAL_DIR);
@@ -1350,23 +1353,11 @@ gulp.task(
         ),
 
         preprocessCSS("web/viewer.css", defines)
-          .pipe(
-            postcss([
-              autoprefixer({
-                overrideBrowserslist: ["last 1 firefox versions"],
-              }),
-            ])
-          )
+          .pipe(postcss([autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG)]))
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
         preprocessCSS("web/viewer-geckoview.css", defines)
-          .pipe(
-            postcss([
-              autoprefixer({
-                overrideBrowserslist: ["last 1 firefox versions"],
-              }),
-            ])
-          )
+          .pipe(postcss([autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG)]))
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
         gulp
@@ -1455,7 +1446,7 @@ gulp.task(
           .pipe(
             postcss([
               postcssDirPseudoClass(),
-              autoprefixer({ overrideBrowserslist: ["Chrome >= 87"] }),
+              autoprefixer(AUTOPREFIXER_CONFIG),
             ])
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
