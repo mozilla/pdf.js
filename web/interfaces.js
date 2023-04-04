@@ -146,7 +146,7 @@ class IRenderableView {
   /**
    * @returns {Promise} Resolved on draw completion.
    */
-  draw() {}
+  async draw() {}
 }
 
 /**
