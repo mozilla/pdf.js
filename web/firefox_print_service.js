@@ -146,6 +146,27 @@ FirefoxPrintService.prototype = {
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
 
+    const hasEqualPageSizes = this.pagesOverview.every(function (size) {
+      return (
+        size.width === this.pagesOverview[0].width &&
+        size.height === this.pagesOverview[0].height
+      );
+    }, this);
+    if (!hasEqualPageSizes) {
+      console.warn(
+        "Not all pages have the same size. The printed " +
+          "result may be incorrect!"
+      );
+    }
+
+    // Insert a @page + size rule to make sure that the page size is correctly
+    // set. Note that we assume that all pages have the same size, because
+    // variable-size pages are scaled down to the initial page size in Firefox.
+    this.pageStyleSheet = document.createElement("style");
+    const pageSize = this.pagesOverview[0];
+    this.pageStyleSheet.textContent = `@page { size: ${pageSize.width}pt ${pageSize.height}pt;}`;
+    body.append(this.pageStyleSheet);
+
     if (pdfDocument.isPureXfa) {
       getXfaHtmlForPrinting(printContainer, pdfDocument);
       return;
@@ -169,6 +190,11 @@ FirefoxPrintService.prototype = {
 
     const body = document.querySelector("body");
     body.removeAttribute("data-pdfjsprinting");
+
+    if (this.pageStyleSheet) {
+      this.pageStyleSheet.remove();
+      this.pageStyleSheet = null;
+    }
   },
 };
 
