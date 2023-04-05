@@ -1666,21 +1666,27 @@ class PDFViewer {
    * @returns {Array} Array of objects with width/height/rotation fields.
    */
   getPagesOverview() {
+    let initialOrientation;
     return this._pages.map(pageView => {
       const viewport = pageView.pdfPage.getViewport({ scale: 1 });
-
-      if (!this.enablePrintAutoRotate || isPortraitOrientation(viewport)) {
+      const orientation = isPortraitOrientation(viewport);
+      if (initialOrientation === undefined) {
+        initialOrientation = orientation;
+      } else if (
+        this.enablePrintAutoRotate &&
+        orientation !== initialOrientation
+      ) {
+        // Rotate to fit the initial orientation.
         return {
-          width: viewport.width,
-          height: viewport.height,
-          rotation: viewport.rotation,
+          width: viewport.height,
+          height: viewport.width,
+          rotation: (viewport.rotation - 90) % 360,
         };
       }
-      // Landscape orientation.
       return {
-        width: viewport.height,
-        height: viewport.width,
-        rotation: (viewport.rotation - 90) % 360,
+        width: viewport.width,
+        height: viewport.height,
+        rotation: viewport.rotation,
       };
     });
   }
