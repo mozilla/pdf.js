@@ -2234,7 +2234,7 @@ function webViewerInitialized() {
   }
 
   if (!PDFViewerApplication.supportsPrinting) {
-    appConfig.toolbar?.print.classList.add("hidden");
+    appConfig.toolbar?.print?.classList.add("hidden");
     appConfig.secondaryToolbar?.printButton.classList.add("hidden");
   }
 
@@ -2243,7 +2243,7 @@ function webViewerInitialized() {
   }
 
   if (PDFViewerApplication.supportsIntegratedFind) {
-    appConfig.toolbar?.viewFind.classList.add("hidden");
+    appConfig.toolbar?.viewFind?.classList.add("hidden");
   }
 
   appConfig.mainContainer.addEventListener(
@@ -2917,6 +2917,17 @@ function webViewerTouchEnd(evt) {
 }
 
 function webViewerClick(evt) {
+  if (
+    typeof PDFJSDev === "undefined"
+      ? window.isGECKOVIEW
+      : PDFJSDev.test("GECKOVIEW")
+  ) {
+    if (
+      document.activeElement === PDFViewerApplication.appConfig.mainContainer
+    ) {
+      PDFViewerApplication.toolbar?.toggle();
+    }
+  }
   if (!PDFViewerApplication.secondaryToolbar?.isOpen) {
     return;
   }
