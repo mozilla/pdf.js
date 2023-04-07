@@ -264,8 +264,11 @@ function createWebpackConfig(
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.MOZCENTRAL) {
     if (bundleDefines.GECKOVIEW) {
+      const gvAlias = {
+        "web-toolbar": "web/toolbar-geckoview.js",
+      };
       for (const key in viewerAlias) {
-        viewerAlias[key] = "web/stubs-geckoview.js";
+        viewerAlias[key] = gvAlias[key] || "web/stubs-geckoview.js";
       }
     } else {
       viewerAlias["web-print_service"] = "web/firefox_print_service.js";
