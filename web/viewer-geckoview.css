@@ -29,6 +29,8 @@
   --dialog-button-border: none;
   --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
   --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+
+  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
 }
 
 :root:dir(rtl) {
@@ -147,6 +149,80 @@ body {
 
 .toolbarField:focus {
   border-color: #0a84ff;
+}
+
+#floatingToolbar {
+  position: absolute;
+  width: 40px;
+  height: auto;
+  bottom: 5%;
+  right: 5%;
+  background-color: transparent;
+  z-index: 100000;
+}
+
+#floatingToolbar.show {
+  display: block;
+}
+
+#floatingToolbar:not(show) {
+  display: none;
+}
+
+.toolbarButton {
+  margin: 2px;
+  padding: 8px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: transparent;
+  border-radius: 19px;
+  user-select: none;
+  box-sizing: border-box;
+  background-color: transparent;
+  backdrop-filter: blur(20px) contrast(100%) invert(100%);
+  width: 38px;
+  height: 38px;
+  outline: none;
+  position: relative;
+}
+
+.toolbarButton > span {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.toolbarButton[disabled],
+.dialogButton[disabled] {
+  opacity: 0.5;
+}
+
+.toolbarButton:hover,
+.toolbarButton:focus-visible {
+  backdrop-filter: blur(20px) contrast(200%) invert(100%);
+}
+
+.toolbarButton::before {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background-color: transparent;
+  backdrop-filter: invert(100%);
+  mask-size: cover;
+}
+
+.toolbarButton::before {
+  opacity: var(--toolbar-icon-opacity);
+}
+
+.toolbarButton:hover::before {
+  backdrop-filter: invert(60%);
+}
+
+#download::before {
+  mask-image: var(--toolbarButton-download-icon);
 }
 
 .dialogButton {
