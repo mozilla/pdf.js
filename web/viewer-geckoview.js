@@ -36,10 +36,16 @@ window.PDFViewerApplicationConstants = AppConstants;
 window.PDFViewerApplicationOptions = AppOptions;
 
 function getViewerConfiguration() {
+  const mainContainer = document.getElementById("viewerContainer");
   return {
     appContainer: document.body,
-    mainContainer: document.getElementById("viewerContainer"),
+    mainContainer,
     viewerContainer: document.getElementById("viewer"),
+    toolbar: {
+      mainContainer,
+      container: document.getElementById("floatingToolbar"),
+      download: document.getElementById("download"),
+    },
 
     passwordOverlay: {
       dialog: document.getElementById("passwordDialog"),
