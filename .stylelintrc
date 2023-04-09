@@ -8,6 +8,9 @@
 
     "block-no-empty": true,
     "declaration-block-no-redundant-longhand-properties": true,
+    "declaration-property-value-disallowed-list": {
+      "float": ["inline-start", "inline-end"]
+    },
     "length-zero-no-unit": [true, {
       ignore: ["custom-properties"]
     }],
