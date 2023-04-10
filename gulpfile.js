@@ -1288,6 +1288,10 @@ function preprocessDefaultPreferences(content) {
   return licenseHeader + "\n" + MODIFICATION_WARNING + "\n" + content + "\n";
 }
 
+function replaceMozcentralCSS() {
+  return replace(/var\(--(inline-(?:start|end))\)/g, "$1");
+}
+
 gulp.task(
   "mozcentral",
   gulp.series(
@@ -1357,10 +1361,12 @@ gulp.task(
 
         preprocessCSS("web/viewer.css", defines)
           .pipe(postcss([autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG)]))
+          .pipe(replaceMozcentralCSS())
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
         preprocessCSS("web/viewer-geckoview.css", defines)
           .pipe(postcss([autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG)]))
+          .pipe(replaceMozcentralCSS())
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
         gulp

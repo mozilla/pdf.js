@@ -17,10 +17,7 @@
 
 :root {
   --dir-factor: 1;
-  /*#if MOZCENTRAL*/
-  --inline-start: inline-start;
-  --inline-end: inline-end;
-  /*#else*/
+  /*#if !MOZCENTRAL*/
   --inline-start: left;
   --inline-end: right;
   /*#endif*/
