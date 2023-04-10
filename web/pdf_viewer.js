@@ -47,7 +47,6 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   PresentationModeState,
-  RendererType,
   RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -266,7 +265,6 @@ class PDFViewer {
       PDFJSDev.test("!PRODUCTION || GENERIC")
     ) {
       this.removePageBorders = options.removePageBorders || false;
-      this.renderer = options.renderer || RendererType.CANVAS;
     }
     this.useOnlyCssZoom = options.useOnlyCssZoom || false;
     this.isOffscreenCanvasSupported =
@@ -775,11 +773,6 @@ class PDFViewer {
             textLayerMode,
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
-            renderer:
-              typeof PDFJSDev === "undefined" ||
-              PDFJSDev.test("!PRODUCTION || GENERIC")
-                ? this.renderer
-                : null,
             useOnlyCssZoom: this.useOnlyCssZoom,
             isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
             maxCanvasPixels: this.maxCanvasPixels,
@@ -1673,21 +1666,27 @@ class PDFViewer {
    * @returns {Array} Array of objects with width/height/rotation fields.
    */
   getPagesOverview() {
+    let initialOrientation;
     return this._pages.map(pageView => {
       const viewport = pageView.pdfPage.getViewport({ scale: 1 });
-
-      if (!this.enablePrintAutoRotate || isPortraitOrientation(viewport)) {
+      const orientation = isPortraitOrientation(viewport);
+      if (initialOrientation === undefined) {
+        initialOrientation = orientation;
+      } else if (
+        this.enablePrintAutoRotate &&
+        orientation !== initialOrientation
+      ) {
+        // Rotate to fit the initial orientation.
         return {
-          width: viewport.width,
-          height: viewport.height,
-          rotation: viewport.rotation,
+          width: viewport.height,
+          height: viewport.width,
+          rotation: (viewport.rotation - 90) % 360,
         };
       }
-      // Landscape orientation.
       return {
-        width: viewport.height,
-        height: viewport.width,
-        rotation: (viewport.rotation - 90) % 360,
+        width: viewport.width,
+        height: viewport.height,
+        rotation: viewport.rotation,
       };
     });
   }
@@ -1966,7 +1965,7 @@ class PDFViewer {
 
   /**
    * Go to the next page, taking scroll/spread-modes into account.
-   * @returns {boolean} Whether navigation occured.
+   * @returns {boolean} Whether navigation occurred.
    */
   nextPage() {
     const currentPageNumber = this._currentPageNumber,
@@ -1984,7 +1983,7 @@ class PDFViewer {
 
   /**
    * Go to the previous page, taking scroll/spread-modes into account.
-   * @returns {boolean} Whether navigation occured.
+   * @returns {boolean} Whether navigation occurred.
    */
   previousPage() {
     const currentPageNumber = this._currentPageNumber;

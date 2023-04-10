@@ -125,7 +125,10 @@ const defaultOptions = {
   },
   imageResourcesPath: {
     /** @type {string} */
-    value: "./images/",
+    value:
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+        ? "resource://pdf.js/web/images/"
+        : "./images/",
     kind: OptionKind.VIEWER,
   },
   maxCanvasPixels: {
@@ -311,11 +314,6 @@ if (
     /** @type {string} */
     value: navigator.language || "en-US",
     kind: OptionKind.VIEWER,
-  };
-  defaultOptions.renderer = {
-    /** @type {string} */
-    value: "canvas",
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   };
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */

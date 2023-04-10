@@ -36,12 +36,9 @@
   padding: 3px;
 }
 #PDFBug .panels {
-  bottom: 0;
-  left: 0;
+  inset: 27px 0 0;
   overflow: auto;
   position: absolute;
-  right: 0;
-  top: 27px;
 }
 #PDFBug .panels > div {
   padding: 5px;

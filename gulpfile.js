@@ -79,7 +79,7 @@ const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
 
 const ENV_TARGETS = [
   "last 2 versions",
-  "Chrome >= 87",
+  "Chrome >= 88",
   "Firefox ESR",
   "Safari >= 14.1",
   "Node >= 16",
@@ -264,8 +264,11 @@ function createWebpackConfig(
     viewerAlias["web-print_service"] = "web/pdf_print_service.js";
   } else if (bundleDefines.MOZCENTRAL) {
     if (bundleDefines.GECKOVIEW) {
+      const gvAlias = {
+        "web-toolbar": "web/toolbar-geckoview.js",
+      };
       for (const key in viewerAlias) {
-        viewerAlias[key] = "web/stubs-geckoview.js";
+        viewerAlias[key] = gvAlias[key] || "web/stubs-geckoview.js";
       }
     } else {
       viewerAlias["web-print_service"] = "web/firefox_print_service.js";
@@ -434,12 +437,15 @@ function createSandboxExternal(defines) {
     saveComments: false,
     defines,
   };
-  return gulp.src("./src/pdf.sandbox.external.js").pipe(
-    transform("utf8", content => {
-      content = preprocessor2.preprocessPDFJSCode(ctx, content);
-      return `${licenseHeader}\n${content}`;
-    })
-  );
+  return gulp
+    .src("./src/pdf.sandbox.external.js")
+    .pipe(rename("pdf.sandbox.external.sys.mjs"))
+    .pipe(
+      transform("utf8", content => {
+        content = preprocessor2.preprocessPDFJSCode(ctx, content);
+        return `${licenseHeader}\n${content}`;
+      })
+    );
 }
 
 function createTemporaryScriptingBundle(defines, extraOptions = undefined) {
@@ -1264,7 +1270,6 @@ function preprocessDefaultPreferences(content) {
   const preprocessor2 = require("./external/builder/preprocessor2.js");
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
 
-  const GLOBALS = "/* eslint-disable */\n";
   const MODIFICATION_WARNING =
     "//\n// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!\n//\n";
 
@@ -1280,16 +1285,11 @@ function preprocessDefaultPreferences(content) {
     content
   );
 
-  return (
-    licenseHeader +
-    "\n" +
-    GLOBALS +
-    "\n" +
-    MODIFICATION_WARNING +
-    "\n" +
-    content +
-    "\n"
-  );
+  return licenseHeader + "\n" + MODIFICATION_WARNING + "\n" + content + "\n";
+}
+
+function replaceMozcentralCSS() {
+  return replace(/var\(--(inline-(?:start|end))\)/g, "$1");
 }
 
 gulp.task(
@@ -1316,6 +1316,9 @@ gulp.task(
         ...COMMON_WEB_FILES,
         "!web/images/toolbarButton-openFile.svg",
       ];
+      const MOZCENTRAL_AUTOPREFIXER_CONFIG = {
+        overrideBrowserslist: ["last 1 firefox versions"],
+      };
 
       // Clear out everything in the firefox extension build directory
       rimraf.sync(MOZCENTRAL_DIR);
@@ -1357,23 +1360,13 @@ gulp.task(
         ),
 
         preprocessCSS("web/viewer.css", defines)
-          .pipe(
-            postcss([
-              autoprefixer({
-                overrideBrowserslist: ["last 1 firefox versions"],
-              }),
-            ])
-          )
+          .pipe(postcss([autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG)]))
+          .pipe(replaceMozcentralCSS())
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
         preprocessCSS("web/viewer-geckoview.css", defines)
-          .pipe(
-            postcss([
-              autoprefixer({
-                overrideBrowserslist: ["last 1 firefox versions"],
-              }),
-            ])
-          )
+          .pipe(postcss([autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG)]))
+          .pipe(replaceMozcentralCSS())
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
 
         gulp
@@ -1381,7 +1374,7 @@ gulp.task(
           .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
         gulp.src("LICENSE").pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
         gulp
-          .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.jsm")
+          .src(FIREFOX_CONTENT_DIR + "PdfJsDefaultPreferences.sys.mjs")
           .pipe(transform("utf8", preprocessDefaultPreferences))
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
       ]);
@@ -1462,7 +1455,7 @@ gulp.task(
           .pipe(
             postcss([
               postcssDirPseudoClass(),
-              autoprefixer({ overrideBrowserslist: ["Chrome >= 87"] }),
+              autoprefixer(AUTOPREFIXER_CONFIG),
             ])
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
@@ -2352,7 +2345,7 @@ gulp.task(
       opts.cwd = installPath;
       distPath = path.relative(installPath, distPath);
     }
-    safeSpawnSync("npm", ["install", distPath], opts);
+    safeSpawnSync("npm", ["install", "--force", distPath], opts);
     done();
   })
 );

@@ -1120,8 +1120,6 @@ class PDFDocumentProxy {
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
- * @property {boolean} disableCombineTextItems - Do not attempt to combine
- *   same line {@link TextItem}'s. The default value is `false`.
  * @property {boolean} [includeMarkedContent] - When true include marked
  *   content items in the items array of TextContent. The default is `false`.
  */
@@ -1204,9 +1202,8 @@ class PDFDocumentProxy {
  *   The default value is `AnnotationMode.ENABLE`.
  * @property {Array<any>} [transform] - Additional transform, applied just
  *   before viewport transform.
- * @property {Object} [canvasFactory] - The factory instance that will be used
- *   when creating canvases. The default value is {new DOMCanvasFactory()}.
- * @property {Object | string} [background] - Background to use for the canvas.
+ * @property {CanvasGradient | CanvasPattern | string} [background] - Background
+ *   to use for the canvas.
  *   Any valid `canvas.fillStyle` can be used: a `DOMString` parsed as CSS
  *   <color> value, a `CanvasGradient` object (a linear or radial gradient) or
  *   a `CanvasPattern` object (a repetitive image). The default value is
@@ -1409,7 +1406,6 @@ class PDFPageProxy {
     intent = "display",
     annotationMode = AnnotationMode.ENABLE,
     transform = null,
-    canvasFactory = null,
     background = null,
     optionalContentConfigPromise = null,
     annotationCanvasMap = null,
@@ -1418,9 +1414,9 @@ class PDFPageProxy {
   }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      canvasFactory
+      arguments[0]?.canvasFactory
     ) {
-      deprecated(
+      throw new Error(
         "render no longer accepts the `canvasFactory`-option, " +
           "please pass it to the `getDocument`-function instead."
       );
@@ -1513,7 +1509,7 @@ class PDFPageProxy {
       annotationCanvasMap,
       operatorList: intentState.operatorList,
       pageIndex: this._pageIndex,
-      canvasFactory: canvasFactory || this._transport.canvasFactory,
+      canvasFactory: this._transport.canvasFactory,
       filterFactory: this._transport.filterFactory,
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
@@ -1602,17 +1598,13 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({
-    disableCombineTextItems = false,
-    includeMarkedContent = false,
-  } = {}) {
+  streamTextContent({ includeMarkedContent = false } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
         pageIndex: this._pageIndex,
-        combineTextItems: disableCombineTextItems !== true,
         includeMarkedContent: includeMarkedContent === true,
       },
       {
@@ -1936,7 +1928,8 @@ class PDFPageProxy {
   }
 
   /**
-   * @type {Object} Returns page stats, if enabled; returns `null` otherwise.
+   * @type {StatTimer | null} Returns page stats, if enabled; returns `null`
+   *   otherwise.
    */
   get stats() {
     return this._stats;
@@ -1976,7 +1969,7 @@ class LoopbackPort {
 /**
  * @typedef {Object} PDFWorkerParameters
  * @property {string} [name] - The name of the worker.
- * @property {Object} [port] - The `workerPort` object.
+ * @property {Worker} [port] - The `workerPort` object.
  * @property {number} [verbosity] - Controls the logging level;
  *   the constants from {@link VerbosityLevel} should be used.
  */
@@ -2762,19 +2755,15 @@ class WorkerTransport {
             break;
           }
 
-          let fontRegistry = null;
-          if (params.pdfBug && globalThis.FontInspector?.enabled) {
-            fontRegistry = {
-              registerFont(font, url) {
-                globalThis.FontInspector.fontAdded(font, url);
-              },
-            };
-          }
+          const inspectFont =
+            params.pdfBug && globalThis.FontInspector?.enabled
+              ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
+              : null;
           const font = new FontFaceObject(exportedData, {
             isEvalSupported: params.isEvalSupported,
             disableFontFace: params.disableFontFace,
             ignoreErrors: params.ignoreErrors,
-            fontRegistry,
+            inspectFont,
           });
 
           this.fontLoader

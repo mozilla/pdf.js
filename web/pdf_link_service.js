@@ -336,7 +336,7 @@ class PDFLinkService {
    * @returns {string} The hyperlink to the PDF object.
    */
   getAnchorUrl(anchor) {
-    return (this.baseUrl || "") + anchor;
+    return this.baseUrl ? this.baseUrl + anchor : anchor;
   }
 
   /**

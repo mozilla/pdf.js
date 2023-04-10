@@ -17,10 +17,7 @@
 
 :root {
   --dir-factor: 1;
-  /*#if MOZCENTRAL*/
-  --inline-start: inline-start;
-  --inline-end: inline-end;
-  /*#else*/
+  /*#if !MOZCENTRAL*/
   --inline-start: left;
   --inline-end: right;
   /*#endif*/
@@ -397,10 +394,10 @@ body {
 #loadingBar .progress {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   width: 100%;
   transform: scaleX(var(--progressBar-percent));
-  transform-origin: 0 0;
+  transform-origin: calc(50% - 50% * var(--dir-factor)) 0;
   height: 100%;
   background-color: var(--progressBar-color);
   overflow: hidden;
@@ -409,7 +406,7 @@ body {
 
 @keyframes progressIndeterminate {
   0% {
-    transform: translateX(-142px);
+    transform: translateX(calc(-142px * var(--dir-factor)));
   }
   100% {
     transform: translateX(0);
@@ -425,7 +422,7 @@ body {
 #loadingBar.indeterminate .progress .glimmer {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   height: 100%;
   width: calc(100% + 150px);
   background: repeating-linear-gradient(
@@ -1115,7 +1112,7 @@ a.secondaryToolbarButton[href="#"] {
 
 #pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
-  text-align: right;
+  text-align: end;
   width: 40px;
   background-size: 0 0;
   transition-property: none;
@@ -1123,7 +1120,7 @@ a.secondaryToolbarButton[href="#"] {
 #pageNumber.visiblePageIsLoading {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
-  background-position: 3px;
+  background-position: calc(50% - 42% * var(--dir-factor));
   background-size: 16px 16px;
   /* Using a delay with background-image doesn't work,
      consequently we use background-size. */
