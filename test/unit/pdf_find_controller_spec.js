@@ -381,6 +381,66 @@ describe("pdf_find_controller", function () {
       pageMatches: [[27, 54]],
       pageMatchesLength: [[1, 1]],
     });
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "1",
+      },
+      matchesPerPage: [3],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[27, 54, 55]],
+      pageMatchesLength: [[1, 1, 1]],
+    });
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "2",
+      },
+      matchesPerPage: [2],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[27, 54]],
+      pageMatchesLength: [[1, 1]],
+    });
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "1/",
+      },
+      matchesPerPage: [3],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[27, 54, 55]],
+      pageMatchesLength: [[1, 1, 1]],
+    });
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: "1/21",
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[54]],
+      pageMatchesLength: [[2]],
+    });
   });
 
   it("performs a normal search, where the text with diacritics is normalized", async function () {
