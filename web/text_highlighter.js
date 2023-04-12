@@ -167,24 +167,18 @@ class TextHighlighter {
       offset: undefined,
     };
 
-    function beginText(begin, classNamePrefix, classNameSuffix) {
+    function beginText(begin, className, matchIdx) {
       const divIdx = begin.divIdx;
       textDivs[divIdx].textContent = "";
-      return appendTextToDiv(
-        divIdx,
-        0,
-        begin.offset,
-        classNamePrefix,
-        classNameSuffix
-      );
+      return appendTextToDiv(divIdx, 0, begin.offset, className, matchIdx);
     }
 
     function appendTextToDiv(
       divIdx,
       fromOffset,
       toOffset,
-      classNamePrefix,
-      classNameSuffix
+      className,
+      matchIdx
     ) {
       let div = textDivs[divIdx];
       if (div.nodeType === Node.TEXT_NODE) {
@@ -199,14 +193,13 @@ class TextHighlighter {
         toOffset
       );
       const node = document.createTextNode(content);
-      if (classNamePrefix || classNameSuffix) {
+      if (className) {
         const span = document.createElement("span");
-        span.className = `${classNamePrefix ?? ""} appended ${
-          classNameSuffix ?? ""
-        }`.trim();
+        span.className = `${className} appended`;
+        span.setAttribute("matchidx", matchIdx.toString());
         span.append(node);
         div.append(span);
-        return classNamePrefix.includes("selected") ? span.offsetLeft : 0;
+        return className.includes("selected") ? span.offsetLeft : 0;
       }
       div.append(node);
       return 0;
@@ -227,8 +220,7 @@ class TextHighlighter {
       const begin = match.begin;
       const end = match.end;
       const isSelected = isSelectedPage && i === selectedMatchIdx;
-      const highlightSelected = isSelected ? " selected" : "";
-      const highlightSuffix = `match${i}`;
+      const highlightSuffix = isSelected ? " selected" : "";
       let selectedLeft = 0;
 
       // Match inside new div.
@@ -248,22 +240,22 @@ class TextHighlighter {
           begin.divIdx,
           begin.offset,
           end.offset,
-          "highlight" + highlightSelected,
-          highlightSuffix
+          "highlight" + highlightSuffix,
+          i
         );
       } else {
         selectedLeft = appendTextToDiv(
           begin.divIdx,
           begin.offset,
           infinity.offset,
-          "highlight begin" + highlightSelected,
-          highlightSuffix
+          "highlight begin" + highlightSuffix,
+          i
         );
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
-          textDivs[n0].className =
-            "highlight middle" + highlightSelected + " " + highlightSuffix;
+          textDivs[n0].className = "highlight middle" + highlightSuffix;
+          textDivs[n0].setAttribute("matchidx", i.toString());
         }
-        beginText(end, "highlight end" + highlightSelected, highlightSuffix);
+        beginText(end, "highlight end" + highlightSuffix, i);
       }
       prevEnd = end;
 
