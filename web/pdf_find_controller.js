@@ -350,8 +350,10 @@ function getOriginalIndex(diffs, pos, len) {
     return [pos, len];
   }
 
+  // First char in the new string.
   const start = pos;
-  const end = pos + len;
+  // Last char in the new string.
+  const end = pos + len - 1;
   let i = binarySearchFirstItem(diffs, x => x[0] >= start);
   if (diffs[i][0] > start) {
     --i;
@@ -362,7 +364,14 @@ function getOriginalIndex(diffs, pos, len) {
     --j;
   }
 
-  return [start + diffs[i][1], len + diffs[j][1] - diffs[i][1]];
+  // First char in the old string.
+  const oldStart = start + diffs[i][1];
+
+  // Last char in the old string.
+  const oldEnd = end + diffs[j][1];
+  const oldLen = oldEnd + 1 - oldStart;
+
+  return [oldStart, oldLen];
 }
 
 /**
