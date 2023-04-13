@@ -588,7 +588,17 @@ const PDFViewerApplication = {
     }
 
     if (appConfig.toolbar) {
-      this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
+      if (
+        typeof PDFJSDev === "undefined"
+          ? window.isGECKOVIEW
+          : PDFJSDev.test("GECKOVIEW")
+      ) {
+        if (AppOptions.get("enableFloatingToolbar")) {
+          this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
+        }
+      } else {
+        this.toolbar = new Toolbar(appConfig.toolbar, eventBus, this.l10n);
+      }
     }
 
     if (appConfig.secondaryToolbar) {
@@ -2917,17 +2927,6 @@ function webViewerTouchEnd(evt) {
 }
 
 function webViewerClick(evt) {
-  if (
-    typeof PDFJSDev === "undefined"
-      ? window.isGECKOVIEW
-      : PDFJSDev.test("GECKOVIEW")
-  ) {
-    if (
-      document.activeElement === PDFViewerApplication.appConfig.mainContainer
-    ) {
-      PDFViewerApplication.toolbar?.toggle();
-    }
-  }
   if (!PDFViewerApplication.secondaryToolbar?.isOpen) {
     return;
   }
