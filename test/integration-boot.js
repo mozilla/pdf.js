@@ -26,13 +26,13 @@ async function runTests(results) {
     random: false,
     spec_dir: "integration",
     spec_files: [
-      "scripting_spec.js",
-      "annotation_spec.js",
       "accessibility_spec.js",
+      "annotation_spec.js",
+      "copy_paste_spec.js",
       "find_spec.js",
       "freetext_editor_spec.js",
       "ink_editor_spec.js",
-      "a11y_spec.js",
+      "scripting_spec.js",
     ],
   });
 
