@@ -82,6 +82,8 @@ function isValidAnnotationEditorMode(mode) {
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} [viewer] - The viewer element.
+ * @property {HTMLDivElement} [hiddenCopyElement] - The hidden element used to
+ *   check if all is selected.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {IDownloadManager} [downloadManager] - The download manager
@@ -205,7 +207,15 @@ class PDFViewer {
 
   #containerTopLeft = null;
 
+  #copyCallbackBound = this.#copyCallback.bind(this);
+
   #enablePermissions = false;
+
+  #getAllTextInProgress = false;
+
+  #hiddenCopyElement = null;
+
+  #interruptCopyCondition = false;
 
   #previousContainerHeight = 0;
 
@@ -230,6 +240,7 @@ class PDFViewer {
     }
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
+    this.#hiddenCopyElement = options.hiddenCopyElement;
 
     if (
       typeof PDFJSDev === "undefined" ||
@@ -638,6 +649,89 @@ class PDFViewer {
     ]);
   }
 
+  async getAllText() {
+    const texts = [];
+    const buffer = [];
+    for (
+      let pageNum = 1, pagesCount = this.pdfDocument.numPages;
+      pageNum <= pagesCount;
+      ++pageNum
+    ) {
+      if (this.#interruptCopyCondition) {
+        return null;
+      }
+      buffer.length = 0;
+      const page = await this.pdfDocument.getPage(pageNum);
+      const { items } = await page.getTextContent();
+      for (const item of items) {
+        if (item.str) {
+          buffer.push(item.str);
+        }
+        if (item.hasEOL) {
+          buffer.push("\n");
+        }
+      }
+      texts.push(buffer.join(""));
+    }
+
+    return texts.join("\n");
+  }
+
+  #copyCallback(event) {
+    const selection = document.getSelection();
+    const { focusNode, anchorNode } = selection;
+    if (
+      anchorNode &&
+      focusNode &&
+      selection.containsNode(this.#hiddenCopyElement)
+    ) {
+      // About the condition above:
+      //  - having non-null anchorNode and focusNode are here to guaranty that
+      //    we have at least a kind of selection.
+      //  - this.#hiddenCopyElement is an invisible element which is impossible
+      //    to select manually (its display is none) but ctrl+A will select all
+      //    including this element so having it in the selection means that all
+      //    has been selected.
+
+      // TODO: if all the pages are rendered we don't need to wait for
+      // getAllText and we could just get text from the Selection object.
+
+      if (this.#getAllTextInProgress) {
+        return;
+      }
+      this.#getAllTextInProgress = true;
+
+      // Select all the document.
+      const savedCursor = this.container.style.cursor;
+      this.container.style.cursor = "wait";
+
+      const interruptCopy = ev =>
+        (this.#interruptCopyCondition = ev.key === "Escape");
+      window.addEventListener("keydown", interruptCopy);
+
+      this.getAllText()
+        .then(async text => {
+          if (text !== null) {
+            await navigator.clipboard.writeText(text);
+          }
+        })
+        .catch(reason => {
+          console.warn(
+            `Something goes wrong when extracting the text: ${reason.message}`
+          );
+        })
+        .finally(() => {
+          this.#getAllTextInProgress = false;
+          this.#interruptCopyCondition = false;
+          window.removeEventListener("keydown", interruptCopy);
+          this.container.style.cursor = savedCursor;
+        });
+
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
   /**
    * @param {PDFDocumentProxy} pdfDocument
    */
@@ -805,6 +899,10 @@ class PDFViewer {
           this.findController?.setDocument(pdfDocument); // Enable searching.
           this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
 
+          if (this.#hiddenCopyElement) {
+            document.addEventListener("copy", this.#copyCallbackBound);
+          }
+
           if (this.#annotationEditorUIManager) {
             // Ensure that the Editor buttons, in the toolbar, are updated.
             this.eventBus.dispatch("annotationeditormodechanged", {
@@ -949,6 +1047,8 @@ class PDFViewer {
     this.viewer.removeAttribute("lang");
     // Reset all PDF document permissions.
     this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
+
+    document.removeEventListener("copy", this.#copyCallbackBound);
   }
 
   #ensurePageViewVisible() {

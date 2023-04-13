@@ -45,6 +45,15 @@
   transform: rotate(270deg) translateX(-100%);
 }
 
+#hiddenCopyElement {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .pdfViewer {
   /* Define this variable here and not in :root to avoid to reflow all the UI
      when scaling (see #15929). */
