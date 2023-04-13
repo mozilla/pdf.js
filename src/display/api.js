@@ -1943,7 +1943,14 @@ class LoopbackPort {
 
   postMessage(obj, transfer) {
     const event = {
-      data: structuredClone(obj, transfer ? { transfer } : null),
+      data: structuredClone(
+        obj,
+        (typeof PDFJSDev === "undefined" ||
+          PDFJSDev.test("SKIP_BABEL || TESTING")) &&
+          transfer
+          ? { transfer }
+          : null
+      ),
     };
 
     this.#deferred.then(() => {
