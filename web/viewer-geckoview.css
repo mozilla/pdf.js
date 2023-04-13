@@ -19,7 +19,7 @@
   --dir-factor: 1;
   --scale-select-width: 140px;
 
-  --toolbar-icon-opacity: 0.7;
+  --toolbar-icon-opacity: 1;
   --doorhanger-icon-opacity: 0.9;
 
   --main-color: rgba(12, 12, 13, 1);
@@ -158,15 +158,18 @@ body {
   bottom: 5%;
   right: 5%;
   background-color: transparent;
-  z-index: 100000;
+  transition-property: opacity;
+  transition-duration: 400ms;
 }
 
 #floatingToolbar.show {
-  display: block;
+  z-index: 100000;
+  opacity: 1;
 }
 
 #floatingToolbar:not(show) {
-  display: none;
+  z-index: -1;
+  opacity: 0;
 }
 
 .toolbarButton {
