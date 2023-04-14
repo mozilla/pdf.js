@@ -62,30 +62,30 @@ function renderPage(
   });
 }
 
-function PDFPrintService(
-  pdfDocument,
-  pagesOverview,
-  printContainer,
-  printResolution,
-  optionalContentConfigPromise = null,
-  printAnnotationStoragePromise = null,
-  l10n
-) {
-  this.pdfDocument = pdfDocument;
-  this.pagesOverview = pagesOverview;
-  this.printContainer = printContainer;
-  this._printResolution = printResolution || 150;
-  this._optionalContentConfigPromise =
-    optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
-  this._printAnnotationStoragePromise =
-    printAnnotationStoragePromise || Promise.resolve();
-  this.l10n = l10n;
-  this.currentPage = -1;
-  // The temporary canvas where renderPage paints one page at a time.
-  this.scratchCanvas = document.createElement("canvas");
-}
+class PDFPrintService {
+  constructor(
+    pdfDocument,
+    pagesOverview,
+    printContainer,
+    printResolution,
+    optionalContentConfigPromise = null,
+    printAnnotationStoragePromise = null,
+    l10n
+  ) {
+    this.pdfDocument = pdfDocument;
+    this.pagesOverview = pagesOverview;
+    this.printContainer = printContainer;
+    this._printResolution = printResolution || 150;
+    this._optionalContentConfigPromise =
+      optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+    this._printAnnotationStoragePromise =
+      printAnnotationStoragePromise || Promise.resolve();
+    this.l10n = l10n;
+    this.currentPage = -1;
+    // The temporary canvas where renderPage paints one page at a time.
+    this.scratchCanvas = document.createElement("canvas");
+  }
 
-PDFPrintService.prototype = {
   layout() {
     this.throwIfInactive();
 
@@ -114,7 +114,7 @@ PDFPrintService.prototype = {
     this.pageStyleSheet = document.createElement("style");
     this.pageStyleSheet.textContent = `@page { size: ${width}pt ${height}pt;}`;
     body.append(this.pageStyleSheet);
-  },
+  }
 
   destroy() {
     if (activeService !== this) {
@@ -139,7 +139,7 @@ PDFPrintService.prototype = {
         overlayManager.close(dialog);
       }
     });
-  },
+  }
 
   renderPages() {
     if (this.pdfDocument.isPureXfa) {
@@ -172,7 +172,7 @@ PDFPrintService.prototype = {
         }, reject);
     };
     return new Promise(renderNextPage);
-  },
+  }
 
   useRenderedPage() {
     this.throwIfInactive();
@@ -195,7 +195,7 @@ PDFPrintService.prototype = {
       img.onload = resolve;
       img.onerror = reject;
     });
-  },
+  }
 
   performPrint() {
     this.throwIfInactive();
@@ -213,18 +213,18 @@ PDFPrintService.prototype = {
         setTimeout(resolve, 20); // Tidy-up.
       }, 0);
     });
-  },
+  }
 
   get active() {
     return this === activeService;
-  },
+  }
 
   throwIfInactive() {
     if (!this.active) {
       throw new Error("This print request was cancelled or completed.");
     }
-  },
-};
+  }
+}
 
 const print = window.print;
 window.print = function () {
