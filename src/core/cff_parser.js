@@ -1383,7 +1383,13 @@ class CFFCompiler {
       data: [],
       length: 0,
       add(data) {
-        this.data = this.data.concat(data);
+        if (data.length <= 65536) {
+          // The number of arguments is limited, hence we just take 65536 as
+          // limit because it isn't too high or too low.
+          this.data.push(...data);
+        } else {
+          this.data = this.data.concat(data);
+        }
         this.length = this.data.length;
       },
     };
