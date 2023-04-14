@@ -114,25 +114,25 @@ function composePage(
   };
 }
 
-function FirefoxPrintService(
-  pdfDocument,
-  pagesOverview,
-  printContainer,
-  printResolution,
-  optionalContentConfigPromise = null,
-  printAnnotationStoragePromise = null
-) {
-  this.pdfDocument = pdfDocument;
-  this.pagesOverview = pagesOverview;
-  this.printContainer = printContainer;
-  this._printResolution = printResolution || 150;
-  this._optionalContentConfigPromise =
-    optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
-  this._printAnnotationStoragePromise =
-    printAnnotationStoragePromise || Promise.resolve();
-}
+class FirefoxPrintService {
+  constructor(
+    pdfDocument,
+    pagesOverview,
+    printContainer,
+    printResolution,
+    optionalContentConfigPromise = null,
+    printAnnotationStoragePromise = null
+  ) {
+    this.pdfDocument = pdfDocument;
+    this.pagesOverview = pagesOverview;
+    this.printContainer = printContainer;
+    this._printResolution = printResolution || 150;
+    this._optionalContentConfigPromise =
+      optionalContentConfigPromise || pdfDocument.getOptionalContentConfig();
+    this._printAnnotationStoragePromise =
+      printAnnotationStoragePromise || Promise.resolve();
+  }
 
-FirefoxPrintService.prototype = {
   layout() {
     const {
       pdfDocument,
@@ -179,7 +179,7 @@ FirefoxPrintService.prototype = {
         _printAnnotationStoragePromise
       );
     }
-  },
+  }
 
   destroy() {
     this.printContainer.textContent = "";
@@ -191,8 +191,8 @@ FirefoxPrintService.prototype = {
       this.pageStyleSheet.remove();
       this.pageStyleSheet = null;
     }
-  },
-};
+  }
+}
 
 PDFPrintServiceFactory.instance = {
   get supportsPrinting() {
