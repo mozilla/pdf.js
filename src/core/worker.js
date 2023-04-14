@@ -129,20 +129,6 @@ class WorkerMessageHandler {
             "; thus breaking e.g. `for...in` iteration of `Array`s."
         );
       }
-
-      // Ensure that (primarily) Node.js users won't accidentally attempt to use
-      // a non-translated/non-polyfilled build of the library, since that would
-      // quickly fail anyway because of missing functionality.
-      if (isNodeJS && typeof Path2D === "undefined") {
-        const partialMsg =
-          "The browser/environment lacks native support for critical " +
-          "functionality used by the PDF.js library (e.g. `Path2D`); ";
-
-        if (isNodeJS) {
-          throw new Error(partialMsg + "please use a `legacy`-build instead.");
-        }
-        throw new Error(partialMsg + "please update to a supported browser.");
-      }
     }
     const workerHandlerName = docId + "_worker";
     let handler = new MessageHandler(workerHandlerName, docId, port);
