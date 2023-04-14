@@ -92,16 +92,13 @@ PDFPrintService.prototype = {
     const body = document.querySelector("body");
     body.setAttribute("data-pdfjsprinting", true);
 
-    const hasEqualPageSizes = this.pagesOverview.every(function (size) {
-      return (
-        size.width === this.pagesOverview[0].width &&
-        size.height === this.pagesOverview[0].height
-      );
-    }, this);
+    const { width, height } = this.pagesOverview[0];
+    const hasEqualPageSizes = this.pagesOverview.every(
+      size => size.width === width && size.height === height
+    );
     if (!hasEqualPageSizes) {
       console.warn(
-        "Not all pages have the same size. The printed " +
-          "result may be incorrect!"
+        "Not all pages have the same size. The printed result may be incorrect!"
       );
     }
 
@@ -115,9 +112,7 @@ PDFPrintService.prototype = {
     // will be ignored and the user has to select the correct paper size in
     // the UI if wanted.
     this.pageStyleSheet = document.createElement("style");
-    const pageSize = this.pagesOverview[0];
-    this.pageStyleSheet.textContent =
-      "@page { size: " + pageSize.width + "pt " + pageSize.height + "pt;}";
+    this.pageStyleSheet.textContent = `@page { size: ${width}pt ${height}pt;}`;
     body.append(this.pageStyleSheet);
   },
 
