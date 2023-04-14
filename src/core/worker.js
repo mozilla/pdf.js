@@ -134,7 +134,7 @@ class WorkerMessageHandler {
       // a non-translated/non-polyfilled build of the library, since that would
       // quickly fail anyway because of missing functionality.
       if (
-        typeof Path2D === "undefined" ||
+        (isNodeJS && typeof Path2D === "undefined") ||
         typeof ReadableStream === "undefined"
       ) {
         const partialMsg =
