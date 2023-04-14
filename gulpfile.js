@@ -2165,8 +2165,6 @@ function packageJson() {
     license: DIST_LICENSE,
     optionalDependencies: {
       canvas: "^2.11.2",
-    },
-    dependencies: {
       "path2d-polyfill": "^2.0.1",
     },
     browser: {
