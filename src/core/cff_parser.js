@@ -1742,11 +1742,6 @@ class CFFCompiler {
     return this.compileIndex(stringIndex);
   }
 
-  compileGlobalSubrIndex() {
-    const globalSubrIndex = this.cff.globalSubrIndex;
-    this.out.writeByteArray(this.compileIndex(globalSubrIndex));
-  }
-
   compileCharStrings(charStrings) {
     const charStringsIndex = new CFFIndex();
     for (let i = 0; i < charStrings.count; i++) {
@@ -1850,11 +1845,7 @@ class CFFCompiler {
   }
 
   compileTypedArray(data) {
-    const out = [];
-    for (let i = 0, ii = data.length; i < ii; ++i) {
-      out[i] = data[i];
-    }
-    return out;
+    return Array.from(data);
   }
 
   compileIndex(index, trackers = []) {
