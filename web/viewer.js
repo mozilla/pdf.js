@@ -179,9 +179,12 @@ function webViewerLoad() {
     // Give custom implementations of the default viewer a simpler way to
     // set various `AppOptions`, by dispatching an event once all viewer
     // files are loaded but *before* the viewer initialization has run.
-    const event = document.createEvent("CustomEvent");
-    event.initCustomEvent("webviewerloaded", true, true, {
-      source: window,
+    const event = new CustomEvent("webviewerloaded", {
+      bubbles: true,
+      cancelable: true,
+      detail: {
+        source: window,
+      },
     });
     try {
       // Attempt to dispatch the event at the embedding `document`,
