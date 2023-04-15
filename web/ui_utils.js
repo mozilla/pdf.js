@@ -841,6 +841,13 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+function toggleCheckedBtn(button, toggle, view = null) {
+  button.classList.toggle("toggled", toggle);
+  button.setAttribute("aria-checked", toggle);
+
+  view?.classList.toggle("hidden", !toggle);
+}
+
 export {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -880,6 +887,7 @@ export {
   SidebarView,
   SpreadMode,
   TextLayerMode,
+  toggleCheckedBtn,
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,
