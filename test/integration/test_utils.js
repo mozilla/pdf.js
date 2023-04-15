@@ -118,3 +118,19 @@ const waitForSelectedEditor = async (page, selector) => {
   );
 };
 exports.waitForSelectedEditor = waitForSelectedEditor;
+
+const mockClipboard = async pages => {
+  await Promise.all(
+    pages.map(async ([_, page]) => {
+      await page.evaluate(() => {
+        let data = null;
+        const clipboard = {
+          writeText: async text => (data = text),
+          readText: async () => data,
+        };
+        Object.defineProperty(navigator, "clipboard", { value: clipboard });
+      });
+    })
+  );
+};
+exports.mockClipboard = mockClipboard;

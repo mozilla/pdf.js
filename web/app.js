@@ -504,6 +504,7 @@ const PDFViewerApplication = {
     this.pdfViewer = new PDFViewer({
       container,
       viewer,
+      hiddenCopyElement: appConfig.hiddenCopyElement,
       eventBus,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
