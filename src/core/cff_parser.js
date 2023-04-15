@@ -1845,11 +1845,7 @@ class CFFCompiler {
   }
 
   compileTypedArray(data) {
-    const out = [];
-    for (let i = 0, ii = data.length; i < ii; ++i) {
-      out[i] = data[i];
-    }
-    return out;
+    return Array.from(data);
   }
 
   compileIndex(index, trackers = []) {
