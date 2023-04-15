@@ -54,11 +54,6 @@ import { isNodeJS } from "./is_node.js";
 
 // Support: Chrome<98, Safari<15.4
 (function checkStructuredClone() {
-  if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
-    // The current image decoders are synchronous, hence `structuredClone`
-    // shouldn't need to be polyfilled for the IMAGE_DECODERS build target.
-    return;
-  }
   if (globalThis.structuredClone) {
     return;
   }
