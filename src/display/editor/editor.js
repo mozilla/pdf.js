@@ -74,6 +74,8 @@ class AnnotationEditor {
     } = this.parent.viewport;
 
     this.rotation = rotation;
+    this.pageRotation =
+      (360 + rotation - this._uiManager.viewParameters.rotation) % 360;
     this.pageDimensions = [pageWidth, pageHeight];
     this.pageTranslation = [pageX, pageY];
 
@@ -250,7 +252,7 @@ class AnnotationEditor {
   }
 
   get parentRotation() {
-    return this._uiManager.viewParameters.rotation;
+    return (this._uiManager.viewParameters.rotation + this.pageRotation) % 360;
   }
 
   get parentDimensions() {
