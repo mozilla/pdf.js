@@ -41,7 +41,6 @@ function getViewerConfiguration() {
     appContainer: document.body,
     mainContainer,
     viewerContainer: document.getElementById("viewer"),
-    hiddenCopyElement: document.getElementById("hiddenCopyElement"),
     toolbar: {
       mainContainer,
       container: document.getElementById("floatingToolbar"),
