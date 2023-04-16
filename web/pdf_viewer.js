@@ -47,6 +47,7 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   PresentationModeState,
+  removeNullCharacters,
   RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
@@ -671,7 +672,7 @@ class PDFViewer {
           buffer.push("\n");
         }
       }
-      texts.push(buffer.join(""));
+      texts.push(removeNullCharacters(buffer.join("")));
     }
 
     return texts.join("\n");
