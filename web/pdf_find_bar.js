@@ -99,7 +99,6 @@ class PDFFindBar {
       source: this,
       type,
       query: this.findField.value,
-      phraseSearch: true,
       caseSensitive: this.caseSensitive.checked,
       entireWord: this.entireWord.checked,
       highlightAll: this.highlightAll.checked,
