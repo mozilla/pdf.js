@@ -82,8 +82,6 @@ function isValidAnnotationEditorMode(mode) {
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} [viewer] - The viewer element.
- * @property {HTMLDivElement} [hiddenCopyElement] - The hidden element used to
- *   check if all is selected.
  * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {IDownloadManager} [downloadManager] - The download manager
@@ -240,7 +238,6 @@ class PDFViewer {
     }
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
-    this.#hiddenCopyElement = options.hiddenCopyElement;
 
     if (
       typeof PDFJSDev === "undefined" ||
@@ -257,6 +254,11 @@ class PDFViewer {
         throw new Error("The `container` must be absolutely positioned.");
       }
     }
+    const hiddenCopyElement = (this.#hiddenCopyElement =
+      document.createElement("div"));
+    hiddenCopyElement.id = "hiddenCopyElement";
+    this.viewer.before(hiddenCopyElement);
+
     this.#resizeObserver.observe(this.container);
 
     this.eventBus = options.eventBus;
