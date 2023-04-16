@@ -2195,7 +2195,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      canvas: "^2.11.0",
+      canvas: "^2.11.2",
     },
     dependencies: {
       "path2d-polyfill": "^2.0.1",
