@@ -95,7 +95,6 @@ function testSearch({
         query: null,
         caseSensitive: false,
         entireWord: false,
-        phraseSearch: true,
         findPrevious: false,
         matchDiacritics: false,
       },
@@ -182,7 +181,6 @@ function testEmptySearch({ eventBus, pdfFindController, state }) {
         query: null,
         caseSensitive: false,
         entireWord: false,
-        phraseSearch: true,
         findPrevious: false,
         matchDiacritics: false,
       },
@@ -321,10 +319,28 @@ describe("pdf_find_controller", function () {
       eventBus,
       pdfFindController,
       state: {
-        query: "alternate solution",
-        phraseSearch: false,
+        query: ["alternate", "solution"],
       },
       matchesPerPage: [0, 0, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0],
+      selectedMatch: {
+        pageIndex: 5,
+        matchIndex: 0,
+      },
+    });
+  });
+
+  it("performs a multiple term (phrase) search", async function () {
+    // Page 9 contains 'alternate solution' and pages 6 and 9 contain
+    // 'solution'. Both should be found for multiple term (phrase) search.
+    const { eventBus, pdfFindController } = await initPdfFindController();
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: ["alternate solution", "solution"],
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 1, 0, 0, 3, 0, 0, 0, 0, 0],
       selectedMatch: {
         pageIndex: 5,
         matchIndex: 0,
