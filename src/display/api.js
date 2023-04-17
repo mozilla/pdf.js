@@ -1122,6 +1122,8 @@ class PDFDocumentProxy {
  * @typedef {Object} getTextContentParameters
  * @property {boolean} [includeMarkedContent] - When true include marked
  *   content items in the items array of TextContent. The default is `false`.
+ * @property {boolean} [disableNormalization] - When true the text is *not*
+ *   normalized in the worker-thread. The default is `false`.
  */
 
 /**
@@ -1598,7 +1600,10 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({ includeMarkedContent = false } = {}) {
+  streamTextContent({
+    includeMarkedContent = false,
+    disableNormalization = false,
+  } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
     return this._transport.messageHandler.sendWithStream(
@@ -1606,6 +1611,7 @@ class PDFPageProxy {
       {
         pageIndex: this._pageIndex,
         includeMarkedContent: includeMarkedContent === true,
+        disableNormalization: disableNormalization === true,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
