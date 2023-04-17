@@ -20,7 +20,8 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 
-import { renderTextLayer, updateTextLayer } from "pdfjs-lib";
+import { normalizeUnicode, renderTextLayer, updateTextLayer } from "pdfjs-lib";
+import { removeNullCharacters } from "./ui_utils.js";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -211,6 +212,16 @@ class TextLayerBuilder {
         end.style.top = "";
       }
       end.classList.remove("active");
+    });
+
+    div.addEventListener("copy", event => {
+      const selection = document.getSelection();
+      event.clipboardData.setData(
+        "text/plain",
+        removeNullCharacters(normalizeUnicode(selection.toString()))
+      );
+      event.preventDefault();
+      event.stopPropagation();
     });
   }
 }

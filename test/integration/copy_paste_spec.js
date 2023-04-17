@@ -28,7 +28,7 @@ describe("Copy and paste", () => {
       await closePages(pages);
     });
 
-    it("must check that we've all the contents", async () => {
+    it("must check that we've all the contents on copy/paste", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.keyboard.down("Control");
@@ -113,6 +113,49 @@ describe("Copy and paste", () => {
           )
             .withContext(`In ${browserName}`)
             .toEqual(true);
+        })
+      );
+    });
+  });
+  describe("all text", () => {
+    let pages;
+
+    beforeAll(async () => {
+      pages = await loadAndWait("copy_paste_ligatures.pdf", ".textLayer");
+      await mockClipboard(pages);
+    });
+
+    afterAll(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that we've all the contents on copy/paste", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.down("Control");
+          await page.keyboard.press("a");
+          await page.keyboard.up("Control");
+
+          await page.waitForTimeout(100);
+
+          await page.keyboard.down("Control");
+          await page.keyboard.press("c");
+          await page.keyboard.up("Control");
+
+          await page.waitForTimeout(100);
+
+          await page.waitForFunction(
+            `document.querySelector('#viewerContainer').style.cursor !== "wait"`
+          );
+
+          const text = await page.evaluate(() =>
+            navigator.clipboard.readText()
+          );
+
+          expect(!!text).withContext(`In ${browserName}`).toEqual(true);
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .toEqual("abcdeffffiflffifflſtstghijklmno");
         })
       );
     });

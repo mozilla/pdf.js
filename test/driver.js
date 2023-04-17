@@ -693,6 +693,7 @@ class Driver {
               initPromise = page
                 .getTextContent({
                   includeMarkedContent: true,
+                  disableNormalization: true,
                 })
                 .then(function (textContent) {
                   return Rasterize.textLayer(
