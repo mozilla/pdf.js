@@ -255,11 +255,6 @@ class PDFViewer {
         throw new Error("The `container` must be absolutely positioned.");
       }
     }
-    const hiddenCopyElement = (this.#hiddenCopyElement =
-      document.createElement("div"));
-    hiddenCopyElement.id = "hiddenCopyElement";
-    this.viewer.before(hiddenCopyElement);
-
     this.#resizeObserver.observe(this.container);
 
     this.eventBus = options.eventBus;
@@ -576,6 +571,15 @@ class PDFViewer {
     };
   }
 
+  #createHiddenCopyElement() {
+    if (this.#hiddenCopyElement) {
+      return;
+    }
+    const element = (this.#hiddenCopyElement = document.createElement("div"));
+    element.id = "hiddenCopyElement";
+    this.viewer.before(element);
+  }
+
   /**
    * Currently only *some* permissions are supported.
    * @returns {Object}
@@ -587,11 +591,14 @@ class PDFViewer {
       textLayerMode: this.textLayerMode,
     };
     if (!permissions) {
+      this.#createHiddenCopyElement();
       return params;
     }
 
     if (!permissions.includes(PermissionFlag.COPY)) {
       this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
+    } else {
+      this.#createHiddenCopyElement();
     }
 
     if (!permissions.includes(PermissionFlag.MODIFY_CONTENTS)) {
@@ -1053,7 +1060,12 @@ class PDFViewer {
     // Reset all PDF document permissions.
     this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 
-    document.removeEventListener("copy", this.#copyCallbackBound);
+    if (this.#hiddenCopyElement) {
+      document.removeEventListener("copy", this.#copyCallbackBound);
+
+      this.#hiddenCopyElement.remove();
+      this.#hiddenCopyElement = null;
+    }
   }
 
   #ensurePageViewVisible() {
