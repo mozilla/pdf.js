@@ -14,6 +14,7 @@
     "length-zero-no-unit": [true, {
       ignore: ["custom-properties"]
     }],
+    "selector-pseudo-element-colon-notation": "double",
     "shorthand-property-no-redundant-values": true,
   },
 }
