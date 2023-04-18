@@ -2575,19 +2575,26 @@ class PartialEvaluator {
       ];
     }
 
-    function compareWithLastPosition() {
+    function compareWithLastPosition(glyphWidth) {
       const currentTransform = getCurrentTextTransform();
       let posX = currentTransform[4];
       let posY = currentTransform[5];
 
-      const shiftedX = posX - viewBox[0];
-      const shiftedY = posY - viewBox[1];
-
-      if (
-        shiftedX < 0 ||
-        shiftedX > viewBox[2] ||
-        shiftedY < 0 ||
-        shiftedY > viewBox[3]
+      // Check if the glyph is in the viewbox.
+      if (textState.font && textState.font.vertical) {
+        if (
+          posX < viewBox[0] ||
+          posX > viewBox[2] ||
+          posY + glyphWidth < viewBox[1] ||
+          posY > viewBox[3]
+        ) {
+          return false;
+        }
+      } else if (
+        posX + glyphWidth < viewBox[0] ||
+        posX > viewBox[2] ||
+        posY < viewBox[1] ||
+        posY > viewBox[3]
       ) {
         return false;
       }
@@ -2837,8 +2844,16 @@ class PartialEvaluator {
           continue;
         }
 
-        if (!category.isZeroWidthDiacritic && !compareWithLastPosition()) {
-          // The glyph is not in page so just skip it.
+        if (
+          !category.isZeroWidthDiacritic &&
+          !compareWithLastPosition(scaledDim)
+        ) {
+          // The glyph is not in page so just skip it but move the cursor.
+          if (!font.vertical) {
+            textState.translateTextMatrix(scaledDim * textState.textHScale, 0);
+          } else {
+            textState.translateTextMatrix(0, scaledDim);
+          }
           continue;
         }
 
