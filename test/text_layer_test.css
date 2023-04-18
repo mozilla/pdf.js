@@ -21,8 +21,7 @@
   line-height: 1;
   opacity: 1;
 }
-.textLayer span,
-.textLayer br {
+.textLayer :is(span, br) {
   color: black;
   position: absolute;
   white-space: pre;
