@@ -101,14 +101,8 @@
   outline: 1.5px solid red;
 }
 
-.xfaLayer div {
-  pointer-events: none;
-}
-
-.xfaLayer svg {
-  pointer-events: none;
-}
-
+.xfaLayer div,
+.xfaLayer svg,
 .xfaLayer svg * {
   pointer-events: none;
 }
@@ -159,10 +153,7 @@
   align-items: center;
 }
 
-.xfaLeft > .xfaCaption,
-.xfaLeft > .xfaCaptionForCheckButton,
-.xfaRight > .xfaCaption,
-.xfaRight > .xfaCaptionForCheckButton {
+:is(.xfaLeft, .xfaRight) > :is(.xfaCaption, .xfaCaptionForCheckButton) {
   max-height: 100%;
 }
 
@@ -178,10 +169,7 @@
   align-items: flex-start;
 }
 
-.xfaTop > .xfaCaption,
-.xfaTop > .xfaCaptionForCheckButton,
-.xfaBottom > .xfaCaption,
-.xfaBottom > .xfaCaptionForCheckButton {
+:is(.xfaTop, .xfaBottom) > :is(.xfaCaption, .xfaCaptionForCheckButton) {
   width: 100%;
 }
 
@@ -196,16 +184,14 @@
   height: 100%;
 }
 
-.xfaTextfield:focus,
-.xfaSelect:focus {
+:is(.xfaTextfield, .xfaSelect):focus {
   background-image: none;
   background-color: transparent;
   outline: var(--xfa-focus-outline);
   outline-offset: -1px;
 }
 
-.xfaCheckbox:focus,
-.xfaRadio:focus {
+:is(.xfaCheckbox, .xfaRadio):focus {
   outline: var(--xfa-focus-outline);
 }
 
@@ -223,10 +209,7 @@
   padding-inline: 2px;
 }
 
-.xfaTop > .xfaTextfield,
-.xfaTop > .xfaSelect,
-.xfaBottom > .xfaTextfield,
-.xfaBottom > .xfaSelect {
+:is(.xfaTop, .xfaBottom) > :is(.xfaTextfield, .xfaSelect) {
   flex: 0 1 auto;
 }
 
@@ -327,12 +310,7 @@
   flex: 1;
 }
 
-.xfaNonInteractive input,
-.xfaNonInteractive textarea,
-.xfaDisabled input,
-.xfaDisabled textarea,
-.xfaReadOnly input,
-.xfaReadOnly textarea {
+:is(.xfaNonInteractive, .xfaDisabled, .xfaReadOnly) :is(input, textarea) {
   background: initial;
 }
 
