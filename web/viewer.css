@@ -600,10 +600,10 @@ body {
     0 0 0 1px var(--doorhanger-border-color);
   border: var(--doorhanger-border-color-whcm);
 }
-.doorHanger:after,
-.doorHanger:before,
-.doorHangerRight:after,
-.doorHangerRight:before {
+.doorHanger::after,
+.doorHanger::before,
+.doorHangerRight::after,
+.doorHangerRight::before {
   bottom: 100%;
   border: 8px solid rgba(0, 0, 0, 0);
   content: " ";
@@ -613,26 +613,26 @@ body {
   pointer-events: none;
   opacity: var(--doorhanger-triangle-opacity-whcm);
 }
-.doorHanger:after {
+.doorHanger::after {
   inset-inline-start: 10px;
   margin-inline-start: -8px;
   border-bottom-color: var(--toolbar-bg-color);
 }
-.doorHangerRight:after {
+.doorHangerRight::after {
   inset-inline-end: 10px;
   margin-inline-end: -8px;
   border-bottom-color: var(--doorhanger-bg-color);
 }
-.doorHanger:before,
-.doorHangerRight:before {
+.doorHanger::before,
+.doorHangerRight::before {
   border-bottom-color: var(--doorhanger-border-color);
   border-width: 9px;
 }
-.doorHanger:before {
+.doorHanger::before {
   inset-inline-start: 10px;
   margin-inline-start: -9px;
 }
-.doorHangerRight:before {
+.doorHangerRight::before {
   inset-inline-end: 10px;
   margin-inline-end: -9px;
 }
