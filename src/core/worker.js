@@ -133,10 +133,14 @@ class WorkerMessageHandler {
       // Ensure that (primarily) Node.js users won't accidentally attempt to use
       // a non-translated/non-polyfilled build of the library, since that would
       // quickly fail anyway because of missing functionality.
-      if (typeof ReadableStream === "undefined") {
+      if (
+        (isNodeJS && typeof Path2D === "undefined") ||
+        typeof ReadableStream === "undefined"
+      ) {
         const partialMsg =
           "The browser/environment lacks native support for critical " +
-          "functionality used by the PDF.js library (e.g. `ReadableStream`); ";
+          "functionality used by the PDF.js library " +
+          "(e.g. `Path2D` and/or `ReadableStream`); ";
 
         if (isNodeJS) {
           throw new Error(partialMsg + "please use a `legacy`-build instead.");
@@ -660,6 +664,7 @@ class WorkerMessageHandler {
               });
             }
 
+            const lastXRefStreamPos = xref.lastXRefStreamPos;
             newXrefInfo = {
               rootRef: xref.trailer.getRaw("Root") || null,
               encryptRef: xref.trailer.getRaw("Encrypt") || null,
@@ -667,7 +672,8 @@ class WorkerMessageHandler {
               infoRef: xref.trailer.getRaw("Info") || null,
               info: infoObj,
               fileIds: xref.trailer.get("ID") || null,
-              startXRef,
+              startXRef:
+                lastXRefStreamPos === null ? startXRef : lastXRefStreamPos,
               filename,
             };
           }
@@ -739,7 +745,7 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetTextContent", function (data, sink) {
-      const pageIndex = data.pageIndex;
+      const { pageIndex, includeMarkedContent, disableNormalization } = data;
 
       pdfManager.getPage(pageIndex).then(function (page) {
         const task = new WorkerTask("GetTextContent: page " + pageIndex);
@@ -753,8 +759,8 @@ class WorkerMessageHandler {
             handler,
             task,
             sink,
-            includeMarkedContent: data.includeMarkedContent,
-            combineTextItems: data.combineTextItems,
+            includeMarkedContent,
+            disableNormalization,
           })
           .then(
             function () {
@@ -835,6 +841,11 @@ class WorkerMessageHandler {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       handler.on("GetXFADatasets", function (data) {
         return pdfManager.ensureDoc("xfaDatasets");
+      });
+      handler.on("GetXRefPrevValue", function (data) {
+        return pdfManager
+          .ensureXRef("trailer")
+          .then(trailer => trailer.get("Prev"));
       });
     }
 

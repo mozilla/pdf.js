@@ -21,7 +21,7 @@ files.forEach(function (expectationFilename) {
     .readFileSync(expectationFilename)
     .toString()
     .trim()
-    .replace(/__filename/g, fs.realpathSync(inFilename));
+    .replaceAll("__filename", fs.realpathSync(inFilename));
   const outLines = [];
 
   const outFilename = function (line) {
@@ -36,7 +36,7 @@ files.forEach(function (expectationFilename) {
     builder.preprocess(inFilename, outFilename, defines);
     out = outLines.join("\n").trim();
   } catch (e) {
-    out = ("Error: " + e.message).replace(/^/gm, "//");
+    out = ("Error: " + e.message).replaceAll(/^/gm, "//");
   }
   if (out !== expectation) {
     errors++;

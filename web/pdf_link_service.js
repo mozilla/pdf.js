@@ -336,7 +336,7 @@ class PDFLinkService {
    * @returns {string} The hyperlink to the PDF object.
    */
   getAnchorUrl(anchor) {
-    return (this.baseUrl || "") + anchor;
+    return this.baseUrl ? this.baseUrl + anchor : anchor;
   }
 
   /**
@@ -350,10 +350,12 @@ class PDFLinkService {
     if (hash.includes("=")) {
       const params = parseQueryString(hash);
       if (params.has("search")) {
+        const query = params.get("search").replaceAll('"', ""),
+          phrase = params.get("phrase") === "true";
+
         this.eventBus.dispatch("findfromurlhash", {
           source: this,
-          query: params.get("search").replace(/"/g, ""),
-          phraseSearch: params.get("phrase") === "true",
+          query: phrase ? query : query.match(/\S+/g),
         });
       }
       // borrowing syntax from "Parameters for Opening PDF Files"

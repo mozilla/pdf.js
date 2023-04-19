@@ -20,6 +20,7 @@ import {
   MAX_SCALE,
   MIN_SCALE,
   noContextMenuHandler,
+  toggleCheckedBtn,
 } from "./ui_utils.js";
 import { AnnotationEditorType } from "pdfjs-lib";
 
@@ -150,13 +151,7 @@ class Toolbar {
     for (const { element, eventName, eventDetails } of this.buttons) {
       element.addEventListener("click", evt => {
         if (eventName !== null) {
-          const details = { source: this };
-          if (eventDetails) {
-            for (const property in eventDetails) {
-              details[property] = eventDetails[property];
-            }
-          }
-          this.eventBus.dispatch(eventName, details);
+          this.eventBus.dispatch(eventName, { source: this, ...eventDetails });
         }
       });
     }
@@ -211,36 +206,27 @@ class Toolbar {
     editorInkButton,
     editorInkParamsToolbar,
   }) {
-    const editorModeChanged = (evt, disableButtons = false) => {
-      const editorButtons = [
-        {
-          mode: AnnotationEditorType.FREETEXT,
-          button: editorFreeTextButton,
-          toolbar: editorFreeTextParamsToolbar,
-        },
-        {
-          mode: AnnotationEditorType.INK,
-          button: editorInkButton,
-          toolbar: editorInkParamsToolbar,
-        },
-      ];
+    const editorModeChanged = ({ mode }) => {
+      toggleCheckedBtn(
+        editorFreeTextButton,
+        mode === AnnotationEditorType.FREETEXT,
+        editorFreeTextParamsToolbar
+      );
+      toggleCheckedBtn(
+        editorInkButton,
+        mode === AnnotationEditorType.INK,
+        editorInkParamsToolbar
+      );
 
-      for (const { mode, button, toolbar } of editorButtons) {
-        const checked = mode === evt.mode;
-        button.classList.toggle("toggled", checked);
-        button.setAttribute("aria-checked", checked);
-        button.disabled = disableButtons;
-        toolbar?.classList.toggle("hidden", !checked);
-      }
+      const isDisable = mode === AnnotationEditorType.DISABLE;
+      editorFreeTextButton.disabled = isDisable;
+      editorInkButton.disabled = isDisable;
     };
     this.eventBus._on("annotationeditormodechanged", editorModeChanged);
 
     this.eventBus._on("toolbarreset", evt => {
       if (evt.source === this) {
-        editorModeChanged(
-          { mode: AnnotationEditorType.NONE },
-          /* disableButtons = */ true
-        );
+        editorModeChanged({ mode: AnnotationEditorType.DISABLE });
       }
     });
   }

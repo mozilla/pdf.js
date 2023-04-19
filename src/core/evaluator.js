@@ -24,6 +24,7 @@ import {
   IDENTITY_MATRIX,
   info,
   isArrayEqual,
+  normalizeUnicode,
   OPS,
   shadow,
   stringToPDFString,
@@ -59,6 +60,7 @@ import {
   LocalGStateCache,
   LocalImageCache,
   LocalTilingPatternCache,
+  RegionalImageCache,
 } from "./image_utils.js";
 import { NullStream, Stream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
@@ -229,6 +231,7 @@ class PartialEvaluator {
     this.options = options || DefaultPartialEvaluatorOptions;
     this.parsingType3Font = false;
 
+    this._regionalImageCache = new RegionalImageCache();
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
     ImageResizer.setMaxArea(this.options.canvasMaxAreaInBytes);
   }
@@ -635,11 +638,20 @@ class PartialEvaluator {
         );
 
         if (cacheKey) {
-          localImageCache.set(cacheKey, imageRef, {
+          const cacheData = {
             fn: OPS.paintImageMaskXObject,
             args,
             optionalContent,
-          });
+          };
+          localImageCache.set(cacheKey, imageRef, cacheData);
+
+          if (imageRef) {
+            this._regionalImageCache.set(
+              /* name = */ null,
+              imageRef,
+              cacheData
+            );
+          }
         }
         return;
       }
@@ -664,11 +676,20 @@ class PartialEvaluator {
         );
 
         if (cacheKey) {
-          localImageCache.set(cacheKey, imageRef, {
+          const cacheData = {
             fn: OPS.paintSolidColorImageMask,
             args: [],
             optionalContent,
-          });
+          };
+          localImageCache.set(cacheKey, imageRef, cacheData);
+
+          if (imageRef) {
+            this._regionalImageCache.set(
+              /* name = */ null,
+              imageRef,
+              cacheData
+            );
+          }
         }
         return;
       }
@@ -693,11 +714,16 @@ class PartialEvaluator {
       );
 
       if (cacheKey) {
-        localImageCache.set(cacheKey, imageRef, {
+        const cacheData = {
           fn: OPS.paintImageMaskXObject,
           args,
           optionalContent,
-        });
+        };
+        localImageCache.set(cacheKey, imageRef, cacheData);
+
+        if (imageRef) {
+          this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
+        }
       }
       return;
     }
@@ -790,13 +816,16 @@ class PartialEvaluator {
     operatorList.addImageOps(OPS.paintImageXObject, args, optionalContent);
 
     if (cacheKey) {
-      localImageCache.set(cacheKey, imageRef, {
+      const cacheData = {
         fn: OPS.paintImageXObject,
         args,
         optionalContent,
-      });
+      };
+      localImageCache.set(cacheKey, imageRef, cacheData);
 
       if (imageRef) {
+        this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
+
         assert(!isInline, "Cannot cache an inline image globally.");
         this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
 
@@ -1723,7 +1752,9 @@ class PartialEvaluator {
 
                 let xobj = xobjs.getRaw(name);
                 if (xobj instanceof Ref) {
-                  const localImage = localImageCache.getByRef(xobj);
+                  const localImage =
+                    localImageCache.getByRef(xobj) ||
+                    self._regionalImageCache.getByRef(xobj);
                   if (localImage) {
                     operatorList.addImageOps(
                       localImage.fn,
@@ -2236,12 +2267,12 @@ class PartialEvaluator {
     task,
     resources,
     stateManager = null,
-    combineTextItems = false,
     includeMarkedContent = false,
     sink,
     seenStyles = new Set(),
     viewBox,
     markedContentData = null,
+    disableNormalization = false,
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
@@ -2311,6 +2342,13 @@ class PartialEvaluator {
       return ret;
     }
 
+    function shouldAddWhitepsace() {
+      return (
+        twoLastChars[twoLastCharsPos] !== " " &&
+        twoLastChars[(twoLastCharsPos + 1) % 2] === " "
+      );
+    }
+
     function resetLastChars() {
       twoLastChars[0] = twoLastChars[1] = " ";
       twoLastCharsPos = 0;
@@ -2341,6 +2379,12 @@ class PartialEvaluator {
     const SPACE_IN_FLOW_MIN_FACTOR = 0.102;
     const SPACE_IN_FLOW_MAX_FACTOR = 0.6;
 
+    // If a char is too high/too low compared to the previous we just create
+    // a new chunk.
+    // If the advance isn't in the +/-VERTICAL_SHIFT_RATIO * height range then
+    // a new chunk is created.
+    const VERTICAL_SHIFT_RATIO = 0.25;
+
     const self = this;
     const xref = this.xref;
     const showSpacedTextBuffer = [];
@@ -2353,6 +2397,23 @@ class PartialEvaluator {
     const preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
     let textState;
+
+    function pushWhitespace({
+      width = 0,
+      height = 0,
+      transform = textContentItem.prevTransform,
+      fontName = textContentItem.fontName,
+    }) {
+      textContent.items.push({
+        str: " ",
+        dir: "ltr",
+        width,
+        height,
+        transform,
+        fontName,
+        hasEOL: false,
+      });
+    }
 
     function getCurrentTextTransform() {
       // 9.4.4 Text Space Details
@@ -2465,7 +2526,10 @@ class PartialEvaluator {
     }
 
     function runBidiTransform(textChunk) {
-      const text = textChunk.str.join("");
+      let text = textChunk.str.join("");
+      if (!disableNormalization) {
+        text = normalizeUnicode(text);
+      }
       const bidiResult = bidi(text, -1, textChunk.vertical);
       return {
         str: bidiResult.str,
@@ -2511,28 +2575,31 @@ class PartialEvaluator {
       ];
     }
 
-    function compareWithLastPosition() {
+    function compareWithLastPosition(glyphWidth) {
       const currentTransform = getCurrentTextTransform();
       let posX = currentTransform[4];
       let posY = currentTransform[5];
 
-      const shiftedX = posX - viewBox[0];
-      const shiftedY = posY - viewBox[1];
-
-      if (
-        shiftedX < 0 ||
-        shiftedX > viewBox[2] ||
-        shiftedY < 0 ||
-        shiftedY > viewBox[3]
+      // Check if the glyph is in the viewbox.
+      if (textState.font && textState.font.vertical) {
+        if (
+          posX < viewBox[0] ||
+          posX > viewBox[2] ||
+          posY + glyphWidth < viewBox[1] ||
+          posY > viewBox[3]
+        ) {
+          return false;
+        }
+      } else if (
+        posX + glyphWidth < viewBox[0] ||
+        posX > viewBox[2] ||
+        posY < viewBox[1] ||
+        posY > viewBox[3]
       ) {
         return false;
       }
 
-      if (
-        !combineTextItems ||
-        !textState.font ||
-        !textContentItem.prevTransform
-      ) {
+      if (!textState.font || !textContentItem.prevTransform) {
         return true;
       }
 
@@ -2625,7 +2692,16 @@ class PartialEvaluator {
         }
 
         if (advanceY <= textOrientation * textContentItem.trackingSpaceMin) {
-          textContentItem.height += advanceY;
+          if (shouldAddWhitepsace()) {
+            // The space is very thin, hence it deserves to have its own span in
+            // order to avoid too much shift between the canvas and the text
+            // layer.
+            resetLastChars();
+            flushTextContentItem();
+            pushWhitespace({ height: Math.abs(advanceY) });
+          } else {
+            textContentItem.height += advanceY;
+          }
         } else if (
           !addFakeSpaces(
             advanceY,
@@ -2635,18 +2711,14 @@ class PartialEvaluator {
         ) {
           if (textContentItem.str.length === 0) {
             resetLastChars();
-            textContent.items.push({
-              str: " ",
-              dir: "ltr",
-              width: 0,
-              height: Math.abs(advanceY),
-              transform: textContentItem.prevTransform,
-              fontName: textContentItem.fontName,
-              hasEOL: false,
-            });
+            pushWhitespace({ height: Math.abs(advanceY) });
           } else {
             textContentItem.height += advanceY;
           }
+        }
+
+        if (Math.abs(advanceX) > textContentItem.width * VERTICAL_SHIFT_RATIO) {
+          flushTextContentItem();
         }
 
         return true;
@@ -2686,24 +2758,29 @@ class PartialEvaluator {
       }
 
       if (advanceX <= textOrientation * textContentItem.trackingSpaceMin) {
-        textContentItem.width += advanceX;
+        if (shouldAddWhitepsace()) {
+          // The space is very thin, hence it deserves to have its own span in
+          // order to avoid too much shift between the canvas and the text
+          // layer.
+          resetLastChars();
+          flushTextContentItem();
+          pushWhitespace({ width: Math.abs(advanceX) });
+        } else {
+          textContentItem.width += advanceX;
+        }
       } else if (
         !addFakeSpaces(advanceX, textContentItem.prevTransform, textOrientation)
       ) {
         if (textContentItem.str.length === 0) {
           resetLastChars();
-          textContent.items.push({
-            str: " ",
-            dir: "ltr",
-            width: Math.abs(advanceX),
-            height: 0,
-            transform: textContentItem.prevTransform,
-            fontName: textContentItem.fontName,
-            hasEOL: false,
-          });
+          pushWhitespace({ width: Math.abs(advanceX) });
         } else {
           textContentItem.width += advanceX;
         }
+      }
+
+      if (Math.abs(advanceY) > textContentItem.height * VERTICAL_SHIFT_RATIO) {
+        flushTextContentItem();
       }
 
       return true;
@@ -2767,8 +2844,16 @@ class PartialEvaluator {
           continue;
         }
 
-        if (!category.isZeroWidthDiacritic && !compareWithLastPosition()) {
-          // The glyph is not in page so just skip it.
+        if (
+          !category.isZeroWidthDiacritic &&
+          !compareWithLastPosition(scaledDim)
+        ) {
+          // The glyph is not in page so just skip it but move the cursor.
+          if (!font.vertical) {
+            textState.translateTextMatrix(scaledDim * textState.textHScale, 0);
+          } else {
+            textState.translateTextMatrix(0, scaledDim);
+          }
           continue;
         }
 
@@ -2794,7 +2879,7 @@ class PartialEvaluator {
           textChunk.prevTransform = getCurrentTextTransform();
         }
 
-        const glyphUnicode = glyph.normalizedUnicode;
+        const glyphUnicode = glyph.unicode;
         if (saveLastChar(glyphUnicode)) {
           // The two last chars are a non-whitespace followed by a whitespace
           // and then this non-whitespace, so we insert a whitespace here.
@@ -2858,16 +2943,11 @@ class PartialEvaluator {
 
       flushTextContentItem();
       resetLastChars();
-      textContent.items.push({
-        str: " ",
-        // TODO: check if using the orientation from last chunk is
-        // better or not.
-        dir: "ltr",
+      pushWhitespace({
         width: Math.abs(width),
         height: Math.abs(height),
         transform: transf || getCurrentTextTransform(),
         fontName,
-        hasEOL: false,
       });
 
       return true;
@@ -3177,12 +3257,12 @@ class PartialEvaluator {
                     task,
                     resources: xobj.dict.get("Resources") || resources,
                     stateManager: xObjStateManager,
-                    combineTextItems,
                     includeMarkedContent,
                     sink: sinkWrapper,
                     seenStyles,
                     viewBox,
                     markedContentData,
+                    disableNormalization,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
@@ -3550,6 +3630,16 @@ class PartialEvaluator {
             code = unicode;
           }
           break;
+        default:
+          // Support (some) non-standard ligatures.
+          switch (glyphName) {
+            case "f_h":
+            case "f_t":
+            case "T_h":
+              toUnicode[charcode] = glyphName.replaceAll("_", "");
+              continue;
+          }
+          break;
       }
       if (code > 0 && code <= 0x10ffff && Number.isInteger(code)) {
         // If `baseEncodingName` is one the predefined encodings, and `code`
@@ -3632,7 +3722,8 @@ class PartialEvaluator {
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
         useCMap: null,
       });
-      const toUnicode = [];
+      const toUnicode = [],
+        buf = [];
       properties.cMap.forEach(function (charcode, cid) {
         if (cid > 0xffff) {
           throw new FormatError("Max size of CID is 65,535");
@@ -3641,9 +3732,12 @@ class PartialEvaluator {
         // obtained in step (d), producing a Unicode value.
         const ucs2 = ucs2CMap.lookup(cid);
         if (ucs2) {
-          toUnicode[charcode] = String.fromCharCode(
-            (ucs2.charCodeAt(0) << 8) + ucs2.charCodeAt(1)
-          );
+          buf.length = 0;
+          // Support multi-byte entries (fixes issue16176.pdf).
+          for (let i = 0, ii = ucs2.length; i < ii; i += 2) {
+            buf.push((ucs2.charCodeAt(i) << 8) + ucs2.charCodeAt(i + 1));
+          }
+          toUnicode[charcode] = String.fromCharCode(...buf);
         }
       });
       return new ToUnicodeMap(toUnicode);
@@ -4072,7 +4166,7 @@ class PartialEvaluator {
         }
 
         // Using base font name as a font name.
-        baseFontName = baseFontName.name.replace(/[,_]/g, "-");
+        baseFontName = baseFontName.name.replaceAll(/[,_]/g, "-");
         const metrics = this.getBaseFontMetrics(baseFontName);
 
         // Simulating descriptor flags attribute

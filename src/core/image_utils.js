@@ -156,6 +156,22 @@ class LocalTilingPatternCache extends BaseLocalCache {
   }
 }
 
+class RegionalImageCache extends BaseLocalCache {
+  constructor(options) {
+    super({ onlyRefs: true });
+  }
+
+  set(name = null, ref, data) {
+    if (!ref) {
+      throw new Error('RegionalImageCache.set - expected "ref" argument.');
+    }
+    if (this._imageCache.has(ref)) {
+      return;
+    }
+    this._imageCache.put(ref, data);
+  }
+}
+
 class GlobalImageCache {
   static get NUM_PAGES_THRESHOLD() {
     return shadow(this, "NUM_PAGES_THRESHOLD", 2);
@@ -288,4 +304,5 @@ export {
   LocalGStateCache,
   LocalImageCache,
   LocalTilingPatternCache,
+  RegionalImageCache,
 };

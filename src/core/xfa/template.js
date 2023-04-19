@@ -5731,7 +5731,7 @@ class Text extends ContentObject {
 
   [$finalize]() {
     if (typeof this[$content] === "string") {
-      this[$content] = this[$content].replace(/\r\n/g, "\n");
+      this[$content] = this[$content].replaceAll("\r\n", "\n");
     }
   }
 

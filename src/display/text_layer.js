@@ -475,7 +475,7 @@ function renderTextLayer(params) {
 
     if (
       visibility === "visible" &&
-      (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-15)
+      (!scaleFactor || Math.abs(scaleFactor - viewport.scale) > 1e-5)
     ) {
       console.error(
         "The `--scale-factor` CSS-variable must be set, " +

@@ -19,7 +19,7 @@
   --dir-factor: 1;
   --scale-select-width: 140px;
 
-  --toolbar-icon-opacity: 0.7;
+  --toolbar-icon-opacity: 1;
   --doorhanger-icon-opacity: 0.9;
 
   --main-color: rgba(12, 12, 13, 1);
@@ -29,6 +29,8 @@
   --dialog-button-border: none;
   --dialog-button-bg-color: rgba(12, 12, 13, 0.1);
   --dialog-button-hover-bg-color: rgba(12, 12, 13, 0.3);
+
+  --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
 }
 
 :root:dir(rtl) {
@@ -84,25 +86,15 @@ body {
 
 #mainContainer {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   min-width: 350px;
 }
 
 #viewerContainer {
   overflow: auto;
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   outline: none;
-}
-#viewerContainer {
-  transition-duration: var(--sidebar-transition-duration);
-  transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
 .dialogButton {
@@ -157,6 +149,74 @@ body {
 
 .toolbarField:focus {
   border-color: #0a84ff;
+}
+
+#floatingToolbar {
+  position: absolute;
+  width: 40px;
+  height: auto;
+  bottom: 5%;
+  right: 5%;
+  background-color: transparent;
+  transition-property: opacity;
+  transition-duration: 400ms;
+}
+
+#floatingToolbar.show {
+  z-index: 100000;
+  opacity: 1;
+}
+
+#floatingToolbar:not(show) {
+  z-index: -1;
+  opacity: 0;
+}
+
+.toolbarButton {
+  margin: 2px;
+  padding: 8px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: transparent;
+  border-radius: 19px;
+  user-select: none;
+  box-sizing: border-box;
+  background-color: transparent;
+  backdrop-filter: blur(20px) contrast(100%) invert(100%);
+  width: 38px;
+  height: 38px;
+  outline: none;
+  position: relative;
+}
+
+.toolbarButton > span {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.toolbarButton[disabled],
+.dialogButton[disabled] {
+  opacity: 0.5;
+}
+
+.toolbarButton::before {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  content: "";
+  background-color: transparent;
+  backdrop-filter: invert(100%);
+  mask-size: cover;
+}
+
+.toolbarButton::before {
+  opacity: var(--toolbar-icon-opacity);
+}
+
+#download::before {
+  mask-image: var(--toolbarButton-download-icon);
 }
 
 .dialogButton {

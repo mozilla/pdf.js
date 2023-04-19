@@ -258,38 +258,38 @@ class PDFThumbnailView {
     reducedCanvas.height = 0;
   }
 
-  draw() {
+  async #finishRenderTask(renderTask, canvas, error = null) {
+    // The renderTask may have been replaced by a new one, so only remove
+    // the reference to the renderTask if it matches the one that is
+    // triggering this callback.
+    if (renderTask === this.renderTask) {
+      this.renderTask = null;
+    }
+
+    if (error instanceof RenderingCancelledException) {
+      return;
+    }
+    this.renderingState = RenderingStates.FINISHED;
+    this._convertCanvasToImage(canvas);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async draw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error("Must be in new state before drawing");
-      return Promise.resolve();
+      return undefined;
     }
     const { pdfPage } = this;
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
-      return Promise.reject(new Error("pdfPage is not loaded"));
+      throw new Error("pdfPage is not loaded");
     }
 
     this.renderingState = RenderingStates.RUNNING;
-
-    const finishRenderTask = async (error = null) => {
-      // The renderTask may have been replaced by a new one, so only remove
-      // the reference to the renderTask if it matches the one that is
-      // triggering this callback.
-      if (renderTask === this.renderTask) {
-        this.renderTask = null;
-      }
-
-      if (error instanceof RenderingCancelledException) {
-        return;
-      }
-      this.renderingState = RenderingStates.FINISHED;
-      this._convertCanvasToImage(canvas);
-
-      if (error) {
-        throw error;
-      }
-    };
 
     // Render the thumbnail at a larger size and downsize the canvas (similar
     // to `setImage`), to improve consistency between thumbnails created by
@@ -324,12 +324,8 @@ class PDFThumbnailView {
     renderTask.onContinue = renderContinueCallback;
 
     const resultPromise = renderTask.promise.then(
-      function () {
-        return finishRenderTask(null);
-      },
-      function (error) {
-        return finishRenderTask(error);
-      }
+      () => this.#finishRenderTask(renderTask, canvas),
+      error => this.#finishRenderTask(renderTask, canvas, error)
     );
     resultPromise.finally(() => {
       // Zeroing the width and height causes Firefox to release graphics

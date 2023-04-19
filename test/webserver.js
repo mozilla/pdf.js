@@ -79,7 +79,7 @@ WebServer.prototype = {
     }
   },
   _handler(req, res) {
-    var url = req.url.replace(/\/\//g, "/");
+    var url = req.url.replaceAll("//", "/");
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     try {
       // Guard against directory traversal attacks such as
@@ -89,7 +89,7 @@ WebServer.prototype = {
       // path.normalize returns a path on the basis of the current platform.
       // Windows paths cause issues in statFile and serverDirectoryIndex.
       // Converting to unix path would avoid platform checks in said functions.
-      pathPart = pathPart.replace(/\\/g, "/");
+      pathPart = pathPart.replaceAll("\\", "/");
     } catch (ex) {
       // If the URI cannot be decoded, a `URIError` is thrown. This happens for
       // malformed URIs such as `http://localhost:8888/%s%s` and should be
@@ -196,11 +196,11 @@ WebServer.prototype = {
       // Escape untrusted input so that it can safely be used in a HTML response
       // in HTML and in HTML attributes.
       return untrusted
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
     function serveDirectoryIndex(dir) {

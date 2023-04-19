@@ -153,10 +153,7 @@ footer {
   position: absolute;
   overflow: auto;
   width: 100%;
-  top: 5rem;
-  bottom: 4rem;
-  left: 0;
-  right: 0;
+  inset: 5rem 0 4rem;
 }
 
 canvas {

@@ -46,14 +46,6 @@ const SidebarView = {
   LAYERS: 4,
 };
 
-const RendererType =
-  typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || GENERIC")
-    ? {
-        CANVAS: "canvas",
-        SVG: "svg",
-      }
-    : null;
-
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
@@ -211,7 +203,6 @@ function parseQueryString(query) {
   return params;
 }
 
-const NullCharactersRegExp = /\x00/g;
 const InvisibleCharactersRegExp = /[\x01-\x1F]/g;
 
 /**
@@ -224,9 +215,9 @@ function removeNullCharacters(str, replaceInvisible = false) {
     return str;
   }
   if (replaceInvisible) {
-    str = str.replace(InvisibleCharactersRegExp, " ");
+    str = str.replaceAll(InvisibleCharactersRegExp, " ");
   }
-  return str.replace(NullCharactersRegExp, "");
+  return str.replaceAll("\x00", "");
 }
 
 /**
@@ -850,6 +841,13 @@ function apiPageModeToSidebarView(mode) {
   return SidebarView.NONE; // Default value.
 }
 
+function toggleCheckedBtn(button, toggle, view = null) {
+  button.classList.toggle("toggled", toggle);
+  button.setAttribute("aria-checked", toggle);
+
+  view?.classList.toggle("hidden", !toggle);
+}
+
 export {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -881,7 +879,6 @@ export {
   PresentationModeState,
   ProgressBar,
   removeNullCharacters,
-  RendererType,
   RenderingStates,
   roundToDivide,
   SCROLLBAR_PADDING,
@@ -890,6 +887,7 @@ export {
   SidebarView,
   SpreadMode,
   TextLayerMode,
+  toggleCheckedBtn,
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,

@@ -181,7 +181,7 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
 }
 
 function normalizeFontName(name) {
-  return name.replace(/[,_]/g, "-").replace(/\s/g, "");
+  return name.replaceAll(/[,_]/g, "-").replaceAll(/\s/g, "");
 }
 
 export {

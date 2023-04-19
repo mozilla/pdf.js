@@ -19,7 +19,7 @@ exports.parseAdobeCMap = function (content) {
     throw new Error("cmap was not found");
   }
 
-  const body = m[1].replace(/\r\n?/g, "\n");
+  const body = m[1].replaceAll(/\r\n?/g, "\n");
   const result = {
     type: 1,
     wmode: 0,

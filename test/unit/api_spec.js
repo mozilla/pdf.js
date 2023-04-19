@@ -14,12 +14,14 @@
  */
 
 import {
+  AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
   createPromiseCapability,
   ImageKind,
   InvalidPDFException,
   MissingPDFException,
+  objectSize,
   OPS,
   PasswordException,
   PasswordResponses,
@@ -28,6 +30,7 @@ import {
 } from "../../src/shared/util.js";
 import {
   buildGetDocumentParams,
+  CMAP_URL,
   DefaultFileReaderFactory,
   TEST_PDFS_PATH,
 } from "./test_utils.js";
@@ -1976,6 +1979,35 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a a new annotation, save the pdf and check that the prev entry in xref stream is correct", async function () {
+      if (isNodeJS) {
+        pending("Linked test-cases are not supported in Node.js.");
+      }
+
+      let loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello PDF.js World!",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      const xrefPrev = await pdfDoc.getXRefPrevValue();
+
+      expect(xrefPrev).toEqual(143954);
+
+      await loadingTask.destroy();
+    });
+
     describe("Cross-origin", function () {
       let loadingTask;
       function _checkCanLoad(expectSuccess, filename, options) {
@@ -2290,26 +2322,16 @@ describe("api", function () {
     });
 
     it("gets text content", async function () {
-      const defaultPromise = page.getTextContent();
-      const parametersPromise = page.getTextContent({
-        disableCombineTextItems: true,
-      });
+      const { items, styles } = await page.getTextContent();
 
-      const data = await Promise.all([defaultPromise, parametersPromise]);
+      expect(items.length).toEqual(15);
+      expect(objectSize(styles)).toEqual(5);
 
-      expect(!!data[0].items).toEqual(true);
-      expect(data[0].items.length).toEqual(15);
-      expect(!!data[0].styles).toEqual(true);
-
-      const page1 = mergeText(data[0].items);
-      expect(page1).toEqual(`Table Of Content
+      const text = mergeText(items);
+      expect(text).toEqual(`Table Of Content
 Chapter 1 .......................................................... 2
 Paragraph 1.1 ...................................................... 3
 page 1 / 3`);
-
-      expect(!!data[1].items).toEqual(true);
-      expect(data[1].items.length).toEqual(6);
-      expect(!!data[1].styles).toEqual(true);
     });
 
     it("gets text content, with correct properties (issue 8276)", async function () {
@@ -2318,7 +2340,9 @@ page 1 / 3`);
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent();
+      const { items, styles } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       expect(items.length).toEqual(1);
       // Font name will be a random object id.
       const fontName = items[0].fontName;
@@ -2354,7 +2378,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue13226.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(text).toEqual(
@@ -2372,7 +2398,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue16119.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2388,7 +2416,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue13201.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2414,7 +2444,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue11913.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2434,7 +2466,9 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue10900.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2453,11 +2487,27 @@ page 1 / 3`);
       const loadingTask = getDocument(buildGetDocumentParams("issue10640.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
-      const text = mergeText(items);
+      let { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      let text = mergeText(items);
+      let expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
+Open Sans was designed with an upright stress, open forms and a neu-
+tral, yet friendly appearance. It was optimized for print, web, and mobile
+interfaces, and has excellent legibility characteristics in its letterforms (see
+ﬁgure \x81 on the following page). This font is available from the Google Font
+Directory [\x81] as TrueType ﬁles licensed under the Apache License version \x82.\x80.
+This package provides support for this font in LATEX. It includes Type \x81
+versions of the fonts, converted for this package using FontForge from its
+sources, for full support with Dvips.`;
 
-      expect(
-        text.includes(`Open Sans is a humanist sans serif typeface designed by Steve Matteson.
+      expect(text.includes(expected)).toEqual(true);
+
+      ({ items } = await pdfPage.getTextContent({
+        disableNormalization: false,
+      }));
+      text = mergeText(items);
+      expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
 Open Sans was designed with an upright stress, open forms and a neu-
 tral, yet friendly appearance. It was optimized for print, web, and mobile
 interfaces, and has excellent legibility characteristics in its letterforms (see
@@ -2465,8 +2515,8 @@ figure \x81 on the following page). This font is available from the Google Font
 Directory [\x81] as TrueType files licensed under the Apache License version \x82.\x80.
 This package provides support for this font in LATEX. It includes Type \x81
 versions of the fonts, converted for this package using FontForge from its
-sources, for full support with Dvips.`)
-      ).toEqual(true);
+sources, for full support with Dvips.`;
+      expect(text.includes(expected)).toEqual(true);
 
       await loadingTask.destroy();
     });
@@ -2479,7 +2529,9 @@ sources, for full support with Dvips.`)
       const loadingTask = getDocument(buildGetDocumentParams("bug931481.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2507,7 +2559,9 @@ sozialökonomische Gerechtigkeit.`)
       const loadingTask = getDocument(buildGetDocumentParams("issue9186.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(
@@ -2528,7 +2582,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(text).toEqual(
@@ -2546,7 +2602,9 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const loadingTask = getDocument(buildGetDocumentParams("bug1755201.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(6);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
       expect(/win aisle/.test(text)).toEqual(false);
@@ -2564,10 +2622,12 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfPage = await pdfDoc.getPage(568);
       let { items } = await pdfPage.getTextContent({
         includeMarkedContent: false,
+        disableNormalization: true,
       });
       const textWithoutMC = mergeText(items);
       ({ items } = await pdfPage.getTextContent({
         includeMarkedContent: true,
+        disableNormalization: true,
       }));
       const textWithMC = mergeText(items);
 
@@ -2576,19 +2636,48 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
-    // TODO: Change this to a `text` reference test instead.
-    //       Currently that doesn't work, since the `XMLSerializer` fails on
-    //       the ASCII "control characters" found in the text-content.
-    it("gets text content with non-standard ligatures (issue issue15516)", async function () {
+    it("gets text content with multi-byte entries, using predefined CMaps (issue 16176)", async function () {
       const loadingTask = getDocument(
-        buildGetDocumentParams("issue15516_reduced.pdf")
+        buildGetDocumentParams("issue16176.pdf", {
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        })
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent();
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
       const text = mergeText(items);
 
-      expect(text).toEqual("ffi fi ffl ff fl \x07 \x08 Ý");
+      expect(text).toEqual("𠮷");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with a rised text", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue16221.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(items.map(i => i.str)).toEqual(["Hello ", "World"]);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with a specific view box", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue16316.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("Experimentation,");
 
       await loadingTask.destroy();
     });

@@ -17,6 +17,7 @@ import {
   PresentationModeState,
   RenderingStates,
   SidebarView,
+  toggleCheckedBtn,
 } from "./ui_utils.js";
 
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
@@ -191,29 +192,33 @@ class PDFSidebar {
     // in order to prevent setting it to an invalid state.
     this.active = view;
 
-    const isThumbs = view === SidebarView.THUMBS,
-      isOutline = view === SidebarView.OUTLINE,
-      isAttachments = view === SidebarView.ATTACHMENTS,
-      isLayers = view === SidebarView.LAYERS;
-
-    // Update the CSS classes (and aria attributes), for all buttons...
-    this.thumbnailButton.classList.toggle("toggled", isThumbs);
-    this.outlineButton.classList.toggle("toggled", isOutline);
-    this.attachmentsButton.classList.toggle("toggled", isAttachments);
-    this.layersButton.classList.toggle("toggled", isLayers);
-
-    this.thumbnailButton.setAttribute("aria-checked", isThumbs);
-    this.outlineButton.setAttribute("aria-checked", isOutline);
-    this.attachmentsButton.setAttribute("aria-checked", isAttachments);
-    this.layersButton.setAttribute("aria-checked", isLayers);
-    // ... and for all views.
-    this.thumbnailView.classList.toggle("hidden", !isThumbs);
-    this.outlineView.classList.toggle("hidden", !isOutline);
-    this.attachmentsView.classList.toggle("hidden", !isAttachments);
-    this.layersView.classList.toggle("hidden", !isLayers);
+    // Update the CSS classes (and aria attributes), for all buttons and views.
+    toggleCheckedBtn(
+      this.thumbnailButton,
+      view === SidebarView.THUMBS,
+      this.thumbnailView
+    );
+    toggleCheckedBtn(
+      this.outlineButton,
+      view === SidebarView.OUTLINE,
+      this.outlineView
+    );
+    toggleCheckedBtn(
+      this.attachmentsButton,
+      view === SidebarView.ATTACHMENTS,
+      this.attachmentsView
+    );
+    toggleCheckedBtn(
+      this.layersButton,
+      view === SidebarView.LAYERS,
+      this.layersView
+    );
 
     // Finally, update view-specific CSS classes.
-    this._outlineOptionsContainer.classList.toggle("hidden", !isOutline);
+    this._outlineOptionsContainer.classList.toggle(
+      "hidden",
+      view !== SidebarView.OUTLINE
+    );
 
     if (forceOpen && !this.isOpen) {
       this.open();

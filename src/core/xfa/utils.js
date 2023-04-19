@@ -26,7 +26,7 @@ const measurementPattern = /([+-]?\d+\.?\d*)(.*)/;
 
 function stripQuotes(str) {
   if (str.startsWith("'") || str.startsWith('"')) {
-    return str.slice(1, str.length - 1);
+    return str.slice(1, -1);
   }
   return str;
 }

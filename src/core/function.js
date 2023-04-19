@@ -502,9 +502,7 @@ class PDFFunction {
 
 function isPDFFunction(v) {
   let fnDict;
-  if (typeof v !== "object") {
-    return false;
-  } else if (v instanceof Dict) {
+  if (v instanceof Dict) {
     fnDict = v;
   } else if (v instanceof BaseStream) {
     fnDict = v.dict;

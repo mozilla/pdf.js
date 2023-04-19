@@ -17,10 +17,7 @@
 
 :root {
   --dir-factor: 1;
-  /*#if MOZCENTRAL*/
-  --inline-start: inline-start;
-  --inline-end: inline-end;
-  /*#else*/
+  /*#if !MOZCENTRAL*/
   --inline-start: left;
   --inline-end: right;
   /*#endif*/
@@ -260,8 +257,12 @@ body {
 
 #sidebarContainer {
   position: absolute;
+<<<<<<< HEAD
   top: 52px;
   bottom: 0;
+=======
+  inset-block: 32px 0;
+>>>>>>> upstream/master
   inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
   visibility: hidden;
@@ -284,16 +285,12 @@ body {
 
 #mainContainer {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   min-width: 350px;
 }
 
 #sidebarContent {
-  top: 32px;
-  bottom: 0;
+  inset-block: 32px 0;
   inset-inline-start: 0;
   overflow: auto;
   position: absolute;
@@ -304,10 +301,14 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
+<<<<<<< HEAD
   top: 52px;
   right: 0;
   bottom: 0;
   left: 0;
+=======
+  inset: 32px 0 0;
+>>>>>>> upstream/master
   outline: none;
 }
 #viewerContainer:not(.pdfPresentationMode) {
@@ -322,8 +323,7 @@ body {
 
 .toolbar {
   position: relative;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   z-index: 9999;
   cursor: default;
   font: message-box;
@@ -363,8 +363,7 @@ body {
 
 #sidebarResizer {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   inset-inline-end: -6px;
   width: 6px;
   z-index: 200;
@@ -411,10 +410,10 @@ body {
 #loadingBar .progress {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   width: 100%;
   transform: scaleX(var(--progressBar-percent));
-  transform-origin: 0 0;
+  transform-origin: calc(50% - 50% * var(--dir-factor)) 0;
   height: 100%;
   background-color: var(--progressBar-color);
   overflow: hidden;
@@ -423,7 +422,7 @@ body {
 
 @keyframes progressIndeterminate {
   0% {
-    transform: translateX(-142px);
+    transform: translateX(calc(-142px * var(--dir-factor)));
   }
   100% {
     transform: translateX(0);
@@ -439,7 +438,7 @@ body {
 #loadingBar.indeterminate .progress .glimmer {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   height: 100%;
   width: calc(100% + 150px);
   background: repeating-linear-gradient(
@@ -1131,7 +1130,7 @@ a.secondaryToolbarButton[href="#"] {
 
 #pageNumber {
   -moz-appearance: textfield; /* hides the spinner in moz */
-  text-align: right;
+  text-align: end;
   width: 40px;
   background-size: 0 0;
   transition-property: none;
@@ -1139,7 +1138,7 @@ a.secondaryToolbarButton[href="#"] {
 #pageNumber.visiblePageIsLoading {
   background-image: var(--loading-icon);
   background-repeat: no-repeat;
-  background-position: 3px;
+  background-position: calc(50% - 42% * var(--dir-factor));
   background-size: 16px 16px;
   /* Using a delay with background-image doesn't work,
      consequently we use background-size. */
@@ -1179,8 +1178,7 @@ a.secondaryToolbarButton[href="#"] {
 #layersView {
   position: absolute;
   width: calc(100% - 8px);
-  top: 0;
-  bottom: 0;
+  inset-block: 0;
   padding: 4px 4px 0;
   overflow: auto;
   user-select: none;
@@ -1422,10 +1420,7 @@ dialog progress::-webkit-progress-value {
   position: fixed;
   background: rgba(0, 0, 0, 0);
   display: block;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   overflow: hidden;
   z-index: 50000; /* should be higher than anything else in PDF.js! */
 }

@@ -303,7 +303,7 @@ function escapePDFName(str) {
 // Replace "(", ")", "\n", "\r" and "\" by "\(", "\)", "\\n", "\\r" and "\\"
 // in order to write it in a PDF file.
 function escapeString(str) {
-  return str.replace(/([()\\\n\r])/g, match => {
+  return str.replaceAll(/([()\\\n\r])/g, match => {
     if (match === "\n") {
       return "\\n";
     } else if (match === "\r") {
@@ -341,7 +341,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code = code && stringToPDFString(code).replace(/\u0000/g, "");
+      code = code && stringToPDFString(code).replaceAll("\x00", "");
       if (code) {
         list.push(code);
       }
@@ -470,14 +470,11 @@ function validateCSSFont(cssFontInfo) {
   const { fontFamily, fontWeight, italicAngle } = cssFontInfo;
 
   // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
-  if (/^".*"$/.test(fontFamily)) {
-    if (/[^\\]"/.test(fontFamily.slice(1, fontFamily.length - 1))) {
-      warn(`XFA - FontFamily contains some unescaped ": ${fontFamily}.`);
-      return false;
-    }
-  } else if (/^'.*'$/.test(fontFamily)) {
-    if (/[^\\]'/.test(fontFamily.slice(1, fontFamily.length - 1))) {
-      warn(`XFA - FontFamily contains some unescaped ': ${fontFamily}.`);
+  const m = /^("|').*("|')$/.exec(fontFamily);
+  if (m && m[1] === m[2]) {
+    const re = new RegExp(`[^\\\\]${m[1]}`);
+    if (re.test(fontFamily.slice(1, -1))) {
+      warn(`XFA - FontFamily contains unescaped ${m[1]}: ${fontFamily}.`);
       return false;
     }
   } else {
@@ -485,7 +482,7 @@ function validateCSSFont(cssFontInfo) {
     for (const ident of fontFamily.split(/[ \t]+/)) {
       if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
         warn(
-          `XFA - FontFamily contains some invalid <custom-ident>: ${fontFamily}.`
+          `XFA - FontFamily contains invalid <custom-ident>: ${fontFamily}.`
         );
         return false;
       }
@@ -515,7 +512,7 @@ function recoverJsURL(str) {
   const URL_OPEN_METHODS = ["app.launchURL", "window.open", "xfa.host.gotoURL"];
   const regex = new RegExp(
     "^\\s*(" +
-      URL_OPEN_METHODS.join("|").split(".").join("\\.") +
+      URL_OPEN_METHODS.join("|").replaceAll(".", "\\.") +
       ")\\((?:'|\")([^'\"]*)(?:'|\")(?:,\\s*(\\w+)\\)|\\))",
     "i"
   );
