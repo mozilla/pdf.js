@@ -257,12 +257,8 @@ body {
 
 #sidebarContainer {
   position: absolute;
-<<<<<<< HEAD
   top: 52px;
   bottom: 0;
-=======
-  inset-block: 32px 0;
->>>>>>> upstream/master
   inset-inline-start: calc(-1 * var(--sidebar-width));
   width: var(--sidebar-width);
   visibility: hidden;
@@ -301,14 +297,10 @@ body {
 #viewerContainer {
   overflow: auto;
   position: absolute;
-<<<<<<< HEAD
   top: 52px;
   right: 0;
   bottom: 0;
   left: 0;
-=======
-  inset: 32px 0 0;
->>>>>>> upstream/master
   outline: none;
 }
 #viewerContainer:not(.pdfPresentationMode) {
