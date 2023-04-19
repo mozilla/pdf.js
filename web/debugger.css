@@ -14,9 +14,7 @@
  */
 
 #PDFBug,
-#PDFBug input,
-#PDFBug button,
-#PDFBug select {
+#PDFBug :is(input, button, select) {
   font: message-box;
 }
 #PDFBug {
@@ -67,8 +65,7 @@
   text-align: center;
 }
 #PDFBug table.showText,
-#PDFBug table.showText tr,
-#PDFBug table.showText td {
+#PDFBug table.showText :is(tr, td) {
   border: 1px solid black;
   padding: 1px;
 }
