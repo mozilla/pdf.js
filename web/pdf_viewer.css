@@ -105,8 +105,7 @@
 }
 /*#endif*/
 
-.pdfViewer.scrollHorizontal,
-.pdfViewer.scrollWrapped,
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped),
 .spread {
   margin-inline: 3.5px;
   text-align: center;
@@ -120,31 +119,24 @@
 /*#if GENERIC*/
 .pdfViewer.removePageBorders,
 /*#endif*/
-.pdfViewer.scrollHorizontal .spread,
-.pdfViewer.scrollWrapped .spread {
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped) .spread {
   margin-inline: 0;
 }
 
-.spread .page,
-.spread .dummyPage,
-.pdfViewer.scrollHorizontal .page,
-.pdfViewer.scrollWrapped .page,
-.pdfViewer.scrollHorizontal .spread,
-.pdfViewer.scrollWrapped .spread {
+.spread :is(.page, .dummyPage),
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped) :is(.page, .spread) {
   display: inline-block;
   vertical-align: middle;
 }
 
 .spread .page,
-.pdfViewer.scrollHorizontal .page,
-.pdfViewer.scrollWrapped .page {
+.pdfViewer:is(.scrollHorizontal, .scrollWrapped) .page {
   margin-inline: var(--spreadHorizontalWrapped-margin-LR);
 }
 
 /*#if GENERIC*/
 .pdfViewer.removePageBorders .spread .page,
-.pdfViewer.removePageBorders.scrollHorizontal .page,
-.pdfViewer.removePageBorders.scrollWrapped .page {
+.pdfViewer.removePageBorders:is(.scrollHorizontal, .scrollWrapped) .page {
   margin-inline: 5px;
 }
 /*#endif*/
