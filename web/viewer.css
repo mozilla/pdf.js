@@ -268,8 +268,7 @@ body {
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
-#outerContainer.sidebarMoving #sidebarContainer,
-#outerContainer.sidebarOpen #sidebarContainer {
+#outerContainer:is(.sidebarMoving, .sidebarOpen) #sidebarContainer {
   visibility: visible;
 }
 #outerContainer.sidebarOpen #sidebarContainer {
@@ -315,22 +314,9 @@ body {
   font: message-box;
 }
 
-.toolbar input,
-.toolbar button,
-.toolbar select,
-.secondaryToolbar input,
-.secondaryToolbar button,
-.secondaryToolbar a,
-.secondaryToolbar select,
-.editorParamsToolbar input,
-.editorParamsToolbar button,
-.editorParamsToolbar select,
-.findbar input,
-.findbar button,
-.findbar select,
-#sidebarContainer input,
-#sidebarContainer button,
-#sidebarContainer select {
+:is(.toolbar, .editorParamsToolbar, .findbar, #sidebarContainer)
+  :is(input, button, select),
+.secondaryToolbar :is(input, button, a, select) {
   outline: none;
   font: message-box;
 }
@@ -437,9 +423,8 @@ body {
   animation: progressIndeterminate 1s linear infinite;
 }
 
-#outerContainer.sidebarResizing #sidebarContainer,
-#outerContainer.sidebarResizing #viewerContainer,
-#outerContainer.sidebarResizing #loadingBar {
+#outerContainer.sidebarResizing
+  :is(#sidebarContainer, #viewerContainer, #loadingBar) {
   /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
   transition-duration: 0s;
 }
@@ -600,10 +585,8 @@ body {
     0 0 0 1px var(--doorhanger-border-color);
   border: var(--doorhanger-border-color-whcm);
 }
-.doorHanger::after,
-.doorHanger::before,
-.doorHangerRight::after,
-.doorHangerRight::before {
+:is(.doorHanger, .doorHangerRight)::after,
+:is(.doorHanger, .doorHangerRight)::before {
   bottom: 100%;
   border: 8px solid rgba(0, 0, 0, 0);
   content: " ";
@@ -623,8 +606,7 @@ body {
   margin-inline-end: -8px;
   border-bottom-color: var(--doorhanger-bg-color);
 }
-.doorHanger::before,
-.doorHangerRight::before {
+:is(.doorHanger, .doorHangerRight)::before {
   border-bottom-color: var(--doorhanger-border-color);
   border-width: 9px;
 }
@@ -649,8 +631,7 @@ body {
   color: rgba(251, 0, 0, 1);
 }
 
-#findResultsCount:empty,
-#findMsg:empty {
+:is(#findResultsCount, #findMsg):empty {
   display: none;
 }
 
@@ -707,13 +688,11 @@ body {
   outline: none;
 }
 
-.dialogButton:hover,
-.dialogButton:focus-visible {
+.dialogButton:is(:hover, :focus-visible) {
   background-color: var(--dialog-button-hover-bg-color);
 }
 
-.dialogButton:hover > span,
-.dialogButton:focus-visible > span {
+.dialogButton:is(:hover, :focus-visible) > span {
   color: var(--dialog-button-hover-color);
 }
 
@@ -724,14 +703,11 @@ body {
   overflow: hidden;
 }
 
-.toolbarButton[disabled],
-.secondaryToolbarButton[disabled],
-.dialogButton[disabled] {
+:is(.toolbarButton, .secondaryToolbarButton, .dialogButton)[disabled] {
   opacity: 0.5;
 }
 
-.splitToolbarButton > .toolbarButton:hover,
-.splitToolbarButton > .toolbarButton:focus-visible,
+.splitToolbarButton > .toolbarButton:is(:hover, :focus-visible),
 .dropdownToolbarButton:hover {
   background-color: var(--button-hover-color);
 }
@@ -768,31 +744,26 @@ body {
   box-sizing: border-box;
 }
 
-.toolbarButton:hover,
-.toolbarButton:focus-visible {
+.toolbarButton:is(:hover, :focus-visible) {
   background-color: var(--button-hover-color);
 }
-.secondaryToolbarButton:hover,
-.secondaryToolbarButton:focus-visible {
+.secondaryToolbarButton:is(:hover, :focus-visible) {
   background-color: var(--doorhanger-hover-bg-color);
   color: var(--doorhanger-hover-color);
 }
 
-.toolbarButton.toggled,
-.splitToolbarButton.toggled > .toolbarButton.toggled,
-.secondaryToolbarButton.toggled {
+:is(.toolbarButton, .secondaryToolbarButton).toggled,
+.splitToolbarButton.toggled > .toolbarButton.toggled {
   background-color: var(--toggled-btn-bg-color);
   color: var(--toggled-btn-color);
 }
 
-.toolbarButton.toggled::before,
-.secondaryToolbarButton.toggled::before {
+:is(.toolbarButton, .secondaryToolbarButton).toggled::before {
   background-color: var(--toggled-btn-color);
 }
 
-.toolbarButton.toggled:hover:active,
-.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
-.secondaryToolbarButton.toggled:hover:active {
+:is(.toolbarButton, .secondaryToolbarButton).toggled:hover:active,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active {
   background-color: var(--toggled-hover-active-btn-color);
 }
 
@@ -825,8 +796,7 @@ body {
   border: none;
   background-color: var(--dropdown-btn-bg-color);
 }
-.dropdownToolbarButton > select:hover,
-.dropdownToolbarButton > select:focus-visible {
+.dropdownToolbarButton > select:is(:hover, :focus-visible) {
   background-color: var(--button-hover-color);
   color: var(--toggled-btn-color);
 }
@@ -841,10 +811,8 @@ body {
   height: 1px;
 }
 
-.toolbarButton::before,
-.secondaryToolbarButton::before,
-.dropdownToolbarButton::after,
-.treeItemToggler::before {
+:is(.toolbarButton, .secondaryToolbarButton, .treeItemToggler)::before,
+.dropdownToolbarButton::after {
   /* All matching images have a size of 16x16
    * All relevant containers have a size of 28x28 */
   position: absolute;
@@ -857,9 +825,7 @@ body {
   mask-size: cover;
 }
 
-.dropdownToolbarButton:hover::after,
-.dropdownToolbarButton:focus-visible::after,
-.dropdownToolbarButton:active::after {
+.dropdownToolbarButton:is(:hover, :focus-visible, :active)::after {
   background-color: var(--toolbar-icon-hover-bg-color);
 }
 
@@ -869,10 +835,8 @@ body {
   left: 6px;
 }
 
-.toolbarButton:hover::before,
-.toolbarButton:focus-visible::before,
-.secondaryToolbarButton:hover::before,
-.secondaryToolbarButton:focus-visible::before {
+.toolbarButton:is(:hover, :focus-visible)::before,
+.secondaryToolbarButton:is(:hover, :focus-visible)::before {
   background-color: var(--toolbar-icon-hover-bg-color);
 }
 
@@ -934,14 +898,12 @@ body {
 }
 
 /*#if GENERIC*/
-#openFile::before,
-#secondaryOpenFile::before {
+:is(#openFile, #secondaryOpenFile)::before {
   mask-image: var(--toolbarButton-openFile-icon);
 }
 /*#endif*/
 
-#download::before,
-#secondaryDownload::before {
+:is(#download, #secondaryDownload)::before {
   mask-image: var(--toolbarButton-download-icon);
 }
 
@@ -949,8 +911,7 @@ a.secondaryToolbarButton {
   padding-top: 5px;
   text-decoration: none;
 }
-a.toolbarButton[href="#"],
-a.secondaryToolbarButton[href="#"] {
+a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
   opacity: 0.5;
   pointer-events: none;
 }
@@ -1170,8 +1131,7 @@ a.secondaryToolbarButton[href="#"] {
   padding: 10px 30px 0;
 }
 
-#thumbnailView > a:active,
-#thumbnailView > a:focus {
+#thumbnailView > a:is(:active, :focus) {
   outline: 0;
 }
 
@@ -1443,8 +1403,7 @@ dialog :link {
     position: relative;
   }
 
-  #printContainer > .printedPage canvas,
-  #printContainer > .printedPage img {
+  #printContainer > .printedPage :is(canvas, img) {
     /* The intrinsic canvas / image size will make sure that we fit the page. */
     max-width: 100%;
     max-height: 100%;
