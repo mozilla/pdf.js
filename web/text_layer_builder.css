@@ -48,10 +48,12 @@
 
 /* Only necessary in Google Chrome, see issue 14205, and most unfortunately
  * the problem doesn't show up in "text" reference tests. */
+/*#if !MOZCENTRAL*/
 .textLayer span.markedContent {
   top: 0;
   height: 0;
 }
+/*#endif*/
 
 .textLayer .highlight {
   margin: -1px;
@@ -88,9 +90,11 @@
 }
 
 /* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
+/*#if !MOZCENTRAL*/
 .textLayer br::selection {
   background: transparent;
 }
+/*#endif*/
 
 .textLayer .endOfContent {
   display: block;
