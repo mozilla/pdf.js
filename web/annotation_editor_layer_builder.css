@@ -137,8 +137,8 @@
   resize: horizontal;
 }
 
-.annotationEditorLayer .freeTextEditor:hover:not(.selectedEditor),
-.annotationEditorLayer .inkEditor:hover:not(.selectedEditor) {
+.annotationEditorLayer
+  :is(.freeTextEditor, .inkEditor):hover:not(.selectedEditor) {
   outline: var(--hover-outline);
 }
 
