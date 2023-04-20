@@ -2345,7 +2345,7 @@ gulp.task(
       opts.cwd = installPath;
       distPath = path.relative(installPath, distPath);
     }
-    safeSpawnSync("npm", ["install", "--force", distPath], opts);
+    safeSpawnSync("npm", ["install", distPath], opts);
     done();
   })
 );
