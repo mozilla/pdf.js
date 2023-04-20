@@ -105,13 +105,11 @@ body {
   outline: none;
 }
 
-.dialogButton:hover,
-.dialogButton:focus-visible {
+.dialogButton:is(:hover, :focus-visible) {
   background-color: var(--dialog-button-hover-bg-color);
 }
 
-.dialogButton:hover > span,
-.dialogButton:focus-visible > span {
+.dialogButton:is(:hover, :focus-visible) > span {
   color: var(--dialog-button-hover-color);
 }
 
@@ -196,8 +194,7 @@ body {
   overflow: hidden;
 }
 
-.toolbarButton[disabled],
-.dialogButton[disabled] {
+:is(.toolbarButton .dialogButton)[disabled] {
   opacity: 0.5;
 }
 
