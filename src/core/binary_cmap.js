@@ -32,7 +32,7 @@ function hexToStr(a, size) {
   if (size === 3) {
     return String.fromCharCode(a[0], a[1], a[2], a[3]);
   }
-  return String.fromCharCode.apply(null, a.subarray(0, size + 1));
+  return String.fromCharCode(...a.subarray(0, size + 1));
 }
 
 function addHex(a, b, size) {
@@ -133,12 +133,12 @@ class BinaryCMapStream {
   }
 
   readString() {
-    const len = this.readNumber();
-    let s = "";
+    const len = this.readNumber(),
+      buf = new Array(len);
     for (let i = 0; i < len; i++) {
-      s += String.fromCharCode(this.readNumber());
+      buf[i] = this.readNumber();
     }
-    return s;
+    return String.fromCharCode(...buf);
   }
 }
 
