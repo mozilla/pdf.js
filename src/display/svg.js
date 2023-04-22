@@ -34,10 +34,7 @@ let SVGGraphics = class {
   }
 };
 
-if (
-  typeof PDFJSDev === "undefined" ||
-  PDFJSDev.test("!PRODUCTION || GENERIC")
-) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const SVG_DEFAULTS = {
     fontStyle: "normal",
     fontWeight: "normal",

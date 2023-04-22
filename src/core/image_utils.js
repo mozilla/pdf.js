@@ -186,10 +186,7 @@ class GlobalImageCache {
   }
 
   constructor() {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         GlobalImageCache.NUM_PAGES_THRESHOLD > 1,
         "GlobalImageCache - invalid NUM_PAGES_THRESHOLD constant."

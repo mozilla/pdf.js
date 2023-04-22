@@ -296,10 +296,7 @@ function int32(b0, b1, b2, b3) {
 }
 
 function string16(value) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       typeof value === "number" && Math.abs(value) < 2 ** 16,
       `string16: Unexpected input "${value}".`
@@ -309,10 +306,7 @@ function string16(value) {
 }
 
 function safeString16(value) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       typeof value === "number" && !Number.isNaN(value),
       `safeString16: Unexpected input "${value}".`

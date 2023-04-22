@@ -158,7 +158,7 @@ const defaultOptions = {
   },
   pdfBugEnabled: {
     /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION"),
+    value: typeof PDFJSDev === "undefined",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   printResolution: {
@@ -210,9 +210,7 @@ const defaultOptions = {
   cMapUrl: {
     /** @type {string} */
     value:
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
-        ? "../external/bcmaps/"
-        : "../web/cmaps/",
+      typeof PDFJSDev === "undefined" ? "../external/bcmaps/" : "../web/cmaps/",
     kind: OptionKind.API,
   },
   disableAutoFetch: {
@@ -273,7 +271,7 @@ const defaultOptions = {
   standardFontDataUrl: {
     /** @type {string} */
     value:
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      typeof PDFJSDev === "undefined"
         ? "../external/standard_fonts/"
         : "../web/standard_fonts/",
     kind: OptionKind.API,
@@ -293,7 +291,7 @@ const defaultOptions = {
     /** @type {string} */
     value:
       // eslint-disable-next-line no-nested-ternary
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      typeof PDFJSDev === "undefined"
         ? "../src/worker_loader.js"
         : PDFJSDev.test("MOZCENTRAL")
         ? "resource://pdf.js/build/pdf.worker.js"
@@ -301,10 +299,7 @@ const defaultOptions = {
     kind: OptionKind.WORKER,
   },
 };
-if (
-  typeof PDFJSDev === "undefined" ||
-  PDFJSDev.test("!PRODUCTION || GENERIC")
-) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   defaultOptions.defaultUrl = {
     /** @type {string} */
     value: "compressed.tracemonkey-pldi-09.pdf",
@@ -323,7 +318,7 @@ if (
   defaultOptions.sandboxBundleSrc = {
     /** @type {string} */
     value:
-      typeof PDFJSDev === "undefined" || !PDFJSDev.test("PRODUCTION")
+      typeof PDFJSDev === "undefined"
         ? "../build/dev-sandbox/pdf.sandbox.js"
         : "../build/pdf.sandbox.js",
     kind: OptionKind.VIEWER,

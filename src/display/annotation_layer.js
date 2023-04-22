@@ -489,10 +489,7 @@ class AnnotationElement {
    * @returns {Array<HTMLElement>} An array of section elements.
    */
   _renderQuadrilaterals(className) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(this.quadrilaterals, "Missing quadrilaterals during rendering");
     }
 

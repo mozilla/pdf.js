@@ -27,10 +27,7 @@ function validateRangeRequestCapabilities({
   rangeChunkSize,
   disableRange,
 }) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       Number.isInteger(rangeChunkSize) && rangeChunkSize > 0,
       "rangeChunkSize must be an integer larger than zero."
