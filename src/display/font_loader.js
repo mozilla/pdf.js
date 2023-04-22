@@ -32,7 +32,7 @@ class FontLoader {
 
     this.nativeFontFaces = [];
     this.styleElement =
-      typeof PDFJSDev === "undefined" || PDFJSDev.test("!PRODUCTION || TESTING")
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
         ? styleElement
         : null;
 
@@ -116,10 +116,7 @@ class FontLoader {
 
   get isFontLoadingAPISupported() {
     const hasFonts = !!this._document?.fonts;
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       return shadow(
         this,
         "isFontLoadingAPISupported",

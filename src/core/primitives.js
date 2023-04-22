@@ -25,8 +25,7 @@ const Name = (function NameClosure() {
   class Name {
     constructor(name) {
       if (
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
         typeof name !== "string"
       ) {
         unreachable('Name: The "name" must be a string.');
@@ -54,8 +53,7 @@ const Cmd = (function CmdClosure() {
   class Cmd {
     constructor(cmd) {
       if (
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
         typeof cmd !== "string"
       ) {
         unreachable('Cmd: The "cmd" must be a string.');
@@ -103,8 +101,7 @@ class Dict {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
       if (
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
         key2.length < key1.length
       ) {
         unreachable("Dict.get: Expected keys to be ordered by length.");
@@ -112,8 +109,7 @@ class Dict {
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
         if (
-          (typeof PDFJSDev === "undefined" ||
-            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
           key3.length < key2.length
         ) {
           unreachable("Dict.get: Expected keys to be ordered by length.");
@@ -132,8 +128,7 @@ class Dict {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
       if (
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
         key2.length < key1.length
       ) {
         unreachable("Dict.getAsync: Expected keys to be ordered by length.");
@@ -141,8 +136,7 @@ class Dict {
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
         if (
-          (typeof PDFJSDev === "undefined" ||
-            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
           key3.length < key2.length
         ) {
           unreachable("Dict.getAsync: Expected keys to be ordered by length.");
@@ -161,8 +155,7 @@ class Dict {
     let value = this._map[key1];
     if (value === undefined && key2 !== undefined) {
       if (
-        (typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")) &&
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
         key2.length < key1.length
       ) {
         unreachable("Dict.getArray: Expected keys to be ordered by length.");
@@ -170,8 +163,7 @@ class Dict {
       value = this._map[key2];
       if (value === undefined && key3 !== undefined) {
         if (
-          (typeof PDFJSDev === "undefined" ||
-            PDFJSDev.test("!PRODUCTION || TESTING")) &&
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
           key3.length < key2.length
         ) {
           unreachable("Dict.getArray: Expected keys to be ordered by length.");
@@ -209,10 +201,7 @@ class Dict {
   }
 
   set(key, value) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       if (typeof key !== "string") {
         unreachable('Dict.set: The "key" must be a string.');
       } else if (value === undefined) {
@@ -325,8 +314,7 @@ const Ref = (function RefClosure() {
 class RefSet {
   constructor(parent = null) {
     if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")) &&
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       parent &&
       !(parent instanceof RefSet)
     ) {
@@ -405,10 +393,7 @@ function isDict(v, type) {
 }
 
 function isRefsEqual(v1, v2) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     assert(
       v1 instanceof Ref && v2 instanceof Ref,
       "isRefsEqual: Both parameters should be `Ref`s."

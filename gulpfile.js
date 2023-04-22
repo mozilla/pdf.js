@@ -96,7 +96,6 @@ const AUTOPREFIXER_CONFIG = {
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const DEFINES = Object.freeze({
-  PRODUCTION: true,
   SKIP_BABEL: true,
   TESTING: undefined,
   // The main build targets:

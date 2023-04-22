@@ -4529,10 +4529,7 @@ class TranslatedFont {
    * @private
    */
   _removeType3ColorOperators(operatorList, fontBBoxSize = NaN) {
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("!PRODUCTION || TESTING")
-    ) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         operatorList.fnArray[0] === OPS.setCharWidthAndBounds,
         "Type3 glyph shall start with the d1 operator."

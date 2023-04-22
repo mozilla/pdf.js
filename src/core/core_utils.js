@@ -86,10 +86,7 @@ class XRefParseException extends BaseException {
  * @returns {Uint8Array}
  */
 function arrayBuffersToBytes(arr) {
-  if (
-    typeof PDFJSDev === "undefined" ||
-    PDFJSDev.test("!PRODUCTION || TESTING")
-  ) {
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
     for (const item of arr) {
       assert(
         item instanceof ArrayBuffer,

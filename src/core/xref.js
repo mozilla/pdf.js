@@ -873,10 +873,7 @@ class XRef {
       xrefEntry = parser.getObj();
     }
     if (!(xrefEntry instanceof BaseStream)) {
-      if (
-        typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("!PRODUCTION || TESTING")
-      ) {
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
         assert(
           xrefEntry !== undefined,
           'fetchUncompressed: The "xrefEntry" cannot be undefined.'
@@ -947,10 +944,7 @@ class XRef {
       const num = nums[i],
         entry = this.entries[num];
       if (entry && entry.offset === tableOffset && entry.gen === i) {
-        if (
-          typeof PDFJSDev === "undefined" ||
-          PDFJSDev.test("!PRODUCTION || TESTING")
-        ) {
+        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
           assert(
             obj !== undefined,
             'fetchCompressed: The "obj" cannot be undefined.'
