@@ -64,7 +64,6 @@ import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 
 const DEFAULT_CACHE_SIZE = 10;
-const ENABLE_PERMISSIONS_CLASS = "enablePermissions";
 
 const PagesCountLimit = {
   FORCE_SCROLL_MODE_PAGE: 15000,
@@ -206,7 +205,7 @@ class PDFViewer {
 
   #containerTopLeft = null;
 
-  #copyCallbackBound = this.#copyCallback.bind(this);
+  #copyCallbackBound = null;
 
   #enablePermissions = false;
 
@@ -225,6 +224,8 @@ class PDFViewer {
   #onVisibilityChange = null;
 
   #scaleTimeoutId = null;
+
+  #textLayerMode = TextLayerMode.ENABLE;
 
   /**
    * @param {PDFViewerOptions} options
@@ -259,7 +260,7 @@ class PDFViewer {
     this.downloadManager = options.downloadManager || null;
     this.findController = options.findController || null;
     this._scriptingManager = options.scriptingManager || null;
-    this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
+    this.#textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.#annotationEditorMode =
@@ -565,15 +566,6 @@ class PDFViewer {
     };
   }
 
-  #createHiddenCopyElement() {
-    if (this.#hiddenCopyElement) {
-      return;
-    }
-    const element = (this.#hiddenCopyElement = document.createElement("div"));
-    element.id = "hiddenCopyElement";
-    this.viewer.before(element);
-  }
-
   /**
    * Currently only *some* permissions are supported.
    * @returns {Object}
@@ -582,17 +574,17 @@ class PDFViewer {
     const params = {
       annotationEditorMode: this.#annotationEditorMode,
       annotationMode: this.#annotationMode,
-      textLayerMode: this.textLayerMode,
+      textLayerMode: this.#textLayerMode,
     };
     if (!permissions) {
-      this.#createHiddenCopyElement();
       return params;
     }
 
-    if (!permissions.includes(PermissionFlag.COPY)) {
-      this.viewer.classList.add(ENABLE_PERMISSIONS_CLASS);
-    } else {
-      this.#createHiddenCopyElement();
+    if (
+      !permissions.includes(PermissionFlag.COPY) &&
+      this.#textLayerMode === TextLayerMode.ENABLE
+    ) {
+      params.textLayerMode = TextLayerMode.ENABLE_PERMISSIONS;
     }
 
     if (!permissions.includes(PermissionFlag.MODIFY_CONTENTS)) {
@@ -683,7 +675,7 @@ class PDFViewer {
     return texts.join("\n");
   }
 
-  #copyCallback(event) {
+  #copyCallback(textLayerMode, event) {
     const selection = document.getSelection();
     const { focusNode, anchorNode } = selection;
     if (
@@ -699,6 +691,11 @@ class PDFViewer {
       //    including this element so having it in the selection means that all
       //    has been selected.
 
+      if (textLayerMode === TextLayerMode.ENABLE_PERMISSIONS) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       // TODO: if all the pages are rendered we don't need to wait for
       // getAllText and we could just get text from the Selection object.
 
@@ -831,6 +828,13 @@ class PDFViewer {
         const { annotationEditorMode, annotationMode, textLayerMode } =
           this.#initializePermissions(permissions);
 
+        if (textLayerMode !== TextLayerMode.DISABLE) {
+          const element = (this.#hiddenCopyElement =
+            document.createElement("div"));
+          element.id = "hiddenCopyElement";
+          this.viewer.before(element);
+        }
+
         if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
           const mode = annotationEditorMode;
 
@@ -906,6 +910,10 @@ class PDFViewer {
           this._scriptingManager?.setDocument(pdfDocument); // Enable scripting.
 
           if (this.#hiddenCopyElement) {
+            this.#copyCallbackBound = this.#copyCallback.bind(
+              this,
+              textLayerMode
+            );
             document.addEventListener("copy", this.#copyCallbackBound);
           }
 
@@ -1051,11 +1059,10 @@ class PDFViewer {
     this._updateScrollMode();
 
     this.viewer.removeAttribute("lang");
-    // Reset all PDF document permissions.
-    this.viewer.classList.remove(ENABLE_PERMISSIONS_CLASS);
 
     if (this.#hiddenCopyElement) {
       document.removeEventListener("copy", this.#copyCallbackBound);
+      this.#copyCallbackBound = null;
 
       this.#hiddenCopyElement.remove();
       this.#hiddenCopyElement = null;

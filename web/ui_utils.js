@@ -49,6 +49,7 @@ const SidebarView = {
 const TextLayerMode = {
   DISABLE: 0,
   ENABLE: 1,
+  ENABLE_PERMISSIONS: 2,
 };
 
 const ScrollMode = {
