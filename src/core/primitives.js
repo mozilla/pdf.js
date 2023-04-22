@@ -18,61 +18,49 @@ import { assert, shadow, unreachable } from "../shared/util.js";
 const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
 
-const Name = (function NameClosure() {
-  let nameCache = Object.create(null);
+let CmdCache = Object.create(null);
+let NameCache = Object.create(null);
+let RefCache = Object.create(null);
 
-  // eslint-disable-next-line no-shadow
-  class Name {
-    constructor(name) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-        typeof name !== "string"
-      ) {
-        unreachable('Name: The "name" must be a string.');
-      }
-      this.name = name;
-    }
+function clearPrimitiveCaches() {
+  CmdCache = Object.create(null);
+  NameCache = Object.create(null);
+  RefCache = Object.create(null);
+}
 
-    static get(name) {
-      // eslint-disable-next-line no-restricted-syntax
-      return nameCache[name] || (nameCache[name] = new Name(name));
+class Name {
+  constructor(name) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      typeof name !== "string"
+    ) {
+      unreachable('Name: The "name" must be a string.');
     }
-
-    static _clearCache() {
-      nameCache = Object.create(null);
-    }
+    this.name = name;
   }
 
-  return Name;
-})();
+  static get(name) {
+    // eslint-disable-next-line no-restricted-syntax
+    return NameCache[name] || (NameCache[name] = new Name(name));
+  }
+}
 
-const Cmd = (function CmdClosure() {
-  let cmdCache = Object.create(null);
-
-  // eslint-disable-next-line no-shadow
-  class Cmd {
-    constructor(cmd) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-        typeof cmd !== "string"
-      ) {
-        unreachable('Cmd: The "cmd" must be a string.');
-      }
-      this.cmd = cmd;
+class Cmd {
+  constructor(cmd) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      typeof cmd !== "string"
+    ) {
+      unreachable('Cmd: The "cmd" must be a string.');
     }
-
-    static get(cmd) {
-      // eslint-disable-next-line no-restricted-syntax
-      return cmdCache[cmd] || (cmdCache[cmd] = new Cmd(cmd));
-    }
-
-    static _clearCache() {
-      cmdCache = Object.create(null);
-    }
+    this.cmd = cmd;
   }
 
-  return Cmd;
-})();
+  static get(cmd) {
+    // eslint-disable-next-line no-restricted-syntax
+    return CmdCache[cmd] || (CmdCache[cmd] = new Cmd(cmd));
+  }
+}
 
 const nonSerializable = function nonSerializableClosure() {
   return nonSerializable; // Creating closure on some variable.
@@ -276,38 +264,27 @@ class Dict {
   }
 }
 
-const Ref = (function RefClosure() {
-  let refCache = Object.create(null);
-
-  // eslint-disable-next-line no-shadow
-  class Ref {
-    constructor(num, gen) {
-      this.num = num;
-      this.gen = gen;
-    }
-
-    toString() {
-      // This function is hot, so we make the string as compact as possible.
-      // |this.gen| is almost always zero, so we treat that case specially.
-      if (this.gen === 0) {
-        return `${this.num}R`;
-      }
-      return `${this.num}R${this.gen}`;
-    }
-
-    static get(num, gen) {
-      const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
-      // eslint-disable-next-line no-restricted-syntax
-      return refCache[key] || (refCache[key] = new Ref(num, gen));
-    }
-
-    static _clearCache() {
-      refCache = Object.create(null);
-    }
+class Ref {
+  constructor(num, gen) {
+    this.num = num;
+    this.gen = gen;
   }
 
-  return Ref;
-})();
+  toString() {
+    // This function is hot, so we make the string as compact as possible.
+    // |this.gen| is almost always zero, so we treat that case specially.
+    if (this.gen === 0) {
+      return `${this.num}R`;
+    }
+    return `${this.num}R${this.gen}`;
+  }
+
+  static get(num, gen) {
+    const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
+    // eslint-disable-next-line no-restricted-syntax
+    return RefCache[key] || (RefCache[key] = new Ref(num, gen));
+  }
+}
 
 // The reference is identified by number and generation.
 // This structure stores only one instance of the reference.
@@ -400,12 +377,6 @@ function isRefsEqual(v1, v2) {
     );
   }
   return v1.num === v2.num && v1.gen === v2.gen;
-}
-
-function clearPrimitiveCaches() {
-  Cmd._clearCache();
-  Name._clearCache();
-  Ref._clearCache();
 }
 
 export {
