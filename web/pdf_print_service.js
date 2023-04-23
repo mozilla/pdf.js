@@ -273,8 +273,11 @@ window.print = function () {
 };
 
 function dispatchEvent(eventType) {
-  const event = document.createEvent("CustomEvent");
-  event.initCustomEvent(eventType, false, false, "custom");
+  const event = new CustomEvent(eventType, {
+    bubbles: false,
+    cancelable: false,
+    detail: "custom",
+  });
   window.dispatchEvent(event);
 }
 
