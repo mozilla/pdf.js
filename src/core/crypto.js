@@ -1321,10 +1321,6 @@ class PDF20 {
     return k.subarray(0, 32);
   }
 
-  hash(password, concatBytes, userBytes) {
-    return this._hash(password, concatBytes, userBytes);
-  }
-
   checkOwnerPassword(password, ownerValidationSalt, userBytes, ownerPassword) {
     const hashData = new Uint8Array(password.length + 56);
     hashData.set(password, 0);
