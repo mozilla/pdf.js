@@ -40,11 +40,14 @@ class FirefoxCom {
     const request = document.createTextNode("");
     document.documentElement.append(request);
 
-    const sender = document.createEvent("CustomEvent");
-    sender.initCustomEvent("pdf.js.message", true, false, {
-      action,
-      data,
-      sync: true,
+    const sender = new CustomEvent("pdf.js.message", {
+      bubbles: true,
+      cancelable: false,
+      detail: {
+        action,
+        data,
+        sync: true,
+      },
     });
     request.dispatchEvent(sender);
     const response = sender.detail.response;
@@ -88,12 +91,15 @@ class FirefoxCom {
     }
     document.documentElement.append(request);
 
-    const sender = document.createEvent("CustomEvent");
-    sender.initCustomEvent("pdf.js.message", true, false, {
-      action,
-      data,
-      sync: false,
-      responseExpected: !!callback,
+    const sender = new CustomEvent("pdf.js.message", {
+      bubbles: true,
+      cancelable: false,
+      detail: {
+        action,
+        data,
+        sync: false,
+        responseExpected: !!callback,
+      },
     });
     request.dispatchEvent(sender);
   }
