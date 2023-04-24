@@ -20,24 +20,10 @@
  * @property {HTMLButtonElement} download - Button to download the document.
  */
 
-const TIME_BEFORE_SHOWING_TOOLBAR = 200;
-
 class Toolbar {
   #buttons;
 
-  #checkForScrollEndBound = this.#checkForScrollEnd.bind(this);
-
   #eventBus;
-
-  #hideBound = this.#hide.bind(this);
-
-  #mainContainer;
-
-  #scrollEndTimeoutId = null;
-
-  #showBound = this.#show.bind(this);
-
-  #toolbar;
 
   /**
    * @param {ToolbarOptions} options
@@ -45,14 +31,11 @@ class Toolbar {
    * @param {IL10n} _l10n - Localization service.
    */
   constructor(options, eventBus, _l10n) {
-    this.#toolbar = options.container;
-    this.#mainContainer = options.mainContainer;
     this.#eventBus = eventBus;
     this.#buttons = [{ element: options.download, eventName: "download" }];
 
     // Bind the event listeners for click and various other actions.
     this.#bindListeners(options);
-    this.#checkForScrollEnd();
   }
 
   setPageNumber(pageNumber, pageLabel) {}
@@ -75,36 +58,6 @@ class Toolbar {
   }
 
   updateLoadingIndicatorState(loading = false) {}
-
-  #checkForScrollEnd() {
-    if (this.#scrollEndTimeoutId !== null) {
-      clearTimeout(this.#scrollEndTimeoutId);
-    }
-    this.#scrollEndTimeoutId = setTimeout(
-      this.#showBound,
-      TIME_BEFORE_SHOWING_TOOLBAR
-    );
-  }
-
-  #show() {
-    this.#toolbar.classList.toggle("show", true);
-    this.#mainContainer.removeEventListener(
-      "scroll",
-      this.#checkForScrollEndBound
-    );
-    this.#scrollEndTimeoutId = null;
-    this.#mainContainer.addEventListener("scroll", this.#hideBound);
-  }
-
-  #hide() {
-    this.#toolbar.classList.toggle("show", false);
-    this.#mainContainer.removeEventListener("scroll", this.#hideBound);
-    this.#mainContainer.addEventListener(
-      "scroll",
-      this.#checkForScrollEndBound
-    );
-    this.#checkForScrollEnd();
-  }
 }
 
 export { Toolbar };
