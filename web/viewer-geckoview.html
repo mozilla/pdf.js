@@ -81,6 +81,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 
       <div id="mainContainer">
 
+        <div id="floatingToolbar" class="show">
+          <button id="download" class="toolbarButton" title="Save" tabindex="31" data-l10n-id="download">
+            <span data-l10n-id="download_label">Download</span>
+          </button>
+        </div>
+
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
         </div>
@@ -102,12 +108,6 @@ See https://github.com/adobe-type-tools/cmap-resources
       </div>  <!-- dialogContainer -->
 
     </div> <!-- outerContainer -->
-
-    <div id="floatingToolbar">
-      <button id="download" class="toolbarButton" title="Save" tabindex="31" data-l10n-id="save">
-        <span data-l10n-id="save_label">Save</span>
-      </button>
-    </div>
 
 <!--#if !MOZCENTRAL-->
     <input type="file" id="fileInput" class="hidden">
