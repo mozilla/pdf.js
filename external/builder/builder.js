@@ -72,7 +72,7 @@ function preprocess(inFilename, outFilename, defines) {
       ? outFilename
       : function (line) {
           if (!line || AllWhitespaceRegexp.test(line)) {
-            const prevLine = out[out.length - 1];
+            const prevLine = out.at(-1);
             if (!prevLine || AllWhitespaceRegexp.test(prevLine)) {
               return; // Avoid adding consecutive blank lines.
             }

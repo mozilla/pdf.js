@@ -215,7 +215,7 @@ function parseCMap(binaryData) {
     },
     readHexSigned(size) {
       const num = this.readHexNumber(size);
-      const sign = fromHexDigit(num[num.length - 1]) & 1 ? 15 : 0;
+      const sign = fromHexDigit(num.at(-1)) & 1 ? 15 : 0;
       let c = 0;
       let result = "";
       for (const digit of num) {
