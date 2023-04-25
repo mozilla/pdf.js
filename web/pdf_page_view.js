@@ -122,6 +122,8 @@ class PDFPageView {
 
   #renderingState = RenderingStates.INITIAL;
 
+  #textLayerMode = TextLayerMode.ENABLE;
+
   #useThumbnailCanvas = {
     initialOptionalContent: true,
     regularAnnotations: true,
@@ -149,7 +151,7 @@ class PDFPageView {
     this._optionalContentConfigPromise =
       options.optionalContentConfigPromise || null;
     this.hasRestrictedScaling = false;
-    this.textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
+    this.#textLayerMode = options.textLayerMode ?? TextLayerMode.ENABLE;
     this.#annotationMode =
       options.annotationMode ?? AnnotationMode.ENABLE_FORMS;
     this.imageResourcesPath = options.imageResourcesPath || "";
@@ -798,7 +800,7 @@ class PDFPageView {
 
     if (
       !this.textLayer &&
-      this.textLayerMode !== TextLayerMode.DISABLE &&
+      this.#textLayerMode !== TextLayerMode.DISABLE &&
       !pdfPage.isPureXfa
     ) {
       this._accessibilityManager ||= new TextAccessibilityManager();
@@ -807,6 +809,8 @@ class PDFPageView {
         highlighter: this._textHighlighter,
         accessibilityManager: this._accessibilityManager,
         isOffscreenCanvasSupported: this.isOffscreenCanvasSupported,
+        enablePermissions:
+          this.#textLayerMode === TextLayerMode.ENABLE_PERMISSIONS,
       });
       div.append(this.textLayer.div);
     }
