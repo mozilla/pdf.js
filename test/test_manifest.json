@@ -7530,5 +7530,15 @@
       "md5": "1aa34fbb2154f9a647c7fa9e90db0eff",
       "rounds": 1,
       "type": "text"
+   },
+   {
+      "id": "issue16339",
+      "file": "pdfs/issue16339.pdf",
+      "md5": "3da5877f9ad5f783e676cda40ef8fd21",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 2,
+      "lastPage": 3,
+      "type": "eq"
    }
 ]

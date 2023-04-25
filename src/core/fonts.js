@@ -1874,6 +1874,12 @@ class Font {
         flagsCount = 0;
       for (i = 0; i < contoursCount; i++) {
         const endPoint = (glyf[j] << 8) | glyf[j + 1];
+        if (endPoint + 1 - flagsCount <= 1) {
+          // The contour contains 0 or 1 point which doesn't really make sense.
+          // The font renderer is able to strip out such wrong points but it's
+          // likely an error and then we don't want to use hints in such a case.
+          hintsValid = false;
+        }
         flagsCount = endPoint + 1;
         j += 2;
       }
@@ -1920,6 +1926,22 @@ class Font {
         // not enough data for coordinates
         return glyphProfile;
       }
+
+      if (hintsValid && instructionsLength > 0) {
+        const ttContext = {
+          functionsDefined: [],
+          functionsUsed: [],
+          functionsStackDeltas: [],
+          tooComplexToFollowFunctions: false,
+          hintsValid: true,
+        };
+        sanitizeTTProgram(
+          { data: glyf.subarray(instructionsStart, instructionsLength) },
+          ttContext
+        );
+        hintsValid = ttContext.hintsValid;
+      }
+
       if (!hintsValid && instructionsLength > 0) {
         dest.set(glyf.subarray(0, instructionsStart), destStart);
         dest.set([0, 0], destStart + instructionsStart);
