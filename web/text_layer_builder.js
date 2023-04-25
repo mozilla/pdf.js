@@ -38,6 +38,8 @@ import { removeNullCharacters } from "./ui_utils.js";
  * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
+  #enablePermissions = false;
+
   #rotation = 0;
 
   #scale = 0;
@@ -48,6 +50,7 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     isOffscreenCanvasSupported = true,
+    enablePermissions = false,
   }) {
     this.textContentItemsStr = [];
     this.renderingDone = false;
@@ -57,6 +60,7 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
+    this.#enablePermissions = enablePermissions === true;
 
     this.div = document.createElement("div");
     this.div.className = "textLayer";
@@ -215,11 +219,13 @@ class TextLayerBuilder {
     });
 
     div.addEventListener("copy", event => {
-      const selection = document.getSelection();
-      event.clipboardData.setData(
-        "text/plain",
-        removeNullCharacters(normalizeUnicode(selection.toString()))
-      );
+      if (!this.#enablePermissions) {
+        const selection = document.getSelection();
+        event.clipboardData.setData(
+          "text/plain",
+          removeNullCharacters(normalizeUnicode(selection.toString()))
+        );
+      }
       event.preventDefault();
       event.stopPropagation();
     });
