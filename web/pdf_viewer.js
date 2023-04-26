@@ -691,18 +691,18 @@ class PDFViewer {
       //    including this element so having it in the selection means that all
       //    has been selected.
 
-      if (textLayerMode === TextLayerMode.ENABLE_PERMISSIONS) {
+      if (
+        this.#getAllTextInProgress ||
+        textLayerMode === TextLayerMode.ENABLE_PERMISSIONS
+      ) {
         event.preventDefault();
         event.stopPropagation();
         return;
       }
+      this.#getAllTextInProgress = true;
+
       // TODO: if all the pages are rendered we don't need to wait for
       // getAllText and we could just get text from the Selection object.
-
-      if (this.#getAllTextInProgress) {
-        return;
-      }
-      this.#getAllTextInProgress = true;
 
       // Select all the document.
       const savedCursor = this.container.style.cursor;
