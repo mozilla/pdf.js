@@ -1715,9 +1715,11 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
         throw new FormatError("invalid key length");
       }
 
+      const ownerBytes = stringToBytes(dict.get("O")),
+        userBytes = stringToBytes(dict.get("U"));
       // prepare keys
-      const ownerPassword = stringToBytes(dict.get("O")).subarray(0, 32);
-      const userPassword = stringToBytes(dict.get("U")).subarray(0, 32);
+      const ownerPassword = ownerBytes.subarray(0, 32);
+      const userPassword = userBytes.subarray(0, 32);
       const flags = dict.get("P");
       const revision = dict.get("R");
       // meaningful when V is 4 or 5
@@ -1734,8 +1736,7 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
             password = utf8StringToString(password);
           } catch (ex) {
             warn(
-              "CipherTransformFactory: " +
-                "Unable to convert UTF8 encoded password."
+              "CipherTransformFactory: Unable to convert UTF8 encoded password."
             );
           }
         }
@@ -1755,17 +1756,11 @@ const CipherTransformFactory = (function CipherTransformFactoryClosure() {
           encryptMetadata
         );
       } else {
-        const ownerValidationSalt = stringToBytes(dict.get("O")).subarray(
-          32,
-          40
-        );
-        const ownerKeySalt = stringToBytes(dict.get("O")).subarray(40, 48);
-        const uBytes = stringToBytes(dict.get("U")).subarray(0, 48);
-        const userValidationSalt = stringToBytes(dict.get("U")).subarray(
-          32,
-          40
-        );
-        const userKeySalt = stringToBytes(dict.get("U")).subarray(40, 48);
+        const ownerValidationSalt = ownerBytes.subarray(32, 40);
+        const ownerKeySalt = ownerBytes.subarray(40, 48);
+        const uBytes = userBytes.subarray(0, 48);
+        const userValidationSalt = userBytes.subarray(32, 40);
+        const userKeySalt = userBytes.subarray(40, 48);
         const ownerEncryption = stringToBytes(dict.get("OE"));
         const userEncryption = stringToBytes(dict.get("UE"));
         const perms = stringToBytes(dict.get("Perms"));
