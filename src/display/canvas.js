@@ -1950,6 +1950,8 @@ class CanvasGraphics {
     }
 
     const name = fontObj.loadedName || "sans-serif";
+    const typeface =
+      fontObj.systemFontInfo?.css || `"${name}", ${fontObj.fallbackName}`;
 
     let bold = "normal";
     if (fontObj.black) {
@@ -1958,7 +1960,6 @@ class CanvasGraphics {
       bold = "bold";
     }
     const italic = fontObj.italic ? "italic" : "normal";
-    const typeface = `"${name}", ${fontObj.fallbackName}`;
 
     // Some font backends cannot handle fonts below certain size.
     // Keeping the font at minimal size and using the fontSizeScale to change
