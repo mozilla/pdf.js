@@ -47,11 +47,6 @@ class NetworkManager {
     this.isHttp = /^https?:/i.test(url);
     this.httpHeaders = (this.isHttp && args.httpHeaders) || Object.create(null);
     this.withCredentials = args.withCredentials || false;
-    this.getXhr =
-      args.getXhr ||
-      function NetworkManager_getXhr() {
-        return new XMLHttpRequest();
-      };
 
     this.currXhrId = 0;
     this.pendingRequests = Object.create(null);
@@ -73,7 +68,7 @@ class NetworkManager {
   }
 
   request(args) {
-    const xhr = this.getXhr();
+    const xhr = new XMLHttpRequest();
     const xhrId = this.currXhrId++;
     const pendingRequest = (this.pendingRequests[xhrId] = { xhr });
 
