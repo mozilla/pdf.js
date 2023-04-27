@@ -68,7 +68,6 @@ const COMMON_WEB_FILES = [
 ];
 const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
-const REPO = "git@github.com:mozilla/pdf.js.git";
 const DIST_REPO_URL = "https://github.com/mozilla/pdfjs-dist";
 
 const builder = require("./external/builder/builder.js");
@@ -2133,33 +2132,6 @@ gulp.task("wintersmith", function (done) {
   });
 });
 
-function ghPagesGit(done) {
-  const VERSION = getVersionJSON().version;
-  const reason = process.env.PDFJS_UPDATE_REASON;
-
-  safeSpawnSync("git", ["init"], { cwd: GH_PAGES_DIR });
-  safeSpawnSync("git", ["remote", "add", "origin", REPO], {
-    cwd: GH_PAGES_DIR,
-  });
-  safeSpawnSync("git", ["add", "-A"], { cwd: GH_PAGES_DIR });
-  safeSpawnSync(
-    "git",
-    [
-      "commit",
-      "-am",
-      "gh-pages site created via gulpfile.js script",
-      "-m",
-      "PDF.js version " + VERSION + (reason ? " - " + reason : ""),
-    ],
-    { cwd: GH_PAGES_DIR }
-  );
-  safeSpawnSync("git", ["branch", "-m", "gh-pages"], { cwd: GH_PAGES_DIR });
-
-  console.log();
-  console.log("Website built in " + GH_PAGES_DIR);
-  done();
-}
-
 gulp.task(
   "web",
   gulp.series(
@@ -2167,8 +2139,7 @@ gulp.task(
     "generic-legacy",
     "jsdoc",
     ghPagesPrepare,
-    "wintersmith",
-    ghPagesGit
+    "wintersmith"
   )
 );
 
