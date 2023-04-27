@@ -273,7 +273,7 @@ class AnnotationFactory {
             baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
             const buffer = [];
             baseFontRef = xref.getNewTemporaryRef();
-            writeObject(baseFontRef, baseFont, buffer, null);
+            await writeObject(baseFontRef, baseFont, buffer, null);
             dependencies.push({ ref: baseFontRef, data: buffer.join("") });
           }
           promises.push(
@@ -1479,7 +1479,7 @@ class MarkupAnnotation extends Annotation {
       const transform = xref.encrypt
         ? xref.encrypt.createCipherTransform(apRef.num, apRef.gen)
         : null;
-      writeObject(apRef, ap, buffer, transform);
+      await writeObject(apRef, ap, buffer, transform);
       dependencies.push({ ref: apRef, data: buffer.join("") });
     } else {
       annotationDict = this.createNewDict(annotation, xref, {});
@@ -1489,7 +1489,7 @@ class MarkupAnnotation extends Annotation {
     const transform = xref.encrypt
       ? xref.encrypt.createCipherTransform(annotationRef.num, annotationRef.gen)
       : null;
-    writeObject(annotationRef, annotationDict, buffer, transform);
+    await writeObject(annotationRef, annotationDict, buffer, transform);
 
     return { ref: annotationRef, data: buffer.join("") };
   }
@@ -1922,7 +1922,7 @@ class WidgetAnnotation extends Annotation {
         appearanceDict.set("Matrix", rotationMatrix);
       }
 
-      writeObject(newRef, appearanceStream, buffer, newTransform);
+      await writeObject(newRef, appearanceStream, buffer, newTransform);
 
       changes.push(
         // data for the new AP
@@ -1937,7 +1937,7 @@ class WidgetAnnotation extends Annotation {
     }
 
     dict.set("M", `D:${getModificationDate()}`);
-    writeObject(this.ref, dict, buffer, originalTransform);
+    await writeObject(this.ref, dict, buffer, originalTransform);
 
     changes[0].data = buffer.join("");
 
@@ -2814,7 +2814,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     const buffer = [`${this.ref.num} ${this.ref.gen} obj\n`];
-    writeDict(dict, buffer, originalTransform);
+    await writeDict(dict, buffer, originalTransform);
     buffer.push("\nendobj\n");
 
     return [{ ref: this.ref, data: buffer.join(""), xfa }];
@@ -2873,7 +2873,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
         }
         parent.set("V", name);
         parentBuffer = [`${this.parent.num} ${this.parent.gen} obj\n`];
-        writeDict(parent, parentBuffer, parentTransform);
+        await writeDict(parent, parentBuffer, parentTransform);
         parentBuffer.push("\nendobj\n");
       } else if (this.parent instanceof Dict) {
         this.parent.set("V", name);
@@ -2897,7 +2897,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     const buffer = [`${this.ref.num} ${this.ref.gen} obj\n`];
-    writeDict(dict, buffer, originalTransform);
+    await writeDict(dict, buffer, originalTransform);
     buffer.push("\nendobj\n");
 
     const newRefs = [{ ref: this.ref, data: buffer.join(""), xfa }];
