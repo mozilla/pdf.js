@@ -829,11 +829,15 @@ describe("Interaction", () => {
             expect(total).withContext(`In ${browserName}`).toEqual(`£${sum}`);
           }
 
+          await page.waitForSelector('.page[data-page-number = "4"]', {
+            timeout: 0,
+          });
+
           // Some unrendered annotations have been updated, so check
           // that they've the correct value when rendered.
           await page.evaluate(() => {
             window.document
-              .querySelectorAll('[data-page-number="4"][class="page"]')[0]
+              .querySelector('.page[data-page-number = "4"]')
               .scrollIntoView();
           });
           await page.waitForSelector(getSelector("299R"), {
@@ -1738,11 +1742,11 @@ describe("Interaction", () => {
             "window.PDFViewerApplication.scriptingReady === true"
           );
 
-          await page.type(getSelector("30R"), "abc");
+          await page.type(getSelector("30R"), "abc", { delay: 100 });
           await page.waitForFunction(
             `${getQuerySelector("30R")}.value !== "abc"`
           );
-          await page.waitForTimeout(10);
+          await page.waitForTimeout(100);
 
           const focusedId = await page.evaluate(_ =>
             window.document.activeElement.getAttribute("data-element-id")
