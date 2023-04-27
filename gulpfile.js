@@ -58,7 +58,6 @@ const MINIFIED_LEGACY_DIR = BUILD_DIR + "minified-legacy/";
 const JSDOC_BUILD_DIR = BUILD_DIR + "jsdoc/";
 const GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 const SRC_DIR = "src/";
-const LIB_DIR = BUILD_DIR + "lib/";
 const DIST_DIR = BUILD_DIR + "dist/";
 const TYPES_DIR = BUILD_DIR + "types/";
 const TMP_DIR = BUILD_DIR + "tmp/";
@@ -2233,7 +2232,6 @@ gulp.task(
     "components-legacy",
     "image_decoders",
     "image_decoders-legacy",
-    "lib",
     "minified",
     "minified-legacy",
     "types",
@@ -2323,9 +2321,6 @@ gulp.task(
             base: IMAGE_DECODERS_LEGACY_DIR,
           })
           .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
-        gulp
-          .src(LIB_DIR + "**/*", { base: LIB_DIR })
-          .pipe(gulp.dest(DIST_DIR + "lib/")),
         gulp
           .src(TYPES_DIR + "**/*", { base: TYPES_DIR })
           .pipe(gulp.dest(DIST_DIR + "types/")),
