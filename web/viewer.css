@@ -627,8 +627,8 @@ body {
   margin: 5px;
 }
 
-#findMsg {
-  color: rgba(251, 0, 0, 1);
+#findMsg[data-status="notFound"] {
+  font-weight: bold;
 }
 
 :is(#findResultsCount, #findMsg):empty {

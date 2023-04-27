@@ -129,6 +129,7 @@ class PDFFindBar {
     this.findField.setAttribute("aria-invalid", state === FindState.NOT_FOUND);
 
     findMsg.then(msg => {
+      this.findMsg.setAttribute("data-status", status);
       this.findMsg.textContent = msg;
       this.#adjustWidth();
     });
