@@ -826,10 +826,9 @@ class PartialEvaluator {
       if (imageRef) {
         this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
 
-        assert(!isInline, "Cannot cache an inline image globally.");
-        this.globalImageCache.addPageIndex(imageRef, this.pageIndex);
-
         if (cacheGlobally) {
+          assert(!isInline, "Cannot cache an inline image globally.");
+
           this.globalImageCache.setData(imageRef, {
             objId,
             fn: OPS.paintImageXObject,
