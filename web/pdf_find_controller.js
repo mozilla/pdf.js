@@ -517,6 +517,18 @@ class PDFFindController {
     });
   }
 
+  /**
+   * @typedef {Object} PDFFindControllerScrollMatchIntoViewParams
+   * @property {HTMLElement} element
+   * @property {number} selectedLeft
+   * @property {number} pageIndex
+   * @property {number} matchIndex
+   */
+
+  /**
+   * Scroll the current match into view.
+   * @param {PDFFindControllerScrollMatchIntoViewParams}
+   */
   scrollMatchIntoView({
     element = null,
     selectedLeft = 0,
