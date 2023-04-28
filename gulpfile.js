@@ -743,43 +743,39 @@ function createBuildNumber(done) {
   console.log("### Getting extension build number");
 
   exec(
-    "git log --format=oneline " + config.baseVersion + "..",
+    `git log --format="%h" ${config.baseVersion}..`,
     function (err, stdout, stderr) {
-      let buildNumber = 0;
-      if (!err) {
+      let buildNumber = 0,
+        buildCommit = "";
+      if (!err && stdout) {
         // Build number is the number of commits since base version
-        buildNumber = stdout ? stdout.match(/\n/g).length : 0;
+        const lines = stdout.split("\n");
+
+        buildNumber = lines.length - 1;
+        buildCommit = lines[0];
       } else {
         console.log(
           "This is not a Git repository; using default build number."
         );
       }
+      console.log(
+        `Extension build number [commit]: ${buildNumber} [${buildCommit}])`
+      );
 
-      console.log("Extension build number: " + buildNumber);
-
-      const version = config.versionPrefix + buildNumber;
-
-      exec('git log --format="%h" -n 1', function (err2, stdout2, stderr2) {
-        let buildCommit = "";
-        if (!err2) {
-          buildCommit = stdout2.replace("\n", "");
-        }
-
-        createStringSource(
-          "version.json",
-          JSON.stringify(
-            {
-              version,
-              build: buildNumber,
-              commit: buildCommit,
-            },
-            null,
-            2
-          )
+      createStringSource(
+        "version.json",
+        JSON.stringify(
+          {
+            version: config.versionPrefix + buildNumber,
+            build: buildNumber,
+            commit: buildCommit,
+          },
+          null,
+          2
         )
-          .pipe(gulp.dest(BUILD_DIR))
-          .on("end", done);
-      });
+      )
+        .pipe(gulp.dest(BUILD_DIR))
+        .on("end", done);
     }
   );
 }
