@@ -513,6 +513,20 @@ class PDFPageView {
     }
   }
 
+  /**
+   * @typedef {Object} PDFPageViewUpdateParameters
+   * @property {number} [scale] The new scale, if specified.
+   * @property {number} [rotation] The new rotation, if specified.
+   * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise]
+   *   A promise that is resolved with an {@link OptionalContentConfig}
+   *   instance. The default value is `null`.
+   * @property {number} [drawingDelay]
+   */
+
+  /**
+   * Update e.g. the scale and/or rotation of the page.
+   * @param {PDFPageViewUpdateParameters}
+   */
   update({
     scale = 0,
     rotation = null,
