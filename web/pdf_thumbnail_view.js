@@ -163,13 +163,6 @@ class PDFThumbnailView {
     this.image?.replaceWith(this._placeholderImg);
     this.#updateDims();
 
-    if (this.canvas) {
-      // Zeroing the width and height causes Firefox to release graphics
-      // resources immediately, which can greatly reduce memory consumption.
-      this.canvas.width = 0;
-      this.canvas.height = 0;
-      delete this.canvas;
-    }
     if (this.image) {
       this.image.removeAttribute("src");
       delete this.image;
