@@ -331,14 +331,12 @@ class PDFViewer {
    * @type {boolean} - True if all {PDFPageView} objects are initialized.
    */
   get pageViewsReady() {
-    if (!this._pagesCapability.settled) {
-      return false;
-    }
     // Prevent printing errors when 'disableAutoFetch' is set, by ensuring
     // that *all* pages have in fact been completely loaded.
-    return this._pages.every(function (pageView) {
-      return pageView?.pdfPage;
-    });
+    return (
+      this._pagesCapability.settled &&
+      this._pages.every(pageView => pageView?.pdfPage)
+    );
   }
 
   /**
