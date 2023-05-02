@@ -156,7 +156,7 @@ class PDFSidebar {
    */
   switchView(view, forceOpen = false) {
     const isViewChanged = view !== this.active;
-    let shouldForceRendering = false;
+    let forceRendering = false;
 
     switch (view) {
       case SidebarView.NONE:
@@ -166,7 +166,7 @@ class PDFSidebar {
         return; // Closing will trigger rendering and dispatch the event.
       case SidebarView.THUMBS:
         if (this.isOpen && isViewChanged) {
-          shouldForceRendering = true;
+          forceRendering = true;
         }
         break;
       case SidebarView.OUTLINE:
@@ -224,9 +224,9 @@ class PDFSidebar {
       this.open();
       return; // Opening will trigger rendering and dispatch the event.
     }
-    if (shouldForceRendering) {
+    if (forceRendering) {
       this.#updateThumbnailViewer();
-      this.#forceRendering();
+      this.onToggled();
     }
     if (isViewChanged) {
       this.#dispatchEvent();
@@ -246,7 +246,7 @@ class PDFSidebar {
     if (this.active === SidebarView.THUMBS) {
       this.#updateThumbnailViewer();
     }
-    this.#forceRendering();
+    this.onToggled();
     this.#dispatchEvent();
 
     this.#hideUINotification();
@@ -263,7 +263,7 @@ class PDFSidebar {
     this.outerContainer.classList.add("sidebarMoving");
     this.outerContainer.classList.remove("sidebarOpen");
 
-    this.#forceRendering();
+    this.onToggled();
     this.#dispatchEvent();
   }
 
@@ -284,16 +284,6 @@ class PDFSidebar {
       source: this,
       view: this.visibleView,
     });
-  }
-
-  #forceRendering() {
-    if (this.onToggled) {
-      this.onToggled();
-    } else {
-      // Fallback
-      this.pdfViewer.forceRendering();
-      this.pdfThumbnailViewer.forceRendering();
-    }
   }
 
   #updateThumbnailViewer() {
