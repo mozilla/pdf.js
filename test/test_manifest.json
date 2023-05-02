@@ -7530,5 +7530,17 @@
       "md5": "1aa34fbb2154f9a647c7fa9e90db0eff",
       "rounds": 1,
       "type": "text"
+   },
+   {
+      "id": "annotation-fileattachment-forced-colors-eq",
+      "file": "pdfs/annotation-fileattachment.pdf",
+      "md5": "d20ecee4b53c81b2dd44c8715a1b4a83",
+      "rounds": 1,
+      "pageColors": {
+         "background": "black",
+         "foreground": "#00FF00"
+      },
+      "annotations": true,
+      "type": "eq"
    }
 ]

@@ -3326,7 +3326,8 @@ class InternalRenderTask {
       this.canvasFactory,
       this.filterFactory,
       { optionalContentConfig },
-      this.annotationCanvasMap
+      this.annotationCanvasMap,
+      this.pageColors
     );
     this.gfx.beginDrawing({
       transform,
@@ -3342,7 +3343,7 @@ class InternalRenderTask {
   cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
-    this.gfx?.endDrawing(this.pageColors);
+    this.gfx?.endDrawing();
 
     if (this._canvas) {
       InternalRenderTask.#canvasInUse.delete(this._canvas);
