@@ -947,7 +947,8 @@ class CanvasGraphics {
     canvasFactory,
     filterFactory,
     { optionalContentConfig, markedContentStack = null },
-    annotationCanvasMap
+    annotationCanvasMap,
+    pageColors
   ) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState(
@@ -983,6 +984,7 @@ class CanvasGraphics {
     this.viewportScale = 1;
     this.outputScaleX = 1;
     this.outputScaleY = 1;
+    this.pageColors = pageColors;
 
     this._cachedScaleForStroking = null;
     this._cachedGetSinglePixelWidth = null;
@@ -1135,7 +1137,7 @@ class CanvasGraphics {
     }
   }
 
-  endDrawing(pageColors = null) {
+  endDrawing() {
     this.#restoreInitialState();
 
     this.cachedCanvases.clear();
@@ -1153,11 +1155,14 @@ class CanvasGraphics {
       cache.clear();
     }
     this._cachedBitmapsMap.clear();
+    this.#drawFilter();
+  }
 
-    if (pageColors) {
+  #drawFilter() {
+    if (this.pageColors) {
       const hcmFilterId = this.filterFactory.addHCMFilter(
-        pageColors.foreground,
-        pageColors.background
+        this.pageColors.foreground,
+        this.pageColors.background
       );
       if (hcmFilterId !== "none") {
         const savedFilter = this.ctx.filter;
@@ -2712,6 +2717,7 @@ class CanvasGraphics {
         this.annotationCanvasMap.set(id, canvas);
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
+        this.ctx.save();
         this.ctx.setTransform(scaleX, 0, 0, -scaleY, 0, height * scaleY);
 
         resetCtxToDefault(this.ctx);
@@ -2735,6 +2741,9 @@ class CanvasGraphics {
 
   endAnnotation() {
     if (this.annotationCanvas) {
+      this.ctx.restore();
+      this.#drawFilter();
+
       this.ctx = this.annotationCanvas.savedCtx;
       delete this.annotationCanvas.savedCtx;
       delete this.annotationCanvas;
