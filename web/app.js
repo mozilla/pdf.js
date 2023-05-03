@@ -36,7 +36,6 @@ import {
 import {
   AnnotationEditorType,
   build,
-  createPromiseCapability,
   FeatureTest,
   getDocument,
   getFilenameFromUrl,
@@ -49,6 +48,7 @@ import {
   MissingPDFException,
   OPS,
   PDFWorker,
+  PromiseCapability,
   shadow,
   UnexpectedResponseException,
   version,
@@ -156,7 +156,7 @@ class DefaultExternalServices {
 
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
-  _initializedCapability: createPromiseCapability(),
+  _initializedCapability: new PromiseCapability(),
   appConfig: null,
   pdfDocument: null,
   pdfLoadingTask: null,
@@ -309,12 +309,7 @@ const PDFViewerApplication = {
     const { mainContainer, viewerContainer } = this.appConfig,
       params = parseQueryString(hash);
 
-    if (
-      typeof PDFJSDev === "undefined" &&
-      params.get("workermodules") === "true"
-    ) {
-      AppOptions.set("workerSrc", "../src/pdf.worker.js");
-    } else if (params.get("disableworker") === "true") {
+    if (params.get("disableworker") === "true") {
       try {
         await loadFakeWorker();
       } catch (ex) {

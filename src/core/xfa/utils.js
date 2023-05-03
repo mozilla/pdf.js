@@ -75,7 +75,7 @@ function getStringOption(data, options) {
 }
 
 function getMeasurement(str, def = "0") {
-  def = def || "0";
+  def ||= "0";
   if (!str) {
     return getMeasurement(def);
   }

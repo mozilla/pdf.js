@@ -451,7 +451,7 @@ class AnnotationElement {
   _createPopup(trigger, data) {
     let container = this.container;
     if (this.quadrilaterals) {
-      trigger = trigger || this.quadrilaterals;
+      trigger ||= this.quadrilaterals;
       container = this.quadrilaterals[0];
     }
 

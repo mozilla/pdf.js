@@ -1220,9 +1220,9 @@ const CalRGBCS = (function CalRGBCSClosure() {
           "WhitePoint missing - required for color space CalRGB"
         );
       }
-      blackPoint = blackPoint || new Float32Array(3);
-      gamma = gamma || new Float32Array([1, 1, 1]);
-      matrix = matrix || new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+      blackPoint ||= new Float32Array(3);
+      gamma ||= new Float32Array([1, 1, 1]);
+      matrix ||= new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
       // Translate arguments to spec variables.
       const XW = whitePoint[0];
@@ -1396,8 +1396,8 @@ const LabCS = (function LabCSClosure() {
           "WhitePoint missing - required for color space Lab"
         );
       }
-      blackPoint = blackPoint || [0, 0, 0];
-      range = range || [-100, 100, -100, 100];
+      blackPoint ||= [0, 0, 0];
+      range ||= [-100, 100, -100, 100];
 
       // Translate args to spec variables
       this.XW = whitePoint[0];

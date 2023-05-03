@@ -18,8 +18,8 @@
 
 import {
   AbortException,
-  createPromiseCapability,
   FeatureTest,
+  PromiseCapability,
   Util,
 } from "../shared/util.js";
 import { deprecated, setLayerDimensions } from "./display_utils.js";
@@ -317,7 +317,7 @@ class TextLayerRenderTask {
     this._reader = null;
     this._textDivProperties = textDivProperties || new WeakMap();
     this._canceled = false;
-    this._capability = createPromiseCapability();
+    this._capability = new PromiseCapability();
     this._layoutTextParams = {
       prevFontSize: null,
       prevFontFamily: null,
@@ -417,7 +417,7 @@ class TextLayerRenderTask {
    * @private
    */
   _render() {
-    const capability = createPromiseCapability();
+    const capability = new PromiseCapability();
     let styleCache = Object.create(null);
 
     if (this._isReadableStream) {

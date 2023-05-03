@@ -513,9 +513,7 @@ function isPDFFunction(v) {
 }
 
 class PostScriptStack {
-  static get MAX_STACK_SIZE() {
-    return shadow(this, "MAX_STACK_SIZE", 100);
-  }
+  static MAX_STACK_SIZE = 100;
 
   constructor(initialStack) {
     this.stack = initialStack ? Array.from(initialStack) : [];

@@ -743,7 +743,7 @@ function validateOS2Table(os2, file) {
 }
 
 function createOS2Table(properties, charstrings, override) {
-  override = override || {
+  override ||= {
     unitsPerEm: 0,
     yMax: 0,
     yMin: 0,
@@ -3090,10 +3090,7 @@ class Font {
       let charCodes = null;
       for (const charCode in charCodeToGlyphId) {
         if (glyphId === charCodeToGlyphId[charCode]) {
-          if (!charCodes) {
-            charCodes = [];
-          }
-          charCodes.push(charCode | 0);
+          (charCodes ||= []).push(charCode | 0);
         }
       }
       return charCodes;
@@ -3285,8 +3282,7 @@ class Font {
         break; // the non-zero width found
       }
     }
-    width = width || this.defaultWidth;
-    return shadow(this, "spaceWidth", width);
+    return shadow(this, "spaceWidth", width || this.defaultWidth);
   }
 
   /**

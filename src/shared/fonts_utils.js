@@ -293,7 +293,7 @@ var Type2Parser = function type2Parser(aFilePath) {
             font.set(token.name, stack.pop());
             break;
           default:
-            if (token.operand && token.operand.length) {
+            if (token.operand?.length) {
               var array = [];
               for (var j = 0; j < token.operand.length; j++) {
                 array.push(stack.pop());
