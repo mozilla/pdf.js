@@ -120,11 +120,7 @@ class PostScriptToken {
   }
 
   static getOperator(op) {
-    const opValue = PostScriptToken.opCache[op];
-    if (opValue) {
-      return opValue;
-    }
-    return (PostScriptToken.opCache[op] = new PostScriptToken(
+    return (PostScriptToken.opCache[op] ||= new PostScriptToken(
       PostScriptTokenTypes.OPERATOR,
       op
     ));

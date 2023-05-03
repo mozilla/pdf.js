@@ -17,7 +17,6 @@ import {
   assert,
   FormatError,
   info,
-  shadow,
   unreachable,
   Util,
   warn,
@@ -89,9 +88,7 @@ class Pattern {
 class BaseShading {
   // A small number to offset the first/last color stops so we can insert ones
   // to support extend. Number.MIN_VALUE is too small and breaks the extend.
-  static get SMALL_NUMBER() {
-    return shadow(this, "SMALL_NUMBER", 1e-6);
-  }
+  static SMALL_NUMBER = 1e-6;
 
   constructor() {
     if (this.constructor === BaseShading) {
@@ -366,29 +363,20 @@ const getB = (function getBClosure() {
     }
     return lut;
   }
-  const cache = [];
+  const cache = Object.create(null);
 
   return function (count) {
-    if (!cache[count]) {
-      cache[count] = buildB(count);
-    }
-    return cache[count];
+    return (cache[count] ||= buildB(count));
   };
 })();
 
 class MeshShading extends BaseShading {
-  static get MIN_SPLIT_PATCH_CHUNKS_AMOUNT() {
-    return shadow(this, "MIN_SPLIT_PATCH_CHUNKS_AMOUNT", 3);
-  }
+  static MIN_SPLIT_PATCH_CHUNKS_AMOUNT = 3;
 
-  static get MAX_SPLIT_PATCH_CHUNKS_AMOUNT() {
-    return shadow(this, "MAX_SPLIT_PATCH_CHUNKS_AMOUNT", 20);
-  }
+  static MAX_SPLIT_PATCH_CHUNKS_AMOUNT = 20;
 
   // Count of triangles per entire mesh bounds.
-  static get TRIANGLE_DENSITY() {
-    return shadow(this, "TRIANGLE_DENSITY", 20);
-  }
+  static TRIANGLE_DENSITY = 20;
 
   constructor(
     stream,

@@ -17,7 +17,6 @@ import {
   AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
-  createPromiseCapability,
   ImageKind,
   InvalidPDFException,
   MissingPDFException,
@@ -26,6 +25,7 @@ import {
   PasswordException,
   PasswordResponses,
   PermissionFlag,
+  PromiseCapability,
   UnknownErrorException,
 } from "../../src/shared/util.js";
 import {
@@ -137,7 +137,7 @@ describe("api", function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = createPromiseCapability();
+      const progressReportedCapability = new PromiseCapability();
       // Attach the callback that is used to report loading progress;
       // similarly to how viewer.js works.
       loadingTask.onProgress = function (progressData) {
@@ -199,7 +199,7 @@ describe("api", function () {
       const loadingTask = getDocument(typedArrayPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = createPromiseCapability();
+      const progressReportedCapability = new PromiseCapability();
       loadingTask.onProgress = function (data) {
         progressReportedCapability.resolve(data);
       };
@@ -229,7 +229,7 @@ describe("api", function () {
       const loadingTask = getDocument(arrayBufferPdf);
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const progressReportedCapability = createPromiseCapability();
+      const progressReportedCapability = new PromiseCapability();
       loadingTask.onProgress = function (data) {
         progressReportedCapability.resolve(data);
       };
@@ -291,8 +291,8 @@ describe("api", function () {
       const loadingTask = getDocument(buildGetDocumentParams("pr6531_1.pdf"));
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
 
-      const passwordNeededCapability = createPromiseCapability();
-      const passwordIncorrectCapability = createPromiseCapability();
+      const passwordNeededCapability = new PromiseCapability();
+      const passwordIncorrectCapability = new PromiseCapability();
       // Attach the callback that is used to request a password;
       // similarly to how the default viewer handles passwords.
       loadingTask.onPassword = function (updatePassword, reason) {

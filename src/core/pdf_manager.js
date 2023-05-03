@@ -48,8 +48,7 @@ class BasePdfManager {
 
     // Check `OffscreenCanvas` support once, rather than repeatedly throughout
     // the worker-thread code.
-    args.evaluatorOptions.isOffscreenCanvasSupported =
-      args.evaluatorOptions.isOffscreenCanvasSupported &&
+    args.evaluatorOptions.isOffscreenCanvasSupported &&=
       FeatureTest.isOffscreenCanvasSupported;
     this.evaluatorOptions = args.evaluatorOptions;
   }

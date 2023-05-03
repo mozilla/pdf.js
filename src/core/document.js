@@ -495,12 +495,8 @@ class Page {
         for (const { opList, separateForm, separateCanvas } of opLists) {
           pageOpList.addOpList(opList);
 
-          if (separateForm) {
-            form = separateForm;
-          }
-          if (separateCanvas) {
-            canvas = separateCanvas;
-          }
+          form ||= separateForm;
+          canvas ||= separateCanvas;
         }
         pageOpList.flush(
           /* lastChunk = */ true,
@@ -580,8 +576,8 @@ class Page {
       return [];
     }
 
-    const textContentPromises = [];
-    const annotationsData = [];
+    const annotationsData = [],
+      textContentPromises = [];
     let partialEvaluator;
 
     const intentAny = !!(intent & RenderingIntentFlag.ANY),
@@ -597,19 +593,18 @@ class Page {
       }
 
       if (annotation.hasTextContent && isVisible) {
-        if (!partialEvaluator) {
-          partialEvaluator = new PartialEvaluator({
-            xref: this.xref,
-            handler,
-            pageIndex: this.pageIndex,
-            idFactory: this._localIdFactory,
-            fontCache: this.fontCache,
-            builtInCMapCache: this.builtInCMapCache,
-            standardFontDataCache: this.standardFontDataCache,
-            globalImageCache: this.globalImageCache,
-            options: this.evaluatorOptions,
-          });
-        }
+        partialEvaluator ||= new PartialEvaluator({
+          xref: this.xref,
+          handler,
+          pageIndex: this.pageIndex,
+          idFactory: this._localIdFactory,
+          fontCache: this.fontCache,
+          builtInCMapCache: this.builtInCMapCache,
+          standardFontDataCache: this.standardFontDataCache,
+          globalImageCache: this.globalImageCache,
+          options: this.evaluatorOptions,
+        });
+
         textContentPromises.push(
           annotation
             .extractTextContent(partialEvaluator, task, this.view)
@@ -665,10 +660,7 @@ class Page {
               continue;
             }
             if (annotation instanceof PopupAnnotation) {
-              if (!popupAnnotations) {
-                popupAnnotations = [];
-              }
-              popupAnnotations.push(annotation);
+              (popupAnnotations ||= []).push(annotation);
               continue;
             }
             sortedAnnotations.push(annotation);

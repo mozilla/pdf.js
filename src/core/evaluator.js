@@ -18,7 +18,6 @@ import {
   AbortException,
   assert,
   CMapCompressionType,
-  createPromiseCapability,
   FONT_IDENTITY_MATRIX,
   FormatError,
   IDENTITY_MATRIX,
@@ -26,6 +25,7 @@ import {
   isArrayEqual,
   normalizeUnicode,
   OPS,
+  PromiseCapability,
   shadow,
   stringToPDFString,
   TextRenderingMode,
@@ -182,13 +182,9 @@ function incrementCachedImageMaskCount(data) {
 
 // Trying to minimize Date.now() usage and check every 100 time.
 class TimeSlotManager {
-  static get TIME_SLOT_DURATION_MS() {
-    return shadow(this, "TIME_SLOT_DURATION_MS", 20);
-  }
+  static TIME_SLOT_DURATION_MS = 20;
 
-  static get CHECK_TIME_EVERY() {
-    return shadow(this, "CHECK_TIME_EVERY", 100);
-  }
+  static CHECK_TIME_EVERY = 100;
 
   constructor() {
     this.reset();
@@ -519,7 +515,7 @@ class PartialEvaluator {
       }
 
       if (smask && smask.backdrop) {
-        colorSpace = colorSpace || ColorSpace.singletons.rgb;
+        colorSpace ||= ColorSpace.singletons.rgb;
         smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
       }
 
@@ -1253,7 +1249,7 @@ class PartialEvaluator {
       return this.fontCache.get(font.cacheKey);
     }
 
-    const fontCapability = createPromiseCapability();
+    const fontCapability = new PromiseCapability();
 
     let preEvaluatedFont;
     try {
@@ -1272,10 +1268,7 @@ class PartialEvaluator {
     }
 
     if (hash && descriptor instanceof Dict) {
-      if (!descriptor.fontAliases) {
-        descriptor.fontAliases = Object.create(null);
-      }
-      const fontAliases = descriptor.fontAliases;
+      const fontAliases = (descriptor.fontAliases ||= Object.create(null));
 
       if (fontAliases[hash]) {
         const aliasFontRef = fontAliases[hash].aliasRef;
@@ -1668,8 +1661,8 @@ class PartialEvaluator {
   }) {
     // Ensure that `resources`/`initialState` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
-    resources = resources || Dict.empty;
-    initialState = initialState || new EvalState();
+    resources ||= Dict.empty;
+    initialState ||= new EvalState();
 
     if (!operatorList) {
       throw new Error('getOperatorList: missing "operatorList" parameter');
@@ -2276,11 +2269,11 @@ class PartialEvaluator {
   }) {
     // Ensure that `resources`/`stateManager` is correctly initialized,
     // even if the provided parameter is e.g. `null`.
-    resources = resources || Dict.empty;
-    stateManager = stateManager || new StateManager(new TextState());
+    resources ||= Dict.empty;
+    stateManager ||= new StateManager(new TextState());
 
     if (includeMarkedContent) {
-      markedContentData = markedContentData || { level: 0 };
+      markedContentData ||= { level: 0 };
     }
 
     const textContent = {
@@ -4255,7 +4248,7 @@ class PartialEvaluator {
         }
       }
     }
-    fontName = fontName || baseFont;
+    fontName ||= baseFont;
 
     if (!(fontName instanceof Name)) {
       throw new FormatError("invalid font name");
@@ -4841,9 +4834,7 @@ class EvaluatorPreprocessor {
     return shadow(this, "opMap", getOPMap());
   }
 
-  static get MAX_INVALID_PATH_OPS() {
-    return shadow(this, "MAX_INVALID_PATH_OPS", 10);
-  }
+  static MAX_INVALID_PATH_OPS = 10;
 
   constructor(stream, xref, stateManager = new StateManager()) {
     // TODO(mduan): pass array of knownCommands rather than this.opMap

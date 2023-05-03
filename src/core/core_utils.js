@@ -38,22 +38,6 @@ function getLookupTableFactory(initializer) {
   };
 }
 
-function getArrayLookupTableFactory(initializer) {
-  let lookup;
-  return function () {
-    if (initializer) {
-      let arr = initializer();
-      initializer = null;
-      lookup = Object.create(null);
-      for (let i = 0, ii = arr.length; i < ii; i += 2) {
-        lookup[arr[i]] = arr[i + 1];
-      }
-      arr = null;
-    }
-    return lookup;
-  };
-}
-
 class MissingDataException extends BaseException {
   constructor(begin, end) {
     super(`Missing data [${begin}, ${end})`, "MissingDataException");
@@ -153,10 +137,7 @@ function getInheritableProperty({
       if (stopWhenFound) {
         return value;
       }
-      if (!values) {
-        values = [];
-      }
-      values.push(value);
+      (values ||= []).push(value);
     }
     dict = dict.get("Parent");
   }
@@ -338,7 +319,7 @@ function _collectJS(entry, xref, list, parents) {
       } else if (typeof js === "string") {
         code = js;
       }
-      code = code && stringToPDFString(code).replaceAll("\x00", "");
+      code &&= stringToPDFString(code).replaceAll("\x00", "");
       if (code) {
         list.push(code);
       }
@@ -616,7 +597,6 @@ export {
   encodeToXmlString,
   escapePDFName,
   escapeString,
-  getArrayLookupTableFactory,
   getInheritableProperty,
   getLookupTableFactory,
   getNewAnnotationsMap,

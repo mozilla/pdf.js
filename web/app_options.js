@@ -292,7 +292,7 @@ const defaultOptions = {
     value:
       // eslint-disable-next-line no-nested-ternary
       typeof PDFJSDev === "undefined"
-        ? "../src/worker_loader.js"
+        ? "../src/pdf.worker.js"
         : PDFJSDev.test("MOZCENTRAL")
         ? "resource://pdf.js/build/pdf.worker.js"
         : "../build/pdf.worker.js",

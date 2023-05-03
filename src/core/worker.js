@@ -16,12 +16,12 @@
 import {
   AbortException,
   assert,
-  createPromiseCapability,
   getVerbosityLevel,
   info,
   InvalidPDFException,
   MissingPDFException,
   PasswordException,
+  PromiseCapability,
   setVerbosityLevel,
   stringToPDFString,
   UnexpectedResponseException,
@@ -46,7 +46,7 @@ class WorkerTask {
   constructor(name) {
     this.name = name;
     this.terminated = false;
-    this._capability = createPromiseCapability();
+    this._capability = new PromiseCapability();
   }
 
   get finished() {
@@ -228,7 +228,7 @@ class WorkerMessageHandler {
         password,
         rangeChunkSize,
       };
-      const pdfManagerCapability = createPromiseCapability();
+      const pdfManagerCapability = new PromiseCapability();
       let newPdfManager;
 
       if (data) {
@@ -261,8 +261,7 @@ class WorkerMessageHandler {
           pdfManagerArgs.source = pdfStream;
           pdfManagerArgs.length = fullRequest.contentLength;
           // We don't need auto-fetch when streaming is enabled.
-          pdfManagerArgs.disableAutoFetch =
-            pdfManagerArgs.disableAutoFetch || fullRequest.isStreamingSupported;
+          pdfManagerArgs.disableAutoFetch ||= fullRequest.isStreamingSupported;
 
           newPdfManager = new NetworkPdfManager(pdfManagerArgs);
           // There may be a chance that `newPdfManager` is not initialized for
@@ -661,7 +660,6 @@ class WorkerMessageHandler {
               });
             }
 
-            const lastXRefStreamPos = xref.lastXRefStreamPos;
             newXrefInfo = {
               rootRef: xref.trailer.getRaw("Root") || null,
               encryptRef: xref.trailer.getRaw("Encrypt") || null,
@@ -669,8 +667,7 @@ class WorkerMessageHandler {
               infoRef: xref.trailer.getRaw("Info") || null,
               info: infoObj,
               fileIds: xref.trailer.get("ID") || null,
-              startXRef:
-                lastXRefStreamPos === null ? startXRef : lastXRefStreamPos,
+              startXRef: xref.lastXRefStreamPos ?? startXRef,
               filename,
             };
           }
