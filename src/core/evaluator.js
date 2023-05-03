@@ -4199,7 +4199,6 @@ class PartialEvaluator {
         const standardFontName = getStandardFontName(baseFontName);
         let file = null;
         if (standardFontName) {
-          properties.isStandardFont = true;
           file = await this.fetchStandardFontData(standardFontName);
           properties.isInternalFont = !!file;
         }
@@ -4271,7 +4270,6 @@ class PartialEvaluator {
       warn(`translateFont - fetching "${fontName.name}" font file: "${ex}".`);
       fontFile = new NullStream();
     }
-    let isStandardFont = false;
     let isInternalFont = false;
     let glyphScaleFactors = null;
     if (fontFile) {
@@ -4304,7 +4302,6 @@ class PartialEvaluator {
     } else if (!isType3Font) {
       const standardFontName = getStandardFontName(fontName.name);
       if (standardFontName) {
-        isStandardFont = true;
         fontFile = await this.fetchStandardFontData(standardFontName);
         isInternalFont = !!fontFile;
       }
@@ -4318,7 +4315,6 @@ class PartialEvaluator {
       length1,
       length2,
       length3,
-      isStandardFont,
       isInternalFont,
       loadedName: baseDict.loadedName,
       composite,
