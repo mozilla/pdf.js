@@ -1695,7 +1695,8 @@ class WidgetAnnotation extends Annotation {
     if (
       renderForms &&
       !(this instanceof SignatureWidgetAnnotation) &&
-      !this.data.noHTML
+      !this.data.noHTML &&
+      !this.data.hasOwnCanvas
     ) {
       return {
         opList: new OperatorList(),
@@ -2425,6 +2426,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
+    this.data.hasOwnCanvas = this.data.readOnly && !this.data.noHTML;
     this._hasText = true;
 
     const dict = params.dict;
