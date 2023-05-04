@@ -1,0 +1,374 @@
+%PDF-1.5
+%¿÷¢þ
+%QDF-1.0
+
+%% Original object ID: 20 0
+1 0 obj
+<<
+  /Pages 3 0 R
+  /Type /Catalog
+>>
+endobj
+
+%% Original object ID: 19 0
+2 0 obj
+<<
+  /Creator (cairo 1.9.5 \(http://cairographics.org\))
+  /Producer (cairo 1.9.5 \(http://cairographics.org\))
+>>
+endobj
+
+%% Original object ID: 1 0
+3 0 obj
+<<
+  /Count 1
+  /Kids [
+    4 0 R
+  ]
+  /Type /Pages
+>>
+endobj
+
+%% Page 1
+%% Original object ID: 7 0
+4 0 obj
+<<
+  /Contents 5 0 R
+  /Group <<
+    /CS /DeviceRGB
+    /S /Transparency
+    /Type /Group
+  >>
+  /MediaBox [
+    0
+    0
+    612
+    792
+  ]
+  /Parent 3 0 R
+  /Resources 7 0 R
+  /Type /Page
+>>
+endobj
+
+%% Contents for page 1
+%% Original object ID: 3 0
+5 0 obj
+<<
+  /Length 6 0 R
+>>
+stream
+q
+Q q
+54 738 504 -661.699 re W n
+1 1 1 rg /a0 gs
+54 738 504 -661.699 re f
+Q q
+61 716 225 -450 re W n
+q /Pattern cs /p5 scn /a0 gs
+61 716 225 -450 re f
+Q
+Q q
+54 738 504 -661.699 re W n
+0 0 0 RG /a0 gs
+1 w
+0 J
+0 j
+[] 0.0 d
+10 M 60.5 716.5 226 -451 re S
+56 736 424 -23 re W n
+Q q
+Q
+endstream
+endobj
+
+6 0 obj
+279
+endobj
+
+%% Original object ID: 2 0
+7 0 obj
+<<
+  /ExtGState <<
+    /a0 <<
+      /CA 1
+      /ca 1
+    >>
+  >>
+  /Pattern <<
+    /p5 9 0 R
+  >>
+>>
+endobj
+
+%% Original object ID: 6 0
+8 0 obj
+<<
+>>
+endobj
+
+%% Original object ID: 5 0
+9 0 obj
+<<
+  /Matrix [
+    1
+    0
+    0
+    -1
+    61
+    716
+  ]
+  /PatternType 2
+  /Shading <<
+    /ColorSpace /DeviceRGB
+    /Coords [
+      112.5
+      -900
+      112.5
+      900
+    ]
+    /Domain [
+      -6
+      6
+    ]
+    /Extend [
+      false
+      false
+    ]
+    /Function 13 0 R
+    /ShadingType 2
+  >>
+  /Type /Pattern
+>>
+endobj
+
+%% Original object ID: 18 0
+10 0 obj
+<<
+>>
+endobj
+
+%% Original object ID: 15 0
+11 0 obj
+<<
+  /Length 12 0 R
+>>
+stream
+endstream
+endobj
+
+12 0 obj
+0
+endobj
+
+%% Original object ID: 12 0
+13 0 obj
+<<
+  /Bounds [
+    -5
+    -4
+    -3
+    -2
+    -1
+    0
+    1
+    2
+    3
+    4
+    5
+  ]
+  /Domain [
+    -6
+    6
+  ]
+  /Encode [
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+    0
+    1
+  ]
+  /FunctionType 3
+  /Functions [
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+    15 0 R
+  ]
+>>
+endobj
+
+%% Original object ID: 17 0
+14 0 obj
+<<
+>>
+endobj
+
+%% Original object ID: 11 0
+15 0 obj
+<<
+  /Bounds [
+    0.5
+    0.5
+  ]
+  /Domain [
+    0
+    1
+  ]
+  /Encode [
+    0
+    1
+    0
+    1
+    0
+    1
+  ]
+  /FunctionType 3
+  /Functions [
+    18 0 R
+    19 0 R
+    20 0 R
+  ]
+>>
+endobj
+
+%% Original object ID: 13 0
+16 0 obj
+<<
+  /Length1 9948
+  /Length 17 0 R
+>>
+stream
+endstream
+endobj
+
+%QDF: ignore_newline
+17 0 obj
+0
+endobj
+
+%% Original object ID: 8 0
+18 0 obj
+<<
+  /C0 [
+    0
+    1
+    0
+  ]
+  /C1 [
+    0
+    1
+    0
+  ]
+  /Domain [
+    0
+    1
+  ]
+  /FunctionType 2
+  /N 1
+>>
+endobj
+
+%% Original object ID: 9 0
+19 0 obj
+<<
+  /C0 [
+    0
+    1
+    0
+  ]
+  /C1 [
+    0
+    0
+    1
+  ]
+  /Domain [
+    0
+    1
+  ]
+  /FunctionType 2
+  /N 1
+>>
+endobj
+
+%% Original object ID: 10 0
+20 0 obj
+<<
+  /C0 [
+    0
+    0
+    1
+  ]
+  /C1 [
+    0
+    0
+    1
+  ]
+  /Domain [
+    0
+    1
+  ]
+  /FunctionType 2
+  /N 1
+>>
+endobj
+
+xref
+0 21
+0000000000 65535 f 
+0000000053 00000 n 
+0000000135 00000 n 
+0000000293 00000 n 
+0000000402 00000 n 
+0000000661 00000 n 
+0000000995 00000 n 
+0000001042 00000 n 
+0000001187 00000 n 
+0000001236 00000 n 
+0000001608 00000 n 
+0000001659 00000 n 
+0000001716 00000 n 
+0000001763 00000 n 
+0000002259 00000 n 
+0000002310 00000 n 
+0000002543 00000 n 
+0000002637 00000 n 
+0000002683 00000 n 
+0000002846 00000 n 
+0000003010 00000 n 
+trailer <<
+  /Info 2 0 R
+  /Root 1 0 R
+  /Size 21
+  /ID [<68de518de1319b4dc1c1bfbdee95b02c><68de518de1319b4dc1c1bfbdee95b02c>]
+>>
+startxref
+3146
+%%EOF
