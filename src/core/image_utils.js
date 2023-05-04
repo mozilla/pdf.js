@@ -208,27 +208,20 @@ class GlobalImageCache {
   }
 
   shouldCache(ref, pageIndex) {
-    const pageIndexSet = this._refCache.get(ref);
-    const numPages = pageIndexSet
-      ? pageIndexSet.size + (pageIndexSet.has(pageIndex) ? 0 : 1)
-      : 1;
-
-    if (numPages < GlobalImageCache.NUM_PAGES_THRESHOLD) {
-      return false;
-    }
-    if (!this._imageCache.has(ref) && this._cacheLimitReached) {
-      return false;
-    }
-    return true;
-  }
-
-  addPageIndex(ref, pageIndex) {
     let pageIndexSet = this._refCache.get(ref);
     if (!pageIndexSet) {
       pageIndexSet = new Set();
       this._refCache.put(ref, pageIndexSet);
     }
     pageIndexSet.add(pageIndex);
+
+    if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
+      return false;
+    }
+    if (!this._imageCache.has(ref) && this._cacheLimitReached) {
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -266,7 +259,7 @@ class GlobalImageCache {
   setData(ref, data) {
     if (!this._refCache.has(ref)) {
       throw new Error(
-        'GlobalImageCache.setData - expected "addPageIndex" to have been called.'
+        'GlobalImageCache.setData - expected "shouldCache" to have been called.'
       );
     }
     if (this._imageCache.has(ref)) {
