@@ -889,6 +889,15 @@ class WidgetAnnotationElement extends AnnotationElement {
     return this.container;
   }
 
+  showElementAndHideCanvas(element) {
+    if (this.data.hasOwnCanvas) {
+      if (element.previousSibling?.nodeName === "CANVAS") {
+        element.previousSibling.hidden = true;
+      }
+      element.hidden = false;
+    }
+  }
+
   _getKeyModifier(event) {
     const { isWin, isMac } = FeatureTest.platform;
     return (isWin && event.ctrlKey) || (isMac && event.metaKey);
@@ -1069,6 +1078,9 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           element.style.overflowX = "hidden";
         }
       }
+      if (this.data.hasOwnCanvas) {
+        element.hidden = true;
+      }
       GetElementsByNameSet.add(element);
       element.setAttribute("data-element-id", id);
 
@@ -1118,6 +1130,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         });
 
         element.addEventListener("updatefromsandbox", jsEvent => {
+          this.showElementAndHideCanvas(jsEvent.target);
           const actions = {
             value(event) {
               elementData.userValue = event.detail.value ?? "";
