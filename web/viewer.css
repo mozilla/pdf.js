@@ -60,10 +60,12 @@
   --field-bg-color: rgba(255, 255, 255, 1);
   --field-border-color: rgba(187, 187, 188, 1);
   --treeitem-color: rgba(0, 0, 0, 0.8);
+  --treeitem-bg-color: rgba(0, 0, 0, 0.15);
   --treeitem-hover-color: rgba(0, 0, 0, 0.9);
   --treeitem-selected-color: rgba(0, 0, 0, 0.9);
   --treeitem-selected-bg-color: rgba(0, 0, 0, 0.25);
-  --sidebaritem-bg-color: rgba(0, 0, 0, 0.15);
+  --thumbnail-hover-color: rgba(0, 0, 0, 0.1);
+  --thumbnail-selected-color: rgba(0, 0, 0, 0.2);
   --doorhanger-bg-color: rgba(255, 255, 255, 1);
   --doorhanger-border-color: rgba(12, 12, 13, 0.2);
   --doorhanger-hover-color: rgba(12, 12, 13, 1);
@@ -150,10 +152,12 @@
     --field-bg-color: rgba(64, 64, 68, 1);
     --field-border-color: rgba(115, 115, 115, 1);
     --treeitem-color: rgba(255, 255, 255, 0.8);
+    --treeitem-bg-color: rgba(255, 255, 255, 0.15);
     --treeitem-hover-color: rgba(255, 255, 255, 0.9);
     --treeitem-selected-color: rgba(255, 255, 255, 0.9);
     --treeitem-selected-bg-color: rgba(255, 255, 255, 0.25);
-    --sidebaritem-bg-color: rgba(255, 255, 255, 0.15);
+    --thumbnail-hover-color: rgba(255, 255, 255, 0.1);
+    --thumbnail-selected-color: rgba(255, 255, 255, 0.2);
     --doorhanger-bg-color: rgba(74, 74, 79, 1);
     --doorhanger-border-color: rgba(39, 39, 43, 1);
     --doorhanger-hover-color: rgba(249, 249, 250, 1);
@@ -1136,56 +1140,49 @@ a:is(.toolbarButton, .secondaryToolbarButton)[href="#"] {
 }
 
 .thumbnail {
+  /* Define these variables here, and not in :root, since the individual
+     thumbnails may have different sizes. */
+  --thumbnail-width: 0;
+  --thumbnail-height: 0;
+
   float: var(--inline-start);
+  width: var(--thumbnail-width);
+  height: var(--thumbnail-height);
   margin: 0 10px 5px;
+  padding: 1px;
+  border: 7px solid transparent;
+  border-radius: 2px;
 }
 
 #thumbnailView > a:last-of-type > .thumbnail {
   margin-bottom: 10px;
 }
-#thumbnailView > a:last-of-type > .thumbnail:not([data-loaded]) {
-  margin-bottom: 9px;
-}
 
-.thumbnail:not([data-loaded]) {
-  border: 1px dashed rgba(132, 132, 132, 1);
-  margin: -1px 9px 4px;
+a:focus > .thumbnail,
+.thumbnail:hover {
+  border-color: var(--thumbnail-hover-color);
+}
+.thumbnail.selected {
+  border-color: var(--thumbnail-selected-color) !important;
 }
 
 .thumbnailImage {
-  border: 1px solid rgba(0, 0, 0, 0);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
-  opacity: 0.8;
-  z-index: 99;
-  background-color: rgba(255, 255, 255, 1);
-  background-clip: content-box;
-}
-
-.thumbnailSelectionRing {
-  border-radius: 2px;
-  padding: 7px;
-}
-
-a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
-.thumbnail:hover > .thumbnailSelectionRing > .thumbnailImage {
+  width: var(--thumbnail-width);
+  height: var(--thumbnail-height);
   opacity: 0.9;
 }
-
-a:focus > .thumbnail > .thumbnailSelectionRing,
-.thumbnail:hover > .thumbnailSelectionRing {
-  background-color: var(--sidebaritem-bg-color);
-  background-clip: padding-box;
-  color: rgba(255, 255, 255, 0.9);
+a:focus > .thumbnail > .thumbnailImage,
+.thumbnail:hover > .thumbnailImage {
+  opacity: 0.95;
+}
+.thumbnail.selected > .thumbnailImage {
+  opacity: 1 !important;
 }
 
-.thumbnail.selected > .thumbnailSelectionRing > .thumbnailImage {
-  opacity: 1;
-}
-
-.thumbnail.selected > .thumbnailSelectionRing {
-  background-color: var(--sidebaritem-bg-color);
-  background-clip: padding-box;
-  color: rgba(255, 255, 255, 1);
+.thumbnail:not([data-loaded]) > .thumbnailImage {
+  width: calc(var(--thumbnail-width) - 2px);
+  height: calc(var(--thumbnail-height) - 2px);
+  border: 1px dashed rgba(132, 132, 132, 1);
 }
 
 .treeWithDeepNesting > .treeItem,
@@ -1250,7 +1247,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 .treeItemToggler:hover + a,
 .treeItemToggler:hover ~ .treeItems,
 .treeItem > a:hover {
-  background-color: var(--sidebaritem-bg-color);
+  background-color: var(--treeitem-bg-color);
   background-clip: padding-box;
   border-radius: 2px;
   color: var(--treeitem-hover-color);
