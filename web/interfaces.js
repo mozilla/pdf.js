@@ -156,8 +156,9 @@ class IDownloadManager {
   /**
    * @param {string} url
    * @param {string} filename
+   * @param {Object} [options]
    */
-  downloadUrl(url, filename) {}
+  downloadUrl(url, filename, options) {}
 
   /**
    * @param {Uint8Array} data
@@ -178,8 +179,9 @@ class IDownloadManager {
    * @param {Blob} blob
    * @param {string} url
    * @param {string} filename
+   * @param {Object} [options]
    */
-  download(blob, url, filename) {}
+  download(blob, url, filename, options) {}
 }
 
 /**

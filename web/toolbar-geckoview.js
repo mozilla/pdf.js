@@ -32,7 +32,10 @@ class Toolbar {
    */
   constructor(options, eventBus, _l10n) {
     this.#eventBus = eventBus;
-    this.#buttons = [{ element: options.download, eventName: "download" }];
+    this.#buttons = [
+      { element: options.download, eventName: "download" },
+      { element: options.openInApp, eventName: "openinexternalapp" },
+    ];
 
     // Bind the event listeners for click and various other actions.
     this.#bindListeners(options);
