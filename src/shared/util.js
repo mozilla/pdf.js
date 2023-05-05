@@ -896,17 +896,48 @@ class Util {
   }
 }
 
-const PDFStringTranslateTable = [
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x2d8,
-  0x2c7, 0x2c6, 0x2d9, 0x2dd, 0x2db, 0x2da, 0x2dc, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0x2022, 0x2020, 0x2021, 0x2026, 0x2014, 0x2013, 0x192,
-  0x2044, 0x2039, 0x203a, 0x2212, 0x2030, 0x201e, 0x201c, 0x201d, 0x2018,
-  0x2019, 0x201a, 0x2122, 0xfb01, 0xfb02, 0x141, 0x152, 0x160, 0x178, 0x17d,
-  0x131, 0x142, 0x153, 0x161, 0x17e, 0, 0x20ac,
-];
+const PDFStringTranslateTable = {
+  "\x18": "\u02d8",
+  "\x19": "\u02c7",
+  "\x1a": "\u02c6",
+  "\x1b": "\u02d9",
+  "\x1c": "\u02dd",
+  "\x1d": "\u02db",
+  "\x1e": "\u02da",
+  "\x1f": "\u02dc",
+  "\x80": "\u2022",
+  "\x81": "\u2020",
+  "\x82": "\u2021",
+  "\x83": "\u2026",
+  "\x84": "\u2014",
+  "\x85": "\u2013",
+  "\x86": "\u0192",
+  "\x87": "\u2044",
+  "\x88": "\u2039",
+  "\x89": "\u203a",
+  "\x8a": "\u2212",
+  "\x8b": "\u2030",
+  "\x8c": "\u201e",
+  "\x8d": "\u201c",
+  "\x8e": "\u201d",
+  "\x8f": "\u2018",
+  "\x90": "\u2019",
+  "\x91": "\u201a",
+  "\x92": "\u2122",
+  "\x93": "\ufb01",
+  "\x94": "\ufb02",
+  "\x95": "\u0141",
+  "\x96": "\u0152",
+  "\x97": "\u0160",
+  "\x98": "\u0178",
+  "\x99": "\u017d",
+  "\x9a": "\u0131",
+  "\x9b": "\u0142",
+  "\x9c": "\u0153",
+  "\x9d": "\u0161",
+  "\x9e": "\u017e",
+  "\xa0": "\u20ac",
+};
 
 function stringToPDFString(str) {
   if (str[0] >= "\xEF") {
@@ -930,12 +961,11 @@ function stringToPDFString(str) {
     }
   }
   // ISO Latin 1
-  const strBuf = [];
-  for (let i = 0, ii = str.length; i < ii; i++) {
-    const code = PDFStringTranslateTable[str.charCodeAt(i)];
-    strBuf.push(code ? String.fromCharCode(code) : str.charAt(i));
+  const buf = [];
+  for (const ch of str) {
+    buf.push(PDFStringTranslateTable[ch] || ch);
   }
-  return strBuf.join("");
+  return buf.join("");
 }
 
 function stringToUTF8String(str) {
