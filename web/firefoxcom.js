@@ -108,10 +108,11 @@ class FirefoxCom {
 class DownloadManager {
   #openBlobUrls = new WeakMap();
 
-  downloadUrl(url, filename) {
+  downloadUrl(url, filename, options = {}) {
     FirefoxCom.request("download", {
       originalUrl: url,
       filename,
+      options,
     });
   }
 
@@ -160,13 +161,14 @@ class DownloadManager {
     return false;
   }
 
-  download(blob, url, filename) {
+  download(blob, url, filename, options = {}) {
     const blobUrl = URL.createObjectURL(blob);
 
     FirefoxCom.request("download", {
       blobUrl,
       originalUrl: url,
       filename,
+      options,
     });
   }
 }

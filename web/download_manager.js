@@ -49,7 +49,7 @@ function download(blobUrl, filename) {
 class DownloadManager {
   #openBlobUrls = new WeakMap();
 
-  downloadUrl(url, filename) {
+  downloadUrl(url, filename, _options) {
     if (!createValidAbsoluteUrl(url, "http://example.com")) {
       console.error(`downloadUrl - not a valid URL: ${url}`);
       return; // restricted/invalid URL
@@ -110,7 +110,7 @@ class DownloadManager {
     return false;
   }
 
-  download(blob, url, filename) {
+  download(blob, url, filename, _options) {
     const blobUrl = URL.createObjectURL(blob);
     download(blobUrl, filename);
   }
