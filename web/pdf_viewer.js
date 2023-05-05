@@ -447,14 +447,14 @@ class PDFViewer {
   /**
    * @param {number} val - Scale of the pages in percents.
    */
-  set currentScale(val) {
-    if (isNaN(val)) {
+  set currentScale({ value, noScroll = true }) {
+    if (isNaN(value)) {
       throw new Error("Invalid numeric scale.");
     }
     if (!this.pdfDocument) {
       return;
     }
-    this.#setScale(val, { noScroll: false });
+    this.#setScale(value, { noScroll });
   }
 
   /**
@@ -467,11 +467,11 @@ class PDFViewer {
   /**
    * @param val - The scale of the pages (in percent or predefined value).
    */
-  set currentScaleValue(val) {
+  set currentScaleValue({ value, noScroll = true }) {
     if (!this.pdfDocument) {
       return;
     }
-    this.#setScale(val, { noScroll: false });
+    this.#setScale(value, { noScroll });
   }
 
   /**
