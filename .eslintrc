@@ -46,6 +46,7 @@
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/no-array-push-push": "error",
     "unicorn/no-instanceof-array": "error",
+    "unicorn/no-invalid-remove-event-listener": "error",
     "unicorn/no-new-buffer": "error",
     "unicorn/no-useless-spread": "error",
     "unicorn/prefer-array-find": "error",
