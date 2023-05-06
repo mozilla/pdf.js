@@ -746,7 +746,12 @@ class PDFImage {
         }
         return imgData;
       }
-      if (this.image instanceof JpegStream && !this.smask && !this.mask) {
+      if (
+        this.image instanceof JpegStream &&
+        !this.smask &&
+        !this.mask &&
+        !this.needsDecode
+      ) {
         let imageLength = originalHeight * rowBytes;
         if (isOffscreenCanvasSupported && !mustBeResized) {
           let isHandled = false;
