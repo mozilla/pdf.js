@@ -41,6 +41,15 @@
        "lastPage": 2,
        "type": "eq"
     },
+    {  "id": "issue16395",
+       "file": "pdfs/issue16395.pdf",
+       "md5": "a5de985711ec27cd2a2ed97d5f1c536c",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 3,
+       "lastPage": 3,
+       "type": "eq"
+    },
     {  "id": "tracemonkey-fbf",
        "file": "pdfs/tracemonkey.pdf",
        "md5": "9a192d8b1a7dc652a19835f6f08098bd",
