@@ -4230,15 +4230,16 @@ class UnderlineAnnotation extends MarkupAnnotation {
           : [0, 0, 0];
         const strokeAlpha = dict.get("CA");
 
+        // The values 0.571 and 1.3 below corresponds to what Acrobat is doing.
         this._setDefaultAppearance({
           xref,
-          extra: "[] 0 d 1 w",
+          extra: "[] 0 d 0.571 w",
           strokeColor,
           strokeAlpha,
           pointsCallback: (buffer, points) => {
             buffer.push(
-              `${points[2].x} ${points[2].y} m`,
-              `${points[3].x} ${points[3].y} l`,
+              `${points[2].x} ${points[2].y + 1.3} m`,
+              `${points[3].x} ${points[3].y + 1.3} l`,
               "S"
             );
             return [points[0].x, points[1].x, points[3].y, points[1].y];
