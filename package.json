@@ -55,7 +55,6 @@
     "typogr": "^0.6.8",
     "vinyl": "^3.0.0",
     "vinyl-fs": "^3.0.3",
-    "web-streams-polyfill": "^3.2.1",
     "webpack": "^5.80.0",
     "webpack-stream": "^7.0.0",
     "wintersmith": "^2.5.0",
@@ -69,7 +68,7 @@
     "url": "git://github.com/mozilla/pdf.js.git"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "license": "Apache-2.0"
 }

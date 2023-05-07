@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable no-var, unicorn/prefer-at */
+/* eslint-disable no-var */
 
 "use strict";
 
@@ -750,9 +750,7 @@ function refTestPostHandler(req, res) {
       });
     }
 
-    var isDone =
-      taskResults[taskResults.length - 1] &&
-      taskResults[taskResults.length - 1][lastPageNum - 1];
+    var isDone = taskResults.at(-1) && taskResults.at(-1)[lastPageNum - 1];
     if (isDone) {
       checkRefTestResults(browser, id, taskResults);
       session.remaining--;

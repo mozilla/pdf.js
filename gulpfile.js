@@ -80,7 +80,7 @@ const ENV_TARGETS = [
   "Chrome >= 88",
   "Firefox ESR",
   "Safari >= 14.1",
-  "Node >= 16",
+  "Node >= 18",
   "> 1%",
   "not IE > 0",
   "not dead",
@@ -2165,10 +2165,7 @@ function packageJson() {
     license: DIST_LICENSE,
     optionalDependencies: {
       canvas: "^2.11.2",
-    },
-    dependencies: {
       "path2d-polyfill": "^2.0.1",
-      "web-streams-polyfill": "^3.2.1",
     },
     browser: {
       canvas: false,
@@ -2184,7 +2181,7 @@ function packageJson() {
       url: DIST_REPO_URL,
     },
     engines: {
-      node: ">=16",
+      node: ">=18",
     },
   };
 
