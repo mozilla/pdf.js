@@ -57,7 +57,7 @@ class Binder {
   constructor(root) {
     this.root = root;
     this.datasets = root.datasets;
-    if (root.datasets && root.datasets.data) {
+    if (root.datasets?.data) {
       this.data = root.datasets.data;
     } else {
       this.data = new XmlObject(NamespaceIds.datasets.id, "data");
@@ -98,9 +98,7 @@ class Binder {
         formNode[$setValue](createText(value));
       } else if (
         formNode instanceof Field &&
-        formNode.ui &&
-        formNode.ui.choiceList &&
-        formNode.ui.choiceList.open === "multiSelect"
+        formNode.ui?.choiceList?.open === "multiSelect"
       ) {
         const value = data[$getChildren]()
           .map(child => child[$content].trim())
@@ -172,7 +170,7 @@ class Binder {
     // Thirdly, try to find it in attributes.
     generator = this.data[$getAttributeIt](name, /* skipConsumed = */ true);
     match = generator.next().value;
-    if (match && match[$isDataValue]()) {
+    if (match?.[$isDataValue]()) {
       return match;
     }
 
