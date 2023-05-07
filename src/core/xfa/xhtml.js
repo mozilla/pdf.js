@@ -450,7 +450,7 @@ class Html extends XhtmlObject {
 
     if (children.length === 1) {
       const child = children[0];
-      if (child.attributes && child.attributes.class.includes("xfaRich")) {
+      if (child.attributes?.class.includes("xfaRich")) {
         return HTMLResult.success(child);
       }
     }

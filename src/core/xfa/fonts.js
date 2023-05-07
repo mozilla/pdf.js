@@ -65,17 +65,14 @@ class FontFinder {
     }
 
     if (!property) {
-      if (
-        pdfFont.name.includes("Bold") ||
-        (pdfFont.psName && pdfFont.psName.includes("Bold"))
-      ) {
+      if (pdfFont.name.includes("Bold") || pdfFont.psName?.includes("Bold")) {
         property = "bold";
       }
       if (
         pdfFont.name.includes("Italic") ||
         pdfFont.name.endsWith("It") ||
-        (pdfFont.psName &&
-          (pdfFont.psName.includes("Italic") || pdfFont.psName.endsWith("It")))
+        pdfFont.psName?.includes("Italic") ||
+        pdfFont.psName?.endsWith("It")
       ) {
         property += "italic";
       }
@@ -117,9 +114,8 @@ class FontFinder {
     if (maybe.length === 0) {
       for (const [, pdfFont] of this.fonts.entries()) {
         if (
-          pdfFont.regular.name &&
           pdfFont.regular.name
-            .replaceAll(pattern, "")
+            ?.replaceAll(pattern, "")
             .toLowerCase()
             .startsWith(name)
         ) {
@@ -140,9 +136,8 @@ class FontFinder {
     if (maybe.length === 0) {
       for (const pdfFont of this.fonts.values()) {
         if (
-          pdfFont.regular.name &&
           pdfFont.regular.name
-            .replaceAll(pattern, "")
+            ?.replaceAll(pattern, "")
             .toLowerCase()
             .startsWith(name)
         ) {
