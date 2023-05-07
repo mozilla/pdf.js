@@ -273,7 +273,7 @@ function checkDimensions(node, space) {
 
   const ERROR = 2;
   const parent = node[$getSubformParent]();
-  const attempt = (parent[$extra] && parent[$extra].attempt) || 0;
+  const attempt = parent[$extra]?.attempt || 0;
 
   const [, y, w, h] = getTransformedBBox(node);
   switch (parent.layout) {

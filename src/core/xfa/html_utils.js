@@ -81,7 +81,7 @@ const converters = {
     const parent = node[$getSubformParent]();
     let width = node.w;
     const height = node.h;
-    if (parent.layout && parent.layout.includes("row")) {
+    if (parent.layout?.includes("row")) {
       const extra = parent[$extra];
       const colSpan = node.colSpan;
       let w;
@@ -117,7 +117,7 @@ const converters = {
   },
   position(node, style) {
     const parent = node[$getSubformParent]();
-    if (parent && parent.layout && parent.layout !== "position") {
+    if (parent?.layout && parent.layout !== "position") {
       // IRL, we've some x/y in tb layout.
       // Specs say x/y is only used in positioned layout.
       return;
@@ -338,7 +338,7 @@ function computeBbox(node, html, availableSpace) {
 
 function fixDimensions(node) {
   const parent = node[$getSubformParent]();
-  if (parent.layout && parent.layout.includes("row")) {
+  if (parent.layout?.includes("row")) {
     const extra = parent[$extra];
     const colSpan = node.colSpan;
     let width;
@@ -566,7 +566,7 @@ function getCurrentPara(node) {
 }
 
 function setPara(node, nodeStyle, value) {
-  if (value.attributes.class && value.attributes.class.includes("xfaRich")) {
+  if (value.attributes.class?.includes("xfaRich")) {
     if (nodeStyle) {
       if (node.h === "") {
         nodeStyle.height = "auto";
