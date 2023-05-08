@@ -1021,12 +1021,29 @@ const PDFViewerApplication = {
       const data = await this.pdfDocument.getData();
       const blob = new Blob([data], { type: "application/pdf" });
 
-      await this.downloadManager.download(blob, url, filename, options);
-    } catch (reason) {
-      // When the PDF document isn't ready, or the PDF file is still
-      // downloading, simply download using the URL.
-      await this.downloadManager.downloadUrl(url, filename, options);
-    }
+      if ("showSaveFilePicker" in window) {
+        // Prompt the user to select the location for download
+        const handle = await window.showSaveFilePicker({
+          types: [
+            {
+              description: "PDF Documents",
+              accept: {
+                "application/pdf": [".pdf"],
+              },
+            },
+          ],
+          suggestedName: filename,
+        });
+
+        // Write the data to the selected file
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } else {
+        // Use the downloadManager.download method for older browsers
+        await this.downloadManager.download(blob, url, filename, options);
+      }
+    } catch (reason) {}
   },
 
   async save(options = {}) {
@@ -1044,12 +1061,33 @@ const PDFViewerApplication = {
       const data = await this.pdfDocument.saveDocument();
       const blob = new Blob([data], { type: "application/pdf" });
 
-      await this.downloadManager.download(blob, url, filename, options);
+      if ("showSaveFilePicker" in window) {
+        // Prompt the user to select the location for download
+        const handle = await window.showSaveFilePicker({
+          types: [
+            {
+              description: "PDF Documents",
+              accept: {
+                "application/pdf": [".pdf"],
+              },
+            },
+          ],
+          suggestedName: filename,
+        });
+
+        // Write the data to the selected file
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+      } else {
+        // Use the downloadManager.download method for older browsers
+        await this.downloadManager.download(blob, url, filename, options);
+      }
     } catch (reason) {
       // When the PDF document isn't ready, or the PDF file is still
       // downloading, simply fallback to a "regular" download.
       console.error(`Error when saving the document: ${reason.message}`);
-      await this.download(options);
+      // await this.download(options);
     } finally {
       await this.pdfScriptingManager.dispatchDidSave();
       this._saveInProgress = false;
@@ -1063,11 +1101,11 @@ const PDFViewerApplication = {
     }
   },
 
-  downloadOrSave(options = {}) {
+  downloadOrSave() {
     if (this.pdfDocument?.annotationStorage.size > 0) {
-      this.save(options);
+      this.save();
     } else {
-      this.download(options);
+      this.download();
     }
   },
 
