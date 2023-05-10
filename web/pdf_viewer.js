@@ -1515,6 +1515,13 @@ class PDFViewer {
       left = Math.max(left, 0);
       top = Math.max(top, 0);
     }
+
+    // The converted top is just a y-axis value in the device space coordinate system,
+    // it should be transformed to make web browser scroll by setting scrollTop.
+    const viewHeight =
+      (changeOrientation ? pageView.width : pageView.height);
+    top = viewHeight - top;
+
     this.#scrollIntoView(pageView, /* pageSpot = */ { left, top });
   }
 
@@ -1531,10 +1538,15 @@ class PDFViewer {
     const container = this.container;
     const topLeft = currentPageView.getPagePoint(
       container.scrollLeft - firstPage.x,
-      container.scrollTop - firstPage.y
+      0
     );
+
+    // The top value may only related to offset?
+    const offsetTop = (container.scrollTop - firstPage.y) /
+      firstPage.view.scale /
+      PixelsPerInch.PDF_TO_CSS_UNITS;
     const intLeft = Math.round(topLeft[0]);
-    const intTop = Math.round(topLeft[1]);
+    const intTop = Math.round(offsetTop);
 
     let pdfOpenParams = `#page=${pageNumber}`;
     if (!this.isInPresentationMode) {
