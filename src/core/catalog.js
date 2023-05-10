@@ -81,6 +81,7 @@ class Catalog {
     this.pageKidsCountCache = new RefSetCache();
     this.pageIndexCache = new RefSetCache();
     this.nonBlendModesSet = new RefSet();
+    this.systemFontCache = new Map();
   }
 
   get version() {
@@ -1062,6 +1063,7 @@ class Catalog {
     this.fontCache.clear();
     this.builtInCMapCache.clear();
     this.standardFontDataCache.clear();
+    this.systemFontCache.clear();
   }
 
   async getPageDict(pageIndex) {
