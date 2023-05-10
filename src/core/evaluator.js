@@ -215,6 +215,7 @@ class PartialEvaluator {
     builtInCMapCache,
     standardFontDataCache,
     globalImageCache,
+    systemFontCache,
     options = null,
   }) {
     this.xref = xref;
@@ -225,6 +226,7 @@ class PartialEvaluator {
     this.builtInCMapCache = builtInCMapCache;
     this.standardFontDataCache = standardFontDataCache;
     this.globalImageCache = globalImageCache;
+    this.systemFontCache = systemFontCache;
     this.options = options || DefaultPartialEvaluatorOptions;
     this.parsingType3Font = false;
 
@@ -4197,6 +4199,7 @@ class PartialEvaluator {
           properties.isInternalFont = !!file;
           if (!properties.isInternalFont && this.options.useSystemFonts) {
             properties.systemFontInfo = getFontSubstitution(
+              this.systemFontCache,
               this.idFactory,
               this.options.standardFontDataUrl,
               baseFontName,
@@ -4309,6 +4312,7 @@ class PartialEvaluator {
         isInternalFont = !!fontFile;
         if (!isInternalFont && this.options.useSystemFonts) {
           systemFontInfo = getFontSubstitution(
+            this.systemFontCache,
             this.idFactory,
             this.options.standardFontDataUrl,
             fontName.name,

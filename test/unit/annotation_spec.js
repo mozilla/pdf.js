@@ -130,6 +130,7 @@ describe("annotation", function () {
       fontCache: new RefSetCache(),
       builtInCMapCache,
       standardFontDataCache: new Map(),
+      systemFontCache: new Map(),
     });
   });
 
