@@ -423,6 +423,31 @@ function encodeToXmlString(str) {
   return buffer.join("");
 }
 
+function validateFontName(fontFamily, mustWarn = false) {
+  // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
+  const m = /^("|').*("|')$/.exec(fontFamily);
+  if (m && m[1] === m[2]) {
+    const re = new RegExp(`[^\\\\]${m[1]}`);
+    if (re.test(fontFamily.slice(1, -1))) {
+      if (mustWarn) {
+        warn(`FontFamily contains unescaped ${m[1]}: ${fontFamily}.`);
+      }
+      return false;
+    }
+  } else {
+    // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
+    for (const ident of fontFamily.split(/[ \t]+/)) {
+      if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
+        if (mustWarn) {
+          warn(`FontFamily contains invalid <custom-ident>: ${fontFamily}.`);
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 function validateCSSFont(cssFontInfo) {
   // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-style.
   const DEFAULT_CSS_FONT_OBLIQUE = "14";
@@ -447,24 +472,8 @@ function validateCSSFont(cssFontInfo) {
 
   const { fontFamily, fontWeight, italicAngle } = cssFontInfo;
 
-  // See https://developer.mozilla.org/en-US/docs/Web/CSS/string.
-  const m = /^("|').*("|')$/.exec(fontFamily);
-  if (m && m[1] === m[2]) {
-    const re = new RegExp(`[^\\\\]${m[1]}`);
-    if (re.test(fontFamily.slice(1, -1))) {
-      warn(`XFA - FontFamily contains unescaped ${m[1]}: ${fontFamily}.`);
-      return false;
-    }
-  } else {
-    // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
-    for (const ident of fontFamily.split(/[ \t]+/)) {
-      if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
-        warn(
-          `XFA - FontFamily contains invalid <custom-ident>: ${fontFamily}.`
-        );
-        return false;
-      }
-    }
+  if (!validateFontName(fontFamily, true)) {
+    return false;
   }
 
   const weight = fontWeight ? fontWeight.toString() : "";
@@ -617,6 +626,7 @@ export {
   stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
+  validateFontName,
   XRefEntryException,
   XRefParseException,
 };

@@ -210,7 +210,12 @@ const defaultOptions = {
   cMapUrl: {
     /** @type {string} */
     value:
-      typeof PDFJSDev === "undefined" ? "../external/bcmaps/" : "../web/cmaps/",
+      // eslint-disable-next-line no-nested-ternary
+      typeof PDFJSDev === "undefined"
+        ? "../external/bcmaps/"
+        : PDFJSDev.test("MOZCENTRAL")
+        ? "resource://pdf.js/web/cmaps/"
+        : "../web/cmaps/",
     kind: OptionKind.API,
   },
   disableAutoFetch: {
@@ -271,8 +276,11 @@ const defaultOptions = {
   standardFontDataUrl: {
     /** @type {string} */
     value:
+      // eslint-disable-next-line no-nested-ternary
       typeof PDFJSDev === "undefined"
         ? "../external/standard_fonts/"
+        : PDFJSDev.test("MOZCENTRAL")
+        ? "resource://pdf.js/web/standard_fonts/"
         : "../web/standard_fonts/",
     kind: OptionKind.API,
   },

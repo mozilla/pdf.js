@@ -98,6 +98,7 @@ const EXPORT_DATA_PROPERTIES = [
   "name",
   "remeasure",
   "subtype",
+  "systemFontInfo",
   "type",
   "vertical",
 ];
@@ -998,6 +999,7 @@ class Font {
       this.fallbackName = "sans-serif";
     }
 
+    this.systemFontInfo = properties.systemFontInfo;
     this.differences = properties.differences;
     this.widths = properties.widths;
     this.defaultWidth = properties.defaultWidth;
