@@ -68,6 +68,7 @@ import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { DecodeStream } from "./decode_stream.js";
 import { FontFlags } from "./fonts_utils.js";
+import { getFontSubstitution } from "./font_substitutions.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { getMetrics } from "./metrics.js";
@@ -4174,6 +4175,7 @@ class PartialEvaluator {
           type,
           name: baseFontName,
           loadedName: baseDict.loadedName,
+          systemFontInfo: null,
           widths: metrics.widths,
           defaultWidth: metrics.defaultWidth,
           isSimulatedFlags: true,
@@ -4193,6 +4195,14 @@ class PartialEvaluator {
         if (standardFontName) {
           file = await this.fetchStandardFontData(standardFontName);
           properties.isInternalFont = !!file;
+          if (!properties.isInternalFont && this.options.useSystemFonts) {
+            properties.systemFontInfo = getFontSubstitution(
+              this.idFactory,
+              this.options.standardFontDataUrl,
+              baseFontName,
+              standardFontName
+            );
+          }
         }
         return this.extractDataStructures(dict, dict, properties).then(
           newProperties => {
@@ -4264,6 +4274,7 @@ class PartialEvaluator {
     }
     let isInternalFont = false;
     let glyphScaleFactors = null;
+    let systemFontInfo = null;
     if (fontFile) {
       if (fontFile.dict) {
         const subtypeEntry = fontFile.dict.get("Subtype");
@@ -4296,6 +4307,14 @@ class PartialEvaluator {
       if (standardFontName) {
         fontFile = await this.fetchStandardFontData(standardFontName);
         isInternalFont = !!fontFile;
+        if (!isInternalFont && this.options.useSystemFonts) {
+          systemFontInfo = getFontSubstitution(
+            this.idFactory,
+            this.options.standardFontDataUrl,
+            fontName.name,
+            standardFontName
+          );
+        }
       }
     }
 
@@ -4325,6 +4344,7 @@ class PartialEvaluator {
       isType3Font,
       cssFontInfo,
       scaleFactors: glyphScaleFactors,
+      systemFontInfo,
     };
 
     if (composite) {
