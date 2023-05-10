@@ -25,6 +25,8 @@ import {
 import { isNodeJS } from "../shared/is_node.js";
 
 class FontLoader {
+  #systemFonts = new Set();
+
   constructor({
     ownerDocument = globalThis.document,
     styleElement = null, // For testing only.
@@ -69,6 +71,7 @@ class FontLoader {
       this._document.fonts.delete(nativeFontFace);
     }
     this.nativeFontFaces.clear();
+    this.#systemFonts.clear();
 
     if (this.styleElement) {
       // Note: ChildNode.remove doesn't throw if the parentNode is undefined.
@@ -78,6 +81,9 @@ class FontLoader {
   }
 
   async loadSystemFont(info) {
+    if (!info || this.#systemFonts.has(info.loadedName)) {
+      return;
+    }
     assert(
       !this.disableFontFace,
       "loadSystemFont shouldn't be called when `disableFontFace` is set."
@@ -89,6 +95,7 @@ class FontLoader {
       this.addNativeFontFace(fontFace);
       try {
         await fontFace.load();
+        this.#systemFonts.add(loadedName);
       } catch {
         warn(
           `Cannot load system font: ${loadedName} for style ${style.style} and weight ${style.weight}.`

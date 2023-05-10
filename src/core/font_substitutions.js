@@ -374,6 +374,7 @@ function makeLocal(prepend, local) {
  *   }
  * or use the FontFace API.
  *
+ * @param {Map} systemFontCache The cache of local fonts.
  * @param {Object} idFactory The ids factory.
  * @param {String} localFontPath Path to the fonts directory.
  * @param {String} baseFontName The font name to be substituted.
@@ -382,6 +383,7 @@ function makeLocal(prepend, local) {
  * @returns an Object with the CSS, the loaded name, the src and the style.
  */
 function getFontSubstitution(
+  systemFontCache,
   idFactory,
   localFontPath,
   baseFontName,
@@ -392,6 +394,12 @@ function getFontSubstitution(
   // It's possible to have a font name with spaces, commas or dashes, hence we
   // just replace them by a dash.
   baseFontName = normalizeFontName(baseFontName);
+
+  const key = baseFontName;
+  let substitutionInfo = systemFontCache.get(key);
+  if (substitutionInfo) {
+    return substitutionInfo;
+  }
 
   // First, check if we've a substitution for the base font.
   let substitution = substitutionMap.get(baseFontName);
@@ -416,6 +424,7 @@ function getFontSubstitution(
   const loadedName = `${idFactory.getDocId()}_sf_${idFactory.createFontId()}`;
   if (!substitution) {
     if (!validateFontName(baseFontName)) {
+      systemFontCache.set(key, null);
       // If the baseFontName is not valid we don't want to use it.
       return null;
     }
@@ -427,12 +436,14 @@ function getFontSubstitution(
       (bold && BOLD) ||
       (italic && ITALIC) ||
       NORMAL;
-    return {
+    substitutionInfo = {
       css: `${loadedName},sans-serif`,
       loadedName,
       src: `local(${baseFontName})`,
       style,
     };
+    systemFontCache.set(key, substitutionInfo);
+    return substitutionInfo;
   }
 
   while (substitution.alias) {
@@ -467,12 +478,14 @@ function getFontSubstitution(
     src = `local(${baseFontName}),${src}`;
   }
 
-  return {
+  substitutionInfo = {
     css: `${loadedName},${ultimate}`,
     loadedName,
     src,
     style,
   };
+  systemFontCache.set(key, substitutionInfo);
+  return substitutionInfo;
 }
 
 export { getFontSubstitution };
