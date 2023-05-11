@@ -14,6 +14,7 @@
  */
 
 import { FindState } from "./pdf_find_controller.js";
+import { toggleExpandedBtn } from "./ui_utils.js";
 
 const MATCHES_COUNT_LIMIT = 1000;
 
@@ -173,9 +174,7 @@ class PDFFindBar {
   open() {
     if (!this.opened) {
       this.opened = true;
-      this.toggleButton.classList.add("toggled");
-      this.toggleButton.setAttribute("aria-expanded", "true");
-      this.bar.classList.remove("hidden");
+      toggleExpandedBtn(this.toggleButton, true, this.bar);
     }
     this.findField.select();
     this.findField.focus();
@@ -188,9 +187,7 @@ class PDFFindBar {
       return;
     }
     this.opened = false;
-    this.toggleButton.classList.remove("toggled");
-    this.toggleButton.setAttribute("aria-expanded", "false");
-    this.bar.classList.add("hidden");
+    toggleExpandedBtn(this.toggleButton, false, this.bar);
 
     this.eventBus.dispatch("findbarclose", { source: this });
   }

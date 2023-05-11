@@ -18,6 +18,7 @@ import {
   RenderingStates,
   SidebarView,
   toggleCheckedBtn,
+  toggleExpandedBtn,
 } from "./ui_utils.js";
 
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
@@ -238,8 +239,7 @@ class PDFSidebar {
       return;
     }
     this.isOpen = true;
-    this.toggleButton.classList.add("toggled");
-    this.toggleButton.setAttribute("aria-expanded", "true");
+    toggleExpandedBtn(this.toggleButton, true);
 
     this.outerContainer.classList.add("sidebarMoving", "sidebarOpen");
 
@@ -257,8 +257,7 @@ class PDFSidebar {
       return;
     }
     this.isOpen = false;
-    this.toggleButton.classList.remove("toggled");
-    this.toggleButton.setAttribute("aria-expanded", "false");
+    toggleExpandedBtn(this.toggleButton, false);
 
     this.outerContainer.classList.add("sidebarMoving");
     this.outerContainer.classList.remove("sidebarOpen");
