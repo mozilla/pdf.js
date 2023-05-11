@@ -327,6 +327,7 @@ function getDocument(src) {
   const disableStream = src.disableStream === true;
   const disableAutoFetch = src.disableAutoFetch === true;
   const pdfBug = src.pdfBug === true;
+  const disableGroupSizeScaling = src.disableGroupSizeScaling === true;
 
   // Parameters whose default values depend on other parameters.
   const length = rangeTransport ? rangeTransport.length : src.length ?? NaN;
@@ -421,6 +422,7 @@ function getDocument(src) {
     disableAutoFetch,
     pdfBug,
     styleElement,
+    disableGroupSizeScaling,
   };
 
   worker.promise
@@ -1516,6 +1518,8 @@ class PDFPageProxy {
       useRequestAnimationFrame: !intentPrint,
       pdfBug: this._pdfBug,
       pageColors,
+      disableGroupSizeScaling:
+        this._transport.loadingParams.disableGroupSizeScaling,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -3089,10 +3093,12 @@ class WorkerTransport {
   }
 
   get loadingParams() {
-    const { disableAutoFetch, enableXfa } = this._params;
+    const { disableAutoFetch, enableXfa, disableGroupSizeScaling } =
+      this._params;
     return shadow(this, "loadingParams", {
       disableAutoFetch,
       enableXfa,
+      disableGroupSizeScaling,
     });
   }
 }
@@ -3257,6 +3263,7 @@ class InternalRenderTask {
     useRequestAnimationFrame = false,
     pdfBug = false,
     pageColors = null,
+    disableGroupSizeScaling,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3270,6 +3277,7 @@ class InternalRenderTask {
     this.filterFactory = filterFactory;
     this._pdfBug = pdfBug;
     this.pageColors = pageColors;
+    this.disableGroupSizeScaling = disableGroupSizeScaling;
 
     this.running = false;
     this.graphicsReadyCallback = null;
@@ -3324,7 +3332,8 @@ class InternalRenderTask {
       this.filterFactory,
       { optionalContentConfig },
       this.annotationCanvasMap,
-      this.pageColors
+      this.pageColors,
+      this.disableGroupSizeScaling
     );
     this.gfx.beginDrawing({
       transform,
