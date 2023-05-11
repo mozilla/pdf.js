@@ -18,6 +18,7 @@ import {
   ScrollMode,
   SpreadMode,
   toggleCheckedBtn,
+  toggleExpandedBtn,
 } from "./ui_utils.js";
 import { PagesCountLimit } from "./pdf_viewer.js";
 
@@ -292,9 +293,7 @@ class SecondaryToolbar {
       return;
     }
     this.opened = true;
-    this.toggleButton.classList.add("toggled");
-    this.toggleButton.setAttribute("aria-expanded", "true");
-    this.toolbar.classList.remove("hidden");
+    toggleExpandedBtn(this.toggleButton, true, this.toolbar);
   }
 
   close() {
@@ -302,9 +301,7 @@ class SecondaryToolbar {
       return;
     }
     this.opened = false;
-    this.toolbar.classList.add("hidden");
-    this.toggleButton.classList.remove("toggled");
-    this.toggleButton.setAttribute("aria-expanded", "false");
+    toggleExpandedBtn(this.toggleButton, false, this.toolbar);
   }
 
   toggle() {
