@@ -247,7 +247,6 @@ function createWebpackConfig(
     "web-pdf_outline_viewer": "web/pdf_outline_viewer.js",
     "web-pdf_presentation_mode": "web/pdf_presentation_mode.js",
     "web-pdf_sidebar": "web/pdf_sidebar.js",
-    "web-pdf_sidebar_resizer": "web/pdf_sidebar_resizer.js",
     "web-pdf_thumbnail_viewer": "web/pdf_thumbnail_viewer.js",
     "web-print_service": "",
     "web-secondary_toolbar": "web/secondary_toolbar.js",
