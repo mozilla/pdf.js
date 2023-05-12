@@ -2180,14 +2180,7 @@ class PDFViewer {
     for (const entry of entries) {
       if (entry.target === this.container) {
         this.#updateContainerHeightCss(
-          // Safari doesn't support `borderBoxSize` until version 15.4.
-          Math.floor(
-            typeof PDFJSDev !== "undefined" &&
-              !PDFJSDev.test("SKIP_BABEL") &&
-              !entry.borderBoxSize?.length
-              ? entry.contentRect.height
-              : entry.borderBoxSize[0].blockSize
-          )
+          Math.floor(entry.borderBoxSize[0].blockSize)
         );
         this.#containerTopLeft = null;
         break;
