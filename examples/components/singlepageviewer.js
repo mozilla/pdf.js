@@ -41,6 +41,8 @@ const SANDBOX_BUNDLE_SRC = "../../node_modules/pdfjs-dist/build/pdf.sandbox.js";
 
 const container = document.getElementById("viewerContainer");
 
+const viewer = document.getElementById("viewer");
+
 const eventBus = new pdfjsViewer.EventBus();
 
 // (Optionally) enable hyperlinks within PDF files.
@@ -62,6 +64,7 @@ const pdfScriptingManager = new pdfjsViewer.PDFScriptingManager({
 
 const pdfSinglePageViewer = new pdfjsViewer.PDFSinglePageViewer({
   container,
+  viewer,
   eventBus,
   linkService: pdfLinkService,
   findController: pdfFindController,
